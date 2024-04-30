@@ -43,6 +43,7 @@ import org.joni.NameEntry;
 import org.joni.Regex;
 import org.joni.Region;
 import org.joni.exception.JOniException;
+import org.joni.exception.ValueException;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Block;
@@ -53,6 +54,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.ByteListHolder;
 import org.jruby.util.RegexpOptions;
+import org.jruby.util.RubyStringBuilder;
 import org.jruby.util.StringSupport;
 
 /**
@@ -467,6 +469,10 @@ public class RubyMatchData extends RubyObject {
         try {
             return pattern.nameToBackrefNumber(value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), regs);
         } catch (JOniException je) {
+            if (je instanceof ValueException) {
+                throw runtime.newIndexError(RubyStringBuilder.str(runtime, "undefined group name reference: ", runtime.newString(value)));
+            }
+            // FIXME: I think we could only catch ValueException here, but someone needs to audit that.
             throw runtime.newIndexError(je.getMessage());
         }
     }
@@ -796,7 +802,7 @@ public class RubyMatchData extends RubyObject {
         return str; //str is frozen
     }
 
-    @JRubyMethod(required = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize_copy(IRubyObject original) {
         if (this == original) return this;
@@ -828,7 +834,7 @@ public class RubyMatchData extends RubyObject {
                this.begin == that.begin && this.end == that.end;
     }
 
-    @JRubyMethod(name = {"eql?", "=="}, required = 1)
+    @JRubyMethod(name = {"eql?", "=="})
     @Override
     public IRubyObject eql_p(IRubyObject obj) {
         return metaClass.runtime.newBoolean( equals(obj) );

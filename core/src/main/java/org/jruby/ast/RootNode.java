@@ -31,6 +31,7 @@ package org.jruby.ast;
 
 import java.util.List;
 
+import org.jcodings.Encoding;
 import org.jruby.ParseResult;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.ext.coverage.CoverageData;
@@ -80,7 +81,7 @@ public class RootNode extends Node implements ParseResult {
      * 
      * @return dynamic scope of this AST
      */
-    public DynamicScope getScope() {
+    public DynamicScope getDynamicScope() {
         return scope;
     }
     
@@ -99,7 +100,12 @@ public class RootNode extends Node implements ParseResult {
     public String getFile() {
         return file;
     }
-    
+
+    @Override
+    public int getCoverageMode() {
+        return coverageMode;
+    }
+
     /**
      * First real AST node to be interpreted
      * 
@@ -117,13 +123,16 @@ public class RootNode extends Node implements ParseResult {
         return createList(bodyNode);
     }
 
-    // Is coverage enabled and is this a valid source file for coverage to apply?
-    public int coverageMode() {
-        return coverageMode;
-    }
-
     @Override
     public boolean executesOnce() {
         return true;
+    }
+
+    public Object getAST() {
+        return this;
+    }
+
+    public Encoding getEncoding() {
+        return null;  // This AST will encode all nodes with proper encoding.
     }
 }

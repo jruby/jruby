@@ -19,7 +19,8 @@ public enum ArgumentType {
     anonreq("req", true),
     anonopt("opt", true),
     anonrest("rest", true),
-    anonkeyrest("keyrest", true);
+    anonkeyrest("keyrest", true),
+    nokey("nokey", true);
 
     ArgumentType(String typeId, boolean anonymous) {
         this.typeId = typeId;
@@ -36,6 +37,7 @@ public enum ArgumentType {
             case 'o': return opt;
             case 'r': return rest;
             case 'q': return req;
+            case 'l': return nokey;
             // These are sourced from DescriptorInfo because ArgumentType references Ruby.
             case DescriptorInfo.ANONREQ_CHAR: return anonreq;
             case DescriptorInfo.ANONOPT_CHAR: return anonopt;
@@ -55,6 +57,7 @@ public enum ArgumentType {
             case opt: return 'o';
             case rest: return 'r';
             case req: return 'q';
+            case nokey: return 'l';
             case anonreq: return DescriptorInfo.ANONREQ_CHAR;
             case anonopt: return DescriptorInfo.ANONOPT_CHAR;
             case anonrest: return DescriptorInfo.ANONREST_CHAR;

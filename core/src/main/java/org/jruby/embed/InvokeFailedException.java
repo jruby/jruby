@@ -33,7 +33,7 @@ package org.jruby.embed;
  * This class is a generic unchecked exception raised during calling methods and
  * invoking interface methods which are implemented by Ruby scripts.
  * 
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class InvokeFailedException extends RuntimeException {
     public InvokeFailedException(Throwable cause) {

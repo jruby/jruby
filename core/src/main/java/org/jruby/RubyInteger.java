@@ -42,6 +42,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
@@ -382,11 +383,20 @@ public abstract class RubyInteger extends RubyNumeric {
         }
     }
 
+    static final byte[][] SINGLE_CHAR_BYTES;
+    static {
+        SINGLE_CHAR_BYTES = new byte[256][];
+        for (int i = 0; i < 256; i++) {
+            byte[] bytes = new byte[] { (byte) i };
+            SINGLE_CHAR_BYTES[i] = bytes;
+        }
+    }
+
     static final ByteList[] SINGLE_CHAR_BYTELISTS;
     static {
         SINGLE_CHAR_BYTELISTS = new ByteList[256];
         for (int i = 0; i < 256; i++) {
-            ByteList bytes = new ByteList(new byte[] { (byte) i }, false);
+            ByteList bytes = new ByteList(SINGLE_CHAR_BYTES[i], false);
             SINGLE_CHAR_BYTELISTS[i] = bytes;
             bytes.setEncoding(i < 0x80 ? USASCIIEncoding.INSTANCE : ASCIIEncoding.INSTANCE);
         }
@@ -402,7 +412,7 @@ public abstract class RubyInteger extends RubyNumeric {
     static {
         SINGLE_CHAR_UTF8_BYTELISTS = new ByteList[128];
         for (int i = 0; i < 128; i++) {
-            ByteList bytes = new ByteList(new byte[] { (byte) i }, false);
+            ByteList bytes = new ByteList(SINGLE_CHAR_BYTES[i], false);
             SINGLE_CHAR_UTF8_BYTELISTS[i] = bytes;
             bytes.setEncoding(UTF8Encoding.INSTANCE);
         }
@@ -433,10 +443,10 @@ public abstract class RubyInteger extends RubyNumeric {
         ByteList bytes;
         if (enc == USASCIIEncoding.INSTANCE) {
             bytes = singleCharByteList(b);
-        } else if ((b & 0xFF) < 0x80 && enc == RubyString.UTF8) {
+        } else if (Byte.toUnsignedInt(b) < 0x80 && enc == RubyString.UTF8) {
             bytes = singleCharUTF8ByteList(b);
         } else {
-            return new RubyString(runtime, meta, new ByteList(new byte[]{b}, enc));
+            return RubyString.newStringShared(runtime, SINGLE_CHAR_BYTES[Byte.toUnsignedInt(b)], enc);
         }
 
         // use shared for cached bytelists
@@ -450,21 +460,58 @@ public abstract class RubyInteger extends RubyNumeric {
     public RubyString chr(ThreadContext context) {
         Ruby runtime = context.runtime;
 
-        // rb_num_to_uint
-        long i = getLongValue() & 0xFFFFFFFFL;
-        int c = (int) i;
+        long uint = toUnsignedInteger(runtime);
 
-        Encoding enc;
-
-        if (i > 0xff) {
-            enc = runtime.getDefaultInternalEncoding();
+        if (uint > 0xff) {
+            Encoding enc = runtime.getDefaultInternalEncoding();
             if (enc == null) {
-                throw runtime.newRangeError(toString() + " out of char range");
+                throw runtime.newRangeError(uint + " out of char range");
             }
-            return chrCommon(context, c, enc);
+            return chrCommon(context, uint, enc);
         }
 
-        return RubyString.newStringShared(runtime, SINGLE_CHAR_BYTELISTS[c]);
+        return RubyString.newStringShared(runtime, SINGLE_CHAR_BYTELISTS[(int) uint]);
+    }
+
+    private long toUnsignedInteger(Ruby runtime) {
+        // rb_num_to_uint
+        long uintResult = numToUint(this);
+        long uint = uintResult >>> 32;
+        int ret = (int) (uintResult & 0xFFFFFFFF);
+        if (ret == 0) {
+        } else if (this instanceof RubyFixnum) {
+            throw runtime.newRangeError(getLongValue() + " out of char range");
+        } else {
+            throw runtime.newRangeError("bignum out of char range");
+        }
+        return uint;
+    }
+
+    public static final int NUMERR_TYPE = 1;
+    public static final int NUMERR_NEGATIVE = 2;
+    public static final int NUMERR_TOOLARGE = 3;
+
+    /**
+     * Simulate CRuby's rb_num_to_uint by returning a single long; the top 4 bytes will be the uint and the bottom
+     * four bytes will be the result code. See {@link #NUMERR_TYPE}, {@link #NUMERR_NEGATIVE}, and {@link #NUMERR_TOOLARGE}.
+     *
+     * @param val the object to convert to a uint
+     * @return the value and result code, with the top four bytes being the result code (zero if no error)
+     */
+    public static long numToUint(IRubyObject val) {
+        if (val instanceof RubyFixnum) {
+            long v = fix2long(val);
+            if (v > 0xFFFFFFFFL) return NUMERR_TOOLARGE;
+            if (v < 0) return NUMERR_NEGATIVE;
+            return v << 32;
+        }
+
+        if (val instanceof RubyBignum) {
+            if (((RubyBignum) val).isNegative()) return NUMERR_NEGATIVE;
+            /* long is 64bit */
+            return NUMERR_TOOLARGE;
+        }
+        return NUMERR_TYPE;
     }
 
     @Deprecated
@@ -476,8 +523,7 @@ public abstract class RubyInteger extends RubyNumeric {
     public RubyString chr(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.runtime;
 
-        // rb_num_to_uint
-        long i = getLongValue() & 0xFFFFFFFFL;
+        long uint = toUnsignedInteger(runtime);
 
         Encoding enc;
         if (arg instanceof RubyEncoding) {
@@ -485,7 +531,7 @@ public abstract class RubyInteger extends RubyNumeric {
         } else {
             enc =  arg.convertToString().toEncoding(runtime);
         }
-        return chrCommon(context, i, enc);
+        return chrCommon(context, uint, enc);
     }
 
     @Deprecated
@@ -523,7 +569,7 @@ public abstract class RubyInteger extends RubyNumeric {
         return this;
     }
 
-    @JRubyMethod(name = "ceil", required = 1)
+    @JRubyMethod(name = "ceil")
     public abstract IRubyObject ceil(ThreadContext context, IRubyObject arg);
 
     @JRubyMethod(name = "floor")
@@ -531,7 +577,7 @@ public abstract class RubyInteger extends RubyNumeric {
         return this;
     }
 
-    @JRubyMethod(name = "floor", required = 1)
+    @JRubyMethod(name = "floor")
     public abstract IRubyObject floor(ThreadContext context, IRubyObject arg);
 
     @JRubyMethod(name = "truncate")
@@ -539,7 +585,7 @@ public abstract class RubyInteger extends RubyNumeric {
         return this;
     }
 
-    @JRubyMethod(name = "truncate", required = 1)
+    @JRubyMethod(name = "truncate")
     public abstract IRubyObject truncate(ThreadContext context, IRubyObject arg);
 
     @Override
@@ -678,8 +724,10 @@ public abstract class RubyInteger extends RubyNumeric {
     /** integer_rationalize
      *
      */
-    @JRubyMethod(name = "rationalize", optional = 1)
+    @JRubyMethod(name = "rationalize", optional = 1, checkArity = false)
     public IRubyObject rationalize(ThreadContext context, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 0, 1);
+
         return to_r(context);
     }
 

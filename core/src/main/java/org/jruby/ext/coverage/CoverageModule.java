@@ -27,6 +27,7 @@
 package org.jruby.ext.coverage;
 
 import java.util.Map;
+
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyHash;
@@ -34,6 +35,7 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
@@ -47,8 +49,10 @@ import static org.jruby.runtime.ThreadContext.hasKeywords;
  * Implementation of Ruby 1.9.2's "Coverage" module
  */
 public class CoverageModule {
-    @JRubyMethod(module = true, optional = 1, keywords = true)
+    @JRubyMethod(module = true, optional = 1, keywords = true, checkArity = false)
     public static IRubyObject setup(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 0, 1);
+
         Ruby runtime = context.runtime;
         int mode = 0;
 
@@ -58,8 +62,8 @@ public class CoverageModule {
             throw runtime.newRuntimeError("coverage measurement is already setup");
         }
 
-        if (args.length != 0) {
-            boolean keyword = hasKeywords(context.resetCallInfo());
+        if (argc != 0) {
+            boolean keyword = hasKeywords(ThreadContext.resetCallInfo(context));
 
             if (keyword) {
                 RubyHash keywords = (RubyHash) TypeConverter.convertToType(args[0], runtime.getHash(), "to_hash");
@@ -127,15 +131,17 @@ public class CoverageModule {
         return context.nil;
     }
 
-    @JRubyMethod(module = true, optional = 1, keywords = true)
+    @JRubyMethod(module = true, optional = 1, keywords = true, checkArity = false)
     public static IRubyObject start(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         setup(context, self, args);
         resume(context, self);
         return context.nil;
     }
 
-    @JRubyMethod(module = true, optional = 1, keywords = true)
+    @JRubyMethod(module = true, optional = 1, keywords = true, checkArity = false)
     public static IRubyObject result(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 0, 1);
+
         Ruby runtime = context.runtime;
         CoverageData data = runtime.getCoverageData();
 
@@ -146,7 +152,7 @@ public class CoverageModule {
         boolean stop = true;
         boolean clear = true;
 
-        if (args.length > 0 && hasKeywords(context.resetCallInfo())) {
+        if (argc > 0 && hasKeywords(ThreadContext.resetCallInfo(context))) {
             RubyHash keywords = (RubyHash) TypeConverter.convertToType(args[0], runtime.getHash(), "to_hash");
             stop = ArgsUtil.extractKeywordArg(context, "stop", keywords).isTrue();
             clear = ArgsUtil.extractKeywordArg(context, "clear", keywords).isTrue();
@@ -182,7 +188,7 @@ public class CoverageModule {
         if (!coverageData.isCoverageEnabled()) {
             throw runtime.newRuntimeError("coverage measurement is not enabled");
         }
-        
+
         return convertCoverageToRuby(context, runtime, coverageData.getCoverage(), coverageData.getCurrentMode());
     }
 
@@ -202,6 +208,11 @@ public class CoverageModule {
         }
 
         return context.nil;
+    }
+
+    @JRubyMethod(module = true)
+    public static IRubyObject line_stub(ThreadContext context, IRubyObject self, IRubyObject arg) {
+        return context.runtime.getParserManager().getLineStub(context, arg);
     }
 
 

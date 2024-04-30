@@ -11,11 +11,11 @@
          '%type <IRubyObject> program'
     ],
     'ParserConstructorParams' => [
-        'LexerSource source, IRubyWarnings warnings',
+        'Ruby runtime, LexerSource source, DynamicScope scope, org.jruby.parser.ParserType type',
         'ThreadContext context, IRubyObject ripper, LexerSource source'
     ],
     'ParserConstructorBody' => [
-        'super(warnings); setLexer(new RubyLexer(this, source, warnings));',
+        'super(runtime, source, scope, type);',
         'super(context, ripper, source);'
     ],
     'lexer' => [
@@ -110,12 +110,14 @@ package @@package@@;
 import java.io.IOException;
 import java.util.Set;
 
+import org.jruby.Ruby;
 import org.jruby.RubySymbol;
 import org.jruby.ast.*;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.LexingCommon;
+import org.jruby.runtime.DynamicScope;
 import @@lex_package@@.StrTerm;
 @@import_ripper@@
 import org.jruby.util.ByteList;
@@ -133,6 +135,7 @@ import static org.jruby.lexer.yacc.RubyLexer.*;
 import static org.jruby.lexer.LexingCommon.AMPERSAND;
 import static org.jruby.lexer.LexingCommon.AMPERSAND_AMPERSAND;
 import static org.jruby.lexer.LexingCommon.AMPERSAND_DOT;
+import static org.jruby.lexer.LexingCommon.AND_KEYWORD;
 import static org.jruby.lexer.LexingCommon.BACKTICK;
 import static org.jruby.lexer.LexingCommon.BANG;
 import static org.jruby.lexer.LexingCommon.CARET;
@@ -140,13 +143,17 @@ import static org.jruby.lexer.LexingCommon.COLON_COLON;
 import static org.jruby.lexer.LexingCommon.DOLLAR_BANG;
 import static org.jruby.lexer.LexingCommon.DOT;
 import static org.jruby.lexer.LexingCommon.GT;
+import static org.jruby.lexer.LexingCommon.GT_EQ;
 import static org.jruby.lexer.LexingCommon.LBRACKET_RBRACKET;
 import static org.jruby.lexer.LexingCommon.LCURLY;
 import static org.jruby.lexer.LexingCommon.LT;
+import static org.jruby.lexer.LexingCommon.LT_EQ;
 import static org.jruby.lexer.LexingCommon.LT_LT;
 import static org.jruby.lexer.LexingCommon.MINUS;
+import static org.jruby.lexer.LexingCommon.MINUS_AT;
 import static org.jruby.lexer.LexingCommon.PERCENT;
 import static org.jruby.lexer.LexingCommon.OR;
+import static org.jruby.lexer.LexingCommon.OR_KEYWORD; 
 import static org.jruby.lexer.LexingCommon.OR_OR;
 import static org.jruby.lexer.LexingCommon.PLUS;
 import static org.jruby.lexer.LexingCommon.RBRACKET;
@@ -154,6 +161,7 @@ import static org.jruby.lexer.LexingCommon.RCURLY;
 import static org.jruby.lexer.LexingCommon.RPAREN;
 import static org.jruby.lexer.LexingCommon.SLASH;
 import static org.jruby.lexer.LexingCommon.STAR;
+import static org.jruby.lexer.LexingCommon.STAR_STAR;
 import static org.jruby.lexer.LexingCommon.TILDE;
 import static org.jruby.lexer.LexingCommon.EXPR_BEG;
 import static org.jruby.lexer.LexingCommon.EXPR_FITEM;
@@ -323,7 +331,9 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
 %type <@@token_type@@> f_norm_arg f_bad_arg
 %type <@@token_type@@> f_kwrest f_label 
 %type <@@prod_f_arg_asgn_type@@> f_arg_asgn
-%type <@@token_type@@> call_op call_op2 reswords relop dot_or_colon
+%type <@@token_type@@> call_op call_op2 reswords
+%type <ByteList> relop
+%type <@@token_type@@> dot_or_colon
 %type <@@token_type@@> p_rest p_kwrest p_kwnorest p_any_kwrest p_kw_label
 %type <@@token_type@@> f_no_kwarg f_any_kwrest args_forward
 %type <@@prod_excessed_comma_type@@> excessed_comma
@@ -336,7 +346,7 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
 %type <LexContext> k_class k_module
 %type <@@keyword_type@@> k_else k_when k_begin k_if k_do
 %type <@@keyword_type@@> k_do_block k_rescue k_ensure k_elsif
-%token <ByteList> tUMINUS_NUM
+%token <@@token_type@@> tUMINUS_NUM
 %type <@@keyword_type@@> rbrace
 %type <@@keyword_type@@> k_def k_end k_while k_until k_for k_case k_unless
 %type <@@prod_type@@> p_lparen p_lbracket
@@ -371,7 +381,7 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
 %token <@@token_type@@> tLSHFT               /* {{<<}} */
 %token <@@token_type@@> tRSHFT               /* {{>>}} */
 %token <@@token_type@@> tANDDOT              /* {{&.}} */
-%token <ByteList> tCOLON2                    /* {{::}} */
+%token <@@token_type@@> tCOLON2              /* {{::}} */
 %token <@@token_type@@> tCOLON3              /* {{:: at EXPR_BEG}} */
 %token <@@token_type@@> tOP_ASGN             /* {{operator assignment}} +=, etc. */
 %token <@@token_type@@> tASSOC               /* {{=>}} */
@@ -440,7 +450,7 @@ program       : {
               } top_compstmt {
                   /*%%%*/
                   Node expr = $2;
-                  if (expr != null && !p.getConfiguration().isEvalParse()) {
+                  if (expr != null && !p.isEval()) {
                       /* last expression should not be void */
                       if ($2 instanceof BlockNode) {
                         expr = $<BlockNode>2.getLast();
@@ -450,6 +460,7 @@ program       : {
                       expr = p.remove_begin(expr);
                       p.void_expr(expr);
                   }
+                  p.finalizeDynamicScope();
                   p.getResult().setAST(p.addRootNode($2));
                   /*% %*/
                   /*% ripper[final]: program!($2) %*/
@@ -772,10 +783,10 @@ command_rhs     : command_call %prec tOP_ASGN {
 // Node:expr *CURRENT* all but arg so far
 expr            : command_call
                 | expr keyword_and expr {
-                    $$ = p.logop($1, AMPERSAND_AMPERSAND, $3);
+                    $$ = p.logop($1, AND_KEYWORD, $3);
                 }
                 | expr keyword_or expr {
-                    $$ = p.logop($1, OR_OR, $3);
+                    $$ = p.logop($1, OR_KEYWORD, $3);
                 }
                 | keyword_not opt_nl expr {
                     $$ = p.call_uni_op(p.method_cond($3), NOT);
@@ -1825,7 +1836,7 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     $$ = p.call_bin_op($1, STAR_STAR, $3, p.src_line());
                 }
                 | tUMINUS_NUM simple_numeric tPOW arg {
-                    $$ = p.call_uni_op(p.call_bin_op($2, $3, $4, p.src_line()), $1);
+                    $$ = p.call_uni_op(p.call_bin_op($2, STAR_STAR, $4, p.src_line()), MINUS_AT);
                 }
                 | tUPLUS arg {
                     $$ = p.call_uni_op($2, PLUS_AT);
@@ -1943,16 +1954,16 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                 }
  
 relop           : '>' {
-                    $$ = $<@@token_type@@>1;
+                    $$ = GT;
                 }
                 | '<' {
-                    $$ = $<@@token_type@@>1;
+                    $$ = LT;
                 }
                 | tGEQ {
-                    $$ = $1;
+                    $$ = GT_EQ;
                 }
                 | tLEQ {
-                    $$ = $1;
+                    $$ = LT_EQ;
                 }
 
 rel_expr        : arg relop arg   %prec '>' {
@@ -2129,7 +2140,14 @@ block_arg       : tAMPER arg_value {
 opt_block_arg   : ',' block_arg {
                     $$ = $2;
                 }
-                | none_block_pass
+                | none_block_pass {
+                    /*%%%*/
+                    $$ = null;
+                    // Changed from MRI
+                    /*%
+                    $$ = p.fals();
+                    %*/
+                }
 
 // [!null]
 args            : arg_value { // ArrayNode
@@ -2800,7 +2818,11 @@ block_param     : f_arg ',' f_block_optarg ',' f_rest_arg opt_block_args_tail {
                 }
 
 opt_block_param : none {
+                    /*%%%*/
                     $$ = p.new_args(p.src_line(), null, null, null, null, (ArgsTailHolder) null);
+                    /*%
+                      $$ = null;
+                      %*/
                 }
                 | block_param_def {
                     p.setCommandStart(true);
@@ -3178,7 +3200,7 @@ p_as            : p_expr tASSOC p_variable {
 
 p_alt           : p_alt '|' p_expr_basic {
                     /*%%%*/
-                    $$ = p.logop($1, OR_OR, $3);
+                    $$ = p.logop($1, OR, $3);
                     /*% %*/
                     /*% ripper: binary!($1, STATIC_ID2SYM(idOr), $3) %*/
                 }
@@ -3433,15 +3455,19 @@ p_kw_label      : tLABEL
 p_kwrest        : kwrest_mark tIDENTIFIER {
                     $$ = $2;
                 }
-                | kwrest_mark {
-                    $$ = null;
+                | kwrest_mark { 
+                    /*%%%*/
+                    $$ = STAR_STAR;
+                    /*%
+                       $$ = null;
+                    %*/
                 }
 
 p_kwnorest      : kwrest_mark keyword_nil {
                     /*%%%*/
                        $$ = KWNOREST;
                     /*%
-                       $$ = null;
+                       $$ = p.symbolID(KWNOREST);
                     %*/
                 }
 
@@ -3573,7 +3599,7 @@ p_primitive     : literal
 p_variable      : tIDENTIFIER {
                     /*%%%*/
                     p.error_duplicate_pattern_variable($1);
-                    $$ = p.assignableInCurr($1, null);
+                    $$ = p.assignableLabelOrIdentifier($1, null);
                     /*%
                       $$ = p.assignable(@1.id, p.var_field($1));
                     %*/
@@ -4546,7 +4572,7 @@ f_opt           : f_arg_asgn f_eq arg_value {
                     p.getLexContext().in_argdef = true;
                     $$ = new OptArgNode(@3.start(), p.assignableLabelOrIdentifier($1.getName().getBytes(), $3));
                     /*%
-                      $$ = p.new_assoc(p.assignable(@1.id, p.var_field($1)), $3);
+                      $$ = p.new_assoc(p.assignable(@1.id, $1), $3);
                     %*/
 
                 }
@@ -4557,7 +4583,7 @@ f_block_opt     : f_arg_asgn f_eq primary_value {
                     /*%%%*/
                     $$ = new OptArgNode(@3.start(), p.assignableLabelOrIdentifier($1.getName().getBytes(), $3));
                     /*%
-                      $$ = p.new_assoc(p.assignable(@1.id, p.var_field($1)), $3);
+                      $$ = p.new_assoc(p.assignable(@1.id, $1), $3);
                     %*/
                 }
 
@@ -4722,9 +4748,8 @@ assoc           : arg_value tASSOC arg_value {
                 | tSTRING_BEG string_contents tLABEL_END arg_value {
                     /*%%%*/
                     if ($2 instanceof StrNode) {
-                        DStrNode dnode = new DStrNode(@2.start(), p.getEncoding());
-                        dnode.add($2);
-                        $$ = p.createKeyValue(new DSymbolNode(@2.start(), dnode), $4);
+                        Node label = p.asSymbol(@2.start(), $2);
+                        $$ = p.createKeyValue(label, $4);
                     } else if ($2 instanceof DStrNode) {
                         $$ = p.createKeyValue(new DSymbolNode(@2.start(), $<DStrNode>2), $4);
                     } else {

@@ -1,0 +1,1 @@
+fails:The ** operator makes a copy when calling a method taking a positional Hash

@@ -499,34 +499,17 @@ describe "Module#prepend" do
     c.dup.new.should be_kind_of(m)
   end
 
-  ruby_version_is ''...'3.0' do
-    it "keeps the module in the chain when dupping an intermediate module" do
-      m1 = Module.new { def calc(x) x end }
-      m2 = Module.new { prepend(m1) }
-      c1 = Class.new { prepend(m2) }
-      m2dup = m2.dup
-      m2dup.ancestors.should == [m2dup,m1,m2]
-      c2 = Class.new { prepend(m2dup) }
-      c1.ancestors[0,3].should == [m1,m2,c1]
-      c1.new.should be_kind_of(m1)
-      c2.ancestors[0,4].should == [m2dup,m1,m2,c2]
-      c2.new.should be_kind_of(m1)
-    end
-  end
-
-  ruby_version_is '3.0' do
-    it "uses only new module when dupping the module" do
-      m1 = Module.new { def calc(x) x end }
-      m2 = Module.new { prepend(m1) }
-      c1 = Class.new { prepend(m2) }
-      m2dup = m2.dup
-      m2dup.ancestors.should == [m1,m2dup]
-      c2 = Class.new { prepend(m2dup) }
-      c1.ancestors[0,3].should == [m1,m2,c1]
-      c1.new.should be_kind_of(m1)
-      c2.ancestors[0,3].should == [m1,m2dup,c2]
-      c2.new.should be_kind_of(m1)
-    end
+  it "uses only new module when dupping the module" do
+    m1 = Module.new { def calc(x) x end }
+    m2 = Module.new { prepend(m1) }
+    c1 = Class.new { prepend(m2) }
+    m2dup = m2.dup
+    m2dup.ancestors.should == [m1,m2dup]
+    c2 = Class.new { prepend(m2dup) }
+    c1.ancestors[0,3].should == [m1,m2,c1]
+    c1.new.should be_kind_of(m1)
+    c2.ancestors[0,3].should == [m1,m2dup,c2]
+    c2.new.should be_kind_of(m1)
   end
 
   it "depends on prepend_features to add the module" do
@@ -741,6 +724,50 @@ describe "Module#prepend" do
     ary = []
     child_class.new.foo(ary)
     ary.should == [3, 2, 1]
+  end
+
+  it "does not prepend a second copy if the module already indirectly exists in the hierarchy" do
+    mod = Module.new do; end
+    submod = Module.new do; end
+    klass = Class.new do; end
+    klass.include(mod)
+    mod.prepend(submod)
+    klass.include(mod)
+
+    klass.ancestors.take(4).should == [klass, submod, mod, Object]
+  end
+
+  # https://bugs.ruby-lang.org/issues/17423
+  describe "when module already exists in ancestor chain" do
+    ruby_version_is ""..."3.1" do
+      it "does not modify the ancestor chain" do
+        m = Module.new do; end
+        a = Module.new do; end
+        b = Class.new do; end
+
+        b.include(a)
+        a.prepend(m)
+        b.ancestors.take(4).should == [b, m, a, Object]
+
+        b.prepend(m)
+        b.ancestors.take(4).should == [b, m, a, Object]
+      end
+    end
+
+    ruby_version_is "3.1" do
+      it "modifies the ancestor chain" do
+        m = Module.new do; end
+        a = Module.new do; end
+        b = Class.new do; end
+
+        b.include(a)
+        a.prepend(m)
+        b.ancestors.take(4).should == [b, m, a, Object]
+
+        b.prepend(m)
+        b.ancestors.take(5).should == [m, b, m, a, Object]
+      end
+    end
   end
 
   describe "called on a module" do

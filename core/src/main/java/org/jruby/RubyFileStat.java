@@ -146,7 +146,7 @@ public class RubyFileStat extends RubyObject {
         return initialize19(fname, unusedBlock);
     }
 
-    @JRubyMethod(name = "initialize", required = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
     public IRubyObject initialize19(IRubyObject fname, Block unusedBlock) {
         Ruby runtime = getRuntime();
         ThreadContext context = runtime.getCurrentContext();
@@ -197,7 +197,7 @@ public class RubyFileStat extends RubyObject {
         return getRuntime().newBoolean(stat.isCharDev());
     }
 
-    @JRubyMethod(name = "<=>", required = 1)
+    @JRubyMethod(name = "<=>")
     public IRubyObject cmp(IRubyObject other) {
         checkInitialized();
         if (!(other instanceof RubyFileStat)) return getRuntime().getNil();
@@ -226,7 +226,11 @@ public class RubyFileStat extends RubyObject {
     @JRubyMethod(name = "birthtime")
     public IRubyObject birthtime() {
         checkInitialized();
-        FileTime btime = null;
+        FileTime btime;
+
+        if (Platform.IS_LINUX || Platform.IS_BSD) {
+            throw getRuntime().newNotImplementedError("birthtime() function is unimplemented on this machine");
+        }
 
         if (file == null || (btime = RubyFile.getBirthtimeWithNIO(file.absolutePath())) == null) {
             return ctime();
@@ -298,7 +302,7 @@ public class RubyFileStat extends RubyObject {
         return getRuntime().newBoolean(stat.isGroupOwned());
     }
     
-    @JRubyMethod(name = "initialize_copy", required = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize_copy(IRubyObject original) {
         if (!(original instanceof RubyFileStat)) {

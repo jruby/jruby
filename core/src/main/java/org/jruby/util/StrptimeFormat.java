@@ -28,7 +28,7 @@ package org.jruby.util;
 
 /**
  * This class is ported from RubyDateFormatter.Format in JRuby 9.1.5.0.
- * @see https://github.com/jruby/jruby/blob/036ce39f0476d4bd718e23e64caff36bb50b8dbc/core/src/main/java/org/jruby/util/RubyDateFormatter.java
+ * @see <a href="https://github.com/jruby/jruby/blob/036ce39f0476d4bd718e23e64caff36bb50b8dbc/core/src/main/java/org/jruby/util/RubyDateFormatter.java">RubyDateFormatter.java from 9.1.5.0</a>
  */
 enum StrptimeFormat {
     FORMAT_STRING, // raw string, no formatting

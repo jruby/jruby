@@ -1,4 +1,5 @@
 # -*- encoding: utf-8 -*-
+# frozen_string_literal: false
 require_relative '../../spec_helper'
 require_relative 'fixtures/classes'
 
@@ -76,16 +77,8 @@ describe "String#downcase" do
     -> { "ABC".downcase(:invalid_option) }.should raise_error(ArgumentError)
   end
 
-  ruby_version_is ''...'3.0' do
-    it "returns a subclass instance for subclasses" do
-      StringSpecs::MyString.new("FOObar").downcase.should be_an_instance_of(StringSpecs::MyString)
-    end
-  end
-
-  ruby_version_is '3.0' do
-    it "returns a String instance for subclasses" do
-      StringSpecs::MyString.new("FOObar").downcase.should be_an_instance_of(String)
-    end
+  it "returns a String instance for subclasses" do
+    StringSpecs::MyString.new("FOObar").downcase.should be_an_instance_of(String)
   end
 end
 

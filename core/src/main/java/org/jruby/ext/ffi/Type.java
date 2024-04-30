@@ -105,7 +105,7 @@ public abstract class Type extends RubyObject {
     }
 
     /**
-     * Initializes a new <tt>Type</tt> instance.
+     * Initializes a new <code>Type</code> instance.
      */
     protected Type(Ruby runtime, RubyClass klass, NativeType type, int size, int alignment) {
         super(runtime, klass);
@@ -115,7 +115,7 @@ public abstract class Type extends RubyObject {
     }
 
     /**
-     * Initializes a new <tt>Type</tt> instance.
+     * Initializes a new <code>Type</code> instance.
      */
     protected Type(Ruby runtime, RubyClass klass, NativeType type) {
         super(runtime, klass);
@@ -125,7 +125,7 @@ public abstract class Type extends RubyObject {
     }
 
     /**
-     * Gets the native type of this <tt>Type</tt> when passed as a parameter
+     * Gets the native type of this <code>Type</code> when passed as a parameter
      *
      * @return The native type of this Type.
      */
@@ -134,7 +134,7 @@ public abstract class Type extends RubyObject {
     }
 
     /**
-     * Gets the native size of this <tt>Type</tt> in bytes
+     * Gets the native size of this <code>Type</code> in bytes
      *
      * @return The native size of this Type.
      */
@@ -143,7 +143,7 @@ public abstract class Type extends RubyObject {
     }
 
     /**
-     * Gets the native alignment of this <tt>Type</tt> in bytes
+     * Gets the native alignment of this <code>Type</code> in bytes
      *
      * @return The native alignment of this Type.
      */
@@ -152,7 +152,7 @@ public abstract class Type extends RubyObject {
     }
 
     /**
-     * Gets the native size of this <tt>Type</tt> in bytes
+     * Gets the native size of this <code>Type</code> in bytes
      *
      * @param context The Ruby thread context.
      * @return The native size of this Type.
@@ -163,7 +163,7 @@ public abstract class Type extends RubyObject {
     }
 
     /**
-     * Gets the native alignment of this <tt>Type</tt> in bytes
+     * Gets the native alignment of this <code>Type</code> in bytes
      *
      * @param context The Ruby thread context.
      * @return The native alignment of this Type.
@@ -178,7 +178,7 @@ public abstract class Type extends RubyObject {
         private final RubySymbol sym;
 
         /**
-         * Initializes a new <tt>BuiltinType</tt> instance.
+         * Initializes a new <code>BuiltinType</code> instance.
          */
         private Builtin(Ruby runtime, RubyClass klass, NativeType nativeType, String symName) {
             super(runtime, klass, nativeType, Type.getNativeSize(nativeType), Type.getNativeAlignment(nativeType));
@@ -215,18 +215,18 @@ public abstract class Type extends RubyObject {
         }
 
         @Override
-        @JRubyMethod(name = "==", required = 1)
+        @JRubyMethod(name = "==")
         public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
             return RubyBoolean.newBoolean(context, this.equals(obj));
         }
 
         @Override
-        @JRubyMethod(name = "equal?", required = 1)
+        @JRubyMethod(name = "equal?")
         public IRubyObject equal_p(ThreadContext context, IRubyObject obj) {
             return RubyBoolean.newBoolean(context, this.equals(obj));
         }
         
-        @JRubyMethod(name = "eql?", required = 1)
+        @JRubyMethod(name = "eql?")
         public IRubyObject eql_p(ThreadContext context, IRubyObject obj) {
             return RubyBoolean.newBoolean(context, this.equals(obj));
         }
@@ -239,7 +239,7 @@ public abstract class Type extends RubyObject {
         private final int length;
 
         /**
-         * Initializes a new <tt>Type.Array</tt> instance.
+         * Initializes a new <code>Type.Array</code> instance.
          */
         public Array(Ruby runtime, RubyClass klass, Type componentType, int length) {
             super(runtime, klass, NativeType.ARRAY, componentType.getNativeSize() * length, componentType.getNativeAlignment());
@@ -248,7 +248,7 @@ public abstract class Type extends RubyObject {
         }
 
         /**
-         * Initializes a new <tt>Type.Array</tt> instance.
+         * Initializes a new <code>Type.Array</code> instance.
          */
         public Array(Ruby runtime, Type componentType, int length) {
             this(runtime, getTypeClass(runtime).getClass("Array"), componentType, length);

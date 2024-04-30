@@ -123,14 +123,30 @@ describe :regexp_new_string, shared: true do
     (r.options & Regexp::EXTENDED).should_not == 0
   end
 
-  it "does not try to convert the second argument to Integer with #to_int method call" do
-    ScratchPad.clear
-    obj = Object.new
-    def obj.to_int() ScratchPad.record(:called) end
+  ruby_version_is ""..."3.2" do
+    it "does not try to convert the second argument to Integer with #to_int method call" do
+      ScratchPad.clear
+      obj = Object.new
+      def obj.to_int() ScratchPad.record(:called) end
 
-    Regexp.send(@method, "Hi", obj)
+      Regexp.send(@method, "Hi", obj)
 
-    ScratchPad.recorded.should == nil
+      ScratchPad.recorded.should == nil
+    end
+  end
+
+  ruby_version_is "3.2" do
+    it "does not try to convert the second argument to Integer with #to_int method call" do
+      ScratchPad.clear
+      obj = Object.new
+      def obj.to_int() ScratchPad.record(:called) end
+
+      -> {
+        Regexp.send(@method, "Hi", obj)
+      }.should complain(/expected true or false as ignorecase/, {verbose: true})
+
+      ScratchPad.recorded.should == nil
+    end
   end
 
   ruby_version_is ""..."3.2" do
@@ -188,12 +204,12 @@ describe :regexp_new_string, shared: true do
     end
 
     it "raises an Argument error if the second argument contains unsupported chars" do
-      -> { Regexp.send(@method, 'Hi', 'e') }.should raise_error(ArgumentError)
-      -> { Regexp.send(@method, 'Hi', 'n') }.should raise_error(ArgumentError)
-      -> { Regexp.send(@method, 'Hi', 's') }.should raise_error(ArgumentError)
-      -> { Regexp.send(@method, 'Hi', 'u') }.should raise_error(ArgumentError)
-      -> { Regexp.send(@method, 'Hi', 'j') }.should raise_error(ArgumentError)
-      -> { Regexp.send(@method, 'Hi', 'mjx') }.should raise_error(ArgumentError)
+      -> { Regexp.send(@method, 'Hi', 'e') }.should raise_error(ArgumentError, "unknown regexp option: e")
+      -> { Regexp.send(@method, 'Hi', 'n') }.should raise_error(ArgumentError, "unknown regexp option: n")
+      -> { Regexp.send(@method, 'Hi', 's') }.should raise_error(ArgumentError, "unknown regexp option: s")
+      -> { Regexp.send(@method, 'Hi', 'u') }.should raise_error(ArgumentError, "unknown regexp option: u")
+      -> { Regexp.send(@method, 'Hi', 'j') }.should raise_error(ArgumentError, "unknown regexp option: j")
+      -> { Regexp.send(@method, 'Hi', 'mjx') }.should raise_error(ArgumentError, /unknown regexp option: mjx\b/)
     end
   end
 
@@ -432,6 +448,10 @@ describe :regexp_new_string, shared: true do
       Regexp.send(@method, "\056\x42\u3042\x52\076").should == /#{"\x2e\x42\u3042\x52\x3e"}/
     end
 
+    it "accepts a multiple byte character which need not be escaped" do
+      Regexp.send(@method, "\§").should == /#{"§"}/
+    end
+
     it "raises a RegexpError if less than four digits are given for \\uHHHH" do
       -> { Regexp.send(@method, "\\" + "u304") }.should raise_error(RegexpError)
     end
@@ -469,12 +489,12 @@ describe :regexp_new_string, shared: true do
     end
 
     it "returns a Regexp with the input String's encoding" do
-      str = "\x82\xa0".force_encoding(Encoding::Shift_JIS)
+      str = "\x82\xa0".dup.force_encoding(Encoding::Shift_JIS)
       Regexp.send(@method, str).encoding.should == Encoding::Shift_JIS
     end
 
     it "returns a Regexp with source String having the input String's encoding" do
-      str = "\x82\xa0".force_encoding(Encoding::Shift_JIS)
+      str = "\x82\xa0".dup.force_encoding(Encoding::Shift_JIS)
       Regexp.send(@method, str).source.encoding.should == Encoding::Shift_JIS
     end
   end

@@ -19,9 +19,15 @@ public class Symbol extends ImmutableLiteral implements Stringable {
         this.symbol = symbol;
     }
 
+    @Override
     public boolean equals(Object other) {
         return other instanceof Symbol &&
                 (this == KW_REST_ARG_DUMMY && other == KW_REST_ARG_DUMMY || symbol.equals(((Symbol) other).symbol));
+    }
+
+    @Override
+    public int hashCode() {
+        return 43 * symbol.hashCode();
     }
 
     @Override

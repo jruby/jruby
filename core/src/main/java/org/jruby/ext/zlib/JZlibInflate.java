@@ -34,6 +34,7 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -55,7 +56,7 @@ public class JZlibInflate extends ZStream {
         super(runtime, type);
     }
 
-    @JRubyMethod(name = "inflate", required = 1, meta = true)
+    @JRubyMethod(name = "inflate", meta = true)
     public static IRubyObject s_inflate(ThreadContext context, IRubyObject recv, IRubyObject string) {
         RubyClass klass = (RubyClass)(recv.isClass() ? recv : context.runtime.getClassFromPath("Zlib::Inflate"));
         JZlibInflate inflate = (JZlibInflate) klass.allocate();
@@ -69,8 +70,10 @@ public class JZlibInflate extends ZStream {
         }
     }
 
-    @JRubyMethod(name = "initialize", optional = 1, visibility = PRIVATE)
+    @JRubyMethod(name = "initialize", optional = 1, checkArity = false, visibility = PRIVATE)
     public IRubyObject _initialize(IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(getRuntime(), args, 0, 1);
+
         windowBits = JZlib.DEF_WBITS;
 
         if (args.length > 0 && !args[0].isNil()) {
@@ -111,7 +114,7 @@ public class JZlibInflate extends ZStream {
         return RubyString.newEmptyBinaryString(context.runtime);
     }
 
-    @JRubyMethod(name = "<<", required = 1)
+    @JRubyMethod(name = "<<")
     public IRubyObject append(ThreadContext context, IRubyObject arg) {
         checkClosed();
         if (arg.isNil()) {
@@ -148,7 +151,7 @@ public class JZlibInflate extends ZStream {
         }
     }
 
-    @JRubyMethod(name = "set_dictionary", required = 1)
+    @JRubyMethod(name = "set_dictionary")
     public IRubyObject set_dictionary(ThreadContext context, IRubyObject arg) {
         try {
             return set_dictionary(arg);
@@ -171,7 +174,7 @@ public class JZlibInflate extends ZStream {
         return str;
     }
 
-    @JRubyMethod(name = "inflate", required = 1)
+    @JRubyMethod(name = "inflate")
     public IRubyObject inflate(ThreadContext context, IRubyObject string, Block block) {
         ByteList data = null;
         if (!string.isNil()) {
@@ -189,7 +192,7 @@ public class JZlibInflate extends ZStream {
         }
     }
 
-    @JRubyMethod(name = "sync", required = 1)
+    @JRubyMethod(name = "sync")
     public IRubyObject sync(ThreadContext context, IRubyObject string) {
         if (flater.avail_in > 0) {
             switch (flater.sync()) {

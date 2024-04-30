@@ -74,7 +74,11 @@ public class IntegerMathInstr extends TwoOperandResultBaseInstr {
             case DIVIDE:
                 return value1 / value2;
             default:
-                throw new RuntimeException("BIntInstr has unknown op");
+                throw new RuntimeException("IntegerMathInstr has unknown op");
         }
+    }
+
+    public Op getOp() {
+        return op;
     }
 }

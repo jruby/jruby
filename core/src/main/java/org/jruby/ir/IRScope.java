@@ -1,5 +1,6 @@
 package org.jruby.ir;
 
+import org.jcodings.Encoding;
 import org.jruby.ParseResult;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
@@ -30,6 +31,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.util.ByteList;
 import org.jruby.util.log.Logger;
@@ -67,6 +69,9 @@ import static org.jruby.ir.IRFlags.*;
  * and so on ...
  */
 public abstract class IRScope implements ParseResult {
+    public DynamicScope getDynamicScope() {
+        return null;
+    }
     public static final Logger LOG = LoggerFactory.getLogger(IRScope.class);
 
     private static final Collection<IRClosure> NO_CLOSURES = Collections.EMPTY_LIST;
@@ -123,6 +128,7 @@ public abstract class IRScope implements ParseResult {
     // optimization passes it is incredibly unlikely any of these could ever be unset anyways; So this is not
     // a poor list of 'truisms' for this Scope.
     private boolean hasBreakInstructions;
+    private boolean hasFlipFlops;
     private boolean hasLoops;
     private boolean hasNonLocalReturns;
     private boolean receivesClosureArg;
@@ -280,7 +286,7 @@ public abstract class IRScope implements ParseResult {
     public IRScope getNearestNonClosurelikeScope() {
         IRScope current = this;
 
-        while (current != null && !(current instanceof IRClosure)) {
+        while (current != null && current instanceof IRClosure) {
             current = current.getLexicalParent();
         }
 
@@ -367,6 +373,10 @@ public abstract class IRScope implements ParseResult {
         getRootLexicalScope().setFileName(filename);
     }
 
+    public Encoding getEncoding() {
+        throw new IllegalArgumentException("This is only here because prism requires this in ParseResult");
+    }
+
     @Deprecated
     public String getFileName() {
         return getFile();
@@ -385,14 +395,20 @@ public abstract class IRScope implements ParseResult {
         return lineNumber;
     }
 
-    public int countForLoops() {
-        int count = 0;
+    public int correctVariableDepthForForLoopsForEncoding(int depth) {
+        int forCount = 0;
+        int currentDepth = 0;
         
         for (IRScope current = this; current != null && !current.isTopLocalVariableScope(); current = current.getLexicalParent()) {
-            if (current instanceof IRFor) count++;
+            if (currentDepth == depth) break;
+            if (current instanceof IRFor) {
+                forCount++;
+            } else {
+                currentDepth++;
+            }
         }
 
-        return count;
+        return depth - forCount;
     }
 
     /**
@@ -452,6 +468,14 @@ public abstract class IRScope implements ParseResult {
 
     public boolean accessesParentsLocalVariables() {
         return accessesParentsLocalVariables;
+    }
+
+    public boolean hasFlipFlops() {
+        return hasFlipFlops;
+    }
+
+    public void setHasFlipFlops(boolean hasFlipFlops) {
+        this.hasFlipFlops = hasFlipFlops;
     }
 
     public void setHasLoops() {
@@ -647,7 +671,7 @@ public abstract class IRScope implements ParseResult {
 
             if (spec.contains(":") && spec.equals(getFileName() + ":" + getLineNumber()) ||
                     spec.equals(getFileName())) {
-                return new IGVDumper(getFullyQualifiedName() + "; line " + getLineNumber());
+                return new IGVDumper(getFullyQualifiedName() + "; line " + (getLineNumber() + 1), RubyInstanceConfig.IR_DEBUG_IGV_STDOUT);
             }
         }
 
@@ -916,6 +940,10 @@ public abstract class IRScope implements ParseResult {
         return false;
     }
 
+    public boolean isWhereFlipFlopStateVariableIs() {
+        return true;
+    }
+
     /**
      * Is this IRClassBody but not IRMetaClassBody?
      */
@@ -1005,5 +1033,9 @@ public abstract class IRScope implements ParseResult {
         } else {
             return EnumSet.noneOf(IRFlags.class);
         }
+    }
+
+    public Object getAST() {
+        throw new RuntimeException("IRScopes and their descendants should never be asked for a syntax tree");
     }
 }

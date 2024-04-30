@@ -60,6 +60,7 @@ lib/ruby/stdlib/abbrev*
 lib/ruby/stdlib/ant*
 lib/ruby/stdlib/base64*
 lib/ruby/stdlib/benchmark*
+lib/ruby/stdlib/bigdecimal*
 lib/ruby/stdlib/bundler*
 lib/ruby/stdlib/cgi*
 lib/ruby/stdlib/csv*
@@ -86,6 +87,7 @@ lib/ruby/stdlib/jar*
 lib/ruby/stdlib/jline
 lib/ruby/stdlib/jopenssl*
 lib/ruby/stdlib/json*
+lib/ruby/stdlib/kconv.rb
 lib/ruby/stdlib/krypt*
 lib/ruby/stdlib/libfixposix*
 lib/ruby/stdlib/logger*
@@ -94,7 +96,9 @@ lib/ruby/stdlib/minitest*
 lib/ruby/stdlib/mutex_m.rb
 lib/ruby/stdlib/net/protocol*
 lib/ruby/stdlib/net/http*
+lib/ruby/stdlib/nkf*
 lib/ruby/stdlib/observer*
+lib/ruby/stdlib/open3*
 lib/ruby/stdlib/open-uri*
 lib/ruby/stdlib/optparse*
 lib/ruby/stdlib/optionparser*

@@ -59,13 +59,13 @@ public abstract class JavaUtilRegex {
             return proxy;
         }
 
-        @JRubyMethod(name = "=~", required = 1)
+        @JRubyMethod(name = "=~")
         public static IRubyObject op_match(final ThreadContext context, final IRubyObject self, IRubyObject str) {
             final java.util.regex.Matcher matcher = matcher(self, str);
             return matcher.find() ? context.runtime.newFixnum(matcher.start()) : context.nil;
         }
 
-        @JRubyMethod(name = "match", required = 1)
+        @JRubyMethod(name = "match")
         public static IRubyObject match(final ThreadContext context, final IRubyObject self, IRubyObject str) {
             final java.util.regex.Matcher matcher = matcher(self, str);
             if ( ! matcher.find() ) return context.nil;
@@ -74,7 +74,7 @@ public abstract class JavaUtilRegex {
             return matcherProxy;
         }
 
-        @JRubyMethod(name = "===", required = 1)
+        @JRubyMethod(name = "===")
         public static IRubyObject eqq(final ThreadContext context, final IRubyObject self, IRubyObject str) {
             return RubyBoolean.newBoolean(context,  matcher(self, str).find() );
         }
@@ -211,7 +211,7 @@ public abstract class JavaUtilRegex {
             return arr;
         }
 
-        @JRubyMethod(name = "[]", required = 1)
+        @JRubyMethod(name = "[]")
         public static IRubyObject aref(final ThreadContext context, final IRubyObject self, final IRubyObject idx) {
             final java.util.regex.Matcher matcher = unwrapJavaObject(self);
             if ( idx instanceof RubySymbol || idx instanceof RubyString ) {
@@ -224,7 +224,7 @@ public abstract class JavaUtilRegex {
             return to_a(context, self).aref(context, idx); // Range
         }
 
-        @JRubyMethod(name = "[]", required = 2)
+        @JRubyMethod(name = "[]")
         public static IRubyObject aref(final ThreadContext context, final IRubyObject self,
             final IRubyObject arg0, final IRubyObject arg1) {
             return to_a(context, self).aref(arg0, arg1);

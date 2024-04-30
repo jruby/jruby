@@ -36,6 +36,7 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.ir.runtime.IRBreakJump;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.RubyEvent;
@@ -106,9 +107,9 @@ public class RubyRunnable implements ThreadedRunnable {
             String file = threadBlock.getBinding().getFile();
             int line = threadBlock.getBinding().getLine();
             try {
-                if (runtime.hasEventHooks()) context.trace(RubyEvent.THREAD_BEGIN, null, frameClass, file, line);
+                IRRuntimeHelpers.callTrace(context, frameClass, RubyEvent.THREAD_BEGIN, null, file, line);
                 IRubyObject result = proc.call(context, arguments);
-                if (runtime.hasEventHooks()) context.trace(RubyEvent.THREAD_END, null, frameClass, file, line);
+                IRRuntimeHelpers.callTrace(context, frameClass, RubyEvent.THREAD_END, null, file, line);
                 rubyThread.cleanTerminate(result);
             } catch (MainExitException mee) {
                 // Someone called exit!, so we need to kill the main thread

@@ -54,6 +54,7 @@ import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CacheEntry;
 
 public class ConcreteJavaProxy extends JavaProxy {
 
@@ -207,10 +208,10 @@ public class ConcreteJavaProxy extends JavaProxy {
         private final Constructor<? extends ReifiedJavaProxy> withBlock;
         final DynamicMethod oldInit;
 
-        StaticJCreateMethod(RubyModule cls, Constructor<? extends ReifiedJavaProxy> withBlock, DynamicMethod oldInit) {
-            super(cls, PUBLIC, "__jcreate_static!");
-            this.withBlock = withBlock;
-            this.oldInit = oldInit;
+        StaticJCreateMethod(RubyModule implClass, Constructor<? extends ReifiedJavaProxy> javaProxyConstructor, DynamicMethod oldinit) {
+            super(implClass, PUBLIC, "__jcreate_static!");
+            this.withBlock = javaProxyConstructor;
+            this.oldInit = oldinit == null ? oldinit : oldinit.getRealMethod(); // ensure we don't use a wrapper (jruby/jruby#8148)
         }
 
         @Override
@@ -310,7 +311,7 @@ public class ConcreteJavaProxy extends JavaProxy {
     }
 
     /**
-     * Used by reified classes, this class is tightly coupled with RealClassGenerator, splitInitialize, & finishInitialize
+     * Used by reified classes, this class is tightly coupled with RealClassGenerator, splitInitialize, &amp; finishInitialize
      * Do not refactor without looking at RCG
      */
     public static final class SplitCtorData {
@@ -361,7 +362,6 @@ public class ConcreteJavaProxy extends JavaProxy {
             this.state = state;
             this.block = block;
         }
-
     }
 
     /**
@@ -369,33 +369,44 @@ public class ConcreteJavaProxy extends JavaProxy {
      * Do not refactor without looking at RCG
      * @return An object used by reified code and the finishInitialize method
      */
-    public SplitCtorData splitInitialized(RubyClass base, IRubyObject[] args, Block blk, JCtorCache jcc) {
-        String name = base.getClassConfig().javaCtorMethodName;
-        DynamicMethod dm = base.searchMethod(name);
-        if (dm instanceof StaticJCreateMethod) dm = ((StaticJCreateMethod) dm).oldInit;
-        DynamicMethod dm1 = base.searchMethodLateral(name); // only on ourself //TODO: missing default
+    public SplitCtorData splitInitialized(RubyClass base, IRubyObject[] args, Block block, JCtorCache jcc) {
+        final Ruby runtime = getRuntime();
+        final String name = base.getClassConfig().javaCtorMethodName;
+        final CacheEntry methodEntry = base.searchWithCache(name);
+        final boolean isLateral = isClassOrIncludedPrependedModule(methodEntry.sourceModule, base);
+        DynamicMethod method = methodEntry.method.getRealMethod(); // ensure we don't use a wrapper (jruby/jruby#8148)
+        if (method instanceof StaticJCreateMethod) method = ((StaticJCreateMethod) method).oldInit;
 
         // jcreate is for nested ruby classes from a java class
-        if ((dm1 != null && !(dm instanceof InitializeMethod) && !(dm instanceof StaticJCreateMethod))) {
+        if (isLateral && method instanceof AbstractIRMethod) {
 
-            AbstractIRMethod air = (AbstractIRMethod) dm; // TODO: getMetaClass() ? or base? (below v)
+            AbstractIRMethod air = (AbstractIRMethod) method; // TODO: getMetaClass() ? or base? (below v)
 
-            SplitSuperState<?> state = air.startSplitSuperCall(getRuntime().getCurrentContext(), this, getMetaClass(),
-                    name, args, blk);
+            SplitSuperState<?> state = air.startSplitSuperCall(runtime.getCurrentContext(), this, getMetaClass(), name, args, block);
             if (state == null) { // no super in method
-                return new SplitCtorData(getRuntime(), args, jcc, air, name, blk);
-            } else {
-                return new SplitCtorData(getRuntime(), state.callArrayArgs.toJavaArrayMaybeUnsafe(), jcc, air, state, blk);
+                return new SplitCtorData(runtime, args, jcc, air, name, block);
             }
-        } else {
-            return new SplitCtorData(getRuntime(), args, jcc);
+            return new SplitCtorData(runtime, state.callArrayArgs.toJavaArrayMaybeUnsafe(), jcc, air, state, block);
         }
+        return new SplitCtorData(runtime, args, jcc);
+    }
+
+    private static boolean isClassOrIncludedPrependedModule(final RubyModule methodSource, final RubyClass klass) {
+        if (methodSource == klass) return true;
+
+        RubyClass candidate = klass.getSuperClass();
+        while (candidate != null && (candidate.isIncluded() || candidate.isPrepended())) { // up till 'real' superclass
+            if (candidate == klass) return true;
+            candidate = candidate.getSuperClass();
+        }
+
+        return false;
     }
 
     /**
      * Used by reified classes, this method is tightly coupled with RealClassGenerator, splitInitialize
      * Do not refactor without looking at RCG
-     * @note invoked from generated byte-code
+     * <p>Note: invoked from generated byte-code</p>
      */
     public void finishInitialize(SplitCtorData returned) {
         if (returned.method != null) {

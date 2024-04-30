@@ -52,7 +52,7 @@ import static org.jruby.runtime.Visibility.PRIVATE;
  * A "thin" Java package wrapper (for the runtime to see them as Ruby objects).
  *
  * @since 9K
- * @note previously <code>JavaPackageModuleTemplate</code> in Ruby code
+ * <p>Note: previously <code>JavaPackageModuleTemplate</code> in Ruby code</p>
  * @author kares
  */
 @JRubyClass(name="Java::JavaPackage", parent="Module")
@@ -121,12 +121,12 @@ public class JavaPackage extends RubyModule {
         return RubyBoolean.newBoolean(context, obj == this || isInstance(obj));
     }
 
-    @JRubyMethod(name = "const_missing", required = 1)
+    @JRubyMethod(name = "const_missing")
     public IRubyObject const_missing(final ThreadContext context, final IRubyObject name) {
         return relativeJavaClassOrPackage(context, name, false);
     }
 
-    @JRubyMethod(name = "const_get", required = 1)
+    @JRubyMethod(name = "const_get")
     public final IRubyObject const_get(final ThreadContext context, final IRubyObject name) {
         // skip constant validation and do not inherit or include object
         IRubyObject constant = getConstantNoConstMissing(name.toString(), false, false);
@@ -134,7 +134,7 @@ public class JavaPackage extends RubyModule {
         return relativeJavaClassOrPackage(context, name, false); // e.g. javax.const_get(:script)
     }
 
-    @JRubyMethod(name = "const_get", required = 2)
+    @JRubyMethod(name = "const_get")
     public final IRubyObject const_get(final ThreadContext context,
         final IRubyObject name, final IRubyObject inherit) {
         IRubyObject constant = getConstantNoConstMissing(name.toString(), inherit.isTrue(), false);
@@ -189,7 +189,7 @@ public class JavaPackage extends RubyModule {
 
     RubyModule relativeJavaProxyClass(final Ruby runtime, final IRubyObject name) {
         final String fullName = packageRelativeName( name.toString() ).toString();
-        return Java.getProxyClass(runtime, Java.getJavaClass(runtime, fullName));
+        return Java.getProxyClass(runtime, Java.getJavaClass(runtime, fullName), true);
     }
 
     @JRubyMethod(name = "respond_to?")
@@ -272,7 +272,13 @@ public class JavaPackage extends RubyModule {
 
     public final boolean isAvailable() {
         // may be null if no package information is available from the archive or codebase
-        return Package.getPackage(packageName) != null;
+        return getPackage() != null;
+    }
+
+    @SuppressWarnings("deprecation")
+    private Package getPackage() {
+        // NOTE: can not switch to getRuntime().getJRubyClassLoader().getDefinedPackage(packageName) as it's Java 9+
+        return Package.getPackage(packageName);
     }
 
     @JRubyMethod(name = "available?")
@@ -282,7 +288,7 @@ public class JavaPackage extends RubyModule {
 
     @JRubyMethod(name = "sealed?")
     public IRubyObject sealed_p(ThreadContext context) {
-        final Package pkg = Package.getPackage(packageName);
+        final Package pkg = getPackage();
         if ( pkg == null ) return context.nil;
         return RubyBoolean.newBoolean(context, pkg.isSealed());
     }
@@ -291,7 +297,7 @@ public class JavaPackage extends RubyModule {
     @SuppressWarnings("unchecked")
     public <T> T toJava(Class<T> target) {
         if ( target.isAssignableFrom( Package.class ) ) {
-            return target.cast(Package.getPackage(packageName));
+            return target.cast(getPackage());
         }
         return super.toJava(target);
     }

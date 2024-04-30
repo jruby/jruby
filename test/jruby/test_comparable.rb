@@ -98,7 +98,7 @@ class TestComparable < Test::Unit::TestCase
     assert $!.nil?, "$! not nil but: #{$!.inspect}"
 
     require 'bigdecimal'
-    big = BigDecimal.new '-10000000000'
+    big = BigDecimal('-10000000000')
     assert_equal nil, big <=> Time.now
     assert $!.nil?, "$! not nil but: #{$!.inspect}"
     assert_equal nil, big <=> nil
@@ -130,7 +130,7 @@ class TestComparable < Test::Unit::TestCase
     assert $!.nil?, "$! not nil but: #{$!.inspect}"
 
     require 'bigdecimal'
-    big = BigDecimal.new '-10000000000'
+    big = BigDecimal('-10000000000')
     assert_equal 0, invokeCompareTo(big, Time.now)
     assert $!.nil?, "$! not nil but: #{$!.inspect}"
     assert_equal 0, invokeCompareTo(big, Object.new)

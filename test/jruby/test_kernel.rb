@@ -780,4 +780,28 @@ class TestKernel < Test::Unit::TestCase
 #  untrace_var
 #  warn
 
+  def test_warning_line_numbers; %w{ open3 tempfile }.each { |feat| require feat }
+    Tempfile.create(__method__.to_s) do |file|
+      file.write "\n" +
+        "#'foo'.lines { :ignored_block } # line 2\n" + # no longer warns in Ruby >= 3.1
+        "[1, 2].find_index(3) { :unused_block }\n" + # line 3
+        "Array.new(2, false) { :superseded }\n" + # line 4
+
+        "Array.class_eval do\n" +
+        "  alias_method :hash, :size\n" + # line 6
+        "end\n" +
+
+        ":done \n" # line 8
+      file.flush
+
+      bin_jruby = File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name'])
+      output, status = Open3.capture2e("#{bin_jruby} -v #{file.path}")
+      assert_equal 0, status.to_i, "got status: #{status} with:\n#{output}"
+      assert_includes output, ":3: warning: given block not used"
+      assert_includes output, ":4: warning: block supersedes default value argument"
+      assert_includes output, ":6: warning: method redefined; discarding old hash"
+      assert_includes output, ":8: warning: possibly useless use of a literal in void context"
+    end
+  end
+
 end

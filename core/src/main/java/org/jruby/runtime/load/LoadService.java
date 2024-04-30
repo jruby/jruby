@@ -187,6 +187,9 @@ public class LoadService {
     protected final Ruby runtime;
     protected LibrarySearcher librarySearcher;
 
+    protected String mainScript;
+    protected String mainScriptPath;
+
     public LoadService(Ruby runtime) {
         this.runtime = runtime;
         if (RubyInstanceConfig.DEBUG_LOAD_TIMINGS) {
@@ -297,7 +300,7 @@ public class LoadService {
     }
 
     public static class LoadPathMethods {
-        @JRubyMethod(required = 1)
+        @JRubyMethod
         public static IRubyObject resolve_feature_path(ThreadContext context, IRubyObject self, IRubyObject pathArg) {
             Ruby runtime = context.runtime;
             RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, pathArg));
@@ -517,16 +520,8 @@ public class LoadService {
                 destroyLock = true;
 
                 return state;
-            } catch (LoadError le) {
-                // LoadError should be considered a completed load and remove the lock
-                destroyLock = true;
 
-                throw le;
-            } catch (StandardError se) {
-                // standard error, consider file not loaded
-                destroyLock = false;
-
-                throw se;
+            // NOTE: raising errors (LoadError included) should not be considered a completed load: `destroyLock == false`
             } finally {
                 if (destroyLock) {
                     lock.destroyed = true;
@@ -802,7 +797,7 @@ public class LoadService {
      * this method uses the appropriate lookup strategy to find a file.
      * It is used by Kernel#require.
      *
-     * @mri rb_find_file
+     * <p>MRI: rb_find_file</p>
      * @param name the file to find, this is a path name
      * @return the correct file
      */
@@ -983,5 +978,35 @@ public class LoadService {
         }
         return resolveLoadName(foundResource, previousPath);
     }
-    //</editor-fold>
+
+    public String getMainScript() {
+        return mainScript;
+    }
+
+    public String getMainScriptPath() {
+        return mainScriptPath;
+    }
+
+    public void setMainScript(String filename, String cwd) {
+        this.mainScript = filename;
+        File mainFile = new File(filename);
+
+        if (!mainFile.isAbsolute()) {
+            mainFile = new File(cwd, filename);
+        }
+
+        if (mainFile.exists()) {
+            this.mainScriptPath = mainFile.getAbsolutePath();
+        } else {
+            this.mainScriptPath = filename;
+        }
+    }
+
+    public String getPathForLocation(String filename) {
+        if (filename.equals(mainScript)) {
+            return mainScriptPath;
+        }
+
+        return filename;
+    }
 }

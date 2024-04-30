@@ -72,9 +72,7 @@ public class Pack {
     private static final String ENDIANESS_CODES = new String(new char[] {
             's' + BE, 'S' + BE/*n*/, 'i' + BE, 'I' + BE, 'l' + BE, 'L' + BE/*N*/, 'q' + BE, 'Q' + BE, 'j' + BE, 'J' + BE,
             's' + LE, 'S' + LE/*v*/, 'i' + LE, 'I' + LE, 'l' + LE, 'L' + LE/*V*/, 'q' + LE, 'Q' + LE, 'j' + LE, 'J' + LE});
-    private static final String UNPACK_IGNORE_NULL_CODES = "cC";
-    private static final String PACK_IGNORE_NULL_CODES = "cCiIlLnNqQsSvV";
-    private static final String PACK_IGNORE_NULL_CODES_WITH_MODIFIERS = "lLsS";
+
     /** Unpack modes
     **/
     private static final int UNPACK_ARRAY = 0;
@@ -478,6 +476,44 @@ public class Pack {
         };
         converters['q' + BE] = tmp;
         if (Platform.BIT_WIDTH == 64) converters['j' + BE] = tmp;
+
+        // pointer; we can't provide a real pointer, so we just use identity hashcode
+        tmp = new QuadConverter(8) {
+            @Override
+            public IRubyObject decode(Ruby runtime, ByteBuffer format) {
+                return runtime.getNil();
+            }
+
+            @Override
+            public void encode(Ruby runtime, IRubyObject from, ByteList result) {
+                if (from.isNil()) {
+                    encodeLongBigEndian(result, 0);
+                } else {
+                    encodeLongBigEndian(result, System.identityHashCode(from));
+                }
+            }
+        };
+
+        converters['p'] = tmp;
+
+        // pointer; we can't provide a real pointer, so we just use identity hashcode
+        tmp = new QuadConverter(8) {
+            @Override
+            public IRubyObject decode(Ruby runtime, ByteBuffer format) {
+                return runtime.getNil();
+            }
+
+            @Override
+            public void encode(Ruby runtime, IRubyObject from, ByteList result) {
+                if (from.isNil()) {
+                    encodeLongBigEndian(result, 0);
+                } else {
+                    encodeLongBigEndian(result, System.identityHashCode(from.convertToString()));
+                }
+            }
+        };
+
+        converters['P'] = tmp;
     }
 
     public static int unpackInt_i(ByteBuffer enc) {
@@ -499,7 +535,7 @@ public class Pack {
         return result;
     }
 
-    public static void encodeUM(Ruby runtime, ByteList lCurElemString, int occurrences, boolean ignoreStar, char type, ByteList result) {
+    private static void encodeUM(Ruby runtime, ByteList lCurElemString, int occurrences, boolean ignoreStar, char type, ByteList result) {
         if (occurrences == 0 && type == 'm' && !ignoreStar) {
             encodes(runtime, result, lCurElemString.getUnsafeBytes(),
                     lCurElemString.getBegin(), lCurElemString.length(),
@@ -578,12 +614,12 @@ public class Pack {
         return io2Append;
     }
 
-    public static RubyArray unpack(Ruby runtime, ByteList encodedString, ByteList formatString) {
-        return unpackWithBlock(runtime.getCurrentContext(), runtime, encodedString, formatString, Block.NULL_BLOCK);
+    public static RubyArray unpack(ThreadContext context, ByteList encodedString, ByteList formatString) {
+        return unpackWithBlock(context, RubyString.newStringLight(context.runtime, encodedString), formatString, Block.NULL_BLOCK);
     }
 
     /**
-     * @see Pack#unpackWithBlock(ThreadContext, Ruby, ByteList, ByteList, Block)
+     * @see Pack#unpackWithBlock(ThreadContext, RubyString, ByteList, Block)
      * @param context
      * @param encoded
      * @param formatString
@@ -596,229 +632,229 @@ public class Pack {
     /**
      *    Decodes <i>str</i> (which may contain binary data) according to the format
      *       string, returning an array of each value extracted.
-     *       The format string consists of a sequence of single-character directives.<br/>
+     *       The format string consists of a sequence of single-character directives.<br>
      *       Each directive may be followed by a number, indicating the number of times to repeat with this directive.  An asterisk (``<code>*</code>'') will use up all
-     *       remaining elements.  <br/>
+     *       remaining elements.  <br>
      *       Note that if passed a block, this method will return null and instead yield results to the block.
-     *       The directives <code>sSiIlL</code> may each be followed by an underscore (``<code>_</code>'') to use the underlying platform's native size for the specified type; otherwise, it uses a platform-independent consistent size.  <br/>
+     *       The directives <code>sSiIlL</code> may each be followed by an underscore (``<code>_</code>'') to use the underlying platform's native size for the specified type; otherwise, it uses a platform-independent consistent size.  <br>
      *       Spaces are ignored in the format string.
      * 
-     *       <table border="2" width="500" bgcolor="#ffe0e0">
+     *       <table border="1"><caption style="display:none">layout table</caption>
      *           <tr>
      *             <td>
      * <P></P>
      *         <b>Directives for <a href="ref_c_string.html#String.unpack">
      *                   <code>String#unpack</code>
      *                 </a>
-     *               </b>        <table class="codebox" cellspacing="0" border="0" cellpadding="3">
-     * <tr bgcolor="#ff9999">
-     *   <td valign="top">
+     *               </b>        <table class="codebox"><caption style="display:none">layout table</caption>
+     * <tr>
+     *   <td>
      *                     <b>Format</b>
      *                   </td>
-     *   <td valign="top">
+     *   <td>
      *                     <b>Function</b>
      *                   </td>
-     *   <td valign="top">
+     *   <td>
      *                     <b>Returns</b>
      *                   </td>
      * </tr>
      * <tr>
-     *   <td valign="top">A</td>
-     *   <td valign="top">String with trailing nulls and spaces removed.</td>
-     *   <td valign="top">String</td>
+     *   <td>A</td>
+     *   <td>String with trailing nulls and spaces removed.</td>
+     *   <td>String</td>
      * </tr>
      * <tr>
-     *   <td valign="top">a</td>
-     *   <td valign="top">String.</td>
-     *   <td valign="top">String</td>
+     *   <td>a</td>
+     *   <td>String.</td>
+     *   <td>String</td>
      * </tr>
      * <tr>
-     *   <td valign="top">B</td>
-     *   <td valign="top">Extract bits from each character (msb first).</td>
-     *   <td valign="top">String</td>
+     *   <td>B</td>
+     *   <td>Extract bits from each character (msb first).</td>
+     *   <td>String</td>
      * </tr>
      * <tr>
-     *   <td valign="top">b</td>
-     *   <td valign="top">Extract bits from each character (lsb first).</td>
-     *   <td valign="top">String</td>
+     *   <td>b</td>
+     *   <td>Extract bits from each character (lsb first).</td>
+     *   <td>String</td>
      * </tr>
      * <tr>
-     *   <td valign="top">C</td>
-     *   <td valign="top">Extract a character as an unsigned integer.</td>
-     *   <td valign="top">Fixnum</td>
+     *   <td>C</td>
+     *   <td>Extract a character as an unsigned integer.</td>
+     *   <td>Fixnum</td>
      * </tr>
      * <tr>
-     *   <td valign="top">c</td>
-     *   <td valign="top">Extract a character as an integer.</td>
-     *   <td valign="top">Fixnum</td>
+     *   <td>c</td>
+     *   <td>Extract a character as an integer.</td>
+     *   <td>Fixnum</td>
      * </tr>
      * <tr>
-     *   <td valign="top">d</td>
-     *   <td valign="top">Treat <em>sizeof(double)</em> characters as a native
+     *   <td>d</td>
+     *   <td>Treat <em>sizeof(double)</em> characters as a native
      *           double.</td>
-     *   <td valign="top">Float</td>
+     *   <td>Float</td>
      * </tr>
      * <tr>
-     *   <td valign="top">E</td>
-     *   <td valign="top">Treat <em>sizeof(double)</em> characters as a double in
+     *   <td>E</td>
+     *   <td>Treat <em>sizeof(double)</em> characters as a double in
      *           little-endian byte order.</td>
-     *   <td valign="top">Float</td>
+     *   <td>Float</td>
      * </tr>
      * <tr>
-     *   <td valign="top">e</td>
-     *   <td valign="top">Treat <em>sizeof(float)</em> characters as a float in
+     *   <td>e</td>
+     *   <td>Treat <em>sizeof(float)</em> characters as a float in
      *           little-endian byte order.</td>
-     *   <td valign="top">Float</td>
+     *   <td>Float</td>
      * </tr>
      * <tr>
-     *   <td valign="top">f</td>
-     *   <td valign="top">Treat <em>sizeof(float)</em> characters as a native float.</td>
-     *   <td valign="top">Float</td>
+     *   <td>f</td>
+     *   <td>Treat <em>sizeof(float)</em> characters as a native float.</td>
+     *   <td>Float</td>
      * </tr>
      * <tr>
-     *   <td valign="top">G</td>
-     *   <td valign="top">Treat <em>sizeof(double)</em> characters as a double in
+     *   <td>G</td>
+     *   <td>Treat <em>sizeof(double)</em> characters as a double in
      *           network byte order.</td>
-     *   <td valign="top">Float</td>
+     *   <td>Float</td>
      * </tr>
      * <tr>
-     *   <td valign="top">g</td>
-     *   <td valign="top">Treat <em>sizeof(float)</em> characters as a float in
+     *   <td>g</td>
+     *   <td>Treat <em>sizeof(float)</em> characters as a float in
      *           network byte order.</td>
-     *   <td valign="top">Float</td>
+     *   <td>Float</td>
      * </tr>
      * <tr>
-     *   <td valign="top">H</td>
-     *   <td valign="top">Extract hex nibbles from each character (most
+     *   <td>H</td>
+     *   <td>Extract hex nibbles from each character (most
      *           significant first).</td>
-     *   <td valign="top">String</td>
+     *   <td>String</td>
      * </tr>
      * <tr>
-     *   <td valign="top">h</td>
-     *   <td valign="top">Extract hex nibbles from each character (least
+     *   <td>h</td>
+     *   <td>Extract hex nibbles from each character (least
      *           significant first).</td>
-     *   <td valign="top">String</td>
+     *   <td>String</td>
      * </tr>
      * <tr>
-     *   <td valign="top">I</td>
-     *   <td valign="top">Treat <em>sizeof(int)</em>
+     *   <td>I</td>
+     *   <td>Treat <em>sizeof(int)</em>
      *                     <sup>1</sup> successive
      *           characters as an unsigned native integer.</td>
-     *   <td valign="top">Integer</td>
+     *   <td>Integer</td>
      * </tr>
      * <tr>
-     *   <td valign="top">i</td>
-     *   <td valign="top">Treat <em>sizeof(int)</em>
+     *   <td>i</td>
+     *   <td>Treat <em>sizeof(int)</em>
      *                     <sup>1</sup> successive
      *           characters as a signed native integer.</td>
-     *   <td valign="top">Integer</td>
+     *   <td>Integer</td>
      * </tr>
      * <tr>
-     *   <td valign="top">L</td>
-     *   <td valign="top">Treat four<sup>1</sup> successive
+     *   <td>L</td>
+     *   <td>Treat four<sup>1</sup> successive
      *           characters as an unsigned native
      *           long integer.</td>
-     *   <td valign="top">Integer</td>
+     *   <td>Integer</td>
      * </tr>
      * <tr>
-     *   <td valign="top">l</td>
-     *   <td valign="top">Treat four<sup>1</sup> successive
+     *   <td>l</td>
+     *   <td>Treat four<sup>1</sup> successive
      *           characters as a signed native
      *           long integer.</td>
-     *   <td valign="top">Integer</td>
+     *   <td>Integer</td>
      * </tr>
      * <tr>
-     *   <td valign="top">M</td>
-     *   <td valign="top">Extract a quoted-printable string.</td>
-     *   <td valign="top">String</td>
+     *   <td>M</td>
+     *   <td>Extract a quoted-printable string.</td>
+     *   <td>String</td>
      * </tr>
      * <tr>
-     *   <td valign="top">m</td>
-     *   <td valign="top">Extract a base64 encoded string.</td>
-     *   <td valign="top">String</td>
+     *   <td>m</td>
+     *   <td>Extract a base64 encoded string.</td>
+     *   <td>String</td>
      * </tr>
      * <tr>
-     *   <td valign="top">N</td>
-     *   <td valign="top">Treat four characters as an unsigned long in network
+     *   <td>N</td>
+     *   <td>Treat four characters as an unsigned long in network
      *           byte order.</td>
-     *   <td valign="top">Fixnum</td>
+     *   <td>Fixnum</td>
      * </tr>
      * <tr>
-     *   <td valign="top">n</td>
-     *   <td valign="top">Treat two characters as an unsigned short in network
+     *   <td>n</td>
+     *   <td>Treat two characters as an unsigned short in network
      *           byte order.</td>
-     *   <td valign="top">Fixnum</td>
+     *   <td>Fixnum</td>
      * </tr>
      * <tr>
-     *   <td valign="top">P</td>
-     *   <td valign="top">Treat <em>sizeof(char *)</em> characters as a pointer, and
+     *   <td>P</td>
+     *   <td>Treat <em>sizeof(char *)</em> characters as a pointer, and
      *           return <em>len</em> characters from the referenced location.</td>
-     *   <td valign="top">String</td>
+     *   <td>String</td>
      * </tr>
      * <tr>
-     *   <td valign="top">p</td>
-     *   <td valign="top">Treat <em>sizeof(char *)</em> characters as a pointer to a
+     *   <td>p</td>
+     *   <td>Treat <em>sizeof(char *)</em> characters as a pointer to a
      *           null-terminated string.</td>
-     *   <td valign="top">String</td>
+     *   <td>String</td>
      * </tr>
      * <tr>
-     *   <td valign="top">S</td>
-     *   <td valign="top">Treat two<sup>1</sup> successive characters as an unsigned
+     *   <td>S</td>
+     *   <td>Treat two<sup>1</sup> successive characters as an unsigned
      *           short in
      *           native byte order.</td>
-     *   <td valign="top">Fixnum</td>
+     *   <td>Fixnum</td>
      * </tr>
      * <tr>
-     *   <td valign="top">s</td>
-     *   <td valign="top">Treat two<sup>1</sup> successive
+     *   <td>s</td>
+     *   <td>Treat two<sup>1</sup> successive
      *           characters as a signed short in
      *           native byte order.</td>
-     *   <td valign="top">Fixnum</td>
+     *   <td>Fixnum</td>
      * </tr>
      * <tr>
-     *   <td valign="top">U</td>
-     *   <td valign="top">Extract UTF-8 characters as unsigned integers.</td>
-     *   <td valign="top">Integer</td>
+     *   <td>U</td>
+     *   <td>Extract UTF-8 characters as unsigned integers.</td>
+     *   <td>Integer</td>
      * </tr>
      * <tr>
-     *   <td valign="top">u</td>
-     *   <td valign="top">Extract a UU-encoded string.</td>
-     *   <td valign="top">String</td>
+     *   <td>u</td>
+     *   <td>Extract a UU-encoded string.</td>
+     *   <td>String</td>
      * </tr>
      * <tr>
-     *   <td valign="top">V</td>
-     *   <td valign="top">Treat four characters as an unsigned long in little-endian
+     *   <td>V</td>
+     *   <td>Treat four characters as an unsigned long in little-endian
      *           byte order.</td>
-     *   <td valign="top">Fixnum</td>
+     *   <td>Fixnum</td>
      * </tr>
      * <tr>
-     *   <td valign="top">v</td>
-     *   <td valign="top">Treat two characters as an unsigned short in little-endian
+     *   <td>v</td>
+     *   <td>Treat two characters as an unsigned short in little-endian
      *           byte order.</td>
-     *   <td valign="top">Fixnum</td>
+     *   <td>Fixnum</td>
      * </tr>
      * <tr>
-     *   <td valign="top">X</td>
-     *   <td valign="top">Skip backward one character.</td>
-     *   <td valign="top">---</td>
+     *   <td>X</td>
+     *   <td>Skip backward one character.</td>
+     *   <td>---</td>
      * </tr>
      * <tr>
-     *   <td valign="top">x</td>
-     *   <td valign="top">Skip forward one character.</td>
-     *   <td valign="top">---</td>
+     *   <td>x</td>
+     *   <td>Skip forward one character.</td>
+     *   <td>---</td>
      * </tr>
      * <tr>
-     *   <td valign="top">Z</td>
-     *   <td valign="top">String with trailing nulls removed.</td>
-     *   <td valign="top">String</td>
+     *   <td>Z</td>
+     *   <td>String with trailing nulls removed.</td>
+     *   <td>String</td>
      * </tr>
      * <tr>
-     *   <td valign="top">@</td>
-     *   <td valign="top">Skip to the offset given by the length argument.</td>
-     *   <td valign="top">---</td>
+     *   <td>@</td>
+     *   <td>Skip to the offset given by the length argument.</td>
+     *   <td>---</td>
      * </tr>
      * <tr>
-     *                   <td colspan="9" bgcolor="#ff9999" height="2"><img src="dot.gif" width="1" height="1"></td>
+     *                   <td colspan="9"><img alt="bullet" src="dot.gif" width="1" height="1"></td>
      *                 </tr>
      *               </table>
      * <P></P>
@@ -949,9 +985,6 @@ public class Pack {
         mainLoop: while (next != 0) {
             int type = next;
             next = safeGet(format);
-            if (UNPACK_IGNORE_NULL_CODES.indexOf(type) != -1 && next == 0) {
-                next = safeGetIgnoreNull(format);
-            }
             
             if (type == '#') {
                 while (type != '\n') {
@@ -997,6 +1030,7 @@ public class Pack {
                     do {
                         occurrences = occurrences * 10 + Character.digit((char)(next & 0xFF), 10);
                         next = safeGet(format);
+                        if (occurrences < 0) throw runtime.newRangeError("pack length too big");
                     } while (next != 0 && ASCII.isDigit(next));
                 } else {
                     occurrences = type == '@' ? 0 : 1;
@@ -1062,6 +1096,13 @@ public class Pack {
                     break;
                 case 'w':
                     value = unpack_w(context, block, runtime, result, encode, occurrences, mode);
+                    break;
+                case ' ':       // various "ok" whitespace
+                case '\011':
+                case '\n':
+                case '\013':
+                case '\014':
+                case '\015':
                     break;
                 default:
                     unknownDirective(context.runtime, "unpack", type, formatString);
@@ -1553,29 +1594,11 @@ public class Pack {
     }
 
     private static void unpack_at(Ruby runtime, ByteList encodedString, ByteBuffer encode, int occurrences) {
-        try {
-            int limit;
-            if (occurrences == IS_STAR) {
-                limit = checkLimit(runtime, encode, encodedString.begin() + encode.remaining());
-            } else {
-                limit = checkLimit(runtime, encode, encodedString.begin() + occurrences);
-            }
-            positionBuffer(encode, limit);
-        } catch (IllegalArgumentException iae) {
-            throw runtime.newArgumentError("@ outside of string");
-        }
-    }
+        int limit = encodedString.begin() + (occurrences == IS_STAR ? encode.remaining() : occurrences);
 
-    private static int checkLimit(Ruby runtime, ByteBuffer encode, int limit) {
-        if (limit >= encode.capacity() || limit < 0) {
-            throw runtime.newRangeError("pack length too big");
-        }
-        return limit;
-    }
+        if (limit > encode.limit() || limit < 0) throw runtime.newArgumentError("@ outside of string");
 
-    @Deprecated
-    public static RubyArray unpackWithBlock(ThreadContext context, Ruby runtime, ByteList encodedString, ByteList formatString, Block block) {
-        return unpackWithBlock(context, RubyString.newStringLight(runtime, encodedString), formatString, block);
+        positionBuffer(encode, limit);
     }
 
     private static void appendOrYield(ThreadContext context, Block block, RubyArray result, IRubyObject item, int mode) {
@@ -1715,14 +1738,6 @@ public class Pack {
         return 0;
     }
 
-    private static int safeGetIgnoreNull(ByteBuffer encode) {
-        int next = 0;
-        while (encode.hasRemaining() && next == 0) {
-            next = safeGet(encode);
-        }
-        return next;
-    }
-
     public static IRubyObject decode(ThreadContext context, Ruby runtime, ByteBuffer encode, int occurrences,
             RubyArray result, Block block, Converter converter, int mode) {
         int lPadLength = 0;
@@ -1750,7 +1765,7 @@ public class Pack {
         return context.nil;
     }
 
-    public static int encode(Ruby runtime, int occurrences, ByteList result,
+    private static int encode(Ruby runtime, int occurrences, ByteList result,
             RubyArray list, int index, ConverterExecutor converter) {
         int listSize = list.size();
 
@@ -1878,27 +1893,6 @@ public class Pack {
         return i2Grow;
     }
 
-    /**
-     * Same as pack but defaults tainting of output to false.
-     */
-    public static RubyString pack(Ruby runtime, RubyArray list, ByteList formatString) {
-        RubyString buffer = runtime.newString();
-        return packCommon(runtime.getCurrentContext(), list, formatString, executor(), buffer);
-    }
-
-    @Deprecated
-    public static RubyString pack(ThreadContext context, Ruby runtime, RubyArray list, RubyString formatString) {
-        RubyString buffer = runtime.newString();
-        return pack(context, list, formatString, buffer);
-    }
-
-    @Deprecated
-    public static void decode(ThreadContext context, Ruby runtime, ByteBuffer encode, int occurrences,
-          RubyArray result, Block block, Converter converter) {
-        decode(context, runtime, encode, occurrences,
-            result, block, converter, block.isGiven() ? UNPACK_BLOCK : UNPACK_ARRAY);
-    }
-
     public static RubyString pack(ThreadContext context, RubyArray list, RubyString formatString, RubyString buffer) {
         return packCommon(context, list, formatString.getByteList(), executor(), buffer);
     }
@@ -1929,9 +1923,6 @@ public class Pack {
         mainLoop: while (next != 0) {
             type = next;
             next = safeGet(format);
-            if (PACK_IGNORE_NULL_CODES.indexOf(type) != -1 && next == 0) {
-                next = safeGetIgnoreNull(format);
-            }
 
             // Skip all whitespace in pack format string
             while (ASCII.isSpace(type)) {
@@ -1958,9 +1949,6 @@ public class Pack {
                 type = MAPPED_CODES.charAt(index);
 
                 next = safeGet(format);
-                if (PACK_IGNORE_NULL_CODES_WITH_MODIFIERS.indexOf(typeBeforeMap) != -1 && next == 0) {
-                    next = safeGetIgnoreNull(format);
-                }
             }
             
             if (next == '>' || next == '<') {
@@ -2039,6 +2027,13 @@ public class Pack {
                     break;
                 case 'w':
                     pack_w(context, list, result, packInts, occurrences);
+                    break;
+                case ' ':       // various "ok" whitespace
+                case '\011':
+                case '\n':
+                case '\013':
+                case '\014':
+                case '\015':
                     break;
                 default:
                     unknownDirective(context.runtime, "pack", type, formatString);
@@ -2126,17 +2121,18 @@ public class Pack {
     }
 
     private static void pack_U(ThreadContext context, RubyArray list, ByteList result, PackInts packInts, int occurrences) {
+        Ruby runtime = context.runtime;
         while (occurrences-- > 0) {
-            if (packInts.listSize-- <= 0) throw context.runtime.newArgumentError(sTooFew);
+            if (packInts.listSize-- <= 0) throw runtime.newArgumentError(sTooFew);
 
             IRubyObject from = list.eltInternal(packInts.idx++);
             int code = from == context.nil ? 0 : RubyNumeric.num2int(from);
 
-            if (code < 0) throw context.runtime.newRangeError("pack(U): value out of range");
+            if (code < 0) throw runtime.newRangeError("pack(U): value out of range");
 
             int len = result.getRealSize();
             result.ensure(len + 6);
-            result.setRealSize(len + utf8Decode(context.runtime, result.getUnsafeBytes(), result.getBegin() + len, code));
+            result.setRealSize(len + utf8Decode(runtime, result.getUnsafeBytes(), result.getBegin() + len, code));
         }
     }
 
@@ -2657,6 +2653,35 @@ public class Pack {
      */
     private static void encodeShortBigEndian(ByteList result, int s) {
         result.append((byte) ((s & 0xff00) >> 8)).append((byte) (s & 0xff));
+    }
+
+    @Deprecated
+    public static RubyArray unpack(Ruby runtime, ByteList encodedString, ByteList formatString) {
+        return unpackWithBlock(runtime.getCurrentContext(), runtime, encodedString, formatString, Block.NULL_BLOCK);
+    }
+
+    @Deprecated
+    public static RubyString pack(Ruby runtime, RubyArray list, ByteList formatString) {
+        RubyString buffer = runtime.newString();
+        return packCommon(runtime.getCurrentContext(), list, formatString, executor(), buffer);
+    }
+
+    @Deprecated
+    public static RubyString pack(ThreadContext context, Ruby runtime, RubyArray list, RubyString formatString) {
+        RubyString buffer = runtime.newString();
+        return pack(context, list, formatString, buffer);
+    }
+
+    @Deprecated
+    public static void decode(ThreadContext context, Ruby runtime, ByteBuffer encode, int occurrences,
+                              RubyArray result, Block block, Converter converter) {
+        decode(context, runtime, encode, occurrences,
+                result, block, converter, block.isGiven() ? UNPACK_BLOCK : UNPACK_ARRAY);
+    }
+
+    @Deprecated
+    public static RubyArray unpackWithBlock(ThreadContext context, Ruby runtime, ByteList encodedString, ByteList formatString, Block block) {
+        return unpackWithBlock(context, RubyString.newStringLight(runtime, encodedString), formatString, block);
     }
 
 }

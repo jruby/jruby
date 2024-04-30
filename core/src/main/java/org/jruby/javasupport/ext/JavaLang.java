@@ -35,9 +35,9 @@ import org.jruby.anno.JRubyModule;
 import org.jruby.exceptions.NoMethodError;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.java.proxies.ArrayJavaProxy;
+import org.jruby.java.util.ClassUtils;
 import org.jruby.javasupport.Java;
-import org.jruby.javasupport.JavaCallable;
-import org.jruby.javasupport.JavaClass;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaInternalBlockBody;
@@ -47,6 +47,7 @@ import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.RubyStringBuilder;
 
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -578,10 +579,7 @@ public abstract class JavaLang {
         @JRubyMethod(name = "<=>") // Ruby Comparable
         public static IRubyObject cmp(final ThreadContext context, final IRubyObject self, final IRubyObject other) {
             final java.lang.Class that;
-            if ( other instanceof JavaClass ) {
-                that = ((JavaClass) other).getJavaClass();
-            }
-            else if ( isJavaObject(other) ) {
+            if ( isJavaObject(other) ) {
                 that = unwrapJavaObject(other);
             }
             else {
@@ -643,7 +641,7 @@ public abstract class JavaLang {
 
         // JavaClass facade (compatibility) :
 
-        @JRubyMethod(required = 1)
+        @JRubyMethod
         public static IRubyObject extend_proxy(final ThreadContext context, IRubyObject self, IRubyObject extender) {
             java.lang.Class<?> klass = Java.unwrapClassProxy(self);
             RubyModule proxy = Java.getProxyClass(context.runtime, klass);
@@ -661,13 +659,15 @@ public abstract class JavaLang {
         //}
 
         @SuppressWarnings("deprecation")
-        @JRubyMethod(required = 1, rest = true)
+        @JRubyMethod(required = 1, rest = true, checkArity = false)
         public static IRubyObject java_method(ThreadContext context, IRubyObject self, final IRubyObject[] args) {
+            Arity.checkArgumentCount(context, args, 1, -1);
+
             final java.lang.Class klass = unwrapJavaObject(self);
 
             final java.lang.String methodName = args[0].asJavaString();
             try {
-                java.lang.Class<?>[] argumentTypes = JavaClass.getArgumentTypes(context, args, 1);
+                java.lang.Class<?>[] argumentTypes = ClassUtils.getArgumentTypes(context, args, 1);
                 final Method method = klass.getMethod(methodName, argumentTypes);
                 return Java.getInstance(context.runtime, method); // a JavaMethod like
             } catch (NoSuchMethodException e) {
@@ -677,13 +677,15 @@ public abstract class JavaLang {
         }
 
         @SuppressWarnings("deprecation")
-        @JRubyMethod(required = 1, rest = true)
+        @JRubyMethod(required = 1, rest = true, checkArity = false)
         public static IRubyObject declared_method(ThreadContext context, IRubyObject self, final IRubyObject[] args) {
+            Arity.checkArgumentCount(context, args, 1, -1);
+
             final java.lang.Class klass = unwrapJavaObject(self);
 
             final java.lang.String methodName = args[0].asJavaString();
             try {
-                java.lang.Class<?>[] argumentTypes = JavaClass.getArgumentTypes(context, args, 1);
+                java.lang.Class<?>[] argumentTypes = ClassUtils.getArgumentTypes(context, args, 1);
                 final Method method = klass.getDeclaredMethod(methodName, argumentTypes);
                 return Java.getInstance(context.runtime, method); // a JavaMethod like
             } catch (NoSuchMethodException e) {
@@ -692,18 +694,20 @@ public abstract class JavaLang {
             }
         }
 
-        @JRubyMethod(required = 1, rest = true)
+        @JRubyMethod(required = 1, rest = true, checkArity = false)
         public static IRubyObject declared_method_smart(ThreadContext context, IRubyObject self, final IRubyObject[] args) {
+            Arity.checkArgumentCount(context, args, 1, -1);
+
             final java.lang.Class klass = unwrapJavaObject(self);
 
             final java.lang.String methodName = args[0].asJavaString();
 
-            java.lang.Class<?>[] argumentTypes = JavaClass.getArgumentTypes(context, args, 1);
+            java.lang.Class<?>[] argumentTypes = ClassUtils.getArgumentTypes(context, args, 1);
 
-            JavaCallable callable = JavaClass.getMatchingCallable(context.runtime, klass, methodName, argumentTypes);
+            AccessibleObject callable = ClassUtils.getMatchingCallable(klass, methodName, argumentTypes);
 
             if ( callable != null ) {
-                return Java.getInstance(context.runtime, callable.accessibleObject()); // a JavaMethod or JavaConstructor like
+                return Java.getInstance(context.runtime, callable); // a JavaMethod or JavaConstructor like
             }
 
             final Ruby runtime = context.runtime;
@@ -715,7 +719,7 @@ public abstract class JavaLang {
         public static IRubyObject constructor(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             final java.lang.Class klass = unwrapJavaObject(self);
             try {
-                java.lang.Class<?>[] parameterTypes = JavaClass.getArgumentTypes(context, args, 0);
+                java.lang.Class<?>[] parameterTypes = ClassUtils.getArgumentTypes(context, args, 0);
                 Constructor<?> constructor = klass.getConstructor(parameterTypes);
                 return Java.getInstance(context.runtime, constructor); // JavaConstructor like
             } catch (NoSuchMethodException e) {
@@ -729,7 +733,7 @@ public abstract class JavaLang {
         public static IRubyObject declared_constructor(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             final java.lang.Class klass = unwrapJavaObject(self);
             try {
-                java.lang.Class<?>[] parameterTypes = JavaClass.getArgumentTypes(context, args, 0);
+                java.lang.Class<?>[] parameterTypes = ClassUtils.getArgumentTypes(context, args, 0);
                 Constructor<?> constructor = klass.getDeclaredConstructor(parameterTypes);
                 return Java.getInstance(context.runtime, constructor); // JavaConstructor like
             } catch (NoSuchMethodException e) {
@@ -745,7 +749,7 @@ public abstract class JavaLang {
             return Java.getInstance(context.runtime, arrayClass);
         }
 
-        @JRubyMethod(required = 1)
+        @JRubyMethod
         public static IRubyObject new_array(ThreadContext context, IRubyObject self, IRubyObject length) {
             final java.lang.Class klass = unwrapJavaObject(self);
 
@@ -821,7 +825,7 @@ public abstract class JavaLang {
 
             RubyString buf = inspectPrefix(context, self.getMetaClass());
             RubyStringBuilder.cat(context.runtime, buf, SPACE);
-            buf.cat19(RubyString.newString(context.runtime, str).inspect());
+            buf.catWithCodeRange(RubyString.newString(context.runtime, str).inspect());
             RubyStringBuilder.cat(context.runtime, buf, GT); // >
 
             return buf;

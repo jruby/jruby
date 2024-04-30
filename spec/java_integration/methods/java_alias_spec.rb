@@ -1,6 +1,6 @@
 require 'java'
 
-describe "A Java object's java_send method" do
+describe "A Java object's java_alias method" do
   before :all do
     class java::util::ArrayList
       java_alias :add_int_object, :add, [Java::int, java.lang.Object]
@@ -44,6 +44,48 @@ describe "A Java object's java_send method" do
     expect do
       @list.add_int_object 0, 'foo', 'bar'
     end.to raise_error(ArgumentError)
+  end
+
+  context 'constructor' do
+
+    before(:all) do
+      Java::java_integration.fixtures::AnArrayList.class_eval do
+        java_alias :init, :'<init>', [Java::int] # AnArrayList(int)
+
+        def initialize(num)
+          init(num) if num
+          @@last_instance = self
+        end
+
+        def self.last_instance; @@last_instance end
+      end
+    end
+
+    before(:each) { klass::CREATED_INSTANCES.clear }
+
+    let(:klass) { Java::java_integration.fixtures::AnArrayList }
+
+    it 'is supported' do
+      a_list = klass.new(3)
+      expect( a_list ).to be klass::last_instance
+      expect( klass::CREATED_INSTANCES.size ).to be 1
+      expect( klass::CREATED_INSTANCES[0].size ).to eql(3)
+
+      a_list = klass.allocate
+      a_list.init(10) # useful to bypass :initialize
+      expect( klass::CREATED_INSTANCES.size ).to be 2
+      expect( a_list ).to_not be klass::last_instance
+    end
+
+    it 'raises on invalid arguments' do
+      expect { klass.new(:foo) }.to raise_error(TypeError)
+    end
+
+    it 'raises on unexpected arguments' do
+      a_list = klass.new(nil)
+      expect { a_list.init(1, 2) }.to raise_error(ArgumentError)
+    end
+
   end
 
   context 'interface' do

@@ -44,6 +44,7 @@
 package org.jruby;
 
 import java.io.ByteArrayOutputStream;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
@@ -93,6 +94,7 @@ import org.jruby.util.io.PopenExecutor;
 
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.RubyFile.fileResource;
 import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.RubyIO.checkUnsupportedOptions;
 import static org.jruby.RubyIO.checkValidSpawnOptions;
@@ -111,6 +113,7 @@ import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PROTECTED;
 import static org.jruby.runtime.Visibility.PUBLIC;
+import static org.jruby.util.RubyStringBuilder.str;
 
 /**
  * Note: For CVS history, see KernelModule.java.
@@ -171,6 +174,8 @@ public class RubyKernel {
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject at_exit(ThreadContext context, IRubyObject recv, Block block) {
+        if (!block.isGiven()) throw context.runtime.newArgumentError("called without a block");
+
         return context.runtime.pushExitBlock(context.runtime.newProc(Block.Type.PROC, block));
     }
 
@@ -253,15 +258,14 @@ public class RubyKernel {
         return open(context, recv, args, block);
     }
 
-    @JRubyMethod(name = "open", required = 1, optional = 3, module = true, visibility = PRIVATE, keywords = true)
+    @JRubyMethod(name = "open", required = 1, optional = 3, checkArity = false, module = true, visibility = PRIVATE, keywords = true)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        boolean keywords = hasKeywords(context.resetCallInfo());
         Ruby runtime = context.runtime;
-        //        symbol to_open = 0;
         boolean redirect = false;
-        int argc = args.length;
+        int callInfo = ThreadContext.resetCallInfo(context);
+        boolean keywords = hasKeywords(callInfo);
 
-        if (argc >= 1) {
+        if (args.length >= 1) {
             //            CONST_ID(to_open, "to_open");
             if (args[0].respondsTo("to_open")) {
                 redirect = true;
@@ -283,6 +287,13 @@ public class RubyKernel {
                 }
             }
         }
+
+        // Mild hack. We want to arity-mismatch if extra arg is not really a kwarg but not if it is one.
+        int maxArgs = keywords ? 5 : 4;
+        Arity.checkArgumentCount(context, args, 1, maxArgs);
+
+        //        symbol to_open = 0;
+
         if (redirect) {
             if (keywords) context.callInfo = ThreadContext.CALL_KEYWORD;
             IRubyObject io = args[0].callMethod(context, "to_open", Arrays.copyOfRange(args, 1, args.length));
@@ -290,6 +301,9 @@ public class RubyKernel {
             RubyIO.ensureYieldClose(context, io, block);
             return io;
         }
+
+        // We had to save callInfo from original call because kwargs needs to still pass through to IO#open
+        context.callInfo = callInfo;
         return RubyIO.open(context, runtime.getFile(), args, block);
     }
 
@@ -301,7 +315,7 @@ public class RubyKernel {
     }
 
     // MRI: rb_f_gets
-    @JRubyMethod(optional = 1, module = true, visibility = PRIVATE)
+    @JRubyMethod(optional = 1, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject gets(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         IRubyObject argsFile = runtime.getArgsFile();
@@ -312,12 +326,14 @@ public class RubyKernel {
         return sites(context).gets.call(context, argsFile, argsFile, args);
     }
 
-    @JRubyMethod(optional = 1, module = true, visibility = PRIVATE)
+    @JRubyMethod(optional = 1, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject abort(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 0, 1);
+
         Ruby runtime = context.runtime;
 
         RubyString message = null;
-        if(args.length == 1) {
+        if(argc == 1) {
             message = args[0].convertToString();
             IRubyObject stderr = runtime.getGlobalVariables().get("$stderr");
             sites(context).puts.call(context, stderr, stderr, message);
@@ -409,6 +425,103 @@ public class RubyKernel {
         return (RubyFloat) new_float(runtime.getCurrentContext(), object, true);
     }
 
+    private static BigInteger SIXTEEN = BigInteger.valueOf(16L);
+    private static BigInteger MINUS_ONE = BigInteger.valueOf(-1L);
+
+    private static RaiseException floatError(Ruby runtime, ByteList string) {
+        throw runtime.newArgumentError(str(runtime, "invalid value for Float(): ", runtime.newString(string)));
+    }
+
+    /**
+     * Parse hexidecimal exponential notation:
+     * <a href="https://en.wikipedia.org/wiki/Hexadecimal#Hexadecimal_exponential_notation">...</a>
+     * <p/>
+     * This method assumes the string is a valid-formatted string.
+     *
+     * @param str the bytelist to be parsed
+     * @return the result.
+     */
+    public static double parseHexidecimalExponentString2(Ruby runtime, ByteList str) {
+        byte[] bytes = str.unsafeBytes();
+        int length = str.length();
+        if (length <= 2) throw floatError(runtime, str);
+        int sign = 1;
+        int letter;
+        int i = str.begin();
+
+        letter = bytes[i];
+        if (letter == '+') {
+            i++;
+        } else if (letter == '-') {
+            sign = -1;
+            i++;
+        }
+
+        // Skip '0x'
+        letter = bytes[i++];
+        if (letter != '0') throw floatError(runtime, str);
+        letter = bytes[i++];
+        if (letter != 'x') throw floatError(runtime, str);
+
+        int exponent = 0;
+        int explicitExponent = 0;
+        int explicitExponentSign = 1;
+        boolean periodFound = false;
+        boolean explicitExponentFound = false;
+        BigInteger value = BigInteger.valueOf(0L);
+
+        if (i == length || bytes[i] == '_' || bytes[i] == 'p' || bytes[i] == 'P') throw floatError(runtime, str);
+
+        for(; i < length && !explicitExponentFound; i++) {
+            letter = bytes[i];
+            switch (letter) {
+                case '.':                              // Fractional part of floating point value "1(.)23"
+                    periodFound = true;
+                    continue;
+                case 'p':                              // Explicit exponent "1.23(p)1a"
+                case 'P':
+                    if (bytes[i-1] == '_' || i == length - 1) throw floatError(runtime, str);
+                    explicitExponentFound = true;
+                    continue;
+                case '_':
+                    continue;
+            }
+
+            // base 16 value representing main pieces of number
+            int digit = Character.digit(letter, 16);
+            if (Character.forDigit(digit, 16) == 0) throw floatError(runtime, str);
+            value = value.multiply(SIXTEEN).add(BigInteger.valueOf(digit));
+
+            if (periodFound) exponent++;
+        }
+
+        if (explicitExponentFound) {
+            if (bytes[i] == '-') {
+                explicitExponentSign = -1;
+                i++;
+            } else if (bytes[i] == '+') {
+                i++;
+            } else if (bytes[i] == '_') {
+                throw floatError(runtime, str);
+            }
+
+            for (; i < length; i++) { // base 10 value representing base 2 exponent
+                letter = bytes[i];
+                if (letter == '_') {
+                    if (i == length - 1) throw floatError(runtime, str);
+                    continue;
+                }
+                int digit = Character.digit(letter, 10);
+                if (Character.forDigit(digit, 10) == 0) throw floatError(runtime, str);
+                explicitExponent = explicitExponent * 10 + digit;
+            }
+        }
+
+        // each exponent in main number is 4 bits and the value after 'p' represents a power of 2.  Wacky.
+        int scaleFactor = 4 * exponent - explicitExponent * explicitExponentSign;
+        return sign * Math.scalb(value.doubleValue(), -scaleFactor);
+    }
+
     public static IRubyObject new_float(ThreadContext context, IRubyObject object, boolean exception) {
         Ruby runtime = context.runtime;
 
@@ -427,6 +540,9 @@ public class RubyKernel {
             }
 
             if (bytes.startsWith(ZEROx)) { // startsWith("0x")
+                if (bytes.indexOf('p') != -1 || bytes.indexOf('P') != -1) {
+                    return runtime.newFloat(parseHexidecimalExponentString2(runtime, bytes));
+                }
                 IRubyObject inum = ConvertBytes.byteListToInum(runtime, bytes, 16, true, exception);
                 if (!exception && inum.isNil()) return inum;
                 return ((RubyInteger) inum).toFloat();
@@ -569,14 +685,14 @@ public class RubyKernel {
         return ret;
     }
 
-    @JRubyMethod(required = 1, module = true)
+    @JRubyMethod(module = true)
     public static IRubyObject public_method(ThreadContext context, IRubyObject recv, IRubyObject symbol) {
         return recv.getMetaClass().newMethod(recv, symbol.asJavaString(), true, PUBLIC, true, false);
     }
 
     /** rb_f_putc
      */
-    @JRubyMethod(required = 1, module = true, visibility = PRIVATE)
+    @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject putc(ThreadContext context, IRubyObject recv, IRubyObject ch) {
         IRubyObject defout = context.runtime.getGlobalVariables().get("$>");
         if (recv == defout) {
@@ -665,7 +781,7 @@ public class RubyKernel {
         return context.nil;
     }
 
-    @JRubyMethod(optional = 1, module = true, visibility = PRIVATE)
+    @JRubyMethod(optional = 1, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject readline(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         IRubyObject line = gets(context, recv, args);
 
@@ -676,7 +792,7 @@ public class RubyKernel {
         return line;
     }
 
-    @JRubyMethod(optional = 1, module = true, visibility = PRIVATE)
+    @JRubyMethod(optional = 1, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject readlines(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return RubyArgsFile.readlines(context, context.runtime.getArgsFile(), args);
     }
@@ -708,25 +824,27 @@ public class RubyKernel {
         }
     }
 
-    @JRubyMethod(required = 1, optional = 3, module = true, visibility = PRIVATE)
+    @JRubyMethod(required = 1, optional = 3, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject select(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return RubyIO.select(context, recv, args);
     }
 
-    @JRubyMethod(optional = 1, module = true, visibility = PRIVATE)
-    public static IRubyObject sleep(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        long milliseconds;
+    @JRubyMethod(module = true, visibility = PRIVATE)
+    public static IRubyObject sleep(ThreadContext context, IRubyObject recv) {
+        // Zero sleeps forever
+        return sleepCommon(context, 0);
+    }
 
-        if (args.length == 0) {
-            // Zero sleeps forever
-            milliseconds = 0;
-        }
-        else {
-            milliseconds = (long) ( RubyTime.convertTimeInterval(context, args[0]) * 1000 );
-            // Explicit zero in MRI returns immediately
-            if ( milliseconds == 0 ) return context.runtime.newFixnum(0);
-        }
+    @JRubyMethod(module = true, visibility = PRIVATE)
+    public static IRubyObject sleep(ThreadContext context, IRubyObject recv, IRubyObject timeout) {
+        long milliseconds = (long) (RubyTime.convertTimeInterval(context, timeout) * 1000);
+        // Explicit zero in MRI returns immediately
+        if (milliseconds == 0) return RubyFixnum.zero(context.runtime);
 
+        return sleepCommon(context, milliseconds);
+    }
+
+    private static RubyFixnum sleepCommon(ThreadContext context, long milliseconds) {
         final long startTime = System.currentTimeMillis();
         final RubyThread rubyThread = context.getThread();
 
@@ -755,14 +873,22 @@ public class RubyKernel {
     // FIXME: Add at_exit and finalizers to exit, then make exit_bang not call those.
     @JRubyMethod(optional = 1, module = true, visibility = PRIVATE)
     public static IRubyObject exit(IRubyObject recv, IRubyObject[] args) {
-        exit(recv.getRuntime(), args, false);
-        return recv.getRuntime().getNil(); // not reached
+        Ruby runtime = recv.getRuntime();
+
+        Arity.checkArgumentCount(runtime, args, 0, 1);
+
+        exit(runtime, args, false);
+        return runtime.getNil(); // not reached
     }
 
-    @JRubyMethod(name = "exit!", optional = 1, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "exit!", optional = 1, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject exit_bang(IRubyObject recv, IRubyObject[] args) {
-        exit(recv.getRuntime(), args, true);
-        return recv.getRuntime().getNil(); // not reached
+        Ruby runtime = recv.getRuntime();
+
+        Arity.checkArgumentCount(runtime, args, 0, 1);
+
+        exit(runtime, args, true);
+        return runtime.getNil(); // not reached
     }
 
     private static void exit(Ruby runtime, IRubyObject[] args, boolean hard) {
@@ -854,7 +980,7 @@ public class RubyKernel {
         return RubyBoolean.newBoolean(context, context.getCurrentFrame().getBlock().isGiven());
     }
 
-    @JRubyMethod(name = {"sprintf", "format"}, required = 1, rest = true, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = {"sprintf", "format"}, required = 1, rest = true, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject sprintf(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         if (args.length == 0) {
             throw context.runtime.newArgumentError("sprintf must have at least one argument");
@@ -913,10 +1039,11 @@ public class RubyKernel {
         throw raise;
     }
 
-    @JRubyMethod(name = {"raise", "fail"}, optional = 3, module = true, visibility = PRIVATE, omit = true)
+    @JRubyMethod(name = {"raise", "fail"}, optional = 3, checkArity = false, module = true, visibility = PRIVATE, omit = true)
     public static IRubyObject raise(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        int argc = Arity.checkArgumentCount(context, args, 0, 3);
+
         final Ruby runtime = context.runtime;
-        int argc = args.length;
         boolean forceCause = false;
 
         // semi extract_raise_opts :
@@ -1076,9 +1203,11 @@ public class RubyKernel {
             throw runtime.newLoadError("cannot infer basepath");
         }
 
+        file = runtime.getLoadService().getPathForLocation(file);
+
         RubyClass fileClass = runtime.getFile();
         IRubyObject realpath = RubyFile.realpath(context, fileClass, runtime.newString(file));
-        IRubyObject dirname = RubyFile.dirname(context, fileClass, new IRubyObject[] { realpath });
+        IRubyObject dirname = RubyFile.dirname(context, fileClass, realpath);
         IRubyObject absoluteFeature = RubyFile.expand_path(context, fileClass, relativePath, dirname);
 
         return RubyKernel.require(context, runtime.getKernel(), absoluteFeature, Block.NULL_BLOCK);
@@ -1136,10 +1265,12 @@ public class RubyKernel {
         return runtime.getTrue();
     }
 
-    @JRubyMethod(name = "eval", required = 1, optional = 3, module = true, visibility = PRIVATE,
+    @JRubyMethod(name = "eval", required = 1, optional = 3, checkArity = false, module = true, visibility = PRIVATE,
             reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
             writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public static IRubyObject eval(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        int argc = Arity.checkArgumentCount(context, args, 1, 4);
+
         return evalCommon(context, recv, args);
     }
 
@@ -1173,7 +1304,7 @@ public class RubyKernel {
         }
 
         // set method to current frame's, which should be caller's
-        String frameName = context.getFrameName();
+        String frameName = context.getCompositeName();
         if (frameName != null) binding.setMethod(frameName);
 
         if (bindingGiven) recv = binding.getSelf();
@@ -1375,7 +1506,7 @@ public class RubyKernel {
         }
 
         if (recv == runtime.getWarning()) {
-            RubyWarnings.warn(context, recv, message);
+            RubyWarnings.warn(context, message);
             return;
         }
 
@@ -1471,27 +1602,35 @@ public class RubyKernel {
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject set_trace_func(ThreadContext context, IRubyObject recv, IRubyObject trace_func, Block block) {
         if (trace_func.isNil()) {
-            context.runtime.setTraceFunction(null);
+            context.traceEvents.setTraceFunction(null);
         } else if (!(trace_func instanceof RubyProc)) {
             throw context.runtime.newTypeError("trace_func needs to be Proc.");
         } else {
-            context.runtime.setTraceFunction((RubyProc) trace_func);
+            context.traceEvents.setTraceFunction((RubyProc) trace_func);
         }
         return trace_func;
     }
 
-    @JRubyMethod(required = 1, optional = 1, module = true, visibility = PRIVATE)
+    @JRubyMethod(required = 1, optional = 1, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject trace_var(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        int argc = Arity.checkArgumentCount(context, args, 1, 2);
+
         RubyProc proc = null;
         String var = args[0].toString();
         // ignore if it's not a global var
         if (var.charAt(0) != '$') {
             return context.nil;
         }
-        if (args.length == 1) {
+        if (argc == 1) {
             proc = RubyProc.newProc(context.runtime, block, Block.Type.PROC);
-        } else if (args.length == 2) {
-            proc = (RubyProc)TypeConverter.convertToType(args[1], context.runtime.getProc(), "to_proc", true);
+        } else if (argc == 2) {
+            if (args[1] instanceof RubyString) {
+                RubyString rubyString = context.runtime.newString("proc {");
+                RubyString s = rubyString.catWithCodeRange(((RubyString) args[1])).cat('}');
+                proc = (RubyProc) evalCommon(context, recv, new IRubyObject[] { s });
+            } else {
+                proc = (RubyProc) TypeConverter.convertToType(args[1], context.runtime.getProc(), "to_proc", true);
+            }
         }
 
         context.runtime.getGlobalVariables().setTraceVar(var, proc);
@@ -1499,11 +1638,10 @@ public class RubyKernel {
         return context.nil;
     }
 
-    @JRubyMethod(required = 1, optional = 1, module = true, visibility = PRIVATE)
+    @JRubyMethod(required = 1, optional = 1, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject untrace_var(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        if (args.length == 0) {
-            throw context.runtime.newArgumentError(0, 1);
-        }
+        int argc = Arity.checkArgumentCount(context, args, 1, 2);
+
         String var = args[0].toString();
 
         // ignore if it's not a global var
@@ -1511,9 +1649,9 @@ public class RubyKernel {
             return context.nil;
         }
 
-        if (args.length > 1) {
-            ArrayList<IRubyObject> success = new ArrayList<>(args.length);
-            for (int i = 1; i < args.length; i++) {
+        if (argc > 1) {
+            ArrayList<IRubyObject> success = new ArrayList<>(argc);
+            for (int i = 1; i < argc; i++) {
                 if (context.runtime.getGlobalVariables().untraceVar(var, args[i])) {
                     success.add(args[i]);
                 }
@@ -1526,14 +1664,12 @@ public class RubyKernel {
         return context.nil;
     }
 
-    @JRubyMethod(required = 1, optional = 1)
+    @JRubyMethod(required = 1, optional = 1, checkArity = false)
     public static IRubyObject define_singleton_method(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        if (args.length == 0) {
-            throw context.runtime.newArgumentError(0, 1);
-        }
+        int argc = Arity.checkArgumentCount(context, args, 1, 2);
 
         RubyClass singleton_class = recv.getSingletonClass();
-        if (args.length > 1) {
+        if (argc > 1) {
             IRubyObject arg1 = args[1];
             if (context.runtime.getUnboundMethod().isInstance(arg1)) {
                 RubyUnboundMethod method = (RubyUnboundMethod) arg1;
@@ -1609,20 +1745,108 @@ public class RubyKernel {
         return RubyFloat.newFloat(context.runtime, RubyFloat.INFINITY);
     }
 
-    @JRubyMethod(required = 2, optional = 1, module = true, visibility = PRIVATE)
-    public static IRubyObject test(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        if (args.length == 0) {
-            throw context.runtime.newArgumentError("wrong number of arguments");
+    @JRubyMethod(module = true, visibility = PRIVATE)
+    public static IRubyObject test(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
+        return testCommon(context, recv, getTestCommand(context, arg0), arg1, null);
+    }
+
+    @JRubyMethod(module = true, visibility = PRIVATE)
+    public static IRubyObject test(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        return testCommon(context, recv, getTestCommand(context, arg0), arg1, arg2);
+    }
+
+    private static IRubyObject testCommon(ThreadContext context, IRubyObject recv, int cmd, IRubyObject arg1, IRubyObject arg2) {
+        // MRI behavior: now check arg count
+        switch (cmd) {
+            case '-':
+            case '=':
+            case '<':
+            case '>':
+                if (arg2 == null) {
+                    throw context.runtime.newArgumentError(2, 3);
+                }
+                break;
+            default:
+                if (arg1 == null) {
+                    throw context.runtime.newArgumentError(1, 2);
+                }
+                break;
         }
 
+        switch (cmd) {
+        case 'A': // ?A  | Time    | Last access time for file1
+            return context.runtime.newFileStat(fileResource(arg1).path(), false).atime();
+        case 'b': // ?b  | boolean | True if file1 is a block device
+            return RubyFileTest.blockdev_p(recv, arg1);
+        case 'c': // ?c  | boolean | True if file1 is a character device
+            return RubyFileTest.chardev_p(recv, arg1);
+        case 'C': // ?C  | Time    | Last change time for file1
+            return context.runtime.newFileStat(fileResource(arg1).path(), false).ctime();
+        case 'd': // ?d  | boolean | True if file1 exists and is a directory
+            return RubyFileTest.directory_p(context, recv, arg1);
+        case 'e': // ?e  | boolean | True if file1 exists
+            return RubyFileTest.exist_p(context, recv, arg1);
+        case 'f': // ?f  | boolean | True if file1 exists and is a regular file
+            return RubyFileTest.file_p(context, recv, arg1);
+        case 'g': // ?g  | boolean | True if file1 has the \CF{setgid} bit
+            return RubyFileTest.setgid_p(recv, arg1);
+        case 'G': // ?G  | boolean | True if file1 exists and has a group ownership equal to the caller's group
+            return RubyFileTest.grpowned_p(recv, arg1);
+        case 'k': // ?k  | boolean | True if file1 exists and has the sticky bit set
+            return RubyFileTest.sticky_p(recv, arg1);
+        case 'M': // ?M  | Time    | Last modification time for file1
+            return context.runtime.newFileStat(fileResource(arg1).path(), false).mtime();
+        case 'l': // ?l  | boolean | True if file1 exists and is a symbolic link
+            return RubyFileTest.symlink_p(recv, arg1);
+        case 'o': // ?o  | boolean | True if file1 exists and is owned by the caller's effective uid
+            return RubyFileTest.owned_p(recv, arg1);
+        case 'O': // ?O  | boolean | True if file1 exists and is owned by the caller's real uid
+            return RubyFileTest.rowned_p(recv, arg1);
+        case 'p': // ?p  | boolean | True if file1 exists and is a fifo
+            return RubyFileTest.pipe_p(recv, arg1);
+        case 'r': // ?r  | boolean | True if file1 is readable by the effective uid/gid of the caller
+            return RubyFileTest.readable_p(context, recv, arg1);
+        case 'R': // ?R  | boolean | True if file is readable by the real uid/gid of the caller
+            return RubyFileTest.readable_p(context, recv, arg1);
+        case 's': // ?s  | int/nil | If file1 has nonzero size, return the size, otherwise nil
+            return RubyFileTest.size_p(context, recv, arg1);
+        case 'S': // ?S  | boolean | True if file1 exists and is a socket
+            return RubyFileTest.socket_p(recv, arg1);
+        case 'u': // ?u  | boolean | True if file1 has the setuid bit set
+            return RubyFileTest.setuid_p(recv, arg1);
+        case 'w': // ?w  | boolean | True if file1 exists and is writable by effective uid/gid
+            return RubyFileTest.writable_p(recv, arg1);
+        case 'W': // ?W  | boolean | True if file1 exists and is writable by the real uid/gid
+            // FIXME: Need to implement an writable_real_p in FileTest
+            return RubyFileTest.writable_p(recv, arg1);
+        case 'x': // ?x  | boolean | True if file1 exists and is executable by the effective uid/gid
+            return RubyFileTest.executable_p(recv, arg1);
+        case 'X': // ?X  | boolean | True if file1 exists and is executable by the real uid/gid
+            return RubyFileTest.executable_real_p(recv, arg1);
+        case 'z': // ?z  | boolean | True if file1 exists and has a zero length
+            return RubyFileTest.zero_p(context, recv, arg1);
+        case '=': // ?=  | boolean | True if the modification times of file1 and file2 are equal
+            return context.runtime.newFileStat(arg1.convertToString().toString(), false).mtimeEquals(arg2);
+        case '<': // ?<  | boolean | True if the modification time of file1 is prior to that of file2
+            return context.runtime.newFileStat(arg1.convertToString().toString(), false).mtimeLessThan(arg2);
+        case '>': // ?>  | boolean | True if the modification time of file1 is after that of file2
+            return context.runtime.newFileStat(arg1.convertToString().toString(), false).mtimeGreaterThan(arg2);
+        case '-': // ?-  | boolean | True if file1 and file2 are identical
+            return RubyFileTest.identical_p(context, recv, arg1, arg2);
+        default:
+            throw new InternalError("unreachable code reached!");
+        }
+    }
+
+    private static int getTestCommand(ThreadContext context, IRubyObject arg0) {
         int cmd;
-        if (args[0] instanceof RubyFixnum) {
-            cmd = (int)((RubyFixnum) args[0]).getLongValue();
-        } else if (args[0] instanceof RubyString && ((RubyString) args[0]).getByteList().length() > 0) {
+        if (arg0 instanceof RubyFixnum) {
+            cmd = (int)((RubyFixnum) arg0).getLongValue();
+        } else if (arg0 instanceof RubyString && ((RubyString) arg0).getByteList().length() > 0) {
             // MRI behavior: use first byte of string value if len > 0
-            cmd = ((RubyString) args[0]).getByteList().charAt(0);
+            cmd = ((RubyString) arg0).getByteList().charAt(0);
         } else {
-            cmd = (int) args[0].convertToInteger().getLongValue();
+            cmd = (int) arg0.convertToInteger().getLongValue();
         }
 
         // MRI behavior: raise ArgumentError for 'unknown command' before checking number of args
@@ -1635,88 +1859,10 @@ public class RubyKernel {
         default:
             throw context.runtime.newArgumentError("unknown command ?" + (char) cmd);
         }
-
-        // MRI behavior: now check arg count
-
-        switch(cmd) {
-        case '-': case '=': case '<': case '>':
-            if (args.length != 3) {
-                throw context.runtime.newArgumentError(args.length, 3);
-            }
-            break;
-        default:
-            if (args.length != 2) {
-                throw context.runtime.newArgumentError(args.length, 2);
-            }
-            break;
-        }
-
-        switch (cmd) {
-        case 'A': // ?A  | Time    | Last access time for file1
-            return context.runtime.newFileStat(args[1].convertToString().toString(), false).atime();
-        case 'b': // ?b  | boolean | True if file1 is a block device
-            return RubyFileTest.blockdev_p(recv, args[1]);
-        case 'c': // ?c  | boolean | True if file1 is a character device
-            return RubyFileTest.chardev_p(recv, args[1]);
-        case 'C': // ?C  | Time    | Last change time for file1
-            return context.runtime.newFileStat(args[1].convertToString().toString(), false).ctime();
-        case 'd': // ?d  | boolean | True if file1 exists and is a directory
-            return RubyFileTest.directory_p(context, recv, args[1]);
-        case 'e': // ?e  | boolean | True if file1 exists
-            return RubyFileTest.exist_p(context, recv, args[1]);
-        case 'f': // ?f  | boolean | True if file1 exists and is a regular file
-            return RubyFileTest.file_p(context, recv, args[1]);
-        case 'g': // ?g  | boolean | True if file1 has the \CF{setgid} bit
-            return RubyFileTest.setgid_p(recv, args[1]);
-        case 'G': // ?G  | boolean | True if file1 exists and has a group ownership equal to the caller's group
-            return RubyFileTest.grpowned_p(recv, args[1]);
-        case 'k': // ?k  | boolean | True if file1 exists and has the sticky bit set
-            return RubyFileTest.sticky_p(recv, args[1]);
-        case 'M': // ?M  | Time    | Last modification time for file1
-            return context.runtime.newFileStat(args[1].convertToString().toString(), false).mtime();
-        case 'l': // ?l  | boolean | True if file1 exists and is a symbolic link
-            return RubyFileTest.symlink_p(recv, args[1]);
-        case 'o': // ?o  | boolean | True if file1 exists and is owned by the caller's effective uid
-            return RubyFileTest.owned_p(recv, args[1]);
-        case 'O': // ?O  | boolean | True if file1 exists and is owned by the caller's real uid
-            return RubyFileTest.rowned_p(recv, args[1]);
-        case 'p': // ?p  | boolean | True if file1 exists and is a fifo
-            return RubyFileTest.pipe_p(recv, args[1]);
-        case 'r': // ?r  | boolean | True if file1 is readable by the effective uid/gid of the caller
-            return RubyFileTest.readable_p(context, recv, args[1]);
-        case 'R': // ?R  | boolean | True if file is readable by the real uid/gid of the caller
-            return RubyFileTest.readable_p(context, recv, args[1]);
-        case 's': // ?s  | int/nil | If file1 has nonzero size, return the size, otherwise nil
-            return RubyFileTest.size_p(context, recv, args[1]);
-        case 'S': // ?S  | boolean | True if file1 exists and is a socket
-            return RubyFileTest.socket_p(recv, args[1]);
-        case 'u': // ?u  | boolean | True if file1 has the setuid bit set
-            return RubyFileTest.setuid_p(recv, args[1]);
-        case 'w': // ?w  | boolean | True if file1 exists and is writable by effective uid/gid
-            return RubyFileTest.writable_p(recv, args[1]);
-        case 'W': // ?W  | boolean | True if file1 exists and is writable by the real uid/gid
-            // FIXME: Need to implement an writable_real_p in FileTest
-            return RubyFileTest.writable_p(recv, args[1]);
-        case 'x': // ?x  | boolean | True if file1 exists and is executable by the effective uid/gid
-            return RubyFileTest.executable_p(recv, args[1]);
-        case 'X': // ?X  | boolean | True if file1 exists and is executable by the real uid/gid
-            return RubyFileTest.executable_real_p(recv, args[1]);
-        case 'z': // ?z  | boolean | True if file1 exists and has a zero length
-            return RubyFileTest.zero_p(context, recv, args[1]);
-        case '=': // ?=  | boolean | True if the modification times of file1 and file2 are equal
-            return context.runtime.newFileStat(args[1].convertToString().toString(), false).mtimeEquals(args[2]);
-        case '<': // ?<  | boolean | True if the modification time of file1 is prior to that of file2
-            return context.runtime.newFileStat(args[1].convertToString().toString(), false).mtimeLessThan(args[2]);
-        case '>': // ?>  | boolean | True if the modification time of file1 is after that of file2
-            return context.runtime.newFileStat(args[1].convertToString().toString(), false).mtimeGreaterThan(args[2]);
-        case '-': // ?-  | boolean | True if file1 and file2 are identical
-            return RubyFileTest.identical_p(recv, args[1], args[2]);
-        default:
-            throw new InternalError("unreachable code reached!");
-        }
+        return cmd;
     }
 
-    @JRubyMethod(name = "`", required = 1, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "`", module = true, visibility = PRIVATE)
     public static IRubyObject backquote(ThreadContext context, IRubyObject recv, IRubyObject str) {
         Ruby runtime = context.runtime;
 
@@ -1802,13 +1948,15 @@ public class RubyKernel {
         return RubyProcess.spawn(context, recv, args);
     }
 
-    @JRubyMethod(required = 1, optional = 9, module = true, visibility = PRIVATE)
+    @JRubyMethod(required = 1, optional = 9, checkArity = false, module = true, notImplemented = true, visibility = PRIVATE)
     public static IRubyObject syscall(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         throw context.runtime.newNotImplementedError("Kernel#syscall is not implemented in JRuby");
     }
 
-    @JRubyMethod(name = "system", required = 1, rest = true, module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "system", required = 1, rest = true, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject    system(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 1, -1);
+
         final Ruby runtime = context.runtime;
         boolean needChdir = !runtime.getCurrentDirectory().equals(runtime.getPosix().getcwd());
 
@@ -2011,17 +2159,7 @@ public class RubyKernel {
         return fork(context, recv, block);
     }
 
-    @JRubyMethod(module = true)
-    public static IRubyObject tap(ThreadContext context, IRubyObject recv, Block block) {
-        if (block.getProcObject() != null) {
-            block.getProcObject().call(context, recv);
-        } else {
-            block.yield(context, recv);
-        }
-        return recv;
-    }
-
-    @JRubyMethod(name = {"to_enum", "enum_for"}, optional = 1, rest = true, keywords = true)
+    @JRubyMethod(name = {"to_enum", "enum_for"}, rest = true, keywords = true)
     public static IRubyObject obj_to_enum(final ThreadContext context, IRubyObject self, IRubyObject[] args, final Block block) {
         // to_enum is a bit strange in that it will propagate the arguments it passes to each element it calls.  We are determining
         // whether we have received keywords so we can propagate this info.
@@ -2043,11 +2181,11 @@ public class RubyKernel {
 
         boolean keywords = (callInfo & ThreadContext.CALL_KEYWORD) != 0 && (callInfo & ThreadContext.CALL_KEYWORD_EMPTY) == 0;
 
-        context.resetCallInfo();
+        ThreadContext.resetCallInfo(context);
         return enumeratorizeWithSize(context, self, method, args, sizeFn, keywords);
     }
 
-    @JRubyMethod(name = { "__method__", "__callee__" }, module = true, visibility = PRIVATE, reads = METHODNAME, omit = true)
+    @JRubyMethod(name = { "__method__" }, module = true, visibility = PRIVATE, reads = METHODNAME, omit = true)
     public static IRubyObject __method__(ThreadContext context, IRubyObject recv) {
         String frameName = context.getFrameName();
         if (frameName == null || frameName == Ruby.ROOT_FRAME_NAME) {
@@ -2056,12 +2194,26 @@ public class RubyKernel {
         return context.runtime.newSymbol(frameName);
     }
 
+    @JRubyMethod(name = { "__callee__" }, module = true, visibility = PRIVATE, reads = METHODNAME, omit = true)
+    public static IRubyObject __callee__(ThreadContext context, IRubyObject recv) {
+        String frameName = context.getCalleeName();
+        if (frameName == null || frameName == Ruby.ROOT_FRAME_NAME) {
+            return context.nil;
+        }
+        return context.runtime.newSymbol(frameName);
+    }
+
     @JRubyMethod(name = "__dir__", module = true, visibility = PRIVATE, reads = FILENAME)
     public static IRubyObject __dir__(ThreadContext context, IRubyObject recv) {
+        Ruby runtime = context.runtime;
+
         // NOTE: not using __FILE__ = context.getFile() since it won't work with JIT
-        final String __FILE__ = context.getSingleBacktrace().getFileName();
-        RubyString path = RubyFile.expandPathInternal(context, RubyString.newString(context.runtime, __FILE__), null, false, true);
-        return RubyString.newString(context.runtime, RubyFile.dirname(context, path.asJavaString()));
+        String __FILE__ = context.getSingleBacktrace().getFileName();
+
+        __FILE__ = runtime.getLoadService().getPathForLocation(__FILE__);
+
+        RubyString path = RubyFile.expandPathInternal(context, RubyString.newString(runtime, __FILE__), null, false, true);
+        return RubyString.newString(runtime, RubyFile.dirname(context, path.asJavaString()));
     }
 
     @JRubyMethod(module = true)
@@ -2101,17 +2253,17 @@ public class RubyKernel {
      * See JRUBY-4871 (because of RubyObject instead of RubyBasicObject cast)
      * BEGIN delegated bindings:
      */
-    @JRubyMethod(name = "eql?", required = 1)
+    @JRubyMethod(name = "eql?")
     public static IRubyObject eql_p(IRubyObject self, IRubyObject obj) {
         return ((RubyBasicObject)self).eql_p(obj);
     }
 
-    @JRubyMethod(name = "===", required = 1)
+    @JRubyMethod(name = "===")
     public static IRubyObject op_eqq(ThreadContext context, IRubyObject self, IRubyObject other) {
         return ((RubyBasicObject) self).op_eqq(context, other);
     }
 
-    @JRubyMethod(name = "<=>", required = 1)
+    @JRubyMethod(name = "<=>")
     public static IRubyObject op_cmp(ThreadContext context, IRubyObject self, IRubyObject other) {
         return ((RubyBasicObject) self).op_cmp(context, other);
     }
@@ -2188,8 +2340,10 @@ public class RubyKernel {
         return ((RubyBasicObject)self).dup();
     }
 
-    @JRubyMethod(optional = 1)
+    @JRubyMethod(optional = 1, checkArity = false)
     public static IRubyObject display(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 0, 1);
+
         return ((RubyBasicObject)self).display(context, args);
     }
 
@@ -2208,7 +2362,7 @@ public class RubyKernel {
         return ((RubyBasicObject)self).inspect();
     }
 
-    @JRubyMethod(name = "instance_of?", required = 1)
+    @JRubyMethod(name = "instance_of?")
     public static RubyBoolean instance_of_p(ThreadContext context, IRubyObject self, IRubyObject type) {
         return ((RubyBasicObject)self).instance_of_p(context, type);
     }
@@ -2218,13 +2372,15 @@ public class RubyKernel {
         return self;
     }
 
-    @JRubyMethod(name = {"kind_of?", "is_a?"}, required = 1)
+    @JRubyMethod(name = {"kind_of?", "is_a?"})
     public static RubyBoolean kind_of_p(ThreadContext context, IRubyObject self, IRubyObject type) {
         return ((RubyBasicObject)self).kind_of_p(context, type);
     }
 
-    @JRubyMethod(name = "methods", optional = 1)
+    @JRubyMethod(name = "methods", optional = 1, checkArity = false)
     public static IRubyObject methods(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 0, 1);
+
         return ((RubyBasicObject)self).methods(context, args);
     }
 
@@ -2238,8 +2394,10 @@ public class RubyKernel {
         return self.id();
     }
 
-    @JRubyMethod(name = "public_methods", optional = 1)
+    @JRubyMethod(name = "public_methods", optional = 1, checkArity = false)
     public static IRubyObject public_methods(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 0, 1);
+
         return ((RubyBasicObject)self).public_methods(context, args);
     }
 
@@ -2248,8 +2406,10 @@ public class RubyKernel {
         return ((RubyBasicObject)self).public_methods(context, args);
     }
 
-    @JRubyMethod(name = "protected_methods", optional = 1)
+    @JRubyMethod(name = "protected_methods", optional = 1, checkArity = false)
     public static IRubyObject protected_methods(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 0, 1);
+
         return ((RubyBasicObject)self).protected_methods(context, args);
     }
 
@@ -2258,8 +2418,10 @@ public class RubyKernel {
         return ((RubyBasicObject)self).protected_methods(context, args);
     }
 
-    @JRubyMethod(name = "private_methods", optional = 1)
+    @JRubyMethod(name = "private_methods", optional = 1, checkArity = false)
     public static IRubyObject private_methods(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 0, 1);
+
         return ((RubyBasicObject)self).private_methods(context, args);
     }
 
@@ -2268,8 +2430,10 @@ public class RubyKernel {
         return ((RubyBasicObject)self).private_methods(context, args);
     }
 
-    @JRubyMethod(name = "singleton_methods", optional = 1)
+    @JRubyMethod(name = "singleton_methods", optional = 1, checkArity = false)
     public static RubyArray singleton_methods(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 0, 1);
+
         return ((RubyBasicObject)self).singleton_methods(context, args);
     }
 
@@ -2278,7 +2442,7 @@ public class RubyKernel {
         return ((RubyBasicObject)self).singleton_methods(context, args);
     }
 
-    @JRubyMethod(name = "singleton_method", required = 1)
+    @JRubyMethod(name = "singleton_method")
     public static IRubyObject singleton_method(IRubyObject self, IRubyObject symbol) {
         return ((RubyBasicObject)self).singleton_method(symbol);
     }
@@ -2293,8 +2457,10 @@ public class RubyKernel {
         return ((RubyBasicObject)self).to_s();
     }
 
-    @JRubyMethod(name = "extend", required = 1, rest = true)
+    @JRubyMethod(name = "extend", required = 1, rest = true, checkArity = false)
     public static IRubyObject extend(IRubyObject self, IRubyObject[] args) {
+        Arity.checkArgumentCount(self.getRuntime(), args, 1, -1);
+
         return ((RubyBasicObject)self).extend(args);
     }
 
@@ -2310,8 +2476,10 @@ public class RubyKernel {
     public static IRubyObject send(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         return ((RubyBasicObject)self).send(context, arg0, arg1, arg2, block);
     }
-    @JRubyMethod(name = "send", required = 1, rest = true, omit = true, keywords = true)
+    @JRubyMethod(name = "send", required = 1, rest = true, checkArity = false, omit = true, keywords = true)
     public static IRubyObject send(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+        Arity.checkArgumentCount(context, args, 1, -1);
+
         return ((RubyBasicObject)self).send(context, args, block);
     }
 
@@ -2340,7 +2508,7 @@ public class RubyKernel {
     // Writes backref due to decendant calls ending up in Regexp#=~
     @JRubyMethod(name = "=~", writes = FrameField.BACKREF)
     public static IRubyObject op_match(ThreadContext context, IRubyObject self, IRubyObject arg) {
-        context.runtime.getWarnings().warn(ID.DEPRECATED_METHOD,
+        context.runtime.getWarnings().warnDeprecated(ID.DEPRECATED_METHOD,
             "deprecated Object#=~ is called on " + ((RubyBasicObject) self).type() +
                 "; it always returns nil");
         return ((RubyBasicObject) self).op_match(context, arg);
@@ -2352,22 +2520,22 @@ public class RubyKernel {
         return ((RubyBasicObject) self).op_not_match(context, arg);
     }
 
-    @JRubyMethod(name = "instance_variable_defined?", required = 1)
+    @JRubyMethod(name = "instance_variable_defined?")
     public static IRubyObject instance_variable_defined_p(ThreadContext context, IRubyObject self, IRubyObject name) {
         return ((RubyBasicObject)self).instance_variable_defined_p(context, name);
     }
 
-    @JRubyMethod(name = "instance_variable_get", required = 1)
+    @JRubyMethod(name = "instance_variable_get")
     public static IRubyObject instance_variable_get(ThreadContext context, IRubyObject self, IRubyObject name) {
         return ((RubyBasicObject)self).instance_variable_get(context, name);
     }
 
-    @JRubyMethod(name = "instance_variable_set", required = 2)
+    @JRubyMethod(name = "instance_variable_set")
     public static IRubyObject instance_variable_set(IRubyObject self, IRubyObject name, IRubyObject value) {
         return ((RubyBasicObject)self).instance_variable_set(name, value);
     }
 
-    @JRubyMethod(name = "remove_instance_variable", required = 1)
+    @JRubyMethod(name = "remove_instance_variable")
     public static IRubyObject remove_instance_variable(ThreadContext context, IRubyObject self, IRubyObject name, Block block) {
         return ((RubyBasicObject) self).remove_instance_variable(context, name, block);
     }
@@ -2596,5 +2764,40 @@ public class RubyKernel {
     @Deprecated
     public static IRubyObject method19(IRubyObject self, IRubyObject symbol) {
         return method(self, symbol);
+    }
+
+    // defined in Ruby now but left here for backward compat
+    @Deprecated
+    public static IRubyObject tap(ThreadContext context, IRubyObject recv, Block block) {
+        if (block.getProcObject() != null) {
+            block.getProcObject().call(context, recv);
+        } else {
+            block.yield(context, recv);
+        }
+        return recv;
+    }
+
+    @Deprecated
+    public static IRubyObject sleep(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        switch (args.length) {
+            case 0:
+                return sleep(context, recv);
+            case 1:
+                return sleep(context, recv, args[0]);
+            default:
+                throw context.runtime.newArgumentError(args.length, 0, 1);
+        }
+    }
+
+    @Deprecated
+    public static IRubyObject test(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        switch (args.length) {
+            case 2:
+                return test(context, recv, args[0], args[1]);
+            case 3:
+                return test(context, recv, args[0], args[1], args[2]);
+            default:
+                throw context.runtime.newArgumentError(args.length, 2, 3);
+        }
     }
 }

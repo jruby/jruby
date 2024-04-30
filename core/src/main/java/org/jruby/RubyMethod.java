@@ -44,9 +44,9 @@ import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.MethodBlockBody;
 import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -153,19 +153,19 @@ public class RubyMethod extends AbstractRubyMethod {
         return getRuntime().newFixnum(method.getSignature().arityValue());
     }
 
-    @JRubyMethod(name = "eql?", required = 1)
+    @JRubyMethod(name = "eql?")
     public IRubyObject op_eql(ThreadContext context, IRubyObject other) {
         return op_equal(context, other);
     }
 
     @Override
-    @JRubyMethod(name = "==", required = 1)
+    @JRubyMethod(name = "==")
     public RubyBoolean op_equal(ThreadContext context, IRubyObject other) {
         return RubyBoolean.newBoolean(context,  equals(other) );
     }
 
     @Override
-    @JRubyMethod(name = "===", required = 1)
+    @JRubyMethod(name = "===")
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
         return method.call(context, receiver, sourceModule, methodName, other, Block.NULL_BLOCK);
     }
@@ -215,6 +215,7 @@ public class RubyMethod extends AbstractRubyMethod {
     public RubyMethod rbClone() {
         RubyMethod newMethod = newMethod(implementationModule, methodName, originModule, originName, entry, receiver);
         newMethod.setMetaClass(getMetaClass());
+        if (isFrozen()) newMethod.setFrozen(true);
         return newMethod;
     }
 
@@ -279,14 +280,14 @@ public class RubyMethod extends AbstractRubyMethod {
         if (mklass.isSingleton()) {
             IRubyObject attached = ((MetaClass) mklass).getAttached();
             if (receiver == null) {
-                str.cat19(inspect(context, mklass).convertToString());
+                str.catWithCodeRange(inspect(context, mklass).convertToString());
             } else if (receiver == attached) {
-                str.cat19(inspect(context, attached).convertToString());
+                str.catWithCodeRange(inspect(context, attached).convertToString());
                 sharp = ".";
             } else {
-                str.cat19(inspect(context, receiver).convertToString());
+                str.catWithCodeRange(inspect(context, receiver).convertToString());
                 str.catString("(");
-                str.cat19(inspect(context, attached).convertToString());
+                str.catWithCodeRange(inspect(context, attached).convertToString());
                 str.catString(")");
                 sharp = ".";
             }
@@ -358,32 +359,21 @@ public class RubyMethod extends AbstractRubyMethod {
         return context.nil;
     }
 
-    public String getFilename() {
-        DynamicMethod realMethod = method.getRealMethod(); // Follow Aliases
-        if (realMethod instanceof PositionAware) {
-            PositionAware poser = (PositionAware) realMethod;
-            return poser.getFile();
-        }
-        return null;
-    }
-
-    public int getLine() {
-        DynamicMethod realMethod = method.getRealMethod(); // Follow Aliases
-        if (realMethod instanceof PositionAware) {
-            PositionAware poser = (PositionAware) realMethod;
-            return poser.getLine() + 1;
-        }
-        return -1;
-    }
-
     @JRubyMethod
     public IRubyObject parameters(ThreadContext context) {
         return Helpers.methodToParameters(context.runtime, this);
     }
 
-    @JRubyMethod(optional = 1)
-    public IRubyObject curry(ThreadContext context, IRubyObject[] args) {
-        return to_proc(context).callMethod(context, "curry", args);
+    @JRubyMethod
+    public IRubyObject curry(ThreadContext context) {
+        IRubyObject proc = to_proc(context);
+        return sites(context).curry.call(context, proc, proc);
+    }
+
+    @JRubyMethod
+    public IRubyObject curry(ThreadContext context, IRubyObject arg0) {
+        IRubyObject proc = to_proc(context);
+        return sites(context).curry.call(context, proc, proc, arg0);
     }
 
     @JRubyMethod
@@ -412,6 +402,16 @@ public class RubyMethod extends AbstractRubyMethod {
 
     public IRubyObject getReceiver() {
         return receiver;
+    }
+
+    @Deprecated
+    public IRubyObject curry(ThreadContext context, IRubyObject[] args) {
+        IRubyObject proc = to_proc(context);
+        return sites(context).curry.call(context, proc, proc, args);
+    }
+
+    private static JavaSites.MethodSites sites(ThreadContext context) {
+        return context.sites.Method;
     }
 
 }

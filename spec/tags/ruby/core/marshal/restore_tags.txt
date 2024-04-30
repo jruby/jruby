@@ -1,3 +1,14 @@
 fails:Marshal.restore for a Symbol loads a binary encoded Symbol
 fails:Marshal.restore for an Object raises ArgumentError if the object from an 'o' stream is not dumpable as 'o' type user class
 fails:Marshal.restore for a wrapped C pointer raises ArgumentError when the local class is a regular object
+fails:Marshal.restore when called with freeze: true does freeze extended objects
+fails:Marshal.restore when called with freeze: true does freeze extended objects with instance variables
+fails:Marshal.restore when called with a proc call the proc with extended objects
+fails:Marshal.restore when called with freeze: true returns frozen object having #_dump method
+fails:Marshal.restore when called with freeze: true returns frozen object responding to #marshal_dump and #marshal_load
+fails:Marshal.restore when called with freeze: true returns frozen object extended by a module
+fails:Marshal.restore when called on objects with custom _dump methods loads the String in multibyte encoding
+fails:Marshal.restore for a Hash preserves compare_by_identity behaviour
+fails:Marshal.restore for a Hash preserves compare_by_identity behaviour for a Hash subclass
+fails:Marshal.restore for a Rational loads
+fails:Marshal.restore for a Complex loads

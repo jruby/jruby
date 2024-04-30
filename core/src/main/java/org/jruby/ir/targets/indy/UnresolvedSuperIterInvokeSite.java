@@ -12,13 +12,14 @@ import java.lang.invoke.MethodType;
 * Created by headius on 10/23/14.
 */
 public class UnresolvedSuperIterInvokeSite extends SuperInvokeSite {
-    public UnresolvedSuperIterInvokeSite(MethodType type, String name, String splatmapString, String file, int line) {
-        super(type, name, splatmapString, file, line);
+    public UnresolvedSuperIterInvokeSite(MethodType type, String name, String splatmapString, int flags, String file, int line) {
+        super(type, name, splatmapString, flags, file, line);
     }
 
     public IRubyObject invoke(ThreadContext context, IRubyObject caller, IRubyObject self, RubyClass definingModule, IRubyObject[] args, Block block) throws Throwable {
         // TODO: get rid of caller
         // TODO: caching
+        IRRuntimeHelpers.setCallInfo(context, flags);
         return IRRuntimeHelpers.unresolvedSuperIterSplatArgs(context, self, args, block, splatMap);
     }
 

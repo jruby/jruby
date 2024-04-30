@@ -251,14 +251,7 @@ class Ripper
     alias compile_error on_error1
 
     (SCANNER_EVENTS.map {|event|:"on_#{event}"} - private_instance_methods(false)).each do |event|
-      # FIXME: Our callee impl is broken and returns same result as __method__
-      #  which is old method name and not new one.
-      define_method(event) { |tok|
-        e = Elem.new([lineno(), column()], event, tok, state())
-        @buf.push e
-        e
-      }
-#      alias_method event, :_push_token
+      alias_method event, :_push_token
     end
   end
 

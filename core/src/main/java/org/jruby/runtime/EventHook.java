@@ -14,9 +14,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import java.util.Set;
 
 /**
- *
- * @author headius
- * @author hooligan495
  * Changed event hook to an enum that manages a collection of event handlers.
  * There are now global event delgators for each event type.  If a component
  * is interested in being notified of an event they should register a handler 
@@ -26,6 +23,8 @@ import java.util.Set;
  * ine number for ruby needs to be offset by 2).  If these rules ever change we 
  * can change them here.
  *
+ * @author headius
+ * @author hooligan495
  */
 public abstract class EventHook {    
     public void event(ThreadContext context, RubyEvent event, String file, int line, String name, IRubyObject type){

@@ -128,7 +128,7 @@ public class Pointer extends AbstractMemory {
 
 
     /**
-     * Tests if this <tt>Pointer</tt> represents the C <tt>NULL</tt> value.
+     * Tests if this <code>Pointer</code> represents the C <code>NULL</code> value.
      *
      * @return true if the address is NULL.
      */
@@ -138,9 +138,8 @@ public class Pointer extends AbstractMemory {
     }
 
 
-    @Override
-    @JRubyMethod(name = { "to_s", "inspect" }, optional = 1)
-    public IRubyObject to_s(ThreadContext context, IRubyObject[] args) {
+    @JRubyMethod(name = { "to_s", "inspect" })
+    public IRubyObject to_s(ThreadContext context) {
         String s = size != Long.MAX_VALUE
                 ? String.format("#<%s address=0x%x size=%s>", getMetaClass().getName(), getAddress(), size)
                 : String.format("#<%s address=0x%x>", getMetaClass().getName(), getAddress());
@@ -162,7 +161,7 @@ public class Pointer extends AbstractMemory {
         return getMemoryIO().address();
     }
 
-    @JRubyMethod(name = "==", required = 1)
+    @JRubyMethod(name = "==")
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
         return RubyBoolean.newBoolean(context, this == obj
                 || getAddress() == 0L && obj.isNil()

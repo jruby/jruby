@@ -101,7 +101,7 @@ public final class Buffer extends AbstractMemory {
     /**
      * 
      */
-    @JRubyMethod(required = 1, visibility=PRIVATE)
+    @JRubyMethod(visibility=PRIVATE)
     public IRubyObject initialize_copy(ThreadContext context, IRubyObject other) {
         if (this == other) {
             return this;

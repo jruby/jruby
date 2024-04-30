@@ -155,27 +155,27 @@ public class RubySignal {
         return names;
     }
 
-    @JRubyMethod(required = 2, meta = true)
+    @JRubyMethod(meta = true)
     public static IRubyObject __jtrap_kernel(final IRubyObject recv, IRubyObject block, IRubyObject sig) {
         return SIGNAL_FACADE.trap(recv, block, sig);
     }
 
-    @JRubyMethod(required = 1, meta = true)
+    @JRubyMethod(meta = true)
     public static IRubyObject __jtrap_platform_kernel(final IRubyObject recv, IRubyObject sig) {
         return SIGNAL_FACADE.restorePlatformDefault(recv, sig);
     }
 
-    @JRubyMethod(required = 1, meta = true)
+    @JRubyMethod(meta = true)
     public static IRubyObject __jtrap_osdefault_kernel(final IRubyObject recv, IRubyObject sig) {
         return SIGNAL_FACADE.restoreOSDefault(recv, sig);
     }
 
-    @JRubyMethod(required = 1, meta = true)
+    @JRubyMethod(meta = true)
     public static IRubyObject __jtrap_restore_kernel(final IRubyObject recv, IRubyObject sig) {
         return SIGNAL_FACADE.ignore(recv, sig);
     }
 
-    @JRubyMethod(required = 1, meta = true)
+    @JRubyMethod(meta = true)
     public static IRubyObject signame(ThreadContext context, final IRubyObject recv, IRubyObject rubySig) {
         long sig = rubySig.convertToInteger().getLongValue();
         String signame = signo2signm(sig);

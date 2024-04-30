@@ -28,8 +28,7 @@ class SafeDecimalParser {
     /**
      * Heuristic test if we should look closer at the value
      * 
-     * @param s
-     *            The non-null input String
+     * @param s The non-null input String
      * @return <code>true</code> if the value is suspicious, <code>false</code> otherwise
      */
     final protected static boolean isSuspicious(String s) {

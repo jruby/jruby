@@ -1,1 +1,0 @@
-windows:Net::FTP#puttextfile sends the contents of the passed local_file, using \r\n as the newline separator

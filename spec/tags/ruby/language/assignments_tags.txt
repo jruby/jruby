@@ -1,0 +1,1 @@
+fails:Multiple assignments evaluation order evaluates expressions right to left when assignment with compounded constant

@@ -38,7 +38,6 @@ import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
-import org.jruby.javasupport.JavaObject;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -158,9 +157,7 @@ public final class Util {
 
     @Deprecated
     public static final <T> T convertParameter(IRubyObject parameter, Class<T> paramClass) {
-        return paramClass.cast(parameter instanceof JavaObject
-            ? ((JavaObject) parameter).getValue()
-            : parameter.toJava(paramClass));
+        return paramClass.cast(parameter.toJava(paramClass));
     }
 
     public static final ByteBuffer slice(ByteBuffer buf, int offset) {

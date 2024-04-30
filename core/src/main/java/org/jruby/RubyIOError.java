@@ -50,4 +50,8 @@ public class RubyIOError extends RubyStandardError {
     protected RaiseException constructThrowable(String message) {
         return new IOError(message, this);
     }
+
+    public static RubyIOError newIOError(Ruby runtime, String message) {
+        return ((RubyIOError) runtime.getIOError().newInstance(runtime.getCurrentContext(), RubyString.newString(runtime, message)));
+    }
 }

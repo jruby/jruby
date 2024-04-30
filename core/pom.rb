@@ -43,29 +43,29 @@ project 'JRuby Base' do
 
   # exclude jnr-ffi to avoid problems with shading and relocation of the asm packages
   jar 'com.github.jnr:jnr-netdb:1.2.0', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-enxio:0.32.14', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-unixsocket:0.38.19', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-posix:3.1.16', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-enxio:0.32.17', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-unixsocket:0.38.22', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-posix:3.1.19', :exclusions => ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-constants:0.10.4', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-ffi:2.2.13'
+  jar 'com.github.jnr:jnr-ffi:2.2.16'
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
-  jar 'org.jruby.joni:joni:2.1.48'
+  jar 'org.jruby.joni:joni:2.2.1'
   jar 'org.jruby.jcodings:jcodings:1.0.58'
   jar 'org.jruby:dirgra:0.3'
 
-  jar 'com.headius:invokebinder:1.12'
+  jar 'com.headius:invokebinder:1.13'
   jar 'com.headius:options:1.6'
 
-  jar 'com.jcraft:jzlib:1.1.3'
+  jar 'org.jruby:jzlib:1.1.5'
   jar 'junit:junit', :scope => 'test'
   jar 'org.awaitility:awaitility', :scope => 'test'
   jar 'org.apache.ant:ant:${ant.version}', :scope => 'provided'
   jar 'org.osgi:org.osgi.core:5.0.0', :scope => 'provided'
 
   # joda timezone must be before joda-time to be packed correctly
-  jar 'org.jruby:joda-timezones:${tzdata.version}', :scope => '${tzdata.scope}'
+  # jar 'org.jruby:joda-timezones:${tzdata.version}', :scope => '${tzdata.scope}'
   jar 'joda-time:joda-time:${joda.time.version}'
 
   # SLF4J only used within SLF4JLogger (JRuby logger impl) class
@@ -74,7 +74,7 @@ project 'JRuby Base' do
 
   jar 'me.qmx.jitescript:jitescript:0.4.1', :exclusions => ['org.ow2.asm:asm-all']
 
-  jar 'com.headius:backport9:1.12'
+  jar 'com.headius:backport9:1.13'
 
   jar 'jakarta.annotation:jakarta.annotation-api:2.0.0', scope: 'provided'
 
@@ -167,12 +167,21 @@ project 'JRuby Base' do
     end
   end
 
+  fork_compiler_args = [ '-XDignore.symbol.file=true',
+                         '-J-Duser.language=en',
+                         '-J-Dfile.encoding=UTF-8',
+                         '-J-Xmx${jruby.compile.memory}' ]
+
+  default_compile_configuration = {
+    'fork' => 'true',
+    'annotationProcessors' => [ 'org.jruby.anno.AnnotationBinder' ],
+    'generatedSourcesDirectory' =>  'target/generated-sources',
+    'compilerArgs' => fork_compiler_args
+  }
+
   plugin( :compiler,
           'encoding' => 'utf-8',
-          'debug' => 'true',
           'verbose' => 'false',
-          'fork' => 'true',
-          'compilerArgs' => { 'arg' => '-J-Xmx1G' },
           'showWarnings' => 'true',
           'showDeprecation' => 'true',
           'source' => [ '${base.java.version}', '1.8' ],
@@ -190,24 +199,19 @@ project 'JRuby Base' do
                                    'org/jruby/util/CodegenUtils.java',
                                    'org/jruby/util/SafePropertyAccessor.java' ] )
     execute_goals( 'compile',
-                   :id => 'default-compile',
-                   :phase => 'compile',
-                   'debug' => 'true',
-                   'annotationProcessors' => [ 'org.jruby.anno.AnnotationBinder' ],
-                   'generatedSourcesDirectory' =>  'target/generated-sources',
-                   'compilerArgs' => [ '-XDignore.symbol.file=true',
-                                       '-J-Duser.language=en',
-                                       '-J-Dfile.encoding=UTF-8',
-                                       '-J-Xmx${jruby.compile.memory}' ] )
+                   default_compile_configuration.merge(
+                     :id => 'default-compile',
+                     :phase => 'compile'
+                   ))
+
     execute_goals( 'compile',
                    :id => 'populators',
                    :phase => 'process-classes',
-                   'debug' => 'true',
-                   'compilerArgs' => [ '-XDignore.symbol.file=true',
-                                       '-J-Duser.language=en',
-                                       '-J-Dfile.encoding=UTF-8',
-                                       '-J-Xmx${jruby.compile.memory}' ],
+                   'debug' => 'false',
+                   'fork' => 'true',
+                   'compilerArgs' => fork_compiler_args,
                    'includes' => [ 'org/jruby/gen/**/*.java' ] )
+
     execute_goals( 'compile',
                    :id => 'eclipse-hack',
                    :phase => 'process-classes',
@@ -236,7 +240,7 @@ project 'JRuby Base' do
           },
           'argLine' =>  '-Xmx${jruby.test.memory} -Dfile.encoding=UTF-8 -Djava.awt.headless=true',
           'environmentVariables' => {
-              'JDK_JAVA_OPTIONS' => '--add-modules java.scripting'
+              'JDK_JAVA_OPTIONS' => '--add-modules java.scripting --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED'
           },
           includes: [
             'org/jruby/test/**/*Test*.java',
@@ -296,6 +300,40 @@ project 'JRuby Base' do
       plugin 'org.codehaus.mojo:exec-maven-plugin' do
         execute_goals( *copy_goal )
       end
+    end
+  end
+
+  profile 'error-prone' do
+    activation do
+      jdk('11') # even an older (2.10.0) version of error-prone would need an adjusted setup on Java 8
+      property(name: 'env.CI') # for keeping fast development cycle, by default only run on CI
+    end
+
+    plugin :compiler do
+      execute_goals( 'compile',
+                     :id => 'default-compile',
+                     :phase => 'none' ) # do not execute default-compile, we have a replacement bellow
+
+      execute_goals( 'compile',
+                     default_compile_configuration.merge(
+                       :id => 'default-compile_with_error_prone',
+                       :phase => 'compile',
+                       'fork' => 'true',
+                       'compilerArgs' => default_compile_configuration['compilerArgs'] + [
+                         '-XDcompilePolicy=simple', '-Xplugin:ErrorProne'
+                       ],
+                        'annotationProcessorPaths' => { 'path' => [ {
+                                                                      'groupId' => 'com.google.errorprone',
+                                                                      'artifactId' => 'error_prone_core',
+                                                                      'version' => '2.18.0'
+                                                                    },
+                                                                    {
+                                                                      'groupId' => 'org.jruby',
+                                                                      'artifactId' => 'jruby-base',
+                                                                      'version' => version
+                                                                    } ]
+                        }
+                    ) )
     end
   end
 

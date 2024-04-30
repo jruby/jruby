@@ -245,7 +245,7 @@ public class RubyRandom extends RubyRandomBase {
         return getDefaultRand(context).getSeed();
     }
 
-    @JRubyMethod(name = "initialize_copy", required = 1, visibility = PRIVATE)
+    @JRubyMethod(name = "initialize_copy", visibility = PRIVATE)
     @Override
     public IRubyObject initialize_copy(IRubyObject orig) {
         if (!(orig instanceof RubyRandom)) {
@@ -333,7 +333,7 @@ public class RubyRandom extends RubyRandomBase {
 
     // c: random_equal
     @Override
-    @JRubyMethod(name = "==", required = 1)
+    @JRubyMethod(name = "==")
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
         if (!getType().equals(obj.getType())) {
             return context.fals;

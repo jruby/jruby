@@ -32,7 +32,7 @@ package org.jruby.embed;
 /**
  * The path type that tells from where Ruby runtime should load the specified file.
  * 
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public enum PathType {
     /**

@@ -222,6 +222,10 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return new RubyFixnum(runtime, value);
     }
 
+    public static RubyFixnum newFixnum(Ruby runtime, int value) {
+        return newFixnum(runtime, (long) value);
+    }
+
     private static boolean isInCacheRange(long value) {
         return value <= CACHE_OFFSET - 1 && value >= -CACHE_OFFSET;
     }
@@ -371,44 +375,30 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
      */
     @Override
     public RubyArray digits(ThreadContext context, IRubyObject base) {
-        final Ruby runtime = context.runtime;
-
         long value = getLongValue();
 
-        if (value < 0) {
-            throw runtime.newMathDomainError("out of domain");
-        }
-        if (!(base instanceof RubyInteger)) {
-            try {
-                base = base.convertToInteger();
-            } catch (ClassCastException e) {
-                String cname = getMetaClass(base).getRealClass().getName();
-                throw runtime.newTypeError("wrong argument type " + cname + " (expected Integer)");
-            }
-        }
-        if (base instanceof RubyBignum){
-            return RubyArray.newArray(context.runtime, newFixnum(runtime, value));
-        }
+        if (value < 0) throw context.runtime.newMathDomainError("out of domain");
+
+        base = base.convertToInteger();
+
+        if (base instanceof RubyBignum) return RubyArray.newArray(context.runtime, newFixnum(context.runtime, value));
+
         long longBase = ((RubyFixnum) base).value;
-        if (longBase < 0) {
-            throw runtime.newArgumentError("negative radix");
-        }
-        if (longBase < 2) {
-            throw runtime.newArgumentError("invalid radix: " + longBase);
-        }
+        if (longBase < 0) throw context.runtime.newArgumentError("negative radix");
+        if (longBase < 2) throw context.runtime.newArgumentError("invalid radix: " + longBase);
 
         if (value == 0) {
-            return RubyArray.newArray(context.runtime, zero(runtime));
+            return RubyArray.newArray(context.runtime, zero(context.runtime));
+        } else {
+            RubyArray res = RubyArray.newArray(context.runtime, 0);
+
+            while (value > 0) {
+                res.append(newFixnum(context.runtime, value % longBase));
+                value /= longBase;
+            }
+
+            return res;
         }
-
-        RubyArray res = RubyArray.newArray(context.runtime, 0);
-
-        while (value > 0) {
-            res.append(newFixnum(runtime, value % longBase));
-            value /= longBase;
-        }
-
-        return res;
     }
 
 
@@ -626,11 +616,11 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
 
     /** fix_div
      * here is terrible MRI gotcha:
-     * 1.div 3.0 -> 0
-     * 1 / 3.0   -> 0.3333333333333333
+     * 1.div 3.0$ -&gt; 0
+     * 1 / 3.0  $ -&gt; 0.3333333333333333
      *
      * MRI is also able to do it in one place by looking at current frame in rb_num_coerce_bin:
-     * rb_funcall(x, ruby_frame->orig_func, 1, y);
+     * rb_funcall(x, ruby_frame-&gt;orig_func, 1, y);
      *
      * also note that RubyFloat doesn't override Numeric.div
      */

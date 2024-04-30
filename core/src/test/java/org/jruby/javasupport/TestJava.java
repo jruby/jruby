@@ -1,6 +1,7 @@
 package org.jruby.javasupport;
 
 import java.lang.reflect.Method;
+import java.text.SimpleDateFormat;
 
 import org.jruby.*;
 import org.jruby.exceptions.RaiseException;
@@ -77,27 +78,6 @@ public class TestJava extends junit.framework.TestCase {
     private static interface NonFxRunnable extends Runnable { public void doRun() ; }
 
     @Test
-    public void test_get_java_class() {
-        final Ruby runtime = Ruby.newInstance();
-        final RubyModule self = runtime.getJavaSupport().getJavaModule();
-        RubyString name;
-
-        name = runtime.newString("java.lang.Integer");
-        assert Java.get_java_class(self, name) != null;
-
-        try {
-            name = runtime.newString("java.lang.BOGUS22");
-            Java.get_java_class(self, name);
-            assert false;
-        }
-        catch (RaiseException ex) {
-            assertEquals("(NameError) cannot load Java class java.lang.BOGUS22", ex.getMessage());
-            assertNotNull(ex.getCause());
-            assertEquals(ClassNotFoundException.class, ex.getCause().getClass());
-        }
-    }
-
-    @Test
     public void testJavaConstructorExceptionHandling() throws Exception {
         final Ruby runtime = Ruby.newInstance();
         ThreadContext context = runtime.getCurrentContext();
@@ -138,4 +118,23 @@ public class TestJava extends junit.framework.TestCase {
         }
     }
 
+    @Test
+    public void testOverrideNewOnConcreteJavaProxySubClassRegression() {
+        String script =
+            "class FormatImpl < java.text.SimpleDateFormat\n" +
+            "  include Enumerable\n" +
+            "  public_class_method :new\n" +
+            "  class << self\n" +
+            "    def new(thread_provider: true)\n" +
+            "      super()\n" +
+            "    end\n" +
+            "  end\n" +
+            "end\n";
+
+        final Ruby runtime = Ruby.newInstance();
+        runtime.evalScriptlet(script);
+
+        assertNotNull(runtime.evalScriptlet("FormatImpl.new")); // used to cause an infinite loop
+        assertTrue(runtime.evalScriptlet("FormatImpl.new").toJava(Object.class) instanceof SimpleDateFormat);
+    }
 }

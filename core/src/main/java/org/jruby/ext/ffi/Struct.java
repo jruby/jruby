@@ -45,29 +45,29 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
     }
 
     /**
-     * Creates a new <tt>StructLayout</tt> instance using defaults.
+     * Creates a new <code>StructLayout</code> instance using defaults.
      *
-     * @param runtime The runtime for the <tt>StructLayout</tt>
+     * @param runtime The runtime for the <code>StructLayout</code>
      */
     Struct(Ruby runtime) {
         this(runtime, runtime.getFFI().structClass);
     }
 
     /**
-     * Creates a new <tt>StructLayout</tt> instance.
+     * Creates a new <code>StructLayout</code> instance.
      *
-     * @param runtime The runtime for the <tt>StructLayout</tt>
-     * @param klass the ruby class to use for the <tt>StructLayout</tt>
+     * @param runtime The runtime for the <code>StructLayout</code>
+     * @param klass the ruby class to use for the <code>StructLayout</code>
      */
     public Struct(Ruby runtime, RubyClass klass) {
         this(runtime, klass, getStructLayout(runtime, klass), null);
     }
 
     /**
-     * Creates a new <tt>StructLayout</tt> instance.
+     * Creates a new <code>StructLayout</code> instance.
      *
-     * @param runtime The runtime for the <tt>StructLayout</tt>
-     * @param klass the ruby class to use for the <tt>StructLayout</tt>
+     * @param runtime The runtime for the <code>StructLayout</code>
+     * @param klass the ruby class to use for the <code>StructLayout</code>
      */
     Struct(Ruby runtime, RubyClass klass, StructLayout layout, IRubyObject memory) {
         super(runtime, klass);
@@ -344,12 +344,12 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
         return RubyBoolean.newBoolean(context, getMemory().getMemoryIO().isNull());
     }
 
-    @JRubyMethod(name = "order", required = 0)
+    @JRubyMethod(name = "order")
     public final IRubyObject order(ThreadContext context) {
         return context.runtime.newSymbol(getMemoryIO().order().equals(ByteOrder.LITTLE_ENDIAN) ? "little" : "big");
     }
 
-    @JRubyMethod(name = "order", required = 1)
+    @JRubyMethod(name = "order")
     public final IRubyObject order(ThreadContext context, IRubyObject byte_order) {
         ByteOrder order = Util.parseByteOrder(context.runtime, byte_order);
         return new Struct(context.runtime, getMetaClass(), layout,

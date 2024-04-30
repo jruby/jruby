@@ -8,8 +8,8 @@ describe "Pattern matching" do
     ScratchPad.record []
   end
 
-  ruby_version_is "3.0" do
-    it "can be standalone assoc operator that deconstructs value" do
+  describe "can be standalone assoc operator that" do
+    it "deconstructs value" do
       suppress_warning do
         eval(<<-RUBY).should == [0, 1]
           [0, 1] => [a, b]
@@ -18,105 +18,117 @@ describe "Pattern matching" do
       end
     end
 
-    describe "find pattern" do
-      it "captures preceding elements to the pattern" do
-        eval(<<~RUBY).should == [0, 1]
-          case [0, 1, 2, 3]
-          in [*pre, 2, 3]
-            pre
-          else
-            false
-          end
+    it "deconstructs value and properly scopes variables" do
+      suppress_warning do
+        eval(<<-RUBY).should == [0, nil]
+          a = nil
+          eval(<<-PATTERN)
+            [0, 1] => [a, b]
+          PATTERN
+          [a, defined?(b)]
         RUBY
       end
+    end
+  end
 
-      it "captures following elements to the pattern" do
-        eval(<<~RUBY).should == [2, 3]
-          case [0, 1, 2, 3]
-          in [0, 1, *post]
-            post
-          else
-            false
-          end
-        RUBY
-      end
+  describe "find pattern" do
+    it "captures preceding elements to the pattern" do
+      eval(<<~RUBY).should == [0, 1]
+        case [0, 1, 2, 3]
+        in [*pre, 2, 3]
+          pre
+        else
+          false
+        end
+      RUBY
+    end
 
-      it "captures both preceding and following elements to the pattern" do
-        eval(<<~RUBY).should == [[0, 1], [3, 4]]
-          case [0, 1, 2, 3, 4]
-          in [*pre, 2, *post]
-            [pre, post]
-          else
-            false
-          end
-        RUBY
-      end
+    it "captures following elements to the pattern" do
+      eval(<<~RUBY).should == [2, 3]
+        case [0, 1, 2, 3]
+        in [0, 1, *post]
+          post
+        else
+          false
+        end
+      RUBY
+    end
 
-      it "can capture the entirety of the pattern" do
-        eval(<<~RUBY).should == [0, 1, 2, 3, 4]
-          case [0, 1, 2, 3, 4]
-          in [*everything]
-            everything
-          else
-            false
-          end
-        RUBY
-      end
+    it "captures both preceding and following elements to the pattern" do
+      eval(<<~RUBY).should == [[0, 1], [3, 4]]
+        case [0, 1, 2, 3, 4]
+        in [*pre, 2, *post]
+          [pre, post]
+        else
+          false
+        end
+      RUBY
+    end
 
-      it "will match an empty Array-like structure" do
-        eval(<<~RUBY).should == []
-          case []
-          in [*everything]
-            everything
-          else
-            false
-          end
-        RUBY
-      end
+    it "can capture the entirety of the pattern" do
+      eval(<<~RUBY).should == [0, 1, 2, 3, 4]
+        case [0, 1, 2, 3, 4]
+        in [*everything]
+          everything
+        else
+          false
+        end
+      RUBY
+    end
 
-      it "can be nested" do
-        eval(<<~RUBY).should == [[0, [2, 4, 6]], [[4, 16, 64]], 27]
-          case [0, [2, 4, 6], [3, 9, 27], [4, 16, 64]]
-          in [*pre, [*, 9, a], *post]
-            [pre, post, a]
-          else
-            false
-          end
-        RUBY
-      end
+    it "will match an empty Array-like structure" do
+      eval(<<~RUBY).should == []
+        case []
+        in [*everything]
+          everything
+        else
+          false
+        end
+      RUBY
+    end
 
-      it "can be nested with an array pattern" do
-        eval(<<~RUBY).should == [[4, 16, 64]]
-          case [0, [2, 4, 6], [3, 9, 27], [4, 16, 64]]
-          in [_, _, [*, 9, *], *post]
-            post
-          else
-            false
-          end
-        RUBY
-      end
+    it "can be nested" do
+      eval(<<~RUBY).should == [[0, [2, 4, 6]], [[4, 16, 64]], 27]
+        case [0, [2, 4, 6], [3, 9, 27], [4, 16, 64]]
+        in [*pre, [*, 9, a], *post]
+          [pre, post, a]
+        else
+          false
+        end
+      RUBY
+    end
 
-      it "can be nested within a hash pattern" do
-        eval(<<~RUBY).should == [27]
-          case {a: [3, 9, 27]}
-          in {a: [*, 9, *post]}
-            post
-          else
-            false
-          end
-        RUBY
-      end
+    it "can be nested with an array pattern" do
+      eval(<<~RUBY).should == [[4, 16, 64]]
+        case [0, [2, 4, 6], [3, 9, 27], [4, 16, 64]]
+        in [_, _, [*, 9, *], *post]
+          post
+        else
+          false
+        end
+      RUBY
+    end
 
-      it "can nest hash and array patterns" do
-        eval(<<~RUBY).should == [42, 2]
-          case [0, {a: 42, b: [0, 1]}, {a: 42, b: [1, 2]}]
-          in [*, {a:, b: [1, c]}, *]
-            [a, c]
-          else
-            false
-          end
-        RUBY
-      end
+    it "can be nested within a hash pattern" do
+      eval(<<~RUBY).should == [27]
+        case {a: [3, 9, 27]}
+        in {a: [*, 9, *post]}
+          post
+        else
+          false
+        end
+      RUBY
+    end
+
+    it "can nest hash and array patterns" do
+      eval(<<~RUBY).should == [42, 2]
+        case [0, {a: 42, b: [0, 1]}, {a: 42, b: [1, 2]}]
+        in [*, {a:, b: [1, c]}, *]
+          [a, c]
+        else
+          false
+        end
+      RUBY
     end
   end
 
@@ -154,35 +166,25 @@ describe "Pattern matching" do
         @src = 'case [0, 1]; in [a, b]; end'
       end
 
-      ruby_version_is ""..."3.0" do
+      it "does not warn about pattern matching is experimental feature" do
+        -> { eval @src }.should_not complain
+      end
+    end
+
+    context 'when one-line form' do
+      before :each do
+        @src = '[0, 1] => [a, b]'
+      end
+
+      ruby_version_is ""..."3.1" do
         it "warns about pattern matching is experimental feature" do
           -> { eval @src }.should complain(/pattern matching is experimental, and the behavior may change in future versions of Ruby!/i)
         end
       end
 
-      ruby_version_is "3.0" do
+      ruby_version_is "3.1" do
         it "does not warn about pattern matching is experimental feature" do
           -> { eval @src }.should_not complain
-        end
-      end
-    end
-
-    context 'when one-line form' do
-      ruby_version_is '3.0' do
-        before :each do
-          @src = '[0, 1] => [a, b]'
-        end
-
-        ruby_version_is ""..."3.1" do
-          it "warns about pattern matching is experimental feature" do
-            -> { eval @src }.should complain(/pattern matching is experimental, and the behavior may change in future versions of Ruby!/i)
-          end
-        end
-
-        ruby_version_is "3.1" do
-          it "does not warn about pattern matching is experimental feature" do
-            -> { eval @src }.should_not complain
-          end
         end
       end
     end
@@ -205,7 +207,7 @@ describe "Pattern matching" do
         in []
         end
       RUBY
-    }.should raise_error(SyntaxError, /syntax error, unexpected `in'/)
+    }.should raise_error(SyntaxError, /syntax error, unexpected `in'|\(eval\):3: syntax error, unexpected keyword_in|unexpected 'in'/)
 
     -> {
       eval <<~RUBY
@@ -214,7 +216,7 @@ describe "Pattern matching" do
         when 1 == 1
         end
       RUBY
-    }.should raise_error(SyntaxError, /syntax error, unexpected `when'/)
+    }.should raise_error(SyntaxError, /syntax error, unexpected `when'|\(eval\):3: syntax error, unexpected keyword_when|unexpected 'when'/)
   end
 
   it "checks patterns until the first matching" do
@@ -251,6 +253,18 @@ describe "Pattern matching" do
     }.should raise_error(NoMatchingPatternError, /\[0, 1\]/)
   end
 
+  it "raises NoMatchingPatternError if no pattern matches and evaluates the expression only once" do
+    evals = 0
+    -> {
+      eval <<~RUBY
+        case (evals += 1; [0, 1])
+        in [0]
+        end
+      RUBY
+    }.should raise_error(NoMatchingPatternError, /\[0, 1\]/)
+    evals.should == 1
+  end
+
   it "does not allow calculation or method calls in a pattern" do
     -> {
       eval <<~RUBY
@@ -259,7 +273,7 @@ describe "Pattern matching" do
           true
         end
       RUBY
-    }.should raise_error(SyntaxError, /unexpected/)
+    }.should raise_error(SyntaxError, /unexpected|expected a delimiter after the predicates of a `when` clause/)
   end
 
   it "evaluates the case expression once for multiple patterns, caching the result" do
@@ -675,26 +689,24 @@ describe "Pattern matching" do
       RUBY
     end
 
-    ruby_version_is "3.0" do
-      it "calls #deconstruct once for multiple patterns, caching the result" do
-        obj = Object.new
+    it "calls #deconstruct once for multiple patterns, caching the result" do
+      obj = Object.new
 
-        def obj.deconstruct
-          ScratchPad << :deconstruct
-          [0, 1]
-        end
-
-        eval(<<~RUBY).should == true
-          case obj
-          in [1, 2]
-            false
-          in [0, 1]
-            true
-          end
-        RUBY
-
-        ScratchPad.recorded.should == [:deconstruct]
+      def obj.deconstruct
+        ScratchPad << :deconstruct
+        [0, 1]
       end
+
+      eval(<<~RUBY).should == true
+        case obj
+        in [1, 2]
+          false
+        in [0, 1]
+          true
+        end
+      RUBY
+
+      ScratchPad.recorded.should == [:deconstruct]
     end
 
     it "calls #deconstruct even on objects that are already an array" do
@@ -720,6 +732,20 @@ describe "Pattern matching" do
       eval(<<~RUBY).should == false
         case [0, 1, 2]
         in String[0, 1, 2]
+          true
+        else
+          false
+        end
+      RUBY
+    end
+
+    it "checks Constant === object before calling #deconstruct" do
+      c1 = Class.new
+      obj = c1.new
+      obj.should_not_receive(:deconstruct)
+      eval(<<~RUBY).should == false
+        case obj
+        in String[1]
           true
         else
           false
@@ -758,11 +784,7 @@ describe "Pattern matching" do
     it "accepts a subclass of Array from #deconstruct" do
       obj = Object.new
       def obj.deconstruct
-        subarray = Class.new(Array).new(2)
-        def subarray.[](n)
-          n
-        end
-        subarray
+        Class.new(Array).new([0, 1])
       end
 
       eval(<<~RUBY).should == true
@@ -992,7 +1014,7 @@ describe "Pattern matching" do
           in {"a" => 1}
           end
         RUBY
-      }.should raise_error(SyntaxError, /unexpected/)
+      }.should raise_error(SyntaxError, /unexpected|expected a label as the key in the hash pattern/)
     end
 
     it "does not support string interpolation in keys" do
@@ -1004,7 +1026,7 @@ describe "Pattern matching" do
           in {"#{x}": 1}
           end
         RUBY
-      }.should raise_error(SyntaxError, /symbol literal with interpolation is not allowed/)
+      }.should raise_error(SyntaxError, /symbol literal with interpolation is not allowed|expected a label as the key in the hash pattern/)
     end
 
     it "raise SyntaxError when keys duplicate in pattern" do
@@ -1053,6 +1075,20 @@ describe "Pattern matching" do
       eval(<<~RUBY).should == false
         case {a: 1}
         in String[a: 1]
+          true
+        else
+          false
+        end
+      RUBY
+    end
+
+    it "checks Constant === object before calling #deconstruct_keys" do
+      c1 = Class.new
+      obj = c1.new
+      obj.should_not_receive(:deconstruct_keys)
+      eval(<<~RUBY).should == false
+        case obj
+        in String(a: 1)
           true
         else
           false
@@ -1220,6 +1256,37 @@ describe "Pattern matching" do
       RUBY
     end
 
+    it "in {} only matches empty hashes" do
+      eval(<<~RUBY).should == false
+        case {a: 1}
+        in {}
+          true
+        else
+          false
+        end
+      RUBY
+    end
+
+    it "in {**nil} only matches empty hashes" do
+      eval(<<~RUBY).should == true
+        case {}
+        in {**nil}
+          true
+        else
+          false
+        end
+      RUBY
+
+      eval(<<~RUBY).should == false
+        case {a: 1}
+        in {**nil}
+          true
+        else
+          false
+        end
+      RUBY
+    end
+
     it "matches anything with **" do
       eval(<<~RUBY).should == true
         case {a: 1}
@@ -1328,76 +1395,115 @@ describe "Pattern matching" do
     end
   end
 
-  ruby_version_is "3.1" do
-    it "can omit parentheses in one line pattern matching" do
-      eval(<<~RUBY).should == [1, 2]
-        [1, 2] => a, b
-        [a, b]
-      RUBY
+  describe "Ruby 3.1 improvements" do
+    ruby_version_is "3.1" do
+      it "can omit parentheses in one line pattern matching" do
+        eval(<<~RUBY).should == [1, 2]
+          [1, 2] => a, b
+          [a, b]
+        RUBY
 
-      eval(<<~RUBY).should == 1
-        {a: 1} => a:
-        a
-      RUBY
-    end
+        eval(<<~RUBY).should == 1
+          {a: 1} => a:
+          a
+        RUBY
+      end
 
-    it "supports pinning instance variables" do
-      eval(<<~RUBY).should == true
-        @a = /a/
-        case 'abc'
-        in ^@a
-          true
-        end
-      RUBY
-    end
-
-    it "supports pinning class variables" do
-      result = nil
-      Module.new do
-        result = module_eval(<<~RUBY)
-          @@a = 0..10
-
-          case 2
-          in ^@@a
+      it "supports pinning instance variables" do
+        eval(<<~RUBY).should == true
+          @a = /a/
+          case 'abc'
+          in ^@a
             true
           end
         RUBY
       end
 
-      result.should == true
+      it "supports pinning class variables" do
+        result = nil
+        Module.new do
+          result = module_eval(<<~RUBY)
+            @@a = 0..10
+
+            case 2
+            in ^@@a
+              true
+            end
+          RUBY
+        end
+
+        result.should == true
+      end
+
+      it "supports pinning global variables" do
+        eval(<<~RUBY).should == true
+          $a = /a/
+          case 'abc'
+          in ^$a
+            true
+          end
+        RUBY
+      end
+
+      it "supports pinning expressions" do
+        eval(<<~RUBY).should == true
+          case 'abc'
+            in ^(/a/)
+            true
+          end
+        RUBY
+
+        eval(<<~RUBY).should == true
+          case 0
+          in ^(0+0)
+            true
+          end
+        RUBY
+      end
+
+      it "supports pinning expressions in array pattern" do
+        eval(<<~RUBY).should == true
+          case [3]
+          in [^(1+2)]
+            true
+          end
+        RUBY
+      end
+
+      it "supports pinning expressions in hash pattern" do
+        eval(<<~RUBY).should == true
+          case {name: '2.6', released_at: Time.new(2018, 12, 25)}
+            in {released_at: ^(Time.new(2010)..Time.new(2020))}
+            true
+          end
+        RUBY
+      end
+    end
+  end
+
+  describe "value in pattern" do
+    it "returns true if the pattern matches" do
+      eval("1 in 1").should == true
+
+      eval("1 in Integer").should == true
+
+      e = nil
+      eval("[1, 2] in [1, e]").should == true
+      e.should == 2
+
+      k = nil
+      eval("{k: 1} in {k:}").should == true
+      k.should == 1
     end
 
-    it "supports pinning global variables" do
-      eval(<<~RUBY).should == true
-        $a = /a/
-        case 'abc'
-        in ^$a
-          true
-        end
-      RUBY
-    end
+    it "returns false if the pattern does not match" do
+      eval("1 in 2").should == false
 
-    it "supports pinning expressions" do
-      eval(<<~RUBY).should == true
-        case 'abc'
-          in ^(/a/)
-          true
-        end
-      RUBY
+      eval("1 in Float").should == false
 
-      eval(<<~RUBY).should == true
-        case {name: '2.6', released_at: Time.new(2018, 12, 25)}
-          in {released_at: ^(Time.new(2010)..Time.new(2020))}
-          true
-        end
-      RUBY
+      eval("[1, 2] in [2, e]").should == false
 
-      eval(<<~RUBY).should == true
-        case 0
-        in ^(0+0)
-          true
-        end
-      RUBY
+      eval("{k: 1} in {k: 2}").should == false
     end
   end
 end

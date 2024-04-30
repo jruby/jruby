@@ -8,8 +8,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.util.ArrayUtils;
 import org.jruby.javasupport.Java;
-import org.jruby.javasupport.JavaArray;
-import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -66,12 +64,12 @@ public final class ArrayJavaProxy extends JavaProxy {
 
     @Override
     @Deprecated
-    protected JavaArray asJavaObject(final Object array) {
-        return new JavaArray(getRuntime(), array);
+    protected org.jruby.javasupport.JavaArray asJavaObject(final Object array) {
+        return new org.jruby.javasupport.JavaArray(getRuntime(), array);
     }
 
     @Deprecated
-    public final JavaArray getJavaArray() {
+    public final org.jruby.javasupport.JavaArray getJavaArray() {
         return asJavaObject(this.object);
     }
 
@@ -106,9 +104,11 @@ public final class ArrayJavaProxy extends JavaProxy {
         return ArrayUtils.arefDirect(context.runtime, getObject(), converter, i);
     }
 
-    @JRubyMethod(name = "[]", required = 1, rest = true)
+    @JRubyMethod(name = "[]", required = 1, rest = true, checkArity = false)
     public final IRubyObject op_aref(ThreadContext context, IRubyObject[] args) {
-        if ( args.length == 1 ) return op_aref(context, args[0]);
+        int argc = Arity.checkArgumentCount(context, args, 1, -1);
+
+        if ( argc == 1 ) return op_aref(context, args[0]);
         return getRange(context, args);
     }
 
@@ -396,8 +396,10 @@ public final class ArrayJavaProxy extends JavaProxy {
         return RubyFixnum.newFixnum(runtime, count);
     }
 
-    @JRubyMethod(name = "dig", required = 1, rest = true)
+    @JRubyMethod(name = "dig", required = 1, rest = true, checkArity = false)
     public final IRubyObject dig(ThreadContext context, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 1, -1);
+
         return dig(context, args, 0);
     }
 
@@ -538,7 +540,7 @@ public final class ArrayJavaProxy extends JavaProxy {
                     } else {
                         buf.setEncoding(s.getEncoding());
                     }
-                    buf.cat19(s);
+                    buf.catWithCodeRange(s);
                 }
                 RubyStringBuilder.cat(runtime, buf, END_BRACKET); // ]
             } finally {

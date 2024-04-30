@@ -1,1 +1,2 @@
 fails:UNIXSocket#initialize using an existing socket path sets the socket to binmode
+fails:UNIXSocket#initialize using an existing socket path sets the socket to nonblock

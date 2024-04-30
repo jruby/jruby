@@ -74,7 +74,6 @@ import java.lang.ref.WeakReference;
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.IntStream;
@@ -105,10 +104,12 @@ public final class ThreadContext {
 
     // Thread#set_trace_func for specific threads events.  We need this because successive
     // Thread.set_trace_funcs will end up replacing the current one (as opposed to add_trace_func).
-    private Ruby.CallTraceFuncHook traceFuncHook = null;
+    private TraceEventManager.CallTraceFuncHook traceFuncHook = null;
 
     // Is this thread currently with in a function trace?
     private boolean isWithinTrace;
+
+    public final TraceEventManager traceEvents;
 
     // FIXME: This should get stuffed into call path OR call site should be passed through callpath and have
     //     this in it.
@@ -176,8 +177,7 @@ public final class ThreadContext {
 
     /**
      * This fields is no longer initialized, is null by default!
-     * Use {@link #getSecureRandom()} instead.
-     * @deprecated
+     * @deprecated Use {@link #getSecureRandom()} instead.
      */
     @Deprecated
     public transient SecureRandom secureRandom;
@@ -241,6 +241,7 @@ public final class ThreadContext {
 
         this.runtimeCache = runtime.getRuntimeCache();
         this.sites = runtime.sites;
+        this.traceEvents = runtime.getTraceEvents();
 
         // TOPLEVEL self and a few others want a top-level scope.  We create this one right
         // away and then pass it into top-level parse so it ends up being the top level.
@@ -459,6 +460,7 @@ public final class ThreadContext {
      * @param tag The interned string to search for
      * @return The continuation associated with this tag
      */
+    @SuppressWarnings("ReferenceEquality")
     public CatchThrow getActiveCatch(Object tag) {
         for (int i = catchIndex; i >= 0; i--) {
             CatchThrow c = catchStack[i];
@@ -701,7 +703,7 @@ public final class ThreadContext {
     public static void pushBacktrace(ThreadContext context, String method, String file, int line) {
         int index = ++context.backtraceIndex;
         BacktraceElement[] stack = context.backtrace;
-        BacktraceElement.update(stack[index], method, file, line);
+        BacktraceElement.update(stack[index], Helpers.getSuperNameFromCompositeName(method), file, line);
         if (index + 1 == stack.length) {
             ThreadContext.expandBacktraceStack(context);
         }
@@ -730,8 +732,36 @@ public final class ThreadContext {
         return false;
     }
 
-    public String getFrameName() {
+    /**
+     * A string representing the name of the current method and the name under which it was called. If not called via
+     * an alias, this will be a single string. If called via an alias, it will be encoded as "\0alias\0original" and
+     * must be unpacked for its components.
+     *
+     * @see #getFrameName()
+     * @see #getCalleeName()
+     * @return a representation of the current method's name and the name it was called under
+     */
+    public String getCompositeName() {
         return getCurrentFrame().getName();
+    }
+
+    /**
+     * The currently-running method's original name, used for stack traces, super calls, and __method__, and trace
+     * hooks.
+     *
+     * @return the current method's name
+     */
+    public String getFrameName() {
+        return Helpers.getSuperNameFromCompositeName(getCurrentFrame().getName());
+    }
+
+    /**
+     * The name under which the current method was called, if called via an alias. Used for __callee__.
+     *
+     * @return the name under which the current method was called
+     */
+    public String getCalleeName() {
+        return Helpers.getCalleeNameFromCompositeName(getCurrentFrame().getName());
     }
 
     public IRubyObject getFrameSelf() {
@@ -752,6 +782,10 @@ public final class ThreadContext {
 
     public int getLine() {
         return backtrace[backtraceIndex].line;
+    }
+
+    public String getFileAndLine() {
+        return "" + getFile() + ":" + getLine();
     }
 
     public void setLine(int line) {
@@ -782,6 +816,7 @@ public final class ThreadContext {
         return callNumber;
     }
 
+    @SuppressWarnings("AmbiguousMethodReference")
     public void callThreadPoll() {
         if ((callNumber++ & CALL_POLL_COUNT) == 0) pollThreadEvents();
     }
@@ -804,7 +839,7 @@ public final class ThreadContext {
     }
 
     public void trace(RubyEvent event, String name, RubyModule implClass, String file, int line) {
-        runtime.callEventHooks(this, event, file, line, name, implClass);
+        traceEvents.callEventHooks(this, event, file, line, name, implClass);
     }
 
     /**
@@ -879,14 +914,13 @@ public final class ThreadContext {
         return backTrace;
     }
 
-    private RubyStackTraceElement[] getFullTrace(Integer length, Stream<StackWalker.StackFrame> stackStream) {
-        if (length != null && length == 0) return RubyStackTraceElement.EMPTY_ARRAY;
-        return TraceType.Gather.CALLER.getBacktraceData(this, stackStream).getBacktrace(runtime);
-    }
-
     private RubyStackTraceElement[] getPartialTrace(int level, Integer length, Stream<StackWalker.StackFrame> stackStream) {
         if (length != null && length == 0) return RubyStackTraceElement.EMPTY_ARRAY;
         return TraceType.Gather.CALLER.getBacktraceData(this, stackStream).getPartialBacktrace(runtime, level + length);
+    }
+
+    private RubyStackTraceElement[] getWarnTrace(int level, Stream<StackWalker.StackFrame> stackStream) {
+        return TraceType.Gather.WARN.getBacktraceData(this, stackStream).getPartialBacktrace(runtime, level + 1);
     }
 
     private static int safeLength(int level, Integer length, RubyStackTraceElement[] trace) {
@@ -904,7 +938,7 @@ public final class ThreadContext {
     public RubyStackTraceElement getSingleBacktrace(int level) {
         runtime.incrementWarningCount();
 
-        RubyStackTraceElement[] trace = WALKER.walk(stream -> getPartialTrace(level, 1, stream));
+        RubyStackTraceElement[] trace = WALKER.walk(stream -> getWarnTrace(level, stream));
 
         if (RubyInstanceConfig.LOG_WARNINGS) TraceType.logWarning(trace);
 
@@ -917,7 +951,7 @@ public final class ThreadContext {
     public RubyStackTraceElement getSingleBacktraceExact(int level) {
         runtime.incrementWarningCount();
 
-        RubyStackTraceElement[] trace = WALKER.walk(stream -> getPartialTrace(level, 1, stream));
+        RubyStackTraceElement[] trace = WALKER.walk(stream -> getWarnTrace(level, stream));
 
         if (RubyInstanceConfig.LOG_WARNINGS) TraceType.logWarning(trace);
 
@@ -960,7 +994,7 @@ public final class ThreadContext {
     public static String createRawBacktraceStringFromThrowable(final Throwable ex, final boolean color) {
         return WALKER.walk(ex.getStackTrace(), stream ->
             TraceType.printBacktraceJRuby(null,
-                    new BacktraceData(stream, Stream.empty(), true, true, false, false).getBacktraceWithoutRuby(),
+                    new BacktraceData(stream, Stream.empty(), true, true, false, false, false).getBacktraceWithoutRuby(),
                     ex.getClass().getName(),
                     ex.getLocalizedMessage(),
                     color));
@@ -1122,11 +1156,9 @@ public final class ThreadContext {
     }
 
     public void preEvalScriptlet(DynamicScope scope) {
-        pushScope(scope);
     }
 
     public void postEvalScriptlet() {
-        popScope();
     }
 
     public Frame preEvalWithBinding(Binding binding) {
@@ -1158,7 +1190,7 @@ public final class ThreadContext {
      * Is this thread actively tracing at this moment.
      *
      * @return true if so
-     * @see org.jruby.Ruby#callEventHooks(ThreadContext, RubyEvent, String, int, String, org.jruby.runtime.builtin.IRubyObject)
+     * @see org.jruby.runtime.TraceEventManager#callEventHooks(ThreadContext, RubyEvent, String, int, String, org.jruby.runtime.builtin.IRubyObject)
      */
     public boolean isWithinTrace() {
         return isWithinTrace;
@@ -1168,7 +1200,7 @@ public final class ThreadContext {
      * Set whether we are actively tracing or not on this thread.
      *
      * @param isWithinTrace true is so
-     * @see org.jruby.Ruby#callEventHooks(ThreadContext, RubyEvent, String, int, String, org.jruby.runtime.builtin.IRubyObject)
+     * @see org.jruby.runtime.TraceEventManager#callEventHooks(ThreadContext, RubyEvent, String, int, String, org.jruby.runtime.builtin.IRubyObject)
      */
     public void setWithinTrace(boolean isWithinTrace) {
         this.isWithinTrace = isWithinTrace;
@@ -1311,7 +1343,7 @@ public final class ThreadContext {
         setExceptionRequiresBacktrace(false);
     }
 
-    private Map<String, Map<IRubyObject, IRubyObject>> symToGuards;
+    private Map<String, IdentityHashMap<IRubyObject, IRubyObject>> symToGuards;
 
     // Thread#set_trace_func of nil will not only remove the one via set_trace_func but also any which
     // were added via add_trace_func.
@@ -1319,7 +1351,7 @@ public final class ThreadContext {
         // We called Thread#set_trace_func.  Remove it here since all thread trace funcs are going away.
         if (traceFuncHook != null) traceFuncHook = null;
 
-        runtime.removeAllCallEventHooksFor(this);
+        traceEvents.removeAllCallEventHooksFor(this);
 
         return nil;
     }
@@ -1327,18 +1359,18 @@ public final class ThreadContext {
     public IRubyObject addThreadTraceFunction(IRubyObject trace_func, boolean useContextHook) {
         if (!(trace_func instanceof RubyProc)) throw runtime.newTypeError("trace_func needs to be Proc.");
 
-        Ruby.CallTraceFuncHook hook;
+        TraceEventManager.CallTraceFuncHook hook;
 
         if (useContextHook) {
             hook = traceFuncHook;
             if (hook == null) {
-                hook = new Ruby.CallTraceFuncHook(this);
+                hook = new TraceEventManager.CallTraceFuncHook(this);
                 traceFuncHook = hook;
             }
         } else {
-            hook = new Ruby.CallTraceFuncHook(this);
+            hook = new TraceEventManager.CallTraceFuncHook(this);
         }
-        runtime.setTraceFunction(hook, (RubyProc) trace_func);
+        traceEvents.setTraceFunction(hook, (RubyProc) trace_func);
 
         return trace_func;
     }
@@ -1411,15 +1443,14 @@ public final class ThreadContext {
     }
 
     private Map<IRubyObject, IRubyObject> safeRecurseGetGuards(String name) {
-        Map<String, Map<IRubyObject, IRubyObject>> symToGuards = this.symToGuards;
+        Map<String, IdentityHashMap<IRubyObject, IRubyObject>> symToGuards = this.symToGuards;
         if (symToGuards == null) {
             this.symToGuards = symToGuards = new HashMap<>();
         }
 
-        Map<IRubyObject, IRubyObject> guards = symToGuards.get(name);
-        if (guards == null) {
-            guards = new IdentityHashMap<>();
-            symToGuards.put(name, guards);
+        IdentityHashMap<IRubyObject, IRubyObject> guards = symToGuards.get(name);
+        if (guards == null) {;
+            symToGuards.put(name, guards = new IdentityHashMap<>());
         }
 
         return guards;
@@ -1492,11 +1523,41 @@ public final class ThreadContext {
      * Reset call info state and return the value of call info right before
      * it is reset.
      * @return the old call info
+     * @deprecated use the trivially-inlinable static version
      */
+    @Deprecated
     public int resetCallInfo() {
-        int callInfo = this.callInfo;
-        this.callInfo = 0;
+        return resetCallInfo(this);
+    }
+
+    /**
+     * Reset call info state and return the value of call info right before
+     * it is reset. This method is static to make it trivially inlinable on
+     * most JVM JITs
+     *
+     * @return the old call info
+     */
+    public static int resetCallInfo(ThreadContext context) {
+        int callInfo = context.callInfo;
+        context.callInfo = 0;
         return callInfo;
+    }
+
+    /**
+     * Clear call info state (set to 0).
+     * @deprecated use the trivially-inlinable static version
+     */
+    @Deprecated
+    public void clearCallInfo() {
+        clearCallInfo(this);
+    }
+
+    /**
+     * Clear call info state (set to 0). This method is static to make it trivially
+     * inlinable on most JVM JITs
+     */
+    public static void clearCallInfo(ThreadContext context) {
+        context.callInfo = 0;
     }
 
     public static boolean hasKeywords(int callInfo) {

@@ -44,6 +44,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -134,8 +135,10 @@ public class RubyConverter extends RubyObject {
         super(runtime, runtime.getConverter());
     }
 
-    @JRubyMethod(visibility = PRIVATE, required = 1, optional = 2)
+    @JRubyMethod(visibility = PRIVATE, required = 1, optional = 2, checkArity = false)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 1, 3);
+
         Ruby runtime = context.runtime;
         Encoding[] encs = {null, null};
         byte[][] encNames = {null, null};
@@ -148,7 +151,7 @@ public class RubyConverter extends RubyObject {
             throw runtime.newTypeError("already initialized");
         }
 
-        if (args.length == 1 && !(convpath = args[0].checkArrayType()).isNil()) {
+        if (argc == 1 && !(convpath = args[0].checkArrayType()).isNil()) {
             ec = EncodingUtils.econvInitByConvpath(context, convpath, encNames, encs);
             ecflags[0] = 0;
             ecopts[0] = context.nil;
@@ -218,8 +221,10 @@ public class RubyConverter extends RubyObject {
     }
 
     // econv_primitive_convert
-    @JRubyMethod(required = 2, optional = 4)
+    @JRubyMethod(required = 2, optional = 4, checkArity = false)
     public IRubyObject primitive_convert(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 2, 6);
+
         Ruby runtime = context.runtime;
         
         RubyString input = null;
@@ -231,9 +236,9 @@ public class RubyConverter extends RubyObject {
         int flags = 0;
         
         int hashArg = -1;
-        
-        if (args.length > 2 && !args[2].isNil()) {
-            if (args.length == 3 && args[2] instanceof RubyHash) {
+
+        if (argc > 2 && !args[2].isNil()) {
+            if (argc == 3 && args[2] instanceof RubyHash) {
                 hashArg = 2;
             } else {
                 outputByteOffsetObj = args[2];
@@ -241,8 +246,8 @@ public class RubyConverter extends RubyObject {
             }
         }
         
-        if (args.length > 3 && !args[3].isNil()) {
-            if (args.length == 4 && args[3] instanceof RubyHash) {
+        if (argc > 3 && !args[3].isNil()) {
+            if (argc == 4 && args[3] instanceof RubyHash) {
                 hashArg = 3;
             } else {
                 outputBytesizeObj = args[3];
@@ -250,9 +255,9 @@ public class RubyConverter extends RubyObject {
             }
         }
         
-        if (args.length > 4 && !args[4].isNil()) {
-            if (args.length > 5 && !args[5].isNil()) {
-                throw runtime.newArgumentError(args.length, 5);
+        if (argc > 4 && !args[4].isNil()) {
+            if (argc > 5 && !args[5].isNil()) {
+                throw runtime.newArgumentError(argc, 5);
             }
             
             if (args[4] instanceof RubyHash) {
@@ -282,12 +287,12 @@ public class RubyConverter extends RubyObject {
             inBytes = new ByteList();
         } else {
             input = args[0].convertToString();
-            input.modify19();
+            input.modifyAndClearCodeRange();
             inBytes = input.getByteList();
         }
         
         output = args[1].convertToString();
-        output.modify19();
+        output.modifyAndClearCodeRange();
         outBytes = output.getByteList();
 
         Ptr inPtr = new Ptr();
@@ -519,7 +524,7 @@ public class RubyConverter extends RubyObject {
         return ary;
     }
 
-    @JRubyMethod(meta = true, required = 2, optional = 1)
+    @JRubyMethod(meta = true, required = 2, optional = 1, checkArity = false)
     public static IRubyObject search_convpath(ThreadContext context, IRubyObject self, IRubyObject[] argv) {
         final Ruby runtime = context.runtime;
         final IRubyObject nil = context.nil;
@@ -591,15 +596,17 @@ public class RubyConverter extends RubyObject {
     }
 
     // econv_putback
-    @JRubyMethod(required = 0, optional = 1)
+    @JRubyMethod(optional = 1, checkArity = false)
     public IRubyObject putback(ThreadContext context, IRubyObject[] argv)
     {
+        int argc = Arity.checkArgumentCount(context, argv, 0, 1);
+
         Ruby runtime = context.runtime;
         int n;
         int putbackable;
         IRubyObject str, max;
 
-        if (argv.length == 0) {
+        if (argc == 0) {
             max = context.nil;
         } else {
             max = argv[0];

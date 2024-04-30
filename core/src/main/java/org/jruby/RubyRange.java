@@ -45,6 +45,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.API;
 import org.jruby.exceptions.JumpException;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock;
@@ -285,8 +286,10 @@ public class RubyRange extends RubyObject {
         }
     }
 
-    @JRubyMethod(required = 2, optional = 1, visibility = PRIVATE)
+    @JRubyMethod(required = 2, optional = 1, checkArity = false, visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block unusedBlock) {
+        Arity.checkArgumentCount(context, args, 2, 3);
+
         if (this.isInited) throw context.runtime.newFrozenError("`initialize' called twice", this);
         checkFrozen();
         init(context, args[0], args[1], args.length > 2 && args[2].isTrue());
@@ -294,7 +297,7 @@ public class RubyRange extends RubyObject {
         return context.nil;
     }
 
-    @JRubyMethod(required = 1, visibility = PRIVATE)
+    @JRubyMethod(visibility = PRIVATE)
     public IRubyObject initialize_copy(ThreadContext context, IRubyObject original) {
         if (this.isInited) throw context.runtime.newFrozenError("`initialize' called twice", this);
 
@@ -333,20 +336,16 @@ public class RubyRange extends RubyObject {
     }
 
     private static RubyString inspectValue(final ThreadContext context, IRubyObject value) {
-        return (RubyString) context.safeRecurse(INSPECT_RECURSIVE, value, value, "inspect", true);
+        return (RubyString) context.safeRecurse(RubyRange::inspectValueRecursive, value, value, "inspect", true);
     }
 
-    private static class InspectRecursive implements ThreadContext.RecursiveFunctionEx<IRubyObject> {
-        @Override
-        public IRubyObject call(ThreadContext context, IRubyObject state, IRubyObject obj, boolean recur) {
-            if (recur) {
-                return RubyString.newString(context.runtime, ((RubyRange) obj).isExclusive ? "(... ... ...)" : "(... .. ...)");
-            } else {
-                return inspect(context, obj);
-            }
+    private static IRubyObject inspectValueRecursive(ThreadContext context, IRubyObject state, IRubyObject obj, boolean recur) {
+        if (recur) {
+            return RubyString.newString(context.runtime, ((RubyRange) obj).isExclusive ? "(... ... ...)" : "(... .. ...)");
+        } else {
+            return inspect(context, obj);
         }
     }
-    private static final InspectRecursive INSPECT_RECURSIVE = new InspectRecursive();
 
     private static final byte[] DOTDOTDOT = new byte[]{'.', '.', '.'};
 
@@ -387,12 +386,12 @@ public class RubyRange extends RubyObject {
         return getRuntime().newBoolean(isExclusive);
     }
     
-    @JRubyMethod(name = "eql?", required = 1)
+    @JRubyMethod(name = "eql?")
     public IRubyObject eql_p(ThreadContext context, IRubyObject other) {
         return equalityInner(context, other, MethodNames.EQL);
     }
 
-    @JRubyMethod(name = "==", required = 1)
+    @JRubyMethod(name = "==")
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         return equalityInner(context, other, MethodNames.OP_EQUAL);
     }
@@ -1143,7 +1142,7 @@ public class RubyRange extends RubyObject {
             RubyRange range = (RubyRange) obj;
 
             marshalStream.registerLinkTarget(range);
-            List<Variable<Object>> attrs = range.getVariableList();
+            List<Variable<Object>> attrs = range.getMarshalVariableList();
 
             attrs.add(new VariableEntry<Object>("excl", range.isExclusive ? runtime.getTrue() : runtime.getFalse()));
             attrs.add(new VariableEntry<Object>("begin", range.begin));

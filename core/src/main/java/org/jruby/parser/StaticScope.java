@@ -56,6 +56,7 @@ import org.jruby.ast.VCallNode;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Signature;
@@ -731,14 +732,7 @@ public class StaticScope implements Serializable {
         this.ivarNames = ivarWrites;
     }
 
-    private boolean isTopScopeEvals() {
-        Ruby runtime = cref.getRuntime();
-        StaticScope scope = this;
-        while (scope != null && scope.type == Type.EVAL) {
-            if (cref != runtime.getTopSelf()) return false;
-            scope = scope.enclosingScope;
-        }
-
-        return scope != null && scope.enclosingScope == null;
+    public boolean isRuby2Keywords() {
+        return irScope.isRuby2Keywords();
     }
 }

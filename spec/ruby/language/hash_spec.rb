@@ -33,7 +33,7 @@ describe "Hash literal" do
   end
 
   it "freezes string keys on initialization" do
-    key = "foo"
+    key = +"foo"
     h = {key => "bar"}
     key.reverse!
     h["foo"].should == "bar"
@@ -190,6 +190,24 @@ describe "Hash literal" do
     utf8_hash.keys.first.should == usascii_hash.keys.first
     usascii_hash.keys.first.encoding.should == Encoding::US_ASCII
   end
+
+  ruby_bug "#20280", ""..."3.4" do
+    it "raises a SyntaxError at parse time when Symbol key with invalid bytes" do
+      ScratchPad.record []
+      -> {
+        eval 'ScratchPad << 1; {:"\xC3" => 1}'
+      }.should raise_error(SyntaxError, /invalid symbol/)
+      ScratchPad.recorded.should == []
+    end
+
+    it "raises a SyntaxError at parse time when Symbol key with invalid bytes and 'key: value' syntax used" do
+      ScratchPad.record []
+      -> {
+        eval 'ScratchPad << 1; {"\xC3": 1}'
+      }.should raise_error(SyntaxError, /invalid symbol/)
+      ScratchPad.recorded.should == []
+    end
+  end
 end
 
 describe "The ** operator" do
@@ -204,8 +222,8 @@ describe "The ** operator" do
     h.should == { one: 1, two: 2 }
   end
 
-  ruby_version_is ""..."3.0" do
-    it "makes a caller-side copy when calling a method taking a positional Hash" do
+  ruby_bug "#20012", ""..."3.3" do
+    it "makes a copy when calling a method taking a positional Hash" do
       def m(h)
         h.delete(:one); h
       end
@@ -214,19 +232,6 @@ describe "The ** operator" do
       m(**h).should == { two: 2 }
       m(**h).should_not.equal?(h)
       h.should == { one: 1, two: 2 }
-    end
-  end
-
-  ruby_version_is "3.0" do
-    it "does not copy when calling a method taking a positional Hash" do
-      def m(h)
-        h.delete(:one); h
-      end
-
-      h = { one: 1, two: 2 }
-      m(**h).should == { two: 2 }
-      m(**h).should.equal?(h)
-      h.should == { two: 2 }
     end
   end
 

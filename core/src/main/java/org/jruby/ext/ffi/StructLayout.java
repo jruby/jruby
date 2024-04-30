@@ -50,6 +50,7 @@ import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -148,9 +149,9 @@ public final class StructLayout extends Type {
     
     
     /**
-     * Creates a new <tt>StructLayout</tt> instance.
+     * Creates a new <code>StructLayout</code> instance.
      *
-     * @param runtime The runtime for the <tt>StructLayout</tt>.
+     * @param runtime The runtime for the <code>StructLayout</code>.
      * @param fields The fields map for this struct.
      * @param size the total size of the struct.
      * @param alignment The minimum alignment required when allocating memory.
@@ -213,9 +214,10 @@ public final class StructLayout extends Type {
         this.isUnion = offset == 0 && memberList.size() > 1;
     }
     
-    @JRubyMethod(name = "new", meta = true, required = 3, optional = 1)
+    @JRubyMethod(name = "new", meta = true, required = 3, optional = 1, checkArity = false)
     public static final IRubyObject newStructLayout(ThreadContext context, IRubyObject klass, 
             IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 3, 4);
 
         IRubyObject rbFields = args[0], size = args[1], alignment = args[2];
 
@@ -230,25 +232,25 @@ public final class StructLayout extends Type {
     }
 
     /**
-     * Gets the value of the struct member corresponding to <tt>name</tt>.
+     * Gets the value of the struct member corresponding to <code>name</code>.
      * 
      * @param ptr The address of the structure in memory.
      * @param name The name of the member.
      * @return A ruby value for the native value of the struct member.
      */
-    @JRubyMethod(name = "get", required = 2)
+    @JRubyMethod(name = "get")
     public IRubyObject get(ThreadContext context, IRubyObject ptr, IRubyObject name) {
         return getValue(context, name, nullStorage, ptr);
     }
     
     /**
-     * Sets the native value of the struct member corresponding to <tt>name</tt>.
+     * Sets the native value of the struct member corresponding to <code>name</code>.
      * 
      * @param ptr The address of the structure in memory.
      * @param name The name of the member.
      * @return A ruby value for the native value of the struct member.
      */
-    @JRubyMethod(name = "put", required = 3)
+    @JRubyMethod(name = "put")
     public IRubyObject put(ThreadContext context, IRubyObject ptr, IRubyObject name, IRubyObject value) {
         putValue(context, name, nullStorage, ptr, value);
 
@@ -258,7 +260,7 @@ public final class StructLayout extends Type {
     /**
      * Gets a ruby array of the names of all members of this struct.
      * 
-     * @return a <tt>RubyArray</tt> containing the names of all members.
+     * @return a <code>RubyArray</code> containing the names of all members.
      */
     @JRubyMethod(name = "members")
     public IRubyObject members(ThreadContext context) {
@@ -272,7 +274,7 @@ public final class StructLayout extends Type {
     /**
      * Gets a ruby array of the offsets of all members of this struct.
      *
-     * @return a <tt>RubyArray</tt> containing the offsets of all members.
+     * @return a <code>RubyArray</code> containing the offsets of all members.
      */
     @JRubyMethod(name = "offsets")
     public IRubyObject offsets(ThreadContext context) {
@@ -380,7 +382,7 @@ public final class StructLayout extends Type {
      * Returns a {@link Member} descriptor for a struct field.
      * 
      * @param name The name of the struct field.
-     * @return A <tt>Member</tt> descriptor.
+     * @return A <code>Member</code> descriptor.
      */
     final Member getMember(Ruby runtime, IRubyObject name) {
         Member m;
@@ -404,7 +406,7 @@ public final class StructLayout extends Type {
      * Returns a {@link Field} descriptor for a struct field.
      *
      * @param name The name of the struct field.
-     * @return A <tt>Member</tt> descriptor.
+     * @return A <code>Member</code> descriptor.
      */
     final Field getField(Ruby runtime, IRubyObject name) {
         return getMember(runtime, name).field;
@@ -558,14 +560,14 @@ public final class StructLayout extends Type {
         /**
          * Gets the cacheable status of this Struct member
          *
-         * @return <tt>true</tt> if this member type is cacheable
+         * @return <code>true</code> if this member type is cacheable
          */
         public abstract boolean isCacheable();
 
         /**
          * Checks if a reference to the ruby object assigned to this field needs to be stored
          *
-         * @return <tt>true</tt> if this member type requires the ruby value to be stored.
+         * @return <code>true</code> if this member type requires the ruby value to be stored.
          */
         public abstract boolean isValueReferenceNeeded();
     }
@@ -647,8 +649,9 @@ public final class StructLayout extends Type {
             init(args[0], args[2], args[1], io);
         }
 
-        @JRubyMethod(name="initialize", visibility = PRIVATE, required = 3, optional = 1)
+        @JRubyMethod(name="initialize", visibility = PRIVATE, required = 3, optional = 1, checkArity = false)
         public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+            Arity.checkArgumentCount(context, args, 3, 4);
             
             init(args[0], args[2], args[1]);
 
@@ -686,7 +689,7 @@ public final class StructLayout extends Type {
         /**
          * Gets the cacheable status of this Struct member
          *
-         * @return <tt>true</tt> if this member type is cacheable
+         * @return <code>true</code> if this member type is cacheable
          */
         public final boolean isCacheable() {
             return io.isCacheable();
@@ -695,7 +698,7 @@ public final class StructLayout extends Type {
         /**
          * Checks if a reference to the ruby object assigned to this field needs to be stored
          *
-         * @return <tt>true</tt> if this member type requires the ruby value to be stored.
+         * @return <code>true</code> if this member type requires the ruby value to be stored.
          */
         public final boolean isValueReferenceNeeded() {
             return io.isValueReferenceNeeded();
@@ -828,8 +831,9 @@ public final class StructLayout extends Type {
         }
 
         @Override
-        @JRubyMethod(name="initialize", visibility = PRIVATE, required = 3, optional = 1)
+        @JRubyMethod(name="initialize", visibility = PRIVATE, required = 3, optional = 1, checkArity = false)
         public final IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+            Arity.checkArgumentCount(context, args, 3, 4);
             
             IRubyObject type = args[2];
 
@@ -850,8 +854,9 @@ public final class StructLayout extends Type {
         }
         
         @Override
-        @JRubyMethod(name="initialize", visibility = PRIVATE, required = 3, optional = 1)
+        @JRubyMethod(name="initialize", visibility = PRIVATE, required = 3, optional = 1, checkArity = false)
         public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+            Arity.checkArgumentCount(context, args, 3, 4);
 
             IRubyObject type = args[2];
 
@@ -873,8 +878,9 @@ public final class StructLayout extends Type {
         }
 
         @Override
-        @JRubyMethod(name="initialize", visibility = PRIVATE, required = 3, optional = 1)
+        @JRubyMethod(name="initialize", visibility = PRIVATE, required = 3, optional = 1, checkArity = false)
         public final IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+            Arity.checkArgumentCount(context, args, 3, 4);
 
             IRubyObject type = args[2];
             if (!(type instanceof Type.Array)) {
@@ -1051,7 +1057,7 @@ public final class StructLayout extends Type {
     }
 
     /**
-     * Enum (maps :foo => 1, :bar => 2, etc)
+     * Enum (maps :foo =&gt; 1, :bar => 2, etc)
      */
     static final class EnumFieldIO implements FieldIO {
         private final MemoryOp op;

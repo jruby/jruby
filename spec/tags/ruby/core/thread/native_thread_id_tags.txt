@@ -1,0 +1,1 @@
+fails:Thread#native_thread_id each thread has different native thread id

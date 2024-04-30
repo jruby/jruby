@@ -8,8 +8,6 @@ import org.jruby.RubyFixnum;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.javasupport.Java;
-import org.jruby.javasupport.JavaArray;
-import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -210,7 +208,7 @@ public class ArrayUtils {
 
     @Deprecated // not used
     public static void copyDataToJavaArray(
-            ThreadContext context, RubyArray rubyArray, int src, JavaArray javaArray, int dest, int length) {
+            ThreadContext context, RubyArray rubyArray, int src, org.jruby.javasupport.JavaArray javaArray, int dest, int length) {
         Class targetType = javaArray.getComponentType();
 
         int destLength = (int)javaArray.length().getLongValue();

@@ -257,17 +257,6 @@ public class Java implements Library {
         return proxyClass;
     }
 
-    @Deprecated // no longer used
-    public static IRubyObject get_java_class(final IRubyObject self, final IRubyObject name) {
-        try {
-            return JavaClass.for_name(self, name);
-        }
-        catch (Exception e) {
-            self.getRuntime().getJavaSupport().handleNativeException(e, null);
-            return self.getRuntime().getNil();
-        }
-    }
-
     /**
      * Same as Java#getInstance(runtime, rawJavaObject, false).
      */
@@ -332,10 +321,6 @@ public class Java implements Library {
             throw runtime.newArgumentError("expected a Java class, got " + java_class.inspect());
         }
 
-        if ( java_class instanceof JavaClass ) { // legacy
-            return ((JavaClass) java_class).javaClass();
-        }
-
         throw runtime.newArgumentError("expected a Java class (or String), got " + java_class.inspect());
     }
 
@@ -360,7 +345,7 @@ public class Java implements Library {
             klass = resolveShortClassName(className);
             if (klass == null) klass = getJavaClass(runtime, className);
         } else {
-            klass = resolveClassType(runtime, type);
+            klass = resolveClassType(type);
             if (klass == null) {
                 throw runtime.newTypeError("expected a Java class, got: " + type);
             }
@@ -369,7 +354,7 @@ public class Java implements Library {
     }
 
     // this should handle the type returned from Class#java_class
-    static Class<?> resolveClassType(final Ruby runtime, final IRubyObject type) {
+    static Class<?> resolveClassType(final IRubyObject type) {
         if (type instanceof JavaProxy) { // due Class#java_class wrapping
             final Object wrapped = ((JavaProxy) type).getObject();
             if (wrapped instanceof Class) return (Class) wrapped;
@@ -377,11 +362,7 @@ public class Java implements Library {
         }
 
         if (type instanceof RubyModule) { // assuming a proxy module/class e.g. to_java(java.lang.String)
-            return JavaClass.getJavaClassIfProxy(runtime.getCurrentContext(), (RubyModule) type);
-        } else {
-            if (type instanceof JavaClass) { // handle legacy JavaClass
-                return ((JavaClass) type).javaClass();
-            }
+            return JavaUtil.getJavaClass((RubyModule) type, null);
         }
         return null;
     }
@@ -433,9 +414,14 @@ public class Java implements Library {
 
     @SuppressWarnings("deprecation")
     public static RubyModule getProxyClass(final Ruby runtime, final Class<?> clazz) {
+        return getProxyClass(runtime, clazz, Options.JI_EAGER_CONSTANTS.load());
+    }
+
+    @SuppressWarnings("deprecation")
+    public static RubyModule getProxyClass(final Ruby runtime, final Class<?> clazz, boolean setConstant) {
         RubyModule proxy = runtime.getJavaSupport().getUnfinishedProxy(clazz);
         if (proxy != null) return proxy;
-        return runtime.getJavaSupport().getProxyClassFromCache(clazz);
+        return runtime.getJavaSupport().getProxyClassFromCache(clazz, setConstant);
     }
 
     // expected to handle Java proxy (Ruby) sub-classes as well
@@ -492,7 +478,6 @@ public class Java implements Library {
             proxy.includeModule(extModule);
         }
         Initializer.setupProxyModule(runtime, javaClass, proxy);
-        addToJavaPackageModule(proxy);
     }
 
     private static void generateClassProxy(Ruby runtime, Class<?> clazz, RubyClass proxy, RubyClass superClass) {
@@ -514,7 +499,6 @@ public class Java implements Library {
             } else {
                 proxy.getMetaClass().defineAnnotatedMethods(OldStyleExtensionInherited.class);
             }
-            addToJavaPackageModule(proxy);
         }
         else {
             createProxyClass(runtime, proxy, clazz, superClass, false);
@@ -522,9 +506,6 @@ public class Java implements Library {
             final Class<?>[] interfaces = clazz.getInterfaces();
             for ( int i = interfaces.length; --i >= 0; ) {
                 proxy.includeModule(getInterfaceModule(runtime, interfaces[i]));
-            }
-            if ( Modifier.isPublic(clazz.getModifiers()) ) {
-                addToJavaPackageModule(proxy);
             }
         }
 
@@ -843,9 +824,7 @@ public class Java implements Library {
 
     // package scheme 2: separate module for each full package name, constructed
     // from the camel-cased package segments: Java::JavaLang::Object,
-    private static void addToJavaPackageModule(RubyModule proxyClass) {
-        final Ruby runtime = proxyClass.getRuntime();
-        final Class<?> clazz = (Class<?>)proxyClass.dataGetStruct();
+    static void addToJavaPackageModule(Ruby runtime, Class<?> clazz, RubyModule proxyClass) {
         final String fullName;
         if ( ( fullName = clazz.getName() ) == null ) return;
 
@@ -1093,7 +1072,7 @@ public class Java implements Library {
         } catch (ClassNotFoundException ex) { // used to catch NoClassDefFoundError for whatever reason
             return null;
         }
-        return getProxyClass(runtime, clazz);
+        return getProxyClass(runtime, clazz, true);
     }
 
     private static int mapMajorMinorClassVersionToJavaVersion(String msg, final int offset) {
@@ -1202,7 +1181,7 @@ public class Java implements Library {
             return this.packageOrClass;
         }
 
-        @Override
+        @Deprecated @Override
         public Arity getArity() { return Arity.noArguments(); }
 
     }
@@ -1281,7 +1260,7 @@ public class Java implements Library {
 
         if (name.length() == 0) throw runtime.newArgumentError("empty class name");
 
-        Class<?> enclosing = JavaClass.getJavaClass(context, enclosingClass);
+        Class<?> enclosing = JavaUtil.getJavaClass(enclosingClass, null);
 
         if (enclosing == null) return null;
 
@@ -1719,7 +1698,7 @@ public class Java implements Library {
     /**
      * @param iface
      * @return the sole un-implemented method for a functional-style interface or null
-     * @note This method is internal and might be subject to change, do not assume its part of JRuby's API!
+     * <p>Note: This method is internal and might be subject to change, do not assume its part of JRuby's API!</p>
      */
     public static Method getFunctionalInterfaceMethod(final Class<?> iface) {
         assert iface.isInterface();

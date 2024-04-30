@@ -62,7 +62,7 @@ public abstract class AbstractInvoker extends Pointer {
     }
     
     /**
-     * Creates a new <tt>AbstractInvoker</tt> instance.
+     * Creates a new <code>AbstractInvoker</code> instance.
      * @param arity
      */
     protected AbstractInvoker(Ruby runtime, RubyClass klass, int arity, MemoryIO io) {
@@ -73,7 +73,8 @@ public abstract class AbstractInvoker extends Pointer {
     /**
      * Attaches this function to a ruby module or class.
      * 
-     * @param module The module or class to attach the function to.
+     * @param context The thread context.
+     * @param obj The module or class to attach the function to.
      * @param methodName The ruby name to attach the function as.
      */
     @JRubyMethod(name="attach")
@@ -93,7 +94,7 @@ public abstract class AbstractInvoker extends Pointer {
     /**
      * Returns the {@link org.jruby.runtime.Arity} of this function.
      * 
-     * @return The <tt>Arity</tt> of the native function.
+     * @return The <code>Arity</code> of the native function.
      */
     public final Arity getArity() {
         return arity;

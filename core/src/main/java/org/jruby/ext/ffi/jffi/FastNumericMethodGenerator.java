@@ -68,7 +68,7 @@ final class FastNumericMethodGenerator extends AbstractNumericMethodGenerator {
         return isFastNumericResult(platform, signature.getResultType());
     }
 
-
+    @SuppressWarnings("ReturnValueIgnored")
     final static int getMaximumFastNumericParameters() {
         try {
             com.kenai.jffi.Invoker.class.getDeclaredMethod("invokeN6", CallContext.class, long.class,

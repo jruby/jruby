@@ -40,8 +40,14 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Represents a method which has been aliased.
@@ -53,13 +59,15 @@ import org.jruby.runtime.callsite.CacheEntry;
 public class AliasMethod extends DynamicMethod {
     private final CacheEntry entry;
     private final boolean findImplementer;
+    private final String newName;
+    private final String compoundName;
 
     /**
      * For some java native methods it is convenient to pass in a String instead
      * of a ByteList.
      */ 
-    public AliasMethod(RubyModule implementationClass, CacheEntry entry, String oldName) {
-        super(implementationClass, entry.method.getVisibility(), oldName);
+    public AliasMethod(RubyModule implementationClass, CacheEntry entry, String newName, String oldName) {
+        super(implementationClass, determineVisibility(newName, entry.method.getVisibility()), oldName);
         entry.method.getRealMethod().adjustAliasCount(1);
 
         this.entry = entry;
@@ -75,60 +83,71 @@ public class AliasMethod extends DynamicMethod {
         }
 
         this.findImplementer = findImplementer;
+
+        // encode both old and new names in one to pass a single string
+        this.newName = newName;
+        this.compoundName = "\0" + newName + "\0" + oldName;
+    }
+
+    private static List<String> ALWAYS_PRIVATE_NAMES = Arrays.asList("initialize", "initialize_copy", "initialize_clone", "initialize_dup", "respond_to_missing?");
+    private static Visibility determineVisibility(String newName, Visibility visibility) {
+        return ALWAYS_PRIVATE_NAMES.contains(newName) ?
+                Visibility.PRIVATE :
+                visibility;
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused) {
-        return entry.method.call(context, self, calculateSourceModule(self, klazz), name);
+        return entry.method.call(context, self, calculateSourceModule(self, klazz), compoundName);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject arg) {
-        return entry.method.call(context, self, calculateSourceModule(self, klazz), name, arg);
+        return entry.method.call(context, self, calculateSourceModule(self, klazz), compoundName, arg);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject arg1, IRubyObject arg2) {
-        return entry.method.call(context, self, calculateSourceModule(self, klazz), name, arg1, arg2);
+        return entry.method.call(context, self, calculateSourceModule(self, klazz), compoundName, arg1, arg2);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-        return entry.method.call(context, self, calculateSourceModule(self, klazz), name, arg1, arg2, arg3);
+        return entry.method.call(context, self, calculateSourceModule(self, klazz), compoundName, arg1, arg2, arg3);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject[] args) {
-        return entry.method.call(context, self, calculateSourceModule(self, klazz), name, args);
+        return entry.method.call(context, self, calculateSourceModule(self, klazz), compoundName, args);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, Block block) {
-        return entry.method.call(context, self, calculateSourceModule(self, klazz), name, block);
+        return entry.method.call(context, self, calculateSourceModule(self, klazz), compoundName, block);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject arg1, Block block) {
-        return entry.method.call(context, self, calculateSourceModule(self, klazz), name, arg1, block);
+        return entry.method.call(context, self, calculateSourceModule(self, klazz), compoundName, arg1, block);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return entry.method.call(context, self, calculateSourceModule(self, klazz), name, arg1, arg2, block);
+        return entry.method.call(context, self, calculateSourceModule(self, klazz), compoundName, arg1, arg2, block);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
-        return entry.method.call(context, self, calculateSourceModule(self, klazz), name, arg1, arg2, arg3, block);
+        return entry.method.call(context, self, calculateSourceModule(self, klazz), compoundName, arg1, arg2, arg3, block);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String unused, IRubyObject[] args, Block block) {
-        return entry.method.call(context, self, calculateSourceModule(self, klazz), name, args, block);
+        return entry.method.call(context, self, calculateSourceModule(self, klazz), compoundName, args, block);
     }
 
     public DynamicMethod dup() {
-        return new AliasMethod(implementationClass, entry, name);
+        return new AliasMethod(implementationClass, entry, newName, name);
     }
 
 

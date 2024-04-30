@@ -447,7 +447,8 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         RubyString str = RubyString.newString(runtime, getBytes());
 
-        if (!(isPrintable(runtime) && (resenc.equals(getBytes().getEncoding()) || str.isAsciiOnly()) && isSymbolName(symbol))) {
+        if (!(isPrintable(runtime) && (resenc.equals(getBytes().getEncoding()) || str.isAsciiOnly()) &&
+                isSymbolName(symbol))) {
             str = str.inspect(runtime);
         }
 
@@ -503,13 +504,13 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return to_s(metaClass.runtime);
     }
 
-    @JRubyMethod(name = "===", required = 1)
+    @JRubyMethod(name = "===")
     @Override
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
         return RubyBoolean.newBoolean(context, this == other);
     }
 
-    @JRubyMethod(name = "==", required = 1)
+    @JRubyMethod(name = "==")
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         return RubyBoolean.newBoolean(context, this == other);
@@ -609,7 +610,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return newShared(context.runtime).match19(context, other, pos, block);
     }
 
-    @JRubyMethod(name = "match", required = 1, rest = true)
+    @JRubyMethod(name = "match", required = 1, rest = true, checkArity = false)
     public IRubyObject match_m(ThreadContext context, IRubyObject[] args, Block block) {
         return newShared(context.runtime).match19(context, args, block);
     }
@@ -890,7 +891,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     private static boolean isSymbolLocal(final String str, final char first, final int length) {
         if (!isIdentStart(first)) return false;
 
-        boolean localID = (first >= 'a' && first <= 'z');
+        boolean localID = isIdentStart(first);
         int last = 1;
 
         for (; last < length; last++) {
@@ -1427,6 +1428,11 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
             h = 31 * h + v;
         }
         return h;
+    }
+
+    @Override
+    public Class getJavaClass() {
+        return String.class;
     }
 
     @Override

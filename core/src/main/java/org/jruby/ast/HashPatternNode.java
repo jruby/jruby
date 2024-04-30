@@ -60,22 +60,15 @@ public class HashPatternNode extends Node {
     }
 
     public boolean hasKeywordArgs() {
-        return keywordArgs != null;
+        return keywordArgs != null && !keywordArgs.isEmpty() || hasRestArg();
     }
 
     public HashNode getKeywordArgs() {
         return keywordArgs;
     }
 
-    public List getKeys() {
-        List<KeyValuePair<Node,Node>> pairs = keywordArgs.getPairs();
-        List<Node> keys = new ArrayList<>(pairs.size());
-
-        for (KeyValuePair<Node, Node> pair: pairs) {
-            keys.add(pair.getKey());
-        }
-
-        return keys;
+    public Node[] getKeys() {
+        return keywordArgs.getKeys();
     }
 
     public boolean hashNamedKeywordRestArg() {

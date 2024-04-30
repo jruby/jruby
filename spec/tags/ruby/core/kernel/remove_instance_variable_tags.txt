@@ -1,2 +1,0 @@
-fails:Kernel#remove_instance_variable raises a FrozenError if self is frozen
-fails:Kernel#remove_instance_variable raises for frozen objects

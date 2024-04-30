@@ -85,20 +85,10 @@ describe :string_each_line, shared: true do
     end
   end
 
-  ruby_version_is ''...'3.0' do
-    it "yields subclass instances for subclasses" do
-      a = []
-      StringSpecs::MyString.new("hello\nworld").send(@method) { |s| a << s.class }
-      a.should == [StringSpecs::MyString, StringSpecs::MyString]
-    end
-  end
-
-  ruby_version_is '3.0' do
-    it "yields String instances for subclasses" do
-      a = []
-      StringSpecs::MyString.new("hello\nworld").send(@method) { |s| a << s.class }
-      a.should == [String, String]
-    end
+  it "yields String instances for subclasses" do
+    a = []
+    StringSpecs::MyString.new("hello\nworld").send(@method) { |s| a << s.class }
+    a.should == [String, String]
   end
 
   it "returns self" do
@@ -116,7 +106,7 @@ describe :string_each_line, shared: true do
   end
 
   it "does not care if the string is modified while substituting" do
-    str = "hello\nworld."
+    str = +"hello\nworld."
     out = []
     str.send(@method){|x| out << x; str[-1] = '!' }.should == "hello\nworld!"
     out.should == ["hello\n", "world."]

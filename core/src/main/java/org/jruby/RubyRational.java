@@ -1082,7 +1082,7 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = "floor")
     public IRubyObject floor(ThreadContext context) {
-        return roundCommon(context, context.nil, RoundingMode.FLOOR);
+        return roundCommon(context, null, RoundingMode.FLOOR);
     }
 
     @JRubyMethod(name = "floor")
@@ -1101,7 +1101,7 @@ public class RubyRational extends RubyNumeric {
     @Override
     @JRubyMethod(name = "ceil")
     public IRubyObject ceil(ThreadContext context) {
-        return roundCommon(context, context.nil, RoundingMode.CEILING);
+        return roundCommon(context, null, RoundingMode.CEILING);
     }
 
     @JRubyMethod(name = "ceil")
@@ -1139,7 +1139,7 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = "truncate")
     public IRubyObject truncate(ThreadContext context) {
-        return roundCommon(context, context.nil, RoundingMode.UNNECESSARY);
+        return roundCommon(context, null, RoundingMode.UNNECESSARY);
     }
 
     @JRubyMethod(name = "truncate")
@@ -1156,14 +1156,14 @@ public class RubyRational extends RubyNumeric {
 
     @JRubyMethod(name = "round")
     public IRubyObject round(ThreadContext context) {
-        return roundCommon(context, context.nil, RoundingMode.HALF_UP);
+        return roundCommon(context, null, RoundingMode.HALF_UP);
     }
 
     @JRubyMethod(name = "round")
     public IRubyObject round(ThreadContext context, IRubyObject n) {
 
         IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, n);
-        if (opts != context.nil) n = context.nil;
+        if (opts != context.nil) n = null;
 
         RoundingMode mode = RubyNumeric.getRoundingMode(context, opts);
 
@@ -1183,14 +1183,15 @@ public class RubyRational extends RubyNumeric {
 
     // MRI: f_round_common
     public IRubyObject roundCommon(ThreadContext context, final IRubyObject n, RoundingMode mode) {
-        if (n == context.nil) {
+        // case : precision arg is not given
+        if (n == null) {
             return doRound(context, mode);
         }
 
         final Ruby runtime = context.runtime;
 
         if (!(n instanceof RubyInteger)) {
-            throw runtime.newTypeError(n, runtime.getInteger());
+            throw runtime.newTypeError("not an integer");
         }
 
         final int nsign = ((RubyInteger) n).signum();
@@ -1391,12 +1392,13 @@ public class RubyRational extends RubyNumeric {
     /** nurat_rationalize
      *
      */
-    @JRubyMethod(name = "rationalize", optional = 1)
+    @JRubyMethod(name = "rationalize", optional = 1, checkArity = false)
     public IRubyObject rationalize(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 0, 1);
 
         IRubyObject a, b;
 
-        if (args.length == 0) return to_r(context);
+        if (argc == 0) return to_r(context);
 
         if (f_negative_p(context, this)) {
             return f_negate(context, ((RubyRational) f_abs(context, this)).rationalize(context, args));
@@ -1558,11 +1560,11 @@ public class RubyRational extends RubyNumeric {
             IRubyObject de = match.at(3);
             IRubyObject re = match.post_match(context);
             
-            RubyArray a = nu.split(context, RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.an_e_pat), false);
+            RubyArray a = nu.split(context, RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.an_e_pat));
             RubyString ifp = (RubyString)a.eltInternal(0);
             IRubyObject exp = a.size() != 2 ? nil : a.eltInternal(1);
             
-            a = ifp.split(context, RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.a_dot_pat), false);
+            a = ifp.split(context, runtime.newString("."));
             IRubyObject ip = a.eltInternal(0);
             IRubyObject fp = a.size() != 2 ? nil : a.eltInternal(1);
             

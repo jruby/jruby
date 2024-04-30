@@ -8,7 +8,7 @@ project 'JRuby Integration Tests' do
   inherit 'org.jruby:jruby-parent', version
   id 'org.jruby:jruby-tests'
 
-  extension 'org.torquebox.mojo:mavengem-wagon:1.0.3'
+  extension 'org.jruby.maven:mavengem-wagon:2.0.2'
 
   repository :id => :mavengems, :url => 'mavengem:http://rubygems.org'
   plugin_repository :id => :mavengems, :url => 'mavengem:http://rubygems.org'
@@ -41,7 +41,7 @@ project 'JRuby Integration Tests' do
     plugin( 'org.eclipse.m2e:lifecycle-mapping:1.0.0',
             'lifecycleMappingMetadata' => {
               'pluginExecutions' => [ { 'pluginExecutionFilter' => {
-                                          'groupId' =>  'de.saumya.mojo',
+                                          'groupId' =>  'org.jruby.maven',
                                           'artifactId' =>  'gem-maven-plugin',
                                           'versionRange' =>  '[1.0.0-rc3,)',
                                           'goals' => [ 'initialize' ]
@@ -58,7 +58,6 @@ project 'JRuby Integration Tests' do
       'gemHome' => '${gem.home}',
       'binDirectory' => '${jruby.home}/bin',
       'includeRubygemsInTestResources' => 'false',
-      'jrubyVersion' => '9.2.9.0'
     }
 
     execute_goals( 'initialize', options )
@@ -128,7 +127,7 @@ project 'JRuby Integration Tests' do
 
     plugin :antrun do
       [ 'jruby', 'objectspace', 'slow' ].each do |index|
-        files = []
+        filenames = []
         File.open(File.join(basedir, index + '.index')) do |file|
           file.each_line do |line|
             next if line =~ /^#/ || line.strip.empty?
@@ -138,15 +137,38 @@ project 'JRuby Integration Tests' do
             next if filename =~ /mri\/psych\//
             next if filename =~ /mri\/net\/http\//
             next unless File.exist? File.join(basedir, filename)
-            files << "<arg value='test/#{filename}'/>"
+            filenames << filename
           end
         end
-        files = files.join('')
+
+        # some tests from jruby suite (test/jruby/test_kernel.rb, test/jruby/test_socket.rb) need sub-process control
+        if ENV_JAVA['java.specification.version'].to_i > 8
+          add_opens = ['java.base/java.io=ALL-UNNAMED', 'java.base/sun.nio.ch=ALL-UNNAMED']
+        else
+          add_opens = []
+        end
 
         execute_goals( 'run',
                        :id => "jruby_complete_jar_#{index}",
                        :phase => 'test',
-                       :configuration => [ xml( "<target><exec dir='${jruby.home}' executable='java' failonerror='true'><arg value='-cp'/><arg value='core/target/test-classes:test/target/test-classes:maven/jruby-complete/target/jruby-complete-${project.version}.jar'/><arg value='-Djruby.home=${jruby.home}'/><arg value='-Djruby.aot.loadClasses=true'/><arg value='org.jruby.Main'/><arg value='-I.'/><arg value='-Itest'/><arg value='lib/ruby/gems/shared/gems/rake-${rake.version}/lib/rake/rake_test_loader.rb'/>#{files}<arg value='-v'/></exec></target>" ) ] )
+                       :configuration => [
+                         xml( "<target unless='maven.test.skip'>" +
+                                "<exec dir='${jruby.home}' executable='java' failonerror='true'>" +
+                                  add_opens.map { |value| "<arg value='--add-opens'/><arg value='#{value}'/>" }.join +
+                                  "<arg value='-Djruby.home=${jruby.home}'/>" +
+                                  "<arg value='-cp'/>" +
+                                  "<arg value='core/target/test-classes:test/target/test-classes:maven/jruby-complete/target/jruby-complete-${project.version}.jar'/>" +
+                                  "<arg value='-Djruby.home=${jruby.home}'/>" +
+                                  "<arg value='-Djruby.aot.loadClasses=true'/>" +
+                                  "<arg value='org.jruby.Main'/>" +
+                                  "<arg value='-I.'/>" +
+                                  "<arg value='-Itest'/>" +
+                                  "<arg value='lib/ruby/gems/shared/gems/rake-${rake.version}/lib/rake/rake_test_loader.rb'/>" +
+                                  filenames.map { |filename| "<arg value='test/#{filename}'/>" }.join +
+                                  "<arg value='-v'/>
+                                </exec>
+                              </target>" )
+                       ] )
       end
     end
 

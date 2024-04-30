@@ -23,17 +23,15 @@ import org.jruby.util.ByteList;
 public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
     final private Encoding encoding;
     final private boolean frozen;
-    final private boolean debug;
     final private String file;
     final private int line;
     private final int estimatedSize;
 
-    public BuildCompoundStringInstr(Variable result, Operand[] pieces, Encoding encoding, int estimatedSize, boolean frozen, boolean debug, String file, int line) {
+    public BuildCompoundStringInstr(Variable result, Operand[] pieces, Encoding encoding, int estimatedSize, boolean frozen, String file, int line) {
         super(Operation.BUILD_COMPOUND_STRING, result, pieces);
 
         this.encoding = encoding;
         this.frozen = frozen;
-        this.debug = debug;
         this.file = file;
         this.line = line;
         this.estimatedSize = estimatedSize;
@@ -53,7 +51,7 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new BuildCompoundStringInstr(ii.getRenamedVariable(result), cloneOperands(ii), encoding, estimatedSize, frozen, debug, file, line);
+        return new BuildCompoundStringInstr(ii.getRenamedVariable(result), cloneOperands(ii), encoding, estimatedSize, frozen, file, line);
     }
 
     @Override
@@ -68,8 +66,7 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
     }
 
     public static BuildCompoundStringInstr decode(IRReaderDecoder d) {
-        boolean debuggingFrozenStringLiteral = d.getCurrentScope().getManager().getInstanceConfig().isDebuggingFrozenStringLiteral();
-        return new BuildCompoundStringInstr(d.decodeVariable(), d.decodeOperandArray(), d.decodeEncoding(), d.decodeInt(), d.decodeBoolean(), debuggingFrozenStringLiteral, d.decodeString(), d.decodeInt());
+        return new BuildCompoundStringInstr(d.decodeVariable(), d.decodeOperandArray(), d.decodeEncoding(), d.decodeInt(), d.decodeBoolean(), d.decodeString(), d.decodeInt());
     }
 
     @Override
@@ -90,9 +87,6 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
         }
 
         if (frozen) {
-            if (debug) {
-                return IRRuntimeHelpers.freezeLiteralString(str, context, file, line);
-            }
             return IRRuntimeHelpers.freezeLiteralString(str);
         }
         return str;

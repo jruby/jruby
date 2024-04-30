@@ -76,6 +76,14 @@ public class TypeConverter {
         return r == null ? handleUncoercibleObject(context.runtime, obj, target, raise) : r;
     }
 
+    // This is essentially convertToType but it is used when we already know the method we are going to call will exist
+    // (as much as we can due to possible race conditions all convert methods have).  This is used in places where we
+    // need to explicitly check for the method (e.g. to_ary) before we actually try and convert the value.
+    public static IRubyObject convertToTypeUnchecked(ThreadContext context, IRubyObject obj, RubyClass target, String convertMethod, boolean raise) {
+        IRubyObject r = obj.callMethod(context, convertMethod);
+        return r == null ? handleUncoercibleObject(context.runtime, obj, target, raise) : r;
+    }
+
     /**
      * Converts this object to type 'targetType' using 'convertMethod' method (MRI: convert_type 1.9).
      *
@@ -225,7 +233,7 @@ public class TypeConverter {
         IRubyObject val = convertToType(obj, target, convertMethod, false);
         if (val.isNil()) return val;
         if (!target.isInstance(val)) {
-            throw newTypeError(obj, target, convertMethod, val);
+            throw newTypeErrorMismatch(obj.getRuntime(), obj, target, convertMethod, val);
         }
         return val;
     }
@@ -244,7 +252,7 @@ public class TypeConverter {
         IRubyObject val = convertToType(context, obj, target, sites, false);
         if (val == context.nil) return val;
         if (!target.isInstance(val)) {
-            throw newTypeError(context.runtime, obj, target, sites.methodName, val);
+            throw newTypeErrorMismatch(context.runtime, obj, target, sites.methodName, val);
         }
         return val;
     }

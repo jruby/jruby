@@ -42,5 +42,5 @@ fails:BasicSocket#recvmsg using IPv6 using a connected socket with data availabl
 fails:BasicSocket#recvmsg using IPv6 using a connected socket with data available the returned Array the returned Addrinfo raises when receiving the ip_port message
 fails:BasicSocket#recvmsg using IPv6 using a disconnected socket using a bound socket without any data available blocks the caller
 fails:BasicSocket#recvmsg using IPv4 using a disconnected socket using a bound socket without any data available blocks the caller
-fails:BasicSocket#recvmsg using IPv6 using a disconnected socket using an unbound socket blocks the caller
 fails:BasicSocket#recvmsg using IPv4 using a disconnected socket using an unbound socket blocks the caller
+fails:BasicSocket#recvmsg using IPv6 using a disconnected socket using an unbound socket blocks the caller

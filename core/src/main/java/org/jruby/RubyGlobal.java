@@ -116,7 +116,8 @@ public class RubyGlobal {
     public static void createGlobals(Ruby runtime) {
         GlobalVariables globals = runtime.getGlobalVariables();
 
-        runtime.defineGlobalConstant("TOPLEVEL_BINDING", runtime.newBinding());
+        runtime.setTopLevelBinding(runtime.newBinding());
+        runtime.defineGlobalConstant("TOPLEVEL_BINDING", runtime.getTopLevelBinding());
 
         initARGV(runtime);
 
@@ -198,13 +199,14 @@ public class RubyGlobal {
         } else {
             verboseValue = runtime.getFalse();
         }
-        runtime.defineVariable(new VerboseGlobalVariable(runtime, "$VERBOSE", verboseValue), GLOBAL);
-        runtime.defineVariable(new VerboseGlobalVariable(runtime, "$-v", verboseValue), GLOBAL);
-        runtime.defineVariable(new VerboseGlobalVariable(runtime, "$-w", verboseValue), GLOBAL);
+        runtime.setVerbose(verboseValue);
+        runtime.defineVariable(new VerboseGlobalVariable(runtime, "$VERBOSE"), GLOBAL);
+        runtime.defineVariable(new VerboseGlobalVariable(runtime, "$-v"), GLOBAL);
+        runtime.defineVariable(new VerboseGlobalVariable(runtime, "$-w"), GLOBAL);
 
-        IRubyObject debug = runtime.newBoolean(runtime.getInstanceConfig().isDebug());
-        runtime.defineVariable(new DebugGlobalVariable(runtime, "$DEBUG", debug), GLOBAL);
-        runtime.defineVariable(new DebugGlobalVariable(runtime, "$-d", debug), GLOBAL);
+        runtime.setDebug(runtime.newBoolean(runtime.getInstanceConfig().isDebug()));
+        runtime.defineVariable(new DebugGlobalVariable(runtime, "$DEBUG"), GLOBAL);
+        runtime.defineVariable(new DebugGlobalVariable(runtime, "$-d"), GLOBAL);
 
         runtime.defineVariable(new BacktraceGlobalVariable(runtime, "$@"), THREAD);
 
@@ -425,7 +427,7 @@ public class RubyGlobal {
 
         protected final boolean isCaseSensitive() { return false; }
 
-        @JRubyMethod(name = "[]", required = 1)
+        @JRubyMethod(name = "[]")
         public IRubyObject op_aref(ThreadContext context, IRubyObject arg) {
             IRubyObject key = arg.convertToString();
             IRubyObject value = internalGet(key);
@@ -484,12 +486,12 @@ public class RubyGlobal {
             return super.rassoc(context, obj.convertToString());
         }
 
-        @JRubyMethod(name = {"has_key?", "key?", "include?", "member?"}, required = 1)
+        @JRubyMethod(name = {"has_key?", "key?", "include?", "member?"})
         public RubyBoolean has_key_p(ThreadContext context, IRubyObject key) {
             return internalGetEntry(verifyStringLike(context, key)) == NO_ENTRY ? context.fals : context.tru;
         }
 
-        @JRubyMethod(name = {"has_value?", "value?"}, required = 1)
+        @JRubyMethod(name = {"has_value?", "value?"})
         public IRubyObject has_value_pp(ThreadContext context, IRubyObject expected) {
             if (!isStringLike(expected)) return context.nil;
 
@@ -537,7 +539,7 @@ public class RubyGlobal {
             return context.nil;
         }
 
-        @JRubyMethod(name = "replace", required = 1)
+        @JRubyMethod(name = "replace")
         public RubyHash replace(final ThreadContext context, IRubyObject other) {
             modify();
 
@@ -729,11 +731,12 @@ public class RubyGlobal {
         }
 
         protected static IRubyObject verifyStringLike(ThreadContext context, IRubyObject test) {
-            if (!isStringLike(test)) {
+            IRubyObject string = test.checkStringType();
+            if (string.isNil()) {
                 throw context.runtime.newTypeError("no implicit conversion of " + test.getMetaClass() + " into String");
             }
 
-            return test;
+            return string;
         }
 
         private static RubyString verifyValidKey(ThreadContext context, RubyString key, IRubyObject value) {
@@ -827,13 +830,13 @@ public class RubyGlobal {
 
         @Override
         public IRubyObject set(IRubyObject value) {
-            runtime.getWarnings().warn(ID.INEFFECTIVE_GLOBAL, "warning: variable " + name + " is no longer effective; ignored");
+            runtime.getWarnings().warnDeprecated(ID.INEFFECTIVE_GLOBAL, "warning: variable " + name + " is no longer effective; ignored");
             return value;
         }
 
         @Override
         public IRubyObject get() {
-            runtime.getWarnings().warn(ID.INEFFECTIVE_GLOBAL, "warning: variable " + name + " is no longer effective");
+            runtime.getWarnings().warnDeprecated(ID.INEFFECTIVE_GLOBAL, "warning: variable " + name + " is no longer effective");
             return value;
         }
     }
@@ -1061,9 +1064,8 @@ public class RubyGlobal {
     }
 
     private static class VerboseGlobalVariable extends GlobalVariable {
-        public VerboseGlobalVariable(Ruby runtime, String name, IRubyObject initialValue) {
-            super(runtime, name, initialValue);
-            set(initialValue);
+        public VerboseGlobalVariable(Ruby runtime, String name) {
+            super(runtime, name, null); // this.value not used
         }
 
         @Override
@@ -1073,11 +1075,7 @@ public class RubyGlobal {
 
         @Override
         public IRubyObject set(IRubyObject newValue) {
-            if (newValue.isNil()) {
-                runtime.setVerbose(newValue);
-            } else {
-                runtime.setVerbose(runtime.newBoolean(newValue.isTrue()));
-            }
+            runtime.setVerbose(newValue.isNil() ? null : newValue.isTrue());
 
             return newValue;
         }
@@ -1095,9 +1093,8 @@ public class RubyGlobal {
     }
 
     private static class DebugGlobalVariable extends GlobalVariable {
-        public DebugGlobalVariable(Ruby runtime, String name, IRubyObject initialValue) {
-            super(runtime, name, initialValue);
-            set(initialValue);
+        public DebugGlobalVariable(Ruby runtime, String name) {
+            super(runtime, name, null); // this.value not used
         }
 
         @Override
@@ -1107,11 +1104,7 @@ public class RubyGlobal {
 
         @Override
         public IRubyObject set(IRubyObject newValue) {
-            if (newValue.isNil()) {
-                runtime.setDebug(newValue);
-            } else {
-                runtime.setDebug(runtime.newBoolean(newValue.isTrue()));
-            }
+            runtime.setDebug(newValue.isTrue());
 
             return newValue;
         }

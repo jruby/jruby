@@ -102,7 +102,7 @@ import org.jruby.runtime.ThreadContext;
  * and its finalizer will unregister that RubyThread from its RubyThreadGroup.
  * With the RubyThread gone, the Thread-to-RubyThread map will eventually clear,
  * releasing the hard reference to the Thread itself.</li>
- * <ul>
+ * </ul>
  */
 public class ThreadService extends ThreadLocal<SoftReference<ThreadContext>> {
     private final Ruby runtime;
@@ -146,16 +146,17 @@ public class ThreadService extends ThreadLocal<SoftReference<ThreadContext>> {
     }
 
     public void teardown() {
+        final RubyThread current = getCurrentContext(this).getThread();
         // kill and await all live Ruby threads
         for (RubyThread rth : getActiveRubyThreads()) {
             // don't kill current thread that is doing teardown
-            if (rth == getCurrentContext().getThread()) continue;
+            if (rth == current) continue;
 
             if (rth.isAdopted()) continue;
 
             try {
                 rth.kill();
-                rth.join(mainContext, IRubyObject.NULL_ARRAY);
+                rth.join(mainContext);
             } catch (RaiseException re) {
                 // ignore Ruby exceptions raised out of join
             }
@@ -202,11 +203,9 @@ public class ThreadService extends ThreadLocal<SoftReference<ThreadContext>> {
         return getCurrentContext(this);
     }
 
-    public static ThreadContext getCurrentContext(ThreadService service) {
-        ThreadContext context;
-
+    public static ThreadContext getCurrentContext(final ThreadService service) {
         // keep trying until we have a context
-        context = adoptLoop(service);
+        final ThreadContext context = adoptLoop(service);
 
         if (context == null) return getCurrentContext(service);
 
@@ -217,14 +216,14 @@ public class ThreadService extends ThreadLocal<SoftReference<ThreadContext>> {
         SoftReference<ThreadContext> ref = service.get();
         if (ref == null) {
             return contextFromAdopt(service); // registerNewThread will localContext.set(...)
-        } else {
-            ThreadContext context;
-            if ((context = ref.get()) == null) {
-                // context is null, wipe out the SoftReference (this could be done with a reference queue)
-                service.remove();
-            }
-            return context;
         }
+
+        final ThreadContext context;
+        if ((context = ref.get()) == null) {
+            // context is null, wipe out the SoftReference (this could be done with a reference queue)
+            service.remove();
+        }
+        return context;
     }
 
     private static ThreadContext contextFromAdopt(ThreadService service) {

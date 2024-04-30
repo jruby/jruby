@@ -22,26 +22,26 @@ import static org.jruby.util.CodegenUtils.sig;
 */
 public class NormalInvokeSite extends InvokeSite {
 
-    public NormalInvokeSite(MethodType type, String name, boolean literalClosure, String file, int line) {
-        super(type, name, CallType.NORMAL, literalClosure, file, line);
+    public NormalInvokeSite(MethodType type, String name, boolean literalClosure, int flags, String file, int line) {
+        super(type, name, CallType.NORMAL, literalClosure, flags, file, line);
     }
 
     public static final Handle BOOTSTRAP = new Handle(
             Opcodes.H_INVOKESTATIC,
             p(NormalInvokeSite.class),
             "bootstrap",
-            sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, int.class, String.class, int.class),
+            sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, int.class, int.class, String.class, int.class),
             false);
 
-    public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, int closureInt, String file, int line) {
+    public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, int closureInt, int flags, String file, int line) {
         boolean literalClosure = closureInt != 0;
         String methodName = JavaNameMangler.demangleMethodName(StringSupport.split(name, ':').get(1));
 
-        return newSite(lookup, methodName, type, literalClosure, file, line);
+        return newSite(lookup, methodName, type, literalClosure, flags, file, line);
     }
 
-    public static NormalInvokeSite newSite(MethodHandles.Lookup lookup, String methodName, MethodType type, boolean literalClosure, String file, int line) {
-        NormalInvokeSite site = new NormalInvokeSite(type, methodName, literalClosure, file, line);
+    public static NormalInvokeSite newSite(MethodHandles.Lookup lookup, String methodName, MethodType type, boolean literalClosure, int flags, String file, int line) {
+        NormalInvokeSite site = new NormalInvokeSite(type, methodName, literalClosure, flags, file, line);
 
         InvokeSite.bootstrap(site, lookup);
 

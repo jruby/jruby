@@ -441,6 +441,7 @@ class UNIXSocketTests < Test::Unit::TestCase
      end
 
      def test_can_create_socket_server_and_accept_nonblocking
+       pending_hangs_on_macos_aarch64
        path = "/tmp/sample"
 
        File.unlink(path) if File.exist?(path)
@@ -632,6 +633,7 @@ class UNIXSocketTests < Test::Unit::TestCase
       end
 
       def test_recv_nonblock
+        pending_hangs_on_macos_aarch64
         s1, s2 = UNIXSocket.pair(Socket::SOCK_DGRAM)
         begin
           s1.recv_nonblock(1)
@@ -656,7 +658,12 @@ class UNIXSocketTests < Test::Unit::TestCase
       end
 
     end
+  private
+
+  def pending_hangs_on_macos_aarch64
+    pend "hangs on MacOS/ARM64" if RbConfig::CONFIG['host_os'] =~ /darwin/
   end
+end
 
 class ServerTest < Test::Unit::TestCase
   include TestHelper

@@ -57,6 +57,7 @@ import java.util.stream.Collectors;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -67,8 +68,8 @@ import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.Java.JCtorCache;
-import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaConstructor;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.proxy.ReifiedJavaProxy;
 import org.jruby.javasupport.util.JavaClassConfiguration;
@@ -144,23 +145,32 @@ public class RubyClass extends RubyModule {
      * Set a reflective allocator that calls a no-arg constructor on the given
      * class.
      *
-     * @param cls The class on which to call the default constructor to allocate
+     * @param clazz The class on which to call the default constructor to allocate
      */
     @SuppressWarnings("unchecked")
-    public void setClassAllocator(final Class<?> cls) {
+    public void setClassAllocator(final Class<?> clazz) {
+        final Constructor<?> constructor;
+        try {
+            constructor = clazz.getConstructor();
+        } catch (NoSuchMethodException nsme) {
+            throw new RuntimeException(nsme);
+        }
+
         this.allocator = (runtime, klazz) -> {
             try {
-                RubyBasicObject object = (RubyBasicObject)cls.getConstructor().newInstance();
+                RubyBasicObject object = (RubyBasicObject) constructor.newInstance();
                 object.setMetaClass(klazz);
                 return object;
-            } catch (InstantiationException | InvocationTargetException ie) {
-                throw runtime.newTypeError("could not allocate " + cls + " with default constructor:\n" + ie);
-            } catch (IllegalAccessException | NoSuchMethodException iae) {
-                throw runtime.newSecurityError("could not allocate " + cls + " due to inaccessible default constructor:\n" + iae);
+            } catch (InvocationTargetException e) {
+                throw newTypeError(runtime, "could not allocate " + clazz + " with default constructor:\n" + e.getTargetException(), e);
+            } catch (InstantiationException e) {
+                throw newTypeError(runtime, "could not allocate " + clazz + " with default constructor:\n" + e, e);
+            } catch (IllegalAccessException e) {
+                throw runtime.newSecurityError("could not allocate " + clazz + " due to inaccessible default constructor:\n" + e);
             }
         };
 
-        this.reifiedClass = (Class<? extends Reified>) cls;
+        this.reifiedClass = (Class<? extends Reified>) clazz;
     }
 
     /**
@@ -171,25 +181,26 @@ public class RubyClass extends RubyModule {
      */
     @SuppressWarnings("unchecked")
     public void setRubyClassAllocator(final Class<? extends IRubyObject> clazz) {
+        final Constructor<? extends IRubyObject> constructor;
         try {
-            final Constructor<? extends IRubyObject> constructor = clazz.getConstructor(Ruby.class, RubyClass.class);
-
-            this.allocator = (runtime, klazz) -> {
-                try {
-                    return constructor.newInstance(runtime, klazz);
-                } catch (InvocationTargetException ite) {
-                    throw runtime.newTypeError("could not allocate " + clazz + " with (Ruby, RubyClass) constructor:\n" + ite);
-                } catch (InstantiationException ie) {
-                    throw runtime.newTypeError("could not allocate " + clazz + " with (Ruby, RubyClass) constructor:\n" + ie);
-                } catch (IllegalAccessException iae) {
-                    throw runtime.newSecurityError("could not allocate " + clazz + " due to inaccessible (Ruby, RubyClass) constructor:\n" + iae);
-                }
-            };
-
-            this.reifiedClass = (Class<? extends Reified>) clazz;
+            constructor = clazz.getConstructor(Ruby.class, RubyClass.class);
         } catch (NoSuchMethodException nsme) {
             throw new RuntimeException(nsme);
         }
+
+        this.allocator = (runtime, klazz) -> {
+            try {
+                return constructor.newInstance(runtime, klazz);
+            } catch (InvocationTargetException e) {
+                throw newTypeError(runtime, "could not allocate " + clazz + " with (Ruby, RubyClass) constructor:\n" + e.getTargetException(), e);
+            } catch (InstantiationException e) {
+                throw newTypeError(runtime, "could not allocate " + clazz + " with (Ruby, RubyClass) constructor:\n" + e, e);
+            } catch (IllegalAccessException e) {
+                throw runtime.newSecurityError("could not allocate " + clazz + " due to inaccessible (Ruby, RubyClass) constructor:\n" + e);
+            }
+        };
+
+        this.reifiedClass = (Class<? extends Reified>) clazz;
     }
 
     /**
@@ -199,27 +210,34 @@ public class RubyClass extends RubyModule {
      *
      * @param clazz The class from which to grab a standard Ruby __allocate__ method.
      *
-     * @note Used with `jrubyc --java` generated (interoperability) class files.
-     * @note Used with new concrete extension.
+     * <p>Note: Used with `jrubyc --java` generated (interoperability) class files.</p>
+     * <p>Note: Used with new concrete extension.</p>
      */
     public void setRubyStaticAllocator(final Class<?> clazz) {
+        final Method method;
         try {
-            final Method method = clazz.getDeclaredMethod("__allocate__", Ruby.class, RubyClass.class);
-
-            this.allocator = (runtime, klazz) -> {
-                try {
-                    return (IRubyObject) method.invoke(null, runtime, klazz);
-                } catch (InvocationTargetException ite) {
-                    throw runtime.newTypeError("could not allocate " + clazz + " with (Ruby, RubyClass) constructor:\n" + ite);
-                } catch (IllegalAccessException iae) {
-                    throw runtime.newSecurityError("could not allocate " + clazz + " due to inaccessible (Ruby, RubyClass) constructor:\n" + iae);
-                }
-            };
-
-            this.reifiedClass = (Class<? extends Reified>) clazz;
+            method = clazz.getDeclaredMethod("__allocate__", Ruby.class, RubyClass.class);
         } catch (NoSuchMethodException nsme) {
             throw new RuntimeException(nsme);
         }
+
+        this.allocator = (runtime, klazz) -> {
+            try {
+                return (IRubyObject) method.invoke(null, runtime, klazz);
+            } catch (InvocationTargetException e) {
+                throw newTypeError(runtime, "could not allocate " + clazz + " with (Ruby, RubyClass) method:\n" + e.getTargetException(), e);
+            } catch (IllegalAccessException e) {
+                throw runtime.newSecurityError("could not allocate " + clazz + " due to inaccessible (Ruby, RubyClass) method:\n" + e);
+            }
+        };
+
+        this.reifiedClass = (Class<? extends Reified>) clazz;
+    }
+
+    private static RaiseException newTypeError(final Ruby runtime, final String msg, final Exception e) {
+        RaiseException error = runtime.newTypeError(msg);
+        error.initCause(e);
+        return error;
     }
 
     @JRubyMethod(name = "allocate")
@@ -936,22 +954,14 @@ public class RubyClass extends RubyModule {
      *
      */
     @Override
-    public IRubyObject initialize(ThreadContext context, Block block) {
-        return initialize19(context, block);
-    }
-
-    public IRubyObject initialize(ThreadContext context, IRubyObject superObject, Block block) {
-        return initialize19(context, superObject, block);
-    }
-
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
-    public IRubyObject initialize19(ThreadContext context, Block block) {
+    public IRubyObject initialize(ThreadContext context, Block block) {
         checkNotInitialized();
         return initializeCommon(context, runtime.getObject(), block);
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
-    public IRubyObject initialize19(ThreadContext context, IRubyObject superObject, Block block) {
+    public IRubyObject initialize(ThreadContext context, IRubyObject superObject, Block block) {
         checkNotInitialized();
         checkInheritable(superObject);
         return initializeCommon(context, (RubyClass) superObject, block);
@@ -975,7 +985,7 @@ public class RubyClass extends RubyModule {
     /** rb_class_init_copy
      *
      */
-    @JRubyMethod(name = "initialize_copy", required = 1, visibility = PRIVATE)
+    @JRubyMethod(name = "initialize_copy", visibility = PRIVATE)
     @Override
     public IRubyObject initialize_copy(IRubyObject original) {
         checkNotInitialized();
@@ -1016,6 +1026,31 @@ public class RubyClass extends RubyModule {
         return subs;
     }
 
+    /**
+     * JRuby had historically provided Class#subclasses as an opt-in extension, which got deprecated in JRuby 9.2.
+     *
+     * Once Ruby 3.1 compatibility was implemented (JRuby 9.4) the <code>require 'jruby/core_ext.class.rb'</code> used
+     * to still cause a redefinition of the <code>Class#subclasses</code> and print deprecation warnings even for the
+     * supported `subclasses()` (no-argument) version.
+     *
+     * @implNote This method was deprecated since it's inception and should be safe to remove in JRuby 9.5 or later
+     *
+     * @param context
+     * @param recursive { true/false } whether to recurse all sub-classes
+     * @return sub-classes of this class
+     */
+    @Deprecated
+    @JRubyMethod
+    public IRubyObject subclasses(ThreadContext context, IRubyObject recursive) {
+        context.runtime.getWarnings().warnDeprecated(IRubyWarnings.ID.DEPRECATED_METHOD,
+            "Class#subclasses(opts) is deprecated, please use the supported Class#subclasses() version");
+        IRubyObject opts = context.nil;
+        if (recursive != context.nil) {
+            opts = RubyHash.newKwargs(context.runtime, "all", recursive);
+        }
+        return org.jruby.ext.jruby.JRubyLibrary.subclasses(context, this, this, opts);
+    }
+
     // introduced solely to provide some level of compatibility with previous
     // Class#subclasses implementation ... `ruby_class.to_java.subclasses`
     public final Collection<RubyClass> subclasses() {
@@ -1052,7 +1087,7 @@ public class RubyClass extends RubyModule {
             Set<RubyClass> keys = subclasses.keySet();
             for (RubyClass klass: keys) {
                 if (klass.isSingleton()) continue;
-                if (klass.isIncluded()) {
+                if (klass.isIncluded() || klass.isPrepended()) {
                     klass.concreteSubclasses(subs);
                     continue;
                 }
@@ -1180,7 +1215,7 @@ public class RubyClass extends RubyModule {
         return getRealClass();
     }
 
-    @JRubyMethod(name = "inherited", required = 1, visibility = PRIVATE)
+    @JRubyMethod(name = "inherited", visibility = PRIVATE)
     public IRubyObject inherited(ThreadContext context, IRubyObject arg) {
         return context.nil;
     }
@@ -1269,7 +1304,7 @@ public class RubyClass extends RubyModule {
             IRubyObject object = (IRubyObject) obj;
 
             marshalStream.registerLinkTarget(object);
-            marshalStream.dumpVariables(object.getVariableList());
+            marshalStream.dumpVariables(object.getMarshalVariableList());
         }
 
         @Override
@@ -1366,50 +1401,56 @@ public class RubyClass extends RubyModule {
         boolean[] java_box = { false };
         // re-check reifiable in case another reify call has jumped in ahead of us
         if (!isReifiable(java_box)) return;
-        final boolean concreteExt = java_box[0]; 
-
-        // calculate an appropriate name, for anonymous using inspect like format e.g. "Class:0x628fad4a"
-        final String name = getBaseName() != null ? getName() :
-                ( "Class_0x" + Integer.toHexString(System.identityHashCode(this)) );
-
-        final String javaName = "rubyobj." + StringSupport.replaceAll(name, "::", ".");
-        final String javaPath = "rubyobj/" + StringSupport.replaceAll(name, "::", "/");
+        final boolean concreteExt = java_box[0];
 
         final Class<?> parentReified = superClass.getRealClass().getReifiedClass();
         if (parentReified == null) {
             throw getClassRuntime().newTypeError(getName() + "'s parent class is not yet reified");
         }
 
-        Class reifiedParent = RubyObject.class;
-        if (superClass.reifiedClass != null) reifiedParent = superClass.reifiedClass;
-
-        Reificator reifier;
-        if (concreteExt) {
-            reifier = new ConcreteJavaReifier(parentReified, javaName, javaPath);
-        } else {
-            reifier = new MethodReificator(reifiedParent, javaName, javaPath, null, javaPath);
-        }
-
-        final byte[] classBytes = reifier.reify();
-
-        final ClassDefiningClassLoader parentCL;
+        ClassDefiningClassLoader classLoader; // usually parent's class-loader
         if (parentReified.getClassLoader() instanceof OneShotClassLoader) {
-            parentCL = (OneShotClassLoader) parentReified.getClassLoader();
+            classLoader = (OneShotClassLoader) parentReified.getClassLoader();
         } else {
             if (useChildLoader) {
                 MultiClassLoader parentLoader = new MultiClassLoader(runtime.getJRubyClassLoader());
                 for(Loader cLoader : runtime.getInstanceConfig().getExtraLoaders()) {
                     parentLoader.addClassLoader(cLoader.getClassLoader());
                 }
-                parentCL = new OneShotClassLoader(parentLoader);
+                classLoader = new OneShotClassLoader(parentLoader);
             } else {
-                parentCL = runtime.getJRubyClassLoader();
+                classLoader = runtime.getJRubyClassLoader();
             }
         }
+
+        String javaName = getReifiedJavaClassName();
+        // *might* need to include a Class identifier in the Java class name, since a Ruby class might be dropped
+        // (using remove_const) and re-created in which case using the same name would cause a conflict...
+        if (classLoader.hasDefinedClass(javaName)) { // as Ruby class dropping is "unusual" - assume v0 to be the raw name
+            String versionedName; int v = 1;
+            // NOTE: '@' is not supported in Ruby class names thus it's safe to use as a "separator"
+            do {
+                versionedName = javaName + "@v" + (v++); // rubyobj.SomeModule.Foo@v1
+            } while (classLoader.hasDefinedClass(versionedName));
+            javaName = versionedName;
+        }
+        final String javaPath = javaName.replace('.', '/');
+
+        Reificator reifier;
+        if (concreteExt) {
+            reifier = new ConcreteJavaReifier(parentReified, javaName, javaPath);
+        } else {
+            Class<?> reifiedParent = superClass.reifiedClass;
+            if (reifiedParent == null) reifiedParent = RubyObject.class;
+            reifier = new MethodReificator(reifiedParent, javaName, javaPath, null, javaPath);
+        }
+
+        final byte[] classBytes = reifier.reify();
+
         boolean nearEnd = false;
         // Attempt to load the name we plan to use; skip reification if it exists already (see #1229).
         try {
-            Class result = parentCL.defineClass(javaName, classBytes);
+            Class result = classLoader.defineClass(javaName, classBytes);
             dumpReifiedClass(classDumpDir, javaPath, classBytes);
 
             //Trigger initilization
@@ -1420,7 +1461,7 @@ public class RubyClass extends RubyModule {
 
             if (concreteExt) {
                 // setAllocator(ConcreteJavaProxy.ALLOCATOR); // this should be already set
-                // Allocator "set" via clinit {@see JavaProxyClass#setProxyClassReified()}
+                // Allocator "set" via clinit {@link JavaProxyClass#setProxyClassReified()}
 
                 this.setInstanceVariable("@java_class", Java.wrapJavaObject(runtime, result));
                 JavaProxy.setJavaClass(this, result);
@@ -1459,6 +1500,15 @@ public class RubyClass extends RubyModule {
             reifiedClass = superClass.reifiedClass;
             allocator = superClass.allocator;
         }
+    }
+
+    private String getReifiedJavaClassName() {
+        final String basePackagePrefix = "rubyobj.";
+        if (getBaseName() == null) { // anonymous Class instance: rubyobj.Class$0x1234abcd
+            return basePackagePrefix + anonymousMetaNameWithIdentifier().replace(':', '$');
+        }
+        final CharSequence name = StringSupport.replaceAll(getName(), "::", ".");
+        return basePackagePrefix + name; // TheFoo::Bar -> rubyobj.TheFoo.Bar
     }
 
     interface Reificator {
@@ -2429,8 +2479,7 @@ public class RubyClass extends RubyModule {
         if (target == Class.class) {
             if (reifiedClass == null) reifyWithAncestors(); // possibly auto-reify
             // Class requested; try java_class or else return nearest reified class
-            final ThreadContext context = runtime.getCurrentContext();
-            Class<?> javaClass = JavaClass.getJavaClassIfProxy(context, this);
+            Class<?> javaClass = JavaUtil.getJavaClass(this, null);
             if (javaClass != null) return (T) javaClass;
 
             Class<?> reifiedClass = nearestReifiedClass(this);
@@ -2898,6 +2947,16 @@ public class RubyClass extends RubyModule {
     @Deprecated
     public VariableAccessorField getObjectGroupAccessorField() {
         return variableTableManager.getObjectGroupAccessorField();
+    }
+
+    @Deprecated
+    public IRubyObject initialize19(ThreadContext context, Block block) {
+        return initialize(context, block);
+    }
+
+    @Deprecated
+    public IRubyObject initialize19(ThreadContext context, IRubyObject superObject, Block block) {
+        return initialize(context, superObject, block);
     }
 
     @Deprecated

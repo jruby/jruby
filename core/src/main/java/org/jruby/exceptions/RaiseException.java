@@ -45,9 +45,9 @@ import org.jruby.RubyException;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyStandardError;
 import org.jruby.RubyString;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.JavaSites;
-import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.backtrace.TraceType;
@@ -74,6 +74,16 @@ public class RaiseException extends JumpException {
 
     /**
      * Construct a new throwable RaiseException appropriate for the target Ruby exception class.
+     *
+     * Note that this will produce a RaiseException that has fully prepared for being thrown, including:
+     *
+     * <ul>
+     *     <li>Populating the stack trace based on the current thread</li>
+     *     <li>Setting the cause to any currently in-flight exception</li>
+     *     <li>Setting the thread-local $! "error info" to this exception</li>
+     * </ul>
+     *
+     * This constructor should not be used to create a RubyException object to be raised on a different thread.
      *
      * @param runtime the current JRuby runtime
      * @param exceptionClass the class of the exception to construct and raise
@@ -201,7 +211,6 @@ public class RaiseException extends JumpException {
         if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.logException(exception);
 
         doSetLastError(context);
-        doCallEventHook(context);
 
         if (backtrace == null) {
             if (capture) { // only false to support legacy RaiseException construction (not setting trace)
@@ -215,6 +224,8 @@ public class RaiseException extends JumpException {
             }
             setStackTraceFromException();
         }
+
+        IRRuntimeHelpers.traceRaise(context);
     }
 
     private void setStackTraceFromException() {
@@ -257,12 +268,6 @@ public class RaiseException extends JumpException {
         StackTraceElement[] curTrace = getStackTrace();
         StackTraceElement[] newTrace = skipFillInStackTracePart(curTrace);
         if (newTrace != curTrace) setStackTrace(newTrace);
-    }
-
-    private static void doCallEventHook(final ThreadContext context) {
-        if (context.runtime.hasEventHooks()) {
-            context.runtime.callEventHooks(context, RubyEvent.RAISE, context.getFile(), context.getLine(), context.getFrameName(), context.getFrameKlazz());
-        }
     }
 
     private void doSetLastError(final ThreadContext context) {

@@ -130,7 +130,7 @@ public class JavaSupportImpl extends JavaSupport {
     }
 
     /**
-     * @note Internal API - subject to change!
+     * <p>Note: Internal API - subject to change!</p>
      */
     public static final class ProxyClassKey {
         final Class superClass;

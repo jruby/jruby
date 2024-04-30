@@ -1,1 +1,0 @@
-fails:Assigning an anonymous module to a constant does not set the name of a module scoped by an anonymous module

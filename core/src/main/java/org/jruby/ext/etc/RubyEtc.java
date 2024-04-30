@@ -28,6 +28,7 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.RubyStruct;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -39,7 +40,7 @@ import java.nio.ByteBuffer;
 @JRubyModule(name="Etc")
 public class RubyEtc {
     public static class IOExt {
-        @JRubyMethod(required = 1)
+        @JRubyMethod
         public static synchronized IRubyObject pathconf(ThreadContext context, IRubyObject recv, IRubyObject arg) {
             Pathconf name = Pathconf.valueOf(RubyNumeric.num2long(arg));
             RubyIO io = (RubyIO) recv;
@@ -158,7 +159,7 @@ public class RubyEtc {
         return RubyArray.newArrayMayCopy(runtime, arr);
     }
     
-    @JRubyMethod(required = 1, module = true)
+    @JRubyMethod(module = true)
     public static synchronized IRubyObject sysconf(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         Ruby runtime = context.runtime;
         Sysconf name = Sysconf.valueOf(RubyNumeric.num2long(arg));
@@ -180,7 +181,7 @@ public class RubyEtc {
         return RubyFixnum.newFixnum(runtime, ret);
     }
     
-    @JRubyMethod(required = 1, module = true)
+    @JRubyMethod(module = true)
     public static synchronized IRubyObject confstr(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         Confstr name = Confstr.valueOf(RubyNumeric.num2long(arg));
         ByteBuffer buf;
@@ -211,9 +212,12 @@ public class RubyEtc {
         return RubyString.newString(context.runtime, bytes);
     }
 
-    @JRubyMethod(optional=1, module = true)
+    @JRubyMethod(optional = 1, checkArity = false, module = true)
     public static synchronized IRubyObject getpwuid(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
+
+        int argc = Arity.checkArgumentCount(runtime, args, 0, 1);
+
         POSIX posix = runtime.getPosix();
         IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
         try {
@@ -240,7 +244,7 @@ public class RubyEtc {
         }
     }
 
-    @JRubyMethod(required=1, module = true)
+    @JRubyMethod(module = true)
     public static synchronized IRubyObject getpwnam(IRubyObject recv, IRubyObject name) {
         Ruby runtime = recv.getRuntime();
         String nam = name.convertToString().toString();
@@ -369,7 +373,7 @@ public class RubyEtc {
         }
     }
 
-    @JRubyMethod(required=1, module = true)
+    @JRubyMethod(module = true)
     public static synchronized IRubyObject getgrnam(IRubyObject recv, IRubyObject name) {
         Ruby runtime = recv.getRuntime();
         String nam = name.convertToString().toString();
@@ -392,13 +396,16 @@ public class RubyEtc {
         }
     }
 
-    @JRubyMethod(optional=1, module = true)
+    @JRubyMethod(optional = 1, checkArity = false, module = true)
     public static synchronized IRubyObject getgrgid(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
+
+        int argc = Arity.checkArgumentCount(runtime, args, 0, 1);
+
         POSIX posix = runtime.getPosix();
 
         try {
-            int gid = args.length == 0 ? posix.getgid() : RubyNumeric.fix2int(args[0]);
+            int gid = argc == 0 ? posix.getgid() : RubyNumeric.fix2int(args[0]);
             Group gr = posix.getgrgid(gid);
             if(gr == null) {
                 if (Platform.IS_WINDOWS) {  // MRI behavior

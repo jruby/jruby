@@ -48,6 +48,7 @@ import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariable;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.IAccessor;
@@ -404,15 +405,17 @@ public class RubyArgsFile extends RubyObject {
     /** Read a line.
      *
      */
-    @JRubyMethod(name = "gets", optional = 1, writes = LASTLINE)
+    @JRubyMethod(name = "gets", optional = 1, checkArity = false, writes = LASTLINE)
     public static IRubyObject gets(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 0, 1);
+
         return context.setLastLine(argf_getline(context, recv, args));
     }
 
     /** Read a line.
      *
      */
-    @JRubyMethod(name = "readline", optional = 1, writes = LASTLINE)
+    @JRubyMethod(name = "readline", optional = 1, checkArity = false, writes = LASTLINE)
     public static IRubyObject readline(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         IRubyObject line = gets(context, recv, args);
 
@@ -421,8 +424,10 @@ public class RubyArgsFile extends RubyObject {
         return line;
     }
 
-    @JRubyMethod(optional = 1)
+    @JRubyMethod(optional = 1, checkArity = false)
     public static IRubyObject readlines(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 0, 1);
+
         Ruby runtime = context.runtime;
         ArgsFileData data = ArgsFileData.getArgsFileData(runtime);
 
@@ -438,8 +443,10 @@ public class RubyArgsFile extends RubyObject {
         return ary;
     }
 
-    @JRubyMethod(optional = 1)
+    @JRubyMethod(optional = 1, checkArity = false)
     public static IRubyObject to_a(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 0, 1);
+
         Ruby runtime = context.runtime;
         ArgsFileData data = ArgsFileData.getArgsFileData(runtime);
 
@@ -471,8 +478,9 @@ public class RubyArgsFile extends RubyObject {
         return block.isGiven() ? each_byte(context, recv, block) : enumeratorize(context.runtime, recv, "each_byte");
     }
 
-    @JRubyMethod(optional = 1)
+    @JRubyMethod(optional = 1, checkArity = false)
     public static IRubyObject bytes(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
+        Arity.checkArgumentCount(context, args, 0, 1);
         return block.isGiven() ? each_byte(context, recv, block) : enumeratorize(context.runtime, recv, "bytes");
     }
 
@@ -547,9 +555,11 @@ public class RubyArgsFile extends RubyObject {
     /** Invoke a block for each line.
      *
      */
-    @JRubyMethod(name = "each_line", optional = 1)
+    @JRubyMethod(name = "each_line", optional = 1, checkArity = false)
     public static IRubyObject each_line(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         if (!block.isGiven()) return enumeratorize(context.runtime, recv, "each_line", args);
+
+        Arity.checkArgumentCount(context, args, 0, 1);
 
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
 
@@ -571,7 +581,7 @@ public class RubyArgsFile extends RubyObject {
     }
 
     @Deprecated // TODO "warning: ARGF#lines is deprecated; use #each_line instead"
-    @JRubyMethod(optional = 1)
+    @JRubyMethod(optional = 1, checkArity = false)
     public static IRubyObject lines(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, recv, "each_line");
         return each_line(context, recv, args, block);
@@ -582,7 +592,7 @@ public class RubyArgsFile extends RubyObject {
         return each_line(context, recv, args, block);
     }
 
-    @JRubyMethod(name = "each", optional = 1)
+    @JRubyMethod(name = "each", optional = 1, checkArity = false)
     public static IRubyObject each(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
         return block.isGiven() ? each_line(context, recv, args, block) : enumeratorize(context.runtime, recv, "each", args);
     }
@@ -722,13 +732,15 @@ public class RubyArgsFile extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "pos=", required = 1)
+    @JRubyMethod(name = "pos=")
     public static IRubyObject set_pos(ThreadContext context, IRubyObject recv, IRubyObject offset) {
         return getCurrentDataFile(context, "no stream to set position").pos_set(context, offset);
     }
 
-    @JRubyMethod(name = "seek", required = 1, optional = 1)
+    @JRubyMethod(name = "seek", required = 1, optional = 1, checkArity = false)
     public static IRubyObject seek(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 1, 2);
+
         return getCurrentDataFile(context, "no stream to seek").seek(context, args);
     }
 
@@ -762,13 +774,17 @@ public class RubyArgsFile extends RubyObject {
         }
     }
 
-    @JRubyMethod(required = 1, optional = 2)
+    @JRubyMethod(required = 1, optional = 2, checkArity = false)
     public static IRubyObject read_nonblock(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 1, 3);
+
         return getPartial(context, recv, args, true);
     }
 
-    @JRubyMethod(required = 1, optional = 1)
+    @JRubyMethod(required = 1, optional = 1, checkArity = false)
     public static IRubyObject readpartial(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 1, 2);
+
         return getPartial(context, recv, args, false);
     }
 
@@ -844,16 +860,18 @@ public class RubyArgsFile extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "read", optional = 2)
+    @JRubyMethod(name = "read", optional = 2, checkArity = false)
     public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 0, 2);
+
         Ruby runtime = context.runtime;
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
         IRubyObject tmp, str, length;
             long len = 0;
 
-        if (args.length > 0) {
+        if (argc > 0) {
             length = args[0];
-            str = args.length > 1 ? args[1] : context.nil;
+            str = argc > 1 ? args[1] : context.nil;
         } else {
             str = length = context.nil;
         }
@@ -883,12 +901,12 @@ public class RubyArgsFile extends RubyObject {
             }
 
             if (tmp == context.nil || length == context.nil) {
-                if(data.next_p != Stream) {
+                if (data.next_p != Stream) {
                     argf_close(context, data.currentFile);
                     data.next_p = NextFile;
                     continue;
                 }
-            } else if(args.length >= 1) {
+            } else if (argc >= 1) {
                 final int strLen = ((RubyString) str).getByteList().length();
                 if (strLen < len) {
                     args[0] = runtime.newFixnum(len - strLen);

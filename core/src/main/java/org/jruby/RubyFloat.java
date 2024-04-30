@@ -47,6 +47,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.FloatSites;
@@ -289,7 +290,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_coerce
      *
      */
-    @JRubyMethod(name = "coerce", required = 1)
+    @JRubyMethod(name = "coerce")
     @Override
     public IRubyObject coerce(IRubyObject other) {
         final Ruby runtime = metaClass.runtime;
@@ -313,7 +314,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_plus
      *
      */
-    @JRubyMethod(name = "+", required = 1)
+    @JRubyMethod(name = "+")
     @Override
     public IRubyObject op_plus(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
@@ -332,7 +333,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_minus
      *
      */
-    @JRubyMethod(name = "-", required = 1)
+    @JRubyMethod(name = "-")
     public IRubyObject op_minus(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
         case INTEGER:
@@ -350,7 +351,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_mul
      *
      */
-    @JRubyMethod(name = "*", required = 1)
+    @JRubyMethod(name = "*")
     public IRubyObject op_mul(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
         case INTEGER:
@@ -368,7 +369,7 @@ public class RubyFloat extends RubyNumeric {
     /**
      * MRI: flo_div
      */
-    @JRubyMethod(name = "/", required = 1)
+    @JRubyMethod(name = "/")
     public IRubyObject op_div(ThreadContext context, IRubyObject other) { // don't override Numeric#div !
         switch (getMetaClass(other).getClassIndex()) {
         case INTEGER:
@@ -398,7 +399,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_mod
      *
      */
-    @JRubyMethod(name = {"%", "modulo"}, required = 1)
+    @JRubyMethod(name = {"%", "modulo"})
     public IRubyObject op_mod(ThreadContext context, IRubyObject other) {
         switch (getMetaClass(other).getClassIndex()) {
         case INTEGER:
@@ -431,7 +432,7 @@ public class RubyFloat extends RubyNumeric {
      *
      */
     @Override
-    @JRubyMethod(name = "divmod", required = 1)
+    @JRubyMethod(name = "divmod")
     public IRubyObject divmod(ThreadContext context, IRubyObject other) {
         switch (getMetaClass(other).getClassIndex()) {
         case INTEGER:
@@ -462,7 +463,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_pow
      *
      */
-    @JRubyMethod(name = "**", required = 1)
+    @JRubyMethod(name = "**")
     public IRubyObject op_pow(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
             case INTEGER:
@@ -490,7 +491,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_eq
      *
      */
-    @JRubyMethod(name = {"==", "==="}, required = 1)
+    @JRubyMethod(name = {"==", "==="})
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         if (Double.isNaN(value)) {
@@ -539,7 +540,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_cmp
      *
      */
-    @JRubyMethod(name = "<=>", required = 1)
+    @JRubyMethod(name = "<=>")
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
         final Ruby runtime = context.runtime;
         switch (other.getMetaClass().getClassIndex()) {
@@ -578,7 +579,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_gt
      *
      */
-    @JRubyMethod(name = ">", required = 1)
+    @JRubyMethod(name = ">")
     public IRubyObject op_gt(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
         case INTEGER:
@@ -597,7 +598,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_ge
      *
      */
-    @JRubyMethod(name = ">=", required = 1)
+    @JRubyMethod(name = ">=")
     public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
         case INTEGER:
@@ -616,7 +617,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_lt
      *
      */
-    @JRubyMethod(name = "<", required = 1)
+    @JRubyMethod(name = "<")
     public IRubyObject op_lt(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
         case INTEGER:
@@ -635,7 +636,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_le
      *
      */
-    @JRubyMethod(name = "<=", required = 1)
+    @JRubyMethod(name = "<=")
     public IRubyObject op_le(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
         case INTEGER:
@@ -654,7 +655,7 @@ public class RubyFloat extends RubyNumeric {
     /** flo_eql
      *
      */
-    @JRubyMethod(name = "eql?", required = 1)
+    @JRubyMethod(name = "eql?")
     @Override
     public IRubyObject eql_p(IRubyObject other) {
         return metaClass.runtime.newBoolean( equals(other) );
@@ -811,8 +812,10 @@ public class RubyFloat extends RubyNumeric {
     /** float_rationalize
      *
      */
-    @JRubyMethod(name = "rationalize", optional = 1)
+    @JRubyMethod(name = "rationalize", optional = 1, checkArity = false)
     public IRubyObject rationalize(ThreadContext context, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 0, 1);
+
         if (f_negative_p(context, this)) {
             return f_negate(context, f_abs(context, this).rationalize(context, args));
         }

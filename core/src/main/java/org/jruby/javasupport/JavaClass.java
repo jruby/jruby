@@ -45,10 +45,10 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.java.util.ArrayUtils;
+import org.jruby.java.util.ClassUtils;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.CodegenUtils;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -65,7 +65,7 @@ import java.util.function.Supplier;
 @Deprecated
 public class JavaClass extends JavaObject {
 
-    public static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
+    public static final Class[] EMPTY_CLASS_ARRAY = ClassUtils.EMPTY_CLASS_ARRAY;
 
     public JavaClass(final Ruby runtime, final Class<?> klass) {
         this(runtime, runtime.getJavaSupport().getJavaClassClass(), klass);
@@ -122,7 +122,7 @@ public class JavaClass extends JavaObject {
      */
     @Deprecated // no longer used
     public static Class<?> getJavaClass(final ThreadContext context, final RubyModule proxy) {
-        return getJavaClassIfProxy(context, proxy);
+        return JavaUtil.getJavaClass(proxy, null);
     }
 
     /**
@@ -134,11 +134,11 @@ public class JavaClass extends JavaObject {
     }
 
     /**
-     * @note Interal API
+     * <p>Note: Interal API</p>
      * @see Java#isProxyType(RubyModule)
      */
     public static boolean isProxyType(final ThreadContext context, final RubyModule proxy) {
-        return getJavaClassIfProxy(context, proxy) != null;
+        return JavaUtil.getJavaClass(proxy, null) != null;
     }
 
     /**
@@ -173,7 +173,7 @@ public class JavaClass extends JavaObject {
     @Deprecated
     public static JavaClass resolveType(final ThreadContext context, final IRubyObject type) {
         RubyModule proxyClass = Java.resolveType(context.runtime, type);
-        return proxyClass == null ? null : get(context.runtime, getJavaClass(context, proxyClass));
+        return proxyClass == null ? null : get(context.runtime, JavaUtil.getJavaClass(proxyClass, null));
     }
 
     @Deprecated
@@ -196,7 +196,7 @@ public class JavaClass extends JavaObject {
     }
 
     @Deprecated
-    @JRubyMethod(name = "for_name", required = 1, meta = true)
+    @JRubyMethod(name = "for_name", meta = true)
     public static JavaClass for_name(IRubyObject recv, IRubyObject name) {
         return for_name(recv, name.asJavaString());
     }
@@ -211,21 +211,7 @@ public class JavaClass extends JavaObject {
     }
 
     public static String getSimpleName(Class<?> clazz) {
- 		if (clazz.isArray()) {
- 			return getSimpleName(clazz.getComponentType()) + "[]";
- 		}
-
- 		String className = clazz.getName();
- 		int len = className.length();
-        int i = className.lastIndexOf('$');
- 		if (i != -1) {
-            do {
- 				i++;
- 			} while (i < len && Character.isDigit(className.charAt(i)));
- 			return className.substring(i);
- 		}
-
- 		return className.substring(className.lastIndexOf('.') + 1);
+        return ClassUtils.getSimpleName(clazz);
  	}
 
     public static JavaCallable getMatchingCallable(Ruby runtime, Class<?> javaClass, String methodName, Class<?>[] argumentTypes) {
@@ -238,13 +224,7 @@ public class JavaClass extends JavaObject {
     }
 
     public static Class<?>[] getArgumentTypes(final ThreadContext context, final IRubyObject[] args, final int offset) {
-        final int length = args.length; // offset == 0 || 1
-        if ( length == offset ) return EMPTY_CLASS_ARRAY;
-        final Class<?>[] argumentTypes = new Class[length - offset];
-        for ( int i = offset; i < length; i++ ) {
-            argumentTypes[ i - offset ] = Java.resolveClassType(context, args[i]);
-        }
-        return argumentTypes;
+        return ClassUtils.getArgumentTypes(context, args, offset);
     }
 
     public IRubyObject emptyJavaArray(ThreadContext context) {
@@ -280,69 +260,27 @@ public class JavaClass extends JavaObject {
     }
 
     public final boolean isAssignableFrom(final Class<?> clazz) {
-        return assignable(javaClass(), clazz);
+        return ClassUtils.assignable(javaClass(), clazz);
     }
 
     public static boolean assignable(Class<?> target, Class<?> from) {
-        if ( target.isPrimitive() ) target = CodegenUtils.getBoxType(target);
-        else if ( from == Void.TYPE || target.isAssignableFrom(from) ) {
-            return true;
-        }
-        if ( from.isPrimitive() ) from = CodegenUtils.getBoxType(from);
-
-        if ( target.isAssignableFrom(from) ) return true;
-
-        if ( Number.class.isAssignableFrom(target) ) {
-            if ( Number.class.isAssignableFrom(from) ) {
-                return true;
-            }
-            if ( from == Character.class ) {
-                return true;
-            }
-        }
-        else if ( target == Character.class ) {
-            if ( Number.class.isAssignableFrom(from) ) {
-                return true;
-            }
-        }
-        return false;
+        return ClassUtils.assignable(target, from);
     }
 
     public static Constructor[] getConstructors(final Class<?> clazz) {
-        try {
-            return clazz.getConstructors();
-        }
-        catch (SecurityException e) { return new Constructor[0]; }
+        return ClassUtils.getConstructors(clazz);
     }
 
     public static Class<?>[] getDeclaredClasses(final Class<?> clazz) {
-        try {
-            return clazz.getDeclaredClasses();
-        }
-        catch (SecurityException e) { return new Class<?>[0]; }
-        catch (NoClassDefFoundError cnfe) {
-            // This is a Scala-specific hack, since Scala uses peculiar
-            // naming conventions and class attributes that confuse Java's
-            // reflection logic and cause a blow up in getDeclaredClasses.
-            // See http://lampsvn.epfl.ch/trac/scala/ticket/2749
-            return new Class<?>[0];
-        }
+        return ClassUtils.getDeclaredClasses(clazz);
     }
 
     public static Field[] getDeclaredFields(final Class<?> clazz) {
-        try {
-            return clazz.getDeclaredFields();
-        }
-        catch (SecurityException e) {
-            return getFields(clazz);
-        }
+        return ClassUtils.getDeclaredFields(clazz);
     }
 
     public static Field[] getFields(final Class<?> clazz) {
-        try {
-            return clazz.getFields();
-        }
-        catch (SecurityException e) { return new Field[0]; }
+        return ClassUtils.getFields(clazz);
     }
 
 }

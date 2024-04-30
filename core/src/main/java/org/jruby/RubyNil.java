@@ -37,6 +37,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.compiler.Constantizable;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -170,7 +171,7 @@ public class RubyNil extends RubyObject implements Constantizable {
     }
 
     @Override
-    @JRubyMethod(name = "=~", required = 1)
+    @JRubyMethod(name = "=~")
     public IRubyObject op_match(ThreadContext context, IRubyObject arg) {
         return this; // nil
     }
@@ -178,7 +179,7 @@ public class RubyNil extends RubyObject implements Constantizable {
     /** nil_and
      *
      */
-    @JRubyMethod(name = "&", required = 1)
+    @JRubyMethod(name = "&")
     public static RubyBoolean op_and(ThreadContext context, IRubyObject recv, IRubyObject obj) {
         return context.fals;
     }
@@ -186,7 +187,7 @@ public class RubyNil extends RubyObject implements Constantizable {
     /** nil_or
      *
      */
-    @JRubyMethod(name = "|", required = 1)
+    @JRubyMethod(name = "|")
     public static RubyBoolean op_or(ThreadContext context, IRubyObject recv, IRubyObject obj) {
         return RubyBoolean.newBoolean(context, obj.isTrue());
     }
@@ -194,7 +195,7 @@ public class RubyNil extends RubyObject implements Constantizable {
     /** nil_xor
      *
      */
-    @JRubyMethod(name = "^", required = 1)
+    @JRubyMethod(name = "^")
     public static RubyBoolean op_xor(ThreadContext context, IRubyObject recv, IRubyObject obj) {
         return RubyBoolean.newBoolean(context, obj.isTrue());
     }
@@ -244,8 +245,10 @@ public class RubyNil extends RubyObject implements Constantizable {
     /** nilclass_rationalize
      *
      */
-    @JRubyMethod(optional = 1)
+    @JRubyMethod(optional = 1, checkArity = false)
     public static IRubyObject rationalize(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 0, 1);
+
         return to_r(context, recv);
     }
 

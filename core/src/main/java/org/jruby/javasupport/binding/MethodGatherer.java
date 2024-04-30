@@ -5,10 +5,10 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.java.invokers.ConstructorInvoker;
+import org.jruby.java.util.ClassUtils;
 import org.jruby.javasupport.Java;
-import org.jruby.javasupport.JavaClass;
-import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaSupportImpl;
+import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -73,6 +73,8 @@ public class MethodGatherer {
     static {
         STATIC_RESERVED_NAMES = newReservedNamesMap(1);
         STATIC_RESERVED_NAMES.put("new", new AssignedName("new", Priority.RESERVED));
+        // "singleton_method_added" gets called on the metaclass for metaclass method definitions
+        STATIC_RESERVED_NAMES.put("singleton_method_added", new AssignedName("singleton_method_added", Priority.RESERVED));
     }
 
     static {
@@ -83,6 +85,8 @@ public class MethodGatherer {
         INSTANCE_RESERVED_NAMES.put("initialize", new AssignedName("initialize", Priority.RESERVED));
         // "equal?" should not be overridden (GH-5990)
         INSTANCE_RESERVED_NAMES.put("equal?", new AssignedName("equal?", Priority.RESERVED));
+        // "singleton_method_added" gets called on the object for singleton method definitions
+        INSTANCE_RESERVED_NAMES.put("singleton_method_added", new AssignedName("singleton_method_added", Priority.RESERVED));
     }
 
     // TODO: other reserved names?
@@ -353,7 +357,7 @@ public class MethodGatherer {
     @SuppressWarnings("deprecation")
     protected void installInnerClasses(final Class<?> javaClass, final RubyModule proxy) {
         // setup constants for public inner classes
-        Class<?>[] classes = JavaClass.getDeclaredClasses(javaClass);
+        Class<?>[] classes = ClassUtils.getDeclaredClasses(javaClass);
 
         final Ruby runtime = proxy.getRuntime();
 
@@ -364,7 +368,7 @@ public class MethodGatherer {
             // no non-public inner classes
             if ( ! Modifier.isPublic(clazz.getModifiers()) ) continue;
 
-            final String simpleName = JavaClass.getSimpleName(clazz);
+            final String simpleName = ClassUtils.getSimpleName(clazz);
             if ( simpleName.length() == 0 ) continue;
 
             if (constantFields.containsKey(simpleName)) {
@@ -474,9 +478,8 @@ public class MethodGatherer {
         getStaticInstallers().forEach(($, value) -> value.install(proxy));
     }
 
-    @SuppressWarnings("deprecation")
     void installConstructors(Class<?> javaClass, final RubyModule proxy) {
-        Constructor[] constructors = JavaClass.getConstructors(javaClass);
+        Constructor[] constructors = ClassUtils.getConstructors(javaClass);
 
         boolean localConstructor = false;
         for (Constructor constructor : constructors) {
@@ -563,7 +566,7 @@ public class MethodGatherer {
 
     @SuppressWarnings("deprecation")
     void setupFieldsAndConstants(Class<?> javaClass) {
-        Field[] fields = JavaClass.getDeclaredFields(javaClass);
+        Field[] fields = ClassUtils.getDeclaredFields(javaClass);
 
         for (Field field : fields) {
             if (javaClass != field.getDeclaringClass()) continue;
@@ -715,17 +718,28 @@ public class MethodGatherer {
         }
 
         private static boolean filterAccessible(Method method, int mod) {
-            // Skip private methods, since they may mess with dispatch
-            if (Modifier.isPrivate(mod)) return false;
-
-            // Skip protected methods if we can't set accessible
-            if (!Modifier.isPublic(mod) && !Java.trySetAccessible(method)) return false;
-
-            // ignore bridge methods because we'd rather directly call methods that this method
-            // is bridging (and such methods are by definition always available.)
+            // Exclude bridge methods
             if ((mod & ACC_BRIDGE) != 0) return false;
 
-            return true;
+            if (Modifier.isPublic(mod)) {
+                // Include public
+                return true;
+            } else if (Modifier.isPrivate(mod)) {
+                // Exclude private
+                return false;
+            } else if (Modifier.isProtected(mod)) {
+                // Include protected if they can be set accessible
+                return Java.trySetAccessible(method);
+            } else {
+                // We split this on 17 because at that level unopened non-public functions are inaccessible
+                if (Platform.JAVA_VERSION < 17) {
+                    // Include package-private if they can be set accessible on Java 16 and earlier
+                    return Java.trySetAccessible(method);
+                } else {
+                    // Exclude package-private on Java 17 and later
+                    return false;
+                }
+            }
         }
     }
 }

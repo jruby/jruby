@@ -386,7 +386,7 @@ public class JavaSignatureParser {
 
 
   /** simplified error message.
-      @see #yyerror(java.lang.String, java.lang.String[])
+      @see #yyerror(java.lang.String, java.lang.String[], java.lang.String)
     */
   public void yyerror (String message) throws ParserSyntaxException {
     throw new ParserSyntaxException(message);
@@ -434,7 +434,7 @@ public class JavaSignatureParser {
   /** the generated parser, with debugging messages.
       Maintains a dynamic state and value stack.
       @param yyLex scanner.
-      @param yydebug debug message writer implementing <tt>yyDebug</tt>, or <tt>null</tt>.
+      @param ayydebug debug message writer implementing <code>yyDebug</code>, or <code>null</code>.
       @return result of the last reduction, if any.
       @throws ParserSyntaxException on irrecoverable parse error.
     */
@@ -450,9 +450,9 @@ public class JavaSignatureParser {
   protected int yyMax;
 
   /** executed at the beginning of a reduce action.
-      Used as <tt>$$ = yyDefault($1)</tt>, prior to the user-specified action, if any.
+      Used as <code>$$ = yyDefault($1)</code>, prior to the user-specified action, if any.
       Can be overwritten to provide deep copy, etc.
-      @param first value for <tt>$1</tt>, or <tt>null</tt>.
+      @param first value for <code>$1</code>, or <code>null</code>.
       @return first.
     */
   protected Object yyDefault (Object first) {

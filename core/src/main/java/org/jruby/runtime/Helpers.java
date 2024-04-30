@@ -8,8 +8,8 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Array;
 
-import java.net.BindException;
 import java.net.PortUnreachableException;
+import java.net.SocketException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.NonReadableChannelException;
 import java.nio.channels.NonWritableChannelException;
@@ -17,7 +17,6 @@ import java.nio.channels.NotYetConnectedException;
 import java.nio.charset.Charset;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.AtomicMoveNotSupportedException;
-import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileSystemLoopException;
 import java.nio.file.NoSuchFileException;
@@ -49,6 +48,7 @@ import org.jruby.ast.RequiredKeywordArgumentValueNode;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.NoMethodError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.internal.runtime.methods.*;
@@ -59,7 +59,6 @@ import org.jruby.ir.JIT;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.javasupport.Java;
-import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.proxy.ReifiedJavaProxy;
 import org.jruby.parser.StaticScope;
@@ -72,6 +71,7 @@ import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
+import org.jruby.util.CommonByteLists;
 import org.jruby.util.MurmurHash;
 import org.jruby.util.TypeConverter;
 
@@ -81,7 +81,6 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.unicode.UnicodeEncoding;
 
-import static org.jruby.RubyBasicObject.UNDEF;
 import static org.jruby.RubyBasicObject.getMetaClass;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_EMPTY;
 import static org.jruby.runtime.Visibility.*;
@@ -113,22 +112,6 @@ public class Helpers {
         } else {
             return receiver.getSingletonClass();
         }
-    }
-
-    @Deprecated // no longer used - only been used by interface implementation
-    public static IRubyObject invokeMethodMissing(IRubyObject receiver, String name, IRubyObject[] args) {
-        ThreadContext context = receiver.getRuntime().getCurrentContext();
-
-        // store call information so method_missing impl can use it
-        context.setLastCallStatusAndVisibility(CallType.FUNCTIONAL, Visibility.PUBLIC);
-
-        if (name.equals("method_missing")) {
-            return RubyKernel.method_missing(context, receiver, args, Block.NULL_BLOCK);
-        }
-
-        IRubyObject[] newArgs = prepareMethodMissingArgs(args, context, name);
-
-        return invoke(context, receiver, "method_missing", newArgs, Block.NULL_BLOCK);
     }
 
     public static IRubyObject callMethodMissing(ThreadContext context, IRubyObject self, RubyClass klass, Visibility visibility, String name, CallType callType, IRubyObject[] args, Block block) {
@@ -189,7 +172,7 @@ public class Helpers {
         if (methodMissing.isUndefined() || methodMissing.equals(runtime.getDefaultMethodMissing())) {
             return selectInternalMM(runtime, visibility, callType);
         }
-        return new MethodMissingMethod(entry, visibility, callType);
+        return new MethodMissingWrapper(entry, visibility, callType);
     }
 
     public static DynamicMethod selectMethodMissing(ThreadContext context, RubyClass selfClass, Visibility visibility, String name, CallType callType) {
@@ -205,7 +188,7 @@ public class Helpers {
         if (methodMissing.isUndefined() || methodMissing.equals(runtime.getDefaultMethodMissing())) {
             return selectInternalMM(runtime, visibility, callType);
         }
-        return new MethodMissingMethod(entry, visibility, callType);
+        return new MethodMissingWrapper(entry, visibility, callType);
     }
 
     public static DynamicMethod selectMethodMissing(RubyClass selfClass, Visibility visibility, String name, CallType callType) {
@@ -221,7 +204,7 @@ public class Helpers {
         if (methodMissing.isUndefined() || methodMissing.equals(runtime.getDefaultMethodMissing())) {
             return selectInternalMM(runtime, visibility, callType);
         }
-        return new MethodMissingMethod(entry, visibility, callType);
+        return new MethodMissingWrapper(entry, visibility, callType);
     }
 
     public static final Map<String, String> map(String... keyValues) {
@@ -253,12 +236,12 @@ public class Helpers {
      * @return the resulting {@link Errno} value, or null if none could be determined.
      */
     public static Errno errnoFromException(Throwable t) {
-        // FIXME: Error-message scrapingis gross and turns out to be fragile if the host system is localized jruby/jruby#5415
+        // FIXME: Error-message scraping is gross and turns out to be fragile if the host system is localized jruby/jruby#5415
 
         // Try specific exception types by rethrowing and catching.
         try {
             throw t;
-        } catch (FileNotFoundException fnfe) {
+        } catch (FileNotFoundException | NoSuchFileException fnfe) {
             return Errno.ENOENT;
         } catch (EOFException eofe) {
             return Errno.EPIPE;
@@ -272,15 +255,11 @@ public class Helpers {
             return Errno.EEXIST;
         } catch (FileSystemLoopException fsle) {
             return Errno.ELOOP;
-        } catch (NoSuchFileException nsfe) {
-            return Errno.ENOENT;
         } catch (NotDirectoryException nde) {
             return Errno.ENOTDIR;
         } catch (AccessDeniedException ade) {
             return Errno.EACCES;
-        } catch (DirectoryNotEmptyException dnee) {
-            return errnoFromMessage(dnee);
-        } catch (BindException be) {
+        } catch (IOException be) {
             return errnoFromMessage(be);
         } catch (NotYetConnectedException nyce) {
             return Errno.ENOTCONN;
@@ -289,12 +268,6 @@ public class Helpers {
             return Errno.EINVAL;
         } catch (IllegalArgumentException nrce) {
             return Errno.EINVAL;
-        } catch (IOException ioe) {
-            String message = ioe.getMessage();
-            // Raised on Windows for process launch with missing file
-            if (message.endsWith("The system cannot find the file specified")) {
-                return Errno.ENOENT;
-            }
         } catch (Throwable t2) {
             // fall through
         }
@@ -320,6 +293,7 @@ public class Helpers {
                     return Errno.ECONNABORTED;
                 case "Broken pipe":
                     return Errno.EPIPE;
+                case "Connection reset":
                 case "Connection reset by peer":
                 case "An existing connection was forcibly closed by the remote host":
                     return Errno.ECONNRESET;
@@ -353,7 +327,13 @@ public class Helpers {
                 case "Protocol family not supported":
                     return Errno.EPFNOSUPPORT;
             }
+
+            // Raised on Windows for process launch with missing file
+            if (errorMessage.endsWith("The system cannot find the file specified")) {
+                return Errno.ENOENT;
+            }
         }
+
         return null;
     }
 
@@ -588,12 +568,24 @@ public class Helpers {
         return (int) length;
     }
 
-    public static class MethodMissingMethod extends DynamicMethod {
+    public static CacheEntry createMethodMissingEntry(ThreadContext context, RubyClass selfClass, CallType callType, Visibility visibility, int token, String methodName) {
+        DynamicMethod method = selectMethodMissing(context, selfClass, visibility, methodName, callType);
+        return new CacheEntry(
+                method,
+                selfClass,
+                token);
+    }
+
+    /**
+     * Wraps the target method_missing implementation, passing the called method name as a leading symbol argument.
+     */
+    public static class MethodMissingWrapper extends DynamicMethod {
         public final CacheEntry entry;
         private final CallType lastCallStatus;
         private final Visibility lastVisibility;
+        private RubySymbol lastName;
 
-        public MethodMissingMethod(CacheEntry entry, Visibility lastVisibility, CallType lastCallStatus) {
+        public MethodMissingWrapper(CacheEntry entry, Visibility lastVisibility, CallType lastCallStatus) {
             super(entry.method.getImplementationClass(), lastVisibility, entry.method.getName());
             this.entry = entry;
             this.lastCallStatus = lastCallStatus;
@@ -607,8 +599,78 @@ public class Helpers {
         }
 
         @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
+            context.setLastCallStatusAndVisibility(lastCallStatus, lastVisibility);
+            return this.entry.method.call(context, self, entry.sourceModule, "method_missing", nameToSymbol(context, name), block);
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
+            context.setLastCallStatusAndVisibility(lastCallStatus, lastVisibility);
+            return this.entry.method.call(context, self, entry.sourceModule, "method_missing", nameToSymbol(context, name), arg0, block);
+        }
+
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+            context.setLastCallStatusAndVisibility(lastCallStatus, lastVisibility);
+            return this.entry.method.call(context, self, entry.sourceModule, "method_missing", nameToSymbol(context, name), arg0, arg1, block);
+        }
+
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+            context.setLastCallStatusAndVisibility(lastCallStatus, lastVisibility);
+            return this.entry.method.call(context, self, entry.sourceModule, "method_missing", arrayOf(nameToSymbol(context, name), arg0, arg1, arg2), block);
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+            context.setLastCallStatusAndVisibility(lastCallStatus, lastVisibility);
+            return this.entry.method.call(context, self, entry.sourceModule, "method_missing", prepareMethodMissingArgs(args, context, name));
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+            context.setLastCallStatusAndVisibility(lastCallStatus, lastVisibility);
+            return this.entry.method.call(context, self, entry.sourceModule, "method_missing", nameToSymbol(context, name));
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
+            context.setLastCallStatusAndVisibility(lastCallStatus, lastVisibility);
+            return this.entry.method.call(context, self, entry.sourceModule, "method_missing", nameToSymbol(context, name), arg0);
+        }
+
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
+            context.setLastCallStatusAndVisibility(lastCallStatus, lastVisibility);
+            return this.entry.method.call(context, self, entry.sourceModule, "method_missing", nameToSymbol(context, name), arg0, arg1);
+        }
+
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+            context.setLastCallStatusAndVisibility(lastCallStatus, lastVisibility);
+            return this.entry.method.call(context, self, entry.sourceModule, "method_missing", arrayOf(nameToSymbol(context, name), arg0, arg1, arg2));
+        }
+
+        @Override
         public DynamicMethod dup() {
             return this;
+        }
+
+        private IRubyObject[] prepareMethodMissingArgs(IRubyObject[] args, ThreadContext context, String name) {
+            return ArraySupport.newCopy(nameToSymbol(context, name), args);
+        }
+
+        private RubySymbol nameToSymbol(ThreadContext context, String name) {
+            RubySymbol lastName = this.lastName;
+            if (lastName == null || !name.equals(lastName.idString())) {
+                this.lastName = lastName = context.runtime.newSymbol(name);
+            }
+            return lastName;
         }
     }
 
@@ -624,10 +686,6 @@ public class Helpers {
         } else {
             return runtime.getNormalMethodMissing();
         }
-    }
-
-    private static IRubyObject[] prepareMethodMissingArgs(IRubyObject[] args, ThreadContext context, String name) {
-        return ArraySupport.newCopy(context.runtime.newSymbol(name), args);
     }
 
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, Block block) {
@@ -726,6 +784,22 @@ public class Helpers {
         return invokeSuper(context, self, context.getFrameKlazz(), context.getFrameName(), args, block);
     }
 
+    public static String getSuperNameFromCompositeName(String compositeName) {
+        if (compositeName != null && compositeName.length() > 0 && compositeName.charAt(0) == '\0') {
+            return compositeName.substring(compositeName.lastIndexOf('\0') + 1);
+        }
+
+        return compositeName;
+    }
+
+    public static String getCalleeNameFromCompositeName(String compositeName) {
+        if (compositeName != null && compositeName.length() > 0 && compositeName.charAt(0) == '\0') {
+            return compositeName.substring(1, compositeName.lastIndexOf('\0'));
+        }
+
+        return compositeName;
+    }
+
     public static IRubyObject invokeSuper(ThreadContext context, IRubyObject self, RubyModule klass, String name, IRubyObject[] args, Block block) {
         checkSuperDisabledOrOutOfMethod(context, klass, name);
 
@@ -807,7 +881,6 @@ public class Helpers {
         RubyModule klazz = context.getFrameKlazz();
         String name = context.getFrameName();
 
-
         RubyClass selfClass = getMetaClass(self);
         RubyClass superClass = klazz.getSuperClass();
         CacheEntry entry = superClass != null ? superClass.searchWithCache(name) : CacheEntry.NULL_CACHE;
@@ -843,6 +916,10 @@ public class Helpers {
      */
     public static IRubyObject nullToNil(IRubyObject value, IRubyObject nil) {
         return value != null ? value : nil;
+    }
+
+    public static IRubyObject nullToUndefined(IRubyObject value) {
+        return value != null ? value : UndefinedValue.UNDEFINED;
     }
 
     public static void handleArgumentSizes(ThreadContext context, Ruby runtime, int given, int required, int opt, int rest) {
@@ -1656,57 +1733,57 @@ public class Helpers {
     }
 
     public static RubyHash constructSmallHash(Ruby runtime,
-                                              IRubyObject key1, IRubyObject value1, boolean prepareString1) {
+                                              IRubyObject key1, IRubyObject value1) {
         RubyHash hash = RubyHash.newSmallHash(runtime);
-        hash.fastASetSmall(runtime, key1, value1, prepareString1);
+        hash.fastASetSmallCheckString(runtime, key1, value1);
         return hash;
     }
 
     public static RubyHash constructSmallHash(Ruby runtime,
-                                              IRubyObject key1, IRubyObject value1, boolean prepareString1,
-                                              IRubyObject key2, IRubyObject value2, boolean prepareString2) {
+                                              IRubyObject key1, IRubyObject value1,
+                                              IRubyObject key2, IRubyObject value2) {
         RubyHash hash = RubyHash.newSmallHash(runtime);
-        hash.fastASetSmall(runtime, key1, value1, prepareString1);
-        hash.fastASetSmall(runtime, key2, value2, prepareString2);
+        hash.fastASetSmallCheckString(runtime, key1, value1);
+        hash.fastASetSmallCheckString(runtime, key2, value2);
         return hash;
     }
 
     public static RubyHash constructSmallHash(Ruby runtime,
-                                              IRubyObject key1, IRubyObject value1, boolean prepareString1,
-                                              IRubyObject key2, IRubyObject value2, boolean prepareString2,
-                                              IRubyObject key3, IRubyObject value3, boolean prepareString3) {
+                                              IRubyObject key1, IRubyObject value1,
+                                              IRubyObject key2, IRubyObject value2,
+                                              IRubyObject key3, IRubyObject value3) {
         RubyHash hash = RubyHash.newSmallHash(runtime);
-        hash.fastASetSmall(runtime, key1, value1, prepareString1);
-        hash.fastASetSmall(runtime, key2, value2, prepareString2);
-        hash.fastASetSmall(runtime, key3, value3, prepareString3);
+        hash.fastASetSmallCheckString(runtime, key1, value1);
+        hash.fastASetSmallCheckString(runtime, key2, value2);
+        hash.fastASetSmallCheckString(runtime, key3, value3);
         return hash;
     }
 
     public static RubyHash constructSmallHash(Ruby runtime,
-                                              IRubyObject key1, IRubyObject value1, boolean prepareString1,
-                                              IRubyObject key2, IRubyObject value2, boolean prepareString2,
-                                              IRubyObject key3, IRubyObject value3, boolean prepareString3,
-                                              IRubyObject key4, IRubyObject value4, boolean prepareString4) {
+                                              IRubyObject key1, IRubyObject value1,
+                                              IRubyObject key2, IRubyObject value2,
+                                              IRubyObject key3, IRubyObject value3,
+                                              IRubyObject key4, IRubyObject value4) {
         RubyHash hash = RubyHash.newSmallHash(runtime);
-        hash.fastASetSmall(runtime, key1, value1, prepareString1);
-        hash.fastASetSmall(runtime, key2, value2, prepareString2);
-        hash.fastASetSmall(runtime, key3, value3, prepareString3);
-        hash.fastASetSmall(runtime, key4, value4, prepareString4);
+        hash.fastASetSmallCheckString(runtime, key1, value1);
+        hash.fastASetSmallCheckString(runtime, key2, value2);
+        hash.fastASetSmallCheckString(runtime, key3, value3);
+        hash.fastASetSmallCheckString(runtime, key4, value4);
         return hash;
     }
 
     public static RubyHash constructSmallHash(Ruby runtime,
-                                              IRubyObject key1, IRubyObject value1, boolean prepareString1,
-                                              IRubyObject key2, IRubyObject value2, boolean prepareString2,
-                                              IRubyObject key3, IRubyObject value3, boolean prepareString3,
-                                              IRubyObject key4, IRubyObject value4, boolean prepareString4,
-                                              IRubyObject key5, IRubyObject value5, boolean prepareString5) {
+                                              IRubyObject key1, IRubyObject value1,
+                                              IRubyObject key2, IRubyObject value2,
+                                              IRubyObject key3, IRubyObject value3,
+                                              IRubyObject key4, IRubyObject value4,
+                                              IRubyObject key5, IRubyObject value5) {
         RubyHash hash = RubyHash.newSmallHash(runtime);
-        hash.fastASetSmall(runtime, key1, value1, prepareString1);
-        hash.fastASetSmall(runtime, key2, value2, prepareString2);
-        hash.fastASetSmall(runtime, key3, value3, prepareString3);
-        hash.fastASetSmall(runtime, key4, value4, prepareString4);
-        hash.fastASetSmall(runtime, key5, value5, prepareString5);
+        hash.fastASetSmallCheckString(runtime, key1, value1);
+        hash.fastASetSmallCheckString(runtime, key2, value2);
+        hash.fastASetSmallCheckString(runtime, key3, value3);
+        hash.fastASetSmallCheckString(runtime, key4, value4);
+        hash.fastASetSmallCheckString(runtime, key5, value5);
         return hash;
     }
 
@@ -1837,21 +1914,27 @@ public class Helpers {
     public static IRubyObject aryToAry(ThreadContext context, IRubyObject value) {
         if (value instanceof RubyArray) return value;
 
-        if (value.respondsTo("to_ary")) {
-            return TypeConverter.convertToType(context, value, context.runtime.getArray(), "to_ary", false);
-        }
+        return respondsTo_to_ary(value) ?
+                TypeConverter.convertToTypeUnchecked(context, value, context.runtime.getArray(), "to_ary", false) :
+                context.runtime.newArray(value);
+    }
 
-        return context.runtime.newArray(value);
+    private static boolean respondsTo_to_ary(IRubyObject value) {
+        try {
+            return value.respondsTo("to_ary");
+        } catch (NoMethodError e) {
+            // A non-existent respond_to? should still end up calling method_missing but if m_m does not
+            // handle it then we should not raise.
+            return false;
+        }
     }
 
     public static IRubyObject aryOrToAry(ThreadContext context, IRubyObject value) {
         if (value instanceof RubyArray) return value;
 
-        if (value.respondsTo("to_ary")) {
-            return TypeConverter.convertToType(context, value, context.runtime.getArray(), "to_ary", false);
-        }
-
-        return context.nil;
+        return respondsTo_to_ary(value) ?
+                TypeConverter.convertToTypeUnchecked(context, value, context.runtime.getArray(), "to_ary", false) :
+                context.nil;
     }
 
     @Deprecated // not used
@@ -2435,7 +2518,7 @@ public class Helpers {
         return ((RubyArray)first.dup()).append(second);
     }
 
-    @JIT
+    @JIT @Interp
     public static RubyArray argsPush(ThreadContext context, IRubyObject first, IRubyObject second, boolean usesKeywords) {
         boolean isEmptyKeywordRest = usesKeywords && second instanceof RubyHash && ((RubyHash) second).isEmpty();
 
@@ -2526,8 +2609,15 @@ public class Helpers {
 
         if (argsNode.getKeyRest() != null) {
             RubySymbol argName = argsNode.getKeyRest().getName();
-            // FIXME: Should a argName of "" really get saved that way here?
-            ArgumentType type = argName == null || argName.getBytes().length() == 0 ? ArgumentType.anonkeyrest : ArgumentType.keyrest;
+            ArgumentType type;
+
+            if (argName == null || argName.getBytes().length() == 0) {
+                type = ArgumentType.anonkeyrest;
+            } else if (argName.getBytes().equals(CommonByteLists.NIL)) {
+                type = ArgumentType.nokey;
+            } else {
+                type = ArgumentType.keyrest;
+            }
             descs.add(new ArgumentDescriptor(type, argName));
         }
         if (argsNode.getBlock() != null) descs.add(new ArgumentDescriptor(ArgumentType.block, argsNode.getBlock().getName()));
@@ -2546,7 +2636,6 @@ public class Helpers {
             String param = parameterList[i];
 
             if (param.equals("NONE")) break;
-            if (param.equals("nil")) param = "n"; // make length 1 so we don't look for a name
 
             ArgumentType type = ArgumentType.valueOf(param.charAt(0));
 
@@ -2688,7 +2777,7 @@ public class Helpers {
     }
 
     /**
-     * @note Assumes exception: ... to be the only (optional) keyword argument!
+     * <p>Note: Assumes exception: ... to be the only (optional) keyword argument!</p>
      * @param context
      * @param opts
      * @return false if `exception: false`, true otherwise
@@ -2698,7 +2787,7 @@ public class Helpers {
     }
 
     /**
-     * @note Assumes exception: ... to be the only (optional) keyword argument!
+     * <p>Note: Assumes exception: ... to be the only (optional) keyword argument!</p>
      * @param context
      * @param opts the keyword args hash
      * @param defValue to return when no keyword options
@@ -2713,7 +2802,7 @@ public class Helpers {
     }
 
     /**
-     * @note Assumes exception: ... to be the only (optional) keyword argument!
+     * <p>Note: Assumes exception: ... to be the only (optional) keyword argument!</p>
      * @param context
      * @param args method args
      * @param defValue to return when no keyword options
@@ -2847,6 +2936,18 @@ public class Helpers {
         newValues[0] = first;
         System.arraycopy(values, 0, newValues, 1, values.length);
         return newValues;
+    }
+
+    public static IRubyObject[] arrayOf(IRubyObject first) {
+        return new IRubyObject[] {first};
+    }
+
+    public static IRubyObject[] arrayOf(IRubyObject first, IRubyObject second) {
+        return new IRubyObject[] {first, second};
+    }
+
+    public static IRubyObject[] arrayOf(IRubyObject first, IRubyObject second, IRubyObject third) {
+        return new IRubyObject[] {first, second, third};
     }
 
     public static <T> T[] arrayOf(T[] values, T last, IntFunction<T[]> allocator) {

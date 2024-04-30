@@ -33,7 +33,7 @@ import java.io.ObjectOutputStream;
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -58,11 +58,12 @@ import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
  * The logic originally lived in both RubyBasicObject and RubyClass, tightly
  * coupled to each and difficult to follow as it bounced back and forth. We
  * moved the logic here for a couple reasons:
- *
+ * <ul>
  * <li>To have a single place from which we could follow ivar logic.</li>
  * <li>To make it easier to swap in new implementations of instance variable
  * logic as we work toward reifying ivars into fields.</li>
  * <li>To remove rather noisy logic from RubyBasicObject and RubyClass.</li>
+ * </ul>
  */
 public class VariableTableManager {
     /** the "real" class associated with this table */
@@ -257,7 +258,7 @@ public class VariableTableManager {
                 if (ivarAccessor == null) {
                     // allocate a new accessor and populate a new table
                     ivarAccessor = allocateVariableAccessors(name, defaultAccessorBuilder);
-                    Map<String, VariableAccessor> newVariableAccessors = new HashMap<String, VariableAccessor>(myVariableAccessors.size() + 1);
+                    Map<String, VariableAccessor> newVariableAccessors = new LinkedHashMap<>(myVariableAccessors.size() + 1);
 
                     newVariableAccessors.putAll(myVariableAccessors);
                     newVariableAccessors.put(name, ivarAccessor);
@@ -389,7 +390,7 @@ public class VariableTableManager {
      * @return a map of names to accessors for all variables
      */
     public Map<String, VariableAccessor> getVariableTableCopy() {
-        return new HashMap<String, VariableAccessor>(getVariableAccessorsForRead());
+        return new LinkedHashMap<String, VariableAccessor>(getVariableAccessorsForRead());
     }
 
     /**

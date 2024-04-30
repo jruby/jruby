@@ -82,7 +82,7 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return wrap19(context, recv, new IRubyObject[]{io}, block);
     }
     
-    @JRubyMethod(meta = true, name = "wrap", required = 1, optional = 1)
+    @JRubyMethod(meta = true, name = "wrap", required = 1, optional = 1, checkArity = false)
     public static IRubyObject wrap19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
         RubyGzipFile instance;
@@ -251,7 +251,7 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return getRuntime().newFixnum(level);
     }
 
-    @JRubyMethod(name = "sync=", required = 1)
+    @JRubyMethod(name = "sync=")
     public IRubyObject set_sync(IRubyObject arg) {
         sync = ((RubyBoolean) arg).isTrue();
         return sync ? getRuntime().getTrue() : getRuntime().getFalse();

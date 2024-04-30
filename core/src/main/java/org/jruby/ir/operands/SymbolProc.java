@@ -8,7 +8,7 @@ import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.ThreadContext;
 
 /**
- * A literal representing proc'ified symbols, as in &:foo.
+ * A literal representing proc'ified symbols, as in &amp;:foo.
  *
  * Used to cache a unique and constant proc at the use site to reduce allocation and improve caching.
  */

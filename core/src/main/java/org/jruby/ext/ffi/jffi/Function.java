@@ -13,6 +13,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.ffi.*;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -68,8 +69,10 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
         getSingletonClass().addMethod("call", createDynamicMethod(getSingletonClass()));
     }
     
-    @JRubyMethod(name = { "new" }, meta = true, required = 2, optional = 2)
+    @JRubyMethod(name = { "new" }, meta = true, required = 2, optional = 2, checkArity = false)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        int argc = Arity.checkArgumentCount(context, args, 2, 4);
+
         MemoryIO fptr = null;
         RubyHash options = null;
         Object proc = null;
@@ -86,10 +89,10 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
             parameterTypes[i] = org.jruby.ext.ffi.Util.findType(context, paramTypes.entry(i));
         }
 
-        if (args.length > 2 && args[2] instanceof Pointer) {
+        if (argc > 2 && args[2] instanceof Pointer) {
             fptr = new CodeMemoryIO(context.runtime, (Pointer) args[2]);
             optionsIndex = 3;
-        } else if (args.length > 2 && (args[2] instanceof RubyProc || args[2].respondsTo("call"))) {
+        } else if (argc > 2 && (args[2] instanceof RubyProc || args[2].respondsTo("call"))) {
             proc = args[2];
             optionsIndex = 3;
         } else if (block.isGiven()) {
@@ -106,7 +109,7 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
         String convention = "default";
         IRubyObject enums = null;
         boolean saveError = true;
-        if (args.length > optionsIndex && args[optionsIndex] instanceof RubyHash) {
+        if (argc > optionsIndex && args[optionsIndex] instanceof RubyHash) {
             options = (RubyHash) args[optionsIndex];
 
             IRubyObject rbConvention = options.fastARef(context.runtime.newSymbol("convention"));
@@ -150,7 +153,7 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
         return context.nil;
     }
 
-    @JRubyMethod(name = "autorelease=", required = 1)
+    @JRubyMethod(name = "autorelease=")
     public final IRubyObject autorelease(ThreadContext context, IRubyObject release) {
         if (autorelease != release.isTrue() && getMemoryIO() instanceof AllocatedDirectMemoryIO) {
             ((AllocatedDirectMemoryIO) getMemoryIO()).setAutoRelease(autorelease = release.isTrue());

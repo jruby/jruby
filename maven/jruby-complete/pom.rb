@@ -11,7 +11,7 @@ project 'JRuby Complete' do
   packaging 'bundle'
 
 
-  extension 'org.torquebox.mojo:mavengem-wagon:1.0.3'
+  extension 'org.jruby.maven:mavengem-wagon:2.0.2'
 
   plugin_repository :id => :mavengems, :url => 'mavengem:https://rubygems.org'
 
@@ -41,7 +41,8 @@ project 'JRuby Complete' do
               :mainClass => 'org.jruby.Main'
             },
             manifestEntries: {
-              'Automatic-Module-Name' => 'org.jruby.complete'
+              'Automatic-Module-Name' => 'org.jruby.complete',
+              'Add-Opens' => 'java.base/java.io java.base/java.nio.channels java.base/sun.nio.ch java.management/sun.management'
             }
           },
           :instructions => {

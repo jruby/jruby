@@ -1,1 +1,3 @@
 fails:TCPServer#accept is automatically retried when interrupted by SIGVTALRM
+fails:TCPServer#accept using IPv4 with a connected client returns a TCPSocket which is set to nonblocking
+fails:TCPServer#accept using IPv6 with a connected client returns a TCPSocket which is set to nonblocking

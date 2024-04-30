@@ -124,9 +124,20 @@ public class RubyException extends RubyObject {
         this.setMessage(message == null ? runtime.getNil() : runtime.newString(message));
     }
 
-    @JRubyMethod(name = "exception", optional = 1, rest = true, meta = true)
+    @JRubyMethod(name = "exception", rest = true, meta = true)
     public static IRubyObject exception(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         return ((RubyClass) recv).newInstance(context, args, block);
+    }
+
+    @JRubyMethod(name = "to_tty?", meta = true)
+    public static IRubyObject to_tty_p(ThreadContext context, IRubyObject recv) {
+        Ruby runtime = context.runtime;
+        IRubyObject stderr = runtime.getGlobalVariables().get("$stderr");
+        IRubyObject STDERR = runtime.getObject().getConstant("STDERR");
+        if (equalInternal(context, stderr, STDERR)) {
+            return ((RubyIO) STDERR).tty_p(context);
+        }
+        return context.fals;
     }
 
     @JRubyMethod(name = "===", meta = true)
@@ -170,7 +181,7 @@ public class RubyException extends RubyObject {
         public void marshalTo(Ruby runtime, RubyException exc, RubyClass type,
                               MarshalStream marshalStream) throws IOException {
             marshalStream.registerLinkTarget(exc);
-            List<Variable<Object>> attrs = exc.getVariableList();
+            List<Variable<Object>> attrs = exc.getMarshalVariableList();
             attrs.add(new VariableEntry<>("mesg", exc.getMessage()));
             attrs.add(new VariableEntry<>("bt", exc.getBacktrace()));
             marshalStream.dumpVariables(attrs);
@@ -268,7 +279,7 @@ public class RubyException extends RubyObject {
         return getBacktrace();
     }
 
-    @JRubyMethod(required = 1)
+    @JRubyMethod
     public IRubyObject set_backtrace(IRubyObject obj) {
         setBacktrace(obj);
         return backtrace();
@@ -291,7 +302,7 @@ public class RubyException extends RubyObject {
         return backtrace.backtraceLocations = backtrace.generateBacktraceLocations(context);
     }
 
-    @JRubyMethod(optional = 1)
+    @JRubyMethod(optional = 1, checkArity = false)
     public RubyException exception(IRubyObject[] args) {
         switch (args.length) {
             case 0 :
@@ -409,7 +420,7 @@ public class RubyException extends RubyObject {
 
     // NOTE: can not have IRubyObject as NativeException has getCause() returning Throwable
     public Object getCause() {
-        return cause;
+        return cause == this ? null : cause;
     }
 
     public RubyStackTraceElement[] getBacktraceElements() {
@@ -434,7 +445,7 @@ public class RubyException extends RubyObject {
      * Retrieve the current backtrace object for a given exception.
      * @param exception
      * @return set (or already generated) backtrace, null otherwise
-     * @note Internal API.
+     * <p>Note: Internal API.</p>
      */
     public static IRubyObject retrieveBacktrace(RubyException exception) {
         return exception.backtrace.backtraceObject;

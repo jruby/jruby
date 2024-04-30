@@ -150,9 +150,20 @@ public class RubyLexer extends LexingCommon {
     }
     
     protected void ambiguousOperator(String op, String syn) {
-        warnings.warn(ID.AMBIGUOUS_ARGUMENT, getFile(), ruby_sourceline,
-                "`" + op + "' after local variable or literal is interpreted as binary operator");
-        warnings.warn(ID.AMBIGUOUS_ARGUMENT, getFile(), ruby_sourceline, "even though it seems like " + syn);
+        warning(ID.AMBIGUOUS_ARGUMENT, "`" + op + "' after local variable or literal is interpreted as binary operator");
+        warning(ID.AMBIGUOUS_ARGUMENT, "even though it seems like " + syn);
+    }
+
+    private void warning(ID id, String message) {
+        warning(id, getFile(), getRubySourceline(), message);
+    }
+
+    private void warning(ID id, String file, int line, String message) {
+        warnings.warning(id, file, line + 1, message); // rubysource-line is 0 based
+    }
+
+    private void warn(ID id, String message) {
+        warnings.warn(id, getFile(), getRubySourceline(), message);
     }
 
     public enum Keyword {
@@ -275,7 +286,7 @@ public class RubyLexer extends LexingCommon {
     private IRubyWarnings warnings;
 
     public Ruby getRuntime() {
-        return parser.getConfiguration().getRuntime();
+        return parser.getRuntime();
     }
 
     public int tokenize_ident(int result) {
@@ -347,7 +358,7 @@ public class RubyLexer extends LexingCommon {
                 c = '\n';
             } else if (ruby_sourceline > last_cr_line) {
                 last_cr_line = ruby_sourceline;
-                warnings.warn(ID.VOID_VALUE_EXPRESSION, getFile(), ruby_sourceline, "encountered \\r in middle of line, treated as a mere space");
+                warn(ID.VOID_VALUE_EXPRESSION, "encountered \\r in middle of line, treated as a mere space");
             }
         }
 
@@ -528,7 +539,7 @@ public class RubyLexer extends LexingCommon {
 
         // Enebo: This is a hash in MRI for multiple potential compile options but we currently only support one.
         // I am just going to set it and when a second is done we will reevaluate how they are populated.
-        parser.getConfiguration().setFrozenStringLiteral(b == 1);
+        parser.setFrozenStringLiteral(b == 1);
     }
 
     @Override
@@ -620,7 +631,7 @@ public class RubyLexer extends LexingCommon {
         try {
             d = SafeDoubleParser.parseDouble(number);
         } catch (NumberFormatException e) {
-            warnings.warn(ID.FLOAT_OUT_OF_RANGE, getFile(), ruby_sourceline, "Float " + number + " out of range.");
+            warning(ID.FLOAT_OUT_OF_RANGE, "Float " + number + " out of range.");
 
             d = number.startsWith("-") ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
         }
@@ -663,7 +674,7 @@ public class RubyLexer extends LexingCommon {
 
         StrNode newStr = new StrNode(ruby_sourceline, buffer, codeRange);
 
-        if (parser.getConfiguration().isFrozenStringLiteral()) newStr.setFrozen(true);
+        if (parser.isFrozenStringLiteral()) newStr.setFrozen(true);
 
         return newStr;
     }
@@ -807,7 +818,7 @@ public class RubyLexer extends LexingCommon {
 
             switch (newline) {
                 case 1:
-                    parser.warn(ruby_sourceline, "here document identifier ends with a newline");
+                    parser.warn("here document identifier ends with a newline");
                     markerValue.setRealSize(markerValue.realSize() - 1);
                     if (markerValue.get(markerValue.realSize() - 1) == '\r') markerValue.setRealSize(markerValue.realSize() - 1);
                     break;
@@ -847,9 +858,9 @@ public class RubyLexer extends LexingCommon {
     private boolean arg_ambiguous(int c) {
         if (warnings.isVerbose() && Options.PARSER_WARN_AMBIGUOUS_ARGUMENTS.load()) {
             if (c == '/') {
-                warnings.warning(ID.AMBIGUOUS_ARGUMENT, getFile(), ruby_sourceline, "ambiguity between regexp and two divisions: wrap regexp in parentheses or add a space after `/' operator");
+                warning(ID.AMBIGUOUS_ARGUMENT, "ambiguity between regexp and two divisions: wrap regexp in parentheses or add a space after `/' operator");
             } else {
-                warnings.warning(ID.AMBIGUOUS_ARGUMENT, getFile(), ruby_sourceline, "ambiguous first argument; put parentheses or a space even after `" + (char) c + "' operator");
+                warning(ID.AMBIGUOUS_ARGUMENT, "ambiguous first argument; put parentheses or a space even after `" + (char) c + "' operator");
             }
         }
         return true;
@@ -1225,7 +1236,7 @@ public class RubyLexer extends LexingCommon {
         int tmpLine = ruby_sourceline;
         if (isSpaceArg(c, spaceSeen)) {
             if (warnings.isVerbose() && Options.PARSER_WARN_ARGUMENT_PREFIX.load())
-                warnings.warning(ID.ARGUMENT_AS_PREFIX, getFile(), tmpLine, "`&' interpreted as argument prefix");
+                warning(ID.ARGUMENT_AS_PREFIX, getFile(), tmpLine, "`&' interpreted as argument prefix");
             c = tAMPER;
         } else if (isBEG()) {
             c = tAMPER;
@@ -1411,9 +1422,7 @@ public class RubyLexer extends LexingCommon {
                 if (!tokadd_ident(c)) return EOF;
 
                 last_state = lex_state;
-                yaccValue = createTokenByteList();
-                return tGVAR;
-
+                return identifierToken(tGVAR, createTokenByteList());
             }
             pushback(c);
             c = '_';
@@ -1484,7 +1493,7 @@ public class RubyLexer extends LexingCommon {
             try {
                 ref = Integer.parseInt(refAsString.substring(1));
             } catch (NumberFormatException e) {
-                warnings.warn(ID.AMBIGUOUS_ARGUMENT, "`" + refAsString + "' is too big for a number variable, always nil");
+                warn(ID.AMBIGUOUS_ARGUMENT, "`" + refAsString + "' is too big for a number variable, always nil");
                 ref = 0;
             }
 
@@ -1526,7 +1535,7 @@ public class RubyLexer extends LexingCommon {
                 }
 
                 if (parenNest == 0 && isLookingAtEOL()) {
-                    warnings.warn(ID.MISCELLANEOUS, "... at EOL, should be parenthesized?");
+                    warn(ID.MISCELLANEOUS, "... at EOL, should be parenthesized?");
                 } else if (getLeftParenBegin() >= 0 && getLeftParenBegin() + 1 == parenNest) {
                     if (isLexState(last_state, EXPR_LABEL)) {
                         return tDOT3;
@@ -1970,7 +1979,7 @@ public class RubyLexer extends LexingCommon {
                     break;
                 }
                 if (c2 != 0) {
-                    warnings.warn(ID.INVALID_CHAR_SEQUENCE, getFile(), ruby_sourceline, "invalid character syntax; use ?\\" + c2);
+                    warning(ID.INVALID_CHAR_SEQUENCE, "invalid character syntax; use ?\\" + c2);
                 }
             }
             pushback(c);
@@ -2102,7 +2111,7 @@ public class RubyLexer extends LexingCommon {
 
             if (isSpaceArg(c, spaceSeen)) {
                 if (warnings.isVerbose() && Options.PARSER_WARN_ARGUMENT_PREFIX.load())
-                    warnings.warning(ID.ARGUMENT_AS_PREFIX, getFile(), ruby_sourceline, "`**' interpreted as argument prefix");
+                    warning(ID.ARGUMENT_AS_PREFIX, "`**' interpreted as argument prefix");
                 c = tDSTAR;
             } else if (isBEG()) {
                 c = tDSTAR;
@@ -2119,7 +2128,7 @@ public class RubyLexer extends LexingCommon {
             pushback(c);
             if (isSpaceArg(c, spaceSeen)) {
                 if (warnings.isVerbose() && Options.PARSER_WARN_ARGUMENT_PREFIX.load())
-                    warnings.warning(ID.ARGUMENT_AS_PREFIX, getFile(), ruby_sourceline, "`*' interpreted as argument prefix");
+                    warning(ID.ARGUMENT_AS_PREFIX, "`*' interpreted as argument prefix");
                 c = tSTAR;
             } else if (isBEG()) {
                 c = tSTAR;

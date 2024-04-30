@@ -45,7 +45,7 @@ abstract public class NativeInvoker extends DynamicMethod {
         return this;
     }
 
-    @Override
+    @Deprecated @Override
     public final Arity getArity() {
         return arity;
     }

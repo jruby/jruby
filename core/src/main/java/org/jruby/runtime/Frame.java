@@ -146,8 +146,7 @@ public final class Frame {
      */
     public void updateFrame(Frame frame) {
         Block block = frame.block;
-
-        block.getClass(); // null check
+        assert block != null;
 
         this.self = frame.self;
         this.name = frame.name;
@@ -165,8 +164,7 @@ public final class Frame {
      * @param block The block passed to the method
      */
     public void updateFrame(RubyModule klazz, IRubyObject self, String name, Block block) {
-        block.getClass(); // null check
-
+        assert block != null;
         this.self = self;
         this.name = name;
         this.klazz = klazz;
@@ -183,8 +181,7 @@ public final class Frame {
      * @param block The block passed to the method
      */
     public void updateFrame(RubyModule klazz, IRubyObject self, String name, Visibility visibility, Block block) {
-        block.getClass(); // null check
-
+        assert block != null;
         this.self = self;
         this.name = name;
         this.klazz = klazz;

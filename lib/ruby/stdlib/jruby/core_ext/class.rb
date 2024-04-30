@@ -27,13 +27,6 @@ class Class
   private_constant :JClass
 
   ##
-  # @deprecated since JRuby 9.2, use `JRuby.subclasses_of(klass)`
-  def subclasses(recursive = false)
-    warn("klass.subclasses is deprecated, use JRuby.subclasses(klass) instead", uplevel: 1)
-    JRuby.subclasses(self, all: recursive)
-  end
-
-  ##
   # java_signature will take the argument and annotate the method of the
   # same name with the Java type and annotation signatures.
   # 

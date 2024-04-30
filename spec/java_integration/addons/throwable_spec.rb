@@ -36,8 +36,8 @@ describe "A Java Throwable" do
 
   it "implements full_message" do
     ex = java.lang.Exception.new('hello')
-    expect(ex.full_message).to match /hello \(Java::JavaLang::Exception\)/
-    expect(ex.full_message(:highlight => true, :order => :top)).to match /hello \(Java::JavaLang::Exception\)/
+    expect(ex.full_message(:highlight => false)).to match(/hello \(Java::JavaLang::Exception\)/)
+    expect(ex.full_message(:highlight => false, :order => :bottom)).to match(/hello \(Java::JavaLang::Exception\)/)
   end
 
   it "can be rescued by rescue Exception" do

@@ -46,7 +46,7 @@ class MSpecScript
       SPEC_DIR + '/core/kernel/at_exit_spec.rb',
       SPEC_DIR + '/language/predefined_spec.rb',
       SPEC_DIR + '/language/predefined/data_spec.rb',
-      SPEC_DIR + '/library/net/http',
+      SPEC_DIR + '/library/net-http',
       *get(:command_line),
       *get(:security),
   ]

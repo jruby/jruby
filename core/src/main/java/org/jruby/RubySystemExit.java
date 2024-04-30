@@ -30,6 +30,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.SystemExit;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 
 import static org.jruby.runtime.Visibility.*;
@@ -71,27 +72,30 @@ public class RubySystemExit extends RubyException {
         return new SystemExit(message, this);
     }
 
-    @JRubyMethod(optional = 2, visibility = PRIVATE)
+    @JRubyMethod(optional = 2, checkArity = false, visibility = PRIVATE)
     @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
-        if (args.length > 0) {
+        Ruby runtime = getRuntime();
+
+        int argc = Arity.checkArgumentCount(runtime, args, 0, 2);
+
+        if (argc > 0) {
             final IRubyObject arg = args[0];
             if (arg instanceof RubyFixnum) {
                 this.status = arg;
-                if (args.length > 1) this.message = args[1]; // (status, message)
+                if (argc > 1) this.message = args[1]; // (status, message)
             }
             else if (arg instanceof RubyBoolean) {
-                final Ruby runtime = getRuntime();
                 this.status = runtime.newFixnum( arg == runtime.getTrue() ? 0 : 1 );
-                if (args.length > 1) this.message = args[1]; // (status, message)
+                if (argc > 1) this.message = args[1]; // (status, message)
             }
             else {
                 this.message = arg;
-                this.status = RubyFixnum.zero(getRuntime());
+                this.status = RubyFixnum.zero(runtime);
             }
         }
         else {
-            this.status = RubyFixnum.zero(getRuntime());
+            this.status = RubyFixnum.zero(runtime);
         }
         super.initialize(NULL_ARRAY, block);
         return this;

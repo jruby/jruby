@@ -33,6 +33,7 @@
 package org.jruby.ast;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import org.jruby.ast.types.ILiteralNode;
@@ -44,7 +45,7 @@ import org.jruby.util.KeyValuePair;
  * of default values or kwarg in a method call.
  */
 public class HashNode extends Node implements ILiteralNode {
-    private final List<KeyValuePair<Node,Node>> pairs;
+    private final List<KeyValuePair<Node,Node>> pairs = new ArrayList<>();
     // contains at least one **k {a: 1, **k}, {**{}, **{}}
     private boolean hasRestKwarg = false;
 
@@ -56,8 +57,6 @@ public class HashNode extends Node implements ILiteralNode {
 
     public HashNode(int line) {
         super(line, false);
-
-        pairs = new ArrayList<>();
     }
     
     public HashNode(int line, KeyValuePair<Node,Node> pair) {
@@ -124,6 +123,25 @@ public class HashNode extends Node implements ILiteralNode {
         return this;
     }
 
+    public boolean removeAll(final Collection<KeyValuePair<Node, Node>> pairsToRemove) {
+        boolean changed = this.pairs.removeAll(pairsToRemove);
+
+        if (changed) {
+            // reset as we're to re-built internal state
+            hasRestKwarg = false;
+            isLiteral = false;
+            hasOnlySymbolKeys = true;
+            // clear pairs and add what is meant to be kept:
+            Object[] pairsCopy = this.pairs.toArray();
+            this.pairs.clear();
+            for (int i = 0; i < pairsCopy.length; i++) {
+                add((KeyValuePair<Node, Node>) pairsCopy[i]);
+            }
+            return true;
+        }
+        return false;
+    }
+
     /**
      * Accept for the visitor pattern.
      * @param iVisitor the visitor
@@ -167,5 +185,16 @@ public class HashNode extends Node implements ILiteralNode {
     @Deprecated
     public boolean isMaybeKwargs() {
         return !isLiteral;
+    }
+
+    public Node[] getKeys() {
+        int length = pairs.size();
+        Node[] keys = new Node[length];
+
+        for (int i = 0; i < length; i++) {
+            keys[i] = pairs.get(i).getKey();
+        }
+
+        return keys;
     }
 }

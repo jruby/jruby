@@ -50,7 +50,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
   def test_passing_a_java_class_auto_reifies
     assert_nil Klass2.to_java.getReifiedClass
     # previously TestHelper.getClassName(Klass2) returned 'org.jruby.RubyObject'
-    assert_equal 'rubyobj.TestHigherJavasupport.Klass2', org.jruby.test.TestHelper.getClassName(Klass2)
+    assert org.jruby.test.TestHelper.getClassName(Klass2).end_with?('.TestHigherJavasupport.Klass2')
     assert_not_nil Klass2.to_java.getReifiedClass
     assert_not_nil Klass1.to_java.getReifiedClass
   end
@@ -1955,24 +1955,27 @@ CLASSDEF
     end
   end
 
-  # original report: https://jira.codehaus.org/browse/JRUBY-5582
-  # NOTE: we're not testing this "early" on still a good JI exercise
-  def test_set_security_manager
-    security_manager = java.lang.System.getSecurityManager
-    begin
-      java.lang.System.setSecurityManager( JRubySecurityManager.new )
-      assert java.lang.System.getSecurityManager.is_a?(JRubySecurityManager)
-      #puts java.lang.System.getSecurityManager.checked_perms.inspect
-    ensure
-      java.lang.System.setSecurityManager( security_manager )
+  # The Java security manager subsystem was deprecated in Java 17 and disabled in 18
+  if ENV_JAVA["java.specification.version"] < "18"
+    # original report: https://jira.codehaus.org/browse/JRUBY-5582
+    # NOTE: we're not testing this "early" on still a good JI exercise
+    def test_set_security_manager
+      security_manager = java.lang.System.getSecurityManager
+      begin
+        java.lang.System.setSecurityManager( JRubySecurityManager.new )
+        assert java.lang.System.getSecurityManager.is_a?(JRubySecurityManager)
+        #puts java.lang.System.getSecurityManager.checked_perms.inspect
+      ensure
+        java.lang.System.setSecurityManager( security_manager )
+      end
     end
-  end
 
-  class JRubySecurityManager < java.lang.SecurityManager
-    def initialize; @checked = [] end
-    def checked_perms; @checked end
+    class JRubySecurityManager < java.lang.SecurityManager
+      def initialize; @checked = [] end
+      def checked_perms; @checked end
 
-    def checkPermission( perm ); @checked << perm end
+      def checkPermission( perm ); @checked << perm end
+    end
   end
 
   def test_method_bind_edge_cases # GH-7244

@@ -165,14 +165,18 @@ public class AnnotationBinder extends AbstractProcessor {
             out.println("        Ruby runtime = cls.getRuntime();");
             out.println("        boolean core = runtime.isBootingCore();");
 
-            Map<CharSequence, List<ExecutableElement>> annotatedMethods = new HashMap<>();
-            Map<CharSequence, List<ExecutableElement>> staticAnnotatedMethods = new HashMap<>();
+            Map<CharSequence, List<ExecutableElement>> annotatedMethods = new LinkedHashMap<>();
+            Map<CharSequence, List<ExecutableElement>> staticAnnotatedMethods = new LinkedHashMap<>();
 
             Map<Set<FrameField>, List<String>> readGroups = new HashMap<>();
             Map<Set<FrameField>, List<String>> writeGroups = new HashMap<>();
 
+            List<ExecutableElement> methods = ElementFilter.methodsIn(cd.getEnclosedElements());
+            methods.sort((m1, m2) -> m1.toString().compareTo(m2.toString())); // e.g.
+            // "methodName(org.jruby.runtime.ThreadContext,org.jruby.runtime.builtin.IRubyObject)"
+
             int methodCount = 0;
-            for (ExecutableElement method : ElementFilter.methodsIn(cd.getEnclosedElements())) {
+            for (ExecutableElement method : methods) {
                 JRubyMethod anno = method.getAnnotation(JRubyMethod.class);
 
                 if (anno == null) continue;
@@ -221,6 +225,8 @@ public class AnnotationBinder extends AbstractProcessor {
 
             processMethodDeclarations(staticAnnotatedMethods);
             gatherMappings(staticAnnotatedMethods, mappings);
+
+            out.println("");
 
             processMethodDeclarations(annotatedMethods);
             gatherMappings(annotatedMethods, mappings);
@@ -534,7 +540,7 @@ public class AnnotationBinder extends AbstractProcessor {
             }
         }
         if (exNames.size() > 0) {
-            warn("method " + type + "." + method + " should not throw exceptions: " + join(", ", exNames));
+            warn("method " + type + "." + method + " throws Java exceptions: " + join(", ", exNames));
         }
     }
 

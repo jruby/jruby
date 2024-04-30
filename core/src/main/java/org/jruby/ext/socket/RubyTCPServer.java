@@ -72,7 +72,7 @@ public class RubyTCPServer extends RubyTCPSocket {
         super(runtime, type);
     }
 
-    @JRubyMethod(name = "initialize", required = 1, optional = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "initialize", required = 1, optional = 1, checkArity = false, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         IRubyObject _host;
@@ -263,7 +263,7 @@ public class RubyTCPServer extends RubyTCPSocket {
         }
     }
 
-    @JRubyMethod(name = "listen", required = 1)
+    @JRubyMethod(name = "listen")
     public IRubyObject listen(ThreadContext context, IRubyObject backlog) {
         return RubyFixnum.zero(context.runtime);
     }

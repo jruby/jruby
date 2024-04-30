@@ -4,7 +4,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.javasupport.JavaClass;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -48,7 +47,7 @@ public class ArrayJavaProxyCreator extends RubyObject {
         this.elementType = elementType;
     }
 
-    @JRubyMethod(name = "[]", required = 1, rest = true)
+    @JRubyMethod(name = "[]", required = 1, rest = true, checkArity = false)
     public final IRubyObject op_aref(ThreadContext context, IRubyObject[] sizes) {
         Arity.checkArgumentCount(context.runtime, sizes, 1, -1);
         aggregateDimensions(sizes);

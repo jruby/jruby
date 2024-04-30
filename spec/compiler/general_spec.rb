@@ -91,7 +91,7 @@ module JITSpecUtils
       scope.setModule currModule = runtime.top_self.class
     end
 
-    method = org.jruby.ir.IRBuilder.build_root(runtime.getIRManager(), node).scope
+    method = org.jruby.ir.builder.IRBuilder.build_root(runtime.getIRManager(), node).scope
     method.prepareForCompilation
 
     compiler = new_visitor(runtime)
@@ -588,6 +588,47 @@ modes.each do |mode|
         expect(result).to eq(["0.1+0i", "1/10"])
       end
     end
+
+    it "handles optimized homogeneous case/when" do
+      run('
+        case "a"
+        when "b"
+          fail
+        when "a"
+          1
+        else
+          fail
+        end
+      ') do |result|
+        expect(result).to eq 1
+      end
+
+      run('
+        case :a
+        when :b
+          fail
+        when :a
+          1
+        else
+          fail
+        end
+      ') do |result|
+        expect(result).to eq 1
+      end
+
+      run('
+        case 1
+        when 2
+          fail
+        when 1
+          1
+        else
+          fail
+        end
+      ') do |result|
+        expect(result).to eq 1
+      end
+    end     
 
     it "handles 0-4 arg and splatted whens in a caseless case/when" do
       run('
@@ -1213,7 +1254,7 @@ modes.each do |mode|
 
     it "handles defined? a.b= forms" do
       run('a = Class.new { attr_writer :b; def []=(_,_); end; def a; [defined? self.b=0, defined? self[0]=0]; end }.new; [a.a, defined? a.b = 0, defined? a[0] = 0]') do |x|
-        expect(x).to eq([["assignment", "assignment"], "assignment", "assignment"])
+        expect(x).to eq([["method", "method"], "method", "method"])
       end
     end
 

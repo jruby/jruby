@@ -51,7 +51,7 @@ import static org.jruby.util.URLUtil.getPath;
  * Utility methods to retrieve System properties or environment variables to
  * get configuration parameters.
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class SystemPropertyCatcher {
 

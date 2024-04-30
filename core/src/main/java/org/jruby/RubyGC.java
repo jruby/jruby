@@ -36,6 +36,7 @@ import java.lang.management.ManagementFactory;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -66,13 +67,16 @@ public class RubyGC {
         return result;        
     }
 
-    @JRubyMethod(module = true, visibility = PRIVATE, optional = 1)
+    @JRubyMethod(module = true, visibility = PRIVATE, optional = 1, checkArity = false)
     public static IRubyObject start(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 0, 1);
+
         return context.nil;
     }
 
-    @JRubyMethod(optional = 1)
+    @JRubyMethod(optional = 1, checkArity = false)
     public static IRubyObject garbage_collect(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 0, 1);
         return context.nil;
     }
 

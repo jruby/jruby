@@ -52,23 +52,23 @@ public class Factory extends org.jruby.ext.ffi.Factory {
     }
 
     /**
-     * Allocates memory on the native C heap and wraps it in a <tt>MemoryIO</tt> accessor.
+     * Allocates memory on the native C heap and wraps it in a <code>MemoryIO</code> accessor.
      *
      * @param size The number of bytes to allocate.
      * @param clear If the memory should be cleared.
-     * @return A new <tt>MemoryIO</tt>.
+     * @return A new <code>MemoryIO</code>.
      */
     public MemoryIO allocateDirectMemory(Ruby runtime, int size, boolean clear) {
         return CachingNativeMemoryAllocator.allocateAligned(runtime, size, 8, clear);
     }
 
     /**
-     * Allocates memory on the native C heap and wraps it in a <tt>MemoryIO</tt> accessor.
+     * Allocates memory on the native C heap and wraps it in a <code>MemoryIO</code> accessor.
      *
      * @param size The number of bytes to allocate.
      * @param align The minimum alignment of the memory
      * @param clear If the memory should be cleared.
-     * @return A new <tt>MemoryIO</tt>.
+     * @return A new <code>MemoryIO</code>.
      */
     public MemoryIO allocateDirectMemory(Ruby runtime, int size, int align, boolean clear) {
         return CachingNativeMemoryAllocator.allocateAligned(runtime, size, align, clear);

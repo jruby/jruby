@@ -39,7 +39,7 @@ import org.jruby.embed.LocalVariableBehavior;
  * As of JRuby 1.5.0 Ruby runtime returned from the getRuntime() method is a
  * classloader-global runtime.
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class SingletonLocalContextProvider extends AbstractLocalContextProvider {
 

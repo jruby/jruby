@@ -45,6 +45,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import org.jruby.EvalType;
+import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -191,6 +192,7 @@ public class Block implements FunctionOneOrTwoOrThree<ThreadContext, IRubyObject
     /**
      * @see Function#apply(Object)
      */
+    @Override
     public IRubyObject apply(ThreadContext context) {
         return call(context);
     }
@@ -198,6 +200,7 @@ public class Block implements FunctionOneOrTwoOrThree<ThreadContext, IRubyObject
     /**
      * @see BiFunction#apply(Object, Object)
      */
+    @Override
     public IRubyObject apply(ThreadContext context, IRubyObject arg0) {
         return call(context, arg0);
     }
@@ -205,6 +208,7 @@ public class Block implements FunctionOneOrTwoOrThree<ThreadContext, IRubyObject
     /**
      * @see TriFunction#apply(Object, Object, Object)
      */
+    @Override
     public IRubyObject apply(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         return call(context, arg0, arg1);
     }
@@ -315,7 +319,7 @@ public class Block implements FunctionOneOrTwoOrThree<ThreadContext, IRubyObject
     /**
      * Set the proc object associated with this block
      *
-     * @param procObject
+     * @param procObject the proc tu associate
      */
     public void setProcObject(RubyProc procObject) {
     	this.proc = procObject;
@@ -326,6 +330,7 @@ public class Block implements FunctionOneOrTwoOrThree<ThreadContext, IRubyObject
      *
      * @return true if this is a valid block or false otherwise
      */
+    @SuppressWarnings("ReferenceEquality")
     public final boolean isGiven() {
         return this != NULL_BLOCK;
     }
@@ -345,6 +350,15 @@ public class Block implements FunctionOneOrTwoOrThree<ThreadContext, IRubyObject
      */
     public Frame getFrame() {
         return binding.getFrame();
+    }
+
+    /**
+     * Gets the frame class.
+     *
+     * @return the binding's frame's self class
+     */
+    public RubyModule getFrameClass() {
+        return binding.getFrame().getKlazz();
     }
 
     public boolean isEscaped() {

@@ -176,9 +176,9 @@ import org.jruby.util.cli.Options;
  * </pre>
  *
  * See more details at project's
- * {@see <a href="https://github.com/jruby/jruby/wiki/RedBridge">Wiki</a>}
+ * @see <a href="https://github.com/jruby/jruby/wiki/RedBridge">Wiki</a>
  *
- * @author Yoko Harada <yokolet@gmail.com>
+ * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     private final Map<String, String[]> basicProperties;
@@ -1618,7 +1618,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      *     #quadratic_formula.rb
      *     def solve(a, b, c)
      *       v = b ** 2 - 4 * a * c
-     *       if v < 0: raise RangeError end
+     *       if v &lt; 0: raise RangeError end
      *       s0 = ((-1)*b - Math.sqrt(v))/(2*a)
      *       s1 = ((-1)*b + Math.sqrt(v))/(2*a)
      *       return s0, s1
@@ -1630,7 +1630,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      *     Object receiver = container.runScriptlet(PathType.CLASSPATH, filename);
      *     QuadraticFormula qf = container.getInstance(receiver, QuadraticFormula.class);
      *     try {
-     *          List<Double> solutions = qf.solve(1, -2, -13);
+     *          List&lt;Double&gt; solutions = qf.solve(1, -2, -13);
      *          printSolutions(solutions);
      *          solutions = qf.solve(1, -2, 13);
      *          for (double s : solutions) {
@@ -1853,7 +1853,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * Ensure this ScriptingContainer instance is terminated when nobody holds any
      * references to it (and GC wants to reclaim it).
      *
-     * Note that {@link org.jruby.embed.LocalContextScope::SINGLETON} containers will not terminate on GC.
+     * Note that {@link org.jruby.embed.LocalContextScope#SINGLETON} containers will not terminate on GC.
      *
      * @throws Throwable
      *
@@ -1895,8 +1895,8 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     }
 
     /**
-     * add the given classloader to the LOAD_PATH and GEM_PATH
-     * @param classloader
+     * add the given classLoader to the LOAD_PATH and GEM_PATH
+     * @param classLoader
      */
     public void addClassLoader(ClassLoader classLoader) {
         getProvider().getRubyInstanceConfig().addLoader(classLoader);

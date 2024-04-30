@@ -47,6 +47,7 @@ import java.lang.reflect.Type;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.java.util.ClassUtils;
 import org.jruby.javasupport.proxy.ReifiedJavaProxy;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.proxy.JavaProxyMethod;
@@ -123,41 +124,11 @@ public class JavaMethod extends JavaCallable {
     }
 
     public static JavaMethod getMatchingDeclaredMethod(Ruby runtime, Class<?> javaClass, String methodName, Class<?>[] argumentTypes) {
-        // FIXME: do we really want 'declared' methods?  includes private/protected, and does _not_
-        // include superclass methods.  also, the getDeclared calls may throw SecurityException if
-        // we're running under a restrictive security policy.
-        try {
-            return new JavaMethod(runtime, javaClass.getDeclaredMethod(methodName, argumentTypes));
-        }
-        catch (NoSuchMethodException e) {
-            // search through all declared methods to find a closest match
-            MethodSearch: for ( Method method : javaClass.getDeclaredMethods() ) {
-                if ( method.getName().equals(methodName) ) {
-                    Class<?>[] targetTypes = method.getParameterTypes();
+        Method m = ClassUtils.getMatchingDeclaredMethod(javaClass, methodName, argumentTypes);
 
-                    // for zero args case we can stop searching
-                    if (targetTypes.length == 0 && argumentTypes.length == 0) {
-                        return new JavaMethod(runtime, method);
-                    }
+        if (m == null) return null;
 
-                    TypeScan: for (int i = 0; i < argumentTypes.length; i++) {
-                        if (i >= targetTypes.length) continue MethodSearch;
-
-                        if (targetTypes[i].isAssignableFrom(argumentTypes[i])) {
-                            continue TypeScan;
-                        } else {
-                            continue MethodSearch;
-                        }
-                    }
-
-                    // if we get here, we found a matching method, use it
-                    // TODO: choose narrowest method by continuing to search
-                    return new JavaMethod(runtime, method);
-                }
-            }
-        }
-        // no matching method found
-        return null;
+        return new JavaMethod(runtime, m);
     }
 
     @Override

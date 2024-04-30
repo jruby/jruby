@@ -1,2 +1,1 @@
-fails:String#to_c raises Encoding::CompatibilityError if String is in not ASCII-compatible encoding
 fails:String#to_c ignores trailing garbage

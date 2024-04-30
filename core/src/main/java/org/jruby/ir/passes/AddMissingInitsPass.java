@@ -23,6 +23,9 @@ public class AddMissingInitsPass extends CompilerPass {
 
     @Override
     public Object execute(FullInterpreterContext fic, Object... data) {
+        // END reuses vars from parent scope so not initialization is needed.
+        if (fic.isEND()) return null;
+
         // Find undefined vars
         DefinedVariablesProblem p = new DefinedVariablesProblem(fic);
         p.compute_MOP_Solution();

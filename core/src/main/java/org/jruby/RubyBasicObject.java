@@ -33,6 +33,7 @@ import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.BasicObjectSites;
 import org.jruby.runtime.callsite.CacheEntry;
@@ -119,6 +120,7 @@ import org.jruby.runtime.ivars.VariableTableManager;
  * with care; reification of Ruby classes into Java classes can produce
  * conflicting method names in rare cases. See JRUBY-5906 for an example.
  */
+@SuppressWarnings("ComparableType")
 public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Comparable<IRubyObject>, CoreObjectType, InstanceVariables, InternalVariables {
 
     //private static final Logger LOG = LoggerFactory.getLogger(RubyBasicObject.class);
@@ -451,7 +453,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     // MRI: special_object_p
     public boolean isSpecialObject() {
-        return isImmediate() || this instanceof RubyBignum || this instanceof RubyFloat || this instanceof RubyRational || this instanceof RubyComplex;
+        // This is broader than MRI but immediates and numeric overlap so I don't think it will hurt.
+        // RubyNumeric vs limited list to also include Numeric/Integer so we need not duplicate clone
+        // (and potentially others).
+        return isImmediate() || this instanceof RubyNumeric;
     }
 
     /**
@@ -719,7 +724,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     /**
      * Internal method that helps to convert any object into the
-     * format of a class name and a hex string inside of #<>.
+     * format of a class name and a hex string inside of #&lt;&gt;.
      */
     @Override
     public IRubyObject anyToString() {
@@ -935,7 +940,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             RubyHash opts = RubyHash.newHash(context.runtime, getRuntime().newSymbol("freeze"), freeze);
             context.callInfo = CALL_KEYWORD;
             sites(context).initialize_clone.call(context, clone, clone, this, opts);
-            if (freeze == context.tru) clone.setFrozen(true);
+            if (freeze == context.tru) clone.freeze(context);
+            if (clone.getMetaClass().isSingleton()) clone.getMetaClass().setFrozen(clone.isFrozen());
         }
 
         return clone;
@@ -1003,7 +1009,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @see org.jruby.runtime.builtin.IRubyObject#dataWrapStruct(Object)
      */
     @Override
-    public synchronized void dataWrapStruct(Object obj) {
+    public void dataWrapStruct(Object obj) {
         if (obj == null) {
             removeInternalVariable("__wrap_struct__");
         } else {
@@ -1022,7 +1028,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @see org.jruby.runtime.builtin.IRubyObject#dataGetStruct()
      */
     @Override
-    public synchronized Object dataGetStruct() {
+    public Object dataGetStruct() {
         return getInternalVariable("__wrap_struct__");
     }
 
@@ -1051,14 +1057,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /** rb_obj_inspect
      *
      *  call-seq:
-     *     obj.inspect   => string
+     *     obj.inspect   =&gt; string
      *
      *  Returns a string containing a human-readable representation of
      *  <i>obj</i>. If not overridden, uses the <code>to_s</code> method to
      *  generate the string.
      *
-     *     [ 1, 2, 3..4, 'five' ].inspect   #=> "[1, 2, 3..4, \"five\"]"
-     *     Time.new.inspect                 #=> "Wed Apr 09 08:54:39 CDT 2003"
+     *     [ 1, 2, 3..4, 'five' ].inspect   #=&gt; "[1, 2, 3..4, \"five\"]"
+     *     Time.new.inspect                 #=&gt; "Wed Apr 09 08:54:39 CDT 2003"
      */
     @Override
     public IRubyObject inspect() {
@@ -1159,7 +1165,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @param other other object
      * @return false if this == other, true otherwise
      */
-    @JRubyMethod(name = "!=", required = 1)
+    @JRubyMethod(name = "!=")
     public IRubyObject op_not_equal(ThreadContext context, IRubyObject other) {
         return RubyBoolean.newBoolean(context, !sites(context).op_equal.call(context, this, this, other).isTrue());
     }
@@ -1326,6 +1332,20 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         for (Map.Entry<String, VariableAccessor> entry : ivarAccessors.entrySet()) {
             Object value = entry.getValue().get(this);
             if (value == null) continue;
+            list.add(new VariableEntry<>(entry.getKey(), value));
+        }
+        return list;
+    }
+
+    /**
+     * @see IRubyObject#getMarshalVariableList()
+     */
+    public List<Variable<Object>> getMarshalVariableList() {
+        Map<String, VariableAccessor> ivarAccessors = metaClass.getVariableAccessorsForRead();
+        ArrayList<Variable<Object>> list = new ArrayList<>(ivarAccessors.size());
+        for (Map.Entry<String, VariableAccessor> entry : ivarAccessors.entrySet()) {
+            Object value = entry.getValue().get(this);
+            if (value == null || !(value instanceof Serializable)) continue;
             list.add(new VariableEntry<>(entry.getKey(), value));
         }
         return list;
@@ -1660,29 +1680,35 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         return getMetaClass().finvokeWithRefinements(context, this, staticScope, name, arg1, arg2, block);
     }
-    @JRubyMethod(name = "__send__", required = 1, rest = true, omit = true, keywords = true)
+    @JRubyMethod(name = "__send__", required = 1, rest = true, checkArity = false, omit = true, keywords = true)
     public IRubyObject send(ThreadContext context, IRubyObject[] args, Block block) {
+        int argc = Arity.checkArgumentCount(context, args, 1, -1);
         int callInfo = context.callInfo;
 
         // FIXME: Likely all methods which can pass the last value to another ruby call must do this.
         // MRI: from vm_args.setup_parameters_complex()
-        if (args.length > 0) {
+        if (argc > 0) {
             if ((callInfo & CALL_SPLATS) != 0) {
-                IRubyObject last = args[args.length - 1];
+                IRubyObject last = args[argc - 1];
                 if (last instanceof RubyHash && ((RubyHash) last).isRuby2KeywordHash()) {
-                    args[args.length - 1] = ((RubyHash) last).dupFast(context);
-                    ((RubyHash) args[args.length - 1]).setRuby2KeywordHash(false);
-                    context.callInfo |= (CALL_KEYWORD | CALL_KEYWORD_REST);
+                    if (((RubyHash) last).isEmpty()) { // empty kwargs hashes should never get passed on.
+                        argc--;
+                        args = ArraySupport.newCopy(args, argc);
+                    } else {
+                        args[argc - 1] = ((RubyHash) last).dupFast(context);
+                        ((RubyHash) args[argc - 1]).setRuby2KeywordHash(false);
+                        context.callInfo |= (CALL_KEYWORD | CALL_KEYWORD_REST);
+                    }
                 }
-            } else if (args.length > 1) {
-              args[args.length - 1] = dupIfKeywordRestAtCallsite(context, args[args.length - 1]);
+            } else if (argc > 1) {
+              args[argc - 1] = dupIfKeywordRestAtCallsite(context, args[argc - 1]);
             }
         }
         String name = RubySymbol.checkID(args[0]);
 
         StaticScope staticScope = context.getCurrentStaticScope();
 
-        final int length = args.length - 1;
+        final int length = argc - 1;
         args = ( length == 0 ) ? IRubyObject.NULL_ARRAY : ArraySupport.newCopy(args, 1, length);
         return getMetaClass().finvokeWithRefinements(context, this, staticScope, name, args, block);
     }
@@ -1938,7 +1964,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      * Will use Java identity equality.
      */
-    @JRubyMethod(name = "equal?", required = 1)
+    @JRubyMethod(name = "equal?")
     public IRubyObject equal_p(ThreadContext context, IRubyObject other) {
         return this == other ? context.tru : context.fals;
     }
@@ -1994,7 +2020,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     /** obj_respond_to
      *
-     * respond_to?( aSymbol, includePriv=false ) -> true or false
+     * respond_to?( aSymbol, includePriv=false )$ -&gt; true or false
      *
      * Returns true if this object responds to the given method. Private
      * methods are included in the search only if the optional second
@@ -2074,12 +2100,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /** rb_obj_display
      *
      *  call-seq:
-     *     obj.display(port=$>)    => nil
+     *     obj.display(port=$&gt;)    =&gt; nil
      *
-     *  Prints <i>obj</i> on the given port (default <code>$></code>).
+     *  Prints <i>obj</i> on the given port (default <code>$&gt;</code>).
      *  Equivalent to:
      *
-     *     def display(port=$>)
+     *     def display(port=$&gt;)
      *       port.write self
      *     end
      *
@@ -2106,7 +2132,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /** rb_obj_freeze
      *
      *  call-seq:
-     *     obj.freeze    => obj
+     *     obj.freeze    =&gt; obj
      *
      *  Prevents further modifications to <i>obj</i>. A
      *  <code>TypeError</code> will be raised if modification is attempted.
@@ -2115,30 +2141,30 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      *     a = [ "a", "b", "c" ]
      *     a.freeze
-     *     a << "z"
+     *     a &lt;&lt; "z"
      *
      *  <em>produces:</em>
      *
-     *     prog.rb:3:in `<<': can't modify frozen array (TypeError)
+     *     prog.rb:3:in `&lt;&lt;': can't modify frozen array (TypeError)
      *     	from prog.rb:3
      */
     public IRubyObject freeze(ThreadContext context) {
-        if ((flags & FROZEN_F) == 0) {
-            flags |= FROZEN_F;
-        }
+        setFrozen(true);
+        RubyClass metaClass = getMetaClass();
+        if (metaClass.isSingleton()) metaClass.setFrozen(true);
         return this;
     }
 
     /** rb_obj_frozen_p
      *
      *  call-seq:
-     *     obj.frozen?    => true or false
+     *     obj.frozen?    =&gt; true or false
      *
      *  Returns the freeze status of <i>obj</i>.
      *
      *     a = [ "a", "b", "c" ]
-     *     a.freeze    #=> ["a", "b", "c"]
-     *     a.frozen?   #=> true
+     *     a.freeze    #=&gt; ["a", "b", "c"]
+     *     a.frozen?   #=&gt; true
      */
     public RubyBoolean frozen_p(ThreadContext context) {
         return RubyBoolean.newBoolean(context, isFrozen());
@@ -2147,7 +2173,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /** rb_obj_is_instance_of
      *
      *  call-seq:
-     *     obj.instance_of?(class)    => true or false
+     *     obj.instance_of?(class)    =&gt; true or false
      *
      *  Returns <code>true</code> if <i>obj</i> is an instance of the given
      *  class. See also <code>Object#kind_of?</code>.
@@ -2166,8 +2192,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /** rb_obj_is_kind_of
      *
      *  call-seq:
-     *     obj.is_a?(class)       => true or false
-     *     obj.kind_of?(class)    => true or false
+     *     obj.is_a?(class)       =&gt; true or false
+     *     obj.kind_of?(class)    =&gt; true or false
      *
      *  Returns <code>true</code> if <i>class</i> is the class of
      *  <i>obj</i>, or if <i>class</i> is one of the superclasses of
@@ -2177,17 +2203,17 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     class A
      *       include M
      *     end
-     *     class B < A; end
-     *     class C < B; end
+     *     class B &lt; A; end
+     *     class C &lt; B; end
      *     b = B.new
-     *     b.instance_of? A   #=> false
-     *     b.instance_of? B   #=> true
-     *     b.instance_of? C   #=> false
-     *     b.instance_of? M   #=> false
-     *     b.kind_of? A       #=> true
-     *     b.kind_of? B       #=> true
-     *     b.kind_of? C       #=> false
-     *     b.kind_of? M       #=> true
+     *     b.instance_of? A   #=&gt; false
+     *     b.instance_of? B   #=&gt; true
+     *     b.instance_of? C   #=&gt; false
+     *     b.instance_of? M   #=&gt; false
+     *     b.kind_of? A       #=&gt; true
+     *     b.kind_of? B       #=&gt; true
+     *     b.kind_of? C       #=&gt; false
+     *     b.kind_of? M       #=&gt; true
      */
     public RubyBoolean kind_of_p(ThreadContext context, IRubyObject type) {
         // TODO: Generalize this type-checking code into IRubyObject helper.
@@ -2202,7 +2228,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /** rb_obj_methods
      *
      *  call-seq:
-     *     obj.methods    => array
+     *     obj.methods    =&gt; array
      *
      *  Returns a list of the names of methods publicly accessible in
      *  <i>obj</i>. This will include all the methods accessible in
@@ -2213,10 +2239,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *       end
      *     end
      *     k = Klass.new
-     *     k.methods[0..9]    #=> ["kMethod", "freeze", "nil?", "is_a?",
+     *     k.methods[0..9]    #=&gt; ["kMethod", "freeze", "nil?", "is_a?",
      *                             "class", "instance_variable_set",
      *                              "methods", "extend", "__send__", "instance_eval"]
-     *     k.methods.length   #=> 42
+     *     k.methods.length   #=&gt; 42
      */
     public IRubyObject methods(ThreadContext context, IRubyObject... args) {
         return methodsImpl(context, args.length == 1 ? args[0].isTrue() : true);
@@ -2252,7 +2278,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /** rb_obj_public_methods
      *
      *  call-seq:
-     *     obj.public_methods(all=true)   => array
+     *     obj.public_methods(all=true)   =&gt; array
      *
      *  Returns the list of public methods accessible to <i>obj</i>. If
      *  the <i>all</i> parameter is set to <code>false</code>, only those methods
@@ -2270,7 +2296,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /** rb_obj_protected_methods
      *
      *  call-seq:
-     *     obj.protected_methods(all=true)   => array
+     *     obj.protected_methods(all=true)   =&gt; array
      *
      *  Returns the list of protected methods accessible to <i>obj</i>. If
      *  the <i>all</i> parameter is set to <code>false</code>, only those methods
@@ -2291,7 +2317,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /** rb_obj_private_methods
      *
      *  call-seq:
-     *     obj.private_methods(all=true)   => array
+     *     obj.private_methods(all=true)   =&gt; array
      *
      *  Returns the list of private methods accessible to <i>obj</i>. If
      *  the <i>all</i> parameter is set to <code>false</code>, only those methods
@@ -2312,7 +2338,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /** rb_obj_singleton_methods
      *
      *  call-seq:
-     *     obj.singleton_methods(all=true)    => array
+     *     obj.singleton_methods(all=true)    =&gt; array
      *
      *  Returns an array of the names of singleton methods for <i>obj</i>.
      *  If the optional <i>all</i> parameter is true, the list will include
@@ -2331,15 +2357,15 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     def a.one()
      *     end
      *
-     *     class << a
+     *     class &lt;&lt; a
      *       include Other
      *       def two()
      *       end
      *     end
      *
-     *     Single.singleton_methods    #=> ["four"]
-     *     a.singleton_methods(false)  #=> ["two", "one"]
-     *     a.singleton_methods         #=> ["two", "one", "three"]
+     *     Single.singleton_methods    #=&gt; ["four"]
+     *     a.singleton_methods(false)  #=&gt; ["two", "one"]
+     *     a.singleton_methods         #=&gt; ["two", "one", "three"]
      */
     // TODO: This is almost RubyModule#instance_methods on the metaClass.  Perhaps refactor.
     public RubyArray singleton_methods(ThreadContext context, IRubyObject[] args) {
@@ -2392,7 +2418,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /** rb_obj_method
      *
      *  call-seq:
-     *     obj.method(sym)    => method
+     *     obj.method(sym)    =&gt; method
      *
      *  Looks up the named method as a receiver in <i>obj</i>, returning a
      *  <code>Method</code> object (or raising <code>NameError</code>). The
@@ -2402,20 +2428,20 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      *     class Demo
      *       def initialize(n)
-     *         @iv = n
+     *         {@literal @}iv = n
      *       end
      *       def hello()
-     *         "Hello, @iv = #{@iv}"
+     *         "Hello, {@literal @}iv = #{{@literal @}iv}"
      *       end
      *     end
      *
      *     k = Demo.new(99)
      *     m = k.method(:hello)
-     *     m.call   #=> "Hello, @iv = 99"
+     *     m.call   #=&gt; "Hello, {@literal @}iv = 99"
      *
      *     l = Demo.new('Fred')
      *     m = l.method("hello")
-     *     m.call   #=> "Hello, @iv = Fred"
+     *     m.call   #=&gt; "Hello, {@literal @}iv = Fred"
      */
     public IRubyObject method(IRubyObject name) {
         final RubySymbol symbol = TypeConverter.checkID(name);
@@ -2442,7 +2468,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /** rb_any_to_s
      *
      *  call-seq:
-     *     obj.to_s    => string
+     *     obj.to_s    =&gt; string
      *
      *  Returns a string representing <i>obj</i>. The default
      *  <code>to_s</code> prints the object's class and an encoding of the
@@ -2456,16 +2482,16 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /** rb_any_to_a
      *
      *  call-seq:
-     *     obj.to_a -> anArray
+     *     obj.to_a$ -&gt; anArray
      *
      *  Returns an array representation of <i>obj</i>. For objects of class
      *  <code>Object</code> and others that don't explicitly override the
      *  method, the return value is an array containing <code>self</code>.
      *  However, this latter behavior will soon be obsolete.
      *
-     *     self.to_a       #=> -:1: warning: default `to_a' will be obsolete
-     *     "hello".to_a    #=> ["hello"]
-     *     Time.new.to_a   #=> [39, 54, 8, 9, 4, 2003, 3, 99, true, "CDT"]
+     *     self.to_a       #=&gt; -:1: warning: default `to_a' will be obsolete
+     *     "hello".to_a    #=&gt; ["hello"]
+     *     Time.new.to_a   #=&gt; [39, 54, 8, 9, 4, 2003, 3, 99, true, "CDT"]
      *
      *  The default to_a method is deprecated.
      */
@@ -2478,8 +2504,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /** rb_obj_instance_eval
      *
      *  call-seq:
-     *     obj.instance_eval(string [, filename [, lineno]] )   => obj
-     *     obj.instance_eval {| | block }                       => obj
+     *     obj.instance_eval(string [, filename [, lineno]] )   =&gt; obj
+     *     obj.instance_eval {| | block }                       =&gt; obj
      *
      *  Evaluates a string containing Ruby source code, or the given block,
      *  within the context of the receiver (_obj_). In order to set the
@@ -2492,11 +2518,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      *     class Klass
      *       def initialize
-     *         @secret = 99
+     *         {@literal @}secret = 99
      *       end
      *     end
      *     k = Klass.new
-     *     k.instance_eval { @secret }   #=> 99
+     *     k.instance_eval { {@literal @}secret }   #=&gt; 99
      */
 
     @JRubyMethod(name = "instance_eval",
@@ -2560,7 +2586,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /** rb_obj_instance_exec
      *
      *  call-seq:
-     *     obj.instance_exec(arg...) {|var...| block }                       => obj
+     *     obj.instance_exec(arg...) {|var...| block }                       =&gt; obj
      *
      *  Executes the given block within the context of the receiver
      *  (_obj_). In order to set the context, the variable +self+ is set
@@ -2569,13 +2595,13 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      *     class Klass
      *       def initialize
-     *         @secret = 99
+     *         {@literal @}secret = 99
      *       end
      *     end
      *     k = Klass.new
-     *     k.instance_exec(5) {|x| @secret+x }   #=> 104
+     *     k.instance_exec(5) {|x| {@literal @}secret+x }   #=&gt; 104
      */
-    @JRubyMethod(name = "instance_exec", optional = 3, rest = true, keywords = true,
+    @JRubyMethod(name = "instance_exec", rest = true, keywords = true,
             reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
             writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject instance_exec(ThreadContext context, IRubyObject[] args, Block block) {
@@ -2602,7 +2628,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /** rb_obj_extend
      *
      *  call-seq:
-     *     obj.extend(module, ...)    => obj
+     *     obj.extend(module, ...)    =&gt; obj
      *
      *  Adds to _obj_ the instance methods from each module given as a
      *  parameter.
@@ -2620,9 +2646,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     end
      *
      *     k = Klass.new
-     *     k.hello         #=> "Hello from Klass.\n"
-     *     k.extend(Mod)   #=> #<Klass:0x401b3bc8>
-     *     k.hello         #=> "Hello from Mod.\n"
+     *     k.hello         #=&gt; "Hello from Klass.\n"
+     *     k.extend(Mod)   #=&gt; #&lt;Klass:0x401b3bc8&gt;
+     *     k.hello         #=&gt; "Hello from Mod.\n"
      */
     public IRubyObject extend(IRubyObject[] args) {
         Ruby runtime = metaClass.runtime;
@@ -2644,7 +2670,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     /** rb_f_send
      *
-     * send( aSymbol  [, args  ]*   ) -> anObject
+     * send( aSymbol  [, args  ]*   )$ -&gt; anObject
      *
      * Invokes the method identified by aSymbol, passing it any arguments
      * specified. You can use __send__ if the name send clashes with an
@@ -2688,8 +2714,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /** rb_false
      *
      * call_seq:
-     *   nil.nil?               => true
-     *   <anything_else>.nil?   => false
+     *   nil.nil?               =&gt; true
+     *   &lt;anything_else&gt;.nil?   =&gt; false
      *
      * Only the object <i>nil</i> responds <code>true</code> to <code>nil?</code>.
      */
@@ -2700,7 +2726,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /** rb_obj_pattern_match
      *
      *  call-seq:
-     *     obj =~ other  => nil
+     *     obj =~ other  =&gt; nil
      *
      *  Pattern Match---Overridden by descendents (notably
      *  <code>Regexp</code> and <code>String</code>) to provide meaningful
@@ -2729,20 +2755,20 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /** rb_obj_ivar_defined
      *
      *  call-seq:
-     *     obj.instance_variable_defined?(symbol)    => true or false
+     *     obj.instance_variable_defined?(symbol)    =&gt; true or false
      *
      *  Returns <code>true</code> if the given instance variable is
      *  defined in <i>obj</i>.
      *
      *     class Fred
      *       def initialize(p1, p2)
-     *         @a, @b = p1, p2
+     *         {@literal @}a, @b = p1, p2
      *       end
      *     end
      *     fred = Fred.new('cat', 99)
-     *     fred.instance_variable_defined?(:@a)    #=> true
-     *     fred.instance_variable_defined?("@b")   #=> true
-     *     fred.instance_variable_defined?("@c")   #=> false
+     *     fred.instance_variable_defined?(:{@literal @}a)    #=&gt; true
+     *     fred.instance_variable_defined?("{@literal @}b")   #=&gt; true
+     *     fred.instance_variable_defined?("@c")   #=&gt; false
      */
     public IRubyObject instance_variable_defined_p(ThreadContext context, IRubyObject name) {
         return RubyBoolean.newBoolean(context, variableTableContains(validateInstanceVariable(name)));
@@ -2751,7 +2777,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /** rb_obj_ivar_get
      *
      *  call-seq:
-     *     obj.instance_variable_get(symbol)    => obj
+     *     obj.instance_variable_get(symbol)    =&gt; obj
      *
      *  Returns the value of the given instance variable, or nil if the
      *  instance variable is not set. The <code>@</code> part of the
@@ -2761,12 +2787,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      *     class Fred
      *       def initialize(p1, p2)
-     *         @a, @b = p1, p2
+     *         {@literal @}a, @b = p1, p2
      *       end
      *     end
      *     fred = Fred.new('cat', 99)
-     *     fred.instance_variable_get(:@a)    #=> "cat"
-     *     fred.instance_variable_get("@b")   #=> 99
+     *     fred.instance_variable_get(:{@literal @}a)    #=&gt; "cat"
+     *     fred.instance_variable_get("{@literal @}b")   #=&gt; 99
      */
     public IRubyObject instance_variable_get(ThreadContext context, IRubyObject name) {
         Object value = variableTableFetch(validateInstanceVariable(name));
@@ -2777,7 +2803,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /** rb_obj_ivar_set
      *
      *  call-seq:
-     *     obj.instance_variable_set(symbol, obj)    => obj
+     *     obj.instance_variable_set(symbol, obj)    =&gt; obj
      *
      *  Sets the instance variable names by <i>symbol</i> to
      *  <i>object</i>, thereby frustrating the efforts of the class's
@@ -2786,13 +2812,13 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      *     class Fred
      *       def initialize(p1, p2)
-     *         @a, @b = p1, p2
+     *         {@literal @}a, @b = p1, p2
      *       end
      *     end
      *     fred = Fred.new('cat', 99)
-     *     fred.instance_variable_set(:@a, 'dog')   #=> "dog"
-     *     fred.instance_variable_set(:@c, 'cat')   #=> "cat"
-     *     fred.inspect                             #=> "#<Fred:0x401b3da8 @a=\"dog\", @b=99, @c=\"cat\">"
+     *     fred.instance_variable_set(:{@literal @}a, 'dog')   #=&gt; "dog"
+     *     fred.instance_variable_set(:@c, 'cat')   #=&gt; "cat"
+     *     fred.inspect                             #=&gt; "#&lt;Fred:0x401b3da8 {@literal @}a=\"dog\", @b=99, @c=\"cat\"&gt;"
      */
     public IRubyObject instance_variable_set(IRubyObject name, IRubyObject value) {
         // no need to check for ensureInstanceVariablesSettable() here, that'll happen downstream in setVariable
@@ -2802,7 +2828,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /** rb_obj_remove_instance_variable
      *
      *  call-seq:
-     *     obj.remove_instance_variable(symbol)    => obj
+     *     obj.remove_instance_variable(symbol)    =&gt; obj
      *
      *  Removes the named instance variable from <i>obj</i>, returning that
      *  variable's value.
@@ -2810,20 +2836,21 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     class Dummy
      *       attr_reader :var
      *       def initialize
-     *         @var = 99
+     *         {@literal @}var = 99
      *       end
      *       def remove
-     *         remove_instance_variable(:@var)
+     *         remove_instance_variable(:{@literal @}var)
      *       end
      *     end
      *     d = Dummy.new
-     *     d.var      #=> 99
-     *     d.remove   #=> 99
-     *     d.var      #=> nil
+     *     d.var      #=&gt; 99
+     *     d.remove   #=&gt; 99
+     *     d.var      #=&gt; nil
      */
     public IRubyObject remove_instance_variable(ThreadContext context, IRubyObject name, Block block) {
+        String id = validateInstanceVariable(name);
         ensureInstanceVariablesSettable();
-        IRubyObject value = (IRubyObject) variableTableRemove(validateInstanceVariable(name));
+        IRubyObject value = (IRubyObject) variableTableRemove(id);
         if (value != null) return value;
         throw context.runtime.newNameError("instance variable %1$s not defined", this, name);
     }
@@ -2831,7 +2858,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /** rb_obj_instance_variables
      *
      *  call-seq:
-     *     obj.instance_variables    => array
+     *     obj.instance_variables    =&gt; array
      *
      *  Returns an array of instance variable names for the receiver. Note
      *  that simply defining an accessor does not create the corresponding
@@ -2840,10 +2867,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     class Fred
      *       attr_accessor :a1
      *       def initialize
-     *         @iv = 3
+     *         {@literal @}iv = 3
      *       end
      *     end
-     *     Fred.new.instance_variables   #=> [:"@iv"]
+     *     Fred.new.instance_variables   #=&gt; [:"{@literal @}iv"]
      */
     public RubyArray instance_variables(ThreadContext context) {
         Ruby runtime = context.runtime;

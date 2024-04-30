@@ -42,6 +42,7 @@ import jnr.constants.platform.SocketLevel;
 import jnr.constants.platform.SocketMessage;
 import jnr.constants.platform.SocketOption;
 import jnr.constants.platform.TCP;
+import jnr.constants.platform.InterfaceInfo;
 import jnr.netdb.Protocol;
 import jnr.unixsocket.UnixSocketAddress;
 import jnr.unixsocket.UnixSocketChannel;
@@ -54,6 +55,7 @@ import org.jruby.RubyModule;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -108,6 +110,8 @@ public class RubySocket extends RubyBasicSocket {
         runtime.loadConstantSet(rb_mConstants, IPProto.class);
         runtime.loadConstantSet(rb_mConstants, Shutdown.class);
         runtime.loadConstantSet(rb_mConstants, TCP.class);
+        runtime.loadConstantSet(rb_mConstants, IP.class);
+        runtime.loadConstantSet(rb_mConstants, InterfaceInfo.class);
         runtime.loadConstantSet(rb_mConstants, NameInfo.class);
         runtime.loadConstantSet(rb_mConstants, SocketMessage.class);
 
@@ -131,14 +135,6 @@ public class RubySocket extends RubyBasicSocket {
 
         rb_mConstants.setConstant("AI_DEFAULT", runtime.newFixnum(AddressInfo.AI_DEFAULT));
         rb_mConstants.setConstant("AI_MASK", runtime.newFixnum(AddressInfo.AI_MASK));
-
-        // More constants needed by specs
-        rb_mConstants.setConstant("IP_MULTICAST_TTL", runtime.newFixnum(IP.IP_MULTICAST_TTL.value()));
-        rb_mConstants.setConstant("IP_MULTICAST_LOOP", runtime.newFixnum(IP.IP_MULTICAST_LOOP.value()));
-        rb_mConstants.setConstant("IP_ADD_MEMBERSHIP", runtime.newFixnum(IP.IP_ADD_MEMBERSHIP.value()));
-        rb_mConstants.setConstant("IP_MAX_MEMBERSHIPS", runtime.newFixnum(IP.IP_MAX_MEMBERSHIPS.value()));
-        rb_mConstants.setConstant("IP_DEFAULT_MULTICAST_LOOP", runtime.newFixnum(IP.IP_DEFAULT_MULTICAST_LOOP));
-        rb_mConstants.setConstant("IP_DEFAULT_MULTICAST_TTL", runtime.newFixnum(IP.IP_DEFAULT_MULTICAST_TTL));
 
         rb_cSocket.includeModule(rb_mConstants);
 
@@ -241,8 +237,10 @@ public class RubySocket extends RubyBasicSocket {
         return recvfrom(context, _length);
     }
 
-    @JRubyMethod(required = 1, optional = 3)
+    @JRubyMethod(required = 1, optional = 3, checkArity = false)
     public IRubyObject recvfrom_nonblock(ThreadContext context, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 1, 4);
+
         if (getOpenFile() == null) {
             throw context.runtime.newErrnoENOTCONNError("socket is not connected");
         }
@@ -259,7 +257,7 @@ public class RubySocket extends RubyBasicSocket {
         throw SocketUtils.sockerr(context.runtime, JRUBY_SERVER_SOCKET_ERROR);
     }
 
-    @JRubyMethod(notImplemented = true, optional = 1)
+    @JRubyMethod(notImplemented = true, optional = 1, checkArity = false)
     public IRubyObject accept_nonblock(ThreadContext context, IRubyObject[] args) {
         throw SocketUtils.sockerr(context.runtime, JRUBY_SERVER_SOCKET_ERROR);
     }
@@ -291,13 +289,17 @@ public class RubySocket extends RubyBasicSocket {
         return list;
     }
 
-    @JRubyMethod(required = 1, rest = true, meta = true)
+    @JRubyMethod(required = 1, rest = true, checkArity = false, meta = true)
     public static IRubyObject gethostbyaddr(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 1, -1);
+
         return SocketUtils.gethostbyaddr(context, args);
     }
 
-    @JRubyMethod(required = 1, optional = 1, meta = true)
+    @JRubyMethod(required = 1, optional = 1, checkArity = false, meta = true)
     public static IRubyObject getservbyname(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 1, 2);
+
         return SocketUtils.getservbyname(context, args);
     }
 
@@ -327,13 +329,17 @@ public class RubySocket extends RubyBasicSocket {
         return SocketUtils.gethostbyname(context, hostname);
     }
 
-    @JRubyMethod(required = 2, optional = 5, meta = true)
+    @JRubyMethod(required = 2, optional = 5, checkArity = false, meta = true)
     public static IRubyObject getaddrinfo(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 2, 7);
+
         return SocketUtils.getaddrinfo(context, args);
     }
 
-    @JRubyMethod(required = 1, optional = 1, meta = true)
+    @JRubyMethod(required = 1, optional = 1, checkArity = false, meta = true)
     public static IRubyObject getnameinfo(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 1, 2);
+
         return SocketUtils.getnameinfo(context, args);
     }
 

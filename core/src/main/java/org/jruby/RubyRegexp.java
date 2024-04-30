@@ -75,6 +75,7 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.collections.WeakValuedMap;
 
+import static org.jruby.util.StringSupport.CR_7BIT;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
 import java.util.Iterator;
@@ -225,9 +226,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         if (!context.runtime.getInstanceConfig().isInterruptibleRegexps()) return matcher.search(start, range, option);
 
         try {
-            RubyThread thread = context.getThread();
-            SearchMatchTask task = new SearchMatchTask(thread, start, range, option, false);
-            return thread.executeTask(context, matcher, task);
+            return context.getThread().executeRegexp(context, matcher, start, range, option, Matcher::searchInterruptible);
         } catch (InterruptedException e) {
             throw context.runtime.newInterruptedRegexpError("Regexp Interrupted");
         }
@@ -237,14 +236,11 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         if (!context.runtime.getInstanceConfig().isInterruptibleRegexps()) return matcher.match(start, range, option);
 
         try {
-            RubyThread thread = context.getThread();
-            SearchMatchTask task = new SearchMatchTask(thread, start, range, option, true);
-            return thread.executeTask(context, matcher, task);
+            return context.getThread().executeRegexp(context, matcher, start, range, option, Matcher::matchInterruptible);
         } catch (InterruptedException e) {
             throw context.runtime.newInterruptedRegexpError("Regexp Interrupted");
         }
     }
-
 
     @Deprecated // not-used
     public static int matcherSearch(Ruby runtime, Matcher matcher, int start, int range, int option) {
@@ -253,42 +249,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     @Deprecated // not-used
     public static int matcherMatch(Ruby runtime, Matcher matcher, int start, int range, int option) {
-        try {
-            ThreadContext context = runtime.getCurrentContext();
-            RubyThread thread = context.getThread();
-            SearchMatchTask task = new SearchMatchTask(thread, start, range, option, true);
-            return thread.executeTask(context, matcher, task);
-        } catch (InterruptedException e) {
-            throw runtime.newInterruptedRegexpError("Regexp Interrupted");
-        }
-    }
-
-    private static class SearchMatchTask implements RubyThread.Task<Matcher, Integer> {
-        final RubyThread thread;
-        final int start;
-        final int range;
-        final int option;
-        final boolean match;
-
-        SearchMatchTask(RubyThread thread, int start, int range, int option, boolean match) {
-            this.thread = thread;
-            this.start = start;
-            this.range = range;
-            this.option = option;
-            this.match = match;
-        }
-
-        @Override
-        public Integer run(ThreadContext context, Matcher matcher) throws InterruptedException {
-            return match ?
-                    matcher.matchInterruptible(start, range, option) :
-                    matcher.searchInterruptible(start, range, option);
-        }
-
-        @Override
-        public void wakeup(RubyThread thread, Matcher matcher) {
-            thread.getNativeThread().interrupt();
-        }
+        return matcherMatch(runtime.getCurrentContext(), matcher, start, range, option);
     }
 
     @Override
@@ -918,7 +879,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     /** rb_reg_init_copy
      */
-    @JRubyMethod(required = 1, visibility = Visibility.PRIVATE)
+    @JRubyMethod(visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize_copy(IRubyObject re) {
         if (this == re) return this;
@@ -973,7 +934,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 newOptions.setEncodingNone(true);
                 return regexpInitialize(arg0.convertToString().getByteList(), ASCIIEncoding.INSTANCE, newOptions);
             } else {
-                metaClass.runtime.getWarnings().warn("encoding option is ignored - " + kcodeBytes);
+                metaClass.runtime.getWarnings().warnDeprecated("encoding option is ignored - " + kcodeBytes);
             }
         }
         return regexpInitializeString(arg0.convertToString(), newOptions);
@@ -1067,7 +1028,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return metaClass.runtime.newFixnum(hash + (hash >> 5));
     }
 
-    @JRubyMethod(name = {"==", "eql?"}, required = 1)
+    @JRubyMethod(name = {"==", "eql?"})
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         if (this == other) {
@@ -1112,7 +1073,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     /** rb_reg_eqq
      *
      */
-    @JRubyMethod(name = "===", required = 1, writes = BACKREF)
+    @JRubyMethod(name = "===", writes = BACKREF)
     public IRubyObject eqq(ThreadContext context, IRubyObject arg) {
         arg = operandNoCheck(arg);
 
@@ -1140,7 +1101,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     // MRI: rb_reg_match
 
     @Override
-    @JRubyMethod(name = "=~", required = 1, writes = BACKREF)
+    @JRubyMethod(name = "=~", writes = BACKREF)
     public IRubyObject op_match(ThreadContext context, IRubyObject str) {
         final RubyString[] strp = { null };
         int pos = matchPos(context, str, strp, true, 0);
@@ -1228,7 +1189,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     private RubyBoolean matchP(ThreadContext context, IRubyObject arg, int pos) {
         if (arg == context.nil) return context.fals;
         RubyString str = arg instanceof RubySymbol ? ((RubySymbol) arg).to_s(context.runtime) : arg.convertToString();
+        return matchP(context, str, pos);
+    }
 
+    final RubyBoolean matchP(ThreadContext context, RubyString str, int pos) {
         if (pos != 0) {
             if (pos < 0) {
                 pos += str.strLength();
@@ -1387,6 +1351,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         ByteList newStr = str.dup();
         newStr.setEncoding(enc);
         return RubyString.newString(metaClass.runtime, newStr);
+    }
+
+    public ByteList rawSource() {
+        return str;
     }
 
     public final int length() {
@@ -1643,7 +1611,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         if (m.regs == null || m.regs.getBeg(0) == -1) return m.getRuntime().getNil();
 
         int i;
-        for (i = m.regs.getNumRegs() - 1; m.regs.getBeg(i) == -1 && i > 0; i--)
+        for (i = m.regs.getNumRegs() - 1; m.regs.getBeg(i) == -1 && i > 0; i--);
         if (i == 0) return m.getRuntime().getNil();
 
         return nth_match(i, m);
@@ -1875,5 +1843,51 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     @Deprecated
     public IRubyObject match_m19(ThreadContext context, IRubyObject str, boolean useBackref, Block block) {
         return matchCommon(context, str, 0, useBackref, block);
+    }
+
+    /**
+     * Is the pattern itself a simple US-ASCII string which can be used in simple string searches and
+     * can be used outside of the regexp engine?
+     *
+     */
+    public boolean isSimpleString() {
+        return isLiteral() &&
+                getEncoding().isAsciiCompatible() &&
+                RubyString.scanForCodeRange(str) == CR_7BIT &&
+                !getOptions().isIgnorecase() &&
+                ((str.realSize() == 1 &&
+                        str.charAt(0) != '.' &&
+                        str.charAt(0) != '^' &&
+                        str.charAt(0) != '$' &&
+                        str.charAt(0) != ' ') ||
+                isExact(str));
+        // FIXME ' ' is for awk split detection this should be in split code perhaps.
+    }
+
+    // FIXME: This should be something within joni which says it is a simple text string and not something requiring a regexp.
+    // Assumes 7bit source
+    private boolean isExact(ByteList str) {
+        int size = str.realSize();
+        byte[] bytes = str.unsafeBytes();
+        int begin = str.begin();
+
+        for (int i = 0; i < size; i++) {
+            switch (bytes[begin + i]) {
+                case '|':
+                case '.':
+                case '*':
+                case '[':
+                case '(':
+                case '+':
+                case '?':
+                case '{':
+                case '\\':
+                case '^':
+                case '$':
+                    return false;
+            }
+        }
+
+        return true;
     }
 }
