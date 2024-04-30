@@ -85,7 +85,7 @@ public class Signature {
      * Are there an exact (fixed) number of parameters to this signature?
      */
     public boolean isFixed() {
-        return arityValue() >= 0;
+        return arityValue() >= 0 && rest != Rest.ANON;
     }
 
     /**

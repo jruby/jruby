@@ -513,7 +513,7 @@ public class IRRuntimeHelpers {
                         new IRubyObject[] { value };
             case  0:
             case  1:
-                return signature.isSpreadable() ?
+                return signature.rest() == org.jruby.runtime.Signature.Rest.ANON ?
                         IRBlockBody.toAry(context, value) :
                         new IRubyObject[] { value };
         }

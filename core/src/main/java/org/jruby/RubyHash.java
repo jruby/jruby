@@ -1624,7 +1624,7 @@ public class RubyHash extends RubyObject implements Map {
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Block block) {
             if (block.type == Block.Type.LAMBDA) {
                 block.call(context, context.runtime.newArray(key, value));
-            } else if (block.getSignature().arityValue() > 1 || block.getSignature().isSpreadable()) {
+            } else if (block.getSignature().isSpreadable()) {
                 block.yieldSpecific(context, key, value);
             } else {
                 block.yield(context, context.runtime.newArray(key, value));
