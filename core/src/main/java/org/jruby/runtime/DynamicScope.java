@@ -598,4 +598,8 @@ public abstract class DynamicScope implements Cloneable {
             throw new RuntimeException("BUG: failed to clone scope type " + getClass().getName());
         }
     }
+
+    public DynamicScope dup() {
+        return newDynamicScope(staticScope.duplicate(), parent);
+    }
 }

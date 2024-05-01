@@ -76,7 +76,7 @@ import org.jruby.runtime.scope.ManyVarsDynamicScope;
  * will point to the previous scope of the enclosing module/class (cref).
  * 
  */
-public class StaticScope implements Serializable {
+public class StaticScope implements Serializable, Cloneable {
     public static final int MAX_SPECIALIZED_SIZE = 50;
     private static final long serialVersionUID = 3423852552352498148L;
 

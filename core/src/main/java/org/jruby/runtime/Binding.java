@@ -316,4 +316,11 @@ public class Binding {
                     // Can't use Frame.DUMMY because of circular static init seeing it before it's assigned
                     new Frame(),
                     Visibility.PUBLIC);
+
+    public Binding dup(ThreadContext context) {
+        Binding newBinding = new Binding(this);
+        DynamicScope scope = getEvalScope(context.runtime);
+        newBinding.evalScope = scope.dup();
+        return newBinding;
+    }
 }
