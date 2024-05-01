@@ -62,26 +62,23 @@ public class RubySignalException extends RubyException {
         return signalExceptionClass;
     }
 
-    @JRubyMethod(optional = 2, checkArity = false, visibility = PRIVATE)
+    @JRubyMethod(required = 1, optional = 2, checkArity = false, visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
-        int argc = Arity.checkArgumentCount(context, args, 0, 2);
+        int argc = Arity.checkArgumentCount(context, args, 1, 2);
 
         final Ruby runtime = context.runtime;
         int argnum = 1;
-        IRubyObject sig = context.nil;
-        long _signo;
 
-        if (argc > 0) {
-            sig = TypeConverter.checkToInteger(runtime, args[0], "to_int");
+        IRubyObject sig = TypeConverter.checkToInteger(runtime, args[0], "to_int");
 
-            if (sig.isNil()) {
-                sig = args[0];
-            } else {
-                argnum = 2;
-            }
+        if (sig.isNil()) {
+            sig = args[0];
+            Arity.checkArgumentCount(runtime, args, 1, argnum);
+        } else {
+            argnum = 2;
         }
 
-        Arity.checkArgumentCount(runtime, args, 1, argnum);
+        long _signo;
 
         if (argnum == 2) {
             _signo = sig.convertToInteger().getLongValue();

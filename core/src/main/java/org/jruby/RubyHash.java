@@ -814,11 +814,10 @@ public class RubyHash extends RubyObject implements Map {
     public IRubyObject initialize(ThreadContext context, IRubyObject _default, final Block block) {
         modify();
 
-        if (block.isGiven()) {
-            throw context.runtime.newArgumentError("wrong number of arguments");
-        } else {
-            ifNone = _default;
-        }
+        if (block.isGiven()) throw context.runtime.newArgumentError(1, 0);
+
+        ifNone = _default;
+
         return this;
     }
 
