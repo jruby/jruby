@@ -32,6 +32,7 @@ import org.jruby.ir.IRScopeType;
 import org.jruby.ir.JIT;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
 public abstract class DynamicScope implements Cloneable {
     // Static scoping information for this scope
@@ -600,6 +601,6 @@ public abstract class DynamicScope implements Cloneable {
     }
 
     public DynamicScope dup() {
-        return newDynamicScope(staticScope.duplicate(), parent);
+        return new ManyVarsDynamicScope(staticScope.duplicate(), parent);
     }
 }
