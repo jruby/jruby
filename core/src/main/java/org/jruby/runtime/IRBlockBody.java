@@ -102,14 +102,13 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     }
 
     private IRubyObject yieldSpecificMultiArgsCommon(ThreadContext context, Block block, IRubyObject... args) {
-        int blockArity = signature.arityValue();
-        if (blockArity == 1) {
+        if (signature.isOneArgument()) {
             args = new IRubyObject[] { RubyArray.newArrayMayCopy(context.runtime, args) };
         }
 
         if (canCallDirect()) return yieldDirect(context, block, args, null);
 
-        if (blockArity == 0) {
+        if (signature.arityValue() == 0) {
             args = IRubyObject.NULL_ARRAY; // discard args
         }
         if (block.type == Block.Type.LAMBDA) signature.checkArity(context.runtime, args);

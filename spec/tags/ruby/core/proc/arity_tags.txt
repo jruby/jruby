@@ -1,2 +1,0 @@
-fails:Proc#arity for instances created with lambda { || } returns positive values for definition '@a = lambda { |a, | }'
-fails:Proc#arity for instances created with proc { || } returns positive values for definition '@a = proc { |a, | }'
