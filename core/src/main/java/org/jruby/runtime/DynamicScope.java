@@ -601,6 +601,11 @@ public abstract class DynamicScope implements Cloneable {
     }
 
     public DynamicScope dup() {
-        return new ManyVarsDynamicScope(staticScope.duplicate(), parent);
+        DynamicScope newScope = new ManyVarsDynamicScope(staticScope.duplicate(), parent);
+        IRubyObject[] values = getValues();
+        for (int i = 0; i < values.length; i++) {
+            newScope.setValueDepthZero(values[i], i);
+        }
+        return newScope;
     }
 }
