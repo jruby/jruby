@@ -28,8 +28,6 @@ public class TraceType {
 
     private static final Logger LOG = LoggerFactory.getLogger(TraceType.class);
     private static final StackWalker WALKER = ThreadContext.WALKER;
-    private static final String[] FULL_MESSAGE_KEYS = {"highlight", "order"};
-    private static final String[] DETAILED_MESSAGE_KEYS = {"highlight"};
 
     private final Gather gather;
     private final Format format;
@@ -365,17 +363,23 @@ public class TraceType {
             highlight = RubyException.to_tty_p(context, context.runtime.getException()).isTrue();
             reverse = false;
         } else {
-            IRubyObject[] highlightOrder = ArgsUtil.extractKeywordArgs(context, (RubyHash) optArg, FULL_MESSAGE_KEYS);
+            RubyHash optHash = (RubyHash) optArg;
 
-            highlight = determineHighlighting(context, highlightOrder[0]);
-            reverse = determineDirection(context, highlightOrder[1]);
+            IRubyObject highlightArg = optHash.fastARef(context.runtime.newSymbol("highlight"));
+            if (highlightArg == null) {
+                optHash.fastASet(context.runtime.newSymbol("highlight"), RubyException.to_tty_p(context, context.runtime.getException()));
+            }
+            highlight = determineHighlighting(context, highlightArg);
+            IRubyObject highlightOrder = optHash.fastARef(context.runtime.newSymbol("order"));
+            reverse = determineDirection(context, highlightOrder);
         }
 
         return printBacktraceMRI(exception, optArg, highlight, reverse);
     }
 
     private static boolean determineHighlighting(ThreadContext context, IRubyObject vHigh) {
-        if (vHigh == null || vHigh.isNil()) return RubyException.to_tty_p(context, context.runtime.getException()).isTrue();
+        if (vHigh == null) return false;
+        if (vHigh.isNil()) return RubyException.to_tty_p(context, context.runtime.getException()).isTrue();
         if (vHigh == context.tru) return true;
         if (vHigh == context.fals) return false;
         throw context.runtime.newArgumentError("expected true or false as highlight: " + vHigh);
@@ -444,10 +448,10 @@ public class TraceType {
         boolean printedPosition = false;
         if (backtrace == null || backtrace.isNil() || !(backtrace instanceof RubyArray)) {
             if (context.getFile() != null && context.getFile().length() > 0) {
-                errorStream.catString(context.getFile() + ':' + context.getLine());
+                errorStream.catString(context.getFile() + ':' + (context.getLine() + 1));
                 printedPosition = true;
             } else {
-                errorStream.catString(""+context.getLine());
+                errorStream.catString(""+(context.getLine() + 1));
                 printedPosition = true;
             }
         } else if (((RubyArray) backtrace).getLength() == 0) {
@@ -472,19 +476,22 @@ public class TraceType {
             if (printedPosition) errorStream.catString(": ");
         }
 
-        // FIXME: probably should figure out if this is empty too? and maybe type opts as RubyHash
-        IRubyObject message;
-        if (opts.isNil()) {
-            message = exception.callMethod(context, "detailed_message");
-        } else {
-            context.callInfo = ThreadContext.CALL_KEYWORD | ThreadContext.CALL_KEYWORD_REST;
-            message = exception.callMethod(context, "detailed_message", opts);
+        IRubyObject message = context.nil;
+        if (exception.respondsTo("detailed_message")) {
+            if (opts.isNil()) {
+                message = exception.callMethod(context, "detailed_message");
+            } else {
+                context.callInfo = ThreadContext.CALL_KEYWORD | ThreadContext.CALL_KEYWORD_REST;
+                message = exception.callMethod(context, "detailed_message", opts);
+            }
         }
-
         if (message instanceof RubyString str) {
             errorStream.append(str);
         } else if (message.isNil()) {
+            if (highlight) errorStream.catString(UNDERLINE);
             errorStream.append(type.getRealClass().rubyName());
+            if (highlight) errorStream.catString(RESET);
+
         } else {
             errorStream.append(message.convertToString());
         }
