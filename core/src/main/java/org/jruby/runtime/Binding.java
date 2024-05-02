@@ -317,10 +317,15 @@ public class Binding {
                     new Frame(),
                     Visibility.PUBLIC);
 
+    /**
+     * Duplicate this binding and setup the proper cloned instance of the eval scope so that any previously
+     * captured variables still exist but are not shared with the original binding.
+     * @param context the current thread context
+     * @return the duplicated binding
+     */
     public Binding dup(ThreadContext context) {
         Binding newBinding = new Binding(this);
-        DynamicScope scope = getEvalScope(context.runtime);
-        newBinding.evalScope = scope.dup();
+        newBinding.evalScope = getEvalScope(context.runtime).dupEvalScope();
         return newBinding;
     }
 }

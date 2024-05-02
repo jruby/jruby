@@ -600,12 +600,13 @@ public abstract class DynamicScope implements Cloneable {
         }
     }
 
-    public DynamicScope dup() {
-        DynamicScope newScope = new ManyVarsDynamicScope(staticScope.duplicate(), parent);
-        IRubyObject[] values = getValues();
-        for (int i = 0; i < values.length; i++) {
-            newScope.setValueDepthZero(values[i], i);
-        }
+    /**
+     * Binding needs to clone its scope with all the current values.
+     * @return a duplicate of this scope with all the current values
+     */
+    public DynamicScope dupEvalScope() {
+        ManyVarsDynamicScope newScope = new ManyVarsDynamicScope(staticScope.duplicate(), parent);
+        newScope.setVariableValues(getValues());
         return newScope;
     }
 }
