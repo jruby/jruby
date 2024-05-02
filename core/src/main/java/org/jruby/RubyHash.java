@@ -815,11 +815,10 @@ public class RubyHash extends RubyObject implements Map {
     public IRubyObject initialize(ThreadContext context, IRubyObject _default, final Block block) {
         modify();
 
-        if (block.isGiven()) {
-            throw context.runtime.newArgumentError("wrong number of arguments");
-        } else {
-            ifNone = _default;
-        }
+        if (block.isGiven()) throw context.runtime.newArgumentError(1, 0);
+
+        ifNone = _default;
+
         return this;
     }
 
@@ -1601,7 +1600,7 @@ public class RubyHash extends RubyObject implements Map {
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Block block) {
             if (block.type == Block.Type.LAMBDA) {
                 block.call(context, context.runtime.newArray(key, value));
-            } else if (block.getSignature().arityValue() > 1) {
+            } else if (block.getSignature().isSpreadable()) {
                 block.yieldSpecific(context, key, value);
             } else {
                 block.yield(context, context.runtime.newArray(key, value));

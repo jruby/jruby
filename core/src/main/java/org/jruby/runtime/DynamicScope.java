@@ -32,6 +32,7 @@ import org.jruby.ir.IRScopeType;
 import org.jruby.ir.JIT;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
 public abstract class DynamicScope implements Cloneable {
     // Static scoping information for this scope
@@ -597,5 +598,15 @@ public abstract class DynamicScope implements Cloneable {
         } catch (CloneNotSupportedException cnse) {
             throw new RuntimeException("BUG: failed to clone scope type " + getClass().getName());
         }
+    }
+
+    /**
+     * Binding needs to clone its scope with all the current values.
+     * @return a duplicate of this scope with all the current values
+     */
+    public DynamicScope dupEvalScope() {
+        ManyVarsDynamicScope newScope = new ManyVarsDynamicScope(staticScope.duplicate(), parent);
+        newScope.setVariableValues(getValues());
+        return newScope;
     }
 }

@@ -513,7 +513,9 @@ public class IRRuntimeHelpers {
                         new IRubyObject[] { value };
             case  0:
             case  1:
-                return new IRubyObject[] { value };
+                return signature.rest() == org.jruby.runtime.Signature.Rest.ANON ?
+                        IRBlockBody.toAry(context, value) :
+                        new IRubyObject[] { value };
         }
 
         return IRBlockBody.toAry(context, value);

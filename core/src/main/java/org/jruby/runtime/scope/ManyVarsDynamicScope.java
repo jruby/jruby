@@ -50,6 +50,13 @@ public class ManyVarsDynamicScope extends DynamicScope {
         if(variableValues == null) variableValues = IRubyObject.array(staticScope.getNumberOfVariables());
     }
 
+    // WARNING:  This is used when dup'ing an eval scope.  We know the size and that it will 100% always be
+    // a ManyVarsDynamicScope.  This should not be used by anything else.  If there ever ends up being another
+    // use then it should be documented in this warning.
+    public void setVariableValues(IRubyObject[] variableValues) {
+        this.variableValues = variableValues;
+    }
+
     public IRubyObject[] getValues() {
         return variableValues;
     }

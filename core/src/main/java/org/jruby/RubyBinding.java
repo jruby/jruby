@@ -105,7 +105,12 @@ public class RubyBinding extends RubyObject {
         
         return this;
     }
-    
+
+    @JRubyMethod
+    public IRubyObject dup(ThreadContext context) {
+        return newBinding(context.runtime, binding.dup(context));
+    }
+
     @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
     @Override
     public IRubyObject initialize_copy(IRubyObject other) {
