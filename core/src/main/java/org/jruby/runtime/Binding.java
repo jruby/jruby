@@ -316,4 +316,16 @@ public class Binding {
                     // Can't use Frame.DUMMY because of circular static init seeing it before it's assigned
                     new Frame(),
                     Visibility.PUBLIC);
+
+    /**
+     * Duplicate this binding and setup the proper cloned instance of the eval scope so that any previously
+     * captured variables still exist but are not shared with the original binding.
+     * @param context the current thread context
+     * @return the duplicated binding
+     */
+    public Binding dup(ThreadContext context) {
+        Binding newBinding = new Binding(this);
+        newBinding.evalScope = getEvalScope(context.runtime).dupEvalScope();
+        return newBinding;
+    }
 }
