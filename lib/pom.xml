@@ -866,7 +866,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>uri</artifactId>
-      <version>0.12.1</version>
+      <version>0.12.2</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1143,7 +1143,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/timeout-0.3.2*</include>
           <include>specifications/tsort-0.1.0*</include>
           <include>specifications/un-0.2.0*</include>
-          <include>specifications/uri-0.12.1*</include>
+          <include>specifications/uri-0.12.2*</include>
           <include>specifications/weakref-0.1.1*</include>
           <include>specifications/yaml-0.2.0*</include>
           <include>specifications/matrix-0.4.2*</include>
@@ -1222,7 +1222,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/timeout-0.3.2*/**/*</include>
           <include>gems/tsort-0.1.0*/**/*</include>
           <include>gems/un-0.2.0*/**/*</include>
-          <include>gems/uri-0.12.1*/**/*</include>
+          <include>gems/uri-0.12.2*/**/*</include>
           <include>gems/weakref-0.1.1*/**/*</include>
           <include>gems/yaml-0.2.0*/**/*</include>
           <include>gems/matrix-0.4.2*/**/*</include>
@@ -1301,7 +1301,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/timeout-0.3.2*</include>
           <include>cache/tsort-0.1.0*</include>
           <include>cache/un-0.2.0*</include>
-          <include>cache/uri-0.12.1*</include>
+          <include>cache/uri-0.12.2*</include>
           <include>cache/weakref-0.1.1*</include>
           <include>cache/yaml-0.2.0*</include>
           <include>cache/matrix-0.4.2*</include>
