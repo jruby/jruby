@@ -454,6 +454,14 @@ public class TraceType {
                 errorStream.catString(""+(context.getLine() + 1));
                 printedPosition = true;
             }
+            // When in no backtrace exception (like just making it) it should print the caller.
+            // As far as I can see currently this is only full_message but I try to retrieve it
+            // from the frame.
+            String method = context.getFrameName();
+            if (method == null) method = "full_message";
+            errorStream.catString(":in '");
+            errorStream.catString(method);
+            errorStream.cat('\'');
         } else if (((RubyArray) backtrace).getLength() == 0) {
             printErrorPos(context, errorStream);
         } else {
