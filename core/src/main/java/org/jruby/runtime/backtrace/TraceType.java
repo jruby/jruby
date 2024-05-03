@@ -22,11 +22,12 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.jruby.util.TypeConverter;
 
+import static org.jruby.util.RubyStringBuilder.str;
+
 public class TraceType {
 
     private static final Logger LOG = LoggerFactory.getLogger(TraceType.class);
     private static final StackWalker WALKER = ThreadContext.WALKER;
-    private static final String[] FULL_MESSAGE_KEYS = {"highlight", "order"};
 
     private final Gather gather;
     private final Format format;
@@ -309,7 +310,8 @@ public class TraceType {
          */
         MRI {
             public String printBacktrace(RubyException exception, boolean console) {
-                return printBacktraceMRI(exception, console, false);
+                RubyHash opts = RubyHash.newKwargs(exception.getRuntime(), "highlight", exception.getRuntime().newBoolean(console));
+                return printBacktraceMRI(exception, opts, console, false).toString();
             }
 
             public void renderBacktrace(RubyStackTraceElement[] elts, StringBuilder buffer, boolean color) {
@@ -334,89 +336,103 @@ public class TraceType {
         public abstract void renderBacktrace(RubyStackTraceElement[] elts, StringBuilder buffer, boolean color);
     }
 
-    public static String printFullMessage(ThreadContext context, IRubyObject exception, IRubyObject opts) {
-        Ruby runtime = context.runtime;
-        IRubyObject optArg = ArgsUtil.getOptionsArg(runtime, opts);
-        IRubyObject vHigh= context.nil;
-        IRubyObject vOrder = context.nil;
+    public static IRubyObject printDetailedMessage(ThreadContext context, IRubyObject exception, IRubyObject opts) {
+        IRubyObject optArg = ArgsUtil.getOptionsArg(context.runtime, opts);
+        boolean highlight;
 
-        if (!optArg.isNil()) {
-            IRubyObject[] highlightOrder = ArgsUtil.extractKeywordArgs(context, (RubyHash) optArg, FULL_MESSAGE_KEYS);
-
-            if (highlightOrder[0] != null) {
-                vHigh = highlightOrder[0];
-                if (vHigh != context.nil && vHigh != context.fals && vHigh != context.tru) {
-                    throw runtime.newArgumentError("expected true or false as highlight: " + vHigh);
-                }
-            }
-
-            if (highlightOrder[1] != null) {
-                vOrder = highlightOrder[1];
-                if (!vOrder.isNil()) {
-                    IRubyObject id = TypeConverter.checkID(vOrder);
-                    if (id == runtime.newSymbol("bottom")) vOrder = context.tru;
-                    else if (id == runtime.newSymbol("top")) vOrder = context.fals;
-                    else {
-                        throw runtime.newArgumentError("expected :top or :bottom as order: " + vOrder);
-                    }
-                }
-            }
+        if (optArg.isNil()) {
+            highlight = false;
+        } else {
+            IRubyObject highlightArg = ((RubyHash) optArg).fastARef(context.runtime.newSymbol("highlight"));
+            highlight = determineHighlighting(context, highlightArg);
         }
 
-        if (vHigh.isNil()) {
-            vHigh = RubyException.to_tty_p(context, context.runtime.getException());
-        }
-        if (vOrder.isNil()) {
-            vOrder = context.fals;
-        }
+        RubyString errorStream = RubyString.newEmptyString(context.runtime);
 
-        boolean highlight = vHigh.isTrue();
-        boolean reverse = vOrder.isTrue();
+        printErrMessageToStream(exception, errorStream, highlight);
 
-        return printBacktraceMRI(exception, highlight, reverse);
+        return errorStream;
     }
 
-    private static String printBacktraceMRI(IRubyObject exception, boolean highlight, boolean reverse) {
-        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        final PrintStream errorStream = new PrintStream(baos);
+    public static RubyString printFullMessage(ThreadContext context, IRubyObject exception, IRubyObject opts) {
+        IRubyObject optArg = ArgsUtil.getOptionsArg(context.runtime, opts);
+        boolean highlight;
+        boolean reverse;
+
+        if (optArg.isNil()) {
+            highlight = RubyException.to_tty_p(context, context.runtime.getException()).isTrue();
+            reverse = false;
+        } else {
+            RubyHash optHash = (RubyHash) optArg;
+
+            IRubyObject highlightArg = optHash.fastARef(context.runtime.newSymbol("highlight"));
+            if (highlightArg == null) {
+                optHash.fastASet(context.runtime.newSymbol("highlight"), RubyException.to_tty_p(context, context.runtime.getException()));
+            }
+            highlight = determineHighlighting(context, highlightArg);
+            IRubyObject highlightOrder = optHash.fastARef(context.runtime.newSymbol("order"));
+            reverse = determineDirection(context, highlightOrder);
+        }
+
+        return printBacktraceMRI(exception, optArg, highlight, reverse);
+    }
+
+    private static boolean determineHighlighting(ThreadContext context, IRubyObject vHigh) {
+        if (vHigh == null) return false;
+        if (vHigh.isNil()) return RubyException.to_tty_p(context, context.runtime.getException()).isTrue();
+        if (vHigh == context.tru) return true;
+        if (vHigh == context.fals) return false;
+        throw context.runtime.newArgumentError("expected true or false as highlight: " + vHigh);
+    }
+
+    private static boolean determineDirection(ThreadContext context, IRubyObject vOrder) {
+        if (vOrder == null || vOrder.isNil()) return false;
+
+        IRubyObject id = TypeConverter.checkID(vOrder);
+        if (id == context.runtime.newSymbol("bottom")) return true;
+        if (id == context.runtime.newSymbol("top")) return false;
+        throw context.runtime.newArgumentError(str(context.runtime, "expected :top or :bottom as order: ", vOrder));
+    }
+
+    private static RubyString printBacktraceMRI(IRubyObject exception, IRubyObject opts, boolean highlight, boolean reverse) {
+        RubyString errorStream = RubyString.newEmptyString(exception.getRuntime());
 
         if (reverse) {
-            if (highlight) errorStream.print(BOLD);
-            errorStream.print("Traceback");
-            if (highlight) errorStream.print(RESET);
-            errorStream.print(" (most recent call last):\n");
+            if (highlight) errorStream.catString(BOLD);
+            errorStream.catString("Traceback");
+            if (highlight) errorStream.catString(RESET);
+            errorStream.catString(" (most recent call last):\n");
         }
 
         final Set<Object> shownCauses = new HashSet<>();
-        printExceptionToStream(exception, errorStream, highlight, reverse, shownCauses);
+        printExceptionToStream(exception, errorStream, opts, highlight, reverse, shownCauses);
 
-        return baos.toString();
+        return errorStream;
     }
 
-    private static void printExceptionToStream(IRubyObject exception, PrintStream errorStream, boolean highlight, boolean reverse, Set<Object> shownCauses) {
+    private static void printExceptionToStream(IRubyObject exception, RubyString errorStream, IRubyObject opts,
+                                               boolean highlight, boolean reverse, Set<Object> shownCauses) {
         final Ruby runtime = exception.getRuntime();
         final ThreadContext context = runtime.getCurrentContext();
         final IRubyObject backtrace = exception.callMethod(context, "backtrace");
 
         if (reverse) {
-            printCauseToStream(exception, errorStream, highlight, reverse, shownCauses);
-            printBacktraceToStream(backtrace, errorStream, reverse, 1);
-            printErrInfoToStream(exception, backtrace, errorStream, highlight);
+            printCauseToStream(context, exception, errorStream, opts, highlight, reverse, shownCauses);
+            printBacktraceToStream(context, backtrace, errorStream, reverse, 1);
+            printErrInfoToStream(exception, backtrace, errorStream, opts, highlight);
         } else {
-            printErrInfoToStream(exception, backtrace, errorStream, highlight);
-            printBacktraceToStream(backtrace, errorStream, reverse, 1);
-            printCauseToStream(exception, errorStream, highlight, reverse, shownCauses);
+            printErrInfoToStream(exception, backtrace, errorStream, opts, highlight);
+            printBacktraceToStream(context, backtrace, errorStream, reverse, 1);
+            printCauseToStream(context, exception, errorStream, opts, highlight, reverse, shownCauses);
         }
     }
 
-    private static void printCauseToStream(IRubyObject exception, PrintStream errorStream, boolean highlight, boolean reverse, Set<Object> shownCauses) {
-        final Ruby runtime = exception.getRuntime();
-        final ThreadContext context = runtime.getCurrentContext();
-
+    private static void printCauseToStream(ThreadContext context, IRubyObject exception, RubyString errorStream,
+                                           IRubyObject opts, boolean highlight, boolean reverse, Set<Object> shownCauses) {
         IRubyObject cause = exception.callMethod(context, "cause");
         if (!cause.isNil() && !shownCauses.contains(cause)) {
             shownCauses.add(cause);
-            printExceptionToStream(cause, errorStream, highlight, reverse, shownCauses);
+            printExceptionToStream(cause, errorStream, opts, highlight, reverse, shownCauses);
         }
     }
 
@@ -424,19 +440,28 @@ public class TraceType {
     private static final String BOLD = "\033[1m";
     private static final String RESET = "\033[m";
 
-    private static void printErrInfoToStream(IRubyObject exception, IRubyObject backtrace, PrintStream errorStream, boolean highlight) {
+    private static void printErrInfoToStream(IRubyObject exception, IRubyObject backtrace, RubyString errorStream,
+                                             IRubyObject opts, boolean highlight) {
         final Ruby runtime = exception.getRuntime();
         final ThreadContext context = runtime.getCurrentContext();
 
         boolean printedPosition = false;
-        if (backtrace.isNil() || !(backtrace instanceof RubyArray)) {
+        if (backtrace == null || backtrace.isNil() || !(backtrace instanceof RubyArray)) {
             if (context.getFile() != null && context.getFile().length() > 0) {
-                errorStream.print(context.getFile() + ':' + context.getLine());
+                errorStream.catString(context.getFile() + ':' + (context.getLine() + 1));
                 printedPosition = true;
             } else {
-                errorStream.print(context.getLine());
+                errorStream.catString(""+(context.getLine() + 1));
                 printedPosition = true;
             }
+            // When in no backtrace exception (like just making it) it should print the caller.
+            // As far as I can see currently this is only full_message but I try to retrieve it
+            // from the frame.
+            String method = context.getFrameName();
+            if (method == null) method = "full_message";
+            errorStream.catString(":in '");
+            errorStream.catString(method);
+            errorStream.cat('\'');
         } else if (((RubyArray) backtrace).getLength() == 0) {
             printErrorPos(context, errorStream);
         } else {
@@ -445,7 +470,7 @@ public class TraceType {
             if (mesg.isNil()) {
                 printErrorPos(context, errorStream);
             } else {
-                errorStream.print(mesg);
+                errorStream.append(mesg);
                 printedPosition = true;
             }
         }
@@ -454,20 +479,52 @@ public class TraceType {
         String info = exception.toString();
 
         if (type == runtime.getRuntimeError() && (info == null || info.length() == 0)) {
-            errorStream.print(": ");
-            if (highlight) errorStream.print(UNDERLINE);
-            errorStream.print("unhandled exception");
-            if (highlight) errorStream.print(RESET);
+            errorStream.catString(": ");
         } else {
-            if (printedPosition) errorStream.print(": ");
+            if (printedPosition) errorStream.catString(": ");
+        }
+
+        IRubyObject message = context.nil;
+        if (exception.respondsTo("detailed_message")) {
+            if (opts.isNil()) {
+                message = exception.callMethod(context, "detailed_message");
+            } else {
+                context.callInfo = ThreadContext.CALL_KEYWORD | ThreadContext.CALL_KEYWORD_REST;
+                message = exception.callMethod(context, "detailed_message", opts);
+            }
+        }
+        if (message instanceof RubyString str) {
+            errorStream.append(str);
+        } else if (message.isNil()) {
+            if (highlight) errorStream.catString(UNDERLINE);
+            errorStream.append(type.getRealClass().rubyName());
+            if (highlight) errorStream.catString(RESET);
+
+        } else {
+            errorStream.append(message.convertToString());
+        }
+
+        errorStream.cat('\n');
+    }
+
+    private static void printErrMessageToStream(IRubyObject exception, RubyString errorStream, boolean highlight) {
+        RubyClass type = exception.getMetaClass();
+        String info = exception.toString();
+
+        if (type == exception.getRuntime().getRuntimeError() && (info == null || info.length() == 0)) {
+
+            if (highlight) errorStream.catString(UNDERLINE);
+            errorStream.catString("unhandled exception");
+            if (highlight) errorStream.catString(RESET);
+        } else {
             String path = type.getName();
 
             if (info.length() == 0) {
-                if (highlight) errorStream.print(UNDERLINE);
-                errorStream.print(path);
-                if (highlight) errorStream.print(RESET);
+                if (highlight) errorStream.catString(UNDERLINE);
+                errorStream.catString(path);
+                if (highlight) errorStream.catString(RESET);
             } else {
-                if (highlight) errorStream.print(BOLD);
+                if (highlight) errorStream.catString(BOLD);
 
                 if (path.startsWith("#")) {
                     path = null;
@@ -480,43 +537,43 @@ public class TraceType {
                     info = info.substring(0, idx);
                 }
 
-                errorStream.print(info);
+                errorStream.catString(info);
 
                 if (path != null) {
-                    errorStream.print(" (");
-                    if (highlight) errorStream.print(UNDERLINE);
-                    errorStream.print(path);
+                    errorStream.catString(" (");
+                    if (highlight) errorStream.catString(UNDERLINE);
+                    errorStream.catString(path);
                     if (highlight) {
-                        errorStream.print(RESET);
-                        errorStream.print(BOLD);
+                        errorStream.catString(RESET);
+                        errorStream.catString(BOLD);
                     }
-                    errorStream.print(')');
-                    if (highlight) errorStream.print(RESET);
+                    errorStream.cat(')');
+                    if (highlight) errorStream.catString(RESET);
                 }
 
                 if (tail != null) {
-                    errorStream.print('\n');
+                    errorStream.cat('\n');
                     if (!highlight) {
-                        errorStream.print(tail);
+                        errorStream.catString(tail);
                     } else {
                         int start = 0, end = tail.indexOf('\n');
                         while (end != -1) {
-                            errorStream.print(BOLD);
-                            errorStream.print(tail.substring(start, end));
-                            errorStream.print(RESET);
-                            errorStream.print('\n');
+                            errorStream.catString(BOLD);
+                            errorStream.catString(tail.substring(start, end));
+                            errorStream.catString(RESET);
+                            errorStream.cat('\n');
                             start = end + 1;
                             end = tail.indexOf('\n', start);
                         }
-                        errorStream.print(BOLD);
-                        errorStream.print(tail.substring(start));
-                        errorStream.print(RESET);
+                        errorStream.catString(BOLD);
+                        errorStream.catString(tail.substring(start));
+                        errorStream.catString(RESET);
                     }
                 }
             }
         }
-        errorStream.print('\n');
     }
+
 
     private static final String FIRST_COLOR = "\033[0;31m";
     private static final String KERNEL_COLOR = "\033[0;36m";
@@ -652,56 +709,55 @@ public class TraceType {
         }
     }
 
-    private static void printErrorPos(ThreadContext context, PrintStream errorStream) {
+    private static void printErrorPos(ThreadContext context, RubyString errorStream) {
         if (context.getFile() != null && context.getFile().length() > 0) {
             if (context.getFrameName() != null) {
-                errorStream.print(context.getFile() + ':' + context.getLine());
-                errorStream.print(":in '" + context.getFrameName() + '\'');
+                errorStream.catString(context.getFile() + ':' + context.getLine());
+                errorStream.catString(":in '" + context.getFrameName() + '\'');
             } else if (context.getLine() != 0) {
-                errorStream.print(context.getFile() + ':' + context.getLine());
+                errorStream.catString(context.getFile() + ':' + context.getLine());
             } else {
-                errorStream.print(context.getFile());
+                errorStream.catString(context.getFile());
             }
         }
     }
 
-    public static void printBacktraceToStream(IRubyObject backtrace, PrintStream errorStream, int skip) {
-        printBacktraceToStream(backtrace, errorStream, false, skip);
+    public static void printBacktraceToStream(ThreadContext context, IRubyObject backtrace, RubyString errorStream, int skip) {
+        printBacktraceToStream(context, backtrace, errorStream, false, skip);
     }
 
-    public static void printBacktraceToStream(IRubyObject backtrace, PrintStream errorStream, boolean reverse, int skip) {
+    public static void printBacktraceToStream(ThreadContext context, IRubyObject backtrace, RubyString errorStream, boolean reverse, int skip) {
         if ( backtrace.isNil() ) return;
         if ( backtrace instanceof RubyArray ) {
             IRubyObject[] elements = ((RubyArray) backtrace).toJavaArrayMaybeUnsafe();
-            Ruby runtime = backtrace.getRuntime();
-            int optionBacktraceLimit = runtime.getInstanceConfig().getBacktraceLimit();
+            int optionBacktraceLimit = context.runtime.getInstanceConfig().getBacktraceLimit();
             int limitPlusSkip = optionBacktraceLimit + skip;
             int maxBacktraceLines =  (optionBacktraceLimit == -1 || limitPlusSkip > elements.length) ? elements.length : limitPlusSkip;
 
             int i, len = maxBacktraceLines;
             final int threshold = 1000000000;
-            final int width = (len <= 1) ? Integer.MIN_VALUE : ((int) Math.log10((double) (len > threshold ?
+            final int width = (len <= 1) ? Integer.MIN_VALUE : ((int) Math.log10((len > threshold ?
                     ((len - 1) / threshold) :
                     len - 1)) +
                     (len < threshold ? 0 : 9) + 1);
 
             for (i = skip; i < maxBacktraceLines; i++) {
                 IRubyObject stackTraceLine = elements[reverse ? len - i : i];
-                errorStream.print('\t');
+                errorStream.cat('\t');
                 if (reverse) {
-                    errorStream.printf("%" + width + "d: ", len - i);
+                    errorStream.catString(String.format("%" + width + "d: ", len - i));
                 }
                 if (stackTraceLine instanceof RubyString) {
-                    errorStream.println("from " + stackTraceLine);
+                    errorStream.catString("from " + stackTraceLine);
                 }
                 else {
-                    errorStream.println(stackTraceLine);
+                    errorStream.append(stackTraceLine);
                 }
             }
 
             if ((elements.length > i)) {
                 String suppressedLines = String.valueOf(elements.length - (i));
-                errorStream.append("\t ... " + suppressedLines + " levels...\n");
+                errorStream.catString("\t ... " + suppressedLines + " levels...\n");
             }
         }
     }

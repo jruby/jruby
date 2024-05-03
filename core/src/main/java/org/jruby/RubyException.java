@@ -240,7 +240,29 @@ public class RubyException extends RubyObject {
 
     @JRubyMethod
     public IRubyObject full_message(ThreadContext context, IRubyObject opts) {
-        return RubyString.newString(context.runtime, TraceType.printFullMessage(context, this, opts));
+        return TraceType.printFullMessage(context, this, opts);
+    }
+
+    @JRubyMethod
+    public IRubyObject detailed_message(ThreadContext context) {
+        return detailed_message(context, (IRubyObject) null);
+    }
+
+    @JRubyMethod
+    public IRubyObject detailed_message(ThreadContext context, IRubyObject opts) {
+        return TraceType.printDetailedMessage(context, this, opts);
+    }
+
+    @JRubyMethod(optional = 1)
+    public IRubyObject detailed_message(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+            case 0:
+                return detailed_message(context);
+            case 1:
+                return detailed_message(context, args[0]);
+            default:
+                throw context.runtime.newArgumentError(args.length, 0, 1);
+        }
     }
 
     @JRubyMethod(visibility = PRIVATE)
@@ -473,8 +495,11 @@ public class RubyException extends RubyObject {
      * @param errorStream the PrintStream to which backtrace should be printed
      */
     public void printBacktrace(PrintStream errorStream, int skip) {
-        IRubyObject trace = callMethod(getRuntime().getCurrentContext(), "backtrace");
-        TraceType.printBacktraceToStream(trace, errorStream, skip);
+        ThreadContext context = getRuntime().getCurrentContext();
+        IRubyObject trace = callMethod(context, "backtrace");
+        RubyString string = RubyString.newEmptyString(getRuntime());
+        TraceType.printBacktraceToStream(context, trace, string, skip);
+        errorStream.print(string);
     }
 
     private boolean isArrayOfStrings(IRubyObject backtrace) {
