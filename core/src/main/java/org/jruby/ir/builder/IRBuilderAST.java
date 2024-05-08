@@ -2655,8 +2655,11 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         switch (callName) {
             case "__method__":
             case "__callee__":
-                addInstr(new FrameNameCallInstr(result, callName));
-                return result;
+                // narrow to methods until we can fix other scopes' frame names
+                if (scope instanceof IRMethod) {
+                    addInstr(new FrameNameCallInstr(result, callName));
+                    return result;
+                }
         }
 
         return _call(result, VARIABLE, buildSelf(), node.getName());
