@@ -151,7 +151,7 @@ public class InterpreterEngine {
                         break;
                     case CALL_OP:
                         if (profile) Profiler.updateCallSite(instr, interpreterContext.getScope(), scopeVersion);
-                        processCall(context, instr, operation, currDynScope, currScope, temp, self, name, block);
+                        processCall(context, instr, operation, currDynScope, currScope, temp, self, name);
                         break;
                     case RET_OP:
                         return processReturnOp(context, block, instr, operation, currDynScope, temp, self, currScope);
@@ -287,7 +287,7 @@ public class InterpreterEngine {
         }
     }
 
-    protected static void processCall(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope, StaticScope currScope, Object[] temp, IRubyObject self, String frameName, Block selfBlock) {
+    protected static void processCall(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope, StaticScope currScope, Object[] temp, IRubyObject self, String name) {
         Object result;
 
         switch(operation) {
@@ -360,9 +360,7 @@ public class InterpreterEngine {
                 instr.interpret(context, currScope, currDynScope, self, temp);
                 break;
             case FRAME_NAME_CALL:
-                setResult(temp, currDynScope, instr,
-                        ((FrameNameCallInstr) instr).getFrameName(
-                                context, self, selfBlock == null ? frameName : IRRuntimeHelpers.getFrameNameFromBlock(selfBlock)));
+                setResult(temp, currDynScope, instr, ((FrameNameCallInstr) instr).getFrameName(context, self, name));
                 break;
             case CALL:
             default:
