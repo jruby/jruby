@@ -753,6 +753,7 @@ public class TraceType {
                 else {
                     errorStream.append(stackTraceLine);
                 }
+                errorStream.cat('\n');
             }
 
             if ((elements.length > i)) {
