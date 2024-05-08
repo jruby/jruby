@@ -539,7 +539,7 @@ public class RubyLexer extends LexingCommon {
 
         // Enebo: This is a hash in MRI for multiple potential compile options but we currently only support one.
         // I am just going to set it and when a second is done we will reevaluate how they are populated.
-        parser.setFrozenStringLiteral(b == 1);
+        parser.setStringStyle(b == 1);
     }
 
     @Override
@@ -666,17 +666,12 @@ public class RubyLexer extends LexingCommon {
             // If we have characters outside 7-bit range and we are still ascii then change to ascii-8bit
             if (codeRange == CR_7BIT) {
                 // Do nothing like MRI
-            } else if (getEncoding() == USASCII_ENCODING &&
-                    bufferEncoding != UTF8_ENCODING) {
+            } else if (getEncoding() == USASCII_ENCODING && bufferEncoding != UTF8_ENCODING) {
                 codeRange = RubyParserBase.associateEncoding(buffer, ASCII8BIT_ENCODING, codeRange);
             }
         }
 
-        StrNode newStr = new StrNode(ruby_sourceline, buffer, codeRange);
-
-        if (parser.isFrozenStringLiteral()) newStr.setFrozen(true);
-
-        return newStr;
+        return new StrNode(ruby_sourceline, buffer, codeRange, parser.getStringStyle());
     }
     
     /**

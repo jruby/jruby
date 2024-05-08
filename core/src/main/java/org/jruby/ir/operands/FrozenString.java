@@ -49,7 +49,7 @@ public class FrozenString extends ImmutableLiteral<RubyString> implements String
         this(ByteList.create(s));
     }
 
-    private FrozenString(ByteList byteList) {
+    protected FrozenString(ByteList byteList) {
         super();
 
         this.bytelist = byteList;

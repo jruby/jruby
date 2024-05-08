@@ -36,10 +36,10 @@ class TestSet < Test::Unit::TestCase
   end
 
   def test_marshal_dump
-    assert_equal "\x04\b{\x00".force_encoding('ASCII-8BIT'), Marshal.dump(Hash.new)
+    assert_equal (+"\x04\b{\x00").force_encoding('ASCII-8BIT'), Marshal.dump(Hash.new)
 
     # MRI internally uses a @hash with a default: `Hash.new(false)'
-    empty_set = "\x04\bo:\bSet\x06:\n@hash}\x00F".force_encoding('ASCII-8BIT')
+    empty_set = (+"\x04\bo:\bSet\x06:\n@hash}\x00F").force_encoding('ASCII-8BIT')
     assert_equal empty_set, Marshal.dump(Set.new)
 
     dump = Marshal.dump(Set.new)

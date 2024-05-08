@@ -45,8 +45,8 @@ public enum OperandType {
     NULL_BLOCK("noblock", (byte) 'o'),
     FILENAME("file", (byte) 'm'),
     SYMBOL_PROC("symproc", (byte) 'P'),
-    SCOPE("scope", (byte) '#')
-    ;
+    SCOPE("scope", (byte) '#'),
+    CHILLED_STRING("chilled", (byte) 'c');
 
     private final String shortName;
     private final byte coded;

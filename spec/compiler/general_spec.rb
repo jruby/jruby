@@ -432,13 +432,13 @@ modes.each do |mode|
     end
 
     it "compiles singleton method definitions" do
-      run("a = 'bar'; def a.foo; 'foo'; end; a.foo") {|result| expect(result).to eq "foo" }
+      run("a = +'bar'; def a.foo; 'foo'; end; a.foo") {|result| expect(result).to eq "foo" }
       run("class Integer; def self.foo; 'foo'; end; end; Integer.foo") {|result| expect(result).to eq "foo" }
       run("def String.foo; 'foo'; end; String.foo") {|result| expect(result).to eq "foo" }
     end
 
     it "compiles singleton class definitions" do
-      run("a = 'bar'; class << a; def bar; 'bar'; end; end; a.bar") {|result| expect(result).to eq "bar" }
+      run("a = +'bar'; class << a; def bar; 'bar'; end; end; a.bar") {|result| expect(result).to eq "bar" }
       run("class Integer; class << self; def bar; 'bar'; end; end; end; Integer.bar") {|result| expect(result).to eq "bar" }
       run("class Integer; def self.metaclass; class << self; self; end; end; end; Integer.metaclass") do |result|
         expect(result).to eq class << Integer; self; end
@@ -474,7 +474,7 @@ modes.each do |mode|
     end
 
     it "compiles splatted element assignment" do
-      run("a = 'foo'; y = ['o']; a[*y] = 'asdf'; a") {|result| expect(result).to match "fasdfo" }
+      run("a = +'foo'; y = ['o']; a[*y] = 'asdf'; a") {|result| expect(result).to match "fasdfo" }
     end
 
     it "compiles constant access" do

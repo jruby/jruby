@@ -39,9 +39,12 @@ import java.util.Objects;
 import org.jruby.Ruby;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.ir.builder.StringStyle;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
+
+import static org.jruby.ir.builder.StringStyle.*;
 
 /** 
  * Representing a simple String literal.
@@ -49,17 +52,18 @@ import org.jruby.util.StringSupport;
 public class StrNode extends Node implements ILiteralNode, LiteralValue, SideEffectFree {
     private final ByteList value;
     private final int codeRange;
-    private boolean frozen;
+    private StringStyle stringStyle;
 
     public StrNode(int line, ByteList value) {
-        this(line, value, StringSupport.codeRangeScan(value.getEncoding(), value));
+        this(line, value, StringSupport.codeRangeScan(value.getEncoding(), value), Frozen);
     }
 
-    public StrNode(int line, ByteList value, int codeRange) {
+    public StrNode(int line, ByteList value, int codeRange, StringStyle stringStyle) {
         super(line, false);
 
         this.value = value;
         this.codeRange = codeRange;
+        this.stringStyle = stringStyle;
     }
 
     public StrNode(int line, StrNode head, StrNode tail) {
@@ -73,7 +77,20 @@ public class StrNode extends Node implements ILiteralNode, LiteralValue, SideEff
         myValue.append(headBL);
         myValue.append(tailBL);
 
-        frozen = head.isFrozen() && tail.isFrozen();
+        // Convoluted logic and maybe not totally needed.  Frozen loses to anything else.
+        // once we know neither is Frozen than a mismatch means we just use chilled.
+        if (head.stringStyle != tail.stringStyle) {
+            if (head.stringStyle == Frozen) {
+                stringStyle = tail.stringStyle;
+            } else if (tail.stringStyle == Frozen) {
+                stringStyle = head.stringStyle;
+            } else {
+                stringStyle = Chilled;
+            }
+        } else {
+            stringStyle = head.stringStyle;
+        }
+
         value = myValue;
         codeRange = StringSupport.codeRangeScan(value.getEncoding(), value);
     }
@@ -123,12 +140,12 @@ public class StrNode extends Node implements ILiteralNode, LiteralValue, SideEff
         return EMPTY_LIST;
     }
 
-    public boolean isFrozen() {
-        return frozen;
+    public StringStyle getStringStyle() {
+        return stringStyle;
     }
 
-    public void setFrozen(boolean frozen) {
-        this.frozen = frozen;
+    public void setStringStyle(StringStyle stringStyle) {
+        this.stringStyle = stringStyle;
     }
 
     @Override

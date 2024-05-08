@@ -6,6 +6,8 @@ import org.jruby.RubyString;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.builder.StringStyle;
+import org.jruby.ir.operands.ChilledString;
 import org.jruby.ir.operands.FrozenString;
 import org.jruby.ir.operands.ImmutableLiteral;
 import org.jruby.ir.operands.MutableString;
@@ -25,6 +27,8 @@ import org.jruby.util.ByteList;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.jruby.ir.builder.StringStyle.Chilled;
+import static org.jruby.ir.builder.StringStyle.Frozen;
 import static org.jruby.util.StringSupport.*;
 
 // This represents a compound string in Ruby
@@ -32,16 +36,16 @@ import static org.jruby.util.StringSupport.*;
 //     - "Hi #{name}"
 public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
     final private Encoding encoding;
-    final private boolean frozen;
+    final private StringStyle stringStyle;
     final private String file;
     final private int line;
     private final int estimatedSize;
 
-    public BuildCompoundStringInstr(Variable result, Operand[] pieces, Encoding encoding, int estimatedSize, boolean frozen, String file, int line) {
+    public BuildCompoundStringInstr(Variable result, Operand[] pieces, Encoding encoding, int estimatedSize, StringStyle stringStyle, String file, int line) {
         super(Operation.BUILD_COMPOUND_STRING, result, pieces);
 
         this.encoding = encoding;
-        this.frozen = frozen;
+        this.stringStyle = stringStyle;
         this.file = file;
         this.line = line;
         this.estimatedSize = estimatedSize;
@@ -61,7 +65,7 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new BuildCompoundStringInstr(ii.getRenamedVariable(result), cloneOperands(ii), encoding, estimatedSize, frozen, file, line);
+        return new BuildCompoundStringInstr(ii.getRenamedVariable(result), cloneOperands(ii), encoding, estimatedSize, stringStyle, file, line);
     }
 
     @Override
@@ -70,13 +74,21 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
         e.encode(getPieces());
         e.encode(encoding);
         e.encode(estimatedSize);
-        e.encode(frozen);
+        e.encode(stringStyle == Frozen);
+        e.encode(stringStyle == StringStyle.Mutable);
         e.encode(file);
         e.encode(line);
     }
 
     public static BuildCompoundStringInstr decode(IRReaderDecoder d) {
-        return new BuildCompoundStringInstr(d.decodeVariable(), d.decodeOperandArray(), d.decodeEncoding(), d.decodeInt(), d.decodeBoolean(), d.decodeString(), d.decodeInt());
+        return new BuildCompoundStringInstr(d.decodeVariable(), d.decodeOperandArray(), d.decodeEncoding(),
+                d.decodeInt(), decodeStringStyle(d.decodeBoolean(), d.decodeBoolean()), d.decodeString(), d.decodeInt());
+    }
+
+    private static StringStyle decodeStringStyle(boolean frozen, boolean mutable) {
+        if (frozen) return Frozen;
+        if (mutable) return StringStyle.Mutable;
+        return Chilled;
     }
 
     @Override
@@ -96,10 +108,11 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
             }
         }
 
-        if (frozen) {
-            return IRRuntimeHelpers.freezeLiteralString(str);
-        }
-        return str;
+        return switch (stringStyle) {
+            case Frozen -> IRRuntimeHelpers.freezeLiteralString(str);
+            case Chilled -> IRRuntimeHelpers.chillLiteralString(str);
+            default -> str;
+        };
     }
 
     @Override
@@ -108,7 +121,11 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
     }
 
     public boolean isFrozen() {
-        return frozen;
+        return stringStyle == Frozen;
+    }
+
+    public boolean isChilled() {
+        return stringStyle == Chilled;
     }
 
     public String getFile() {
@@ -135,9 +152,12 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
         if (piecesArray.length == 0) { // not sure we can have an empty compound string but better safe than sorry.
             var newByteList = new ByteList(0);
             newByteList.setEncoding(encoding);
-            return new CopyInstr(getResult(), frozen ?
-                    new FrozenString(newByteList, CR_VALID, file, line) :
-                    new MutableString(newByteList, CR_VALID, file, line));
+            Operand string = switch (stringStyle) {
+                case Frozen -> new FrozenString(newByteList, CR_VALID, file, line);
+                case Mutable -> new MutableString(newByteList, CR_VALID, file, line);
+                default -> new ChilledString(newByteList, CR_VALID, file, line);
+            };
+            return new CopyInstr(getResult(), string);
         } else if (piecesArray.length == 1) { // not sure we can have a compound string with only one piece AND a non-string.
             return piecesArray[0] instanceof FrozenString froz ? copy(froz) : this;
         }
@@ -183,7 +203,7 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
         if (pieces.size() != piecesArray.length) {
             return pieces.size() == 1 ?
                     copy((FrozenString) pieces.get(0)) :
-                    new BuildCompoundStringInstr(result, pieces.toArray(Operand[]::new), encoding, estimatedSize, frozen, file, line);
+                    new BuildCompoundStringInstr(result, pieces.toArray(Operand[]::new), encoding, estimatedSize, stringStyle, file, line);
         }
 
         return this;
@@ -217,9 +237,13 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
     }
 
     private Instr copy(FrozenString string) {
-        return frozen ?
-                new CopyInstr(result, string) :
-                new CopyInstr(result, new MutableString(string.getByteList(), CR_UNKNOWN, file, line));
+        Operand value = switch (stringStyle) {
+            case Frozen -> string;
+            case Mutable -> new MutableString(string.bytelist, CR_VALID, file, line);
+            default -> new ChilledString(string.bytelist, CR_VALID, file, line);
+        };
+
+        return new CopyInstr(result, value);
     }
 
     private FrozenString asFrozenString(ThreadContext context, ImmutableLiteral piece) {

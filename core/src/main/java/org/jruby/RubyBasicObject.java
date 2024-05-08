@@ -918,7 +918,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         if (freeze == context.nil) {
             sites(context).initialize_clone.call(context, clone, clone, this);
-            if (isFrozen()) clone.setFrozen(true);
+            if (this instanceof RubyString str && str.isChilled()) {
+                ((RubyString) clone).chill();
+            } else if (isFrozen()) {
+                clone.setFrozen(true);
+            }
         } else { // will always be true or false (MRI has bulletproofing to catch odd values (rb_bug explodes).
             // FIXME: MRI uses C module variables to make a single hash ever for this setup.  We build every time.
             RubyHash opts = RubyHash.newHash(context.runtime, getRuntime().newSymbol("freeze"), freeze);
@@ -1590,8 +1594,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public final void ensureInstanceVariablesSettable() {
         if (!isFrozen()) {
             return;
+        } else if (this instanceof RubyString string) {
+            // We put this second to reduce overhead since most objects will not be frozen and we do not want this instanceof all the time.
+            string.frozenCheck();
+        } else {
+            raiseFrozenError();
         }
-        raiseFrozenError();
     }
 
     private void raiseFrozenError() throws RaiseException {

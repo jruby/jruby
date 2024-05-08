@@ -1649,7 +1649,7 @@ CLASSDEF
       num2 = java.lang.Short.new(num2)
     end
     pack = [ num1, num2 ].pack('D')
-    assert_equal "\x00\x00\x00\x00\x00\x00\xE0?".force_encoding('ASCII-8BIT'), pack
+    assert_equal (+"\x00\x00\x00\x00\x00\x00\xE0?").force_encoding('ASCII-8BIT'), pack
 
     i = java.lang.Integer.new(1)
     arr = []; arr[i] = 'one'

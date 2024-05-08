@@ -42,7 +42,7 @@ class TestZlib < Test::Unit::TestCase
       inflater = Zlib::Inflate.new(-Zlib::MAX_WBITS)
 
       stream = StringIO.new(data.unpack('m*')[0])
-      assert_equal(actual, inflater.inflate(stream.read(nil, '')), "Unexpected result of decompression.")
+      assert_equal(actual, inflater.inflate(stream.read(nil, +'')), "Unexpected result of decompression.")
       assert(inflater.finished?, "Inflater should be finished after inflating all input.")
   end
 
@@ -119,7 +119,7 @@ class TestZlib < Test::Unit::TestCase
   end
 
   def test_wrap
-    content = StringIO.new "", "r+"
+    content = StringIO.new +"", "r+"
 
     Zlib::GzipWriter.wrap(content) do |io|
       io.write "hello\nworld\n"
@@ -309,7 +309,7 @@ class TestZlib < Test::Unit::TestCase
 
   # JRUBY-4502: 1.4 raises native exception at gz.read
   def test_corrupted_data
-    zip = "\037\213\b\000,\334\321G\000\005\000\235\005\000$\n\000\000"
+    zip = +"\037\213\b\000,\334\321G\000\005\000\235\005\000$\n\000\000"
     io = StringIO.new(zip)
     # JRuby cannot check corrupted data format at GzipReader.new for now
     # because of different input buffer handling.
@@ -336,7 +336,7 @@ class TestZlib < Test::Unit::TestCase
 
   def test_inflate_pass_through
     main_data = "x\234K\313\317\a\000\002\202\001E"
-    result = ""
+    result = +""
     z = Zlib::Inflate.new
     # add bytes, one by one
     (main_data * 2).each_byte { |d| result << z.inflate(d.chr)}
@@ -481,7 +481,7 @@ class TestZlib < Test::Unit::TestCase
   def test_writer_flush
     marker = "\x00\x00\xff\xff"
 
-    sio = StringIO.new("")
+    sio = StringIO.new(+"")
     Zlib::GzipWriter.wrap(sio) { |z|
       z.write 'a'
       z.write 'b'           # marker
@@ -731,7 +731,7 @@ end
 # Test for MAX_WBITS + 16
 class TestZlibInflateGzip < Test::Unit::TestCase
   def test_inflate_gzip
-    Zlib::GzipWriter.wrap(sio = StringIO.new("")) { |gz| gz << "foo" }
+    Zlib::GzipWriter.wrap(sio = StringIO.new(+"")) { |gz| gz << "foo" }
     assert_equal("foo", Zlib::Inflate.new(Zlib::MAX_WBITS + 16).inflate(sio.string))
     i = Zlib::Inflate.new(Zlib::MAX_WBITS + 16)
     i << sio.string
@@ -797,7 +797,7 @@ class TestZlibInflateAuto < Test::Unit::TestCase
   end
 
   def test_inflate_auto_detection_gzip
-    Zlib::GzipWriter.wrap(sio = StringIO.new("")) { |gz| gz << "foo" }
+    Zlib::GzipWriter.wrap(sio = StringIO.new(+"")) { |gz| gz << "foo" }
     assert_equal("foo", Zlib::Inflate.new(Zlib::MAX_WBITS + 32).inflate(sio.string))
     i = Zlib::Inflate.new(Zlib::MAX_WBITS + 32)
     i << sio.string
@@ -805,7 +805,7 @@ class TestZlibInflateAuto < Test::Unit::TestCase
   end
 
   def test_corrupted_header
-    gz = Zlib::GzipWriter.new(StringIO.new(s = ""))
+    gz = Zlib::GzipWriter.new(StringIO.new(s = +""))
     gz.orig_name = "X"
     gz.comment = "Y"
     gz.print("foo")
@@ -820,7 +820,7 @@ class TestZlibInflateAuto < Test::Unit::TestCase
   end
 
   def test_split_header
-    gz = Zlib::GzipWriter.new(StringIO.new(s = ""))
+    gz = Zlib::GzipWriter.new(StringIO.new(s = +""))
     gz.orig_name = "X"
     gz.comment = "Y"
     gz.print("foo")

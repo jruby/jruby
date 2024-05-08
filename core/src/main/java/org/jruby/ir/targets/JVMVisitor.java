@@ -1193,6 +1193,7 @@ public class JVMVisitor extends IRVisitor {
                 compoundstring.getEncoding(),
                 compoundstring.getInitialSize(),
                 compoundstring.isFrozen(),
+                compoundstring.isChilled(),
                 runtime.getInstanceConfig().isDebuggingFrozenStringLiteral(),
                 compoundstring.getFile(),
                 compoundstring.getLine(),
@@ -2724,6 +2725,11 @@ public class JVMVisitor extends IRVisitor {
     public void UnboxedBoolean(org.jruby.ir.operands.UnboxedBoolean bool) {
         jvmAdapter().ldc(bool.isTrue());
     }
+
+    public void ChilledString(ChilledString chilled) {
+        jvmMethod().getValueCompiler().pushChilledString(chilled.getByteList(), chilled.getCodeRange());
+    }
+
 
     @Override
     public void ClosureLocalVariable(ClosureLocalVariable closurelocalvariable) {

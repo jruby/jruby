@@ -87,6 +87,7 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.function.Function;
 
+import static org.jruby.ObjectFlags.CHILLED_F;
 import static org.jruby.RubyComparable.invcmp;
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorize;
@@ -513,6 +514,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     public static RubyString newString(Ruby runtime, ByteList bytes, int coderange) {
         return new RubyString(runtime, runtime.getString(), bytes, coderange);
+    }
+
+    public static RubyString newChilledString(Ruby runtime, ByteList bytes, int coderange) {
+        return newString(runtime, bytes, coderange).chill();
     }
 
     public static RubyString newString(Ruby runtime, ByteList bytes, Encoding encoding) {
@@ -953,9 +958,21 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     protected void frozenCheck() {
-        if (isFrozen()) {
+        if (isChilled()) {
+            mutateChilledString();
+        } else if (isFrozen()) {
             throw getRuntime().newFrozenError("String", this);
         }
+    }
+
+    private void mutateChilledString() {
+        getRuntime().getWarnings().warn("literal string will be frozen in the future");
+        setFrozen(false);
+        flags &= ~CHILLED_F;
+    }
+
+    protected boolean isChilled() {
+        return (flags & CHILLED_F) != 0;
     }
 
     /** rb_str_modify
@@ -5002,6 +5019,17 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return pat; // String
     }
 
+    @Override
+    public RubyClass getSingletonClass() {
+        if (isChilled()) {
+            mutateChilledString();
+        } else if (isFrozen()) {
+            throw typeError(getRuntime().getCurrentContext(), "can't define singleton");
+        }
+
+        return super.getSingletonClass();
+    }
+
     // MRI: get_pat_quoted (scan error checking portion)
     private static Object getScanPatternQuoted(ThreadContext context, IRubyObject pat) {
         pat = getPatternQuoted(context, pat);
@@ -6758,9 +6786,16 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod
     public IRubyObject freeze(ThreadContext context) {
+        if (isChilled()) flags &= ~CHILLED_F;
         if (isFrozen()) return this;
         resize(size());
         return super.freeze(context);
+    }
+
+    public RubyString chill() {
+        flags |= CHILLED_F;
+        setFrozen(true);
+        return this;
     }
 
     /**

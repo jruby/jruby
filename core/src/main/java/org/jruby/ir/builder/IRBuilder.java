@@ -54,6 +54,8 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import static org.jruby.ir.IRFlags.*;
+import static org.jruby.ir.builder.StringStyle.Frozen;
+import static org.jruby.ir.builder.StringStyle.Mutable;
 import static org.jruby.ir.instructions.Instr.EMPTY_OPERANDS;
 import static org.jruby.ir.instructions.IntegerMathInstr.Op.ADD;
 import static org.jruby.ir.instructions.IntegerMathInstr.Op.SUBTRACT;
@@ -326,7 +328,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         label("empty", (empty) ->
                 cond(empty, result, tru(), ()->
                         addInstr(new BuildCompoundStringInstr(errorString, new Operand[] {value, new FrozenString(" is not empty")},
-                                UTF8Encoding.INSTANCE, 13, true, getFileName(), lastProcessedLineNum))));
+                                UTF8Encoding.INSTANCE, 13, Frozen, getFileName(), lastProcessedLineNum))));
     }
     protected RubySymbol methodNameFor() {
         IRScope method = scope.getNearestMethod();
@@ -1276,6 +1278,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         return result;
     }
 
+    // Pre-Ruby 3.4 path for JRuby 9.4.x.
+    @Deprecated
     protected Operand buildDStr(Variable result, U[] nodePieces, Encoding encoding, boolean isFrozen, int line) {
         if (result == null) result = temp();
 
@@ -1286,7 +1290,22 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             estimatedSize += dynamicPiece(pieces, i, nodePieces[i], null);
         }
 
-        addInstr(new BuildCompoundStringInstr(result, pieces, encoding, estimatedSize, isFrozen, getFileName(), line));
+        addInstr(new BuildCompoundStringInstr(result, pieces, encoding, estimatedSize, isFrozen ? Frozen : Mutable, getFileName(), line));
+
+        return result;
+    }
+
+    protected Operand buildDStr(Variable result, U[] nodePieces, Encoding encoding, StringStyle stringStyle, int line) {
+        if (result == null) result = temp();
+
+        Operand[] pieces = new Operand[nodePieces.length];
+        int estimatedSize = 0;
+
+        for (int i = 0; i < pieces.length; i++) {
+            estimatedSize += dynamicPiece(pieces, i, nodePieces[i], null);
+        }
+
+        addInstr(new BuildCompoundStringInstr(result, pieces, encoding, estimatedSize, stringStyle, getFileName(), line));
 
         return result;
     }

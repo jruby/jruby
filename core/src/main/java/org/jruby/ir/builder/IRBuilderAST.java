@@ -27,6 +27,7 @@ import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.Bignum;
+import org.jruby.ir.operands.ChilledString;
 import org.jruby.ir.operands.Complex;
 import org.jruby.ir.operands.Filename;
 import org.jruby.ir.operands.Float;
@@ -67,6 +68,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.jruby.ir.builder.StringStyle.Frozen;
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 
 import static org.jruby.ir.operands.ScopeModule.*;
@@ -916,7 +918,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
                 (arg0 = argsAry.get(0)) instanceof StrNode &&
 
                 // not pre-frozen (which can just go through normal call path)
-                !((StrNode) arg0).isFrozen() &&
+                ((StrNode) arg0).getStringStyle() != Frozen &&
 
                 // obj#[] definitely not refined
                 !scope.maybeUsingRefinements() &&
@@ -1065,7 +1067,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
 
     @Override
     protected Operand frozen_string(Node node) {
-        ((StrNode) node).setFrozen(true);
+        ((StrNode) node).setStringStyle(Frozen);
         return buildStrRaw((StrNode) node);
     }
 
@@ -2134,7 +2136,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     public Operand buildDStr(Variable result, DStrNode node) {
-        return buildDStr(result, node.children(), node.getEncoding(), node.isFrozen(), node.getLine());
+        return buildDStr(result, node.children(), node.getEncoding(), node.getStringStyle(), node.getLine());
     }
 
     public Operand buildDSymbol(Variable result, DSymbolNode node) {
@@ -2615,9 +2617,11 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
 
         int line = strNode.getLine();
 
-        if (strNode.isFrozen()) return new FrozenString(strNode.getValue(), strNode.getCodeRange(), scope.getFile(), line);
-
-        return new MutableString(strNode.getValue(), strNode.getCodeRange(), scope.getFile(), line);
+        switch(strNode.getStringStyle()) {
+            case Frozen -> { return new FrozenString(strNode.getValue(), strNode.getCodeRange(), scope.getFile(), line); }
+            case Mutable -> { return new MutableString(strNode.getValue(), strNode.getCodeRange(), scope.getFile(), line); }
+            default -> { return new ChilledString(strNode.getValue(), strNode.getCodeRange(), scope.getFile(), line); }
+        }
     }
 
     public Operand buildSuper(Variable result, SuperNode node) {

@@ -651,7 +651,7 @@ class UNIXSocketTests < Test::Unit::TestCase
         rescue IO::EAGAINWaitReadable
         end
         s2.send('a', 0)
-        s1.recv_nonblock(5, nil, str = '')
+        s1.recv_nonblock(5, nil, str = +'')
         assert_equal 'a', str
         assert_raise(IO::EAGAINWaitReadable) { s1.recv_nonblock(5, nil, str) }
         assert_equal :wait_readable, s1.recv_nonblock(5, exception: false)

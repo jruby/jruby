@@ -44,7 +44,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 
 import org.jcodings.Encoding;
@@ -61,6 +60,7 @@ import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.common.RubyWarnings;
 import org.jruby.ext.coverage.CoverageData;
+import org.jruby.ir.builder.StringStyle;
 import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.yacc.LexContext;
 import org.jruby.lexer.yacc.RubyLexer;
@@ -76,6 +76,7 @@ import org.jruby.util.RegexpOptions;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
+import static org.jruby.ir.builder.StringStyle.*;
 import static org.jruby.lexer.LexingCommon.*;
 import static org.jruby.lexer.LexingCommon.AMPERSAND_AMPERSAND;
 import static org.jruby.lexer.LexingCommon.DOT;
@@ -123,7 +124,7 @@ public abstract class RubyParserBase {
 
     private static final int[] EMPTY_COVERAGE = new int[0];
 
-    private boolean frozenStringLiterals;
+    private StringStyle stringStyle = Chilled;
 
     private Node itId;
 
@@ -135,7 +136,7 @@ public abstract class RubyParserBase {
         this.existingScope = scope;
         this.type = type;
         this.result = new RubyParserResult();
-        frozenStringLiterals = runtime.getInstanceConfig().isFrozenStringLiteral();
+        setStringStyle(runtime.getInstanceConfig().isFrozenStringLiteral());
     }
 
     public void reset() {
@@ -1398,7 +1399,7 @@ public abstract class RubyParserBase {
     }
 
     public KeyValuePair<Node, Node> createKeyValue(Node key, Node value) {
-        if (key instanceof StrNode) ((StrNode) key).setFrozen(true);
+        if (key instanceof StrNode) ((StrNode) key).setStringStyle(Frozen);
 
         return new KeyValuePair<>(key, value);
     }
@@ -1449,7 +1450,7 @@ public abstract class RubyParserBase {
                 DStrNode newDStr = new DStrNode(head.getLine(), ((DStrNode) tail).getEncoding());
                 newDStr.add(head);
                 newDStr.addAll(tail);
-                if (frozenStringLiterals) newDStr.setFrozen(true);
+                newDStr.setStringStyle(stringStyle);
                 return newDStr;
             } 
 
@@ -2306,12 +2307,12 @@ public abstract class RubyParserBase {
         return lexer.isEndSeen();
     }
 
-    public boolean isFrozenStringLiteral() {
-        return frozenStringLiterals;
+    public StringStyle getStringStyle() {
+        return stringStyle;
     }
 
-    public void setFrozenStringLiteral(boolean b) {
-        frozenStringLiterals = b;
+    public void setStringStyle(Boolean frozen) {
+        stringStyle = frozen != null ? (frozen ? Frozen : Mutable) : Chilled;
     }
 
     public DynamicScope finalizeDynamicScope(StaticScope staticScope) {

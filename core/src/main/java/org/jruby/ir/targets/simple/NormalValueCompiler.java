@@ -108,6 +108,13 @@ public class NormalValueCompiler implements ValueCompiler {
         compiler.adapter.invokestatic(p(RubyString.class), "newStringShared", sig(RubyString.class, Ruby.class, ByteList.class, int.class));
     }
 
+    public void pushChilledString(ByteList bl, int cr) {
+        pushRuntime();
+        pushByteList(bl);
+        compiler.adapter.ldc(cr);
+        compiler.adapter.invokestatic(p(RubyString.class), "newChilledString", sig(RubyString.class, Ruby.class, ByteList.class, int.class));
+    }
+
     public void pushFrozenString(final ByteList bl, final int cr, final String file, final int line) {
         cacheValuePermanentlyLoadContext("fstring", RubyString.class, keyFor("fstring", bl), () -> {
             pushFrozenStringUncached(bl, cr, file, line);
@@ -151,7 +158,7 @@ public class NormalValueCompiler implements ValueCompiler {
         compiler.adapter.invokestatic(p(RubyString.class), "newStringLight", sig(RubyString.class, Ruby.class, int.class, Encoding.class));
     }
 
-    public void buildDynamicString(Encoding encoding, int size, boolean frozen, boolean debugFrozen, String file, int line, List<DStringElement> elements) {
+    public void buildDynamicString(Encoding encoding, int size, boolean frozen, boolean chilled, boolean debugFrozen, String file, int line, List<DStringElement> elements) {
         pushBufferString(encoding, size);
 
         for (DStringElement elt : elements) {
@@ -175,6 +182,10 @@ public class NormalValueCompiler implements ValueCompiler {
             } else {
                 compiler.invokeIRHelper("freezeLiteralString", sig(RubyString.class, RubyString.class));
             }
+        }
+
+        if (chilled) {
+            compiler.invokeIRHelper("chillLiteralString", sig(RubyString.class, RubyString.class));
         }
     }
 

@@ -43,14 +43,16 @@ public class BuildDynamicStringSite extends MutableCallSite {
     final Encoding encoding;
     final long descriptor;
     final boolean frozen;
+    final boolean chilled;
     final int elementCount;
     final ByteListAndCodeRange[] strings;
 
     public BuildDynamicStringSite(MethodType type, Object[] stringArgs) {
         super(type);
 
-        initialSize = (Integer) stringArgs[stringArgs.length - 5];
-        encoding = StringBootstrap.encodingFromName((String) stringArgs[stringArgs.length - 4]);
+        initialSize = (Integer) stringArgs[stringArgs.length - 6];
+        encoding = StringBootstrap.encodingFromName((String) stringArgs[stringArgs.length - 5]);
+        chilled = ((Integer) stringArgs[stringArgs.length - 4]) != 0;
         frozen = ((Integer) stringArgs[stringArgs.length - 3]) != 0;
         descriptor = (Long) stringArgs[stringArgs.length - 2];
         elementCount = (Integer) stringArgs[stringArgs.length - 1];
@@ -444,6 +446,8 @@ public class BuildDynamicStringSite extends MutableCallSite {
 
         if (frozen) {
             buffer.freeze(context);
+        } else if (chilled) {
+            buffer.chill();
         }
 
         return buffer;
@@ -482,6 +486,8 @@ public class BuildDynamicStringSite extends MutableCallSite {
 
         if (frozen) {
             buffer.freeze(context);
+        } else if (chilled) {
+            buffer.chill();
         }
 
         return buffer;
