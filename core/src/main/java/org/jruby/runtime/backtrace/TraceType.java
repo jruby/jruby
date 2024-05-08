@@ -569,7 +569,7 @@ public class TraceType {
                     if (highlight) errorStream.catString(RESET);
                 }
 
-                if (tail != null) {
+                if (tail != null && tail.length() > 0) {
                     errorStream.cat('\n');
                     if (!highlight) {
                         errorStream.catString(tail);
@@ -767,11 +767,11 @@ public class TraceType {
                 }
                 if (stackTraceLine instanceof RubyString) {
                     errorStream.catString("from " + stackTraceLine);
+                    errorStream.cat('\n');
                 }
                 else {
                     errorStream.append(stackTraceLine);
                 }
-                errorStream.cat('\n');
             }
 
             if ((elements.length > i)) {
