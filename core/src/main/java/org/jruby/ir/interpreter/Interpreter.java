@@ -268,7 +268,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         Frame lastFrame = context.preEvalWithBinding(binding);
         try {
             return evalCommon(context, evalScope, self, src, binding.getFile(),
-                    binding.getLine(), binding.getFrame().getName(), binding.getFrame().getBlock(), EvalType.BINDING_EVAL, bindingGiven);
+                    binding.getLine(), binding.getMethod(), binding.getFrame().getBlock(), EvalType.BINDING_EVAL, bindingGiven);
         } finally {
             context.postEvalWithBinding(binding, lastFrame);
         }
