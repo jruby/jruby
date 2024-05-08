@@ -5,30 +5,18 @@ import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
+import org.jruby.parser.StaticScope;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
-public class ChilledString extends FrozenString implements Stringable, StringLiteral {
+public class ChilledString extends MutableString implements Stringable, StringLiteral {
     /**
      * Used by persistence and by .freeze optimization
      */
     public ChilledString(ByteList bytelist, int coderange, String file, int line) {
         super(bytelist, coderange, file, line);
-    }
-
-    public ChilledString(RubySymbol symbol) {
-        super(symbol.getBytes());
-    }
-
-    /**
-     * IRBuild.buildGetDefinition returns a frozen string and this is for all intern'd Java strings.
-     */
-    public ChilledString(String s) {
-        this(ByteList.create(s));
-    }
-
-    private ChilledString(ByteList byteList) {
-        super(byteList);
     }
 
     @Override
@@ -38,17 +26,19 @@ public class ChilledString extends FrozenString implements Stringable, StringLit
 
     @Override
     public boolean equals(Object other) {
-        return other instanceof ChilledString && bytelist.equals(((FrozenString) other).bytelist) && coderange == ((FrozenString) other).coderange;
+        return other instanceof ChilledString &&
+                getByteList().equals(((ChilledString) other).getByteList()) &&
+                getCodeRange() == ((ChilledString) other).getCodeRange();
+    }
+
+    @Override
+    public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
+        return frozenString.retrieve(context, self, currScope, currDynScope, temp).strDup(context.runtime).chill();
     }
 
     @Override
     public String toString() {
-        return "chilled:\"" + bytelist + "\"";
-    }
-
-    @Override
-    public RubyString createCacheObject(ThreadContext context) {
-        return IRRuntimeHelpers.newChilledString(context, bytelist, coderange, file, line);
+        return "chilled:\"" + getByteList() + "\"";
     }
 
     @Override
