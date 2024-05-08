@@ -37,7 +37,7 @@ public class MutableString extends Operand implements Stringable, StringLiteral 
         frozenString = new FrozenString(symbol);
     }
 
-    private MutableString(FrozenString frozenString) {
+    protected MutableString(FrozenString frozenString) {
         this.frozenString = frozenString;
     }
 

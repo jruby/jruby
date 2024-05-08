@@ -16,6 +16,10 @@ public class ChilledString extends MutableString implements Stringable, StringLi
         super(bytelist, coderange, file, line);
     }
 
+    public ChilledString(FrozenString frozenString) {
+        super(frozenString);
+    }
+
     @Override
     public OperandType getOperandType() {
         return OperandType.CHILLED_STRING;
@@ -42,6 +46,6 @@ public class ChilledString extends MutableString implements Stringable, StringLi
     }
 
     public static ChilledString decode(IRReaderDecoder d) {
-        return new ChilledString(d.decodeByteList(), d.decodeInt(), d.decodeString(), d.decodeInt());
+        return new ChilledString((FrozenString)d.decodeOperand());
     }
 }
