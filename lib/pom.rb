@@ -45,7 +45,7 @@ default_gems = [
     # ['io-nonblock', '0.1.0'],
     ['io-wait', '0.3.1'],
     ['ipaddr', '1.2.6'],
-    ['irb', '1.11.2'],
+    ['irb', '1.13.0'],
     ['jar-dependencies', '0.4.1'],
     ['jruby-readline', '1.3.7'],
     ['jruby-openssl', '0.14.5'],

@@ -1452,7 +1452,7 @@ public class RubyInstanceConfig {
         this.profilingService = service;
     }
 
-    public boolean isFrozenStringLiteral() {
+    public Boolean isFrozenStringLiteral() {
         return frozenStringLiteral;
     }
 
@@ -1570,7 +1570,7 @@ public class RubyInstanceConfig {
     private boolean updateNativeENVEnabled = true;
     private boolean kernelGsubDefined;
     private boolean hasScriptArgv = false;
-    private boolean frozenStringLiteral = false;
+    private Boolean frozenStringLiteral = null;
     private boolean debuggingFrozenStringLiteral = false;
     private final boolean interruptibleRegexps = Options.REGEXP_INTERRUPTIBLE.load();
     private String jrubyHome;

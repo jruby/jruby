@@ -521,6 +521,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case BIGNUM: return Bignum.decode(this);
             case BOOLEAN: return org.jruby.ir.operands.Boolean.decode(this);
             case BUILTIN_CLASS: return BuiltinClass.decode(this);
+            case CHILLED_STRING: return ChilledString.decode(this);
             case COMPLEX: return Complex.decode(this);
             case CURRENT_SCOPE: return CurrentScope.decode(this);
             case DYNAMIC_SYMBOL: return DynamicSymbol.decode(this);

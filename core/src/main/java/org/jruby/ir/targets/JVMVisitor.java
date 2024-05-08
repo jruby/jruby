@@ -1193,6 +1193,7 @@ public class JVMVisitor extends IRVisitor {
                 compoundstring.getEncoding(),
                 compoundstring.getInitialSize(),
                 compoundstring.isFrozen(),
+                compoundstring.isChilled(),
                 runtime.getInstanceConfig().isDebuggingFrozenStringLiteral(),
                 compoundstring.getFile(),
                 compoundstring.getLine(),

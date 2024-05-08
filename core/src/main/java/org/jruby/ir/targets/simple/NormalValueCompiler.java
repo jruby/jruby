@@ -151,7 +151,7 @@ public class NormalValueCompiler implements ValueCompiler {
         compiler.adapter.invokestatic(p(RubyString.class), "newStringLight", sig(RubyString.class, Ruby.class, int.class, Encoding.class));
     }
 
-    public void buildDynamicString(Encoding encoding, int size, boolean frozen, boolean debugFrozen, String file, int line, List<DStringElement> elements) {
+    public void buildDynamicString(Encoding encoding, int size, boolean frozen, boolean chilled, boolean debugFrozen, String file, int line, List<DStringElement> elements) {
         pushBufferString(encoding, size);
 
         for (DStringElement elt : elements) {
@@ -175,6 +175,10 @@ public class NormalValueCompiler implements ValueCompiler {
             } else {
                 compiler.invokeIRHelper("freezeLiteralString", sig(RubyString.class, RubyString.class));
             }
+        }
+
+        if (chilled) {
+            compiler.invokeIRHelper("chillLiteralString", sig(RubyString.class, RubyString.class));
         }
     }
 

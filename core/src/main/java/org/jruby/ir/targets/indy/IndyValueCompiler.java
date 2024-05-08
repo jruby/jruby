@@ -105,9 +105,9 @@ public class IndyValueCompiler implements ValueCompiler {
         compiler.adapter.invokedynamic("bufferString", sig(RubyString.class, ThreadContext.class), StringBootstrap.BUFFER_STRING_BOOTSTRAP, encoding.toString(), size);
     }
 
-    public void buildDynamicString(Encoding encoding, int estimatedSize, boolean frozen, boolean debugFrozen, String file, int line, List<DStringElement> elements) {
+    public void buildDynamicString(Encoding encoding, int estimatedSize, boolean frozen, boolean chilled, boolean debugFrozen, String file, int line, List<DStringElement> elements) {
         if (elements.size() > 50 || !Options.COMPILE_INVOKEDYNAMIC.load()) {
-            normalValueCompiler.buildDynamicString(encoding, estimatedSize, frozen, debugFrozen, file, line, elements);
+            normalValueCompiler.buildDynamicString(encoding, estimatedSize, frozen, chilled, debugFrozen, file, line, elements);
             return;
         }
 
@@ -136,6 +136,7 @@ public class IndyValueCompiler implements ValueCompiler {
         bootstrapArgs.add(estimatedSize * 3/2);
         bootstrapArgs.add(encoding.toString());
         bootstrapArgs.add(frozen);
+        bootstrapArgs.add(chilled);
         bootstrapArgs.add(descriptor);
         bootstrapArgs.add(bit);
 
