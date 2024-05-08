@@ -128,7 +128,7 @@ public class ArrayJavaAddons {
     }
 
     private static ArrayJavaProxy assertJavaArrayProxy(final ThreadContext context, final IRubyObject java_array) {
-        if (java_array instanceof ArrayJavaProxy) throw typeError(context, java_array, "Java array");
+        if (!(java_array instanceof ArrayJavaProxy)) throw typeError(context, java_array, "Java array");
         return (ArrayJavaProxy) java_array;
     }
 
