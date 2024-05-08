@@ -4342,7 +4342,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     // rb_io_s_readlines
-    @JRubyMethod(name = "readlines", required = 1, optional = 2, checkArity = false, meta = true)
+    @JRubyMethod(name = "readlines", required = 1, optional = 3, checkArity = false, meta = true)
     public static IRubyObject readlines(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         IRubyObject opt = ArgsUtil.getOptionsArg(context.runtime, args);
         final RubyIO io = openKeyArgs(context, recv, args, opt);
@@ -4357,6 +4357,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 case 3:
                     if (opt != context.nil) return io.readlines(context, args[1], opt);
                     return io.readlines(context, args[1], args[2]);
+                case 4:
+                    return io.readlines(context, args[1], args[2], args[3]);
                 default:
                     Arity.raiseArgumentError(context, args.length, 1, 3);
                     throw new AssertionError("BUG");
