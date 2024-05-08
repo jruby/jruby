@@ -1508,8 +1508,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     public final RubyString catString(String str) {
-        ByteList other = encodeBytelist(str, getEncoding());
-        catWithCodeRange(other, CR_UNKNOWN);
+        ByteList other = encodeBytelist(str, UTF8);
+        catWithCodeRange(other, CR_VALID);
         return this;
     }
 
