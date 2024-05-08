@@ -10,11 +10,13 @@ import java.util.stream.Stream;
 import com.headius.backport9.stack.StackWalker;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
 import org.jruby.RubyHash;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -338,51 +340,67 @@ public class TraceType {
 
     public static IRubyObject printDetailedMessage(ThreadContext context, IRubyObject exception, IRubyObject opts) {
         IRubyObject optArg = ArgsUtil.getOptionsArg(context.runtime, opts);
-        boolean highlight;
 
-        if (optArg.isNil()) {
-            highlight = false;
-        } else {
-            IRubyObject highlightArg = ((RubyHash) optArg).fastARef(context.runtime.newSymbol("highlight"));
-            highlight = determineHighlighting(context, highlightArg);
-        }
+        IRubyObject highlightArg = checkHighlightKeyword(context, optArg, false);
 
         RubyString errorStream = RubyString.newEmptyString(context.runtime);
 
-        printErrMessageToStream(exception, errorStream, highlight);
+        printErrMessageToStream(exception, errorStream, highlightArg.isTrue());
 
         return errorStream;
     }
 
     public static RubyString printFullMessage(ThreadContext context, IRubyObject exception, IRubyObject opts) {
-        IRubyObject optArg = ArgsUtil.getOptionsArg(context.runtime, opts);
-        boolean highlight;
-        boolean reverse;
+        Ruby runtime = context.runtime;
+        IRubyObject optArg = ArgsUtil.getOptionsArg(runtime, opts);
+
+        IRubyObject highlightArg = checkHighlightKeyword(context, optArg, true);
+        boolean reverse = checkOrderKeyword(context, optArg);
 
         if (optArg.isNil()) {
-            highlight = RubyException.to_tty_p(context, context.runtime.getException()).isTrue();
+            optArg = RubyHash.newHash(runtime);
+        }
+
+        ((RubyHash) optArg).fastASet(runtime.newSymbol("highlight"), highlightArg);
+
+        return printBacktraceMRI(exception, optArg, highlightArg.isTrue(), reverse);
+    }
+
+    private static boolean checkOrderKeyword(ThreadContext context, IRubyObject optArg) {
+        boolean reverse;
+        if (optArg.isNil()) {
             reverse = false;
         } else {
             RubyHash optHash = (RubyHash) optArg;
-
-            IRubyObject highlightArg = optHash.fastARef(context.runtime.newSymbol("highlight"));
-            if (highlightArg == null) {
-                optHash.fastASet(context.runtime.newSymbol("highlight"), RubyException.to_tty_p(context, context.runtime.getException()));
-            }
-            highlight = determineHighlighting(context, highlightArg);
             IRubyObject highlightOrder = optHash.fastARef(context.runtime.newSymbol("order"));
             reverse = determineDirection(context, highlightOrder);
         }
-
-        return printBacktraceMRI(exception, optArg, highlight, reverse);
+        return reverse;
     }
 
-    private static boolean determineHighlighting(ThreadContext context, IRubyObject vHigh) {
-        if (vHigh == null) return false;
-        if (vHigh.isNil()) return RubyException.to_tty_p(context, context.runtime.getException()).isTrue();
-        if (vHigh == context.tru) return true;
-        if (vHigh == context.fals) return false;
-        throw context.runtime.newArgumentError("expected true or false as highlight: " + vHigh);
+    private static IRubyObject checkHighlightKeyword(ThreadContext context, IRubyObject optArg, boolean autoTTYDetect) {
+        Ruby runtime = context.runtime;
+        IRubyObject highlightArg = context.nil;
+
+        RubySymbol highlightSym = runtime.newSymbol("highlight");
+        if (!optArg.isNil()) {
+            RubyHash optHash = (RubyHash) optArg;
+
+            highlightArg = optHash.fastARef(highlightSym);
+
+            if (highlightArg == null) highlightArg = context.nil;
+            if (!(highlightArg.isNil()
+                    || highlightArg == context.tru
+                    || highlightArg == context.fals)) {
+                throw context.runtime.newArgumentError("expected true or false as highlight: " + highlightArg);
+            }
+        }
+
+        if (highlightArg.isNil()) {
+            highlightArg = RubyBoolean.newBoolean(context, autoTTYDetect && RubyException.to_tty_p(context, runtime.getException()).isTrue());
+        }
+
+        return highlightArg;
     }
 
     private static boolean determineDirection(ThreadContext context, IRubyObject vOrder) {
