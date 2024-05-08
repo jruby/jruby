@@ -516,6 +516,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return new RubyString(runtime, runtime.getString(), bytes, coderange);
     }
 
+    public static RubyString newChilledString(Ruby runtime, ByteList bytes, int coderange) {
+        return newString(runtime, bytes, coderange).chill();
+    }
+
     public static RubyString newString(Ruby runtime, ByteList bytes, Encoding encoding) {
         return new RubyString(runtime, runtime.getString(), bytes, encoding);
     }

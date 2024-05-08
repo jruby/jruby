@@ -232,6 +232,8 @@ public interface ValueCompiler {
      */
     void pushBufferString(Encoding encoding, int size);
 
+    void pushChilledString(ByteList byteList, int codeRange);
+
     enum DStringElementType { STRING, OTHER }
     record DStringElement<T>(DStringElementType type, T value) {}
 

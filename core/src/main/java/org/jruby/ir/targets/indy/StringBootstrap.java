@@ -40,6 +40,13 @@ public class StringBootstrap {
             "string",
             sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, String.class, int.class),
             false);
+
+    public static final Handle CSTRING_BOOTSTRAP = new Handle(
+            Opcodes.H_INVOKESTATIC,
+            p(StringBootstrap.class),
+            "cstring",
+            sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, String.class, int.class),
+            false);
     public static final Handle EMPTY_STRING_BOOTSTRAP = new Handle(
             Opcodes.H_INVOKESTATIC,
             p(StringBootstrap.class),
@@ -69,6 +76,12 @@ public class StringBootstrap {
             Binder
                     .from(RubyString.class, ThreadContext.class, ByteList.class, int.class)
                     .invokeStaticQuiet(LOOKUP, StringBootstrap.class, "string");
+
+    private static final MethodHandle CSTRING_HANDLE =
+            Binder
+                    .from(RubyString.class, ThreadContext.class, ByteList.class, int.class)
+                    .invokeStaticQuiet(LOOKUP, StringBootstrap.class, "string");
+
     private static final MethodHandle FSTRING_HANDLE =
             Binder
                     .from(RubyString.class, ThreadContext.class, MutableCallSite.class, ByteList.class, int.class, String.class, int.class)
@@ -88,6 +101,10 @@ public class StringBootstrap {
 
     public static CallSite string(MethodHandles.Lookup lookup, String name, MethodType type, String value, String encodingName, int cr) {
         return new ConstantCallSite(insertArguments(STRING_HANDLE, 1, bytelist(value, encodingName), cr));
+    }
+
+    public static CallSite cstring(MethodHandles.Lookup lookup, String name, MethodType type, String value, String encodingName, int cr) {
+        return new ConstantCallSite(insertArguments(CSTRING_HANDLE, 1, bytelist(value, encodingName), cr));
     }
 
     public static CallSite emptyString(MethodHandles.Lookup lookup, String name, MethodType type, String encodingName) {

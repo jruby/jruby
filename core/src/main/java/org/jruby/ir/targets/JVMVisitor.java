@@ -2726,6 +2726,11 @@ public class JVMVisitor extends IRVisitor {
         jvmAdapter().ldc(bool.isTrue());
     }
 
+    public void ChilledString(ChilledString chilled) {
+        jvmMethod().getValueCompiler().pushChilledString(chilled.getByteList(), chilled.getCodeRange());
+    }
+
+
     @Override
     public void ClosureLocalVariable(ClosureLocalVariable closurelocalvariable) {
         LocalVariable(closurelocalvariable);
