@@ -1,10 +1,7 @@
 package org.jruby.ir.operands;
 
-import org.jruby.RubyString;
-import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.persistence.IRReaderDecoder;
-import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -26,9 +23,7 @@ public class ChilledString extends MutableString implements Stringable, StringLi
 
     @Override
     public boolean equals(Object other) {
-        return other instanceof ChilledString &&
-                getByteList().equals(((ChilledString) other).getByteList()) &&
-                getCodeRange() == ((ChilledString) other).getCodeRange();
+        return other instanceof ChilledString && frozenString.equals(((ChilledString) other).frozenString);
     }
 
     @Override
