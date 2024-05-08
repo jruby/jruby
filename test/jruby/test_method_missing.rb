@@ -71,7 +71,7 @@ class TestMethodMissing < Test::Unit::TestCase
     end
 
     def test_undef_method_and_clone_singleton_class
-        s = "a string"
+        s = +"a string"
         s.instance_eval do
             (class << self;self;end).class_eval do
                 undef_method :length

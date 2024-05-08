@@ -962,7 +962,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private void mutateChilledString() {
-        getRuntime().getWarnings().warn("literal string will be frozen in the future");
+        getRuntime().getWarnings().warning("literal string will be frozen in the future");
         setFrozen(false);
         flags &= ~CHILLED_F;
     }
