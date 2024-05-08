@@ -127,43 +127,43 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     }
 
     public static IRubyObject INTERPRET_CLASS(ThreadContext context, IRScope body, RubyModule clazz, String name) {
-        return interpretFrameScope(context, null, body, clazz, null, Visibility.PUBLIC, clazz, name, null, Block.NULL_BLOCK);
+        return interpretFrameScope(context, null, body, clazz, null, Visibility.PUBLIC, clazz, null, name, null, Block.NULL_BLOCK);
     }
 
     public static IRubyObject INTERPRET_MODULE(ThreadContext context, IRScope body, RubyModule clazz, String name) {
-        return interpretFrameScope(context, null, body, clazz, null, Visibility.PUBLIC, clazz, name, null, Block.NULL_BLOCK);
+        return interpretFrameScope(context, null, body, clazz, null, Visibility.PUBLIC, clazz, null, name,  null, Block.NULL_BLOCK);
     }
 
     public static IRubyObject INTERPRET_METACLASS(ThreadContext context, IRScope body, RubyModule clazz, String name, Visibility visibility) {
-        return interpretFrameScope(context, null, body, clazz, context.getCurrentScope(), visibility, clazz, name, null, Block.NULL_BLOCK);
+        return interpretFrameScope(context, null, body, clazz, context.getCurrentScope(), visibility, clazz, null, name,  null, Block.NULL_BLOCK);
     }
 
     public static IRubyObject INTERPRET_METHOD(ThreadContext context, IRScope body, RubyModule implClass,
                                                IRubyObject self, String name, IRubyObject[] args, Block block) {
-        return interpretFrameScope(context, null, body, implClass, null, Visibility.PUBLIC, self, name, args, block);
+        return interpretFrameScope(context, null, body, implClass, null, Visibility.PUBLIC, self, name, name, args, block);
     }
 
     public static IRubyObject INTERPRET_METHOD(ThreadContext context, IRScope body, RubyModule implClass,
                                                IRubyObject self, String name, Block block) {
-        return interpretFrameScope(context, null, body, implClass, null, Visibility.PUBLIC, self, name, IRubyObject.NULL_ARRAY, block);
+        return interpretFrameScope(context, null, body, implClass, null, Visibility.PUBLIC, self, name, name, IRubyObject.NULL_ARRAY, block);
     }
 
     public static IRubyObject INTERPRET_METHOD(ThreadContext context, IRScope body, RubyModule implClass,
                                                IRubyObject self, String name, IRubyObject arg0, Block block) {
-        return interpretFrameScope(context, null, body, implClass, null, Visibility.PUBLIC, self, name, arrayOf(arg0), block);
+        return interpretFrameScope(context, null, body, implClass, null, Visibility.PUBLIC, self, name, name, arrayOf(arg0), block);
     }
 
     public static IRubyObject INTERPRET_METHOD(ThreadContext context, IRScope body, RubyModule implClass,
                                                IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
-        return interpretFrameScope(context, null, body, implClass, null, Visibility.PUBLIC, self, name, arrayOf(arg0, arg1), block);
+        return interpretFrameScope(context, null, body, implClass, null, Visibility.PUBLIC, self, name, name, arrayOf(arg0, arg1), block);
     }
 
     public static IRubyObject INTERPRET_METHOD(ThreadContext context, IRScope body, RubyModule implClass,
                                                IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return interpretFrameScope(context, null, body, implClass, null, Visibility.PUBLIC, self, name, arrayOf(arg0, arg1, arg2), block);
+        return interpretFrameScope(context, null, body, implClass, null, Visibility.PUBLIC, self, name, name, arrayOf(arg0, arg1, arg2), block);
     }
 
-    private static IRubyObject interpretFrameScope(ThreadContext context, Block selfBlock, IRScope body, RubyModule clazz, DynamicScope parentScope, Visibility visibility, IRubyObject self, String name, IRubyObject[] args, Block block) {
+    private static IRubyObject interpretFrameScope(ThreadContext context, Block selfBlock, IRScope body, RubyModule clazz, DynamicScope parentScope, Visibility visibility, IRubyObject self, String frameName, String passedName, IRubyObject[] args, Block block) {
         InterpreterContext ic = body.getInterpreterContext();
         String id = body.getId();
         boolean hasExplicitCallProtocol =  ic.hasExplicitCallProtocol();
@@ -171,10 +171,10 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         try {
             ThreadContext.pushBacktrace(context, id, ic.getFileName(), ic.getLine());
 
-            if (!hasExplicitCallProtocol) preFrameScope(ic, context, self, name, block, clazz, parentScope, visibility);
+            if (!hasExplicitCallProtocol) preFrameScope(ic, context, self, frameName, block, clazz, parentScope, visibility);
 
             try {
-                return ic.getEngine().interpret(context, selfBlock, self, ic, clazz, name, args, block);
+                return ic.getEngine().interpret(context, selfBlock, self, ic, clazz, passedName, args, block);
             } finally {
                 body.cleanupAfterExecution();
                 if (!hasExplicitCallProtocol) postFrameScope(ic, context);
