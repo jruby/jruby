@@ -56,8 +56,6 @@ public class FrameNameCallInstr extends NoOperandResultBaseInstr implements Fixe
             return frameNameSite.call(context, self, self);
         }
 
-        if (compositeName == null) return context.nil;
-
         return callee ?
                 RubySymbol.newCalleeSymbolFromCompound(context.runtime, compositeName):
                 RubySymbol.newMethodSymbolFromCompound(context.runtime, compositeName);

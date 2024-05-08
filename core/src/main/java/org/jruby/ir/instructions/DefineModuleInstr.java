@@ -65,7 +65,7 @@ public class DefineModuleInstr extends OneOperandResultBaseInstr implements Fixe
         RubyModule clazz = IRRuntimeHelpers.newRubyModuleFromIR(context, body.getId(), body.getStaticScope(), container, body.maybeUsingRefinements());
 
 
-        return Interpreter.INTERPRET_MODULE(context, body, clazz);
+        return Interpreter.INTERPRET_MODULE(context, body, clazz, body.getId());
     }
 
     @Override

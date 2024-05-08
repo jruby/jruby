@@ -61,7 +61,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                         break;
                     case CALL_OP:
                         if (profile) Profiler.updateCallSite(instr, interpreterContext.getScope(), scopeVersion);
-                        processCall(context, instr, operation, currDynScope, currScope, temp, self, name, block);
+                        processCall(context, instr, operation, currDynScope, currScope, temp, self, name);
                         break;
                     case RET_OP:
                         return processReturnOp(context, block, instr, operation, currDynScope, temp, self, currScope);
