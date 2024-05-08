@@ -126,16 +126,16 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         }
     }
 
-    public static IRubyObject INTERPRET_CLASS(ThreadContext context, IRScope body, RubyModule clazz) {
-        return interpretFrameScope(context, null, body, clazz, null, Visibility.PUBLIC, clazz, null, null, Block.NULL_BLOCK);
+    public static IRubyObject INTERPRET_CLASS(ThreadContext context, IRScope body, RubyModule clazz, String name) {
+        return interpretFrameScope(context, null, body, clazz, null, Visibility.PUBLIC, clazz, name, null, Block.NULL_BLOCK);
     }
 
-    public static IRubyObject INTERPRET_MODULE(ThreadContext context, IRScope body, RubyModule clazz) {
-        return interpretFrameScope(context, null, body, clazz, null, Visibility.PUBLIC, clazz, null, null, Block.NULL_BLOCK);
+    public static IRubyObject INTERPRET_MODULE(ThreadContext context, IRScope body, RubyModule clazz, String name) {
+        return interpretFrameScope(context, null, body, clazz, null, Visibility.PUBLIC, clazz, name, null, Block.NULL_BLOCK);
     }
 
-    public static IRubyObject INTERPRET_METACLASS(ThreadContext context, IRScope body, RubyModule clazz, Visibility visibility) {
-        return interpretFrameScope(context, null, body, clazz, context.getCurrentScope(), visibility, clazz, null, null, Block.NULL_BLOCK);
+    public static IRubyObject INTERPRET_METACLASS(ThreadContext context, IRScope body, RubyModule clazz, String name, Visibility visibility) {
+        return interpretFrameScope(context, null, body, clazz, context.getCurrentScope(), visibility, clazz, name, null, Block.NULL_BLOCK);
     }
 
     public static IRubyObject INTERPRET_METHOD(ThreadContext context, IRScope body, RubyModule implClass,

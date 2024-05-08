@@ -71,7 +71,7 @@ public class DefineClassInstr extends TwoOperandResultBaseInstr implements Fixed
         RubyModule clazz = IRRuntimeHelpers.newRubyClassFromIR(context, body.getId(), body.getStaticScope(),
                 superClass, container, body.maybeUsingRefinements());
 
-        return Interpreter.INTERPRET_CLASS(context, body, clazz);
+        return Interpreter.INTERPRET_CLASS(context, body, clazz, body.getId());
     }
 
     @Override

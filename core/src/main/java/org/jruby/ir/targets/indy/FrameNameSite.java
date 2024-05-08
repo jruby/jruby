@@ -1,7 +1,6 @@
 package org.jruby.ir.targets.indy;
 
 import com.headius.invokebinder.Binder;
-import org.jruby.RubyNil;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -59,7 +58,7 @@ public class FrameNameSite extends MutableCallSite {
         if (entry.method.isBuiltin()) {
             target = Binder.from(type())
                     .permute(2)
-                    .append(context.runtime.getSymbolTable(), context.nil)
+                    .append(context.runtime.getSymbolTable())
                     .prepend(this)
                     .invokeVirtualQuiet(methodName);
         } else {
@@ -73,18 +72,14 @@ public class FrameNameSite extends MutableCallSite {
         return (IRubyObject) target.invokeExact(context, self, frameName);
     }
 
-    public IRubyObject __callee__(String frameName, RubySymbol.SymbolTable symbolTable, RubyNil nil) {
-        if (frameName == null) return nil;
-
+    public IRubyObject __callee__(String frameName, RubySymbol.SymbolTable symbolTable) {
         if (frameName.charAt(0) != '\0') {
             return getSimpleName(frameName, symbolTable);
         }
         return symbolTable.getCalleeSymbolFromCompound(frameName);
     }
 
-    public IRubyObject __method__(String frameName, RubySymbol.SymbolTable symbolTable, RubyNil nil) {
-        if (frameName == null) return nil;
-
+    public IRubyObject __method__(String frameName, RubySymbol.SymbolTable symbolTable) {
         if (frameName.charAt(0) != '\0') {
             return getSimpleName(frameName, symbolTable);
         }

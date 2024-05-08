@@ -41,9 +41,9 @@ public class InterpretedIRBodyMethod extends InterpretedIRMethod {
         ensureInstrsReady();
 
         switch (getIRScope().getScopeType()) {
-            case MODULE_BODY: return Interpreter.INTERPRET_MODULE(context, getIRScope(), clazz);
-            case CLASS_BODY: return Interpreter.INTERPRET_CLASS(context, getIRScope(), clazz);
-            case METACLASS_BODY: return Interpreter.INTERPRET_METACLASS(context, getIRScope(), clazz, getVisibility());
+            case MODULE_BODY: return Interpreter.INTERPRET_MODULE(context, getIRScope(), clazz, name);
+            case CLASS_BODY: return Interpreter.INTERPRET_CLASS(context, getIRScope(), clazz, name);
+            case METACLASS_BODY: return Interpreter.INTERPRET_METACLASS(context, getIRScope(), clazz, name, getVisibility());
             default: throw new RuntimeException("invalid body method type: " + getIRScope());
         }
     }
