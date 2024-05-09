@@ -1524,6 +1524,20 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return EncodingUtils.encCrStrBufCat(metaClass.runtime, this, other, other.getEncoding(), codeRange);
     }
 
+    /**
+     * Append a Java String to this RubyString assuming it will be the encoding of the RubyString.  If it is
+     * not then then it will end up as an invalid string.  Some methods assume an encoding of BINARY so that
+     * broken bytes are possible/expected (e.g. an error message with two names which are not compatible to be
+     * combined into a single Ruby String).  Proc#to_s is an example of this.
+     * @param str to be appended
+     * @return this string after it has appended str
+     */
+    public final RubyString catStringUnsafe(String str) {
+        ByteList other = encodeBytelist(str, getEncoding());
+        catWithCodeRange(other, CR_UNKNOWN);
+        return this;
+    }
+
     public final RubyString catString(String str) {
         ByteList other = encodeBytelist(str, UTF8);
         catWithCodeRange(other, CR_VALID);

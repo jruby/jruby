@@ -239,17 +239,17 @@ public class RubyProc extends RubyObject implements DataType {
         string.setEncoding(RubyString.ASCII);
 
         string.append(types(runtime, type()));
-        string.catString(":0x" + Integer.toString(System.identityHashCode(block), 16));
+        string.catStringUnsafe(":0x" + Integer.toString(System.identityHashCode(block), 16));
 
         boolean isSymbolProc = block.getBody() instanceof RubySymbol.SymbolProcBody;
         if (isSymbolProc) {
-            string.catString("(&:" + ((RubySymbol.SymbolProcBody) block.getBody()).getId() + ")");
+            string.catStringUnsafe("(&:" + ((RubySymbol.SymbolProcBody) block.getBody()).getId() + ")");
         } else if ((file = block.getBody().getFile()) != null) {
-            string.catString(" " + file + ":" + (block.getBody().getLine() + 1));
+            string.catStringUnsafe(" " + file + ":" + (block.getBody().getLine() + 1));
         }
 
-        if (isLambda()) string.catString(" (lambda)");
-        string.catString(">");
+        if (isLambda()) string.catStringUnsafe(" (lambda)");
+        string.catStringUnsafe(">");
 
         return string;
     }
