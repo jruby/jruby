@@ -1,1 +1,3 @@
 fails:The ** operator makes a copy when calling a method taking a positional Hash
+fails:The ** operator hash with omitted value raises a SyntaxError when the hash key ends with `!`
+fails:The ** operator hash with omitted value raises a SyntaxError when the hash key ends with `?`

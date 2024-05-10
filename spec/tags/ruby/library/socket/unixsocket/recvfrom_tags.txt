@@ -1,2 +1,4 @@
 critical(hangs):UNIXSocket#recvfrom uses different message options
 fails:UNIXSocket#recvfrom using a UNIX socket constructed using UNIXSocket.for_fd returns an Array containing the data and address information
+fails:UNIXSocket#recvfrom allows an output buffer as third argument
+fails:UNIXSocket#recvfrom preserves the encoding of the given buffer
