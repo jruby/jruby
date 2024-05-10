@@ -37,6 +37,7 @@
 
 package org.jruby;
 
+import static org.jruby.RubyNumeric.fix2int;
 import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.anno.FrameField.LASTLINE;
 
@@ -75,6 +76,7 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.collections.WeakValuedMap;
 
+import static org.jruby.api.Convert.castToHash;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.StringSupport.CR_7BIT;
@@ -874,7 +876,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     private static int objectAsJoniOptions(IRubyObject arg) {
         Ruby runtime = arg.getRuntime();
-        if (arg instanceof RubyFixnum) return RubyNumeric.fix2int(arg);
+        if (arg instanceof RubyFixnum) return fix2int(arg);
         if (arg instanceof RubyString) return RegexpOptions.fromByteList(runtime, ((RubyString) arg).getByteList()).toJoniOptions();
         if (arg instanceof RubyBoolean) {
             if (arg.isTrue()) return RE_OPTION_IGNORECASE;
@@ -1494,6 +1496,46 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     @JRubyMethod(name = "fixed_encoding?")
     public IRubyObject fixed_encoding_p(ThreadContext context) {
         return RubyBoolean.newBoolean(context, options.isFixed());
+    }
+
+    private record RegexpArgs(RubyString string, int options, IRubyObject timeout) {}
+
+    // MRI: reg_extract_args - This does not break the regexp into a String value since it will never used if the first
+    // argument is a Regexp.  This also is true of MRI so I am not sure why they do the string part.
+    private static RegexpArgs extractRegexpArgs(ThreadContext context, IRubyObject[] args) {
+        int callInfo = ThreadContext.resetCallInfo(context);
+        int length = args.length;
+
+        IRubyObject timeout = null;
+        if ((callInfo & ThreadContext.CALL_KEYWORD) != 0) {
+            length--;
+            RubyHash opts = castToHash(context, args[args.length - 1]);
+            timeout = opts.fastARef(context.runtime.newSymbol("timeout"));
+        }
+
+        RubyString string;
+        int opts = 0;
+        if (args[0] instanceof RubyRegexp) {
+            if (length > 1) context.runtime.getWarnings().warn("flags ignored");
+            string = null;
+        } else {
+            if (length > 1) opts = objectAsJoniOptions(args[1]);
+            string = args[0].convertToString();
+        }
+
+        return new RegexpArgs(string, opts, timeout);
+    }
+
+    @JRubyMethod(name = "linear_time?", meta = true, required = 1, optional = 1)
+    public static IRubyObject linear_time_p(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        RegexpArgs regexpArgs = extractRegexpArgs(context, args);
+        RubyRegexp regexp = args[0] instanceof RubyRegexp reg ?
+                reg : newRegexpFromStr(context.runtime, regexpArgs.string, regexpArgs.options);
+
+        Regex pattern = regexp.pattern;
+
+        // Regexp.allocate will make a regexp instance with no pattern.
+        return pattern != null && pattern.isLinear() ? context.tru : context.fals;
     }
 
     /** rb_reg_nth_match
