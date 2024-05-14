@@ -9,6 +9,9 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
+import org.jruby.util.cli.Options;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 
@@ -24,6 +27,8 @@ import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
 
 public class BuildDynamicStringSite extends MutableCallSite {
+    private static final Logger LOG = LoggerFactory.getLogger(BuildDynamicStringSite.class);
+
     public static final Handle BUILD_DSTRING_BOOTSTRAP = new Handle(
             Opcodes.H_INVOKESTATIC,
             p(BuildDynamicStringSite.class),
@@ -94,13 +99,22 @@ public class BuildDynamicStringSite extends MutableCallSite {
 
         if (specialize) {
             // bind directly to specialized builds
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                LOG.info("dstring(" + Long.toBinaryString(descriptor) +")" + "\tbound directly");
+            }
             binder = binder.append(arrayOf(Encoding.class, int.class), encoding, initialSize);
             setTarget(binder.invokeStaticQuiet(BuildDynamicStringSite.class, "buildString"));
         } else if (dynamicArgs <= MAX_DYNAMIC_ARGS_FOR_SPECIALIZE2) {
             // second level specialization, using call site to hold strings, no argument[] box, and appending in a loop
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                LOG.info("dstring(" + Long.toBinaryString(descriptor) +")" + "\tbound to unrolled loop");
+            }
             binder = binder.prepend(this).append(arrayOf(Encoding.class, int.class), encoding, initialSize);
             setTarget(binder.invokeVirtualQuiet("buildString2"));
         } else {
+            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                LOG.info("dstring(" + Long.toBinaryString(descriptor) +")" + "\tbound to loop");
+            }
             binder = binder.prepend(this).collect(2, IRubyObject[].class);
             setTarget(binder.invokeVirtualQuiet("buildString"));
         }
@@ -462,9 +476,9 @@ public class BuildDynamicStringSite extends MutableCallSite {
         byte[] bufferArray = Arrays.copyOfRange(firstStringByteList.unsafeBytes(), firstStringByteList.begin(), initialSize);
 
         // use element realSize for starting buffer realSize
-        ByteList bufferByteList = new ByteList(bufferArray, 0, firstStringByteList.realSize());
+        ByteList bufferByteList = new ByteList(bufferArray, 0, firstStringByteList.realSize(), firstStringByteList.getEncoding(), false);
 
-        buffer = RubyString.newStringNoCopy(context.runtime, bufferByteList, firstStringByteList.getEncoding(), firstStringCR);
+        buffer = RubyString.newString(context.runtime, bufferByteList, firstStringCR);
         return buffer;
     }
 

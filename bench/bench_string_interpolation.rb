@@ -2,7 +2,7 @@ require 'benchmark/ips'
 
 class Stringable
   def to_s
-    "quux"
+    "quux".freeze
   end
 end
 
@@ -96,12 +96,31 @@ Benchmark.ips {|bm|
     a
   }
 
+  bm.report('"foo#{n}bar#{n}baz#{n}" fixnum') {|n|
+    a = nil
+    while n > 0
+      n-=1
+      a = "foo#{n}bar#{n}baz"
+    end
+    a
+  }
+
   bm.report('"#{x}#{x}#{x}#{x}#{x}" to_s') {|n|
     a = nil
     x = Stringable.new
     while n > 0
       n-=1
       a = "#{x}#{x}#{x}#{x}#{x}"
+    end
+    a
+  }
+
+  bm.report('"#{x}#{x}#{x}#{x}#{x}#{x}#{x}#{x}#{x}#{x}" to_s') {|n|
+    a = nil
+    x = Stringable.new
+    while n > 0
+      n-=1
+      a = "#{x}#{x}#{x}#{x}#{x}#{x}#{x}#{x}#{x}#{x}"
     end
     a
   }
