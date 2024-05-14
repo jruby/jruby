@@ -648,7 +648,7 @@ public class UnmarshalStream extends InputStream {
             byteList.setRealSize(dst - ptr);
         }
 
-        regexp.regexpInitialize(byteList, byteList.getEncoding(), reOpts);
+        regexp.regexpInitialize(byteList, byteList.getEncoding(), reOpts, null);
 
         if (ivarHolder != null) {
             ivarHolder.getInstanceVariables().copyInstanceVariablesInto(regexp);

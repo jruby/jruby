@@ -1675,6 +1675,8 @@ public final class Ruby implements Constantizable {
         ifAllowed("KeyError",               (ruby) -> keyError = RubyKeyError.define(ruby, indexError));
         ifAllowed("DomainError",            (ruby) -> mathDomainError = RubyDomainError.define(ruby, argumentError, mathModule));
 
+        setRegexpTimeoutError(regexpClass.defineClassUnder("TimeoutError", getRegexpError(), RubyRegexpError::new));
+
         RubyClass runtimeError = this.runtimeError;
         ObjectAllocator runtimeErrorAllocator = runtimeError.getAllocator();
 
@@ -4930,6 +4932,22 @@ public final class Ruby implements Constantizable {
         return topLevelBinding;
     }
 
+    public void setRubyTimeout(IRubyObject timeout) {
+        this.regexpTimeout = timeout;
+    }
+
+    public IRubyObject getRubyTimeout() {
+        return regexpTimeout;
+    }
+
+    public void setRegexpTimeoutError(RubyClass error) {
+        this.regexpTimeoutError = error;
+    }
+
+    public RubyClass getRegexpTimeoutError() {
+        return regexpTimeoutError;
+    }
+
     static class FStringEqual {
         RubyString string;
         public boolean equals(Object other) {
@@ -5338,6 +5356,10 @@ public final class Ruby implements Constantizable {
     private boolean doNotReverseLookupEnabled = false;
     private volatile boolean objectSpaceEnabled;
     private boolean siphashEnabled;
+
+    // Global timeout value.  Nil == no timeout set.
+    private IRubyObject regexpTimeout;
+    private RubyClass regexpTimeoutError;
 
     @Deprecated
     private long globalState = 1;
