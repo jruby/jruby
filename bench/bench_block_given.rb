@@ -9,10 +9,11 @@ def foo2
 end
 
 Benchmark.ips do |bm|
+  pr = proc { }
   bm.report("block") do |i|
     while i > 0
       i-=1
-      foo { }; foo { }; foo { }; foo { }; foo { }; foo { }; foo { }; foo { }; foo { }; foo { }
+      foo &pr; foo &pr; foo &pr; foo &pr; foo &pr; foo &pr; foo &pr; foo &pr; foo &pr; foo &pr
     end
   end
 
@@ -26,7 +27,7 @@ Benchmark.ips do |bm|
   bm.report("defined block") do |i|
     while i > 0
       i-=1
-      foo2 { }; foo2 { }; foo2 { }; foo2 { }; foo2 { }; foo2 { }; foo2 { }; foo2 { }; foo2 { }; foo2 { }
+      foo2 &pr; foo2 &pr; foo2 &pr; foo2 &pr; foo2 &pr; foo2 &pr; foo2 &pr; foo2 &pr; foo2 &pr; foo2 &pr
     end
   end
 
