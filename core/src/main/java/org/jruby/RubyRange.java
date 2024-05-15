@@ -1276,7 +1276,7 @@ public class RubyRange extends RubyObject {
             if (end.isNil()) {
                 return dbl2num(context.runtime, Double.POSITIVE_INFINITY);
             }
-        } else if (begin.isNil()) {
+        } else if (begin.isNil() && end instanceof RubyNumeric) {
             return dbl2num(context.runtime, Double.POSITIVE_INFINITY);
         }
 
