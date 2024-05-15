@@ -11,6 +11,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 
+import static org.jruby.runtime.ThreadContext.resetCallInfo;
+
 /**
  * Encapsulation of the prepare_getline_args logic from MRI, used by StringIO and IO.
  */
@@ -67,6 +69,7 @@ public class Getline {
     }
 
     public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline, Self self, Encoding enc_io, int argc, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        boolean keywords = (resetCallInfo(context) & ThreadContext.CALL_KEYWORD) != 0;
         final IRubyObject nil = context.nil;
 
         boolean chomp = false;
@@ -90,6 +93,15 @@ public class Getline {
 
         final Ruby runtime = context.runtime;
 
+        if (optArg instanceof RubyHash && !keywords) {
+            // We get args from multiple sources so we are form-fitting this as if we are processing it from
+            // the original method.  We should not be doing this processing this deep into this IO processing.
+            if (argc == 3) {
+                throw runtime.newArgumentError(argc, 0, 2);
+            } else {
+                throw runtime.newTypeError("no implicit conversion of Hash into Integer");
+            }
+        }
         opt = ArgsUtil.getOptionsArg(runtime, optArg);
 
         if (opt == nil) {
