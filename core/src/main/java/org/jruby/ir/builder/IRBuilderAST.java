@@ -1650,6 +1650,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             // Try verifying definition, and if we get an JumpException exception, process it with the rescue block above
             return protectCodeWithRescue(protectedCode, rescueBlock);
         }
+            case OPASGNCONSTDECLNODE:
+                return new FrozenString("assignment");
         default:
             return new FrozenString("expression");
         }
