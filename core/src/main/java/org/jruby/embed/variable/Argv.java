@@ -114,7 +114,7 @@ public class Argv extends AbstractVariable {
      * invoked during EvalUnit#run() is executed.
      */
     @Override
-    public void inject() {
+    public synchronized void inject() {
         final Ruby runtime = getRuntime();
 
         final RubyArray argv = RubyArray.newArray(runtime);
@@ -141,7 +141,7 @@ public class Argv extends AbstractVariable {
      * this variable in top self.
      */
     @Override
-    public void remove() {
+    public synchronized void remove() {
         this.javaObject = new ArrayList();
         inject();
     }
@@ -173,7 +173,7 @@ public class Argv extends AbstractVariable {
     }
 
     // ARGV appears to require special treatment, leaving javaType intact
-    protected void updateRubyObject(final IRubyObject rubyObject) {
+    protected synchronized void updateRubyObject(final IRubyObject rubyObject) {
         if ( rubyObject == null ) return;
         this.rubyObject = rubyObject;
     }
@@ -193,7 +193,7 @@ public class Argv extends AbstractVariable {
 
     @Override
     @SuppressWarnings("unchecked")
-    public Object getJavaObject() {
+    public synchronized Object getJavaObject() {
         if ( rubyObject == null || ! fromRuby ) return javaObject;
 
         final RubyArray ary = (RubyArray) rubyObject;

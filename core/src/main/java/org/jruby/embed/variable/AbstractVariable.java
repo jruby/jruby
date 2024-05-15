@@ -49,10 +49,10 @@ abstract class AbstractVariable implements BiVariable {
      */
     protected final IRubyObject receiver;
     protected final String name;
-    protected Object javaObject = null;
-    protected Class javaType = null;
-    protected IRubyObject rubyObject = null;
-    protected boolean fromRuby;
+    protected volatile Object javaObject;
+    protected volatile Class javaType;
+    protected volatile IRubyObject rubyObject;
+    protected volatile boolean fromRuby;
 
     /**
      * Constructor used when this variable is originaed from Java.
@@ -94,7 +94,7 @@ abstract class AbstractVariable implements BiVariable {
         return (RubyObject) receiver.getRuntime().getTopSelf();
     }
 
-    protected void updateByJavaObject(final Ruby runtime, Object... values) {
+    protected synchronized void updateByJavaObject(final Ruby runtime, Object... values) {
         assert values != null;
         javaObject = values[0];
         if (javaObject == null) {
@@ -108,7 +108,7 @@ abstract class AbstractVariable implements BiVariable {
         fromRuby = false;
     }
 
-    protected void updateRubyObject(final IRubyObject rubyObject) {
+    protected synchronized void updateRubyObject(final IRubyObject rubyObject) {
         if ( rubyObject == null ) return;
         this.rubyObject = rubyObject;
         this.javaType = null;
@@ -134,7 +134,7 @@ abstract class AbstractVariable implements BiVariable {
         return name;
     }
 
-    public Object getJavaObject() {
+    public synchronized Object getJavaObject() {
         if (rubyObject == null) return javaObject;
 
         if (javaType != null) { // Java originated variables
