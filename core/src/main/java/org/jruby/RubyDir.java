@@ -634,7 +634,7 @@ public class RubyDir extends RubyObject implements Closeable {
 
     @JRubyMethod(name = "home", meta = true)
     public static IRubyObject home(ThreadContext context, IRubyObject recv, IRubyObject user) {
-        if (user == null || user.isNil()) {
+        if (user == null || user.isNil() || user.toString().isEmpty()) {
             return getHomeDirectoryPath(context);
         }
 
