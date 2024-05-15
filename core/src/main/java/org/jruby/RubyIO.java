@@ -3725,21 +3725,21 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @JRubyMethod(keywords = true)
     public IRubyObject each_line(final ThreadContext context, IRubyObject arg0, final Block block) {
-        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line");
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line", arg0);
 
         return Getline.getlineCall(context, GETLINE_YIELD, this, getReadEncoding(context), arg0, block);
     }
 
     @JRubyMethod(keywords = true)
     public IRubyObject each_line(final ThreadContext context, IRubyObject arg0, IRubyObject arg1, final Block block) {
-        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line");
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line", arg0, arg1);
 
         return Getline.getlineCall(context, GETLINE_YIELD, this, getReadEncoding(context), arg0, arg1, block);
     }
 
     @JRubyMethod(keywords = true)
     public IRubyObject each_line(final ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, final Block block) {
-        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line");
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line", arg0, arg1, arg2);
 
         return Getline.getlineCall(context, GETLINE_YIELD, this, getReadEncoding(context), arg0, arg1, arg2, block);
     }
