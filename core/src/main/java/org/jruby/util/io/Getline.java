@@ -100,7 +100,7 @@ public class Getline {
             }
         } else {
             IRubyObject chompKwarg = ArgsUtil.extractKeywordArg(context, "chomp", (RubyHash) opt);
-            if (chompKwarg != null) {
+            if (chompKwarg != null && (sepArg == null || !sepArg.isNil())) {
                 chomp = chompKwarg.isTrue();
             }
         }
