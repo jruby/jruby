@@ -1,1 +1,0 @@
-fails(https://github.com/ruby/stringio/pull/61):StringIO#each when passed a separator yields each paragraph with all separation characters when passed an empty String as separator
