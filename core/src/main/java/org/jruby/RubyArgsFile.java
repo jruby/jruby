@@ -43,6 +43,8 @@ import static org.jruby.RubyArgsFile.Next.NextFile;
 import static org.jruby.RubyArgsFile.Next.Stream;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.anno.FrameField.LASTLINE;
+import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
+import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 import org.jruby.anno.JRubyMethod;
@@ -362,6 +364,8 @@ public class RubyArgsFile extends RubyObject {
 
     // MRI: argf_getline
     private static IRubyObject argf_getline(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        boolean keywords = (resetCallInfo(context) & CALL_KEYWORD) != 0;
+
         Ruby runtime = context.runtime;
 
         IRubyObject line;
@@ -379,7 +383,7 @@ public class RubyArgsFile extends RubyObject {
                 if (args.length == 0 && runtime.getRecordSeparatorVar().get() == runtime.getGlobalVariables().getDefaultSeparator()) {
                     line = (currentFile).gets(context);
                 } else {
-                    line = Getline.getlineCall(context, GETLINE, currentFile, currentFile.getReadEncoding(), args);
+                    line = Getline.getlineCall(context, GETLINE, currentFile, currentFile.getReadEncoding(), keywords, args);
                 }
 
                 if (line.isNil() && data.next_p != Stream) {
