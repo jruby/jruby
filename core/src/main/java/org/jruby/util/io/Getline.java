@@ -26,20 +26,24 @@ public class Getline {
         return getlineCall(context, getline, self, enc_io, 0, null, null, null, Block.NULL_BLOCK, false);
     }
 
+    // Work around native extensions calling without marking keywords annotation AND not calling newer non-deprecated methods.
     @Deprecated
     public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
                                                                         Self self, Encoding enc_io, IRubyObject arg0) {
-        return getlineCall(context, getline, self, enc_io, 1, arg0, null, null, Block.NULL_BLOCK, false);
+        boolean keywords = arg0 instanceof RubyHash;
+        return getlineCall(context, getline, self, enc_io, 1, arg0, null, null, Block.NULL_BLOCK, keywords);
     }
     public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
                                                                         Self self, Encoding enc_io, IRubyObject arg0, boolean keywords) {
         return getlineCall(context, getline, self, enc_io, 1, arg0, null, null, Block.NULL_BLOCK, keywords);
     }
 
+    // Work around native extensions calling without marking keywords annotation AND not calling newer non-deprecated methods.
     @Deprecated
     public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
                                                                         Self self, Encoding enc_io, IRubyObject arg0, IRubyObject arg1) {
-        return getlineCall(context, getline, self, enc_io, 2, arg0, arg1, null, Block.NULL_BLOCK, false);
+        boolean keywords = arg1 instanceof RubyHash;
+        return getlineCall(context, getline, self, enc_io, 2, arg0, arg1, null, Block.NULL_BLOCK, keywords);
     }
     public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
                                                                         Self self, Encoding enc_io, IRubyObject arg0,
@@ -47,11 +51,13 @@ public class Getline {
         return getlineCall(context, getline, self, enc_io, 2, arg0, arg1, null, Block.NULL_BLOCK, keywords);
     }
 
+    // Work around native extensions calling without marking keywords annotation AND not calling newer non-deprecated methods.
     @Deprecated
     public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
                                                                         Self self, Encoding enc_io, IRubyObject arg0,
                                                                         IRubyObject arg1, IRubyObject arg2) {
-        return getlineCall(context, getline, self, enc_io, 3, arg0, arg1, arg2, Block.NULL_BLOCK);
+        boolean keywords = arg2 instanceof RubyHash;
+        return getlineCall(context, getline, self, enc_io, 3, arg0, arg1, arg2, Block.NULL_BLOCK, keywords);
     }
 
     public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
@@ -65,10 +71,12 @@ public class Getline {
         return getlineCall(context, getline, self, enc_io, 0, null, null, null, block);
     }
 
+    // Work around native extensions calling without marking keywords annotation AND not calling newer non-deprecated methods.
     @Deprecated
     public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
                                                                         Self self, Encoding enc_io, IRubyObject arg0, Block block) {
-        return getlineCall(context, getline, self, enc_io, 1, arg0, null, null, block, false);
+        boolean keywords = arg0 instanceof RubyHash;
+        return getlineCall(context, getline, self, enc_io, 1, arg0, null, null, block, keywords);
     }
 
     public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
@@ -77,11 +85,13 @@ public class Getline {
         return getlineCall(context, getline, self, enc_io, 1, arg0, null, null, block, keywords);
     }
 
+    // Work around native extensions calling without marking keywords annotation AND not calling newer non-deprecated methods.
     @Deprecated
     public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
                                                                         Self self, Encoding enc_io, IRubyObject arg0,
                                                                         IRubyObject arg1, Block block) {
-        return getlineCall(context, getline, self, enc_io, 2, arg0, arg1, null, block, false);
+        boolean keywords = arg1 instanceof RubyHash;
+        return getlineCall(context, getline, self, enc_io, 2, arg0, arg1, null, block, keywords);
     }
 
     public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
@@ -90,11 +100,13 @@ public class Getline {
         return getlineCall(context, getline, self, enc_io, 2, arg0, arg1, null, block, keywords);
     }
 
+    // Work around native extensions calling without marking keywords annotation AND not calling newer non-deprecated methods.
     @Deprecated
     public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
                                                                         Self self, Encoding enc_io, IRubyObject arg0,
                                                                         IRubyObject arg1, IRubyObject arg2, Block block) {
-        return getlineCall(context, getline, self, enc_io, 3, arg0, arg1, arg2, block);
+        boolean keywords = arg2 instanceof RubyHash;
+        return getlineCall(context, getline, self, enc_io, 3, arg0, arg1, arg2, block, keywords);
     }
 
     public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
@@ -137,11 +149,17 @@ public class Getline {
         }
     }
 
+    // Work around native extensions calling without marking keywords annotation AND not calling newer non-deprecated methods.
+    // Note: some callers use this as the single entry point vs calling into the specific overload so we need to do extra null
+    //   checking to figure out actual last valid passed argument.
     @Deprecated
     public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
                                                                         Self self, Encoding enc_io, int argc, IRubyObject arg0,
                                                                         IRubyObject arg1, IRubyObject arg2, Block block) {
-        return getlineCall(context, getline, self, enc_io, argc, arg0, arg1, arg2, block, false);
+        IRubyObject lastArg = arg2 == null ? (arg1 == null ? (arg0 == null ? null : arg0) : arg1) : arg2;
+        boolean keywords = lastArg != null && lastArg instanceof RubyHash;
+
+        return getlineCall(context, getline, self, enc_io, argc, arg0, arg1, arg2, block, keywords);
     }
 
     public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
