@@ -21,55 +21,132 @@ public class Getline {
         Return getline(ThreadContext context, Self self, IRubyObject rs, int limit, boolean chomp, Block block);
     }
 
-    public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline, Self self, Encoding enc_io) {
-        return getlineCall(context, getline, self, enc_io, 0, null, null, null, Block.NULL_BLOCK);
+    public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
+                                                                        Self self, Encoding enc_io) {
+        return getlineCall(context, getline, self, enc_io, 0, null, null, null, Block.NULL_BLOCK, false);
     }
 
-    public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline, Self self, Encoding enc_io, IRubyObject arg0) {
-        return getlineCall(context, getline, self, enc_io, 1, arg0, null, null, Block.NULL_BLOCK);
+    @Deprecated
+    public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
+                                                                        Self self, Encoding enc_io, IRubyObject arg0) {
+        return getlineCall(context, getline, self, enc_io, 1, arg0, null, null, Block.NULL_BLOCK, false);
+    }
+    public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
+                                                                        Self self, Encoding enc_io, IRubyObject arg0, boolean keywords) {
+        return getlineCall(context, getline, self, enc_io, 1, arg0, null, null, Block.NULL_BLOCK, keywords);
     }
 
-    public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline, Self self, Encoding enc_io, IRubyObject arg0, IRubyObject arg1) {
-        return getlineCall(context, getline, self, enc_io, 2, arg0, arg1, null, Block.NULL_BLOCK);
+    @Deprecated
+    public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
+                                                                        Self self, Encoding enc_io, IRubyObject arg0, IRubyObject arg1) {
+        return getlineCall(context, getline, self, enc_io, 2, arg0, arg1, null, Block.NULL_BLOCK, false);
+    }
+    public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
+                                                                        Self self, Encoding enc_io, IRubyObject arg0,
+                                                                        IRubyObject arg1, boolean keywords) {
+        return getlineCall(context, getline, self, enc_io, 2, arg0, arg1, null, Block.NULL_BLOCK, keywords);
     }
 
-    public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline, Self self, Encoding enc_io, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+    @Deprecated
+    public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
+                                                                        Self self, Encoding enc_io, IRubyObject arg0,
+                                                                        IRubyObject arg1, IRubyObject arg2) {
         return getlineCall(context, getline, self, enc_io, 3, arg0, arg1, arg2, Block.NULL_BLOCK);
     }
 
-    public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline, Self self, Encoding enc_io, Block block) {
+    public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
+                                                                        Self self, Encoding enc_io, IRubyObject arg0,
+                                                                        IRubyObject arg1, IRubyObject arg2, boolean keywords) {
+        return getlineCall(context, getline, self, enc_io, 3, arg0, arg1, arg2, Block.NULL_BLOCK, keywords);
+    }
+
+    public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
+                                                                        Self self, Encoding enc_io, Block block) {
         return getlineCall(context, getline, self, enc_io, 0, null, null, null, block);
     }
 
-    public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline, Self self, Encoding enc_io, IRubyObject arg0, Block block) {
-        return getlineCall(context, getline, self, enc_io, 1, arg0, null, null, block);
+    @Deprecated
+    public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
+                                                                        Self self, Encoding enc_io, IRubyObject arg0, Block block) {
+        return getlineCall(context, getline, self, enc_io, 1, arg0, null, null, block, false);
     }
 
-    public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline, Self self, Encoding enc_io, IRubyObject arg0, IRubyObject arg1, Block block) {
-        return getlineCall(context, getline, self, enc_io, 2, arg0, arg1, null, block);
+    public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
+                                                                        Self self, Encoding enc_io, IRubyObject arg0,
+                                                                        Block block, boolean keywords) {
+        return getlineCall(context, getline, self, enc_io, 1, arg0, null, null, block, keywords);
     }
 
-    public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline, Self self, Encoding enc_io, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+    @Deprecated
+    public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
+                                                                        Self self, Encoding enc_io, IRubyObject arg0,
+                                                                        IRubyObject arg1, Block block) {
+        return getlineCall(context, getline, self, enc_io, 2, arg0, arg1, null, block, false);
+    }
+
+    public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
+                                                                        Self self, Encoding enc_io, IRubyObject arg0,
+                                                                        IRubyObject arg1, Block block, boolean keywords) {
+        return getlineCall(context, getline, self, enc_io, 2, arg0, arg1, null, block, keywords);
+    }
+
+    @Deprecated
+    public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
+                                                                        Self self, Encoding enc_io, IRubyObject arg0,
+                                                                        IRubyObject arg1, IRubyObject arg2, Block block) {
         return getlineCall(context, getline, self, enc_io, 3, arg0, arg1, arg2, block);
     }
 
-    public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline, Self self, Encoding enc_io, IRubyObject... args) {
+    public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
+                                                                        Self self, Encoding enc_io, IRubyObject arg0,
+                                                                        IRubyObject arg1, IRubyObject arg2, Block block,
+                                                                        boolean keywords) {
+        return getlineCall(context, getline, self, enc_io, 3, arg0, arg1, arg2, block, keywords);
+    }
+
+    @Deprecated
+    public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
+                                                                        Self self, Encoding enc_io, IRubyObject... args) {
         switch (args.length) {
             case 0:
-                return getlineCall(context, getline, self, enc_io);
+                return getlineCall(context, getline, self, enc_io, false);
             case 1:
-                return getlineCall(context, getline, self, enc_io, args[0]);
+                return getlineCall(context, getline, self, enc_io, false, args[0]);
             case 2:
-                return getlineCall(context, getline, self, enc_io, args[0], args[1]);
+                return getlineCall(context, getline, self, enc_io, false, args[0], args[1]);
             case 3:
-                return getlineCall(context, getline, self, enc_io, args[0], args[1], args[2]);
+                return getlineCall(context, getline, self, enc_io, false, args[0], args[1], args[2]);
             default:
                 throw context.runtime.newArgumentError(args.length, 0, 3);
         }
     }
 
-    public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline, Self self, Encoding enc_io, int argc, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        boolean keywords = (resetCallInfo(context) & ThreadContext.CALL_KEYWORD) != 0;
+    public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
+                                                                        Self self, Encoding enc_io, boolean keywords, IRubyObject... args) {
+        switch (args.length) {
+            case 0:
+                return getlineCall(context, getline, self, enc_io, keywords);
+            case 1:
+                return getlineCall(context, getline, self, enc_io, args[0], keywords);
+            case 2:
+                return getlineCall(context, getline, self, enc_io, args[0], args[1], keywords);
+            case 3:
+                return getlineCall(context, getline, self, enc_io, args[0], args[1], args[2], keywords);
+            default:
+                throw context.runtime.newArgumentError(args.length, 0, 3);
+        }
+    }
+
+    @Deprecated
+    public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
+                                                                        Self self, Encoding enc_io, int argc, IRubyObject arg0,
+                                                                        IRubyObject arg1, IRubyObject arg2, Block block) {
+        return getlineCall(context, getline, self, enc_io, argc, arg0, arg1, arg2, block, false);
+    }
+
+    public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
+                                                                        Self self, Encoding enc_io, int argc, IRubyObject arg0,
+                                                                        IRubyObject arg1, IRubyObject arg2, Block block, boolean keywords) {
         final IRubyObject nil = context.nil;
 
         boolean chomp = false;
