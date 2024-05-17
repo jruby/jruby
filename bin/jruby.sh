@@ -387,7 +387,14 @@ if [ -z "$JAVACMD" ]; then
     elif $cygwin; then
         JAVACMD="$(cygpath -u "$JAVA_HOME")/bin/java"
     else
-        JAVACMD="$JAVA_HOME/bin/java"
+        # Linux and others have a chain of symlinks
+        resolve "$JAVA_HOME/bin/java"
+        JAVACMD="$REPLY"
+
+        # export separately from command execution
+        dir_name "$JAVACMD"
+        dir_name "$REPLY"
+        JAVA_HOME="$REPLY"
     fi
 else
     resolve "$(command -v "$JAVACMD")"
