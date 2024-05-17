@@ -453,15 +453,16 @@ public class RubyGlobal {
 
         @JRubyMethod(name = "assoc")
         public IRubyObject assoc(final ThreadContext context, IRubyObject obj) {
+            RubyString expected = verifyStringLike(context, obj).convertToString();
             EnvStringValidation.ensureValidEnvString(context.getRuntime(), obj, "value");
 
-            return super.assoc(context, verifyStringLike(context, obj).convertToString());
+            return super.assoc(context, expected);
         }
 
         @JRubyMethod(name = "fetch", required = 1, optional = 2)
         public IRubyObject fetch(ThreadContext context, IRubyObject[] args, Block block) {
-
             EnvStringValidation.ensureValidEnvString(context.runtime, args[0], "key");
+            
             switch(args.length) {
                 case 1: return super.fetch(context, args[0], block);
                 case 2: return super.fetch(context, args[0], args[1], block);
@@ -514,17 +515,19 @@ public class RubyGlobal {
 
         @JRubyMethod(name = {"has_key?", "key?", "include?", "member?"})
         public RubyBoolean has_key_p(ThreadContext context, IRubyObject key) {
+            IRubyObject expected = verifyStringLike(context, key);
+            
             EnvStringValidation.ensureValidEnvString(context.runtime, key, "key");
 
-            return internalGetEntry(verifyStringLike(context, key)) == NO_ENTRY ? context.fals : context.tru;
+            return internalGetEntry(expected) == NO_ENTRY ? context.fals : context.tru;
         }
 
         @JRubyMethod(name = {"has_value?", "value?"})
         public IRubyObject has_value_pp(ThreadContext context, IRubyObject expected) {
-            EnvStringValidation.ensureValidEnvString(context.runtime, expected, "value");
-
             if (!isStringLike(expected)) return context.nil;
 
+            EnvStringValidation.ensureValidEnvString(context.runtime, expected, "value");
+            
             return super.has_value_p(context, expected.convertToString());
         }
 
@@ -1281,7 +1284,7 @@ public class RubyGlobal {
 
     private static class EnvStringValidation {
         public static void ensureValidEnvString(Ruby runtime, IRubyObject str, String type) {
-            RubyString value = str.convertToString();
+            RubyString value = str.asString();
 
             if(!value.getByteList().getEncoding().isAsciiCompatible()){
                 throw runtime.newArgumentError("bad environment variable " + type + ": ASCII incompatible encoding: " + value.getByteList().getEncoding().toString());
