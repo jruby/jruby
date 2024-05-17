@@ -5,6 +5,7 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,7 +39,7 @@ public class ClasspathLauncher {
 
         try {
             return Paths.get(new URL(jarPath).toURI()).toString();
-        } catch (URISyntaxException | MalformedURLException e) {
+        } catch (URISyntaxException | MalformedURLException | FileSystemNotFoundException e) {
             return null;
         }
     }
