@@ -378,26 +378,22 @@ if [ -z "$JAVACMD" ]; then
             # Linux and others have a chain of symlinks
             resolve "$(command -v java)"
             JAVACMD="$REPLY"
-
-            # export separately from command execution
-            dir_name "$JAVACMD"
-            dir_name "$REPLY"
-            JAVA_HOME="$REPLY"
         fi
     elif $cygwin; then
         JAVACMD="$(cygpath -u "$JAVA_HOME")/bin/java"
     else
-        JAVACMD="$JAVA_HOME/bin/java"
+        resolve "$JAVA_HOME/bin/java"
+        JAVACMD="$REPLY"
     fi
 else
     resolve "$(command -v "$JAVACMD")"
-    expanded_javacmd="$REPLY"
-    if [ -z "$JAVA_HOME" ] && [ -x "$expanded_javacmd" ]; then
-        dir_name "$expanded_javacmd"
-        dir_name "$REPLY"
-        JAVA_HOME="$REPLY"
-    fi
+    JAVACMD="$REPLY"
 fi
+
+# export separately from command execution
+dir_name "$JAVACMD"
+dir_name "$REPLY"
+JAVA_HOME="$REPLY"
 
 # Detect modularized Java
 java_is_modular() {
