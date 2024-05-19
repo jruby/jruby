@@ -155,7 +155,6 @@ module Fiddle
     def self.to_ptr(value)
       if value.is_a?(String)
         cptr = Pointer.malloc(value.bytesize)
-        size = value.bytesize
         cptr.ffi_ptr.put_string(0, value)
         cptr
 
@@ -350,7 +349,7 @@ module Fiddle
     def ptr
       Pointer.new(ffi_ptr.get_pointer(0))
     end
-    
+
     def +@
       ptr
     end
