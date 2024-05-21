@@ -22,7 +22,8 @@ import static org.jruby.util.CodegenUtils.sig;
  * Perform an optimized __method__ or __callee__ invocation without accessing a caller's frame.
  *
  * This logic checks if the target method is our built-in version and uses fast logic in that case. All other calls
- * fall back on normal indy call logic.
+ * fall back on normal indy call logic. Only the built-in versions can actually access the caller's frame, so we can
+ * omit the frame altogether if we only use the specialized site.
  *
  * Note that if the target method is initially not built-in, or becomes a not built-in version later, we permanently
  * fall back on the invocation logic. No further checking is done and the site is optimized as a normal call from there.
