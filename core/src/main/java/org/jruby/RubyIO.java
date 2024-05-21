@@ -1828,17 +1828,17 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return print0(context, this);
     }
 
-    @JRubyMethod(reads = LASTLINE)
+    @JRubyMethod
     public IRubyObject print(ThreadContext context, IRubyObject arg0) {
         return print1(context, this, arg0);
     }
 
-    @JRubyMethod(reads = LASTLINE)
+    @JRubyMethod
     public IRubyObject print(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         return print2(context, this, arg0, arg1);
     }
 
-    @JRubyMethod(reads = LASTLINE)
+    @JRubyMethod
     public IRubyObject print(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         return print3(context, this, arg0, arg1, arg2);
     }

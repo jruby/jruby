@@ -748,17 +748,17 @@ public class RubyKernel {
         return RubyIO.print0(context, context.runtime.getGlobalVariables().get("$>"));
     }
 
-    @JRubyMethod(module = true, visibility = PRIVATE, reads = LASTLINE)
+    @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject print(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
         return RubyIO.print1(context, context.runtime.getGlobalVariables().get("$>"), arg0);
     }
 
-    @JRubyMethod(module = true, visibility = PRIVATE, reads = LASTLINE)
+    @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject print(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
         return RubyIO.print2(context, context.runtime.getGlobalVariables().get("$>"), arg0, arg1);
     }
 
-    @JRubyMethod(module = true, visibility = PRIVATE, reads = LASTLINE)
+    @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject print(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         return RubyIO.print3(context, context.runtime.getGlobalVariables().get("$>"), arg0, arg1, arg2);
     }
