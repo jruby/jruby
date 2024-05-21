@@ -147,10 +147,18 @@ public class Module {
     private static RubyModule setProxyClass(final Ruby runtime, final RubyModule target, final String constName, final Class<?> javaClass)
         throws NameError {
         final RubyModule proxyClass = Java.getProxyClass(runtime, javaClass);
-        if (!target.constDefinedAt(constName) || !target.getConstant(constName, false).equals(proxyClass)) {
-            target.const_set(runtime.newSymbol(constName), proxyClass); // setConstant would not validate const-name
+        if (constantNotSetOrDifferent(target, constName, proxyClass)) {
+            synchronized (target) { // synchronize to prevent "already initialized constant" warnings with multiple threads
+                if (constantNotSetOrDifferent(target, constName, proxyClass)) {
+                    target.const_set(runtime.newSymbol(constName), proxyClass); // setConstant would not validate const-name
+                }
+            }
         }
         return proxyClass;
+    }
+
+    private static boolean constantNotSetOrDifferent(final RubyModule target, final String constName, final RubyModule proxyClass) {
+        return !target.constDefinedAt(constName) || !target.getConstant(constName, false).equals(proxyClass);
     }
 
     @JRubyMethod(visibility = PRIVATE)
