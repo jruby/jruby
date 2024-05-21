@@ -136,17 +136,20 @@ public class Module {
             constant = javaClass.getSimpleName();
         }
 
-        proxyClass = Java.getProxyClass(runtime, javaClass);
-
         try {
-            if (!target.constDefinedAt(constant) || !target.getConstant(constant, false).equals(proxyClass)) {
-                target.const_set(runtime.newSymbol(constant), proxyClass); // setConstant would not validate const-name
-            }
+            return setProxyClass(runtime, target, constant, javaClass);
         } catch (NameError e) {
             String message = "cannot import Java class " + javaClass.getName() + " as `" + constant + "' : " + e.getException().getMessage();
             throw (RaiseException) runtime.newNameError(message, constant).initCause(e);
         }
+    }
 
+    private static RubyModule setProxyClass(final Ruby runtime, final RubyModule target, final String constName, final Class<?> javaClass)
+        throws NameError {
+        final RubyModule proxyClass = Java.getProxyClass(runtime, javaClass);
+        if (!target.constDefinedAt(constName) || !target.getConstant(constName, false).equals(proxyClass)) {
+            target.const_set(runtime.newSymbol(constName), proxyClass); // setConstant would not validate const-name
+        }
         return proxyClass;
     }
 
@@ -231,7 +234,13 @@ public class Module {
                     throw runtime.newNameError(constant + " not found in packages: " + includedPackages.packages.stream().collect(Collectors.joining(", ")), constant);
                 }
             }
-            return Java.setProxyClass(runtime, (RubyModule) self, constName, foundClass);
+
+            try {
+                return setProxyClass(runtime, (RubyModule) self, constName, foundClass);
+            } catch (NameError e) {
+                String message = "cannot set Java class " + foundClass.getName() + " as `" + constant + "' : " + e.getException().getMessage();
+                throw (RaiseException) runtime.newNameError(message, constant).initCause(e);
+            }
         }
 
     }
