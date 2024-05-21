@@ -3583,7 +3583,7 @@ public final class Ruby implements Constantizable {
     public RaiseException newArgumentError(int got, int expected) {
         return newArgumentError(got, expected, expected);
     }
-    
+
     public RaiseException newArgumentError(int got, int min, int max) {
         if (min == max) {
             return newRaiseException(getArgumentError(), "wrong number of arguments (given " + got + ", expected " + min + ")");
@@ -4929,6 +4929,10 @@ public final class Ruby implements Constantizable {
         return topLevelBinding;
     }
 
+    public void setChdirThread(RubyThread thread) { this.chdirCurrentThread = thread; }
+
+    public RubyThread getChdirThread() { return this.chdirCurrentThread; }
+
     static class FStringEqual {
         RubyString string;
         public boolean equals(Object other) {
@@ -5504,6 +5508,8 @@ public final class Ruby implements Constantizable {
     private RubyModule procSysModule;
     private RubyModule precisionModule;
     private RubyModule errnoModule;
+
+    private  RubyThread chdirCurrentThread;
 
     private DynamicMethod privateMethodMissing, protectedMethodMissing, variableMethodMissing,
             superMethodMissing, normalMethodMissing, defaultMethodMissing, defaultModuleMethodMissing,
