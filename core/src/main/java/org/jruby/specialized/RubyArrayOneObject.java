@@ -28,7 +28,7 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
 
     public RubyArrayOneObject(RubyClass otherClass, IRubyObject value) {
         // packed arrays are omitted from ObjectSpace
-        super(otherClass, false);
+        super(otherClass);
         this.value = value;
         this.realLength = 1;
     }

@@ -234,6 +234,10 @@ public interface ValueCompiler {
 
     void pushChilledString(ByteList byteList, int codeRange);
 
+    void pushFixnumArray(List<Long> values);
+
+    void pushFloatArray(List<Double> values);
+
     enum DStringElementType { STRING, OTHER }
     record DStringElement<T>(DStringElementType type, T value) {}
 

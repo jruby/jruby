@@ -81,11 +81,14 @@ import org.objectweb.asm.commons.Method;
 import java.io.ByteArrayOutputStream;
 import java.lang.invoke.MethodType;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
+import static java.util.Arrays.stream;
 import static org.jruby.util.CodegenUtils.c;
 import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.p;
@@ -2705,11 +2708,27 @@ public class JVMVisitor extends IRVisitor {
     public void Array(Array array) {
         jvmMethod().loadContext();
 
-        for (Operand operand : array.getElts()) {
+        Operand[] operands = array.getElts();
+
+        if (operands.length > 0) {
+            // TODO: these are iterating twice
+            if (stream(operands).allMatch(o -> o instanceof Fixnum)) {
+                List<Long> list = stream(operands).map(o -> ((Fixnum) o).getValue()).toList();
+                jvmMethod().getValueCompiler().pushFixnumArray(list);
+                return;
+            } else if (stream(operands).allMatch(o -> o instanceof Fixnum)) {
+                List<Double> list = stream(operands).map(o -> ((Float) o).getValue()).toList();
+                jvmMethod().getValueCompiler().pushFloatArray(list);
+                return;
+            }
+        }
+
+        // unoptimized path
+        for (Operand operand : operands) {
             visit(operand);
         }
 
-        jvmMethod().getDynamicValueCompiler().array(array.getElts().length);
+        jvmMethod().getDynamicValueCompiler().array(operands.length);
     }
 
     @Override

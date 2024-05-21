@@ -576,6 +576,63 @@ public class Helpers {
                 token);
     }
 
+    public static String encodeLongString(List<Long> values) {
+        char[] chars = new char[values.size() * 4];
+
+        for (int i = 0; i < values.size(); i++) {
+            encodeLongAsChars(chars, i * 4, values.get(i));
+        }
+
+        return new String(chars);
+    }
+
+    public static long[] decodeLongString(String fixnumString) {
+        char[] charValues = fixnumString.toCharArray();
+        long[] values = new long[charValues.length / 4];
+
+        for (int i = 0; i < values.length; i++) {
+            values[i] = decodeLongFromChars(charValues, i * 4);
+        }
+
+        return values;
+    }
+
+    public static String encodeDoubleString(List<Double> values) {
+        char[] chars = new char[values.size() * 4];
+
+        for (int i = 0; i < values.size(); i++) {
+            encodeLongAsChars(chars, i * 4, Double.doubleToRawLongBits(values.get(i)));
+        }
+
+        return new String(chars);
+    }
+
+    public static double[] decodeDoubleString(String fixnumString) {
+        char[] charValues = fixnumString.toCharArray();
+        double[] values = new double[charValues.length / 4];
+
+        for (int i = 0; i < values.length; i++) {
+            values[i] = decodeLongFromChars(charValues, i * 4);
+        }
+
+        return values;
+    }
+
+    private static void encodeLongAsChars(char[] chars, int index, long value) {
+        chars[index] = (char) value;
+        chars[index + 1] = (char) (value >>> 16);
+        chars[index + 2] = (char) (value >>> 32);
+        chars[index + 3] = (char) (value >>> 48);
+    }
+
+    private static long decodeLongFromChars(char[] charValues, int index) {
+        long l = charValues[index];
+        l |= (long) charValues[index + 1] << 16;
+        l |= (long) charValues[index + 2] << 32;
+        l |= (long) charValues[index + 3] << 48;
+        return l;
+    }
+
     /**
      * Wraps the target method_missing implementation, passing the called method name as a leading symbol argument.
      */

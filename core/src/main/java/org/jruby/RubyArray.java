@@ -218,8 +218,16 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return USE_PACKED_ARRAYS ? new RubyArrayOneObject(runtime, obj) : new RubyArray(runtime, arrayOf(obj));
     }
 
+    public static RubyArray newArrayLight(RubyClass arrayClass, IRubyObject obj) {
+        return USE_PACKED_ARRAYS ? new RubyArrayOneObject(arrayClass, obj) : new RubyArray(arrayClass, arrayOf(obj), false);
+    }
+
     public static RubyArray newArrayLight(Ruby runtime, IRubyObject car, IRubyObject cdr) {
         return USE_PACKED_ARRAYS ? new RubyArrayTwoObject(runtime, car, cdr) : new RubyArray(runtime, arrayOf(car, cdr));
+    }
+
+    public static RubyArray newArrayLight(RubyClass arrayClass, IRubyObject car, IRubyObject cdr) {
+        return USE_PACKED_ARRAYS ? new RubyArrayTwoObject(arrayClass, car, cdr) : new RubyArray(arrayClass, arrayOf(car, cdr), false);
     }
 
     public static RubyArray newArrayLight(Ruby runtime, IRubyObject... objs) {
@@ -273,6 +281,14 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             return newEmptyArray(runtime);
         }
         return isPackedArray(list) ? packedArray(runtime, list) : new RubyArray(runtime, list.toArray(IRubyObject.NULL_ARRAY));
+    }
+
+    public static RubyArray newSharedArray(RubyClass arrayClass, IRubyObject[] shared) {
+        RubyArray sharedArray = new RubyArray(arrayClass, shared, true);
+
+        sharedArray.isShared = true;
+
+        return sharedArray;
     }
 
     private static RubyArray packedArray(final Ruby runtime, final IRubyObject[] args) {
@@ -448,6 +464,13 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         super(runtime, klass);
         values = vals;
         realLength = vals.length;
+    }
+
+    public RubyArray(RubyClass klass, IRubyObject[] vals, boolean shared) {
+        super(klass);
+        values = vals;
+        realLength = vals.length;
+        isShared = shared;
     }
 
     /**

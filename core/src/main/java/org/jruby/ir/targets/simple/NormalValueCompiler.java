@@ -507,4 +507,16 @@ public class NormalValueCompiler implements ValueCompiler {
     }
 
     private final Map<Object, String> cacheFieldNames = new HashMap<>();
+
+    public void pushFixnumArray(List<Long> values) {
+        values.forEach(obj -> pushFixnum(obj.longValue()));
+
+        compiler.getDynamicValueCompiler().array(values.size());
+    }
+
+    public void pushFloatArray(List<Double> values) {
+        values.forEach(obj -> pushFloat(obj.doubleValue()));
+
+        compiler.getDynamicValueCompiler().array(values.size());
+    }
 }

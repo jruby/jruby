@@ -2,6 +2,7 @@ package org.jruby.ir.targets.indy;
 
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
 import org.jruby.RubyEncoding;
@@ -18,6 +19,7 @@ import org.jruby.ir.targets.JVM;
 import org.jruby.ir.targets.ValueCompiler;
 import org.jruby.ir.targets.simple.NormalValueCompiler;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
@@ -243,4 +245,19 @@ public class IndyValueCompiler implements ValueCompiler {
     public void pushConstantLookupSite(String className, String siteName, ByteList name) {
         normalValueCompiler.pushConstantLookupSite(className, siteName, name);
     }
+
+    @Override
+    public void pushFixnumArray(List<Long> values) {
+        String fixnumString = Helpers.encodeLongString(values);
+
+        compiler.adapter.invokedynamic("fixnumArray", sig(RubyArray.class, ThreadContext.class), ArrayBootstrap.NUMERIC_ARRAY, fixnumString);
+    }
+
+    @Override
+    public void pushFloatArray(List<Double> values) {
+        String doubleString = Helpers.encodeDoubleString(values);
+
+        compiler.adapter.invokedynamic("floatArray", sig(RubyArray.class, ThreadContext.class), ArrayBootstrap.NUMERIC_ARRAY, doubleString);
+    }
+
 }

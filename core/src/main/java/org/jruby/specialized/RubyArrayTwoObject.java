@@ -36,7 +36,7 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
 
     public RubyArrayTwoObject(RubyClass otherClass, IRubyObject car, IRubyObject cdr) {
         // packed arrays are omitted from ObjectSpace
-        super(otherClass, false);
+        super(otherClass);
         this.car = car;
         this.cdr = cdr;
         this.realLength = 2;
