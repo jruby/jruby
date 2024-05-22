@@ -970,20 +970,22 @@ public class RubyBasicSocket extends RubyIO {
 
     protected IRubyObject addrFor(ThreadContext context, InetSocketAddress addr, boolean reverse) {
         final Ruby runtime = context.runtime;
-        IRubyObject ret0, ret1, ret2, ret3;
-        if (addr.getAddress() instanceof Inet6Address) {
-            ret0 = runtime.newString("AF_INET6");
-        } else {
-            ret0 = runtime.newString("AF_INET");
-        }
-        ret1 = runtime.newFixnum(addr.getPort());
+        boolean ipV6 = addr.getAddress() instanceof Inet6Address;
+        IRubyObject ret0 = runtime.newString(ipV6 ? "AF_INET6" : "AF_INET");
+        IRubyObject ret1 = runtime.newFixnum(addr.getPort());
+        IRubyObject ret2;
         String hostAddress = addr.getAddress().getHostAddress();
         if (!reverse || doNotReverseLookup(context)) {
-            ret2 = runtime.newString(hostAddress);
+            ret2 = ipV6 && hostAddress.equals("0:0:0:0:0:0:0:0") ?
+                    runtime.newString("::") :
+                    runtime.newString(hostAddress);
         } else {
             ret2 = runtime.newString(addr.getHostName());
         }
-        ret3 = runtime.newString(hostAddress);
+        IRubyObject ret3 = ipV6 && hostAddress.equals("0:0:0:0:0:0:0:0") ?
+                runtime.newString("::") :
+                runtime.newString(hostAddress);
+
         return RubyArray.newArray(runtime, ret0, ret1, ret2, ret3);
     }
 
