@@ -1773,16 +1773,29 @@ CLASSDEF
       include_package 'java.math'
       include_package 'java.net'
     end
+
+    thread_count = 50
+
     output = with_stderr_captured do
-      threads = (0..100).map do
+      latch = java.util.concurrent.CountDownLatch.new(1)
+      waiting_thread_count = java.util.concurrent.atomic.AtomicInteger.new
+
+      threads = (0...thread_count).map do
         Thread.start do
-          sleep 0.01; mod::URLEncoder
-          sleep 0.01; mod::Field
-          sleep 0.01; mod::ThreadInfo
-          sleep 0.01; mod::LockInfo
-          sleep 0.01; mod::Array
+          waiting_thread_count.incrementAndGet
+          latch.await
+
+          mod::URLEncoder
+          mod::Field
+          mod::ThreadInfo
+          mod::LockInfo
+          mod::Array
         end
       end
+
+      Thread.pass while (waiting_thread_count.get < thread_count)
+      latch.countDown
+
       threads.each { |thread| thread.join }
     end
 
