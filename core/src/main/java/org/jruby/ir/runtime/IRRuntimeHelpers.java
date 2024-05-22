@@ -528,7 +528,9 @@ public class IRRuntimeHelpers {
                 return array.toJavaArray();
             case 0:
             case 1:
-                return new IRubyObject[] { array };
+                return signature.rest() == org.jruby.runtime.Signature.Rest.ANON ?
+                        IRBlockBody.toAry(context, array) :
+                        new IRubyObject[] { array };
         }
 
         return singleBlockArgToArray(Helpers.aryToAry(context, array.size() == 1 ? array.eltInternal(0) : array));
