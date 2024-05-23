@@ -2289,7 +2289,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             }
             return Helpers.rbEqual(context, obj, this);
         }
-        return RecursiveComparator.compare(context, sites(context).op_equal, this, obj);
+        return RecursiveComparator.compare(context, sites(context).op_equal, this, obj, false);
     }
 
     public RubyBoolean compare(ThreadContext context, CallSite site, IRubyObject other) {
@@ -2323,7 +2323,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if(!(obj instanceof RubyArray)) {
             return context.fals;
         }
-        return RecursiveComparator.compare(context, sites(context).eql, this, obj);
+        return RecursiveComparator.compare(context, sites(context).eql, this, obj, true);
     }
 
     /** rb_ary_compact_bang
