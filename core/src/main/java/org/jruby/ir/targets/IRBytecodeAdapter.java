@@ -42,6 +42,7 @@ import org.jruby.runtime.Frame;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JavaNameMangler;
+import org.jruby.util.cli.Options;
 import org.jruby.util.collections.IntHashMap;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
@@ -260,7 +261,9 @@ public class IRBytecodeAdapter {
                 for (IntHashMap.Entry<Type> entry : variableTypes.entrySet()) {
                     final int i = entry.getKey();
                     String name = variableNames.get(i);
-                    adapter.local(i, name, entry.getValue());
+                    if (!name.startsWith("$") || Options.JIT_DEBUG.load()) {
+                        adapter.local(i, name, entry.getValue());
+                    }
                 }
             }
         });

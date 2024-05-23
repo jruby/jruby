@@ -25,7 +25,12 @@ public class TemporaryLocalReplacementVariable extends TemporaryLocalVariable im
 
     @Override
     public String getPrefix() {
-        return PREFIX + oldName + "_";
+        return oldName;
+    }
+
+    @Override
+    public String getId() {
+        return oldName;
     }
 
     @Override

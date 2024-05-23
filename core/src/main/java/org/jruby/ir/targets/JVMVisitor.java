@@ -97,7 +97,7 @@ import static org.jruby.util.CodegenUtils.sig;
 public class JVMVisitor extends IRVisitor {
 
     private static final Logger LOG = LoggerFactory.getLogger(JVMVisitor.class);
-    public static final String DYNAMIC_SCOPE = "$dynamicScope";
+    public static final String DYNAMIC_SCOPE = "variableStore";
     private static final boolean DEBUG = false;
     public static final String BLOCK_ARG_NAME = "blockArg";
     public static final String SELF_BLOCK_NAME = "selfBlock";
