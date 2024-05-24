@@ -508,14 +508,14 @@ public class JVMVisitor extends IRVisitor {
     }
 
     protected void emitMethod(IRMethod method, JVMVisitorMethodContext context) {
-        String name = JavaNameMangler.encodeScopeForBacktrace(method) + '$' + methodIndex++;
+        String name = JavaNameMangler.encodeNumberedScopeForBacktrace(method, methodIndex++);
 
         emitWithSignatures(method, context, name);
     }
 
     protected void emitMethodJIT(IRMethod method, JVMVisitorMethodContext context) {
         String clsName = jvm.scriptToClass(method.getFile());
-        String name = JavaNameMangler.encodeScopeForBacktrace(method) + '$' + methodIndex++;
+        String name = JavaNameMangler.encodeNumberedScopeForBacktrace(method, methodIndex++);
         jvm.pushscript(this, clsName, method.getFile());
 
         emitWithSignatures(method, context, name);
@@ -526,7 +526,7 @@ public class JVMVisitor extends IRVisitor {
 
     protected void emitBlockJIT(IRClosure closure, JVMVisitorMethodContext context) {
         String clsName = jvm.scriptToClass(closure.getFile());
-        String name = JavaNameMangler.encodeScopeForBacktrace(closure) + '$' + methodIndex++;
+        String name = JavaNameMangler.encodeNumberedScopeForBacktrace(closure, methodIndex++);
         jvm.pushscript(this, clsName, closure.getFile());
 
         emitScope(closure, name, CLOSURE_SIGNATURE, false, true);
@@ -568,7 +568,7 @@ public class JVMVisitor extends IRVisitor {
     }
 
     protected Handle emitModuleBodyJIT(IRModuleBody method) {
-        String name = JavaNameMangler.encodeScopeForBacktrace(method) + '$' + methodIndex++;
+        String name = JavaNameMangler.encodeNumberedScopeForBacktrace(method, methodIndex++);
 
         String clsName = jvm.scriptToClass(method.getFile());
         jvm.pushscript(this, clsName, method.getFile());
@@ -598,7 +598,7 @@ public class JVMVisitor extends IRVisitor {
 
     protected Handle emitClosure(IRClosure closure, boolean print) {
         /* Compile the closure like a method */
-        String name = JavaNameMangler.encodeScopeForBacktrace(closure) + '$' + methodIndex++;
+        String name = JavaNameMangler.encodeNumberedScopeForBacktrace(closure, methodIndex++);
 
         emitScope(closure, name, CLOSURE_SIGNATURE, false, print);
 
@@ -615,7 +615,7 @@ public class JVMVisitor extends IRVisitor {
     }
 
     protected Handle emitModuleBody(IRModuleBody method) {
-        String name = JavaNameMangler.encodeScopeForBacktrace(method) + '$' + methodIndex++;
+        String name = JavaNameMangler.encodeNumberedScopeForBacktrace(method, methodIndex++);
 
         Signature signature = signatureFor(method, false);
         emitScope(method, name, signature, false, true);
