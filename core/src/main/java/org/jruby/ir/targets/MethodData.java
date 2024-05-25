@@ -33,7 +33,7 @@ public class MethodData {
             String argName = signature.argName(i);
             argName = switch (argName) {
                 case "self" -> "self";
-                case "blockArg" -> "&";
+                case "blockArg" -> JVMVisitor.BLOCK_ARG_LOCAL_NAME;
                 default -> "$" + argName;
             };
             local(argName, Type.getType(signature.argType(i)));

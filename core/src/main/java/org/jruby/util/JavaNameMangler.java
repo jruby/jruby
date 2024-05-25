@@ -290,6 +290,8 @@ public class JavaNameMangler {
     private static final String SCRIPT_MARKER = "script";
     private static final char DELIMITER = '\u00A0';
 
+    public static final String SCRIPT_METHOD_NAME = RUBY_MARKER + DELIMITER + SCRIPT_MARKER;
+
     public static String encodeNumberedScopeForBacktrace(IRScope scope, int number) {
         return encodeScopeForBacktrace(scope) + DELIMITER + '#' + number;
     }
@@ -316,7 +318,7 @@ public class JavaNameMangler {
         } else if (scope instanceof IRModuleBody) {
             base = RUBY_MARKER + DELIMITER + MODULE_MARKER + DELIMITER + mangleMethodNameInternal(scope.getId());
         } else if (scope instanceof IRScriptBody) {
-            base = RUBY_MARKER + DELIMITER + SCRIPT_MARKER;
+            base = SCRIPT_METHOD_NAME;
         } else {
             throw new IllegalStateException("unknown scope type for backtrace encoding: " + scope.getClass());
         }

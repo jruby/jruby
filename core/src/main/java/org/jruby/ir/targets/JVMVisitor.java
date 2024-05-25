@@ -100,6 +100,7 @@ public class JVMVisitor extends IRVisitor {
     public static final String DYNAMIC_SCOPE = "variableStore";
     private static final boolean DEBUG = false;
     public static final String BLOCK_ARG_NAME = "blockArg";
+    public static final String BLOCK_ARG_LOCAL_NAME = "&";
     public static final String SELF_BLOCK_NAME = "selfBlock";
     public static final String SUPER_NAME_NAME = "superName";
 
@@ -2131,7 +2132,7 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void ReifyClosureInstr(ReifyClosureInstr reifyclosureinstr) {
         jvmMethod().loadContext();
-        jvmLoadLocal("$blockArg");
+        jvmLoadLocal(BLOCK_ARG_LOCAL_NAME);
         jvmMethod().invokeIRHelper("newProc", sig(IRubyObject.class, ThreadContext.class, Block.class));
         jvmStoreLocal(reifyclosureinstr.getResult());
     }
