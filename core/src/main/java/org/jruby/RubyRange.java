@@ -73,6 +73,7 @@ import org.jruby.runtime.callsite.RespondToCallSite;
 import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.NewMarshal;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.Numeric;
 import org.jruby.util.TypeConverter;
@@ -1301,6 +1302,21 @@ public class RubyRange extends RubyObject {
             attrs.add(new VariableEntry<Object>("end", range.end));
 
             marshalStream.dumpVariables(attrs);
+        }
+
+        @Override
+        public void marshalTo(Object obj, RubyClass type,
+                              NewMarshal marshalStream, ThreadContext context, NewMarshal.RubyOutputStream out) {
+            RubyRange range = (RubyRange) obj;
+
+            marshalStream.registerLinkTarget(range);
+            List<Variable<Object>> attrs = range.getMarshalVariableList();
+
+            attrs.add(new VariableEntry<Object>("excl", range.isExclusive ? context.tru : context.fals));
+            attrs.add(new VariableEntry<Object>("begin", range.begin));
+            attrs.add(new VariableEntry<Object>("end", range.end));
+
+            marshalStream.dumpVariables(context, out, attrs);
         }
 
         @Override

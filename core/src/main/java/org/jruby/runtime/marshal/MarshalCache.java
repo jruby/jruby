@@ -37,6 +37,7 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 
 import org.jruby.RubySymbol;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
@@ -71,9 +72,21 @@ public class MarshalCache {
         output.writeInt(registeredIndex(value));
     }
 
+    public void writeLink(NewMarshal output, ThreadContext context, NewMarshal.RubyOutputStream out, IRubyObject value) {
+        assert !(value instanceof RubySymbol) : "Use writeSymbolLink for symbols";
+
+        out.write('@');
+        out.write(registeredIndex(value));
+    }
+
     public void writeSymbolLink(MarshalStream output, ByteList sym) throws IOException {
         output.write(';');
         output.writeInt(registeredSymbolIndex(sym));
+    }
+
+    public void writeSymbolLink(NewMarshal output, ThreadContext context, NewMarshal.RubyOutputStream out, ByteList sym) {
+        out.write(';');
+        output.writeInt(out, registeredSymbolIndex(sym));
     }
 
     private int registeredIndex(IRubyObject value) {

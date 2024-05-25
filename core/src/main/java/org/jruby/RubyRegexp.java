@@ -66,6 +66,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.MarshalEncoding;
 import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.NewMarshal;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
@@ -1871,6 +1872,17 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         if (regexp.getOptions().isFixed()) options |= RE_FIXED;
 
         output.writeByte(options);
+    }
+
+    public static void marshalTo(RubyRegexp regexp, NewMarshal output, NewMarshal.RubyOutputStream out) {
+        output.registerLinkTarget(regexp);
+        output.writeString(out, regexp.str);
+
+        int options = regexp.pattern.getOptions() & EMBEDDABLE;
+
+        if (regexp.getOptions().isFixed()) options |= RE_FIXED;
+
+        output.writeByte(out, options);
     }
 
     @Deprecated

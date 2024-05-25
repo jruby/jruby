@@ -58,6 +58,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.NewMarshal;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.RecursiveComparator;
@@ -2476,6 +2477,19 @@ public class RubyHash extends RubyObject implements Map {
         }
 
         if (hash.ifNone != UNDEF) output.dumpObject(hash.ifNone);
+    }
+
+    public static void marshalTo(final RubyHash hash, final NewMarshal output, ThreadContext context, NewMarshal.RubyOutputStream out) {
+        output.registerLinkTarget(hash);
+        int hashSize = hash.size();
+        output.writeInt(out, hashSize);
+        try {
+            hash.visitLimited(hash.getRuntime().getCurrentContext(), MarshalDumpVisitor, hashSize, output);
+        } catch (VisitorIOException e) {
+            out.handle((IOException) e.getCause());
+        }
+
+        if (hash.ifNone != UNDEF) output.dumpObject(context, out, hash.ifNone);
     }
 
     private static final VisitorWithState<MarshalStream> MarshalDumpVisitor = new VisitorWithState<MarshalStream>() {

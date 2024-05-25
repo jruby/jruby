@@ -42,10 +42,12 @@ import java.io.OutputStream;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 
+import org.jruby.api.Error;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.NewMarshal;
 import org.jruby.runtime.marshal.UnmarshalStream;
 
 import org.jruby.util.ByteList;
@@ -96,20 +98,16 @@ public class RubyMarshal {
             }
         }
 
-        try {
-            if (io != null) {
-                dumpToStream(runtime, objectToDump, outputStream(context, io), depthLimit);
-                return io;
-            }
-            
-            ByteArrayOutputStream stringOutput = new ByteArrayOutputStream();
-            dumpToStream(runtime, objectToDump, stringOutput, depthLimit);
-            RubyString result = RubyString.newString(runtime, new ByteList(stringOutput.toByteArray(), false));
-            
-            return result;
-        } catch (IOException ioe) {
-            throw runtime.newIOErrorFromException(ioe);
+        if (io != null) {
+            dumpToStream(context, objectToDump, outputStream(context, io), depthLimit);
+            return io;
         }
+
+        ByteArrayOutputStream stringOutput = new ByteArrayOutputStream();
+        dumpToStream(context, objectToDump, stringOutput, depthLimit);
+        RubyString result = RubyString.newString(runtime, new ByteList(stringOutput.toByteArray(), false));
+
+        return result;
     }
 
     @Deprecated
@@ -170,10 +168,12 @@ public class RubyMarshal {
         return new IOOutputStream(out, true, false); // respond_to?(:write) already checked
     }
 
-    private static void dumpToStream(Ruby runtime, IRubyObject object, OutputStream rawOutput, int depthLimit)
-        throws IOException {
-        MarshalStream output = new MarshalStream(runtime, rawOutput, depthLimit);
-        output.dumpObject(object);
+    private static void dumpToStream(ThreadContext context, IRubyObject object, OutputStream rawOutput, int depthLimit) {
+        NewMarshal output = new NewMarshal(depthLimit);
+        NewMarshal.RubyOutputStream out = new NewMarshal.RubyOutputStream(rawOutput, ioe -> {throw context.runtime.newIOErrorFromException(ioe);});
+
+        output.start(out);
+        output.dumpObject(context, out, object);
     }
 
     private static void setBinmodeIfPossible(ThreadContext context, IRubyObject io) {

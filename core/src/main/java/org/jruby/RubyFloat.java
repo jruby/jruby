@@ -55,6 +55,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.NewMarshal;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertDouble;
@@ -1213,6 +1214,11 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     public static void marshalTo(RubyFloat aFloat, MarshalStream output) throws java.io.IOException {
         output.registerLinkTarget(aFloat);
         output.writeString(aFloat.marshalDump());
+    }
+
+    public static void marshalTo(RubyFloat aFloat, NewMarshal output, ThreadContext context, NewMarshal.RubyOutputStream out) {
+        output.registerLinkTarget(aFloat);
+        output.writeString(out, aFloat.marshalDump());
     }
 
     public static RubyFloat unmarshalFrom(UnmarshalStream input) throws java.io.IOException {

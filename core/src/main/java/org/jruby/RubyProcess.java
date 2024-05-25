@@ -61,6 +61,7 @@ import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.runtime.marshal.CoreObjectType;
 import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.NewMarshal;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ShellLauncher;
 import org.jruby.exceptions.RaiseException;
@@ -174,6 +175,21 @@ public class RubyProcess {
             attrs.add(new VariableEntry("pid", runtime.newFixnum(status.pid)));
 
             marshalStream.dumpVariables(attrs);
+        }
+
+        @Override
+        public void marshalTo(Object obj, RubyClass type,
+                              NewMarshal marshalStream, ThreadContext context, NewMarshal.RubyOutputStream out) {
+            RubyStatus status = (RubyStatus) obj;
+
+            marshalStream.registerLinkTarget(status);
+            List<Variable<Object>> attrs = status.getMarshalVariableList();
+
+            Ruby runtime = context.runtime;
+            attrs.add(new VariableEntry("status", runtime.newFixnum(status.status)));
+            attrs.add(new VariableEntry("pid", runtime.newFixnum(status.pid)));
+
+            marshalStream.dumpVariables(context, out, attrs);
         }
 
         @Override

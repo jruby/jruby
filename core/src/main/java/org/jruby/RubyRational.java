@@ -46,6 +46,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.NewMarshal;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
@@ -1466,6 +1467,10 @@ public class RubyRational extends RubyNumeric {
         @Override
         public void marshalTo(Ruby runtime, Object obj, RubyClass type, MarshalStream marshalStream) {
             throw typeError(runtime.getCurrentContext(), "marshal_dump should be used instead for Rational");
+        }
+        @Override
+        public void marshalTo(Object obj, RubyClass type, NewMarshal marshalStream, ThreadContext context, NewMarshal.RubyOutputStream out) {
+            throw typeError(context, "marshal_dump should be used instead for Rational");
         }
 
         @Override

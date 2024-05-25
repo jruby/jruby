@@ -56,7 +56,6 @@ import java.util.stream.Stream;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.api.Error;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
@@ -76,6 +75,7 @@ import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.NewMarshal;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.specialized.RubyArrayOneObject;
 import org.jruby.specialized.RubyArraySpecialized;
@@ -5241,6 +5241,21 @@ float_loop:
         try {
             for (int i = 0; i < length; i++) {
                 output.dumpObject(array.eltInternal(i));
+            }
+        } catch (ArrayIndexOutOfBoundsException ex) {
+            throw concurrentModification(array.getRuntime(), ex);
+        }
+    }
+
+    public static void marshalTo(RubyArray array, NewMarshal output, ThreadContext context, NewMarshal.RubyOutputStream out) {
+        output.registerLinkTarget(array);
+
+        int length = array.realLength;
+
+        output.writeInt(out, length);
+        try {
+            for (int i = 0; i < length; i++) {
+                output.dumpObject(context, out, array.eltInternal(i));
             }
         } catch (ArrayIndexOutOfBoundsException ex) {
             throw concurrentModification(array.getRuntime(), ex);
