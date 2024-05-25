@@ -1349,10 +1349,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public List<Variable<Object>> getVariableList() {
-        Map<String, VariableAccessor> ivarAccessors = metaClass.getVariableAccessorsForRead();
-        ArrayList<Variable<Object>> list = new ArrayList<>(ivarAccessors.size());
-        for (Map.Entry<String, VariableAccessor> entry : ivarAccessors.entrySet()) {
-            Object value = entry.getValue().get(this);
+        var ivarAccessors = metaClass.getVariableAccessorsForRead();
+        var list = new ArrayList<Variable<Object>>(ivarAccessors.size());
+        for (var entry : ivarAccessors.entrySet()) {
+            var value = entry.getValue().get(this);
             if (value == null) continue;
             list.add(new VariableEntry<>(entry.getKey(), value));
         }
@@ -1363,10 +1363,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @see IRubyObject#getMarshalVariableList()
      */
     public List<Variable<Object>> getMarshalVariableList() {
-        Map<String, VariableAccessor> ivarAccessors = metaClass.getVariableAccessorsForRead();
-        ArrayList<Variable<Object>> list = new ArrayList<>(ivarAccessors.size());
+        var ivarAccessors = metaClass.getVariableAccessorsForRead();
+        var list = new ArrayList<Variable<Object>>(ivarAccessors.size());
         for (Map.Entry<String, VariableAccessor> entry : ivarAccessors.entrySet()) {
-            Object value = entry.getValue().get(this);
+            var value = entry.getValue().get(this);
             if (value == null || !(value instanceof Serializable)) continue;
             list.add(new VariableEntry<>(entry.getKey(), value));
         }
@@ -1378,10 +1378,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public List<String> getVariableNameList() {
-        Map<String, VariableAccessor> ivarAccessors = metaClass.getVariableAccessorsForRead();
-        ArrayList<String> list = new ArrayList<>(ivarAccessors.size());
-        for (Map.Entry<String, VariableAccessor> entry : ivarAccessors.entrySet()) {
-            Object value = entry.getValue().get(this);
+        var ivarAccessors = metaClass.getVariableAccessorsForRead();
+        var list = new ArrayList<String>(ivarAccessors.size());
+        for (var entry : ivarAccessors.entrySet()) {
+            var value = entry.getValue().get(this);
             if (value == null) continue;
             list.add(entry.getKey());
         }
