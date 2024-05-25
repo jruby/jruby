@@ -218,7 +218,7 @@ public class JVMVisitor extends IRVisitor {
 
         if (fullIC.needsBinding() || !fullIC.hasExplicitCallProtocol()) {
             // declare dynamic scope local only if we'll need it
-            jvm.methodData().local("$dynamicScope", Type.getType(DynamicScope.class));
+            jvm.methodData().local(DYNAMIC_SCOPE, Type.getType(DynamicScope.class));
         }
 
         if (!fullIC.hasExplicitCallProtocol()) {
