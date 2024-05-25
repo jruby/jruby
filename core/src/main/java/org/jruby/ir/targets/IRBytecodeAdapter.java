@@ -50,6 +50,8 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
 import java.lang.invoke.MethodType;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.jruby.util.CodegenUtils.*;
 
@@ -255,15 +257,15 @@ public class IRBytecodeAdapter {
     }
 
     public void endMethod() {
-        adapter.end(new Runnable() {
-            public void run() {
-                for (IntHashMap.Entry<Type> entry : variableTypes.entrySet()) {
-                    final int i = entry.getKey();
-                    String name = variableNames.get(i);
-                    adapter.local(i, name, entry.getValue());
-                }
+        adapter.end(() -> variableTypes.forEach((i, type) -> {
+            String name = variableNames.get(i);
+            Label varStart = varStarts.get(i);
+            if (varStart == null) {
+                adapter.local(i, name, type);
+            } else {
+                adapter.local(i, name, type, varStart);
             }
-        });
+        }));
     }
 
     public void loadLocal(int i) {
@@ -333,7 +335,14 @@ public class IRBytecodeAdapter {
         adapter.astore(signature.argOffset("args"));
     }
 
+    private Map<Integer, Label> varStarts = new HashMap<>();
+
     public void storeLocal(int i) {
+        varStarts.computeIfAbsent(i, (Integer) -> {
+            Label varStart = newLabel();
+            adapter.label(varStart);
+            return varStart;
+        });
         adapter.astore(i);
     }
 

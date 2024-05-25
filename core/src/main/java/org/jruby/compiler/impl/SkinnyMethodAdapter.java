@@ -642,6 +642,10 @@ public final class SkinnyMethodAdapter extends MethodVisitor {
         getMethodVisitor().visitLocalVariable(name, type.getDescriptor(), null, start, end, index);
     }
 
+    public void local(int index, String name, Type type, Label start) {
+        getMethodVisitor().visitLocalVariable(name, type.getDescriptor(), null, start, end, index);
+    }
+
     public void line(int line) {
         Label label = new Label();
         label(label);
