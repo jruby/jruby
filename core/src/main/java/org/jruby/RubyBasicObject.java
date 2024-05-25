@@ -43,7 +43,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -1364,12 +1363,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @see IRubyObject#getMarshalVariableList()
      */
     public List<Variable<Object>> getMarshalVariableList() {
-        return metaClass.getVariableAccessorsForRead()
-                .entrySet()
-                .stream()
-                .map(entry -> (Variable<Object>) new VariableEntry<>(entry.getKey(), entry.getValue().get(this)))
-                .filter(var -> var.getValue() != null && var.getValue() instanceof Serializable)
-                .toList();
+        Map<String, VariableAccessor> ivarAccessors = metaClass.getVariableAccessorsForRead();
+        ArrayList<Variable<Object>> list = new ArrayList<>(ivarAccessors.size());
+        for (Map.Entry<String, VariableAccessor> entry : ivarAccessors.entrySet()) {
+            Object value = entry.getValue().get(this);
+            if (value == null || !(value instanceof Serializable)) continue;
+            list.add(new VariableEntry<>(entry.getKey(), value));
+        }
+        return list;
     }
 
     /**
@@ -1377,12 +1378,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public List<String> getVariableNameList() {
-        return metaClass.getVariableAccessorsForRead()
-                .entrySet()
-                .stream()
-                .filter(entry -> entry.getValue().get(this) != null)
-                .map(entry -> entry.getKey())
-                .toList();
+        Map<String, VariableAccessor> ivarAccessors = metaClass.getVariableAccessorsForRead();
+        ArrayList<String> list = new ArrayList<>(ivarAccessors.size());
+        for (Map.Entry<String, VariableAccessor> entry : ivarAccessors.entrySet()) {
+            Object value = entry.getValue().get(this);
+            if (value == null) continue;
+            list.add(entry.getKey());
+        }
+        return list;
     }
 
     /**
