@@ -278,14 +278,16 @@ public class NewMarshal {
         }
     }
 
-    public static String getPathFromClass(ThreadContext context, RubyModule clazz) {
+    public static RubySymbol getPathFromClass(ThreadContext context, RubyModule clazz) {
         Ruby runtime = context.runtime;
-        RubyString path = clazz.rubyName();
+        RubySymbol pathSym = clazz.symbolName();
 
-        if (path.charAt(0) == '#') {
+        if (pathSym == null) {
             String type = clazz.isClass() ? "class" : "module";
             throw typeError(context, str(runtime, "can't dump anonymous " + type + " ", types(runtime, clazz)));
         }
+
+        String path = pathSym.idString();
         
         RubyModule real = clazz.isModule() ? clazz : ((RubyClass)clazz).getRealClass();
 
@@ -293,10 +295,10 @@ public class NewMarshal {
         // will this fail on?  If there is a failing case then passing asJavaString may be broken since it will not be
         // a properly encoded string.  If this is an issue we should make a clazz.IdPath where all segments are returned
         // by their id names.
-        if (runtime.getClassFromPath(path.asJavaString()) != real) {
+        if (runtime.getClassFromPath(path) != real) {
             throw typeError(context, str(runtime, types(runtime, clazz), " can't be referred"));
         }
-        return path.asJavaString();
+        return pathSym;
     }
     
     private void writeObjectData(ThreadContext context, RubyOutputStream out, IRubyObject value) {
