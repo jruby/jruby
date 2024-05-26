@@ -61,6 +61,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.RefinedCachingCallSite;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.MarshalEncoding;
+import org.jruby.runtime.marshal.MarshalCommon;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
@@ -1005,12 +1006,16 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         private int threshold;
         private final float loadFactor;
         private final Ruby runtime;
+        private final RubySymbol encodingSymbolE;
+        private final RubySymbol encodingSymbol;
 
         public SymbolTable(Ruby runtime) {
             this.runtime = runtime;
             this.loadFactor = DEFAULT_LOAD_FACTOR;
             this.threshold = (int)(DEFAULT_INITIAL_CAPACITY * DEFAULT_LOAD_FACTOR);
             this.symbolTable = new SymbolEntry[DEFAULT_INITIAL_CAPACITY];
+            this.encodingSymbolE = createSymbol(MarshalCommon.SYMBOL_ENCODING_SPECIAL, false);
+            this.encodingSymbol = createSymbol(MarshalCommon.SYMBOL_ENCODING, false);
         }
 
         // note all fields are final -- rehash creates new entries when necessary.
@@ -1062,6 +1067,20 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
             if (symbol == null) symbol = createSymbol(name, symbolBytesFromString(runtime, name), hash, hard);
 
             return symbol;
+        }
+
+        /**
+         * Create a new symbol without looking for an existing one.
+         *
+         * Primarily used for core symbols used repeatedly from Java. Use only when you know there is no existing
+         * symbol.
+         *
+         * @param name name of the symbol
+         * @param hard whether to mark it as a hard reference
+         * @return a new symbol after inserting it into the symbol table
+         */
+        public RubySymbol createSymbol(String name, boolean hard) {
+            return createSymbol(name, symbolBytesFromString(runtime, name), javaStringHashCode(name), hard);
         }
 
         public RubySymbol getSymbol(ByteList bytes) {
@@ -1190,6 +1209,14 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
             }
 
             return symbol;
+        }
+
+        public RubySymbol getEncodingSymbolE() {
+            return encodingSymbolE;
+        }
+
+        public RubySymbol getEncodingSymbol() {
+            return encodingSymbol;
         }
 
         private static SymbolEntry getEntryFromTable(SymbolEntry[] table, int hash) {

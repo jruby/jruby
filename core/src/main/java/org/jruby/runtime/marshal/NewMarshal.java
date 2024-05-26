@@ -557,13 +557,13 @@ public class NewMarshal {
     public void writeEncoding(ThreadContext context, RubyOutputStream out, Encoding encoding) {
         Ruby runtime = context.runtime;
         if (encoding == null || encoding == USASCIIEncoding.INSTANCE) {
-            writeAndRegisterSymbol(out, RubySymbol.newSymbol(runtime, SYMBOL_ENCODING_SPECIAL));
+            writeAndRegisterSymbol(out, runtime.getSymbolTable().getEncodingSymbolE());
             writeObjectData(context, out, runtime.getFalse());
         } else if (encoding == UTF8Encoding.INSTANCE) {
-            writeAndRegisterSymbol(out, RubySymbol.newSymbol(runtime, SYMBOL_ENCODING_SPECIAL));
+            writeAndRegisterSymbol(out, runtime.getSymbolTable().getEncodingSymbolE());
             writeObjectData(context, out, runtime.getTrue());
         } else {
-            writeAndRegisterSymbol(out, RubySymbol.newSymbol(runtime, SYMBOL_ENCODING));
+            writeAndRegisterSymbol(out, runtime.getSymbolTable().getEncodingSymbol());
             RubyString encodingString = new RubyString(runtime, runtime.getString(), encoding.getName());
             writeObjectData(context, out, encodingString);
         }

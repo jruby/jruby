@@ -27,7 +27,7 @@ public class MarshalCommon {
     static final char TYPE_IVAR	= 'I';
     static final char TYPE_LINK	= '@';
 
-    static final String SYMBOL_ENCODING_SPECIAL = "E";
-    static final String SYMBOL_ENCODING = "encoding";
+    public static final String SYMBOL_ENCODING_SPECIAL = "E";
+    public static final String SYMBOL_ENCODING = "encoding";
     static final String RUBY2_KEYWORDS_FLAG = "K";
 }
