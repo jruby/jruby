@@ -168,7 +168,7 @@ public class RubyMarshal {
 
     private static void dumpToStream(ThreadContext context, IRubyObject object, OutputStream rawOutput, int depthLimit) {
         NewMarshal output = new NewMarshal(depthLimit);
-        NewMarshal.RubyOutputStream out = new NewMarshal.RubyOutputStream(rawOutput, ioe -> {throw context.runtime.newIOErrorFromException(ioe);});
+        NewMarshal.RubyOutputStream out = new NewMarshal.RubyOutputStream(rawOutput, context);
 
         output.start(out);
         output.dumpObject(context, out, object);

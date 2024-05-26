@@ -66,7 +66,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.Map;
-import java.util.function.Consumer;
 
 import static org.jruby.RubyBasicObject.getMetaClass;
 import static org.jruby.api.Convert.castToString;
@@ -97,11 +96,11 @@ public class NewMarshal {
 
     public static class RubyOutputStream extends OutputStream {
         private final OutputStream wrap;
-        private final Consumer<IOException> handler;
+        private final ThreadContext context;
 
-        public RubyOutputStream(OutputStream wrap, Consumer<IOException> handler) {
+        public RubyOutputStream(OutputStream wrap, ThreadContext context) {
             this.wrap = wrap;
-            this.handler = handler;
+            this.context = context;
         }
 
         public void write(int b) {
@@ -129,7 +128,7 @@ public class NewMarshal {
         }
 
         public void handle(IOException ioe) {
-            handler.accept(ioe);
+            throw context.runtime.newIOErrorFromException(ioe);
         }
     }
 
