@@ -84,7 +84,7 @@ public class RubyMarshal {
 
         if (argc >= 2) {
             IRubyObject arg1 = args[1];
-            if (sites(context).respond_to_write.respondsTo(context, arg1, arg1)) {
+            if (arg1 instanceof RubyIO || sites(context).respond_to_write.respondsTo(context, arg1, arg1)) {
                 io = arg1;
             } else if (arg1 instanceof RubyFixnum fixnum) {
                 depthLimit = (int) fixnum.getLongValue();
@@ -96,13 +96,25 @@ public class RubyMarshal {
             }
         }
 
+        OutputStream outputStream;
+        TransparentByteArrayOutputStream stringOutput = null;
+
         if (io != null) {
-            dumpToStream(context, objectToDump, outputStream(context, io), depthLimit);
+            if (io instanceof RubyIO rubyIO) {
+                outputStream = rubyIO.getOutStream();
+            } else {
+                outputStream = outputStream(context, io);
+            }
+        } else {
+            outputStream = stringOutput = new TransparentByteArrayOutputStream();
+        }
+
+        dumpToStream(context, objectToDump, outputStream, depthLimit);
+
+        if (io != null) {
             return io;
         }
 
-        TransparentByteArrayOutputStream stringOutput = new TransparentByteArrayOutputStream();
-        dumpToStream(context, objectToDump, stringOutput, depthLimit);
         RubyString result = RubyString.newString(runtime, new ByteList(stringOutput.getRawBytes(), 0, stringOutput.size(), false));
 
         return result;
