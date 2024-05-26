@@ -34,7 +34,6 @@
 package org.jruby;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -53,6 +52,7 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.IOInputStream;
 import org.jruby.util.IOOutputStream;
+import org.jruby.util.io.TransparentByteArrayOutputStream;
 
 import static org.jruby.api.Error.typeError;
 
@@ -103,9 +103,9 @@ public class RubyMarshal {
             return io;
         }
 
-        ByteArrayOutputStream stringOutput = new ByteArrayOutputStream();
+        TransparentByteArrayOutputStream stringOutput = new TransparentByteArrayOutputStream();
         dumpToStream(context, objectToDump, stringOutput, depthLimit);
-        RubyString result = RubyString.newString(runtime, new ByteList(stringOutput.toByteArray(), false));
+        RubyString result = RubyString.newString(runtime, new ByteList(stringOutput.getRawBytes(), 0, stringOutput.size(), false));
 
         return result;
     }
