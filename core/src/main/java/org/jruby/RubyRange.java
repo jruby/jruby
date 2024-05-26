@@ -1310,13 +1310,12 @@ public class RubyRange extends RubyObject {
             RubyRange range = (RubyRange) obj;
 
             marshalStream.registerLinkTarget(range);
-            List<Variable<Object>> attrs = range.getMarshalVariableList();
 
-            attrs.add(new VariableEntry<Object>("excl", range.isExclusive ? context.tru : context.fals));
-            attrs.add(new VariableEntry<Object>("begin", range.begin));
-            attrs.add(new VariableEntry<Object>("end", range.end));
-
-            marshalStream.dumpVariables(context, out, attrs);
+            marshalStream.dumpVariables(context, out, range, 3, (marshal, c, o, v, receiver) -> {
+                receiver.receive(marshal, c, o, "excl", v.isExclusive ? c.tru : c.fals);
+                receiver.receive(marshal, c, o, "begin", v.begin);
+                receiver.receive(marshal, c, o, "end", v.end);
+            });
         }
 
         @Override

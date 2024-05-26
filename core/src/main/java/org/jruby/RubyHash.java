@@ -2484,7 +2484,13 @@ public class RubyHash extends RubyObject implements Map {
         int hashSize = hash.size();
         output.writeInt(out, hashSize);
         try {
-            hash.visitLimited(hash.getRuntime().getCurrentContext(), MarshalDumpVisitor, hashSize, output);
+            hash.visitLimited(hash.getRuntime().getCurrentContext(), new VisitorWithState<NewMarshal>() {
+                @Override
+                public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, NewMarshal state) {
+                    state.dumpObject(context, out, key);
+                    state.dumpObject(context, out, value);
+                }
+            }, hashSize, output);
         } catch (VisitorIOException e) {
             out.handle((IOException) e.getCause());
         }

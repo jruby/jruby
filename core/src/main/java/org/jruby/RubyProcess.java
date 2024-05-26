@@ -183,13 +183,13 @@ public class RubyProcess {
             RubyStatus status = (RubyStatus) obj;
 
             marshalStream.registerLinkTarget(status);
-            List<Variable<Object>> attrs = status.getMarshalVariableList();
 
-            Ruby runtime = context.runtime;
-            attrs.add(new VariableEntry("status", runtime.newFixnum(status.status)));
-            attrs.add(new VariableEntry("pid", runtime.newFixnum(status.pid)));
-
-            marshalStream.dumpVariables(context, out, attrs);
+            marshalStream.dumpVariables(context, out, status, 3, (marshal, c, o, v, receiver) -> {
+                Ruby runtime = c.runtime;
+                // TODO: marshal these values directly
+                receiver.receive(marshal, c, o, "status", runtime.newFixnum(v.status));
+                receiver.receive(marshal, c, o, "pid", runtime.newFixnum(v.pid));
+            });
         }
 
         @Override

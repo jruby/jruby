@@ -72,11 +72,11 @@ public class MarshalCache {
         output.writeInt(registeredIndex(value));
     }
 
-    public void writeLink(NewMarshal output, ThreadContext context, NewMarshal.RubyOutputStream out, IRubyObject value) {
+    public void writeLink(NewMarshal output, NewMarshal.RubyOutputStream out, IRubyObject value) {
         assert !(value instanceof RubySymbol) : "Use writeSymbolLink for symbols";
 
         out.write('@');
-        out.write(registeredIndex(value));
+        output.writeInt(out, registeredIndex(value));
     }
 
     public void writeSymbolLink(MarshalStream output, ByteList sym) throws IOException {
@@ -84,7 +84,7 @@ public class MarshalCache {
         output.writeInt(registeredSymbolIndex(sym));
     }
 
-    public void writeSymbolLink(NewMarshal output, ThreadContext context, NewMarshal.RubyOutputStream out, ByteList sym) {
+    public void writeSymbolLink(NewMarshal output, NewMarshal.RubyOutputStream out, ByteList sym) {
         out.write(';');
         output.writeInt(out, registeredSymbolIndex(sym));
     }

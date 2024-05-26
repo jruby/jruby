@@ -193,10 +193,10 @@ public class RubyException extends RubyObject {
         public void marshalTo(RubyException exc, RubyClass type,
                               NewMarshal marshalStream, ThreadContext context, NewMarshal.RubyOutputStream out) {
             marshalStream.registerLinkTarget(exc);
-            List<Variable<Object>> attrs = exc.getMarshalVariableList();
-            attrs.add(new VariableEntry<>("mesg", exc.getMessage()));
-            attrs.add(new VariableEntry<>("bt", exc.getBacktrace()));
-            marshalStream.dumpVariables(context, out, attrs);
+            marshalStream.dumpVariables(context, out, exc, 2, (marshal, c, o, v, receiver) -> {
+                receiver.receive(marshal, c, o, "mesg", v.getMessage());
+                receiver.receive(marshal, c, o, "bt", v.getBacktrace());
+            });
         }
 
         @Override

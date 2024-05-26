@@ -156,12 +156,11 @@ public class RubySystemCallError extends RubyStandardError {
             RubySystemCallError exc = (RubySystemCallError) obj;
             marshalStream.registerLinkTarget(exc);
 
-            List<Variable<Object>> attrs = exc.getMarshalVariableList();
-            attrs.add(new VariableEntry<Object>(
-                    "mesg", exc.message == null ? context.nil : exc.message));
-            attrs.add(new VariableEntry<Object>("errno", exc.errno));
-            attrs.add(new VariableEntry<Object>("bt", exc.getBacktrace()));
-            marshalStream.dumpVariables(context, out, attrs);
+            marshalStream.dumpVariables(context, out, exc, 3, (marshal, c, o, v, receiver) -> {
+                receiver.receive(marshal, c, o, "mesg", v.message == null ? c.nil : v.message);
+                receiver.receive(marshal, c, o, "errno", v.errno);
+                receiver.receive(marshal, c, o, "bt", v.getBacktrace());
+            });
         }
 
         @Override
