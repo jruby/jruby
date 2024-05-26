@@ -66,6 +66,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 import static org.jruby.RubyBasicObject.getMetaClass;
 import static org.jruby.api.Convert.castToString;
@@ -189,6 +190,7 @@ public class NewMarshal {
         }
     }
 
+    IRubyObject currentValue;
     boolean doVariables;
     int variableCount;
 
@@ -212,43 +214,49 @@ public class NewMarshal {
 
         } else {
 
-            doVariables = shouldMarshalEncoding;
-            variableCount = 0;
+            try {
+                var ivarAccessors = checkVariables(value, shouldMarshalEncoding);
 
-            // check if any variables are set and collect size
-            Map<String, VariableAccessor> ivarAccessors = getMetaClass(value).getVariableAccessorsForRead();
-            ivarAccessors.forEach((name, accessor) -> {
-                Object varValue = accessor.get(value);
-                if (!(varValue instanceof Serializable)) return;
-                doVariables = true;
-                variableCount++;
-            });
+                if (doVariables) {
+                    // object has instance vars and isn't a class, get a snapshot to be marshalled
+                    // and output the ivar header here
 
-            if (doVariables) {
-                // object has instance vars and isn't a class, get a snapshot to be marshalled
-                // and output the ivar header here
+                    // write `I' instance var signet if class is NOT a direct subclass of Object
+                    out.write(TYPE_IVAR);
+                    dumpBaseObject(context, out, value, nativeClassIndex);
 
-                // write `I' instance var signet if class is NOT a direct subclass of Object
-                out.write(TYPE_IVAR);
-                dumpBaseObject(context, out, value, nativeClassIndex);
+                    if (shouldMarshalEncoding) {
+                        writeInt(out, variableCount + 1); // vars preceded by encoding
+                        writeEncoding(context, out, ((MarshalEncoding) value).getMarshalEncoding());
+                    } else {
+                        writeInt(out, variableCount);
+                    }
 
-                if (shouldMarshalEncoding) {
-                    writeInt(out, variableCount + 1); // vars preceded by encoding
-                    writeEncoding(context, out, ((MarshalEncoding) value).getMarshalEncoding());
+                    ivarAccessors.forEach(new VariableDumper(context, out, value));
                 } else {
-                    writeInt(out, variableCount);
+                    // no variables, no encoding
+                    dumpBaseObject(context, out, value, nativeClassIndex);
                 }
-
-                ivarAccessors.forEach((name, accessor) -> {
-                    Object varValue = accessor.get(value);
-                    if (!(varValue instanceof Serializable)) return;
-                    dumpVariable(this, context, out, name, varValue);
-                });
-            } else {
-                // no variables, no encoding
-                dumpBaseObject(context, out, value, nativeClassIndex);
+            } finally {
+                clearVariableState();
             }
+
         }
+    }
+
+    private void clearVariableState() {
+        currentValue = null;
+    }
+
+    private Map<String, VariableAccessor> checkVariables(IRubyObject value, boolean shouldMarshalEncoding) {
+        currentValue = value;
+        doVariables = shouldMarshalEncoding;
+        variableCount = 0;
+
+        // check if any variables are set and collect size
+        var ivarAccessors = getMetaClass(value).getVariableAccessorsForRead();
+        ivarAccessors.forEach(this::checkVariablesForMarshal);
+        return ivarAccessors;
     }
 
     private void dumpBaseObject(ThreadContext context, RubyOutputStream out, IRubyObject value, ClassIndex nativeClassIndex) {
@@ -452,28 +460,21 @@ public class NewMarshal {
         RubyString marshaled = castToString(context, dumpResult);
 
         if (marshaled.hasVariables()) {
-            var ivarAccessors = getMetaClass(marshaled).getVariableAccessorsForRead();
-            var entries = ivarAccessors.entrySet();
+            try {
+                var ivarAccessors = countVariables(marshaled);
 
-            int size = 0;
-            for (var entry : entries) {
-                Object varValue = entry.getValue().get(marshaled);
-                if (!(varValue instanceof Serializable)) continue;
-                size += 1;
-            }
+                if (variableCount > 0) {
+                    out.write(TYPE_IVAR);
+                    dumpUserdefBase(out, runtime, klass, marshaled);
 
-            if (size > 0) {
-                out.write(TYPE_IVAR);
-                dumpUserdefBase(out, runtime, klass, marshaled);
+                    writeInt(out, variableCount);
 
-                writeInt(out, size);
-                for (var entry : entries) {
-                    Object varValue = entry.getValue().get(marshaled);
-                    if (!(varValue instanceof Serializable)) continue;
-                    dumpVariable(this, context, out, entry.getKey(), varValue);
+                    ivarAccessors.forEach(new VariableDumper(context, out, marshaled));
+                } else {
+                    dumpUserdefBase(out, runtime, klass, marshaled);
                 }
-            } else {
-                dumpUserdefBase(out, runtime, klass, marshaled);
+            } finally {
+                clearVariableState();
             }
         } else {
             dumpUserdefBase(out, runtime, klass, marshaled);
@@ -507,21 +508,30 @@ public class NewMarshal {
     }
 
     public void dumpVariables(ThreadContext context, RubyOutputStream out, IRubyObject value, int extraSize) {
-        Map<String, VariableAccessor> ivarAccessors = getMetaClass(value).getVariableAccessorsForRead();
-        int size = extraSize;
-        var entries = ivarAccessors.entrySet();
-        for (var entry : entries) {
-            Object varValue = entry.getValue().get(value);
-            if (varValue == null || !(varValue instanceof Serializable)) continue;
-            size++;
+        try {
+            Map<String, VariableAccessor> ivarAccessors = countVariables(value, extraSize);
+
+            writeInt(out, variableCount);
+
+            ivarAccessors.forEach(new VariableDumper(context, out, value));
+        } finally {
+            clearVariableState();
         }
-        writeInt(out, size);
-        for (var entry : entries) {
-            Object varValue = entry.getValue().get(value);
-            if (varValue == null || !(varValue instanceof Serializable)) continue;
-            String name = entry.getKey();
-            dumpVariable(this, context, out, name, varValue);
-        }
+    }
+
+    private Map<String, VariableAccessor> countVariables(IRubyObject value) {
+        return countVariables(value, 0);
+    }
+
+    private Map<String, VariableAccessor> countVariables(IRubyObject value, int extraSize) {
+        currentValue = value;
+        variableCount = extraSize;
+
+        var ivarAccessors = getMetaClass(value).getVariableAccessorsForRead();
+
+        ivarAccessors.forEach(this::countVariablesForMarshal);
+
+        return ivarAccessors;
     }
 
     public interface VariableReceiver {
@@ -644,13 +654,35 @@ public class NewMarshal {
         out.write(value);
     }
 
-    @Deprecated
-    public boolean isTainted() {
-        return false;
+    private void checkVariablesForMarshal(String name, VariableAccessor accessor) {
+        Object varValue = accessor.get(currentValue);
+        if (!(varValue instanceof Serializable)) return;
+        doVariables = true;
+        variableCount++;
     }
 
-    @Deprecated
-    public boolean isUntrusted() {
-        return false;
+    private void countVariablesForMarshal(String name, VariableAccessor accessor) {
+        Object varValue = accessor.get(currentValue);
+        if (!(varValue instanceof Serializable)) return;
+        variableCount++;
+    }
+
+    private class VariableDumper implements BiConsumer<String, VariableAccessor> {
+        private final ThreadContext context;
+        private final RubyOutputStream out;
+        private final IRubyObject value;
+
+        public VariableDumper(ThreadContext context, RubyOutputStream out, IRubyObject value) {
+            this.context = context;
+            this.out = out;
+            this.value = value;
+        }
+
+        @Override
+        public void accept(String name, VariableAccessor accessor) {
+            Object varValue = accessor.get(value);
+            if (!(varValue instanceof Serializable)) return;
+            dumpVariable(NewMarshal.this, context, out, name, varValue);
+        }
     }
 }
