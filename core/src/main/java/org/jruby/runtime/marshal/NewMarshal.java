@@ -71,8 +71,6 @@ import java.util.function.BiConsumer;
 import static org.jruby.RubyBasicObject.getMetaClass;
 import static org.jruby.api.Convert.castToString;
 import static org.jruby.api.Error.typeError;
-import static org.jruby.runtime.marshal.MarshalCommon.SYMBOL_ENCODING;
-import static org.jruby.runtime.marshal.MarshalCommon.SYMBOL_ENCODING_SPECIAL;
 import static org.jruby.runtime.marshal.MarshalCommon.TYPE_IVAR;
 import static org.jruby.runtime.marshal.MarshalCommon.TYPE_UCLASS;
 import static org.jruby.runtime.marshal.MarshalCommon.TYPE_USERDEF;
