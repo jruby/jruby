@@ -1216,7 +1216,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         output.writeString(aFloat.marshalDump());
     }
 
-    public static void marshalTo(RubyFloat aFloat, NewMarshal output, ThreadContext context, NewMarshal.RubyOutputStream out) {
+    public static void marshalTo(RubyFloat aFloat, NewMarshal output, NewMarshal.RubyOutputStream out) {
         output.registerLinkTarget(aFloat);
         output.writeString(out, aFloat.marshalDump());
     }

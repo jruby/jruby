@@ -344,16 +344,16 @@ public class NewMarshal {
                 // fall through
             case BIGNUM:
                 out.write('l');
-                RubyBignum.marshalTo((RubyBignum)value, this, context, out);
+                RubyBignum.marshalTo((RubyBignum)value, this, out);
                 return;
             case CLASS:
                 if (((RubyClass)value).isSingleton()) throw typeError(context,"singleton class can't be dumped");
                 out.write('c');
-                RubyClass.marshalTo((RubyClass)value, this, context, out);
+                RubyClass.marshalTo((RubyClass)value, this, out);
                 return;
             case FLOAT:
                 out.write('f');
-                RubyFloat.marshalTo((RubyFloat)value, this, context, out);
+                RubyFloat.marshalTo((RubyFloat)value, this, out);
                 return;
             case HASH: {
                 RubyHash hash = (RubyHash)value;

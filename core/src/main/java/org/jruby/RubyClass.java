@@ -1277,7 +1277,7 @@ public class RubyClass extends RubyModule {
         output.writeString(MarshalStream.getPathFromClass(clazz));
     }
 
-    public static void marshalTo(RubyClass clazz, NewMarshal output, ThreadContext context, NewMarshal.RubyOutputStream out) {
+    public static void marshalTo(RubyClass clazz, NewMarshal output, NewMarshal.RubyOutputStream out) {
         output.registerLinkTarget(clazz);
         output.writeString(out, MarshalStream.getPathFromClass(clazz));
     }

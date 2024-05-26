@@ -1247,7 +1247,7 @@ public class RubyBignum extends RubyInteger {
         }
     }
 
-    public static void marshalTo(RubyBignum bignum, NewMarshal output, ThreadContext context, NewMarshal.RubyOutputStream out) {
+    public static void marshalTo(RubyBignum bignum, NewMarshal output, NewMarshal.RubyOutputStream out) {
         output.registerLinkTarget(bignum);
 
         out.write(bignum.value.signum() >= 0 ? '+' : '-');
