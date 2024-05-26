@@ -86,12 +86,12 @@ import static org.jruby.util.RubyStringBuilder.types;
  * @author Anders
  */
 public class NewMarshal {
-    private final MarshalCache cache;
+    private final NewMarshalCache cache;
     private final int depthLimit;
     private int depth = 0;
 
     public NewMarshal(int depthLimit) {
-        this.cache = new MarshalCache();
+        this.cache = new NewMarshalCache();
         this.depthLimit = depthLimit >= 0 ? depthLimit : Integer.MAX_VALUE;
     }
 
@@ -154,7 +154,7 @@ public class NewMarshal {
         }
     }
 
-    public void registerSymbol(ByteList sym) {
+    public void registerSymbol(RubySymbol sym) {
         cache.registerSymbol(sym);
     }
 
@@ -173,12 +173,12 @@ public class NewMarshal {
         return fixnum.getLongValue() <= RubyFixnum.MAX_MARSHAL_FIXNUM && fixnum.getLongValue() >= RubyFixnum.MIN_MARSHAL_FIXNUM;
     }
 
-    private void writeAndRegisterSymbol(RubyOutputStream out, ByteList sym) {
+    private void writeAndRegisterSymbol(RubyOutputStream out, RubySymbol sym) {
         if (cache.isSymbolRegistered(sym)) {
             cache.writeSymbolLink(this, out, sym);
         } else {
             registerSymbol(sym);
-            dumpSymbol(out, sym);
+            dumpSymbol(out, sym.getBytes());
         }
     }
 
@@ -386,7 +386,7 @@ public class NewMarshal {
                 RubyStruct.marshalTo((RubyStruct)value, this, context, out);
                 return;
             case SYMBOL:
-                writeAndRegisterSymbol(out, ((RubySymbol) value).getBytes());
+                writeAndRegisterSymbol(out, ((RubySymbol) value));
                 return;
             case TRUE:
                 out.write('T');
@@ -415,7 +415,7 @@ public class NewMarshal {
         out.write(TYPE_USRMARSHAL);
         final RubyClass klass = getMetaClass(value);
         final Ruby runtime = context.runtime;
-        writeAndRegisterSymbol(out, RubySymbol.newSymbol(runtime, klass.getRealClass().getName()).getBytes());
+        writeAndRegisterSymbol(out, RubySymbol.newSymbol(runtime, klass.getRealClass().getName()));
 
         IRubyObject marshaled;
         if (entry != null) {
@@ -483,7 +483,7 @@ public class NewMarshal {
 
     private void dumpUserdefBase(RubyOutputStream out, Ruby runtime, RubyClass klass, RubyString marshaled) {
         out.write(TYPE_USERDEF);
-        writeAndRegisterSymbol(out, RubySymbol.newSymbol(runtime, klass.getRealClass().getName()).getBytes());
+        writeAndRegisterSymbol(out, RubySymbol.newSymbol(runtime, klass.getRealClass().getName()));
         writeString(out, marshaled.getByteList());
     }
 
@@ -498,7 +498,7 @@ public class NewMarshal {
         }
         
         // w_symbol
-        writeAndRegisterSymbol(out, RubySymbol.newSymbol(runtime, type.getName()).getBytes());
+        writeAndRegisterSymbol(out, RubySymbol.newSymbol(runtime, type.getName()));
     }
 
     public void dumpVariables(ThreadContext context, RubyOutputStream out, IRubyObject value) {
@@ -538,7 +538,7 @@ public class NewMarshal {
 
     private static void dumpVariable(NewMarshal marshal, ThreadContext context, RubyOutputStream out, String name, Object value) {
         if (value instanceof IRubyObject) {
-            marshal.writeAndRegisterSymbol(out, RubySymbol.newSymbol(context.runtime, name).getBytes());
+            marshal.writeAndRegisterSymbol(out, RubySymbol.newSymbol(context.runtime, name));
             marshal.dumpObject(context, out, (IRubyObject) value);
         }
     }
@@ -546,13 +546,13 @@ public class NewMarshal {
     public void writeEncoding(ThreadContext context, RubyOutputStream out, Encoding encoding) {
         Ruby runtime = context.runtime;
         if (encoding == null || encoding == USASCIIEncoding.INSTANCE) {
-            writeAndRegisterSymbol(out, RubySymbol.newSymbol(runtime, SYMBOL_ENCODING_SPECIAL).getBytes());
+            writeAndRegisterSymbol(out, RubySymbol.newSymbol(runtime, SYMBOL_ENCODING_SPECIAL));
             writeObjectData(context, out, runtime.getFalse());
         } else if (encoding == UTF8Encoding.INSTANCE) {
-            writeAndRegisterSymbol(out, RubySymbol.newSymbol(runtime, SYMBOL_ENCODING_SPECIAL).getBytes());
+            writeAndRegisterSymbol(out, RubySymbol.newSymbol(runtime, SYMBOL_ENCODING_SPECIAL));
             writeObjectData(context, out, runtime.getTrue());
         } else {
-            writeAndRegisterSymbol(out, RubySymbol.newSymbol(runtime, SYMBOL_ENCODING).getBytes());
+            writeAndRegisterSymbol(out, RubySymbol.newSymbol(runtime, SYMBOL_ENCODING));
             RubyString encodingString = new RubyString(runtime, runtime.getString(), encoding.getName());
             writeObjectData(context, out, encodingString);
         }
@@ -580,7 +580,7 @@ public class NewMarshal {
         }
         while(type.isIncluded()) {
             out.write('e');
-            writeAndRegisterSymbol(out, RubySymbol.newSymbol(context.runtime, type.getOrigin().getName()).getBytes());
+            writeAndRegisterSymbol(out, RubySymbol.newSymbol(context.runtime, type.getOrigin().getName()));
             type = type.getSuperClass();
         }
         return type;
@@ -593,7 +593,7 @@ public class NewMarshal {
     public void dumpDefaultObjectHeader(ThreadContext context, RubyOutputStream out, char tp, RubyClass type) {
         dumpExtended(context, out, type);
         out.write(tp);
-        writeAndRegisterSymbol(out, RubySymbol.newSymbol(context.runtime, getPathFromClass(context, type.getRealClass())).getBytes());
+        writeAndRegisterSymbol(out, RubySymbol.newSymbol(context.runtime, getPathFromClass(context, type.getRealClass())));
     }
 
     public void writeString(RubyOutputStream out, String value) {
