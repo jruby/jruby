@@ -190,6 +190,9 @@ public class NewMarshal {
         }
     }
 
+    boolean doVariables;
+    int variableCount;
+
     public void writeDirectly(ThreadContext context, RubyOutputStream out, IRubyObject value) {
         ClassIndex nativeClassIndex;
         boolean shouldMarshalEncoding;
@@ -210,18 +213,17 @@ public class NewMarshal {
 
         } else {
 
-            boolean doVariables = shouldMarshalEncoding;
-            int size = 0;
+            doVariables = shouldMarshalEncoding;
+            variableCount = 0;
 
             // check if any variables are set and collect size
             Map<String, VariableAccessor> ivarAccessors = getMetaClass(value).getVariableAccessorsForRead();
-            var entries = ivarAccessors.entrySet();
-            for (var entry : entries) {
-                Object varValue = entry.getValue().get(value);
-                if (varValue == null || !(varValue instanceof Serializable)) continue;
+            ivarAccessors.forEach((name, accessor) -> {
+                Object varValue = accessor.get(value);
+                if (!(varValue instanceof Serializable)) return;
                 doVariables = true;
-                size++;
-            }
+                variableCount++;
+            });
 
             if (doVariables) {
                 // object has instance vars and isn't a class, get a snapshot to be marshalled
@@ -232,17 +234,17 @@ public class NewMarshal {
                 dumpBaseObject(context, out, value, nativeClassIndex);
 
                 if (shouldMarshalEncoding) {
-                    writeInt(out, size + 1); // vars preceded by encoding
+                    writeInt(out, variableCount + 1); // vars preceded by encoding
                     writeEncoding(context, out, ((MarshalEncoding) value).getMarshalEncoding());
                 } else {
-                    writeInt(out, size);
+                    writeInt(out, variableCount);
                 }
 
-                for (var entry : entries) {
-                    Object varValue = entry.getValue().get(value);
-                    if (varValue == null || !(varValue instanceof Serializable)) continue;
-                    dumpVariable(this, context, out, entry.getKey(), varValue);
-                }
+                ivarAccessors.forEach((name, accessor) -> {
+                    Object varValue = accessor.get(value);
+                    if (!(varValue instanceof Serializable)) return;
+                    dumpVariable(this, context, out, name, varValue);
+                });
             } else {
                 // no variables, no encoding
                 dumpBaseObject(context, out, value, nativeClassIndex);

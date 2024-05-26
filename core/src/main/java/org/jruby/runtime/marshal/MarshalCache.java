@@ -40,10 +40,11 @@ import org.jruby.RubySymbol;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.collections.HashMapInt;
 
 public class MarshalCache {
-    private final Map<IRubyObject, Integer> linkCache = new IdentityHashMap();
-    private final Map<ByteList, Integer> symbolCache = new HashMap();
+    private final HashMapInt linkCache = new HashMapInt<>(true);
+    private final HashMapInt symbolCache = new HashMapInt<ByteList>();
 
     public boolean isRegistered(IRubyObject value) {
         assert !(value instanceof RubySymbol) : "Use isSymbolRegistered for symbol links";
@@ -90,7 +91,7 @@ public class MarshalCache {
     }
 
     private int registeredIndex(IRubyObject value) {
-        return linkCache.get(value).intValue();
+        return linkCache.get(value);
     }
 
     private int registeredSymbolIndex(ByteList sym) {
