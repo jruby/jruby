@@ -1940,7 +1940,9 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         return copy(temp(), putConstant(parent, name, result));
     }
 
+    @Deprecated
     protected abstract Operand putConstant(Y constant, Operand value);
+    protected abstract Operand putConstant(Y constant, CodeBlock value);
 
     protected Operand buildOpAsgnOr(CodeBlock lhs, CodeBlock rhs) {
         Label done = getNewLabel();

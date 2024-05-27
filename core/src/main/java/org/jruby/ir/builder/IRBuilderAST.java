@@ -675,7 +675,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
                 addInstr(new PutClassVariableInstr(classVarDefinitionContainer(), ((ClassVarAsgnNode)node).getName(), rhsVal));
                 break;
             case CONSTDECLNODE:
-                buildConstDeclAssignment((ConstDeclNode) node, rhsVal);
+                buildConstDeclAssignment((ConstDeclNode) node, () -> rhsVal);
                 break;
             case DASGNNODE: {
                 DAsgnNode variable = (DAsgnNode) node;
@@ -745,7 +745,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
                         receiveBlockArg(temp(), argsArray, argIndex, isSplat)));
                 break;
             case CONSTDECLNODE:
-                buildConstDeclAssignment((ConstDeclNode) node, receiveBlockArg(temp(), argsArray, argIndex, isSplat));
+                buildConstDeclAssignment((ConstDeclNode) node, () -> receiveBlockArg(temp(), argsArray, argIndex, isSplat));
                 break;
             case GLOBALASGNNODE:
                 addInstr(new PutGlobalVarInstr(((GlobalAsgnNode)node).getName(),
@@ -1322,17 +1322,27 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     public Operand buildConstDecl(ConstDeclNode node) {
-        return buildConstDeclAssignment(node, build(node.getValueNode()));
+        return buildConstDeclAssignment(node, () -> build(node.getValueNode()));
     }
 
-    public Operand buildConstDeclAssignment(ConstDeclNode constDeclNode, Operand value) {
+    public Operand buildConstDeclAssignment(ConstDeclNode constDeclNode, CodeBlock valueBuilder) {
         Node constNode = constDeclNode.getConstNode();
 
-        if (constNode == null) return putConstant(constDeclNode.getName(), value);
+        if (constNode == null) return putConstant(constDeclNode.getName(), valueBuilder.run());
 
-        return putConstant((Colon3Node) constNode, value);
+        return putConstant((Colon3Node) constNode, valueBuilder);
     }
 
+    protected Operand putConstant(Colon3Node colonNode, CodeBlock valueBuilder) {
+        if (colonNode.getNodeType() == NodeType.COLON2NODE) {
+            Colon2Node colon2Node = (Colon2Node) colonNode;
+            return putConstant(build(colon2Node.getLeftNode()), colon2Node.getName(), valueBuilder.run());
+        } else { // colon3, assign in Object
+            return putConstant(getManager().getObjectClass(), colonNode.getName(), valueBuilder.run());
+        }
+    }
+
+    @Deprecated
     protected Operand putConstant(Colon3Node colonNode, Operand value) {
         if (colonNode.getNodeType() == NodeType.COLON2NODE) {
             Colon2Node colon2Node = (Colon2Node) colonNode;
