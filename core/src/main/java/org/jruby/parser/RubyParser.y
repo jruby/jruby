@@ -3384,7 +3384,6 @@ p_args_tail     : p_rest {
 
 // FindPatternNode - [!null]
 p_find          : p_rest ',' p_args_post ',' p_rest {
-                    p.warn_experimental(@1.start(), "Find pattern is experimental, and the behavior may change in future versions of Ruby!");
                     $$ = p.new_find_pattern_tail(@1.start(), $1, $3, $5);
                 };
 
