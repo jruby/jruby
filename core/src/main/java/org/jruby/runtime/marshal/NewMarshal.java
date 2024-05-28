@@ -602,7 +602,7 @@ public class NewMarshal {
     public void dumpDefaultObjectHeader(ThreadContext context, RubyOutputStream out, char tp, RubyClass type) {
         dumpExtended(context, out, type);
         out.write(tp);
-        writeAndRegisterSymbol(out, RubySymbol.newSymbol(context.runtime, getPathFromClass(context, type.getRealClass())));
+        writeAndRegisterSymbol(out, getPathFromClass(context, type.getRealClass()));
     }
 
     public void writeString(RubyOutputStream out, String value) {
