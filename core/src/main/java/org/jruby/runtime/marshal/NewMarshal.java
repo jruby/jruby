@@ -212,31 +212,29 @@ public class NewMarshal {
 
         } else {
 
-            try {
-                var ivarAccessors = checkVariables(value, shouldMarshalEncoding);
+            var ivarAccessors = checkVariables(value, shouldMarshalEncoding);
+            int size = variableCount;
+            clearVariableState();
 
-                if (doVariables) {
-                    // object has instance vars and isn't a class, get a snapshot to be marshalled
-                    // and output the ivar header here
+            if (doVariables) {
+                // object has instance vars and isn't a class, get a snapshot to be marshalled
+                // and output the ivar header here
 
-                    // write `I' instance var signet if class is NOT a direct subclass of Object
-                    out.write(TYPE_IVAR);
-                    dumpBaseObject(context, out, value, nativeClassIndex);
+                // write `I' instance var signet if class is NOT a direct subclass of Object
+                out.write(TYPE_IVAR);
+                dumpBaseObject(context, out, value, nativeClassIndex);
 
-                    if (shouldMarshalEncoding) {
-                        writeInt(out, variableCount + 1); // vars preceded by encoding
-                        writeEncoding(context, out, ((MarshalEncoding) value).getMarshalEncoding());
-                    } else {
-                        writeInt(out, variableCount);
-                    }
-
-                    ivarAccessors.forEach(new VariableDumper(context, out, value));
+                if (shouldMarshalEncoding) {
+                    writeInt(out, size + 1); // vars preceded by encoding
+                    writeEncoding(context, out, ((MarshalEncoding) value).getMarshalEncoding());
                 } else {
-                    // no variables, no encoding
-                    dumpBaseObject(context, out, value, nativeClassIndex);
+                    writeInt(out, size);
                 }
-            } finally {
-                clearVariableState();
+
+                ivarAccessors.forEach(new VariableDumper(context, out, value));
+            } else {
+                // no variables, no encoding
+                dumpBaseObject(context, out, value, nativeClassIndex);
             }
 
         }
@@ -458,21 +456,19 @@ public class NewMarshal {
         RubyString marshaled = castToString(context, dumpResult);
 
         if (marshaled.hasVariables()) {
-            try {
-                var ivarAccessors = countVariables(marshaled);
+            var ivarAccessors = countVariables(marshaled);
+            int size = variableCount;
+            clearVariableState();
 
-                if (variableCount > 0) {
-                    out.write(TYPE_IVAR);
-                    dumpUserdefBase(out, runtime, klass, marshaled);
+            if (size > 0) {
+                out.write(TYPE_IVAR);
+                dumpUserdefBase(out, runtime, klass, marshaled);
 
-                    writeInt(out, variableCount);
+                writeInt(out, size);
 
-                    ivarAccessors.forEach(new VariableDumper(context, out, marshaled));
-                } else {
-                    dumpUserdefBase(out, runtime, klass, marshaled);
-                }
-            } finally {
-                clearVariableState();
+                ivarAccessors.forEach(new VariableDumper(context, out, marshaled));
+            } else {
+                dumpUserdefBase(out, runtime, klass, marshaled);
             }
         } else {
             dumpUserdefBase(out, runtime, klass, marshaled);
@@ -506,15 +502,13 @@ public class NewMarshal {
     }
 
     public void dumpVariables(ThreadContext context, RubyOutputStream out, IRubyObject value, int extraSize) {
-        try {
-            Map<String, VariableAccessor> ivarAccessors = countVariables(value, extraSize);
+        Map<String, VariableAccessor> ivarAccessors = countVariables(value, extraSize);
+        int size = variableCount;
+        clearVariableState();
 
-            writeInt(out, variableCount);
+        writeInt(out, size);
 
-            ivarAccessors.forEach(new VariableDumper(context, out, value));
-        } finally {
-            clearVariableState();
-        }
+        ivarAccessors.forEach(new VariableDumper(context, out, value));
     }
 
     private Map<String, VariableAccessor> countVariables(IRubyObject value) {
