@@ -38,6 +38,7 @@ import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.NewMarshal;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ArraySupport;
 
@@ -84,6 +85,10 @@ public class RubySet extends RubyObject implements Set {
 
         public void marshalTo(Ruby runtime, Object obj, RubyClass type, MarshalStream marshalStream) throws IOException {
             defaultMarshal.marshalTo(runtime, obj, type, marshalStream);
+        }
+
+        public void marshalTo(Object obj, RubyClass type, NewMarshal marshalStream, ThreadContext context, NewMarshal.RubyOutputStream out) {
+            defaultMarshal.marshalTo(obj, type, marshalStream, context, out);
         }
 
         public Object unmarshalFrom(Ruby runtime, RubyClass type, UnmarshalStream unmarshalStream) throws IOException {

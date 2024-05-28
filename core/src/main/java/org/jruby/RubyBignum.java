@@ -48,6 +48,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.NewMarshal;
 import org.jruby.runtime.marshal.UnmarshalStream;
 
 import static org.jruby.RubyFixnum.zero;
@@ -1243,6 +1244,32 @@ public class RubyBignum extends RubyInteger {
         if (oddLengthNonzeroStart) {
             // Pad with a 0
             output.write(0);
+        }
+    }
+
+    public static void marshalTo(RubyBignum bignum, NewMarshal output, NewMarshal.RubyOutputStream out) {
+        output.registerLinkTarget(bignum);
+
+        out.write(bignum.value.signum() >= 0 ? '+' : '-');
+
+        BigInteger absValue = bignum.value.abs();
+
+        byte[] digits = absValue.toByteArray();
+
+        boolean oddLengthNonzeroStart = (digits.length % 2 != 0 && digits[0] != 0);
+        int shortLength = digits.length / 2;
+        if (oddLengthNonzeroStart) {
+            shortLength++;
+        }
+        output.writeInt(out, shortLength);
+
+        for (int i = 1; i <= shortLength * 2 && i <= digits.length; i++) {
+            out.write(digits[digits.length - i]);
+        }
+
+        if (oddLengthNonzeroStart) {
+            // Pad with a 0
+            out.write(0);
         }
     }
 

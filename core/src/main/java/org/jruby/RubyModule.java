@@ -113,6 +113,7 @@ import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.NewMarshal;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.runtime.opto.OptoFactory;
@@ -653,8 +654,7 @@ public class RubyModule extends RubyObject {
      * @return The generated class name
      */
     public String getName() {
-        if (cachedName != null) return cachedName;
-        return calculateName();
+        return cachedName != null ? cachedName : calculateName();
     }
 
     /**
@@ -667,6 +667,24 @@ public class RubyModule extends RubyObject {
      */
     public RubyString rubyName() {
         return cachedRubyName != null ? cachedRubyName : calculateRubyName();
+    }
+
+    /**
+     * Generate a fully-qualified class name or a #-style name as a Symbol. If any element of the path is anonymous,
+     * returns null.
+     *
+     * @return a properly encoded non-anonymous class path as a Symbol, or null.
+     */
+    public RubySymbol symbolName() {
+        IRubyObject symbolName = cachedSymbolName;
+
+        if (symbolName == null) {
+            cachedSymbolName = symbolName = calculateSymbolName();
+        }
+
+        if (symbolName == UNDEF) return null;
+
+        return (RubySymbol) symbolName;
     }
 
     public RubyString rubyBaseName() {
@@ -690,16 +708,18 @@ public class RubyModule extends RubyObject {
 
         if (getBaseName() == null) return calculateAnonymousRubyName(); // no name...anonymous!
 
+        Ruby runtime = getRuntime();
+
         if (usingTemporaryName()) { // temporary name
-            cachedRubyName = getRuntime().newSymbol(baseName).toRubyString(getRuntime().getCurrentContext());
+            cachedRubyName = runtime.newSymbol(baseName).toRubyString(getRuntime().getCurrentContext());
             return cachedRubyName;
         }
-
-        Ruby runtime = getRuntime();
+        
         RubyClass objectClass = runtime.getObject();
-        List<RubyString> parents = new ArrayList<>();
-        for (RubyModule p = getParent(); p != null && p != objectClass; p = p.getParent()) {
-            if (p == this) break;  // Break out of cyclic namespaces like C::A = C2; C2::A = C (jruby/jruby#2314)
+        List<RubyString> parents = new ArrayList<>(5);
+        for (RubyModule p = getParent();
+             p != null && p != objectClass && p != this; // Break out of cyclic namespaces like C::A = C2; C2::A = C (jruby/jruby#2314)
+             p = p.getParent()) {
 
             RubyString name = p.rubyBaseName();
 
@@ -716,21 +736,60 @@ public class RubyModule extends RubyObject {
             parents.add(name);
         }
 
-        Collections.reverse(parents);
+        RubyString fullName = buildPathString(runtime, parents);
 
+        if (cache) cachedRubyName = fullName;
+
+        return fullName;
+    }
+
+    /**
+     * Calculate the module's name path as a Symbol. If any element in the path is anonymous, this will return null.
+     *
+     * Used primarily by Marshal.dump for class names.
+     *
+     * @return a non-anonymous class path as a Symbol, or null
+     */
+    private IRubyObject calculateSymbolName() {
+        if (getBaseName() == null) return UNDEF;
+
+        Ruby runtime = getRuntime();
+
+        if (usingTemporaryName()) { // temporary name
+            return runtime.newSymbol(baseName);
+        }
+
+        RubyClass objectClass = runtime.getObject();
+        List<RubyString> parents = new ArrayList<>(5);
+        for (RubyModule p = getParent();
+             p != null && p != objectClass && p != this; // Break out of cyclic namespaces like C::A = C2; C2::A = C (jruby/jruby#2314)
+             p = p.getParent()) {
+
+            RubyString name = p.rubyBaseName();
+
+            if (name == null) {
+                return UNDEF;
+            }
+
+            parents.add(name);
+        }
+
+        RubyString fullName = buildPathString(runtime, parents);
+
+        return fullName.intern();
+    }
+
+    private RubyString buildPathString(Ruby runtime, List<RubyString> parents) {
         RubyString colons = runtime.newString("::");
         RubyString fullName = runtime.newString();       // newString creates empty ByteList which ends up as
         fullName.setEncoding(USASCIIEncoding.INSTANCE);  // ASCII-8BIT.  8BIT is unfriendly to string concats.
-        for (RubyString parent:  parents) {
-            RubyString rubyString = fullName.catWithCodeRange(parent);
+        for (int i = parents.size() - 1; i >= 0; i--) {
+            RubyString rubyString = fullName.catWithCodeRange(parents.get(i));
             rubyString.catWithCodeRange(colons);
         }
         fullName.catWithCodeRange(rubyBaseName());
 
         fullName.setFrozen(true);
-
-        if (cache) cachedRubyName = fullName;
-
         return fullName;
     }
 
@@ -3737,6 +3796,11 @@ public class RubyModule extends RubyObject {
         output.writeString(MarshalStream.getPathFromClass(module));
     }
 
+    public static void marshalTo(RubyModule module, NewMarshal output, ThreadContext context, NewMarshal.RubyOutputStream out) {
+        output.registerLinkTarget(module);
+        output.writeString(out, MarshalStream.getPathFromClass(module));
+    }
+
     public static RubyModule unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         String name = RubyString.byteListToString(input.unmarshalString());
 
@@ -5773,6 +5837,7 @@ public class RubyModule extends RubyObject {
      */
     private transient String cachedName;
     private transient RubyString cachedRubyName;
+    private transient IRubyObject cachedSymbolName;
 
     @SuppressWarnings("unchecked")
     private volatile Map<String, ConstantEntry> constants = Collections.EMPTY_MAP;

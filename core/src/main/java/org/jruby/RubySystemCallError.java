@@ -14,10 +14,13 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectMarshal;
 import static org.jruby.runtime.Visibility.*;
+
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.NewMarshal;
 import org.jruby.runtime.marshal.UnmarshalStream;
 
 import jnr.constants.platform.Errno;
@@ -138,13 +141,26 @@ public class RubySystemCallError extends RubyStandardError {
                               MarshalStream marshalStream) throws IOException {
             RubySystemCallError exc = (RubySystemCallError) obj;
             marshalStream.registerLinkTarget(exc);
-            
+
             List<Variable<Object>> attrs = exc.getMarshalVariableList();
             attrs.add(new VariableEntry<Object>(
                     "mesg", exc.message == null ? runtime.getNil() : exc.message));
             attrs.add(new VariableEntry<Object>("errno", exc.errno));
             attrs.add(new VariableEntry<Object>("bt", exc.getBacktrace()));
             marshalStream.dumpVariables(attrs);
+        }
+
+        @Override
+        public void marshalTo(Object obj, RubyClass type,
+                              NewMarshal marshalStream, ThreadContext context, NewMarshal.RubyOutputStream out) {
+            RubySystemCallError exc = (RubySystemCallError) obj;
+            marshalStream.registerLinkTarget(exc);
+
+            marshalStream.dumpVariables(context, out, exc, 3, (marshal, c, o, v, receiver) -> {
+                receiver.receive(marshal, c, o, "mesg", v.message == null ? c.nil : v.message);
+                receiver.receive(marshal, c, o, "errno", v.errno);
+                receiver.receive(marshal, c, o, "bt", v.getBacktrace());
+            });
         }
 
         @Override

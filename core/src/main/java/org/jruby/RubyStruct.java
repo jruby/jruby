@@ -54,6 +54,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.NewMarshal;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.RecursiveComparator;
@@ -895,6 +896,20 @@ public class RubyStruct extends RubyObject {
             RubySymbol name = (RubySymbol) member.eltInternal(i);
             output.dumpObject(name);
             output.dumpObject(struct.values[i]);
+        }
+    }
+
+    public static void marshalTo(RubyStruct struct, NewMarshal output, ThreadContext context, NewMarshal.RubyOutputStream out) {
+        output.registerLinkTarget(struct);
+        output.dumpDefaultObjectHeader(context, out, 'S', struct.getMetaClass());
+
+        RubyArray member = __member__(struct.classOf());
+        output.writeInt(out, member.size());
+
+        for (int i = 0; i < member.size(); i++) {
+            RubySymbol name = (RubySymbol) member.eltInternal(i);
+            output.dumpObject(context, out, name);
+            output.dumpObject(context, out, struct.values[i]);
         }
     }
 

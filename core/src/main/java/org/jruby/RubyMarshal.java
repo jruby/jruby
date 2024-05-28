@@ -34,7 +34,6 @@
 package org.jruby;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,12 +44,13 @@ import org.jruby.anno.JRubyModule;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.NewMarshal;
 import org.jruby.runtime.marshal.UnmarshalStream;
 
 import org.jruby.util.ByteList;
 import org.jruby.util.IOInputStream;
 import org.jruby.util.IOOutputStream;
+import org.jruby.util.io.TransparentByteArrayOutputStream;
 
 import static org.jruby.api.Error.typeError;
 
@@ -72,49 +72,61 @@ public class RubyMarshal {
         return module;
     }
 
-    @JRubyMethod(required = 1, optional = 2, checkArity = false, module = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject dump(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-        int argc = Arity.checkArgumentCount(context, args, 1, 3);
+    @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject dump(ThreadContext context, IRubyObject recv, IRubyObject object) {
+        return dumpCommon(context, object, null, -1);
+    }
 
-        final Ruby runtime = context.runtime;
-
-        IRubyObject objectToDump = args[0];
+    @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject dump(ThreadContext context, IRubyObject recv, IRubyObject object, IRubyObject ioOrLimit) {
         IRubyObject io = null;
         int depthLimit = -1;
 
-        if (argc >= 2) {
-            IRubyObject arg1 = args[1];
-            if (sites(context).respond_to_write.respondsTo(context, arg1, arg1)) {
-                io = arg1;
-            } else if (arg1 instanceof RubyFixnum fixnum) {
-                depthLimit = (int) fixnum.getLongValue();
-            } else {
-                throw typeError(context, "Instance of IO needed");
-            }
-            if (argc == 3) {
-                depthLimit = (int) args[2].convertToInteger().getLongValue();
-            }
+        if (ioOrLimit instanceof RubyIO || sites(context).respond_to_write.respondsTo(context, ioOrLimit, ioOrLimit)) {
+            io = ioOrLimit;
+        } else if (ioOrLimit instanceof RubyFixnum fixnum) {
+            depthLimit = fixnum.getIntValue();
+        } else {
+            throw typeError(context, "Instance of IO needed");
         }
 
-        try {
-            if (io != null) {
-                dumpToStream(runtime, objectToDump, outputStream(context, io), depthLimit);
-                return io;
-            }
-            
-            ByteArrayOutputStream stringOutput = new ByteArrayOutputStream();
-            dumpToStream(runtime, objectToDump, stringOutput, depthLimit);
-            RubyString result = RubyString.newString(runtime, new ByteList(stringOutput.toByteArray(), false));
-            
-            return result;
-        } catch (IOException ioe) {
-            throw runtime.newIOErrorFromException(ioe);
-        }
+        return dumpCommon(context, object, io, depthLimit);
     }
 
-    @Deprecated
-    public static IRubyObject dump(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-        return dump(recv.getRuntime().getCurrentContext(), recv, args, unusedBlock);
+    @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject dump(ThreadContext context, IRubyObject recv, IRubyObject object, IRubyObject io, IRubyObject limit) {
+        if (!(io instanceof RubyIO || sites(context).respond_to_write.respondsTo(context, io, io))) {
+            throw typeError(context, "Instance of IO needed");
+        }
+
+        int depthLimit = limit.convertToInteger().getIntValue();
+
+        return dumpCommon(context, object, io, depthLimit);
+    }
+
+    private static IRubyObject dumpCommon(ThreadContext context, IRubyObject objectToDump, IRubyObject io, int depthLimit) {
+        OutputStream outputStream;
+        TransparentByteArrayOutputStream stringOutput = null;
+
+        if (io != null) {
+            if (io instanceof RubyIO rubyIO) {
+                outputStream = rubyIO.getOutStream();
+            } else {
+                outputStream = outputStream(context, io);
+            }
+        } else {
+            outputStream = stringOutput = new TransparentByteArrayOutputStream();
+        }
+
+        dumpToStream(context, objectToDump, outputStream, depthLimit);
+
+        if (io != null) {
+            return io;
+        }
+
+        RubyString result = RubyString.newString(context.runtime, new ByteList(stringOutput.getRawBytes(), 0, stringOutput.size(), false));
+
+        return result;
     }
 
     @JRubyMethod(name = {"load", "restore"}, required = 1, optional = 2, checkArity = false, module = true, visibility = Visibility.PRIVATE)
@@ -170,10 +182,12 @@ public class RubyMarshal {
         return new IOOutputStream(out, true, false); // respond_to?(:write) already checked
     }
 
-    private static void dumpToStream(Ruby runtime, IRubyObject object, OutputStream rawOutput, int depthLimit)
-        throws IOException {
-        MarshalStream output = new MarshalStream(runtime, rawOutput, depthLimit);
-        output.dumpObject(object);
+    private static void dumpToStream(ThreadContext context, IRubyObject object, OutputStream rawOutput, int depthLimit) {
+        NewMarshal output = new NewMarshal(depthLimit);
+        NewMarshal.RubyOutputStream out = new NewMarshal.RubyOutputStream(rawOutput, context);
+
+        output.start(out);
+        output.dumpObject(context, out, object);
     }
 
     private static void setBinmodeIfPossible(ThreadContext context, IRubyObject io) {
@@ -187,6 +201,31 @@ public class RubyMarshal {
      */
     public static IRubyObject undumpable(ThreadContext context, RubyObject self) {
         throw typeError(context, "can't dump ", self, "");
+    }
+
+    @Deprecated
+    public static IRubyObject dump(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
+        return dump(recv.getRuntime().getCurrentContext(), recv, args, unusedBlock);
+    }
+
+    @Deprecated
+    public static IRubyObject dump(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
+        int argc = Arity.checkArgumentCount(context, args, 1, 3);
+
+        IRubyObject objectToDump = args[0];
+        IRubyObject io = null;
+        int depthLimit = -1;
+
+        switch (argc) {
+            case 1:
+                return dump(context, recv, args[0]);
+            case 2:
+                return dump(context, recv, args[0], args[1]);
+            case 3:
+                return dump(context, recv, args[0], args[1], args[2]);
+        }
+
+        return dumpCommon(context, objectToDump, io, depthLimit);
     }
 
     private static JavaSites.MarshalSites sites(ThreadContext context) {

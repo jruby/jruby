@@ -393,6 +393,7 @@ public final class Ruby implements Constantizable {
         encodingService = new EncodingService(this);
 
         symbolClass = RubySymbol.createSymbolClass(this);
+        symbolTable = new RubySymbol.SymbolTable(this);
 
         threadGroupClass = profile.allowClass("ThreadGroup") ? RubyThreadGroup.createThreadGroupClass(this) : null;
         threadClass = profile.allowClass("Thread") ? RubyThread.createThreadClass(this) : null;
@@ -5349,7 +5350,7 @@ public final class Ruby implements Constantizable {
 
     private final ObjectSpace objectSpace = new ObjectSpace();
 
-    private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
+    private final RubySymbol.SymbolTable symbolTable;
 
     private boolean abortOnException = false; // Thread.abort_on_exception
     private boolean reportOnException = true; // Thread.report_on_exception

@@ -84,6 +84,7 @@ import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.ivars.VariableAccessorField;
 import org.jruby.runtime.ivars.VariableTableManager;
 import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.marshal.NewMarshal;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.util.ArraySupport;
@@ -1263,6 +1264,10 @@ public class RubyClass extends RubyModule {
         getMarshal().marshalTo(runtime, obj, this, marshalStream);
     }
 
+    public final void marshal(Object obj, NewMarshal marshalStream, ThreadContext context, NewMarshal.RubyOutputStream out) {
+        getMarshal().marshalTo(obj, this, marshalStream, context, out);
+    }
+
     public final Object unmarshal(UnmarshalStream unmarshalStream) throws IOException {
         return getMarshal().unmarshalFrom(runtime, this, unmarshalStream);
     }
@@ -1270,6 +1275,11 @@ public class RubyClass extends RubyModule {
     public static void marshalTo(RubyClass clazz, MarshalStream output) throws java.io.IOException {
         output.registerLinkTarget(clazz);
         output.writeString(MarshalStream.getPathFromClass(clazz));
+    }
+
+    public static void marshalTo(RubyClass clazz, NewMarshal output, NewMarshal.RubyOutputStream out) {
+        output.registerLinkTarget(clazz);
+        output.writeString(out, MarshalStream.getPathFromClass(clazz));
     }
 
     public static RubyClass unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
@@ -1284,6 +1294,14 @@ public class RubyClass extends RubyModule {
 
             marshalStream.registerLinkTarget(object);
             marshalStream.dumpVariables(object.getMarshalVariableList());
+        }
+
+        @Override
+        public void marshalTo(Object obj, RubyClass type, NewMarshal marshalStream, ThreadContext context, NewMarshal.RubyOutputStream out) {
+            IRubyObject object = (IRubyObject) obj;
+
+            marshalStream.registerLinkTarget(object);
+            marshalStream.dumpVariables(context, out, object);
         }
 
         @Override
@@ -2535,7 +2553,28 @@ public class RubyClass extends RubyModule {
                     } else {
                         stream.writeDirectly(object);
                     }
+            }
+        }
+
+        public void dump(NewMarshal stream, ThreadContext context, NewMarshal.RubyOutputStream out, IRubyObject object) {
+            switch (type) {
+                case DEFAULT:
+                    stream.writeDirectly(context, out, object);
                     return;
+                case NEW_USER:
+                    stream.userNewMarshal(context, out, object, entry);
+                    return;
+                case OLD_USER:
+                    stream.userMarshal(context, out, object, entry);
+                    return;
+                case DEFAULT_SLOW:
+                    if (object.respondsTo("marshal_dump")) {
+                        stream.userNewMarshal(context, out, object);
+                    } else if (object.respondsTo("_dump")) {
+                        stream.userMarshal(context, out, object);
+                    } else {
+                        stream.writeDirectly(context, out, object);
+                    }
             }
         }
 
@@ -2599,6 +2638,38 @@ public class RubyClass extends RubyModule {
         }
 
         tuple.dump(stream, target);
+    }
+
+    public void smartDump(NewMarshal stream, ThreadContext context, NewMarshal.RubyOutputStream out, IRubyObject target) {
+        MarshalTuple tuple;
+        if ((tuple = cachedDumpMarshal).generation == generation) {
+        } else {
+            // recache
+            CacheEntry entry = searchWithCache("respond_to?");
+            DynamicMethod method = entry.method;
+            if (!method.equals(runtime.getRespondToMethod()) && !method.isUndefined()) {
+
+                // custom respond_to?, always do slow default marshaling
+                tuple = (cachedDumpMarshal = new MarshalTuple(null, MarshalType.DEFAULT_SLOW, generation));
+
+            } else if (!(entry = searchWithCache("marshal_dump")).method.isUndefined()) {
+
+                // object really has 'marshal_dump', cache "new" user marshaling
+                tuple = (cachedDumpMarshal = new MarshalTuple(entry, MarshalType.NEW_USER, generation));
+
+            } else if (!(entry = searchWithCache("_dump")).method.isUndefined()) {
+
+                // object really has '_dump', cache "old" user marshaling
+                tuple = (cachedDumpMarshal = new MarshalTuple(entry, MarshalType.OLD_USER, generation));
+
+            } else {
+
+                // no respond_to?, marshal_dump, or _dump, so cache default marshaling
+                tuple = (cachedDumpMarshal = new MarshalTuple(null, MarshalType.DEFAULT, generation));
+            }
+        }
+
+        tuple.dump(stream, context, out, target);
     }
 
     /**

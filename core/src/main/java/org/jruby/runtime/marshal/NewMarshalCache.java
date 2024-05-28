@@ -31,20 +31,16 @@
 
 package org.jruby.runtime.marshal;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.IdentityHashMap;
-import java.util.Map;
-
 import org.jruby.RubySymbol;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.collections.HashMapInt;
 
-public class MarshalCache {
-    private final HashMapInt linkCache = new HashMapInt<>(true);
-    private final HashMapInt symbolCache = new HashMapInt<ByteList>();
+import java.io.IOException;
+
+public class NewMarshalCache {
+    private final HashMapInt<IRubyObject> linkCache = new HashMapInt<>(true);
+    private final HashMapInt<RubySymbol> symbolCache = new HashMapInt<>(true);
 
     public boolean isRegistered(IRubyObject value) {
         assert !(value instanceof RubySymbol) : "Use isSymbolRegistered for symbol links";
@@ -52,7 +48,7 @@ public class MarshalCache {
         return linkCache.containsKey(value);
     }
 
-    public boolean isSymbolRegistered(ByteList sym) {
+    public boolean isSymbolRegistered(RubySymbol sym) {
         return symbolCache.containsKey(sym);
     }
 
@@ -62,27 +58,27 @@ public class MarshalCache {
         linkCache.put(value, Integer.valueOf(linkCache.size()));
     }
 
-    public void registerSymbol(ByteList sym) {
+    public void registerSymbol(RubySymbol sym) {
         symbolCache.put(sym, symbolCache.size());
     }
 
-    public void writeLink(MarshalStream output, IRubyObject value) throws IOException {
+    public void writeLink(NewMarshal output, NewMarshal.RubyOutputStream out, IRubyObject value) {
         assert !(value instanceof RubySymbol) : "Use writeSymbolLink for symbols";
 
-        output.write('@');
-        output.writeInt(registeredIndex(value));
+        out.write('@');
+        output.writeInt(out, registeredIndex(value));
     }
 
-    public void writeSymbolLink(MarshalStream output, ByteList sym) throws IOException {
-        output.write(';');
-        output.writeInt(registeredSymbolIndex(sym));
+    public void writeSymbolLink(NewMarshal output, NewMarshal.RubyOutputStream out, RubySymbol sym) {
+        out.write(';');
+        output.writeInt(out, registeredSymbolIndex(sym));
     }
 
     private int registeredIndex(IRubyObject value) {
         return linkCache.get(value);
     }
 
-    private int registeredSymbolIndex(ByteList sym) {
+    private int registeredSymbolIndex(RubySymbol sym) {
         return symbolCache.get(sym);
     }
 }
