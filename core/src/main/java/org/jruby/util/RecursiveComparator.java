@@ -15,7 +15,7 @@ import java.util.Set;
 import java.util.HashSet;
 
 public class RecursiveComparator {
-    public static <T> IRubyObject compare(ThreadContext context, T invokable, IRubyObject a, IRubyObject b) {
+    public static <T> IRubyObject compare(ThreadContext context, T invokable, IRubyObject a, IRubyObject b, boolean eql) {
 
         if (a == b) {
             return context.tru;
@@ -47,7 +47,7 @@ public class RecursiveComparator {
 
             if (a instanceof RubyHash) {
                 RubyHash hash = (RubyHash) a;
-                return hash.compare(context, (RubyHash.VisitorWithState<RubyHash>) invokable, b);
+                return hash.compare(context, (RubyHash.VisitorWithState<RubyHash>) invokable, b, eql);
             }
             if (a instanceof RubyArray) {
                 RubyArray array = (RubyArray) a;

@@ -1233,12 +1233,18 @@ public class RubyHash extends RubyObject implements Map {
         return internalGet(key);
     }
 
-    public RubyBoolean compare(final ThreadContext context, VisitorWithState<RubyHash> visitor, IRubyObject other) {
+    public RubyBoolean compare(final ThreadContext context, VisitorWithState<RubyHash> visitor, IRubyObject other, boolean eql) {
         if (!(other instanceof RubyHash)) {
             if (!sites(context).respond_to_to_hash.respondsTo(context, other, other)) {
                 return context.fals;
             }
-            return Helpers.rbEqual(context, other, this);
+
+            if(eql) {
+                return Helpers.rbEql(context, other, this);
+            }else {
+                return Helpers.rbEqual(context, other, this);
+
+            }
         }
 
         final RubyHash otherHash = (RubyHash) other;
@@ -1294,7 +1300,7 @@ public class RubyHash extends RubyObject implements Map {
     @Override
     @JRubyMethod(name = "==")
     public IRubyObject op_equal(final ThreadContext context, IRubyObject other) {
-        return RecursiveComparator.compare(context, FindMismatchUsingEqualVisitor, this, other);
+        return RecursiveComparator.compare(context, FindMismatchUsingEqualVisitor, this, other, false);
     }
 
     /** rb_hash_eql
@@ -1302,7 +1308,7 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = "eql?")
     public IRubyObject op_eql(final ThreadContext context, IRubyObject other) {
-        return RecursiveComparator.compare(context, FindMismatchUsingEqlVisitor, this, other);
+        return RecursiveComparator.compare(context, FindMismatchUsingEqlVisitor, this, other, true);
     }
 
     @Deprecated

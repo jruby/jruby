@@ -619,7 +619,7 @@ public class RubyStruct extends RubyObject {
 
         if (other == this) return context.tru;
 
-        return RecursiveComparator.compare(context, sites(context).op_equal, this, other);
+        return RecursiveComparator.compare(context, sites(context).op_equal, this, other, true);
     }
 
     @JRubyMethod(name = "eql?")
@@ -630,7 +630,7 @@ public class RubyStruct extends RubyObject {
             return context.fals;
         }
 
-        return RecursiveComparator.compare(context, sites(context).eql, this, other);
+        return RecursiveComparator.compare(context, sites(context).eql, this, other, true);
     }
 
     public RubyBoolean compare(ThreadContext context, CallSite site, IRubyObject other) {
