@@ -3212,7 +3212,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     protected void throwSyntaxError(int line , String message) {
         String errorMessage = getFileName() + ":" + (line + 1) + ": " + message;
-        throw scope.getManager().getRuntime().newSyntaxError(errorMessage);
+        throw scope.getManager().getRuntime().newSyntaxError(errorMessage, getFileName());
     }
 
     protected BinaryType binaryType(U node) {
