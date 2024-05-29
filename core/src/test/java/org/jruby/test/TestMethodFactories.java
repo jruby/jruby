@@ -30,12 +30,15 @@ package org.jruby.test;
 
 import org.jruby.CompatVersion;
 import org.jruby.Ruby;
+import org.jruby.RubyClass;
 import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
+import org.jruby.RubyObject;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 
@@ -164,6 +167,39 @@ public class TestMethodFactories extends Base {
         mod.defineAnnotatedMethods(VersionedMethods.class);
 
         assertNotNull(mod.searchMethod("method"));
+    }
+
+    public void testDefaultVisibility() {
+        RubyClass cls = runtime.defineClass("NoVisibilityInitialize", runtime.getObject(), NoVisibilityInitialize::new);
+
+        cls.defineAnnotatedMethods(NoVisibilityInitialize.class);
+
+        assertEquals(Visibility.PRIVATE, cls.searchMethod("initialize").getVisibility());
+        assertEquals(Visibility.PRIVATE, cls.searchMethod("initialize_copy").getVisibility());
+        assertEquals(Visibility.PUBLIC, cls.searchMethod("some_other_method").getVisibility());
+    }
+
+    public static class NoVisibilityInitialize extends RubyObject {
+        public NoVisibilityInitialize(Ruby runtime, RubyClass metaClass) {
+            super(metaClass);
+        }
+
+        // intentionally no visibility
+        @JRubyMethod
+        public IRubyObject initialize(ThreadContext context) {
+            return context.nil;
+        }
+
+        // intentionally no visibility
+        @JRubyMethod
+        public IRubyObject initialize_copy(ThreadContext context, IRubyObject copy) {
+            return context.nil;
+        }
+
+        @JRubyMethod
+        public IRubyObject some_other_method(ThreadContext context) {
+            return context.nil;
+        }
     }
 
 }
