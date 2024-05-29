@@ -1823,37 +1823,113 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return print(context, this, args);
     }
 
+    @JRubyMethod(reads = LASTLINE)
+    public IRubyObject print(ThreadContext context) {
+        return print0(context, this);
+    }
+
+    @JRubyMethod
+    public IRubyObject print(ThreadContext context, IRubyObject arg0) {
+        return print1(context, this, arg0);
+    }
+
+    @JRubyMethod
+    public IRubyObject print(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        return print2(context, this, arg0, arg1);
+    }
+
+    @JRubyMethod
+    public IRubyObject print(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        return print3(context, this, arg0, arg1, arg2);
+    }
+
     /**
      * Print some objects to the stream.
      *
      * MRI: rb_io_print
      */
     public static IRubyObject print(ThreadContext context, IRubyObject out, IRubyObject[] args) {
+        switch (args.length) {
+            case 0:
+                return print0(context, out);
+            case 1:
+                return print1(context, out, args[0]);
+            case 2:
+                return print2(context, out, args[0], args[1]);
+            case 3:
+                return print3(context, out, args[0], args[1], args[2]);
+        }
+
         Ruby runtime = context.runtime;
         int i;
-        IRubyObject line;
         int argc = args.length;
         IRubyObject outputFS = runtime.getGlobalVariables().get("$,");
 
-        /* if no argument given, print `$_' */
-        if (argc == 0) {
-            argc = 1;
-            line = context.getLastLine();
-            args = new IRubyObject[]{line};
-        }
-        if (argc > 1 && !outputFS.isNil()) {
+        boolean fieldSeparatorNotNil = !outputFS.isNil();
+        if (fieldSeparatorNotNil) {
             runtime.getWarnings().warnDeprecated("$, is set to non-nil value");
         }
         for (i=0; i<argc; i++) {
-            if (!outputFS.isNil() && i>0) {
+            if (fieldSeparatorNotNil && i>0) {
                 write(context, out, outputFS);
             }
             write(context, out, args[i]);
         }
-        IRubyObject outputRS = runtime.getGlobalVariables().get("$\\");
-        if (argc > 0 && !outputRS.isNil()) {
+
+        writeRecordSeparator(context, out);
+
+        return context.nil;
+    }
+
+    public static IRubyObject print0(ThreadContext context, IRubyObject out) {
+        return print1(context, out, context.getLastLine());
+    }
+
+    public static IRubyObject print1(ThreadContext context, IRubyObject out, IRubyObject arg1) {
+        write(context, out, arg1);
+
+        writeRecordSeparator(context, out);
+
+        return context.nil;
+    }
+
+    private static void writeRecordSeparator(ThreadContext context, IRubyObject out) {
+        IRubyObject outputRS = context.runtime.getGlobalVariables().get("$\\");
+        if (!outputRS.isNil()) {
             write(context, out, outputRS);
         }
+    }
+
+    public static IRubyObject print2(ThreadContext context, IRubyObject out, IRubyObject arg0, IRubyObject arg1) {
+        Ruby runtime = context.runtime;
+
+        IRubyObject outputFS = runtime.getGlobalVariables().get("$,");
+        boolean fieldSeparatorNotNil = !outputFS.isNil();
+        if (fieldSeparatorNotNil) runtime.getWarnings().warnDeprecated("$, is set to non-nil value");
+
+        write(context, out, arg0);
+        if (fieldSeparatorNotNil) write(context, out, outputFS);
+        write(context, out, arg1);
+
+        writeRecordSeparator(context, out);
+
+        return context.nil;
+    }
+
+    public static IRubyObject print3(ThreadContext context, IRubyObject out, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        Ruby runtime = context.runtime;
+
+        IRubyObject outputFS = runtime.getGlobalVariables().get("$,");
+        boolean fieldSeparatorNotNil = !outputFS.isNil();
+        if (fieldSeparatorNotNil) runtime.getWarnings().warnDeprecated("$, is set to non-nil value");
+
+        write(context, out, arg0);
+        if (fieldSeparatorNotNil) write(context, out, outputFS);
+        write(context, out, arg1);
+        if (fieldSeparatorNotNil) write(context, out, outputFS);
+        write(context, out, arg2);
+
+        writeRecordSeparator(context, out);
 
         return context.nil;
     }
