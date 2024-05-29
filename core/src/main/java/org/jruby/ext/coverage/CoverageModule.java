@@ -43,6 +43,7 @@ import org.jruby.util.collections.IntList;
 
 import static org.jruby.api.Convert.castToSymbol;
 import static org.jruby.ext.coverage.CoverageData.CoverageDataState.*;
+import static org.jruby.ext.coverage.CoverageData.EVAL;
 import static org.jruby.ext.coverage.CoverageData.LINES;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
 
@@ -71,6 +72,9 @@ public class CoverageModule {
 
                 if (ArgsUtil.extractKeywordArg(context, "lines", keywords).isTrue()) {
                     mode |= LINES;
+                }
+                if (ArgsUtil.extractKeywordArg(context, "eval", keywords).isTrue()) {
+                    mode |= EVAL;
                 }
                 if (ArgsUtil.extractKeywordArg(context, "branches", keywords).isTrue()) {
                     runtime.getWarnings().warn("branch coverage is not supported");
@@ -220,7 +224,9 @@ public class CoverageModule {
     public static IRubyObject supported_p(ThreadContext context, IRubyObject self, IRubyObject arg) {
         RubySymbol mode = castToSymbol(context, arg);
 
-        if (mode == context.runtime.newSymbol("lines") || mode == context.runtime.newSymbol("oneshot_lines")) {
+        if (mode == context.runtime.newSymbol("lines") ||
+                mode == context.runtime.newSymbol("oneshot_lines") ||
+                mode == context.runtime.newSymbol("eval")) {
             return context.tru;
         }
 

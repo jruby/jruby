@@ -2340,7 +2340,8 @@ public abstract class RubyParserBase {
     }
 
     public boolean isCoverageEnabled() {
-        return !isEval() && getRuntime().getCoverageData().isCoverageEnabled();
+        return isEval() && getRuntime().getCoverageData().isEvalCovered() ||
+                getRuntime().getCoverageData().isCoverageEnabled();
     }
 
     /**

@@ -49,13 +49,18 @@ public class CoverageData {
     public static final int BRANCHES = 1 << 1;
     public static final int METHODS = 1 << 2;
     public static final int ONESHOT_LINES = 1 << 3;
-    public static final int ALL = LINES | BRANCHES | METHODS;
+    public static final int EVAL = 1 << 4;
+    public static final int ALL = LINES | BRANCHES | METHODS | EVAL;
 
     /**
      * Has coverage been setup?
      */
     public boolean isCoverageEnabled() {
         return state != IDLE;
+    }
+
+    public boolean isEvalCovered() {
+        return (mode & EVAL) != 0;
     }
 
     /**
@@ -140,7 +145,7 @@ public class CoverageData {
     private void setupLines() {
         Map<String, IntList> coverage = this.coverage;
 
-        if (coverage == null && ((mode & (LINES|ONESHOT_LINES)) != 0)) this.coverage = new HashMap<>();
+        if (coverage == null && ((mode & (LINES|ONESHOT_LINES|EVAL)) != 0)) this.coverage = new HashMap<>();
     }
 
     public synchronized Map<String, IntList> resetCoverage() {

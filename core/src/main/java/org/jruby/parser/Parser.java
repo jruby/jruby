@@ -217,7 +217,7 @@ public class Parser {
     }
 
     protected RubyArray getLines(boolean isEvalParse, String file, int length) {
-        if (isEvalParse) return null;
+        if (isEvalParse && !runtime.getCoverageData().isEvalCovered()) return null;
 
         IRubyObject scriptLines = runtime.getObject().getConstantAt("SCRIPT_LINES__");
         if (scriptLines == null || !(scriptLines instanceof RubyHash)) return null;
