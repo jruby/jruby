@@ -42,10 +42,12 @@ import org.jruby.util.TypeConverter;
 import org.jruby.util.collections.IntList;
 
 import static org.jruby.api.Convert.castToSymbol;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.ext.coverage.CoverageData.CoverageDataState.*;
 import static org.jruby.ext.coverage.CoverageData.EVAL;
 import static org.jruby.ext.coverage.CoverageData.LINES;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
+import static org.jruby.util.RubyStringBuilder.str;
 
 /**
  * Implementation of Ruby 1.9.2's "Coverage" module
@@ -93,6 +95,8 @@ public class CoverageModule {
                 }
             } else if (args[0] instanceof RubySymbol && args[0] == runtime.newSymbol("all")) {
                 mode |= CoverageData.ALL;
+            } else {
+                throw typeError(context, str(runtime, "no implicit conversion of ", args[0].getMetaClass(), " into Hash"));
             }
         }
 
