@@ -1286,7 +1286,7 @@ public abstract class RubyParserBase {
         // FIXME: We walk this during identifier construction so we should calculate CR without having to walk twice.
         if (RubyString.scanForCodeRange(identifierValue) == StringSupport.CR_BROKEN) {
             Ruby runtime = getRuntime();
-            throw runtime.newSyntaxError(str(runtime, "invalid symbol in encoding " + lexer.getEncoding() + " :\"", inspectIdentifierByteList(runtime, identifierValue), "\""));
+            throw runtime.newSyntaxError(str(runtime, "invalid symbol in encoding " + lexer.getEncoding() + " :\"", inspectIdentifierByteList(runtime, identifierValue), "\""), getFile());
         }
 
         return RubySymbol.newIDSymbol(getRuntime(), identifierValue);
@@ -1851,7 +1851,7 @@ public abstract class RubyParserBase {
             message += (addNewline ? "\n" : "") + line;
         }
 
-        throw getRuntime().newSyntaxError(errorMessage + message);
+        throw getRuntime().newSyntaxError(errorMessage + message, lexer.getFile());
     }
 
     public Node new_regexp(int line, Node contents, RegexpNode end) {

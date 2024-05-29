@@ -123,9 +123,9 @@ public class Parser {
             result = parser.parse();
             if (parser.isEndSeen() && type == ParserType.MAIN) runtime.defineDATA(lexerSource.getRemainingAsIO());
         } catch (IOException e) {
-            throw runtime.newSyntaxError("Problem reading source: " + e);
+            throw runtime.newSyntaxError("Problem reading source: " + e, existingScope.getStaticScope().getFile());
         } catch (SyntaxException e) {
-            throw runtime.newSyntaxError(e.getFile() + ":" + (e.getLine() + 1) + ": " + e.getMessage());
+            throw runtime.newSyntaxError(e.getFile() + ":" + (e.getLine() + 1) + ": " + e.getMessage(), e.getFile());
         }
 
         runtime.getParserManager().getParserStats().addParsedBytes(lexerSource.getOffset());
