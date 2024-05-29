@@ -12,6 +12,7 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
 import org.jruby.RubyRange;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -265,5 +266,19 @@ public class Convert {
     public static RubyString castToString(ThreadContext context, IRubyObject newValue) {
         if (!(newValue instanceof RubyString)) throw typeError(context, newValue, "String");
         return (RubyString) newValue;
+    }
+
+
+    /**
+     * Cast the given value to a RubySymbol with most basic typeError thrown
+     * if the value is not a RubySymbol.
+     *
+     * @param context the current thread context
+     * @param newValue the value to cast
+     * @return the value as a RubySymbol
+     */
+    public static RubySymbol castToSymbol(ThreadContext context, IRubyObject newValue) {
+        if (!(newValue instanceof RubySymbol)) throw typeError(context, newValue, "Symbol");
+        return (RubySymbol) newValue;
     }
 }

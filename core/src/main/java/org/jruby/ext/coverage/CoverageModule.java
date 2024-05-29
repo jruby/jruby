@@ -41,9 +41,13 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.collections.IntList;
 
+import static org.jruby.api.Convert.castToSymbol;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.ext.coverage.CoverageData.CoverageDataState.*;
+import static org.jruby.ext.coverage.CoverageData.EVAL;
 import static org.jruby.ext.coverage.CoverageData.LINES;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
+import static org.jruby.util.RubyStringBuilder.str;
 
 /**
  * Implementation of Ruby 1.9.2's "Coverage" module
@@ -71,6 +75,9 @@ public class CoverageModule {
                 if (ArgsUtil.extractKeywordArg(context, "lines", keywords).isTrue()) {
                     mode |= LINES;
                 }
+                if (ArgsUtil.extractKeywordArg(context, "eval", keywords).isTrue()) {
+                    mode |= EVAL;
+                }
                 if (ArgsUtil.extractKeywordArg(context, "branches", keywords).isTrue()) {
                     runtime.getWarnings().warn("branch coverage is not supported");
                     mode |= CoverageData.BRANCHES;
@@ -88,6 +95,8 @@ public class CoverageModule {
                 }
             } else if (args[0] instanceof RubySymbol && args[0] == runtime.newSymbol("all")) {
                 mode |= CoverageData.ALL;
+            } else {
+                throw typeError(context, str(runtime, "no implicit conversion of ", args[0].getMetaClass(), " into Hash"));
             }
         }
 
@@ -215,6 +224,18 @@ public class CoverageModule {
         return context.runtime.getParserManager().getLineStub(context, arg);
     }
 
+    @JRubyMethod(module = true, name = "supported?")
+    public static IRubyObject supported_p(ThreadContext context, IRubyObject self, IRubyObject arg) {
+        RubySymbol mode = castToSymbol(context, arg);
+
+        if (mode == context.runtime.newSymbol("lines") ||
+                mode == context.runtime.newSymbol("oneshot_lines") ||
+                mode == context.runtime.newSymbol("eval")) {
+            return context.tru;
+        }
+
+        return context.fals;
+    }
 
     private static IRubyObject convertCoverageToRuby(ThreadContext context, Ruby runtime, Map<String, IntList> coverage, int mode) {
         // populate a Ruby Hash with coverage data

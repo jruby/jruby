@@ -252,7 +252,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     public InterpreterContext buildEvalRoot(ParseResult rootNode) {
         executesOnce = false;
-        coverageMode = CoverageData.NONE;  // Assuming there is no path into build eval root without actually being an eval.
+        coverageMode = rootNode.getCoverageMode();
         addInstr(getManager().newLineNumber(scope.getLine()));
 
         afterPrologueIndex = instructions.size() - 1;                      // added BEGINs start after scope prologue stuff

@@ -49,13 +49,18 @@ public class CoverageData {
     public static final int BRANCHES = 1 << 1;
     public static final int METHODS = 1 << 2;
     public static final int ONESHOT_LINES = 1 << 3;
-    public static final int ALL = LINES | BRANCHES | METHODS;
+    public static final int EVAL = 1 << 4;
+    public static final int ALL = LINES | BRANCHES | METHODS | EVAL;
 
     /**
      * Has coverage been setup?
      */
     public boolean isCoverageEnabled() {
         return state != IDLE;
+    }
+
+    public boolean isEvalCovered() {
+        return (mode & EVAL) != 0;
     }
 
     /**
@@ -140,7 +145,7 @@ public class CoverageData {
     private void setupLines() {
         Map<String, IntList> coverage = this.coverage;
 
-        if (coverage == null && ((mode & (LINES|ONESHOT_LINES)) != 0)) this.coverage = new HashMap<>();
+        if (coverage == null && ((mode & (LINES|ONESHOT_LINES|EVAL)) != 0)) this.coverage = new HashMap<>();
     }
 
     public synchronized Map<String, IntList> resetCoverage() {
@@ -173,11 +178,44 @@ public class CoverageData {
             if (isOneshot()) {
                 coverage.put(filename, new IntList());
             } else {
-                coverage.put(filename, new IntList(startingLines));
+                IntList existing = coverage.get(filename);
+                if (existing != null) {
+                    // Two files with the same path and name just overlay the coverage...weird but true.
+                    coverage.put(filename, mergeLines(existing, startingLines));
+                } else {
+                    coverage.put(filename, new IntList(startingLines));
+                }
             }
         }
 
         return coverage;
+    }
+
+    private IntList mergeLines(IntList existing, int[] startingLines) {
+        IntList result = existing;
+        int existingSize = existing.size();
+        int startingLinesLength = startingLines.length;
+
+        if (existingSize < startingLinesLength) {
+            int[] newLines = new int[startingLinesLength];
+            System.arraycopy(existing.toIntArray(), 0, newLines, 0, existingSize);
+            result = new IntList(newLines);
+        }
+
+        for (int i = 0; i < startingLinesLength; i++) {
+            int existingValue = existing.get(i);
+            int newValue = startingLines[i];
+
+            if (newValue == -1) continue;
+
+            if (existingValue == -1) {
+                result.set(i, newValue);
+            } else {
+                result.set(i, existingValue + newValue);
+            }
+        }
+
+        return result;
     }
 
     public CoverageDataState getCurrentState() {
