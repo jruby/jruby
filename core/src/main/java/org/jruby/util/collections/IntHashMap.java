@@ -2,10 +2,12 @@ package org.jruby.util.collections;
 
 import java.util.AbstractCollection;
 import java.util.AbstractSet;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 public class IntHashMap<V> {
 
@@ -408,6 +410,15 @@ public class IntHashMap<V> {
             }
         }
         return newMap;
+    }
+
+    public void forEach(BiConsumer<Integer, ? super V> action) {
+        for (Entry<V> entry : table) {
+            while (entry != null) {
+                action.accept(entry.getKey(), entry.value);
+                entry = entry.next;
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")

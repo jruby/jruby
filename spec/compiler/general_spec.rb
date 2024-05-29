@@ -96,7 +96,8 @@ module JITSpecUtils
 
     compiler = new_visitor(runtime)
     compiled = compiler.compile(method, org.jruby.util.OneShotClassLoader.new(runtime.getJRubyClassLoader()))
-    scriptMethod = compiled.getMethod("RUBY$script",
+    scriptMethod = compiled.getMethod(
+        org.jruby.util.JavaNameMangler::SCRIPT_METHOD_NAME,
         org.jruby.runtime.ThreadContext.java_class,
         org.jruby.parser.StaticScope.java_class,
         org.jruby.runtime.builtin.IRubyObject.java_class,

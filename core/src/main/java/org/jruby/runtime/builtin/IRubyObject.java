@@ -366,12 +366,12 @@ public interface IRubyObject {
     void syncVariables(IRubyObject source);
     
     /**
-     * @return a list of all variables (ivar/cvar/constant/internal)
+     * @return a list of all variables (ivar/internal)
      */
     List<Variable<Object>> getVariableList();
 
     /**
-     * @return a list of all marshalable variables (ivar/cvar/constant/internal)
+     * @return a mutable list of all marshalable variables (ivar/internal)
      */
     default List<Variable<Object>> getMarshalVariableList() {
         return getVariableList();

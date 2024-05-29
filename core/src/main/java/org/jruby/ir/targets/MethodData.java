@@ -30,7 +30,13 @@ public class MethodData {
 
         // incoming arguments
         for (int i = 0; i < signature.argCount(); i++) {
-            local("$" + signature.argName(i), Type.getType(signature.argType(i)));
+            String argName = signature.argName(i);
+            argName = switch (argName) {
+                case "self" -> "self";
+                case "blockArg" -> JVMVisitor.BLOCK_ARG_LOCAL_NAME;
+                default -> "$" + argName;
+            };
+            local(argName, Type.getType(signature.argType(i)));
         }
     }
 
