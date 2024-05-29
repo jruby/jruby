@@ -41,6 +41,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.collections.IntList;
 
+import static org.jruby.api.Convert.castToSymbol;
 import static org.jruby.ext.coverage.CoverageData.CoverageDataState.*;
 import static org.jruby.ext.coverage.CoverageData.LINES;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
@@ -215,6 +216,16 @@ public class CoverageModule {
         return context.runtime.getParserManager().getLineStub(context, arg);
     }
 
+    @JRubyMethod(module = true, name = "supported?")
+    public static IRubyObject supported_p(ThreadContext context, IRubyObject self, IRubyObject arg) {
+        RubySymbol mode = castToSymbol(context, arg);
+
+        if (mode == context.runtime.newSymbol("lines") || mode == context.runtime.newSymbol("oneshot_lines")) {
+            return context.tru;
+        }
+
+        return context.fals;
+    }
 
     private static IRubyObject convertCoverageToRuby(ThreadContext context, Ruby runtime, Map<String, IntList> coverage, int mode) {
         // populate a Ruby Hash with coverage data
