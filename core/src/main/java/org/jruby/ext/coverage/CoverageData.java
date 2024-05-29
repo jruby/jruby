@@ -178,11 +178,44 @@ public class CoverageData {
             if (isOneshot()) {
                 coverage.put(filename, new IntList());
             } else {
-                coverage.put(filename, new IntList(startingLines));
+                IntList existing = coverage.get(filename);
+                if (existing != null) {
+                    // Two files with the same path and name just overlay the coverage...weird but true.
+                    coverage.put(filename, mergeLines(existing, startingLines));
+                } else {
+                    coverage.put(filename, new IntList(startingLines));
+                }
             }
         }
 
         return coverage;
+    }
+
+    private IntList mergeLines(IntList existing, int[] startingLines) {
+        IntList result = existing;
+        int existingSize = existing.size();
+        int startingLinesLength = startingLines.length;
+
+        if (existingSize < startingLinesLength) {
+            int[] newLines = new int[startingLinesLength];
+            System.arraycopy(existing.toIntArray(), 0, newLines, 0, existingSize);
+            result = new IntList(newLines);
+        }
+
+        for (int i = 0; i < startingLinesLength; i++) {
+            int existingValue = existing.get(i);
+            int newValue = startingLines[i];
+
+            if (newValue == -1) continue;
+
+            if (existingValue == -1) {
+                result.set(i, newValue);
+            } else {
+                result.set(i, existingValue + newValue);
+            }
+        }
+
+        return result;
     }
 
     public CoverageDataState getCurrentState() {
