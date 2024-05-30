@@ -102,9 +102,9 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
         if (method instanceof ProcMethod) {
             return ((ProcMethod) method).isSame(((AbstractRubyMethod) other).getMethod());
         }
+
         AbstractRubyMethod otherMethod = (AbstractRubyMethod) other;
-        return originModule == otherMethod.originModule &&
-               method.getRealMethod().getSerialNumber() == otherMethod.method.getRealMethod().getSerialNumber();
+        return method.getRealMethod().getSerialNumber() == otherMethod.method.getRealMethod().getSerialNumber();
     }
 
     @JRubyMethod
