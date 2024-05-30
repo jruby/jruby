@@ -1,1 +1,0 @@
-fails:Enumerable#reduce raises an ArgumentError when no parameters or block is given
