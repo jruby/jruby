@@ -90,8 +90,10 @@ import static org.jruby.RubyComparable.invcmp;
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.RubyNumeric.checkInt;
 import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.runtime.Visibility.PRIVATE;
+import static org.jruby.util.Numeric.checkInteger;
 import static org.jruby.util.StringSupport.CR_7BIT;
 import static org.jruby.util.StringSupport.CR_BROKEN;
 import static org.jruby.util.StringSupport.CR_MASK;
@@ -1260,8 +1262,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     private RubyString multiplyByteList(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.runtime;
 
-        int len = RubyNumeric.num2int(arg);
-        if (len < 0) throw runtime.newArgumentError("negative argument");
+        long longLen = RubyNumeric.num2long(arg);
+        if (longLen < 0) throw runtime.newArgumentError("negative argument");
+        if (size() == 0) return (RubyString) dup();
+
+        checkInt(arg, longLen);
+        int len = (int) longLen;
 
         // we limit to int because ByteBuffer can only allocate int sizes
         len = Helpers.multiplyBufferLength(runtime, value.getRealSize(), len);
