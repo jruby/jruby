@@ -36,9 +36,11 @@ package org.jruby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.AliasMethod;
+import org.jruby.internal.runtime.methods.DelegatingDynamicMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.PartialDelegatingMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
+import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.ThreadContext;
@@ -169,6 +171,95 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
         }
 
         return context.runtime.newSymbol(method.getName());
+    }
+
+    public IRubyObject inspect(IRubyObject receiver) {
+        Ruby runtime = getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
+
+        RubyString str = RubyString.newString(runtime, "#<");
+        String sharp = "#";
+
+        str.catString(getType().getName()).catString(": ");
+
+        RubyModule definedClass;
+        RubyModule mklass = originModule;
+
+        if (method instanceof AliasMethod || method instanceof DelegatingDynamicMethod) {
+            definedClass = method.getRealMethod().getDefinedClass();
+        } else {
+            definedClass = method.getDefinedClass();
+        }
+
+        if (definedClass.isIncluded()) {
+            definedClass = definedClass.getMetaClass();
+        }
+
+        if (receiver == null) {
+            str.catWithCodeRange(inspect(context, definedClass).convertToString());
+        } else if (mklass.isSingleton()) {
+            IRubyObject attached = ((MetaClass) mklass).getAttached();
+            if (receiver == null) {
+                str.catWithCodeRange(inspect(context, mklass).convertToString());
+            } else if (receiver == attached) {
+                str.catWithCodeRange(inspect(context, attached).convertToString());
+                sharp = ".";
+            } else {
+                str.catWithCodeRange(inspect(context, receiver).convertToString());
+                str.catString("(");
+                str.catWithCodeRange(inspect(context, attached).convertToString());
+                str.catString(")");
+                sharp = ".";
+            }
+        } else {
+            if (receiver instanceof RubyClass) {
+                str.catString("#<");
+                str.cat(mklass.rubyName());
+                str.catString(":");
+                str.cat(((RubyClass) receiver).rubyName());
+                str.catString(">");
+            } else {
+                str.cat(mklass.rubyName());
+            }
+            if (definedClass != mklass) {
+                str.catString("(");
+                str.cat(definedClass.rubyName());
+                str.catString(")");
+            }
+        }
+        str.catString(sharp);
+        str.cat(runtime.newSymbol(this.methodName).asString());
+        if (!methodName.equals(method.getName())) {
+            str.catString("(");
+            str.cat(runtime.newSymbol(method.getRealMethod().getName()).asString());
+            str.catString(")");
+        }
+        if (method.isNotImplemented()) {
+            str.catString(" (not-implemented)");
+        }
+
+        str.catString("(");
+        ArgumentDescriptor[] descriptors = Helpers.methodToArgumentDescriptors(method);
+        if (descriptors.length > 0) {
+            RubyString desc = descriptors[0].asParameterName(context);
+
+            str.cat(desc);
+            for (int i = 1; i < descriptors.length; i++) {
+                desc = descriptors[i].asParameterName(context);
+
+                str.catString(", ");
+                str.cat(desc);
+            }
+        }
+        str.catString(")");
+        String fileName = getFilename();
+        if (fileName != null) { // Only Ruby Methods will have this info.
+            str.catString(" ");
+            str.catString(fileName).cat(':').catString("" + getLine());
+        }
+        str.catString(">");
+
+        return str;
     }
 }
 
