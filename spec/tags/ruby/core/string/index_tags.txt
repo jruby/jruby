@@ -1,1 +1,0 @@
-fails:String#index with Regexp raises an Encoding::CompatibilityError if the encodings are incompatible

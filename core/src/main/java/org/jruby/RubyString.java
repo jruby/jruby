@@ -3496,7 +3496,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             }
             RubyRegexp regSub = (RubyRegexp) sub;
             pos = singleByteOptimizable() ? pos :
-                    StringSupport.nth(checkEncoding(regSub), value.getUnsafeBytes(), value.getBegin(),
+                    StringSupport.nth(regSub.checkEncoding(this), value.getUnsafeBytes(), value.getBegin(),
                             value.getBegin() + value.getRealSize(),
                                       pos) - value.getBegin();
             pos = regSub.adjustStartPos(this, pos, false);
@@ -3506,12 +3506,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 pos = subLength(match.begin(0));
             }
         } else if (sub instanceof RubyString) {
-            pos = StringSupport.index(this, (RubyString) sub, pos, this.checkEncoding((RubyString) sub));
+            pos = StringSupport.index(this, (RubyString) sub, pos, checkEncoding((RubyString) sub));
             pos = subLength(pos);
         } else {
             IRubyObject tmp = sub.checkStringType();
             if (tmp == context.nil) throw context.runtime.newTypeError("type mismatch: " + sub.getMetaClass().getName() + " given");
-            pos = StringSupport.index(this, (RubyString) tmp, pos, this.checkEncoding((RubyString) tmp));
+            pos = StringSupport.index(this, (RubyString) tmp, pos, checkEncoding((RubyString) tmp));
             pos = subLength(pos);
         }
 
