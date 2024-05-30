@@ -120,6 +120,15 @@ public final class GlobalVariable {
             context.setWithinTrace(false);
         }
     }
+
+    /**
+     * read-only variables like $FILENAME are ony read-only to the user.  We need to change them behind the curtain.
+     * @param newValue
+     */
+    public void forceValue(IRubyObject newValue) {
+        accessor.forceValue(newValue);
+        invalidate();
+    }
     
     public Invalidator getInvalidator() {
         return invalidator;
