@@ -183,7 +183,7 @@ public class RubyMethod extends AbstractRubyMethod {
         }
 
         RubyMethod otherMethod = (RubyMethod)other;
-        return receiver == otherMethod.receiver && originModule == otherMethod.originModule &&
+        return receiver == otherMethod.receiver &&
             ( isSerialMatch(otherMethod.method) || isMethodMissingMatch(otherMethod.getMethod().getRealMethod()) );
     }
 

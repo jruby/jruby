@@ -1,3 +1,0 @@
-fails:UnboundMethod#== considers methods through aliasing equal
-fails:UnboundMethod#== considers methods through visibility change equal
-fails:UnboundMethod#== considers methods through aliasing and visibility change equal
