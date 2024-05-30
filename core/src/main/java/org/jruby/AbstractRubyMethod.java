@@ -37,6 +37,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.PartialDelegatingMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.PositionAware;
@@ -100,7 +101,13 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
 
     @JRubyMethod(name = "owner")
     public IRubyObject owner(ThreadContext context) {
-        return implementationModule.getOrigin();
+        // If original method has changed visibility in a higher module/class then we return that location
+        // and not where it was originally defined.
+        if (method instanceof PartialDelegatingMethod) {
+            return method.getImplementationClass();
+        } else {
+            return implementationModule.getOrigin();
+        }
     }
 
     @JRubyMethod(name = "source_location")
