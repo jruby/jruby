@@ -174,6 +174,7 @@ public class RubyArgsFile extends RubyObject {
                     StringSupport.checkStringSafety(runtime, filename);
                     if ( ! filename.op_equal(context, $FILENAME).isTrue() ) {
                         runtime.defineReadonlyVariable("$FILENAME", filename, GlobalVariable.Scope.GLOBAL);
+                        runtime.getGlobalVariables().getVariable("$FILENAME").invalidate();
                     }
 
                     if (filenameEqlDash(filename)) {
@@ -201,6 +202,7 @@ public class RubyArgsFile extends RubyObject {
                 currentFile = runtime.getGlobalVariables().get("$stdin");
                 if (!filenameEqlDash((RubyString) $FILENAME)) {
                     runtime.defineReadonlyVariable("$FILENAME", runtime.newString("-"), GlobalVariable.Scope.GLOBAL);
+                    runtime.getGlobalVariables().getVariable("$FILENAME").invalidate();
                 }
             }
 
