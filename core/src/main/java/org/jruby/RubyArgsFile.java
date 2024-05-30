@@ -542,7 +542,7 @@ public class RubyArgsFile extends RubyObject {
             data.next_p = NextFile;
         }
 
-        return context.nil;
+        return recv;
     }
 
     @JRubyMethod
