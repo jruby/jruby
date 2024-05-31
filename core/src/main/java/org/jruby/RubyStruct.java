@@ -209,6 +209,25 @@ public class RubyStruct extends RubyObject {
         return null;
     }
 
+
+    // FIXME: We duplicated this from ArgsUtil because for Struct (and seemingly only Struct) we need to
+    //   raise TypeError instead of ArgumentError.  When .api.* addresses kwargs we should redesign how
+    //   we process kwargs.
+    private static IRubyObject extractKeywordArg(final ThreadContext context, final RubyHash options, String validKey) {
+        if (options.isEmpty()) return null;
+
+        final RubySymbol testKey = context.runtime.newSymbol(validKey);
+        IRubyObject ret = options.fastARef(testKey);
+
+        if (ret == null || options.size() > 1) { // other (unknown) keys in options
+            options.visitAll(context, (ctxt, self, key, value, index) -> {
+                if (!key.equals(testKey)) throw ctxt.runtime.newTypeError("unknown keyword: " + key.inspect());
+            });
+        }
+
+        return ret;
+    }
+
     // Struct methods
 
     /** Create new Struct class.
@@ -242,7 +261,7 @@ public class RubyStruct extends RubyObject {
             final IRubyObject opts = args[argc - 1];
             if (opts instanceof RubyHash) {
                 argc--;
-                keywordInitValue = ArgsUtil.extractKeywordArg(runtime.getCurrentContext(), (RubyHash) opts, "keyword_init");
+                keywordInitValue = extractKeywordArg(runtime.getCurrentContext(), (RubyHash) opts, "keyword_init");
             }
         }
 
