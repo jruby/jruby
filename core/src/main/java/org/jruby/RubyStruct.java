@@ -39,7 +39,6 @@ import java.util.Set;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -376,7 +375,8 @@ public class RubyStruct extends RubyObject {
 
         @JRubyMethod(name = "keyword_init?")
         public static IRubyObject keyword_init_p(IRubyObject self) {
-            return RubyStruct.getInternalVariable((RubyClass) self, KEYWORD_INIT_VAR);
+            IRubyObject keywordInit = getInternalVariable((RubyClass) self, KEYWORD_INIT_VAR);
+            return keywordInit.isTrue() ? self.getRuntime().getTrue() : keywordInit;
         }
     }
 
