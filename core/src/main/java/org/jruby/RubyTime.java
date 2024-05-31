@@ -1761,9 +1761,6 @@ public class RubyTime extends RubyObject {
             this.zone = zone;
             dtz = DateTimeZone.UTC;
         } else {
-            if (zone instanceof RubyString str && !str.getEncoding().isAsciiCompatible()) {
-                throw context.runtime.newArgumentError("time string should have ASCII compatible encoding");
-            }
             dtz = getTimeZoneFromUtcOffset(context, zone);
             if (dtz != null) {
                 this.setIsTzRelative(true);
