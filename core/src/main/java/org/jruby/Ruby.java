@@ -5764,6 +5764,10 @@ public final class Ruby implements Constantizable {
         objectSpacer.addToObjectSpace(this, useObjectSpace, object);
     }
 
+    public static void addToObjectSpace(Ruby runtime, boolean useObjectSpace, IRubyObject object) {
+        runtime.objectSpacer.addToObjectSpace(runtime, useObjectSpace, object);
+    }
+
     public interface ExitFunction extends ToIntFunction<ThreadContext> {
         default boolean matches(Object o) { return o == this; }
     }
