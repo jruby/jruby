@@ -238,9 +238,9 @@ public class RubyBasicSocket extends RubyIO {
                 return null; // not reached
             }
         } else {
-            bytes = doRead(context, buffer);
-            if (bytes == null) return context.nil;
+                bytes = doRead(context, buffer);
         }
+        if (bytes == null) return context.nil;
 
         if (str != null) {
             str.setValue(bytes);
@@ -738,7 +738,8 @@ public class RubyBasicSocket extends RubyIO {
             context.getThread().beforeBlockingCall(context);
 
             int read = openFile.readChannel().read(buffer);
-            if (read <= 0) return null;
+
+            if (read == 0) return null;
 
             return new ByteList(buffer.array(), 0, buffer.position(), false);
         } catch (Exception e) {
