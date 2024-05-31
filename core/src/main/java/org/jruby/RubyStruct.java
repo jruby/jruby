@@ -457,7 +457,7 @@ public class RubyStruct extends RubyObject {
         return context.nil;
     }
 
-    private void setupStructValuesFromHash(ThreadContext context, RubyHash kwArgs) {
+    private IRubyObject setupStructValuesFromHash(ThreadContext context, RubyHash kwArgs) {
         Ruby runtime = context.runtime;
 
         RubyArray __members__ = __member__();
@@ -472,6 +472,8 @@ public class RubyStruct extends RubyObject {
                     if (index.isNil()) throw runtime.newArgumentError(str(runtime, "unknown keywords: ", key));
                     values[index.convertToInteger().getIntValue()] = entry.getValue();
                 });
+
+        return context.nil;
     }
 
     @JRubyMethod(visibility = PRIVATE)
@@ -483,23 +485,16 @@ public class RubyStruct extends RubyObject {
 
     @JRubyMethod(visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject arg0) {
-        IRubyObject keywordInit = RubyStruct.getInternalVariable(classOf(), KEYWORD_INIT_VAR);
-        checkForKeywords(context, !keywordInit.isNil());
-        ThreadContext.resetCallInfo(context);
-        Ruby runtime = context.runtime;
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
 
-        if (keywordInit.isTrue()) {
-            IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(runtime, arg0);
-
-            if (maybeKwargs.isNil()) throw context.runtime.newArgumentError(1, 0);
-
-            setupStructValuesFromHash(context, (RubyHash) maybeKwargs);
-
-            return context.nil;
-        } else {
-            IRubyObject nil = context.nil;
-            return initializeInternal(context, 1, arg0, nil, nil);
+        if (keywords) {
+            return setupStructValuesFromHash(context, (RubyHash) arg0);
+        } else if (RubyStruct.getInternalVariable(classOf(), KEYWORD_INIT_VAR).isTrue()) {
+            if (!(arg0 instanceof RubyHash)) throw context.runtime.newArgumentError(1, 0);
+            return setupStructValuesFromHash(context, (RubyHash) arg0);
         }
+
+        return initializeInternal(context, 1, arg0, context.nil, context.nil);
     }
 
     @JRubyMethod(visibility = PRIVATE)
