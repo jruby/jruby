@@ -1,1 +1,0 @@
-fails:StructClass#keyword_init? returns true for any truthy value, not just for true

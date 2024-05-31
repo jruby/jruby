@@ -39,7 +39,6 @@ import java.util.Set;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -209,6 +208,25 @@ public class RubyStruct extends RubyObject {
         return null;
     }
 
+
+    // FIXME: We duplicated this from ArgsUtil because for Struct (and seemingly only Struct) we need to
+    //   raise TypeError instead of ArgumentError.  When .api.* addresses kwargs we should redesign how
+    //   we process kwargs.
+    private static IRubyObject extractKeywordArg(final ThreadContext context, final RubyHash options, String validKey) {
+        if (options.isEmpty()) return null;
+
+        final RubySymbol testKey = context.runtime.newSymbol(validKey);
+        IRubyObject ret = options.fastARef(testKey);
+
+        if (ret == null || options.size() > 1) { // other (unknown) keys in options
+            options.visitAll(context, (ctxt, self, key, value, index) -> {
+                if (!key.equals(testKey)) throw ctxt.runtime.newTypeError("unknown keyword: " + key.inspect());
+            });
+        }
+
+        return ret;
+    }
+
     // Struct methods
 
     /** Create new Struct class.
@@ -216,14 +234,16 @@ public class RubyStruct extends RubyObject {
      * MRI: rb_struct_s_def / make_struct
      *
      */
-    @JRubyMethod(name = "new", required = 1, rest = true, checkArity = false, meta = true, keywords = true)
+    @JRubyMethod(name = "new", rest = true, checkArity = false, meta = true, keywords = true)
     public static RubyClass newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
 
-        int argc = Arity.checkArgumentCount(runtime, args, 1, -1);
+        int argc = Arity.checkArgumentCount(runtime, args, 0, -1);
 
         String name = null;
         boolean nilName = false;
+        RubyArray member = runtime.newArray();
+        IRubyObject keywordInitValue = runtime.getNil();
 
         if (argc > 0) {
             IRubyObject firstArgAsString = args[0].checkStringType();
@@ -236,18 +256,15 @@ public class RubyStruct extends RubyObject {
             } else if (args[0].isNil()) {
                 nilName = true;
             }
+
+            final IRubyObject opts = args[argc - 1];
+            if (opts instanceof RubyHash) {
+                argc--;
+                keywordInitValue = extractKeywordArg(runtime.getCurrentContext(), (RubyHash) opts, "keyword_init");
+            }
         }
 
-        RubyArray member = runtime.newArray();
-        IRubyObject keywordInitValue = runtime.getNil();
-
-        final IRubyObject opts = args[argc - 1];
-        if (opts instanceof RubyHash) {
-            argc--;
-            keywordInitValue = ArgsUtil.extractKeywordArg(runtime.getCurrentContext(), (RubyHash) opts, "keyword_init");
-        }
-
-        Set<IRubyObject> tmpMemberSet = new HashSet<IRubyObject>();
+        Set<IRubyObject> tmpMemberSet = new HashSet<>();
         for (int i = (name == null && !nilName) ? 0 : 1; i < argc; i++) {
             IRubyObject arg = args[i];
             RubySymbol sym;
@@ -358,7 +375,8 @@ public class RubyStruct extends RubyObject {
 
         @JRubyMethod(name = "keyword_init?")
         public static IRubyObject keyword_init_p(IRubyObject self) {
-            return RubyStruct.getInternalVariable((RubyClass) self, KEYWORD_INIT_VAR);
+            IRubyObject keywordInit = getInternalVariable((RubyClass) self, KEYWORD_INIT_VAR);
+            return keywordInit.isTrue() ? self.getRuntime().getTrue() : keywordInit;
         }
     }
 
@@ -439,7 +457,7 @@ public class RubyStruct extends RubyObject {
         return context.nil;
     }
 
-    private void setupStructValuesFromHash(ThreadContext context, RubyHash kwArgs) {
+    private IRubyObject setupStructValuesFromHash(ThreadContext context, RubyHash kwArgs) {
         Ruby runtime = context.runtime;
 
         RubyArray __members__ = __member__();
@@ -454,6 +472,8 @@ public class RubyStruct extends RubyObject {
                     if (index.isNil()) throw runtime.newArgumentError(str(runtime, "unknown keywords: ", key));
                     values[index.convertToInteger().getIntValue()] = entry.getValue();
                 });
+
+        return context.nil;
     }
 
     @JRubyMethod(visibility = PRIVATE)
@@ -465,23 +485,16 @@ public class RubyStruct extends RubyObject {
 
     @JRubyMethod(visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject arg0) {
-        IRubyObject keywordInit = RubyStruct.getInternalVariable(classOf(), KEYWORD_INIT_VAR);
-        checkForKeywords(context, !keywordInit.isNil());
-        ThreadContext.resetCallInfo(context);
-        Ruby runtime = context.runtime;
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
 
-        if (keywordInit.isTrue()) {
-            IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(runtime, arg0);
-
-            if (maybeKwargs.isNil()) throw context.runtime.newArgumentError(1, 0);
-
-            setupStructValuesFromHash(context, (RubyHash) maybeKwargs);
-
-            return context.nil;
-        } else {
-            IRubyObject nil = context.nil;
-            return initializeInternal(context, 1, arg0, nil, nil);
+        if (keywords) {
+            return setupStructValuesFromHash(context, (RubyHash) arg0);
+        } else if (RubyStruct.getInternalVariable(classOf(), KEYWORD_INIT_VAR).isTrue()) {
+            if (!(arg0 instanceof RubyHash)) throw context.runtime.newArgumentError(1, 0);
+            return setupStructValuesFromHash(context, (RubyHash) arg0);
         }
+
+        return initializeInternal(context, 1, arg0, context.nil, context.nil);
     }
 
     @JRubyMethod(visibility = PRIVATE)
