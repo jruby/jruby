@@ -216,14 +216,16 @@ public class RubyStruct extends RubyObject {
      * MRI: rb_struct_s_def / make_struct
      *
      */
-    @JRubyMethod(name = "new", required = 1, rest = true, checkArity = false, meta = true, keywords = true)
+    @JRubyMethod(name = "new", rest = true, checkArity = false, meta = true, keywords = true)
     public static RubyClass newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
 
-        int argc = Arity.checkArgumentCount(runtime, args, 1, -1);
+        int argc = Arity.checkArgumentCount(runtime, args, 0, -1);
 
         String name = null;
         boolean nilName = false;
+        RubyArray member = runtime.newArray();
+        IRubyObject keywordInitValue = runtime.getNil();
 
         if (argc > 0) {
             IRubyObject firstArgAsString = args[0].checkStringType();
@@ -236,18 +238,15 @@ public class RubyStruct extends RubyObject {
             } else if (args[0].isNil()) {
                 nilName = true;
             }
+
+            final IRubyObject opts = args[argc - 1];
+            if (opts instanceof RubyHash) {
+                argc--;
+                keywordInitValue = ArgsUtil.extractKeywordArg(runtime.getCurrentContext(), (RubyHash) opts, "keyword_init");
+            }
         }
 
-        RubyArray member = runtime.newArray();
-        IRubyObject keywordInitValue = runtime.getNil();
-
-        final IRubyObject opts = args[argc - 1];
-        if (opts instanceof RubyHash) {
-            argc--;
-            keywordInitValue = ArgsUtil.extractKeywordArg(runtime.getCurrentContext(), (RubyHash) opts, "keyword_init");
-        }
-
-        Set<IRubyObject> tmpMemberSet = new HashSet<IRubyObject>();
+        Set<IRubyObject> tmpMemberSet = new HashSet<>();
         for (int i = (name == null && !nilName) ? 0 : 1; i < argc; i++) {
             IRubyObject arg = args[i];
             RubySymbol sym;
