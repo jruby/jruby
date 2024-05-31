@@ -621,7 +621,7 @@ class UNIXSocketTests < Test::Unit::TestCase
 
         sock2.send("hello", 0)
         assert_equal "hell", sock1.recv(4)
-        assert_equal "", sock1.recv(0)
+        assert_equal nil, sock1.recv(0)
         assert_equal "o", sock1.recv(1)
 
         sock2.close
