@@ -53,6 +53,10 @@ public abstract class RubyArraySpecialized extends RubyArray {
         super(otherClass.getClassRuntime(), otherClass, light);
     }
 
+    public RubyArraySpecialized(RubyClass otherClass) {
+        super(otherClass.getClassRuntime(), otherClass);
+    }
+
     protected final void unpack() {
         if (!packed()) return;
 
