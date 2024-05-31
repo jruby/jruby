@@ -357,13 +357,13 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             // Old constructor with no name, use thread-local to pass it.
             JavaMethod.NAME_PASSER.set(name);
             try {
-                ic = (JavaMethod) c.getConstructor(RubyModule_and_Visibility).newInstance(implementationClass, desc.anno.visibility());
+                ic = (JavaMethod) c.getConstructor(RubyModule_and_Visibility).newInstance(implementationClass, desc.anno.visibility().getDefaultVisibilityFor(name));
             } finally {
                 JavaMethod.NAME_PASSER.remove();
             }
         } else {
             // New constructor with name.
-            ic = (JavaMethod) c.getConstructor(RubyModule_and_Visibility_and_Name).newInstance(implementationClass, desc.anno.visibility(), name);
+            ic = (JavaMethod) c.getConstructor(RubyModule_and_Visibility_and_Name).newInstance(implementationClass, desc.anno.visibility().getDefaultVisibilityFor(name), name);
         }
         return ic;
     }

@@ -385,6 +385,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return pattern;
     }
 
+    final Encoding checkEncoding(RubyString other) {
+        Encoding enc = other.isCompatibleWith(this);
+        if (enc == null) encodingMatchError(getRuntime(), pattern, other.getEncoding());
+        return enc;
+    }
+
     private static void encodingMatchError(Ruby runtime, Regex pattern, Encoding strEnc) {
         throw runtime.newEncodingCompatibilityError("incompatible encoding regexp match (" +
                 pattern.getEncoding() + " regexp with " + strEnc + " string)");

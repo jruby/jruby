@@ -81,7 +81,7 @@ public @interface JRubyMethod {
     /**
      * The visibility of this method.
      */
-    Visibility visibility() default Visibility.PUBLIC;
+    Visibility visibility() default Visibility.DEFAULT;
 
     /**
      * What, if anything, method reads from caller's frame

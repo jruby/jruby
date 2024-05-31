@@ -376,10 +376,6 @@ public abstract class JavaLang {
 
         static RubyClass define(final Ruby runtime, final RubyClass proxy) {
             proxy.defineAnnotatedMethods(Number.class);
-
-            proxy.defineAlias("to_int", "longValue");
-            proxy.defineAlias("to_f", "doubleValue");
-
             return proxy;
         }
 

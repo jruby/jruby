@@ -1072,6 +1072,8 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = {"inject", "reduce"})
     public static IRubyObject inject(ThreadContext context, IRubyObject self, final Block block) {
+        if (!block.isGiven()) throw context.runtime.newArgumentError("wrong number of arguments (given 0, expected 1..2)");
+
         return injectCommon(context, self, null, block);
     }
 

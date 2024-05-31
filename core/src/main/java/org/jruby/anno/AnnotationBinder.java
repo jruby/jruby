@@ -328,7 +328,7 @@ public class AnnotationBinder extends AbstractProcessor {
             String implClass = anno.meta() ? "singletonClass" : "cls";
 
             String baseName = getBaseName(anno.name(), method);
-            out.println("        javaMethod = new " + annotatedBindingName + "(" + implClass + ", Visibility." + anno.visibility() + ", \"" + baseName + "\");");
+            out.println("        javaMethod = new " + annotatedBindingName + "(" + implClass + ", Visibility." + anno.visibility().getDefaultVisibilityFor(baseName) + ", \"" + baseName + "\");");
             out.println("        populateMethod(javaMethod, " +
                     join(AnnotationHelper.getArityValue(anno, actualRequired),
                             quote(method.getSimpleName()),
@@ -365,7 +365,7 @@ public class AnnotationBinder extends AbstractProcessor {
             String implClass = anno.meta() ? "singletonClass" : "cls";
 
             String baseName = getBaseName(anno.name(), method);
-            out.println("        javaMethod = new " + annotatedBindingName + "(" + implClass + ", Visibility." + anno.visibility() + ", \"" + baseName + "\");");
+            out.println("        javaMethod = new " + annotatedBindingName + "(" + implClass + ", Visibility." + anno.visibility().getDefaultVisibilityFor(baseName) + ", \"" + baseName + "\");");
             out.println("        populateMethod(javaMethod, " +
                         join(-1,
                                 quote(method.getSimpleName()),

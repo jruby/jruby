@@ -245,7 +245,7 @@ public class RubyDir extends RubyObject implements Closeable {
 
                 if (rets[0] == null || rets[0].isNil()) {
                     options.base = "";
-                    return;  
+                    return;
                 }
 
                 RubyString path = RubyFile.get_path(context, rets[0]);
@@ -429,24 +429,43 @@ public class RubyDir extends RubyObject implements Closeable {
     @JRubyMethod(optional = 1, checkArity = false, meta = true)
     public static IRubyObject chdir(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         int argc = Arity.checkArgumentCount(context, args, 0, 1);
+
         Ruby runtime = context.runtime;
+        RubyHash env = context.runtime.getENV();
+
+        if(argc == 0 && env.op_aref(context, runtime.newString("LOG_DIR")).isNil() &&
+                env.op_aref(context, runtime.newString("HOME")).isNil()){
+            throw runtime.newArgumentError("HOME/LOGDIR not set");
+        }
+
         RubyString path = argc == 1 ?
-            StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, args[0])) :
-            getHomeDirectoryPath(context);
+                StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, args[0])) :
+                getHomeDirectoryPath(context);
 
         String adjustedPath = RubyFile.adjustRootPathOnWindows(runtime, path.asJavaString(), null);
         checkDirIsTwoSlashesOnWindows(runtime, adjustedPath);
 
         adjustedPath = getExistingDir(runtime, adjustedPath).canonicalPath();
 
+      if (context.runtime.getChdirThread() != null && context.getThread() != context.runtime.getChdirThread()) {
+            throw runtime.newRuntimeError("conflicting chdir during another chdir block");
+        }
+
+        if(!block.isGiven() && context.runtime.getChdirThread() != null) {
+            context.runtime.getWarnings().warn("conflicting chdir during another chdir block");
+        }
+
         IRubyObject result;
+
         if (block.isGiven()) {
+            context.runtime.setChdirThread(context.getThread());
             final String oldCwd = runtime.getCurrentDirectory();
-            // FIXME: Don't allow multiple threads to do this at once
+
             runtime.setCurrentDirectory(adjustedPath);
             try {
                 result = block.yield(context, path);
             } finally {
+                context.runtime.setChdirThread(null);
                 getExistingDir(runtime, oldCwd); // needed in case the block deleted the oldCwd
                 runtime.setCurrentDirectory(oldCwd);
             }
@@ -473,7 +492,7 @@ public class RubyDir extends RubyObject implements Closeable {
     public RubyArray children(ThreadContext context) {
         return entriesCommon(context, path, encoding, true);
     }
-    
+
     @JRubyMethod(name = "children", meta = true)
     public static RubyArray children(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         return children(context, recv, arg, context.nil);
@@ -629,7 +648,7 @@ public class RubyDir extends RubyObject implements Closeable {
 
     @JRubyMethod(name = "home", meta = true)
     public static IRubyObject home(ThreadContext context, IRubyObject recv, IRubyObject user) {
-        if (user == null || user.isNil()) {
+        if (user == null || user.isNil() || user.toString().isEmpty()) {
             return getHomeDirectoryPath(context);
         }
 
@@ -1107,7 +1126,9 @@ public class RubyDir extends RubyObject implements Closeable {
 
     public static RubyString getHomeDirectoryPath(ThreadContext context) {
         final RubyString homeKey = RubyString.newStringShared(context.runtime, HOME);
-        return getHomeDirectoryPath(context, context.runtime.getENV().op_aref(context, homeKey));
+        IRubyObject home = context.runtime.getENV().op_aref(context, homeKey);
+
+        return getHomeDirectoryPath(context, home);
     }
 
     public static Optional<String> getHomeFromEnv(Ruby runtime) {
@@ -1124,7 +1145,8 @@ public class RubyDir extends RubyObject implements Closeable {
     private static final ByteList user_home = new ByteList(new byte[] {'u','s','e','r','.','h','o','m','e'}, false);
 
     static RubyString getHomeDirectoryPath(ThreadContext context, IRubyObject home) {
-        final Ruby runtime = context.runtime;
+        Ruby runtime = context.runtime;
+        RubyHash env = context.runtime.getENV();
 
         if (home == null || home == context.nil) {
             IRubyObject ENV_JAVA = runtime.getObject().getConstant("ENV_JAVA");
@@ -1132,7 +1154,7 @@ public class RubyDir extends RubyObject implements Closeable {
         }
 
         if (home == null || home == context.nil) {
-            home = context.runtime.getENV().op_aref(context, runtime.newString("LOGDIR"));
+            home = env.op_aref(context, runtime.newString("LOGDIR"));
         }
 
         if (home == null || home == context.nil) {

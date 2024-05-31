@@ -92,10 +92,30 @@ import static org.jruby.RubyComparable.invcmp;
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.RubyNumeric.checkInt;
 import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.StringSupport.*;
+
+import static org.jruby.util.StringSupport.CR_7BIT;
+import static org.jruby.util.StringSupport.CR_BROKEN;
+import static org.jruby.util.StringSupport.CR_MASK;
+import static org.jruby.util.StringSupport.CR_UNKNOWN;
+import static org.jruby.util.StringSupport.CR_VALID;
+import static org.jruby.util.StringSupport.MBCLEN_CHARFOUND_LEN;
+import static org.jruby.util.StringSupport.MBCLEN_CHARFOUND_P;
+import static org.jruby.util.StringSupport.MBCLEN_INVALID_P;
+import static org.jruby.util.StringSupport.MBCLEN_NEEDMORE_P;
+import static org.jruby.util.StringSupport.codeLength;
+import static org.jruby.util.StringSupport.codePoint;
+import static org.jruby.util.StringSupport.codeRangeScan;
+import static org.jruby.util.StringSupport.encFastMBCLen;
+import static org.jruby.util.StringSupport.isSingleByteOptimizable;
+import static org.jruby.util.StringSupport.memsearch;
+import static org.jruby.util.StringSupport.memchr;
+import static org.jruby.util.StringSupport.nth;
+import static org.jruby.util.StringSupport.offset;
 
 /**
  * Implementation of Ruby String class
@@ -1341,8 +1361,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     private RubyString multiplyByteList(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.runtime;
 
-        int len = RubyNumeric.num2int(arg);
-        if (len < 0) throw runtime.newArgumentError("negative argument");
+        long longLen = RubyNumeric.num2long(arg);
+        if (longLen < 0) throw runtime.newArgumentError("negative argument");
+        if (size() == 0) return (RubyString) dup();
+
+        checkInt(arg, longLen);
+        int len = (int) longLen;
 
         // we limit to int because ByteBuffer can only allocate int sizes
         len = Helpers.multiplyBufferLength(runtime, value.getRealSize(), len);
@@ -3495,9 +3519,13 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     private IRubyObject indexCommon(ThreadContext context, IRubyObject sub, int pos) {
         if (sub instanceof RubyRegexp) {
-            if (pos > strLength()) return context.nil;
+            if (pos > strLength()) {
+                context.clearBackRef();
+                return context.nil;
+            }
             RubyRegexp regSub = (RubyRegexp) sub;
-            pos = singleByteOptimizable() ? pos : StringSupport.nth(checkEncoding(regSub), value, pos) - value.getBegin();
+
+            pos = singleByteOptimizable() ? pos : StringSupport.nth(regSub.checkEncoding(this), value, pos) - value.getBegin();
             pos = regSub.adjustStartPos(this, pos, false);
             pos = regSub.search(context, this, pos, false);
             if (pos >= 0) pos = subLength(context.getLocalMatch().begin(0));

@@ -1,1 +1,0 @@
-hangs:ARGF.each_codepoint returns self when passed a block

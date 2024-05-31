@@ -37,4 +37,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public interface IAccessor {
     public IRubyObject getValue();
     public IRubyObject setValue(IRubyObject newValue);
+    default void forceValue(IRubyObject newValue) {
+        setValue(newValue);
+    }
 }

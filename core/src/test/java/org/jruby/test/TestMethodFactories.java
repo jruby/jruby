@@ -143,5 +143,4 @@ public class TestMethodFactories extends Base {
 
         assertEquals(mod.getSingletonClass(), rubyMethod.owner(runtime.getCurrentContext()));
     }
-
 }
