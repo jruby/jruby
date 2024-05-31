@@ -48,6 +48,8 @@ import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariable;
+import org.jruby.internal.runtime.ReadonlyAccessor;
+import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -166,14 +168,14 @@ public class RubyArgsFile extends RubyObject {
                 }
             }
 
-            IRubyObject $FILENAME = runtime.getGlobalVariables().get("$FILENAME");
+            GlobalVariable $FILENAME = runtime.getGlobalVariables().getVariable("$FILENAME");
 
             if (next_p == NextFile) {
                 if (argv.getLength() > 0) {
                     RubyString filename = TypeConverter.convertToType(argv.shift(context), context.runtime.getString(), "to_path").convertToString();
                     StringSupport.checkStringSafety(runtime, filename);
-                    if ( ! filename.op_equal(context, $FILENAME).isTrue() ) {
-                        runtime.defineReadonlyVariable("$FILENAME", filename, GlobalVariable.Scope.GLOBAL);
+                    if ( ! filename.op_equal(context, $FILENAME.getAccessor().getValue()).isTrue() ) {
+                        $FILENAME.forceValue(filename);
                     }
 
                     if (filenameEqlDash(filename)) {
@@ -199,8 +201,8 @@ public class RubyArgsFile extends RubyObject {
                 }
             } else if (next_p == Stream) {
                 currentFile = runtime.getGlobalVariables().get("$stdin");
-                if (!filenameEqlDash((RubyString) $FILENAME)) {
-                    runtime.defineReadonlyVariable("$FILENAME", runtime.newString("-"), GlobalVariable.Scope.GLOBAL);
+                if (!filenameEqlDash((RubyString) $FILENAME.getAccessor().getValue())) {
+                    $FILENAME.forceValue(runtime.newString("-"));
                 }
             }
 
@@ -540,7 +542,7 @@ public class RubyArgsFile extends RubyObject {
             data.next_p = NextFile;
         }
 
-        return context.nil;
+        return recv;
     }
 
     @JRubyMethod
