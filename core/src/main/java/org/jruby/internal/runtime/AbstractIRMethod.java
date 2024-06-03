@@ -78,7 +78,7 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
 
         final Ruby runtime = implementationClass.getRuntime();
         // If we are printing, do the build right at creation time so we can see it
-        if (IRRuntimeHelpers.shouldPrintIR(runtime)) {
+        if (IRRuntimeHelpers.shouldPrintIR(runtime) && IRRuntimeHelpers.shouldPrintScope(scope.getIRScope())) {
             ensureInstrsReady();
         }
     }
@@ -136,7 +136,7 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
         IRScope method = getIRScope();
         final InterpreterContext interpreterContext = method.builtInterpreterContext();
 
-        if (IRRuntimeHelpers.shouldPrintIR(implementationClass.getRuntime())) printMethodIR();
+        if (IRRuntimeHelpers.shouldPrintIR(implementationClass.getRuntime()) && IRRuntimeHelpers.shouldPrintScope(method)) printMethodIR();
 
         return interpreterContext;
     }
