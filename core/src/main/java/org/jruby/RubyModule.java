@@ -6034,7 +6034,7 @@ public class RubyModule extends RubyObject {
 
                 RubyModule module = (RubyModule) _module;
 
-                if (module.getSuperClass() != runtime.getObject()) {
+                if (module.getSuperClass() != null) {
                     runtime.getWarnings().warn(module.getName() + " has ancestors, but Refinement#import_methods doesn't import their methods");
                 }
             }
