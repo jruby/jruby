@@ -3273,7 +3273,7 @@ public final class Ruby implements Constantizable {
                 }
             }
         } finally {
-            finalizersMutex.unlock();
+            internalFinalizersMutex.unlock();
         }
 
         getBeanManager().unregisterCompiler();
