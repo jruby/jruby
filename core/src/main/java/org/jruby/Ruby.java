@@ -74,6 +74,7 @@ import org.jruby.util.MRIRecursionGuard;
 import org.jruby.util.StringSupport;
 import org.jruby.util.StrptimeParser;
 import org.jruby.util.StrptimeToken;
+import org.jruby.util.WeakIdentityHashMap;
 import org.jruby.util.collections.ConcurrentWeakHashMap;
 import org.jruby.util.io.EncodingUtils;
 import org.objectweb.asm.util.TraceClassVisitor;
@@ -199,6 +200,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.ToIntFunction;
 import java.util.regex.Pattern;
@@ -3174,37 +3176,39 @@ public final class Ruby implements Constantizable {
 
     // use this for JRuby-internal finalizers
     public void addInternalFinalizer(Finalizable finalizer) {
-        synchronized (internalFinalizersMutex) {
-            if (internalFinalizers == null) {
-                internalFinalizers = new WeakHashMap<Finalizable, Object>();
-            }
+        internalFinalizersMutex.lock();
+        try {
             internalFinalizers.put(finalizer, null);
+        } finally {
+            internalFinalizersMutex.unlock();
         }
     }
 
     // this method is for finalizers registered via ObjectSpace
     public void addFinalizer(Finalizable finalizer) {
-        synchronized (finalizersMutex) {
-            if (finalizers == null) {
-                finalizers = new WeakHashMap<Finalizable, Object>();
-            }
+        finalizersMutex.lock();
+        try {
             finalizers.put(finalizer, null);
+        } finally {
+            finalizersMutex.unlock();
         }
     }
 
     public void removeInternalFinalizer(Finalizable finalizer) {
-        synchronized (internalFinalizersMutex) {
-            if (internalFinalizers != null) {
-                internalFinalizers.remove(finalizer);
-            }
+        internalFinalizersMutex.lock();
+        try {
+            internalFinalizers.remove(finalizer);
+        } finally {
+            internalFinalizersMutex.unlock();
         }
     }
 
     public void removeFinalizer(Finalizable finalizer) {
-        synchronized (finalizersMutex) {
-            if (finalizers != null) {
-                finalizers.remove(finalizer);
-            }
+        finalizersMutex.lock();
+        try {
+            finalizers.remove(finalizer);
+        } finally {
+            finalizersMutex.unlock();
         }
     }
 
@@ -3256,8 +3260,9 @@ public final class Ruby implements Constantizable {
             fun.applyAsInt(context); // return value ignored
         }
 
-        synchronized (internalFinalizersMutex) {
-            if (internalFinalizers != null) {
+        internalFinalizersMutex.lock();
+        try {
+            if (!internalFinalizers.isEmpty()) {
                 for (Iterator<Finalizable> finalIter = new ArrayList<>(
                         internalFinalizers.keySet()).iterator(); finalIter.hasNext();) {
                     Finalizable f = finalIter.next();
@@ -3271,6 +3276,8 @@ public final class Ruby implements Constantizable {
                     finalIter.remove();
                 }
             }
+        } finally {
+            finalizersMutex.unlock();
         }
 
         getBeanManager().unregisterCompiler();
@@ -5630,23 +5637,24 @@ public final class Ruby implements Constantizable {
     private final ConcurrentWeakHashMap<RubyModule, Object> allModules = new ConcurrentWeakHashMap<>(128);
 
     private final Map<String, DateTimeZone> timeZoneCache = new HashMap<>();
+
     /**
      * A list of "external" finalizers (the ones, registered via ObjectSpace),
      * weakly referenced, to be executed on tearDown.
      */
-    private Map<Finalizable, Object> finalizers;
+    private final Map<Finalizable, Object> finalizers = new WeakIdentityHashMap();
 
     /**
      * A list of JRuby-internal finalizers,  weakly referenced,
      * to be executed on tearDown.
      */
-    private Map<Finalizable, Object> internalFinalizers;
+    private final Map<Finalizable, Object> internalFinalizers = new WeakIdentityHashMap();
 
     // mutex that controls modifications of user-defined finalizers
-    private final Object finalizersMutex = new Object();
+    private final ReentrantLock finalizersMutex = new ReentrantLock();
 
     // mutex that controls modifications of internal finalizers
-    private final Object internalFinalizersMutex = new Object();
+    private final ReentrantLock internalFinalizersMutex = new ReentrantLock();
 
     // A thread pool to use for executing this runtime's Ruby threads
     private final ExecutorService executor;
