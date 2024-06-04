@@ -514,7 +514,7 @@ public final class Ruby implements Constantizable {
         dummyClass.setFrozen(true);
 
         // Create global constants and variables
-        RubyGlobal.createGlobals(this);
+        envObject = RubyGlobal.createGlobalsAndENV(this);
 
         // Prepare LoadService and load path
         getLoadService().init(this.config.getLoadPaths());
@@ -2247,10 +2247,6 @@ public final class Ruby implements Constantizable {
 
     public RubyHash getENV() {
         return envObject;
-    }
-
-    public void setENV(RubyHash env) {
-        envObject = env;
     }
 
     public RubyClass getLocation() {
@@ -5706,7 +5702,7 @@ public final class Ruby implements Constantizable {
     private final boolean coreIsBooted;
     private final boolean runtimeIsBooted;
 
-    private RubyHash envObject;
+    private final RubyHash envObject;
 
     private final CoverageData coverageData = new CoverageData();
 
@@ -5942,6 +5938,10 @@ public final class Ruby implements Constantizable {
     @Deprecated
     public boolean hasEventHooks() {
         return traceEvents.hasEventHooks();
+    }
+
+    @Deprecated
+    public void setENV(RubyHash env) {
     }
 
 }

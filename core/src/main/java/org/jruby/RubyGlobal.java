@@ -113,7 +113,12 @@ public class RubyGlobal {
         }
     }
 
+    @Deprecated
     public static void createGlobals(Ruby runtime) {
+        createGlobalsAndENV(runtime);
+    }
+
+    public static RubyHash createGlobalsAndENV(Ruby runtime) {
         GlobalVariables globals = runtime.getGlobalVariables();
 
         runtime.setTopLevelBinding(runtime.newBinding());
@@ -231,7 +236,7 @@ public class RubyGlobal {
         globals.defineReadonly("$$", new PidAccessor(runtime), GLOBAL);
 
         // after defn of $stderr as the call may produce warnings
-        defineGlobalEnvConstants(runtime);
+        RubyHash env = defineGlobalEnvConstants(runtime);
 
         // Fixme: Do we need the check or does Main.java not call this...they should consolidate
         if (globals.get("$*").isNil()) {
@@ -286,6 +291,8 @@ public class RubyGlobal {
         globals.alias("$PREMATCH", "$`");
         globals.alias("$POSTMATCH", "$'");
         globals.alias("$LAST_PAREN_MATCH", "$+");
+
+        return env;
     }
 
     public static void initSTDIO(Ruby runtime, GlobalVariables globals) {
@@ -391,7 +398,7 @@ public class RubyGlobal {
 
 
     @SuppressWarnings("unchecked")
-    private static void defineGlobalEnvConstants(Ruby runtime) {
+    private static RubyHash defineGlobalEnvConstants(Ruby runtime) {
     	Map<RubyString, RubyString> environmentVariableMap = OSEnvironment.environmentVariableMap(runtime);
     	RubyHash env = new CaseInsensitiveStringOnlyRubyHash(
             runtime, environmentVariableMap, runtime.getNil(),
@@ -399,7 +406,6 @@ public class RubyGlobal {
         );
         env.getSingletonClass().defineAnnotatedMethods(CaseInsensitiveStringOnlyRubyHash.class);
         runtime.defineGlobalConstant("ENV", env);
-        runtime.setENV(env);
 
         // Define System.getProperties() in ENV_JAVA
         Map<RubyString, RubyString> systemPropertiesMap = OSEnvironment.systemPropertiesMap(runtime);
@@ -408,6 +414,8 @@ public class RubyGlobal {
         );
         envJava.setFrozen(true);
         runtime.defineGlobalConstant("ENV_JAVA", envJava);
+
+        return env;
     }
 
     private static void warnDeprecatedGlobal(final Ruby runtime, final String name) {
