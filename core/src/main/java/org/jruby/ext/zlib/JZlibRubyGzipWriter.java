@@ -115,7 +115,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         // unused; could not figure out how to get JZlib to take this right
         /*int strategy = */processStrategy(argc, args);
         
-        initializeCommon(args[0], level);
+        initializeCommon(context, args[0], level);
         
         ecopts(context, opt);
         
@@ -134,8 +134,9 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return level;
     }
 
-    private IRubyObject initializeCommon(IRubyObject stream, int level) {
-        realIo = (RubyObject) stream;
+    private IRubyObject initializeCommon(ThreadContext context, IRubyObject stream, int level) {
+        Ruby runtime = context.runtime;
+        realIo = stream;
         try {
             // the 15+16 here is copied from a Deflater default constructor
             Deflater deflater = new Deflater(level, 15+16, false);
@@ -158,9 +159,15 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
             };
 
             io = new GZIPOutputStream(ioOutputStream, deflater, 512, false);
+
+            // set mtime to current time in case it is never updated
+            long now = System.currentTimeMillis();
+            this.mtime = RubyTime.newTime(runtime, now);
+            io.setModifiedTime(now / 1000);
+
             return this;
         } catch (IOException ioe) {
-            throw getRuntime().newIOErrorFromException(ioe);
+            throw runtime.newIOErrorFromException(ioe);
         }
     }
     

@@ -6109,7 +6109,7 @@ public class RubyModule extends RubyObject {
             for (IRubyObject _module : modules) {
                 RubyModule module = castToModule(context, _module);
 
-                if (module.getSuperClass() != objectClass) {
+                if (module.getSuperClass() != null) {
                     context.runtime.getWarnings().warn(module.getName() + " has ancestors, but Refinement#import_methods doesn't import their methods");
                 }
             }
