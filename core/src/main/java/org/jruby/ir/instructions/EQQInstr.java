@@ -24,24 +24,27 @@ public class EQQInstr extends CallInstr implements FixedArityInstr {
     // This is a splatted value and eqq should compare each element in the array vs
     // treating the array as a single value.
     private final boolean splattedValue;
+    private final boolean pattern;
 
     // clone constructor
-    protected EQQInstr(IRScope scope, Variable result, Operand v1, Operand v2, boolean splattedValue, boolean isPotentiallyRefined, CallSite callSite,
+    protected EQQInstr(IRScope scope, Variable result, Operand v1, Operand v2, boolean splattedValue, boolean pattern, boolean isPotentiallyRefined, CallSite callSite,
                        long callSiteID) {
         super(scope, Operation.EQQ, CallType.FUNCTIONAL, result, scope.getManager().getRuntime().newSymbol("==="),
                 v1, new Operand[] { v2 }, NullBlock.INSTANCE, 0, isPotentiallyRefined, callSite, callSiteID);
 
         this.splattedValue = splattedValue;
+        this.pattern = pattern;
     }
 
     // normal constructor
-    public EQQInstr(IRScope scope, Variable result, Operand v1, Operand v2, boolean splattedValue, boolean isPotentiallyRefined) {
+    public EQQInstr(IRScope scope, Variable result, Operand v1, Operand v2, boolean splattedValue, boolean pattern, boolean isPotentiallyRefined) {
         super(scope, Operation.EQQ, CallType.FUNCTIONAL, result, scope.getManager().getRuntime().newSymbol("==="), v1,
                 new Operand[] { v2 }, NullBlock.INSTANCE, 0, isPotentiallyRefined);
 
         assert result != null: "EQQInstr result is null";
 
         this.splattedValue = splattedValue;
+        this.pattern = pattern;
     }
 
     @Override
@@ -53,10 +56,14 @@ public class EQQInstr extends CallInstr implements FixedArityInstr {
         return splattedValue;
     }
 
+    public boolean isPattern() {
+        return pattern;
+    }
+
     @Override
     public Instr clone(CloneInfo ii) {
         return new EQQInstr(ii.getScope(), ii.getRenamedVariable(result), getReceiver().cloneForInlining(ii),
-                getArg1().cloneForInlining(ii), isSplattedValue(), isPotentiallyRefined(), getCallSite(), getCallSiteId());
+                getArg1().cloneForInlining(ii), isSplattedValue(), isPattern(), isPotentiallyRefined(), getCallSite(), getCallSiteId());
     }
 
     @Override
@@ -64,6 +71,7 @@ public class EQQInstr extends CallInstr implements FixedArityInstr {
         super.encode(e);
 
         e.encode(splattedValue);
+        e.encode(pattern);
     }
 
     public static EQQInstr decode(IRReaderDecoder d) {
@@ -81,7 +89,7 @@ public class EQQInstr extends CallInstr implements FixedArityInstr {
         Variable result = d.decodeVariable();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call, result:  " + result);
 
-        return new EQQInstr(d.getCurrentScope(), result, receiver, arg1, d.decodeBoolean(), d.getCurrentScope().maybeUsingRefinements());
+        return new EQQInstr(d.getCurrentScope(), result, receiver, arg1, d.decodeBoolean(), d.decodeBoolean(), d.getCurrentScope().maybeUsingRefinements());
     }
 
     @Override

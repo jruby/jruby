@@ -1597,7 +1597,7 @@ public class JVMVisitor extends IRVisitor {
     private boolean canOmitStoreLoad(EQQInstr eqq, Instr nextInstr) {
         assert nextInstr != null: "Somehow EQQ is the last instr in the scope...";
 
-        return nextInstr instanceof BTrueInstr && eqq.getResult().equals(((BTrueInstr) nextInstr).getArg1());
+        return !eqq.isPattern() && nextInstr instanceof BTrueInstr && eqq.getResult().equals(((BTrueInstr) nextInstr).getArg1());
     }
 
     @Override
