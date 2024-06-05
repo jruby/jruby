@@ -58,6 +58,7 @@ import com.headius.backport9.modules.Modules;
 import org.jcodings.Encoding;
 
 import org.jruby.*;
+import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.TypeError;
 import org.jruby.javasupport.binding.Initializer;
 import org.jruby.javasupport.proxy.JavaProxyClass;
@@ -249,12 +250,28 @@ public class Java implements Library {
         return setProxyClass(runtime, (RubyModule) module, name.asJavaString(), resolveJavaClassArgument(runtime, javaClass));
     }
 
-    public static RubyModule setProxyClass(final Ruby runtime, final RubyModule target,
-                                           final String constName, final Class<?> javaClass) {
+    public static RubyModule setProxyClass(final Ruby runtime, final RubyModule target, final String constName, final Class<?> javaClass) throws NameError {
         final RubyModule proxyClass = getProxyClass(runtime, javaClass);
-
-        target.setConstant(constName, proxyClass);
+        setProxyClass(runtime, target, constName, proxyClass, true);
         return proxyClass;
+    }
+
+    private static void setProxyClass(final Ruby runtime, final RubyModule target, final String constName, final RubyModule proxyClass, final boolean validateConstant) {
+        if (constantNotSetOrDifferent(target, constName, proxyClass)) {
+            synchronized (target) { // synchronize to prevent "already initialized constant" warnings with multiple threads
+                if (constantNotSetOrDifferent(target, constName, proxyClass)) {
+                    if (validateConstant) {
+                        target.const_set(runtime.newSymbol(constName), proxyClass); // setConstant would not validate const-name
+                    } else {
+                        target.setConstant(constName, proxyClass);
+                    }
+                }
+            }
+        }
+    }
+
+    private static boolean constantNotSetOrDifferent(final RubyModule target, final String constName, final RubyModule proxyClass) {
+        return !target.constDefinedAt(constName) || !proxyClass.equals(target.getConstant(constName, false));
     }
 
     /**
@@ -847,9 +864,8 @@ public class Java implements Library {
 
         if ( parentModule != null && // TODO a Java Ruby class should not validate (as well)
             ( IdUtil.isConstant(className) || parentModule instanceof JavaPackage ) ) {
-            if (parentModule.getConstantAt(className) == null) {
-                parentModule.setConstant(className, proxyClass);
-            }
+            // setConstant without validation since Java class name might be lower-case
+            setProxyClass(runtime, parentModule, className, proxyClass, false);
         }
     }
 

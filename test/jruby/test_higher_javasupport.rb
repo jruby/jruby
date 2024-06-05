@@ -1746,7 +1746,7 @@ CLASSDEF
     end
     # expect no already initialized constant warning written e.g.
     # file:/.../jruby.jar!/jruby/java/java_module.rb:4 warning: already initialized constant JavaTextSpi
-    assert ! output.index('already initialized constant'), output
+    refute output.index('already initialized constant'), output
   end
 
   def test_no_warnings_on_concurrent_class_const_initialization
@@ -1760,7 +1760,53 @@ CLASSDEF
     end
     # expect no already initialized constant warning written e.g.
     # ... warning: already initialized constant DefaultPackageClass
-    assert ! output.index('already initialized constant'), output
+    refute output.index('already initialized constant'), output
+  end
+
+  def test_no_warnings_on_concurrent_class_loading_with_include_package
+    mod = Module.new do
+      include_package 'java.lang'
+      include_package 'java.lang.annotation'
+      include_package 'java.lang.invoke'
+      include_package 'java.lang.management'
+      include_package 'java.lang.reflect'
+      include_package 'java.math'
+      include_package 'java.net'
+    end
+
+    thread_count = 50
+
+    output = with_stderr_captured do
+      latch = java.util.concurrent.CountDownLatch.new(1)
+      waiting_thread_count = java.util.concurrent.atomic.AtomicInteger.new
+
+      threads = (0...thread_count).map do
+        Thread.start do
+          waiting_thread_count.incrementAndGet
+          latch.await
+
+          mod::URLEncoder
+          mod::Field
+          mod::ThreadInfo
+          mod::LockInfo
+          mod::Array
+        end
+      end
+
+      Thread.pass while (waiting_thread_count.get < thread_count)
+      latch.countDown
+
+      threads.each { |thread| thread.join }
+    end
+
+    # expect no warnings setting the constant on the module, like:
+    #   warning: already initialized constant #<Module:0x6ffeb468>::ThreadInfo
+    # or warnings while setting the actual Java proxy class such as:
+    #   warning: already initialized constant java.lang.management::ThreadInfo
+    #   warning: already initialized constant java.lang.reflect::Array
+    refute output.index('already initialized constant'), output
+
+    assert_same java.lang.reflect.Array, mod::Array
   end
 
   # reproducing https://github.com/jruby/jruby/issues/2014
