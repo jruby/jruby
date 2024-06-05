@@ -2072,7 +2072,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                 cond_ne(deconstruct_cache_end, deconstructed, nil(), () -> {
                     call(deconstructed, obj, "deconstruct");
                     label("array_check_end", arrayCheck -> {
-                        addInstr(new EQQInstr(scope, result, getManager().getArrayClass(), deconstructed, false, false));
+                        addInstr(new EQQInstr(scope, result, getManager().getArrayClass(), deconstructed, false, true, false));
                         cond(arrayCheck, result, tru(), () -> type_error("deconstruct must return Array"));
                     });
                 })
@@ -2120,7 +2120,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     private void buildPatternConstant(Label testEnd, Variable result, U constant, Operand obj, boolean isSinglePattern, Variable errorString) {
         Operand expression = build(constant);
-        addInstr(new EQQInstr(scope, result, expression, obj, false, true));
+        addInstr(new EQQInstr(scope, result, expression, obj, false, true, true));
         if (isSinglePattern) {
             buildPatternSetEQQError(errorString, result, obj, expression, obj);
         }
@@ -2149,7 +2149,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
                 call(deconstructed, obj, "deconstruct");
                 label("array_check_end", arrayCheck -> {
-                    addInstr(new EQQInstr(scope, result, getManager().getArrayClass(), deconstructed, false, false));
+                    addInstr(new EQQInstr(scope, result, getManager().getArrayClass(), deconstructed, false, true, false));
                     cond(arrayCheck, result, tru(), () -> type_error("deconstruct must return Array"));
                 });
             });
@@ -2249,7 +2249,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                 Variable inspect = temp();
                 label("key_check_error", (key_check_end)-> {
                     // if errorString is a literal symbol then this is for key pattern error.  Normally it is a string or nil
-                    Variable whichError = addResultInstr(new EQQInstr(scope, temp(), getManager().getSymbolClass(), errorString, false, false));
+                    Variable whichError = addResultInstr(new EQQInstr(scope, temp(), getManager().getSymbolClass(), errorString, false, true, false));
                     addInstr(createBranch(whichError, tru(), key_check_end));
                     if_else(errorString, nil(),
                             () -> call(inspect, value, "inspect"),
@@ -2317,7 +2317,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         Variable d = deconstructHashPatternKeys(testEnd, errorString, constant, assocsKeys, rest, result, obj, isSinglePattern);
 
         label("hash_check_end", endHashCheck -> {
-            addInstr(new EQQInstr(scope, result, getManager().getHashClass(), d, false, true));
+            addInstr(new EQQInstr(scope, result, getManager().getHashClass(), d, false, true, true));
             cond(endHashCheck, result, tru(), () -> type_error("deconstruct_keys must return Hash"));
         });
 
@@ -2777,7 +2777,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                 expression = buildWithOrder(node, containsVariableAssignment(node));
             }
 
-            addInstr(new EQQInstr(scope, eqqResult, expression, testValue, needsSplat, scope.maybeUsingRefinements()));
+            addInstr(new EQQInstr(scope, eqqResult, expression, testValue, needsSplat, false, scope.maybeUsingRefinements()));
             addInstr(createBranch(eqqResult, tru(), bodyLabel));
         }
     }

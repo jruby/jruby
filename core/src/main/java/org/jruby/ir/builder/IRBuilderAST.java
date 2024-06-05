@@ -997,7 +997,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             Operand expression = build(exprNodes);
             boolean needsSplat = exprNodes instanceof ArgsPushNode || exprNodes instanceof SplatNode || exprNodes instanceof ArgsCatNode;
 
-            addInstr(new EQQInstr(scope, result, expression, value, needsSplat, scope.maybeUsingRefinements()));
+            addInstr(new EQQInstr(scope, result, expression, value, needsSplat, true, scope.maybeUsingRefinements()));
             if (isSinglePattern) {
                 buildPatternSetEQQError(errorString, result, original, expression, value);
             }
@@ -1249,7 +1249,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
                 expression = ((MutableString) expression).frozenString;
             }
 
-            addInstr(new EQQInstr(scope, eqqResult, expression, value, false, scope.maybeUsingRefinements()));
+            addInstr(new EQQInstr(scope, eqqResult, expression, value, false, false, scope.maybeUsingRefinements()));
             addInstr(createBranch(eqqResult, tru(), bodyLabel));
 
             // SSS FIXME: This doesn't preserve original order of when clauses.  We could consider
