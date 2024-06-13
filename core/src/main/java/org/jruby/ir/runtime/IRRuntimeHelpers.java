@@ -663,6 +663,18 @@ public class IRRuntimeHelpers {
     }
 
     /**
+     * Check if the scope matches the configured ir.print.pattern, or if no pattern is set.
+     *
+     * @param scope the scope to match
+     * @return whether to print the scope
+     */
+    public static boolean shouldPrintScope(IRScope scope) {
+        String pattern = Options.IR_PRINT_PATTERN.load();
+
+        return pattern.equals(Options.IR_PRINT_PATTERN_NO_PATTERN_STRING) || scope.getId().matches(pattern);
+    }
+
+    /**
      * Update coverage data for the given file and zero-based line number.
      *
      * @param context
