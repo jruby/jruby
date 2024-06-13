@@ -204,7 +204,7 @@ public class JVMVisitor extends IRVisitor {
         BasicBlock[] bbs = scope.prepareForCompilation();
         FullInterpreterContext fullIC = scope.getFullInterpreterContext();
 
-        if (print && IRRuntimeHelpers.shouldPrintIR(runtime)) {
+        if (print && IRRuntimeHelpers.shouldPrintIR(runtime) && IRRuntimeHelpers.shouldPrintScope(scope)) {
             ByteArrayOutputStream baos = IRDumper.printIR(scope, true);
 
             LOG.info("Printing JIT IR for " + scope.getId() + ":\n" + new String(baos.toByteArray()));
@@ -1603,7 +1603,7 @@ public class JVMVisitor extends IRVisitor {
     private boolean canOmitStoreLoad(EQQInstr eqq, Instr nextInstr) {
         assert nextInstr != null: "Somehow EQQ is the last instr in the scope...";
 
-        return nextInstr instanceof BTrueInstr && eqq.getResult().equals(((BTrueInstr) nextInstr).getArg1());
+        return !eqq.isPattern() && nextInstr instanceof BTrueInstr && eqq.getResult().equals(((BTrueInstr) nextInstr).getArg1());
     }
 
     @Override

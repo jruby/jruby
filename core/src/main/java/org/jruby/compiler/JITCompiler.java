@@ -34,6 +34,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.IRScope;
@@ -227,6 +228,8 @@ public class JITCompiler implements JITCompilerMBean {
                 // just run directly
                 task.run();
             }
+        } catch (RaiseException e) {
+            throw e;
         } catch (Exception e) {
             throw new NotCompilableException(e);
         }

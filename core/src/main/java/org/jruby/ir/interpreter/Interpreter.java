@@ -55,7 +55,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     protected IRubyObject execute(Ruby runtime, IRScriptBody irScope, IRubyObject self) {
         InterpreterContext ic = irScope.getInterpreterContext();
 
-        if (IRRuntimeHelpers.shouldPrintIR(runtime)) {
+        if (IRRuntimeHelpers.shouldPrintIR(runtime) && IRRuntimeHelpers.shouldPrintScope(irScope)) {
             ByteArrayOutputStream baos = IRDumper.printIR(irScope, false);
 
             LOG.info("Printing simple IR for " + irScope.getId() + ":\n" + new String(baos.toByteArray()));
