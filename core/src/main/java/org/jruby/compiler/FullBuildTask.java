@@ -34,7 +34,7 @@ class FullBuildTask implements Runnable {
 
             method.completeBuild(method.getIRScope().prepareFullBuild());
 
-            if (IRRuntimeHelpers.shouldPrintIR(jitCompiler.runtime)) {
+            if (IRRuntimeHelpers.shouldPrintIR(jitCompiler.runtime) && IRRuntimeHelpers.shouldPrintScope(method.getIRScope())) {
                 ByteArrayOutputStream baos = IRDumper.printIR(method.getIRScope(), true, true);
                 LOG.info("Printing full IR for " + method.getIRScope().getId() + ":\n" + new String(baos.toByteArray()));
             }

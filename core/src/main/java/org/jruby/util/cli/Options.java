@@ -57,6 +57,8 @@ public class Options {
     private static final boolean INVOKEDYNAMIC_DEFAULT = calculateInvokedynamicDefault();
     private static final boolean COLOR = System.console() != null;
 
+    public static final String IR_PRINT_PATTERN_NO_PATTERN_STRING = "<NO_PATTERN>";
+
     // This section holds all Options for JRuby. They will be listed in the
     // --properties output.
 
@@ -119,6 +121,7 @@ public class Options {
     public static final Option<Boolean>  IR_PRINT = bool(IR, "ir.print", IR_PRINT_ALL.load(), "Print the final IR to be run before starting to execute each body of code.");
     public static final Option<Boolean>  IR_PRINT_COLOR = bool(IR, "ir.print.color", COLOR, "Print the final IR with color highlighting.");
     public static final Option<Boolean>  IR_STRING_FREEZE = bool(IR, "ir.string.freeze", true, "Compile \"foo\".freeze as a constant frozen string value instead of a call.");
+    public static final Option<String> IR_PRINT_PATTERN = string(IR, "ir.print.pattern", IR_PRINT_PATTERN_NO_PATTERN_STRING, "A pattern to limit IR print output to specific scopes.");
 
     public static final Option<Boolean> NATIVE_ENABLED = bool(NATIVE, "native.enabled", true, "Enable/disable native code, including POSIX features and C exts.");
     public static final Option<Boolean> NATIVE_VERBOSE = bool(NATIVE, "native.verbose", false, "Enable verbose logging of native extension loading.");
