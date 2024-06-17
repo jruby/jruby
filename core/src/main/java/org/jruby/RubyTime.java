@@ -1674,21 +1674,26 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = "initialize", optional = 7, checkArity = false, visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
-        IRubyObject zone = null;
+        IRubyObject zone = context.nil;
         IRubyObject nil = context.nil;
+        IRubyObject usec = nil;
 
         int argc = args.length;
         if (keywords) {
-            IRubyObject in = ArgsUtil.extractKeywordArg(context, args[argc - 1], "in");
-            if (in != null) {
+            IRubyObject[] opts = ArgsUtil.extractKeywordArgs(context, args[argc - 1], new String[] { "in", "precision" });
+            if (opts[0] != null) {
                 if (argc > 7) {
                     throw context.runtime.newArgumentError("timezone argument given as positional and keyword arguments");
                 }
-                zone = in;
+                zone = opts[0];
             } else {
                 if (argc > 6) {
                     zone = args[6];
                 }
+            }
+
+            if (opts[1] != null) {
+                usec = opts[1];
             }
         } else if (argc > 6) {
             zone = args[6];
@@ -1698,47 +1703,48 @@ public class RubyTime extends RubyObject {
             case 0:
                 return initialize(context);
             case 1:
-                return zone != null ?
+                return keywords ?
                         initializeNow(context, zone) :
-                        initialize(context, args[0], nil, nil, nil, nil, nil);
+                        initialize(context, args[0], nil, nil, nil, nil, nil, usec, nil);
             case 2:
-                return zone != null ?
-                        initialize(context, args[0], nil, nil, nil, nil, nil, zone) :
+                return keywords ?
+                        initialize(context, args[0], nil, nil, nil, nil, nil, usec, zone) :
                         initialize(context, args[0], args[1], nil, nil, nil, nil);
             case 3:
-                return zone != null ?
-                        initialize(context, args[0], args[1], nil, nil, nil, nil, zone) :
+                return keywords ?
+                        initialize(context, args[0], args[1], nil, nil, nil, nil, usec, zone) :
                         initialize(context, args[0], args[1], args[2], nil, nil, nil);
             case 4:
-                return zone != null ?
-                        initialize(context, args[0], args[1], args[2], nil, nil, nil, zone) :
+                return keywords ?
+                        initialize(context, args[0], args[1], args[2], nil, nil, nil, usec, zone) :
                         initialize(context, args[0], args[1], args[2], args[3], nil, nil);
             case 5:
-                return zone != null ?
-                        initialize(context, args[0], args[1], args[2], args[3], nil, nil, zone) :
+                return keywords ?
+                        initialize(context, args[0], args[1], args[2], args[3], nil, nil, usec, zone) :
                         initialize(context, args[0], args[1], args[2], args[3], args[4], nil);
             case 6:
-                return zone != null ?
-                        initialize(context, args[0], args[1], args[2], args[3], args[4], nil, zone) :
+                return keywords ?
+                        initialize(context, args[0], args[1], args[2], args[3], args[4], nil, usec, zone) :
                         initialize(context, args[0], args[1], args[2], args[3], args[4], args[5]);
             case 7:
-                return initialize(context, args[0], args[1], args[2], args[3], args[4], args[5], zone);
+                return initialize(context, args[0], args[1], args[2], args[3], args[4], args[5], usec, zone);
             default:
                 throw context.runtime.newArgumentError(argc, 0, 7);
         }
     }
 
-    private IRubyObject initialize(ThreadContext context, IRubyObject year, IRubyObject month, IRubyObject day, IRubyObject hour, IRubyObject minute, IRubyObject second) {
-        IRubyObject nil = context.nil;
-
-        TimeArgs timeArgs = new TimeArgs(context, year, month, day, hour, minute, second, nil, false);
+    private IRubyObject initialize(ThreadContext context, IRubyObject year, IRubyObject month, IRubyObject day,
+                                   IRubyObject hour, IRubyObject minute, IRubyObject second) {
+        TimeArgs timeArgs = new TimeArgs(context, year, month, day, hour, minute, second, context.nil, false);
 
         timeArgs.initializeTime(context, this, getLocalTimeZone(context.runtime));
 
-        return nil;
+        return context.nil;
     }
 
-    private IRubyObject initialize(ThreadContext context, IRubyObject year, IRubyObject month, IRubyObject day, IRubyObject hour, IRubyObject minute, IRubyObject second, IRubyObject zone) {
+    private IRubyObject initialize(ThreadContext context, IRubyObject year, IRubyObject month, IRubyObject day,
+                                   IRubyObject hour, IRubyObject minute, IRubyObject second, IRubyObject usec,
+                                   IRubyObject zone) {
         Ruby runtime = context.runtime;
         IRubyObject nil = context.nil;
 
@@ -1771,7 +1777,7 @@ public class RubyTime extends RubyObject {
             }
         }
 
-        TimeArgs timeArgs = new TimeArgs(context, year, month, day, hour, minute, second, nil, dst);
+        TimeArgs timeArgs = new TimeArgs(context, year, month, day, hour, minute, second, usec, dst);
 
         timeArgs.initializeTime(context, this, dtz);
 
