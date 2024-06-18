@@ -433,7 +433,7 @@ public class ShellLauncher {
             pathObject = env.op_aref(runtime.getCurrentContext(), RubyString.newString(runtime, PATH_ENV));
         }
 
-        if (pathObject == null) {
+        if (pathObject.isNil() || pathObject.convertToString().size() == 0) {
             pathNodes = DEFAULT_PATH; // ASSUME: not modified by callee
         }
 
