@@ -90,7 +90,7 @@ default_gems = [
       ['ffi-binary-libfixposix', '0.5.1.1'],
       ['ffi-bindings-libfixposix', '0.5.1.0'],
     ['syntax_suggest', '2.0.0'],
-    ['tempfile', '0.1.3'],
+    ['tempfile', '0.2.1'],
     ['time', '0.3.0'],
     ['timeout', '0.4.1'],
     # https://github.com/ruby/tmpdir/issues/13
