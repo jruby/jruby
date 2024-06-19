@@ -4813,10 +4813,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         try {
             if (arg1 == runtime.getArgsFile() || !(arg1 instanceof RubyFile || arg1 instanceof RubyString || arg1.respondsTo("to_path"))) {
-                if (sites.respond_to_read.respondsTo(context, arg1, arg1, true)) {
-                    channel1 = new IOChannel.IOReadableByteChannel(arg1);
-                } else if (sites.respond_to_readpartial.respondsTo(context, arg1, arg1, true)) {
+                if (sites.respond_to_readpartial.respondsTo(context, arg1, arg1, true)) {
                     channel1 = new IOChannel.IOReadableByteChannel(arg1, "readpartial");
+                } else if (sites.respond_to_read.respondsTo(context, arg1, arg1, true)) {
+                    channel1 = new IOChannel.IOReadableByteChannel(arg1);
                 }
             } else {
                 IRubyObject tmpIO = TypeConverter.ioCheckIO(runtime, arg1);
