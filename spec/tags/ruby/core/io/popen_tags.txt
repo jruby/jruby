@@ -5,7 +5,6 @@ fails:IO.popen with a leading Array argument accepts an IO mode argument followi
 fails:IO.popen with a leading ENV Hash accepts a single String command with a trailing Hash of Process.exec options, and an IO mode
 fails:IO.popen with a leading ENV Hash accepts an Array command with a separate trailing Hash of Process.exec options, and an IO mode
 windows:IO.popen reads a read-only pipe
-windows:IO.popen with a block returns the value of the block
 windows:IO.popen with a leading ENV Hash accepts a single String command
 windows:IO.popen with a leading ENV Hash accepts a single String command, and an IO mode
 windows:IO.popen with a leading ENV Hash accepts a single String command with a trailing Hash of Process.exec options
