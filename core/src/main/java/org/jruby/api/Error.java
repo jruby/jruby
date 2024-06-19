@@ -2,6 +2,7 @@ package org.jruby.api;
 
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.ThreadContext;
@@ -93,6 +94,32 @@ public class Error {
     public static RaiseException withException(RaiseException error, Exception exception) {
         error.initCause(exception);
         return error;
+    }
+
+    /**
+     * Throw an instance of ArgumentError with the given message.
+     *
+     * @param context the current thread context
+     * @param message to be the message of the exception.  Note that this message should
+     *                be properly formatted using RubyStringBuilder.str() or you
+     *                absolutely know it is clean ASCII-7BIT
+     * @return the created exception
+     */
+    public static ArgumentError argumentError(ThreadContext context, String message) {
+        throw createArgumentError(context, message);
+    }
+
+    /**
+     * Create an instance of ArgumentError with the given message.
+     *
+     * @param context the current thread context
+     * @param message to be the message of the exception.  Note that this message should
+     *                be properly formatted using RubyStringBuilder.str() or you
+     *                absolutely know it is clean ASCII-7BIT
+     * @return the created exception
+     */
+    public static ArgumentError createArgumentError(ThreadContext context, String message) {
+        return (ArgumentError) context.runtime.newArgumentError(message);
     }
 
     private static IRubyObject typeFor(Ruby runtime, IRubyObject object) {
