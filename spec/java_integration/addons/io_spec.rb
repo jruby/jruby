@@ -87,7 +87,7 @@ describe "Ruby IO" do
 
 
   it "is coercible using to_java to java.io.OutputStream" do
-    file = Tempfile.new("io_spec")
+    file = Tempfile.create("io_spec")
     stream = file.to_java 'java.io.OutputStream'
     expect(java.io.OutputStream).to be === stream
 

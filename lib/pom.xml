@@ -657,6 +657,19 @@ DO NOT MODIFY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>tempfile</artifactId>
+      <version>0.2.1</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>rubygems</groupId>
+          <artifactId>jar-dependencies</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>time</artifactId>
       <version>0.3.0</version>
       <type>gem</type>
@@ -1140,6 +1153,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/ffi-binary-libfixposix-0.5.1.1*</include>
           <include>specifications/ffi-bindings-libfixposix-0.5.1.0*</include>
           <include>specifications/syntax_suggest-2.0.0*</include>
+          <include>specifications/tempfile-0.2.1*</include>
           <include>specifications/time-0.3.0*</include>
           <include>specifications/timeout-0.4.1*</include>
           <include>specifications/tsort-0.2.0*</include>
@@ -1220,6 +1234,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/ffi-binary-libfixposix-0.5.1.1*/**/*</include>
           <include>gems/ffi-bindings-libfixposix-0.5.1.0*/**/*</include>
           <include>gems/syntax_suggest-2.0.0*/**/*</include>
+          <include>gems/tempfile-0.2.1*/**/*</include>
           <include>gems/time-0.3.0*/**/*</include>
           <include>gems/timeout-0.4.1*/**/*</include>
           <include>gems/tsort-0.2.0*/**/*</include>
@@ -1300,6 +1315,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/ffi-binary-libfixposix-0.5.1.1*</include>
           <include>cache/ffi-bindings-libfixposix-0.5.1.0*</include>
           <include>cache/syntax_suggest-2.0.0*</include>
+          <include>cache/tempfile-0.2.1*</include>
           <include>cache/time-0.3.0*</include>
           <include>cache/timeout-0.4.1*</include>
           <include>cache/tsort-0.2.0*</include>
