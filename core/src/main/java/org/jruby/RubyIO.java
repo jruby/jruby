@@ -4812,22 +4812,24 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         boolean local2 = false;
 
         try {
-            if (arg1 instanceof RubyString) {
-                io1 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[]{arg1}, Block.NULL_BLOCK);
-                local1 = true;
-            } else if (arg1 instanceof RubyIO) {
+            if (arg1 == runtime.getArgsFile() || !(arg1 instanceof RubyFile || arg1 instanceof RubyString || arg1.respondsTo("to_path"))) {
+                if (sites.respond_to_read.respondsTo(context, arg1, arg1, true)) {
+                    channel1 = new IOChannel.IOReadableByteChannel(arg1);
+                } else if (sites.respond_to_readpartial.respondsTo(context, arg1, arg1, true)) {
+                    channel1 = new IOChannel.IOReadableByteChannel(arg1, "readpartial");
+                }
+            } else {
+                IRubyObject tmpIO = TypeConverter.ioCheckIO(runtime, arg1);
+                if (!tmpIO.isNil()) {
+                    arg1 = tmpIO;
+                } else if (!(arg1 instanceof RubyFile)) {
+                    RubyString path = RubyFile.get_path(context, arg1);
+                    arg1 = RubyFile.open(context, runtime.getFile(), new IRubyObject[]{path, runtime.newFixnum(ModeFlags.RDONLY)}, Block.NULL_BLOCK);
+                    local1 = true;
+                }
+
                 io1 = (RubyIO) arg1;
                 userProvidedReadIO = true;
-            } else if (sites.to_path_checked1.respond_to_X.respondsTo(context, arg1, arg1)) {
-                RubyString path = (RubyString) TypeConverter.convertToType(context, arg1, runtime.getString(), sites.to_path_checked1);
-                io1 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[]{path}, Block.NULL_BLOCK);
-                local1 = true;
-            } else if (sites.respond_to_read.respondsTo(context, arg1, arg1, true)) {
-                channel1 = new IOChannel.IOReadableByteChannel(arg1);
-            } else if (sites.respond_to_readpartial.respondsTo(context, arg1, arg1, true)) {
-                channel1 = new IOChannel.IOReadableByteChannel(arg1, "readpartial");
-            } else {
-                throw runtime.newArgumentError("Should be String or IO");
             }
 
             // for instance IO, just use its channel
@@ -4836,19 +4838,21 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 channel1 = io1.getChannel();
             }
 
-            if (arg2 instanceof RubyString) {
-                io2 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[]{arg2, runtime.newString("w")}, Block.NULL_BLOCK);
-                local2 = true;
-            } else if (arg2 instanceof RubyIO) {
-                io2 = (RubyIO) arg2;
-            } else if (sites.to_path_checked2.respond_to_X.respondsTo(context, arg2, arg2)) {
-                RubyString path = (RubyString) TypeConverter.convertToType(context, arg2, runtime.getString(), sites.to_path_checked2);
-                io2 = (RubyIO) RubyFile.open(context, runtime.getFile(), new IRubyObject[]{path, runtime.newString("w")}, Block.NULL_BLOCK);
-                local2 = true;
-            } else if (sites.respond_to_write.respondsTo(context, arg2, arg2, true)) {
-                channel2 = new IOChannel.IOWritableByteChannel(arg2);
+            if (arg2 == runtime.getArgsFile() || !(arg2 instanceof RubyFile || arg2 instanceof RubyString || arg2.respondsTo("to_path"))) {
+                if (sites.respond_to_write.respondsTo(context, arg2, arg2, true)) {
+                    channel2 = new IOChannel.IOWritableByteChannel(arg2);
+                }
             } else {
-                throw runtime.newArgumentError("Should be String or IO");
+                IRubyObject tmpIO = TypeConverter.ioCheckIO(runtime, arg2);
+                if (!tmpIO.isNil()) {
+                    arg2 = tmpIO;
+                } else if (!(arg2 instanceof RubyFile)) {
+                    RubyString path = RubyFile.get_path(context, arg2);
+                    arg2 = RubyFile.open(context, runtime.getFile(), new IRubyObject[]{path, runtime.newFixnum(ModeFlags.WRONLY | ModeFlags.CREAT | ModeFlags.TRUNC)}, Block.NULL_BLOCK);
+                    local2 = true;
+                }
+
+                io2 = (RubyIO) arg2;
             }
 
             // for instanceof IO, just use its write channel
