@@ -457,18 +457,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return StringSupport.checkEmbeddedNulls(context.runtime, get_path(context, str));
     }
 
-    @JRubyMethod(name = {"path", "to_path"})
+    // Moved to IO in 3.2
     public IRubyObject path(ThreadContext context) {
-        if ((openFile.getMode() & OpenFile.TMPFILE) != 0) {
-            throw context.runtime.newIOError("File is unnamed (TMPFILE?)");
-        }
-
-        final String path = getPath();
-        if (path != null) {
-            RubyString newPath = context.runtime.newString(path);
-            return newPath;
-        }
-        return context.nil;
+        return super.path(context);
     }
 
     @JRubyMethod
@@ -1466,14 +1457,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return RubyFixnum.zero(runtime);
     }
 
+    // Moved to IO in 3.2
+    @Override
     public String getPath() {
-        if (openFile == null) return null;
-        return openFile.getPath();
-    }
-
-    private void setPath(String path) {
-        if (openFile == null) return;
-        openFile.setPath(path);
+        return super.getPath();
     }
 
     @Override

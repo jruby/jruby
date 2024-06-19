@@ -5198,6 +5198,26 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return context.nil;
     }
 
+    @JRubyMethod(name = {"path", "to_path"})
+    public IRubyObject path(ThreadContext context) {
+        final String path = getPath();
+        if (path != null) {
+            RubyString newPath = context.runtime.newString(path);
+            return newPath;
+        }
+        return context.nil;
+    }
+
+    public String getPath() {
+        if (openFile == null) return null;
+        return openFile.getPath();
+    }
+
+    protected void setPath(String path) {
+        if (openFile == null) return;
+        openFile.setPath(path);
+    }
+
     /**
      * Add a thread to the list of blocking threads for this IO.
      *
