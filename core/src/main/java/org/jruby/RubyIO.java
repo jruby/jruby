@@ -46,6 +46,7 @@ import java.nio.channels.Channel;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.WritableByteChannel;
 import java.util.Arrays;
@@ -65,6 +66,7 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.transcode.EConvFlags;
 import org.jruby.api.API;
+import org.jruby.api.Error;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
@@ -4813,6 +4815,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         try {
             if (arg1 == runtime.getArgsFile() || !(arg1 instanceof RubyFile || arg1 instanceof RubyString || arg1.respondsTo("to_path"))) {
+                if (offset != null) {
+                    throw Error.argumentError(context, "cannot specify src_offset for non-IO");
+                }
+
                 if (sites.respond_to_readpartial.respondsTo(context, arg1, arg1, true)) {
                     channel1 = new IOChannel.IOReadableByteChannel(arg1, "readpartial");
                 } else if (sites.respond_to_read.respondsTo(context, arg1, arg1, true)) {
@@ -4999,11 +5005,15 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         long transferred = 0;
 
         if (position != -1) {
-            if (from instanceof NativeSelectableChannel) {
-                int ret = context.runtime.getPosix().lseek(((NativeSelectableChannel)from).getFD(), position, PosixShim.SEEK_SET);
+            if (from instanceof NativeSelectableChannel nativeSelectableChannel) {
+                int ret = context.runtime.getPosix().lseek(nativeSelectableChannel.getFD(), position, PosixShim.SEEK_SET);
                 if (ret == -1) {
                     throw context.runtime.newErrnoFromErrno(Errno.valueOf(context.runtime.getPosix().errno()), from.toString());
                 }
+            } else if (from instanceof SeekableByteChannel seekableByteChannel) {
+                seekableByteChannel.position(position);
+            } else {
+                throw context.runtime.newErrnoESPIPEError();
             }
         }
 

@@ -1,4 +1,3 @@
-fails:IO.copy_stream from a pipe IO raises an error when an offset is specified
 windows:IO.copy_stream from an IO to a file name copies only length bytes from the offset
 windows:IO.copy_stream from an IO to an IO copies only length bytes from the offset
 windows:IO.copy_stream from a file name to a file name copies only length bytes from the offset
