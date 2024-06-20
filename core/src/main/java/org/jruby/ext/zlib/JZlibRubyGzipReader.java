@@ -61,7 +61,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.jruby.RubyIO.PARAGRAPH_SEPARATOR;
-import static org.jruby.api.Convert.castToString;
+import static org.jruby.api.Convert.castAsString;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 /**
@@ -366,7 +366,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
             if (len < 0) throw runtime.newArgumentError("negative length " + len + " given");
 
             if (argc > 1 && !args[1].isNil()) {
-                return readPartial(runtime, len, castToString(runtime.getCurrentContext(), args[1]));
+                return readPartial(runtime, len, castAsString(runtime.getCurrentContext(), args[1]));
             }
 
             return readPartial(runtime, len, null);

@@ -23,7 +23,7 @@ import java.lang.invoke.MutableCallSite;
 import java.lang.invoke.SwitchPoint;
 
 import static java.lang.invoke.MethodHandles.guardWithTest;
-import static org.jruby.api.Convert.castToModule;
+import static org.jruby.api.Convert.castAsModule;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;

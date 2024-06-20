@@ -59,8 +59,8 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 
 import static org.jruby.RubyRegexp.*;
-import static org.jruby.api.Convert.castToArray;
-import static org.jruby.api.Convert.castToNumeric;
+import static org.jruby.api.Convert.castAsArray;
+import static org.jruby.api.Convert.castAsNumeric;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ext.date.DateUtils.*;
 import static org.jruby.util.Numeric.*;
@@ -1217,7 +1217,7 @@ public class RubyDate extends RubyObject {
     public IRubyObject op_plus(ThreadContext context, IRubyObject n) {
         return n instanceof RubyFixnum fixnum ?
                 newInstance(context, dt.plusDays(+fixnum.getIntValue()), off, start) :
-                op_plus_numeric(context, castToNumeric(context, n, "expected numeric"));
+                op_plus_numeric(context, castAsNumeric(context, n, "expected numeric"));
     }
 
     RubyDate op_plus_numeric(ThreadContext context, RubyNumeric n) {
@@ -1417,7 +1417,7 @@ public class RubyDate extends RubyObject {
     public RubyDate marshal_load(ThreadContext context, IRubyObject a) {
         checkFrozen();
 
-        final RubyArray ary = castToArray(context, a, "expected an array");
+        final RubyArray ary = castAsArray(context, a, "expected an array");
 
         IRubyObject ajd, of, sg;
 

@@ -49,6 +49,7 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Convert;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -59,7 +60,7 @@ import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.util.ByteList;
 
-import static org.jruby.api.Convert.castToArray;
+import static org.jruby.api.Convert.castAsArray;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.*;
 
@@ -220,7 +221,7 @@ public final class StructLayout extends Type {
 
         IRubyObject rbFields = args[0], size = args[1], alignment = args[2];
 
-        List<IRubyObject> fields = Arrays.asList(castToArray(context, rbFields).toJavaArrayMaybeUnsafe());
+        List<IRubyObject> fields = Arrays.asList(Convert.castAsArray(context, rbFields).toJavaArrayMaybeUnsafe());
 
         return new StructLayout(context, (RubyClass) klass, fields,
                 RubyNumeric.num2int(size), RubyNumeric.num2int(alignment));

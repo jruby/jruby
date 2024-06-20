@@ -42,6 +42,7 @@ import java.util.regex.Pattern;
 import org.jruby.*;
 import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Convert;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.RaiseException;
@@ -58,7 +59,7 @@ import org.jruby.util.Numeric;
 import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
 
-import static org.jruby.api.Convert.castToFixnum;
+import static org.jruby.api.Convert.castAsFixnum;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -329,7 +330,7 @@ public class RubyBigDecimal extends RubyNumeric {
         IRubyObject old = limit(context, recv);
 
         if (arg == context.nil) return old;
-        if (castToFixnum(context, arg).getLongValue() < 0) throw context.runtime.newArgumentError("argument must be positive");
+        if (Convert.castAsFixnum(context, arg).getLongValue() < 0) throw context.runtime.newArgumentError("argument must be positive");
 
         ((RubyModule) recv).setInternalModuleVariable("vpPrecLimit", arg);
 
@@ -378,7 +379,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
         args = Arity.scanArgs(context.runtime, args, 1, 1);
 
-        long mode = castToFixnum(context, args[0]).getLongValue();
+        long mode = Convert.castAsFixnum(context, args[0]).getLongValue();
         IRubyObject value = args[1];
 
         if ((mode & EXCEPTION_ALL) != 0) {
@@ -1345,7 +1346,7 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private static int getPositiveInt(ThreadContext context, IRubyObject arg) {
-        int value = castToFixnum(context, arg).getIntValue();
+        int value = Convert.castAsFixnum(context, arg).getIntValue();
         if (value < 0) throw context.runtime.newArgumentError("argument must be positive");
         return value;
     }

@@ -33,7 +33,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 
-import static org.jruby.api.Convert.castToBignum;
+import static org.jruby.api.Convert.castAsBignum;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -371,7 +371,7 @@ public class RubyRandom extends RubyRandomBase {
         RubyArray load = arg.convertToArray();
         if (load.size() != 3) throw context.runtime.newArgumentError("wrong dump data");
 
-        RubyBignum state = castToBignum(context, load.eltInternal(0));
+        RubyBignum state = castAsBignum(context, load.eltInternal(0));
         int left = RubyNumeric.num2int(load.eltInternal(1));
         IRubyObject seed = load.eltInternal(2);
 

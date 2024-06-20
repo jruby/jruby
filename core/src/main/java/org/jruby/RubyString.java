@@ -92,8 +92,8 @@ import static org.jruby.RubyComparable.invcmp;
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
-import static org.jruby.RubyNumeric.checkInt;
 import static org.jruby.anno.FrameField.BACKREF;
+import static org.jruby.api.Convert.checkInt;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.StringSupport.*;
@@ -1284,18 +1284,16 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @JRubyMethod(name = "<=>")
     @Override
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
-        Ruby runtime = context.runtime;
-        if (other instanceof RubyString) {
-            return runtime.newFixnum(op_cmp((RubyString) other));
-        }
+        if (other instanceof RubyString otherStr) return context.runtime.newFixnum(op_cmp(otherStr));
+
         JavaSites.CheckedSites sites = sites(context).to_str_checked;
         if (sites.respond_to_X.respondsTo(context, this, other)) {
             IRubyObject tmp = TypeConverter.checkStringType(context, sites, other);
-            if (tmp instanceof RubyString) return runtime.newFixnum(op_cmp((RubyString) tmp));
+            if (tmp instanceof RubyString otherStr) return context.runtime.newFixnum(op_cmp(otherStr));
+            return context.nil;
         } else {
             return invcmp(context, sites(context).recursive_cmp, this, other);
         }
-        return context.nil;
     }
 
     /** rb_str_equal
@@ -1305,9 +1303,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         if (this == other) return context.tru;
-        if (other instanceof RubyString) {
-            RubyString otherString = (RubyString)other;
-            return StringSupport.areComparable(this, otherString) && value.equal(otherString.value) ? context.tru : context.fals;
+
+        if (other instanceof RubyString otherStr) {
+            return StringSupport.areComparable(this, otherStr) && value.equal(otherStr.value) ? context.tru : context.fals;
         }
         return op_equalCommon(context, other);
     }
@@ -1365,8 +1363,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (longLen < 0) throw runtime.newArgumentError("negative argument");
         if (size() == 0) return (RubyString) dup();
 
-        checkInt(arg, longLen);
-        int len = (int) longLen;
+        int len = checkInt(context, longLen);
 
         // we limit to int because ByteBuffer can only allocate int sizes
         len = Helpers.multiplyBufferLength(runtime, value.getRealSize(), len);
@@ -1382,8 +1379,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             }
             System.arraycopy(bytes.getUnsafeBytes(), 0, bytes.getUnsafeBytes(), n, len - n);
         }
-        RubyString result = newString(context.runtime, bytes);
-        return result;
+        return newString(context.runtime, bytes);
     }
 
     @JRubyMethod(name = "%")

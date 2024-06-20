@@ -53,7 +53,6 @@ import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import static org.jruby.api.Convert.castToClass;
 import static org.jruby.api.Error.typeError;
 
 public class RaiseException extends JumpException {
