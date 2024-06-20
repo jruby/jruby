@@ -40,23 +40,22 @@ import static org.jruby.RubyFile.canonicalize;
 
 public class ExternalScript implements Library {
     private final LoadServiceResource resource;
+    private final String loadName;
     
-    public ExternalScript(LoadServiceResource resource, String name) {
+    public ExternalScript(LoadServiceResource resource, String loadName) {
         this.resource = resource;
+        this.loadName = loadName;
     }
 
     public void load(Ruby runtime, boolean wrap) {
         InputStream in = null;
         try {
             in = resource.getInputStream();
-            String name = resource.getName();
 
             if (runtime.getInstanceConfig().getCompileMode().shouldPrecompileAll()) {
-                runtime.compileAndLoadFile(name, in, wrap);
+                runtime.compileAndLoadFile(loadName, in, wrap);
             } else {
-                name = CompiledScriptLoader.getFilenameFromPathAndName(resource.getPath(), name, resource.isAbsolute());
-
-                runtime.loadFile(name, new LoadServiceResourceInputStream(in), wrap);
+                runtime.loadFile(loadName, new LoadServiceResourceInputStream(in), wrap);
             }
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
