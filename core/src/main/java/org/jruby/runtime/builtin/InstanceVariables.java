@@ -7,6 +7,7 @@ package org.jruby.runtime.builtin;
 
 import java.util.List;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 /**
  * Interface that represents the instance variable aspect of Ruby
@@ -76,7 +77,21 @@ public interface InstanceVariables {
      */
     void copyInstanceVariablesInto(InstanceVariables other);
 
+    /**
+     * Iterate over all instance variable name/value pairs for this object.
+     *
+     * @param accessor a consumer for each variable
+     */
     default void forEachInstanceVariable(BiConsumer<String, IRubyObject> accessor) {
         getInstanceVariableList().forEach((var) -> accessor.accept(var.getName(), var.getValue()));
+    }
+
+    /**
+     * Iterate over all instance variable names for this object.
+     *
+     * @param consumer consumer for the names
+     */
+    default void forEachInstanceVariableName(Consumer<String> consumer) {
+        forEachInstanceVariable((name, value) -> consumer.accept(name));
     }
 }

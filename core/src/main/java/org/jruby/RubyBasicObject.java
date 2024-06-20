@@ -51,6 +51,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
@@ -1575,9 +1576,15 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return list;
     }
 
-    /**
-     * @see org.jruby.runtime.builtin.InstanceVariables#getInstanceVariableNameList
-     */
+    @Override
+    public void forEachInstanceVariableName(Consumer<String> consumer) {
+        metaClass.getVariableAccessorsForRead().forEach((name, var) -> {
+            if (IdUtil.isInstanceVariable(name) && var.get(this) instanceof IRubyObject) {
+                consumer.accept(name);
+            }
+        });
+    }
+
     @Override
     public void copyInstanceVariablesInto(final InstanceVariables other) {
         forEachInstanceVariable(other::setInstanceVariable);
@@ -1599,11 +1606,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
     }
 
+    @Override
     public void forEachInstanceVariable(BiConsumer<String, IRubyObject> accessor) {
         metaClass.getVariableAccessorsForRead().forEach((name, var) -> {
-            final Object value = var.get(this);
-            if (!(value instanceof IRubyObject rubyObject) || !IdUtil.isInstanceVariable(name)) return;
-            accessor.accept(name, rubyObject);
+            if (IdUtil.isInstanceVariable(name) && var.get(this) instanceof IRubyObject rubyObject) {
+                accessor.accept(name, rubyObject);
+            }
         });
     }
 
@@ -2781,16 +2789,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     public RubyArray instance_variables(ThreadContext context) {
         Ruby runtime = context.runtime;
-        List<String> nameList = getInstanceVariableNameList();
-        int size = nameList.size();
-
-        RubyArray array = RubyArray.newBlankArrayInternal(runtime, size);
-
-        for (int i = 0; i < size; i++) {
-            array.eltInternalSet(i, runtime.newSymbol(nameList.get(i)));
-        }
-        array.realLength = size;
-
+        RubyArray array = RubyArray.newArray(runtime, getMetaClass().getVariableAccessorsForRead().size());
+        forEachInstanceVariableName(name -> array.append(runtime.newSymbol(name)));
         return array;
     }
 
