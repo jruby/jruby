@@ -50,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
@@ -1579,11 +1580,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public void copyInstanceVariablesInto(final InstanceVariables other) {
-        for (Variable<IRubyObject> var : getInstanceVariableList()) {
-            synchronized (this) {
-                other.setInstanceVariable(var.getName(), var.getValue());
-            }
-        }
+        forEachInstanceVariable(other::setInstanceVariable);
     }
 
     /**
@@ -1600,6 +1597,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         } else {
             raiseFrozenError();
         }
+    }
+
+    public void forEachInstanceVariable(BiConsumer<String, IRubyObject> accessor) {
+        metaClass.getVariableAccessorsForRead().forEach((name, var) -> {
+            final Object value = var.get(this);
+            if (!(value instanceof IRubyObject rubyObject) || !IdUtil.isInstanceVariable(name)) return;
+            accessor.accept(name, rubyObject);
+        });
     }
 
     private void raiseFrozenError() throws RaiseException {
