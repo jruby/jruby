@@ -29,6 +29,7 @@ import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
 import org.jruby.RubyIO;
+import org.jruby.RubyInteger;
 import org.jruby.RubyMethod;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
@@ -56,6 +57,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.jruby.RubyString.*;
+import static org.jruby.api.Convert.checkToInteger;
+import static org.jruby.api.Convert.integerAsInt;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.StringSupport.CR_UNKNOWN;
 import static org.jruby.util.StringSupport.searchNonAscii;
@@ -203,11 +206,11 @@ public class EncodingUtils {
                 fmode_p[0] = OpenFile.READABLE;
                 oflags_p[0] = ModeFlags.RDONLY;
             } else {
-                intmode = TypeConverter.checkToInteger(context, vmode(vmodeAndVperm_p));
+                intmode = checkToInteger(context, vmode(vmodeAndVperm_p));
 
                 if (!intmode.isNil()) {
                     vmode(vmodeAndVperm_p, intmode);
-                    oflags_p[0] = RubyNumeric.num2int(intmode);
+                    oflags_p[0] = integerAsInt(context, (RubyInteger) intmode);
                     fmode_p[0] = ModeFlags.getOpenFileFlagsFor(oflags_p[0]);
                 } else {
                     String p = vmode(vmodeAndVperm_p).convertToString().asJavaString();

@@ -7,6 +7,7 @@ import jnr.constants.platform.SocketLevel;
 import jnr.constants.platform.SocketOption;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
@@ -22,6 +23,8 @@ import org.jruby.util.TypeConverter;
 import java.nio.ByteBuffer;
 import java.util.Locale;
 
+import static org.jruby.api.Convert.checkToInteger;
+import static org.jruby.api.Convert.integerAsInt;
 import static org.jruby.api.Error.typeError;
 
 public class Option extends RubyObject {
@@ -221,21 +224,12 @@ public class Option extends RubyObject {
     }
 
     @JRubyMethod(meta = true)
-    public static IRubyObject linger(ThreadContext context, IRubyObject self, IRubyObject vonoff, IRubyObject vsecs) {
-        ProtocolFamily family = ProtocolFamily.PF_UNSPEC;
-        SocketLevel level = SocketLevel.SOL_SOCKET;
-        SocketOption option = SocketOption.SO_LINGER;
-        int coercedVonoff;
-
-        if (!TypeConverter.checkToInteger(context, vonoff).isNil()) {
-            coercedVonoff = vonoff.convertToInteger().getIntValue();
-        } else {
-            coercedVonoff = vonoff.isTrue() ? 1 : 0;
-        }
-
+    public static IRubyObject linger(ThreadContext context, IRubyObject self, IRubyObject vonoffArg, IRubyObject vsecs) {
+        IRubyObject vonoff = checkToInteger(context, vonoffArg);
+        int coercedVonoff = !vonoff.isNil() ? integerAsInt(context, (RubyInteger) vonoff) : (vonoffArg.isTrue() ? 1 : 0);
         ByteList data = packLinger(coercedVonoff, vsecs.convertToInteger().getIntValue());
 
-        return new Option(context.getRuntime(), family, level, option, data);
+        return new Option(context.runtime, ProtocolFamily.PF_UNSPEC, SocketLevel.SOL_SOCKET, SocketOption.SO_LINGER, data);
      }
 
     @JRubyMethod

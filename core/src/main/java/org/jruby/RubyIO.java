@@ -107,6 +107,8 @@ import static com.headius.backport9.buffer.Buffers.flipBuffer;
 import static com.headius.backport9.buffer.Buffers.limitBuffer;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.anno.FrameField.LASTLINE;
+import static org.jruby.api.Convert.checkToInteger;
+import static org.jruby.api.Convert.integerAsInt;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.ThreadContext.*;
 import static org.jruby.runtime.Visibility.*;
@@ -1238,8 +1240,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         if (vmode.isNil())
             oflags = OpenFlags.O_RDONLY.intValue();
-        else if (!(intmode = TypeConverter.checkToInteger(context, vmode)).isNil())
-            oflags = RubyNumeric.num2int(intmode);
+        else if (!(intmode = checkToInteger(context, vmode)).isNil())
+            oflags = integerAsInt(context, (RubyInteger) intmode);
         else {
             vmode = vmode.convertToString();
             oflags = OpenFile.ioModestrOflags(runtime, vmode.toString());

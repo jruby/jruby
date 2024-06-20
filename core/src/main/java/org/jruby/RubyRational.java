@@ -52,6 +52,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 import org.jruby.util.TypeConverter;
 
+import static org.jruby.api.Convert.checkToInteger;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ast.util.ArgsUtil.hasExceptionOption;
 import static org.jruby.runtime.Helpers.invokedynamic;
@@ -444,7 +445,7 @@ public class RubyRational extends RubyNumeric {
             if (!raise && a1.isNil()) return a1;
         } else if (a1 instanceof RubyObject && !a1.respondsTo("to_r")) {
             try {
-                IRubyObject tmp = TypeConverter.checkToInteger(context, a1);
+                IRubyObject tmp = checkToInteger(context, a1);
                 if (!tmp.isNil()) {
                     a1 = tmp;
                 }
@@ -462,7 +463,7 @@ public class RubyRational extends RubyNumeric {
             if (!raise && a2.isNil()) return a2;
         } else if (!a2.isNil() & a2 instanceof RubyObject && !a2.respondsTo("to_r")) {
             try {
-                IRubyObject tmp = TypeConverter.checkToInteger(context, a2);
+                IRubyObject tmp = checkToInteger(context, a2);
                 if (!tmp.isNil()) {
                     a2 = tmp;
                 }

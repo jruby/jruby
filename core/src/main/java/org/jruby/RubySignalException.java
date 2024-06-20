@@ -35,7 +35,11 @@ import org.jruby.exceptions.SignalException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Convert.checkToInteger;
+import static org.jruby.api.Convert.integerAsLong;
 import static org.jruby.runtime.Visibility.PRIVATE;
+
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
 
@@ -69,7 +73,7 @@ public class RubySignalException extends RubyException {
         final Ruby runtime = context.runtime;
         int argnum = 1;
 
-        IRubyObject sig = TypeConverter.checkToInteger(runtime, args[0], "to_int");
+        IRubyObject sig = checkToInteger(context, args[0]);
 
         if (sig.isNil()) {
             sig = args[0];
@@ -81,7 +85,7 @@ public class RubySignalException extends RubyException {
         long _signo;
 
         if (argnum == 2) {
-            _signo = sig.convertToInteger().getLongValue();
+            _signo = integerAsLong(context, (RubyInteger) sig);
             if (_signo < 0 || _signo > NSIG.longValue()) {
                 throw runtime.newArgumentError("invalid signal number (" + _signo + ")");
             }

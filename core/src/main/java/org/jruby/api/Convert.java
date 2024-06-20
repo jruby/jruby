@@ -1,5 +1,6 @@
 package org.jruby.api;
 
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
@@ -13,10 +14,14 @@ import org.jruby.RubyProc;
 import org.jruby.RubyRange;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.RubyBignum.big2long;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.util.TypeConverter.convertToTypeWithCheck;
+import static org.jruby.util.TypeConverter.sites;
 
 public class Convert {
     /**
@@ -280,5 +285,54 @@ public class Convert {
     public static RubySymbol castToSymbol(ThreadContext context, IRubyObject newValue) {
         if (!(newValue instanceof RubySymbol)) throw typeError(context, newValue, "Symbol");
         return (RubySymbol) newValue;
+    }
+
+    // FIXME: Create annotation @MRI so we can formalize these comments and provide a dictionary for embedders.
+    // MRI: rb_check_to_integer
+    /**
+     * Check whether the given object is an Integer or can be converted to an Integer using #to_int.
+     * @param context the current thread context
+     * @param obj the object to be converted
+     * @return the integer value or nil if the object or conversion is not an Integer.
+     */
+    public static IRubyObject checkToInteger(ThreadContext context, IRubyObject obj) {
+        if (obj instanceof RubyFixnum) return obj;
+
+        JavaSites.TypeConverterSites sites = sites(context);
+
+        IRubyObject conv = convertToTypeWithCheck(context, obj, context.runtime.getInteger(), sites.to_int_checked);
+
+        return conv instanceof RubyInteger ? conv : context.nil;
+    }
+
+    /**
+     * Safely convert a Ruby Integer into a java int value.  Raising if the value will not fit.
+     * @param context the current thread context
+     * @param value the RubyInteger to convert
+     * @return the int value
+     */
+    public static int integerAsInt(ThreadContext context, RubyInteger value) {
+        long num = value.getLongValue();
+
+        if (((int) num) != num) {
+            throw context.runtime.newRangeError("integer " + num +
+                    (num < Integer.MIN_VALUE ? " too small to convert to `int'" : " too big to convert to `int'"));
+        }
+
+        return (int) num;
+    }
+
+    /**
+     * Safely convert a Ruby Integer into a java int value.  Raising if the value will not fit.
+     * @param context the current thread context
+     * @param value the RubyInteger to convert
+     * @return the int value
+     */
+    public static long integerAsLong(ThreadContext context, RubyInteger value) {
+        if (value instanceof RubyBignum) {
+            return big2long((RubyBignum) value);
+        }
+
+        return value.getLongValue();
     }
 }

@@ -60,6 +60,7 @@ import org.jruby.runtime.ThreadContext;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyNumeric.dbl2num;
 import static org.jruby.RubyNumeric.fix2long;
+import static org.jruby.api.Convert.checkToInteger;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.hashEnd;
 import static org.jruby.runtime.Helpers.hashStart;
@@ -887,8 +888,8 @@ public class RubyRange extends RubyObject {
                 b.uptoCommon(context, end.asString(), isExclusive, blockCallback);
             }
         } else if (begin instanceof RubyNumeric
-                || !TypeConverter.checkToInteger(runtime, begin, "to_int").isNil()
-                || !TypeConverter.checkToInteger(runtime, end, "to_int").isNil()) {
+                || !checkToInteger(context, begin).isNil()
+                || !checkToInteger(context, end).isNil()) {
             numericStep(context, runtime, step, block);
         } else {
             IRubyObject tmp = begin.checkStringType();

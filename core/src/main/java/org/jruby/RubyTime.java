@@ -81,6 +81,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.jruby.RubyComparable.invcmp;
+import static org.jruby.api.Convert.checkToInteger;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
@@ -354,7 +355,7 @@ public class RubyTime extends RubyObject {
                     }
                     v = tmp; break;
                 }
-                if (!(tmp = TypeConverter.checkToInteger(context, v)).isNil()) {
+                if (!(tmp = checkToInteger(context, v)).isNil()) {
                     v = tmp; // return tmp;
                 }
                 else {
