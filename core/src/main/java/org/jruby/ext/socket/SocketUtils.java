@@ -31,6 +31,7 @@ import jnr.constants.platform.ProtocolFamily;
 import jnr.constants.platform.Sock;
 import jnr.constants.platform.SocketLevel;
 import jnr.constants.platform.SocketOption;
+import jnr.ffi.annotations.In;
 import jnr.netdb.Protocol;
 import jnr.netdb.Service;
 import org.jcodings.specific.ASCIIEncoding;
@@ -502,7 +503,25 @@ public class SocketUtils {
 
     public static IRubyObject getaddress(ThreadContext context, IRubyObject hostname) {
         try {
-            return RubyString.newInternalFromJavaExternal(context.runtime, InetAddress.getByName(hostname.convertToString().toString()).getHostAddress());
+            String hostnameString = hostname.convertToString().toString();
+            InetAddress address = InetAddress.getByName(hostnameString);
+
+            String ipv4MappedAddressPrefix = "::ffff:";
+            String ipv6LocalHost = "::1";
+
+            if (hostnameString.startsWith(ipv4MappedAddressPrefix)) {
+                // See https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/Inet6Address.html#special-ipv6-address-heading
+                // IPv4 mapped IPv6 addresses will always return an Inet4Address. When given an IPv6 address to
+                // IPSocket.getaddress, ruby will return the IPv6 address. This is not the case in Java.
+                return RubyString.newInternalFromJavaExternal(
+                        context.runtime, ipv4MappedAddressPrefix + address.getHostAddress());
+            } else if (hostnameString.equals(ipv6LocalHost)) {
+                // Ruby will return "::1" for the local host IPv6 address.
+                // Java will return the full IPv6 address of 0:0:0:0:0:0:0:1.
+                return RubyString.newInternalFromJavaExternal(context.runtime, ipv6LocalHost);
+            } else {
+                return RubyString.newInternalFromJavaExternal(context.runtime, address.getHostAddress());
+            }
         } catch(UnknownHostException e) {
             throw sockerr(context.runtime, "getaddress: name or service not known");
         }
