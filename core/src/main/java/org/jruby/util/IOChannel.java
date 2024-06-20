@@ -92,7 +92,7 @@ public abstract class IOChannel implements Channel {
 
         CacheEntry readMethodEntry = read.retrieveCache(io);
         RubyFixnum remainingFixnum = runtime.newFixnum(remaining);
-        RubyString readValue;
+        IRubyObject readValue;
         if (readMethodEntry.method.getSignature().isTwoArguments()) {
             if (dst.hasArray()) {
                 readValue = RubyString.newStringNoCopy(runtime, dst.array(), dst.position(), remaining);
@@ -101,12 +101,14 @@ public abstract class IOChannel implements Channel {
             }
             read.call(runtime.getCurrentContext(), io, io, remainingFixnum, readValue);
         } else {
-            readValue = read.call(runtime.getCurrentContext(), io, io, remainingFixnum).convertToString();
+            readValue = read.call(runtime.getCurrentContext(), io, io, remainingFixnum);
         }
 
         int returnValue = -1;
-        if (!readValue.isNil() && readValue.size() > 0) {
-            ByteList str = readValue.getByteList();
+        RubyString readString;
+        if (!readValue.isNil()
+                && (readString = readValue.convertToString()).size() > 0) {
+            ByteList str = readString.getByteList();
             int realSize = str.getRealSize();
 
             if (realSize > remaining) {
