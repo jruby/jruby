@@ -12,7 +12,7 @@ import static org.jruby.util.RubyStringBuilder.types;
 
 public class Error {
     /**
-     * Throw a TypeError with the given message.
+     * Create a TypeError with the given message.
      *
      * @param context the current thread context
      * @param object which is the wrong type
@@ -24,7 +24,7 @@ public class Error {
     }
 
     /**
-     * Throw a TypeError with the given message.
+     * Create a TypeError with the given message.
      *
      * @param context the current thread context
      * @param startOfMessage the start of the message
@@ -36,18 +36,18 @@ public class Error {
     }
 
     /**
-     * Throw a TypeError with the given message.
+     * Create a TypeError with the given message.
      *
      * @param context the current thread context
      * @param object which is the wrong type
      * @param expectedType the expected type that object should have been
      */
     public static TypeError typeError(ThreadContext context, IRubyObject object, RubyModule expectedType) {
-        throw createTypeError(context, createTypeErrorMessage(context, object, expectedType));
+        return createTypeError(context, createTypeErrorMessage(context, object, expectedType));
     }
 
     /**
-     * Throw a TypeError with the given message.
+     * Create a TypeError with the given message.
      *
      * @param context the current thread context
      * @param message to be the message of the exception.  Note that this message should
@@ -55,7 +55,7 @@ public class Error {
      *                absolutely know it is clean ASCII-7BIT
      */
     public static TypeError typeError(ThreadContext context, String message) {
-        throw createTypeError(context, message);
+        return createTypeError(context, message);
     }
 
     /**

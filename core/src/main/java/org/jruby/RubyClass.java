@@ -435,8 +435,8 @@ public class RubyClass extends RubyModule {
      * Corresponds to rb_class_new in MRI.
      */
     public static RubyClass newClass(Ruby runtime, RubyClass superClass) {
-        if (superClass == runtime.getClassClass()) typeError(runtime.getCurrentContext(), "can't make subclass of Class");
-        if (superClass.isSingleton()) typeError(runtime.getCurrentContext(), "can't make subclass of virtual class");
+        if (superClass == runtime.getClassClass()) throw typeError(runtime.getCurrentContext(), "can't make subclass of Class");
+        if (superClass.isSingleton()) throw typeError(runtime.getCurrentContext(), "can't make subclass of virtual class");
         return new RubyClass(runtime, superClass);
     }
 
