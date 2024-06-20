@@ -212,21 +212,19 @@ public class IRRuntimeHelpers {
 
     // FIXME: When we recompile lambdas we can eliminate this binary code path and we can emit as a NONLOCALRETURN directly.
     @JIT
-    public static IRubyObject initiateBreak(ThreadContext context, DynamicScope dynScope, IRubyObject breakValue, Block block) throws RuntimeException {
+    public static IRubyObject initiateBreak(ThreadContext context, DynamicScope scope, IRubyObject breakValue, Block block) throws RuntimeException {
         // Wrap the return value in an exception object and push it through the break exception
         // paths so that ensures are run, frames/scopes are popped from runtime stacks, etc.
         if (inLambda(block.type)) throw new IRWrappedLambdaReturnValue(breakValue, true);
 
-        IRScopeType scopeType = ensureScopeIsClosure(context, dynScope);
+        Frame targetFrame = block.getFrame();
 
-        DynamicScope parentScope = dynScope.getParentScope();
-
-        if (block.isEscaped()) {
+        if (block.isEscaped() || targetFrame.getThreadID() != context.threadID) {
             throw Helpers.newLocalJumpErrorForBreak(context.runtime, breakValue);
         }
 
         // Raise a break jump so we can bubble back down the stack to the appropriate place to break from.
-        throw IRBreakJump.create(parentScope, breakValue, scopeType.isEval()); // weirdly evals are impld as closures...yes yes.
+        throw IRBreakJump.create(targetFrame, breakValue, scope.getStaticScope().getScopeType().isEval()); // weirdly evals are impld as closures...yes yes.
     }
 
     // Are we within the scope where we want to return the value we are passing down the stack?
@@ -279,7 +277,7 @@ public class IRRuntimeHelpers {
 
             bj.breakInEval = false;
             throw bj;
-        } else if (bj.scopeToReturnTo == dynScope) {
+        } else if (bj.frameToReturnTo == context.getCurrentFrame()) {
             // Done!! Hurray!
             if (isDebug()) System.out.println("---> Break reached target in scope: " + dynScope);
             return bj.breakValue;

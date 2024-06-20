@@ -91,18 +91,23 @@ public final class Frame {
     /** whether this frame has been captured into a binding **/
     boolean captured;
 
+    /** the ID object for the thread that created this frame **/
+    final Object threadID;
+
     /**
      * Empty constructor, since Frame objects are pre-allocated and updated
      * when needed.
      */
-    public Frame() {
+    public Frame(Object threadID) {
+        this.threadID = threadID;
     }
 
     /**
      * Used only by static init to avoid accessing NULL_BLOCK before initialized.
      * @param nullBlock
      */
-    private Frame(Block nullBlock) {
+    private Frame(Object threadID, Block nullBlock) {
+        this.threadID = threadID;
         this.block = nullBlock;
     }
 
@@ -113,6 +118,7 @@ public final class Frame {
     private Frame(Frame frame) {
         assert frame.block != null;
 
+        this.threadID = frame.threadID;
         this.self = frame.self;
         this.name = frame.name;
         this.klazz = frame.klazz;
@@ -235,18 +241,6 @@ public final class Frame {
     }
 
     /**
-     * Clone this frame for use in backtraces only (avoiding long-lived
-     * references to other elements.
-     *
-     * @return A new frame with identical backtrace information to this frame
-     */
-    public Frame duplicateForBacktrace() {
-        Frame backtraceFrame = new Frame();
-        backtraceFrame.name = name;
-        return backtraceFrame;
-    }
-
-    /**
      * Return class that we are calling against
      *
      * @return The class we are calling against
@@ -358,6 +352,10 @@ public final class Frame {
         return captured;
     }
 
+    public Object getThreadID() {
+        return threadID;
+    }
+
     /* (non-Javadoc)
      * @see java.lang.Object#toString()
      */
@@ -372,7 +370,4 @@ public final class Frame {
 
         return sb.toString();
     }
-
-    @Deprecated
-    public static final Frame DUMMY = new Frame();
 }

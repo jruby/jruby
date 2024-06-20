@@ -168,6 +168,8 @@ public final class ThreadContext {
 
     private RubyMatchData matchData;
 
+    public final Object threadID = new Object();
+
     @SuppressWarnings("deprecation")
     public SecureRandom getSecureRandom() {
         SecureRandom secureRandom = this.secureRandom;
@@ -227,7 +229,7 @@ public final class ThreadContext {
         Frame[] stack = frameStack;
         int length = stack.length;
         for (int i = 0; i < length; i++) {
-            stack[i] = new Frame();
+            stack[i] = new Frame(threadID);
         }
         BacktraceElement[] stack2 = backtrace;
         int length2 = stack2.length;
@@ -321,7 +323,7 @@ public final class ThreadContext {
         System.arraycopy(frameStack, 0, newFrameStack, 0, frameStack.length);
 
         for (int i = frameStack.length; i < newSize; i++) {
-            newFrameStack[i] = new Frame();
+            newFrameStack[i] = new Frame(threadID);
         }
 
         return newFrameStack;
@@ -505,7 +507,7 @@ public final class ThreadContext {
 
         // if the frame was captured, we must replace it but not clear
         if (frame.isCaptured()) {
-            stack[index] = new Frame();
+            stack[index] = new Frame(threadID);
         } else {
             frame.clearFrameForBackref();
         }
@@ -535,7 +537,7 @@ public final class ThreadContext {
 
         // if the frame was captured, we must replace it but not clear
         if (frame.captured) {
-            stack[index] = new Frame();
+            stack[index] = new Frame(threadID);
         } else {
             frame.clear();
         }
