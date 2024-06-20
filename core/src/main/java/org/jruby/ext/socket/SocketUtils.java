@@ -499,13 +499,13 @@ public class SocketUtils {
         }
     }
 
+    private static final String ipv4MappedAddressPrefix = "::ffff:";
+    private static final String ipv6LocalHost = "::1";
+
     public static IRubyObject getaddress(ThreadContext context, IRubyObject hostname) {
         try {
             String hostnameString = hostname.convertToString().toString();
             InetAddress address = InetAddress.getByName(hostnameString);
-
-            String ipv4MappedAddressPrefix = "::ffff:";
-            String ipv6LocalHost = "::1";
 
             if (hostnameString.startsWith(ipv4MappedAddressPrefix)) {
                 // See https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/Inet6Address.html#special-ipv6-address-heading
