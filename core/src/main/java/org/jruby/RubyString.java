@@ -94,6 +94,7 @@ import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.api.Convert.checkInt;
+import static org.jruby.api.Convert.numericToLong;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.StringSupport.*;
@@ -1357,16 +1358,14 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private RubyString multiplyByteList(ThreadContext context, IRubyObject arg) {
-        Ruby runtime = context.runtime;
-
-        long longLen = RubyNumeric.num2long(arg);
-        if (longLen < 0) throw runtime.newArgumentError("negative argument");
+        long longLen = numericToLong(context, arg);
+        if (longLen < 0) throw context.runtime.newArgumentError("negative argument");
         if (size() == 0) return (RubyString) dup();
 
         int len = checkInt(context, longLen);
 
         // we limit to int because ByteBuffer can only allocate int sizes
-        len = Helpers.multiplyBufferLength(runtime, value.getRealSize(), len);
+        len = Helpers.multiplyBufferLength(context.runtime, value.getRealSize(), len);
 
         ByteList bytes = new ByteList(len);
         if (len > 0) {
@@ -2792,10 +2791,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             return append((RubyString) other);
         }
         if (other instanceof RubyFixnum) {
-            long c = RubyNumeric.num2long(other);
-            if (c < 0) {
-                throw context.runtime.newRangeError(c + " out of char range");
-            }
+            long c = numericToLong(context, other);
+            if (c < 0) throw context.runtime.newRangeError(c + " out of char range");
+
             return concatNumeric(context, (int)(c & 0xFFFFFFFF));
         }
         if (other instanceof RubyBignum) {
@@ -3696,49 +3694,48 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     /* str_byte_substr */
-    private IRubyObject byteSubstr(Ruby runtime, long beg, long len) {
+    private IRubyObject byteSubstr(ThreadContext context, long beg, long len) {
         int length = value.length();
 
-        if (len < 0 || beg > length) return runtime.getNil();
+        if (len < 0 || beg > length) return context.nil;
 
         if (beg < 0) {
             beg += length;
-            if (beg < 0) return runtime.getNil();
+            if (beg < 0) return context.nil;
         }
 
         if (beg + len > length) len = length - beg;
         if (len <= 0) len = 0;
 
         // above boundary checks confirms we can safely cast to int for beg + len.
-        return makeSharedString(runtime, (int) beg, (int) len);
+        return makeSharedString(context.runtime, (int) beg, (int) len);
     }
 
     /* str_byte_aref */
-    private IRubyObject byteARef(Ruby runtime, IRubyObject idx) {
+    private IRubyObject byteARef(ThreadContext context, IRubyObject idx) {
         final int index;
 
         if (idx instanceof RubyRange){
             int[] begLen = ((RubyRange) idx).begLenInt(getByteList().length(), 0);
-            return begLen == null ? runtime.getNil() : byteSubstr(runtime, begLen[0], begLen[1]);
+            return begLen == null ? context.nil : byteSubstr(context, begLen[0], begLen[1]);
         } else if (idx instanceof RubyFixnum) {
-            long i = RubyNumeric.num2long(((RubyFixnum) idx));
-            if (i > RubyFixnum.MAX || i < RubyFixnum.MIN) return runtime.getNil();
+            long i = numericToLong(context, idx);
+            if (i > RubyFixnum.MAX || i < RubyFixnum.MIN) return context.nil;
             index = (int) i;
         } else {
-            ThreadContext context = runtime.getCurrentContext();
             StringSites sites = sites(context);
             if (RubyRange.isRangeLike(context, idx, sites.respond_to_begin, sites.respond_to_end)) {
                 RubyRange range = RubyRange.rangeFromRangeLike(context, idx, sites.begin, sites.end, sites.exclude_end);
 
                 int[] begLen = range.begLenInt(getByteList().length(), 0);
-                return begLen == null ? runtime.getNil() : byteSubstr(runtime, begLen[0], begLen[1]);
+                return begLen == null ? context.nil : byteSubstr(context, begLen[0], begLen[1]);
             } else {
                 index = RubyNumeric.num2int(idx);
             }
         }
 
-        IRubyObject obj = byteSubstr(runtime, index, 1);
-        if (obj.isNil() || ((RubyString)obj).getByteList().length() == 0) return runtime.getNil();
+        IRubyObject obj = byteSubstr(context, index, 1);
+        if (obj.isNil() || ((RubyString)obj).getByteList().length() == 0) return context.nil;
         return obj;
     }
 
@@ -3899,12 +3896,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod
     public IRubyObject byteslice(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
-        return byteSubstr(context.runtime, RubyNumeric.num2long(arg1), RubyNumeric.num2long(arg2));
+        return byteSubstr(context, numericToLong(context, arg1), numericToLong(context, arg2));
     }
 
     @JRubyMethod
     public IRubyObject byteslice(ThreadContext context, IRubyObject arg) {
-        return byteARef(context.runtime, arg);
+        return byteARef(context, arg);
     }
 
     @JRubyMethod(required = 2, optional = 3, checkArity = false)
@@ -6576,7 +6573,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod
     public IRubyObject sum(ThreadContext context, IRubyObject arg) {
-        return sumCommon(context, RubyNumeric.num2long(arg));
+        return sumCommon(context, numericToLong(context, arg));
     }
 
     public IRubyObject sumCommon(ThreadContext context, long bits) {

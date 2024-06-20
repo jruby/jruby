@@ -107,8 +107,7 @@ import static com.headius.backport9.buffer.Buffers.flipBuffer;
 import static com.headius.backport9.buffer.Buffers.limitBuffer;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.anno.FrameField.LASTLINE;
-import static org.jruby.api.Convert.checkToInteger;
-import static org.jruby.api.Convert.integerAsInt;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.ThreadContext.*;
 import static org.jruby.runtime.Visibility.*;
@@ -1486,8 +1485,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
      */
     @JRubyMethod(name = "write")
     public IRubyObject write2(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        long acc = RubyNumeric.num2long(write(context, arg0, false));
-        acc += RubyNumeric.num2long(write(context, arg1, false));
+        long acc = numericToLong(context, write(context, arg0, false));
+        acc += numericToLong(context, write(context, arg1, false));
         return RubyFixnum.newFixnum(context.runtime, acc);
     }
 
@@ -1501,9 +1500,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
      */
     @JRubyMethod(name = "write")
     public IRubyObject write3(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        long acc = RubyNumeric.num2long(write(context, arg0, false));
-        acc += RubyNumeric.num2long(write(context, arg1, false));
-        acc += RubyNumeric.num2long(write(context, arg2, false));
+        long acc = numericToLong(context, write(context, arg0, false));
+        acc += numericToLong(context, write(context, arg1, false));
+        acc += numericToLong(context, write(context, arg2, false));
         return RubyFixnum.newFixnum(context.runtime, acc);
     }
 
@@ -1518,7 +1517,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         long acc = 0l;
         for (IRubyObject s : args) {
             IRubyObject write = write(context, s, false);
-            long num2long = RubyNumeric.num2long(write);
+            long num2long = numericToLong(context, write);
             acc = acc + num2long;
         }
         return RubyFixnum.newFixnum(context.runtime, acc);
@@ -1977,13 +1976,13 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @JRubyMethod
     public RubyFixnum seek(ThreadContext context, IRubyObject off) {
-        long ret = doSeek(context, RubyNumeric.num2long(off), PosixShim.SEEK_SET);
+        long ret = doSeek(context, numericToLong(context, off), PosixShim.SEEK_SET);
         return context.runtime.newFixnum(ret);
     }
 
     @JRubyMethod
     public RubyFixnum seek(ThreadContext context, IRubyObject off, IRubyObject whence) {
-        long ret = doSeek(context, RubyNumeric.num2long(off), interpretSeekWhence(whence));
+        long ret = doSeek(context, numericToLong(context, off), interpretSeekWhence(whence));
         return context.runtime.newFixnum(ret);
     }
 

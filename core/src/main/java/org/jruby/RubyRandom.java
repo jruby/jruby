@@ -34,6 +34,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 
 import static org.jruby.api.Convert.castAsBignum;
+import static org.jruby.api.Convert.numericToLong;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -67,7 +68,7 @@ public class RubyRandom extends RubyRandomBase {
         }
 
         public static Random randomFromFixnum(RubyFixnum seed) {
-            return randomFromLong(RubyNumeric.num2long(seed));
+            return randomFromLong(numericToLong(seed.getRuntime().getCurrentContext(), seed));
         }
 
         public static Random randomFromLong(long seed) {

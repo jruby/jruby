@@ -60,6 +60,7 @@ import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
 
 import static org.jruby.api.Convert.castAsFixnum;
+import static org.jruby.api.Convert.numericToLong;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -467,16 +468,16 @@ public class RubyBigDecimal extends RubyNumeric {
         return value.getMetaClass().getBaseName();
     }
 
-    private static BigDecimal toBigDecimal(final RubyInteger value) {
+    private static BigDecimal toBigDecimal(ThreadContext context, final RubyInteger value) {
         if (value instanceof RubyFixnum) {
-            return BigDecimal.valueOf(RubyNumeric.num2long(value));
+            return BigDecimal.valueOf(numericToLong(context, value));
         }
         return new BigDecimal(value.getBigIntegerValue());
     }
 
     private static RubyBigDecimal getVpRubyObjectWithPrecInner(ThreadContext context, RubyRational value, RoundingMode mode) {
-        BigDecimal numerator = toBigDecimal(value.getNumerator());
-        BigDecimal denominator = toBigDecimal(value.getDenominator());
+        BigDecimal numerator = toBigDecimal(context, value.getNumerator());
+        BigDecimal denominator = toBigDecimal(context, value.getDenominator());
 
         int len = numerator.precision() + denominator.precision(); // 0
         int pow = len / 4; // 0
@@ -520,7 +521,7 @@ public class RubyBigDecimal extends RubyNumeric {
             case FLOAT:
                 return newInstance(context.runtime, context.runtime.getClass("BigDecimal"), (RubyFloat) value, new MathContext(RubyFloat.DIG));
             case RATIONAL:
-                return newInstance(context.runtime, context.runtime.getClass("BigDecimal"), (RubyRational) value, new MathContext(RubyFloat.DIG));
+                return newInstance(context, context.runtime.getClass("BigDecimal"), (RubyRational) value, new MathContext(RubyFloat.DIG));
         }
         return cannotBeCoerced(context, value, must);
     }
@@ -540,11 +541,11 @@ public class RubyBigDecimal extends RubyNumeric {
         return new RubyBigDecimal(runtime, (RubyClass) recv, new BigDecimal(value, mathContext));
     }
 
-    private static RubyBigDecimal newInstance(Ruby runtime, IRubyObject recv, RubyRational arg, MathContext mathContext) {
-        if (arg.getNumerator().isZero()) return getZero(runtime, 1);
+    private static RubyBigDecimal newInstance(ThreadContext context, IRubyObject recv, RubyRational arg, MathContext mathContext) {
+        if (arg.getNumerator().isZero()) return getZero(context.runtime, 1);
 
-        BigDecimal num = toBigDecimal(arg.getNumerator());
-        BigDecimal den = toBigDecimal(arg.getDenominator());
+        BigDecimal num = toBigDecimal(context, arg.getNumerator());
+        BigDecimal den = toBigDecimal(context, arg.getDenominator());
         BigDecimal value;
         try {
             value = num.divide(den, mathContext);
@@ -552,7 +553,7 @@ public class RubyBigDecimal extends RubyNumeric {
             value = num.divide(den, MathContext.DECIMAL64);
         }
 
-        return new RubyBigDecimal(runtime, (RubyClass) recv, value);
+        return new RubyBigDecimal(context.runtime, (RubyClass) recv, value);
     }
 
     private static RubyBigDecimal newInstance(Ruby runtime, IRubyObject recv, RubyFloat arg, MathContext mathContext) {
@@ -893,7 +894,7 @@ public class RubyBigDecimal extends RubyNumeric {
                 if (digits == Integer.MAX_VALUE) {
                     return handleMissingPrecision(context, "Rational", strict, exception);
                 }
-                return newInstance(context.runtime, recv, (RubyRational) arg, mathContext);
+                return newInstance(context, recv, (RubyRational) arg, mathContext);
             case FLOAT:
                 RubyBigDecimal res = newFloatSpecialCases(context.runtime, (RubyFloat) arg);
                 if (res != null) return res;
@@ -1558,8 +1559,8 @@ public class RubyBigDecimal extends RubyNumeric {
         }
         if (val.isZero()) throw context.runtime.newZeroDivisionError();
 
-        BigDecimal result = this.value.multiply(toBigDecimal(val.getDenominator()))
-                                      .divideToIntegralValue(toBigDecimal(val.getNumerator()));
+        BigDecimal result = this.value.multiply(toBigDecimal(context, val.getDenominator()))
+                                      .divideToIntegralValue(toBigDecimal(context, val.getNumerator()));
         return toInteger(context.runtime, result);
     }
 

@@ -45,6 +45,7 @@ import org.jruby.util.ByteList;
 import java.util.Spliterator;
 import java.util.stream.Stream;
 
+import static org.jruby.api.Convert.numericToLong;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
@@ -416,7 +417,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
     @JRubyMethod(name = "each_slice")
     public IRubyObject each_slice(ThreadContext context, IRubyObject arg, final Block block) {
-        int size = (int) RubyNumeric.num2long(arg);
+        int size = (int) numericToLong(context, arg);
         if (size <= 0) throw context.runtime.newArgumentError("invalid size");
 
         return block.isGiven() ? RubyEnumerable.each_sliceCommon(context, this, size, block) :
@@ -425,7 +426,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
     @JRubyMethod(name = "each_cons")
     public IRubyObject each_cons(ThreadContext context, IRubyObject arg, final Block block) {
-        int size = (int) RubyNumeric.num2long(arg);
+        int size = (int) numericToLong(context, arg);
         if (size <= 0) throw context.runtime.newArgumentError("invalid size");
         return block.isGiven() ? RubyEnumerable.each_consCommon(context, this, size, block) :
                 enumeratorize(context.runtime, getType(), this, "each_cons", arg);
