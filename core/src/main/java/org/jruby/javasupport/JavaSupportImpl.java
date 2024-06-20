@@ -61,11 +61,6 @@ public class JavaSupportImpl extends JavaSupport {
         super(runtime);
     }
 
-    @Deprecated
-    public Map<String, JavaClass> getNameClassMap() {
-        return Collections.emptyMap();
-    }
-
     public ClassValue<Map<String, AssignedName>> getStaticAssignedNames() {
         return staticAssignedNames;
     }
