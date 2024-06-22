@@ -4555,10 +4555,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             io.setupPopen(runtime, modes, process);
 
             if (block.isGiven()) {
-                ensureYieldClose(context, io, block);
-
+                IRubyObject returnedBlock = ensureYieldClose(context, io, block);
                 // RubyStatus uses real native status now, so we unshift Java's shifted exit status
                 context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, process.waitFor() << 8, ShellLauncher.getPidFromProcess(process)));
+                return returnedBlock;
             }
             return io;
         } catch (IOException e) {
