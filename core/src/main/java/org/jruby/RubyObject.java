@@ -45,6 +45,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.List;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Block;
@@ -57,6 +58,7 @@ import org.jruby.runtime.marshal.DataType;
 
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.invokedynamic;
+import static org.jruby.runtime.Helpers.throwException;
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
@@ -538,12 +540,43 @@ public class RubyObject extends RubyBasicObject {
     // at symbols, threads, modules, classes, and other unserializable types are not detected.
     private void writeObject(ObjectOutputStream out) throws IOException {
         out.defaultWriteObject();
+
         // write out ivar count followed by name/value pairs
-        List<String> names = getInstanceVariableNameList();
-        out.writeInt(names.size());
-        for (String name : names) {
-            out.writeObject(name);
-            out.writeObject(getInstanceVariables().getInstanceVariable(name));
+        ObjectOutputter outputter = new ObjectOutputter(out);
+        forEachInstanceVariable(outputter);
+        outputter.writeCount();
+        forEachInstanceVariable(outputter);
+    }
+
+    private static class ObjectOutputter implements BiConsumer<String, IRubyObject> {
+        final ObjectOutputStream out;
+        int count = 0;
+        boolean counting = true;
+
+        ObjectOutputter(ObjectOutputStream out) {
+            this.out = out;
+        }
+
+        public void accept(String name, IRubyObject value) {
+            if (counting) {
+                count++;
+            } else {
+                try {
+                    out.writeObject(name);
+                    out.writeObject(value);
+                } catch (IOException ioe) {
+                    throwException(ioe);
+                }
+            }
+        }
+
+        public void writeCount() {
+            try {
+                out.writeInt(count);
+                counting = false;
+            } catch (IOException ioe) {
+                throwException(ioe);
+            }
         }
     }
 

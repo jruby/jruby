@@ -30,6 +30,7 @@ package org.jruby;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.function.BiConsumer;
 
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
@@ -259,13 +260,16 @@ public final class BasicObjectStub {
      */
     private static StringBuilder inspectObj(IRubyObject self, StringBuilder part) {
         ThreadContext context = getRuntime(self).getCurrentContext();
-        String sep = "";
+        getInstanceVariables(self).forEachInstanceVariable(new BiConsumer<>() {
+            String sep = "";
 
-        for (Variable<IRubyObject> ivar : getInstanceVariables(self).getInstanceVariableList()) {
-            part.append(sep).append(' ').append(ivar.getName()).append('=');
-            part.append(invokedynamic(context, ivar.getValue(), INSPECT));
-            sep = ",";
-        }
+            @Override
+            public void accept(String name, IRubyObject value) {
+                part.append(sep).append(' ').append(name).append('=');
+                part.append(invokedynamic(context, value, INSPECT));
+                sep = ",";
+            }
+        });
         part.append('>');
         return part;
     }
