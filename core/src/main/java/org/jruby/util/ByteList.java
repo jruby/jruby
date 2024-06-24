@@ -1163,7 +1163,9 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     public String toString() {
         String decoded = this.stringValue;
         if (decoded == null) {
-            this.stringValue = decoded = decode(bytes, begin, realSize, ISO_LATIN_1);
+            Charset charset = this.encoding.getCharset();
+            if (charset == null) charset = ISO_LATIN_1;
+            this.stringValue = decoded = decode(bytes, begin, realSize, charset);
         }
         return decoded;
     }
