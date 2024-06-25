@@ -132,7 +132,7 @@ public class FullInterpreterContext extends InterpreterContext {
         Instr[] linearizedInstrArray = newInstrs.toArray(new Instr[newInstrs.size()]);
 
         BasicBlock[] basicBlocks = getLinearizedBBList();
-        rescueIPCs = new int[2 * basicBlocks.length];
+        int[] rescueIPCs = new int[2 * basicBlocks.length];
 
         // Pass 2: Use ipc info from previous to mark all linearized instrs rpc
         ipc = 0;
@@ -154,7 +154,8 @@ public class FullInterpreterContext extends InterpreterContext {
             }
         }
 
-        instructions = linearizedInstrArray;
+        this.rescueIPCs = rescueIPCs;
+        this.instructions = linearizedInstrArray;
 
         // System.out.println("SCOPE: " + getScope().getId());
         // System.out.println("INSTRS: " + cfg.toStringInstrs());
