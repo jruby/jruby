@@ -31,12 +31,12 @@ public class InterpreterContext {
 
     // startup interp will mark this at construction and not change but full interpreter will write it
     // much later after running compiler passes.  JIT will not use this field at all.
-    protected Instr[] instructions;
+    protected volatile Instr[] instructions;
 
     // Contains pairs of values.  The first value is number of instrs in this range + number of instrs before
     // this range.  The second number is the rescuePC.  getRescuePC(ipc) will walk this list and first odd value
     // less than this value will be the rpc.
-    protected int[] rescueIPCs = null;
+    protected volatile int[] rescueIPCs = null;
 
     // Cached computed fields
     protected boolean hasExplicitCallProtocol; // Only can be true in Full+
@@ -97,7 +97,7 @@ public class InterpreterContext {
         return instructions == null ? NO_INSTRUCTIONS : instructions;
     }
 
-    private void setInstructions(final List<Instr> instructions) {
+    private synchronized void setInstructions(final List<Instr> instructions) {
         this.instructions = instructions != null ? prepareBuildInstructions(instructions) : null;
     }
 
@@ -112,7 +112,7 @@ public class InterpreterContext {
         }
 
         Deque<Integer> markers = new ArrayDeque<>(8);
-        rescueIPCs = new int[length];
+        int[] rescueIPCs = new int[length];
         int rpc = -1;
 
         for (int ipc = 0; ipc < length; ipc++) {
@@ -128,6 +128,8 @@ public class InterpreterContext {
 
             rescueIPCs[ipc] = rpc;
         }
+
+        this.rescueIPCs = rescueIPCs;
 
         return linearizedInstrArray;
     }
