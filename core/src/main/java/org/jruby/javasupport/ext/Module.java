@@ -113,7 +113,7 @@ public class Module {
             if (className.contains("::")) {
                 throw runtime.newArgumentError("must use Java style name: " + className);
             }
-            javaClass = Java.getJavaClass(runtime, className, false); // raises NameError if not found
+            javaClass = Java.getJavaClass(runtime, className); // raises NameError if not found
         } else if (klass instanceof JavaPackage) {
             throw runtime.newArgumentError("java_import does not work for Java packages (try include_package instead)");
         } else if (klass instanceof RubyModule) {
