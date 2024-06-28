@@ -149,15 +149,17 @@ final class SeekableByteChannelImpl extends AbstractInterruptibleChannel
     private static Field accessibleField(final String name) {
         try {
             Field field = ByteArrayInputStream.class.getDeclaredField(name);
-            Java.trySetAccessible(field);
-            return field;
+            if (Java.trySetAccessible(field)) {
+                return field;
+            }
         }
         catch (NoSuchFieldException ex) {
-            return null; // should never happen
+            // should never happen
         }
         catch (SecurityException ex) {
-            return null;
         }
+
+        return null;
     }
 
 }
