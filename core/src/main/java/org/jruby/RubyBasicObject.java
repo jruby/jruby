@@ -468,6 +468,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return ((RubyBasicObject) arg).metaClass;
     }
 
+    public VariableTableManager getShape() {
+        return metaClass.getVariableTableManager();
+    }
+
     /** rb_singleton_class
      *
      * Note: this method is specialized for RubyFixnum, RubySymbol,
@@ -1059,7 +1063,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * object is frozen.
      */
     protected long getObjectId() {
-        return metaClass.getRealClass().getVariableTableManager().getObjectId(this);
+        return getShape().getObjectId(this);
     }
 
     /** rb_obj_inspect
@@ -1137,7 +1141,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         final ThreadContext context = runtime.getCurrentContext();
 
         boolean first = true;
-        for (Map.Entry<String, VariableAccessor> entry : metaClass.getVariableTableManager().getVariableAccessorsForRead().entrySet()) {
+        for (Map.Entry<String, VariableAccessor> entry : getShape().getVariableAccessorsForRead().entrySet()) {
             Object value = entry.getValue().get(this);
             if (!(value instanceof IRubyObject)) continue;
             RubySymbol symbol = runtime.newSymbol(entry.getKey());
@@ -1311,15 +1315,15 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public void setVariable(int index, Object value) {
         ensureInstanceVariablesSettable();
         if (index < 0) return;
-        metaClass.getVariableTableManager().setVariableInternal(this, index, value);
+        getShape().setVariableInternal(this, index, value);
     }
 
     public final Object getFFIHandle() {
-        return metaClass.getVariableTableManager().getFFIHandle(this);
+        return getShape().getFFIHandle(this);
     }
 
     public final void setFFIHandle(Object value) {
-        metaClass.getVariableTableManager().setFFIHandle(this, value);
+        getShape().setFFIHandle(this, value);
     }
 
     //
@@ -1333,7 +1337,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public boolean hasVariables() {
-        return metaClass.getVariableTableManager().hasVariables(this);
+        return getShape().hasVariables(this);
     }
 
     /**
@@ -1343,7 +1347,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @return true if there are set instance variables, false otherwise
      */
     protected boolean hasInstanceVariables() {
-        return metaClass.getVariableTableManager().hasInstanceVariables(this);
+        return getShape().hasInstanceVariables(this);
     }
 
     /**
@@ -1420,7 +1424,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * table, and returning the removed value.
      */
     protected Object variableTableRemove(String name) {
-        return metaClass.getVariableTableManager().clearVariable(this, name);
+        return getShape().clearVariable(this, name);
     }
 
     /**
@@ -1491,7 +1495,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public void syncVariables(IRubyObject other) {
-        metaClass.getVariableTableManager().syncVariables(this, other);
+        getShape().syncVariables(this, other);
     }
 
     //
@@ -2886,7 +2890,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         oos.defaultWriteObject();
         oos.writeUTF(metaClass.getName());
 
-        metaClass.getVariableTableManager().serializeVariables(this, oos);
+        getShape().serializeVariables(this, oos);
     }
 
     /**
@@ -2912,7 +2916,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         ois.defaultReadObject();
         metaClass = (RubyClass)ruby.getClassFromPath(ois.readUTF());
 
-        metaClass.getVariableTableManager().deserializeVariables(this, ois);
+        getShape().deserializeVariables(this, ois);
     }
 
     /**
