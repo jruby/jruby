@@ -40,7 +40,7 @@ import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 
-import static org.jruby.api.Convert.castToString;
+import static org.jruby.api.Convert.castAsString;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -83,7 +83,7 @@ public class JavaArrayUtilities {
     public static IRubyObject ruby_string_to_bytes(IRubyObject recv, IRubyObject string) {
         Ruby runtime = recv.getRuntime();
 
-        return JavaUtil.convertJavaToUsableRubyObject(runtime, castToString(runtime.getCurrentContext(), string).getBytes());
+        return JavaUtil.convertJavaToUsableRubyObject(runtime, castAsString(runtime.getCurrentContext(), string).getBytes());
     }
 
     @JRubyMethod(module = true)

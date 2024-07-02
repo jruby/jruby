@@ -32,6 +32,7 @@ import org.jruby.*;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.api.Convert;
 import org.jruby.exceptions.NoMethodError;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.java.proxies.ArrayJavaProxy;
@@ -55,7 +56,7 @@ import java.lang.reflect.Modifier;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyModule.undefinedMethodMessage;
-import static org.jruby.api.Convert.castToInteger;
+import static org.jruby.api.Convert.castAsInteger;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.javasupport.JavaUtil.convertJavaToUsableRubyObject;
 import static org.jruby.javasupport.JavaUtil.isJavaObject;
@@ -782,7 +783,7 @@ public abstract class JavaLang {
                 }
                 final int[] dimensions = new int[len];
                 for (int i = len; --i >= 0; ) {
-                    dimensions[i] = castToInteger(context, aryLengths[i]).getIntValue();
+                    dimensions[i] = Convert.castAsInteger(context, aryLengths[i]).getIntValue();
                 }
                 return ArrayJavaProxy.newArray(context.runtime, klass, dimensions);
             }

@@ -18,8 +18,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.RubyStringBuilder;
 
-import static org.jruby.api.Convert.castToFixnum;
-import static org.jruby.api.Convert.castToRange;
+import static org.jruby.api.Convert.castAsFixnum;
+import static org.jruby.api.Convert.castAsRange;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.javasupport.ext.JavaLang.Character.inspectCharValue;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
@@ -820,14 +820,14 @@ public final class ArrayJavaProxy extends JavaProxy {
     }
 
     public IRubyObject getRange(ThreadContext context, IRubyObject arg0) {
-        return arrayRange(context, castToRange(context, arg0));
+        return arrayRange(context, castAsRange(context, arg0));
     }
 
     private IRubyObject arrayRange(final ThreadContext context, final RubyRange range) {
         final Object array = getObject();
         final int arrayLength = Array.getLength( array );
-        int first = castToFixnum(context, range.first(context), "Only Integer ranges supported").getIntValue();
-        int last = castToFixnum(context, range.last(context), "Only Integer ranges supported").getIntValue();
+        int first = castAsFixnum(context, range.first(context), "Only Integer ranges supported").getIntValue();
+        int last = castAsFixnum(context, range.last(context), "Only Integer ranges supported").getIntValue();
 
         first = first >= 0 ? first : arrayLength + first;
         if (first < 0 || first >= arrayLength) return context.nil;
@@ -851,8 +851,8 @@ public final class ArrayJavaProxy extends JavaProxy {
         final Object array = getObject();
         final int arrayLength = Array.getLength( array );
 
-        int first = castToFixnum(context, rFirst, "Only Integer ranges supported").getIntValue();
-        int length = castToFixnum(context, rLength, "Only Integer ranges supported").getIntValue();
+        int first = castAsFixnum(context, rFirst, "Only Integer ranges supported").getIntValue();
+        int length = castAsFixnum(context, rLength, "Only Integer ranges supported").getIntValue();
 
         if (length > arrayLength) throw context.runtime.newIndexError("length specified is longer than array");
         if (length < 0) return context.nil;

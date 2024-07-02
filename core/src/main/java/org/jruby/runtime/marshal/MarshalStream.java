@@ -66,7 +66,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.encoding.MarshalEncoding;
 
 import static org.jruby.RubyBasicObject.getMetaClass;
-import static org.jruby.api.Convert.castToString;
+import static org.jruby.api.Convert.castAsString;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.marshal.MarshalCommon.*;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -376,7 +376,7 @@ public class MarshalStream extends FilterOutputStream {
             dumpResult = value.callMethod(context, "_dump", depthLimitFixnum);
         }
         
-        RubyString marshaled = castToString(context, dumpResult);
+        RubyString marshaled = castAsString(context, dumpResult);
 
         List<Variable<Object>> variables = null;
         if (marshaled.hasVariables()) {

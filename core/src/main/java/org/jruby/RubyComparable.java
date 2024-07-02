@@ -41,7 +41,7 @@ import org.jruby.runtime.JavaSites.ComparableSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import static org.jruby.api.Convert.castToRange;
+import static org.jruby.api.Convert.castAsRange;
 
 /** Implementation of the Comparable module.
  *
@@ -235,7 +235,7 @@ public class RubyComparable {
 
     @JRubyMethod(name = "clamp")
     public static IRubyObject clamp(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        RubyRange range = castToRange(context, arg);
+        RubyRange range = castAsRange(context, arg);
         IRubyObject min = range.begin(context);
         IRubyObject max = range.end(context);
 

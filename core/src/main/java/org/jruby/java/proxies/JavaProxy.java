@@ -28,6 +28,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyUnboundMethod;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Convert;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.java.invokers.ConstructorInvoker;
@@ -56,7 +57,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JRubyObjectInputStream;
 
-import static org.jruby.api.Convert.castToModule;
+import static org.jruby.api.Convert.castAsModule;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.arrayOf;
 
@@ -702,7 +703,7 @@ public class JavaProxy extends RubyObject {
 
         @JRubyMethod(meta = true, visibility = Visibility.PRIVATE)
         public static IRubyObject java_alias(ThreadContext context, IRubyObject klass, IRubyObject newName, IRubyObject rubyName, IRubyObject argTypes) {
-            final RubyModule proxyClass = castToModule(context, klass);
+            final RubyModule proxyClass = Convert.castAsModule(context, klass);
 
             String name = rubyName.asJavaString();
             String newNameStr = newName.asJavaString();
@@ -734,7 +735,7 @@ public class JavaProxy extends RubyObject {
         }
 
         private static AbstractRubyMethod getRubyMethod(ThreadContext context, IRubyObject clazz, String name, Class... argTypesClasses) {
-            final RubyModule proxyClass = castToModule(context, clazz);
+            final RubyModule proxyClass = Convert.castAsModule(context, clazz);
             final Method method = getMethodFromClass(context, JavaUtil.getJavaClass(proxyClass), name, argTypesClasses);
             final String prettyName = name + CodegenUtils.prettyParams(argTypesClasses);
 

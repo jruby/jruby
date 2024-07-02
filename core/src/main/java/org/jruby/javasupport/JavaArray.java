@@ -35,11 +35,11 @@ import java.lang.reflect.Array;
 
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
-import org.jruby.RubyInteger;
+import org.jruby.api.Convert;
 import org.jruby.java.util.ArrayUtils;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import static org.jruby.api.Convert.castToInteger;
+import static org.jruby.api.Convert.castAsInteger;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.javasupport.Java.castToJavaObject;
 
@@ -89,7 +89,7 @@ public class JavaArray extends JavaObject {
 
     public IRubyObject aset(IRubyObject indexArg, IRubyObject value) {
         var context = getRuntime().getCurrentContext();
-        var index = castToInteger(context, indexArg).getIntValue();
+        var index = Convert.castAsInteger(context, indexArg).getIntValue();
         var javaObject = castToJavaObject(context, value).getValue();
 
         ArrayUtils.setWithExceptionHandlingDirect(getRuntime(), javaObject, index, javaObject);
@@ -107,8 +107,8 @@ public class JavaArray extends JavaObject {
 
     public IRubyObject afill(IRubyObject beginArg, IRubyObject endArg, IRubyObject value) {
         var context = getRuntime().getCurrentContext();
-        var beginIndex = castToInteger(context, beginArg).getIntValue();
-        var endIndex = castToInteger(context, endArg).getIntValue();
+        var beginIndex = Convert.castAsInteger(context, beginArg).getIntValue();
+        var endIndex = Convert.castAsInteger(context, endArg).getIntValue();
         var javaValue = castToJavaObject(context, value).getValue();
 
         fillWithExceptionHandling(beginIndex, endIndex, javaValue);

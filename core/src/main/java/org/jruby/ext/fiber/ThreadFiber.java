@@ -38,7 +38,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
-import static org.jruby.api.Convert.castToHash;
+import static org.jruby.api.Convert.castAsHash;
 import static org.jruby.api.Error.typeError;
 
 public class ThreadFiber extends RubyObject implements ExecutionContext {
@@ -792,7 +792,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         // nil is an allowed value and will be lazily initialized.
         if (hashArg == context.nil) return;
 
-        var hash = castToHash(context, hashArg, "storage must be a Hash");
+        var hash = castAsHash(context, hashArg, "storage must be a Hash");
         if (hash.isFrozen()) throw context.runtime.newFrozenError("storage must not be frozen");
 
         hash.visitAll(context, (ctx, self, key, value, index) -> {

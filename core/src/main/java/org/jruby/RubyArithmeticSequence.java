@@ -50,8 +50,8 @@ import static org.jruby.RubyNumeric.floatStepSize;
 import static org.jruby.RubyNumeric.dbl2num;
 import static org.jruby.RubyNumeric.int2fix;
 import static org.jruby.RubyNumeric.num2dbl;
-import static org.jruby.RubyNumeric.num2long;
 
+import static org.jruby.api.Convert.numericToLong;
 import static org.jruby.runtime.Helpers.hashEnd;
 import static org.jruby.runtime.Helpers.hashStart;
 import static org.jruby.runtime.Helpers.murmurCombine;
@@ -210,7 +210,7 @@ public class RubyArithmeticSequence extends RubyObject {
         }
 
         /* TODO: the following code should be extracted as arith_seq_take */
-        n = num2long(num);
+        n = numericToLong(context, num);
 
         if (n < 0) {
             throw runtime.newArgumentError("attempt to take negative size");
@@ -511,7 +511,7 @@ public class RubyArithmeticSequence extends RubyObject {
             nv = len;
         }
 
-        n = num2long(nv);
+        n = numericToLong(context, nv);
         if (n < 0) {
             throw runtime.newArgumentError("negative array size");
         }
@@ -599,7 +599,7 @@ public class RubyArithmeticSequence extends RubyObject {
 
     @JRubyMethod(name = "each_cons")
     public IRubyObject each_cons(ThreadContext context, IRubyObject arg, final Block block) {
-        int size = (int) RubyNumeric.num2long(arg);
+        int size = (int) numericToLong(context, arg);
         if (size <= 0) throw context.runtime.newArgumentError("invalid size");
         return block.isGiven() ? RubyEnumerable.each_consCommon(context, this, size, block) :
                 enumeratorize(context.runtime, this, "each_cons", arg);
@@ -607,7 +607,7 @@ public class RubyArithmeticSequence extends RubyObject {
 
     @JRubyMethod(name = "each_slice")
     public IRubyObject each_slice(ThreadContext context, IRubyObject arg, final Block block) {
-        int size = (int) RubyNumeric.num2long(arg);
+        int size = (int) numericToLong(context, arg);
         if (size <= 0) throw context.runtime.newArgumentError("invalid size");
 
         return block.isGiven() ? RubyEnumerable.each_sliceCommon(context, this, size, block) :

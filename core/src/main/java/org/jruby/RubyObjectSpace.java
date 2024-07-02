@@ -42,13 +42,14 @@ import java.util.stream.Stream;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.api.Convert;
 import org.jruby.exceptions.StopIteration;
 import org.jruby.javasupport.JavaPackage;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 
-import static org.jruby.api.Convert.castToFixnum;
+import static org.jruby.api.Convert.castAsFixnum;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.Inspector.inspectPrefix;
@@ -121,7 +122,7 @@ public class RubyObjectSpace {
     @JRubyMethod(name = "_id2ref", module = true, visibility = PRIVATE)
     public static IRubyObject id2ref(IRubyObject recv, IRubyObject id) {
         final Ruby runtime = id.getRuntime();
-        long longId = castToFixnum(runtime.getCurrentContext(), id).getLongValue();
+        long longId = Convert.castAsFixnum(runtime.getCurrentContext(), id).getLongValue();
         if (longId == 0) {
             return runtime.getFalse();
         } else if (longId == 20) {

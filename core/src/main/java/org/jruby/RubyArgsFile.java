@@ -43,6 +43,7 @@ import static org.jruby.RubyArgsFile.Next.NextFile;
 import static org.jruby.RubyArgsFile.Next.Stream;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.anno.FrameField.LASTLINE;
+import static org.jruby.api.Convert.numericToLong;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
 import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -872,7 +873,7 @@ public class RubyArgsFile extends RubyObject {
             str = length = context.nil;
         }
 
-        if (length != context.nil) len = RubyNumeric.num2long(length);
+        if (length != context.nil) len = numericToLong(context, length);
 
         if (str != context.nil) {
             str = str.convertToString();

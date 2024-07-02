@@ -52,6 +52,7 @@ import org.jruby.runtime.marshal.NewMarshal;
 import org.jruby.runtime.marshal.UnmarshalStream;
 
 import static org.jruby.RubyFixnum.zero;
+import static org.jruby.api.Convert.numericToLong;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -960,7 +961,7 @@ public class RubyBignum extends RubyInteger {
                 return RubyFixnum.one(context.runtime);
             }
         }
-        long position = num2long(other);
+        long position = numericToLong(context, other);
         if (position < 0 || position > Integer.MAX_VALUE) {
             return zero(context.runtime);
         }

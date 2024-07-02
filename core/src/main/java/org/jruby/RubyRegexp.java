@@ -55,6 +55,7 @@ import org.joni.exception.JOniException;
 import org.joni.exception.TimeoutException;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Convert;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.parser.ReOptions;
@@ -78,7 +79,7 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.collections.WeakValuedMap;
 
-import static org.jruby.api.Convert.castToHash;
+import static org.jruby.api.Convert.castAsHash;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -955,7 +956,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     private IRubyObject timeoutFromArg(ThreadContext context, IRubyObject arg) {
-        RubyHash kwargs = castToHash(context, arg);
+        RubyHash kwargs = Convert.castAsHash(context, arg);
         return kwargs.fastARef(context.runtime.newSymbol("timeout"));
     }
 
@@ -1587,7 +1588,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         IRubyObject timeout = null;
         if ((callInfo & ThreadContext.CALL_KEYWORD) != 0) {
             length--;
-            RubyHash opts = castToHash(context, args[args.length - 1]);
+            RubyHash opts = Convert.castAsHash(context, args[args.length - 1]);
             timeout = opts.fastARef(context.runtime.newSymbol("timeout"));
         }
 

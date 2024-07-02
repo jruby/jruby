@@ -44,6 +44,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.EncodingUtils;
 
+import static org.jruby.api.Convert.numericToLong;
 import static org.jruby.api.Error.typeError;
 
 
@@ -615,7 +616,7 @@ public class Sprintf {
                             n = StringSupport.codeLength(bl.getEncoding(), c);
                         }
                     } else {
-                        c = (int) RubyNumeric.num2long(arg) & 0xFFFFFFFF;
+                        c = (int) numericToLong(context, arg) & 0xFFFFFFFF;
                         try {
                             n = StringSupport.codeLength(encoding, c);
                         } catch (EncodingException e) {

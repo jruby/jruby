@@ -41,7 +41,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.collections.IntList;
 
-import static org.jruby.api.Convert.castToSymbol;
+import static org.jruby.api.Convert.castAsSymbol;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ext.coverage.CoverageData.CoverageDataState.*;
 import static org.jruby.ext.coverage.CoverageData.EVAL;
@@ -226,7 +226,7 @@ public class CoverageModule {
 
     @JRubyMethod(module = true, name = "supported?")
     public static IRubyObject supported_p(ThreadContext context, IRubyObject self, IRubyObject arg) {
-        RubySymbol mode = castToSymbol(context, arg);
+        RubySymbol mode = castAsSymbol(context, arg);
 
         if (mode == context.runtime.newSymbol("lines") ||
                 mode == context.runtime.newSymbol("oneshot_lines") ||

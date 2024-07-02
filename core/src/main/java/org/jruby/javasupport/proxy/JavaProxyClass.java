@@ -64,7 +64,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
-import static org.jruby.api.Convert.castToClass;
+import static org.jruby.api.Convert.castAsClass;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.javasupport.JavaCallable.inspectParameterTypes;
 
@@ -514,7 +514,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     @JRubyMethod(meta = true)
     public static RubyObject get_with_class(final IRubyObject self, IRubyObject obj) {
         final Ruby runtime = self.getRuntime();
-        return getProxyClass(runtime, castToClass(runtime.getCurrentContext(), obj));
+        return getProxyClass(runtime, castAsClass(runtime.getCurrentContext(), obj));
     }
     
     // Note: called from <clinit> of reified classes

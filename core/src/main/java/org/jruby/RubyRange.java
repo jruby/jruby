@@ -58,9 +58,9 @@ import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
-import static org.jruby.RubyNumeric.dbl2num;
-import static org.jruby.RubyNumeric.fix2long;
+import static org.jruby.RubyNumeric.*;
 import static org.jruby.api.Convert.checkToInteger;
+import static org.jruby.api.Convert.numericToLong;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.hashEnd;
 import static org.jruby.runtime.Helpers.hashStart;
@@ -80,7 +80,6 @@ import org.jruby.util.Numeric;
 import org.jruby.util.TypeConverter;
 
 import static org.jruby.RubyEnumerator.SizeFn;
-import static org.jruby.RubyNumeric.intervalStepSize;
 
 import static org.jruby.runtime.Visibility.PRIVATE;
 
@@ -179,8 +178,8 @@ public class RubyRange extends RubyObject {
         range.isExclusive = isExclusive;
     }
 
-    final boolean checkBegin(long length) {
-        long beg = isBeginless ? 0 : RubyNumeric.num2long(this.begin);
+    final boolean checkBegin(ThreadContext context, long length) {
+        long beg = isBeginless ? 0 : numericToLong(context, this.begin);
         if (beg < 0) {
             beg += length;
             if (beg < 0) {
@@ -192,9 +191,9 @@ public class RubyRange extends RubyObject {
         return true;
     }
 
-    final long[] begLen(long len, int err) {
-        long beg = isBeginless ? 0 : RubyNumeric.num2long(this.begin);
-        long end = isEndless ? -1: RubyNumeric.num2long(this.end);
+    final long[] begLen(ThreadContext context, long len, int err) {
+        long beg = isBeginless ? 0 : numericToLong(context, this.begin);
+        long end = isEndless ? -1: numericToLong(context, this.end);
 
         if (beg < 0) {
             beg += len;
@@ -232,8 +231,8 @@ public class RubyRange extends RubyObject {
         return new long[]{beg, len};
     }
 
-    final long begLen0(long len) {
-        long beg = isBeginless ? 0 : RubyNumeric.num2long(this.begin);
+    final long begLen0(ThreadContext context, long len) {
+        long beg = isBeginless ? 0 : numericToLong(context, this.begin);
 
         if (beg < 0) {
             beg += len;
@@ -245,8 +244,8 @@ public class RubyRange extends RubyObject {
         return beg;
     }
 
-    final long begLen1(long len, long beg) {
-        long end = isEndless ? -1 : RubyNumeric.num2long(this.end);
+    final long begLen1(ThreadContext context, long len, long beg) {
+        long end = isEndless ? -1 : numericToLong(context, this.end);
 
         if (end < 0) {
             end += len;
@@ -1247,15 +1246,13 @@ public class RubyRange extends RubyObject {
             return RubyArray.newEmptyArray(context.runtime);
         }
 
-        long n = RubyNumeric.num2long(arg);
-        if (n < 0) {
-            throw context.runtime.newArgumentError("negative array size");
-        }
+        long n = numericToLong(context, arg);
+        if (n < 0) throw context.runtime.newArgumentError("negative array size");
 
         nv = RubyInteger.int2fix(context.runtime, n);
         if (Numeric.f_gt_p(context, nv, len)) {
              nv = len;
-             n = RubyNumeric.num2long(nv);
+             n = numericToLong(context, nv);
         }
 
         RubyArray array = RubyArray.newArray(context.runtime, n);

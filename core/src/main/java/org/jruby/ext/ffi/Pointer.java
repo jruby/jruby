@@ -11,6 +11,7 @@ import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 
+import static org.jruby.api.Convert.numericToLong;
 import static org.jruby.runtime.Visibility.*;
 
 /**
@@ -91,7 +92,7 @@ public class Pointer extends AbstractMemory {
     public IRubyObject initialize(ThreadContext context, IRubyObject address) {
         setMemoryIO(address instanceof Pointer
                 ? ((Pointer) address).getMemoryIO()
-                : Factory.getInstance().wrapDirectMemory(context.runtime, RubyFixnum.num2long(address)));
+                : Factory.getInstance().wrapDirectMemory(context.runtime, numericToLong(context, address)));
         size = Long.MAX_VALUE;
         typeSize = 1;
 
@@ -102,7 +103,7 @@ public class Pointer extends AbstractMemory {
     public IRubyObject initialize(ThreadContext context, IRubyObject type, IRubyObject address) {
         setMemoryIO(address instanceof Pointer
                 ? ((Pointer) address).getMemoryIO()
-                : Factory.getInstance().wrapDirectMemory(context.runtime, RubyFixnum.num2long(address)));
+                : Factory.getInstance().wrapDirectMemory(context.runtime, numericToLong(context, address)));
         size = Long.MAX_VALUE;
         typeSize = calculateTypeSize(context, type);
 

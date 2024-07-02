@@ -54,6 +54,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Convert;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Helpers;
@@ -83,7 +84,7 @@ import java.nio.channels.SocketChannel;
 import java.util.Enumeration;
 import java.util.regex.Pattern;
 
-import static org.jruby.api.Convert.castToFixnum;
+import static org.jruby.api.Convert.castAsFixnum;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -144,7 +145,7 @@ public class RubySocket extends RubyBasicSocket {
 
     @JRubyMethod(meta = true)
     public static IRubyObject for_fd(ThreadContext context, IRubyObject socketClass, IRubyObject _fd) {
-        int intFD = castToFixnum(context, _fd).getIntValue();
+        int intFD = Convert.castAsFixnum(context, _fd).getIntValue();
         Ruby runtime = context.runtime;
         ChannelFD fd = runtime.getFilenoUtil().getWrapperFromFileno(intFD);
 

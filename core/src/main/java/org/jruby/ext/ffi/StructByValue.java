@@ -11,7 +11,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import static org.jruby.api.Convert.castToClass;
+import static org.jruby.api.Convert.castAsClass;
 import static org.jruby.api.Error.typeError;
 
 
@@ -34,7 +34,7 @@ public final class StructByValue extends Type {
     @JRubyMethod(name = "new", meta = true)
     public static final IRubyObject newStructByValue(ThreadContext context, IRubyObject klass, IRubyObject structClass1) {
         Ruby runtime = context.runtime;
-        RubyClass structClass = castToClass(context, structClass1);
+        RubyClass structClass = castAsClass(context, structClass1);
 
         if (!structClass.isKindOfModule(runtime.getFFI().structClass)) {
             throw typeError(context, structClass, "subclass of FFI::Struct");
