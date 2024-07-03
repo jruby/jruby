@@ -857,6 +857,13 @@ public final class ThreadContext {
         return backTrace;
     }
 
+    public IRubyObject yieldCallerLocations(ThreadContext context, Stream<StackWalker.StackFrame> stackStream, int skip, Block block) {
+        runtime.incrementCallerCount();
+
+        // start at level 2 to skip each_caller_location and its caller
+        return TraceType.Gather.CALLER.getBacktraceData(this, stackStream).yieldBacktraceElements(context, skip, block);
+    }
+
     private RubyStackTraceElement[] getFullTrace(Integer length, Stream<StackWalker.StackFrame> stackStream) {
         if (length != null && length == 0) return RubyStackTraceElement.EMPTY_ARRAY;
         return TraceType.Gather.CALLER.getBacktraceData(this, stackStream).getBacktrace(runtime);
