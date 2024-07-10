@@ -1526,7 +1526,7 @@ public class RubyInstanceConfig {
 
     private ProfilingMode profilingMode = Options.CLI_PROFILING_MODE.load();
     private ProfileOutput profileOutput = new ProfileOutput(System.err);
-    private String profilingService = Options.CLI_PROFILING_SERVICE.load();;
+    private String profilingService = Options.CLI_PROFILING_SERVICE.load();
 
     private ClassLoader loader = defaultClassLoader();
 

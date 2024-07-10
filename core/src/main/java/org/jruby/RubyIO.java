@@ -5385,7 +5385,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     private static int rb_io_fptr_finalize(Ruby runtime, OpenFile fptr) {
         if (fptr == null) return 0;
-        fptr.setPath(null);;
+        fptr.setPath(null);
         if (fptr.fd() != null)
             fptr.cleanup(runtime, true);
         fptr.write_lock = null;

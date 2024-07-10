@@ -32,7 +32,7 @@ import org.jruby.ir.operands.Filename;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.FrozenString;
 import org.jruby.ir.operands.Hash;
-import org.jruby.ir.operands.ImmutableLiteral;;
+import org.jruby.ir.operands.ImmutableLiteral;
 import org.jruby.ir.operands.Integer;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;

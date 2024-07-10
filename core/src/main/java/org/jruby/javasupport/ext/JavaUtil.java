@@ -531,7 +531,7 @@ public abstract class JavaUtil {
             final java.util.List list = unwrapIfJavaObject(self);
             final IRubyObject[] array = new IRubyObject[ list.size() ];
             int i = 0; for ( Object elem : list ) {
-                array[i++] = convertJavaToUsableRubyObject(runtime, elem);;
+                array[i++] = convertJavaToUsableRubyObject(runtime, elem);
             }
             return RubyArray.newArrayMayCopy(runtime, array);
         }
