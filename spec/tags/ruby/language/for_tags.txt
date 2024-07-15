@@ -1,0 +1,3 @@
+fails:The for expression iterates over a list of arrays and destructures with a splat
+fails:The for expression iterates over a list of arrays and destructures with a splat and additional targets
+fails:The for expression allows an attribute with safe navigation on a nil base as an iterator name

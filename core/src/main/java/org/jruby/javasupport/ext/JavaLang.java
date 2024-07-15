@@ -913,7 +913,7 @@ public abstract class JavaLang {
 
         @Override
         public IRubyObject call(final ThreadContext context, final IRubyObject self, final RubyModule clazz, final java.lang.String name) {
-            java.lang.Object val = unwrapIfJavaObject(self);;
+            java.lang.Object val = unwrapIfJavaObject(self);
             return context.runtime.newString(val.toString());
         }
 

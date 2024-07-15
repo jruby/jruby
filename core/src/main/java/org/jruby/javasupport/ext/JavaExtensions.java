@@ -14,7 +14,7 @@ import java.util.function.Consumer;
  */
 public class JavaExtensions {
 
-    private static final boolean LAZY = Options.JI_LOAD_LAZY.load();;
+    private static final boolean LAZY = Options.JI_LOAD_LAZY.load();
 
     private JavaExtensions() { /* hidden */ }
 

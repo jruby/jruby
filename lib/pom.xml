@@ -307,7 +307,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>jruby-openssl</artifactId>
-      <version>0.14.5</version>
+      <version>0.15.0</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -892,7 +892,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>net-ftp</artifactId>
-      <version>0.3.4</version>
+      <version>0.3.7</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1126,7 +1126,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/irb-1.13.0*</include>
           <include>specifications/jar-dependencies-0.4.1*</include>
           <include>specifications/jruby-readline-1.3.7*</include>
-          <include>specifications/jruby-openssl-0.14.5*</include>
+          <include>specifications/jruby-openssl-0.15.0*</include>
           <include>specifications/json-2.7.2*</include>
           <include>specifications/logger-1.6.0*</include>
           <include>specifications/net-http-0.4.1*</include>
@@ -1171,7 +1171,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/matrix-0.4.2*</include>
           <include>specifications/minitest-5.22.2*</include>
           <include>specifications/mutex_m-0.2.0*</include>
-          <include>specifications/net-ftp-0.3.4*</include>
+          <include>specifications/net-ftp-0.3.7*</include>
           <include>specifications/net-imap-0.4.10*</include>
           <include>specifications/net-pop-0.1.2*</include>
           <include>specifications/net-smtp-0.4.0.1*</include>
@@ -1207,7 +1207,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/irb-1.13.0*/**/*</include>
           <include>gems/jar-dependencies-0.4.1*/**/*</include>
           <include>gems/jruby-readline-1.3.7*/**/*</include>
-          <include>gems/jruby-openssl-0.14.5*/**/*</include>
+          <include>gems/jruby-openssl-0.15.0*/**/*</include>
           <include>gems/json-2.7.2*/**/*</include>
           <include>gems/logger-1.6.0*/**/*</include>
           <include>gems/net-http-0.4.1*/**/*</include>
@@ -1252,7 +1252,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/matrix-0.4.2*/**/*</include>
           <include>gems/minitest-5.22.2*/**/*</include>
           <include>gems/mutex_m-0.2.0*/**/*</include>
-          <include>gems/net-ftp-0.3.4*/**/*</include>
+          <include>gems/net-ftp-0.3.7*/**/*</include>
           <include>gems/net-imap-0.4.10*/**/*</include>
           <include>gems/net-pop-0.1.2*/**/*</include>
           <include>gems/net-smtp-0.4.0.1*/**/*</include>
@@ -1288,7 +1288,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/irb-1.13.0*</include>
           <include>cache/jar-dependencies-0.4.1*</include>
           <include>cache/jruby-readline-1.3.7*</include>
-          <include>cache/jruby-openssl-0.14.5*</include>
+          <include>cache/jruby-openssl-0.15.0*</include>
           <include>cache/json-2.7.2*</include>
           <include>cache/logger-1.6.0*</include>
           <include>cache/net-http-0.4.1*</include>
@@ -1333,7 +1333,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/matrix-0.4.2*</include>
           <include>cache/minitest-5.22.2*</include>
           <include>cache/mutex_m-0.2.0*</include>
-          <include>cache/net-ftp-0.3.4*</include>
+          <include>cache/net-ftp-0.3.7*</include>
           <include>cache/net-imap-0.4.10*</include>
           <include>cache/net-pop-0.1.2*</include>
           <include>cache/net-smtp-0.4.0.1*</include>

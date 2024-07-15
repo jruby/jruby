@@ -27,6 +27,7 @@ import java.util.regex.Pattern;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.RubyString;
 import org.jruby.util.SafePropertyAccessor;
+import org.jruby.util.cli.Options;
 import org.jruby.util.io.EncodingUtils;
 
 public final class EncodingService {
@@ -430,7 +431,7 @@ public final class EncodingService {
     }
 
     public Encoding getWindowsFilesystemEncoding(Ruby ruby) {
-        String encoding = SafePropertyAccessor.getProperty("file.encoding", "UTF-8");
+        String encoding = Options.WINDOWS_FILESYSTEM_ENCODING.load();
         Encoding filesystemEncoding = loadEncoding(ByteList.create(encoding));
 
         // Use default external if file.encoding does not point at an encoding we recognize
