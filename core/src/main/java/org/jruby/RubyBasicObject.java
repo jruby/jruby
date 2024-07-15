@@ -66,7 +66,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 
 import static org.jruby.anno.FrameField.*;
-import static org.jruby.api.Convert.castToModule;
+import static org.jruby.api.Convert.castAsModule;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
 import static org.jruby.runtime.Helpers.invokeChecked;
@@ -2229,7 +2229,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     b.kind_of? M       #=&gt; true
      */
     public RubyBoolean kind_of_p(ThreadContext context, IRubyObject type) {
-        return RubyBoolean.newBoolean(context, castToModule(context, type, "class or module required").isInstance(this));
+        return RubyBoolean.newBoolean(context, castAsModule(context, type, "class or module required").isInstance(this));
     }
 
     /** rb_obj_methods

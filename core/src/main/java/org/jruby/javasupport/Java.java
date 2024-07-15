@@ -230,7 +230,7 @@ public class Java implements Library {
 
         @JRubyMethod
         public static IRubyObject inherited(ThreadContext context, IRubyObject self, IRubyObject subclass) {
-            JavaInterfaceTemplate.addRealImplClassNew(castToClass(context, subclass));
+            JavaInterfaceTemplate.addRealImplClassNew(castAsClass(context, subclass));
             return context.nil;
         }
     }
@@ -242,7 +242,7 @@ public class Java implements Library {
             IRubyObject javaClass,
             IRubyObject mod) {
         final Ruby runtime = self.getRuntime();
-        RubyModule module = castToModule(runtime.getCurrentContext(), mod);
+        RubyModule module = castAsModule(runtime.getCurrentContext(), mod);
 
         return setProxyClass(runtime, module, name.asJavaString(), resolveJavaClassArgument(runtime, javaClass));
     }
@@ -583,7 +583,7 @@ public class Java implements Library {
         RubyClass javaProxyClass = javaSupport.getJavaProxyClass().getMetaClass();
         Helpers.invokeAs(context, javaProxyClass, clazz, "inherited", subclazz, Block.NULL_BLOCK);
 
-        setupJavaSubclass(context, castToClass(context, subclazz));
+        setupJavaSubclass(context, castAsClass(context, subclazz));
 
         return context.nil;
     }
@@ -1099,7 +1099,7 @@ public class Java implements Library {
 
     public static IRubyObject get_proxy_or_package_under_package(final ThreadContext context, final IRubyObject self,
                                                                  final IRubyObject parentPackage, final IRubyObject name) {
-        final RubyModule result = getProxyOrPackageUnderPackage(context, castToModule(context, parentPackage), name.asJavaString(), true);
+        final RubyModule result = getProxyOrPackageUnderPackage(context, castAsModule(context, parentPackage), name.asJavaString(), true);
         return result != null ? result : context.nil;
     }
 
@@ -1214,7 +1214,7 @@ public class Java implements Library {
         }
 
         private static IRubyObject callProc(ThreadContext context, IRubyObject self, IRubyObject[] procArgs) {
-            RubyProc proc = castToProc(context, self, "interface impl method_missing for block used with non-Proc object");
+            RubyProc proc = castAsProc(context, self, "interface impl method_missing for block used with non-Proc object");
             return proc.call(context, procArgs);
         }
 

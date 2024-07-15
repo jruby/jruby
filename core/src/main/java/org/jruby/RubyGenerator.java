@@ -30,6 +30,7 @@ package org.jruby;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Convert;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -38,7 +39,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ArraySupport;
 
-import static org.jruby.api.Convert.castToProc;
+import static org.jruby.api.Convert.castAsProc;
 import static org.jruby.api.Error.typeError;
 
 @JRubyClass(name = "Enumerator::Generator")
@@ -62,7 +63,7 @@ public class RubyGenerator extends RubyObject {
         if (Arity.checkArgumentCount(context, args, 0, 1) == 0) {
             proc = RubyProc.newProc(context.runtime, block, Block.Type.PROC);
         } else {
-            proc = castToProc(context, args[0]);
+            proc = Convert.castAsProc(context, args[0]);
 
             if (block.isGiven()) context.runtime.getWarnings().warn(IRubyWarnings.ID.BLOCK_UNUSED, "given block not used");
         }

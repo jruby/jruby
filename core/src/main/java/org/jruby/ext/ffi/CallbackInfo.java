@@ -35,12 +35,13 @@ import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Convert;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import static org.jruby.api.Convert.castToArray;
+import static org.jruby.api.Convert.castAsArray;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -110,7 +111,7 @@ public class CallbackInfo extends Type {
         IRubyObject returnType = args[0];
 
         if (!(returnType instanceof Type)) throw typeError(context, returnType.getMetaClass(), "FFI::Type");
-        var paramTypes = castToArray(context, args[1]);
+        var paramTypes = Convert.castAsArray(context, args[1]);
 
         if (returnType instanceof MappedType) returnType = ((MappedType) returnType).getRealType();
 

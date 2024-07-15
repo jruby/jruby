@@ -1035,7 +1035,7 @@ public class RubyModule extends RubyObject {
 
     // mri: rb_using_module
     public static void usingModule(ThreadContext context, RubyModule cref, IRubyObject refinedModule) {
-        usingModuleRecursive(context, cref, castToModule(context, refinedModule));
+        usingModuleRecursive(context, cref, castAsModule(context, refinedModule));
     }
 
     // mri: using_module_recursive
@@ -1239,7 +1239,7 @@ public class RubyModule extends RubyObject {
     @Deprecated
     public void prependModule(IRubyObject arg) {
         assert arg != null;
-        prependModule(castToModule(getRuntime().getCurrentContext(), arg));
+        prependModule(castAsModule(getRuntime().getCurrentContext(), arg));
     }
 
     /**
@@ -2930,7 +2930,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "<=")
     public IRubyObject op_le(IRubyObject arg) {
         Ruby runtime = getRuntime();
-        RubyModule argMod = castToModule(runtime.getCurrentContext(), arg, "compared with non class/module");
+        RubyModule argMod = castAsModule(runtime.getCurrentContext(), arg, "compared with non class/module");
 
         if (searchAncestor(argMod.getMethodLocation()) != null) {
             return runtime.getTrue();
@@ -2969,7 +2969,7 @@ public class RubyModule extends RubyObject {
     */
     @JRubyMethod(name = ">=")
     public IRubyObject op_ge(IRubyObject obj) {
-        return castToModule(getRuntime().getCurrentContext(), obj, "compared with non class/module").op_le(this);
+        return castAsModule(getRuntime().getCurrentContext(), obj, "compared with non class/module").op_le(this);
     }
 
     /** rb_mod_gt
@@ -3344,7 +3344,7 @@ public class RubyModule extends RubyObject {
     private RubyModule verifyNormalModule(ThreadContext context, IRubyObject include) {
         if (!isModule()) throw typeError(context, this, "Module");
 
-        var mod = castToModule(context, include);
+        var mod = castAsModule(context, include);
 
         // included and prepended modules happen to be RubyModule but are not "modules".
         if (!(mod.isModule() || mod.isClass())) throw typeError(context, include, "Module");
@@ -3409,7 +3409,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "mix", visibility = PRIVATE)
     public IRubyObject mix(ThreadContext context, IRubyObject modArg) {
-        var mod = castToModule(context, modArg);
+        var mod = castAsModule(context, modArg);
 
         for (Map.Entry<String, DynamicMethod> entry : mod.methods.entrySet()) {
             if (methodLocation.getMethods().containsKey(entry.getKey())) {
@@ -3426,9 +3426,9 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "mix", visibility = PRIVATE)
     public IRubyObject mix(ThreadContext context, IRubyObject modArg, IRubyObject hash0) {
-        var mod = castToModule(context, modArg);
+        var mod = castAsModule(context, modArg);
         if (!mod.isModule()) throw typeError(context, mod, "Module");
-        var methodNames = castToHash(context, hash0);
+        var methodNames = castAsHash(context, hash0);
 
         for (Map.Entry<IRubyObject, IRubyObject> entry : (Set<Map.Entry<IRubyObject, IRubyObject>>)methodNames.directEntrySet()) {
             String name = entry.getValue().toString();
@@ -6107,7 +6107,7 @@ public class RubyModule extends RubyObject {
             RubyClass objectClass = context.runtime.getObject();
 
             for (IRubyObject _module : modules) {
-                RubyModule module = castToModule(context, _module);
+                RubyModule module = castAsModule(context, _module);
 
                 if (module.getSuperClass() != null) {
                     context.runtime.getWarnings().warn(module.getName() + " has ancestors, but Refinement#import_methods doesn't import their methods");

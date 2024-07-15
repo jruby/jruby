@@ -59,6 +59,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.RecursiveComparator;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.api.Convert.numericToLong;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
@@ -176,7 +177,7 @@ public class RubyStruct extends RubyObject {
             IRubyObject hash = context.safeRecurse(
                     (ctx, runtime1, obj, recur) -> recur ? RubyFixnum.zero(runtime1) : invokedynamic(ctx, obj, HASH),
                     runtime, values[i], "hash", true);
-            h ^= RubyNumeric.num2long(hash);
+            h ^= numericToLong(context, hash);
         }
 
         return runtime.newFixnum(h);

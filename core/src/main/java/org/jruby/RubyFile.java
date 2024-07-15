@@ -81,6 +81,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import static org.jruby.RubyInteger.singleCharByteList;
+import static org.jruby.api.Convert.numericToLong;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.StringSupport.*;
@@ -1779,11 +1780,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         long[] timespec = new long[2];
 
         if (value instanceof RubyFloat) {
-            timespec[0] = Platform.IS_32_BIT ? RubyNumeric.num2int(value) : RubyNumeric.num2long(value);
+            timespec[0] = Platform.IS_32_BIT ? RubyNumeric.num2int(value) : numericToLong(context, value);
             double fraction = ((RubyFloat) value).getDoubleValue() % 1.0;
             timespec[1] = (long)(fraction * 1e9 + 0.5);
         } else if (value instanceof RubyNumeric) {
-            timespec[0] = Platform.IS_32_BIT ? RubyNumeric.num2int(value) : RubyNumeric.num2long(value);
+            timespec[0] = Platform.IS_32_BIT ? RubyNumeric.num2int(value) : numericToLong(context, value);
             timespec[1] = 0;
         } else {
             RubyTime time;
@@ -1792,8 +1793,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             } else {
                 time = (RubyTime) TypeConverter.convertToType(context, value, context.runtime.getTime(), sites(context).to_time_checked, true);
             }
-            timespec[0] = Platform.IS_32_BIT ? RubyNumeric.num2int(time.to_i()) : RubyNumeric.num2long(time.to_i());
-            timespec[1] = Platform.IS_32_BIT ? RubyNumeric.num2int(time.nsec()) : RubyNumeric.num2long(time.nsec());
+            timespec[0] = Platform.IS_32_BIT ? RubyNumeric.num2int(time.to_i()) : numericToLong(context, time.to_i());
+            timespec[1] = Platform.IS_32_BIT ? RubyNumeric.num2int(time.nsec()) : numericToLong(context, time.nsec());
         }
 
         return timespec;

@@ -61,8 +61,7 @@ import java.math.RoundingMode;
 
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
-import static org.jruby.api.Convert.castToInteger;
-import static org.jruby.api.Convert.checkToInteger;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.Numeric.f_gcd;
 import static org.jruby.util.Numeric.f_lcm;
@@ -671,7 +670,7 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     protected boolean int_round_zero_p(ThreadContext context, int ndigits) {
-        long bytes = num2long(sites(context).size.call(context, this, this));
+        long bytes = numericToLong(context, sites(context).size.call(context, this, this));
         return (-0.415241 * ndigits - 0.125 > bytes);
     }
 
@@ -904,10 +903,10 @@ public abstract class RubyInteger extends RubyNumeric {
         Ruby runtime = context.runtime;
 
         boolean negaFlg = false;
-        RubyInteger base = castToInteger(context, b, "Integer#pow() 2nd argument not allowed unless a 1st argument is integer");
+        RubyInteger base = castAsInteger(context, b, "Integer#pow() 2nd argument not allowed unless a 1st argument is integer");
         if (base.isNegative()) throw runtime.newRangeError("Integer#pow() 1st argument cannot be negative when 2nd argument specified");
 
-        RubyInteger pow = castToInteger(context, m, "Integer#pow() 2nd argument not allowed unless all arguments are integers");
+        RubyInteger pow = castAsInteger(context, m, "Integer#pow() 2nd argument not allowed unless all arguments are integers");
 
         if (pow.isNegative()) {
             pow = pow.negate();

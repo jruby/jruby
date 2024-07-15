@@ -53,6 +53,8 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Convert.numericToLong;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -185,11 +187,12 @@ public class RubyZlib {
 
     @JRubyMethod(name = "crc32", optional = 2, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject crc32(IRubyObject recv, IRubyObject[] args) {
-        args = Arity.scanArgs(recv.getRuntime(),args,0,2);
+        ThreadContext context = recv.getRuntime().getCurrentContext();
+        args = Arity.scanArgs(context.runtime, args, 0, 2);
         long start = 0;
         ByteList bytes = null;
         if (!args[0].isNil()) bytes = args[0].convertToString().getByteList();
-        if (!args[1].isNil()) start = RubyNumeric.num2long(args[1]);
+        if (!args[1].isNil()) start = numericToLong(context, args[1]);
         start &= 0xFFFFFFFFL;
 
         final boolean slowPath = start != 0;
@@ -208,11 +211,12 @@ public class RubyZlib {
 
     @JRubyMethod(name = "adler32", optional = 2, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject adler32(IRubyObject recv, IRubyObject[] args) {
-        args = Arity.scanArgs(recv.getRuntime(),args,0,2);
+        ThreadContext context = recv.getRuntime().getCurrentContext();
+        args = Arity.scanArgs(context.runtime, args, 0, 2);
         int start = 1;
         ByteList bytes = null;
         if (!args[0].isNil()) bytes = args[0].convertToString().getByteList();
-        if (!args[1].isNil()) start = (int)RubyNumeric.num2long(args[1]);
+        if (!args[1].isNil()) start = (int) numericToLong(context, args[1]);
 
         Adler32 checksum = new Adler32();
         if (bytes != null) {
@@ -251,9 +255,10 @@ public class RubyZlib {
                                             IRubyObject arg0,
                                             IRubyObject arg1,
                                             IRubyObject arg2) {
-        long crc1 = RubyNumeric.num2long(arg0);
-        long crc2 = RubyNumeric.num2long(arg1);
-        long len2 = RubyNumeric.num2long(arg2);
+        ThreadContext context = recv.getRuntime().getCurrentContext();
+        long crc1 = numericToLong(context, arg0);
+        long crc2 = numericToLong(context, arg1);
+        long len2 = numericToLong(context, arg2);
 
         long crc3 = com.jcraft.jzlib.JZlib.crc32_combine(crc1, crc2, len2);
         return recv.getRuntime().newFixnum(crc3);
@@ -264,9 +269,10 @@ public class RubyZlib {
                                             IRubyObject arg0,
                                             IRubyObject arg1,
                                             IRubyObject arg2) {
-        long adler1 = RubyNumeric.num2long(arg0);
-        long adler2 = RubyNumeric.num2long(arg1);
-        long len2 = RubyNumeric.num2long(arg2);
+        ThreadContext context = recv.getRuntime().getCurrentContext();
+        long adler1 = numericToLong(context, arg0);
+        long adler2 = numericToLong(context, arg1);
+        long len2 = numericToLong(context, arg2);
 
         long adler3 = com.jcraft.jzlib.JZlib.adler32_combine(adler1, adler2, len2);
         return recv.getRuntime().newFixnum(adler3);

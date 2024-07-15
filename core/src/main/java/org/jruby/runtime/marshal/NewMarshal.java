@@ -69,7 +69,7 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 
 import static org.jruby.RubyBasicObject.getMetaClass;
-import static org.jruby.api.Convert.castToString;
+import static org.jruby.api.Convert.castAsString;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.marshal.MarshalCommon.TYPE_IVAR;
 import static org.jruby.runtime.marshal.MarshalCommon.TYPE_UCLASS;
@@ -453,7 +453,7 @@ public class NewMarshal {
             dumpResult = value.callMethod(context, "_dump", depthLimitFixnum);
         }
         
-        RubyString marshaled = castToString(context, dumpResult);
+        RubyString marshaled = castAsString(context, dumpResult);
 
         if (marshaled.hasVariables()) {
             var ivarAccessors = countVariables(marshaled);

@@ -38,6 +38,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Convert;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
@@ -56,7 +57,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import static org.jruby.api.Convert.castToModule;
+import static org.jruby.api.Convert.castAsModule;
 import static org.jruby.api.Error.typeError;
 
 public class JavaInterfaceTemplate {
@@ -84,7 +85,7 @@ public class JavaInterfaceTemplate {
     // check for reserved Ruby names, conflicting methods, etc.
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public static IRubyObject implement(ThreadContext context, IRubyObject self, IRubyObject clazz) {
-        final RubyModule targetModule = castToModule(context, self);
+        final RubyModule targetModule = Convert.castAsModule(context, self);
         final IRubyObject javaClass = JavaProxy.getJavaClass((RubyModule) self);
         Class<?> klass = JavaUtil.unwrapJavaObject(javaClass);
         final Method[] javaInstanceMethods = klass.getMethods();
@@ -343,7 +344,7 @@ public class JavaInterfaceTemplate {
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg, Block block) {
-            RubyModule target = castToModule(context, arg, "append_features called with non-module");
+            RubyModule target = castAsModule(context, arg, "append_features called with non-module");
             target.include( getInterfaceModules(self).toJavaArrayMaybeUnsafe() );
 
             return Helpers.invokeAs(context, clazz.getSuperClass(), self, name, arg, block);
