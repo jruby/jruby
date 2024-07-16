@@ -81,6 +81,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.unicode.UnicodeEncoding;
 
 import static org.jruby.RubyBasicObject.getMetaClass;
+import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_EMPTY;
 import static org.jruby.runtime.Visibility.*;
@@ -2394,8 +2395,7 @@ public class Helpers {
      */
     public static RubyBoolean rbEqual(ThreadContext context, IRubyObject a, IRubyObject b) {
         if (a == b) return context.tru;
-        IRubyObject res = sites(context).op_equal.call(context, a, a, b);
-        return RubyBoolean.newBoolean(context, res.isTrue());
+        return asBoolean(context, sites(context).op_equal.call(context, a, a, b).isTrue());
     }
 
     /**
@@ -2408,8 +2408,7 @@ public class Helpers {
      */
     public static RubyBoolean rbEqual(ThreadContext context, IRubyObject a, IRubyObject b, CallSite equal) {
         if (a == b) return context.tru;
-        IRubyObject res = equal.call(context, a, a, b);
-        return RubyBoolean.newBoolean(context, res.isTrue());
+        return asBoolean(context, equal.call(context, a, a, b).isTrue());
     }
 
     /**
@@ -2422,8 +2421,7 @@ public class Helpers {
      */
     public static RubyBoolean rbEql(ThreadContext context, IRubyObject a, IRubyObject b) {
         if (a == b) return context.tru;
-        IRubyObject res = invokedynamic(context, a, EQL, b);
-        return RubyBoolean.newBoolean(context, res.isTrue());
+        return asBoolean(context, invokedynamic(context, a, EQL, b).isTrue());
     }
 
     /**

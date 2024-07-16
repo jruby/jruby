@@ -79,7 +79,7 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.collections.WeakValuedMap;
 
-import static org.jruby.api.Convert.castAsHash;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -1041,23 +1041,19 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     @JRubyMethod(name = {"==", "eql?"})
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
-        if (this == other) {
-            return context.tru;
-        }
-        if (!(other instanceof RubyRegexp)) {
-            return context.fals;
-        }
+        if (this == other) return context.tru;
+        if (!(other instanceof RubyRegexp)) return context.fals;
+
         RubyRegexp otherRegex = (RubyRegexp) other;
 
         check();
         otherRegex.check();
 
-        return RubyBoolean.newBoolean(context, str.equal(otherRegex.str) && options.equals(otherRegex.options));
+        return asBoolean(context, str.equal(otherRegex.str) && options.equals(otherRegex.options));
     }
 
     @JRubyMethod(name = "~", reads = {LASTLINE}, writes = BACKREF)
     public IRubyObject op_match2(ThreadContext context) {
-        Ruby runtime = context.runtime;
         IRubyObject line = context.getLastLine();
         if (line instanceof RubyString) {
             int start = searchString(context, (RubyString) line, 0, false);
@@ -1065,7 +1061,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 // set backref for user
                 context.updateBackref();
 
-                return runtime.newFixnum(start);
+                return asFixnum(context, start);
             }
         }
 
@@ -1374,13 +1370,18 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     @JRubyMethod
+    public IRubyObject options(ThreadContext context) {
+        return asFixnum(context, getOptions().toOptions());
+    }
+
+    @Deprecated
     public IRubyObject options() {
-        return metaClass.runtime.newFixnum(getOptions().toOptions());
+        return options(getCurrentContext());
     }
 
     @JRubyMethod(name = "casefold?")
     public IRubyObject casefold_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, getOptions().isIgnorecase());
+        return asBoolean(context, getOptions().isIgnorecase());
     }
 
     /** rb_reg_source
@@ -1574,7 +1575,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     @JRubyMethod(name = "fixed_encoding?")
     public IRubyObject fixed_encoding_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, options.isFixed());
+        return asBoolean(context, options.isFixed());
     }
 
     private record RegexpArgs(RubyString string, int options, IRubyObject timeout) {}

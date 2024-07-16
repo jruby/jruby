@@ -2,6 +2,7 @@ package org.jruby.api;
 
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFile;
 import org.jruby.RubyFixnum;
@@ -31,6 +32,9 @@ import static org.jruby.util.TypeConverter.sites;
  * be that thing.  For example, `integerAsInt` implies the value is already an int and will error if
  * it is not.  `checkToInteger` implies the value might not be an integer and that it may try and convert
  * it to one.
+ *
+ * Methods where the parameter to `As` methods will omit the type from in front of as.  For example,
+ * `longAsInteger` will be `asInteger(context, long)`.
  */
 public class Convert {
     /**
@@ -331,12 +335,52 @@ public class Convert {
     }
 
     /**
+     * Create a Ruby Boolean from a java boolean.
+     * @param context the current thread context
+     * @param value the boolean value
+     * @return the Ruby Boolean
+     */
+    public static RubyBoolean asBoolean(ThreadContext context, boolean value) {
+        return value ? context.tru : context.fals;
+    }
+
+    /**
+     * Create a Ruby Fixnum from a java long.
+     * @param context the current thread context
+     * @param value the long value
+     * @return the Ruby Fixnum
+     */
+    public static RubyFixnum asFixnum(ThreadContext context, long value) {
+        return RubyFixnum.newFixnum(context.runtime, value);
+    }
+
+    /**
+     * Create a Ruby Fixnum from a java int.
+     * @param context the current thread context
+     * @param value the int value
+     * @return the Ruby Fixnum
+     */
+    public static RubyFixnum asFixnum(ThreadContext context, int value) {
+        return RubyFixnum.newFixnum(context.runtime, value);
+    }
+
+    /**
+     * Create a Ruby String from a java String.
+     * @param context the current thread context
+     * @param value the String value
+     * @return the Ruby String
+     */
+    public static RubyString asString(ThreadContext context, String value) {
+        return context.runtime.newString(value);
+    }
+
+    /**
      * Safely convert a Ruby Integer into a java int value.  Raising if the value will not fit.
      * @param context the current thread context
      * @param value the RubyInteger to convert
      * @return the int value
      */
-    public static int integerAsInt(ThreadContext context, RubyInteger value) {
+    public static int asInt(ThreadContext context, RubyInteger value) {
         long num = value.getLongValue();
 
         return checkInt(context, num);
@@ -348,7 +392,7 @@ public class Convert {
      * @param value the RubyInteger to convert
      * @return the int value
      */
-    public static long integerAsLong(ThreadContext context, RubyInteger value) {
+    public static long asLong(ThreadContext context, RubyInteger value) {
         if (value instanceof RubyBignum) {
             return big2long((RubyBignum) value);
         }

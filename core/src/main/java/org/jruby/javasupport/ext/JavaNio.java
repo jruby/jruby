@@ -39,6 +39,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.RubyStringBuilder;
 
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.javasupport.JavaUtil.unwrapIfJavaObject;
 import static org.jruby.runtime.Visibility.PUBLIC;
 import static org.jruby.util.Inspector.GT;
@@ -70,7 +71,7 @@ public abstract class JavaNio {
         @JRubyMethod(name = {"length", "size"})
         public static IRubyObject length(final ThreadContext context, final IRubyObject self) {
             java.nio.Buffer obj = self.toJava(java.nio.Buffer.class);
-            return context.runtime.newFixnum(obj.remaining()); // limit - position
+            return asFixnum(context, obj.remaining()); // limit - position
         }
 
     }

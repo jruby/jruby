@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.jruby.RubyString.newString;
+import static org.jruby.api.Convert.asFixnum;
 
 /**
  * Port of MRI's popen+exec logic.
@@ -100,7 +101,7 @@ public class PopenExecutor {
             }
             throw runtime.newErrnoFromErrno(executor.errno, errmsg[0]);
         }
-        return runtime.newFixnum(pid);
+        return asFixnum(context, pid);
     }
 
     // MRI: rb_f_system

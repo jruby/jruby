@@ -67,6 +67,7 @@ import java.nio.ByteOrder;
 import java.nio.channels.Channel;
 
 import static com.headius.backport9.buffer.Buffers.flipBuffer;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Error.typeError;
 
 
@@ -311,7 +312,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
                 throw context.runtime.newErrnoENOPROTOOPTError();
         }
 
-        return context.runtime.newFixnum(0);
+        return asFixnum(context, 0);
     }
 
     protected static void rb_sys_fail(Ruby runtime, String message) {

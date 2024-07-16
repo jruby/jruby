@@ -60,6 +60,7 @@ import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.util.ByteList;
 
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.castAsArray;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.*;
@@ -726,17 +727,17 @@ public final class StructLayout extends Type {
 
         @JRubyMethod
         public final IRubyObject size(ThreadContext context) {
-            return context.runtime.newFixnum(type.getNativeSize());
+            return asFixnum(context, type.getNativeSize());
         }
 
         @JRubyMethod
         public final IRubyObject alignment(ThreadContext context) {
-            return context.runtime.newFixnum(type.getNativeAlignment());
+            return asFixnum(context, type.getNativeAlignment());
         }
 
         @JRubyMethod
         public final IRubyObject offset(ThreadContext context) {
-            return context.runtime.newFixnum(offset);
+            return asFixnum(context, offset);
         }
 
         @JRubyMethod(name = { "type", "ffi_type" })

@@ -13,13 +13,14 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.EventHook;
 import org.jruby.runtime.JavaSites;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
 
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.util.RubyStringBuilder.str;
 
 public class TracePoint extends RubyObject {
@@ -159,7 +160,7 @@ public class TracePoint extends RubyObject {
     
     @JRubyMethod(name = "enabled?")
     public IRubyObject enabled_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, enabled);
+        return asBoolean(context, enabled);
     }
     
     @JRubyMethod
@@ -183,7 +184,7 @@ public class TracePoint extends RubyObject {
     public IRubyObject lineno(ThreadContext context) {
         checkInside(context);
         
-        return context.runtime.newFixnum(line);
+        return asFixnum(context, line);
     }
     
     @JRubyMethod
@@ -260,7 +261,7 @@ public class TracePoint extends RubyObject {
             }
         }
         
-        IRubyObject old = RubyBoolean.newBoolean(context, enabled);
+        IRubyObject old = asBoolean(context, enabled);
         updateEnabled(context, toggle);
         
         return old;

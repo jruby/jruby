@@ -57,6 +57,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JRubyObjectInputStream;
 
+import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.castAsModule;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.arrayOf;
@@ -210,7 +211,7 @@ public class JavaProxy extends RubyObject {
 
     @JRubyMethod(name = "__persistent__", meta = true)
     public static IRubyObject persistent(final ThreadContext context, final IRubyObject clazz) {
-        return RubyBoolean.newBoolean(context, ((RubyClass) clazz).getRealClass().getCacheProxy());
+        return asBoolean(context, ((RubyClass) clazz).getRealClass().getCacheProxy());
     }
 
     @Override
@@ -364,11 +365,7 @@ public class JavaProxy extends RubyObject {
     @Override
     @JRubyMethod(name = "equal?")
     public IRubyObject equal_p(ThreadContext context, IRubyObject other) {
-        if ( other instanceof JavaProxy ) {
-            boolean equal = getObject() == ((JavaProxy) other).getObject();
-            return RubyBoolean.newBoolean(context, equal);
-        }
-        return context.fals;
+        return other instanceof JavaProxy proxy ? asBoolean(context, getObject() == proxy.getObject()) : context.fals;
     }
 
     @JRubyMethod

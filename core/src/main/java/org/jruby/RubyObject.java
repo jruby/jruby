@@ -56,6 +56,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
 
+import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.Helpers.throwException;
@@ -386,7 +387,7 @@ public class RubyObject extends RubyBasicObject {
      */
     @Override
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
-        return RubyBoolean.newBoolean(context, equalInternal(context, this, other));
+        return asBoolean(context, equalInternal(context, this, other));
     }
 
     /**

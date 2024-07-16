@@ -66,6 +66,8 @@ import org.jruby.ast.util.ArgsUtil;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyFile.filePathConvert;
 import static org.jruby.RubyString.UTF8;
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.io.EncodingUtils.newExternalStringWithEncoding;
 
@@ -471,7 +473,7 @@ public class RubyDir extends RubyObject implements Closeable {
             }
         } else {
             runtime.setCurrentDirectory(adjustedPath);
-            result = runtime.newFixnum(0);
+            result = asFixnum(context, 0);
         }
 
         return result;
@@ -838,9 +840,14 @@ public class RubyDir extends RubyObject implements Closeable {
      * Returns the current position in the directory.
      */
     @JRubyMethod(name = {"tell", "pos"})
-    public RubyInteger tell() {
+    public RubyInteger tell(ThreadContext context) {
         checkDir();
-        return getRuntime().newFixnum(pos);
+        return asFixnum(context, pos);
+    }
+
+    @Deprecated
+    public RubyInteger tell() {
+        return tell(getCurrentContext());
     }
 
     /**
@@ -906,7 +913,7 @@ public class RubyDir extends RubyObject implements Closeable {
         RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, arg));
         RubyFileStat fileStat = runtime.newFileStat(path.asJavaString(), false);
         boolean isDirectory = fileStat.directory_p().isTrue();
-        return runtime.newBoolean(isDirectory && entries(context, recv, arg).getLength() <= 2);
+        return asBoolean(context, isDirectory && entries(context, recv, arg).getLength() <= 2);
     }
 
     @JRubyMethod(name = "exist?", meta = true)
@@ -921,7 +928,7 @@ public class RubyDir extends RubyObject implements Closeable {
         } catch (Exception e) {
             // Restore $!
             runtime.getGlobalVariables().set("$!", exception);
-            return runtime.newBoolean(false);
+            return context.fals;
         }
     }
 

@@ -46,6 +46,8 @@ import java.net.SocketAddress;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 
+import static org.jruby.api.Convert.asFixnum;
+
 @JRubyClass(name="UNIXServer", parent="UNIXSocket")
 public class RubyUNIXServer extends RubyUNIXSocket {
     static void createUNIXServer(Ruby runtime) {
@@ -147,13 +149,13 @@ public class RubyUNIXServer extends RubyUNIXSocket {
     @JRubyMethod
     public IRubyObject listen(ThreadContext context, IRubyObject log) {
         // TODO listen backlog
-        return context.runtime.newFixnum(0);
+        return asFixnum(context, 0);
     }
 
     @JRubyMethod
     public IRubyObject sysaccept(ThreadContext context) {
         RubyUNIXSocket socket = (RubyUNIXSocket) accept(context);
-        return context.runtime.newFixnum(((UnixSocketChannel) socket.getChannel()).getFD());
+        return asFixnum(context, ((UnixSocketChannel) socket.getChannel()).getFD());
     }
 
     @JRubyMethod

@@ -40,6 +40,8 @@ import org.jruby.util.NoFunctionalitySignalFacade;
 
 import java.util.*;
 
+import static org.jruby.api.Convert.asFixnum;
+
 @JRubyModule(name="Signal")
 public class RubySignal {
 
@@ -143,9 +145,9 @@ public class RubySignal {
             if (names == null) {
                 names = RubyHash.newHash(runtime);
                 for (Map.Entry<String, Integer> sig : RubySignal.list().entrySet()) {
-                    names.op_aset(context, runtime.newDeduplicatedString(sig.getKey()), runtime.newFixnum(sig.getValue()));
+                    names.op_aset(context, runtime.newDeduplicatedString(sig.getKey()), asFixnum(context, sig.getValue()));
                 }
-                names.op_aset(context, runtime.newDeduplicatedString("EXIT"), runtime.newFixnum(0));
+                names.op_aset(context, runtime.newDeduplicatedString("EXIT"), asFixnum(context, 0));
                 recv.getInternalVariables().setInternalVariable("signal_list", names);
             } else {
                 names.dup(context);

@@ -81,7 +81,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import static org.jruby.RubyInteger.singleCharByteList;
-import static org.jruby.api.Convert.numericToLong;
+import static org.jruby.api.Convert.*;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.StringSupport.*;
@@ -378,7 +378,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             throw context.runtime.newErrnoENOENTError(path);
         }
 
-        return context.runtime.newFixnum(context.runtime.getPosix().chmod(path, mode));
+        return asFixnum(context, context.runtime.getPosix().chmod(path, mode));
     }
 
     @JRubyMethod
@@ -399,13 +399,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             throw context.runtime.newErrnoENOENTError(path);
         }
 
-        return context.runtime.newFixnum(context.runtime.getPosix().chown(path, owner, group));
+        return asFixnum(context, context.runtime.getPosix().chown(path, owner, group));
     }
 
     @JRubyMethod
     public IRubyObject atime(ThreadContext context) {
         checkClosed(context);
-        return context.runtime.newFileStat(getPath(), false).atime();
+        return context.runtime.newFileStat(getPath(), false).atime(context);
     }
 
     @JRubyMethod(name = "ctime")
@@ -450,7 +450,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod
     public IRubyObject mtime(ThreadContext context) {
         checkClosed(context);
-        return ((RubyFileStat) stat(context)).mtime();
+        return ((RubyFileStat) stat(context)).mtime(context);
     }
 
     @JRubyMethod(meta = true)
@@ -627,58 +627,48 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod(required = 2, rest = true, checkArity = false, meta = true)
     public static IRubyObject chmod(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 2, -1);
-
-        Ruby runtime = context.runtime;
-
         int count = 0;
         RubyInteger mode = args[0].convertToInteger();
+
         for (int i = 1; i < argc; i++) {
             JRubyFile filename = file(args[i]);
 
-            if (!filename.exists()) {
-                throw runtime.newErrnoENOENTError(filename.toString());
-            }
+            if (!filename.exists()) throw context.runtime.newErrnoENOENTError(filename.toString());
 
-            if (0 != runtime.getPosix().chmod(filename.getAbsolutePath(), (int) mode.getLongValue())) {
-                throw runtime.newErrnoFromLastPOSIXErrno();
+            if (0 != context.runtime.getPosix().chmod(filename.getAbsolutePath(), (int) mode.getLongValue())) {
+                throw context.runtime.newErrnoFromLastPOSIXErrno();
             } else {
                 count++;
             }
         }
 
-        return runtime.newFixnum(count);
+        return asFixnum(context, count);
     }
 
     @JRubyMethod(required = 2, rest = true, checkArity = false, meta = true)
     public static IRubyObject chown(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 2, -1);
-        Ruby runtime = context.runtime;
-
         int count = 0;
+
         int owner = -1;
-        if (!args[0].isNil()) {
-            owner = RubyNumeric.num2int(args[0]);
-        }
+        if (!args[0].isNil()) owner = RubyNumeric.num2int(args[0]);
 
         int group = -1;
-        if (!args[1].isNil()) {
-            group = RubyNumeric.num2int(args[1]);
-        }
+        if (!args[1].isNil()) group = RubyNumeric.num2int(args[1]);
+
         for (int i = 2; i < argc; i++) {
             JRubyFile filename = file(args[i]);
 
-            if (!filename.exists()) {
-                throw runtime.newErrnoENOENTError(filename.toString());
-            }
+            if (!filename.exists()) throw context.runtime.newErrnoENOENTError(filename.toString());
 
-            if (0 != runtime.getPosix().chown(filename.getAbsolutePath(), owner, group)) {
-                throw runtime.newErrnoFromLastPOSIXErrno();
+            if (0 != context.runtime.getPosix().chown(filename.getAbsolutePath(), owner, group)) {
+                throw context.runtime.newErrnoFromLastPOSIXErrno();
             } else {
                 count++;
             }
         }
 
-        return runtime.newFixnum(count);
+        return asFixnum(context, count);
     }
 
     @JRubyMethod(meta = true)
@@ -953,7 +943,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         RubyString file = get_path(context, arg);
 
         // asJavaString should be ok here since windows drive shares will be charset representable and otherwise we look for "/" at front.
-        return context.runtime.newBoolean(isJRubyAbsolutePath(file.asJavaString()));
+        return asBoolean(context, isJRubyAbsolutePath(file.asJavaString()));
     }
 
     @JRubyMethod(meta = true)
@@ -1085,7 +1075,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     public static IRubyObject ctime(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         Ruby runtime = context.runtime;
         String f = StringSupport.checkEmbeddedNulls(runtime, get_path(context, filename)).toString();
-        return runtime.newFileStat(f, false).ctime();
+        return runtime.newFileStat(f, false).ctime(context);
     }
 
     @JRubyMethod(name = "birthtime", meta = true)
@@ -1098,28 +1088,24 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod(required = 1, rest = true, checkArity = false, meta = true)
     public static IRubyObject lchmod(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 1, -1);
-
-        Ruby runtime = context.runtime;
-
         int count = 0;
         RubyInteger mode = args[0].convertToInteger();
+
         for (int i = 1; i < argc; i++) {
             JRubyFile file = file(args[i]);
-            if (0 != runtime.getPosix().lchmod(file.toString(), (int) mode.getLongValue())) {
-                throw runtime.newErrnoFromLastPOSIXErrno();
+            if (0 != context.runtime.getPosix().lchmod(file.toString(), (int) mode.getLongValue())) {
+                throw context.runtime.newErrnoFromLastPOSIXErrno();
             } else {
                 count++;
             }
         }
 
-        return runtime.newFixnum(count);
+        return asFixnum(context, count);
     }
 
     @JRubyMethod(required = 2, rest = true, checkArity = false, meta = true)
     public static IRubyObject lchown(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 2, -1);
-
-        Ruby runtime = context.runtime;
         int owner = !args[0].isNil() ? RubyNumeric.num2int(args[0]) : -1;
         int group = !args[1].isNil() ? RubyNumeric.num2int(args[1]) : -1;
         int count = 0;
@@ -1127,14 +1113,14 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         for (int i = 2; i < argc; i++) {
             JRubyFile file = file(args[i]);
 
-            if (0 != runtime.getPosix().lchown(file.toString(), owner, group)) {
-                throw runtime.newErrnoFromLastPOSIXErrno();
+            if (0 != context.runtime.getPosix().lchown(file.toString(), owner, group)) {
+                throw context.runtime.newErrnoFromLastPOSIXErrno();
             } else {
                 count++;
             }
         }
 
-        return runtime.newFixnum(count);
+        return asFixnum(context, count);
     }
 
     @JRubyMethod(meta = true)
@@ -1155,14 +1141,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 throw runtime.newErrnoEEXISTError(fromStr + " or " + toStr);
             }
         }
-        return runtime.newFixnum(ret);
+        return asFixnum(context, ret);
     }
 
     @JRubyMethod(meta = true)
     public static IRubyObject mtime(ThreadContext context, IRubyObject recv, IRubyObject filename) {
-        Ruby runtime = context.runtime;
-        String f = StringSupport.checkEmbeddedNulls(runtime, get_path(context, filename)).toString();
-        return runtime.newFileStat(f, false).mtime();
+        String f = StringSupport.checkEmbeddedNulls(context.runtime, get_path(context, filename)).toString();
+        return context.runtime.newFileStat(f, false).mtime(context);
     }
 
     @JRubyMethod(meta = true)
@@ -1278,19 +1263,17 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod(meta = true, optional = 1, checkArity = false)
     public static IRubyObject umask(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 0, 1);
-
-        Ruby runtime = context.runtime;
         int oldMask;
         if (argc == 0) {
-            oldMask = PosixShim.umask(runtime.getPosix());
+            oldMask = PosixShim.umask(context.runtime.getPosix());
         } else if (argc == 1) {
             int newMask = (int) args[0].convertToInteger().getLongValue();
-            oldMask = PosixShim.umask(runtime.getPosix(), newMask);
+            oldMask = PosixShim.umask(context.runtime.getPosix(), newMask);
         } else {
-            throw runtime.newArgumentError("wrong number of arguments");
+            throw context.runtime.newArgumentError("wrong number of arguments");
         }
 
-        return runtime.newFixnum(oldMask);
+        return asFixnum(context, oldMask);
     }
 
     @JRubyMethod(required = 2, rest = true, checkArity = false, meta = true)
@@ -1321,7 +1304,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             }
         }
 
-        return runtime.newFixnum(argc - 2);
+        return asFixnum(context, argc - 2);
     }
 
     @JRubyMethod(required = 2, rest = true, checkArity = false, meta = true)
@@ -1362,7 +1345,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             }
         }
 
-        return runtime.newFixnum(argc - 2);
+        return asFixnum(context, argc - 2);
     }
 
     @JRubyMethod(rest = true, meta = true)
@@ -1388,7 +1371,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             }
         }
 
-        return runtime.newFixnum(args.length);
+        return asFixnum(context, args.length);
     }
 
     private static boolean isSymlink(ThreadContext context, JRubyFile file) {
@@ -1411,7 +1394,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             }
         }
 
-        return runtime.newFixnum(args.length);
+        return asFixnum(context, args.length);
     }
 
     public static IRubyObject unlink(ThreadContext context, IRubyObject... args) {
@@ -1617,10 +1600,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      *
      * @param pathOrFile the string or IO to use for the path
      */
+    @Deprecated
     public static FileResource fileResource(IRubyObject pathOrFile) {
-        ThreadContext context = pathOrFile.getRuntime().getCurrentContext();
-
-        return fileResource(context, pathOrFile);
+        return fileResource(((RubyBasicObject)pathOrFile).getCurrentContext(), pathOrFile);
     }
 
     private static String getDecodedPath(ThreadContext context, IRubyObject pathOrFile) {
@@ -1648,7 +1630,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @Deprecated // Use fileResource instead
     public static JRubyFile file(IRubyObject pathOrFile) {
-        return fileResource(pathOrFile).unwrap(JRubyFile.class);
+        return fileResource(((RubyBasicObject) pathOrFile).getCurrentContext(), pathOrFile).unwrap(JRubyFile.class);
     }
 
     @Override

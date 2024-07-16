@@ -37,6 +37,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.castAsString;
 
 /**
@@ -54,7 +55,7 @@ public abstract class CoreExt {
 
         @JRubyMethod
         public static RubyFixnum unseeded_hash(ThreadContext context, IRubyObject recv) {
-            return context.runtime.newFixnum(castAsString(context, recv).unseededStrHashCode(context.runtime));
+            return asFixnum(context, castAsString(context, recv).unseededStrHashCode(context.runtime));
         }
 
         @JRubyMethod(name = "alloc", meta = true)

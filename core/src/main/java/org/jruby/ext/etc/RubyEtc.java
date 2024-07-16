@@ -37,6 +37,7 @@ import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.io.OpenFile;
 import java.nio.ByteBuffer;
 
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.numericToLong;
 
 @JRubyModule(name="Etc")
@@ -58,7 +59,7 @@ public class RubyEtc {
                     throw context.runtime.newErrnoFromLastPOSIXErrno();
                 }
             }
-            return context.runtime.newFixnum(ret);
+            return asFixnum(context, ret);
         }
     }
     

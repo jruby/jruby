@@ -42,6 +42,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import jnr.posix.FileStat;
 import jnr.posix.util.Platform;
+import org.jruby.api.Convert;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -50,6 +51,8 @@ import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.StringSupport;
 
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -67,8 +70,8 @@ public class RubyFileStat extends RubyObject {
     private FileResource file;
     private FileStat stat;
 
-    private void checkInitialized() {
-        if (stat == null) throw typeError(getRuntime().getCurrentContext(), "uninitialized File::Stat");
+    private void checkInitialized(ThreadContext context) {
+        if (stat == null) throw typeError(context, "uninitialized File::Stat");
     }
 
     public static RubyClass createFileStatClass(Ruby runtime) {
@@ -160,149 +163,235 @@ public class RubyFileStat extends RubyObject {
     }
     
     @JRubyMethod(name = "atime")
-    public IRubyObject atime() {
-        checkInitialized();
+    public IRubyObject atime(ThreadContext context) {
+        checkInitialized(context);
         if (stat instanceof NanosecondFileStat) {
-            return RubyTime.newTimeFromNanoseconds(getRuntime(), stat.atime() * BILLION + ((NanosecondFileStat) stat).aTimeNanoSecs());
+            return RubyTime.newTimeFromNanoseconds(context.runtime, stat.atime() * BILLION + ((NanosecondFileStat) stat).aTimeNanoSecs());
         }
-        return getRuntime().newTime(stat.atime() * 1000);
+        return context.runtime.newTime(stat.atime() * 1000);
+    }
+
+    @Deprecated
+    public IRubyObject atime() {
+        return atime(getCurrentContext());
     }
     
     @JRubyMethod(name = "blksize")
     public IRubyObject blockSize(ThreadContext context) {
-        checkInitialized();
+        checkInitialized(context);
         if (Platform.IS_WINDOWS) return context.nil;
-        return context.runtime.newFixnum(stat.blockSize());
+        return asFixnum(context, stat.blockSize());
     }
 
     @Deprecated
     public RubyFixnum blksize() {
-        checkInitialized();
-        return getRuntime().newFixnum(stat.blockSize());
+        ThreadContext context = getCurrentContext();
+        checkInitialized(context);
+        return asFixnum(context, stat.blockSize());
     }
 
     @JRubyMethod(name = "blockdev?")
+    public IRubyObject blockdev_p(ThreadContext context) {
+        checkInitialized(context);
+        return asBoolean(context, stat.isBlockDev());
+    }
+
+    @Deprecated
     public IRubyObject blockdev_p() {
-        checkInitialized();
-        return getRuntime().newBoolean(stat.isBlockDev());
+        return blockdev_p(getCurrentContext());
     }
 
     @JRubyMethod(name = "blocks")
+    public IRubyObject blocks(ThreadContext context) {
+        checkInitialized(context);
+        if (Platform.IS_WINDOWS) return context.nil;
+        return asFixnum(context, stat.blocks());
+    }
+
+    @Deprecated
     public IRubyObject blocks() {
-        checkInitialized();
-        if (Platform.IS_WINDOWS) return getRuntime().getNil();
-        return getRuntime().newFixnum(stat.blocks());
+        return blocks(getCurrentContext());
     }
 
     @JRubyMethod(name = "chardev?")
+    public IRubyObject chardev_p(ThreadContext context) {
+        checkInitialized(context);
+        return asBoolean(context, stat.isCharDev());
+    }
+
+    @Deprecated
     public IRubyObject chardev_p() {
-        checkInitialized();
-        return getRuntime().newBoolean(stat.isCharDev());
+        return chardev_p(getCurrentContext());
     }
 
     @JRubyMethod(name = "<=>")
-    public IRubyObject cmp(IRubyObject other) {
-        checkInitialized();
-        if (!(other instanceof RubyFileStat)) return getRuntime().getNil();
-        
+    public IRubyObject cmp(ThreadContext context, IRubyObject other) {
+        checkInitialized(context);
+        if (!(other instanceof RubyFileStat)) return context.nil;
+
         long time1 = stat.mtime();
         long time2 = ((RubyFileStat) other).stat.mtime();
-        
-        if (time1 == time2) {
-            return getRuntime().newFixnum(0);
-        } else if (time1 < time2) {
-            return getRuntime().newFixnum(-1);
-        } 
 
-        return getRuntime().newFixnum(1);
+        if (time1 == time2) {
+            return asFixnum(context, 0);
+        } else if (time1 < time2) {
+            return asFixnum(context, -1);
+        } else {
+            return asFixnum(context, 1);
+        }
+    }
+
+    @Deprecated
+    public IRubyObject cmp(IRubyObject other) {
+        return cmp(getCurrentContext(), other);
     }
 
     @JRubyMethod(name = "ctime")
-    public IRubyObject ctime() {
-        checkInitialized();
+    public IRubyObject ctime(ThreadContext context) {
+        checkInitialized(context);
         if (stat instanceof NanosecondFileStat) {
-            return RubyTime.newTimeFromNanoseconds(getRuntime(), stat.ctime() * BILLION + ((NanosecondFileStat) stat).cTimeNanoSecs());
+            return RubyTime.newTimeFromNanoseconds(context.runtime, stat.ctime() * BILLION + ((NanosecondFileStat) stat).cTimeNanoSecs());
         }
-        return getRuntime().newTime(stat.ctime() * 1000);
+        return context.runtime.newTime(stat.ctime() * 1000);
+    }
+
+    @Deprecated
+    public IRubyObject ctime() {
+        return ctime(getCurrentContext());
     }
 
     @JRubyMethod(name = "birthtime")
-    public IRubyObject birthtime() {
-        checkInitialized();
+    public IRubyObject birthtime(ThreadContext context) {
+        checkInitialized(context);
         FileTime btime;
 
         if (Platform.IS_LINUX) {
-            throw getRuntime().newNotImplementedError("birthtime() function is unimplemented on this machine");
+            throw context.runtime.newNotImplementedError("birthtime() function is unimplemented on this machine");
         }
 
         if (file == null || (btime = RubyFile.getBirthtimeWithNIO(file.absolutePath())) == null) {
             return ctime();
         }
-        return getRuntime().newTime(btime.toMillis());
+        return context.runtime.newTime(btime.toMillis());
+    }
+
+    @Deprecated
+    public IRubyObject birthtime() {
+        return birthtime(getCurrentContext());
     }
 
     @JRubyMethod(name = "dev")
+    public IRubyObject dev(ThreadContext context) {
+        checkInitialized(context);
+        return asFixnum(context, stat.dev());
+    }
+
+    @Deprecated
     public IRubyObject dev() {
-        checkInitialized();
-        return getRuntime().newFixnum(stat.dev());
+        return dev(getCurrentContext());
     }
     
     @JRubyMethod(name = "dev_major")
+    public IRubyObject devMajor(ThreadContext context) {
+        checkInitialized(context);
+        if (Platform.IS_WINDOWS) return context.nil;
+        return asFixnum(context, stat.major(stat.dev()));
+    }
+
+    @Deprecated
     public IRubyObject devMajor() {
-        checkInitialized();
-        if (Platform.IS_WINDOWS) return getRuntime().getNil();
-        return getRuntime().newFixnum(stat.major(stat.dev()));
+        return devMajor(getCurrentContext());
     }
 
     @JRubyMethod(name = "dev_minor")
+    public IRubyObject devMinor(ThreadContext context) {
+        checkInitialized(context);
+        if (Platform.IS_WINDOWS) return context.nil;
+        return asFixnum(context, stat.minor(stat.dev()));
+    }
+
+    @Deprecated
     public IRubyObject devMinor() {
-        checkInitialized();
-        if (Platform.IS_WINDOWS) return getRuntime().getNil();
-        return getRuntime().newFixnum(stat.minor(stat.dev()));
+        return devMinor(getCurrentContext());
     }
 
     @JRubyMethod(name = "directory?")
+    public RubyBoolean directory_p(ThreadContext context) {
+        checkInitialized(context);
+        return asBoolean(context, stat.isDirectory());
+    }
+
+    @Deprecated
     public RubyBoolean directory_p() {
-        checkInitialized();
-        return getRuntime().newBoolean(stat.isDirectory());
+        return directory_p(getCurrentContext());
     }
 
     @JRubyMethod(name = "executable?")
+    public IRubyObject executable_p(ThreadContext context) {
+        checkInitialized(context);
+        return asBoolean(context, stat.isExecutable());
+    }
+
+    @Deprecated
     public IRubyObject executable_p() {
-        checkInitialized();
-        return getRuntime().newBoolean(stat.isExecutable());
+        return executable_p(getCurrentContext());
     }
 
     @JRubyMethod(name = "executable_real?")
+    public IRubyObject executableReal_p(ThreadContext context) {
+        checkInitialized(context);
+        return asBoolean(context, stat.isExecutableReal());
+    }
+
+    @Deprecated
     public IRubyObject executableReal_p() {
-        checkInitialized();
-        return getRuntime().newBoolean(stat.isExecutableReal());
+        return executableReal_p(getCurrentContext());
     }
 
     @JRubyMethod(name = "file?")
+    public RubyBoolean file_p(ThreadContext context) {
+        checkInitialized(context);
+        return asBoolean(context, stat.isFile());
+    }
+
+    @Deprecated
     public RubyBoolean file_p() {
-        checkInitialized();
-        return getRuntime().newBoolean(stat.isFile());
+        return file_p(getCurrentContext());
     }
 
     @JRubyMethod(name = "ftype")
+    public RubyString ftype(ThreadContext context) {
+        checkInitialized(context);
+        return Convert.asString(context, stat.ftype());
+    }
+
+    @Deprecated
     public RubyString ftype() {
-        checkInitialized();
-        return getRuntime().newString(stat.ftype());
+        return ftype(getCurrentContext());
     }
 
     @JRubyMethod(name = "gid")
+    public IRubyObject gid(ThreadContext context) {
+        checkInitialized(context);
+        if (Platform.IS_WINDOWS) return RubyFixnum.zero(context.runtime);
+        return asFixnum(context, stat.gid());
+    }
+
+    @Deprecated
     public IRubyObject gid() {
-        checkInitialized();
-        if (Platform.IS_WINDOWS) return RubyFixnum.zero(getRuntime());
-        return getRuntime().newFixnum(stat.gid());
+        return gid(getCurrentContext());
     }
     
     @JRubyMethod(name = "grpowned?")
+    public IRubyObject group_owned_p(ThreadContext context) {
+        checkInitialized(context);
+        if (Platform.IS_WINDOWS) return context.fals;
+        return asBoolean(context, stat.isGroupOwned());
+    }
+
+    @Deprecated
     public IRubyObject group_owned_p() {
-        checkInitialized();
-        if (Platform.IS_WINDOWS) return getRuntime().getFalse();
-        return getRuntime().newBoolean(stat.isGroupOwned());
+        return group_owned_p(getCurrentContext());
     }
     
     @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
@@ -321,20 +410,25 @@ public class RubyFileStat extends RubyObject {
     }
     
     @JRubyMethod(name = "ino")
+    public IRubyObject ino(ThreadContext context) {
+        checkInitialized(context);
+        return asFixnum(context, stat.ino());
+    }
+
+    @Deprecated
     public IRubyObject ino() {
-        checkInitialized();
-        return metaClass.runtime.newFixnum(stat.ino());
+        return ino(getCurrentContext());
     }
 
     @JRubyMethod(name = "inspect")
     @Override
     public IRubyObject inspect() {
+        ThreadContext context = metaClass.runtime.getCurrentContext();
         StringBuilder buf = new StringBuilder("#<");
         buf.append(getMetaClass().getRealClass().getName());
         if (stat == null) {
             buf.append(": uninitialized");
         } else {
-            ThreadContext context = metaClass.runtime.getCurrentContext();
             buf.append(' ');
             // FIXME: Obvious issue that not all platforms can display all attributes.  Ugly hacks.
             // Using generic posix library makes pushing inspect behavior into specific system impls
@@ -346,7 +440,7 @@ public class RubyFileStat extends RubyObject {
             try { buf.append("uid=").append(stat.uid()); } catch (Exception e) {} finally { buf.append(", "); }
             try { buf.append("gid=").append(stat.gid()); } catch (Exception e) {} finally { buf.append(", "); }
             try { buf.append("rdev=0x").append(Long.toHexString(stat.rdev())); } catch (Exception e) {} finally { buf.append(", "); }
-            buf.append("size=").append(sizeInternal()).append(", ");
+            buf.append("size=").append(sizeInternal(context)).append(", ");
             try {
                 buf.append("blksize=").append(blockSize(context).inspect().toString()); } catch (Exception e) {} finally { buf.append(", "); }
             try { buf.append("blocks=").append(blocks().inspect().toString()); } catch (Exception e) {} finally { buf.append(", "); }
@@ -360,44 +454,63 @@ public class RubyFileStat extends RubyObject {
         }
         buf.append('>');
         
-        return getRuntime().newString(buf.toString());
+        return Convert.asString(context, buf.toString());
     }
 
     @JRubyMethod(name = "uid")
+    public IRubyObject uid(ThreadContext context) {
+        checkInitialized(context);
+        if (Platform.IS_WINDOWS) return RubyFixnum.zero(context.runtime);
+        return asFixnum(context, stat.uid());
+    }
+
+    @Deprecated
     public IRubyObject uid() {
-        checkInitialized();
-        if (Platform.IS_WINDOWS) return RubyFixnum.zero(getRuntime());
-        return getRuntime().newFixnum(stat.uid());
+        return uid(getCurrentContext());
     }
     
     @JRubyMethod(name = "mode")
+    public IRubyObject mode(ThreadContext context) {
+        checkInitialized(context);
+        return asFixnum(context, stat.mode());
+    }
+
+    @Deprecated
     public IRubyObject mode() {
-        checkInitialized();
-        return getRuntime().newFixnum(stat.mode());
+        return mode(getCurrentContext());
     }
 
     @JRubyMethod(name = "mtime")
-    public IRubyObject mtime() {
-        checkInitialized();
-        if (stat instanceof NanosecondFileStat) {
-            return RubyTime.newTimeFromNanoseconds(getRuntime(), stat.mtime() * BILLION + ((NanosecondFileStat) stat).mTimeNanoSecs());
-        }
-        return getRuntime().newTime(stat.mtime() * 1000);
+    public IRubyObject mtime(ThreadContext context) {
+        checkInitialized(context);
+        return stat instanceof NanosecondFileStat ?
+                RubyTime.newTimeFromNanoseconds(context.runtime, stat.mtime() * BILLION + ((NanosecondFileStat) stat).mTimeNanoSecs()) :
+                context.runtime.newTime(stat.mtime() * 1000);
     }
-    
-    public IRubyObject mtimeEquals(IRubyObject other) {
-        FileStat otherStat = newFileStat(getRuntime(), other.convertToString().toString(), false).stat;
+
+    @Deprecated
+    public IRubyObject mtime() {
+        return mtime(getCurrentContext());
+    }
+
+    public IRubyObject mtimeEquals(ThreadContext context, IRubyObject other) {
+        FileStat otherStat = newFileStat(context.runtime, other.convertToString().toString(), false).stat;
         boolean equal = stat.mtime() == otherStat.mtime();
 
         if (stat instanceof NanosecondFileStat && otherStat instanceof NanosecondFileStat) {
             equal = equal && ((NanosecondFileStat) stat).mTimeNanoSecs() == ((NanosecondFileStat) otherStat).mTimeNanoSecs();
         }
 
-        return getRuntime().newBoolean(equal);
+        return asBoolean(context, equal);
     }
 
-    public IRubyObject mtimeGreaterThan(IRubyObject other) {
-        FileStat otherStat = newFileStat(getRuntime(), other.convertToString().toString(), false).stat;
+    @Deprecated
+    public IRubyObject mtimeEquals(IRubyObject other) {
+        return mtimeEquals(getCurrentContext(), other);
+    }
+
+    public IRubyObject mtimeGreaterThan(ThreadContext context, IRubyObject other) {
+        FileStat otherStat = newFileStat(context.runtime, other.convertToString().toString(), false).stat;
         boolean gt;
 
         if (stat instanceof NanosecondFileStat && otherStat instanceof NanosecondFileStat) {
@@ -407,11 +520,16 @@ public class RubyFileStat extends RubyObject {
             gt = stat.mtime() > otherStat.mtime();
         }
 
-        return getRuntime().newBoolean(gt);
+        return asBoolean(context, gt);
     }
 
-    public IRubyObject mtimeLessThan(IRubyObject other) {
-        FileStat otherStat = newFileStat(getRuntime(), other.convertToString().toString(), false).stat;
+    @Deprecated
+    public IRubyObject mtimeGreaterThan(IRubyObject other) {
+        return mtimeGreaterThan(getCurrentContext(), other);
+    }
+
+    public IRubyObject mtimeLessThan(ThreadContext context, IRubyObject other) {
+        FileStat otherStat = newFileStat(context.runtime, other.convertToString().toString(), false).stat;
         boolean lt;
 
         if (stat instanceof NanosecondFileStat && otherStat instanceof NanosecondFileStat) {
@@ -421,73 +539,128 @@ public class RubyFileStat extends RubyObject {
             lt = stat.mtime() < otherStat.mtime();
         }
 
-        return getRuntime().newBoolean(lt);
+        return asBoolean(context, lt);
+    }
+
+    @Deprecated
+    public IRubyObject mtimeLessThan(IRubyObject other) {
+        return mtimeLessThan(getCurrentContext(), other);
     }
 
     @JRubyMethod(name = "nlink")
+    public IRubyObject nlink(ThreadContext context) {
+        checkInitialized(context);
+        return asFixnum(context, stat.nlink());
+    }
+
+    @Deprecated
     public IRubyObject nlink() {
-        checkInitialized();
-        return getRuntime().newFixnum(stat.nlink());
+        return nlink(getCurrentContext());
     }
 
     @JRubyMethod(name = "owned?")
+    public IRubyObject owned_p(ThreadContext context) {
+        checkInitialized(context);
+        return asBoolean(context, stat.isOwned());
+    }
+
+    @Deprecated
     public IRubyObject owned_p() {
-        checkInitialized();
-        return getRuntime().newBoolean(stat.isOwned());
+        return owned_p(getCurrentContext());
     }
 
     @JRubyMethod(name = "pipe?")
+    public IRubyObject pipe_p(ThreadContext context) {
+        checkInitialized(context);
+        return asBoolean(context, stat.isNamedPipe());
+    }
+
+    @Deprecated
     public IRubyObject pipe_p() {
-        checkInitialized();
-        return getRuntime().newBoolean(stat.isNamedPipe());
+        return pipe_p(getCurrentContext());
     }
 
     @JRubyMethod(name = "rdev")
+    public IRubyObject rdev(ThreadContext context) {
+        checkInitialized(context);
+        return asFixnum(context, stat.rdev());
+    }
+
+    @Deprecated
     public IRubyObject rdev() {
-        checkInitialized();
-        return getRuntime().newFixnum(stat.rdev());
+        return rdev(getCurrentContext());
     }
     
     @JRubyMethod(name = "rdev_major")
+    public IRubyObject rdevMajor(ThreadContext context) {
+        checkInitialized(context);
+        if (Platform.IS_WINDOWS) return context.nil;
+        return asFixnum(context, stat.major(stat.rdev()));
+    }
+
+    @Deprecated
     public IRubyObject rdevMajor() {
-        checkInitialized();
-        if (Platform.IS_WINDOWS) return getRuntime().getNil();
-        return getRuntime().newFixnum(stat.major(stat.rdev()));
+        return rdevMajor(getCurrentContext());
     }
 
     @JRubyMethod(name = "rdev_minor")
+    public IRubyObject rdevMinor(ThreadContext context) {
+        checkInitialized(context);
+        if (Platform.IS_WINDOWS) return context.nil;
+        return asFixnum(context, stat.minor(stat.rdev()));
+    }
+
+    @Deprecated
     public IRubyObject rdevMinor() {
-        checkInitialized();
-        if (Platform.IS_WINDOWS) return getRuntime().getNil();
-        return getRuntime().newFixnum(stat.minor(stat.rdev()));
+        return rdevMinor(getCurrentContext());
     }
 
     @JRubyMethod(name = "readable?")
+    public IRubyObject readable_p(ThreadContext context) {
+        checkInitialized(context);
+        return asBoolean(context, stat.isReadable());
+    }
+
+    @Deprecated
     public IRubyObject readable_p() {
-        checkInitialized();
-        return getRuntime().newBoolean(stat.isReadable());
+        return readable_p(getCurrentContext());
     }
 
     @JRubyMethod(name = "readable_real?")
+    public IRubyObject readableReal_p(ThreadContext context) {
+        checkInitialized(context);
+        return asBoolean(context, stat.isReadableReal());
+    }
+
+    @Deprecated
     public IRubyObject readableReal_p() {
-        checkInitialized();
-        return getRuntime().newBoolean(stat.isReadableReal());
+        return readableReal_p(getCurrentContext());
     }
 
     @JRubyMethod(name = "setgid?")
+    public IRubyObject setgid_p(ThreadContext context) {
+        checkInitialized(context);
+        return asBoolean(context, stat.isSetgid());
+    }
+
+    @Deprecated
     public IRubyObject setgid_p() {
-        checkInitialized();
-        return getRuntime().newBoolean(stat.isSetgid());
+        return setgid_p(getCurrentContext());
     }
 
     @JRubyMethod(name = "setuid?")
-    public IRubyObject setuid_p() {
-        checkInitialized();
-        return getRuntime().newBoolean(stat.isSetuid());
+    public IRubyObject setuid_p(ThreadContext context) {
+        checkInitialized(context);
+        return asBoolean(context, stat.isSetuid());
     }
 
-    private long sizeInternal() {
-        checkInitialized();
+    @Deprecated
+    public IRubyObject setuid_p() {
+        return setuid_p(getCurrentContext());
+    }
+
+    private long sizeInternal(ThreadContext context) {
+        checkInitialized(context);
         // Workaround for JRUBY-4149
         if (Platform.IS_WINDOWS && file != null) {
             try {
@@ -501,59 +674,96 @@ public class RubyFileStat extends RubyObject {
     }
 
     @JRubyMethod(name = "size")
+    public IRubyObject size(ThreadContext context) {
+        return asFixnum(context, sizeInternal(context));
+    }
+
+    @Deprecated
     public IRubyObject size() {
-        return getRuntime().newFixnum(sizeInternal());
+        return size(getCurrentContext());
     }
     
     @JRubyMethod(name = "size?")
+    public IRubyObject size_p(ThreadContext context) {
+        long size = sizeInternal(context);
+
+        if (size == 0) return context.nil;
+
+        return asFixnum(context, size);
+    }
+
+    @Deprecated
     public IRubyObject size_p() {
-        long size = sizeInternal();
-        
-        if (size == 0) return getRuntime().getNil();
-        
-        return getRuntime().newFixnum(size);
+        return size_p(getCurrentContext());
     }
 
     @JRubyMethod(name = "socket?")
+    public IRubyObject socket_p(ThreadContext context) {
+        checkInitialized(context);
+        return asBoolean(context, stat.isSocket());
+    }
+
+    @Deprecated
     public IRubyObject socket_p() {
-        checkInitialized();
-        return getRuntime().newBoolean(stat.isSocket());
+        return socket_p(getCurrentContext());
     }
     
     @JRubyMethod(name = "sticky?")
+    public IRubyObject sticky_p(ThreadContext context) {
+        checkInitialized(context);
+
+        return context.runtime.getPosix().isNative() ?
+                asBoolean(context, stat.isSticky()) :
+                context.nil;
+    }
+
+    @Deprecated
     public IRubyObject sticky_p() {
-        checkInitialized();
-        Ruby runtime = getRuntime();
-        
-        if (runtime.getPosix().isNative()) {
-            return runtime.newBoolean(stat.isSticky());
-        }
-        
-        return runtime.getNil();
+        return sticky_p(getCurrentContext());
     }
 
     @JRubyMethod(name = "symlink?")
+    public IRubyObject symlink_p(ThreadContext context) {
+        checkInitialized(context);
+        return asBoolean(context, stat.isSymlink());
+    }
+
+    @Deprecated
     public IRubyObject symlink_p() {
-        checkInitialized();
-        return getRuntime().newBoolean(stat.isSymlink());
+        return symlink_p(getCurrentContext());
     }
 
     @JRubyMethod(name = "writable?")
+    public IRubyObject writable_p(ThreadContext context) {
+        checkInitialized(context);
+        return asBoolean(context, stat.isWritable());
+    }
+
+    @Deprecated
     public IRubyObject writable_p() {
-        checkInitialized();
-    	return getRuntime().newBoolean(stat.isWritable());
+        return writable_p(getCurrentContext());
     }
     
     @JRubyMethod(name = "writable_real?")
+    public IRubyObject writableReal_p(ThreadContext context) {
+        checkInitialized(context);
+        return asBoolean(context, stat.isWritableReal());
+    }
+
+    @Deprecated
     public IRubyObject writableReal_p() {
-        checkInitialized();
-        return getRuntime().newBoolean(stat.isWritableReal());
+        return writableReal_p(getCurrentContext());
     }
     
     @JRubyMethod(name = "zero?")
+    public IRubyObject zero_p(ThreadContext context) {
+        checkInitialized(context);
+        return asBoolean(context, stat.isEmpty());
+    }
+
+    @Deprecated
     public IRubyObject zero_p() {
-        checkInitialized();
-        return getRuntime().newBoolean(stat.isEmpty());
+        return zero_p(getCurrentContext());
     }
 
     @JRubyMethod(name = "world_readable?")
@@ -567,7 +777,7 @@ public class RubyFileStat extends RubyObject {
     }
 
     private IRubyObject getWorldMode(ThreadContext context, int mode) {
-        checkInitialized();
+        checkInitialized(context);
         if ((stat.mode() & mode) == mode) {
             return RubyNumeric.int2fix(context.runtime,
                     (stat.mode() & (S_IRUGO | S_IWUGO | S_IXUGO) ));

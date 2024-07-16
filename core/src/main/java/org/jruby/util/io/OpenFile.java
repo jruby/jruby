@@ -49,6 +49,7 @@ import org.jruby.util.ShellLauncher;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.util.StringSupport.*;
 
 public class OpenFile implements Finalizable {
@@ -2608,7 +2609,7 @@ public class OpenFile implements Finalizable {
             while (res == EConvResult.DestinationBufferFull) {
                 if (wbuf.len == wbuf.capa) {
                     if (io_fflush(context) < 0)
-                        return noalloc ? context.tru : runtime.newFixnum(posix.getErrno() == null ? 0 : posix.getErrno().longValue());
+                        return noalloc ? context.tru : asFixnum(context, posix.getErrno() == null ? 0 : posix.getErrno().longValue());
                 }
 
                 dsBytes = wbuf.ptr;

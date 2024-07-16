@@ -11,6 +11,8 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.asFixnum;
+
 public class AsFixnumInstr extends OneOperandResultBaseInstr {
     public AsFixnumInstr(Variable result, Operand operand) {
         super(Operation.AS_FIXNUM, result, operand);
@@ -32,6 +34,6 @@ public class AsFixnumInstr extends OneOperandResultBaseInstr {
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        return context.runtime.newFixnum((int) getOperand1().retrieve(context, self, currScope, currDynScope, temp));
+        return asFixnum(context, (int) getOperand1().retrieve(context, self, currScope, currDynScope, temp));
     }
 }

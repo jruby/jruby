@@ -12,19 +12,19 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Convert;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 import org.jruby.util.Sprintf;
-import org.jruby.util.TypeConverter;
 
 import java.nio.ByteBuffer;
 import java.util.Locale;
 
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.checkToInteger;
-import static org.jruby.api.Convert.integerAsInt;
 import static org.jruby.api.Error.typeError;
 
 public class Option extends RubyObject {
@@ -66,17 +66,17 @@ public class Option extends RubyObject {
 
     @JRubyMethod
     public IRubyObject family(ThreadContext context) {
-        return context.runtime.newFixnum(family.longValue());
+        return asFixnum(context, family.longValue());
     }
 
     @JRubyMethod
     public IRubyObject level(ThreadContext context) {
-        return context.runtime.newFixnum(level.longValue());
+        return asFixnum(context, level.longValue());
     }
 
     @JRubyMethod
     public IRubyObject optname(ThreadContext context) {
-        return context.runtime.newFixnum(option.longValue());
+        return asFixnum(context, option.longValue());
     }
 
     @JRubyMethod
@@ -203,7 +203,7 @@ public class Option extends RubyObject {
     public IRubyObject asInt(ThreadContext context) {
         validateDataSize(context, data, 4);
 
-        return context.runtime.newFixnum(unpackInt(data));
+        return asFixnum(context, unpackInt(data));
     }
 
     @JRubyMethod(required = 4, meta = true)
@@ -226,7 +226,7 @@ public class Option extends RubyObject {
     @JRubyMethod(meta = true)
     public static IRubyObject linger(ThreadContext context, IRubyObject self, IRubyObject vonoffArg, IRubyObject vsecs) {
         IRubyObject vonoff = checkToInteger(context, vonoffArg);
-        int coercedVonoff = !vonoff.isNil() ? integerAsInt(context, (RubyInteger) vonoff) : (vonoffArg.isTrue() ? 1 : 0);
+        int coercedVonoff = !vonoff.isNil() ? Convert.asInt(context, (RubyInteger) vonoff) : (vonoffArg.isTrue() ? 1 : 0);
         ByteList data = packLinger(coercedVonoff, vsecs.convertToInteger().getIntValue());
 
         return new Option(context.runtime, ProtocolFamily.PF_UNSPEC, SocketLevel.SOL_SOCKET, SocketOption.SO_LINGER, data);

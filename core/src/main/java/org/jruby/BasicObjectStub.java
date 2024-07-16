@@ -41,6 +41,7 @@ import org.jruby.runtime.builtin.InternalVariables;
 import org.jruby.runtime.builtin.RubyJavaObject;
 import org.jruby.runtime.builtin.Variable;
 
+import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.invokedynamic.MethodNames.INSPECT;
 import static org.jruby.runtime.Helpers.invokedynamic;
@@ -303,11 +304,11 @@ public final class BasicObjectStub {
     }
 
     public static IRubyObject op_equal(IRubyObject self, ThreadContext context, IRubyObject other) {
-        return RubyBoolean.newBoolean(context, self == other);
+        return asBoolean(context, self == other);
     }
 
     public static IRubyObject op_eqq(IRubyObject self, ThreadContext context, IRubyObject other) {
-        return RubyBoolean.newBoolean(context, self == other);
+        return asBoolean(context, self == other);
     }
 
     public static boolean eql(IRubyObject self, IRubyObject other) {

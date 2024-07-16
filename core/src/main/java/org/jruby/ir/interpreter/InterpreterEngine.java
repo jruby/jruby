@@ -65,6 +65,9 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
+
 /**
  * Base full interpreter.  Subclasses can use utility methods here and override what they want.  This method requires
  * that it has fully built and has had a CFG made, etc...
@@ -502,13 +505,13 @@ public class InterpreterEngine {
             }
 
             case BOX_FIXNUM: {
-                RubyFixnum f = context.runtime.newFixnum(getFixnumArg(fixnums, ((BoxFixnumInstr) instr).getValue()));
+                RubyFixnum f = asFixnum(context, getFixnumArg(fixnums, ((BoxFixnumInstr) instr).getValue()));
                 setResult(temp, currDynScope, ((BoxInstr)instr).getResult(), f);
                 break;
             }
 
             case BOX_BOOLEAN: {
-                RubyBoolean f = RubyBoolean.newBoolean(context, getBooleanArg(booleans, ((BoxBooleanInstr) instr).getValue()));
+                RubyBoolean f = asBoolean(context, getBooleanArg(booleans, ((BoxBooleanInstr) instr).getValue()));
                 setResult(temp, currDynScope, ((BoxInstr)instr).getResult(), f);
                 break;
             }

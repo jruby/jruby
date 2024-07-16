@@ -56,6 +56,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.JRubyObjectInputStream;
 
+import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.javasupport.JavaUtil.unwrapJava;
 
@@ -192,18 +193,19 @@ public class JavaObject extends RubyObject {
     }
 
     @JRubyMethod(name = "equal?")
-    public IRubyObject same(final IRubyObject other) {
-        final Ruby runtime = getRuntime();
+    public IRubyObject same(ThreadContext context, final IRubyObject other) {
         final Object thisValue = getValue();
         final Object otherValue = unwrapJava(other, NEVER);
 
-        if ( otherValue == NEVER ) { // not a wrapped object
-            return runtime.getFalse();
-        }
+        if (otherValue == NEVER) return context.fals; // not a wrapped object
+        if (!(other instanceof JavaObject)) return context.fals;
 
-        if ( ! (other instanceof JavaObject) ) return runtime.getFalse();
+        return asBoolean(context, thisValue == otherValue);
+    }
 
-        return runtime.newBoolean(thisValue == otherValue);
+    @Deprecated
+    public IRubyObject same(final IRubyObject other) {
+        return same(getCurrentContext(), other);
     }
 
     @JRubyMethod

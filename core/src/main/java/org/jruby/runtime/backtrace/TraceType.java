@@ -24,6 +24,7 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.jruby.util.TypeConverter;
 
+import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.util.RubyStringBuilder.str;
 
 public class TraceType {
@@ -397,7 +398,7 @@ public class TraceType {
         }
 
         if (highlightArg.isNil()) {
-            highlightArg = RubyBoolean.newBoolean(context, autoTTYDetect && RubyException.to_tty_p(context, runtime.getException()).isTrue());
+            highlightArg = asBoolean(context, autoTTYDetect && RubyException.to_tty_p(context, runtime.getException()).isTrue());
         }
 
         return highlightArg;

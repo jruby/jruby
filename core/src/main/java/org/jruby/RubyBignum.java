@@ -52,7 +52,7 @@ import org.jruby.runtime.marshal.NewMarshal;
 import org.jruby.runtime.marshal.UnmarshalStream;
 
 import static org.jruby.RubyFixnum.zero;
-import static org.jruby.api.Convert.numericToLong;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -798,7 +798,7 @@ public class RubyBignum extends RubyInteger {
 
     @Override
     public IRubyObject bit_length(ThreadContext context) {
-        return context.runtime.newFixnum(value.bitLength());
+        return asFixnum(context, value.bitLength());
     }
 
     /** rb_big_xor
@@ -1132,18 +1132,18 @@ public class RubyBignum extends RubyInteger {
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         final BigInteger otherValue;
-        if (other instanceof RubyFixnum) {
-            otherValue = fix2big((RubyFixnum) other);
-        } else if (other instanceof RubyBignum) {
-            otherValue = ((RubyBignum) other).value;
-        } else if (other instanceof RubyFloat) {
-            double a = ((RubyFloat) other).value;
+        if (other instanceof RubyFixnum fixnum) {
+            otherValue = fix2big(fixnum);
+        } else if (other instanceof RubyBignum bignum) {
+            otherValue = bignum.value;
+        } else if (other instanceof RubyFloat flote) {
+            double a = flote.value;
             if (Double.isNaN(a)) return context.fals;
-            return RubyBoolean.newBoolean(context, a == big2dbl(this));
+            return asBoolean(context, a == big2dbl(this));
         } else {
             return other.op_eqq(context, this);
         }
-        return RubyBoolean.newBoolean(context, value.compareTo(otherValue) == 0);
+        return asBoolean(context, value.compareTo(otherValue) == 0);
     }
 
     /** rb_big_eql
@@ -1204,12 +1204,12 @@ public class RubyBignum extends RubyInteger {
      */
     @Override
     public IRubyObject size(ThreadContext context) {
-        return context.runtime.newFixnum((value.bitLength() + 7) / 8);
+        return asFixnum(context, (value.bitLength() + 7) / 8);
     }
 
     @Override
     public IRubyObject zero_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, isZero());
+        return asBoolean(context, isZero());
     }
 
     @Override
@@ -1347,7 +1347,7 @@ public class RubyBignum extends RubyInteger {
     public IRubyObject isNegative(ThreadContext context) {
         CachingCallSite op_lt_site = sites(context).basic_op_lt;
         if (op_lt_site.isBuiltin(metaClass)) {
-            return RubyBoolean.newBoolean(context, value.signum() < 0);
+            return asBoolean(context, value.signum() < 0);
         }
         return op_lt_site.call(context, this, this, zero(context.runtime));
     }
@@ -1356,7 +1356,7 @@ public class RubyBignum extends RubyInteger {
     public IRubyObject isPositive(ThreadContext context) {
         CachingCallSite op_gt_site = sites(context).basic_op_gt;
         if (op_gt_site.isBuiltin(metaClass)) {
-            return RubyBoolean.newBoolean(context, value.signum() > 0);
+            return asBoolean(context, value.signum() > 0);
         }
         return op_gt_site.call(context, this, this, zero(context.runtime));
     }

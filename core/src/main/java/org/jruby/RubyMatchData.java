@@ -60,6 +60,7 @@ import org.jruby.util.ByteListHolder;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.StringSupport;
 
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.RubyStringBuilder.str;
 
@@ -381,7 +382,7 @@ public class RubyMatchData extends RubyObject {
 
         int end = regs.getEnd(index);
 
-        return runtime.newArray(runtime.newFixnum(start), runtime.newFixnum(end));
+        return runtime.newArray(asFixnum(context, start), asFixnum(context, end));
     }
 
     @JRubyMethod

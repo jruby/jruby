@@ -61,6 +61,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.jruby.RubyIO.PARAGRAPH_SEPARATOR;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.castAsString;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
@@ -176,21 +177,24 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
     @JRubyMethod
     public IRubyObject rewind(ThreadContext context) {
-        Ruby runtime = context.runtime;
-
         // should invoke seek on realIo...
         realIo.callMethod(context, "seek",
-                new IRubyObject[]{runtime.newFixnum(-internalPosition()), runtime.newFixnum(PosixShim.SEEK_CUR)});
+                new IRubyObject[]{asFixnum(context, -internalPosition()), asFixnum(context, PosixShim.SEEK_CUR)});
 
         // ... and then reinitialize
         initialize(context, realIo);
 
-        return getRuntime().getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = "lineno")
+    public IRubyObject lineno(ThreadContext context) {
+        return asFixnum(context, line);
+    }
+
+    @Deprecated
     public IRubyObject lineno() {
-        return getRuntime().newFixnum(line);
+        return lineno(getCurrentContext());
     }
 
     @JRubyMethod(name = "readline", writes = FrameField.LASTLINE)

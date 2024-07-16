@@ -45,6 +45,7 @@ import org.jruby.util.ByteList;
 import java.util.Spliterator;
 import java.util.stream.Stream;
 
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.numericToLong;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.arrayOf;
@@ -471,12 +472,11 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
     }
 
     private IRubyObject with_index_common(ThreadContext context, final Block block, final String rubyMethodName, IRubyObject arg) {
-        final Ruby runtime = context.runtime;
         final int index = arg.isNil() ? 0 : RubyNumeric.num2int(arg);
         if ( ! block.isGiven() ) {
             return arg.isNil() ?
                     enumeratorizeWithSize(context, this, rubyMethodName, RubyEnumerator::size) :
-                        enumeratorizeWithSize(context, this, rubyMethodName, new IRubyObject[]{runtime.newFixnum(index)}, RubyEnumerator::size);
+                        enumeratorizeWithSize(context, this, rubyMethodName, new IRubyObject[]{asFixnum(context, index)}, RubyEnumerator::size);
         }
 
         return RubyEnumerable.callEach(context, sites(context).each, this, new RubyEnumerable.EachWithIndex(block, index));

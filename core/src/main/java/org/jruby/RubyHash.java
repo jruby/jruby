@@ -79,6 +79,8 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyEnumerator.SizeFn;
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.Inspector.*;
@@ -960,7 +962,7 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = {"size", "length"})
     public RubyFixnum rb_size(ThreadContext context) {
-        return context.runtime.newFixnum(size);
+        return asFixnum(context, size);
     }
 
     /**
@@ -1320,7 +1322,7 @@ public class RubyHash extends RubyObject implements Map {
         final RubyHash otherHash = ((RubyBasicObject) other).convertToHash();
         if (size() >= otherHash.size()) return context.fals;
 
-        return RubyBoolean.newBoolean(context, hash_le(otherHash));
+        return asBoolean(context, hash_le(otherHash));
     }
 
     @JRubyMethod(name = "<=")
@@ -1328,7 +1330,7 @@ public class RubyHash extends RubyObject implements Map {
         final RubyHash otherHash = other.convertToHash();
         if (size() > otherHash.size()) return context.fals;
 
-        return RubyBoolean.newBoolean(context, hash_le(otherHash));
+        return asBoolean(context, hash_le(otherHash));
     }
 
     @JRubyMethod(name = ">")
@@ -1365,7 +1367,7 @@ public class RubyHash extends RubyObject implements Map {
             hash = hval[0];
         }
 
-        return context.runtime.newFixnum(hash);
+        return asFixnum(context, hash);
     }
 
     private static final ThreadLocal<ByteBuffer> HASH_16_BYTE = ThreadLocal.withInitial(() -> ByteBuffer.allocate(16));
@@ -1514,7 +1516,7 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = {"has_value?", "value?"})
     public RubyBoolean has_value_p(ThreadContext context, IRubyObject expected) {
-        return RubyBoolean.newBoolean(context, hasValue(context, expected));
+        return asBoolean(context, hasValue(context, expected));
     }
 
     private volatile int iteratorCount;
@@ -2284,7 +2286,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod(name = "compare_by_identity?")
     public IRubyObject compare_by_identity_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, isComparedByIdentity());
+        return asBoolean(context, isComparedByIdentity());
     }
 
     @JRubyMethod
@@ -2461,7 +2463,7 @@ public class RubyHash extends RubyObject implements Map {
     public static IRubyObject ruby2_keywords_hash_p(ThreadContext context, IRubyObject _self, IRubyObject arg) {
         TypeConverter.checkType(context, arg, context.runtime.getHash());
 
-        return context.runtime.newBoolean(((RubyHash) arg).isRuby2KeywordHash());
+        return asBoolean(context, ((RubyHash) arg).isRuby2KeywordHash());
     }
 
     private static class VisitorIOException extends RuntimeException {
@@ -3016,13 +3018,12 @@ public class RubyHash extends RubyObject implements Map {
 
     @Deprecated
     public RubyFixnum rb_size() {
-        return metaClass.runtime.newFixnum(size());
+        return rb_size(getCurrentContext());
     }
 
     @Deprecated
     public RubyBoolean empty_p() {
-        Ruby runtime = metaClass.runtime;
-        return isEmpty() ? runtime.getTrue() : runtime.getFalse();
+        return asBoolean(getCurrentContext(), isEmpty());
     }
 
     @Deprecated

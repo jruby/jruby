@@ -54,6 +54,8 @@ import java.util.Set;
 import org.jruby.util.RubyStringBuilder;
 import org.jruby.util.TypeConverter;
 
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.util.Inspector.*;
 
 /**
@@ -112,7 +114,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
 
         @Override
         public RubyFixnum rb_size(ThreadContext context) {
-            return context.runtime.newFixnum( mapDelegate().size() );
+            return asFixnum(context, mapDelegate().size());
         }
 
         @Override
@@ -288,7 +290,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         @Override
         public RubyBoolean compare_by_identity_p(ThreadContext context) {
             // NOTE: obviously little we can do to detect - but at least report Java built-in one :
-            return RubyBoolean.newBoolean(context, mapDelegate() instanceof java.util.IdentityHashMap );
+            return asBoolean(context, mapDelegate() instanceof java.util.IdentityHashMap );
         }
 
         @Override

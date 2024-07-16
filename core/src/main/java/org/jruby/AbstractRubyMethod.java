@@ -35,6 +35,7 @@ package org.jruby;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Convert;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.DelegatingDynamicMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -48,6 +49,9 @@ import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.marshal.DataType;
+
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
 
 /**
  * @see RubyMethod
@@ -76,13 +80,18 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
      * @return the number of arguments of a method.
      */
     @JRubyMethod(name = "arity")
+    public RubyFixnum arity(ThreadContext context) {
+        return asFixnum(context, method.getSignature().arityValue());
+    }
+
+    @Deprecated
     public RubyFixnum arity() {
-        return getRuntime().newFixnum(method.getSignature().arityValue());
+        return arity(getCurrentContext());
     }
 
     @JRubyMethod(name = "eql?")
     public IRubyObject op_eql(ThreadContext context, IRubyObject other) {
-        return RubyBoolean.newBoolean(context,  equals(other) );
+        return asBoolean(context,  equals(other) );
     }
 
     @Override
@@ -114,11 +123,10 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
 
     @JRubyMethod(name = "source_location")
     public IRubyObject source_location(ThreadContext context) {
-        Ruby runtime = context.runtime;
-
         String filename = getFilename();
+
         if (filename != null) {
-            return runtime.newArray(runtime.newString(filename), runtime.newFixnum(getLine()));
+            return context.runtime.newArray(Convert.asString(context, filename), asFixnum(context, getLine()));
         }
 
         return context.nil;

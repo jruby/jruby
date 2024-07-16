@@ -672,13 +672,13 @@ public class JavaUtil {
     public static final JavaConverter JAVA_BOOLEAN_CONVERTER = new JavaConverter(Boolean.class) {
         public IRubyObject convert(Ruby runtime, Object object) {
             if (object == null) return runtime.getNil();
-            return RubyBoolean.newBoolean(runtime, ((Boolean)object).booleanValue());
+            return runtime.newBoolean(((Boolean)object).booleanValue());
         }
         public IRubyObject get(Ruby runtime, Object array, int i) {
             return convert(runtime, ((Boolean[]) array)[i]);
         }
         public void set(Ruby runtime, Object array, int i, IRubyObject value) {
-            ((Boolean[])array)[i] = (Boolean)value.toJava(Boolean.class);
+            ((Boolean[])array)[i] = value.toJava(Boolean.class);
         }
     };
 
@@ -776,13 +776,13 @@ public class JavaUtil {
     public static final JavaConverter JAVA_BOOLEANPRIM_CONVERTER = new JavaConverter(boolean.class) {
         public IRubyObject convert(Ruby runtime, Object object) {
             if (object == null) return runtime.getNil();
-            return RubyBoolean.newBoolean(runtime, ((Boolean)object).booleanValue());
+            return runtime.newBoolean(((Boolean)object).booleanValue());
         }
         public IRubyObject get(Ruby runtime, Object array, int i) {
-            return RubyBoolean.newBoolean(runtime, ((boolean[])array)[i]);
+            return runtime.newBoolean(((boolean[])array)[i]);
         }
         public void set(Ruby runtime, Object array, int i, IRubyObject value) {
-            ((boolean[])array)[i] = (Boolean)value.toJava(boolean.class);
+            ((boolean[])array)[i] = value.toJava(boolean.class);
         }
     };
 

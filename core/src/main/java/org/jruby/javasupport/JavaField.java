@@ -46,6 +46,8 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asString;
 import static org.jruby.api.Error.typeError;
 
 @Deprecated
@@ -75,22 +77,22 @@ public class JavaField {
 
     @JRubyMethod(name = "public?")
     public RubyBoolean public_p(ThreadContext context) {
-        return context.runtime.newBoolean(Modifier.isPublic(field.getModifiers()));
+        return asBoolean(context, Modifier.isPublic(field.getModifiers()));
     }
 
     @JRubyMethod(name = "static?")
     public RubyBoolean static_p(ThreadContext context) {
-        return context.runtime.newBoolean(Modifier.isStatic(field.getModifiers()));
+        return asBoolean(context, Modifier.isStatic(field.getModifiers()));
     }
 
     @JRubyMethod(name = "enum_constant?")
     public RubyBoolean enum_constant_p(ThreadContext context) {
-        return context.runtime.newBoolean(field.isEnumConstant());
+        return asBoolean(context, field.isEnumConstant());
     }
 
     @JRubyMethod
     public RubyString to_generic_string(ThreadContext context) {
-        return context.runtime.newString(field.toGenericString());
+        return asString(context, field.toGenericString());
     }
 
     @JRubyMethod(name = "type")
@@ -128,7 +130,7 @@ public class JavaField {
 
     @JRubyMethod(name = "final?")
     public RubyBoolean final_p(ThreadContext context) {
-        return context.runtime.newBoolean(Modifier.isFinal(field.getModifiers()));
+        return asBoolean(context, Modifier.isFinal(field.getModifiers()));
     }
 
     @JRubyMethod

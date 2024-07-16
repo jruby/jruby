@@ -41,6 +41,7 @@ import org.jruby.runtime.JavaSites.ComparableSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.castAsRange;
 
 /** Implementation of the Comparable module.
@@ -66,20 +67,8 @@ public class RubyComparable {
      */
     public static int cmpint(ThreadContext context, CallSite op_gt, CallSite op_lt, IRubyObject val, IRubyObject a, IRubyObject b) {
         if (val == context.nil) cmperr(a, b);
-        if (val instanceof RubyFixnum) {
-            final int asInt = RubyNumeric.fix2int((RubyFixnum) val);
-
-            if (asInt > 0) {
-                return 1;
-            }
-
-            if (asInt < 0) {
-                return -1;
-            }
-
-            return 0;
-        }
-        if (val instanceof RubyBignum) return ((RubyBignum) val).signum() == -1 ? -1 : 1;
+        if (val instanceof RubyFixnum fixnum) return Integer.compare(RubyNumeric.fix2int(fixnum), 0);
+        if (val instanceof RubyBignum bignum) return bignum.signum() == -1 ? -1 : 1;
 
         RubyFixnum zero = RubyFixnum.zero(context.runtime);
 
@@ -154,8 +143,6 @@ public class RubyComparable {
     }
 
     private static IRubyObject callCmpMethod(final ThreadContext context, final IRubyObject recv, final IRubyObject other, IRubyObject returnValueOnError) {
-        final Ruby runtime = context.runtime;
-
         if (recv == other) return context.tru;
 
         IRubyObject result = context.safeRecurse(
@@ -163,9 +150,9 @@ public class RubyComparable {
                 other, recv, "<=>", true);
 
         // This is only to prevent throwing exceptions by cmperr - it has poor performance
-        if ( result.isNil() ) return returnValueOnError;
+        if (result.isNil()) return returnValueOnError;
 
-        return RubyBoolean.newBoolean(runtime, cmpint(context, result, recv, other) == 0);
+        return asBoolean(context, cmpint(context, result, recv, other) == 0);
     }
 
     /** cmp_gt
@@ -178,7 +165,7 @@ public class RubyComparable {
 
         if (result.isNil()) cmperr(recv, other);
 
-        return RubyBoolean.newBoolean(context, cmpint(context, result, recv, other) > 0);
+        return asBoolean(context, cmpint(context, result, recv, other) > 0);
     }
 
     /** cmp_ge
@@ -190,7 +177,7 @@ public class RubyComparable {
 
         if (result.isNil()) cmperr(recv, other);
 
-        return RubyBoolean.newBoolean(context, cmpint(context, result, recv, other) >= 0);
+        return asBoolean(context, cmpint(context, result, recv, other) >= 0);
     }
 
     /** cmp_lt
@@ -202,7 +189,7 @@ public class RubyComparable {
 
         if (result.isNil()) cmperr(recv, other);
 
-        return RubyBoolean.newBoolean(context, cmpint(context, result, recv, other) < 0);
+        return asBoolean(context, cmpint(context, result, recv, other) < 0);
     }
 
     public static RubyBoolean op_lt(ThreadContext context, CallSite cmp, IRubyObject recv, IRubyObject other) {
@@ -210,7 +197,7 @@ public class RubyComparable {
 
         if (result.isNil()) cmperr(recv, other);
 
-        return RubyBoolean.newBoolean(context, cmpint(context, result, recv, other) < 0);
+        return asBoolean(context, cmpint(context, result, recv, other) < 0);
     }
 
     /** cmp_le
@@ -222,7 +209,7 @@ public class RubyComparable {
 
         if (result.isNil()) cmperr(recv, other);
 
-        return RubyBoolean.newBoolean(context, cmpint(context, result, recv, other) <= 0);
+        return asBoolean(context, cmpint(context, result, recv, other) <= 0);
     }
 
     /** cmp_between
@@ -230,7 +217,7 @@ public class RubyComparable {
      */
     @JRubyMethod(name = "between?")
     public static RubyBoolean between_p(ThreadContext context, IRubyObject recv, IRubyObject first, IRubyObject second) {
-        return RubyBoolean.newBoolean(context, op_lt(context, recv, first).isFalse() && op_gt(context, recv, second).isFalse());
+        return asBoolean(context, op_lt(context, recv, first).isFalse() && op_gt(context, recv, second).isFalse());
     }
 
     @JRubyMethod(name = "clamp")

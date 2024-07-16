@@ -38,6 +38,8 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.asFixnum;
+
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
@@ -99,8 +101,11 @@ public class RubyClassPathVariable extends RubyObject {
     }
 
     @JRubyMethod(name = {"size", "length"})
+    public IRubyObject size(ThreadContext context) {
+        return asFixnum(context, context.runtime.getJRubyClassLoader().getURLs().length);
+    }
     public IRubyObject size() {
-        return getRuntime().newFixnum(getRuntime().getJRubyClassLoader().getURLs().length);
+        return size(getCurrentContext());
     }
 
     @JRubyMethod

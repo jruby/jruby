@@ -51,6 +51,7 @@ import static org.jruby.RubyNumeric.dbl2num;
 import static org.jruby.RubyNumeric.int2fix;
 import static org.jruby.RubyNumeric.num2dbl;
 
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.numericToLong;
 import static org.jruby.runtime.Helpers.hashEnd;
 import static org.jruby.runtime.Helpers.hashStart;
@@ -349,12 +350,8 @@ public class RubyArithmeticSequence extends RubyObject {
 
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
-        Ruby runtime = context.runtime;
-
-        IRubyObject v;
-
-        v = safeHash(context, excludeEnd);
-        long hash = hashStart(runtime, v.convertToInteger().getLongValue());
+        IRubyObject v = safeHash(context, excludeEnd);
+        long hash = hashStart(context.runtime, v.convertToInteger().getLongValue());
 
         v = safeHash(context, begin);
         hash = murmurCombine(hash, v.convertToInteger().getLongValue());
@@ -366,7 +363,7 @@ public class RubyArithmeticSequence extends RubyObject {
         hash = murmurCombine(hash, v.convertToInteger().getLongValue());
         hash = hashEnd(hash);
 
-        return runtime.newFixnum(hash);
+        return asFixnum(context, hash);
     }
 
     @Override
@@ -627,12 +624,11 @@ public class RubyArithmeticSequence extends RubyObject {
 
     @JRubyMethod(name = "with_index")
     public IRubyObject with_index(ThreadContext context, IRubyObject arg, final Block block) {
-        final Ruby runtime = context.runtime;
         final int index = arg.isNil() ? 0 : RubyNumeric.num2int(arg);
         if ( ! block.isGiven() ) {
             return arg.isNil() ?
-                enumeratorizeWithSize(context, this, "with_index", RubyArithmeticSequence::size) :
-                    enumeratorizeWithSize(context, this, "with_index", new IRubyObject[]{runtime.newFixnum(index)}, RubyArithmeticSequence::size);
+                    enumeratorizeWithSize(context, this, "with_index", RubyArithmeticSequence::size) :
+                    enumeratorizeWithSize(context, this, "with_index", new IRubyObject[]{asFixnum(context, index)}, RubyArithmeticSequence::size);
         }
 
         return RubyEnumerable.callEach(context, fiberSites(context).each, this, new RubyEnumerable.EachWithIndex(block, index));

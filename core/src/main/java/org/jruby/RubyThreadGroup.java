@@ -41,6 +41,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.WeakHashSet;
 
+import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -71,23 +72,22 @@ public class RubyThreadGroup extends RubyObject {
 
     @JRubyMethod(name = "add")
     public IRubyObject add(ThreadContext context, IRubyObject rubyThread, Block block) {
-        if (!(rubyThread instanceof RubyThread)) throw typeError(context, rubyThread, "Thread");
+        if (!(rubyThread instanceof RubyThread thread)) throw typeError(context, rubyThread, "Thread");
         
         // synchronize on the RubyThread for threadgroup updates
         if (isFrozen()) throw typeError(context, "can't add to the frozen thread group");
         if (enclosed) throw typeError(context, "can't move to the enclosed thread group");
 
-        RubyThread thread = (RubyThread) rubyThread;
         RubyThreadGroup threadGroup = thread.getThreadGroup();
 
         // edit by headius: ThreadGroup may be null, perhaps if this is an adopted thread etc
-        if(threadGroup != null) {
+        if (threadGroup != null) {
             if (threadGroup.isFrozen()) throw typeError(context, "can't move from the frozen thread group");
             if (threadGroup.enclosed_p(block).isTrue()) throw typeError(context, "can't move from the enclosed thread group");
         }
 
         // we only add live threads
-        if (thread.alive_p(context).isTrue()) addDirectly(thread);
+        if (thread.isAlive()) addDirectly(thread);
 
         return this;
     }
@@ -120,8 +120,13 @@ public class RubyThreadGroup extends RubyObject {
     }
     
     @JRubyMethod(name = "enclosed?")
+    public IRubyObject enclosed_p(ThreadContext context, Block block) {
+        return asBoolean(context, enclosed);
+    }
+
+    @Deprecated
     public IRubyObject enclosed_p(Block block) {
-        return getRuntime().newBoolean(enclosed);
+        return enclosed_p(getRuntime().getCurrentContext(), block);
     }
 
     @JRubyMethod
