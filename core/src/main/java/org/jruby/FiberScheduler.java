@@ -202,7 +202,7 @@ public class FiberScheduler {
 
     public static IRubyObject result(Ruby runtime, int result, Errno error) {
         if (result == -1) {
-            return RubyFixnum.newFixnum(runtime, error.value());
+            return RubyFixnum.newFixnum(runtime, -error.value());
         } else {
             return RubyFixnum.newFixnum(runtime, result);
         }
