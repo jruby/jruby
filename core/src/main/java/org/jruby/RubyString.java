@@ -93,7 +93,6 @@ import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyNumeric.checkInt;
 import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.runtime.Visibility.PRIVATE;
-import static org.jruby.util.Numeric.checkInteger;
 import static org.jruby.util.StringSupport.CR_7BIT;
 import static org.jruby.util.StringSupport.CR_BROKEN;
 import static org.jruby.util.StringSupport.CR_MASK;
