@@ -4158,6 +4158,15 @@ public final class Ruby implements Constantizable {
         return newFrozenError(receiver.getType().toString(), receiver);
     }
 
+    public RaiseException newFrozenError(String message) {
+        ThreadContext context = getCurrentContext();
+
+        return RubyFrozenError.newFrozenError(context,
+                        newString(message),
+                        null)
+                .toThrowable();
+    }
+
     private static IRubyObject inspectFrozenObject(ThreadContext ctx, Ruby runtime, IRubyObject obj, boolean recur) {
         return recur ? runtime.newString(" ...") : obj.inspect();
     }
@@ -5888,11 +5897,6 @@ public final class Ruby implements Constantizable {
     @Deprecated
     public RaiseException newErrnoEADDRFromBindException(BindException be) {
         return newErrnoEADDRFromBindException(be, null);
-    }
-
-    @Deprecated
-    public RaiseException newFrozenError(String objectType) {
-        return newFrozenError(objectType, null);
     }
 
     @Deprecated
