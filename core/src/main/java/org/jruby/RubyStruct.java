@@ -59,6 +59,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.RecursiveComparator;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.numericToLong;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.invokedynamic;
@@ -167,20 +168,18 @@ public class RubyStruct extends RubyObject {
 
     @JRubyMethod
     public RubyFixnum hash(ThreadContext context) {
-        Ruby runtime = context.runtime;
-
         int h = getType().hashCode();
-
         IRubyObject[] values = this.values;
+
         for (int i = 0; i < values.length; i++) {
             h = (h << 1) | (h < 0 ? 1 : 0);
             IRubyObject hash = context.safeRecurse(
                     (ctx, runtime1, obj, recur) -> recur ? RubyFixnum.zero(runtime1) : invokedynamic(ctx, obj, HASH),
-                    runtime, values[i], "hash", true);
+                    context.runtime, values[i], "hash", true);
             h ^= numericToLong(context, hash);
         }
 
-        return runtime.newFixnum(h);
+        return asFixnum(context, h);
     }
 
     private IRubyObject setByName(String name, IRubyObject value) {
@@ -307,7 +306,7 @@ public class RubyStruct extends RubyObject {
         newStruct.setReifiedClass(RubyStruct.class);
         newStruct.setClassIndex(ClassIndex.STRUCT);
 
-        newStruct.setInternalVariable(SIZE_VAR, member.length());
+        newStruct.setInternalVariable(SIZE_VAR, member.length(runtime.getCurrentContext()));
         newStruct.setInternalVariable(MEMBER_VAR, member);
         newStruct.setInternalVariable(KEYWORD_INIT_VAR, keywordInitValue);
 
@@ -594,7 +593,7 @@ public class RubyStruct extends RubyObject {
      * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
      */
     private static IRubyObject size(ThreadContext context, RubyStruct recv, IRubyObject[] args) {
-        return recv.size();
+        return recv.size(context);
     }
 
     public IRubyObject set(IRubyObject value, int index) {
@@ -750,8 +749,13 @@ public class RubyStruct extends RubyObject {
     }
 
     @JRubyMethod(name = {"size", "length"} )
+    public RubyFixnum size(ThreadContext context) {
+        return asFixnum(context, values.length);
+    }
+
+    @Deprecated
     public RubyFixnum size() {
-        return getRuntime().newFixnum(values.length);
+        return size(getCurrentContext());
     }
 
     public IRubyObject eachInternal(ThreadContext context, Block block) {

@@ -45,6 +45,8 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
 
+import static org.jruby.api.Convert.asFixnum;
+
 /**
  *
  * @author  jpetersen
@@ -132,11 +134,13 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
 
         return trueClass;
     }
-    
+
+    @Deprecated
     public static RubyBoolean newBoolean(Ruby runtime, boolean value) {
         return value ? runtime.getTrue() : runtime.getFalse();
     }
 
+    @Deprecated
     public static RubyBoolean newBoolean(ThreadContext context, boolean value) {
         return value ? context.tru : context.fals;
     }
@@ -234,7 +238,7 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
     
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
-        return context.runtime.newFixnum(hashCode());
+        return asFixnum(context, hashCode());
     }
 
     @Override

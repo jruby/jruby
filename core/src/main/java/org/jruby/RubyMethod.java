@@ -34,6 +34,7 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.api.Convert;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.DelegatingDynamicMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -52,6 +53,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
 
 /** 
@@ -161,7 +164,7 @@ public class RubyMethod extends AbstractRubyMethod {
     @Override
     @JRubyMethod(name = "==")
     public RubyBoolean op_equal(ThreadContext context, IRubyObject other) {
-        return RubyBoolean.newBoolean(context,  equals(other) );
+        return asBoolean(context,  equals(other) );
     }
 
     @Override
@@ -198,7 +201,7 @@ public class RubyMethod extends AbstractRubyMethod {
 
     @JRubyMethod
     public RubyFixnum hash(ThreadContext context) {
-        return context.runtime.newFixnum(hashCodeImpl());
+        return asFixnum(context, hashCodeImpl());
     }
 
     @Override
@@ -273,11 +276,9 @@ public class RubyMethod extends AbstractRubyMethod {
 
     @JRubyMethod
     public IRubyObject source_location(ThreadContext context) {
-        Ruby runtime = context.runtime;
-
         String filename = getFilename();
         if (filename != null) {
-            return runtime.newArray(runtime.newString(filename), runtime.newFixnum(getLine()));
+            return context.runtime.newArray(Convert.asString(context, filename), asFixnum(context, getLine()));
         }
 
         return context.nil;

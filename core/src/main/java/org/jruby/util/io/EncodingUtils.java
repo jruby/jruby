@@ -58,7 +58,7 @@ import java.util.List;
 
 import static org.jruby.RubyString.*;
 import static org.jruby.api.Convert.checkToInteger;
-import static org.jruby.api.Convert.integerAsInt;
+import static org.jruby.api.Convert.asInt;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.StringSupport.CR_UNKNOWN;
 import static org.jruby.util.StringSupport.searchNonAscii;
@@ -210,7 +210,7 @@ public class EncodingUtils {
 
                 if (!intmode.isNil()) {
                     vmode(vmodeAndVperm_p, intmode);
-                    oflags_p[0] = integerAsInt(context, (RubyInteger) intmode);
+                    oflags_p[0] = asInt(context, (RubyInteger) intmode);
                     fmode_p[0] = ModeFlags.getOpenFileFlagsFor(oflags_p[0]);
                 } else {
                     String p = vmode(vmodeAndVperm_p).convertToString().asJavaString();

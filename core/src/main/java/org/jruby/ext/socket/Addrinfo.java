@@ -48,6 +48,8 @@ import static jnr.constants.platform.ProtocolFamily.PF_INET6;
 import static jnr.constants.platform.ProtocolFamily.PF_UNIX;
 import static jnr.constants.platform.ProtocolFamily.PF_UNSPEC;
 import static jnr.constants.platform.Sock.*;
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.ext.socket.SocketUtils.sockerr;
 
 public class Addrinfo extends RubyObject {
@@ -434,25 +436,23 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod
     public IRubyObject afamily(ThreadContext context) {
-        return context.runtime.newFixnum(getAddressFamily().intValue());
+        return asFixnum(context, getAddressFamily().intValue());
     }
 
     @JRubyMethod
     public IRubyObject pfamily(ThreadContext context) {
-        return context.runtime.newFixnum(pfamily.intValue());
+        return asFixnum(context, pfamily.intValue());
     }
 
     @JRubyMethod
     public IRubyObject socktype(ThreadContext context) {
-      return context.runtime.newFixnum(sock == null ? 0 : sock.intValue());
+      return asFixnum(context, sock == null ? 0 : sock.intValue());
     }
 
     @JRubyMethod
     public IRubyObject protocol(ThreadContext context) {
         // Any unknown protocol will end up null but the one case we see is IPPROTO_RAW is not listed in /etc/protocols
-        int proto = protocol == null ? 255 : protocol.getProto();
-
-        return context.runtime.newFixnum(proto);
+        return asFixnum(context, protocol == null ? 255 : protocol.getProto());
     }
 
     @JRubyMethod
@@ -469,22 +469,22 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod(name = "ipv4?")
     public IRubyObject ipv4_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, getAddressFamily() == AF_INET);
+        return asBoolean(context, getAddressFamily() == AF_INET);
     }
 
     @JRubyMethod(name = "ipv6?")
     public IRubyObject ipv6_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, getAddressFamily() == AF_INET6);
+        return asBoolean(context, getAddressFamily() == AF_INET6);
     }
 
     @JRubyMethod(name = "unix?")
     public IRubyObject unix_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, getAddressFamily() == AF_UNIX);
+        return asBoolean(context, getAddressFamily() == AF_UNIX);
     }
 
     @JRubyMethod(name = "ip?")
     public IRubyObject ip_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, getAddressFamily() == AF_INET || getAddressFamily() == AF_INET6);
+        return asBoolean(context, getAddressFamily() == AF_INET || getAddressFamily() == AF_INET6);
     }
 
     @JRubyMethod
@@ -512,29 +512,29 @@ public class Addrinfo extends RubyObject {
         if (getAddressFamily() != AF_INET && getAddressFamily() != AF_INET6) {
             throw sockerr(context.runtime, "need IPv4 or IPv6 address");
         }
-        return context.runtime.newFixnum(((InetSocketAddress) socketAddress).getPort());
+        return asFixnum(context, ((InetSocketAddress) socketAddress).getPort());
     }
 
     @JRubyMethod(name = "ipv4_private?")
     public IRubyObject ipv4_private_p(ThreadContext context) {
         if (getAddressFamily() == AF_INET) {
-            return RubyBoolean.newBoolean(context, getInet4Address().isSiteLocalAddress());
+            return asBoolean(context, getInet4Address().isSiteLocalAddress());
         }
-        return RubyBoolean.newBoolean(context, false);
+        return asBoolean(context, false);
     }
 
     @JRubyMethod(name = "ipv4_loopback?")
     public IRubyObject ipv4_loopback_p(ThreadContext context) {
       if (getAddressFamily() == AF_INET) {
-        return RubyBoolean.newBoolean(context, ((InetSocketAddress) socketAddress).getAddress().isLoopbackAddress());
+        return asBoolean(context, ((InetSocketAddress) socketAddress).getAddress().isLoopbackAddress());
       }
-      return RubyBoolean.newBoolean(context, false);
+      return asBoolean(context, false);
     }
 
     @JRubyMethod(name = "ipv4_multicast?")
     public IRubyObject ipv4_multicast_p(ThreadContext context) {
         if (getAddressFamily() == AF_INET) {
-            return RubyBoolean.newBoolean(context, getInet4Address().isMulticastAddress());
+            return asBoolean(context, getInet4Address().isMulticastAddress());
         }
         return context.fals;
     }
@@ -542,7 +542,7 @@ public class Addrinfo extends RubyObject {
     @JRubyMethod(name = "ipv6_unspecified?")
     public IRubyObject ipv6_unspecified_p(ThreadContext context) {
         if (getAddressFamily() == AF_INET6) {
-            return RubyBoolean.newBoolean(context, ipv6_ip().equals("::"));
+            return asBoolean(context, ipv6_ip().equals("::"));
         }
         return context.fals;
     }
@@ -550,27 +550,27 @@ public class Addrinfo extends RubyObject {
     @JRubyMethod(name = "ipv6_loopback?")
     public IRubyObject ipv6_loopback_p(ThreadContext context) {
       if (getAddressFamily() == AF_INET6) {
-        return RubyBoolean.newBoolean(context, getInetSocketAddress().getAddress().isLoopbackAddress());
+        return asBoolean(context, getInetSocketAddress().getAddress().isLoopbackAddress());
       }
-      return RubyBoolean.newBoolean(context, false);
+      return asBoolean(context, false);
     }
 
     @JRubyMethod(name = "ipv6_multicast?")
     public IRubyObject ipv6_multicast_p(ThreadContext context) {
         if (getAddressFamily() == AF_INET6) {
-            return RubyBoolean.newBoolean(context, getInet6Address().isMulticastAddress());
+            return asBoolean(context, getInet6Address().isMulticastAddress());
         }
         return context.fals;
     }
 
     @JRubyMethod(name = "ipv6_linklocal?")
     public IRubyObject ipv6_linklocal_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, getInetSocketAddress().getAddress().isLinkLocalAddress());
+        return asBoolean(context, getInetSocketAddress().getAddress().isLinkLocalAddress());
     }
 
     @JRubyMethod(name = "ipv6_sitelocal?")
     public IRubyObject ipv6_sitelocal_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, ((InetSocketAddress) socketAddress).getAddress().isSiteLocalAddress());
+        return asBoolean(context, ((InetSocketAddress) socketAddress).getAddress().isSiteLocalAddress());
     }
 
     @JRubyMethod(name = "ipv6_unique_local?")
@@ -583,47 +583,47 @@ public class Addrinfo extends RubyObject {
             return context.fals;
         }
         int firstAddrByte = address.getAddress()[0] & 0xff;
-        return RubyBoolean.newBoolean(context, firstAddrByte == 0xfc || firstAddrByte == 0xfd);
+        return asBoolean(context, firstAddrByte == 0xfc || firstAddrByte == 0xfd);
     }
 
     @JRubyMethod(name = "ipv6_v4mapped?")
     public IRubyObject ipv6_v4mapped_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, looksLikeV4ButIsV6);
+        return asBoolean(context, looksLikeV4ButIsV6);
     }
 
     @JRubyMethod(name = "ipv6_v4compat?")
     public IRubyObject ipv6_v4compat_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, isIPV6() && !looksLikeV4ButIsV6);
+        return asBoolean(context, isIPV6() && !looksLikeV4ButIsV6);
     }
 
     @JRubyMethod(name = "ipv6_mc_nodelocal?")
     public IRubyObject ipv6_mc_nodelocal_p(ThreadContext context) {
         Inet6Address in6 = getInet6Address();
-        return RubyBoolean.newBoolean(context, in6 != null && in6.isMCNodeLocal());
+        return asBoolean(context, in6 != null && in6.isMCNodeLocal());
     }
 
     @JRubyMethod(name = "ipv6_mc_linklocal?")
     public IRubyObject ipv6_mc_linklocal_p(ThreadContext context) {
         Inet6Address in6 = getInet6Address();
-        return RubyBoolean.newBoolean(context, in6 != null && in6.isMCLinkLocal());
+        return asBoolean(context, in6 != null && in6.isMCLinkLocal());
     }
 
     @JRubyMethod(name = "ipv6_mc_sitelocal?")
     public IRubyObject ipv6_mc_sitelocal_p(ThreadContext context) {
         Inet6Address in6 = getInet6Address();
-        return RubyBoolean.newBoolean(context, in6 != null && in6.isMCSiteLocal());
+        return asBoolean(context, in6 != null && in6.isMCSiteLocal());
     }
 
     @JRubyMethod(name = "ipv6_mc_orglocal?")
     public IRubyObject ipv6_mc_orglocal_p(ThreadContext context) {
         Inet6Address in6 = getInet6Address();
-        return RubyBoolean.newBoolean(context, in6 != null && in6.isMCOrgLocal());
+        return asBoolean(context, in6 != null && in6.isMCOrgLocal());
     }
 
     @JRubyMethod(name = "ipv6_mc_global?")
     public IRubyObject ipv6_mc_global_p(ThreadContext context) {
         Inet6Address in6 = getInet6Address();
-        return RubyBoolean.newBoolean(context, in6 != null && in6.isMCGlobal());
+        return asBoolean(context, in6 != null && in6.isMCGlobal());
     }
 
     // FIXME: What is the actual name for ::0.0.0.1

@@ -14,6 +14,7 @@ import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 
 import java.lang.ref.WeakReference;
 
+import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -268,7 +269,7 @@ final class NativeClosureProxy implements Closure {
                     return getStringParameter(runtime, buffer, index);
 
                 case BOOL:
-                    return runtime.newBoolean(buffer.getByte(index) != 0);
+                    return asBoolean(context, buffer.getByte(index) != 0);
 
                 default:
                     throw typeError(context, "invalid callback parameter type " + type);

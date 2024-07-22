@@ -42,6 +42,7 @@ import org.jruby.util.ByteList;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyEnumerator.SizeFn;
+import static org.jruby.api.Convert.asFixnum;
 
 /**
  * Implements Enumerator::Chain
@@ -200,12 +201,11 @@ public class RubyChain extends RubyObject {
 
     @JRubyMethod(name = "with_index")
     public IRubyObject with_index(ThreadContext context, IRubyObject arg, final Block block) {
-        final Ruby runtime = context.runtime;
         final int index = arg.isNil() ? 0 : RubyNumeric.num2int(arg);
         if ( ! block.isGiven() ) {
             return arg.isNil() ?
                 enumeratorizeWithSize(context, this, "with_index", RubyChain::size) :
-                    enumeratorizeWithSize(context, this, "with_index", new IRubyObject[]{runtime.newFixnum(index)}, RubyChain::size);
+                    enumeratorizeWithSize(context, this, "with_index", new IRubyObject[]{asFixnum(context, index)}, RubyChain::size);
         }
 
         return RubyEnumerable.callEach(context, fiberSites(context).each, this, new RubyEnumerable.EachWithIndex(block, index));

@@ -8,6 +8,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.OpenFile;
 
+import static org.jruby.api.Convert.asBoolean;
+
 public class IONonBlock {
 
     public static void load(Ruby runtime) {
@@ -16,14 +18,14 @@ public class IONonBlock {
 
     @JRubyMethod(name = "nonblock?")
     public static IRubyObject nonblock_p(ThreadContext context, IRubyObject io) {
-        return context.runtime.newBoolean( !getIO(io).getBlocking() );
+        return asBoolean(context, !getIO(io).getBlocking());
     }
 
     @JRubyMethod(name = "nonblock=")
     public static IRubyObject nonblock_set(ThreadContext context, IRubyObject io, IRubyObject nonblocking) {
         final boolean nonblock = nonblocking.isTrue();
         getIO(io).setBlocking(!nonblock);
-        return context.runtime.newBoolean(nonblock); // NOTE: MRI seems to return io
+        return asBoolean(context, nonblock); // NOTE: MRI seems to return io
     }
 
     @JRubyMethod(name = "nonblock")
@@ -43,7 +45,7 @@ public class IONonBlock {
                 ioObj.setBlocking(oldBlocking);
             }
         }
-        return context.runtime.newBoolean(oldBlocking);
+        return asBoolean(context, oldBlocking);
     }
 
     private static RubyIO getIO(IRubyObject io) {

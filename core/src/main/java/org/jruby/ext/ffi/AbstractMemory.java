@@ -49,7 +49,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
-import static org.jruby.api.Convert.numericToLong;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -164,7 +164,7 @@ abstract public class AbstractMemory extends MemoryObject {
      */
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
-        return context.runtime.newFixnum(hashCode());
+        return asFixnum(context, hashCode());
     }
 
     @JRubyMethod(name = "[]")
@@ -196,7 +196,7 @@ abstract public class AbstractMemory extends MemoryObject {
     @JRubyMethod(name = "==")
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
-        return RubyBoolean.newBoolean(context, this.equals(obj));
+        return asBoolean(context, this.equals(obj));
     }
     
     /**
@@ -236,7 +236,7 @@ abstract public class AbstractMemory extends MemoryObject {
      */
     @JRubyMethod(name = "type_size")
     public final IRubyObject type_size(ThreadContext context) {
-        return context.runtime.newFixnum(typeSize);
+        return asFixnum(context, typeSize);
     }
 
     /**

@@ -108,6 +108,8 @@ import static org.jruby.anno.FrameField.METHODNAME;
 import static org.jruby.anno.FrameField.SCOPE;
 import static org.jruby.anno.FrameField.SELF;
 import static org.jruby.anno.FrameField.VISIBILITY;
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
@@ -871,7 +873,7 @@ public class RubyKernel {
             }
         }
 
-        return context.runtime.newFixnum(Math.round((System.currentTimeMillis() - startTime) / 1000.0));
+        return asFixnum(context, Math.round((System.currentTimeMillis() - startTime) / 1000.0));
     }
 
     // FIXME: Add at_exit and finalizers to exit, then make exit_bang not call those.
@@ -966,11 +968,11 @@ public class RubyKernel {
 
     @JRubyMethod(name = {"block_given?", "iterator?"}, module = true, visibility = PRIVATE, reads = BLOCK)
     public static RubyBoolean block_given_p(ThreadContext context, IRubyObject recv) {
-        return RubyBoolean.newBoolean(context, context.getCurrentFrame().getBlock().isGiven());
+        return asBoolean(context, context.getCurrentFrame().getBlock().isGiven());
     }
 
     public static RubyBoolean blockGiven(ThreadContext context, IRubyObject recv, Block frameBlock) {
-        return RubyBoolean.newBoolean(context, frameBlock.isGiven());
+        return asBoolean(context, frameBlock.isGiven());
     }
 
     @JRubyMethod(name = {"sprintf", "format"}, required = 1, rest = true, checkArity = false, module = true, visibility = PRIVATE)
@@ -1165,15 +1167,14 @@ public class RubyKernel {
     @JRubyMethod(name = "require", module = true, visibility = PRIVATE)
     public static IRubyObject require(ThreadContext context, IRubyObject recv, IRubyObject name, Block block) {
         IRubyObject tmp = name.checkStringType();
+        RubyString requireName = tmp != context.nil ? (RubyString) tmp : RubyFile.get_path(context, name);
 
-        if (tmp != context.nil) return requireCommon(context.runtime, (RubyString) tmp, block);
-
-        return requireCommon(context.runtime, RubyFile.get_path(context, name), block);
+        return requireCommon(context, requireName, block);
     }
 
-    private static IRubyObject requireCommon(Ruby runtime, RubyString name, Block block) {
-        RubyString path = StringSupport.checkEmbeddedNulls(runtime, name);
-        return runtime.newBoolean(runtime.getLoadService().require(path.toString()));
+    private static IRubyObject requireCommon(ThreadContext context, RubyString name, Block block) {
+        RubyString path = StringSupport.checkEmbeddedNulls(context.runtime, name);
+        return asBoolean(context, context.runtime.getLoadService().require(path.toString()));
     }
 
     @JRubyMethod(name = "require_relative", module = true, visibility = PRIVATE, reads = SCOPE)
@@ -1725,13 +1726,13 @@ public class RubyKernel {
 
         switch (cmd) {
         case 'A': // ?A  | Time    | Last access time for file1
-            return context.runtime.newFileStat(fileResource(arg1).path(), false).atime();
+            return context.runtime.newFileStat(fileResource(arg1).path(), false).atime(context);
         case 'b': // ?b  | boolean | True if file1 is a block device
-            return RubyFileTest.blockdev_p(recv, arg1);
+            return RubyFileTest.blockdev_p(context, recv, arg1);
         case 'c': // ?c  | boolean | True if file1 is a character device
-            return RubyFileTest.chardev_p(recv, arg1);
+            return RubyFileTest.chardev_p(context, recv, arg1);
         case 'C': // ?C  | Time    | Last change time for file1
-            return context.runtime.newFileStat(fileResource(arg1).path(), false).ctime();
+            return context.runtime.newFileStat(fileResource(arg1).path(), false).ctime(context);
         case 'd': // ?d  | boolean | True if file1 exists and is a directory
             return RubyFileTest.directory_p(context, recv, arg1);
         case 'e': // ?e  | boolean | True if file1 exists
@@ -1739,21 +1740,21 @@ public class RubyKernel {
         case 'f': // ?f  | boolean | True if file1 exists and is a regular file
             return RubyFileTest.file_p(context, recv, arg1);
         case 'g': // ?g  | boolean | True if file1 has the \CF{setgid} bit
-            return RubyFileTest.setgid_p(recv, arg1);
+            return RubyFileTest.setgid_p(context, recv, arg1);
         case 'G': // ?G  | boolean | True if file1 exists and has a group ownership equal to the caller's group
-            return RubyFileTest.grpowned_p(recv, arg1);
+            return RubyFileTest.grpowned_p(context, recv, arg1);
         case 'k': // ?k  | boolean | True if file1 exists and has the sticky bit set
-            return RubyFileTest.sticky_p(recv, arg1);
+            return RubyFileTest.sticky_p(context, recv, arg1);
         case 'M': // ?M  | Time    | Last modification time for file1
-            return context.runtime.newFileStat(fileResource(arg1).path(), false).mtime();
+            return context.runtime.newFileStat(fileResource(arg1).path(), false).mtime(context);
         case 'l': // ?l  | boolean | True if file1 exists and is a symbolic link
-            return RubyFileTest.symlink_p(recv, arg1);
+            return RubyFileTest.symlink_p(context, recv, arg1);
         case 'o': // ?o  | boolean | True if file1 exists and is owned by the caller's effective uid
-            return RubyFileTest.owned_p(recv, arg1);
+            return RubyFileTest.owned_p(context, recv, arg1);
         case 'O': // ?O  | boolean | True if file1 exists and is owned by the caller's real uid
-            return RubyFileTest.rowned_p(recv, arg1);
+            return RubyFileTest.rowned_p(context, recv, arg1);
         case 'p': // ?p  | boolean | True if file1 exists and is a fifo
-            return RubyFileTest.pipe_p(recv, arg1);
+            return RubyFileTest.pipe_p(context, recv, arg1);
         case 'r': // ?r  | boolean | True if file1 is readable by the effective uid/gid of the caller
             return RubyFileTest.readable_p(context, recv, arg1);
         case 'R': // ?R  | boolean | True if file is readable by the real uid/gid of the caller
@@ -1761,26 +1762,26 @@ public class RubyKernel {
         case 's': // ?s  | int/nil | If file1 has nonzero size, return the size, otherwise nil
             return RubyFileTest.size_p(context, recv, arg1);
         case 'S': // ?S  | boolean | True if file1 exists and is a socket
-            return RubyFileTest.socket_p(recv, arg1);
+            return RubyFileTest.socket_p(context, recv, arg1);
         case 'u': // ?u  | boolean | True if file1 has the setuid bit set
-            return RubyFileTest.setuid_p(recv, arg1);
+            return RubyFileTest.setuid_p(context, recv, arg1);
         case 'w': // ?w  | boolean | True if file1 exists and is writable by effective uid/gid
-            return RubyFileTest.writable_p(recv, arg1);
+            return RubyFileTest.writable_p(context, recv, arg1);
         case 'W': // ?W  | boolean | True if file1 exists and is writable by the real uid/gid
             // FIXME: Need to implement an writable_real_p in FileTest
-            return RubyFileTest.writable_p(recv, arg1);
+            return RubyFileTest.writable_p(context, recv, arg1);
         case 'x': // ?x  | boolean | True if file1 exists and is executable by the effective uid/gid
-            return RubyFileTest.executable_p(recv, arg1);
+            return RubyFileTest.executable_p(context, recv, arg1);
         case 'X': // ?X  | boolean | True if file1 exists and is executable by the real uid/gid
-            return RubyFileTest.executable_real_p(recv, arg1);
+            return RubyFileTest.executable_real_p(context, recv, arg1);
         case 'z': // ?z  | boolean | True if file1 exists and has a zero length
             return RubyFileTest.zero_p(context, recv, arg1);
         case '=': // ?=  | boolean | True if the modification times of file1 and file2 are equal
-            return context.runtime.newFileStat(arg1.convertToString().toString(), false).mtimeEquals(arg2);
+            return context.runtime.newFileStat(arg1.convertToString().toString(), false).mtimeEquals(context, arg2);
         case '<': // ?<  | boolean | True if the modification time of file1 is prior to that of file2
-            return context.runtime.newFileStat(arg1.convertToString().toString(), false).mtimeLessThan(arg2);
+            return context.runtime.newFileStat(arg1.convertToString().toString(), false).mtimeLessThan(context, arg2);
         case '>': // ?>  | boolean | True if the modification time of file1 is after that of file2
-            return context.runtime.newFileStat(arg1.convertToString().toString(), false).mtimeGreaterThan(arg2);
+            return context.runtime.newFileStat(arg1.convertToString().toString(), false).mtimeGreaterThan(context, arg2);
         case '-': // ?-  | boolean | True if file1 and file2 are identical
             return RubyFileTest.identical_p(context, recv, arg1, arg2);
         default:
@@ -2087,7 +2088,7 @@ public class RubyKernel {
         // FIXME: Make jnr-posix Pure-Java backend do this as well
         int resultCode = ShellLauncher.execAndWait(runtime, args);
 
-        exit(runtime, new IRubyObject[] {runtime.newFixnum(resultCode)}, true);
+        exit(runtime, new IRubyObject[] {asFixnum(context, resultCode)}, true);
 
         // not reached
         return runtime.getNil();

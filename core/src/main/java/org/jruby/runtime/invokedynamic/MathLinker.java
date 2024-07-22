@@ -34,6 +34,7 @@ import java.lang.invoke.SwitchPoint;
 
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.util.CodegenUtils.p;
 
 import com.headius.invokebinder.Binder;
@@ -136,7 +137,7 @@ public class MathLinker {
         SwitchPoint switchPoint = (SwitchPoint) classFixnum.getInvalidator().getData();
 
         MethodHandle fallback = Binder.from(site.type())
-                .append(IRubyObject.class, runtime.newFixnum(value))
+                .append(IRubyObject.class, asFixnum(context, value))
                 .invoke(normalSite.dynamicInvoker());
 
         CacheEntry entry = searchWithCache(operator, caller, self.getMetaClass(), site);

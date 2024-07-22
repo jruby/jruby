@@ -960,7 +960,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             throw runtime.newErrnoEBADFError();
         }
 
-        API.ModeAndPermission pm = EncodingUtils.vmodeVperm(vmodeArg, runtime.newFixnum(0));
+        API.ModeAndPermission pm = EncodingUtils.vmodeVperm(vmodeArg, asFixnum(context, 0));
         int[] fmode_p = {0};
         ConvConfig convconfig = new ConvConfig();
         EncodingUtils.extractModeEncoding(context, convconfig, pm, opt, oflags_p, fmode_p);
@@ -976,7 +976,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             }
         }
 
-        if (opt != null && !opt.isNil() && ((RubyHash)opt).op_aref(context, runtime.newSymbol("autoclose")) == runtime.getFalse()) {
+        if (opt != null && !opt.isNil() && ((RubyHash)opt).op_aref(context, runtime.newSymbol("autoclose")) == context.fals) {
             fmode_p[0] |= OpenFile.PREP;
         }
 
@@ -1242,7 +1242,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         if (vmode.isNil())
             oflags = OpenFlags.O_RDONLY.intValue();
         else if (!(intmode = checkToInteger(context, vmode)).isNil())
-            oflags = integerAsInt(context, (RubyInteger) intmode);
+            oflags = asInt(context, (RubyInteger) intmode);
         else {
             vmode = vmode.convertToString();
             oflags = OpenFile.ioModestrOflags(runtime, vmode.toString());
@@ -1252,7 +1252,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         StringSupport.checkStringSafety(context.runtime, fname);
         fname = ((RubyString)fname).dupFrozen();
         fd = sysopen(runtime, fname.toString(), oflags, perm);
-        return runtime.newFixnum(fd.bestFileno(true));
+        return asFixnum(context, fd.bestFileno(true));
     }
 
     public static class Sysopen {
@@ -1335,7 +1335,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @JRubyMethod(name = "autoclose?")
     public IRubyObject autoclose(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, isAutoclose());
+        return asBoolean(context, isAutoclose());
     }
 
     @JRubyMethod(name = "autoclose=")
@@ -1359,18 +1359,16 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     // MRI: rb_io_binmode_p
     @JRubyMethod(name = "binmode?")
     public IRubyObject op_binmode(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, getOpenFileChecked().isBinmode());
+        return asBoolean(context, getOpenFileChecked().isBinmode());
     }
 
     // rb_io_syswrite
     @JRubyMethod(name = "syswrite")
     public IRubyObject syswrite(ThreadContext context, IRubyObject str) {
-       Ruby runtime = context.runtime;
         OpenFile fptr;
         long n;
 
-        if (!(str instanceof RubyString))
-            str = str.asString();
+        if (!(str instanceof RubyString)) str = str.asString();
 
         RubyIO io = GetWriteIO();
         fptr = io.getOpenFileChecked();
@@ -1381,19 +1379,17 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
             str = str.convertToString().newFrozen();
 
-            if (fptr.wbuf.len != 0) {
-                runtime.getWarnings().warn("syswrite for buffered IO");
-            }
+            if (fptr.wbuf.len != 0) context.runtime.getWarnings().warn("syswrite for buffered IO");
 
             ByteList strByteList = ((RubyString) str).getByteList();
             n = OpenFile.writeInternal(context, fptr, strByteList.unsafeBytes(), strByteList.begin(), strByteList.getRealSize());
 
-            if (n == -1) throw runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
+            if (n == -1) throw context.runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
         } finally {
             if (locked) fptr.unlock();
         }
 
-        return runtime.newFixnum(n);
+        return asFixnum(context, n);
     }
 
     // MRI: rb_io_write_nonblock
@@ -1448,7 +1444,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             if (locked) fptr.unlock();
         }
 
-        return runtime.newFixnum(n);
+        return asFixnum(context, n);
     }
 
     public RubyIO GetWriteIO() {
@@ -1717,7 +1713,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @JRubyMethod(name = "fileno", alias = "to_i")
     public RubyFixnum fileno(ThreadContext context) {
-        return context.runtime.newFixnum(getOpenFileChecked().getFileno());
+        return asFixnum(context, getOpenFileChecked().getFileno());
     }
 
     /** Returns the current line number.
@@ -1726,7 +1722,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
      */
     @JRubyMethod(name = "lineno")
     public RubyFixnum lineno(ThreadContext context) {
-        return context.runtime.newFixnum(getOpenFileChecked().getLineNumber());
+        return asFixnum(context, getOpenFileChecked().getLineNumber());
     }
 
     /** Sets the current line number.
@@ -1737,7 +1733,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     public RubyFixnum lineno_set(ThreadContext context, IRubyObject newLineNumber) {
         getOpenFileChecked().setLineNumber(RubyNumeric.fix2int(newLineNumber));
 
-        return context.runtime.newFixnum(getOpenFileChecked().getLineNumber());
+        return asFixnum(context, getOpenFileChecked().getLineNumber());
     }
 
     /** Returns the current sync mode.
@@ -1779,7 +1775,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         // Of course this isn't particularly useful.
         long pid = myOpenFile.getPid();
 
-        return context.runtime.newFixnum(pid);
+        return asFixnum(context, pid);
     }
 
     // rb_io_pos
@@ -1792,7 +1788,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             long pos = fptr.tell(context);
             if (pos == -1 && fptr.errno() != null) throw context.runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
             pos -= fptr.rbuf.len;
-            return context.runtime.newFixnum(pos);
+            return asFixnum(context, pos);
         } finally {
             if (locked) fptr.unlock();
         }
@@ -1801,13 +1797,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     // rb_io_set_pos
     @JRubyMethod(name = "pos=")
     public RubyFixnum pos_set(ThreadContext context, IRubyObject offset) {
-        OpenFile fptr;
-        long pos;
-
-        pos = offset.convertToInteger().getLongValue();
-        fptr = getOpenFileChecked();
-
+        long pos = offset.convertToInteger().getLongValue();
+        OpenFile fptr = getOpenFileChecked();
         boolean locked = fptr.lock();
+
         try {
             pos = fptr.seek(context, pos, PosixShim.SEEK_SET);
             if (pos == -1 && fptr.errno() != null) throw context.runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
@@ -1815,7 +1808,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             if (locked) fptr.unlock();
         }
 
-        return context.runtime.newFixnum(pos);
+        return asFixnum(context, pos);
     }
 
     /** Print some objects to the stream.
@@ -1978,14 +1971,12 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @JRubyMethod
     public RubyFixnum seek(ThreadContext context, IRubyObject off) {
-        long ret = doSeek(context, numericToLong(context, off), PosixShim.SEEK_SET);
-        return context.runtime.newFixnum(ret);
+        return asFixnum(context, doSeek(context, numericToLong(context, off), PosixShim.SEEK_SET));
     }
 
     @JRubyMethod
     public RubyFixnum seek(ThreadContext context, IRubyObject off, IRubyObject whence) {
-        long ret = doSeek(context, numericToLong(context, off), interpretSeekWhence(whence));
-        return context.runtime.newFixnum(ret);
+        return asFixnum(context, doSeek(context, numericToLong(context, off), interpretSeekWhence(whence)));
     }
 
     // rb_io_seek
@@ -2253,7 +2244,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @JRubyMethod(name = "closed?")
     public RubyBoolean closed_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, isClosed());
+        return asBoolean(context, isClosed());
     }
 
     /**
@@ -2302,15 +2293,14 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         IOSites sites = sites(context);
         IRubyObject closed = io.checkCallMethod(context, sites.closed_checked);
         if (closed != null && closed.isTrue()) return io;
-        final Ruby runtime = context.runtime;
-        IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
+        IRubyObject oldExc = context.runtime.getGlobalVariables().get("$!"); // Save $!
         try {
             closed = io.checkCallMethod(context, sites.close_checked);
-            return runtime.newBoolean(closed != null && closed.isTrue());
+            return asBoolean(context, closed != null && closed.isTrue());
         } catch (RaiseException re) {
             if (re.getMessage().contains(CLOSED_STREAM_MSG)) {
                 // ignore
-                runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
+                context.runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
                 return context.nil;
             } else {
                 throw re;
@@ -2725,16 +2715,16 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         if (realCmd == Fcntl.F_GETFL.intValue()) {
             OpenFile myOpenFile = getOpenFileChecked();
-            return runtime.newFixnum(OpenFile.ioFmodeOflags(myOpenFile.getMode()));
+            return asFixnum(context, OpenFile.ioFmodeOflags(myOpenFile.getMode()));
         }
 
         // FIXME: Arg may also be true, false, and nil and still be valid.  Strangely enough,
         // protocol conversion is not happening in Ruby on this arg?
-        if (arg == null || arg.isNil() || arg == runtime.getFalse()) {
+        if (arg == null || arg.isNil() || arg == context.fals) {
             nArg = 0;
         } else if (arg instanceof RubyFixnum) {
             nArg = RubyFixnum.fix2long(arg);
-        } else if (arg == runtime.getTrue()) {
+        } else if (arg == context.tru) {
             nArg = 1;
         } else {
             throw runtime.newNotImplementedError("JRuby does not support string for second fcntl/ioctl argument yet");
@@ -2752,7 +2742,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         //   for mode changes which should persist across fork() boundaries.  Since JVM has no fork
         //   this is not a problem for us.
         if (realCmd == FcntlLibrary.FD_CLOEXEC) {
-            close_on_exec_set(context, runtime.getTrue());
+            close_on_exec_set(context, context.tru);
         } else if (realCmd == Fcntl.F_SETFD.intValue()) {
             if (arg != null && (nArg & FcntlLibrary.FD_CLOEXEC) == FcntlLibrary.FD_CLOEXEC) {
                 close_on_exec_set(context, arg);
@@ -2760,7 +2750,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 throw runtime.newNotImplementedError("F_SETFD only supports FD_CLOEXEC");
             }
         } else if (realCmd == Fcntl.F_GETFD.intValue()) {
-            return runtime.newFixnum(close_on_exec_p(context).isTrue() ? FD_CLOEXEC : 0);
+            return asFixnum(context, close_on_exec_p(context).isTrue() ? FD_CLOEXEC : 0);
         } else if (realCmd == Fcntl.F_SETFL.intValue()) {
             if ((nArg & OpenFlags.O_NONBLOCK.intValue()) != 0) {
                 fptr.setBlocking(runtime, false);
@@ -2774,14 +2764,14 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 close_on_exec_set(context, context.fals);
             }
         } else if (realCmd == Fcntl.F_GETFL.intValue()) {
-            return runtime.newFixnum(
+            return asFixnum(context,
                     (fptr.isBlocking() ? 0 : OpenFlags.O_NONBLOCK.intValue()) |
                             (close_on_exec_p(context).isTrue() ? FD_CLOEXEC : 0));
         } else {
             throw runtime.newNotImplementedError("JRuby only supports F_SETFL and F_GETFL with NONBLOCK for fcntl/ioctl");
         }
 
-        return runtime.newFixnum(0);
+        return asFixnum(context, 0);
     }
 
     @JRubyMethod(name = "puts")
@@ -3571,20 +3561,18 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
      * MRI: rb_io_each_byte
      */
     public IRubyObject each_byteInternal(ThreadContext context, Block block) {
-        Ruby runtime = context.runtime;
-        OpenFile fptr;
-
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_byte");
-        fptr = getOpenFileChecked();
 
+        OpenFile fptr = getOpenFileChecked();
         boolean locked = fptr.lock();
+
         try {
             do {
                 while (fptr.rbuf.len > 0) {
                     byte[] pBytes = fptr.rbuf.ptr;
                     int p = fptr.rbuf.off++;
                     fptr.rbuf.len--;
-                    block.yield(context, runtime.newFixnum(pBytes[p] & 0xFF));
+                    block.yield(context, asFixnum(context, pBytes[p] & 0xFF));
                     fptr.errno(null);
                 }
                 fptr.checkByteReadable(context);
@@ -3711,7 +3699,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                     }
                     fptr.cbuf.off += n;
                     fptr.cbuf.len -= n;
-                    block.yield(context, runtime.newFixnum(c & 0xFFFFFFFF));
+                    block.yield(context, asFixnum(context, c & 0xFFFFFFFF));
                 }
             }
             fptr.NEED_NEWLINE_DECORATOR_ON_READ_CHECK();
@@ -3723,7 +3711,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                     c = StringSupport.codePoint(runtime, enc, fptr.rbuf.ptr, fptr.rbuf.off, fptr.rbuf.off + fptr.rbuf.len);
                     fptr.rbuf.off += n;
                     fptr.rbuf.len -= n;
-                    block.yield(context, runtime.newFixnum(c & 0xFFFFFFFF));
+                    block.yield(context, asFixnum(context, c & 0xFFFFFFFF));
                 } else if (StringSupport.MBCLEN_INVALID_P(r)) {
                     throw runtime.newArgumentError("invalid byte sequence in " + enc);
                 } else if (StringSupport.MBCLEN_NEEDMORE_P(r)) {
@@ -3743,7 +3731,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                     r = enc.length(cbuf, 0, p);
                     if (!StringSupport.MBCLEN_CHARFOUND_P(r)) throw runtime.newArgumentError("invalid byte sequence in " + enc);
                     c = enc.mbcToCode(cbuf, 0, p);
-                    block.yield(context, runtime.newFixnum(c));
+                    block.yield(context, asFixnum(context, c));
                 } else {
                     continue;
                 }
@@ -4188,7 +4176,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     public static void failIfDirectory(Ruby runtime, RubyString pathStr) {
-        if (RubyFileTest.directory_p(runtime, pathStr).isTrue()) {
+        if (RubyFileTest.directory_p(runtime.getCurrentContext(), pathStr).isTrue()) {
             if (Platform.IS_WINDOWS) {
                 throw runtime.newErrnoEACCESError(pathStr.asJavaString());
             } else {
@@ -4207,8 +4195,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         // MRI increments args past 0 now, so remaining uses of args only see non-path args
 
         if (opt == context.nil) {
-            vmode = runtime.newFixnum(ModeFlags.RDONLY);
-            vperm = runtime.newFixnum(0666);
+            vmode = asFixnum(context, ModeFlags.RDONLY);
+            vperm = asFixnum(context, 0666);
         } else if ((v = ((RubyHash) opt).op_aref(context, runtime.newSymbol("open_args"))) != context.nil) {
             RubyArray vAry = v.convertToArray();
             int n = vAry.size();
@@ -4411,7 +4399,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 if ( binary ) mode |= OpenFlags.O_BINARY.intValue();
             }
             if ( offset == context.nil ) mode |= OpenFlags.O_TRUNC.intValue();
-            optHash.op_aset(context, modeSym, runtime.newFixnum(mode));
+            optHash.op_aset(context, modeSym, asFixnum(context, mode));
         }
 
         IRubyObject _io = openKeyArgs(context, recv, argv, optHash);
@@ -4606,7 +4594,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         io.MakeOpenFile();
 
-        API.ModeAndPermission pm = vmodeVperm(pmode, runtime.newFixnum(0));
+        API.ModeAndPermission pm = vmodeVperm(pmode, asFixnum(context, 0));
         int[] oflags_p = {0}, fmode_p = {0};
         EncodingUtils.extractModeEncoding(context, io, pm, options, oflags_p, fmode_p);
         ModeFlags modes = ModeFlags.createModeFlags(oflags_p[0]);
@@ -4831,7 +4819,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                     arg1 = tmpIO;
                 } else if (!(arg1 instanceof RubyFile)) {
                     RubyString path = RubyFile.get_path(context, arg1);
-                    arg1 = RubyFile.open(context, runtime.getFile(), new IRubyObject[]{path, runtime.newFixnum(ModeFlags.RDONLY)}, Block.NULL_BLOCK);
+                    arg1 = RubyFile.open(context, runtime.getFile(), new IRubyObject[]{path, asFixnum(context, ModeFlags.RDONLY)}, Block.NULL_BLOCK);
                     local1 = true;
                 }
 
@@ -4855,7 +4843,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                     arg2 = tmpIO;
                 } else if (!(arg2 instanceof RubyFile)) {
                     RubyString path = RubyFile.get_path(context, arg2);
-                    arg2 = RubyFile.open(context, runtime.getFile(), new IRubyObject[]{path, runtime.newFixnum(ModeFlags.WRONLY | ModeFlags.CREAT | ModeFlags.TRUNC)}, Block.NULL_BLOCK);
+                    arg2 = RubyFile.open(context, runtime.getFile(), new IRubyObject[]{path, asFixnum(context, ModeFlags.WRONLY | ModeFlags.CREAT | ModeFlags.TRUNC)}, Block.NULL_BLOCK);
                     local2 = true;
                 }
 
@@ -4915,10 +4903,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                         }
                     }
 
-                    return context.runtime.newFixnum(size);
+                    return asFixnum(context, size);
                 } catch (EOFError eof) {
                     // ignore EOF, reached end of input
-                    return context.runtime.newFixnum(size);
+                    return asFixnum(context, size);
                 } catch (IOException ioe) {
                     throw runtime.newIOErrorFromException(ioe);
                 } finally {
@@ -5121,11 +5109,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         int length = strByteList.realSize();
         ByteBuffer wrap = ByteBuffer.wrap(strByteList.unsafeBytes(), strByteList.begin(), length);
 
-        int written;
+        int written = OpenFile.pwriteInternal(context, fptr, fd, wrap, off, length);
 
-        written = OpenFile.pwriteInternal(context, fptr, fd, wrap, off, length);
-
-        return context.runtime.newFixnum(written);
+        return asFixnum(context, written);
     }
 
     @JRubyMethod(optional = 1)
@@ -5709,7 +5695,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
                         runtime.getThreadService().registerNewThread(rubyThread);
 
-                        rubyThread.op_aset(runtime.newSymbol("pid"),  runtime.newFixnum(pid));
+                        rubyThread.op_aset(runtime.newSymbol("pid"),  asFixnum(context, pid));
 
                         try {
                             int exitValue = tuple.process.waitFor();
@@ -5758,7 +5744,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             POpenTuple tuple = popenSpecial(context, args);
 
             RubyArray yieldArgs = RubyArray.newArrayLight(runtime,
-                    runtime.newFixnum(ShellLauncher.getPidFromProcess(tuple.process)),
+                    asFixnum(context, ShellLauncher.getPidFromProcess(tuple.process)),
                     tuple.output,
                     tuple.input,
                     tuple.error);

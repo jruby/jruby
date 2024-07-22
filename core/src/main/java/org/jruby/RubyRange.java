@@ -59,8 +59,7 @@ import org.jruby.runtime.ThreadContext;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyNumeric.*;
-import static org.jruby.api.Convert.checkToInteger;
-import static org.jruby.api.Convert.numericToLong;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.hashEnd;
 import static org.jruby.runtime.Helpers.hashStart;
@@ -133,7 +132,7 @@ public class RubyRange extends RubyObject {
     public static RubyRange newBeginlessRange(ThreadContext context, long end, boolean isExclusive) {
         Ruby runtime = context.runtime;
         RubyRange range = new RubyRange(runtime, runtime.getRange());
-        range.init(context, context.nil, runtime.newFixnum(end), isExclusive);
+        range.init(context, context.nil, asFixnum(context, end), isExclusive);
         range.isInited = true;
         return range;
     }
@@ -141,7 +140,7 @@ public class RubyRange extends RubyObject {
     public static RubyRange newEndlessRange(ThreadContext context, long begin, boolean isExclusive) {
         Ruby runtime = context.runtime;
         RubyRange range = new RubyRange(runtime, runtime.getRange());
-        range.init(context, runtime.newFixnum(begin), context.nil, isExclusive);
+        range.init(context, asFixnum(context, begin), context.nil, isExclusive);
         range.isInited = true;
         return range;
     }
@@ -149,7 +148,7 @@ public class RubyRange extends RubyObject {
     public static RubyRange newRange(ThreadContext context, long begin, long end, boolean isExclusive) {
         Ruby runtime = context.runtime;
         RubyRange range = new RubyRange(runtime, runtime.getRange());
-        range.init(context, runtime.newFixnum(begin), runtime.newFixnum(end), isExclusive);
+        range.init(context, asFixnum(context, begin), asFixnum(context, end), isExclusive);
         range.isInited = true;
         return range;
     }
@@ -353,21 +352,18 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
-        Ruby runtime = context.runtime;
-
         int exclusiveBit = isExclusive ? 1 : 0;
         long hash = exclusiveBit;
-        IRubyObject v;
 
-        hash = hashStart(runtime, hash);
-        v = safeHash(context, begin);
+        hash = hashStart(context.runtime, hash);
+        IRubyObject v = safeHash(context, begin);
         hash = murmurCombine(hash, v.convertToInteger().getLongValue());
         v = safeHash(context, end);
         hash = murmurCombine(hash, v.convertToInteger().getLongValue());
         hash = murmurCombine(hash, exclusiveBit << 24);
         hash = hashEnd(hash);
 
-        return runtime.newFixnum(hash);
+        return asFixnum(context, hash);
     }
 
     private static RubyString inspectValue(final ThreadContext context, IRubyObject value) {
@@ -417,8 +413,13 @@ public class RubyRange extends RubyObject {
     }
 
     @JRubyMethod(name = "exclude_end?")
+    public RubyBoolean exclude_end_p(ThreadContext context) {
+        return asBoolean(context, isExclusive);
+    }
+
+    @Deprecated
     public RubyBoolean exclude_end_p() {
-        return getRuntime().newBoolean(isExclusive);
+        return exclude_end_p(getRuntime().getCurrentContext());
     }
     
     @JRubyMethod(name = "eql?")
@@ -437,7 +438,7 @@ public class RubyRange extends RubyObject {
 
         RubyRange otherRange = (RubyRange) other;
 
-        return RubyBoolean.newBoolean(context, isExclusive == otherRange.isExclusive &&
+        return asBoolean(context, isExclusive == otherRange.isExclusive &&
                 invokedynamic(context, this.begin, equalityCheck, otherRange.begin).isTrue() &&
                 invokedynamic(context, this.end, equalityCheck, otherRange.end).isTrue());
     }
@@ -1006,7 +1007,7 @@ public class RubyRange extends RubyObject {
         if (iterable
                 || !TypeConverter.convertToTypeWithCheck(context, begin, runtime.getInteger(), to_int_checked).isNil()
                 || !TypeConverter.convertToTypeWithCheck(context, end, runtime.getInteger(), to_int_checked).isNil()) {
-            return RubyBoolean.newBoolean(context, rangeIncludes(context, val));
+            return asBoolean(context, rangeIncludes(context, val));
         } else if ((begin instanceof RubyString) || (end instanceof RubyString)) {
             if ((begin instanceof RubyString) && (end instanceof RubyString)) {
                 if (useStringCover) {
@@ -1047,16 +1048,16 @@ public class RubyRange extends RubyObject {
     public IRubyObject eqq_p(ThreadContext context, IRubyObject obj) {
         IRubyObject result = includeCommon(context, obj, true);
         if (result != UNDEF) return result;
-        return RubyBoolean.newBoolean(context, rangeIncludes(context, obj));
+        return asBoolean(context, rangeIncludes(context, obj));
     }
 
     @JRubyMethod(name = "cover?")
     public RubyBoolean cover_p(ThreadContext context, IRubyObject obj) {
         if (obj instanceof RubyRange) {
-            return RubyBoolean.newBoolean(context, coverRange(context, (RubyRange) obj));
+            return asBoolean(context, coverRange(context, (RubyRange) obj));
         }
 
-        return RubyBoolean.newBoolean(context, rangeIncludes(context, obj));
+        return asBoolean(context, rangeIncludes(context, obj));
     }
 
     // MRI: r_cover_p
@@ -1475,7 +1476,7 @@ public class RubyRange extends RubyObject {
                 longBits = Double.doubleToLongBits(((RubyFloat) flote).getDoubleValue());
             }
 
-            return context.runtime.newFixnum(longBits);
+            return asFixnum(context, longBits);
         }
 
         @JRubyMethod(meta = true)

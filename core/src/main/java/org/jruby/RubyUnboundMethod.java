@@ -42,6 +42,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.util.RubyStringBuilder.str;
 
 /**
@@ -93,7 +95,7 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
     @Override
     @JRubyMethod(name = "==")
     public RubyBoolean op_equal(ThreadContext context, IRubyObject other) {
-        return RubyBoolean.newBoolean(context,  equals(other) );
+        return asBoolean(context,  equals(other) );
     }
 
     @Override
@@ -109,7 +111,7 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
 
     @JRubyMethod
     public RubyFixnum hash(ThreadContext context) {
-        return context.runtime.newFixnum(hashCode());
+        return asFixnum(context, hashCode());
     }
 
     @Override

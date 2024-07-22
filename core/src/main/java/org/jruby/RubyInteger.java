@@ -129,12 +129,12 @@ public abstract class RubyInteger extends RubyNumeric {
 
     @Override
     public IRubyObject isNegative(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, isNegative());
+        return asBoolean(context, isNegative());
     }
 
     @Override
     public IRubyObject isPositive(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, isPositive());
+        return asBoolean(context, isPositive());
     }
 
     @Override
@@ -989,17 +989,17 @@ public abstract class RubyInteger extends RubyNumeric {
             if (beg.isNil()) {
                 if (!negativeInt(context, end)) {
                     if (!isExclusive) {
-                        end = ((RubyInteger) end).op_plus(context, context.runtime.newFixnum(1));
+                        end = ((RubyInteger) end).op_plus(context, asFixnum(context, 1));
                     }
 
                     RubyInteger mask = generateMask(context, end);
                     if (((RubyInteger) op_and(context, mask)).isZero()) {
-                        return context.runtime.newFixnum(0);
+                        return asFixnum(context, 0);
                     } else {
                         throw context.runtime.newArgumentError("The beginless range for Integer#[] results in infinity");
                     }
                 } else {
-                    return context.runtime.newFixnum(0);
+                    return asFixnum(context, 0);
                 }
             }
             beg = beg.convertToInteger();
@@ -1008,13 +1008,13 @@ public abstract class RubyInteger extends RubyNumeric {
             if (!end.isNil() && cmp < 0) {
                 IRubyObject length = ((RubyInteger) end).op_minus(context, beg);
                 if (!isExclusive) {
-                    length = ((RubyInteger) length).op_plus(context, context.runtime.newFixnum(1));
+                    length = ((RubyInteger) length).op_plus(context, asFixnum(context, 1));
                 }
                 RubyInteger mask = generateMask(context, length);
                 num = (((RubyInteger) num).op_and(context, mask));
                 return num;
             } else if (cmp == 0) {
-                if (isExclusive) return context.runtime.newFixnum(0);
+                if (isExclusive) return asFixnum(context, 0);
                 index = beg;
             } else {
                 return num;
@@ -1043,7 +1043,7 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     RubyInteger generateMask(ThreadContext context, IRubyObject length) {
-        RubyFixnum one = context.runtime.newFixnum(1);
+        RubyFixnum one = asFixnum(context, 1);
         return (RubyInteger) ((RubyInteger) one.op_lshift(context, length)).op_minus(context, one);
     }
 

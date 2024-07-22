@@ -35,6 +35,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.RubyStringBuilder;
 
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.javasupport.JavaUtil.convertJavaToUsableRubyObject;
 import static org.jruby.javasupport.JavaUtil.unwrapJavaObject;
 import static org.jruby.util.Inspector.*;
@@ -62,7 +64,7 @@ public abstract class JavaUtilRegex {
         @JRubyMethod(name = "=~")
         public static IRubyObject op_match(final ThreadContext context, final IRubyObject self, IRubyObject str) {
             final java.util.regex.Matcher matcher = matcher(self, str);
-            return matcher.find() ? context.runtime.newFixnum(matcher.start()) : context.nil;
+            return matcher.find() ? asFixnum(context, matcher.start()) : context.nil;
         }
 
         @JRubyMethod(name = "match")
@@ -76,14 +78,13 @@ public abstract class JavaUtilRegex {
 
         @JRubyMethod(name = "===")
         public static IRubyObject eqq(final ThreadContext context, final IRubyObject self, IRubyObject str) {
-            return RubyBoolean.newBoolean(context,  matcher(self, str).find() );
+            return asBoolean(context,  matcher(self, str).find() );
         }
 
         @JRubyMethod(name = "casefold?")
         public static IRubyObject casefold_p(final ThreadContext context, final IRubyObject self) {
             final java.util.regex.Pattern regex = unwrapJavaObject(self);
-            boolean i = ( regex.flags() & java.util.regex.Pattern.CASE_INSENSITIVE ) != 0;
-            return RubyBoolean.newBoolean(context, i);
+            return asBoolean(context, (regex.flags() & java.util.regex.Pattern.CASE_INSENSITIVE) != 0);
         }
 
         @JRubyMethod(name = "inspect")
@@ -123,35 +124,34 @@ public abstract class JavaUtilRegex {
         @JRubyMethod
         public static IRubyObject begin(final ThreadContext context, final IRubyObject self, final IRubyObject idx) {
             final java.util.regex.Matcher matcher = unwrapJavaObject(self);
-            if ( idx instanceof RubySymbol ) {
-                return context.runtime.newFixnum( matcher.start(idx.toString()) );
-            }
+            if (idx instanceof RubySymbol) return asFixnum(context, matcher.start(idx.toString()));
+
             final int group = idx.convertToInteger().getIntValue();
-            return context.runtime.newFixnum( matcher.start(group) );
+            return asFixnum(context, matcher.start(group));
         }
 
         @JRubyMethod
         public static IRubyObject end(final ThreadContext context, final IRubyObject self, final IRubyObject idx) {
             final java.util.regex.Matcher matcher = unwrapJavaObject(self);
-            if ( idx instanceof RubySymbol ) {
-                return context.runtime.newFixnum( matcher.end(idx.toString()) );
-            }
+            if (idx instanceof RubySymbol) return asFixnum(context, matcher.end(idx.toString()));
+
             final int group = idx.convertToInteger().getIntValue();
-            return context.runtime.newFixnum(matcher.end(group));
+            return asFixnum(context, matcher.end(group));
         }
 
         @JRubyMethod
         public static IRubyObject offset(final ThreadContext context, final IRubyObject self, final IRubyObject idx) {
             final java.util.regex.Matcher matcher = unwrapJavaObject(self);
-            final IRubyObject beg; final IRubyObject end;
-            if ( idx instanceof RubySymbol ) {
-                beg = context.runtime.newFixnum( matcher.start(idx.toString()) );
-                end = context.runtime.newFixnum( matcher.end(idx.toString()) );
-            }
-            else {
+            final IRubyObject beg;
+            final IRubyObject end;
+
+            if (idx instanceof RubySymbol) {
+                beg = asFixnum(context, matcher.start(idx.toString()));
+                end = asFixnum(context, matcher.end(idx.toString()));
+            } else {
                 final int group = idx.convertToInteger().getIntValue();
-                beg = context.runtime.newFixnum( matcher.start(group) );
-                end = context.runtime.newFixnum( matcher.end(group) );
+                beg = asFixnum(context, matcher.start(group));
+                end = asFixnum(context, matcher.end(group));
             }
             return RubyArray.newArray(context.runtime, beg, end);
         }
@@ -159,7 +159,7 @@ public abstract class JavaUtilRegex {
         @JRubyMethod(name = { "length", "size" })
         public static RubyFixnum size(final ThreadContext context, final IRubyObject self) {
             final java.util.regex.Matcher matcher = unwrapJavaObject(self);
-            return context.runtime.newFixnum(matcher.groupCount() + 1); // the Ruby way!
+            return asFixnum(context, matcher.groupCount() + 1); // the Ruby way!
         }
 
         @JRubyMethod

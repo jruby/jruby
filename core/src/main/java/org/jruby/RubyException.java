@@ -58,6 +58,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.List;
 
+import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -383,11 +384,10 @@ public class RubyException extends RubyObject {
     public RubyBoolean op_equal(ThreadContext context, IRubyObject other) {
         if (this == other) return context.tru;
 
-        boolean equal = context.runtime.getException().isInstance(other) &&
+        return asBoolean(context, context.runtime.getException().isInstance(other) &&
                 getMetaClass().getRealClass() == other.getMetaClass().getRealClass() &&
                 callMethod(context, "message").equals(other.callMethod(context, "message")) &&
-                callMethod(context, "backtrace").equals(other.callMethod(context, "backtrace"));
-        return RubyBoolean.newBoolean(context, equal);
+                callMethod(context, "backtrace").equals(other.callMethod(context, "backtrace")));
     }
 
     @JRubyMethod(name = "cause")

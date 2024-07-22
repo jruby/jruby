@@ -62,6 +62,7 @@ import org.jruby.util.ConvertDouble;
 import org.jruby.util.Numeric;
 import org.jruby.util.Sprintf;
 
+import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.Numeric.f_abs;
 import static org.jruby.util.Numeric.f_add;
@@ -208,13 +209,13 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @Override
     @JRubyMethod(name = "negative?")
     public IRubyObject isNegative(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, isNegative());
+        return asBoolean(context, isNegative());
     }
 
     @Override
     @JRubyMethod(name = "positive?")
     public IRubyObject isPositive(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, isPositive());
+        return asBoolean(context, isPositive());
     }
 
     @Override
@@ -496,7 +497,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         switch (other.getMetaClass().getClassIndex()) {
         case INTEGER:
         case FLOAT:
-            return RubyBoolean.newBoolean(context, value == ((RubyNumeric) other).getDoubleValue());
+            return asBoolean(context, value == ((RubyNumeric) other).getDoubleValue());
         default:
             // Numeric.equal
             return super.op_num_equal(context, other);
@@ -507,14 +508,14 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         if (Double.isNaN(value)) {
             return context.fals;
         }
-        return RubyBoolean.newBoolean(context, value == other);
+        return asBoolean(context, value == other);
     }
 
     public IRubyObject op_not_equal(ThreadContext context, double other) {
         if (Double.isNaN(value)) {
             return context.tru;
         }
-        return RubyBoolean.newBoolean(context, value != other);
+        return asBoolean(context, value != other);
     }
 
     public boolean fastEqual(RubyFloat other) {
@@ -581,14 +582,14 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         case INTEGER:
         case FLOAT:
             double b = ((RubyNumeric) other).getDoubleValue();
-            return RubyBoolean.newBoolean(context, !Double.isNaN(b) && value > b);
+            return asBoolean(context, !Double.isNaN(b) && value > b);
         default:
             return coerceRelOp(context, sites(context).op_gt, other);
         }
     }
 
     public IRubyObject op_gt(ThreadContext context, double other) {
-        return RubyBoolean.newBoolean(context, !Double.isNaN(other) && value > other);
+        return asBoolean(context, !Double.isNaN(other) && value > other);
     }
 
     /** flo_ge
@@ -600,14 +601,14 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         case INTEGER:
         case FLOAT:
             double b = ((RubyNumeric) other).getDoubleValue();
-            return RubyBoolean.newBoolean(context, !Double.isNaN(b) && value >= b);
+            return asBoolean(context, !Double.isNaN(b) && value >= b);
         default:
             return coerceRelOp(context, sites(context).op_ge, other);
         }
     }
 
     public IRubyObject op_ge(ThreadContext context, double other) {
-        return RubyBoolean.newBoolean(context, !Double.isNaN(other) && value >= other);
+        return asBoolean(context, !Double.isNaN(other) && value >= other);
     }
 
     /** flo_lt
@@ -619,14 +620,14 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         case INTEGER:
         case FLOAT:
             double b = ((RubyNumeric) other).getDoubleValue();
-            return RubyBoolean.newBoolean(context, !Double.isNaN(b) && value < b);
+            return asBoolean(context, !Double.isNaN(b) && value < b);
         default:
             return coerceRelOp(context, sites(context).op_lt, other);
 		}
     }
 
     public IRubyObject op_lt(ThreadContext context, double other) {
-        return RubyBoolean.newBoolean(context, !Double.isNaN(other) && value < other);
+        return asBoolean(context, !Double.isNaN(other) && value < other);
     }
 
     /** flo_le
@@ -638,14 +639,14 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         case INTEGER:
         case FLOAT:
             double b = ((RubyNumeric) other).getDoubleValue();
-            return RubyBoolean.newBoolean(context, !Double.isNaN(b) && value <= b);
+            return asBoolean(context, !Double.isNaN(b) && value <= b);
         default:
             return coerceRelOp(context, sites(context).op_le, other);
 		}
 	}
 
     public IRubyObject op_le(ThreadContext context, double other) {
-        return RubyBoolean.newBoolean(context, !Double.isNaN(other) && value <= other);
+        return asBoolean(context, !Double.isNaN(other) && value <= other);
 	}
 
     /** flo_eql
@@ -733,7 +734,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @JRubyMethod(name = "zero?")
     @Override
     public IRubyObject zero_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, value == 0.0);
+        return asBoolean(context, value == 0.0);
     }
 
     @Override
@@ -1166,8 +1167,13 @@ public class RubyFloat extends RubyNumeric implements Appendable {
      *
      */
     @JRubyMethod(name = "nan?")
+    public IRubyObject nan_p(ThreadContext context) {
+        return asBoolean(context, isNaN());
+    }
+
+    @Deprecated
     public IRubyObject nan_p() {
-        return RubyBoolean.newBoolean(metaClass.runtime, isNaN());
+        return nan_p(getRuntime().getCurrentContext());
     }
 
     public boolean isNaN() {
@@ -1290,7 +1296,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     public IRubyObject equal_p(ThreadContext context, IRubyObject obj) {
         // if flonum, simlulate identity
         if (flonumable(value)) {
-            return RubyBoolean.newBoolean(context, this == obj || eql(obj));
+            return asBoolean(context, this == obj || eql(obj));
         } else {
             return super.equal_p(context, obj);
         }

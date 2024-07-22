@@ -13,8 +13,7 @@ import org.jruby.util.TypeConverter;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
-import static org.jruby.api.Convert.checkToInteger;
-import static org.jruby.api.Convert.numericToLong;
+import static org.jruby.api.Convert.*;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.TypeConverter.toFloat;
 
@@ -523,7 +522,7 @@ public class RubyRandomBase extends RubyObject {
         RubyRandom.RandomType rnd = tryGetRandomType(context, obj);
 
         if (rnd == null) {
-            RubyInteger v = Helpers.invokePublic(context, obj, "rand", context.runtime.newFixnum(limit + 1)).convertToInteger();
+            RubyInteger v = Helpers.invokePublic(context, obj, "rand", asFixnum(context, limit + 1)).convertToInteger();
             long r = numericToLong(context, v);
             if (r < 0) throw context.runtime.newRangeError("random number too small " + r);
             if (r > limit) throw context.runtime.newRangeError("random number too big " + r);

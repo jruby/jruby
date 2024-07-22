@@ -6,6 +6,8 @@ import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.runtime.ThreadContext;
 
+import static org.jruby.api.Convert.asBoolean;
+
 public class Boolean extends ImmutableLiteral {
     private final boolean truthy;
 
@@ -22,7 +24,7 @@ public class Boolean extends ImmutableLiteral {
 
     @Override
     public Object createCacheObject(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, isTrue());
+        return asBoolean(context, isTrue());
     }
 
     public boolean isTrue()  {

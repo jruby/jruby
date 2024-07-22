@@ -45,6 +45,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
 
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
+
 /**
  *
  * @author  jpetersen
@@ -189,7 +192,7 @@ public class RubyNil extends RubyObject implements Constantizable {
      */
     @JRubyMethod(name = "|")
     public static RubyBoolean op_or(ThreadContext context, IRubyObject recv, IRubyObject obj) {
-        return RubyBoolean.newBoolean(context, obj.isTrue());
+        return asBoolean(context, obj.isTrue());
     }
     
     /** nil_xor
@@ -197,7 +200,7 @@ public class RubyNil extends RubyObject implements Constantizable {
      */
     @JRubyMethod(name = "^")
     public static RubyBoolean op_xor(ThreadContext context, IRubyObject recv, IRubyObject obj) {
-        return RubyBoolean.newBoolean(context, obj.isTrue());
+        return asBoolean(context, obj.isTrue());
     }
 
     @Override
@@ -213,7 +216,7 @@ public class RubyNil extends RubyObject implements Constantizable {
 
     @JRubyMethod
     public RubyFixnum hash(ThreadContext context) {
-        return context.runtime.newFixnum(hashCode());
+        return asFixnum(context, hashCode());
     }
 
     @Override

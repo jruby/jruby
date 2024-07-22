@@ -57,6 +57,8 @@ import org.jruby.util.io.EncodingUtils;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
@@ -361,16 +363,15 @@ public class RubyConverter extends RubyObject {
 
     @JRubyMethod
     public IRubyObject convert(ThreadContext context, IRubyObject srcBuffer) {
-        Ruby runtime = context.runtime;
         RubyString orig = srcBuffer.convertToString();
         IRubyObject dest;
 
         IRubyObject[] newArgs = {
                 orig.dup(),
-                dest = runtime.newString(),
+                dest = context.runtime.newString(),
                 context.nil,
                 context.nil,
-                runtime.newFixnum(EConvFlags.PARTIAL_INPUT)
+                asFixnum(context, EConvFlags.PARTIAL_INPUT)
         };
 
         IRubyObject ret = primitive_convert(context, newArgs);
@@ -382,15 +383,15 @@ public class RubyConverter extends RubyObject {
             if (retStr.equals(EConvResult.InvalidByteSequence.symbolicName()) ||
                     retStr.equals(EConvResult.UndefinedConversion.symbolicName()) ||
                     retStr.equals(EConvResult.IncompleteInput.symbolicName())) {
-                throw EncodingUtils.makeEconvException(runtime, ec);
+                throw EncodingUtils.makeEconvException(context.runtime, ec);
             }
 
             if (retStr.equals(EConvResult.Finished.symbolicName())) {
-                throw runtime.newArgumentError("converter already finished");
+                throw context.runtime.newArgumentError("converter already finished");
             }
 
             if (!retStr.equals(EConvResult.SourceBufferEmpty.symbolicName())) {
-                throw runtime.newRuntimeError("bug: unexpected result of primitive_convert: " + retSym);
+                throw context.runtime.newRuntimeError("bug: unexpected result of primitive_convert: " + retSym);
             }
         }
 
@@ -399,15 +400,14 @@ public class RubyConverter extends RubyObject {
     
     @JRubyMethod
     public IRubyObject finish(ThreadContext context) {
-        Ruby runtime = context.runtime;
         IRubyObject dest;
 
         IRubyObject[] newArgs = {
                 context.nil,
-                dest = runtime.newString(),
+                dest = context.runtime.newString(),
                 context.nil,
                 context.nil,
-                runtime.newFixnum(0)
+                asFixnum(context, 0)
         };
 
         IRubyObject ret = primitive_convert(context, newArgs);
@@ -419,11 +419,11 @@ public class RubyConverter extends RubyObject {
             if (retStr.equals(EConvResult.InvalidByteSequence.symbolicName()) ||
                     retStr.equals(EConvResult.UndefinedConversion.symbolicName()) ||
                     retStr.equals(EConvResult.IncompleteInput.symbolicName())) {
-                throw EncodingUtils.makeEconvException(runtime, ec);
+                throw EncodingUtils.makeEconvException(context.runtime, ec);
             }
 
             if (!retStr.equals(EConvResult.Finished.symbolicName())) {
-                throw runtime.newRuntimeError("bug: unexpected result of primitive_convert");
+                throw context.runtime.newRuntimeError("bug: unexpected result of primitive_convert");
             }
         }
 
@@ -636,15 +636,12 @@ public class RubyConverter extends RubyObject {
     // econv_equal
     @JRubyMethod(name = "==")
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
-        EConv ec1 = ec;
-        EConv ec2;
-        int i;
-
         if (!(other instanceof RubyConverter)) return context.nil;
 
-        ec2 = ((RubyConverter)other).ec;
+        EConv ec1 = ec;
+        EConv ec2 = ((RubyConverter)other).ec;
 
-        return RubyBoolean.newBoolean(context, ec1.equals(ec2));
+        return asBoolean(context, ec1.equals(ec2));
     }
     
     public static class EncodingErrorMethods {

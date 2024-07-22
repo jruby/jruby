@@ -93,8 +93,7 @@ import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyEnumerator.enumWithSize;
-import static org.jruby.api.Convert.checkInt;
-import static org.jruby.api.Convert.numericToLong;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.addBufferLength;
 import static org.jruby.runtime.Helpers.arrayOf;
@@ -1421,8 +1420,13 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      *
      */
     @JRubyMethod(name = "length", alias = "size")
+    public RubyFixnum length(ThreadContext context) {
+        return asFixnum(context, realLength);
+    }
+
+    @Deprecated
     public RubyFixnum length() {
-        return metaClass.runtime.newFixnum(realLength);
+        return length(getCurrentContext());
     }
 
     /**
@@ -1431,7 +1435,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
      */
     protected static IRubyObject size(ThreadContext context, RubyArray self, IRubyObject[] args) {
-        return self.length();
+        return self.length(context);
     }
 
     /** rb_ary_push - specialized rb_ary_store
@@ -1601,7 +1605,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     @JRubyMethod(name = "include?")
     public RubyBoolean include_p(ThreadContext context, IRubyObject item) {
-        return RubyBoolean.newBoolean(context, includes(context, item));
+        return asBoolean(context, includes(context, item));
     }
 
     /** rb_ary_frozen_p
@@ -1610,7 +1614,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     @JRubyMethod(name = "frozen?")
     @Override
     public RubyBoolean frozen_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, isFrozen() || (flags & TMPLOCK_ARR_F) != 0);
+        return asBoolean(context, isFrozen() || (flags & TMPLOCK_ARR_F) != 0);
     }
 
     /**
@@ -1991,12 +1995,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      *
      */
     public IRubyObject eachIndex(ThreadContext context, Block block) {
-        Ruby runtime = context.runtime;
-        if (!block.isGiven()) {
-            throw runtime.newLocalJumpErrorNoBlock();
-        }
+        if (!block.isGiven()) throw context.runtime.newLocalJumpErrorNoBlock();
+
         for (int i = 0; i < realLength; i++) {
-            block.yield(context, runtime.newFixnum(i));
+            block.yield(context, asFixnum(context, i));
         }
         return this;
     }
@@ -2474,7 +2476,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
         final Ruby runtime = context.runtime;
         for (int i = beg; i < end; i++) {
-            IRubyObject v = block.yield(context, runtime.newFixnum(i));
+            IRubyObject v = block.yield(context, asFixnum(context, i));
             if (i >= realLength) break;
             safeArraySet(runtime, values, begin + i, v);
         }
@@ -2486,10 +2488,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      *
      */
     public IRubyObject index(ThreadContext context, IRubyObject obj) {
-        Ruby runtime = context.runtime;
-
         for (int i = 0; i < realLength; i++) {
-            if (equalInternal(context, eltOk(i), obj)) return runtime.newFixnum(i);
+            if (equalInternal(context, eltOk(i), obj)) return asFixnum(context, i);
         }
 
         return context.nil;
@@ -2503,11 +2503,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     @JRubyMethod(name = {"index", "find_index"})
     public IRubyObject index(ThreadContext context, Block block) {
-        Ruby runtime = context.runtime;
-        if (!block.isGiven()) return enumeratorize(runtime, this, "index");
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, "index");
 
         for (int i = 0; i < realLength; i++) {
-            if (block.yield(context, eltOk(i)).isTrue()) return runtime.newFixnum(i);
+            if (block.yield(context, eltOk(i)).isTrue()) return asFixnum(context, i);
         }
 
         return context.nil;
@@ -2588,7 +2587,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     public IRubyObject rindex(ThreadContext context, IRubyObject obj) {
         unpack();
         
-        Ruby runtime = context.runtime;
         int i = realLength;
 
         while (i-- > 0) {
@@ -2596,10 +2594,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                 i = realLength;
                 continue;
             }
-            if (equalInternal(context, eltOk(i), obj)) return runtime.newFixnum(i);
+            if (equalInternal(context, eltOk(i), obj)) return asFixnum(context, i);
         }
 
-        return runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod
@@ -2610,8 +2608,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     @JRubyMethod
     public IRubyObject rindex(ThreadContext context, Block block) {
-        Ruby runtime = context.runtime;
-        if (!block.isGiven()) return enumeratorize(runtime, this, "rindex");
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, "rindex");
 
         int i = realLength;
 
@@ -2620,10 +2617,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                 i = realLength;
                 continue;
             }
-            if (block.yield(context, eltOk(i)).isTrue()) return runtime.newFixnum(i);
+            if (block.yield(context, eltOk(i)).isTrue()) return asFixnum(context, i);
         }
 
-        return runtime.getNil();
+        return context.nil;
     }
 
     @Deprecated
@@ -3468,14 +3465,19 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      *
      */
     @JRubyMethod(name = "nitems")
-    public IRubyObject nitems() {
+    public IRubyObject nitems(ThreadContext context) {
         int n = 0;
 
         for (int i = 0; i < realLength; i++) {
             if (!eltOk(i).isNil()) n++;
         }
 
-        return metaClass.runtime.newFixnum(n);
+        return asFixnum(context, n);
+    }
+
+    @Deprecated
+    public IRubyObject nitems() {
+        return nitems(getCurrentContext());
     }
 
     /** rb_ary_plus
@@ -4186,7 +4188,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             return RubyFixnum.zero(runtime);
         }
 
-        RubyFixnum length = self.length();
+        RubyFixnum length = self.length(context);
         return sites(context).op_times.call(context, length, length, RubyFixnum.newFixnum(runtime, multiple));
     }
 
@@ -4465,16 +4467,13 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
      */
     private static IRubyObject repeatedPermutationSize(ThreadContext context, RubyArray self, IRubyObject[] args) {
-        RubyFixnum n = self.length();
+        RubyFixnum n = self.length(context);
         assert args != null && args.length > 0 && args[0] instanceof RubyNumeric; // #repeated_permutation ensures arg[0] is numeric
         long k = ((RubyNumeric) args[0]).getLongValue();
 
-        Ruby runtime = context.runtime;
-        if (k < 0) {
-            return RubyFixnum.zero(runtime);
-        }
+        if (k < 0) return RubyFixnum.zero(context.runtime);
 
-        RubyFixnum v = RubyFixnum.newFixnum(runtime, k);
+        RubyFixnum v = asFixnum(context, k);
         return sites(context).op_exp.call(context, n, n, v);
     }
 
@@ -5229,7 +5228,7 @@ float_loop:
         if (!self_each.isBuiltin(this)) return RubyEnumerable.find_indexCommon(context, self_each, this, block, Signature.OPTIONAL);
 
         for (int i = 0; i < realLength; i++) {
-            if (block.yield(context, eltOk(i)).isTrue()) return context.runtime.newFixnum(i);
+            if (block.yield(context, eltOk(i)).isTrue()) return asFixnum(context, i);
         }
 
         return context.nil;
@@ -5240,7 +5239,7 @@ float_loop:
         if (!self_each.isBuiltin(this)) return RubyEnumerable.find_indexCommon(context, self_each, this, cond);
 
         for (int i = 0; i < realLength; i++) {
-            if (eltOk(i).equals(cond)) return context.runtime.newFixnum(i);
+            if (eltOk(i).equals(cond)) return asFixnum(context, i);
         }
 
         return context.nil;

@@ -47,6 +47,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.lexer.LexingCommon.*;
 
 public class RubyRipper extends RubyObject {
@@ -299,7 +301,7 @@ public class RubyRipper extends RubyObject {
             
         if (!parseStarted) return context.nil;
         
-        return context.runtime.newFixnum(parser.getColumn());
+        return asFixnum(context, parser.getColumn());
     }
 
     @JRubyMethod
@@ -309,12 +311,12 @@ public class RubyRipper extends RubyObject {
 
     @JRubyMethod(name = "end_seen?")
     public IRubyObject end_seen_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, parser.isEndSeen());
+        return asBoolean(context, parser.isEndSeen());
     }
 
     @JRubyMethod(name = "error?")
     public IRubyObject error_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, parser.isError());
+        return asBoolean(context, parser.isError());
     }
     @JRubyMethod
     public IRubyObject filename(ThreadContext context) {
@@ -327,14 +329,14 @@ public class RubyRipper extends RubyObject {
         
         if (!parseStarted) return context.nil;
             
-        return context.runtime.newFixnum(parser.getLineno());
+        return asFixnum(context, parser.getLineno());
     }
 
     @JRubyMethod
     public IRubyObject state(ThreadContext context) {
         int state = parser.getState();
 
-        return state == 0 ? context.nil : context.runtime.newFixnum(parser.getState());
+        return state == 0 ? context.nil : asFixnum(context, state);
     }
 
     @JRubyMethod
@@ -358,7 +360,7 @@ public class RubyRipper extends RubyObject {
 
     @JRubyMethod
     public IRubyObject yydebug(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, parser.getYYDebug());
+        return asBoolean(context, parser.getYYDebug());
     }
     
     @JRubyMethod(name = "yydebug=")
@@ -373,7 +375,7 @@ public class RubyRipper extends RubyObject {
         int wid = _width.convertToInteger().getIntValue();
         input.modifyAndClearCodeRange();
         int col = LexingCommon.dedent_string(input.getByteList(), wid);
-        return context.runtime.newFixnum(col);
+        return asFixnum(context, col);
     }
 
     @JRubyMethod

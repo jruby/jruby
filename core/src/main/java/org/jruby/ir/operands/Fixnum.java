@@ -7,6 +7,8 @@ import org.jruby.runtime.ThreadContext;
 
 import java.math.BigInteger;
 
+import static org.jruby.api.Convert.asFixnum;
+
 /*
  * Represents a literal fixnum.
  *
@@ -46,7 +48,7 @@ public class Fixnum extends ImmutableLiteral {
 
     @Override
     public Object createCacheObject(ThreadContext context) {
-        return context.runtime.newFixnum(value);
+        return asFixnum(context, value);
     }
 
     @Override

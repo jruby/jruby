@@ -59,8 +59,7 @@ import org.jruby.util.Numeric;
 import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
 
-import static org.jruby.api.Convert.castAsFixnum;
-import static org.jruby.api.Convert.numericToLong;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -312,7 +311,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(meta = true)
     public static IRubyObject double_fig(ThreadContext context, IRubyObject recv) {
-        return context.runtime.newFixnum(VP_DOUBLE_FIG);
+        return asFixnum(context, VP_DOUBLE_FIG);
     }
 
     /**
@@ -1644,7 +1643,7 @@ public class RubyBigDecimal extends RubyNumeric {
                 case '=': {
                     if (falsyEqlCheck(context, arg)) return context.fals;
                     IRubyObject res = callCoerced(context, sites(context).op_eql, arg, false);
-                    return RubyBoolean.newBoolean(context, res != context.nil && res != context.fals);
+                    return asBoolean(context, res != context.nil && res != context.fals);
                 }
                 case '!':
                     if (falsyEqlCheck(context, arg)) return context.tru;
@@ -1666,13 +1665,13 @@ public class RubyBigDecimal extends RubyNumeric {
         e = infinitySign != 0 || rb.infinitySign != 0 ? infinitySign - rb.infinitySign : value.compareTo(rb.value);
 
         switch (op) {
-            case '*': return context.runtime.newFixnum(e);
-            case '=': return RubyBoolean.newBoolean(context, e == 0);
-            case '!': return RubyBoolean.newBoolean(context, e != 0);
-            case 'G': return RubyBoolean.newBoolean(context, e >= 0);
-            case '>': return RubyBoolean.newBoolean(context, e >  0);
-            case 'L': return RubyBoolean.newBoolean(context, e <= 0);
-            case '<': return RubyBoolean.newBoolean(context, e <  0);
+            case '*': return asFixnum(context, e);
+            case '=': return asBoolean(context, e == 0);
+            case '!': return asBoolean(context, e != 0);
+            case 'G': return asBoolean(context, e >= 0);
+            case '>': return asBoolean(context, e >  0);
+            case 'L': return asBoolean(context, e <= 0);
+            case '<': return asBoolean(context, e <  0);
         }
         return context.nil;
     }
@@ -1834,8 +1833,13 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     @JRubyMethod(name = "finite?")
+    public IRubyObject finite_p(ThreadContext context) {
+        return asBoolean(context, !isNaN() && !isInfinity());
+    }
+
+    @Deprecated
     public IRubyObject finite_p() {
-        return getRuntime().newBoolean(!isNaN() && !isInfinity());
+        return finite_p(getRuntime().getCurrentContext());
     }
 
     private RubyBigDecimal floorNaNInfinityCheck(ThreadContext context) {
@@ -1874,7 +1878,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = "infinite?")
     public IRubyObject infinite_p(ThreadContext context) {
-        return infinitySign == 0 ? context.nil : context.runtime.newFixnum(infinitySign);
+        return infinitySign == 0 ? context.nil : asFixnum(context, infinitySign);
     }
 
     @JRubyMethod
@@ -1884,7 +1888,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = "nan?")
     public IRubyObject nan_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, isNaN());
+        return asBoolean(context, isNaN());
     }
 
     @Override
@@ -1900,10 +1904,9 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod
     public  IRubyObject n_significant_digits(ThreadContext context) {
-        if (value.equals(BigDecimal.ZERO)) {
-            return RubyFixnum.zero(context.runtime);
-        }
-        return context.runtime.newFixnum(value.stripTrailingZeros().precision());
+        return value.equals(BigDecimal.ZERO) ?
+                RubyFixnum.zero(context.runtime) :
+                asFixnum(context, value.stripTrailingZeros().precision());
     }
 
     @JRubyMethod
@@ -1974,8 +1977,8 @@ public class RubyBigDecimal extends RubyNumeric {
     public IRubyObject precs(ThreadContext context) {
         context.runtime.getWarnings().warn(IRubyWarnings.ID.DEPRECATED_METHOD, "BigDecimal#precs is deprecated and will be removed in the future; use BigDecimal#precision instead.");
         return RubyArray.newArray(context.runtime,
-                context.runtime.newFixnum(getSignificantDigits().length()),
-                context.runtime.newFixnum(((getAllDigits().length() / 4) + 1) * 4));
+                asFixnum(context, getSignificantDigits().length()),
+                asFixnum(context, ((getAllDigits().length() / 4) + 1) * 4));
     }
 
     @JRubyMethod(name = "round", optional = 2, checkArity = false)
@@ -2148,20 +2151,20 @@ public class RubyBigDecimal extends RubyNumeric {
         return getMetaClass().getConstant(value.signum() < 0 ? "SIGN_NEGATIVE_FINITE" : "SIGN_POSITIVE_FINITE");
     }
 
-    private RubyFixnum signValue(Ruby runtime) {
-        if (isNaN()) return RubyFixnum.zero(runtime);
-        if (isInfinity()) return runtime.newFixnum(infinitySign);
-        if (isZero()) return runtime.newFixnum(zeroSign);
+    private RubyFixnum signValue(ThreadContext context) {
+        if (isNaN()) return RubyFixnum.zero(context.runtime);
+        if (isInfinity()) return asFixnum(context, infinitySign);
+        if (isZero()) return asFixnum(context, zeroSign);
 
-        return runtime.newFixnum(value.signum());
+        return asFixnum(context, value.signum());
     }
 
     @JRubyMethod
     public RubyArray split(ThreadContext context) {
         return RubyArray.newArray(context.runtime,
-                signValue(context.runtime),
-                context.runtime.newString(splitDigits()),
-                context.runtime.newFixnum(10),
+                signValue(context),
+                Convert.asString(context, splitDigits()),
+                asFixnum(context, 10),
                 exponent());
     }
 
@@ -2485,12 +2488,12 @@ public class RubyBigDecimal extends RubyNumeric {
     @Override
     @JRubyMethod(name = "zero?")
     public IRubyObject zero_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, isZero());
+        return asBoolean(context, isZero());
     }
 
     @Deprecated
     public IRubyObject zero_p() {
-        return getRuntime().newBoolean(isZero());
+        return zero_p(getRuntime().getCurrentContext());
     }
 
     @Override

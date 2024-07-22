@@ -67,6 +67,7 @@ import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyObject.equalInternal;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.numericToLong;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.arrayOf;
@@ -1152,12 +1153,12 @@ public class RubyEnumerable {
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject[] iargs, Block block) {
-            return this.block.call(context, packEnumValues(context, iargs), context.runtime.newFixnum(index++));
+            return this.block.call(context, packEnumValues(context, iargs), asFixnum(context, index++));
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject iarg, Block block) {
-            return this.block.call(context, iarg, context.runtime.newFixnum(index++));
+            return this.block.call(context, iarg, asFixnum(context, index++));
         }
     }
 

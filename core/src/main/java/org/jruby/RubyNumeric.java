@@ -60,6 +60,8 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.Numeric.f_abs;
 import static org.jruby.util.Numeric.f_arg;
@@ -931,14 +933,14 @@ public class RubyNumeric extends RubyObject {
     */
     @JRubyMethod(name = "real?")
     public IRubyObject real_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, isReal());
+        return asBoolean(context, isReal());
     }
 
     public boolean isReal() { return true; } // only RubyComplex isn't real
 
     @Deprecated
     public IRubyObject scalar_p() {
-        return getRuntime().newBoolean(isReal());
+        return asBoolean(getRuntime().getCurrentContext(), isReal());
     }
 
     /** num_int_p
@@ -1026,7 +1028,7 @@ public class RubyNumeric extends RubyObject {
 
             if (step.isNil()) {
                 step = RubyFixnum.one(context.runtime);
-            } else if (step.op_equal(context, context.runtime.newFixnum(0)).isTrue()) {
+            } else if (step.op_equal(context, asFixnum(context, 0)).isTrue()) {
                 throw context.runtime.newArgumentError("step can't be 0");
             }
 
@@ -1269,15 +1271,13 @@ public class RubyNumeric extends RubyObject {
                 if (excl) {
                     delta--;
                 }
-                if (delta < 0) {
-                    return runtime.newFixnum(0);
-                }
+                if (delta < 0) return asFixnum(context, 0);
 
                 // overflow checking
                 long steps = delta / diff;
                 long stepSize = steps + 1;
                 if (stepSize != Long.MIN_VALUE) {
-                    return new RubyFixnum(runtime, delta / diff + 1);
+                    return asFixnum(context, delta / diff + 1);
                 } else {
                     return RubyBignum.newBignum(runtime, BigInteger.valueOf(steps).add(BigInteger.ONE));
                 }

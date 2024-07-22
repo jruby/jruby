@@ -48,6 +48,8 @@ import org.jruby.runtime.load.BasicLibraryService;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.ClasspathLauncher;
 
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.util.URLUtil.getPath;
 
 /**
@@ -74,9 +76,13 @@ public class JRubyUtilLibrary implements Library {
     }
 
     @JRubyMethod(name = { "objectspace", "object_space?" }, alias = { "objectspace?" }, module = true)
+    public static IRubyObject getObjectSpaceEnabled(ThreadContext context, IRubyObject recv) {
+        return asBoolean(context, context.runtime.isObjectSpaceEnabled());
+    }
+
+    @Deprecated
     public static IRubyObject getObjectSpaceEnabled(IRubyObject recv) {
-        final Ruby runtime = recv.getRuntime();
-        return RubyBoolean.newBoolean(runtime, runtime.isObjectSpaceEnabled());
+        return getObjectSpaceEnabled(recv.getRuntime().getCurrentContext(), recv);
     }
 
     @JRubyMethod(name = { "objectspace=", "object_space=" }, module = true)
@@ -92,7 +98,7 @@ public class JRubyUtilLibrary implements Library {
 
     @JRubyMethod(meta = true, name = "native_posix?")
     public static IRubyObject native_posix_p(ThreadContext context, IRubyObject self) {
-        return RubyBoolean.newBoolean(context, context.runtime.getPosix().isNative());
+        return asBoolean(context, context.runtime.getPosix().isNative());
     }
 
     @Deprecated
@@ -409,8 +415,8 @@ public class JRubyUtilLibrary implements Library {
         Ruby runtime = context.runtime;
 
         RubyHash stat = RubyHash.newHash(runtime);
-        stat.op_aset(context, runtime.newSymbol("method_invalidation_count"), runtime.newFixnum(runtime.getCaches().getMethodInvalidationCount()));
-        stat.op_aset(context, runtime.newSymbol("constant_invalidation_count"), runtime.newFixnum(runtime.getCaches().getConstantInvalidationCount()));
+        stat.op_aset(context, runtime.newSymbol("method_invalidation_count"), asFixnum(context, runtime.getCaches().getMethodInvalidationCount()));
+        stat.op_aset(context, runtime.newSymbol("constant_invalidation_count"), asFixnum(context, runtime.getCaches().getConstantInvalidationCount()));
 
         return stat;
     }

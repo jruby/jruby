@@ -33,8 +33,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 
-import static org.jruby.api.Convert.castAsBignum;
-import static org.jruby.api.Convert.numericToLong;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -327,7 +326,7 @@ public class RubyRandom extends RubyRandomBase {
         if (!getType().equals(obj.getType())) {
             return context.fals;
         }
-        return RubyBoolean.newBoolean(context, random.equals(((RubyRandom) obj).random));
+        return asBoolean(context, random.equals(((RubyRandom) obj).random));
     }
 
     // c: random_state

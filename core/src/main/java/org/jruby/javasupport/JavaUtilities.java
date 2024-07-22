@@ -11,6 +11,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.StringSupport;
 
 import static org.jruby.anno.FrameField.*;
+import static org.jruby.api.Convert.asBoolean;
 
 @JRubyModule(name = "JavaUtilities")
 public class JavaUtilities {
@@ -66,8 +67,7 @@ public class JavaUtilities {
 
     @JRubyMethod(name = "valid_java_identifier?", meta = true)
     public static IRubyObject valid_java_identifier_p(ThreadContext context, IRubyObject recv, IRubyObject name) {
-        final String javaName = name.convertToString().decodeString();
-        return RubyBoolean.newBoolean(context, validJavaIdentifier(javaName));
+        return asBoolean(context, validJavaIdentifier(name.convertToString().decodeString()));
     }
 
     public static boolean validJavaIdentifier(final String javaName) {

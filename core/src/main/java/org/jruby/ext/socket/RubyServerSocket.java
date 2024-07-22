@@ -51,6 +51,7 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -74,7 +75,7 @@ public class RubyServerSocket extends RubySocket {
                 IRubyWarnings.ID.LISTEN_SERVER_SOCKET,
                 "pass backlog to #bind instead of #listen (https://github.com/jruby/jruby/wiki/ServerSocket)");
 
-        return context.runtime.newFixnum(0);
+        return asFixnum(context, 0);
     }
 
     @JRubyMethod(notImplemented = true)

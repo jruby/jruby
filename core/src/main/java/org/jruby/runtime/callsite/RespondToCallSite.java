@@ -10,6 +10,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.util.TypeConverter;
 
 import static org.jruby.RubyBasicObject.getMetaClass;
+import static org.jruby.api.Convert.asBoolean;
 
 public class RespondToCallSite extends MonomorphicCallSite {
     private volatile RespondToTuple respondToTuple = RespondToTuple.NULL_CACHE;
@@ -101,7 +102,7 @@ public class RespondToCallSite extends MonomorphicCallSite {
             if (strName.equals(tuple.name) && !includePrivate == tuple.checkVisibility) return tuple.respondsToBoolean;
         }
         // go through normal call logic, which will hit overridden cacheAndCall
-        return super.call(context, caller, self, getRespondToNameSym(context), RubyBoolean.newBoolean(context, includePrivate)).isTrue();
+        return super.call(context, caller, self, getRespondToNameSym(context), asBoolean(context, includePrivate)).isTrue();
     }
 
     private RubySymbol getRespondToNameSym(ThreadContext context) {
@@ -171,6 +172,6 @@ public class RespondToCallSite extends MonomorphicCallSite {
         CacheEntry respondToLookupResult = klass.searchWithCache(newString);
         boolean respondsTo = Helpers.respondsToMethod(respondToLookupResult.method, checkVisibility);
 
-        return new RespondToTuple(newString, checkVisibility, respondToMethod, respondToLookupResult, RubyBoolean.newBoolean(context, respondsTo));
+        return new RespondToTuple(newString, checkVisibility, respondToMethod, respondToLookupResult, asBoolean(context, respondsTo));
     }
 }

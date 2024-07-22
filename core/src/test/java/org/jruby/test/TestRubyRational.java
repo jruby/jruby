@@ -31,8 +31,10 @@ import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyRational;
+import org.jruby.runtime.ThreadContext;
 import org.junit.Test;
 
+import static org.jruby.api.Convert.asFixnum;
 import static org.junit.Assert.*;
 
 public class TestRubyRational extends junit.framework.TestCase {
@@ -74,7 +76,8 @@ public class TestRubyRational extends junit.framework.TestCase {
     }
 
     private RubyRational newRational(final long num, final long den) {
-        return (RubyRational) RubyRational.newInstance(runtime.getCurrentContext(), runtime.newFixnum(num), runtime.newFixnum(den));
+        ThreadContext context = runtime.getCurrentContext();
+        return (RubyRational) RubyRational.newInstance(context, asFixnum(context, num), asFixnum(context, den));
     }
 
 }

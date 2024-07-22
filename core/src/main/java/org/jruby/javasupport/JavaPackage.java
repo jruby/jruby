@@ -46,6 +46,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ClassProvider;
 import org.jruby.util.TypeConverter;
 
+import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 /**
@@ -118,7 +119,7 @@ public class JavaPackage extends RubyModule {
     @JRubyMethod(name = "===")
     public RubyBoolean op_eqq(ThreadContext context, IRubyObject obj) {
         // maybe we could handle java.lang === java.lang.reflect as well ?
-        return RubyBoolean.newBoolean(context, obj == this || isInstance(obj));
+        return asBoolean(context, obj == this || isInstance(obj));
     }
 
     @JRubyMethod(name = "const_missing")
@@ -215,8 +216,8 @@ public class JavaPackage extends RubyModule {
         */
 
         //if ( ! (mname instanceof RubySymbol) ) mname = context.runtime.newSymbol(name);
-        //IRubyObject respond = Helpers.invoke(context, this, "respond_to_missing?", mname, RubyBoolean.newBoolean(context, includePrivate));
-        //return RubyBoolean.newBoolean(context, respond.isTrue());
+        //IRubyObject respond = Helpers.invoke(context, this, "respond_to_missing?", mname, asBoolean(context, includePrivate));
+        //return asBoolean(context, respond.isTrue());
 
         return context.nil; // NOTE: this is wrong - should be true but compatibility first, for now
     }
@@ -244,7 +245,7 @@ public class JavaPackage extends RubyModule {
     }
 
     private RubyBoolean respond_to_missing(final ThreadContext context, IRubyObject mname, final boolean includePrivate) {
-        return RubyBoolean.newBoolean(context, BlankSlateWrapper.handlesMethod(TypeConverter.checkID(mname).idString()) == null);
+        return asBoolean(context, BlankSlateWrapper.handlesMethod(TypeConverter.checkID(mname).idString()) == null);
     }
 
     @JRubyMethod(name = "method_missing")
@@ -283,14 +284,14 @@ public class JavaPackage extends RubyModule {
 
     @JRubyMethod(name = "available?")
     public IRubyObject available_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, isAvailable());
+        return asBoolean(context, isAvailable());
     }
 
     @JRubyMethod(name = "sealed?")
     public IRubyObject sealed_p(ThreadContext context) {
         final Package pkg = getPackage();
         if ( pkg == null ) return context.nil;
-        return RubyBoolean.newBoolean(context, pkg.isSealed());
+        return asBoolean(context, pkg.isSealed());
     }
 
     @Override

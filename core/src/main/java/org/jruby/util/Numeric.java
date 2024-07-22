@@ -47,6 +47,7 @@ import org.jruby.runtime.callsite.CachingCallSite;
 
 import java.math.BigInteger;
 
+import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Error.typeError;
 
 public class Numeric {
@@ -430,12 +431,12 @@ public class Numeric {
      * return non-boolean (which unless it is nil it will be isTrue()).
      *
      */
-    public static IRubyObject f_equal(ThreadContext context, IRubyObject x, IRubyObject y) {
-        if (x instanceof RubyFixnum && y instanceof RubyFixnum) {
-            return RubyBoolean.newBoolean(context, ((RubyFixnum) x).getLongValue() == ((RubyFixnum) y).getLongValue());
+    public static IRubyObject f_equal(ThreadContext context, IRubyObject a, IRubyObject b) {
+        if (a instanceof RubyFixnum x && b instanceof RubyFixnum y) {
+            return asBoolean(context, x.getLongValue() == y.getLongValue());
         }
 
-        return sites(context).op_equals.call(context, x, x, y);
+        return sites(context).op_equals.call(context, a, a, b);
     }
 
     public static IRubyObject f_equal(ThreadContext context, RubyInteger x, RubyInteger y) {

@@ -54,6 +54,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.numericToLong;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -186,8 +187,7 @@ public class RubyZlib {
     }
 
     @JRubyMethod(name = "crc32", optional = 2, checkArity = false, module = true, visibility = PRIVATE)
-    public static IRubyObject crc32(IRubyObject recv, IRubyObject[] args) {
-        ThreadContext context = recv.getRuntime().getCurrentContext();
+    public static IRubyObject crc32(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         args = Arity.scanArgs(context.runtime, args, 0, 2);
         long start = 0;
         ByteList bytes = null;
@@ -206,12 +206,16 @@ public class RubyZlib {
         if (slowPath) {
             result = JZlib.crc32_combine(start, result, bytesLength);
         }
-        return recv.getRuntime().newFixnum(result);
+        return asFixnum(context, result);
+    }
+
+    @Deprecated
+    public static IRubyObject crc32(IRubyObject recv, IRubyObject[] args) {
+        return crc32(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
 
     @JRubyMethod(name = "adler32", optional = 2, checkArity = false, module = true, visibility = PRIVATE)
-    public static IRubyObject adler32(IRubyObject recv, IRubyObject[] args) {
-        ThreadContext context = recv.getRuntime().getCurrentContext();
+    public static IRubyObject adler32(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         args = Arity.scanArgs(context.runtime, args, 0, 2);
         int start = 1;
         ByteList bytes = null;
@@ -226,7 +230,12 @@ public class RubyZlib {
         if (start != 1) {
             result = JZlib.adler32_combine(start, result, bytes.length());
         }
-        return recv.getRuntime().newFixnum(result);
+        return asFixnum(context, result);
+    }
+
+    @Deprecated
+    public static IRubyObject adler32(IRubyObject recv, IRubyObject[] args) {
+        return adler32(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
 
     @JRubyMethod(module = true)
@@ -240,42 +249,48 @@ public class RubyZlib {
     }
 
     @JRubyMethod(name = "crc_table", module = true, visibility = PRIVATE)
-    public static IRubyObject crc_table(IRubyObject recv) {
-        Ruby runtime = recv.getRuntime();
+    public static IRubyObject crc_table(ThreadContext context, IRubyObject recv) {
         int[] table = com.jcraft.jzlib.CRC32.getCRC32Table();
-        RubyArray array = runtime.newArray(table.length);
+        RubyArray array = context.runtime.newArray(table.length);
         for (int i = 0; i < table.length; i++) {
-            array.append(runtime.newFixnum(table[i] & 0xffffffffL));
+            array.append(asFixnum(context, table[i] & 0xffffffffL));
         }
         return array;
     }
 
+    @Deprecated
+    public static IRubyObject crc_table(IRubyObject recv) {
+        return crc_table(((RubyBasicObject) recv).getCurrentContext(), recv);
+    }
+
     @JRubyMethod(name = "crc32_combine", module = true, visibility = PRIVATE)
-    public static IRubyObject crc32_combine(IRubyObject recv,
-                                            IRubyObject arg0,
-                                            IRubyObject arg1,
-                                            IRubyObject arg2) {
-        ThreadContext context = recv.getRuntime().getCurrentContext();
+    public static IRubyObject crc32_combine(ThreadContext context, IRubyObject recv,
+                                            IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         long crc1 = numericToLong(context, arg0);
         long crc2 = numericToLong(context, arg1);
         long len2 = numericToLong(context, arg2);
 
-        long crc3 = com.jcraft.jzlib.JZlib.crc32_combine(crc1, crc2, len2);
-        return recv.getRuntime().newFixnum(crc3);
+        return asFixnum(context, com.jcraft.jzlib.JZlib.crc32_combine(crc1, crc2, len2));
+    }
+
+    @Deprecated
+    public static IRubyObject crc32_combine(IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        return crc32_combine(((RubyBasicObject) recv).getCurrentContext(), recv, arg0, arg1, arg2);
     }
 
     @JRubyMethod(name = "adler32_combine", module = true, visibility = PRIVATE)
-    public static IRubyObject adler32_combine(IRubyObject recv,
-                                            IRubyObject arg0,
-                                            IRubyObject arg1,
-                                            IRubyObject arg2) {
-        ThreadContext context = recv.getRuntime().getCurrentContext();
+    public static IRubyObject adler32_combine(ThreadContext context, IRubyObject recv,
+                                              IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         long adler1 = numericToLong(context, arg0);
         long adler2 = numericToLong(context, arg1);
         long len2 = numericToLong(context, arg2);
 
-        long adler3 = com.jcraft.jzlib.JZlib.adler32_combine(adler1, adler2, len2);
-        return recv.getRuntime().newFixnum(adler3);
+        return asFixnum(context, com.jcraft.jzlib.JZlib.adler32_combine(adler1, adler2, len2));
+    }
+
+    @Deprecated
+    public static IRubyObject adler32_combine(IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        return adler32_combine(((RubyBasicObject) recv).getCurrentContext(), recv, arg0, arg1, arg2);
     }
 
     static RaiseException newZlibError(Ruby runtime, String message) {

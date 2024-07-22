@@ -89,7 +89,7 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.Type;
 
-import static org.jruby.api.Convert.castAsModule;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ir.operands.UndefinedValue.UNDEFINED;
 import static org.jruby.runtime.Block.Type.LAMBDA;
@@ -451,7 +451,7 @@ public class IRRuntimeHelpers {
         boolean ret = IRRuntimeHelpers.isRubyExceptionHandled(context, excType, excObj)
             || IRRuntimeHelpers.isJavaExceptionHandled(context, excType, excObj, false);
 
-        return RubyBoolean.newBoolean(context, ret);
+        return asBoolean(context, ret);
     }
 
     // partially: vm_insnhelper.c - vm_check_match + check_match
@@ -1257,7 +1257,7 @@ public class IRRuntimeHelpers {
     public static RubyBoolean isBlockGiven(ThreadContext context, Object blk) {
         if (blk instanceof RubyProc) blk = ((RubyProc) blk).getBlock();
         if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
-        return RubyBoolean.newBoolean(context,  ((Block) blk).isGiven() );
+        return asBoolean(context,  ((Block) blk).isGiven() );
     }
 
     @JIT @Interp
@@ -2111,7 +2111,7 @@ public class IRRuntimeHelpers {
     }
 
     public static IRubyObject irNot(ThreadContext context, IRubyObject obj) {
-        return RubyBoolean.newBoolean(context, !(obj.isTrue()));
+        return asBoolean(context, !(obj.isTrue()));
     }
 
     @JIT
@@ -2179,7 +2179,7 @@ public class IRRuntimeHelpers {
             currScope = currScope.getEnclosingScope();
             i++;
         }
-        return context.runtime.newFixnum(i);
+        return asFixnum(context, i);
     }
 
     public static IRubyObject[] toAry(ThreadContext context, IRubyObject[] args) {

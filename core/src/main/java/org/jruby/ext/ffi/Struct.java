@@ -11,6 +11,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 
+import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.castAsClass;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.*;
@@ -330,7 +331,7 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
 
     @JRubyMethod(name="null?")
     public IRubyObject null_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, getMemory().getMemoryIO().isNull());
+        return asBoolean(context, getMemory().getMemoryIO().isNull());
     }
 
     @JRubyMethod(name = "order")
