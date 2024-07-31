@@ -146,8 +146,29 @@ public class EncodingUtils {
         return runtime.getEncodingService().getAscii8bitEncoding();
     }
 
-    public static API.ModeAndPermission vmodeVperm(IRubyObject vmode, IRubyObject vperm) {
+    @Deprecated
+    public static Object vmodeVperm(IRubyObject vmode, IRubyObject vperm) {
         return new API.ModeAndPermission(vmode, vperm);
+    }
+
+    @Deprecated
+    public static IRubyObject vmode(Object vmodeVperm) {
+        return ((API.ModeAndPermission) vmodeVperm).mode;
+    }
+
+    @Deprecated
+    public static void vmode(Object vmodeVperm, IRubyObject vmode) {
+        ((API.ModeAndPermission) vmodeVperm).mode = vmode;
+    }
+
+    @Deprecated
+    public static IRubyObject vperm(Object vmodeVperm) {
+        return ((API.ModeAndPermission) vmodeVperm).permission;
+    }
+
+    @Deprecated
+    public static void vperm(Object vmodeVperm, IRubyObject vperm) {
+        ((API.ModeAndPermission) vmodeVperm).permission = vperm;
     }
 
     public static IRubyObject vmode(API.ModeAndPermission vmodeVperm) {
@@ -180,6 +201,12 @@ public class EncodingUtils {
             return ecflags | EConvFlags.UNIVERSAL_NEWLINE_DECORATOR;
         }
         return ecflags;
+    }
+
+    @Deprecated
+    public static void extractModeEncoding(ThreadContext context,
+                                           IOEncodable ioEncodable, Object vmodeAndVperm_p, IRubyObject options, int[] oflags_p, int[] fmode_p) {
+        extractModeEncoding(context, ioEncodable, (API.ModeAndPermission) vmodeAndVperm_p, options, oflags_p, fmode_p);
     }
 
     /*

@@ -1461,7 +1461,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     protected IRubyObject openFile(ThreadContext context, IRubyObject args[]) {
         Ruby runtime = context.runtime;
 
-        API.ModeAndPermission pm = EncodingUtils.vmodeVperm(null, null);
+        API.ModeAndPermission pm = new API.ModeAndPermission(null, null);
         IRubyObject options = context.nil;
 
         switch(args.length) {

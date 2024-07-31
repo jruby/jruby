@@ -116,7 +116,6 @@ import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
 import static org.jruby.util.io.ChannelHelper.*;
-import static org.jruby.util.io.EncodingUtils.vmodeVperm;
 import static org.jruby.util.io.EncodingUtils.vperm;
 
 /**
@@ -627,7 +626,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         try {
             if (nmode != nil || opt != nil) {
                 ConvConfig convconfig = new ConvConfig();
-                API.ModeAndPermission vmode_vperm = vmodeVperm(nmode, null);
+                API.ModeAndPermission vmode_vperm = new API.ModeAndPermission(nmode, null);
                 int[] fmode_p = {0};
 
                 EncodingUtils.extractModeEncoding(context, convconfig, vmode_vperm, opt, oflags_p, fmode_p);
@@ -960,7 +959,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             throw runtime.newErrnoEBADFError();
         }
 
-        API.ModeAndPermission pm = EncodingUtils.vmodeVperm(vmodeArg, asFixnum(context, 0));
+        IRubyObject vperm = asFixnum(context, 0);
+        API.ModeAndPermission pm = new API.ModeAndPermission(vmodeArg, vperm);
         int[] fmode_p = {0};
         ConvConfig convconfig = new ConvConfig();
         EncodingUtils.extractModeEncoding(context, convconfig, pm, opt, oflags_p, fmode_p);
@@ -4226,7 +4226,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         int[] oflags_p = {0}, fmode_p = {0};
         ConvConfig convConfig = new ConvConfig();
 
-        API.ModeAndPermission pm = EncodingUtils.vmodeVperm(vmode, vperm);
+        API.ModeAndPermission pm = new API.ModeAndPermission(vmode, vperm);
         EncodingUtils.extractModeEncoding(context, convConfig, pm, opt, oflags_p, fmode_p);
         vperm = vperm(pm);
         int perm = (vperm == null || vperm == context.nil) ? 0666 : RubyNumeric.num2int(vperm);
@@ -4594,7 +4594,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         io.MakeOpenFile();
 
-        API.ModeAndPermission pm = vmodeVperm(pmode, asFixnum(context, 0));
+        IRubyObject vperm = asFixnum(context, 0);
+        API.ModeAndPermission pm = new API.ModeAndPermission(pmode, vperm);
         int[] oflags_p = {0}, fmode_p = {0};
         EncodingUtils.extractModeEncoding(context, io, pm, options, oflags_p, fmode_p);
         ModeFlags modes = ModeFlags.createModeFlags(oflags_p[0]);
