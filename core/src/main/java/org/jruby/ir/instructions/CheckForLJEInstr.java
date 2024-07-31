@@ -74,7 +74,7 @@ public class CheckForLJEInstr extends NoOperandInstr {
     @Override
     public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
         super.computeScopeFlags(scope, flags);
-        flags.add(IRFlags.REQUIRES_DYNSCOPE);
+        //flags.add(IRFlags.REQUIRES_DYNSCOPE);
         return true;
     }
 }
