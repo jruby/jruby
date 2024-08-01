@@ -3,12 +3,12 @@ gemfile
 packaging 'bundle'
 
 # default versions will be overwritten by pom.rb from root directory
-properties( 'jruby.plugins.version' => '3.0.2',
-            'exam.version' => '3.0.3',
-            'url.version' => '1.5.2',
-            'logback.version' => '1.0.13',
-            # needed by felix-bundle-plugin
-            'polyglot.dump.pom' => 'pom.xml' )
+properties('jruby.plugins.version' => '3.0.2',
+           'exam.version' => '3.0.3',
+           'url.version' => '1.5.2',
+           'logback.version' => '1.0.13',
+           # needed by felix-bundle-plugin
+           'polyglot.dump.pom' => 'pom.xml')
 
 pom 'org.jruby:jruby', '${jruby.version}'
 
@@ -22,17 +22,17 @@ jruby_plugin! :gem, :includeRubygemsInResources => true, :jrubyVersion => '9.0.0
 # add some ruby scripts to bundle
 resource :directory => 'src/main/ruby'
 
-plugin( 'org.apache.felix:maven-bundle-plugin', '2.4.0',
-        :instructions => {
-          # org.junit is needed for the test phase to run unit tests
-          'Export-Package' => 'org.jruby.*,org.junit.*',
-          # this is needed to find javax.* packages
-          'DynamicImport-Package' => '*',
-          'Include-Resource' => '{maven-resources}',
-          'Import-Package' => '!org.jruby.*,*;resolution:=optional',
-          'Embed-Dependency' => '*;type=jar;scope=compile|runtime;inline=true',
-          'Embed-Transitive' => true
-        } ) do
+plugin('org.apache.felix:maven-bundle-plugin', '2.4.0',
+       :instructions => {
+         # org.junit is needed for the test phase to run unit tests
+         'Export-Package' => 'org.jruby.*,org.junit.*',
+         # this is needed to find javax.* packages
+         'DynamicImport-Package' => '*',
+         'Include-Resource' => '{maven-resources}',
+         'Import-Package' => '!org.jruby.*,*;resolution:=optional',
+         'Embed-Dependency' => '*;type=jar;scope=compile|runtime;inline=true',
+         'Embed-Transitive' => true
+       }) do
   # pack the bundle before the test phase
   execute_goal :bundle, :phase => 'process-test-resources'
   # TODO fix DSL
@@ -65,8 +65,8 @@ scope :test do
     jar 'org.apache.felix:org.apache.felix.framework:3.2.2'
   end
   profile :id => 'knoplerfish' do
-    repository( :id => :knoplerfish,
-                :url => 'http://www.knopflerfish.org/maven2' )
+    repository(:id => :knoplerfish,
+               :url => 'http://www.knopflerfish.org/maven2')
     jar 'org.knopflerfish:framework:5.1.6'
   end
 end

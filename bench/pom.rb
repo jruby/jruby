@@ -1,8 +1,7 @@
 version = ENV['JRUBY_VERSION'] ||
-  File.read(File.join(basedir, '..', 'VERSION')).strip
+          File.read(File.join(basedir, '..', 'VERSION')).strip
 
 project 'JRuby Benchmark' do
-
   model_version '4.0.0'
   inherit 'org.jruby:jruby-parent', version
   id 'org.jruby:jruby-benchmark'
@@ -14,13 +13,13 @@ project 'JRuby Benchmark' do
              'build.date' => '${maven.build.timestamp}',
              'main.basedir' => '${project.parent.basedir}',
              'jruby.basedir' => '${basedir}/..',
-             'jmh.version' => '1.19'
-  )
+             'jmh.version' => '1.19')
 
   IO.foreach(File.join(basedir, '..', 'default.build.properties')) do |line|
     line.chomp!
     # skip comments
     next if line =~ /(^\W*#|^$)/
+
     # build const name
     name, value = line.split('=', 2)
     properties name => value
@@ -49,7 +48,6 @@ project 'JRuby Benchmark' do
                   :phase => 'package',
                   'outputFile' => '${project.build.directory}/jruby-benchmark.jar',
                   'transformers' => [{ '@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
-                                       'mainClass' => 'org.openjdk.jmh.Main' }]
-    )
+                                       'mainClass' => 'org.openjdk.jmh.Main' }])
   end
 end
