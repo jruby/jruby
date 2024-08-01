@@ -1,14 +1,14 @@
 #-*- mode: ruby -*-
 
-properties( 'exam.version' => '3.0.3',
-            'url.version' => '1.5.2',
-            'logback.version' => '1.0.13' )
+properties('exam.version' => '3.0.3',
+           'url.version' => '1.5.2',
+           'logback.version' => '1.0.13')
 
 bundle 'org.jruby:jruby-complete', '${jruby.version}'
 bundle 'org.jruby.osgi:gems-bundle', '1.0'
 bundle 'org.jruby.osgi:scripts-bundle', '1.0'
 
-plugin( 'org.apache.felix:maven-bundle-plugin', '2.4.0' ) do
+plugin('org.apache.felix:maven-bundle-plugin', '2.4.0') do
   # TODO fix DSL
   @current.extensions = true
 end
@@ -38,8 +38,8 @@ scope :test do
     jar 'org.apache.felix:org.apache.felix.framework:4.4.1'
   end
   profile :id => 'knoplerfish' do
-    repository( :id => :knoplerfish, 
-                :url => 'http://www.knopflerfish.org/maven2' )
+    repository(:id => :knoplerfish,
+               :url => 'http://www.knopflerfish.org/maven2')
     jar 'org.knopflerfish:framework:5.1.6'
   end
 end
