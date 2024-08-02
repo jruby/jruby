@@ -20,7 +20,7 @@ project 'JRuby Main Maven Artifact' do
   # this plugin is configured to attach empty jars for sources and javadocs
   plugin( 'org.codehaus.mojo:build-helper-maven-plugin' )
 
-  plugin( :invoker, :properties => { 'localRepository' => '${settings.localRepository}' } )
+  plugin( :invoker, properties: { 'localRepository' => '${settings.localRepository}' } )
 
   build do
     resource do
@@ -34,12 +34,12 @@ project 'JRuby Main Maven Artifact' do
 
   profile :apps do
     activation do
-      property :name => 'invoker.test'
+      property name: 'invoker.test'
     end
 
     properties 'invoker.skip' => false, 'invoker.test' => 'hellowarld_*'
 
-    execute 'setup web applications', :phase => 'pre-integration-test' do |ctx|
+    execute 'setup web applications', phase: 'pre-integration-test' do |ctx|
       def setup(ctx, framework, package, type, server)
         puts [framework, package, server].join "\t"
 
@@ -80,10 +80,10 @@ project 'JRuby Main Maven Artifact' do
 
   profile :osgi do
     activation do
-      property :name => 'invoker.test'
+      property name: 'invoker.test'
     end
 
-    execute 'setup osgi integration tests', :phase => 'pre-integration-test' do |ctx|
+    execute 'setup osgi integration tests', phase: 'pre-integration-test' do |ctx|
       source = File.join( ctx.basedir.to_pathname, 'src', 'templates', 'osgi_all_inclusive' )
       [ 'knoplerfish', 'equinox-3.6', 'equinox-3.7', 'felix-3.2', 'felix-4.4'].each do |m|
         target = File.join( ctx.basedir.to_pathname, 'src', 'it', 'osgi_all_inclusive_' + m )
@@ -98,25 +98,25 @@ project 'JRuby Main Maven Artifact' do
 
   plugin( :clean ) do
     execute_goals( :clean,
-                   :phase => :clean,
-                   :id => 'clean-extra-osgi-ITs',
-                   :filesets => [ { :directory => '${basedir}/src/it',
-                                    :includes => ['osgi*/**'] } ],
-                   :failOnError => false )
+                   phase: :clean,
+                   id: 'clean-extra-osgi-ITs',
+                   filesets: [ { directory: '${basedir}/src/it',
+                                    includes: ['osgi*/**'] } ],
+                   failOnError: false )
   end
 
-  profile :id => :jdk8 do
+  profile id: :jdk8 do
     activation do
       jdk '17'
     end
-    plugin :invoker, :pomExcludes => ['extended/pom.xml', 'osgi_all_inclusive_felix-3.2/pom.xml', '${its.j2ee}', '${its.osgi}']
+    plugin :invoker, pomExcludes: ['extended/pom.xml', 'osgi_all_inclusive_felix-3.2/pom.xml', '${its.j2ee}', '${its.osgi}']
   end
 
-  profile :id => :wlp do
+  profile id: :wlp do
     activation do
-      property :name => 'wlp.jar'
+      property name: 'wlp.jar'
     end
-    execute :install_wlp, :phase => :'pre-integration-test' do |ctx|
+    execute :install_wlp, phase: :'pre-integration-test' do |ctx|
       wlp = ctx.project.properties[ 'wlp.jar' ] || java.lang.System.properties[ 'wlp.jar' ]
       system( 'java -jar ' + wlp.to_pathname + ' --acceptLicense ' + ctx.project.build.directory.to_pathname )
       system( File.join( ctx.project.build.directory.to_pathname,

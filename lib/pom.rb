@@ -162,33 +162,33 @@ project 'JRuby Lib Setup' do
               'jruby.complete.gems' => '${jruby.complete.home}/lib/ruby/gems/shared' )
 
   # just depends on jruby-core so we are sure the jruby.jar is in place
-  jar "org.jruby:jruby-core:#{version}", :scope => 'test'
+  jar "org.jruby:jruby-core:#{version}", scope: 'test'
 
   extension 'org.jruby.maven:mavengem-wagon:2.0.2'
 
-  repository :id => :mavengems, :url => 'mavengem:https://rubygems.org'
+  repository id: :mavengems, url: 'mavengem:https://rubygems.org'
 
   # for testing out jruby-ossl before final release :
   # repository :id => 'gem-snaphots', :url => 'https://oss.sonatype.org/content/repositories/snapshots'
   # repository :id => 'gem-staging', :url => 'http://oss.sonatype.org/content/repositories/staging'
 
   plugin( :clean,
-          :filesets => [ { :directory => '${basedir}/ruby/gems/shared/specifications/default',
-                           :includes => [ '*' ] },
-                         { :directory => '${basedir}/ruby/stdlib',
-                           :includes => [ 'org/**/*.jar' ] } ] )
+          filesets: [ { directory: '${basedir}/ruby/gems/shared/specifications/default',
+                           includes: [ '*' ] },
+                         { directory: '${basedir}/ruby/stdlib',
+                           includes: [ 'org/**/*.jar' ] } ] )
 
   # tell maven to download the respective gem artifacts
   default_gems.each do |name, version|
     # use provided scope so it is not a real dependency for runtime
-    dependency 'rubygems', name, version, :type => 'gem', :scope => :provided do
+    dependency 'rubygems', name, version, type: 'gem', scope: :provided do
       exclusion 'rubygems:jar-dependencies'
     end
   end
 
   bundled_gems.each do |name, version|
     # use provided scope so it is not a real dependency for runtime
-    dependency 'rubygems', name, version, :type => 'gem', :scope => :provided do
+    dependency 'rubygems', name, version, type: 'gem', scope: :provided do
       exclusion 'rubygems:jar-dependencies'
     end
   end
@@ -197,11 +197,11 @@ project 'JRuby Lib Setup' do
   all_gems     = default_gems + bundled_gems
 
   plugin :dependency,
-    :useRepositoryLayout => true,
-    :outputDirectory => 'ruby/stdlib',
-    :excludeGroupIds => 'rubygems',
-    :includeScope => :provided do
-    execute_goal 'copy-dependencies', :phase => 'generate-resources'
+    useRepositoryLayout: true,
+    outputDirectory: 'ruby/stdlib',
+    excludeGroupIds: 'rubygems',
+    includeScope: :provided do
+    execute_goal 'copy-dependencies', phase: 'generate-resources'
   end
 
   execute :install_gems, :'initialize' do |ctx|
@@ -389,7 +389,7 @@ project 'JRuby Lib Setup' do
       next unless File.file?(fn)
       next if fn =~ /.bat$/
       next if File.exist?("#{fn}.bat")
-      next unless File.open(fn, 'r', :internal_encoding => 'ASCII-8BIT') do |io|
+      next unless File.open(fn, 'r', internal_encoding: 'ASCII-8BIT') do |io|
         line = io.readline rescue ""
         line =~ /^#!.*ruby/
       end

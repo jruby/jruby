@@ -30,25 +30,25 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
   license 'LGPL-2.1', 'http://www.gnu.org/licenses/lgpl-2.1-standalone.html'
   license 'EPL-2.0', 'http://www.eclipse.org/legal/epl-v20.html'
 
-  plugin_repository( :url => 'https://oss.sonatype.org/content/repositories/snapshots/',
-                     :id => 'sonatype' ) do
+  plugin_repository( url: 'https://oss.sonatype.org/content/repositories/snapshots/',
+                     id: 'sonatype' ) do
     releases 'false'
     snapshots 'true'
   end
-  repository( :url => 'https://oss.sonatype.org/content/repositories/snapshots/',
-              :id => 'sonatype' ) do
+  repository( url: 'https://oss.sonatype.org/content/repositories/snapshots/',
+              id: 'sonatype' ) do
     releases 'false'
     snapshots 'true'
   end
 
-  source_control( :url => 'https://github.com/jruby/jruby',
-                  :connection => 'scm:git:git@jruby.org:jruby.git',
-                  :developer_connection => 'scm:git:ssh://git@jruby.org/jruby.git' )
+  source_control( url: 'https://github.com/jruby/jruby',
+                  connection: 'scm:git:git@jruby.org:jruby.git',
+                  developer_connection: 'scm:git:ssh://git@jruby.org/jruby.git' )
 
   distribution do
-    site( :url => 'https://github.com/jruby/jruby',
-          :id => 'gh-pages',
-          :name => 'JRuby Site' )
+    site( url: 'https://github.com/jruby/jruby',
+          id: 'gh-pages',
+          name: 'JRuby Site' )
   end
 
   properties( 'its.j2ee' => 'j2ee*/pom.xml',
@@ -77,10 +77,10 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
   plugin_management do
     jar( 'junit:junit:4.13.1',
-         :scope => 'test' )
+         scope: 'test' )
 
     jar( 'org.awaitility:awaitility:4.1.0',
-         :scope => 'test' )
+         scope: 'test' )
 
     plugin( 'org.apache.felix:maven-bundle-plugin:4.2.1',
             'instructions' => {
@@ -93,7 +93,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
             } ) do
       dependency(groupId: 'biz.aQute.bnd', artifactId: 'biz.aQute.bndlib', version: '6.3.1')
       execute_goals( 'manifest',
-                     :phase => 'prepare-package' )
+                     phase: 'prepare-package' )
     end
 
     plugin( :site, '3.9.1', 'skipDeploy' =>  'true' )
@@ -111,12 +111,12 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     plugin :release, '3.0.0-M1'
     plugin :jar, '3.2.0'
 
-    rules = { :requireMavenVersion => { :version => '[3.3.0,)' } }
+    rules = { requireMavenVersion: { version: '[3.3.0,)' } }
     unless model.version =~ /-SNAPSHOT/
-       rules[:requireReleaseDeps] = { :message => 'No Snapshots Allowed!' }
+       rules[:requireReleaseDeps] = { message: 'No Snapshots Allowed!' }
     end
     plugin :enforcer, '1.4' do
-      execute_goal :enforce, :rules => rules
+      execute_goal :enforce, rules: rules
     end
 
     plugin :compiler, '3.8.1'
@@ -135,7 +135,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
             'goals' => [:install],
             'streamLogs' =>  'true' ) do
       execute_goals( 'install', 'run',
-                     :id => 'integration-test' )
+                     id: 'integration-test' )
     end
 
     plugin 'org.eclipse.m2e:lifecycle-mapping:1.0.0'
@@ -146,8 +146,8 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
           'port' =>  '9000',
           'tempWebappDirectory' =>  '${basedir}/target/site/tempdir' ) do
     execute_goals( 'stage',
-                   :id => 'stage-for-scm-publish',
-                   :phase => 'post-site',
+                   id: 'stage-for-scm-publish',
+                   phase: 'post-site',
                    'skipDeploy' =>  'false' )
   end
 
@@ -156,8 +156,8 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
           'pubScmUrl' =>  'scm:git:git@github.com:jruby/jruby.git',
           'tryUpdate' =>  'true' ) do
     execute_goals( 'publish-scm',
-                   :id => 'scm-publish',
-                   :phase => 'site-deploy' )
+                   id: 'scm-publish',
+                   phase: 'site-deploy' )
   end
 
   modules [ 'shaded', 'core', 'lib' ]
@@ -199,7 +199,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
       build do
         default_goal 'install'
         plugin_management do
-          plugin :surefire, '2.15', :skipTests => true
+          plugin :surefire, '2.15', skipTests: true
         end
       end
     end
@@ -261,10 +261,10 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     modules [ 'maven' ]
     properties 'invoker.skip' => true
     plugin(:source) do
-      execute_goals('jar-no-fork', :id => 'attach-sources')
+      execute_goals('jar-no-fork', id: 'attach-sources')
     end
     plugin(:javadoc) do
-      execute_goals('jar', :id => 'attach-javadocs')
+      execute_goals('jar', id: 'attach-javadocs')
       configuration(doclint: 'none')
     end
   end
@@ -274,25 +274,25 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     modules [ 'maven' ]
 
     distribution_management do
-      repository( :url => "file:${project.build.directory}/maven", :id => 'local releases' )
-      snapshot_repository( :url => "file:${project.build.directory}/maven",
-                           :id => 'local snapshots' )
+      repository( url: "file:${project.build.directory}/maven", id: 'local releases' )
+      snapshot_repository( url: "file:${project.build.directory}/maven",
+                           id: 'local snapshots' )
     end
     build do
       default_goal :deploy
     end
 
     plugin(:source) do
-      execute_goals('jar-no-fork', :id => 'attach-sources')
+      execute_goals('jar-no-fork', id: 'attach-sources')
     end
     plugin(:javadoc) do
-      execute_goals('jar', :id => 'attach-javadocs')
+      execute_goals('jar', id: 'attach-javadocs')
     end
   end
 
   profile 'single invoker test' do
     activation do
-      property :name => 'invoker.test'
+      property name: 'invoker.test'
     end
     properties 'invoker.skip' => false
   end
@@ -301,7 +301,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     activation do
       jdk '17'
     end
-    plugin :javadoc, :additionalparam => '-Xdoclint:none'
+    plugin :javadoc, additionalparam: '-Xdoclint:none'
   end
 
   reporting do
@@ -313,7 +313,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
             'configLocation' =>  '${main.basedir}/docs/style_checks.xml',
             'propertyExpansion' =>  'cacheFile=${project.build.directory}/checkstyle-cachefile' ) do
       report_set( 'checkstyle',
-                  :inherited => 'false' )
+                  inherited: 'false' )
     end
 
     plugin( 'org.codehaus.mojo:cobertura-maven-plugin:2.5.1',

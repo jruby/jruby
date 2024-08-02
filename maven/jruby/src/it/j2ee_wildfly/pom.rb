@@ -12,19 +12,19 @@ pom( 'org.jruby:jruby', '${jruby.version}' )
 gem 'virtus', '0.5.5'
 
 extension 'org.jruby.maven:mavengem-wagon:2.0.2'
-repository :id => :mavengems, :url => 'mavengem:https://rubygems.org'
+repository id: :mavengems, url: 'mavengem:https://rubygems.org'
 
-jruby_plugin :gem, :includeRubygemsInResources => true, :jrubyVersion => '9.0.0.0' do
+jruby_plugin :gem, includeRubygemsInResources: true, jrubyVersion: '9.0.0.0' do
   execute_goal :initialize
 end
 
 plugin( 'org.wildfly.plugins:wildfly-maven-plugin:1.0.2.Final' ) do
   execute_goals( :start,
-                 :id => 'wildfly-start',
-                 :phase => 'pre-integration-test' )
+                 id: 'wildfly-start',
+                 phase: 'pre-integration-test' )
   execute_goals( :shutdown,
-                 :id => 'wildfly-stop',
-                 :phase => 'post-integration-test' )
+                 id: 'wildfly-stop',
+                 phase: 'post-integration-test' )
 end
 
 
@@ -33,7 +33,7 @@ build do
 end
 
 # download files during the tests
-execute 'download', :phase => 'integration-test' do
+execute 'download', phase: 'integration-test' do
   require 'open-uri'
   dir = Dir[ 'target/wildfly-run/*' ].first
   FileUtils.cp( 'target/j2ee_wildfly.war', dir + '/standalone/deployments/packed.war' )
@@ -64,7 +64,7 @@ execute 'download', :phase => 'integration-test' do
 end
 
 # verify the downloads
-execute 'check download', :phase => :verify do
+execute 'check download', phase: :verify do
   [ 'result1', 'result2' ].each do |r|
     result = File.read( r )
     expected = 'hello world:'

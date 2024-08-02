@@ -11,32 +11,32 @@ pom( 'org.jruby:jruby', '${jruby.version}' )
 gem 'flickraw', '0.9.7'
 
 extension 'org.jruby.maven:mavengem-wagon:2.0.2'
-repository :id => :mavengems, :url => 'mavengem:https://rubygems.org'
+repository id: :mavengems, url: 'mavengem:https://rubygems.org'
 
-jruby_plugin :gem, :includeRubygemsInResources => true, :jrubyVersion => '9.0.0.0' do
+jruby_plugin :gem, includeRubygemsInResources: true, jrubyVersion: '9.0.0.0' do
   execute_goal :initialize
 end
 
 # start tomcat for the tests
 plugin( 'org.codehaus.mojo:tomcat-maven-plugin', '1.1',
-        :fork => true, :path => '/' ) do
+        fork: true, path: '/' ) do
   execute_goals( 'run',
-                 :id => 'run-tomcat',
-                 :phase => 'pre-integration-test' )
+                 id: 'run-tomcat',
+                 phase: 'pre-integration-test' )
   execute_goals( 'shutdown',
-                 :id => 'shutdown-tomcat',
-                 :phase => 'post-integration-test' )
+                 id: 'shutdown-tomcat',
+                 phase: 'post-integration-test' )
 end
 
 # download files during the tests
-execute 'download', :phase => 'integration-test' do
+execute 'download', phase: 'integration-test' do
   require 'open-uri'
   result = open( 'http://localhost:8080' ).string
   File.open( 'result', 'w' ) { |f| f.puts result }
 end
 
 # verify the downloads
-execute 'check download', :phase => :verify do
+execute 'check download', phase: :verify do
   result = File.read( 'result' )
   expected = 'hello world:'
   unless result.match( /#{expected}/ )

@@ -16,8 +16,8 @@ project 'JRuby Artifacts' do
   plugin_management do
     plugin 'org.codehaus.mojo:build-helper-maven-plugin' do
       execute_goals( 'attach-artifact',
-                     :id => 'attach-artifacts',
-                     :phase => 'package',
+                     id: 'attach-artifacts',
+                     phase: 'package',
                      'artifacts' => [ { 'file' =>  '${basedir}/src/empty.jar',
                                         'classifier' =>  'sources' },
                                       { 'file' =>  '${basedir}/src/empty.jar',
