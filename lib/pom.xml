@@ -1022,7 +1022,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>rexml</artifactId>
-      <version>3.2.5</version>
+      <version>3.3.4</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1155,7 +1155,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/prime-0.1.2*</include>
           <include>specifications/power_assert-2.0.1*</include>
           <include>specifications/rake-${rake.version}*</include>
-          <include>specifications/rexml-3.2.5*</include>
+          <include>specifications/rexml-3.3.4*</include>
           <include>specifications/rss-0.2.9*</include>
           <include>specifications/test-unit-3.5.3*</include>
           <include>gems/rubygems-update-3.3.26*/**/*</include>
@@ -1234,7 +1234,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/prime-0.1.2*/**/*</include>
           <include>gems/power_assert-2.0.1*/**/*</include>
           <include>gems/rake-${rake.version}*/**/*</include>
-          <include>gems/rexml-3.2.5*/**/*</include>
+          <include>gems/rexml-3.3.4*/**/*</include>
           <include>gems/rss-0.2.9*/**/*</include>
           <include>gems/test-unit-3.5.3*/**/*</include>
           <include>cache/rubygems-update-3.3.26*</include>
@@ -1313,7 +1313,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/prime-0.1.2*</include>
           <include>cache/power_assert-2.0.1*</include>
           <include>cache/rake-${rake.version}*</include>
-          <include>cache/rexml-3.2.5*</include>
+          <include>cache/rexml-3.3.4*</include>
           <include>cache/rss-0.2.9*</include>
           <include>cache/test-unit-3.5.3*</include>
         </includes>
