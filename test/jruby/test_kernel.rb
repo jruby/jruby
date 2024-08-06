@@ -369,6 +369,18 @@ class TestKernel < Test::Unit::TestCase
     assert_raises(ArgumentError) { sleep(SecDuration19.new(-0.01)) }
   end
 
+  def test_nanosecond_precision_sleep
+    start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    100.times do
+      sleep(0.0001)
+    end
+    end_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+
+    actual_duration = end_time - start_time
+    assert_true(actual_duration > 0.01) # 100 * 0.0001 => 0.01
+    assert_true(actual_duration < 0.03)
+  end
+
   def test_sprintf
     assert_equal 'Hello', Kernel.sprintf('Hello')
   end

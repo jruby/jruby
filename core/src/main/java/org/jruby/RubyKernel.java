@@ -48,6 +48,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import jnr.constants.platform.Errno;
 import jnr.posix.POSIX;
@@ -837,27 +838,30 @@ public class RubyKernel {
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject sleep(ThreadContext context, IRubyObject recv, IRubyObject timeout) {
-        long milliseconds = (long) (RubyTime.convertTimeInterval(context, timeout) * 1000);
+        long nanoseconds = (long) (RubyTime.convertTimeInterval(context, timeout) * 1_000_000_000);
         // Explicit zero in MRI returns immediately
-        if (milliseconds == 0) return RubyFixnum.zero(context.runtime);
+        if (nanoseconds == 0) return RubyFixnum.zero(context.runtime);
 
-        return sleepCommon(context, milliseconds);
+        return sleepCommon(context, nanoseconds);
     }
 
-    private static RubyFixnum sleepCommon(ThreadContext context, long milliseconds) {
-        final long startTime = System.currentTimeMillis();
+    private static RubyFixnum sleepCommon(ThreadContext context, long nanoseconds) {
+        long milliseconds = TimeUnit.NANOSECONDS.toMillis(nanoseconds);
+        long remainingNanos = nanoseconds - TimeUnit.MILLISECONDS.toNanos(milliseconds);
+
+        final long startTime = System.nanoTime();
         final RubyThread rubyThread = context.getThread();
 
         boolean interrupted = false;
         try {
             // Spurious wakeup-loop
             do {
-                long loopStartTime = System.currentTimeMillis();
+                long loopStartTime = System.nanoTime();
 
-                if (!rubyThread.sleep(milliseconds)) break;
+                if (!rubyThread.sleep(milliseconds, remainingNanos)) break;
 
-                milliseconds -= (System.currentTimeMillis() - loopStartTime);
-            } while (milliseconds > 0);
+                nanoseconds -= (System.nanoTime() - loopStartTime);
+            } while (nanoseconds > 0);
         } catch (InterruptedException ie) {
             // ignore; sleep gets interrupted
             interrupted = true;
@@ -867,7 +871,7 @@ public class RubyKernel {
             }
         }
 
-        return context.runtime.newFixnum(Math.round((System.currentTimeMillis() - startTime) / 1000.0));
+        return context.runtime.newFixnum(Math.round((System.nanoTime() - startTime) / 1_000_000_000.0));
     }
 
     // FIXME: Add at_exit and finalizers to exit, then make exit_bang not call those.
