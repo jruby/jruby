@@ -84,9 +84,8 @@ DO NOT MODIFY - GENERATED CODE
     </mailingList>
   </mailingLists>
   <modules>
-    <module>shaded</module>
     <module>core</module>
-    <module>lib</module>
+    <module>shaded</module>
   </modules>
   <scm>
     <connection>scm:git:git@jruby.org:jruby.git</connection>
@@ -527,6 +526,17 @@ DO NOT MODIFY - GENERATED CODE
   </reporting>
   <profiles>
     <profile>
+      <id>stdlib</id>
+      <activation>
+        <property>
+          <name>!core</name>
+        </property>
+      </activation>
+      <modules>
+        <module>lib</module>
+      </modules>
+    </profile>
+    <profile>
       <id>test</id>
       <modules>
         <module>test</module>
@@ -837,6 +847,14 @@ DO NOT MODIFY - GENERATED CODE
           </plugin>
         </plugins>
       </build>
+    </profile>
+    <profile>
+      <id>core</id>
+      <activation>
+        <property>
+          <name>core</name>
+        </property>
+      </activation>
     </profile>
   </profiles>
 </project>

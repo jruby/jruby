@@ -1909,7 +1909,7 @@ public final class StringSupport {
         replaceInternal(beg, len, source, repl);
         associateEncoding(source, enc);
         int cr = CodeRangeSupport.codeRangeAnd(source.getCodeRange(), repl.getCodeRange());
-        if (cr != CR_BROKEN) source.setCodeRange(cr);
+        if (cr != source.getCodeRange()) source.setCodeRange(cr);
     }
 
     // MRI: rb_str_update, first half

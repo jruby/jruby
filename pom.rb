@@ -160,10 +160,17 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
                    :phase => 'site-deploy' )
   end
 
-  modules [ 'shaded', 'core', 'lib' ]
-
   build do
     default_goal 'install'
+  end
+
+  modules("core", "shaded")
+
+  profile :stdlib do
+    activation do
+      property name: '!core'
+    end
+    modules(["lib"])
   end
 
   profile 'test' do
@@ -302,6 +309,12 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
       jdk '17'
     end
     plugin :javadoc, :additionalparam => '-Xdoclint:none'
+  end
+
+  profile 'core' do
+    activation do
+      property name: 'core'
+    end
   end
 
   reporting do

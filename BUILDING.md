@@ -31,6 +31,18 @@ This will run the default "install" goal (`mvn install`) and will do all of the 
 
 The environment is now suitable for running Ruby applications.
 
+If you have Maven installed in your PATH, you can just use `mvn` instead of `./mvnw`.
+
+Incremental Builds
+------------------
+
+When working on JRuby sources, it is helpful to incrementally rebuild only the `lib/jruby.jar` file rather than also
+re-assembling the standard library. You can add `-Dcore` to the `mvn` command line to speed up incremental builds:
+
+```
+./mvnw -Dcore
+```
+
 Running JRuby
 -------------
 

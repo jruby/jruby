@@ -96,8 +96,6 @@ import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
-import static org.jruby.util.StringSupport.*;
-
 import static org.jruby.util.StringSupport.CR_7BIT;
 import static org.jruby.util.StringSupport.CR_BROKEN;
 import static org.jruby.util.StringSupport.CR_MASK;
@@ -112,10 +110,11 @@ import static org.jruby.util.StringSupport.codePoint;
 import static org.jruby.util.StringSupport.codeRangeScan;
 import static org.jruby.util.StringSupport.encFastMBCLen;
 import static org.jruby.util.StringSupport.isSingleByteOptimizable;
-import static org.jruby.util.StringSupport.memsearch;
 import static org.jruby.util.StringSupport.memchr;
+import static org.jruby.util.StringSupport.memsearch;
 import static org.jruby.util.StringSupport.nth;
 import static org.jruby.util.StringSupport.offset;
+import static org.jruby.util.StringSupport.strUpdate;
 
 /**
  * Implementation of Ruby String class
