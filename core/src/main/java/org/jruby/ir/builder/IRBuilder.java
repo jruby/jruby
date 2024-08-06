@@ -311,7 +311,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     private boolean computeNeedsDynamicScopeFlag() {
-        return scope.hasNonLocalReturns() ||
+        return //scope.hasNonLocalReturns() ||
                 scope.canCaptureCallersBinding() ||
                 scope.canReceiveNonlocalReturns() ||
                 flags.contains(BINDING_HAS_ESCAPED);
