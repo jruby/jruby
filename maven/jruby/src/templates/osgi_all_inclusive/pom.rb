@@ -15,15 +15,15 @@ pom 'org.jruby:jruby', '${jruby.version}'
 model.repositories.clear
 
 extension 'org.jruby.maven:mavengem-wagon:2.0.2'
-repository :id => :mavengems, :url => 'mavengem:https://rubygems.org'
+repository id: :mavengems, url: 'mavengem:https://rubygems.org'
 
-jruby_plugin! :gem, :includeRubygemsInResources => true, :jrubyVersion => '9.0.0.0'
+jruby_plugin! :gem, includeRubygemsInResources: true, jrubyVersion: '9.0.0.0'
 
 # add some ruby scripts to bundle
-resource :directory => 'src/main/ruby'
+resource directory: 'src/main/ruby'
 
 plugin( 'org.apache.felix:maven-bundle-plugin', '2.4.0',
-        :instructions => {
+        instructions: {
           # org.junit is needed for the test phase to run unit tests
           'Export-Package' => 'org.jruby.*,org.junit.*',
           # this is needed to find javax.* packages
@@ -34,7 +34,7 @@ plugin( 'org.apache.felix:maven-bundle-plugin', '2.4.0',
           'Embed-Transitive' => true
         } ) do
   # pack the bundle before the test phase
-  execute_goal :bundle, :phase => 'process-test-resources'
+  execute_goal :bundle, phase: 'process-test-resources'
   # TODO fix DSL
   @current.extensions = true
 end
@@ -52,21 +52,21 @@ scope :test do
   jar 'ch.qos.logback:logback-core', '${logback.version}'
   jar 'ch.qos.logback:logback-classic', '${logback.version}'
 
-  profile :id => 'equinox-3.6' do
+  profile id: 'equinox-3.6' do
     jar 'org.eclipse.osgi:org.eclipse.osgi:3.6.0.v20100517'
   end
-  profile :id => 'equinox-3.7' do
+  profile id: 'equinox-3.7' do
     jar 'org.eclipse.osgi:org.eclipse.osgi:3.7.1'
   end
-  profile :id => 'felix-4.4' do
+  profile id: 'felix-4.4' do
     jar 'org.apache.felix:org.apache.felix.framework:4.4.1'
   end
-  profile :id => 'felix-3.2' do
+  profile id: 'felix-3.2' do
     jar 'org.apache.felix:org.apache.felix.framework:3.2.2'
   end
-  profile :id => 'knoplerfish' do
-    repository( :id => :knoplerfish,
-                :url => 'http://www.knopflerfish.org/maven2' )
+  profile id: 'knoplerfish' do
+    repository( id: :knoplerfish,
+                url: 'http://www.knopflerfish.org/maven2' )
     jar 'org.knopflerfish:framework:5.1.6'
   end
 end

@@ -13,7 +13,7 @@ project 'JRuby Complete' do
 
   extension 'org.jruby.maven:mavengem-wagon:2.0.2'
 
-  plugin_repository :id => :mavengems, :url => 'mavengem:https://rubygems.org'
+  plugin_repository id: :mavengems, url: 'mavengem:https://rubygems.org'
 
   properties( 'polyglot.dump.pom' => 'pom.xml',
               'polyglot.dump.readonly' => true,
@@ -36,16 +36,16 @@ project 'JRuby Complete' do
   end
 
   plugin( 'org.apache.felix:maven-bundle-plugin',
-          :archive => {
-            :manifest => {
-              :mainClass => 'org.jruby.Main'
+          archive: {
+            manifest: {
+              mainClass: 'org.jruby.Main'
             },
             manifestEntries: {
               'Automatic-Module-Name' => 'org.jruby.complete',
               'Add-Opens' => 'java.base/java.io java.base/java.nio.channels java.base/sun.nio.ch java.management/sun.management'
             }
           },
-          :instructions => {
+          instructions: {
             'Export-Package' => 'org.jruby.*;version=${project.version}',
             'Import-Package' => '!org.jruby.*, *;resolution:=optional',
             'DynamicImport-Package' => 'javax.*',
@@ -75,7 +75,7 @@ project 'JRuby Complete' do
   # later in the build so IDE can use them
   plugin( :source, 'skipSource' =>  'true' )
 
-  execute 'setup other osgi frameworks', :phase => 'pre-integration-test' do |ctx|
+  execute 'setup other osgi frameworks', phase: 'pre-integration-test' do |ctx|
     require 'fileutils'
     source = File.join( ctx.basedir.to_pathname, 'src', 'templates', 'osgi_many_bundles_with_embedded_gems' )
     [ 'knoplerfish', 'equinox-3.6', 'equinox-3.7', 'felix-3.2', 'felix-4.4' ].each do |m|
@@ -90,11 +90,11 @@ project 'JRuby Complete' do
 
   plugin( :clean ) do
     execute_goals( :clean,
-                   :phase => :clean,
-                   :id => 'clean-extra-osgi-ITs',
-                   :filesets => [ { :directory => '${basedir}/src/it',
-                                    :includes => ['osgi*/**'] } ],
-                   :failOnError => false )
+                   phase: :clean,
+                   id: 'clean-extra-osgi-ITs',
+                   filesets: [ { directory: '${basedir}/src/it',
+                                    includes: ['osgi*/**'] } ],
+                   failOnError: false )
   end
 
   plugin( 'net.ju-n.maven.plugins:checksum-maven-plugin' )
@@ -115,7 +115,7 @@ project 'JRuby Complete' do
               'outputDirectory' =>  '${project.build.directory}' }
           end
           execute_goals( 'copy',
-                         :id => 'copy javadocs and sources from jruby-core',
+                         id: 'copy javadocs and sources from jruby-core',
                          'artifactItems' => items )
         end
 
@@ -124,11 +124,11 @@ project 'JRuby Complete' do
             { 'file' =>  "${project.build.directory}/jruby-core-${project.version}-#{classifier}.jar", 'classifier' =>  classifier }
           end
           execute_goals( 'attach-artifact',
-                         :id => 'attach-artifacts',
+                         id: 'attach-artifacts',
                          'artifacts' => artifacts )
 
           execute_goals( 'attach-artifact',
-                         :id => 'attach-checksums',
+                         id: 'attach-checksums',
                          'artifacts' => [ { file: '${project.build.directory}/jruby-complete-${project.version}.jar.sha256',
                                             type: 'jar.sha256'},
                                           { file: '${project.build.directory}/jruby-complete-${project.version}.jar.sha512',
@@ -139,10 +139,10 @@ project 'JRuby Complete' do
     end
   end
 
-  profile :id => :jdk8 do
+  profile id: :jdk8 do
     activation do
       jdk '17'
     end
-    plugin :invoker, :pomExcludes => ['osgi_many_bundles_with_embedded_gems_felix-3.2/pom.xml', '${its.j2ee}', '${its.osgi}']
+    plugin :invoker, pomExcludes: ['osgi_many_bundles_with_embedded_gems_felix-3.2/pom.xml', '${its.j2ee}', '${its.osgi}']
   end
 end

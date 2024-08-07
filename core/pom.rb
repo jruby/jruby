@@ -42,11 +42,11 @@ project 'JRuby Base' do
   jar 'org.ow2.asm:asm-util:${asm.version}'
 
   # exclude jnr-ffi to avoid problems with shading and relocation of the asm packages
-  jar 'com.github.jnr:jnr-netdb:1.2.0', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-enxio:0.32.17', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-unixsocket:0.38.22', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-posix:3.1.19', :exclusions => ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-constants:0.10.4', :exclusions => ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-netdb:1.2.0', exclusions: ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-enxio:0.32.17', exclusions: ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-unixsocket:0.38.22', exclusions: ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-posix:3.1.19', exclusions: ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-constants:0.10.4', exclusions: ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-ffi:2.2.16'
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
@@ -59,20 +59,20 @@ project 'JRuby Base' do
   jar 'com.headius:options:1.6'
 
   jar 'org.jruby:jzlib:1.1.5'
-  jar 'junit:junit', :scope => 'test'
-  jar 'org.awaitility:awaitility', :scope => 'test'
-  jar 'org.apache.ant:ant:${ant.version}', :scope => 'provided'
-  jar 'org.osgi:org.osgi.core:5.0.0', :scope => 'provided'
+  jar 'junit:junit', scope: 'test'
+  jar 'org.awaitility:awaitility', scope: 'test'
+  jar 'org.apache.ant:ant:${ant.version}', scope: 'provided'
+  jar 'org.osgi:org.osgi.core:5.0.0', scope: 'provided'
 
   # joda timezone must be before joda-time to be packed correctly
   # jar 'org.jruby:joda-timezones:${tzdata.version}', :scope => '${tzdata.scope}'
   jar 'joda-time:joda-time:${joda.time.version}'
 
   # SLF4J only used within SLF4JLogger (JRuby logger impl) class
-  jar 'org.slf4j:slf4j-api:1.7.12', :scope => 'provided', :optional => true
-  jar 'org.slf4j:slf4j-simple:1.7.12', :scope => 'test'
+  jar 'org.slf4j:slf4j-api:1.7.12', scope: 'provided', optional: true
+  jar 'org.slf4j:slf4j-simple:1.7.12', scope: 'test'
 
-  jar 'me.qmx.jitescript:jitescript:0.4.1', :exclusions => ['org.ow2.asm:asm-all']
+  jar 'me.qmx.jitescript:jitescript:0.4.1', exclusions: ['org.ow2.asm:asm-all']
 
   jar 'com.headius:backport9:1.13'
 
@@ -131,21 +131,21 @@ project 'JRuby Base' do
 
   plugin 'org.codehaus.mojo:buildnumber-maven-plugin:1.2' do
     execute_goals( 'create',
-                   :id => 'jruby-revision',
-                   :phase => 'generate-sources',
+                   id: 'jruby-revision',
+                   phase: 'generate-sources',
                    'buildNumberPropertyName' =>  'jruby.revision' )
   end
 
   phase 'process-classes' do
     plugin 'org.codehaus.mojo:build-helper-maven-plugin' do
       execute_goals( 'add-source',
-                     :id => 'add-populators',
+                     id: 'add-populators',
                      'sources' => [ '${anno.sources}' ] )
     end
 
     plugin 'org.codehaus.mojo:exec-maven-plugin' do
       execute_goals( 'exec',
-                     :id => 'invoker-generator',
+                     id: 'invoker-generator',
                      'arguments' => [ '-Djruby.bytecode.version=${base.java.version}',
                                       '-classpath',
                                       xml( '<classpath/>' ),
@@ -156,7 +156,7 @@ project 'JRuby Base' do
                      'classpathScope' =>  'compile' )
 
       execute_goals( 'exec',
-                     :id => 'scope-generator',
+                     id: 'scope-generator',
                      'arguments' => [ '-Djruby.bytecode.version=${base.java.version}',
                                       '-classpath',
                                       xml( '<classpath/>' ),
@@ -188,8 +188,8 @@ project 'JRuby Base' do
           'target' => [ '${base.javac.version}', '17' ],
           'useIncrementalCompilation' =>  'false' ) do
     execute_goals( 'compile',
-                   :id => 'anno',
-                   :phase => 'process-resources',
+                   id: 'anno',
+                   phase: 'process-resources',
                    'includes' => [ 'org/jruby/anno/FrameField.java',
                                    'org/jruby/anno/AnnotationBinder.java',
                                    'org/jruby/anno/JRubyMethod.java',
@@ -199,29 +199,29 @@ project 'JRuby Base' do
                                    'org/jruby/util/SafePropertyAccessor.java' ] )
     execute_goals( 'compile',
                    default_compile_configuration.merge(
-                     :id => 'default-compile',
-                     :phase => 'compile'
+                     id: 'default-compile',
+                     phase: 'compile'
                    ))
 
     execute_goals( 'compile',
-                   :id => 'populators',
-                   :phase => 'process-classes',
+                   id: 'populators',
+                   phase: 'process-classes',
                    'debug' => 'false',
                    'fork' => 'true',
                    'compilerArgs' => fork_compiler_args,
                    'includes' => [ 'org/jruby/gen/**/*.java' ] )
 
     execute_goals( 'compile',
-                   :id => 'eclipse-hack',
-                   :phase => 'process-classes',
+                   id: 'eclipse-hack',
+                   phase: 'process-classes',
                    'skipMain' =>  'true',
                    'includes' => [ '**/*.java' ] )
   end
 
   plugin :clean do
     execute_goals( 'clean',
-                   :id => 'default-clean',
-                   :phase => 'clean',
+                   id: 'default-clean',
+                   phase: 'clean',
                    'filesets' => [ { 'directory' =>  '${project.build.sourceDirectory}',
                                      'includes' => [ '${Constants.java}' ] },
                                    { 'directory' =>  '${project.basedir}/..',
@@ -285,7 +285,7 @@ project 'JRuby Base' do
                   ])
   end
 
-  copy_goal = [:exec, :executable => '/bin/sh', :arguments => ['-c', 'cp ${jruby.basedir}/bin/jruby.sh ${jruby.basedir}/bin/jruby']]
+  copy_goal = [:exec, executable: '/bin/sh', arguments: ['-c', 'cp ${jruby.basedir}/bin/jruby.sh ${jruby.basedir}/bin/jruby']]
 
   profile :clean do
     activation do
@@ -310,13 +310,13 @@ project 'JRuby Base' do
 
     plugin :compiler do
       execute_goals( 'compile',
-                     :id => 'default-compile',
-                     :phase => 'none' ) # do not execute default-compile, we have a replacement bellow
+                     id: 'default-compile',
+                     phase: 'none' ) # do not execute default-compile, we have a replacement bellow
 
       execute_goals( 'compile',
                      default_compile_configuration.merge(
-                       :id => 'default-compile_with_error_prone',
-                       :phase => 'compile',
+                       id: 'default-compile_with_error_prone',
+                       phase: 'compile',
                        'fork' => 'true',
                        'compilerArgs' => default_compile_configuration['compilerArgs'] + [
                          '-XDcompilePolicy=simple', '-Xplugin:ErrorProne'
@@ -339,7 +339,7 @@ project 'JRuby Base' do
   profile 'jruby.sh' do
 
     activation do
-      file( :missing => '../bin/jruby' )
+      file( missing: '../bin/jruby' )
     end
     activation do
       # hack to get the os triggeer into the model
@@ -356,7 +356,7 @@ project 'JRuby Base' do
 
   end
 
-  jni_config = [ 'unpack', { :id => 'unzip native',
+  jni_config = [ 'unpack', { id: 'unzip native',
                              'excludes' =>  'META-INF,META-INF/*',
                              'artifactItems' => [ { 'groupId' =>  'com.github.jnr',
                                                     'artifactId' =>  'jffi',
@@ -375,7 +375,7 @@ project 'JRuby Base' do
   profile 'native' do
 
     activation do
-      file( :missing => '../lib/jni' )
+      file( missing: '../lib/jni' )
     end
 
     phase 'process-classes' do
@@ -394,13 +394,13 @@ project 'JRuby Base' do
   profile 'build.properties' do
 
     activation do
-      file( :exists => '../build.properties' )
+      file( exists: '../build.properties' )
     end
 
     plugin 'org.codehaus.mojo:properties-maven-plugin:1.0-alpha-2' do
       execute_goals( 'read-project-properties',
-                     :id => 'properties',
-                     :phase => 'initialize',
+                     id: 'properties',
+                     phase: 'initialize',
                      'files' => [ '${jruby.basedir}/build.properties' ],
                      'quiet' =>  'true' )
     end
@@ -410,7 +410,7 @@ project 'JRuby Base' do
   profile 'tzdata' do
 
     activation do
-      property( :name => 'tzdata.version' )
+      property( name: 'tzdata.version' )
     end
 
     properties( 'tzdata.jar.version' => '${tzdata.version}',
@@ -420,7 +420,7 @@ project 'JRuby Base' do
 
   profile 'generate sources jar' do
     activation do
-      property( :name => 'create.sources.jar', :value => 'true' )
+      property( name: 'create.sources.jar', value: 'true' )
     end
 
     plugin :source do

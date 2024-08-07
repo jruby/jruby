@@ -11,31 +11,31 @@ pom( 'org.jruby:jruby', '${jruby.version}' )
 gem 'flickraw', '0.9.7'
 
 extension 'org.jruby.maven:mavengem-wagon:2.0.2'
-repository :id => :mavengems, :url => 'mavengem:https://rubygems.org'
+repository id: :mavengems, url: 'mavengem:https://rubygems.org'
 
-jruby_plugin :gem, :includeRubygemsInResources => true, :jrubyVersion => '9.0.0.0' do
+jruby_plugin :gem, includeRubygemsInResources: true, jrubyVersion: '9.0.0.0' do
   execute_goal :initialize
 end 
 
 # start jetty for the tests
 plugin( 'org.eclipse.jetty:jetty-maven-plugin', '9.1.3.v20140225',
-        :path => '/',
-        :stopPort => 9999,
-        :stopKey => 'foo' ) do
-   execute_goal( 'start', :id => 'start jetty', :phase => 'pre-integration-test', :daemon => true )
-   execute_goal( 'stop', :id => 'stop jetty', :phase => 'post-integration-test' )
+        path: '/',
+        stopPort: 9999,
+        stopKey: 'foo' ) do
+   execute_goal( 'start', id: 'start jetty', phase: 'pre-integration-test', daemon: true )
+   execute_goal( 'stop', id: 'stop jetty', phase: 'post-integration-test' )
 end
 
 # download files during the tests
 result = nil
-execute 'download', :phase => 'integration-test' do
+execute 'download', phase: 'integration-test' do
   require 'open-uri'
   result = open( 'http://localhost:8080' ).string
   puts result
 end
 
 # verify the downloads
-execute 'check download', :phase => :verify do
+execute 'check download', phase: :verify do
   expected = 'hello world:'
   unless result.match( /#{expected}/ )
     raise "missed expected string in download: #{expected}"

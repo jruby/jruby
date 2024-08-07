@@ -14,7 +14,7 @@ project 'JRuby Dist' do
 
     plugin :dependency do
       execute_goals( 'unpack',
-                     :id => 'unpack jruby-stdlib',
+                     id: 'unpack jruby-stdlib',
                      'stripVersion' =>  'true',
                      'artifactItems' => [ { 'groupId' =>  'org.jruby',
                                             'artifactId' =>  'jruby-stdlib',
@@ -37,10 +37,10 @@ project 'JRuby Dist' do
 
   phase :package do
     plugin( :assembly, '2.4',
-            :recompressZippedFiles => true,
-            :tarLongFileMode =>  'gnu' ) do
-      execute_goals( :single, :id => 'bin.tar.gz and bin.zip',
-                     :descriptors => [ 'src/main/assembly/bin.xml' ] )
+            recompressZippedFiles: true,
+            tarLongFileMode:  'gnu' ) do
+      execute_goals( :single, id: 'bin.tar.gz and bin.zip',
+                     descriptors: [ 'src/main/assembly/bin.xml' ] )
     end
   end
 
@@ -83,7 +83,7 @@ project 'JRuby Dist' do
   profile 'source dist' do
 
     activation do
-      file( :exists => '../../.git' )
+      file( exists: '../../.git' )
     end
 
     phase 'prepare-package' do
@@ -103,10 +103,10 @@ project 'JRuby Dist' do
       end
       plugin 'org.codehaus.mojo:build-helper-maven-plugin' do
         execute_goal( 'attach-artifact',
-                      :id => 'attach-artifacts',
-                      :artifacts => [ { :file => '${project.build.directory}/${project.build.finalName}-src.zip',
-                                        :type => 'zip',
-                                        :classifier => 'src' } ] )
+                      id: 'attach-artifacts',
+                      artifacts: [ { file: '${project.build.directory}/${project.build.finalName}-src.zip',
+                                        type: 'zip',
+                                        classifier: 'src' } ] )
 
       end
     end
