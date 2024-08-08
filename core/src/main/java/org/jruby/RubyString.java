@@ -363,11 +363,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return eqlAndComparable(other);
     }
 
-    @Deprecated
-    private boolean eql19(IRubyObject other) {
-        return eqlAndComparable(other);
-    }
-
     // rb_str_hash_cmp
     private boolean eqlAndComparable(IRubyObject other) {
         final RubyString otherString = (RubyString) other;
@@ -1013,11 +1008,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         value.invalidate();
     }
 
-    @Deprecated
-    public final void modify19() {
-        modifyAndClearCodeRange();
-    }
-
     public final void modifyAndClearCodeRange() {
         modify();
         clearCodeRange();
@@ -1317,11 +1307,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return isFrozen() ? this.dup() : this;
     }
 
-    @Deprecated
-    public IRubyObject op_plus19(ThreadContext context, IRubyObject arg) {
-        return op_plus(context, arg);
-    }
-
     @JRubyMethod(name = "+")
     public IRubyObject op_plus(ThreadContext context, IRubyObject arg) {
         RubyString str = arg.convertToString();
@@ -1333,11 +1318,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         RubyString resultStr = newStringNoCopy(context.runtime, StringSupport.addByteLists(value, str.value),
                 enc, CodeRangeSupport.codeRangeAnd(getCodeRange(), str.getCodeRange()));
         return resultStr;
-    }
-
-    @Deprecated
-    public IRubyObject op_mul19(ThreadContext context, IRubyObject other) {
-        return op_mul(context, other);
     }
 
     @JRubyMethod(name = "*")
@@ -1500,13 +1480,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return this;
     }
 
-    // Needs to remain in place until StringIO has migrated to the new methods
-    // See https://github.com/ruby/stringio/issues/83
-    @Deprecated
-    public final RubyString cat19(RubyString str2) {
-        return catWithCodeRange(str2);
-    }
-
     // // rb_str_buf_append against VALUE
     public final RubyString catWithCodeRange(RubyString str2) {
         ByteList other = str2.getByteList();
@@ -1520,13 +1493,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     public final RubyString cat(ByteList other, int codeRange) {
         catWithCodeRange(other, codeRange);
         return this;
-    }
-
-    // Needs to remain in place until StringIO has migrated to the new methods
-    // See https://github.com/ruby/stringio/issues/83
-    @Deprecated
-    public final int cat19(ByteList other, int codeRange) {
-        return catWithCodeRange(other, codeRange);
     }
 
     // rb_str_buf_append against ptr
@@ -1608,11 +1574,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return this;
     }
 
-    @Deprecated
-    public IRubyObject replace19(IRubyObject other) {
-        return replace(other);
-    }
-
     @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
     @Override
     public RubyString initialize_copy(IRubyObject other) {
@@ -1650,21 +1611,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return this;
     }
 
-    @Deprecated
-    public IRubyObject reverse19(ThreadContext context) {
-        return reverse(context);
-    }
-
     @JRubyMethod(name = "reverse")
     public IRubyObject reverse(ThreadContext context) {
         RubyString str = strDup(context.runtime, context.runtime.getString());
         str.reverse_bang(context);
         return str;
-    }
-
-    @Deprecated
-    public RubyString reverse_bang19(ThreadContext context) {
-        return reverse_bang(context);
     }
 
     @JRubyMethod(name = "reverse!")
@@ -1830,20 +1781,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (other instanceof RubyString) throw typeError(context, "type mismatch: String given");
         return sites(context).op_match.call(context, other, other, this);
     }
-    @Deprecated
-    public IRubyObject match19(ThreadContext context, IRubyObject pattern) {
-        return match(context, pattern, Block.NULL_BLOCK);
-    }
-
-    @Deprecated
-    public IRubyObject match19(ThreadContext context, IRubyObject pattern, IRubyObject pos, Block block) {
-        return match(context, pattern, pos, block);
-    }
-
-    @Deprecated
-    public IRubyObject match19(ThreadContext context, IRubyObject[] args, Block block) {
-        return match(context, args, block);
-    }
 
     /**
      * String#match(pattern)
@@ -1888,20 +1825,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return getPattern(context, pattern).matchP(context, this, RubyNumeric.num2int(pos));
     }
 
-    @Deprecated
-    public IRubyObject op_ge19(ThreadContext context, IRubyObject other) {
-        return op_ge(context, other);
-    }
-
     @JRubyMethod(name = ">=")
     public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
         return other instanceof RubyString otherStr && cmpIsBuiltin(context) ?
             asBoolean(context, op_cmp(otherStr) >= 0) : RubyComparable.op_ge(context, this, other);
-    }
-
-    @Deprecated
-    public IRubyObject op_gt19(ThreadContext context, IRubyObject other) {
-        return op_gt(context, other);
     }
 
     @JRubyMethod(name = ">")
@@ -1910,20 +1837,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             asBoolean(context, op_cmp(otherStr) > 0) : RubyComparable.op_gt(context, this, other);
     }
 
-    @Deprecated
-    public IRubyObject op_le19(ThreadContext context, IRubyObject other) {
-        return op_le(context, other);
-    }
-
     @JRubyMethod(name = "<=")
     public IRubyObject op_le(ThreadContext context, IRubyObject other) {
         return other instanceof RubyString otherStr && cmpIsBuiltin(context) ?
                 asBoolean(context, op_cmp(otherStr) <= 0) : RubyComparable.op_le(context, this, other);
-    }
-
-    @Deprecated
-    public IRubyObject op_lt19(ThreadContext context, IRubyObject other) {
-        return op_lt(context, other);
     }
 
     @JRubyMethod(name = "<")
@@ -1934,11 +1851,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     private boolean cmpIsBuiltin(ThreadContext context) {
         return sites(context).cmp.isBuiltin(this);
-    }
-
-    @Deprecated
-    public IRubyObject str_eql_p19(ThreadContext context, IRubyObject other) {
-        return str_eql_p(context, other);
     }
 
     @JRubyMethod(name = "eql?")
@@ -3829,11 +3741,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return this;
     }
 
-    @Deprecated
-    private void replaceInternal19(Ruby runtime, int beg, int len, RubyString repl) {
-        strUpdate(runtime, beg, len, this, repl);
-    }
-
     /** rb_str_aref, rb_str_aref_m
      *
      */
@@ -5594,26 +5501,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return context.nil;
     }
 
-    @Deprecated
-    public RubyString chomp19(ThreadContext context) {
-        return chomp(context);
-    }
-
-    @Deprecated
-    public RubyString chomp19(ThreadContext context, IRubyObject arg0) {
-        return chomp(context, arg0);
-    }
-
-    @Deprecated
-    public IRubyObject chomp_bang19(ThreadContext context) {
-        return chomp_bang(context);
-    }
-
-    @Deprecated
-    public IRubyObject chomp_bang19(ThreadContext context, IRubyObject arg0) {
-        return chomp_bang(context, arg0);
-    }
-
     /**
      * rb_str_chomp_bang
      *
@@ -6119,16 +6006,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return this;
     }
 
-    @Deprecated
-    public IRubyObject tr19(ThreadContext context, IRubyObject src, IRubyObject repl) {
-        return tr(context, src, repl);
-    }
-
-    @Deprecated
-    public IRubyObject tr_bang19(ThreadContext context, IRubyObject src, IRubyObject repl) {
-        return tr_bang(context, src, repl);
-    }
-
     /** rb_str_tr / rb_str_tr_bang
      *
      */
@@ -6154,16 +6031,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         CodeRangeable ret = StringSupport.trTransHelper(context.runtime, this, srcStr, replStr, sflag);
         return (ret == null) ? context.nil : (IRubyObject) ret;
-    }
-
-    @Deprecated
-    public IRubyObject tr_s19(ThreadContext context, IRubyObject src, IRubyObject repl) {
-        return tr_s(context, src, repl);
-    }
-
-    @Deprecated
-    public IRubyObject tr_s_bang19(ThreadContext context, IRubyObject src, IRubyObject repl) {
-        return tr_s_bang(context, src, repl);
     }
 
     /** rb_str_tr_s / rb_str_tr_s_bang
