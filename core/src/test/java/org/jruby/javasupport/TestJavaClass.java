@@ -7,16 +7,6 @@ import org.jruby.*;
 public class TestJavaClass extends junit.framework.TestCase {
 
     @Test
-    @SuppressWarnings("deprecation")
-    public void testGet() {
-        Ruby runtime = Ruby.newInstance();
-        requireJava(runtime);
-
-        JavaClass javaClass = JavaClass.get(runtime, String.class);
-        assertSame(javaClass, JavaClass.get(runtime, String.class));
-    }
-
-    @Test
     public void testToJava() {
         Ruby runtime = Ruby.newInstance();
         requireJava(runtime);
