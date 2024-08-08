@@ -12,6 +12,7 @@ import org.jruby.RubyRational;
 import org.jruby.RubyString;
 import org.jruby.RubyStruct;
 import org.jruby.RubyTime;
+import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -207,8 +208,11 @@ public class TimeArgs {
     }
 
     private static int parseYear(ThreadContext context, IRubyObject _year) {
-        if (_year instanceof RubyString) {
-            _year = RubyNumeric.str2inum(context.runtime, (RubyString) _year, 10, false);
+        if (_year instanceof RubyString yr) {
+            if (!yr.getEncoding().isAsciiCompatible()) {
+                throw context.runtime.newArgumentError("time string should have ASCII compatible encoding");
+            }
+            _year = RubyNumeric.str2inum(context.runtime, yr, 10, false);
         }
 
         return RubyNumeric.num2int(_year);
