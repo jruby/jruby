@@ -427,14 +427,8 @@ public class RubyRational extends RubyNumeric {
     }
     
     private static IRubyObject convertCommon(ThreadContext context, RubyClass clazz, IRubyObject a1, IRubyObject a2, boolean raise) {
-        if (a1 instanceof RubyComplex) {
-            RubyComplex a1c = (RubyComplex) a1;
-            if (k_exact_p(a1c.getImage()) && f_zero_p(context, a1c.getImage())) a1 = a1c.getReal();
-        }
-        if (a2 instanceof RubyComplex) {
-            RubyComplex a2c = (RubyComplex) a2;
-            if (k_exact_p(a2c.getImage()) && f_zero_p(context, a2c.getImage())) a2 = a2c.getReal();
-        }
+        if (a1 instanceof RubyComplex a1c && k_exact_p(a1c.getImage()) && f_zero_p(context, a1c.getImage())) a1 = a1c.getReal();
+        if (a2 instanceof RubyComplex a2c && k_exact_p(a2c.getImage()) && f_zero_p(context, a2c.getImage())) a2 = a2c.getReal();
 
         if (a1 instanceof RubyInteger) {
             // do nothing
@@ -446,9 +440,7 @@ public class RubyRational extends RubyNumeric {
         } else if (a1 instanceof RubyObject && !a1.respondsTo("to_r")) {
             try {
                 IRubyObject tmp = checkToInteger(context, a1);
-                if (!tmp.isNil()) {
-                    a1 = tmp;
-                }
+                if (!tmp.isNil()) a1 = tmp;
             } catch (RaiseException re) {
                 context.setErrorInfo(context.nil);
             }
@@ -461,12 +453,10 @@ public class RubyRational extends RubyNumeric {
         } else if (a2 instanceof RubyString) {
             a2 = str_to_r_strict(context, (RubyString) a2, raise);
             if (!raise && a2.isNil()) return a2;
-        } else if (!a2.isNil() & a2 instanceof RubyObject && !a2.respondsTo("to_r")) {
+        } else if (!a2.isNil() & !a2.respondsTo("to_r")) {
             try {
                 IRubyObject tmp = checkToInteger(context, a2);
-                if (!tmp.isNil()) {
-                    a2 = tmp;
-                }
+                if (!tmp.isNil()) a2 = tmp;
             } catch (RaiseException re) {
                 context.setErrorInfo(context.nil);
             }
@@ -479,43 +469,11 @@ public class RubyRational extends RubyNumeric {
         RubyClass rationalClazz = context.runtime.getRational();
         if (a2 == context.nil) {
             if (!(a1 instanceof RubyNumeric && f_integer_p(context, (RubyNumeric) a1))) {
-                if (!raise) {
-                    try {
-                        IRubyObject ret = TypeConverter.convertToType(context, a1, rationalClazz, sites(context).to_r_checked);
-                        return ret;
-                    } catch (RaiseException re) {
-                        context.setErrorInfo(context.nil);
-                        return context.nil;
-                    }
-                }
-                return TypeConverter.convertToType(context, a1, rationalClazz, sites(context).to_r_checked);
+                return convertToRational(context, a1, raise, rationalClazz);
             }
         } else {
-            if (!(a1 instanceof RubyNumeric)) {
-                try {
-                    a1 = TypeConverter.convertToType(context, a1, rationalClazz, sites(context).to_r_checked);
-                } catch (RaiseException re) {
-                    if (!raise) {
-                        context.setErrorInfo(context.nil);
-                        return context.nil;
-                    } else {
-                        throw re;
-                    }
-                }
-            }
-
-            if (!(a2 instanceof RubyNumeric)) {
-                try {
-                    a2 = TypeConverter.convertToType(context, a2, rationalClazz, sites(context).to_r_checked);
-                } catch (RaiseException re) {
-                    if (!raise) {
-                        context.setErrorInfo(context.nil);
-                        return context.nil;
-                    } else {
-                        throw re;
-                    }
-                }
-            }
+            if (!(a1 instanceof RubyNumeric)) a1 = convertToRational(context, a1, raise, rationalClazz);
+            if (!(a2 instanceof RubyNumeric)) a2 = convertToRational(context, a2, raise, rationalClazz);
 
             if ((a1 instanceof RubyNumeric && a2 instanceof RubyNumeric) &&
                 (!f_integer_p(context, (RubyNumeric) a1) || !f_integer_p(context, (RubyNumeric) a2))) {
@@ -542,6 +500,17 @@ public class RubyRational extends RubyNumeric {
         }
 
         return newInstance(context, clazz, a1, a2, raise);
+    }
+
+    private static IRubyObject convertToRational(ThreadContext context, IRubyObject obj, boolean raise, RubyClass rationalClazz) {
+        if (raise) return TypeConverter.convertToType(context, obj, rationalClazz, sites(context).to_r_checked);
+
+        try {
+            return TypeConverter.convertToType(context, obj, rationalClazz, sites(context).to_r_checked);
+        } catch (RaiseException re) {
+            context.setErrorInfo(context.nil);
+            return context.nil;
+        }
     }
 
     /** nurat_numerator
