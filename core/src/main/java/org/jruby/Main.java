@@ -199,12 +199,14 @@ public class Main {
 
         if (DripMain.DRIP_RUNTIME != null) {
             main = new Main(DripMain.DRIP_CONFIG, true);
+        } else if (CheckpointMain.checkpointConfig != null) {
+            main = new Main(CheckpointMain.checkpointConfig, true);
         } else {
             main = new Main(true);
         }
 
         try {
-            Status status = main.run(checkpoint, args);
+            Status status = main.run(args);
 
             if (status.isExit()) {
                 System.exit(status.getStatus());
@@ -229,31 +231,10 @@ public class Main {
         }
     }
 
-    private static void checkpoint(String[] args) {
-        // warm up JRuby internals
-        System.out.println("warming up for checkpoint");
-
-        String loopsEnv = System.getenv("JRUBY_CHECKPOINT_LOOPS");
-        int loops = loopsEnv == null ? 10 : Integer.valueOf(loopsEnv);
-
-        String codeEnv = System.getenv("JRUBY_CHECKPOINT_CODE");
-        String code = codeEnv == null ? "require 'rubygems'" : codeEnv;
-
-        for (int i = 0; i < loops; i++) {
-            Ruby ruby = Ruby.newInstance();
-            ruby.evalScriptlet(code);
-            ruby.tearDown();
-        }
-    }
-
-    public Status run(boolean checkpoint, String[] args) {
+    public Status run(String[] args) {
         try {
-            if (checkpoint) {
-                checkpoint(args);
-            }
-
             config.processArguments(args);
-            return internalRun(checkpoint);
+            return internalRun();
         } catch (MainExitException mee) {
             return handleMainExit(mee);
         } catch (OutOfMemoryError oome) {
@@ -269,10 +250,10 @@ public class Main {
 
     @Deprecated
     public Status run() {
-        return internalRun(false);
+        return internalRun();
     }
 
-    private Status internalRun(boolean checkpoint) {
+    private Status internalRun() {
         doShowVersion();
         doShowCopyright();
         doPrintProperties();
@@ -291,18 +272,11 @@ public class Main {
             // use drip's runtime, reinitializing config
             runtime = DripMain.DRIP_RUNTIME;
             runtime.reinitialize(true);
+        } else if (CheckpointMain.checkpointRuby != null) {
+            runtime = CheckpointMain.checkpointRuby;
+            runtime.reinitialize(true);
         } else {
             runtime = Ruby.newInstance(config);
-        }
-
-        if (checkpoint) {
-            try {
-                Core.checkpointRestore();
-                System.exit(0);
-            } catch (CheckpointException | RestoreException ce) {
-                ce.printStackTrace();
-                throw new RuntimeException(ce);
-            }
         }
 
         Status status = null;

@@ -5,6 +5,9 @@ import org.crac.Core;
 import org.crac.RestoreException;
 
 public class CheckpointMain {
+    static RubyInstanceConfig checkpointConfig;
+    static Ruby checkpointRuby;
+
     public static void main(String[] args) {
         // warm up JRuby internals
         String loopsEnv = System.getenv("JRUBY_CHECKPOINT_LOOPS");
@@ -18,16 +21,22 @@ public class CheckpointMain {
             ruby.evalScriptlet(code);
             ruby.tearDown();
         }
-//
-//        try {
-//
-//        } catch (CheckpointException | RestoreException e) {
-//            e.printStackTrace();
-//            System.exit(1);
-//        }
+
+        Ruby.clearGlobalRuntime();
+
+        checkpointConfig = new RubyInstanceConfig();
+        checkpointRuby = Ruby.newInstance(checkpointConfig);
+
+        try {
+            Core.checkpointRestore();
+        } catch (CheckpointException | RestoreException e) {
+            e.printStackTrace();
+        }
+
+        System.exit(1);
 
         // if no restore main used, proceed with normal main and prepared runtime
 //        Main main = new Main(true);
-        Main.checkpointMain(true, args);
+//        Main.checkpointMain(true, args);
     }
 }
