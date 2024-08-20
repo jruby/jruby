@@ -16,16 +16,18 @@ public class CheckpointMain {
         for (int i = 0; i < loops; i++) {
             Ruby ruby = Ruby.newInstance();
             ruby.evalScriptlet(code);
+            ruby.tearDown();
         }
+//
+//        try {
+//
+//        } catch (CheckpointException | RestoreException e) {
+//            e.printStackTrace();
+//            System.exit(1);
+//        }
 
-        try {
-            Core.checkpointRestore();
-        } catch (CheckpointException | RestoreException e) {
-            e.printStackTrace();
-            System.exit(1);
-        }
-
-        // if no restore main used, proceed with normal main
-        Main.main(args);
+        // if no restore main used, proceed with normal main and prepared runtime
+//        Main main = new Main(true);
+        Main.checkpointMain(true, args);
     }
 }

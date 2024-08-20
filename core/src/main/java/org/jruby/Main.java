@@ -189,6 +189,10 @@ public class Main {
      * @param args command-line args, provided by the JVM.
      */
     public static void main(String[] args) {
+        checkpointMain(false, args);
+    }
+
+    public static void checkpointMain(boolean checkpoint, String[] args) {
         doGCJCheck();
 
         Main main;
@@ -200,7 +204,7 @@ public class Main {
         }
 
         try {
-            Status status = main.run(args);
+            Status status = main.run(checkpoint, args);
 
             if (status.isExit()) {
                 System.exit(status.getStatus());
@@ -225,26 +229,27 @@ public class Main {
         }
     }
 
-    private static String[] checkpoint(String[] args) {
-        // warm up the process
-        System.out.println("warming up");
-        for (int i = 0; i < 1000; i++) {
-            Ruby ruby = Ruby.newInstance();
-//            ruby.evalScriptlet("require 'rubygems'; Gem::Specification.find_all {|spec| spec.to_s}");
-            ruby.tearDown();
-            System.gc();
-            System.out.print('.');
-        }
+    private static void checkpoint(String[] args) {
+        // warm up JRuby internals
+        System.out.println("warming up for checkpoint");
 
-        return Arrays.copyOfRange(args, 1, args.length);
+        String loopsEnv = System.getenv("JRUBY_CHECKPOINT_LOOPS");
+        int loops = loopsEnv == null ? 10 : Integer.valueOf(loopsEnv);
+
+        String codeEnv = System.getenv("JRUBY_CHECKPOINT_CODE");
+        String code = codeEnv == null ? "require 'rubygems'" : codeEnv;
+
+        for (int i = 0; i < loops; i++) {
+            Ruby ruby = Ruby.newInstance();
+            ruby.evalScriptlet(code);
+            ruby.tearDown();
+        }
     }
 
-    public Status run(String[] args) {
+    public Status run(boolean checkpoint, String[] args) {
         try {
-            boolean checkpoint = false;
-            if (args.length > 0 && args[0].equals("--checkpoint")) {
-                args = checkpoint(args);
-                checkpoint = true;
+            if (checkpoint) {
+                checkpoint(args);
             }
 
             config.processArguments(args);
@@ -292,9 +297,8 @@ public class Main {
 
         if (checkpoint) {
             try {
-//                runtime.evalScriptlet("require 'rubygems'");
                 Core.checkpointRestore();
-                System.out.println("go");
+                System.exit(0);
             } catch (CheckpointException | RestoreException ce) {
                 ce.printStackTrace();
                 throw new RuntimeException(ce);
