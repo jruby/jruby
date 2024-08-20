@@ -38,6 +38,9 @@
 
 package org.jruby;
 
+import org.crac.CheckpointException;
+import org.crac.Core;
+import org.crac.RestoreException;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
@@ -57,6 +60,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -221,10 +225,30 @@ public class Main {
         }
     }
 
+    private static String[] checkpoint(String[] args) {
+        // warm up the process
+        System.out.println("warming up");
+        for (int i = 0; i < 1000; i++) {
+            Ruby ruby = Ruby.newInstance();
+//            ruby.evalScriptlet("require 'rubygems'; Gem::Specification.find_all {|spec| spec.to_s}");
+            ruby.tearDown();
+            System.gc();
+            System.out.print('.');
+        }
+
+        return Arrays.copyOfRange(args, 1, args.length);
+    }
+
     public Status run(String[] args) {
         try {
+            boolean checkpoint = false;
+            if (args.length > 0 && args[0].equals("--checkpoint")) {
+                args = checkpoint(args);
+                checkpoint = true;
+            }
+
             config.processArguments(args);
-            return internalRun();
+            return internalRun(checkpoint);
         } catch (MainExitException mee) {
             return handleMainExit(mee);
         } catch (OutOfMemoryError oome) {
@@ -240,10 +264,10 @@ public class Main {
 
     @Deprecated
     public Status run() {
-        return internalRun();
+        return internalRun(false);
     }
 
-    private Status internalRun() {
+    private Status internalRun(boolean checkpoint) {
         doShowVersion();
         doShowCopyright();
         doPrintProperties();
@@ -264,6 +288,17 @@ public class Main {
             runtime.reinitialize(true);
         } else {
             runtime = Ruby.newInstance(config);
+        }
+
+        if (checkpoint) {
+            try {
+//                runtime.evalScriptlet("require 'rubygems'");
+                Core.checkpointRestore();
+                System.out.println("go");
+            } catch (CheckpointException | RestoreException ce) {
+                ce.printStackTrace();
+                throw new RuntimeException(ce);
+            }
         }
 
         Status status = null;

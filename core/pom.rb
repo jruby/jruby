@@ -78,6 +78,8 @@ project 'JRuby Base' do
 
   jar 'jakarta.annotation:jakarta.annotation-api:2.0.0', scope: 'provided'
 
+  jar 'org.crac:crac:1.4.0'
+
   plugin_management do
     plugin( 'org.eclipse.m2e:lifecycle-mapping:1.0.0',
             'lifecycleMappingMetadata' => {
