@@ -48,6 +48,7 @@ import static jnr.constants.platform.ProtocolFamily.PF_INET6;
 import static jnr.constants.platform.ProtocolFamily.PF_UNIX;
 import static jnr.constants.platform.ProtocolFamily.PF_UNSPEC;
 import static jnr.constants.platform.Sock.*;
+import static org.jruby.ext.socket.SocketUtils.IP_V4_MAPPED_ADDRESS_PREFIX;
 import static org.jruby.ext.socket.SocketUtils.sockerr;
 
 public class Addrinfo extends RubyObject {
@@ -262,15 +263,20 @@ public class Addrinfo extends RubyObject {
                     int _port = service.convertToInteger().getIntValue();
 
                     InetAddress inetAddress;
+                    boolean ipv4PrefixedString;
                     if (!nodename.isNil()) {
-                        inetAddress = getRubyInetAddress(nodename.convertToString().toString(), numericnode);
+                        String address = nodename.convertToString().toString();
+                        inetAddress = getRubyInetAddress(address, numericnode);
+                        ipv4PrefixedString = false;
                     } else {
                         inetAddress = getRubyInetAddress(numericnode);
+                        ipv4PrefixedString = SocketUtils.isIPV4MappedAddressPrefix(numericnode);
+                        if (ipv4PrefixedString) looksLikeV4ButIsV6 = true;
                     }
 
                     this.socketAddress = new InetSocketAddress(inetAddress, _port);
 
-                    if (af == AF_INET6 && getInetAddress() instanceof Inet4Address) {
+                    if (af == AF_INET6 && getInetAddress() instanceof Inet4Address && !ipv4PrefixedString) {
                         throw sockerr(runtime, "getaddrinfo: Address family for hostname not supported");
                     }
 
@@ -361,7 +367,8 @@ public class Addrinfo extends RubyObject {
         }
 
         String portString = port == 0 ? "" : ":" + port;
-        String host = getInetSocketAddress().getAddress().getHostAddress();
+        String host = (looksLikeV4ButIsV6 ? IP_V4_MAPPED_ADDRESS_PREFIX : "") +
+                getInetSocketAddress().getAddress().getHostAddress();
 
         return context.runtime.newString(host + portString);
     }

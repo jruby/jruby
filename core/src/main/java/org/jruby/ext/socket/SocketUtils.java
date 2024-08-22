@@ -499,20 +499,24 @@ public class SocketUtils {
         }
     }
 
-    private static final String ipv4MappedAddressPrefix = "::ffff:";
+    public static final String IP_V4_MAPPED_ADDRESS_PREFIX = "::ffff:";
     private static final String ipv6LocalHost = "::1";
+
+    public static boolean isIPV4MappedAddressPrefix(String address) {
+        return address.startsWith(IP_V4_MAPPED_ADDRESS_PREFIX);
+    }
 
     public static IRubyObject getaddress(ThreadContext context, IRubyObject hostname) {
         try {
             String hostnameString = hostname.convertToString().toString();
             InetAddress address = InetAddress.getByName(hostnameString);
 
-            if (hostnameString.startsWith(ipv4MappedAddressPrefix)) {
+            if (isIPV4MappedAddressPrefix(hostnameString)) {
                 // See https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/Inet6Address.html#special-ipv6-address-heading
                 // IPv4 mapped IPv6 addresses will always return an Inet4Address. When given an IPv6 address to
                 // IPSocket.getaddress, ruby will return the IPv6 address. This is not the case in Java.
                 return RubyString.newInternalFromJavaExternal(
-                        context.runtime, ipv4MappedAddressPrefix + address.getHostAddress());
+                        context.runtime, IP_V4_MAPPED_ADDRESS_PREFIX + address.getHostAddress());
             } else if (hostnameString.equals(ipv6LocalHost)) {
                 // Ruby will return "::1" for the local host IPv6 address.
                 // Java will return the full IPv6 address of 0:0:0:0:0:0:0:1.
