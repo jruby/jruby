@@ -46,6 +46,7 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.main.DripMain;
+import org.jruby.main.PrebootMain;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.backtrace.TraceType;
@@ -189,18 +190,12 @@ public class Main {
      * @param args command-line args, provided by the JVM.
      */
     public static void main(String[] args) {
-        checkpointMain(false, args);
-    }
-
-    public static void checkpointMain(boolean checkpoint, String[] args) {
         doGCJCheck();
 
         Main main;
 
-        if (DripMain.DRIP_RUNTIME != null) {
-            main = new Main(DripMain.DRIP_CONFIG, true);
-        } else if (CheckpointMain.checkpointConfig != null) {
-            main = new Main(CheckpointMain.checkpointConfig, true);
+        if (PrebootMain.PREBOOT_RUNTIME != null) {
+            main = new Main(PrebootMain.PREBOOT_CONFIG, true);
         } else {
             main = new Main(true);
         }
@@ -211,6 +206,8 @@ public class Main {
             if (status.isExit()) {
                 System.exit(status.getStatus());
             }
+
+            System.exit(0);
         }
         catch (RaiseException ex) {
             System.exit( handleRaiseException(ex) );
@@ -268,12 +265,9 @@ public class Main {
 
         final Ruby runtime;
 
-        if (DripMain.DRIP_RUNTIME != null) {
+        if (PrebootMain.PREBOOT_RUNTIME != null) {
             // use drip's runtime, reinitializing config
-            runtime = DripMain.DRIP_RUNTIME;
-            runtime.reinitialize(true);
-        } else if (CheckpointMain.checkpointRuby != null) {
-            runtime = CheckpointMain.checkpointRuby;
+            runtime = PrebootMain.PREBOOT_RUNTIME;
             runtime.reinitialize(true);
         } else {
             runtime = Ruby.newInstance(config);

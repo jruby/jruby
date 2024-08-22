@@ -1,19 +1,17 @@
 package org.jruby.main;
 
+import org.crac.CheckpointException;
+import org.crac.Core;
+import org.crac.RestoreException;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.util.cli.Options;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 
-public class DripMain extends PrebootMain {
-    public static RubyInstanceConfig DRIP_CONFIG;
-    public static Ruby DRIP_RUNTIME;
-
+public class CheckpointMain extends PrebootMain {
     public static void main(String[] args) throws IOException {
-        DripMain dm = new DripMain();
+        CheckpointMain dm = new CheckpointMain();
         dm.warmup();
     }
 
@@ -25,5 +23,11 @@ public class DripMain extends PrebootMain {
 
     @Override
     void endPreboot() {
+        try {
+            Core.checkpointRestore();
+        } catch (CheckpointException | RestoreException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
     }
 }
