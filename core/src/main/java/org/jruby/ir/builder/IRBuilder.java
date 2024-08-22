@@ -65,9 +65,9 @@ import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_REST;
 import static org.jruby.util.RubyStringBuilder.str;
 
 public abstract class IRBuilder<U, V, W, X, Y, Z> {
-    static final boolean PARSER_TIMING = Options.PARSER_SUMMARY.load();
     static final UnexecutableNil U_NIL = UnexecutableNil.U_NIL;
 
+    private boolean parserTiming = Options.PARSER_SUMMARY.load();
     private final IRManager manager;
     protected final IRScope scope;
     protected final IRBuilder parent;
@@ -265,7 +265,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     protected InterpreterContext buildRootInner(ParseResult parseResult) {
         long time = 0;
-        if (PARSER_TIMING) time = System.nanoTime();
+        if (parserTiming) time = System.nanoTime();
         coverageMode = parseResult.getCoverageMode();
 
         // Build IR for the tree and return the result of the expression tree
@@ -279,7 +279,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
         InterpreterContext ic = scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
 
-        if (PARSER_TIMING) manager.getRuntime().getParserManager().getParserStats().addIRBuildTime(System.nanoTime() - time);
+        if (parserTiming) manager.getRuntime().getParserManager().getParserStats().addIRBuildTime(System.nanoTime() - time);
         return ic;
     }
 
@@ -1556,7 +1556,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     protected InterpreterContext buildIterInner(RubySymbol methodName, U var, U body, int endLine) {
         long time = 0;
-        if (PARSER_TIMING) time = System.nanoTime();
+        if (parserTiming) time = System.nanoTime();
         this.methodName = methodName;
 
         boolean forNode = scope instanceof IRFor;
@@ -1593,7 +1593,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         computeScopeFlagsFrom(instructions);
         InterpreterContext ic = scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
 
-        if (PARSER_TIMING) manager.getRuntime().getParserManager().getParserStats().addIRBuildTime(System.nanoTime() - time);
+        if (parserTiming) manager.getRuntime().getParserManager().getParserStats().addIRBuildTime(System.nanoTime() - time);
 
         return ic;
     }
@@ -1613,7 +1613,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     protected InterpreterContext buildLambdaInner(U blockArgs, U body) {
         long time = 0;
-        if (PARSER_TIMING) time = System.nanoTime();
+        if (parserTiming) time = System.nanoTime();
 
         receiveBlockArgs(blockArgs);
 
@@ -1629,7 +1629,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         computeScopeFlagsFrom(instructions);
         InterpreterContext ic = scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
 
-        if (PARSER_TIMING) manager.getRuntime().getParserManager().getParserStats().addIRBuildTime(System.nanoTime() - time);
+        if (parserTiming) manager.getRuntime().getParserManager().getParserStats().addIRBuildTime(System.nanoTime() - time);
 
         return ic;
     }
@@ -2933,7 +2933,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     public InterpreterContext defineMethodInner(LazyMethodDefinition<U, V, W, X, Y, Z> defNode, IRScope parent, int coverageMode) {
         long time = 0;
-        if (PARSER_TIMING) time = System.nanoTime();
+        if (parserTiming) time = System.nanoTime();
         this.coverageMode = coverageMode;
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
@@ -2968,7 +2968,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
         InterpreterContext ic = scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
 
-        if (PARSER_TIMING) manager.getRuntime().getParserManager().getParserStats().addIRBuildTime(System.nanoTime() - time);
+        if (parserTiming) manager.getRuntime().getParserManager().getParserStats().addIRBuildTime(System.nanoTime() - time);
 
         return ic;
     }

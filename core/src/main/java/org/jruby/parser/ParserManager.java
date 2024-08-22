@@ -34,9 +34,10 @@ import static org.jruby.parser.ParserType.*;
  *   1. file parses can deserialize from IR but evals never do.
  */
 public class ParserManager {
-    public static final boolean PARSER_TIMING = Options.PARSER_SUMMARY.load();
     public static final boolean PARSER_WASM = Options.PARSER_WASM.load();
 
+    public final boolean parserTiming = Options.PARSER_SUMMARY.load();
+    
     private final Ruby runtime;
 
     private final Parser parser;
@@ -91,9 +92,9 @@ public class ParserManager {
         long nanos = 0;
         parserStats.addEvalParse();
 
-        if (PARSER_TIMING) nanos = System.nanoTime();
+        if (parserTiming) nanos = System.nanoTime();
         ParseResult result = parser.parse(fileName, lineNumber, source, scope, EVAL);
-        if (PARSER_TIMING) parserStats.addParseTime(System.nanoTime() - nanos);
+        if (parserTiming) parserStats.addParseTime(System.nanoTime() - nanos);
 
         return result;
     }
@@ -114,14 +115,14 @@ public class ParserManager {
         long nanos = 0;
         parserStats.addLoadParse();
 
-        if (PARSER_TIMING) nanos = System.nanoTime();
+        if (parserTiming) nanos = System.nanoTime();
         ParseResult result;
         if (RubyInstanceConfig.IR_READING) {
             result = loadFileFromIRPersistence(fileName, lineNumber, in, encoding, scope, type);
         } else {
             result = parser.parse(fileName, lineNumber, in, encoding, scope, type);
         }
-        if (PARSER_TIMING) parserStats.addParseTime(System.nanoTime() - nanos);
+        if (parserTiming) parserStats.addParseTime(System.nanoTime() - nanos);
 
         return result;
     }
