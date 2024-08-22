@@ -41,6 +41,7 @@ import org.jruby.internal.runtime.methods.IRMethodArgs;
 import org.jruby.internal.runtime.methods.PartialDelegatingMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.runtime.ArgumentDescriptor;
+import org.jruby.runtime.ArgumentType;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
@@ -323,12 +324,25 @@ public class RubyMethod extends AbstractRubyMethod {
         if (descriptors.length > 0) {
             RubyString desc = descriptors[0].asParameterName(context);
 
-            str.cat(desc);
-            for (int i = 1; i < descriptors.length; i++) {
-                desc = descriptors[i].asParameterName(context);
+            boolean specialDots = false;
+            if (descriptors.length == 3) {
+                // weirdly parameters will show these 3 params but inspect will figure out this was originally (...).
+                if (descriptors[0].type == ArgumentType.rest && "*".equals(descriptors[0].name.idString()) &&
+                        descriptors[1].type == ArgumentType.keyrest && "**".equals(descriptors[1].name.idString()) &&
+                        descriptors[2].type == ArgumentType.block && "&".equals(descriptors[2].name.idString())) {
+                    str.catString("...");
+                    specialDots = true;
+                }
+            }
 
-                str.catString(", ");
+            if (!specialDots) {
                 str.cat(desc);
+                for (int i = 1; i < descriptors.length; i++) {
+                    desc = descriptors[i].asParameterName(context);
+
+                    str.catString(", ");
+                    str.cat(desc);
+                }
             }
         }
         str.catString(")");
