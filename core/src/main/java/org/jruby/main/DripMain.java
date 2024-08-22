@@ -9,21 +9,20 @@ import java.io.FileInputStream;
 import java.io.IOException;
 
 public class DripMain extends PrebootMain {
-    public static RubyInstanceConfig DRIP_CONFIG;
-    public static Ruby DRIP_RUNTIME;
-
     public static void main(String[] args) throws IOException {
         DripMain dm = new DripMain();
-        dm.warmup();
+        dm.preboot(args);
     }
 
     @Override
-    void prepareOptions() {
+    protected String[] prepareOptions(String[] args) {
         // Disable native stdio when running under Drip (#4942)
         Options.NATIVE_STDIO.force("false");
+
+        return args;
     }
 
     @Override
-    void endPreboot() {
+    protected void endPreboot(String[] args) {
     }
 }

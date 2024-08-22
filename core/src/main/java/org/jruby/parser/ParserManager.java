@@ -7,7 +7,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyFile;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyString;
-import org.jruby.common.RubyWarnings;
 import org.jruby.ir.persistence.IRReader;
 import org.jruby.ir.persistence.IRReaderStream;
 import org.jruby.ir.persistence.util.IRFileExpert;
@@ -37,7 +36,7 @@ public class ParserManager {
     public static final boolean PARSER_WASM = Options.PARSER_WASM.load();
 
     public final boolean parserTiming = Options.PARSER_SUMMARY.load();
-    
+
     private final Ruby runtime;
 
     private final Parser parser;
