@@ -67,6 +67,8 @@ public class ArgumentDescriptor {
             case anonreq:
             case anonopt:
                 return context.runtime.newString("_");
+            case nokey:
+                return context.runtime.newString("**nil");
         }
 
         // not reached
