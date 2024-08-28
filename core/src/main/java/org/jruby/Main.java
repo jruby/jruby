@@ -38,14 +38,10 @@
 
 package org.jruby;
 
-import org.crac.CheckpointException;
-import org.crac.Core;
-import org.crac.RestoreException;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
-import org.jruby.main.DripMain;
 import org.jruby.main.PrebootMain;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.ThreadContext;
@@ -61,11 +57,8 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.HashSet;
 import java.util.Properties;
 
 /**
@@ -194,8 +187,8 @@ public class Main {
 
         Main main;
 
-        if (PrebootMain.PREBOOT_RUNTIME != null) {
-            main = new Main(PrebootMain.PREBOOT_CONFIG, true);
+        if (PrebootMain.getPrebootMain() != null) {
+            main = new Main(PrebootMain.getPrebootMain().getPrebootConfig(), true);
         } else {
             main = new Main(true);
         }
@@ -265,9 +258,9 @@ public class Main {
 
         final Ruby runtime;
 
-        if (PrebootMain.PREBOOT_RUNTIME != null) {
-            // use drip's runtime, reinitializing config
-            runtime = PrebootMain.PREBOOT_RUNTIME;
+        if (PrebootMain.getPrebootMain() != null) {
+            // use prebooted runtime, reinitializing config
+            runtime = PrebootMain.getPrebootMain().getPrebootRuntime();
             runtime.reinitialize(true);
         } else {
             runtime = Ruby.newInstance(config);

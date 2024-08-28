@@ -10,8 +10,7 @@ import java.io.IOException;
 
 public class DripMain extends PrebootMain {
     public static void main(String[] args) throws IOException {
-        DripMain dm = new DripMain();
-        dm.preboot(args);
+        preboot(new DripMain(), args);
     }
 
     @Override

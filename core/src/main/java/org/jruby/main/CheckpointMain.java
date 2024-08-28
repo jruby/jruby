@@ -1,5 +1,6 @@
 package org.jruby.main;
 
+import com.headius.options.Option;
 import org.crac.CheckpointException;
 import org.crac.Context;
 import org.crac.Core;
@@ -13,8 +14,7 @@ import java.io.IOException;
 
 public class CheckpointMain extends PrebootMain {
     public static void main(String[] args) throws IOException {
-        CheckpointMain dm = new CheckpointMain();
-        dm.preboot(args);
+        preboot(new CheckpointMain(), args);
     }
 
     @Override
@@ -30,18 +30,14 @@ public class CheckpointMain extends PrebootMain {
 
     private static class JRubyContext extends Context<Resource> {
         @Override
-        public void beforeCheckpoint(Context<? extends Resource> context) throws CheckpointException {
-
-        }
+        public void beforeCheckpoint(Context<? extends Resource> context) throws CheckpointException {}
 
         @Override
         public void afterRestore(Context<? extends Resource> context) throws RestoreException {
-            Options.PARSER_SUMMARY.reload();
+            Options.PROPERTIES.forEach(Option::reload);
         }
 
         @Override
-        public void register(Resource resource) {
-
-        }
+        public void register(Resource resource) {}
     }
 }
