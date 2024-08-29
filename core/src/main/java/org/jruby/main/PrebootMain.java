@@ -22,9 +22,9 @@ public abstract class PrebootMain extends Main {
     }
 
     public static void preboot(PrebootMain main, String[] args) {
-        main.preboot(args);
-
         prebootMain = main;
+
+        main.preboot(args);
     }
 
     public void preboot(String[] args) {
@@ -34,10 +34,17 @@ public abstract class PrebootMain extends Main {
         RubyInstanceConfig config = prepareConfig(args);
         Ruby ruby = prepareRuntime(config, args);
 
+        this.config = config;
+        this.runtime = ruby;
+
         endPreboot(config, ruby, args);
     }
 
     protected String[] warmup(String[] args) {
+        return args;
+    }
+
+    protected String[] prepareOptions(String[] args) {
         return args;
     }
 
@@ -49,13 +56,6 @@ public abstract class PrebootMain extends Main {
         return Ruby.newInstance(config);
     }
 
-    protected String[] prepareOptions(String[] args) {
-        return args;
-    }
-
     protected void endPreboot(RubyInstanceConfig config, Ruby ruby, String[] args) {
-        // use config and runtime from preboot process
-        this.config = config;
-        this.runtime = ruby;
     }
 }
