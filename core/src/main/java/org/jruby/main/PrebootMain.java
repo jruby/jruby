@@ -1,11 +1,12 @@
 package org.jruby.main;
 
+import org.jruby.Main;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 
 import java.io.File;
 
-public abstract class PrebootMain {
+public abstract class PrebootMain extends Main {
     private static PrebootMain prebootMain;
     private RubyInstanceConfig config;
     private Ruby runtime;
