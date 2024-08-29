@@ -4,16 +4,10 @@ import org.jruby.Main;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 
-import java.io.File;
-
 public abstract class PrebootMain extends Main {
     private static PrebootMain prebootMain;
     private RubyInstanceConfig config;
     private Ruby runtime;
-
-    public static final String JRUBY_PREBOOT_WARMUP_ENV = "JRUBY_PREBOOT_WARMUP";
-    public static final String JRUBY_PREBOOT_WARMUP_DEFAULT = "1 + 1";
-    public static final String JRUBY_PREBOOT_FILE = "./prebootmain.rb";
 
     public static PrebootMain getPrebootMain() {
         return prebootMain;
@@ -34,63 +28,34 @@ public abstract class PrebootMain extends Main {
     }
 
     public void preboot(String[] args) {
-        // warmup JVM first
-        args = jvmWarmup(args);
-
-        // preboot actual runtime
-        Ruby.clearGlobalRuntime();
-
+        args = warmup(args);
         args = prepareOptions(args);
 
-        RubyInstanceConfig config = new RubyInstanceConfig();
-        Ruby ruby = Ruby.newInstance(config);
+        RubyInstanceConfig config = prepareConfig(args);
+        Ruby ruby = prepareRuntime(config, args);
 
-        args = jrubyWarmup(ruby, args);
-
-        // use config and runtime from preboot process
-        this.config = config;
-        this.runtime = ruby;
-
-        endPreboot(args);
+        endPreboot(config, ruby, args);
     }
 
-    protected String[] jvmWarmup(String[] args) {
-        Ruby ruby = Ruby.newInstance();
-
-        String envWarmup = System.getenv(prebootWarmupEnvVar());
-        if (envWarmup != null && envWarmup.length() > 0) {
-            ruby.evalScriptlet(envWarmup);
-        } else {
-            ruby.evalScriptlet(prebootWarmupDefault());
-        }
-
+    protected String[] warmup(String[] args) {
         return args;
     }
 
-    protected String[] jrubyWarmup(Ruby ruby, String[] args) {
-        File prebootMain = new File(prebootFile());
-        if (prebootMain.exists()) {
-            ruby.getLoadService().load(prebootMain.getAbsolutePath(), false);
-        }
-
-        return args;
+    protected RubyInstanceConfig prepareConfig(String[] args) {
+        return new RubyInstanceConfig();
     }
 
-    protected String prebootWarmupEnvVar() {
-        return JRUBY_PREBOOT_WARMUP_ENV;
-    }
-
-    protected static String prebootWarmupDefault() {
-        return JRUBY_PREBOOT_WARMUP_DEFAULT;
-    }
-
-    protected static String prebootFile() {
-        return JRUBY_PREBOOT_FILE;
+    protected Ruby prepareRuntime(RubyInstanceConfig config, String[] args) {
+        return Ruby.newInstance(config);
     }
 
     protected String[] prepareOptions(String[] args) {
         return args;
     }
 
-    protected abstract void endPreboot(String[] args);
+    protected void endPreboot(RubyInstanceConfig config, Ruby ruby, String[] args) {
+        // use config and runtime from preboot process
+        this.config = config;
+        this.runtime = ruby;
+    }
 }

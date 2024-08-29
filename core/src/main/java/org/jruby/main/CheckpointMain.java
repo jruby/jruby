@@ -10,11 +10,8 @@ import org.jruby.Main;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 
-import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 
 public class CheckpointMain extends PrebootMain {
@@ -22,14 +19,22 @@ public class CheckpointMain extends PrebootMain {
         preboot(new CheckpointMain(), args);
     }
 
-    protected String[] jrubyWarmup(Ruby ruby, String[] args) {
+    protected RubyInstanceConfig prepareConfig(String[] args) {
+        RubyInstanceConfig config = super.prepareConfig(args);
+        if (args.length > 0) {
+            config.processArguments(args);
+        }
+        return config;
+    }
+
+    protected Ruby prepareRuntime(RubyInstanceConfig config, String[] args) {
+        Ruby ruby = super.prepareRuntime(config, args);
+
         // If more arguments were provided, run them as normal before checkpointing
         if (args.length > 0) {
-            RubyInstanceConfig config = ruby.getInstanceConfig();
             InputStream in   = config.getScriptSource();
             String filename  = config.displayedFileName();
 
-            Main.Status status = null;
             try {
                 if (in == null || config.getShouldCheckSyntax()) {
                     // ignore if there's no code to run
@@ -40,17 +45,15 @@ public class CheckpointMain extends PrebootMain {
             } catch (RaiseException rj) {
                 handleRaiseException(rj);
             }
-
-            // arguments should have been consumed, so return empty array
-            return new String[0];
         }
 
-        // otherwise fall back on PrebootMain warmup
-        return super.jrubyWarmup(ruby, args);
+        return ruby;
     }
 
     @Override
-    protected void endPreboot(String[] args) {
+    protected void endPreboot(RubyInstanceConfig config, Ruby ruby, String[] args) {
+        super.endPreboot(config, ruby, args);
+
         try {
             Core.getGlobalContext().register(new JRubyContext());
             Core.checkpointRestore();
