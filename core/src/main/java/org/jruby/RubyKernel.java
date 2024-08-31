@@ -846,9 +846,6 @@ public class RubyKernel {
     }
 
     private static RubyFixnum sleepCommon(ThreadContext context, long nanoseconds) {
-        long milliseconds = TimeUnit.NANOSECONDS.toMillis(nanoseconds);
-        long remainingNanos = nanoseconds - TimeUnit.MILLISECONDS.toNanos(milliseconds);
-
         final long startTime = System.nanoTime();
         final RubyThread rubyThread = context.getThread();
 
@@ -857,6 +854,8 @@ public class RubyKernel {
             // Spurious wakeup-loop
             do {
                 long loopStartTime = System.nanoTime();
+                long milliseconds = TimeUnit.NANOSECONDS.toMillis(nanoseconds);
+                long remainingNanos = nanoseconds - TimeUnit.MILLISECONDS.toNanos(milliseconds);
 
                 if (!rubyThread.sleep(milliseconds, remainingNanos)) break;
 
