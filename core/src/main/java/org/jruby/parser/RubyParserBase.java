@@ -1664,6 +1664,11 @@ public abstract class RubyParserBase {
     }
 
     public ArgumentNode arg_var(ByteList byteName) {
+        // FIXME: parser is sending some keyword args as 'a:' instead of 'a' and since this is illegal we are
+        //  working around it here.  Long term fix is to audit and figure out where this is happening and correct
+        //  it.  Prism is replacing this parser so this felt like a lot less work.
+        int length = byteName.length();
+        if (length > 0 && byteName.get(length - 1) == ':') byteName.setRealSize(length - 1);
         RubySymbol name = symbolID(byteName);
         numparam_name(byteName);
 
