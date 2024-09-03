@@ -1248,17 +1248,6 @@ public abstract class RubyParserBase {
     }
 
     public RubySymbol symbolID(ByteList identifierValue) {
-        // FIXME: parser is sending some keyword args as 'a:' instead of 'a' and since this is illegal we are
-        //  working around it here.  Long term fix is to audit and figure out where this is happening and correct
-        //  it.  Prism is replacing this parser so this felt like a lot less work.
-        int length = identifierValue.length();
-        if (length > 0 && identifierValue.get(length - 1) == ':') {
-            // $: is the one exception where it is a valid name
-            if (length != 2 || identifierValue.get(0) != '$') {
-                identifierValue.setRealSize(length - 1);
-            }
-        }
-
         // FIXME: We walk this during identifier construction so we should calculate CR without having to walk twice.
         if (RubyString.scanForCodeRange(identifierValue) == StringSupport.CR_BROKEN) {
             Ruby runtime = getRuntime();
@@ -1675,6 +1664,11 @@ public abstract class RubyParserBase {
     }
 
     public ArgumentNode arg_var(ByteList byteName) {
+        // FIXME: parser is sending some keyword args as 'a:' instead of 'a' and since this is illegal we are
+        //  working around it here.  Long term fix is to audit and figure out where this is happening and correct
+        //  it.  Prism is replacing this parser so this felt like a lot less work.
+        int length = byteName.length();
+        if (length > 0 && byteName.get(length - 1) == ':') byteName.setRealSize(length - 1);
         RubySymbol name = symbolID(byteName);
         numparam_name(byteName);
 
