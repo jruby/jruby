@@ -410,7 +410,8 @@ public class StaticScope implements Serializable, Cloneable {
         if (name.equals("_")) return true;
         int slot = exists(name);
 
-        return slot >= 0 && firstKeywordIndex != -1 && slot >= firstKeywordIndex;
+        return slot >= 0 && firstKeywordIndex != -1 &&
+                slot >= firstKeywordIndex  && slot < firstKeywordIndex + signature.kwargs();
     }
 
     /**
