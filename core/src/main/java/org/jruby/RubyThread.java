@@ -1591,7 +1591,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         sleepTask.nanoseconds = nanoseconds + TimeUnit.MILLISECONDS.toNanos(milliseconds);
         try {
             long timeSlept = executeTaskBlocking(getContext(), null, sleepTask);
-            if (nanoseconds == 0 || timeSlept >= nanoseconds) {
+            if (sleepTask.nanoseconds == 0 || timeSlept >= sleepTask.nanoseconds) {
                 // sleep was unbounded or we slept long enough
                 return true;
             } else {
