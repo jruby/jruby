@@ -13,7 +13,7 @@ describe "Thread#wakeup" do
     end_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
     actual_duration = end_time - start_time
-    assert_true(actual_duration > 0.01) # 100 * 0.0001 => 0.01
-    assert_true(actual_duration < 0.03)
+    (actual_duration > 0.01).should == true # 100 * 0.0001 => 0.01
+    (actual_duration < 0.03).should == true
   end
 end
