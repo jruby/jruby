@@ -19,6 +19,16 @@ public class CheckpointMain extends PrebootMain {
         preboot(new CheckpointMain(), args);
     }
 
+    protected String[] warmup(String[] args) {
+        Ruby ruby = Ruby.newInstance();
+
+        ruby.evalScriptlet("1 + 1");
+
+        Ruby.clearGlobalRuntime();
+
+        return args;
+    }
+
     protected RubyInstanceConfig prepareConfig(String[] args) {
         RubyInstanceConfig config = super.prepareConfig(args);
         if (args.length > 0) {
