@@ -256,7 +256,7 @@ public class Java implements Library {
         return proxyClass;
     }
 
-    private static void setProxyClass(final Ruby runtime, final RubyModule target, final String constName, final RubyModule proxyClass, final boolean validateConstant) {
+    static void setProxyClass(final Ruby runtime, final RubyModule target, final String constName, final RubyModule proxyClass, final boolean validateConstant) {
         if (constantNotSetOrDifferent(target, constName, proxyClass)) {
             synchronized (target) { // synchronize to prevent "already initialized constant" warnings with multiple threads
                 if (constantNotSetOrDifferent(target, constName, proxyClass)) {

@@ -1,5 +1,8 @@
 package org.jruby.javasupport;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 
@@ -21,7 +24,7 @@ public class TestJava extends junit.framework.TestCase {
     public void testProxyCreation() {
         final Ruby runtime = Ruby.newInstance();
         try {
-            Java.getProxyClass(runtime, B.class);
+            Java.getProxyClass(runtime, B.class, false);
             assert(true);
         }
         catch (AssertionError ae) {
@@ -136,5 +139,54 @@ public class TestJava extends junit.framework.TestCase {
 
         assertNotNull(runtime.evalScriptlet("FormatImpl.new")); // used to cause an infinite loop
         assertTrue(runtime.evalScriptlet("FormatImpl.new").toJava(Object.class) instanceof SimpleDateFormat);
+    }
+
+    @Test
+    public void testDuckTypeInterfaceImplGeneratesNoWarning() {
+        final String script =
+            "class Consumer1\n" +
+            "  def self.accept(arg); puts self end\n" +
+            "end\n" +
+            "class Consumer2 < Consumer1; end\n" +
+            "class Consumer3 < Consumer1; end\n" ;
+
+        final ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+        RubyInstanceConfig config = new RubyInstanceConfig();
+        config.setOutput(new PrintStream(output));
+        config.setError(new PrintStream(output));
+
+        final Ruby runtime = Ruby.newInstance(config);
+        runtime.evalScriptlet(script);
+
+        runtime.evalScriptlet(
+            "coll = java.util.Collections.singleton(42)\n" +
+            "coll.forEach(Consumer1); coll.forEach(Consumer2); coll.forEach(Consumer3)"
+        );
+
+        assertEquals("Consumer1\nConsumer2\nConsumer3\n", output.toString()); // no "warning: already initialized constant ..."
+    }
+
+    @Test
+    public void testGetProxyClass() {
+        final ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+        RubyInstanceConfig config = new RubyInstanceConfig();
+        config.setOutput(new PrintStream(output));
+        config.setError(new PrintStream(output)); // ignore warnings - we'll be replacing internal Java proxy constant
+
+        final Ruby runtime = Ruby.newInstance(config);
+
+        final Object klass = Java.getProxyClass(runtime, java.lang.System.class, true); // Java::JavaLang::System
+
+        final RubyModule dummySystemProxy = RubyModule.newModule(runtime); // replace Java::JavaLang::System with smt different
+        Java.setProxyClass(runtime, runtime.getClassFromPath("Java::JavaLang"), "System", dummySystemProxy, true);
+
+        assertSame(klass, Java.getProxyClass(runtime, java.lang.System.class));
+        assertSame(klass, Java.getProxyClass(runtime, java.lang.System.class, true));
+        assertSame(klass, Java.getProxyClass(runtime, java.lang.System.class, false));
+
+        // asserting here that the Java.addToJavaPackageModule path only executes once and not repeatedly
+        assertSame(dummySystemProxy, runtime.getClassFromPath("Java::JavaLang::System"));
     }
 }
