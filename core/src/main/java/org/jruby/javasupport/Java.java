@@ -297,13 +297,17 @@ public class Java implements Library {
     public static IRubyObject getInstance(Ruby runtime, Object rawJavaObject, boolean forceCache) {
         if (rawJavaObject != null) {
             RubyClass proxyClass = (RubyClass) getProxyClass(runtime, rawJavaObject.getClass());
-
-            if (OBJECT_PROXY_CACHE || forceCache || proxyClass.getCacheProxy()) {
-                return runtime.getJavaSupport().getObjectProxyCache().getOrCreate(rawJavaObject, proxyClass);
-            }
-            return allocateProxy(rawJavaObject, proxyClass);
+            return getInstanceInternal(runtime, rawJavaObject, proxyClass, forceCache);
         }
         return runtime.getNil();
+    }
+
+    public static IRubyObject getInstanceInternal(Ruby runtime, Object rawJavaObject,
+                                                  RubyClass proxyClass, boolean forceCache) {
+        if (OBJECT_PROXY_CACHE || forceCache || proxyClass.getCacheProxy()) {
+            return runtime.getJavaSupport().getObjectProxyCache().getOrCreate(rawJavaObject, proxyClass);
+        }
+        return allocateProxy(rawJavaObject, proxyClass);
     }
 
     @Deprecated
