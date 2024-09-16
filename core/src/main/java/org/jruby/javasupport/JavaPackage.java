@@ -309,22 +309,20 @@ public class JavaPackage extends RubyModule {
         public RubyClass defineClassUnder(RubyModule pkg, String name, RubyClass superClazz) {
             // shouldn't happen, but if a superclass is specified, it's not ours
             if ( superClazz != null ) return null;
-
-            final String subPackageName = JavaPackage.buildPackageName(pkg, name).toString();
-
-            final Ruby runtime = pkg.getRuntime();
-            Class<?> javaClass = Java.getJavaClass(runtime, subPackageName);
-            return (RubyClass) Java.getProxyClass(runtime, javaClass);
+            return (RubyClass) defineImpl(pkg, name);
         }
 
         public RubyModule defineModuleUnder(RubyModule pkg, String name) {
+            return defineImpl(pkg, name);
+        }
+
+        private RubyModule defineImpl(RubyModule pkg, String name) {
             final String subPackageName = JavaPackage.buildPackageName(pkg, name).toString();
 
             final Ruby runtime = pkg.getRuntime();
             Class<?> javaClass = Java.getJavaClass(runtime, subPackageName);
-            return Java.getInterfaceModule(runtime, javaClass);
+            return Java.getProxyClass(runtime, javaClass);
         }
-
     }
 
     /**
