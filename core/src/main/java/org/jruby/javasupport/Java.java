@@ -429,16 +429,21 @@ public class Java implements Library {
         return getProxyClass(runtime, javaClass.javaClass());
     }
 
-    @SuppressWarnings("deprecation")
     public static RubyModule getProxyClass(final Ruby runtime, final Class<?> clazz) {
         return getProxyClass(runtime, clazz, Options.JI_EAGER_CONSTANTS.load());
     }
 
-    @SuppressWarnings("deprecation")
-    public static RubyModule getProxyClass(final Ruby runtime, final Class<?> clazz, boolean setConstant) {
-        RubyModule proxy = runtime.getJavaSupport().getUnfinishedProxy(clazz);
+    /**
+     * @param runtime
+     * @param clazz the Java class
+     * @param setConstant is only considered upon actual proxy class initialization
+     * @return Ruby proxy module/class for the Java interface/class
+     */
+    public static RubyModule getProxyClass(final Ruby runtime, final Class<?> clazz, final boolean setConstant) {
+        RubyModule proxy = runtime.getJavaSupport().getUnfinishedProxy(clazz, setConstant);
         if (proxy != null) return proxy;
-        return runtime.getJavaSupport().getProxyClassFromCache(clazz, setConstant);
+
+        return runtime.getJavaSupport().getProxyClassFromCache(clazz);
     }
 
     // expected to handle Java proxy (Ruby) sub-classes as well
@@ -479,7 +484,7 @@ public class Java implements Library {
                 generateClassProxy(runtime, clazz, (RubyClass) proxy, superClass);
             }
         } finally {
-            javaSupport.endProxy(clazz);
+            javaSupport.endProxy(clazz, proxy);
         }
 
         return proxy;

@@ -68,6 +68,7 @@ public abstract class JavaSupport {
 
     static final class UnfinishedProxy extends ReentrantLock {
         final RubyModule proxy;
+        volatile boolean setConstant;
         UnfinishedProxy(RubyModule proxy) {
             this.proxy = proxy;
         }
@@ -359,27 +360,24 @@ public abstract class JavaSupport {
         unfinishedProxies.put(clazz, up);
     }
 
-    final void endProxy(Class clazz) {
+    final void endProxy(Class clazz, RubyModule proxy) {
         UnfinishedProxy up = unfinishedProxies.remove(clazz);
+        if (up.setConstant && Modifier.isPublic(clazz.getModifiers())) {
+            Java.addToJavaPackageModule(runtime, clazz, proxy);
+        }
         up.unlock();
     }
 
-    final RubyModule getUnfinishedProxy(Class clazz) {
+    final RubyModule getUnfinishedProxy(Class clazz, boolean setConstant) {
         UnfinishedProxy up = unfinishedProxies.get(clazz);
-        if (up != null && up.isHeldByCurrentThread()) return up.proxy;
+        if (up != null && up.isHeldByCurrentThread()) {
+            up.setConstant = setConstant;
+            return up.proxy;
+        }
         return null;
     }
 
-    RubyModule getProxyClassFromCache(Class clazz, boolean setConstant) {
-        RubyModule proxy = proxyClassCache.get(clazz);
-
-        if (setConstant) {
-            if ( Modifier.isPublic(clazz.getModifiers()) ) {
-                Java.addToJavaPackageModule(runtime, clazz, proxy);
-            }
-        }
-
-        return proxy;
+    RubyModule getProxyClassFromCache(Class clazz) {
+        return proxyClassCache.get(clazz);
     }
-
 }
