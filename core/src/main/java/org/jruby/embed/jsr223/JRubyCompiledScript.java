@@ -57,7 +57,11 @@ public class JRubyCompiledScript extends CompiledScript {
         this.container = container;
         this.engine = engine;
         Utils.preEval(container, engine.getContext());
-        unit = container.parse(script);
+        try {
+            unit = container.parse(script);
+        } finally {
+            Utils.postEval(container, engine.getContext());
+        }
     }
 
     JRubyCompiledScript(ScriptingContainer container, JRubyEngine engine, Reader reader) throws RaiseException {
@@ -65,7 +69,11 @@ public class JRubyCompiledScript extends CompiledScript {
         this.engine = engine;
         String filename = System.getProperty(ScriptEngine.FILENAME);
         Utils.preEval(container, engine.getContext());
-        unit = container.parse(reader, filename, Utils.getLineNumber(engine.getContext()));
+        try {
+            unit = container.parse(reader, filename, Utils.getLineNumber(engine.getContext()));
+        } finally {
+            Utils.postEval(container, engine.getContext());
+        }
     }
 
     @Override
