@@ -205,17 +205,4 @@ public class ArrayUtils {
             javaArray[i] = (Byte) rubyArray.eltInternal(i).toJava(targetType);
         }
     }
-
-    @Deprecated // not used
-    public static void copyDataToJavaArray(
-            ThreadContext context, RubyArray rubyArray, int src, org.jruby.javasupport.JavaArray javaArray, int dest, int length) {
-        Class targetType = javaArray.getComponentType();
-
-        int destLength = (int)javaArray.length().getLongValue();
-        int srcLength = rubyArray.getLength();
-
-        for (int i = 0; src + i < srcLength && dest + i < destLength && i < length; i++) {
-            javaArray.setWithExceptionHandling(dest + i, rubyArray.entry(src + i).toJava(targetType));
-        }
-    }
 }
