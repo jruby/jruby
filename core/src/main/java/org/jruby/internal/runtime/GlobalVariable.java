@@ -31,6 +31,7 @@
 package org.jruby.internal.runtime;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.jruby.Ruby;
 import org.jruby.RubyProc;
@@ -72,13 +73,13 @@ public final class GlobalVariable {
         return scope;
     }
 
-    public ArrayList getTraces() {
+    public List<IRubyObject> getTraces() {
         return traces;
     }
 
     public void addTrace(RubyProc command) {
         if (traces == null) {
-            traces = new ArrayList<IRubyObject>();
+            traces = new ArrayList<>(2);
         }
         traces.add(command);
     }

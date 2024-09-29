@@ -47,14 +47,14 @@ public class ThrowExceptionInstr extends OneOperandInstr implements FixedArityIn
 
         Object excObj = getException().retrieve(context, self, currScope, currDynScope, temp);
 
-        if (excObj instanceof IRubyObject) {
-            RubyKernel.raise(context, context.runtime.getKernel(), new IRubyObject[] {(IRubyObject)excObj}, Block.NULL_BLOCK);
-        } else if (excObj instanceof Throwable) { // java exception -- avoid having to add 'throws' clause everywhere!
-            Helpers.throwException((Throwable)excObj);
+        if (excObj instanceof Throwable) {
+            excObj = Helpers.wrapJavaException(context.runtime, (Throwable) excObj); // IRubyObject
         }
 
+        RubyKernel.raise(context, self, new IRubyObject[] {(IRubyObject) excObj}, Block.NULL_BLOCK);
+
         // should never get here
-        throw new RuntimeException("Control shouldn't have reached here in ThrowEx");
+        throw new AssertionError("Control shouldn't have reached here in ThrowEx");
     }
 
     @Override
