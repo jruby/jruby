@@ -1568,30 +1568,20 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     /**
-     * Sleep the current thread for milliseconds, waking up on any thread interrupts.
-     *
-     * @param milliseconds Number of milliseconds to sleep. Zero sleeps forever.
-     */
-    public boolean sleep(long milliseconds) throws InterruptedException {
-        return sleep(milliseconds, 0);
-    }
-
-    /**
-     * Sleep the current thread for milliseconds + nanoseconds, waking up on any thread interrupts.
+     * Sleep the current thread for millis, waking up on any thread interrupts.
      *
      * We can never be sure if a wait will finish because of a Java "spurious wakeup".  So if we
      * explicitly wakeup and we wait less than requested amount we will return false.  We will
      * return true if we sleep right amount or less than right amount via spurious wakeup.
      *
-     * @param milliseconds Number of milliseconds to sleep. Combined with nanoseconds, zero sleeps forever.
-     * @param nanoseconds Number of nanoseconds to sleep. Combined with milliseconds, zero sleeps forever.
+     * @param millis Number of milliseconds to sleep. Zero sleeps forever.
      */
-    public boolean sleep(long milliseconds, long nanoseconds) throws InterruptedException {
+    public boolean sleep(long millis) throws InterruptedException {
         assert this == getRuntime().getCurrentContext().getThread();
-        sleepTask.nanoseconds = nanoseconds + TimeUnit.MILLISECONDS.toNanos(milliseconds);
+        sleepTask.millis = millis;
         try {
             long timeSlept = executeTaskBlocking(getContext(), null, sleepTask);
-            if (sleepTask.nanoseconds == 0 || timeSlept >= sleepTask.nanoseconds) {
+            if (millis == 0 || timeSlept >= millis) {
                 // sleep was unbounded or we slept long enough
                 return true;
             } else {
@@ -1675,21 +1665,21 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      */
     private static class SleepTask2 implements Task<Object, Long> {
         final Semaphore semaphore = new Semaphore(1);
-        long nanoseconds;
+        long millis;
         {semaphore.drainPermits();}
 
         @Override
         public Long run(ThreadContext context, Object data) throws InterruptedException {
-            long start = System.nanoTime();
+            long start = System.currentTimeMillis();
 
             try {
-                if (nanoseconds == 0) {
+                if (millis == 0) {
                     semaphore.tryAcquire(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
                 } else {
-                    semaphore.tryAcquire(nanoseconds, TimeUnit.NANOSECONDS);
+                    semaphore.tryAcquire(millis, TimeUnit.MILLISECONDS);
                 }
 
-                return System.nanoTime() - start;
+                return System.currentTimeMillis() - start;
             } finally {
                 semaphore.drainPermits();
             }
