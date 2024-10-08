@@ -340,7 +340,7 @@ public class RubyPathname extends RubyObject {
         }
 
         args[2] = RubyHash.newSmallHash(runtime);
-        ((RubyHash) args[2]).fastASetSmall(runtime.newSymbol("base"), context.runtime.getFile().callMethod(context, "realpath", getPath()));
+        ((RubyHash) args[2]).fastASetSmall(runtime.newSymbol("base"), getPath());
 
         JavaSites.PathnameSites sites = sites(context);
         CallSite glob = sites.glob;
