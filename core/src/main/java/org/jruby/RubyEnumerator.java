@@ -438,6 +438,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         if (sizeFn != null) {
             IRubyObject[] args = methodArgs;
 
+            if (context == null) context = metaClass.runtime.getCurrentContext();
             return sizeFn.size(context, object, args);
         }
 
