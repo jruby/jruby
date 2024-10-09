@@ -1680,7 +1680,7 @@ public class RubyTime extends RubyObject {
 
         int argc = args.length;
         if (keywords) {
-            IRubyObject[] opts = ArgsUtil.extractKeywordArgs(context, args[argc - 1], new String[] { "in", "precision" });
+            IRubyObject[] opts = ArgsUtil.extractKeywordArgs(context, args[argc - 1], "in", "precision");
             if (opts[0] != null) {
                 if (argc > 7) {
                     throw context.runtime.newArgumentError("timezone argument given as positional and keyword arguments");
@@ -1693,7 +1693,7 @@ public class RubyTime extends RubyObject {
             }
 
             if (opts[1] != null) {
-                usec = opts[1];
+                usec = opts[1].convertToInteger();
             }
         } else if (argc > 6) {
             zone = args[6];
