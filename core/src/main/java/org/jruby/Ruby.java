@@ -4902,7 +4902,9 @@ public final class Ruby implements Constantizable {
             // ref is there but vacated, try to replace it until we have a result
             while (true) {
                 wrapper.string = string;
-                dedupedRef = dedupMap.computeIfPresent(wrapper, (key, old) -> old.get() == null ? weakref : old);
+
+                // re-get reference if it is non-null and populated, or replace with new reference
+                dedupedRef = dedupMap.compute(wrapper, (key, old) -> old == null || old.get() == null ? weakref : old);
 
                 // return result if not vacated
                 unduped = dedupedRef.get();

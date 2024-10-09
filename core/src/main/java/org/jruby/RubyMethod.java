@@ -42,6 +42,7 @@ import org.jruby.internal.runtime.methods.IRMethodArgs;
 import org.jruby.internal.runtime.methods.PartialDelegatingMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.runtime.ArgumentDescriptor;
+import org.jruby.runtime.ArgumentType;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;

@@ -238,6 +238,11 @@ DO NOT MODIFY - GENERATED CODE
       <version>2.0.0</version>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>org.crac</groupId>
+      <artifactId>crac</artifactId>
+      <version>1.5.0</version>
+    </dependency>
   </dependencies>
   <build>
     <defaultGoal>package</defaultGoal>

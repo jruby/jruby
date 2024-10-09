@@ -462,7 +462,7 @@ public class RubyBasicSocket extends RubyIO {
                             int ret = SOCKOPT.getsockopt(fd.realFileno, intLevel, intOpt, buf, len);
 
                             if (ret != 0) {
-                                throw runtime.newErrnoEINVALError(SOCKOPT.strerror(ret));
+                                throw runtime.newErrnoFromLastPOSIXErrno();
                             }
                             flipBuffer(buf);
                             ByteList bytes = new ByteList(buf.array(), buf.position(), len.getValue());
@@ -537,7 +537,7 @@ public class RubyBasicSocket extends RubyIO {
                             int ret = SOCKOPT.setsockopt(fd.realFileno, intLevel, intOpt, buf, buf.remaining());
 
                             if (ret != 0) {
-                                throw runtime.newErrnoEINVALError(SOCKOPT.strerror(ret));
+                                throw runtime.newErrnoFromLastPOSIXErrno();
                             }
                         }
 
@@ -573,10 +573,9 @@ public class RubyBasicSocket extends RubyIO {
         int F_SETFL = jnr.constants.platform.Fcntl.F_SETFL.intValue();
         int O_NONBLOCK = jnr.constants.platform.OpenFlags.O_NONBLOCK.intValue();
 
-        int getsockopt(int s, int level, int optname, @Out ByteBuffer optval, @Out IntByReference optlen);
+        int getsockopt(int s, int level, int optname, @Out ByteBuffer optval, IntByReference optlen);
         int setsockopt(int s, int level, int optname, @In ByteBuffer optval, int optlen);
         int setsockopt(int s, int level, int optname, @In Timeval optval, int optlen);
-        String strerror(int error);
     }
 
     static final LibC SOCKOPT;

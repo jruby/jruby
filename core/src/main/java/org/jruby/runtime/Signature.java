@@ -82,6 +82,14 @@ public class Signature {
     public int keyRest() { return keyRest; }
 
     /**
+     * Total number of keyword argument parameters.
+     * @return the number of kwarg parameters
+     */
+    public int kwargs() {
+        return kwargs;
+    }
+
+    /**
      * Are there an exact (fixed) number of parameters to this signature?
      */
     public boolean isFixed() {

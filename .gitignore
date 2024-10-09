@@ -205,3 +205,5 @@ build.eclipse
 
 # Vagrant
 .vagrant
+
+.tool-versions

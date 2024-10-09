@@ -116,7 +116,7 @@ echo() {
 
 # ----- Set variable defaults -------------------------------------------------
 
-readonly java_class=org.jruby.Main
+java_class=org.jruby.Main
 JRUBY_SHELL=/bin/sh
 
 # Detect cygwin and mingw environments
@@ -595,6 +595,18 @@ do
         --environment) print_environment_log=true ;;
         # warn but ignore
         --1.8|--1.9|--2.0) echo "warning: $1 ignored" 1>&2 ;;
+        --checkpoint=*)
+            java_class=org.jruby.main.CheckpointMain
+            append java_args -XX:CRaCCheckpointTo="${1#--checkpoint=}" ;;
+        # capture a checkpoint to specified location
+        --checkpoint)
+            java_class=org.jruby.main.CheckpointMain
+            append java_args -XX:CRaCCheckpointTo=.jruby.checkpoint ;;
+        # restore from checkpoint
+        --restore=*)
+            append java_args -XX:CRaCRestoreFrom="${1#--restore=}" ;;
+        --restore)
+            append java_args -XX:CRaCRestoreFrom=.jruby.checkpoint ;;
         # Abort processing on the double dash
         --) break ;;
         # Other opts go to ruby
