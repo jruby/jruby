@@ -16,6 +16,8 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -161,7 +163,7 @@ public abstract class Type extends RubyObject {
      */
     @JRubyMethod(name = "size")
     public IRubyObject size(ThreadContext context) {
-        return context.runtime.newFixnum(getNativeSize());
+        return asFixnum(context, getNativeSize());
     }
 
     /**
@@ -172,7 +174,7 @@ public abstract class Type extends RubyObject {
      */
     @JRubyMethod(name = "alignment")
     public IRubyObject alignment(ThreadContext context) {
-        return context.runtime.newFixnum(getNativeAlignment());
+        return asFixnum(context, getNativeAlignment());
     }
 
     @JRubyClass(name = "FFI::Type::Builtin", parent = "FFI::Type")
@@ -219,18 +221,18 @@ public abstract class Type extends RubyObject {
         @Override
         @JRubyMethod(name = "==")
         public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
-            return RubyBoolean.newBoolean(context, this.equals(obj));
+            return asBoolean(context, this.equals(obj));
         }
 
         @Override
         @JRubyMethod(name = "equal?")
         public IRubyObject equal_p(ThreadContext context, IRubyObject obj) {
-            return RubyBoolean.newBoolean(context, this.equals(obj));
+            return asBoolean(context, this.equals(obj));
         }
         
         @JRubyMethod(name = "eql?")
         public IRubyObject eql_p(ThreadContext context, IRubyObject obj) {
-            return RubyBoolean.newBoolean(context, this.equals(obj));
+            return asBoolean(context, this.equals(obj));
         }
 
     }
@@ -274,7 +276,7 @@ public abstract class Type extends RubyObject {
 
         @JRubyMethod
         public final IRubyObject length(ThreadContext context) {
-            return context.runtime.newFixnum(length);
+            return asFixnum(context, length);
         }
 
         @JRubyMethod

@@ -42,6 +42,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.api.Convert;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.ClassIndex;
@@ -272,6 +273,7 @@ public class TypeConverter {
     }
 
     // rb_check_to_integer
+    @Deprecated // Use Convert.checkToInteger
     public static IRubyObject checkToInteger(ThreadContext context, IRubyObject obj) {
         if (obj instanceof RubyFixnum) return obj;
 
@@ -283,8 +285,9 @@ public class TypeConverter {
     }
 
     // rb_check_to_integer
+    @Deprecated // Use Convert.checkToInteger (and MRI uses not to_i so I do not think this signature is needed).
     public static IRubyObject checkToInteger(Ruby runtime, IRubyObject obj, String method) {
-        if (method.equals("to_int")) return checkToInteger(runtime.getCurrentContext(), obj);
+        if (method.equals("to_int")) return Convert.checkToInteger(runtime.getCurrentContext(), obj);
 
         if (obj instanceof RubyFixnum) return obj;
 
@@ -493,7 +496,7 @@ public class TypeConverter {
         throw context.runtime.newArgumentError("base specified for non string value");
     }
 
-    private static TypeConverterSites sites(ThreadContext context) {
+    public static TypeConverterSites sites(ThreadContext context) {
         return context.sites.TypeConverter;
     }
 

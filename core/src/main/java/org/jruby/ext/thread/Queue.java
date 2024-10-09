@@ -55,6 +55,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
 import org.jruby.util.TypeConverter;
 
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Error.typeError;
 
 /*
@@ -342,7 +344,7 @@ public class Queue extends RubyObject implements DataType {
     @JRubyMethod(name = "empty?")
     public RubyBoolean empty_p(ThreadContext context) {
         initializedCheck();
-        return RubyBoolean.newBoolean(context, count.get() == 0);
+        return asBoolean(context, count.get() == 0);
     }
 
     @JRubyMethod(name = {"length", "size"})
@@ -358,7 +360,7 @@ public class Queue extends RubyObject implements DataType {
         try {
             takeLock.lockInterruptibly();
             try {
-                return context.runtime.newFixnum(takeLock.getWaitQueueLength(notEmpty));
+                return asFixnum(context, takeLock.getWaitQueueLength(notEmpty));
             } finally {
                 takeLock.unlock();
             }
@@ -591,7 +593,7 @@ public class Queue extends RubyObject implements DataType {
     @JRubyMethod(name = "closed?")
     public IRubyObject closed_p(ThreadContext context) {
         initializedCheck();
-        return RubyBoolean.newBoolean(context, closed);
+        return asBoolean(context, closed);
     }
 
     public synchronized void shutdown() throws InterruptedException {

@@ -50,6 +50,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
@@ -64,7 +66,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 
 import static org.jruby.anno.FrameField.*;
-import static org.jruby.api.Convert.castToModule;
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.castAsModule;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
 import static org.jruby.runtime.Helpers.invokeChecked;
@@ -578,6 +581,16 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     @Override
     public final Ruby getRuntime() {
         return metaClass.runtime;
+    }
+
+    // As part of reducing usage of getRuntime() this method was added so it is
+    // easier to know how many real uses of getRuntime() we still need to eliminate.
+    // IMPORTANT: This method should only be used in deprecated methods.  If you do
+    // not have access then you should continue using getRuntime().getCurrentContext()
+    // until we can plumb ThreadContext into whatever method needs it.
+    @Deprecated
+    public final ThreadContext getCurrentContext() {
+        return getRuntime().getCurrentContext();
     }
 
     /**
@@ -1161,7 +1174,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     @JRubyMethod(name = "!")
     public IRubyObject op_not(ThreadContext context) {
-        return isTrue() ? context.fals : context.tru;
+        return asBoolean(context, !isTrue());
     }
 
     /**
@@ -1173,7 +1186,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @JRubyMethod(name = "!=")
     public IRubyObject op_not_equal(ThreadContext context, IRubyObject other) {
-        return RubyBoolean.newBoolean(context, !sites(context).op_equal.call(context, this, this, other).isTrue());
+        return asBoolean(context, !sites(context).op_equal.call(context, this, this, other).isTrue());
     }
 
     /**
@@ -1217,7 +1230,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     @Override
     @JRubyMethod(name = "==")
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
-        return this == obj ? context.tru : context.fals;
+        return asBoolean(context, this == obj);
     }
 
     @Override
@@ -1574,16 +1587,18 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return list;
     }
 
-    /**
-     * @see org.jruby.runtime.builtin.InstanceVariables#getInstanceVariableNameList
-     */
+    @Override
+    public void forEachInstanceVariableName(Consumer<String> consumer) {
+        metaClass.getVariableAccessorsForRead().forEach((name, var) -> {
+            if (IdUtil.isInstanceVariable(name) && var.get(this) instanceof IRubyObject) {
+                consumer.accept(name);
+            }
+        });
+    }
+
     @Override
     public void copyInstanceVariablesInto(final InstanceVariables other) {
-        for (Variable<IRubyObject> var : getInstanceVariableList()) {
-            synchronized (this) {
-                other.setInstanceVariable(var.getName(), var.getValue());
-            }
-        }
+        forEachInstanceVariable(other::setInstanceVariable);
     }
 
     /**
@@ -1600,6 +1615,15 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         } else {
             raiseFrozenError();
         }
+    }
+
+    @Override
+    public void forEachInstanceVariable(BiConsumer<String, IRubyObject> accessor) {
+        metaClass.getVariableAccessorsForRead().forEach((name, var) -> {
+            if (IdUtil.isInstanceVariable(name) && var.get(this) instanceof IRubyObject rubyObject) {
+                accessor.accept(name, rubyObject);
+            }
+        });
     }
 
     private void raiseFrozenError() throws RaiseException {
@@ -1984,7 +2008,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @JRubyMethod(name = "equal?")
     public IRubyObject equal_p(ThreadContext context, IRubyObject other) {
-        return this == other ? context.tru : context.fals;
+        return asBoolean(context, this == other);
     }
 
     /** rb_obj_equal
@@ -2170,7 +2194,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     a.frozen?   #=&gt; true
      */
     public RubyBoolean frozen_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, isFrozen());
+        return asBoolean(context, isFrozen());
     }
 
     /** rb_obj_is_instance_of
@@ -2216,7 +2240,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     b.kind_of? M       #=&gt; true
      */
     public RubyBoolean kind_of_p(ThreadContext context, IRubyObject type) {
-        return RubyBoolean.newBoolean(context, castToModule(context, type, "class or module required").isInstance(this));
+        return asBoolean(context, castAsModule(context, type, "class or module required").isInstance(this));
     }
 
     /** rb_obj_methods
@@ -2646,7 +2670,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @return
      */
     public IRubyObject op_not_match(ThreadContext context, IRubyObject arg) {
-        return RubyBoolean.newBoolean(context, !sites(context).match.call(context, this, this, arg).isTrue());
+        return asBoolean(context, !sites(context).match.call(context, this, this, arg).isTrue());
     }
 
 
@@ -2673,7 +2697,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     fred.instance_variable_defined?("@c")   #=&gt; false
      */
     public IRubyObject instance_variable_defined_p(ThreadContext context, IRubyObject name) {
-        return RubyBoolean.newBoolean(context, variableTableContains(validateInstanceVariable(name)));
+        return asBoolean(context, variableTableContains(validateInstanceVariable(name)));
     }
 
     /** rb_obj_ivar_get
@@ -2776,16 +2800,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     public RubyArray instance_variables(ThreadContext context) {
         Ruby runtime = context.runtime;
-        List<String> nameList = getInstanceVariableNameList();
-        int size = nameList.size();
-
-        RubyArray array = RubyArray.newBlankArrayInternal(runtime, size);
-
-        for (int i = 0; i < size; i++) {
-            array.eltInternalSet(i, runtime.newSymbol(nameList.get(i)));
-        }
-        array.realLength = size;
-
+        RubyArray array = RubyArray.newArray(runtime, getMetaClass().getVariableAccessorsForRead().size());
+        forEachInstanceVariableName(name -> array.append(runtime.newSymbol(name)));
         return array;
     }
 

@@ -25,7 +25,8 @@ import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
 
-import static org.jruby.RubyBoolean.newBoolean;
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Error.typeError;
 
 public class RubyIOBuffer extends RubyObject {
@@ -546,12 +547,12 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "size")
     public IRubyObject size(ThreadContext context) {
-        return context.runtime.newFixnum(size);
+        return asFixnum(context, size);
     }
 
     @JRubyMethod(name = "valid?")
     public IRubyObject valid_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, validate());
+        return asBoolean(context, validate());
     }
 
     @JRubyMethod(name = "transfer")
@@ -580,17 +581,17 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "null?")
     public IRubyObject null_p(ThreadContext context) {
-        return newBoolean(context, base == null);
+        return asBoolean(context, base == null);
     }
 
     @JRubyMethod(name = "empty?")
     public IRubyObject empty_p(ThreadContext context) {
-        return newBoolean(context, size == 0);
+        return asBoolean(context, size == 0);
     }
 
     @JRubyMethod(name = "external?")
     public IRubyObject external_p(ThreadContext context) {
-        return newBoolean(context, isExternal());
+        return asBoolean(context, isExternal());
     }
 
     private boolean isExternal() {
@@ -599,7 +600,7 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "internal?")
     public IRubyObject internal_p(ThreadContext context) {
-        return newBoolean(context, isInternal());
+        return asBoolean(context, isInternal());
     }
 
     private boolean isInternal() {
@@ -608,7 +609,7 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "mapped?")
     public IRubyObject mapped_p(ThreadContext context) {
-        return newBoolean(context, isMapped());
+        return asBoolean(context, isMapped());
     }
 
     private boolean isMapped() {
@@ -618,7 +619,7 @@ public class RubyIOBuffer extends RubyObject {
     @JRubyMethod(name = "shared?")
     public IRubyObject shared_p(ThreadContext context) {
         // no support for shared yet
-        return newBoolean(context, false);
+        return asBoolean(context, false);
     }
 
     private boolean isShared() {
@@ -627,7 +628,7 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "locked?")
     public IRubyObject locked_p(ThreadContext context) {
-        return newBoolean(context, isLocked());
+        return asBoolean(context, isLocked());
     }
 
     private boolean isLocked() {
@@ -636,7 +637,7 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "readonly?")
     public IRubyObject readonly_p(ThreadContext context) {
-        return newBoolean(context, isReadonly());
+        return asBoolean(context, isReadonly());
     }
 
     private boolean isReadonly() {
@@ -744,7 +745,7 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "<=>")
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
-        return context.runtime.newFixnum(base.compareTo(((RubyIOBuffer) other).base));
+        return asFixnum(context, base.compareTo(((RubyIOBuffer) other).base));
     }
 
     @JRubyMethod(name = "resize")

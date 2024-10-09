@@ -68,9 +68,9 @@ import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_REST;
 import static org.jruby.util.RubyStringBuilder.str;
 
 public abstract class IRBuilder<U, V, W, X, Y, Z> {
-    static final boolean PARSER_TIMING = Options.PARSER_SUMMARY.load();
     static final UnexecutableNil U_NIL = UnexecutableNil.U_NIL;
 
+    private boolean parserTiming = Options.PARSER_SUMMARY.load();
     private final IRManager manager;
     protected final IRScope scope;
     protected final IRBuilder<U, V, W, X, Y, Z> parent;
@@ -268,7 +268,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     protected InterpreterContext buildRootInner(ParseResult parseResult) {
         long time = 0;
-        if (PARSER_TIMING) time = System.nanoTime();
+        if (parserTiming) time = System.nanoTime();
         coverageMode = parseResult.getCoverageMode();
 
         // Build IR for the tree and return the result of the expression tree
@@ -282,7 +282,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
         InterpreterContext ic = scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
 
-        if (PARSER_TIMING) manager.getRuntime().getParserManager().getParserStats().addIRBuildTime(System.nanoTime() - time);
+        if (parserTiming) manager.getRuntime().getParserManager().getParserStats().addIRBuildTime(System.nanoTime() - time);
         return ic;
     }
 
@@ -1567,7 +1567,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     protected void buildIterInner(RubySymbol methodName, U var, U body, int endLine) {
         long time = 0;
-        if (PARSER_TIMING) time = System.nanoTime();
+        if (parserTiming) time = System.nanoTime();
         this.methodName = methodName;
 
         boolean forNode = scope instanceof IRFor;
@@ -1604,7 +1604,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         computeScopeFlagsFrom(instructions);
         scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
 
-        if (PARSER_TIMING) manager.getRuntime().getParserManager().getParserStats().addIRBuildTime(System.nanoTime() - time);
+        if (parserTiming) manager.getRuntime().getParserManager().getParserStats().addIRBuildTime(System.nanoTime() - time);
     }
 
     public Operand buildLambda(U args, U body, StaticScope staticScope, Signature signature, int line) {
@@ -1622,7 +1622,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     protected void buildLambdaInner(U blockArgs, U body) {
         long time = 0;
-        if (PARSER_TIMING) time = System.nanoTime();
+        if (parserTiming) time = System.nanoTime();
 
         receiveBlockArgs(blockArgs);
 
@@ -1638,7 +1638,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         computeScopeFlagsFrom(instructions);
         scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
 
-        if (PARSER_TIMING) manager.getRuntime().getParserManager().getParserStats().addIRBuildTime(System.nanoTime() - time);
+        if (parserTiming) manager.getRuntime().getParserManager().getParserStats().addIRBuildTime(System.nanoTime() - time);
     }
 
     protected Operand buildLocalVariableAssign(RubySymbol name, int depth, U valueNode) {
@@ -2081,7 +2081,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                 cond_ne_nil(deconstruct_cache_end, deconstructed, () -> {
                     call(deconstructed, obj, "deconstruct");
                     label("array_check_end", arrayCheck -> {
-                        addInstr(new EQQInstr(scope, result, getManager().getArrayClass(), deconstructed, false, false));
+                        addInstr(new EQQInstr(scope, result, getManager().getArrayClass(), deconstructed, false, true, false));
                         cond(arrayCheck, result, tru(), () -> type_error("deconstruct must return Array"));
                     });
                 })
@@ -2129,7 +2129,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     private void buildPatternConstant(Label testEnd, Variable result, U constant, Operand obj, boolean isSinglePattern, Variable errorString) {
         Operand expression = build(constant);
-        addInstr(new EQQInstr(scope, result, expression, obj, false, true));
+        addInstr(new EQQInstr(scope, result, expression, obj, false, true, true));
         if (isSinglePattern) {
             buildPatternSetEQQError(errorString, result, obj, expression, obj);
         }
@@ -2158,7 +2158,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
                 call(deconstructed, obj, "deconstruct");
                 label("array_check_end", arrayCheck -> {
-                    addInstr(new EQQInstr(scope, result, getManager().getArrayClass(), deconstructed, false, false));
+                    addInstr(new EQQInstr(scope, result, getManager().getArrayClass(), deconstructed, false, true, false));
                     cond(arrayCheck, result, tru(), () -> type_error("deconstruct must return Array"));
                 });
             })
@@ -2258,7 +2258,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                 Variable inspect = temp();
                 label("key_check_error", (key_check_end)-> {
                     // if errorString is a literal symbol then this is for key pattern error.  Normally it is a string or nil
-                    Variable whichError = addResultInstr(new EQQInstr(scope, temp(), getManager().getSymbolClass(), errorString, false, false));
+                    Variable whichError = addResultInstr(new EQQInstr(scope, temp(), getManager().getSymbolClass(), errorString, false, true, false));
                     addInstr(createBranch(whichError, tru(), key_check_end));
                     if_else(errorString, nil(),
                             () -> call(inspect, value, "inspect"),
@@ -2326,7 +2326,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         Variable d = deconstructHashPatternKeys(testEnd, errorString, constant, assocsKeys, rest, result, obj, isSinglePattern);
 
         label("hash_check_end", endHashCheck -> {
-            addInstr(new EQQInstr(scope, result, getManager().getHashClass(), d, false, true));
+            addInstr(new EQQInstr(scope, result, getManager().getHashClass(), d, false, true, true));
             cond(endHashCheck, result, tru(), () -> type_error("deconstruct_keys must return Hash"));
         });
 
@@ -2799,7 +2799,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                 expression = buildWithOrder(node, containsVariableAssignment(node));
             }
 
-            addInstr(new EQQInstr(scope, eqqResult, expression, testValue, needsSplat, scope.maybeUsingRefinements()));
+            addInstr(new EQQInstr(scope, eqqResult, expression, testValue, needsSplat, false, scope.maybeUsingRefinements()));
             addInstr(createBranch(eqqResult, tru(), bodyLabel));
         }
     }
@@ -2955,7 +2955,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     public void defineMethodInner(LazyMethodDefinition<U, V, W, X, Y, Z> defNode, IRScope parent, int coverageMode) {
         long time = 0;
-        if (PARSER_TIMING) time = System.nanoTime();
+        if (parserTiming) time = System.nanoTime();
         this.coverageMode = coverageMode;
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
@@ -2990,7 +2990,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
         scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
 
-        if (PARSER_TIMING) manager.getRuntime().getParserManager().getParserStats().addIRBuildTime(System.nanoTime() - time);
+        if (parserTiming) manager.getRuntime().getParserManager().getParserStats().addIRBuildTime(System.nanoTime() - time);
     }
 
     private void prependUsedImplicitState(IRScope parent) {

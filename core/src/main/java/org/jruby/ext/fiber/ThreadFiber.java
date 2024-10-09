@@ -38,7 +38,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
-import static org.jruby.api.Convert.castToHash;
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.castAsHash;
 import static org.jruby.api.Error.typeError;
 
 public class ThreadFiber extends RubyObject implements ExecutionContext {
@@ -483,7 +484,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "alive?")
     public IRubyObject alive_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, alive());
+        return asBoolean(context, alive());
     }
     
     @JRubyMethod(meta = true)
@@ -642,7 +643,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "blocking?")
     public IRubyObject blocking_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, isBlocking());
+        return asBoolean(context, isBlocking());
     }
 
     @JRubyMethod(name = "blocking?", meta = true)
@@ -792,7 +793,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         // nil is an allowed value and will be lazily initialized.
         if (hashArg == context.nil) return;
 
-        var hash = castToHash(context, hashArg, "storage must be a Hash");
+        var hash = castAsHash(context, hashArg, "storage must be a Hash");
         if (hash.isFrozen()) throw context.runtime.newFrozenError("storage must not be frozen");
 
         hash.visitAll(context, (ctx, self, key, value, index) -> {

@@ -9,6 +9,7 @@ import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
 
@@ -35,6 +36,6 @@ public class FixnumObjectSite extends LazyObjectSite {
     }
 
     public IRubyObject construct(ThreadContext context) {
-        return context.runtime.newFixnum(value);
+        return asFixnum(context, value);
     }
 }

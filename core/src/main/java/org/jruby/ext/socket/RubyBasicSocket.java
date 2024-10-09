@@ -52,6 +52,7 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Convert;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.platform.Platform;
@@ -81,6 +82,7 @@ import static jnr.constants.platform.TCP.TCP_KEEPCNT;
 import static jnr.constants.platform.TCP.TCP_KEEPIDLE;
 import static jnr.constants.platform.TCP.TCP_KEEPINTVL;
 import static jnr.constants.platform.TCP.TCP_NODELAY;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.runtime.Helpers.extractExceptionOnlyArg;
 import static org.jruby.runtime.Helpers.throwErrorFromException;
 import static com.headius.backport9.buffer.Buffers.flipBuffer;
@@ -118,7 +120,7 @@ public class RubyBasicSocket extends RubyIO {
 
     @JRubyMethod(name = "do_not_reverse_lookup")
     public IRubyObject do_not_reverse_lookup(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, doNotReverseLookup);
+        return Convert.asBoolean(context, doNotReverseLookup);
     }
 
     @JRubyMethod(name = "do_not_reverse_lookup=")
@@ -129,7 +131,7 @@ public class RubyBasicSocket extends RubyIO {
 
     @JRubyMethod(meta = true)
     public static IRubyObject do_not_reverse_lookup(ThreadContext context, IRubyObject recv) {
-        return RubyBoolean.newBoolean(context, context.runtime.isDoNotReverseLookupEnabled());
+        return Convert.asBoolean(context, context.runtime.isDoNotReverseLookupEnabled());
     }
 
     @JRubyMethod(name = "do_not_reverse_lookup=", meta = true)
@@ -174,7 +176,7 @@ public class RubyBasicSocket extends RubyIO {
             if (channel instanceof DatagramChannel && sockaddr != null) {
                 written = ((DatagramChannel) channel).send(mesgBytes, sockaddr);
 
-                return context.runtime.newFixnum(written);
+                return asFixnum(context, written);
             } else {
                 return syswrite(context, _mesg);
             }
@@ -460,7 +462,7 @@ public class RubyBasicSocket extends RubyIO {
                             int ret = SOCKOPT.getsockopt(fd.realFileno, intLevel, intOpt, buf, len);
 
                             if (ret != 0) {
-                                throw runtime.newErrnoEINVALError(SOCKOPT.strerror(ret));
+                                throw runtime.newErrnoFromLastPOSIXErrno();
                             }
                             flipBuffer(buf);
                             ByteList bytes = new ByteList(buf.array(), buf.position(), len.getValue());
@@ -535,7 +537,7 @@ public class RubyBasicSocket extends RubyIO {
                             int ret = SOCKOPT.setsockopt(fd.realFileno, intLevel, intOpt, buf, buf.remaining());
 
                             if (ret != 0) {
-                                throw runtime.newErrnoEINVALError(SOCKOPT.strerror(ret));
+                                throw runtime.newErrnoFromLastPOSIXErrno();
                             }
                         }
 
@@ -571,10 +573,9 @@ public class RubyBasicSocket extends RubyIO {
         int F_SETFL = jnr.constants.platform.Fcntl.F_SETFL.intValue();
         int O_NONBLOCK = jnr.constants.platform.OpenFlags.O_NONBLOCK.intValue();
 
-        int getsockopt(int s, int level, int optname, @Out ByteBuffer optval, @Out IntByReference optlen);
+        int getsockopt(int s, int level, int optname, @Out ByteBuffer optval, IntByReference optlen);
         int setsockopt(int s, int level, int optname, @In ByteBuffer optval, int optlen);
         int setsockopt(int s, int level, int optname, @In Timeval optval, int optlen);
-        String strerror(int error);
     }
 
     static final LibC SOCKOPT;

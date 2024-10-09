@@ -45,6 +45,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
+import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.javasupport.JavaUtil.convertJavaArrayToRuby;
 import static org.jruby.javasupport.JavaUtil.convertJavaToUsableRubyObject;
 import static org.jruby.javasupport.JavaUtil.inspectObject;
@@ -146,7 +147,7 @@ public abstract class JavaUtil {
         @JRubyMethod(name = { "include?", "member?" }) // @override Enumerable#include?
         public static RubyBoolean include_p(final ThreadContext context, final IRubyObject self, final IRubyObject obj) {
             final java.util.Collection coll = unwrapIfJavaObject(self);
-            return RubyBoolean.newBoolean(context,  coll.contains( obj.toJava(java.lang.Object.class) ) );
+            return asBoolean(context, coll.contains(obj.toJava(java.lang.Object.class)));
         }
 
         // NOTE: first might conflict with some Java types (e.g. java.util.Deque) thus providing a ruby_ alias
@@ -531,7 +532,7 @@ public abstract class JavaUtil {
             final java.util.List list = unwrapIfJavaObject(self);
             final IRubyObject[] array = new IRubyObject[ list.size() ];
             int i = 0; for ( Object elem : list ) {
-                array[i++] = convertJavaToUsableRubyObject(runtime, elem);;
+                array[i++] = convertJavaToUsableRubyObject(runtime, elem);
             }
             return RubyArray.newArrayMayCopy(runtime, array);
         }

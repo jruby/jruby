@@ -69,7 +69,7 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
 
         InterpreterContext ic = interpreterContext;
         if (ic == null) {
-            if (IRRuntimeHelpers.shouldPrintIR(closure.getStaticScope().getModule().getRuntime())) {
+            if (IRRuntimeHelpers.shouldPrintIR(closure.getStaticScope().getModule().getRuntime()) && IRRuntimeHelpers.shouldPrintScope(getIRScope())) {
                 ByteArrayOutputStream baos = IRDumper.printIR(closure, false);
 
                 LOG.info("Printing simple IR for " + closure.getId() + ":\n" + new String(baos.toByteArray()));

@@ -52,6 +52,8 @@ import org.jruby.util.ByteList;
 
 import java.io.ByteArrayInputStream;
 
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.parser.ParserType.INLINE;
 
@@ -89,12 +91,12 @@ public class JRubyLibrary implements Library {
     public static class JRubyConfig {
         @JRubyMethod(name = "rubygems_disabled?")
         public static IRubyObject rubygems_disabled_p(ThreadContext context, IRubyObject self) {
-            return RubyBoolean.newBoolean(context, context.runtime.getInstanceConfig().isDisableGems());
+            return asBoolean(context, context.runtime.getInstanceConfig().isDisableGems());
         }
 
         @JRubyMethod(name = "did_you_mean_disabled?")
         public static IRubyObject did_you_mean_disabled_p(ThreadContext context, IRubyObject self) {
-            return RubyBoolean.newBoolean(context, context.runtime.getInstanceConfig().isDisableDidYouMean());
+            return asBoolean(context, context.runtime.getInstanceConfig().isDisableDidYouMean());
         }
     }
 
@@ -169,9 +171,13 @@ public class JRubyLibrary implements Library {
     }
 
     @JRubyMethod(name = "security_restricted?", module = true)
+    public static RubyBoolean is_security_restricted(ThreadContext context, IRubyObject recv) {
+        return asBoolean(context, Ruby.isSecurityRestricted());
+    }
+
+    @Deprecated
     public static RubyBoolean is_security_restricted(IRubyObject recv) {
-        final Ruby runtime = recv.getRuntime();
-        return RubyBoolean.newBoolean(runtime, Ruby.isSecurityRestricted());
+        return is_security_restricted(recv.getRuntime().getCurrentContext(), recv);
     }
 
     // NOTE: its probably too late to set this when jruby library is booted (due the java library) ?
@@ -190,7 +196,7 @@ public class JRubyLibrary implements Library {
      */
     @JRubyMethod(module = true)
     public static IRubyObject identity_hash(ThreadContext context, IRubyObject recv, IRubyObject obj) {
-        return context.runtime.newFixnum(System.identityHashCode(obj));
+        return asFixnum(context, System.identityHashCode(obj));
     }
 
     @JRubyMethod(module = true, name = "parse", alias = "ast_for", required = 1, optional = 3, checkArity = false)

@@ -61,6 +61,7 @@ import org.jcodings.Encoding;
 import org.joni.Matcher;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Convert;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
@@ -93,6 +94,8 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.jruby.common.IRubyWarnings.ID;
 
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.RubyStringBuilder.ids;
@@ -492,7 +495,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         @JRubyMethod(module = true)
         public static IRubyObject limit(ThreadContext context, IRubyObject self) {
-            return context.runtime.newFixnum(context.runtime.getInstanceConfig().getBacktraceLimit());
+            return asFixnum(context, context.runtime.getInstanceConfig().getBacktraceLimit());
         }
     }
 
@@ -538,12 +541,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         @JRubyMethod
         public IRubyObject lineno(ThreadContext context) {
-            return context.runtime.newFixnum(element.getLineNumber());
+            return asFixnum(context, element.getLineNumber());
         }
 
         @JRubyMethod
         public IRubyObject path(ThreadContext context) {
-            return context.runtime.newString(element.getFileName());
+            return Convert.asString(context, element.getFileName());
         }
 
         @JRubyMethod
@@ -890,7 +893,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "pending_interrupt?")
     public IRubyObject pending_interrupt_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, !pendingInterruptQueue.isEmpty());
+        return asBoolean(context, !pendingInterruptQueue.isEmpty());
     }
 
     @JRubyMethod(name = "pending_interrupt?")
@@ -1099,7 +1102,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         key = getSymbolKey(key);
         final Map<IRubyObject, IRubyObject> locals = getFiberLocals();
         synchronized (locals) {
-            return RubyBoolean.newBoolean(context, locals.containsKey(key));
+            return asBoolean(context, locals.containsKey(key));
         }
     }
 
@@ -1122,7 +1125,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         key = getSymbolKey(key);
         final Map<IRubyObject, IRubyObject> locals = getThreadLocals();
         synchronized (locals) {
-            return RubyBoolean.newBoolean(context, locals.containsKey(key));
+            return asBoolean(context, locals.containsKey(key));
         }
     }
 
@@ -1199,7 +1202,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "alive?")
     public RubyBoolean alive_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, isAlive());
+        return asBoolean(context, isAlive());
     }
 
     @JRubyMethod
@@ -1380,9 +1383,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     @JRubyMethod(name = "stop?")
-    public RubyBoolean stop_p() {
+    public RubyBoolean stop_p(ThreadContext context) {
         // not valid for "dead" state
-        return getRuntime().newBoolean(getStatus() == Status.SLEEP || getStatus() == Status.DEAD);
+        return asBoolean(context, getStatus() == Status.SLEEP || getStatus() == Status.DEAD);
+    }
+
+    @Deprecated
+    public RubyBoolean stop_p() {
+        return stop_p(getRuntime().getCurrentContext());
     }
 
     @JRubyMethod
@@ -1485,7 +1493,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             try {
                 int id = Integer.parseInt(encodedString.substring(0, atIndex));
 
-                return context.runtime.newFixnum(id);
+                return asFixnum(context, id);
             } catch (NumberFormatException e) {
                 // if we fail to parse this we will just act like we don't support it
             }
@@ -1559,20 +1567,30 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     /**
-     * Sleep the current thread for millis, waking up on any thread interrupts.
+     * Sleep the current thread for milliseconds, waking up on any thread interrupts.
+     *
+     * @param milliseconds Number of milliseconds to sleep. Zero sleeps forever.
+     */
+    public boolean sleep(long milliseconds) throws InterruptedException {
+        return sleep(milliseconds, 0);
+    }
+
+    /**
+     * Sleep the current thread for milliseconds + nanoseconds, waking up on any thread interrupts.
      *
      * We can never be sure if a wait will finish because of a Java "spurious wakeup".  So if we
      * explicitly wakeup and we wait less than requested amount we will return false.  We will
      * return true if we sleep right amount or less than right amount via spurious wakeup.
      *
-     * @param millis Number of milliseconds to sleep. Zero sleeps forever.
+     * @param milliseconds Number of milliseconds to sleep. Combined with nanoseconds, zero sleeps forever.
+     * @param nanoseconds Number of nanoseconds to sleep. Combined with milliseconds, zero sleeps forever.
      */
-    public boolean sleep(long millis) throws InterruptedException {
+    public boolean sleep(long milliseconds, long nanoseconds) throws InterruptedException {
         assert this == getRuntime().getCurrentContext().getThread();
-        sleepTask.millis = millis;
+        sleepTask.nanoseconds = nanoseconds + TimeUnit.MILLISECONDS.toNanos(milliseconds);
         try {
             long timeSlept = executeTaskBlocking(getContext(), null, sleepTask);
-            if (millis == 0 || timeSlept >= millis) {
+            if (sleepTask.nanoseconds == 0 || timeSlept >= sleepTask.nanoseconds) {
                 // sleep was unbounded or we slept long enough
                 return true;
             } else {
@@ -1672,21 +1690,21 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      */
     private static class SleepTask2 implements Task<Object, Long> {
         final Semaphore semaphore = new Semaphore(1);
-        long millis;
+        long nanoseconds;
         {semaphore.drainPermits();}
 
         @Override
         public Long run(ThreadContext context, Object data) throws InterruptedException {
-            long start = System.currentTimeMillis();
+            long start = System.nanoTime();
 
             try {
-                if (millis == 0) {
+                if (nanoseconds == 0) {
                     semaphore.tryAcquire(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
                 } else {
-                    semaphore.tryAcquire(millis, TimeUnit.MILLISECONDS);
+                    semaphore.tryAcquire(nanoseconds, TimeUnit.NANOSECONDS);
                 }
 
-                return System.currentTimeMillis() - start;
+                return System.nanoTime() - start;
             } finally {
                 semaphore.drainPermits();
             }
@@ -2010,20 +2028,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "report_on_exception=", meta = true)
     public static IRubyObject report_on_exception_set(ThreadContext context, IRubyObject self, IRubyObject state) {
-        Ruby runtime = context.runtime;
-        
-        if (state.isNil()) {
-            runtime.setReportOnException(state);
-        } else {
-            runtime.setReportOnException(runtime.newBoolean(state.isTrue()));
-        }
-
+        context.runtime.setReportOnException(state.isNil() ? context.nil : asBoolean(context, state.isTrue()));
         return state;
     }
 
     @JRubyMethod(name = "report_on_exception", meta = true)
     public static IRubyObject report_on_exception(ThreadContext context, IRubyObject self) {
-        return context.runtime.isReportOnException() ? context.tru : context.fals;
+        return asBoolean(context, context.runtime.isReportOnException());
     }
 
     public StackTraceElement[] javaBacktrace() {

@@ -58,6 +58,7 @@ import org.jruby.util.io.EncodingUtils;
 
 import static com.headius.backport9.buffer.Buffers.clearBuffer;
 import static com.headius.backport9.buffer.Buffers.flipBuffer;
+import static org.jruby.api.Convert.asBoolean;
 
 @JRubyClass(name="Encoding")
 public class RubyEncoding extends RubyObject implements Constantizable {
@@ -566,7 +567,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
 
     @JRubyMethod(name = "ascii_compatible?")
     public IRubyObject asciiCompatible_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, getEncoding().isAsciiCompatible());
+        return asBoolean(context, getEncoding().isAsciiCompatible());
     }
 
     @JRubyMethod(name = {"to_s", "name"})
@@ -618,7 +619,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
 
     @JRubyMethod(name = "dummy?")
     public IRubyObject dummy_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, isDummy);
+        return asBoolean(context, isDummy);
     }
 
     @JRubyMethod(name = "compatible?", meta = true)

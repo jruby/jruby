@@ -29,6 +29,7 @@ import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
 import org.jruby.RubyIO;
+import org.jruby.RubyInteger;
 import org.jruby.RubyMethod;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
@@ -56,6 +57,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.jruby.RubyString.*;
+import static org.jruby.api.Convert.checkToInteger;
+import static org.jruby.api.Convert.asInt;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.StringSupport.CR_UNKNOWN;
 import static org.jruby.util.StringSupport.searchNonAscii;
@@ -143,8 +146,29 @@ public class EncodingUtils {
         return runtime.getEncodingService().getAscii8bitEncoding();
     }
 
-    public static API.ModeAndPermission vmodeVperm(IRubyObject vmode, IRubyObject vperm) {
+    @Deprecated
+    public static Object vmodeVperm(IRubyObject vmode, IRubyObject vperm) {
         return new API.ModeAndPermission(vmode, vperm);
+    }
+
+    @Deprecated
+    public static IRubyObject vmode(Object vmodeVperm) {
+        return ((API.ModeAndPermission) vmodeVperm).mode;
+    }
+
+    @Deprecated
+    public static void vmode(Object vmodeVperm, IRubyObject vmode) {
+        ((API.ModeAndPermission) vmodeVperm).mode = vmode;
+    }
+
+    @Deprecated
+    public static IRubyObject vperm(Object vmodeVperm) {
+        return ((API.ModeAndPermission) vmodeVperm).permission;
+    }
+
+    @Deprecated
+    public static void vperm(Object vmodeVperm, IRubyObject vperm) {
+        ((API.ModeAndPermission) vmodeVperm).permission = vperm;
     }
 
     public static IRubyObject vmode(API.ModeAndPermission vmodeVperm) {
@@ -179,6 +203,12 @@ public class EncodingUtils {
         return ecflags;
     }
 
+    @Deprecated
+    public static void extractModeEncoding(ThreadContext context,
+                                           IOEncodable ioEncodable, Object vmodeAndVperm_p, IRubyObject options, int[] oflags_p, int[] fmode_p) {
+        extractModeEncoding(context, ioEncodable, (API.ModeAndPermission) vmodeAndVperm_p, options, oflags_p, fmode_p);
+    }
+
     /*
      * This is a wacky method which is a very near port from MRI.  pm passes in
      * a permissions value and a mode value.  As a side-effect mode will get set
@@ -203,11 +233,11 @@ public class EncodingUtils {
                 fmode_p[0] = OpenFile.READABLE;
                 oflags_p[0] = ModeFlags.RDONLY;
             } else {
-                intmode = TypeConverter.checkToInteger(context, vmode(vmodeAndVperm_p));
+                intmode = checkToInteger(context, vmode(vmodeAndVperm_p));
 
                 if (!intmode.isNil()) {
                     vmode(vmodeAndVperm_p, intmode);
-                    oflags_p[0] = RubyNumeric.num2int(intmode);
+                    oflags_p[0] = asInt(context, (RubyInteger) intmode);
                     fmode_p[0] = ModeFlags.getOpenFileFlagsFor(oflags_p[0]);
                 } else {
                     String p = vmode(vmodeAndVperm_p).convertToString().asJavaString();
@@ -271,11 +301,13 @@ public class EncodingUtils {
                 
                 v = hashARef(runtime, options, "perm");
                 if (!v.isNil()) {
-                    if (vperm(vmodeAndVperm_p) != null) {
-                        if (!vperm(vmodeAndVperm_p).isNil()) throw runtime.newArgumentError("perm specified twice");
-
-                        vperm(vmodeAndVperm_p, v);
+                    if (vperm(vmodeAndVperm_p) != null && !vperm(vmodeAndVperm_p).isNil()) {
+                        throw runtime.newArgumentError("perm specified twice");
                     }
+
+                    vperm(vmodeAndVperm_p, v);
+                } else {
+                    /* perm no use, just ignore */
                 }
 
                 IRubyObject extraFlags = hashARef(runtime, options, "flags");

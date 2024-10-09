@@ -59,8 +59,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 
 import static org.jruby.RubyRegexp.*;
-import static org.jruby.api.Convert.castToArray;
-import static org.jruby.api.Convert.castToNumeric;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ext.date.DateUtils.*;
 import static org.jruby.util.Numeric.*;
@@ -278,7 +277,7 @@ public class RubyDate extends RubyObject {
 
     private RubyFixnum DAY_MS(final ThreadContext context) {
         RubyFixnum v = DAY_MS_CACHE;
-        if (v == null) v = DAY_MS_CACHE = context.runtime.newFixnum(DAY_MS);
+        if (v == null) v = DAY_MS_CACHE = asFixnum(context, DAY_MS);
         return v;
     }
 
@@ -827,7 +826,7 @@ public class RubyDate extends RubyObject {
     @Override
     @JRubyMethod(name = "<=>")
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyDate date) return context.runtime.newFixnum(cmp(context, date));
+        if (other instanceof RubyDate date) return asFixnum(context, cmp(context, date));
 
         // other (Numeric) - interpreted as an Astronomical Julian Day Number.
 
@@ -908,12 +907,12 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod(name = "julian?")
     public RubyBoolean julian_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, isJulian());
+        return asBoolean(context, isJulian());
     }
 
     @JRubyMethod(name = "gregorian?")
     public RubyBoolean gregorian_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, ! isJulian());
+        return asBoolean(context, ! isJulian());
     }
 
     public final boolean isJulian() {
@@ -1178,13 +1177,13 @@ public class RubyDate extends RubyObject {
     @JRubyMethod(name = "julian_leap?", meta = true)
     public static IRubyObject julian_leap_p(ThreadContext context, IRubyObject self, IRubyObject year) {
         final RubyInteger y = year.convertToInteger();
-        return RubyBoolean.newBoolean(context, isJulianLeap(y.getLongValue()));
+        return asBoolean(context, isJulianLeap(y.getLongValue()));
     }
 
     @JRubyMethod(name = "gregorian_leap?", alias = "leap?", meta = true)
     public static IRubyObject gregorian_leap_p(ThreadContext context, IRubyObject self, IRubyObject year) {
         final RubyInteger y = year.convertToInteger();
-        return RubyBoolean.newBoolean(context, isGregorianLeap(y.getLongValue()));
+        return asBoolean(context, isGregorianLeap(y.getLongValue()));
     }
 
     // All years divisible by 4 are leap years in the Julian calendar.
@@ -1208,7 +1207,7 @@ public class RubyDate extends RubyObject {
     @JRubyMethod(name = "leap?")
     public IRubyObject leap_p(ThreadContext context) {
         final long year = dt.getYear();
-        return RubyBoolean.newBoolean(context,  isJulian() ? isJulianLeap(year) : isGregorianLeap(year) );
+        return asBoolean(context,  isJulian() ? isJulianLeap(year) : isGregorianLeap(year) );
     }
 
     //
@@ -1217,7 +1216,7 @@ public class RubyDate extends RubyObject {
     public IRubyObject op_plus(ThreadContext context, IRubyObject n) {
         return n instanceof RubyFixnum fixnum ?
                 newInstance(context, dt.plusDays(+fixnum.getIntValue()), off, start) :
-                op_plus_numeric(context, castToNumeric(context, n, "expected numeric"));
+                op_plus_numeric(context, castAsNumeric(context, n, "expected numeric"));
     }
 
     RubyDate op_plus_numeric(ThreadContext context, RubyNumeric n) {
@@ -1417,7 +1416,7 @@ public class RubyDate extends RubyObject {
     public RubyDate marshal_load(ThreadContext context, IRubyObject a) {
         checkFrozen();
 
-        final RubyArray ary = castToArray(context, a, "expected an array");
+        final RubyArray ary = castAsArray(context, a, "expected an array");
 
         IRubyObject ajd, of, sg;
 
@@ -1467,7 +1466,7 @@ public class RubyDate extends RubyObject {
     }
 
     static RubyRational newRationalConvert(ThreadContext context, IRubyObject num, long den) {
-        return (RubyRational) RubyRational.newRationalConvert(context, num, context.runtime.newFixnum(den));
+        return (RubyRational) RubyRational.newRationalConvert(context, num, asFixnum(context, den));
     }
 
     // def jd_to_ajd(jd, fr, of=0) jd + fr - of - Rational(1, 2) end
@@ -2440,7 +2439,7 @@ public class RubyDate extends RubyObject {
             set_hash(context, hash, "mday", cstr2num(context.runtime, d, bp, ep));
         }
 
-        if (comp != null) set_hash(context, hash, "_comp", RubyBoolean.newBoolean(context, comp));
+        if (comp != null) set_hash(context, hash, "_comp", asBoolean(context, comp));
 
         return hash;
     }

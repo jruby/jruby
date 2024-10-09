@@ -11,6 +11,7 @@ import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 
+import static org.jruby.api.Convert.*;
 import static org.jruby.runtime.Visibility.*;
 
 /**
@@ -91,7 +92,7 @@ public class Pointer extends AbstractMemory {
     public IRubyObject initialize(ThreadContext context, IRubyObject address) {
         setMemoryIO(address instanceof Pointer
                 ? ((Pointer) address).getMemoryIO()
-                : Factory.getInstance().wrapDirectMemory(context.runtime, RubyFixnum.num2long(address)));
+                : Factory.getInstance().wrapDirectMemory(context.runtime, numericToLong(context, address)));
         size = Long.MAX_VALUE;
         typeSize = 1;
 
@@ -102,7 +103,7 @@ public class Pointer extends AbstractMemory {
     public IRubyObject initialize(ThreadContext context, IRubyObject type, IRubyObject address) {
         setMemoryIO(address instanceof Pointer
                 ? ((Pointer) address).getMemoryIO()
-                : Factory.getInstance().wrapDirectMemory(context.runtime, RubyFixnum.num2long(address)));
+                : Factory.getInstance().wrapDirectMemory(context.runtime, numericToLong(context, address)));
         size = Long.MAX_VALUE;
         typeSize = calculateTypeSize(context, type);
 
@@ -134,7 +135,7 @@ public class Pointer extends AbstractMemory {
      */
     @JRubyMethod(name = "null?")
     public IRubyObject null_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, getMemoryIO().isNull());
+        return asBoolean(context, getMemoryIO().isNull());
     }
 
 
@@ -149,7 +150,7 @@ public class Pointer extends AbstractMemory {
 
     @JRubyMethod(name = { "address", "to_i" })
     public IRubyObject address(ThreadContext context) {
-        return context.runtime.newFixnum(getAddress());
+        return asFixnum(context, getAddress());
     }
 
     /**
@@ -163,7 +164,7 @@ public class Pointer extends AbstractMemory {
 
     @JRubyMethod(name = "==")
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
-        return RubyBoolean.newBoolean(context, this == obj
+        return asBoolean(context, this == obj
                 || getAddress() == 0L && obj.isNil()
                 || (obj instanceof Pointer && ((Pointer) obj).getAddress() == getAddress()));
     }

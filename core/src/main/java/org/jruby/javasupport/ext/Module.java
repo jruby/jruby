@@ -104,7 +104,7 @@ public class Module {
     private static IRubyObject javaImport(ThreadContext context, RubyModule target, IRubyObject klass, Block block) {
         final Ruby runtime = context.runtime;
 
-        Class<?> javaClass; RubyModule proxyClass;
+        final Class<?> javaClass;
         if (klass instanceof RubyString) {
             final String className = klass.asJavaString();
             if (!JavaUtilities.validJavaIdentifier(className)) {
@@ -113,7 +113,7 @@ public class Module {
             if (className.contains("::")) {
                 throw runtime.newArgumentError("must use Java style name: " + className);
             }
-            javaClass = Java.getJavaClass(runtime, className, false); // raises NameError if not found
+            javaClass = Java.getJavaClass(runtime, className); // raises NameError if not found
         } else if (klass instanceof JavaPackage) {
             throw runtime.newArgumentError("java_import does not work for Java packages (try include_package instead)");
         } else if (klass instanceof RubyModule) {
@@ -136,18 +136,12 @@ public class Module {
             constant = javaClass.getSimpleName();
         }
 
-        proxyClass = Java.getProxyClass(runtime, javaClass);
-
         try {
-            if (!target.constDefinedAt(constant) || !target.getConstant(constant, false).equals(proxyClass)) {
-                target.const_set(runtime.newSymbol(constant), proxyClass); // setConstant would not validate const-name
-            }
+            return Java.setProxyClass(runtime, target, constant, javaClass);
         } catch (NameError e) {
             String message = "cannot import Java class " + javaClass.getName() + " as `" + constant + "' : " + e.getException().getMessage();
             throw (RaiseException) runtime.newNameError(message, constant).initCause(e);
         }
-
-        return proxyClass;
     }
 
     @JRubyMethod(visibility = PRIVATE)
@@ -228,12 +222,21 @@ public class Module {
                 try {
                     return Helpers.invokeSuper(context, self, klass, "const_missing", constant, Block.NULL_BLOCK);
                 } catch (NameError e) { // super didn't find anything either, raise a (new) NameError
-                    throw runtime.newNameError(constant + " not found in packages: " + includedPackages.packages.stream().collect(Collectors.joining(", ")), constant);
+                    throw runtime.newNameError(constant + " not found in packages: " + joinedPackageNames(), constant);
                 }
             }
-            return Java.setProxyClass(runtime, (RubyModule) self, constName, foundClass);
+
+            try {
+                return Java.setProxyClass(runtime, (RubyModule) self, constName, foundClass);
+            } catch (NameError e) {
+                String message = "cannot set Java class " + foundClass.getName() + " as `" + constant + "' : " + e.getException().getMessage();
+                throw runtime.newNameError(message, constant);
+            }
         }
 
+        private String joinedPackageNames() {
+            return includedPackages.packages.stream().collect(Collectors.joining(", "));
+        }
     }
 
 }

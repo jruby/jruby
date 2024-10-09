@@ -17,6 +17,8 @@ import java.net.UnknownHostException;
 
 import jnr.constants.platform.InterfaceInfo;
 
+import static org.jruby.api.Convert.asFixnum;
+
 /**
  *
  * @author Lucas Allan Amorim
@@ -115,12 +117,12 @@ public class Ifaddr extends RubyObject {
 
     @JRubyMethod
     public IRubyObject ifindex(ThreadContext context) {
-        return context.runtime.newFixnum(index);
+        return asFixnum(context, index);
     }
 
     @JRubyMethod
     public IRubyObject flags(ThreadContext context) {
-        return context.runtime.newFixnum(flags);
+        return asFixnum(context, flags);
     }
 
     @JRubyMethod

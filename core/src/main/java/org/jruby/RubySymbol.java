@@ -76,6 +76,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
@@ -524,13 +526,13 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     @JRubyMethod(name = "===")
     @Override
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
-        return RubyBoolean.newBoolean(context, this == other);
+        return asBoolean(context, this == other);
     }
 
     @JRubyMethod(name = "==")
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
-        return RubyBoolean.newBoolean(context, this == other);
+        return asBoolean(context, this == other);
     }
 
     @Deprecated
@@ -541,7 +543,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @JRubyMethod
     public RubyFixnum hash(ThreadContext context) {
-        return context.runtime.newFixnum(hashCode());
+        return asFixnum(context, hashCode());
     }
 
     @Override

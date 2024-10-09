@@ -36,6 +36,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyHash;
 import org.jruby.RubySymbol;
+import org.jruby.api.Convert;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
@@ -43,7 +44,7 @@ import org.jruby.util.TypeConverter;
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.jruby.api.Convert.castToArray;
+import static org.jruby.api.Convert.castAsArray;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
@@ -80,7 +81,7 @@ public final class ArgsUtil {
 
         return newValue.isNil() ?
                 RubyArray.newArrayLight(runtime, value):
-                castToArray(runtime.getCurrentContext(), newValue);
+                Convert.castAsArray(runtime.getCurrentContext(), newValue);
     }
     
     public static int arrayLength(IRubyObject node) {

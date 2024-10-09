@@ -43,6 +43,7 @@ import static org.jruby.RubyArgsFile.Next.NextFile;
 import static org.jruby.RubyArgsFile.Next.Stream;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.anno.FrameField.LASTLINE;
+import static org.jruby.api.Convert.*;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
 import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -651,7 +652,7 @@ public class RubyArgsFile extends RubyObject {
 
         data.next_argv(context);
 
-        return RubyBoolean.newBoolean(context, isClosed(context, data.currentFile));
+        return asBoolean(context, isClosed(context, data.currentFile));
     }
 
     private static boolean isClosed(ThreadContext context, IRubyObject currentFile) {
@@ -677,7 +678,7 @@ public class RubyArgsFile extends RubyObject {
 
     @JRubyMethod(name = "lineno")
     public static IRubyObject lineno(ThreadContext context, IRubyObject recv) {
-        return context.runtime.newFixnum(context.runtime.getCurrentLine());
+        return asFixnum(context, context.runtime.getCurrentLine());
     }
 
     @JRubyMethod(name = "lineno=")
@@ -697,7 +698,7 @@ public class RubyArgsFile extends RubyObject {
         RubyIO currentFile = getCurrentDataFile(context, "no stream to rewind");
 
         RubyFixnum retVal = currentFile.rewind(context);
-        currentFile.lineno_set(context, context.runtime.newFixnum(0));
+        currentFile.lineno_set(context, asFixnum(context, 0));
 
         return retVal;
     }
@@ -859,8 +860,6 @@ public class RubyArgsFile extends RubyObject {
     @JRubyMethod(name = "read", optional = 2, checkArity = false)
     public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 0, 2);
-
-        Ruby runtime = context.runtime;
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
         IRubyObject tmp, str, length;
             long len = 0;
@@ -872,7 +871,7 @@ public class RubyArgsFile extends RubyObject {
             str = length = context.nil;
         }
 
-        if (length != context.nil) len = RubyNumeric.num2long(length);
+        if (length != context.nil) len = numericToLong(context, length);
 
         if (str != context.nil) {
             str = str.convertToString();
@@ -905,7 +904,7 @@ public class RubyArgsFile extends RubyObject {
             } else if (argc >= 1) {
                 final int strLen = ((RubyString) str).getByteList().length();
                 if (strLen < len) {
-                    args[0] = runtime.newFixnum(len - strLen);
+                    args[0] = asFixnum(context, len - strLen);
                     continue;
                 }
             }

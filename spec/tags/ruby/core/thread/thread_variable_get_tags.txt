@@ -1,0 +1,3 @@
+fails:Thread#thread_variable_get converts a key that is neither String nor Symbol with #to_str
+fails:Thread#thread_variable_get does not raise a TypeError if the key is neither Symbol nor String, nor responds to #to_str
+fails:Thread#thread_variable_get does not try to convert the key with #to_sym

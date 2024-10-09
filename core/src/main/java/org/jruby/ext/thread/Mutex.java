@@ -44,6 +44,9 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
 
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
+
 /**
  * The "Mutex" class from the 'thread' library.
  */
@@ -80,7 +83,7 @@ public class Mutex extends RubyObject implements DataType {
 
     @JRubyMethod(name = "locked?")
     public RubyBoolean locked_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, isLocked());
+        return asBoolean(context, isLocked());
     }
 
     public boolean isLocked() {
@@ -89,7 +92,7 @@ public class Mutex extends RubyObject implements DataType {
 
     @JRubyMethod
     public RubyBoolean try_lock(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, tryLock(context));
+        return asBoolean(context, tryLock(context));
     }
 
     public boolean tryLock(ThreadContext context) {
@@ -154,9 +157,8 @@ public class Mutex extends RubyObject implements DataType {
 
     @JRubyMethod
     public IRubyObject sleep(ThreadContext context, IRubyObject timeout) {
-        Ruby runtime = context.runtime;
-
         final long beg = System.currentTimeMillis();
+
         try {
             RubyThread thread = context.getThread();
 
@@ -173,12 +175,12 @@ public class Mutex extends RubyObject implements DataType {
                 }
             }
         } catch (IllegalMonitorStateException imse) {
-            throw runtime.newThreadError("Attempt to unlock a mutex which is not locked");
+            throw context.runtime.newThreadError("Attempt to unlock a mutex which is not locked");
         } catch (InterruptedException ex) {
             context.pollThreadEvents();
         }
 
-        return runtime.newFixnum((System.currentTimeMillis() - beg) / 1000);
+        return asFixnum(context, (System.currentTimeMillis() - beg) / 1000);
     }
 
     @JRubyMethod
@@ -193,7 +195,7 @@ public class Mutex extends RubyObject implements DataType {
 
     @JRubyMethod(name = "owned?")
     public IRubyObject owned_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, lock.isHeldByCurrentThread());
+        return asBoolean(context, lock.isHeldByCurrentThread());
     }
 
     private void checkRelocking(ThreadContext context) {

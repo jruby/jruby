@@ -275,7 +275,7 @@ public class JavaBootstrap {
     }
 
     public static IRubyObject booleanOrNil(Ruby runtime, Boolean b) {
-        return b == null ? runtime.getNil() : RubyBoolean.newBoolean(runtime, b);
+        return b == null ? runtime.getNil() : runtime.newBoolean(b);
     }
 
     public static IRubyObject stringOrNil(Ruby runtime, CharSequence cs) {

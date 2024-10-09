@@ -13,6 +13,7 @@ import org.jruby.util.TypeConverter;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
+import static org.jruby.api.Convert.*;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.TypeConverter.toFloat;
 
@@ -317,7 +318,7 @@ public class RubyRandomBase extends RubyObject {
 
         if (vmax.isNil()) return vmax;
         if (!(vmax instanceof RubyFloat)) {
-            v = TypeConverter.checkToInteger(context, vmax);
+            v = checkToInteger(context, vmax);
             if (!v.isNil()) return randInt(context, obj, rnd, (RubyInteger) v, true);
         }
         Ruby runtime = context.runtime;
@@ -463,7 +464,7 @@ public class RubyRandomBase extends RubyObject {
 
     private static IRubyObject checkMaxInt(ThreadContext context, IRubyObject vmax) {
         if (!(vmax instanceof RubyFloat)) {
-            IRubyObject v = TypeConverter.checkToInteger(context, vmax);
+            IRubyObject v = checkToInteger(context, vmax);
             if (v != context.nil) return v;
         }
         return null;
@@ -521,8 +522,8 @@ public class RubyRandomBase extends RubyObject {
         RubyRandom.RandomType rnd = tryGetRandomType(context, obj);
 
         if (rnd == null) {
-            RubyInteger v = Helpers.invokePublic(context, obj, "rand", context.runtime.newFixnum(limit + 1)).convertToInteger();
-            long r = RubyNumeric.num2long(v);
+            RubyInteger v = Helpers.invokePublic(context, obj, "rand", asFixnum(context, limit + 1)).convertToInteger();
+            long r = numericToLong(context, v);
             if (r < 0) throw context.runtime.newRangeError("random number too small " + r);
             if (r > limit) throw context.runtime.newRangeError("random number too big " + r);
 

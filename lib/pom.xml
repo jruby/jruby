@@ -307,7 +307,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>jruby-openssl</artifactId>
-      <version>0.14.5</version>
+      <version>0.15.0</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -657,6 +657,19 @@ DO NOT MODIFY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>tempfile</artifactId>
+      <version>0.2.1</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>rubygems</groupId>
+          <artifactId>jar-dependencies</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>time</artifactId>
       <version>0.3.0</version>
       <type>gem</type>
@@ -879,7 +892,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>net-ftp</artifactId>
-      <version>0.3.4</version>
+      <version>0.3.7</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1022,7 +1035,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>rexml</artifactId>
-      <version>3.2.6</version>
+      <version>3.3.4</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1113,7 +1126,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/irb-1.13.0*</include>
           <include>specifications/jar-dependencies-0.4.1*</include>
           <include>specifications/jruby-readline-1.3.7*</include>
-          <include>specifications/jruby-openssl-0.14.5*</include>
+          <include>specifications/jruby-openssl-0.15.0*</include>
           <include>specifications/json-2.7.2*</include>
           <include>specifications/logger-1.6.0*</include>
           <include>specifications/net-http-0.4.1*</include>
@@ -1140,6 +1153,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/ffi-binary-libfixposix-0.5.1.1*</include>
           <include>specifications/ffi-bindings-libfixposix-0.5.1.0*</include>
           <include>specifications/syntax_suggest-2.0.0*</include>
+          <include>specifications/tempfile-0.2.1*</include>
           <include>specifications/time-0.3.0*</include>
           <include>specifications/timeout-0.4.1*</include>
           <include>specifications/tsort-0.2.0*</include>
@@ -1157,7 +1171,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/matrix-0.4.2*</include>
           <include>specifications/minitest-5.22.2*</include>
           <include>specifications/mutex_m-0.2.0*</include>
-          <include>specifications/net-ftp-0.3.4*</include>
+          <include>specifications/net-ftp-0.3.7*</include>
           <include>specifications/net-imap-0.4.10*</include>
           <include>specifications/net-pop-0.1.2*</include>
           <include>specifications/net-smtp-0.4.0.1*</include>
@@ -1168,7 +1182,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/racc-1.7.3*</include>
           <include>specifications/rake-${rake.version}*</include>
           <include>specifications/resolv-replace-0.1.1*</include>
-          <include>specifications/rexml-3.2.6*</include>
+          <include>specifications/rexml-3.3.4*</include>
           <include>specifications/rinda-0.2.0*</include>
           <include>specifications/rss-0.3.0*</include>
           <include>specifications/test-unit-3.6.2*</include>
@@ -1193,7 +1207,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/irb-1.13.0*/**/*</include>
           <include>gems/jar-dependencies-0.4.1*/**/*</include>
           <include>gems/jruby-readline-1.3.7*/**/*</include>
-          <include>gems/jruby-openssl-0.14.5*/**/*</include>
+          <include>gems/jruby-openssl-0.15.0*/**/*</include>
           <include>gems/json-2.7.2*/**/*</include>
           <include>gems/logger-1.6.0*/**/*</include>
           <include>gems/net-http-0.4.1*/**/*</include>
@@ -1220,6 +1234,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/ffi-binary-libfixposix-0.5.1.1*/**/*</include>
           <include>gems/ffi-bindings-libfixposix-0.5.1.0*/**/*</include>
           <include>gems/syntax_suggest-2.0.0*/**/*</include>
+          <include>gems/tempfile-0.2.1*/**/*</include>
           <include>gems/time-0.3.0*/**/*</include>
           <include>gems/timeout-0.4.1*/**/*</include>
           <include>gems/tsort-0.2.0*/**/*</include>
@@ -1237,7 +1252,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/matrix-0.4.2*/**/*</include>
           <include>gems/minitest-5.22.2*/**/*</include>
           <include>gems/mutex_m-0.2.0*/**/*</include>
-          <include>gems/net-ftp-0.3.4*/**/*</include>
+          <include>gems/net-ftp-0.3.7*/**/*</include>
           <include>gems/net-imap-0.4.10*/**/*</include>
           <include>gems/net-pop-0.1.2*/**/*</include>
           <include>gems/net-smtp-0.4.0.1*/**/*</include>
@@ -1248,7 +1263,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/racc-1.7.3*/**/*</include>
           <include>gems/rake-${rake.version}*/**/*</include>
           <include>gems/resolv-replace-0.1.1*/**/*</include>
-          <include>gems/rexml-3.2.6*/**/*</include>
+          <include>gems/rexml-3.3.4*/**/*</include>
           <include>gems/rinda-0.2.0*/**/*</include>
           <include>gems/rss-0.3.0*/**/*</include>
           <include>gems/test-unit-3.6.2*/**/*</include>
@@ -1273,7 +1288,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/irb-1.13.0*</include>
           <include>cache/jar-dependencies-0.4.1*</include>
           <include>cache/jruby-readline-1.3.7*</include>
-          <include>cache/jruby-openssl-0.14.5*</include>
+          <include>cache/jruby-openssl-0.15.0*</include>
           <include>cache/json-2.7.2*</include>
           <include>cache/logger-1.6.0*</include>
           <include>cache/net-http-0.4.1*</include>
@@ -1300,6 +1315,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/ffi-binary-libfixposix-0.5.1.1*</include>
           <include>cache/ffi-bindings-libfixposix-0.5.1.0*</include>
           <include>cache/syntax_suggest-2.0.0*</include>
+          <include>cache/tempfile-0.2.1*</include>
           <include>cache/time-0.3.0*</include>
           <include>cache/timeout-0.4.1*</include>
           <include>cache/tsort-0.2.0*</include>
@@ -1317,7 +1333,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/matrix-0.4.2*</include>
           <include>cache/minitest-5.22.2*</include>
           <include>cache/mutex_m-0.2.0*</include>
-          <include>cache/net-ftp-0.3.4*</include>
+          <include>cache/net-ftp-0.3.7*</include>
           <include>cache/net-imap-0.4.10*</include>
           <include>cache/net-pop-0.1.2*</include>
           <include>cache/net-smtp-0.4.0.1*</include>
@@ -1328,7 +1344,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/racc-1.7.3*</include>
           <include>cache/rake-${rake.version}*</include>
           <include>cache/resolv-replace-0.1.1*</include>
-          <include>cache/rexml-3.2.6*</include>
+          <include>cache/rexml-3.3.4*</include>
           <include>cache/rinda-0.2.0*</include>
           <include>cache/rss-0.3.0*</include>
           <include>cache/test-unit-3.6.2*</include>

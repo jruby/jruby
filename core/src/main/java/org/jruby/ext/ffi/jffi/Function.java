@@ -19,6 +19,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Error.typeError;
 
 @JRubyClass(name="FFI::Function", parent="FFI::Pointer")
@@ -161,7 +162,7 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
 
     @JRubyMethod(name = { "autorelease?", "autorelease" })
     public final IRubyObject autorelease_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, autorelease);
+        return asBoolean(context, autorelease);
     }
 
     @Override

@@ -13,6 +13,8 @@ import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.asBoolean;
+
 @JRubyClass(name = "Monitor")
 public class Monitor extends RubyObject {
     private final Mutex mutex;
@@ -99,7 +101,7 @@ public class Monitor extends RubyObject {
 
     @JRubyMethod(name = "mon_owned?")
     public RubyBoolean mon_owned_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, ownedByCurrentThread(context));
+        return asBoolean(context, ownedByCurrentThread(context));
     }
 
     @JRubyMethod

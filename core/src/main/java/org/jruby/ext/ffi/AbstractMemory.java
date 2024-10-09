@@ -49,6 +49,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -92,7 +93,7 @@ abstract public class AbstractMemory extends MemoryObject {
                 return Struct.getStructSize(context.runtime, sizeArg);
 
             } else if (!(sizeMethod = sizeArg.getMetaClass().searchMethod("size")).isUndefined()) {
-                return (int) RubyFixnum.num2long(sizeMethod.call(context, sizeArg, sizeArg.getMetaClass(), "size"));
+                return (int) numericToLong(context, sizeMethod.call(context, sizeArg, sizeArg.getMetaClass(), "size"));
 
             } else {
                 throw context.runtime.newArgumentError("Invalid size argument");
@@ -163,7 +164,7 @@ abstract public class AbstractMemory extends MemoryObject {
      */
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
-        return context.runtime.newFixnum(hashCode());
+        return asFixnum(context, hashCode());
     }
 
     @JRubyMethod(name = "[]")
@@ -195,7 +196,7 @@ abstract public class AbstractMemory extends MemoryObject {
     @JRubyMethod(name = "==")
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
-        return RubyBoolean.newBoolean(context, this.equals(obj));
+        return asBoolean(context, this.equals(obj));
     }
     
     /**
@@ -235,7 +236,7 @@ abstract public class AbstractMemory extends MemoryObject {
      */
     @JRubyMethod(name = "type_size")
     public final IRubyObject type_size(ThreadContext context) {
-        return context.runtime.newFixnum(typeSize);
+        return asFixnum(context, typeSize);
     }
 
     /**
@@ -1941,8 +1942,7 @@ abstract public class AbstractMemory extends MemoryObject {
     @JRubyMethod(name = "write_string")
     public IRubyObject write_string(ThreadContext context, IRubyObject strArg, IRubyObject lenArg) {
         ByteList bl = strArg.convertToString().getByteList();
-        getMemoryIO().put(0, bl.getUnsafeBytes(), bl.begin(),
-                Math.min(bl.length(), (int) org.jruby.RubyInteger.num2long(lenArg)));
+        getMemoryIO().put(0, bl.getUnsafeBytes(), bl.begin(), Math.min(bl.length(), (int) numericToLong(context, lenArg)));
         return this;
     }
 
@@ -2142,7 +2142,7 @@ abstract public class AbstractMemory extends MemoryObject {
         MemoryOp op = MemoryOp.getMemoryOp(type);
 
         if(op != null) {
-            return op.get(context, getMemoryIO(), RubyNumeric.num2long(offset));
+            return op.get(context, getMemoryIO(), numericToLong(context, offset));
         }
 
         throw runtime.newArgumentError("undefined type " + typeName);
@@ -2155,7 +2155,7 @@ abstract public class AbstractMemory extends MemoryObject {
         Type type = runtime.getFFI().getTypeResolver().findType(runtime, typeName);
         MemoryOp op = MemoryOp.getMemoryOp(type);
         if(op != null) {
-            op.put(context, getMemoryIO(), RubyNumeric.num2long(offset), value);
+            op.put(context, getMemoryIO(), numericToLong(context, offset), value);
 
             return context.nil;
         }

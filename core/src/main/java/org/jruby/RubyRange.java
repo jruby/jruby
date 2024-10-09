@@ -58,8 +58,8 @@ import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
-import static org.jruby.RubyNumeric.dbl2num;
-import static org.jruby.RubyNumeric.fix2long;
+import static org.jruby.RubyNumeric.*;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.hashEnd;
 import static org.jruby.runtime.Helpers.hashStart;
@@ -79,7 +79,6 @@ import org.jruby.util.Numeric;
 import org.jruby.util.TypeConverter;
 
 import static org.jruby.RubyEnumerator.SizeFn;
-import static org.jruby.RubyNumeric.intervalStepSize;
 
 import static org.jruby.runtime.Visibility.PRIVATE;
 
@@ -133,7 +132,7 @@ public class RubyRange extends RubyObject {
     public static RubyRange newBeginlessRange(ThreadContext context, long end, boolean isExclusive) {
         Ruby runtime = context.runtime;
         RubyRange range = new RubyRange(runtime, runtime.getRange());
-        range.init(context, context.nil, runtime.newFixnum(end), isExclusive);
+        range.init(context, context.nil, asFixnum(context, end), isExclusive);
         range.isInited = true;
         return range;
     }
@@ -141,7 +140,7 @@ public class RubyRange extends RubyObject {
     public static RubyRange newEndlessRange(ThreadContext context, long begin, boolean isExclusive) {
         Ruby runtime = context.runtime;
         RubyRange range = new RubyRange(runtime, runtime.getRange());
-        range.init(context, runtime.newFixnum(begin), context.nil, isExclusive);
+        range.init(context, asFixnum(context, begin), context.nil, isExclusive);
         range.isInited = true;
         return range;
     }
@@ -149,7 +148,7 @@ public class RubyRange extends RubyObject {
     public static RubyRange newRange(ThreadContext context, long begin, long end, boolean isExclusive) {
         Ruby runtime = context.runtime;
         RubyRange range = new RubyRange(runtime, runtime.getRange());
-        range.init(context, runtime.newFixnum(begin), runtime.newFixnum(end), isExclusive);
+        range.init(context, asFixnum(context, begin), asFixnum(context, end), isExclusive);
         range.isInited = true;
         return range;
     }
@@ -178,8 +177,8 @@ public class RubyRange extends RubyObject {
         range.isExclusive = isExclusive;
     }
 
-    final boolean checkBegin(long length) {
-        long beg = isBeginless ? 0 : RubyNumeric.num2long(this.begin);
+    final boolean checkBegin(ThreadContext context, long length) {
+        long beg = isBeginless ? 0 : numericToLong(context, this.begin);
         if (beg < 0) {
             beg += length;
             if (beg < 0) {
@@ -191,9 +190,9 @@ public class RubyRange extends RubyObject {
         return true;
     }
 
-    final long[] begLen(long len, int err) {
-        long beg = isBeginless ? 0 : RubyNumeric.num2long(this.begin);
-        long end = isEndless ? -1: RubyNumeric.num2long(this.end);
+    final long[] begLen(ThreadContext context, long len, int err) {
+        long beg = isBeginless ? 0 : numericToLong(context, this.begin);
+        long end = isEndless ? -1: numericToLong(context, this.end);
 
         if (beg < 0) {
             beg += len;
@@ -231,8 +230,8 @@ public class RubyRange extends RubyObject {
         return new long[]{beg, len};
     }
 
-    final long begLen0(long len) {
-        long beg = isBeginless ? 0 : RubyNumeric.num2long(this.begin);
+    final long begLen0(ThreadContext context, long len) {
+        long beg = isBeginless ? 0 : numericToLong(context, this.begin);
 
         if (beg < 0) {
             beg += len;
@@ -244,8 +243,8 @@ public class RubyRange extends RubyObject {
         return beg;
     }
 
-    final long begLen1(long len, long beg) {
-        long end = isEndless ? -1 : RubyNumeric.num2long(this.end);
+    final long begLen1(ThreadContext context, long len, long beg) {
+        long end = isEndless ? -1 : numericToLong(context, this.end);
 
         if (end < 0) {
             end += len;
@@ -353,21 +352,18 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
-        Ruby runtime = context.runtime;
-
         int exclusiveBit = isExclusive ? 1 : 0;
         long hash = exclusiveBit;
-        IRubyObject v;
 
-        hash = hashStart(runtime, hash);
-        v = safeHash(context, begin);
+        hash = hashStart(context.runtime, hash);
+        IRubyObject v = safeHash(context, begin);
         hash = murmurCombine(hash, v.convertToInteger().getLongValue());
         v = safeHash(context, end);
         hash = murmurCombine(hash, v.convertToInteger().getLongValue());
         hash = murmurCombine(hash, exclusiveBit << 24);
         hash = hashEnd(hash);
 
-        return runtime.newFixnum(hash);
+        return asFixnum(context, hash);
     }
 
     private static RubyString inspectValue(final ThreadContext context, IRubyObject value) {
@@ -417,8 +413,13 @@ public class RubyRange extends RubyObject {
     }
 
     @JRubyMethod(name = "exclude_end?")
+    public RubyBoolean exclude_end_p(ThreadContext context) {
+        return asBoolean(context, isExclusive);
+    }
+
+    @Deprecated
     public RubyBoolean exclude_end_p() {
-        return getRuntime().newBoolean(isExclusive);
+        return exclude_end_p(getRuntime().getCurrentContext());
     }
     
     @JRubyMethod(name = "eql?")
@@ -437,7 +438,7 @@ public class RubyRange extends RubyObject {
 
         RubyRange otherRange = (RubyRange) other;
 
-        return RubyBoolean.newBoolean(context, isExclusive == otherRange.isExclusive &&
+        return asBoolean(context, isExclusive == otherRange.isExclusive &&
                 invokedynamic(context, this.begin, equalityCheck, otherRange.begin).isTrue() &&
                 invokedynamic(context, this.end, equalityCheck, otherRange.end).isTrue());
     }
@@ -887,8 +888,8 @@ public class RubyRange extends RubyObject {
                 b.uptoCommon(context, end.asString(), isExclusive, blockCallback);
             }
         } else if (begin instanceof RubyNumeric
-                || !TypeConverter.checkToInteger(runtime, begin, "to_int").isNil()
-                || !TypeConverter.checkToInteger(runtime, end, "to_int").isNil()) {
+                || !checkToInteger(context, begin).isNil()
+                || !checkToInteger(context, end).isNil()) {
             numericStep(context, runtime, step, block);
         } else {
             IRubyObject tmp = begin.checkStringType();
@@ -1006,7 +1007,7 @@ public class RubyRange extends RubyObject {
         if (iterable
                 || !TypeConverter.convertToTypeWithCheck(context, begin, runtime.getInteger(), to_int_checked).isNil()
                 || !TypeConverter.convertToTypeWithCheck(context, end, runtime.getInteger(), to_int_checked).isNil()) {
-            return RubyBoolean.newBoolean(context, rangeIncludes(context, val));
+            return asBoolean(context, rangeIncludes(context, val));
         } else if ((begin instanceof RubyString) || (end instanceof RubyString)) {
             if ((begin instanceof RubyString) && (end instanceof RubyString)) {
                 if (useStringCover) {
@@ -1047,16 +1048,16 @@ public class RubyRange extends RubyObject {
     public IRubyObject eqq_p(ThreadContext context, IRubyObject obj) {
         IRubyObject result = includeCommon(context, obj, true);
         if (result != UNDEF) return result;
-        return RubyBoolean.newBoolean(context, rangeIncludes(context, obj));
+        return asBoolean(context, rangeIncludes(context, obj));
     }
 
     @JRubyMethod(name = "cover?")
     public RubyBoolean cover_p(ThreadContext context, IRubyObject obj) {
         if (obj instanceof RubyRange) {
-            return RubyBoolean.newBoolean(context, coverRange(context, (RubyRange) obj));
+            return asBoolean(context, coverRange(context, (RubyRange) obj));
         }
 
-        return RubyBoolean.newBoolean(context, rangeIncludes(context, obj));
+        return asBoolean(context, rangeIncludes(context, obj));
     }
 
     // MRI: r_cover_p
@@ -1246,15 +1247,13 @@ public class RubyRange extends RubyObject {
             return RubyArray.newEmptyArray(context.runtime);
         }
 
-        long n = RubyNumeric.num2long(arg);
-        if (n < 0) {
-            throw context.runtime.newArgumentError("negative array size");
-        }
+        long n = numericToLong(context, arg);
+        if (n < 0) throw context.runtime.newArgumentError("negative array size");
 
         nv = RubyInteger.int2fix(context.runtime, n);
         if (Numeric.f_gt_p(context, nv, len)) {
              nv = len;
-             n = RubyNumeric.num2long(nv);
+             n = numericToLong(context, nv);
         }
 
         RubyArray array = RubyArray.newArray(context.runtime, n);
@@ -1477,7 +1476,7 @@ public class RubyRange extends RubyObject {
                 longBits = Double.doubleToLongBits(((RubyFloat) flote).getDoubleValue());
             }
 
-            return context.runtime.newFixnum(longBits);
+            return asFixnum(context, longBits);
         }
 
         @JRubyMethod(meta = true)

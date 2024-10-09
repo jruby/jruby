@@ -58,6 +58,7 @@ import com.headius.backport9.modules.Modules;
 import org.jcodings.Encoding;
 
 import org.jruby.*;
+import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.TypeError;
 import org.jruby.javasupport.binding.Initializer;
 import org.jruby.javasupport.proxy.JavaProxyClass;
@@ -229,7 +230,7 @@ public class Java implements Library {
 
         @JRubyMethod
         public static IRubyObject inherited(ThreadContext context, IRubyObject self, IRubyObject subclass) {
-            JavaInterfaceTemplate.addRealImplClassNew(castToClass(context, subclass));
+            JavaInterfaceTemplate.addRealImplClassNew(castAsClass(context, subclass));
             return context.nil;
         }
     }
@@ -241,17 +242,33 @@ public class Java implements Library {
             IRubyObject javaClass,
             IRubyObject mod) {
         final Ruby runtime = self.getRuntime();
-        RubyModule module = castToModule(runtime.getCurrentContext(), mod);
+        RubyModule module = castAsModule(runtime.getCurrentContext(), mod);
 
         return setProxyClass(runtime, module, name.asJavaString(), resolveJavaClassArgument(runtime, javaClass));
     }
 
-    public static RubyModule setProxyClass(final Ruby runtime, final RubyModule target,
-                                           final String constName, final Class<?> javaClass) {
+    public static RubyModule setProxyClass(final Ruby runtime, final RubyModule target, final String constName, final Class<?> javaClass) throws NameError {
         final RubyModule proxyClass = getProxyClass(runtime, javaClass);
-
-        target.setConstant(constName, proxyClass);
+        setProxyClass(runtime, target, constName, proxyClass, true);
         return proxyClass;
+    }
+
+    private static void setProxyClass(final Ruby runtime, final RubyModule target, final String constName, final RubyModule proxyClass, final boolean validateConstant) {
+        if (constantNotSetOrDifferent(target, constName, proxyClass)) {
+            synchronized (target) { // synchronize to prevent "already initialized constant" warnings with multiple threads
+                if (constantNotSetOrDifferent(target, constName, proxyClass)) {
+                    if (validateConstant) {
+                        target.const_set(runtime.newSymbol(constName), proxyClass); // setConstant would not validate const-name
+                    } else {
+                        target.setConstant(constName, proxyClass);
+                    }
+                }
+            }
+        }
+    }
+
+    private static boolean constantNotSetOrDifferent(final RubyModule target, final String constName, final RubyModule proxyClass) {
+        return !target.constDefinedAt(constName) || !proxyClass.equals(target.getConstant(constName, false));
     }
 
     /**
@@ -566,7 +583,7 @@ public class Java implements Library {
         RubyClass javaProxyClass = javaSupport.getJavaProxyClass().getMetaClass();
         Helpers.invokeAs(context, javaProxyClass, clazz, "inherited", subclazz, Block.NULL_BLOCK);
 
-        setupJavaSubclass(context, castToClass(context, subclazz));
+        setupJavaSubclass(context, castAsClass(context, subclazz));
 
         return context.nil;
     }
@@ -843,9 +860,8 @@ public class Java implements Library {
 
         if ( parentModule != null && // TODO a Java Ruby class should not validate (as well)
             ( IdUtil.isConstant(className) || parentModule instanceof JavaPackage ) ) {
-            if (parentModule.getConstantAt(className) == null) {
-                parentModule.setConstant(className, proxyClass);
-            }
+            // setConstant without validation since Java class name might be lower-case
+            setProxyClass(runtime, parentModule, className, proxyClass, false);
         }
     }
 
@@ -1083,7 +1099,7 @@ public class Java implements Library {
 
     public static IRubyObject get_proxy_or_package_under_package(final ThreadContext context, final IRubyObject self,
                                                                  final IRubyObject parentPackage, final IRubyObject name) {
-        final RubyModule result = getProxyOrPackageUnderPackage(context, castToModule(context, parentPackage), name.asJavaString(), true);
+        final RubyModule result = getProxyOrPackageUnderPackage(context, castAsModule(context, parentPackage), name.asJavaString(), true);
         return result != null ? result : context.nil;
     }
 
@@ -1198,7 +1214,7 @@ public class Java implements Library {
         }
 
         private static IRubyObject callProc(ThreadContext context, IRubyObject self, IRubyObject[] procArgs) {
-            RubyProc proc = castToProc(context, self, "interface impl method_missing for block used with non-Proc object");
+            RubyProc proc = castAsProc(context, self, "interface impl method_missing for block used with non-Proc object");
             return proc.call(context, procArgs);
         }
 

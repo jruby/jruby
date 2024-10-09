@@ -12,6 +12,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.platform.Platform;
 import org.jruby.util.WindowsFFI;
 
+import static org.jruby.api.Convert.asFixnum;
+
 public class Factory extends org.jruby.ext.ffi.Factory {
 
     public Factory() {
@@ -117,7 +119,7 @@ public class Factory extends org.jruby.ext.ffi.Factory {
     public static final class LastError {
         @JRubyMethod(name = {  "error" }, module = true)
         public static final IRubyObject error(ThreadContext context, IRubyObject recv) {
-            return context.runtime.newFixnum(com.kenai.jffi.LastError.getInstance().get());
+            return asFixnum(context, com.kenai.jffi.LastError.getInstance().get());
         }
 
         @JRubyMethod(name = {  "error=" }, module = true)

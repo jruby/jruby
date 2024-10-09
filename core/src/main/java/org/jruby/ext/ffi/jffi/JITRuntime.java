@@ -10,6 +10,7 @@ import org.jruby.runtime.callsite.CachingCallSite;
 
 import java.math.BigInteger;
 
+import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -383,7 +384,7 @@ public final class JITRuntime {
     }
     
     public static IRubyObject newBoolean(ThreadContext context, int value) {
-        return RubyBoolean.newBoolean(context, (value & 0x1) != 0);
+        return asBoolean(context, (value & 0x1) != 0);
     }
 
     public static IRubyObject newBoolean(Ruby runtime, int value) {
@@ -391,7 +392,7 @@ public final class JITRuntime {
     }
     
     public static IRubyObject newBoolean(ThreadContext context, long value) {
-        return RubyBoolean.newBoolean(context, (value & 0x1L) != 0);
+        return asBoolean(context, (value & 0x1L) != 0);
     }
 
     public static IRubyObject newBoolean(Ruby runtime, long value) {

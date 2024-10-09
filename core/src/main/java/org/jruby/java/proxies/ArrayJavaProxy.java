@@ -18,8 +18,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.RubyStringBuilder;
 
-import static org.jruby.api.Convert.castToFixnum;
-import static org.jruby.api.Convert.castToRange;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.javasupport.ext.JavaLang.Character.inspectCharValue;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
@@ -92,12 +91,12 @@ public final class ArrayJavaProxy extends JavaProxy {
 
     @JRubyMethod(name = {"length", "size"})
     public RubyFixnum length(ThreadContext context) {
-        return context.runtime.newFixnum( length() );
+        return asFixnum(context, length());
     }
 
     @JRubyMethod(name = "empty?")
     public RubyBoolean empty_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context,  length() == 0 );
+        return asBoolean(context,  length() == 0 );
     }
 
     @JRubyMethod(name = "[]")
@@ -129,30 +128,30 @@ public final class ArrayJavaProxy extends JavaProxy {
         if ( componentClass.isPrimitive() ) {
             switch (componentClass.getName().charAt(0)) {
                 case 'b':
-                    if (componentClass == byte.class) return RubyBoolean.newBoolean(context,  includes(context, (byte[]) array, obj) );
-                    else /* if (componentClass == boolean.class) */ return RubyBoolean.newBoolean(context,  includes(context, (boolean[]) array, obj) );
+                    if (componentClass == byte.class) return asBoolean(context,  includes(context, (byte[]) array, obj) );
+                    else /* if (componentClass == boolean.class) */ return asBoolean(context,  includes(context, (boolean[]) array, obj) );
                     // break;
                 case 's':
-                    /* if (componentClass == short.class) */ return RubyBoolean.newBoolean(context,  includes(context, (short[]) array, obj) );
+                    /* if (componentClass == short.class) */ return asBoolean(context,  includes(context, (short[]) array, obj) );
                     // break;
                 case 'c':
-                    /* if (componentClass == char.class) */ return RubyBoolean.newBoolean(context,  includes(context, (char[]) array, obj) );
+                    /* if (componentClass == char.class) */ return asBoolean(context,  includes(context, (char[]) array, obj) );
                     // break;
                 case 'i':
-                    /* if (componentClass == int.class) */ return RubyBoolean.newBoolean(context,  includes(context, (int[]) array, obj) );
+                    /* if (componentClass == int.class) */ return asBoolean(context,  includes(context, (int[]) array, obj) );
                     // break;
                 case 'l':
-                    /* if (componentClass == long.class) */ return RubyBoolean.newBoolean(context,  includes(context, (long[]) array, obj) );
+                    /* if (componentClass == long.class) */ return asBoolean(context,  includes(context, (long[]) array, obj) );
                     // break;
                 case 'f':
-                    /* if (componentClass == float.class) */ return RubyBoolean.newBoolean(context,  includes(context, (float[]) array, obj) );
+                    /* if (componentClass == float.class) */ return asBoolean(context,  includes(context, (float[]) array, obj) );
                     // break;
                 case 'd':
-                    /* if (componentClass == double.class) */ return RubyBoolean.newBoolean(context,  includes(context, (double[]) array, obj) );
+                    /* if (componentClass == double.class) */ return asBoolean(context,  includes(context, (double[]) array, obj) );
                     // break;
             }
         }
-        return RubyBoolean.newBoolean(context,  includes(context, (Object[]) array, obj) );
+        return asBoolean(context,  includes(context, (Object[]) array, obj) );
     }
 
     private boolean includes(final ThreadContext context, final Object[] array, final IRubyObject obj) {
@@ -268,9 +267,8 @@ public final class ArrayJavaProxy extends JavaProxy {
     private boolean includes(final ThreadContext context, final boolean[] array, final IRubyObject obj) {
         final int len = array.length;
         if ( len == 0 ) return false;
-        final Ruby runtime = context.runtime;
-        if ( obj instanceof RubyBoolean ) {
-            final boolean objVal = ((RubyBoolean) obj).isTrue();
+        if ( obj instanceof RubyBoolean bool) {
+            final boolean objVal = bool.isTrue();
 
             for ( int i = 0; i < len; i++ ) {
                 if ( objVal == array[i] ) return true;
@@ -278,7 +276,7 @@ public final class ArrayJavaProxy extends JavaProxy {
             return false;
         }
         for ( int i = 0; i < len; i++ ) {
-            IRubyObject value = RubyBoolean.newBoolean(runtime, array[i]);
+            IRubyObject value = asBoolean(context, array[i]);
             if ( equalInternal(context, value, obj) ) return true;
         }
         return false;
@@ -651,7 +649,7 @@ public final class ArrayJavaProxy extends JavaProxy {
     public RubyBoolean op_equal(ThreadContext context, IRubyObject other) {
         if ( other instanceof RubyArray ) {
             // we respond_to? to_ary thus shall handle [1].to_java == [1]
-            return RubyBoolean.newBoolean(context,  equalsRubyArray((RubyArray) other) );
+            return asBoolean(context,  equalsRubyArray((RubyArray) other) );
         }
         return eql_p(context, other);
     }
@@ -680,7 +678,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         else if ( obj.getClass().isArray() ) {
             equals = arraysEquals(getObject(), obj);
         }
-        return RubyBoolean.newBoolean(context, equals);
+        return asBoolean(context, equals);
     }
 
     @Override
@@ -820,14 +818,14 @@ public final class ArrayJavaProxy extends JavaProxy {
     }
 
     public IRubyObject getRange(ThreadContext context, IRubyObject arg0) {
-        return arrayRange(context, castToRange(context, arg0));
+        return arrayRange(context, castAsRange(context, arg0));
     }
 
     private IRubyObject arrayRange(final ThreadContext context, final RubyRange range) {
         final Object array = getObject();
         final int arrayLength = Array.getLength( array );
-        int first = castToFixnum(context, range.first(context), "Only Integer ranges supported").getIntValue();
-        int last = castToFixnum(context, range.last(context), "Only Integer ranges supported").getIntValue();
+        int first = castAsFixnum(context, range.first(context), "Only Integer ranges supported").getIntValue();
+        int last = castAsFixnum(context, range.last(context), "Only Integer ranges supported").getIntValue();
 
         first = first >= 0 ? first : arrayLength + first;
         if (first < 0 || first >= arrayLength) return context.nil;
@@ -851,8 +849,8 @@ public final class ArrayJavaProxy extends JavaProxy {
         final Object array = getObject();
         final int arrayLength = Array.getLength( array );
 
-        int first = castToFixnum(context, rFirst, "Only Integer ranges supported").getIntValue();
-        int length = castToFixnum(context, rLength, "Only Integer ranges supported").getIntValue();
+        int first = castAsFixnum(context, rFirst, "Only Integer ranges supported").getIntValue();
+        int length = castAsFixnum(context, rLength, "Only Integer ranges supported").getIntValue();
 
         if (length > arrayLength) throw context.runtime.newIndexError("length specified is longer than array");
         if (length < 0) return context.nil;

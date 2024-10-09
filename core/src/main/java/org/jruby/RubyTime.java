@@ -47,6 +47,7 @@ import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.tz.FixedDateTimeZone;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Convert;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.TypeError;
@@ -81,6 +82,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.jruby.RubyComparable.invcmp;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
@@ -354,7 +356,7 @@ public class RubyTime extends RubyObject {
                     }
                     v = tmp; break;
                 }
-                if (!(tmp = TypeConverter.checkToInteger(context, v)).isNil()) {
+                if (!(tmp = checkToInteger(context, v)).isNil()) {
                     v = tmp; // return tmp;
                 }
                 else {
@@ -607,8 +609,13 @@ public class RubyTime extends RubyObject {
     }
 
     @JRubyMethod(name = {"gmt?", "utc?", "gmtime?"})
+    public RubyBoolean gmt(ThreadContext context) {
+        return asBoolean(context, isUTC());
+    }
+
+    @Deprecated
     public RubyBoolean gmt() {
-        return metaClass.runtime.newBoolean(isUTC());
+        return gmt(getRuntime().getCurrentContext());
     }
 
     public boolean isUTC() {
@@ -671,12 +678,8 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = "==")
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyTime) {
-            return RubyBoolean.newBoolean(context, safeCmp(context, this, other) == 0);
-        }
-        if (other == context.nil) {
-            return context.fals;
-        }
+        if (other instanceof RubyTime) return asBoolean(context, safeCmp(context, this, other) == 0);
+        if (other == context.nil) return context.fals;
 
         return RubyComparable.op_equal(context, this, other);
     }
@@ -694,36 +697,28 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = ">=")
     public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyTime) {
-            return RubyBoolean.newBoolean(context, safeCmp(context, this, other) >= 0);
-        }
+        if (other instanceof RubyTime) return asBoolean(context, safeCmp(context, this, other) >= 0);
 
         return RubyComparable.op_ge(context, this, other);
     }
 
     @JRubyMethod(name = ">")
     public IRubyObject op_gt(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyTime) {
-            return RubyBoolean.newBoolean(context, safeCmp(context, this, other) > 0);
-        }
+        if (other instanceof RubyTime) return asBoolean(context, safeCmp(context, this, other) > 0);
 
         return RubyComparable.op_gt(context, this, other);
     }
 
     @JRubyMethod(name = "<=")
     public IRubyObject op_le(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyTime) {
-            return RubyBoolean.newBoolean(context, safeCmp(context, this, other) <= 0);
-        }
+        if (other instanceof RubyTime) return asBoolean(context, safeCmp(context, this, other) <= 0);
 
         return RubyComparable.op_le(context, this, other);
     }
 
     @JRubyMethod(name = "<")
     public IRubyObject op_lt(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyTime) {
-            return RubyBoolean.newBoolean(context, safeCmp(context, this, other) < 0);
-        }
+        if (other instanceof RubyTime) return asBoolean(context, safeCmp(context, this, other) < 0);
 
         return RubyComparable.op_lt(context, this, other);
     }
@@ -824,7 +819,7 @@ public class RubyTime extends RubyObject {
     @Override
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
-            return RubyBoolean.newBoolean(context, RubyNumeric.fix2int(invokedynamic(context, this, OP_CMP, other)) == 0);
+            return asBoolean(context, RubyNumeric.fix2int(invokedynamic(context, this, OP_CMP, other)) == 0);
         }
 
         return context.fals;
@@ -833,11 +828,9 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = "<=>")
     @Override
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyTime) {
-            return context.runtime.newFixnum(cmp((RubyTime) other));
-        }
-
-        return invcmp(context, sites(context).recursive_cmp, this, other);
+        return other instanceof RubyTime ?
+                asFixnum(context, cmp((RubyTime) other)) :
+                invcmp(context, sites(context).recursive_cmp, this, other);
     }
 
     @JRubyMethod(name = "eql?")
@@ -937,8 +930,13 @@ public class RubyTime extends RubyObject {
     }
 
     @JRubyMethod(name = {"to_i", "tv_sec"})
+    public RubyInteger to_i(ThreadContext context) {
+        return asFixnum(context, Math.floorDiv(getTimeInMillis(), (long) 1000));
+    }
+
+    @Deprecated
     public RubyInteger to_i() {
-        return getRuntime().newFixnum(Math.floorDiv(getTimeInMillis(), (long) 1000));
+        return to_i(getCurrentContext());
     }
 
     /**
@@ -950,8 +948,13 @@ public class RubyTime extends RubyObject {
      * @return the (sec) fractional part of time (in nanos)
      */
     @JRubyMethod(name = {"nsec", "tv_nsec"})
+    public RubyInteger nsec(ThreadContext context) {
+        return asFixnum(context, getNanos());
+    }
+
+    @Deprecated
     public RubyInteger nsec() {
-        return getRuntime().newFixnum(getNanos());
+        return nsec(getCurrentContext());
     }
 
     @JRubyMethod
@@ -965,8 +968,13 @@ public class RubyTime extends RubyObject {
      * @return the (whole) microsecond part of time
      */
     @JRubyMethod(name = {"usec", "tv_usec"})
+    public RubyInteger usec(ThreadContext context) {
+        return asFixnum(context, dt.getMillisOfSecond() * 1000 + getUSec());
+    }
+
+    @Deprecated
     public RubyInteger usec() {
-        return getRuntime().newFixnum(dt.getMillisOfSecond() * 1000 + getUSec());
+        return usec(getCurrentContext());
     }
 
     /**
@@ -1031,78 +1039,115 @@ public class RubyTime extends RubyObject {
     }
 
     @JRubyMethod
+    public RubyInteger sec(ThreadContext context) {
+        return asFixnum(context, dt.getSecondOfMinute());
+    }
+
     public RubyInteger sec() {
-        return getRuntime().newFixnum(dt.getSecondOfMinute());
+        return sec(getCurrentContext());
     }
 
     @JRubyMethod
+    public RubyInteger min(ThreadContext context) {
+        return asFixnum(context, dt.getMinuteOfHour());
+    }
+
+    @Deprecated
     public RubyInteger min() {
-        return getRuntime().newFixnum(dt.getMinuteOfHour());
+        return min(getCurrentContext());
     }
 
     @JRubyMethod
+    public RubyInteger hour(ThreadContext context) {
+        return asFixnum(context, dt.getHourOfDay());
+    }
+
+    @Deprecated
     public RubyInteger hour() {
-        return getRuntime().newFixnum(dt.getHourOfDay());
+        return hour(getCurrentContext());
     }
 
     @JRubyMethod(name = {"mday", "day"})
+    public RubyInteger mday(ThreadContext context) {
+        return asFixnum(context, dt.getDayOfMonth());
+    }
+
+    @Deprecated
     public RubyInteger mday() {
-        return getRuntime().newFixnum(dt.getDayOfMonth());
+        return mday(getCurrentContext());
     }
 
     @JRubyMethod(name = {"month", "mon"})
+    public RubyInteger month(ThreadContext context) {
+        return asFixnum(context, dt.getMonthOfYear());
+    }
+
     public RubyInteger month() {
-        return getRuntime().newFixnum(dt.getMonthOfYear());
+        return month(getCurrentContext());
     }
 
     @JRubyMethod
+    public RubyInteger year(ThreadContext context) {
+        return asFixnum(context, dt.getYear());
+    }
+
+    @Deprecated
     public RubyInteger year() {
-        return getRuntime().newFixnum(dt.getYear());
+        return year(getCurrentContext());
     }
 
     @JRubyMethod
+    public RubyInteger wday(ThreadContext context) {
+        return asFixnum(context, (dt.getDayOfWeek() % 7));
+    }
+
+    @Deprecated
     public RubyInteger wday() {
-        return getRuntime().newFixnum((dt.getDayOfWeek() % 7));
+        return wday(getCurrentContext());
     }
 
     @JRubyMethod
+    public RubyInteger yday(ThreadContext context) {
+        return asFixnum(context, dt.getDayOfYear());
+    }
+
     public RubyInteger yday() {
-        return getRuntime().newFixnum(dt.getDayOfYear());
+        return yday(getCurrentContext());
     }
 
     @JRubyMethod(name = "sunday?")
     public RubyBoolean sunday_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, (dt.getDayOfWeek() % 7) == 0);
+        return asBoolean(context, (dt.getDayOfWeek() % 7) == 0);
     }
 
     @JRubyMethod(name = "monday?")
     public RubyBoolean monday_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, (dt.getDayOfWeek() % 7) == 1);
+        return asBoolean(context, (dt.getDayOfWeek() % 7) == 1);
     }
 
     @JRubyMethod(name = "tuesday?")
     public RubyBoolean tuesday_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, (dt.getDayOfWeek() % 7) == 2);
+        return asBoolean(context, (dt.getDayOfWeek() % 7) == 2);
     }
 
     @JRubyMethod(name = "wednesday?")
     public RubyBoolean wednesday_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, (dt.getDayOfWeek() % 7) == 3);
+        return asBoolean(context, (dt.getDayOfWeek() % 7) == 3);
     }
 
     @JRubyMethod(name = "thursday?")
     public RubyBoolean thursday_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, (dt.getDayOfWeek() % 7) == 4);
+        return asBoolean(context, (dt.getDayOfWeek() % 7) == 4);
     }
 
     @JRubyMethod(name = "friday?")
     public RubyBoolean friday_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, (dt.getDayOfWeek() % 7) == 5);
+        return asBoolean(context, (dt.getDayOfWeek() % 7) == 5);
     }
 
     @JRubyMethod(name = "saturday?")
     public RubyBoolean saturday_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, (dt.getDayOfWeek() % 7) == 6);
+        return asBoolean(context, (dt.getDayOfWeek() % 7) == 6);
     }
 
     @Deprecated
@@ -1119,15 +1164,24 @@ public class RubyTime extends RubyObject {
     }
 
     @JRubyMethod(name = {"gmt_offset", "gmtoff", "utc_offset"})
-    public RubyInteger gmt_offset() {
+    public RubyInteger gmt_offset(ThreadContext context) {
         int offset = dt.getZone().getOffset(dt.getMillis());
 
-        return getRuntime().newFixnum(offset / 1000);
+        return asFixnum(context, offset / 1000);
+    }
+
+    public RubyInteger gmt_offset() {
+        return gmt_offset(getCurrentContext());
     }
 
     @JRubyMethod(name = {"isdst", "dst?"})
+    public RubyBoolean isdst(ThreadContext context) {
+        return asBoolean(context, !dt.getZone().isStandardOffset(dt.getMillis()));
+    }
+
+    @Deprecated
     public RubyBoolean isdst() {
-        return getRuntime().newBoolean(!dt.getZone().isStandardOffset(dt.getMillis()));
+        return isdst(getRuntime().getCurrentContext());
     }
 
     @JRubyMethod
@@ -1211,7 +1265,7 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = "_dump")
     public RubyString dump(final ThreadContext context) {
-        RubyString str = mdump(context.runtime);
+        RubyString str = mdump(context);
         str.syncVariables(this);
         return str;
     }
@@ -1230,10 +1284,10 @@ public class RubyTime extends RubyObject {
 
     @Deprecated
     public RubyObject mdump() {
-        return mdump(getRuntime());
+        return mdump(getCurrentContext());
     }
 
-    private RubyString mdump(final Ruby runtime) {
+    private RubyString mdump(ThreadContext context) {
         DateTime dateTime = dt.toDateTime(DateTimeZone.UTC);
         byte dumpValue[] = new byte[8];
         long usec = this.nsec / 1000;
@@ -1260,15 +1314,15 @@ public class RubyTime extends RubyObject {
             se >>>= 8;
         }
 
-        RubyString string = RubyString.newString(runtime, new ByteList(dumpValue, false));
+        RubyString string = RubyString.newString(context.runtime, new ByteList(dumpValue, false));
 
         // 1.9 includes more nsecs
         copyInstanceVariablesInto(string);
 
         // nanos in numerator/denominator form
         if (nanosec != 0) {
-            string.setInternalVariable("nano_num", runtime.newFixnum(nanosec));
-            string.setInternalVariable("nano_den", runtime.newFixnum(1));
+            string.setInternalVariable("nano_num", asFixnum(context, nanosec));
+            string.setInternalVariable("nano_den", asFixnum(context, 1));
         }
 
         // submicro for 1.9.1 compat
@@ -1280,17 +1334,17 @@ public class RubyTime extends RubyObject {
         nanosec /= 10;
         submicro[0] |= (byte)((nanosec % 10) << 4);
         if (submicro[1] == 0) len = 1;
-        string.setInternalVariable("submicro", RubyString.newString(runtime, submicro, 0, len));
+        string.setInternalVariable("submicro", RubyString.newString(context.runtime, submicro, 0, len));
 
         // time zone
         final DateTimeZone zone = dt.getZone();
         if (zone != DateTimeZone.UTC) {
             long offset = zone.getOffset(dt.getMillis());
-            string.setInternalVariable("offset", runtime.newFixnum(offset / 1000));
+            string.setInternalVariable("offset", asFixnum(context, offset / 1000));
 
             String zoneName = zone.getShortName(dt.getMillis());
             if (!TIME_OFFSET_PATTERN.matcher(zoneName).matches()) {
-                string.setInternalVariable("zone", runtime.newString(zoneName));
+                string.setInternalVariable("zone", Convert.asString(context, zoneName));
             }
         }
 
@@ -1498,7 +1552,7 @@ public class RubyTime extends RubyObject {
                 nanosecs = nanos.longValue();
             } else {
                 nanosecs = 0;
-                millisecs = RubyNumeric.num2long(arg) * 1000;
+                millisecs = numericToLong(context, arg) * 1000;
             }
 
             try {
@@ -1527,7 +1581,7 @@ public class RubyTime extends RubyObject {
             millisecs = (long) (dbl * 1000);
             nanosecs = ((long) (dbl * 1000000000)) % 1000000;
         } else {
-            millisecs = RubyNumeric.num2long(arg1) * 1000;
+            millisecs = numericToLong(context, arg1) * 1000;
         }
 
         if (!(arg3 instanceof RubySymbol)) {
@@ -1548,23 +1602,23 @@ public class RubyTime extends RubyObject {
                 millisecs += (long) (nanos / 1000000);
                 nanosecs += (long) (nanos % 1000000);
             } else if (runtime.newSymbol("nanosecond").eql(unit) || runtime.newSymbol("nsec").eql(unit)) {
-                nanosecs += RubyNumeric.num2long(arg2);
+                nanosecs += numericToLong(context, arg2);
             } else {
                 throw context.runtime.newArgumentError("unexpected unit " + arg3);
             }
         } else {
             if (runtime.newSymbol("microsecond").eql(unit) || runtime.newSymbol("usec").eql(unit)) {
-                long micros = RubyNumeric.num2long(arg2);
+                long micros = numericToLong(context, arg2);
                 long nanos = micros * 1000;
                 millisecs += nanos / 1000000;
                 nanosecs += nanos % 1000000;
             } else if (runtime.newSymbol("millisecond").eql(unit)) {
-                double millis = RubyNumeric.num2long(arg2);
+                double millis = numericToLong(context, arg2);
                 double nanos = millis * 1000000;
                 millisecs += nanos / 1000000;
                 nanosecs += nanos % 1000000;
             } else if (runtime.newSymbol("nanosecond").eql(unit) || runtime.newSymbol("nsec").eql(unit)) {
-                nanosecs += RubyNumeric.num2long(arg2);
+                nanosecs += numericToLong(context, arg2);
             } else {
                 throw context.runtime.newArgumentError("unexpected unit " + arg3);
             }

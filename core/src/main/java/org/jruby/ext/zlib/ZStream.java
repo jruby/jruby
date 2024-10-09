@@ -38,6 +38,9 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -123,10 +126,15 @@ public abstract class ZStream extends RubyObject {
     }
 
     @JRubyMethod(name = "adler")
-    public IRubyObject adler() {
+    public IRubyObject adler(ThreadContext context) {
         checkClosed();
-        
-        return getRuntime().newFixnum(internalAdler());
+
+        return asFixnum(context, internalAdler());
+    }
+
+    @Deprecated
+    public IRubyObject adler() {
+        return adler(getCurrentContext());
     }
 
     @JRubyMethod(name = "finish")
@@ -158,7 +166,7 @@ public abstract class ZStream extends RubyObject {
     @JRubyMethod(name = "finished?")
     public IRubyObject finished_p(ThreadContext context) {
         checkClosed();
-        return RubyBoolean.newBoolean(context, internalFinished());
+        return asBoolean(context, internalFinished());
     }
 
     @JRubyMethod(name = {"close", "end"})

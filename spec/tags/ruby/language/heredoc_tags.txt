@@ -1,1 +1,2 @@
 fails:Heredoc string raises SyntaxError if quoted HEREDOC identifier is ending not on same line
+fails:Heredoc string reports line numbers inside HEREDOC with method call

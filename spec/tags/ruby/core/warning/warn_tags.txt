@@ -1,0 +1,2 @@
+fails:Warning.warn isn't called by Kernel.warn when category is :deprecated but Warning[:deprecated] is false
+fails:Warning.warn isn't called by Kernel.warn when category is :experimental but Warning[:experimental] is false

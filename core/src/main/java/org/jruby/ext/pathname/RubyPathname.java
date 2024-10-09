@@ -30,6 +30,7 @@
 package org.jruby.ext.pathname;
 
 import static org.jruby.anno.FrameField.BACKREF;
+import static org.jruby.api.Convert.asFixnum;
 
 import org.jruby.*;
 import org.jruby.anno.JRubyClass;
@@ -229,11 +230,9 @@ public class RubyPathname extends RubyObject {
     @Override
     @JRubyMethod(name = "<=>")
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyPathname) {
-            return context.runtime.newFixnum(cmp((RubyPathname) other));
-        } else {
-            return context.nil;
-        }
+        return other instanceof RubyPathname path ?
+                asFixnum(context, cmp(path)) :
+                context.nil;
     }
 
     @JRubyMethod(name = "hash")
@@ -340,7 +339,7 @@ public class RubyPathname extends RubyObject {
         }
 
         args[2] = RubyHash.newSmallHash(runtime);
-        ((RubyHash) args[2]).fastASetSmall(runtime.newSymbol("base"), context.runtime.getFile().callMethod(context, "realpath", getPath()));
+        ((RubyHash) args[2]).fastASetSmall(runtime.newSymbol("base"), getPath());
 
         JavaSites.PathnameSites sites = sites(context);
         CallSite glob = sites.glob;

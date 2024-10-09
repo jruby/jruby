@@ -32,6 +32,7 @@ import org.jruby.*;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.api.Convert;
 import org.jruby.exceptions.NoMethodError;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.java.proxies.ArrayJavaProxy;
@@ -55,7 +56,8 @@ import java.lang.reflect.Modifier;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyModule.undefinedMethodMessage;
-import static org.jruby.api.Convert.castToInteger;
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.javasupport.JavaUtil.convertJavaToUsableRubyObject;
 import static org.jruby.javasupport.JavaUtil.isJavaObject;
@@ -127,7 +129,7 @@ public abstract class JavaLang {
             java.util.Iterator iterator = iterable.iterator();
             final boolean twoArguments = block.getSignature().isTwoArguments();
             int i = 0; while ( iterator.hasNext() ) {
-                final RubyInteger index = RubyFixnum.newFixnum(runtime, i++);
+                final RubyInteger index = asFixnum(context, i++);
                 final Object value = iterator.next();
                 final IRubyObject rValue = convertJavaToUsableRubyObject(runtime, value);
 
@@ -155,38 +157,36 @@ public abstract class JavaLang {
 
         @JRubyMethod(name = "count") // @override Enumerable#count
         public static IRubyObject count(final ThreadContext context, final IRubyObject self, final Block block) {
-            final Ruby runtime = context.runtime;
             java.lang.Iterable iterable = unwrapIfJavaObject(self);
-            if ( block.isGiven() ) {
-                return countBlock(context, iterable.iterator(), block);
-            }
+            if (block.isGiven()) return countBlock(context, iterable.iterator(), block);
+
             if ( iterable instanceof java.util.Collection ) {
-                return RubyFixnum.newFixnum(runtime, ((java.util.Collection) iterable).size());
+                return asFixnum(context, ((java.util.Collection) iterable).size());
             }
             int count = 0;
             for( java.util.Iterator it = iterable.iterator(); it.hasNext(); ) { it.next(); count++; }
-            return RubyFixnum.newFixnum(runtime, count);
+            return asFixnum(context, count);
         }
 
         static RubyFixnum countBlock(final ThreadContext context, final java.util.Iterator it, final Block block) {
-            final Ruby runtime = context.runtime;
-            int count = 0; while ( it.hasNext() ) {
-                IRubyObject next = convertJavaToUsableRubyObject( runtime, it.next() );
+            int count = 0;
+            while ( it.hasNext() ) {
+                IRubyObject next = convertJavaToUsableRubyObject(context.runtime, it.next());
                 if ( block.yield( context, next ).isTrue() ) count++;
             }
-            return RubyFixnum.newFixnum(runtime, count);
+            return asFixnum(context, count);
         }
 
         @JRubyMethod(name = "count") // @override Enumerable#count
         public static IRubyObject count(final ThreadContext context, final IRubyObject self, final IRubyObject obj, final Block unused) {
             // unused block due DescriptorInfo not (yet) supporting if a method receives block and an override doesn't
-            final Ruby runtime = context.runtime;
             java.lang.Iterable iterable = unwrapIfJavaObject(self);
-            int count = 0; for ( java.util.Iterator it = iterable.iterator(); it.hasNext(); ) {
-                IRubyObject next = convertJavaToUsableRubyObject( runtime, it.next() );
+            int count = 0;
+            for ( java.util.Iterator it = iterable.iterator(); it.hasNext(); ) {
+                IRubyObject next = convertJavaToUsableRubyObject(context.runtime, it.next() );
                 if ( RubyObject.equalInternal(context, next, obj) ) count++;
             }
-            return RubyFixnum.newFixnum(runtime, count);
+            return asFixnum(context, count);
         }
 
     }
@@ -208,7 +208,7 @@ public abstract class JavaLang {
             final java.lang.Object otherComp = unwrapIfJavaObject(other);
 
             try {
-                return RubyFixnum.newFixnum(context.runtime, comparable.compareTo(otherComp));
+                return asFixnum(context, comparable.compareTo(otherComp));
             } catch (ClassCastException ex) {
                 throw typeError(context, ex.getMessage());
             }
@@ -381,39 +381,37 @@ public abstract class JavaLang {
 
         @JRubyMethod(name = "to_f")
         public static IRubyObject to_f(final ThreadContext context, final IRubyObject self) {
-            java.lang.Number val = (java.lang.Number) self.toJava(java.lang.Number.class);
+            java.lang.Number val = self.toJava(java.lang.Number.class);
             return context.runtime.newFloat(val.doubleValue());
         }
 
         @JRubyMethod(name = "real?")
         public static IRubyObject real_p(final ThreadContext context, final IRubyObject self) {
-            java.lang.Number val = (java.lang.Number) self.toJava(java.lang.Number.class);
-            return RubyBoolean.newBoolean(context, val instanceof Integer || val instanceof Long ||
-                                                    val instanceof Short || val instanceof Byte ||
-                                                    val instanceof Float || val instanceof Double ||
-                                                    val instanceof java.math.BigInteger || val instanceof java.math.BigDecimal);
+            java.lang.Number val = self.toJava(java.lang.Number.class);
+            return asBoolean(context, val instanceof Integer || val instanceof Long || val instanceof Short ||
+                    val instanceof Byte || val instanceof Float || val instanceof Double ||
+                    val instanceof java.math.BigInteger || val instanceof java.math.BigDecimal);
         }
 
         @JRubyMethod(name = { "to_i", "to_int" })
         public static IRubyObject to_i(final ThreadContext context, final IRubyObject self) {
-            java.lang.Number val = (java.lang.Number) self.toJava(java.lang.Number.class);
-            if (val instanceof java.math.BigInteger) { // NOTE: should be moved into its own?
-                return RubyBignum.newBignum(context.runtime, (java.math.BigInteger) val);
+            java.lang.Number val = self.toJava(java.lang.Number.class);
+            if (val instanceof java.math.BigInteger bigint) { // NOTE: should be moved into its own?
+                return RubyBignum.newBignum(context.runtime, bigint);
             }
-            return context.runtime.newFixnum(val.longValue());
+            return asFixnum(context, val.longValue());
         }
 
         @JRubyMethod(name = "integer?")
         public static IRubyObject integer_p(final ThreadContext context, final IRubyObject self) {
-            java.lang.Number val = (java.lang.Number) self.toJava(java.lang.Number.class);
-            return RubyBoolean.newBoolean(context, val instanceof Integer || val instanceof Long ||
-                                                    val instanceof Short || val instanceof Byte ||
-                                                    val instanceof java.math.BigInteger);
+            java.lang.Number val = self.toJava(java.lang.Number.class);
+            return asBoolean(context, val instanceof Integer || val instanceof Long ||
+                    val instanceof Short || val instanceof Byte || val instanceof java.math.BigInteger);
         }
 
         @JRubyMethod(name = "zero?")
         public static IRubyObject zero_p(final ThreadContext context, final IRubyObject self) {
-            return RubyBoolean.newBoolean(context, isZero(self));
+            return asBoolean(context, isZero(self));
         }
 
         private static boolean isZero(final IRubyObject self) {
@@ -455,13 +453,13 @@ public abstract class JavaLang {
         @JRubyMethod(name = "java_identifier_start?", meta = true)
         public static IRubyObject java_identifier_start_p(final ThreadContext context, final IRubyObject self,
                                                           final IRubyObject num) {
-            return RubyBoolean.newBoolean(context,  java.lang.Character.isJavaIdentifierStart(int_char(num)) );
+            return asBoolean(context, java.lang.Character.isJavaIdentifierStart(int_char(num)));
         }
 
         @JRubyMethod(name = "java_identifier_part?", meta = true)
         public static IRubyObject java_identifier_part_p(final ThreadContext context, final IRubyObject self,
                                                          final IRubyObject num) {
-            return RubyBoolean.newBoolean(context,  java.lang.Character.isJavaIdentifierPart(int_char(num)) );
+            return asBoolean(context, java.lang.Character.isJavaIdentifierPart(int_char(num)));
         }
 
         private static int int_char(IRubyObject num) { // str.ord -> Fixnum
@@ -470,13 +468,13 @@ public abstract class JavaLang {
 
         @JRubyMethod(name = "to_i")
         public static IRubyObject to_i(final ThreadContext context, final IRubyObject self) {
-            java.lang.Character c = (java.lang.Character) self.toJava(java.lang.Character.class);
-            return context.runtime.newFixnum(c);
+            java.lang.Character c = self.toJava(java.lang.Character.class);
+            return asFixnum(context, c);
         }
 
         @JRubyMethod(name = "inspect")
         public static IRubyObject inspect(final ThreadContext context, final IRubyObject self) {
-            java.lang.Character c = (java.lang.Character) self.toJava(java.lang.Character.class);
+            java.lang.Character c = self.toJava(java.lang.Character.class);
             return RubyString.newString(context.runtime, inspectCharValue(new java.lang.StringBuilder(3), c));
         }
 
@@ -544,13 +542,13 @@ public abstract class JavaLang {
         @JRubyMethod(name = "annotations?")
         public static IRubyObject annotations_p(final ThreadContext context, final IRubyObject self) {
             final java.lang.Class klass = unwrapJavaObject(self);
-            return RubyBoolean.newBoolean(context, klass.getAnnotations().length > 0);
+            return asBoolean(context, klass.getAnnotations().length > 0);
         }
 
         @JRubyMethod(name = "declared_annotations?")
         public static IRubyObject declared_annotations_p(final ThreadContext context, final IRubyObject self) {
             final java.lang.Class klass = unwrapJavaObject(self);
-            return RubyBoolean.newBoolean(context, klass.getDeclaredAnnotations().length > 0);
+            return asBoolean(context, klass.getDeclaredAnnotations().length > 0);
         }
 
         @JRubyMethod
@@ -595,65 +593,94 @@ public abstract class JavaLang {
 
         @JRubyMethod(name = "<=>") // Ruby Comparable
         public static IRubyObject cmp(final ThreadContext context, final IRubyObject self, final IRubyObject other) {
-            final java.lang.Class that;
-            if ( isJavaObject(other) ) {
-                that = unwrapJavaObject(other);
-            }
-            else {
-                return context.nil;
-            }
-
+            if (!isJavaObject(other)) return context.nil;
+            final java.lang.Class that = unwrapJavaObject(other);
             final java.lang.Class thiz = unwrapJavaObject(self);
 
-            if ( thiz == that ) return context.runtime.newFixnum(0);
-            if ( thiz.isAssignableFrom(that) ) return context.runtime.newFixnum(+1);
-            if ( that.isAssignableFrom(thiz) ) return context.runtime.newFixnum(-1);
+            if (thiz == that) return asFixnum(context, 0);
+            if (thiz.isAssignableFrom(that)) asFixnum(context, +1);
+            if (that.isAssignableFrom(thiz)) asFixnum(context, -1);
 
             return context.nil;
         }
 
         @JRubyMethod(name = "anonymous?")
-        public static IRubyObject anonymous_p(final IRubyObject self) {
+        public static IRubyObject anonymous_p(ThreadContext context, final IRubyObject self) {
             final java.lang.Class klass = unwrapJavaObject(self);
-            return self.getRuntime().newBoolean( klass.isAnonymousClass() );
+            return asBoolean(context, klass.isAnonymousClass());
+        }
+
+        @Deprecated
+        public static IRubyObject anonymous_p(final IRubyObject self) {
+            return anonymous_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
 
         @JRubyMethod(name = "abstract?")
-        public static IRubyObject abstract_p(final IRubyObject self) {
+        public static IRubyObject abstract_p(ThreadContext context, final IRubyObject self) {
             final java.lang.Class klass = unwrapJavaObject(self);
-            return JavaLangReflect.isAbstract( self, klass.getModifiers() );
+            return JavaLangReflect.isAbstract(context, self, klass.getModifiers());
+        }
+
+        @Deprecated
+        public static IRubyObject abstract_p(final IRubyObject self) {
+            return abstract_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
 
         // JavaUtilities::ModifiedShortcuts :
 
         @JRubyMethod(name = "public?")
-        public static IRubyObject public_p(final IRubyObject self) {
+        public static IRubyObject public_p(ThreadContext context, final IRubyObject self) {
             final java.lang.Class klass = unwrapJavaObject(self);
-            return JavaLangReflect.isPublic( self, klass.getModifiers() );
+            return JavaLangReflect.isPublic(context, self, klass.getModifiers());
+        }
+
+        @Deprecated
+        public static IRubyObject public_p(final IRubyObject self) {
+            return public_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
 
         @JRubyMethod(name = "protected?")
-        public static IRubyObject protected_p(final IRubyObject self) {
+        public static IRubyObject protected_p(ThreadContext context, final IRubyObject self) {
             final java.lang.Class klass = unwrapJavaObject(self);
-            return JavaLangReflect.isProtected(self, klass.getModifiers());
+            return JavaLangReflect.isProtected(context, self, klass.getModifiers());
+        }
+
+        @Deprecated
+        public static IRubyObject protected_p(final IRubyObject self) {
+            return protected_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
 
         @JRubyMethod(name = "private?")
-        public static IRubyObject private_p(final IRubyObject self) {
+        public static IRubyObject private_p(ThreadContext context, final IRubyObject self) {
             final java.lang.Class klass = unwrapJavaObject(self);
-            return JavaLangReflect.isPrivate(self, klass.getModifiers());
+            return JavaLangReflect.isPrivate(context, self, klass.getModifiers());
+        }
+
+        @Deprecated
+        public static IRubyObject private_p(final IRubyObject self) {
+            return private_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
 
         @JRubyMethod(name = "final?")
-        public static IRubyObject final_p(final IRubyObject self) {
+        public static IRubyObject final_p(ThreadContext context, final IRubyObject self) {
             final java.lang.Class klass = unwrapJavaObject(self);
-            return JavaLangReflect.isFinal(self, klass.getModifiers());
+            return JavaLangReflect.isFinal(context, self, klass.getModifiers());
+        }
+
+        @Deprecated
+        public static IRubyObject final_p(final IRubyObject self) {
+            return final_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
 
         @JRubyMethod(name = "static?")
-        public static IRubyObject static_p(final IRubyObject self) {
+        public static IRubyObject static_p(ThreadContext context, final IRubyObject self) {
             final java.lang.Class klass = unwrapJavaObject(self);
-            return JavaLangReflect.isStatic(self, klass.getModifiers());
+            return JavaLangReflect.isStatic(context, self, klass.getModifiers());
+        }
+
+        @Deprecated
+        public static IRubyObject static_p(final IRubyObject self) {
+            return static_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
 
         // JavaClass facade (compatibility) :
@@ -782,7 +809,7 @@ public abstract class JavaLang {
                 }
                 final int[] dimensions = new int[len];
                 for (int i = len; --i >= 0; ) {
-                    dimensions[i] = castToInteger(context, aryLengths[i]).getIntValue();
+                    dimensions[i] = Convert.castAsInteger(context, aryLengths[i]).getIntValue();
                 }
                 return ArrayJavaProxy.newArray(context.runtime, klass, dimensions);
             }
@@ -912,7 +939,7 @@ public abstract class JavaLang {
 
         @Override
         public IRubyObject call(final ThreadContext context, final IRubyObject self, final RubyModule clazz, final java.lang.String name) {
-            java.lang.Object val = unwrapIfJavaObject(self);;
+            java.lang.Object val = unwrapIfJavaObject(self);
             return context.runtime.newString(val.toString());
         }
 
@@ -941,7 +968,7 @@ public abstract class JavaLang {
             final RubyInteger val = (RubyInteger) self.callMethod(context, "[]", idx);
             int byte_val = val.getIntValue();
             if ( byte_val >= 0 ) return val;
-            return RubyFixnum.newFixnum(context.runtime, byte_val + 256); // byte += 256 if byte < 0
+            return asFixnum(context, byte_val + 256); // byte += 256 if byte < 0
         }
     }
 
@@ -955,7 +982,7 @@ public abstract class JavaLang {
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, java.lang.String name, IRubyObject idx, IRubyObject val) {
             int byte_val = ((RubyInteger) val).getIntValue();
             if ( byte_val > 127 ) {
-                val = RubyFixnum.newFixnum(context.runtime, byte_val - 256); // value -= 256 if value > 127
+                val = asFixnum(context, byte_val - 256); // value -= 256 if value > 127
             }
             return self.callMethod(context, "[]=", new IRubyObject[] { idx, val });
         }

@@ -1035,7 +1035,7 @@ public class RubyModule extends RubyObject {
 
     // mri: rb_using_module
     public static void usingModule(ThreadContext context, RubyModule cref, IRubyObject refinedModule) {
-        usingModuleRecursive(context, cref, castToModule(context, refinedModule));
+        usingModuleRecursive(context, cref, castAsModule(context, refinedModule));
     }
 
     // mri: using_module_recursive
@@ -1239,7 +1239,7 @@ public class RubyModule extends RubyObject {
     @Deprecated
     public void prependModule(IRubyObject arg) {
         assert arg != null;
-        prependModule(castToModule(getRuntime().getCurrentContext(), arg));
+        prependModule(castAsModule(getRuntime().getCurrentContext(), arg));
     }
 
     /**
@@ -1551,7 +1551,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "singleton_class?")
     public IRubyObject singleton_class_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, isSingleton());
+        return asBoolean(context, isSingleton());
     }
 
     private String frozenType() {
@@ -2887,7 +2887,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "===")
     @Override
     public RubyBoolean op_eqq(ThreadContext context, IRubyObject obj) {
-        return RubyBoolean.newBoolean(context, isInstance(obj));
+        return asBoolean(context, isInstance(obj));
     }
 
     /**
@@ -2908,9 +2908,9 @@ public class RubyModule extends RubyObject {
 
         RubyModule otherModule = (RubyModule) other;
         if(otherModule.isIncluded()) {
-            return RubyBoolean.newBoolean(context, otherModule.isSame(this));
+            return asBoolean(context, otherModule.isSame(this));
         } else {
-            return RubyBoolean.newBoolean(context, isSame(otherModule));
+            return asBoolean(context, isSame(otherModule));
         }
     }
 
@@ -2930,7 +2930,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "<=")
     public IRubyObject op_le(IRubyObject arg) {
         Ruby runtime = getRuntime();
-        RubyModule argMod = castToModule(runtime.getCurrentContext(), arg, "compared with non class/module");
+        RubyModule argMod = castAsModule(runtime.getCurrentContext(), arg, "compared with non class/module");
 
         if (searchAncestor(argMod.getMethodLocation()) != null) {
             return runtime.getTrue();
@@ -2969,7 +2969,7 @@ public class RubyModule extends RubyObject {
     */
     @JRubyMethod(name = ">=")
     public IRubyObject op_ge(IRubyObject obj) {
-        return castToModule(getRuntime().getCurrentContext(), obj, "compared with non class/module").op_le(this);
+        return castAsModule(getRuntime().getCurrentContext(), obj, "compared with non class/module").op_le(this);
     }
 
     /** rb_mod_gt
@@ -2984,16 +2984,21 @@ public class RubyModule extends RubyObject {
     *
     */
     @JRubyMethod(name = "<=>")
-    public IRubyObject op_cmp(IRubyObject obj) {
-        if (this == obj) return getRuntime().newFixnum(0);
-        if (!(obj instanceof RubyModule)) return getRuntime().getNil();
+    public IRubyObject op_cmp(ThreadContext context, IRubyObject obj) {
+        if (this == obj) return asFixnum(context, 0);
+        if (!(obj instanceof RubyModule)) return context.nil;
 
         RubyModule module = (RubyModule) obj;
 
-        if (module.isKindOfModule(this)) return getRuntime().newFixnum(1);
-        if (this.isKindOfModule(module)) return getRuntime().newFixnum(-1);
+        if (module.isKindOfModule(this)) return asFixnum(context, 1);
+        if (this.isKindOfModule(module)) return asFixnum(context, -1);
 
-        return getRuntime().getNil();
+        return context.nil;
+    }
+
+    @Deprecated
+    public IRubyObject op_cmp(IRubyObject obj) {
+        return op_cmp(getCurrentContext(), obj);
     }
 
     public boolean isKindOfModule(RubyModule type) {
@@ -3344,7 +3349,7 @@ public class RubyModule extends RubyObject {
     private RubyModule verifyNormalModule(ThreadContext context, IRubyObject include) {
         if (!isModule()) throw typeError(context, this, "Module");
 
-        var mod = castToModule(context, include);
+        var mod = castAsModule(context, include);
 
         // included and prepended modules happen to be RubyModule but are not "modules".
         if (!(mod.isModule() || mod.isClass())) throw typeError(context, include, "Module");
@@ -3409,7 +3414,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "mix", visibility = PRIVATE)
     public IRubyObject mix(ThreadContext context, IRubyObject modArg) {
-        var mod = castToModule(context, modArg);
+        var mod = castAsModule(context, modArg);
 
         for (Map.Entry<String, DynamicMethod> entry : mod.methods.entrySet()) {
             if (methodLocation.getMethods().containsKey(entry.getKey())) {
@@ -3426,9 +3431,9 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "mix", visibility = PRIVATE)
     public IRubyObject mix(ThreadContext context, IRubyObject modArg, IRubyObject hash0) {
-        var mod = castToModule(context, modArg);
+        var mod = castAsModule(context, modArg);
         if (!mod.isModule()) throw typeError(context, mod, "Module");
-        var methodNames = castToHash(context, hash0);
+        var methodNames = castAsHash(context, hash0);
 
         for (Map.Entry<IRubyObject, IRubyObject> entry : (Set<Map.Entry<IRubyObject, IRubyObject>>)methodNames.directEntrySet()) {
             String name = entry.getValue().toString();
@@ -3589,7 +3594,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "method_defined?")
     public RubyBoolean method_defined_p(ThreadContext context, IRubyObject symbol) {
-        return isMethodBound(TypeConverter.checkID(symbol).idString(), true) ? context.tru : context.fals;
+        return asBoolean(context, isMethodBound(TypeConverter.checkID(symbol).idString(), true));
     }
 
     @JRubyMethod(name = "method_defined?")
@@ -3599,43 +3604,43 @@ public class RubyModule extends RubyObject {
         if (parents) return method_defined_p(context, symbol);
 
         Visibility visibility = checkMethodVisibility(context, symbol, parents);
-        return RubyBoolean.newBoolean(context, visibility != UNDEFINED && visibility != PRIVATE);
+        return asBoolean(context, visibility != UNDEFINED && visibility != PRIVATE);
     }
 
     @JRubyMethod(name = "public_method_defined?")
     public IRubyObject public_method_defined(ThreadContext context, IRubyObject symbol) {
-        return RubyBoolean.newBoolean(context, checkMethodVisibility(context, symbol, true) == PUBLIC);
+        return asBoolean(context, checkMethodVisibility(context, symbol, true) == PUBLIC);
     }
 
     @JRubyMethod(name = "public_method_defined?")
     public IRubyObject public_method_defined(ThreadContext context, IRubyObject symbol, IRubyObject includeSuper) {
         boolean parents = includeSuper.isTrue();
 
-        return RubyBoolean.newBoolean(context, checkMethodVisibility(context, symbol, parents) == PUBLIC);
+        return asBoolean(context, checkMethodVisibility(context, symbol, parents) == PUBLIC);
     }
 
     @JRubyMethod(name = "protected_method_defined?")
     public IRubyObject protected_method_defined(ThreadContext context, IRubyObject symbol) {
-        return RubyBoolean.newBoolean(context, checkMethodVisibility(context, symbol, true) == PROTECTED);
+        return asBoolean(context, checkMethodVisibility(context, symbol, true) == PROTECTED);
     }
 
     @JRubyMethod(name = "protected_method_defined?")
     public IRubyObject protected_method_defined(ThreadContext context, IRubyObject symbol, IRubyObject includeSuper) {
         boolean parents = includeSuper.isTrue();
 
-        return RubyBoolean.newBoolean(context, checkMethodVisibility(context, symbol, parents) == PROTECTED);
+        return asBoolean(context, checkMethodVisibility(context, symbol, parents) == PROTECTED);
     }
 
     @JRubyMethod(name = "private_method_defined?")
     public IRubyObject private_method_defined(ThreadContext context, IRubyObject symbol) {
-        return RubyBoolean.newBoolean(context, checkMethodVisibility(context, symbol, true) == PRIVATE);
+        return asBoolean(context, checkMethodVisibility(context, symbol, true) == PRIVATE);
     }
 
     @JRubyMethod(name = "private_method_defined?")
     public IRubyObject private_method_defined(ThreadContext context, IRubyObject symbol, IRubyObject includeSuper) {
         boolean parents = includeSuper.isTrue();
 
-        return RubyBoolean.newBoolean(context, checkMethodVisibility(context, symbol, parents) == PRIVATE);
+        return asBoolean(context, checkMethodVisibility(context, symbol, parents) == PRIVATE);
     }
 
     private Visibility checkMethodVisibility(ThreadContext context, IRubyObject symbol, boolean parents) {
@@ -4123,13 +4128,12 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "const_defined?")
     public RubyBoolean const_defined_p(ThreadContext context, IRubyObject name) {
-
-        return constDefined(context, name, true) ? context.tru : context.fals;
+        return asBoolean(context, constDefined(context, name, true));
     }
 
     @JRubyMethod(name = "const_defined?")
     public RubyBoolean const_defined_p(ThreadContext context, IRubyObject name, IRubyObject recurse) {
-        return constDefined(context, name, recurse.isTrue()) ? context.tru : context.fals;
+        return asBoolean(context, constDefined(context, name, recurse.isTrue()));
     }
 
     private boolean constDefined(ThreadContext context, IRubyObject name, boolean inherit) {
@@ -4350,7 +4354,7 @@ public class RubyModule extends RubyObject {
             if (location.getFile().equals(BUILTIN_CONSTANT)) {
                 return RubyArray.newEmptyArray(context.runtime);
             }
-            return RubyArray.newArray(context.runtime, runtime.newString(location.getFile()), runtime.newFixnum(location.getLine()));
+            return RubyArray.newArray(context.runtime, runtime.newString(location.getFile()), asFixnum(context, location.getLine()));
         }
 
         return context.nil;
@@ -6107,9 +6111,9 @@ public class RubyModule extends RubyObject {
             RubyClass objectClass = context.runtime.getObject();
 
             for (IRubyObject _module : modules) {
-                RubyModule module = castToModule(context, _module);
+                RubyModule module = castAsModule(context, _module);
 
-                if (module.getSuperClass() != objectClass) {
+                if (module.getSuperClass() != null) {
                     context.runtime.getWarnings().warn(module.getName() + " has ancestors, but Refinement#import_methods doesn't import their methods");
                 }
             }

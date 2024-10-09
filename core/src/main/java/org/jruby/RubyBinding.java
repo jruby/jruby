@@ -36,6 +36,7 @@ package org.jruby;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Convert;
 import org.jruby.ext.ripper.RubyLexer;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Binding;
@@ -47,6 +48,8 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
 
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.util.RubyStringBuilder.str;
 
 /**
@@ -108,7 +111,11 @@ public class RubyBinding extends RubyObject {
 
     @JRubyMethod
     public IRubyObject dup(ThreadContext context) {
-        return newBinding(context.runtime, binding.dup(context));
+        RubyBinding newBinding = newBinding(context.runtime, binding.dup(context));
+
+        copyInstanceVariablesInto(newBinding);
+
+        return newBinding;
     }
 
     @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
@@ -142,7 +149,7 @@ public class RubyBinding extends RubyObject {
     @JRubyMethod(name = "local_variable_defined?")
     public IRubyObject local_variable_defined_p(ThreadContext context, IRubyObject symbol) {
         String id = checkLocalId(context, symbol);
-        return RubyBoolean.newBoolean(context, binding.getEvalScope(context.runtime).getStaticScope().isDefined(id) != -1);
+        return asBoolean(context, binding.getEvalScope(context.runtime).getStaticScope().isDefined(id) != -1);
     }
 
     @JRubyMethod
@@ -194,9 +201,8 @@ public class RubyBinding extends RubyObject {
 
     @JRubyMethod
     public IRubyObject source_location(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        IRubyObject filename = runtime.newString(binding.getFile()).freeze(context);
-        RubyFixnum line = runtime.newFixnum(binding.getLine() + 1); /* zero-based */
-        return runtime.newArray(filename, line);
+        IRubyObject filename = Convert.asString(context, binding.getFile()).freeze(context);
+        RubyFixnum line = asFixnum(context, binding.getLine() + 1); /* zero-based */
+        return context.runtime.newArray(filename, line);
     }
 }

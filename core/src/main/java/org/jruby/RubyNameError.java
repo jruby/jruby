@@ -44,6 +44,8 @@ import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.Sprintf;
 
+import static org.jruby.api.Convert.asBoolean;
+
 /**
  * The Java representation of a Ruby NameError.
  *
@@ -280,7 +282,7 @@ public class RubyNameError extends RubyStandardError {
 
     @JRubyMethod(name = "private_call?")
     public IRubyObject private_call_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, isPrivateCall());
+        return asBoolean(context, isPrivateCall());
     }
 
     @Override

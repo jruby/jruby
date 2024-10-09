@@ -2,6 +2,7 @@ package org.jruby.api;
 
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFile;
 import org.jruby.RubyFixnum;
@@ -13,11 +14,28 @@ import org.jruby.RubyProc;
 import org.jruby.RubyRange;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.RubyBignum.big2long;
+import static org.jruby.RubyNumeric.num2long;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.util.TypeConverter.convertToTypeWithCheck;
+import static org.jruby.util.TypeConverter.sites;
 
+/**
+ * Conversion utilities.
+ *
+ * By convention if a method has `As` in it then it implies it is already the thing and it may error
+ * if wrong.  If it has `To` in it then it implies it is converting to that thing and it if might not
+ * be that thing.  For example, `integerAsInt` implies the value is already an int and will error if
+ * it is not.  `checkToInteger` implies the value might not be an integer and that it may try and convert
+ * it to one.
+ *
+ * Methods where the parameter to `As` methods will omit the type from in front of as.  For example,
+ * `longAsInteger` will be `asInteger(context, long)`.
+ */
 public class Convert {
     /**
      * Cast the given value to a RubyArray with most basic typeError thrown
@@ -27,7 +45,7 @@ public class Convert {
      * @param newValue the value to cast
      * @return the value as a RubyArray
      */
-    public static RubyArray castToArray(ThreadContext context, IRubyObject newValue) {
+    public static RubyArray castAsArray(ThreadContext context, IRubyObject newValue) {
         if (!(newValue instanceof RubyArray)) throw typeError(context, newValue, "Array");
         return (RubyArray) newValue;
     }
@@ -42,7 +60,7 @@ public class Convert {
      * @param message the message to include in the type error
      * @return the value as a RubyArray
      */
-    public static RubyArray castToArray(ThreadContext context, IRubyObject newValue, String message) {
+    public static RubyArray castAsArray(ThreadContext context, IRubyObject newValue, String message) {
         if (!(newValue instanceof RubyArray)) throw typeError(context, newValue, message);
         return (RubyArray) newValue;
     }
@@ -55,7 +73,7 @@ public class Convert {
      * @param newValue the value to cast
      * @return the value as a RubyBignum
      */
-    public static RubyBignum castToBignum(ThreadContext context, IRubyObject newValue) {
+    public static RubyBignum castAsBignum(ThreadContext context, IRubyObject newValue) {
         if (!(newValue instanceof RubyBignum)) throw typeError(context, newValue, "Bignum");
         return (RubyBignum) newValue;
     }
@@ -68,7 +86,7 @@ public class Convert {
      * @param newValue the value to cast
      * @return the value as a RubyClass
      */
-    public static RubyClass castToClass(ThreadContext context, IRubyObject newValue) {
+    public static RubyClass castAsClass(ThreadContext context, IRubyObject newValue) {
         if (!(newValue instanceof RubyClass)) throw typeError(context, newValue, "Class");
         return (RubyClass) newValue;
     }
@@ -81,7 +99,7 @@ public class Convert {
      * @param newValue the value to cast
      * @return the value as a RubyFile
      */
-    public static RubyFile castToFile(ThreadContext context, IRubyObject newValue) {
+    public static RubyFile castAsFile(ThreadContext context, IRubyObject newValue) {
         if (!(newValue instanceof RubyFile)) throw typeError(context, newValue, "File");
         return (RubyFile) newValue;
     }
@@ -94,7 +112,7 @@ public class Convert {
      * @param newValue the value to cast
      * @return the value as a RubyFixnum
      */
-    public static RubyFixnum castToFixnum(ThreadContext context, IRubyObject newValue) {
+    public static RubyFixnum castAsFixnum(ThreadContext context, IRubyObject newValue) {
         if (!(newValue instanceof RubyFixnum)) throw typeError(context, newValue, "Fixnum");
         return (RubyFixnum) newValue;
     }
@@ -109,7 +127,7 @@ public class Convert {
      * @param message the message to include in the type error
      * @return the value as a RubyFixnum
      */
-    public static RubyFixnum castToFixnum(ThreadContext context, IRubyObject newValue, String message) {
+    public static RubyFixnum castAsFixnum(ThreadContext context, IRubyObject newValue, String message) {
         if (!(newValue instanceof RubyFixnum)) throw typeError(context, message);
         return (RubyFixnum) newValue;
     }
@@ -122,7 +140,7 @@ public class Convert {
      * @param newValue the value to cast
      * @return the value as a RubyHash
      */
-    public static RubyHash castToHash(ThreadContext context, IRubyObject newValue) {
+    public static RubyHash castAsHash(ThreadContext context, IRubyObject newValue) {
         if (!(newValue instanceof RubyHash)) throw typeError(context, newValue, "Hash");
         return (RubyHash) newValue;
     }
@@ -137,7 +155,7 @@ public class Convert {
      * @param message the message to include in the type error
      * @return the value as a RubyHash
      */
-    public static RubyHash castToHash(ThreadContext context, IRubyObject newValue, String message) {
+    public static RubyHash castAsHash(ThreadContext context, IRubyObject newValue, String message) {
         if (!(newValue instanceof RubyHash)) throw typeError(context, message);
         return (RubyHash) newValue;
     }
@@ -150,7 +168,7 @@ public class Convert {
      * @param newValue the value to cast
      * @return the value as a RubyInteger
      */
-    public static RubyInteger castToInteger(ThreadContext context, IRubyObject newValue) {
+    public static RubyInteger castAsInteger(ThreadContext context, IRubyObject newValue) {
         if (!(newValue instanceof RubyInteger)) throw typeError(context, newValue, "Integer");
         return (RubyInteger) newValue;
     }
@@ -165,7 +183,7 @@ public class Convert {
      * @param message the message to include in the type error
      * @return the value as a RubyInteger
      */
-    public static RubyInteger castToInteger(ThreadContext context, IRubyObject newValue, String message) {
+    public static RubyInteger castAsInteger(ThreadContext context, IRubyObject newValue, String message) {
         if (!(newValue instanceof RubyInteger)) throw typeError(context, message);
         return (RubyInteger) newValue;
     }
@@ -179,7 +197,7 @@ public class Convert {
      * @param newValue the value to cast
      * @return the value as a RubyModule
      */
-    public static RubyModule castToModule(ThreadContext context, IRubyObject newValue) {
+    public static RubyModule castAsModule(ThreadContext context, IRubyObject newValue) {
         if (!(newValue instanceof RubyModule)) throw typeError(context, newValue, "Module");
         return (RubyModule) newValue;
     }
@@ -194,7 +212,7 @@ public class Convert {
      * @param message the message to include in the type error
      * @return the value as a RubyModule
      */
-    public static RubyModule castToModule(ThreadContext context, IRubyObject newValue, String message) {
+    public static RubyModule castAsModule(ThreadContext context, IRubyObject newValue, String message) {
         if (!(newValue instanceof RubyModule)) throw typeError(context, message);
         return (RubyModule) newValue;
     }
@@ -209,7 +227,7 @@ public class Convert {
      * @param message the message to include in the type error
      * @return the value as a RubyNumeric
      */
-    public static RubyNumeric castToNumeric(ThreadContext context, IRubyObject newValue, String message) {
+    public static RubyNumeric castAsNumeric(ThreadContext context, IRubyObject newValue, String message) {
         if (!(newValue instanceof RubyNumeric)) throw typeError(context, message);
         return (RubyNumeric) newValue;
     }
@@ -222,7 +240,7 @@ public class Convert {
      * @param newValue the value to cast
      * @return the value as a RubyProc
      */
-    public static RubyProc castToProc(ThreadContext context, IRubyObject newValue) {
+    public static RubyProc castAsProc(ThreadContext context, IRubyObject newValue) {
         if (!(newValue instanceof RubyProc)) throw typeError(context, newValue, "Proc");
         return (RubyProc) newValue;
     }
@@ -237,7 +255,7 @@ public class Convert {
      * @param message the message to include in the type error
      * @return the value as a RubyProc
      */
-    public static RubyProc castToProc(ThreadContext context, IRubyObject newValue, String message) {
+    public static RubyProc castAsProc(ThreadContext context, IRubyObject newValue, String message) {
         if (!(newValue instanceof RubyProc)) throw typeError(context, message);
         return (RubyProc) newValue;
     }
@@ -250,7 +268,7 @@ public class Convert {
      * @param newValue the value to cast
      * @return the value as a RubyRange
      */
-    public static RubyRange castToRange(ThreadContext context, IRubyObject newValue) {
+    public static RubyRange castAsRange(ThreadContext context, IRubyObject newValue) {
         if (!(newValue instanceof RubyRange)) throw typeError(context, newValue, "Range");
         return (RubyRange) newValue;
     }
@@ -263,7 +281,7 @@ public class Convert {
      * @param newValue the value to cast
      * @return the value as a RubyString
      */
-    public static RubyString castToString(ThreadContext context, IRubyObject newValue) {
+    public static RubyString castAsString(ThreadContext context, IRubyObject newValue) {
         if (!(newValue instanceof RubyString)) throw typeError(context, newValue, "String");
         return (RubyString) newValue;
     }
@@ -277,8 +295,120 @@ public class Convert {
      * @param newValue the value to cast
      * @return the value as a RubySymbol
      */
-    public static RubySymbol castToSymbol(ThreadContext context, IRubyObject newValue) {
+    public static RubySymbol castAsSymbol(ThreadContext context, IRubyObject newValue) {
         if (!(newValue instanceof RubySymbol)) throw typeError(context, newValue, "Symbol");
         return (RubySymbol) newValue;
+    }
+
+    // FIXME: Create annotation @MRI so we can formalize these comments and provide a dictionary for embedders.
+    // MRI: rb_check_to_integer
+    /**
+     * Check whether the given object is an Integer or can be converted to an Integer using #to_int.
+     * @param context the current thread context
+     * @param obj the object to be converted
+     * @return the integer value or nil if the object or conversion is not an Integer.
+     */
+    public static IRubyObject checkToInteger(ThreadContext context, IRubyObject obj) {
+        if (obj instanceof RubyFixnum) return obj;
+
+        JavaSites.TypeConverterSites sites = sites(context);
+
+        IRubyObject conv = convertToTypeWithCheck(context, obj, context.runtime.getInteger(), sites.to_int_checked);
+
+        return conv instanceof RubyInteger ? conv : context.nil;
+    }
+
+    /**
+     * Check to make sure the long num given will fit into an int.
+     *
+     * @param context the current thread context
+     * @param num the long to check
+     * @return the int value
+     */
+    public static int checkInt(ThreadContext context, long num) {
+        if (((int) num) != num) {
+            throw context.runtime.newRangeError("integer " + num +
+                    (num < Integer.MIN_VALUE ? " too small to convert to `int'" : " too big to convert to `int'"));
+        }
+
+        return (int) num;
+    }
+
+    /**
+     * Create a Ruby Boolean from a java boolean.
+     * @param context the current thread context
+     * @param value the boolean value
+     * @return the Ruby Boolean
+     */
+    public static RubyBoolean asBoolean(ThreadContext context, boolean value) {
+        return value ? context.tru : context.fals;
+    }
+
+    /**
+     * Create a Ruby Fixnum from a java long.
+     * @param context the current thread context
+     * @param value the long value
+     * @return the Ruby Fixnum
+     */
+    public static RubyFixnum asFixnum(ThreadContext context, long value) {
+        return RubyFixnum.newFixnum(context.runtime, value);
+    }
+
+    /**
+     * Create a Ruby Fixnum from a java int.
+     * @param context the current thread context
+     * @param value the int value
+     * @return the Ruby Fixnum
+     */
+    public static RubyFixnum asFixnum(ThreadContext context, int value) {
+        return RubyFixnum.newFixnum(context.runtime, value);
+    }
+
+    /**
+     * Create a Ruby String from a java String.
+     * @param context the current thread context
+     * @param value the String value
+     * @return the Ruby String
+     */
+    public static RubyString asString(ThreadContext context, String value) {
+        return context.runtime.newString(value);
+    }
+
+    /**
+     * Safely convert a Ruby Integer into a java int value.  Raising if the value will not fit.
+     * @param context the current thread context
+     * @param value the RubyInteger to convert
+     * @return the int value
+     */
+    public static int asInt(ThreadContext context, RubyInteger value) {
+        long num = value.getLongValue();
+
+        return checkInt(context, num);
+    }
+
+    /**
+     * Safely convert a Ruby Integer into a java int value.  Raising if the value will not fit.
+     * @param context the current thread context
+     * @param value the RubyInteger to convert
+     * @return the int value
+     */
+    public static long asLong(ThreadContext context, RubyInteger value) {
+        if (value instanceof RubyBignum) {
+            return big2long((RubyBignum) value);
+        }
+
+        return value.getLongValue();
+    }
+
+    // MRI: rb_num2long and FIX2LONG (numeric.c)
+    /**
+     * Safely convert a Ruby Numeric into a java long value.  Raising if the value will not fit.
+     * @param context the current thread context
+     * @param arg the RubyNumeric to convert
+     * @return the long value
+     */
+    public static long numericToLong(ThreadContext context, IRubyObject arg) {
+        // FIXME: Move this logic out of numeric and into a place which accepts and uses context.
+        return num2long(arg);
     }
 }

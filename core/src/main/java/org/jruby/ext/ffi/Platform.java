@@ -38,6 +38,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.SafePropertyAccessor;
 
+import static org.jruby.api.Convert.asBoolean;
+
 /**
  *
  */
@@ -308,27 +310,27 @@ public class Platform {
 
     @JRubyMethod(name = "windows?", module=true)
     public static IRubyObject windows_p(ThreadContext context, IRubyObject recv) {
-        return RubyBoolean.newBoolean(context, OS == OS.WINDOWS);
+        return asBoolean(context, OS == OS.WINDOWS);
     }
     @JRubyMethod(name = "mac?", module=true)
     public static IRubyObject mac_p(ThreadContext context, IRubyObject recv) {
-        return RubyBoolean.newBoolean(context, OS == OS.DARWIN);
+        return asBoolean(context, OS == OS.DARWIN);
     }
     @JRubyMethod(name = "unix?", module=true)
     public static IRubyObject unix_p(ThreadContext context, IRubyObject recv) {
-        return RubyBoolean.newBoolean(context, Platform.getPlatform().isUnix());
+        return asBoolean(context, Platform.getPlatform().isUnix());
     }
     @JRubyMethod(name = "bsd?", module=true)
     public static IRubyObject bsd_p(ThreadContext context, IRubyObject recv) {
-        return RubyBoolean.newBoolean(context, Platform.getPlatform().isBSD());
+        return asBoolean(context, Platform.getPlatform().isBSD());
     }
     @JRubyMethod(name = "linux?", module=true)
     public static IRubyObject linux_p(ThreadContext context, IRubyObject recv) {
-        return RubyBoolean.newBoolean(context, OS == OS.LINUX);
+        return asBoolean(context, OS == OS.LINUX);
     }
     @JRubyMethod(name = "solaris?", module=true)
     public static IRubyObject solaris_p(ThreadContext context, IRubyObject recv) {
-        return RubyBoolean.newBoolean(context, OS == OS.SOLARIS);
+        return asBoolean(context, OS == OS.SOLARIS);
     }
 
     /**

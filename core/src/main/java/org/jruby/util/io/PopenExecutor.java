@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.jruby.RubyString.newString;
+import static org.jruby.api.Convert.asFixnum;
 
 /**
  * Port of MRI's popen+exec logic.
@@ -100,7 +101,7 @@ public class PopenExecutor {
             }
             throw runtime.newErrnoFromErrno(executor.errno, errmsg[0]);
         }
-        return runtime.newFixnum(pid);
+        return asFixnum(context, pid);
     }
 
     // MRI: rb_f_system
@@ -306,7 +307,7 @@ public class PopenExecutor {
         Ruby runtime = context.runtime;
         String modestr;
         IRubyObject pname, port, tmp, opt = context.nil, env = context.nil;
-        API.ModeAndPermission pmode = EncodingUtils.vmodeVperm(null, null);
+        API.ModeAndPermission pmode = new API.ModeAndPermission(null, null);
         ExecArg eargp;
         int[] oflags_p = {0}, fmode_p = {0};
         IOEncodable.ConvConfig convconfig = new IOEncodable.ConvConfig();

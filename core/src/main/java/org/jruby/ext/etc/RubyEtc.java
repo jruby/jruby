@@ -37,12 +37,15 @@ import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.io.OpenFile;
 import java.nio.ByteBuffer;
 
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.numericToLong;
+
 @JRubyModule(name="Etc")
 public class RubyEtc {
     public static class IOExt {
         @JRubyMethod
         public static synchronized IRubyObject pathconf(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-            Pathconf name = Pathconf.valueOf(RubyNumeric.num2long(arg));
+            Pathconf name = Pathconf.valueOf(numericToLong(context, arg));
             RubyIO io = (RubyIO) recv;
             OpenFile fptr = io.getOpenFileChecked();
             POSIX posix = context.runtime.getPosix();
@@ -56,7 +59,7 @@ public class RubyEtc {
                     throw context.runtime.newErrnoFromLastPOSIXErrno();
                 }
             }
-            return context.runtime.newFixnum(ret);
+            return asFixnum(context, ret);
         }
     }
     
@@ -162,7 +165,7 @@ public class RubyEtc {
     @JRubyMethod(module = true)
     public static synchronized IRubyObject sysconf(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         Ruby runtime = context.runtime;
-        Sysconf name = Sysconf.valueOf(RubyNumeric.num2long(arg));
+        Sysconf name = Sysconf.valueOf(numericToLong(context, arg));
         POSIX posix = runtime.getPosix();
         posix.errno(0);
         long ret = posix.sysconf(name);
@@ -183,7 +186,7 @@ public class RubyEtc {
     
     @JRubyMethod(module = true)
     public static synchronized IRubyObject confstr(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        Confstr name = Confstr.valueOf(RubyNumeric.num2long(arg));
+        Confstr name = Confstr.valueOf(numericToLong(context, arg));
         ByteBuffer buf;
 
         POSIX posix = context.runtime.getPosix();

@@ -52,6 +52,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.function.BiFunction;
 
+import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
@@ -833,18 +834,12 @@ public class RubyComplex extends RubyNumeric {
     @JRubyMethod(name = "==")
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyComplex) {
-            RubyComplex otherComplex = (RubyComplex) other;
-            boolean test = f_equal(context, real, otherComplex.real).isTrue() &&
-                    f_equal(context, image, otherComplex.image).isTrue();
-
-            return RubyBoolean.newBoolean(context, test);
+        if (other instanceof RubyComplex comp) {
+            return asBoolean(context, f_equal(context, real, comp.real).isTrue() && f_equal(context, image, comp.image).isTrue());
         }
 
-        if (other instanceof RubyNumeric && f_real_p(context, (RubyNumeric) other)) {
-            boolean test = f_equal(context, real, other).isTrue() && f_zero_p(context, image);
-
-            return RubyBoolean.newBoolean(context, test);
+        if (other instanceof RubyNumeric num && f_real_p(context, num)) {
+            return asBoolean(context, f_equal(context, real, num).isTrue() && f_zero_p(context, image));
         }
         
         return f_equal(context, other, this);
@@ -1006,7 +1001,7 @@ public class RubyComplex extends RubyNumeric {
     @JRubyMethod(name = "eql?")
     @Override
     public IRubyObject eql_p(ThreadContext context, IRubyObject other) {
-        return RubyBoolean.newBoolean(context, equals(context, other));
+        return asBoolean(context, equals(context, other));
     }
 
     private boolean equals(ThreadContext context, Object other) {

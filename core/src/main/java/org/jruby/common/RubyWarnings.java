@@ -47,6 +47,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.func.TriFunction;
 
+import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.util.RubyStringBuilder.str;
 
 /**
@@ -258,7 +259,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
         if (category == null) throw runtime.newArgumentError(str(runtime, "unknown category: ", arg));
 
-        return runtime.newBoolean(runtime.getWarningCategories().contains(category));
+        return asBoolean(context, runtime.getWarningCategories().contains(category));
     }
 
     @JRubyMethod(name = "[]=")

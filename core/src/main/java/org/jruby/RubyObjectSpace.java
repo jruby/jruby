@@ -42,13 +42,14 @@ import java.util.stream.Stream;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.api.Convert;
 import org.jruby.exceptions.StopIteration;
 import org.jruby.javasupport.JavaPackage;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 
-import static org.jruby.api.Convert.castToFixnum;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.Inspector.inspectPrefix;
@@ -121,16 +122,17 @@ public class RubyObjectSpace {
     @JRubyMethod(name = "_id2ref", module = true, visibility = PRIVATE)
     public static IRubyObject id2ref(IRubyObject recv, IRubyObject id) {
         final Ruby runtime = id.getRuntime();
-        long longId = castToFixnum(runtime.getCurrentContext(), id).getLongValue();
+        ThreadContext context = runtime.getCurrentContext();
+        long longId = castAsFixnum(context, id).getLongValue();
         if (longId == 0) {
-            return runtime.getFalse();
+            return context.fals;
         } else if (longId == 20) {
-            return runtime.getTrue();
+            return context.tru;
         } else if (longId == 8) {
-            return runtime.getNil();
+            return context.nil;
         } else if ((longId & 0b01) == 0b01) {
             // fixnum
-            return runtime.newFixnum((longId - 1) / 2);
+            return asFixnum(context, (longId - 1) / 2);
         } else if ((longId & 0b11) == 0b10) {
             // flonum
             double d = 0.0;
@@ -147,7 +149,7 @@ public class RubyObjectSpace {
             if (runtime.isObjectSpaceEnabled()) {
                 IRubyObject object = runtime.getObjectSpace().id2ref(longId);
                 if (object == null) {
-                    return runtime.getNil();
+                    return context.nil;
                 }
                 return object;
             } else {
@@ -184,7 +186,7 @@ public class RubyObjectSpace {
             for (int i = 0; i<count; i++) {
                 block.yield(context, modules.get(i));
             }
-            return runtime.newFixnum(count);
+            return asFixnum(context, count);
         }
         if (rubyClass.getClass() == MetaClass.class) {
             // each_object(Cls.singleton_class) is basically a walk of Cls and all descendants of Cls.
@@ -199,7 +201,7 @@ public class RubyObjectSpace {
                     }
                 }
             }
-            return runtime.newFixnum(count);
+            return asFixnum(context, count);
         }
         if ( ! runtime.isObjectSpaceEnabled() ) {
             throw runtime.newRuntimeError("ObjectSpace is disabled; each_object will only work with Class, pass -X+O to enable");
@@ -209,7 +211,7 @@ public class RubyObjectSpace {
         while ((obj = (IRubyObject) iter.next()) != null) {
             count++; block.yield(context, obj);
         }
-        return runtime.newFixnum(count);
+        return asFixnum(context, count);
     }
 
     @JRubyMethod(name = "each_object", optional = 1, checkArity = false, module = true, visibility = PRIVATE)
@@ -249,18 +251,16 @@ public class RubyObjectSpace {
 
         @JRubyMethod(name = "[]=")
         public IRubyObject op_aref(ThreadContext context, IRubyObject key, IRubyObject value) {
-            Ruby runtime = context.runtime;
-
             Map<IRubyObject, IRubyObject> weakMap = getWeakMapFor(key);
             weakMap.put(key, value);
 
-            return runtime.newFixnum(System.identityHashCode(value));
+            return asFixnum(context, System.identityHashCode(value));
         }
 
         @JRubyMethod(name = "key?")
         public IRubyObject key_p(ThreadContext context, IRubyObject key) {
             Map<IRubyObject, IRubyObject> weakMap = getWeakMapFor(key);
-            return RubyBoolean.newBoolean(context, weakMap.get(key) != null);
+            return asBoolean(context, weakMap.get(key) != null);
         }
 
         @JRubyMethod(name = "keys")
@@ -308,7 +308,7 @@ public class RubyObjectSpace {
 
         @JRubyMethod(name = {"include?", "member?"})
         public IRubyObject member_p(ThreadContext context, IRubyObject key) {
-            return RubyBoolean.newBoolean(context, getWeakMapFor(key).containsKey(key));
+            return asBoolean(context, getWeakMapFor(key).containsKey(key));
         }
 
         @JRubyMethod(name = "delete")
@@ -354,7 +354,7 @@ public class RubyObjectSpace {
         }
 
         public IRubyObject size(ThreadContext context) {
-            return context.runtime.newFixnum(identityMap.size() + valueMap.size());
+            return asFixnum(context, identityMap.size() + valueMap.size());
         }
 
         public IRubyObject inspect(ThreadContext context) {
@@ -419,13 +419,11 @@ public class RubyObjectSpace {
         }
 
         public IRubyObject size(ThreadContext context) {
-            return context.runtime.newFixnum(weakMap.size());
+            return asFixnum(context, weakMap.size());
         }
 
         public IRubyObject inspect(ThreadContext context) {
-            Ruby runtime = context.runtime;
-
-            RubyString part = inspectPrefix(runtime.getCurrentContext(), metaClass.getRealClass(), inspectHashCode());
+            RubyString part = inspectPrefix(context, metaClass.getRealClass(), inspectHashCode());
 
             part.cat(Inspector.SPACE);
             part.cat(Inspector.SIZE_EQUALS);

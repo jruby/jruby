@@ -39,6 +39,8 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.asBoolean;
+
 /**
  * An RubyArray that maintains an O(1) Set for fast include? operations.
  */
@@ -97,7 +99,7 @@ public class StringArraySet extends RubyArray {
 
     @Override
     public final RubyBoolean include_p(ThreadContext context, IRubyObject item) {
-        return RubyBoolean.newBoolean(context, containsString(convertToString(item)));
+        return asBoolean(context, containsString(convertToString(item)));
     }
 
     @Override

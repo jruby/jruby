@@ -48,7 +48,7 @@ default_gems = [
     ['irb', '1.13.0'],
     ['jar-dependencies', '0.4.1'],
     ['jruby-readline', '1.3.7'],
-    ['jruby-openssl', '0.14.5'],
+    ['jruby-openssl', '0.15.0'],
     ['json', '2.7.2'],
     ['logger', '1.6.0'],
     ['net-http', '0.4.1'],
@@ -90,8 +90,7 @@ default_gems = [
       ['ffi-binary-libfixposix', '0.5.1.1'],
       ['ffi-bindings-libfixposix', '0.5.1.0'],
     ['syntax_suggest', '2.0.0'],
-    # https://github.com/ruby/tempfile/issues/7
-    # ['tempfile', '0.1.2'],
+    ['tempfile', '0.2.1'],
     ['time', '0.3.0'],
     ['timeout', '0.4.1'],
     # https://github.com/ruby/tmpdir/issues/13
@@ -121,7 +120,7 @@ bundled_gems = [
     ['matrix', '0.4.2'],
     ['minitest', '5.22.2'],
     ['mutex_m', '0.2.0'],
-    ['net-ftp', '0.3.4'],
+    ['net-ftp', '0.3.7'],
     ['net-imap', '0.4.10'],
     ['net-pop', '0.1.2'],
     ['net-smtp', '0.4.0.1'],
@@ -134,7 +133,7 @@ bundled_gems = [
     # Depends on many CRuby internals
     # ['rbs', '2.0.0'],
     ['resolv-replace', '0.1.1'],
-    ['rexml', '3.2.6'],
+    ['rexml', '3.3.4'],
     ['rinda', '0.2.0'],
     ['rss', '0.3.0'],
     # https://github.com/ruby/syslog/issues/1

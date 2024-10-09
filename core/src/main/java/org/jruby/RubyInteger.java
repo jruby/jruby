@@ -61,7 +61,7 @@ import java.math.RoundingMode;
 
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
-import static org.jruby.api.Convert.castToInteger;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.Numeric.f_gcd;
 import static org.jruby.util.Numeric.f_lcm;
@@ -129,12 +129,12 @@ public abstract class RubyInteger extends RubyNumeric {
 
     @Override
     public IRubyObject isNegative(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, isNegative());
+        return asBoolean(context, isNegative());
     }
 
     @Override
     public IRubyObject isPositive(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, isPositive());
+        return asBoolean(context, isPositive());
     }
 
     @Override
@@ -670,7 +670,7 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     protected boolean int_round_zero_p(ThreadContext context, int ndigits) {
-        long bytes = num2long(sites(context).size.call(context, this, this));
+        long bytes = numericToLong(context, sites(context).size.call(context, this, this));
         return (-0.415241 * ndigits - 0.125 > bytes);
     }
 
@@ -738,19 +738,19 @@ public abstract class RubyInteger extends RubyNumeric {
 
     @JRubyMethod(name = "allbits?")
     public IRubyObject allbits_p(ThreadContext context, IRubyObject other) {
-        IRubyObject mask = TypeConverter.checkToInteger(context, other);
+        IRubyObject mask = checkToInteger(context, other);
         return ((RubyInteger) op_and(context, mask)).op_equal(context, mask);
     }
 
     @JRubyMethod(name = "anybits?")
     public IRubyObject anybits_p(ThreadContext context, IRubyObject other) {
-        IRubyObject mask = TypeConverter.checkToInteger(context, other);
+        IRubyObject mask = checkToInteger(context, other);
         return ((RubyInteger) op_and(context, mask)).zero_p(context).isTrue() ? context.fals : context.tru;
     }
 
     @JRubyMethod(name = "nobits?")
     public IRubyObject nobits_p(ThreadContext context, IRubyObject other) {
-        IRubyObject mask = TypeConverter.checkToInteger(context, other);
+        IRubyObject mask = checkToInteger(context, other);
         return ((RubyInteger) op_and(context, mask)).zero_p(context);
     }
 
@@ -903,10 +903,10 @@ public abstract class RubyInteger extends RubyNumeric {
         Ruby runtime = context.runtime;
 
         boolean negaFlg = false;
-        RubyInteger base = castToInteger(context, b, "Integer#pow() 2nd argument not allowed unless a 1st argument is integer");
+        RubyInteger base = castAsInteger(context, b, "Integer#pow() 2nd argument not allowed unless a 1st argument is integer");
         if (base.isNegative()) throw runtime.newRangeError("Integer#pow() 1st argument cannot be negative when 2nd argument specified");
 
-        RubyInteger pow = castToInteger(context, m, "Integer#pow() 2nd argument not allowed unless all arguments are integers");
+        RubyInteger pow = castAsInteger(context, m, "Integer#pow() 2nd argument not allowed unless all arguments are integers");
 
         if (pow.isNegative()) {
             pow = pow.negate();
@@ -989,17 +989,17 @@ public abstract class RubyInteger extends RubyNumeric {
             if (beg.isNil()) {
                 if (!negativeInt(context, end)) {
                     if (!isExclusive) {
-                        end = ((RubyInteger) end).op_plus(context, context.runtime.newFixnum(1));
+                        end = ((RubyInteger) end).op_plus(context, asFixnum(context, 1));
                     }
 
                     RubyInteger mask = generateMask(context, end);
                     if (((RubyInteger) op_and(context, mask)).isZero()) {
-                        return context.runtime.newFixnum(0);
+                        return asFixnum(context, 0);
                     } else {
                         throw context.runtime.newArgumentError("The beginless range for Integer#[] results in infinity");
                     }
                 } else {
-                    return context.runtime.newFixnum(0);
+                    return asFixnum(context, 0);
                 }
             }
             beg = beg.convertToInteger();
@@ -1008,13 +1008,13 @@ public abstract class RubyInteger extends RubyNumeric {
             if (!end.isNil() && cmp < 0) {
                 IRubyObject length = ((RubyInteger) end).op_minus(context, beg);
                 if (!isExclusive) {
-                    length = ((RubyInteger) length).op_plus(context, context.runtime.newFixnum(1));
+                    length = ((RubyInteger) length).op_plus(context, asFixnum(context, 1));
                 }
                 RubyInteger mask = generateMask(context, length);
                 num = (((RubyInteger) num).op_and(context, mask));
                 return num;
             } else if (cmp == 0) {
-                if (isExclusive) return context.runtime.newFixnum(0);
+                if (isExclusive) return asFixnum(context, 0);
                 index = beg;
             } else {
                 return num;
@@ -1043,7 +1043,7 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     RubyInteger generateMask(ThreadContext context, IRubyObject length) {
-        RubyFixnum one = context.runtime.newFixnum(1);
+        RubyFixnum one = asFixnum(context, 1);
         return (RubyInteger) ((RubyInteger) one.op_lshift(context, length)).op_minus(context, one);
     }
 

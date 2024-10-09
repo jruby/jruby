@@ -12,6 +12,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 @JRubyClass(name = "FFI::MemoryPointer", parent = "FFI::Pointer")
@@ -82,7 +84,7 @@ public class MemoryPointer extends Pointer {
     @JRubyMethod(name = "from_string", meta = true)
     public static IRubyObject from_string(ThreadContext context, IRubyObject klass, IRubyObject s) {
         org.jruby.util.ByteList bl = s.convertToString().getByteList();
-        MemoryPointer ptr = (MemoryPointer) ((RubyClass) klass).newInstance(context, context.runtime.newFixnum(bl.length() + 1), Block.NULL_BLOCK);
+        MemoryPointer ptr = (MemoryPointer) ((RubyClass) klass).newInstance(context, asFixnum(context, bl.length() + 1), Block.NULL_BLOCK);
         ptr.getMemoryIO().putZeroTerminatedByteArray(0, bl.unsafeBytes(), bl.begin(), bl.length());
 
         return ptr;
@@ -114,11 +116,10 @@ public class MemoryPointer extends Pointer {
 
     @JRubyMethod(name = "==")
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
-        return RubyBoolean.newBoolean(context, this == obj
+        return asBoolean(context, this == obj
                 || getAddress() == 0L && obj.isNil()
-                || (obj instanceof MemoryPointer
-                && ((MemoryPointer) obj).getAddress() == getAddress())
-                && ((MemoryPointer) obj).getSize() == getSize());
+                || (obj instanceof MemoryPointer mem && mem.getAddress() == getAddress())
+                && mem.getSize() == getSize());
     }
     
     @JRubyMethod(name = "free")
@@ -137,6 +138,6 @@ public class MemoryPointer extends Pointer {
 
     @JRubyMethod(name = "autorelease?")
     public final IRubyObject autorelease_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, ((AllocatedDirectMemoryIO) getMemoryIO()).isAutoRelease());
+        return asBoolean(context, ((AllocatedDirectMemoryIO) getMemoryIO()).isAutoRelease());
     }
 }

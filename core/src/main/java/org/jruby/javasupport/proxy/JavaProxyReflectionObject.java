@@ -40,6 +40,7 @@ import org.jruby.javasupport.Java;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Error.typeError;
 
 public class JavaProxyReflectionObject extends RubyObject {
@@ -68,7 +69,7 @@ public class JavaProxyReflectionObject extends RubyObject {
             }
             obj = (IRubyObject) wrappedObj;
         }
-        return RubyBoolean.newBoolean(context,  this.equals(obj) );
+        return asBoolean(context, this.equals(obj));
     }
 
     @Deprecated
@@ -88,7 +89,7 @@ public class JavaProxyReflectionObject extends RubyObject {
             }
             obj = (IRubyObject) wrappedObj;
         }
-        return RubyBoolean.newBoolean(context, this == obj);
+        return asBoolean(context, this == obj);
     }
 
     @Override

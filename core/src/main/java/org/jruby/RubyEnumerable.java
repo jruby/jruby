@@ -67,6 +67,8 @@ import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyObject.equalInternal;
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.numericToLong;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.runtime.Helpers.invokedynamic;
@@ -193,10 +195,8 @@ public class RubyEnumerable {
             return enumeratorizeWithSize(context, self, "cycle", new IRubyObject[] { arg }, RubyEnumerable::cycleSize);
         }
 
-        long times = RubyNumeric.num2long(arg);
-        if (times <= 0) {
-            return context.nil;
-        }
+        long times = numericToLong(context, arg);
+        if (times <= 0) return context.nil;
 
         return cycleCommon(context, self, times, block);
     }
@@ -267,7 +267,7 @@ public class RubyEnumerable {
     @JRubyMethod(name = "take")
     public static IRubyObject take(ThreadContext context, IRubyObject self, IRubyObject n, Block block) {
         final Ruby runtime = context.runtime;
-        final long len = RubyNumeric.num2long(n);
+        final long len = numericToLong(context, n);
 
         if (len < 0) throw runtime.newArgumentError("attempt to take negative size");
         if (len == 0) return runtime.newEmptyArray();
@@ -325,7 +325,7 @@ public class RubyEnumerable {
     @JRubyMethod(name = "drop")
     public static IRubyObject drop(ThreadContext context, IRubyObject self, IRubyObject n, final Block block) {
         final Ruby runtime = context.runtime;
-        final long len = RubyNumeric.num2long(n);
+        final long len = numericToLong(context, n);
 
         if (len < 0) throw runtime.newArgumentError("attempt to drop negative size");
 
@@ -408,7 +408,7 @@ public class RubyEnumerable {
     @JRubyMethod(name = "first")
     public static IRubyObject first(ThreadContext context, IRubyObject self, final IRubyObject num) {
         final Ruby runtime = context.runtime;
-        final long firstCount = RubyNumeric.num2long(num);
+        final long firstCount = numericToLong(context, num);
 
         if (firstCount == 0) return runtime.newEmptyArray();
         if (firstCount < 0) throw runtime.newArgumentError("attempt to take negative size");
@@ -1153,12 +1153,12 @@ public class RubyEnumerable {
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject[] iargs, Block block) {
-            return this.block.call(context, packEnumValues(context, iargs), context.runtime.newFixnum(index++));
+            return this.block.call(context, packEnumValues(context, iargs), asFixnum(context, index++));
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject iarg, Block block) {
-            return this.block.call(context, iarg, context.runtime.newFixnum(index++));
+            return this.block.call(context, iarg, asFixnum(context, index++));
         }
     }
 
@@ -1250,7 +1250,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "each_slice")
     public static IRubyObject each_slice(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
-        int size = (int) RubyNumeric.num2long(arg);
+        int size = (int) numericToLong(context, arg);
         if (size <= 0) throw context.runtime.newArgumentError("invalid size");
 
         return block.isGiven() ? each_sliceCommon(context, self, size, block) :
@@ -1300,7 +1300,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "each_cons")
     public static IRubyObject each_cons(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
-        int size = (int) RubyNumeric.num2long(arg);
+        int size = (int) numericToLong(context, arg);
         if (size <= 0) throw context.runtime.newArgumentError("invalid size");
         return block.isGiven() ? each_consCommon(context, self, size, block) : enumeratorizeWithSize(context, self, "each_cons", new IRubyObject[] { arg }, (SizeFn) RubyEnumerable::eachConsSize);
     }

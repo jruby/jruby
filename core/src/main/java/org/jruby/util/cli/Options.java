@@ -57,6 +57,8 @@ public class Options {
     private static final boolean INVOKEDYNAMIC_DEFAULT = calculateInvokedynamicDefault();
     private static final boolean COLOR = System.console() != null;
 
+    public static final String IR_PRINT_PATTERN_NO_PATTERN_STRING = "<NO_PATTERN>";
+
     // This section holds all Options for JRuby. They will be listed in the
     // --properties output.
 
@@ -120,6 +122,7 @@ public class Options {
     public static final Option<Boolean>  IR_PRINT = bool(IR, "ir.print", IR_PRINT_ALL.load(), "Print the final IR to be run before starting to execute each body of code.");
     public static final Option<Boolean>  IR_PRINT_COLOR = bool(IR, "ir.print.color", COLOR, "Print the final IR with color highlighting.");
     public static final Option<Boolean>  IR_STRING_FREEZE = bool(IR, "ir.string.freeze", true, "Compile \"foo\".freeze as a constant frozen string value instead of a call.");
+    public static final Option<String> IR_PRINT_PATTERN = string(IR, "ir.print.pattern", IR_PRINT_PATTERN_NO_PATTERN_STRING, "A pattern to limit IR print output to specific scopes.");
 
     public static final Option<Boolean> NATIVE_ENABLED = bool(NATIVE, "native.enabled", true, "Enable/disable native code, including POSIX features and C exts.");
     public static final Option<Boolean> NATIVE_VERBOSE = bool(NATIVE, "native.verbose", false, "Enable verbose logging of native extension loading.");
@@ -162,6 +165,7 @@ public class Options {
     public static final Option<Boolean> PACKED_ARRAYS = bool(MISCELLANEOUS, "packed.arrays", true, "Toggle whether to use \"packed\" arrays for small tuples.");
     public static final Option<Boolean> REGEXP_INTERRUPTIBLE = bool(MISCELLANEOUS, "regexp.interruptible", true, "Allow regexp operations to be interruptible from Ruby.");
     public static final Option<Integer> JAR_CACHE_EXPIRATION = integer(MISCELLANEOUS, "jar.cache.expiration", 750, "The time (ms) between checks if a JAR file containing resources has been updated.");
+    public static final Option<String> WINDOWS_FILESYSTEM_ENCODING = string(MISCELLANEOUS, "windows.filesystem.encoding", "UTF-8", "The encoding to use for filesystem names and paths on Windows.");
 
     public static final Option<Boolean> DEBUG_LOADSERVICE = bool(DEBUG, "debug.loadService", false, "Log require/load file searches.");
     public static final Option<Boolean> DEBUG_LOADSERVICE_TIMING = bool(DEBUG, "debug.loadService.timing", false, "Log require/load parse+evaluate times.");
@@ -195,7 +199,7 @@ public class Options {
     public static final Option<Boolean> JI_LOAD_LAZY = bool(JAVA_INTEGRATION, "ji.load.lazy", true, "Load Java support (class extensions) lazily on demand or ahead of time.");
     public static final Option<Boolean> JI_CLOSE_CLASSLOADER = bool(JAVA_INTEGRATION, "ji.close.classloader", false, "Close the JRubyClassLoader used by each runtime");
     public static final Option<String> JI_NESTED_JAR_TMPDIR = string(JAVA_INTEGRATION, "ji.nested.jar.tmpdir", "Use specified dir as a base for unpacking nested jar files.");
-    public static final Option<Boolean> JI_EAGER_CONSTANTS = bool(JAVA_INTEGRATION, "ji.eager.constants", true, "Eagerly bind Java:: constants for newly-encountered classes");
+    public static final Option<Boolean> JI_EAGER_CONSTANTS = bool(JAVA_INTEGRATION, "ji.eager.constants", false, "Eagerly bind Java:: constants for newly-encountered classes");
 
     public static final Option<Integer> PROFILE_MAX_METHODS = integer(PROFILING, "profile.max.methods", 100000, "Maximum number of methods to consider for profiling.");
 

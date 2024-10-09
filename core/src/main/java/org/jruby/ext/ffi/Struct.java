@@ -11,7 +11,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 
-import static org.jruby.api.Convert.castToClass;
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.castAsClass;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.*;
 
@@ -213,7 +214,7 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
 
     @JRubyMethod(name = { "size" }, meta = true)
     public static IRubyObject size(ThreadContext context, IRubyObject structClass) {
-        RubyClass klass = castToClass(context, structClass);
+        RubyClass klass = castAsClass(context, structClass);
 
         Object obj = klass.getFFIHandle();
         if (obj instanceof StructLayout) {
@@ -237,7 +238,7 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
 
     @JRubyMethod(name = { "layout=" }, meta = true)
     public static IRubyObject set_layout(ThreadContext context, IRubyObject structClass, IRubyObject layout) {
-        RubyClass klass = castToClass(context, structClass);
+        RubyClass klass = castAsClass(context, structClass);
 
         if (!(layout instanceof StructLayout)) {
             throw typeError(context, layout, context.runtime.getModule("FFI").getClass("StructLayout"));
@@ -330,7 +331,7 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
 
     @JRubyMethod(name="null?")
     public IRubyObject null_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, getMemory().getMemoryIO().isNull());
+        return asBoolean(context, getMemory().getMemoryIO().isNull());
     }
 
     @JRubyMethod(name = "order")

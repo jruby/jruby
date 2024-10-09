@@ -37,6 +37,7 @@ package org.jruby;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Convert;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -56,6 +57,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
 
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.util.RubyStringBuilder.types;
 
 /**
@@ -293,7 +296,7 @@ public class RubyProc extends RubyObject implements DataType {
 
         if (type != other.type) return context.fals;
 
-        return context.runtime.newBoolean(getBlock().equals(other.block));
+        return asBoolean(context, getBlock().equals(other.block));
     }
 
     /**
@@ -401,7 +404,7 @@ public class RubyProc extends RubyObject implements DataType {
     public IRubyObject source_location(ThreadContext context) {
         Ruby runtime = context.runtime;
         if (file != null) {
-            return runtime.newArray(runtime.newString(file), runtime.newFixnum(line + 1 /*zero-based*/));
+            return runtime.newArray(runtime.newString(file), asFixnum(context, line + 1 /*zero-based*/));
         }
 
         if (block != null) {
@@ -410,8 +413,8 @@ public class RubyProc extends RubyObject implements DataType {
             // block+binding may exist for a core method, which will have a null filename
             if (binding.getFile() != null) {
                 return runtime.newArray(
-                        runtime.newString(binding.getFile()),
-                        runtime.newFixnum(binding.getLine() + 1 /*zero-based*/));
+                        Convert.asString(context, binding.getFile()),
+                        asFixnum(context, binding.getLine() + 1 /*zero-based*/));
             }
         }
 
@@ -442,7 +445,7 @@ public class RubyProc extends RubyObject implements DataType {
 
     @JRubyMethod(name = "lambda?")
     public IRubyObject lambda_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, isLambda());
+        return asBoolean(context, isLambda());
     }
 
     private boolean isLambda() {

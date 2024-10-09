@@ -44,6 +44,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static org.jruby.api.Convert.asFixnum;
+
 /**
  * The "SizedQueue" class from the 'thread' library.
  */
@@ -117,7 +119,7 @@ public class SizedQueue extends Queue {
             try {
                 putLock.lockInterruptibly();
                 try {
-                    return context.runtime.newFixnum(takeLock.getWaitQueueLength(notEmpty) + putLock.getWaitQueueLength(notFull));
+                    return asFixnum(context, takeLock.getWaitQueueLength(notEmpty) + putLock.getWaitQueueLength(notFull));
                 } finally {
                     putLock.unlock();
                 }

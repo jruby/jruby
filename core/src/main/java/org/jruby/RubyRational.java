@@ -52,6 +52,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 import org.jruby.util.TypeConverter;
 
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ast.util.ArgsUtil.hasExceptionOption;
 import static org.jruby.runtime.Helpers.invokedynamic;
@@ -230,13 +231,13 @@ public class RubyRational extends RubyNumeric {
     }
 
     private static RubyNumeric canonicalizeInternal(ThreadContext context, RubyClass clazz, long num, long den) {
-        if (den == 0)
-            throw context.runtime.newZeroDivisionError();
+        if (den == 0) throw context.runtime.newZeroDivisionError();
+
         if (num == Long.MIN_VALUE && den == Long.MIN_VALUE)
-            canonicalizeInternal(context, clazz, context.runtime.newFixnum(num), context.runtime.newFixnum(den));
+            canonicalizeInternal(context, clazz, asFixnum(context, num), asFixnum(context, den));
         long gcd = i_gcd(num, den);
-        RubyInteger _num = (RubyInteger) context.runtime.newFixnum(num).idiv(context, gcd);
-        RubyInteger _den = (RubyInteger) context.runtime.newFixnum(den).idiv(context, gcd);
+        RubyInteger _num = (RubyInteger) asFixnum(context, num).idiv(context, gcd);
+        RubyInteger _den = (RubyInteger) asFixnum(context, den).idiv(context, gcd);
 
         if (Numeric.CANON && canonicalization && _den.getLongValue() == 1) return _num;
 
@@ -444,7 +445,7 @@ public class RubyRational extends RubyNumeric {
             if (!raise && a1.isNil()) return a1;
         } else if (a1 instanceof RubyObject && !a1.respondsTo("to_r")) {
             try {
-                IRubyObject tmp = TypeConverter.checkToInteger(context, a1);
+                IRubyObject tmp = checkToInteger(context, a1);
                 if (!tmp.isNil()) {
                     a1 = tmp;
                 }
@@ -462,7 +463,7 @@ public class RubyRational extends RubyNumeric {
             if (!raise && a2.isNil()) return a2;
         } else if (!a2.isNil() & a2 instanceof RubyObject && !a2.respondsTo("to_r")) {
             try {
-                IRubyObject tmp = TypeConverter.checkToInteger(context, a2);
+                IRubyObject tmp = checkToInteger(context, a2);
                 if (!tmp.isNil()) {
                     a2 = tmp;
                 }
@@ -573,7 +574,7 @@ public class RubyRational extends RubyNumeric {
 
     @Override
     public IRubyObject zero_p(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, isZero());
+        return asBoolean(context, isZero());
     }
 
     @Override
@@ -588,12 +589,12 @@ public class RubyRational extends RubyNumeric {
 
     @Override
     public IRubyObject isNegative(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, signum() < 0);
+        return asBoolean(context, signum() < 0);
     }
 
     @Override
     public IRubyObject isPositive(ThreadContext context) {
-        return RubyBoolean.newBoolean(context, signum() > 0);
+        return asBoolean(context, signum() > 0);
     }
 
     @Override
@@ -968,14 +969,14 @@ public class RubyRational extends RubyNumeric {
     }
 
     public final IRubyObject op_equal(ThreadContext context, RubyInteger other) {
-        if (num.isZero()) return RubyBoolean.newBoolean(context, other.isZero());
+        if (num.isZero()) return asBoolean(context, other.isZero());
         if (!(den instanceof RubyFixnum) || den.getLongValue() != 1) return context.fals;
         return f_equal(context, num, other);
     }
 
     final RubyBoolean op_equal(ThreadContext context, RubyRational other) {
-        if (num.isZero()) return RubyBoolean.newBoolean(context, other.num.isZero());
-        return RubyBoolean.newBoolean(context,
+        if (num.isZero()) return asBoolean(context, other.num.isZero());
+        return asBoolean(context,
                 f_equal(context, num, other.num).isTrue() && f_equal(context, den, other.den).isTrue());
     }
 
@@ -1162,7 +1163,7 @@ public class RubyRational extends RubyNumeric {
 
         final int nsign = ((RubyInteger) n).signum();
 
-        RubyNumeric b = f_expt(context, context.runtime.newFixnum(10), (RubyInteger) n);
+        RubyNumeric b = f_expt(context, asFixnum(context, 10), (RubyInteger) n);
         IRubyObject s = nsign >= 0 ?
                 op_mul(context, (RubyInteger) b) :
                 op_mul(context, b); // (RubyRational) b
