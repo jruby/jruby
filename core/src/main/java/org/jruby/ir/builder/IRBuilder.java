@@ -1605,8 +1605,6 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
 
         if (parserTiming) manager.getRuntime().getParserManager().getParserStats().addIRBuildTime(System.nanoTime() - time);
-
-        return ic;
     }
 
     public Operand buildLambda(U args, U body, StaticScope staticScope, Signature signature, int line) {
@@ -1641,8 +1639,6 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
 
         if (parserTiming) manager.getRuntime().getParserManager().getParserStats().addIRBuildTime(System.nanoTime() - time);
-
-        return ic;
     }
 
     protected Operand buildLocalVariableAssign(RubySymbol name, int depth, U valueNode) {
@@ -2995,8 +2991,6 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
 
         if (parserTiming) manager.getRuntime().getParserManager().getParserStats().addIRBuildTime(System.nanoTime() - time);
-
-        return ic;
     }
 
     private void prependUsedImplicitState(IRScope parent) {
