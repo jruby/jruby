@@ -571,7 +571,7 @@ public class RubyBasicSocket extends RubyIO {
         int F_SETFL = jnr.constants.platform.Fcntl.F_SETFL.intValue();
         int O_NONBLOCK = jnr.constants.platform.OpenFlags.O_NONBLOCK.intValue();
 
-        int getsockopt(int s, int level, int optname, @Out ByteBuffer optval, @Out IntByReference optlen);
+        int getsockopt(int s, int level, int optname, @Out ByteBuffer optval, IntByReference optlen);
         int setsockopt(int s, int level, int optname, @In ByteBuffer optval, int optlen);
         int setsockopt(int s, int level, int optname, @In Timeval optval, int optlen);
     }
