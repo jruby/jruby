@@ -515,7 +515,7 @@ public class Java implements Library {
             } else {
                 proxy.getMetaClass().defineAnnotatedMethods(OldStyleExtensionInherited.class);
             }
-            setProxyConstantInJavaPackage(proxy, clazz);
+            setProxyConstantInJavaPackage(proxy, clazz, true);
         }
         else {
             createProxyClass(runtime, proxy, clazz, superClass, false);
@@ -840,13 +840,17 @@ public class Java implements Library {
         return null;
     }
 
+    static void setProxyConstantInJavaPackage(final RubyModule proxyClass, final Class<?> clazz) {
+        setProxyConstantInJavaPackage(proxyClass, clazz, Options.JI_EAGER_CONSTANTS.load());
+    }
+
     // package scheme 2: separate module for each full package name, constructed
     // from the camel-cased package segments: Java::JavaLang::Object,
-    static void setProxyConstantInJavaPackage(final RubyModule proxyClass, final Class<?> clazz) {
+    private static void setProxyConstantInJavaPackage(final RubyModule proxyClass, final Class<?> clazz, final boolean eagerSet) {
         assert clazz == proxyClass.dataGetStruct() :
             "not a Java proxy wrapper: " + proxyClass.dataGetStruct() + " expected: " + clazz;
 
-        if (!Modifier.isPublic(clazz.getModifiers())) return;
+        if (!eagerSet || !Modifier.isPublic(clazz.getModifiers())) return;
 
         final String fullName = clazz.getName();
 
