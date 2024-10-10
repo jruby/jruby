@@ -24,7 +24,7 @@ public class TestJava extends junit.framework.TestCase {
     public void testProxyCreation() {
         final Ruby runtime = Ruby.newInstance();
         try {
-            Java.getProxyClass(runtime, B.class, false);
+            Java.getProxyClass(runtime, B.class);
             assert(true);
         }
         catch (AssertionError ae) {
@@ -177,14 +177,12 @@ public class TestJava extends junit.framework.TestCase {
 
         final Ruby runtime = Ruby.newInstance(config);
 
-        final Object klass = Java.getProxyClass(runtime, java.lang.System.class, true); // Java::JavaLang::System
+        final Object klass = Java.getProxyClass(runtime, java.lang.System.class); // Java::JavaLang::System
 
         final RubyModule dummySystemProxy = RubyModule.newModule(runtime); // replace Java::JavaLang::System with smt different
         Java.setProxyClass(runtime, runtime.getClassFromPath("Java::JavaLang"), "System", dummySystemProxy, true);
 
         assertSame(klass, Java.getProxyClass(runtime, java.lang.System.class));
-        assertSame(klass, Java.getProxyClass(runtime, java.lang.System.class, true));
-        assertSame(klass, Java.getProxyClass(runtime, java.lang.System.class, false));
 
         // asserting here that the Java.setProxyConstantInJavaPackage path only executes once and not repeatedly
         assertSame(dummySystemProxy, runtime.getClassFromPath("Java::JavaLang::System"));
