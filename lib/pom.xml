@@ -696,6 +696,19 @@ DO NOT MODIFY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>ruby-maven</artifactId>
+      <version>3.9.0.pre1</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>rubygems</groupId>
+          <artifactId>jar-dependencies</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>securerandom</artifactId>
       <version>0.2.0</version>
       <type>gem</type>
@@ -1130,6 +1143,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/resolv-replace-0.1.0*</include>
           <include>specifications/rinda-0.1.1*</include>
           <include>specifications/ruby2_keywords-0.0.5*</include>
+          <include>specifications/ruby-maven-3.9.0.pre1*</include>
           <include>specifications/securerandom-0.2.0*</include>
           <include>specifications/shellwords-0.1.0*</include>
           <include>specifications/singleton-0.1.1*</include>
@@ -1209,6 +1223,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/resolv-replace-0.1.0*/**/*</include>
           <include>gems/rinda-0.1.1*/**/*</include>
           <include>gems/ruby2_keywords-0.0.5*/**/*</include>
+          <include>gems/ruby-maven-3.9.0.pre1*/**/*</include>
           <include>gems/securerandom-0.2.0*/**/*</include>
           <include>gems/shellwords-0.1.0*/**/*</include>
           <include>gems/singleton-0.1.1*/**/*</include>
@@ -1288,6 +1303,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/resolv-replace-0.1.0*</include>
           <include>cache/rinda-0.1.1*</include>
           <include>cache/ruby2_keywords-0.0.5*</include>
+          <include>cache/ruby-maven-3.9.0.pre1*</include>
           <include>cache/securerandom-0.2.0*</include>
           <include>cache/shellwords-0.1.0*</include>
           <include>cache/singleton-0.1.1*</include>

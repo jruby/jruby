@@ -91,6 +91,7 @@ default_gems = [
     ['resolv-replace', '0.1.0'],
     ['rinda', '0.1.1'],
     ['ruby2_keywords', '0.0.5'],
+    ['ruby-maven', '3.9.0.pre1'],
     ['securerandom', '0.2.0'],
     # https://github.com/ruby/set/issues/21
     # ['set', '1.0.2'],
