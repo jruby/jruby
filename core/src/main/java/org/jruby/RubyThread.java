@@ -1029,6 +1029,15 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return locals;
     }
 
+    /**
+     * Clear the local variable storage for this thread.
+     * Meant for Java consumers when reusing threads (e.g. dur thread pooling).
+     */
+    public synchronized void clearLocalVariables() {
+        getFiberLocals().clear();
+        getThreadLocals().clear();
+    }
+
     @Override
     public final Map<Object, IRubyObject> getContextVariables() {
         return contextVariables;
