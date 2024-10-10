@@ -940,9 +940,18 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return RubyString.newString(runtime, rubyName);
     }
 
+    /**
+     * Returns the current Ruby thread.
+     * @param runtime
+     * @return current ruby thread
+     */
+    public static RubyThread current(final Ruby runtime) {
+        return runtime.getCurrentContext().getThread();
+    }
+
     @JRubyMethod(meta = true)
     public static RubyThread current(IRubyObject recv) {
-        return recv.getRuntime().getCurrentContext().getThread();
+        return current(recv.getRuntime());
     }
 
     @JRubyMethod(meta = true)
@@ -1027,6 +1036,30 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             }
         }
         return locals;
+    }
+
+    /**
+     * Clear the fiber local variable storage for this thread.
+     * Meant for Java consumers when reusing threads (e.g. during thread pooling).
+     * @see #clearThreadLocals()
+     */
+    public void clearFiberLocals() {
+        final Map<IRubyObject, IRubyObject> locals = getFiberLocals();
+        synchronized (locals) {
+            locals.clear();
+        }
+    }
+
+    /**
+     * Clear the thread local variable storage for this thread.
+     * Meant for Java consumers when reusing threads (e.g. during thread pooling).
+     * @see #clearFiberLocals()
+     */
+    public void clearThreadLocals() {
+        final Map<IRubyObject, IRubyObject> locals = getThreadLocals();
+        synchronized (locals) {
+            locals.clear();
+        }
     }
 
     @Override
