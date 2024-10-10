@@ -1,7 +1,10 @@
 package org.jruby.test;
 
 import org.jruby.RubyThread;
+import org.jruby.runtime.builtin.IRubyObject;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class TestRubyThread extends Base {
@@ -50,4 +53,38 @@ public class TestRubyThread extends Base {
         assertSame(runtime.getNil(), thread.status(runtime.getCurrentContext()));
     }
 
+    public void testClearLocalVariables() throws InterruptedException {
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        final AtomicReference<RubyThread> otherThread = new AtomicReference<>();
+        final CountDownLatch latch2 = new CountDownLatch(1);
+
+        Thread thread = new Thread(() -> {
+            runtime.evalScriptlet("Thread.current[:foo] = :bar");
+            otherThread.set(RubyThread.current(runtime.getThread()));
+
+            runtime.evalScriptlet("sleep(0.1)");
+            latch1.countDown();
+
+            runtime.evalScriptlet("sleep(0.1)");
+            try {
+                latch2.await(3, TimeUnit.SECONDS);
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+            }
+        });
+
+        thread.start();
+        latch1.await(3, TimeUnit.SECONDS);
+
+        IRubyObject local = otherThread.get().op_aref(runtime.getCurrentContext(), runtime.newSymbol("foo"));
+        assertEquals("bar", local.toString());
+
+        otherThread.get().clearLocalVariables();
+
+        local = otherThread.get().op_aref(runtime.getCurrentContext(), runtime.newSymbol("foo"));
+        assertSame(runtime.getNil(), local);
+        assertEquals(0, otherThread.get().keys().size());
+
+        latch2.countDown();
+    }
 }
