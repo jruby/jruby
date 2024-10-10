@@ -640,6 +640,19 @@ public final class DefaultMethodFactory extends MethodFactory {
                 buffer.putAddress(strategy.address(parameter));
 
             } else {
+                if (ArrayFlags.isOut(flags)) {
+                    if (parameter instanceof RubyString) {
+                        RubyString parameterStr = (RubyString) parameter;
+
+                        if (parameterStr.isFrozen()) {
+                            parameterStr = parameterStr.strDup(context.runtime);
+                        }
+
+                        // ensure string is modifiable
+                        parameterStr.modify();
+                    }
+                }
+
                 buffer.putArray(byte[].class.cast(strategy.object(parameter)), strategy.offset(parameter), strategy.length(parameter),
                         flags);
             }
