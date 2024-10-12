@@ -10,11 +10,11 @@ project 'JRuby Integration Tests' do
 
   extension 'org.jruby.maven:mavengem-wagon:2.0.2'
 
-  repository :id => :mavengems, :url => 'mavengem:http://rubygems.org'
-  plugin_repository :id => :mavengems, :url => 'mavengem:http://rubygems.org'
+  repository id: :mavengems, url: 'mavengem:http://rubygems.org'
+  plugin_repository id: :mavengems, url: 'mavengem:http://rubygems.org'
 
-  plugin_repository( :url => 'https://oss.sonatype.org/content/repositories/snapshots/',
-                     :id => 'sonatype' ) do
+  plugin_repository( url: 'https://oss.sonatype.org/content/repositories/snapshots/',
+                     id: 'sonatype' ) do
     releases 'false'
     snapshots 'true'
   end
@@ -34,8 +34,8 @@ project 'JRuby Integration Tests' do
     jar 'org.apache.ant:ant:${ant.version}'
   end
   jar( 'org.jruby:requireTest:1.0',
-       :scope => 'system',
-       :systemPath => '${project.basedir}/jruby/requireTest-1.0.jar' )
+       scope: 'system',
+       systemPath: '${project.basedir}/jruby/requireTest-1.0.jar' )
 
   overrides do
     plugin( 'org.eclipse.m2e:lifecycle-mapping:1.0.0',
@@ -53,7 +53,7 @@ project 'JRuby Integration Tests' do
   end
 
   jruby_plugin :gem, '${jruby.plugins.version}' do
-    options = { :phase => 'initialize',
+    options = { phase: 'initialize',
       'gemPath' => '${gem.home}',
       'gemHome' => '${gem.home}',
       'binDirectory' => '${jruby.home}/bin',
@@ -74,8 +74,8 @@ project 'JRuby Integration Tests' do
           'target' =>  '${base.java.version}' )
   plugin :dependency do
     execute_goals( 'copy',
-                   :id => 'copy jars for testing',
-                   :phase => 'process-classes',
+                   id: 'copy jars for testing',
+                   phase: 'process-classes',
                    'artifactItems' => [ { 'groupId' =>  'junit',
                                           'artifactId' =>  'junit',
                                           'version' =>  '4.11',
@@ -114,16 +114,16 @@ project 'JRuby Integration Tests' do
 
     plugin :antrun do
       execute_goals( 'run',
-                     :id => 'rake',
-                     :phase => 'test',
-                     :configuration => [ xml( '<target><exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true"><env key="JRUBY_OPTS" value=""/><arg value="-S"/><arg value="rake"/><arg value="${task}"/></exec></target>' ) ] )
+                     id: 'rake',
+                     phase: 'test',
+                     configuration: [ xml( '<target><exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true"><env key="JRUBY_OPTS" value=""/><arg value="-S"/><arg value="rake"/><arg value="${task}"/></exec></target>' ) ] )
     end
 
   end
 
   profile 'jruby_complete_jar_extended' do
 
-    jar 'org.jruby:jruby-complete', '${project.version}', :scope => :provided
+    jar 'org.jruby:jruby-complete', '${project.version}', scope: :provided
 
     plugin :antrun do
       [ 'jruby', 'objectspace', 'slow' ].each do |index|
@@ -149,9 +149,9 @@ project 'JRuby Integration Tests' do
         end
 
         execute_goals( 'run',
-                       :id => "jruby_complete_jar_#{index}",
-                       :phase => 'test',
-                       :configuration => [
+                       id: "jruby_complete_jar_#{index}",
+                       phase: 'test',
+                       configuration: [
                          xml( "<target unless='maven.test.skip'>" +
                                 "<exec dir='${jruby.home}' executable='java' failonerror='true'>" +
                                   add_opens.map { |value| "<arg value='--add-opens'/><arg value='#{value}'/>" }.join +

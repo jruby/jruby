@@ -45,8 +45,8 @@ project 'JRuby Benchmark' do
 
   plugin :shade do
     execute_goals('shade',
-                  :id => 'create jruby-benchmark.jar',
-                  :phase => 'package',
+                  id: 'create jruby-benchmark.jar',
+                  phase: 'package',
                   'outputFile' => '${project.build.directory}/jruby-benchmark.jar',
                   'transformers' => [{ '@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
                                        'mainClass' => 'org.openjdk.jmh.Main' }]
