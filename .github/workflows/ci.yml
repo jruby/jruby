@@ -82,7 +82,7 @@ jobs:
       - name: rake test:jruby
         run: bin/jruby --dev -S rake test:jruby
 
-  rake-test-17-indy:
+  rake-test-17-indy-off:
     runs-on: ubuntu-latest
 
     strategy:
@@ -91,10 +91,10 @@ jobs:
         java-version: ['17', '21']
       fail-fast: false
 
-    name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }} +indy)
+    name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }} -indy)
 
     env:
-      JRUBY_OPTS: '-Xcompile.invokedynamic -X+C -Xjit.threshold=0'
+      JRUBY_OPTS: '-Xcompile.invokedynamic=false -X+C -Xjit.threshold=0'
 
     steps:
       - name: Bootstrap build
@@ -419,7 +419,7 @@ jobs:
     permissions:
       contents: none
     if: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/heads/jruby-9.5' }}
-    needs: [mvn-test, mvn-test-extended, mvn-test-windows, dependency-check, rake-test, rake-test-17-indy, rake-test-17, test-versions, sequel, concurrent-ruby, jruby-tests-dev, regression-specs-jit]
+    needs: [mvn-test, mvn-test-extended, mvn-test-windows, dependency-check, rake-test, rake-test-17-indy-off, rake-test-17, test-versions, sequel, concurrent-ruby, jruby-tests-dev, regression-specs-jit]
     uses: jruby/jruby/.github/workflows/snapshot-publish.yml@6cd0d4d96d9406635183d81cf91acc82cd78245f
     secrets:
       SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
