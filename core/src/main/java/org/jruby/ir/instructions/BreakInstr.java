@@ -47,7 +47,7 @@ public class BreakInstr extends OneOperandInstr implements FixedArityInstr {
     @Override
     public boolean computeScopeFlags(IRScope scope, EnumSet<IRFlags> flags) {
         scope.setHasBreakInstructions();
-        flags.add(IRFlags.REQUIRES_DYNSCOPE);
+//        flags.add(IRFlags.REQUIRES_DYNSCOPE);
         return true;
     }
 
