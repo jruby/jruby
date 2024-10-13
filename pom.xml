@@ -105,7 +105,7 @@ DO NOT MODIFY - GENERATED CODE
   </distributionManagement>
   <properties>
     <ant.version>1.9.8</ant.version>
-    <asm.version>9.6</asm.version>
+    <asm.version>9.7.1</asm.version>
     <base.java.version>17</base.java.version>
     <base.javac.version>17</base.javac.version>
     <github.global.server>github</github.global.server>
