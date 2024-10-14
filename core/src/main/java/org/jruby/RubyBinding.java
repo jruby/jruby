@@ -158,7 +158,7 @@ public class RubyBinding extends RubyObject {
         DynamicScope evalScope = binding.getEvalScope(context.runtime);
         int slot = evalScope.getStaticScope().isDefined(id);
 
-        if (slot == -1) throw context.runtime.newNameError(str(context.runtime, "local variable `", symbol, "' not defined for " + inspect()), symbol);
+        if (slot == -1) throw context.runtime.newNameError(str(context.runtime, "local variable '", symbol, "' not defined for " + inspect()), symbol);
 
         return evalScope.getValueOrNil(slot & 0xffff, slot >> 16, context.nil);
     }
@@ -182,7 +182,7 @@ public class RubyBinding extends RubyObject {
         String id = RubySymbol.checkID(obj);
 
         if (!RubyLexer.isIdentifierChar(id.charAt(0))) {
-            throw context.runtime.newNameError(str(context.runtime, "wrong local variable name `", obj, "' for ", this), id);
+            throw context.runtime.newNameError(str(context.runtime, "wrong local variable name '", obj, "' for ", this), id);
         }
 
         return id;

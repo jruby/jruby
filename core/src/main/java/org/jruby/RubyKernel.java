@@ -240,16 +240,16 @@ public class RubyKernel {
 
     private static String getMethodMissingFormat(Visibility visibility, CallType callType) {
 
-        String format = "undefined method `%s' for %s%s%s";
+        String format = "undefined method '%s' for %s%s%s";
 
         if (visibility == PRIVATE) {
-            format = "private method `%s' called for %s%s%s";
+            format = "private method '%s' called for %s%s%s";
         } else if (visibility == PROTECTED) {
-            format = "protected method `%s' called for %s%s%s";
+            format = "protected method '%s' called for %s%s%s";
         } else if (callType == CallType.VARIABLE) {
-            format = "undefined local variable or method `%s' for %s%s%s";
+            format = "undefined local variable or method '%s' for %s%s%s";
         } else if (callType == CallType.SUPER) {
-            format = "super: no superclass method `%s' for %s%s%s";
+            format = "super: no superclass method '%s' for %s%s%s";
         }
 
         return format;
@@ -1153,7 +1153,7 @@ public class RubyKernel {
         RubyStackTraceElement[] elements = rEx.getBacktraceElements();
         RubyStackTraceElement firstElement = elements.length > 0 ? elements[0] :
                 new RubyStackTraceElement("", "", "(empty)", 0, false);
-        String msg = String.format("Exception `%s' at %s:%s - %s\n",
+        String msg = String.format("Exception '%s' at %s:%s - %s\n",
                 rEx.getMetaClass(),
                 firstElement.getFileName(), firstElement.getLineNumber(),
                 TypeConverter.convertToType(rEx, runtime.getString(), "to_s"));

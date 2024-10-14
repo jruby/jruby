@@ -460,7 +460,7 @@ public class RubyLexer extends LexingCommon {
     @Override
     protected void setCompileOptionFlag(String name, ByteList value) {
         if (tokenSeen) {
-            warning("`%s' is ignored after any tokens", name);
+            warning("'%s' is ignored after any tokens", name);
             return;
         }
     }

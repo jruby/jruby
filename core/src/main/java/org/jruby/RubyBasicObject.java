@@ -2405,7 +2405,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
                 return newMethod;
             }
         }
-        throw getRuntime().newNameError(str(getRuntime(), "undefined method `", symbol,  "' for `", inspect(), "'"), symbol);
+        throw getRuntime().newNameError(str(getRuntime(), "undefined method '", symbol,  "' for '", inspect(), "'"), symbol);
     }
 
     /** rb_obj_method
@@ -2850,7 +2850,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     protected String validateInstanceVariable(String name) {
         if (IdUtil.isValidInstanceVariableName(name)) return name;
 
-        throw getRuntime().newNameError("`%1$s' is not allowable as an instance variable name", this, name);
+        throw getRuntime().newNameError("'%1$s' is not allowable as an instance variable name", this, name);
     }
 
     @Deprecated
@@ -2861,7 +2861,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     protected String validateInstanceVariable(IRubyObject name) {
         return RubySymbol.retrieveIDSymbol(name, (sym, newSym) -> {
             if (!sym.validInstanceVariableName()) {
-                throw getRuntime().newNameError("`%1$s' is not allowable as an instance variable name", this, name);
+                throw getRuntime().newNameError("'%1$s' is not allowable as an instance variable name", this, name);
             }
         }).idString();
     }
