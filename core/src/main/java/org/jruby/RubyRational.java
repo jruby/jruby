@@ -1159,7 +1159,7 @@ public class RubyRational extends RubyNumeric {
     public IRubyObject roundCommon(ThreadContext context, final IRubyObject n, RoundingMode mode) {
         // case : precision arg is not given
         if (n == null) return doRound(context, mode);
-        if (!(n instanceof RubyInteger)) typeError(context, "not an integer");
+        if (!(n instanceof RubyInteger)) throw typeError(context, "not an integer");
 
         final int nsign = ((RubyInteger) n).signum();
 

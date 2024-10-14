@@ -165,7 +165,7 @@ public class RubyObjectSpace {
         if (args.length == 0) {
             rubyClass = runtime.getObject();
         } else {
-            if (!(args[0] instanceof RubyModule)) runtime.newArgumentError("class or module required");
+            if (!(args[0] instanceof RubyModule)) throw runtime.newArgumentError("class or module required");
             rubyClass = (RubyModule) args[0];
         }
         if (rubyClass == runtime.getClassClass() || rubyClass == runtime.getModule()) {

@@ -94,7 +94,7 @@ public class RubyEtc {
     
     private static void definePasswdStruct(Ruby runtime) {
         IRubyObject[] args = new IRubyObject[] {
-                runtime.newString("Passwd"),
+                runtime.getNil(),
                 runtime.newSymbol("name"),
                 runtime.newSymbol("passwd"),
                 runtime.newSymbol("uid"),
@@ -113,7 +113,7 @@ public class RubyEtc {
 
     private static void defineGroupStruct(Ruby runtime) {
         IRubyObject[] args = new IRubyObject[] {
-                runtime.newString("Group"),
+                runtime.getNil(),
                 runtime.newSymbol("name"),
                 runtime.newSymbol("passwd"),
                 runtime.newSymbol("gid"),
