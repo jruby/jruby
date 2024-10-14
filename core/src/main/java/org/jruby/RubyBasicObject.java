@@ -1607,7 +1607,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * Will throw a suitable exception in that case.
      */
     public void ensureInstanceVariablesSettable() {
-        checkFrozen();
+        if (isFrozen()) {
+            raiseFrozenError();
+        }
     }
 
     @Override
