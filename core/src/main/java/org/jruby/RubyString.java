@@ -451,6 +451,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         flags |= cr;
     }
 
+    protected RubyString(Ruby runtime, RubyClass rubyClass, ByteList value, int cr, boolean objectspace) {
+        this(runtime, rubyClass, value, objectspace);
+        flags |= cr;
+    }
+
     // Deprecated String construction routines
 
     @Deprecated
@@ -1095,7 +1100,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         private final int line;
 
         protected DebugFrozenString(Ruby runtime, RubyClass rubyClass, ByteList value, int cr, String file, int line) {
-            super(runtime, rubyClass, value, cr);
+            super(runtime, rubyClass, value, cr, false);
 
             this.file = file;
             this.line = line;
@@ -1132,7 +1137,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         private IRubyObject converted;
 
         protected FString(Ruby runtime, RubyClass rubyClass, ByteList value, int cr) {
-            super(runtime, rubyClass, value, cr);
+            super(runtime, rubyClass, value, cr, false);
 
             // set flag for code that does not use isFrozen
             setFrozen(true);
