@@ -404,7 +404,7 @@ public class RubyKernel {
             IRubyObject exObj = ArgsUtil.extractKeywordArg(context,  opts, "exception");
 
             if (exObj != context.tru && exObj != context.fals) {
-                throw context.runtime.newArgumentError("`" + rubyClass.getName() + "': expected true or false as exception: " + exObj);
+                throw context.runtime.newArgumentError("'" + rubyClass.getName() + "': expected true or false as exception: " + exObj);
             }
             exception = exObj.isTrue();
         }

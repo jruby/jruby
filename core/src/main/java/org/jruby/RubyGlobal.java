@@ -419,7 +419,7 @@ public class RubyGlobal {
     }
 
     private static void warnDeprecatedGlobal(final Ruby runtime, final String name) {
-        runtime.getWarnings().warnDeprecated(ID.MISCELLANEOUS, "`" + name + "' is deprecated");
+        runtime.getWarnings().warnDeprecated(ID.MISCELLANEOUS, "'" + name + "' is deprecated");
     }
 
     /**

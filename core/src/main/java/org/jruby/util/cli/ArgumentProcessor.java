@@ -475,7 +475,7 @@ public class ArgumentProcessor {
                                 continue;
                             }
 
-                            config.getError().println("warning: unknown argument for --debug: `" + debug + "'");
+                            config.getError().println("warning: unknown argument for --debug: '" + debug + "'");
                         }
                         break FOR;
                     } else if (argument.startsWith("--encoding")) {
@@ -671,7 +671,7 @@ public class ArgumentProcessor {
         BiFunction<ArgumentProcessor, Boolean, Void> feature = FEATURES.get(name);
 
         if (feature == null) {
-            config.getError().println("warning: unknown argument for --" + (enable ? "enable" : "disable") + ": `" + name + "'");
+            config.getError().println("warning: unknown argument for --" + (enable ? "enable" : "disable") + ": '" + name + "'");
         } else {
             feature.apply(this, enable);
         }

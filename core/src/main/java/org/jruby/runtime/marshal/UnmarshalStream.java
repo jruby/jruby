@@ -329,7 +329,7 @@ public class UnmarshalStream extends InputStream {
 
     public void prohibitIVar(MarshalState state, String label, String name) {
         if (state != null && state.isIvarWaiting()) {
-            throw typeError(runtime.getCurrentContext(), "can't override instance variable of " + label + "`" + name + "'");
+            throw typeError(runtime.getCurrentContext(), "can't override instance variable of " + label + "'" + name + "'");
         }
     }
 

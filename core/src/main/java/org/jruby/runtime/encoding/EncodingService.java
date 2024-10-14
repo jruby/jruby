@@ -420,7 +420,7 @@ public final class EncodingService {
         try {
             return EncodingUtils.charsetForEncoding(encoding);
         } catch (UnsupportedCharsetException uce) {
-            throw runtime.newEncodingCompatibilityError("no java.nio.charset.Charset found for encoding `" + encoding.toString() + "'");
+            throw runtime.newEncodingCompatibilityError("no java.nio.charset.Charset found for encoding '" + encoding.toString() + "'");
         }
     }
 

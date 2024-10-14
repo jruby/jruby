@@ -1570,7 +1570,7 @@ public class RubyLexer extends LexingCommon {
             try {
                 Integer.parseInt(refAsString.substring(1).intern());
             } catch (NumberFormatException e) {
-                warn("`" + refAsString + "' is too big for a number variable, always nil");
+                warn("'" + refAsString + "' is too big for a number variable, always nil");
             }
 
             identValue = createTokenString().intern();
@@ -1675,7 +1675,7 @@ public class RubyLexer extends LexingCommon {
     private int identifier(int c, boolean commandState) {
         if (!isIdentifierChar(c)) {
             String badChar = "\\" + Integer.toOctalString(c & 0xff);
-            compile_error("Invalid char `" + badChar + "' ('" + (char) c + "') in expression");
+            compile_error("Invalid char '" + badChar + "' ('" + (char) c + "') in expression");
         }
         // FIXME: on_kw: will return BOM as part of the ident string "\xfeffclass" on MRI and Yard also seems
         // to need this to properly parse.  So I record where token should really start so I can extract as

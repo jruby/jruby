@@ -98,7 +98,7 @@ public class ClassExtensionLibrary implements Library {
                 continue;
             } catch (UnsupportedClassVersionError ucve) {
                 if (runtime.isDebug()) ucve.printStackTrace();
-                throw runtime.newLoadError("JRuby ext built for wrong Java version in `" + className + "': " + ucve, className);
+                throw runtime.newLoadError("JRuby ext built for wrong Java version in '" + className + "': " + ucve, className);
             }
         }
 

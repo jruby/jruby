@@ -418,7 +418,7 @@ public class JavaInterfaceTemplate {
                     }
                 }
                 // did not continue (main) loop - passed method name not found in interface
-                runtime.getWarnings().warn("`" + name + "' is not a declared method in interface " + ifaceClass.getName());
+                runtime.getWarnings().warn("'" + name + "' is not a declared method in interface " + ifaceClass.getName());
             }
         }
 

@@ -1552,7 +1552,7 @@ public class RubyProcess {
         String signalName = value.startsWith("SIG") ? value.substring(3) : value;
         int signalValue = (int) RubySignal.signm2signo(signalName);
 
-        if (signalValue == 0) throw runtime.newArgumentError("unsupported name `" + signalName + "'");
+        if (signalValue == 0) throw runtime.newArgumentError("unsupported name '" + signalName + "'");
 
         return negative ? -signalValue : signalValue;
     }

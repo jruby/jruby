@@ -266,7 +266,7 @@ public class JavaPackage extends RubyModule {
         final String method, final int argsLength) {
         String packageName = ((JavaPackage) pkg).packageName;
         return runtime.newArgumentError(
-                "Java package '" + packageName + "' does not have a method `" +
+                "Java package '" + packageName + "' does not have a method '" +
                         method + "' with " + argsLength + (argsLength == 1 ? " argument" : " arguments")
         );
     }

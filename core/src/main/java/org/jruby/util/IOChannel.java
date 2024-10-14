@@ -164,7 +164,7 @@ public abstract class IOChannel implements Channel {
         if(io.respondsTo(readMethod)) {
             return new FunctionalCachingCallSite(readMethod);
         } else {
-            throw new IllegalArgumentException(io.getMetaClass() + "not coercible to " + getClass().getSimpleName() + ": no `" + readMethod + "' method");
+            throw new IllegalArgumentException(io.getMetaClass() + "not coercible to " + getClass().getSimpleName() + ": no '" + readMethod + "' method");
         }
     }
 

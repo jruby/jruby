@@ -150,7 +150,7 @@ public class RubyLexer extends LexingCommon {
     }
     
     protected void ambiguousOperator(String op, String syn) {
-        warning(ID.AMBIGUOUS_ARGUMENT, "`" + op + "' after local variable or literal is interpreted as binary operator");
+        warning(ID.AMBIGUOUS_ARGUMENT, "'" + op + "' after local variable or literal is interpreted as binary operator");
         warning(ID.AMBIGUOUS_ARGUMENT, "even though it seems like " + syn);
     }
 
@@ -530,7 +530,7 @@ public class RubyLexer extends LexingCommon {
     @Override
     protected void setCompileOptionFlag(String name, ByteList value) {
         if (tokenSeen) {
-            warnings.warn(ID.ACCESSOR_MODULE_FUNCTION, "`" + name + "' is ignored after any tokens");
+            warnings.warn(ID.ACCESSOR_MODULE_FUNCTION, "'" + name + "' is ignored after any tokens");
             return;
         }
 
@@ -855,7 +855,7 @@ public class RubyLexer extends LexingCommon {
             if (c == '/') {
                 warning(ID.AMBIGUOUS_ARGUMENT, "ambiguity between regexp and two divisions: wrap regexp in parentheses or add a space after `/' operator");
             } else {
-                warning(ID.AMBIGUOUS_ARGUMENT, "ambiguous first argument; put parentheses or a space even after `" + (char) c + "' operator");
+                warning(ID.AMBIGUOUS_ARGUMENT, "ambiguous first argument; put parentheses or a space even after '" + (char) c + "' operator");
             }
         }
         return true;
@@ -1488,7 +1488,7 @@ public class RubyLexer extends LexingCommon {
             try {
                 ref = Integer.parseInt(refAsString.substring(1));
             } catch (NumberFormatException e) {
-                warn(ID.AMBIGUOUS_ARGUMENT, "`" + refAsString + "' is too big for a number variable, always nil");
+                warn(ID.AMBIGUOUS_ARGUMENT, "'" + refAsString + "' is too big for a number variable, always nil");
                 ref = 0;
             }
 

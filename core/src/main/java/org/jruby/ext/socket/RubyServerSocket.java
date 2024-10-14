@@ -132,7 +132,7 @@ public class RubyServerSocket extends RubySocket {
                 channel = ServerSocketChannel.open();
             }
             else {
-                throw runtime.newArgumentError("unsupported server socket type `" + soType + "'");
+                throw runtime.newArgumentError("unsupported server socket type '" + soType + "'");
             }
 
             return newChannelFD(runtime, channel);
