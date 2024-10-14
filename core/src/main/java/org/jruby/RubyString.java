@@ -986,7 +986,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     private void mutateChilledString() {
         getRuntime().getWarnings().warn("literal string will be frozen in the future");
-        setFrozen(false);
         flags &= ~CHILLED_F;
     }
 
@@ -1314,7 +1313,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "+@") // +'foo' returns modifiable string
     public final IRubyObject plus_at() {
-        return isFrozen() ? this.dup() : this;
+        return isFrozen() | isChilled() ? this.dup() : this;
     }
 
     @Deprecated
@@ -6797,7 +6796,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     public RubyString chill() {
         flags |= CHILLED_F;
-        setFrozen(true);
         return this;
     }
 
