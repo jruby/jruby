@@ -984,6 +984,16 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         }
     }
 
+    @Override
+    public void checkFrozen() {
+        frozenCheck();
+    }
+
+    @Override
+    public final void ensureInstanceVariablesSettable() {
+        frozenCheck();
+    }
+
     private void mutateChilledString() {
         getRuntime().getWarnings().warn("literal string will be frozen in the future");
         flags &= ~CHILLED_F;
