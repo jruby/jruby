@@ -18,6 +18,7 @@ import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.Bignum;
 import org.jruby.ir.operands.BuiltinClass;
+import org.jruby.ir.operands.ChilledString;
 import org.jruby.ir.operands.ClosureLocalVariable;
 import org.jruby.ir.operands.Complex;
 import org.jruby.ir.operands.CurrentScope;
@@ -309,6 +310,7 @@ public class IRDumper extends IRVisitor {
     public void Boolean(org.jruby.ir.operands.Boolean bool) { print(bool.isTrue() ? "t" : "f"); }
     public void BuiltinClass(BuiltinClass builtinClass) { } // FIXME: need to print enum
     public void UnboxedBoolean(UnboxedBoolean bool) { print(bool.isTrue() ? "t" : "f"); }
+    public void ChilledString(ChilledString chilled) { print(chilled.getByteList()); }
     public void ClosureLocalVariable(ClosureLocalVariable closurelocalvariable) { LocalVariable(closurelocalvariable); }
     public void CurrentScope(CurrentScope currentscope) { }
     public void Complex(Complex complex) { visit(complex.getNumber()); }
