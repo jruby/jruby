@@ -487,11 +487,14 @@ end
 class Enumerator::Product < Enumerator
   def initialize(*enums, **nil)
     @__enums = enums
+    self
   end
 
   def each(&block)
-    return self unless block
-    __execute(block, [], @__enums)
+    if block
+      __execute(block, [], @__enums)
+    end
+    self
   end
 
   def __execute(block, values, enums)
@@ -523,6 +526,22 @@ class Enumerator::Product < Enumerator
     @__enums.each do |enum|
       enum.rewind if enum.respond_to?(:rewind)
     end
+    self
+  end
+
+  private def initialize_copy(other)
+    return self if self.equal?(other)
+
+    raise TypeError if !(Product === other)
+
+    super(other)
+
+    other_enums = other.instance_variable_get(:@__enums)
+
+    raise ArgumentError.new("uninitialized product") unless other_enums
+
+    @__enums = other_enums
+
     self
   end
 end
