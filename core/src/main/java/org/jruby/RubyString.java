@@ -451,6 +451,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         flags |= cr;
     }
 
+    protected RubyString(Ruby runtime, RubyClass rubyClass, ByteList value, int cr, boolean objectspace) {
+        this(runtime, rubyClass, value, objectspace);
+        flags |= cr;
+    }
+
     // Deprecated String construction routines
 
     @Deprecated
@@ -536,7 +541,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     public static RubyString newChilledString(Ruby runtime, ByteList bytes, int coderange) {
-        return newString(runtime, bytes, coderange).chill();
+        return newStringShared(runtime, bytes, coderange).chill();
     }
 
     public static RubyString newString(Ruby runtime, ByteList bytes, Encoding encoding) {
@@ -984,9 +989,18 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         }
     }
 
+    @Override
+    public void checkFrozen() {
+        frozenCheck();
+    }
+
+    @Override
+    public final void ensureInstanceVariablesSettable() {
+        frozenCheck();
+    }
+
     private void mutateChilledString() {
         getRuntime().getWarnings().warn("literal string will be frozen in the future");
-        setFrozen(false);
         flags &= ~CHILLED_F;
     }
 
@@ -1086,7 +1100,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         private final int line;
 
         protected DebugFrozenString(Ruby runtime, RubyClass rubyClass, ByteList value, int cr, String file, int line) {
-            super(runtime, rubyClass, value, cr);
+            super(runtime, rubyClass, value, cr, false);
 
             this.file = file;
             this.line = line;
@@ -1123,7 +1137,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         private IRubyObject converted;
 
         protected FString(Ruby runtime, RubyClass rubyClass, ByteList value, int cr) {
-            super(runtime, rubyClass, value, cr);
+            super(runtime, rubyClass, value, cr, false);
 
             // set flag for code that does not use isFrozen
             setFrozen(true);
@@ -1314,7 +1328,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "+@") // +'foo' returns modifiable string
     public final IRubyObject plus_at() {
-        return isFrozen() ? this.dup() : this;
+        return isFrozen() | isChilled() ? this.dup() : this;
     }
 
     @Deprecated
@@ -6797,7 +6811,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     public RubyString chill() {
         flags |= CHILLED_F;
-        setFrozen(true);
         return this;
     }
 

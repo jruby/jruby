@@ -1606,13 +1606,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * including information about whether this object is frozen.
      * Will throw a suitable exception in that case.
      */
-    public final void ensureInstanceVariablesSettable() {
-        if (!isFrozen()) {
-            return;
-        } else if (this instanceof RubyString string) {
-            // We put this second to reduce overhead since most objects will not be frozen and we do not want this instanceof all the time.
-            string.frozenCheck();
-        } else {
+    public void ensureInstanceVariablesSettable() {
+        if (isFrozen()) {
             raiseFrozenError();
         }
     }

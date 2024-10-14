@@ -80,7 +80,7 @@ public class StringBootstrap {
     private static final MethodHandle CSTRING_HANDLE =
             Binder
                     .from(RubyString.class, ThreadContext.class, ByteList.class, int.class)
-                    .invokeStaticQuiet(LOOKUP, StringBootstrap.class, "string");
+                    .invokeStaticQuiet(LOOKUP, StringBootstrap.class, "chilledString");
 
     private static final MethodHandle FSTRING_HANDLE =
             Binder
@@ -134,6 +134,10 @@ public class StringBootstrap {
 
     public static RubyString string(ThreadContext context, ByteList value, int cr) {
         return RubyString.newStringShared(context.runtime, value, cr);
+    }
+
+    public static RubyString chilledString(ThreadContext context, ByteList value, int cr) {
+        return RubyString.newChilledString(context.runtime, value, cr);
     }
 
     public static RubyString bufferString(ThreadContext context, Encoding encoding, int size, int cr) {
