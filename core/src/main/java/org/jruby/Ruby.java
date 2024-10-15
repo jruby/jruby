@@ -1476,7 +1476,7 @@ public final class Ruby implements Constantizable {
         if (superClass == null) {
             IRubyObject className = parentIsObject ? ids(this, id) :
                     parent.toRubyString(getCurrentContext()).append(newString("::")).append(ids(this, id));
-            warnings.warn(ID.NO_SUPER_CLASS, str(this, "no super class for `", className, "', Object assumed"));
+            warnings.warn(ID.NO_SUPER_CLASS, str(this, "no super class for '", className, "', Object assumed"));
 
             superClass = objectClass;
         }

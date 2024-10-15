@@ -451,14 +451,14 @@ public class RubySocket extends RubyBasicSocket {
                         channel = SocketChannel.open();
                     }
                     else {
-                        throw runtime.newArgumentError("unsupported protocol family `" + soProtocolFamily + "'");
+                        throw runtime.newArgumentError("unsupported protocol family '" + soProtocolFamily + "'");
                     }
                     break;
                 case SOCK_DGRAM:
                     channel = DatagramChannel.open();
                     break;
                 default:
-                    throw runtime.newArgumentError("unsupported socket type `" + soType + "'");
+                    throw runtime.newArgumentError("unsupported socket type '" + soType + "'");
             }
 
             return newChannelFD(runtime, channel);
@@ -677,7 +677,7 @@ public class RubySocket extends RubyBasicSocket {
                 return Sockaddr.addressFromSockaddr_in(context, arg);
 
             default:
-                throw context.runtime.newArgumentError("unsupported protocol family `" + soProtocolFamily + "'");
+                throw context.runtime.newArgumentError("unsupported protocol family '" + soProtocolFamily + "'");
         }
     }
 

@@ -83,7 +83,7 @@ describe "java package" do
     begin
       javax.script(1)
     rescue ArgumentError => e
-      expect( e.message ).to eql "Java package 'javax' does not have a method `script' with 1 argument"
+      expect( e.message ).to eql "Java package 'javax' does not have a method 'script' with 1 argument"
     else; fail 'error not raised' end
   end
 

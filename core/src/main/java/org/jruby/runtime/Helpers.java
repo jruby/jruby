@@ -2196,7 +2196,7 @@ public class Helpers {
         switch(symbol.idString()) {
             case "__id__":
             case "__send__":
-                runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, str(runtime, "redefining `", ids(runtime, symbol), "' may cause serious problem"));
+                runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, str(runtime, "redefining '", ids(runtime, symbol), "' may cause serious problem"));
                 break;
             case "initialize":
                 if (clazz == runtime.getObject()) {

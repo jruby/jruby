@@ -1488,7 +1488,7 @@ public class RubyModule extends RubyObject {
 
         testFrozen("module");
         if (name.equals("__send__") || name.equals("object_id") || name.equals("initialize")) {
-            runtime.getWarnings().warn(ID.UNDEFINING_BAD, "undefining `"+ name +"' may cause serious problems");
+            runtime.getWarnings().warn(ID.UNDEFINING_BAD, "undefining '"+ name +"' may cause serious problems");
         }
 
         if (name.equals("method_missing")) {
@@ -1531,7 +1531,7 @@ public class RubyModule extends RubyObject {
         }
 
         // FIXME: Since we found no method we probably do not have symbol entry...do not want to pollute symbol table here.
-        throw runtime.newNameError(str(runtime, "undefined method `" + name + "' for" + s0 + " `", c, "'"), name);
+        throw runtime.newNameError(str(runtime, "undefined method '" + name + "' for" + s0 + " '", c, "'"), name);
     }
 
     @JRubyMethod(name = "include?")
@@ -1653,7 +1653,7 @@ public class RubyModule extends RubyObject {
 
     private static void warnMethodRemoval(final ThreadContext context, final String id) {
         context.runtime.getWarnings().warn(ID.UNDEFINING_BAD,
-                str(context.runtime, "removing `", ids(context.runtime, id), "' may cause serious problems"));
+                str(context.runtime, "removing '", ids(context.runtime, id), "' may cause serious problems"));
     }
 
     /**
@@ -2454,7 +2454,7 @@ public class RubyModule extends RubyObject {
     }
 
     public static String undefinedMethodMessage(Ruby runtime, IRubyObject name, IRubyObject modName, boolean isModule) {
-        return str(runtime, "undefined method `", name, "' for " + (isModule ? "module" : "class") + " `", modName, "'");
+        return str(runtime, "undefined method '", name, "' for " + (isModule ? "module" : "class") + " '", modName, "'");
     }
 
     /**
@@ -2540,10 +2540,10 @@ public class RubyModule extends RubyObject {
                             entry.sourceModule,
                             entry.token);
                 } else {
-                    throw getRuntime().newNameError("undefined method `" + methodName + "' for class `" + getName() + '\'', methodName);
+                    throw getRuntime().newNameError("undefined method '" + methodName + "' for class '" + getName() + '\'', methodName);
                 }
             } else {
-                throw getRuntime().newNameError("undefined method `" + methodName + "' for class `" + getName() + '\'', methodName);
+                throw getRuntime().newNameError("undefined method '" + methodName + "' for class '" + getName() + '\'', methodName);
             }
         }
 
@@ -4608,7 +4608,7 @@ public class RubyModule extends RubyObject {
         if (!isRefinement()) {
             String methodName = nameIsTarget ? "target" : "refined_class";
             String errMsg = RubyStringBuilder.str(context.runtime,
-                    "undefined method `"+ methodName +"' for ", rubyBaseName(),
+                    "undefined method '"+ methodName +"' for ", rubyBaseName(),
                     ":", getMetaClass());
             throw context.runtime.newNoMethodError(errMsg, this, "target", context.runtime.newEmptyArray());
         }
@@ -5406,21 +5406,21 @@ public class RubyModule extends RubyObject {
         if (IdUtil.isValidClassVariableName(name)) {
             return name;
         }
-        throw getRuntime().newNameError("`%1$s' is not allowed as a class variable name", this, name);
+        throw getRuntime().newNameError("'%1$s' is not allowed as a class variable name", this, name);
     }
 
     protected final String validateClassVariable(IRubyObject nameObj, String name) {
         if (IdUtil.isValidClassVariableName(name)) {
             return name;
         }
-        throw getRuntime().newNameError("`%1$s' is not allowed as a class variable name", this, nameObj);
+        throw getRuntime().newNameError("'%1$s' is not allowed as a class variable name", this, nameObj);
     }
 
     protected String validateClassVariable(Ruby runtime, IRubyObject object) {
         RubySymbol name = TypeConverter.checkID(object);
 
         if (!name.validClassVariableName()) {
-            throw getRuntime().newNameError(str(runtime, "`", ids(runtime, name), "' is not allowed as a class variable name"), this, object);
+            throw getRuntime().newNameError(str(runtime, "'", ids(runtime, name), "' is not allowed as a class variable name"), this, object);
         }
 
         return name.idString();

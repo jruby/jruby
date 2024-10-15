@@ -1330,7 +1330,7 @@ public class Java implements Library {
         final IRubyObject name = args[0];
         if ( args.length > 1 ) {
             final int count = args.length - 1;
-            throw context.runtime.newArgumentError("Java does not have a method `"+ name +"' with " + count + " arguments");
+            throw context.runtime.newArgumentError("Java does not have a method '"+ name +"' with " + count + " arguments");
         }
         return method_missing(context, self, name);
     }

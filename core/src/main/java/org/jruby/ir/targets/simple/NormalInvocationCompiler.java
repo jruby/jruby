@@ -70,7 +70,7 @@ public class NormalInvocationCompiler implements InvocationCompiler {
     public void invoke(String file, int lineNumber, String scopeFieldName, CallBase call, int arity) {
         String id = call.getId();
         if (arity > IRBytecodeAdapter.MAX_ARGUMENTS)
-            throw new NotCompilableException("call to `" + id + "' has more than " + IRBytecodeAdapter.MAX_ARGUMENTS + " arguments");
+            throw new NotCompilableException("call to '" + id + "' has more than " + IRBytecodeAdapter.MAX_ARGUMENTS + " arguments");
 
         MethodType incoming, outgoing;
         String incomingSig, outgoingSig;
@@ -355,7 +355,7 @@ public class NormalInvocationCompiler implements InvocationCompiler {
 
     public void invokeSelf(String file, String scopeFieldName, CallBase call, int arity) {
         if (arity > IRBytecodeAdapter.MAX_ARGUMENTS)
-            throw new NotCompilableException("call to `" + call.getId() + "' has more than " + IRBytecodeAdapter.MAX_ARGUMENTS + " arguments");
+            throw new NotCompilableException("call to '" + call.getId() + "' has more than " + IRBytecodeAdapter.MAX_ARGUMENTS + " arguments");
 
         invoke(file, compiler.getLastLine(), scopeFieldName, call, arity);
     }

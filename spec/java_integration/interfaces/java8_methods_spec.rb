@@ -209,7 +209,7 @@ describe "an interface" do
       impl = Java::Java8Interface.impl(:baz) { |*args| "#{args.inspect}-IMPL" }
       expect{ Java::Java8Interface.bar(impl) }.to raise_error(NoMethodError)
     end
-    expect( output.index("`baz' is not a declared method in interface") ).to_not be nil
+    expect( output.index("'baz' is not a declared method in interface") ).to_not be nil
   end
 
   it "does not consider Map vs func-type Consumer ambiguous" do

@@ -139,7 +139,7 @@ public class Module {
         try {
             return Java.setProxyClass(runtime, target, constant, javaClass);
         } catch (NameError e) {
-            String message = "cannot import Java class " + javaClass.getName() + " as `" + constant + "' : " + e.getException().getMessage();
+            String message = "cannot import Java class " + javaClass.getName() + " as '" + constant + "' : " + e.getException().getMessage();
             throw (RaiseException) runtime.newNameError(message, constant).initCause(e);
         }
     }
@@ -229,7 +229,7 @@ public class Module {
             try {
                 return Java.setProxyClass(runtime, (RubyModule) self, constName, foundClass);
             } catch (NameError e) {
-                String message = "cannot set Java class " + foundClass.getName() + " as `" + constant + "' : " + e.getException().getMessage();
+                String message = "cannot set Java class " + foundClass.getName() + " as '" + constant + "' : " + e.getException().getMessage();
                 throw runtime.newNameError(message, constant);
             }
         }

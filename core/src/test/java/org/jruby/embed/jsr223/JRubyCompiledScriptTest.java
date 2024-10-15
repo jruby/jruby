@@ -213,7 +213,7 @@ public class JRubyCompiledScriptTest extends BaseTest {
             fail("script expected to fail but returned: " + result);
         } catch (ScriptException e) {
             assertTrue(Objects.toString(e.getCause()), e.getCause() instanceof org.jruby.exceptions.NameError);
-            assertTrue(e.getCause().getMessage(), e.getCause().getMessage().contains("undefined local variable or method `sample_message'"));
+            assertTrue(e.getCause().getMessage(), e.getCause().getMessage().contains("undefined local variable or method 'sample_message'"));
         }
     }
 

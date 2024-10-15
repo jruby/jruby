@@ -98,7 +98,7 @@ public class RubyStackTraceElement implements java.io.Serializable {
 
     @Deprecated
     public final CharSequence mriStyleString() {
-        // return fileName + ':' + lineNumber + ":in `" + methodName + '\'';
+        // return fileName + ':' + lineNumber + ":in '" + methodName + '\'';
         return new StringBuilder(fileName.length() + methodName.length() + 12).
                 append(fileName).append(':').append(lineNumber).
                 append(":in `").append(methodName).append('\'');

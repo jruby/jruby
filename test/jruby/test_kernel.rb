@@ -285,25 +285,25 @@ class TestKernel < Test::Unit::TestCase
     # by Exception Class
     $stderr = StringIO.new
     raise StandardError rescue nil
-    tobe = "Exception `StandardError' at #{__FILE__}:#{__LINE__ - 1} - StandardError"
+    tobe = "Exception 'StandardError' at #{__FILE__}:#{__LINE__ - 1} - StandardError"
     assert_equal(tobe, $stderr.string.split("\n")[0])
 
     # by String
     $stderr.reopen
     raise "TEST_ME" rescue nil
-    tobe = "Exception `RuntimeError' at #{__FILE__}:#{__LINE__ - 1} - TEST_ME"
+    tobe = "Exception 'RuntimeError' at #{__FILE__}:#{__LINE__ - 1} - TEST_ME"
     assert_equal(tobe, $stderr.string.split("\n")[0])
 
     # by Exception
     $stderr.reopen
     raise RuntimeError.new("TEST_ME") rescue nil
-    tobe = "Exception `RuntimeError' at #{__FILE__}:#{__LINE__ - 1} - TEST_ME"
+    tobe = "Exception 'RuntimeError' at #{__FILE__}:#{__LINE__ - 1} - TEST_ME"
     assert_equal(tobe, $stderr.string.split("\n")[0])
 
     # by re-raise
     $stderr.reopen
     raise "TEST_ME" rescue raise rescue nil
-    tobe = "Exception `RuntimeError' at #{__FILE__}:#{__LINE__ - 1} - TEST_ME"
+    tobe = "Exception 'RuntimeError' at #{__FILE__}:#{__LINE__ - 1} - TEST_ME"
     traces = $stderr.string.split("\n")
     assert_equal(tobe, traces[0])
     assert_equal(tobe, traces[1])

@@ -642,13 +642,13 @@ public class LoadService {
                 service.basicLoad(runtime);
             } else {
                 // invalid type of library, raise error
-                throw runtime.newLoadError("library `" + libraryName + "' is not of type Library or BasicLibraryService", libraryName);
+                throw runtime.newLoadError("library '" + libraryName + "' is not of type Library or BasicLibraryService", libraryName);
             }
         } catch (RaiseException re) {
             throw re;
         } catch (Throwable e) {
             debugLoadException(runtime, e);
-            throw runtime.newLoadError("library `" + libraryName + "' could not be loaded: " + e, libraryName);
+            throw runtime.newLoadError("library '" + libraryName + "' could not be loaded: " + e, libraryName);
         }
     }
 
@@ -779,7 +779,7 @@ public class LoadService {
         String file = resource.getName();
         String location = loadName;
         if (file.endsWith(".so") || file.endsWith(".dll") || file.endsWith(".bundle")) {
-            throw runtime.newLoadError("C extensions are not supported, can't load `" + resource.getName() + "'", resource.getName());
+            throw runtime.newLoadError("C extensions are not supported, can't load '" + resource.getName() + "'", resource.getName());
         } else if (file.endsWith(".jar")) {
             return new JarredScript(resource, baseName);
         } else if (file.endsWith(".class")) {

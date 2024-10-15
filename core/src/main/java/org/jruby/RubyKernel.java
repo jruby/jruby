@@ -240,16 +240,16 @@ public class RubyKernel {
 
     private static String getMethodMissingFormat(Visibility visibility, CallType callType) {
 
-        String format = "undefined method `%s' for %s%s%s";
+        String format = "undefined method '%s' for %s%s%s";
 
         if (visibility == PRIVATE) {
-            format = "private method `%s' called for %s%s%s";
+            format = "private method '%s' called for %s%s%s";
         } else if (visibility == PROTECTED) {
-            format = "protected method `%s' called for %s%s%s";
+            format = "protected method '%s' called for %s%s%s";
         } else if (callType == CallType.VARIABLE) {
-            format = "undefined local variable or method `%s' for %s%s%s";
+            format = "undefined local variable or method '%s' for %s%s%s";
         } else if (callType == CallType.SUPER) {
-            format = "super: no superclass method `%s' for %s%s%s";
+            format = "super: no superclass method '%s' for %s%s%s";
         }
 
         return format;
@@ -404,7 +404,7 @@ public class RubyKernel {
             IRubyObject exObj = ArgsUtil.extractKeywordArg(context,  opts, "exception");
 
             if (exObj != context.tru && exObj != context.fals) {
-                throw context.runtime.newArgumentError("`" + rubyClass.getName() + "': expected true or false as exception: " + exObj);
+                throw context.runtime.newArgumentError("'" + rubyClass.getName() + "': expected true or false as exception: " + exObj);
             }
             exception = exObj.isTrue();
         }
@@ -1153,7 +1153,7 @@ public class RubyKernel {
         RubyStackTraceElement[] elements = rEx.getBacktraceElements();
         RubyStackTraceElement firstElement = elements.length > 0 ? elements[0] :
                 new RubyStackTraceElement("", "", "(empty)", 0, false);
-        String msg = String.format("Exception `%s' at %s:%s - %s\n",
+        String msg = String.format("Exception '%s' at %s:%s - %s\n",
                 rEx.getMetaClass(),
                 firstElement.getFileName(), firstElement.getLineNumber(),
                 TypeConverter.convertToType(rEx, runtime.getString(), "to_s"));
