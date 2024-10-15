@@ -1235,6 +1235,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private IRubyObject joinCommon(ThreadContext context, long timeoutMillis) {
         Ruby runtime = context.runtime;
         if (isCurrent()) {
+            RubyKernel.gets(context, this, IRubyObject.NULL_ARRAY);
             throw runtime.newThreadError("Target thread must not be current thread");
         }
 

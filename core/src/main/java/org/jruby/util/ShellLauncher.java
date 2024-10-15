@@ -41,6 +41,9 @@ import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.io.PrintStream;
+import java.lang.invoke.LambdaMetafactory;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
@@ -665,75 +668,99 @@ public class ShellLauncher {
     private static final PidGetter PID_GETTER;
 
     static {
-        PidGetter pidGetter;
+        PidGetter pidGetter = null;
 
+        // try Java 9+ pid access:
+        try {
+            Method pid = Process.class.getMethod("pid");
+            pidGetter = (PidGetter) LambdaMetafactory.altMetafactory(
+                            MethodHandles.lookup(),
+                            "getPid",
+                            MethodType.methodType(PidGetter.class),
+                            MethodType.methodType(long.class, Process.class),
+                            MethodHandles.lookup().unreflect(pid),
+                            MethodType.methodType(long.class, Process.class),
+                            0)
+                    .dynamicInvoker().invoke();
+        } catch (Throwable t) {
+            t.printStackTrace();
+            // fall through to other options
+        }
+
+        // try reflective access to process internals
         Class up = null;
         Field pid = null;
-        try {
-            up = Class.forName("java.lang.UNIXProcess");
-        } catch (ClassNotFoundException e) {
-            try {
-                // Renamed in 11 (or earlier)
-                up = Class.forName("java.lang.ProcessImpl");
-            } catch (ClassNotFoundException e2) {
-                // ignore and try windows version
-            }
-        }
-
-        if (up != null) {
-            try {
-                pid = up.getDeclaredField("pid");
-                if (!Java.trySetAccessible(pid)) pid = null;
-            } catch (NoSuchFieldException | SecurityException e) {
-                // ignore and try windows version
-            }
-        }
-        UNIXProcess = up;
-        UNIXProcess_pid = pid;
-
         Class pi = null;
         Field handle = null;
-        try {
-            pi = Class.forName("java.lang.ProcessImpl");
-            handle = pi.getDeclaredField("handle");
-            if (!Java.trySetAccessible(handle)) {
-                handle = null;
-            }
-        } catch (Exception e) {
-            // ignore and use hashcode
-        }
-
         Method pi_pid = null;
-        if (pi != null) {
+
+        if (pidGetter == null) {
             try {
-                pi_pid = pi.getMethod("pid");
-                if (!Java.trySetAccessible(pi_pid)) {
-                    pi_pid = null;
-                    if (handle == null) pi = null;
+                up = Class.forName("java.lang.UNIXProcess");
+            } catch (ClassNotFoundException e) {
+                try {
+                    // Renamed in 11 (or earlier)
+                    up = Class.forName("java.lang.ProcessImpl");
+                } catch (ClassNotFoundException e2) {
+                    // ignore and try windows version
+                }
+            }
+
+            if (up != null) {
+                try {
+                    pid = up.getDeclaredField("pid");
+                    if (!Java.trySetAccessible(pid)) pid = null;
+                } catch (NoSuchFieldException | SecurityException e) {
+                    // ignore and try windows version
+                }
+            }
+
+            try {
+                pi = Class.forName("java.lang.ProcessImpl");
+                handle = pi.getDeclaredField("handle");
+                if (!Java.trySetAccessible(handle)) {
+                    handle = null;
                 }
             } catch (Exception e) {
                 // ignore and use hashcode
             }
+
+            if (pi != null) {
+                try {
+                    pi_pid = pi.getMethod("pid");
+                    if (!Java.trySetAccessible(pi_pid)) {
+                        pi_pid = null;
+                        if (handle == null) pi = null;
+                    }
+                } catch (Exception e) {
+                    // ignore and use hashcode
+                }
+            }
+
+            if (pid != null) {
+                if (handle != null) {
+                    // try both
+                    pidGetter = ShellLauncher::getPidBoth;
+                } else {
+                    // just unix
+                    pidGetter = ShellLauncher::getPidUnix;
+                }
+            } else if (handle != null || pi_pid != null) {
+                // just windows
+                pidGetter = ShellLauncher::getPidWindows;
+            } else {
+                // neither - default PidGetter
+                pidGetter = Object::hashCode;
+            }
         }
+
+        UNIXProcess = up;
+        UNIXProcess_pid = pid;
+
         ProcessImpl = pi;
         ProcessImpl_handle = handle;
         ProcessImpl_pid = pi_pid;
 
-        if (UNIXProcess_pid != null) {
-            if (ProcessImpl_handle != null) {
-                // try both
-                pidGetter = ShellLauncher::getPidBoth;
-            } else {
-                // just unix
-                pidGetter = ShellLauncher::getPidUnix;
-            }
-        } else if (ProcessImpl_handle != null || ProcessImpl_pid != null) {
-            // just windows
-            pidGetter = ShellLauncher::getPidWindows;
-        } else {
-            // neither - default PidGetter
-            pidGetter = Object::hashCode;
-        }
         PID_GETTER = pidGetter;
     }
 
