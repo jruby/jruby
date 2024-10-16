@@ -1,7 +1,7 @@
 require_relative 'helper'
-require 'reline/ansi'
+require 'reline'
 
-class Reline::ANSI::TestWithTerminfo < Reline::TestCase
+class Reline::ANSI::WithTerminfoTest < Reline::TestCase
   def setup
     Reline.send(:test_mode, ansi: true)
     @config = Reline::Config.new
@@ -109,4 +109,4 @@ class Reline::ANSI::TestWithTerminfo < Reline::TestCase
     assert_key_binding("\e ", :em_set_mark, [:emacs])
     assert_key_binding("\C-x\C-x", :em_exchange_mark, [:emacs])
   end
-end if Reline::Terminfo.enabled?
+end if Reline::Terminfo.enabled? && Reline::Terminfo.term_supported?

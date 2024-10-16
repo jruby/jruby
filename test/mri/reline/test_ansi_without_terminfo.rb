@@ -1,7 +1,7 @@
 require_relative 'helper'
-require 'reline/ansi'
+require 'reline'
 
-class Reline::ANSI::TestWithoutTerminfo < Reline::TestCase
+class Reline::ANSI::WithoutTerminfoTest < Reline::TestCase
   def setup
     Reline.send(:test_mode, ansi: true)
     @config = Reline::Config.new
@@ -32,25 +32,21 @@ class Reline::ANSI::TestWithoutTerminfo < Reline::TestCase
 
   def test_up_arrow
     assert_key_binding("\e[A", :ed_prev_history) # Console (80x25)
-    assert_key_binding("\eGA", :ed_prev_history) # KDE
     assert_key_binding("\eOA", :ed_prev_history)
   end
 
   def test_down_arrow
     assert_key_binding("\e[B", :ed_next_history) # Console (80x25)
-    assert_key_binding("\eGB", :ed_next_history) # KDE
     assert_key_binding("\eOB", :ed_next_history)
   end
 
   def test_right_arrow
     assert_key_binding("\e[C", :ed_next_char) # Console (80x25)
-    assert_key_binding("\eGC", :ed_next_char) # KDE
     assert_key_binding("\eOC", :ed_next_char)
   end
 
   def test_left_arrow
     assert_key_binding("\e[D", :ed_prev_char) # Console (80x25)
-    assert_key_binding("\eGD", :ed_prev_char) # KDE
     assert_key_binding("\eOD", :ed_prev_char)
   end
 

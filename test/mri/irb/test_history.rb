@@ -12,19 +12,14 @@ module TestIRB
     def setup
       @original_verbose, $VERBOSE = $VERBOSE, nil
       @tmpdir = Dir.mktmpdir("test_irb_history_")
-      @backup_home = ENV["HOME"]
-      @backup_xdg_config_home = ENV.delete("XDG_CONFIG_HOME")
-      @backup_irbrc = ENV.delete("IRBRC")
+      setup_envs(home: @tmpdir)
       @backup_default_external = Encoding.default_external
-      ENV["HOME"] = @tmpdir
-      IRB.conf[:RC_NAME_GENERATOR] = nil
+      IRB.instance_variable_set(:@existing_rc_name_generators, nil)
     end
 
     def teardown
-      IRB.conf[:RC_NAME_GENERATOR] = nil
-      ENV["HOME"] = @backup_home
-      ENV["XDG_CONFIG_HOME"] = @backup_xdg_config_home
-      ENV["IRBRC"] = @backup_irbrc
+      IRB.instance_variable_set(:@existing_rc_name_generators, nil)
+      teardown_envs
       Encoding.default_external = @backup_default_external
       $VERBOSE = @original_verbose
       FileUtils.rm_rf(@tmpdir)
@@ -42,6 +37,21 @@ module TestIRB
       HISTORY = Readline::HISTORY
 
       include IRB::HistorySavingAbility
+    end
+
+    def test_history_dont_save
+      omit "Skip Editline" if /EditLine/n.match(Readline::VERSION)
+      IRB.conf[:SAVE_HISTORY] = nil
+      assert_history(<<~EXPECTED_HISTORY, <<~INITIAL_HISTORY, <<~INPUT)
+        1
+        2
+      EXPECTED_HISTORY
+        1
+        2
+      INITIAL_HISTORY
+        3
+        exit
+      INPUT
     end
 
     def test_history_save_1
@@ -144,7 +154,7 @@ module TestIRB
       io.class::HISTORY << 'line1'
       io.class::HISTORY << 'line2'
 
-      history_file = IRB.rc_files("_history").first
+      history_file = IRB.rc_file("_history")
       assert_not_send [File, :file?, history_file]
       File.write(history_file, "line0\n")
       io.save_history
@@ -154,7 +164,7 @@ module TestIRB
     def test_history_different_encodings
       IRB.conf[:SAVE_HISTORY] = 2
       Encoding.default_external = Encoding::US_ASCII
-      locale = IRB::Locale.new("C")
+      locale = IRB::Locale.new("en_US.ASCII")
       assert_history(<<~EXPECTED_HISTORY.encode(Encoding::US_ASCII), <<~INITIAL_HISTORY.encode(Encoding::UTF_8), <<~INPUT, locale: locale)
         ????
         exit
@@ -171,7 +181,7 @@ module TestIRB
       IRB.conf[:HISTORY_FILE] = "fake/fake/fake/history_file"
       io = TestInputMethodWithRelineHistory.new
 
-      assert_warn(/history file does not exist/) do
+      assert_warn(/ensure the folder exists/i) do
         io.save_history
       end
 
@@ -181,6 +191,16 @@ module TestIRB
       $VERBOSE = nil
     ensure
       IRB.conf[:HISTORY_FILE] = backup_history_file
+    end
+
+    def test_no_home_no_history_file_does_not_raise_history_save
+      ENV['HOME'] = nil
+      io = TestInputMethodWithRelineHistory.new
+      assert_nil(IRB.rc_file('_history'))
+      assert_nothing_raised do
+        io.load_history
+        io.save_history
+      end
     end
 
     private
@@ -217,7 +237,7 @@ module TestIRB
     def assert_history(expected_history, initial_irb_history, input, input_method = TestInputMethodWithRelineHistory, locale: IRB::Locale.new)
       IRB.conf[:LC_MESSAGES] = locale
       actual_history = nil
-      history_file = IRB.rc_files("_history").first
+      history_file = IRB.rc_file("_history")
       ENV["HOME"] = @tmpdir
       File.open(history_file, "w") do |f|
         f.write(initial_irb_history)

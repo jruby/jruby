@@ -1,6 +1,10 @@
 require_relative 'helper'
 require 'reline'
 require 'stringio'
+begin
+  require "pty"
+rescue LoadError # some platforms don't support PTY
+end
 
 class Reline::Test < Reline::TestCase
   class DummyCallbackObject
@@ -303,12 +307,12 @@ class Reline::Test < Reline::TestCase
 
   def test_vi_editing_mode
     Reline.vi_editing_mode
-    assert_equal(Reline::KeyActor::ViInsert, Reline.core.config.editing_mode.class)
+    assert_equal(:vi_insert, Reline.core.config.instance_variable_get(:@editing_mode_label))
   end
 
   def test_emacs_editing_mode
     Reline.emacs_editing_mode
-    assert_equal(Reline::KeyActor::Emacs, Reline.core.config.editing_mode.class)
+    assert_equal(:emacs, Reline.core.config.instance_variable_get(:@editing_mode_label))
   end
 
   def test_add_dialog_proc
@@ -375,13 +379,106 @@ class Reline::Test < Reline::TestCase
   def test_dumb_terminal
     lib = File.expand_path("../../lib", __dir__)
     out = IO.popen([{"TERM"=>"dumb"}, Reline.test_rubybin, "-I#{lib}", "-rreline", "-e", "p Reline.core.io_gate"], &:read)
-    assert_equal("Reline::GeneralIO", out.chomp)
+    assert_match(/#<Reline::Dumb/, out.chomp)
+  end
+
+  def test_print_prompt_before_everything_else
+    pend if win?
+    lib = File.expand_path("../../lib", __dir__)
+    code = "p Reline::IOGate.class; p Reline.readline 'prompt> '"
+    out = IO.popen([Reline.test_rubybin, "-I#{lib}", "-rreline", "-e", code], "r+") do |io|
+      io.write "abc\n"
+      io.close_write
+      io.read
+    end
+    assert_match(/\AReline::ANSI\nprompt> /, out)
+  end
+
+  def test_read_eof_returns_input
+    pend if win?
+    lib = File.expand_path("../../lib", __dir__)
+    code = "p result: Reline.readline"
+    out = IO.popen([Reline.test_rubybin, "-I#{lib}", "-rreline", "-e", code], "r+") do |io|
+      io.write "a\C-a"
+      io.close_write
+      io.read
+    end
+    assert_include(out, { result: 'a' }.inspect)
+  end
+
+  def test_read_eof_returns_nil_if_empty
+    pend if win?
+    lib = File.expand_path("../../lib", __dir__)
+    code = "p result: Reline.readline"
+    out = IO.popen([Reline.test_rubybin, "-I#{lib}", "-rreline", "-e", code], "r+") do |io|
+      io.write "a\C-h"
+      io.close_write
+      io.read
+    end
+    assert_include(out, { result: nil }.inspect)
+  end
+
+  def test_require_reline_should_not_trigger_winsize
+    pend if win?
+    lib = File.expand_path("../../lib", __dir__)
+    code = <<~RUBY
+      require "io/console"
+      def STDIN.tty?; true; end
+      def STDOUT.tty?; true; end
+      def STDIN.winsize; raise; end
+      require("reline") && p(Reline.core.io_gate)
+    RUBY
+    out = IO.popen([{}, Reline.test_rubybin, "-I#{lib}", "-e", code], &:read)
+    assert_include(out.chomp, "Reline::ANSI")
+  end
+
+  def win?
+    /mswin|mingw/.match?(RUBY_PLATFORM)
+  end
+
+  def test_tty_amibuous_width
+    omit unless defined?(PTY)
+    ruby_file = Tempfile.create('rubyfile')
+    ruby_file.write(<<~RUBY)
+      require 'reline'
+      Thread.new { sleep 2; puts 'timeout'; exit }
+      p [Reline.ambiguous_width, gets.chomp]
+    RUBY
+    ruby_file.close
+    lib = File.expand_path('../../lib', __dir__)
+    cmd = [{ 'TERM' => 'xterm' }, 'ruby', '-I', lib, ruby_file.to_path]
+
+    # Calculate ambiguous width from cursor position
+    [1, 2].each do |ambiguous_width|
+      PTY.spawn(*cmd) do |r, w, pid|
+        loop { break if r.readpartial(1024).include?("\e[6n") }
+        w.puts "hello\e[10;#{ambiguous_width + 1}Rworld"
+        assert_include(r.gets, [ambiguous_width, 'helloworld'].inspect)
+      ensure
+        r.close
+        w.close
+        Process.waitpid pid
+      end
+    end
+
+    # Ambiguous width = 1 when cursor pos timed out
+    PTY.spawn(*cmd) do |r, w, pid|
+      loop { break if r.readpartial(1024).include?("\e[6n") }
+      w.puts "hello\e[10;2Sworld"
+      assert_include(r.gets, [1, "hello\e[10;2Sworld"].inspect)
+    ensure
+      r.close
+      w.close
+      Process.waitpid pid
+    end
+  ensure
+    File.delete(ruby_file.path) if ruby_file
   end
 
   def get_reline_encoding
     if encoding = Reline.core.encoding
       encoding
-    elsif RUBY_PLATFORM =~ /mswin|mingw/
+    elsif win?
       Encoding::UTF_8
     else
       Encoding::default_external

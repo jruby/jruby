@@ -46,7 +46,7 @@ class TestGemSource < Gem::TestCase
     response = Gem::Net::HTTPResponse.new "1.1", 200, "OK"
     response.uri = Gem::URI("http://example")
 
-    @fetcher.data[@gem_repo] = response
+    @fetcher.data["#{@gem_repo}versions"] = response
 
     set = @source.dependency_resolver_set
 
@@ -54,8 +54,9 @@ class TestGemSource < Gem::TestCase
   end
 
   def test_dependency_resolver_set_file_uri
-    File.write(File.join(@tempdir, "prerelease_specs.4.8.gz"), Gem::Util.gzip("\x04\x08[\x05".b))
-    File.write(File.join(@tempdir, "specs.4.8.gz"), Gem::Util.gzip("\x04\x08[\x05".b))
+    empty_dump = Gem::Util.gzip("\x04\x08[\x05".b)
+    File.binwrite(File.join(@tempdir, "prerelease_specs.4.8.gz"), empty_dump)
+    File.binwrite(File.join(@tempdir, "specs.4.8.gz"), empty_dump)
 
     source = Gem::Source.new "file://#{@tempdir}/"
 

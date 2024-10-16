@@ -5,22 +5,33 @@ require "tmpdir"
 require "envutil"
 
 class TestCoverage < Test::Unit::TestCase
+  # The command-line arguments that we will pass to the ruby subprocess invoked
+  # by assert_in_out_err. In general this is just requiring the coverage
+  # library, but if prism is enabled we want to additionally pass that option
+  # through.
+  ARGV = ["-rcoverage"]
+
+  if RubyVM::InstructionSequence.compile('').to_a[4][:parser] == :prism
+    ARGV << "-W:no-experimental"
+    ARGV << "--parser=prism"
+  end
+
   def test_result_without_start
-    assert_in_out_err(%w[-rcoverage], <<-"end;", [], /coverage measurement is not enabled/)
+    assert_in_out_err(ARGV, <<-"end;", [], /coverage measurement is not enabled/)
       Coverage.result
       p :NG
     end;
   end
 
   def test_peek_result_without_start
-    assert_in_out_err(%w[-rcoverage], <<-"end;", [], /coverage measurement is not enabled/)
+    assert_in_out_err(ARGV, <<-"end;", [], /coverage measurement is not enabled/)
       Coverage.peek_result
       p :NG
     end;
   end
 
   def test_result_with_nothing
-    assert_in_out_err(%w[-rcoverage], <<-"end;", ["{}"], [])
+    assert_in_out_err(ARGV, <<-"end;", ["{}"], [])
       Coverage.start
       p Coverage.result
     end;
@@ -34,7 +45,7 @@ class TestCoverage < Test::Unit::TestCase
   end
 
   def test_coverage_running?
-    assert_in_out_err(%w[-rcoverage], <<-"end;", ["false", "true", "true", "false"], [])
+    assert_in_out_err(ARGV, <<-"end;", ["false", "true", "true", "false"], [])
       p Coverage.running?
       Coverage.start
       p Coverage.running?
@@ -56,7 +67,7 @@ class TestCoverage < Test::Unit::TestCase
           EOS
         end
 
-        assert_in_out_err(%w[-rcoverage], <<-"end;", ["[1, 0, nil]", "[1, 1, nil]", "[1, 1, nil]"], [])
+        assert_in_out_err(ARGV, <<-"end;", ["[1, 0, nil]", "[1, 1, nil]", "[1, 1, nil]"], [])
           Coverage.start
           tmp = Dir.pwd
           require tmp + "/test.rb"
@@ -92,7 +103,7 @@ class TestCoverage < Test::Unit::TestCase
         exp1 = { "#{tmp}/test.rb" => [1, 0, nil] }.inspect
         exp2 = {}.inspect
         exp3 = { "#{tmp}/test2.rb" => [1] }.inspect
-        assert_in_out_err(%w[-rcoverage], <<-"end;", [exp1, exp2, exp3], [])
+        assert_in_out_err(ARGV, <<-"end;", [exp1, exp2, exp3], [])
           Coverage.start
           tmp = Dir.pwd
           require tmp + "/test.rb"
@@ -124,7 +135,7 @@ class TestCoverage < Test::Unit::TestCase
           f.puts "])"
         end
 
-        assert_in_out_err(%w[-rcoverage], <<-"end;", ["10003"], [])
+        assert_in_out_err(ARGV, <<-"end;", ["10003"], [])
           Coverage.start
           tmp = Dir.pwd
           require tmp + '/test.rb'
@@ -153,7 +164,7 @@ class TestCoverage < Test::Unit::TestCase
           f.puts 'end'
         end
 
-        assert_in_out_err(%w[-W0 -rcoverage], <<-"end;", ["[1, 1, 1, 400, nil, nil, nil, nil, nil, nil, nil]"], [], bug13305)
+        assert_in_out_err(["-W0", *ARGV], <<-"end;", ["[1, 1, 1, 400, nil, nil, nil, nil, nil, nil, nil]"], [], bug13305)
           Coverage.start(:all)
           tmp = Dir.pwd
           require tmp + '/test.rb'
@@ -165,7 +176,7 @@ class TestCoverage < Test::Unit::TestCase
   end
 
   def test_eval_coverage
-    assert_in_out_err(%w[-rcoverage], <<-"end;", ["[1, 1, 1, nil, 0, nil]"], [])
+    assert_in_out_err(ARGV, <<-"end;", ["[1, 1, 1, nil, 0, nil]"], [])
       Coverage.start(eval: true, lines: true)
 
       eval(<<-RUBY, TOPLEVEL_BINDING, "test.rb")
@@ -242,7 +253,7 @@ class TestCoverage < Test::Unit::TestCase
       Dir.chdir(tmp) {
         File.write("test.rb", code)
 
-        assert_in_out_err(%w[-W0 -rcoverage], <<-"end;", stdout, [])
+        assert_in_out_err(["-W0", *ARGV], <<-"end;", stdout, [])
           Coverage.start(#{ opt })
           tmp = Dir.pwd
           require tmp + '/test.rb'
@@ -638,11 +649,11 @@ class TestCoverage < Test::Unit::TestCase
         end
 
         exp = [
-          "{:lines=>[1, 0, 0, nil, 0, nil, nil]}",
-          "{:lines=>[0, 1, 1, nil, 0, nil, nil]}",
-          "{:lines=>[0, 1, 0, nil, 1, nil, nil]}",
+          { lines: [1, 0, 0, nil, 0, nil, nil] }.inspect,
+          { lines: [0, 1, 1, nil, 0, nil, nil] }.inspect,
+          { lines: [0, 1, 0, nil, 1, nil, nil] }.inspect,
         ]
-        assert_in_out_err(%w[-rcoverage], <<-"end;", exp, [])
+        assert_in_out_err(ARGV, <<-"end;", exp, [])
           Coverage.start(lines: true)
           tmp = Dir.pwd
           f = tmp + "/test.rb"
@@ -671,12 +682,12 @@ class TestCoverage < Test::Unit::TestCase
         end
 
         exp = [
-          "{:branches=>{[:if, 0, 2, 2, 6, 5]=>{[:then, 1, 3, 4, 3, 8]=>0, [:else, 2, 5, 4, 5, 12]=>0}}}",
-          "{:branches=>{[:if, 0, 2, 2, 6, 5]=>{[:then, 1, 3, 4, 3, 8]=>1, [:else, 2, 5, 4, 5, 12]=>0}}}",
-          "{:branches=>{[:if, 0, 2, 2, 6, 5]=>{[:then, 1, 3, 4, 3, 8]=>0, [:else, 2, 5, 4, 5, 12]=>1}}}",
-          "{:branches=>{[:if, 0, 2, 2, 6, 5]=>{[:then, 1, 3, 4, 3, 8]=>0, [:else, 2, 5, 4, 5, 12]=>1}}}",
+          { branches: { [:if, 0, 2, 2, 6, 5] => { [:then, 1, 3, 4, 3, 8] => 0, [:else, 2, 5, 4, 5, 12] => 0 } } }.inspect,
+          { branches: { [:if, 0, 2, 2, 6, 5] => { [:then, 1, 3, 4, 3, 8] => 1, [:else, 2, 5, 4, 5, 12] => 0 } } }.inspect,
+          { branches: { [:if, 0, 2, 2, 6, 5] => { [:then, 1, 3, 4, 3, 8] => 0, [:else, 2, 5, 4, 5, 12] => 1 } } }.inspect,
+          { branches: { [:if, 0, 2, 2, 6, 5] => { [:then, 1, 3, 4, 3, 8] => 0, [:else, 2, 5, 4, 5, 12] => 1 } } }.inspect,
         ]
-        assert_in_out_err(%w[-rcoverage], <<-"end;", exp, [])
+        assert_in_out_err(ARGV, <<-"end;", exp, [])
           Coverage.start(branches: true)
           tmp = Dir.pwd
           f = tmp + "/test.rb"
@@ -707,12 +718,12 @@ class TestCoverage < Test::Unit::TestCase
         end
 
         exp = [
-          "{:methods=>{[Object, :foo, 1, 0, 7, 3]=>0}}",
-          "{:methods=>{[Object, :foo, 1, 0, 7, 3]=>1}}",
-          "{:methods=>{[Object, :foo, 1, 0, 7, 3]=>1}}",
-          "{:methods=>{[Object, :foo, 1, 0, 7, 3]=>1}}"
+          { methods: { [Object, :foo, 1, 0, 7, 3] => 0 } }.inspect,
+          { methods: { [Object, :foo, 1, 0, 7, 3] => 1 } }.inspect,
+          { methods: { [Object, :foo, 1, 0, 7, 3] => 1 } }.inspect,
+          { methods: { [Object, :foo, 1, 0, 7, 3] => 1 } }.inspect
         ]
-        assert_in_out_err(%w[-rcoverage], <<-"end;", exp, [])
+        assert_in_out_err(ARGV, <<-"end;", exp, [])
           Coverage.start(methods: true)
           tmp = Dir.pwd
           f = tmp + "/test.rb"
@@ -743,12 +754,12 @@ class TestCoverage < Test::Unit::TestCase
         end
 
         exp = [
-          "{:oneshot_lines=>[1]}",
-          "{:oneshot_lines=>[2, 3]}",
-          "{:oneshot_lines=>[5]}",
-          "{:oneshot_lines=>[]}",
+          { oneshot_lines: [1] }.inspect,
+          { oneshot_lines: [2, 3] }.inspect,
+          { oneshot_lines: [5] }.inspect,
+          { oneshot_lines: [] }.inspect,
         ]
-        assert_in_out_err(%w[-rcoverage], <<-"end;", exp, [])
+        assert_in_out_err(ARGV, <<-"end;", exp, [])
           Coverage.start(oneshot_lines: true)
           tmp = Dir.pwd
           f = tmp + "/test.rb"
@@ -924,7 +935,7 @@ class TestCoverage < Test::Unit::TestCase
   end
 
   def test_coverage_state
-    assert_in_out_err(%w[-rcoverage], <<-"end;", [":idle", ":running", ":running", ":idle"], [])
+    assert_in_out_err(ARGV, <<-"end;", [":idle", ":running", ":running", ":idle"], [])
       p Coverage.state
       Coverage.start
       p Coverage.state
@@ -934,7 +945,7 @@ class TestCoverage < Test::Unit::TestCase
       p Coverage.state
     end;
 
-    assert_in_out_err(%w[-rcoverage], <<-"end;", [":idle", ":suspended", ":running", ":suspended", ":running", ":suspended", ":idle"], [])
+    assert_in_out_err(ARGV, <<-"end;", [":idle", ":suspended", ":running", ":suspended", ":running", ":suspended", ":idle"], [])
       p Coverage.state
       Coverage.setup
       p Coverage.state
@@ -952,14 +963,14 @@ class TestCoverage < Test::Unit::TestCase
   end
 
   def test_result_without_resume
-    assert_in_out_err(%w[-rcoverage], <<-"end;", ["{}"], [])
+    assert_in_out_err(ARGV, <<-"end;", ["{}"], [])
       Coverage.setup
       p Coverage.result
     end;
   end
 
   def test_result_after_suspend
-    assert_in_out_err(%w[-rcoverage], <<-"end;", ["{}"], [])
+    assert_in_out_err(ARGV, <<-"end;", ["{}"], [])
       Coverage.start
       Coverage.suspend
       p Coverage.result
@@ -967,21 +978,21 @@ class TestCoverage < Test::Unit::TestCase
   end
 
   def test_resume_without_setup
-    assert_in_out_err(%w[-rcoverage], <<-"end;", [], /coverage measurement is not set up yet/)
+    assert_in_out_err(ARGV, <<-"end;", [], /coverage measurement is not set up yet/)
       Coverage.resume
       p :NG
     end;
   end
 
   def test_suspend_without_setup
-    assert_in_out_err(%w[-rcoverage], <<-"end;", [], /coverage measurement is not running/)
+    assert_in_out_err(ARGV, <<-"end;", [], /coverage measurement is not running/)
       Coverage.suspend
       p :NG
     end;
   end
 
   def test_double_resume
-    assert_in_out_err(%w[-rcoverage], <<-"end;", [], /coverage measurement is already running/)
+    assert_in_out_err(ARGV, <<-"end;", [], /coverage measurement is already running/)
       Coverage.start
       Coverage.resume
       p :NG
@@ -989,7 +1000,7 @@ class TestCoverage < Test::Unit::TestCase
   end
 
   def test_double_suspend
-    assert_in_out_err(%w[-rcoverage], <<-"end;", [], /coverage measurement is not running/)
+    assert_in_out_err(ARGV, <<-"end;", [], /coverage measurement is not running/)
       Coverage.setup
       Coverage.suspend
       p :NG
