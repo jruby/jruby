@@ -15,17 +15,15 @@ module TestIRB
         Dir.mkdir(@tmpdir)
       end
       Dir.chdir(@tmpdir)
-      @home_backup = ENV["HOME"]
-      ENV["HOME"] = @tmpdir
-      @xdg_config_home_backup = ENV.delete("XDG_CONFIG_HOME")
+      setup_envs(home: @tmpdir)
       save_encodings
       IRB.instance_variable_get(:@CONF).clear
+      IRB.instance_variable_set(:@existing_rc_name_generators, nil)
       @is_win = (RbConfig::CONFIG['host_os'] =~ /mswin|msys|mingw|cygwin|bccwin|wince|emc/)
     end
 
     def teardown
-      ENV["XDG_CONFIG_HOME"] = @xdg_config_home_backup
-      ENV["HOME"] = @home_backup
+      teardown_envs
       Dir.chdir(@pwd)
       FileUtils.rm_rf(@tmpdir)
       restore_encodings
@@ -238,7 +236,7 @@ module TestIRB
       )
 
       assert_empty err
-      assert_match(/\A(TIME is added\.\n=> nil\nprocessing time: .+\n=> 3\n=> nil\n=> 3\n){2}/, out)
+      assert_match(/\A(TIME is added\.\nprocessing time: .+\n=> 3\n=> 3\n){2}/, out)
       assert_empty(c.class_variables)
     end
 
@@ -265,7 +263,7 @@ module TestIRB
       )
 
       assert_empty err
-      assert_match(/\ATIME is added\.\n=> nil\nprocessing time: .+\n=> 3\nprocessing time: .+\n=> 3/, out)
+      assert_match(/\ATIME is added\.\nprocessing time: .+\n=> 3\nprocessing time: .+\n=> 3/, out)
       assert_empty(c.class_variables)
     end
 
@@ -290,7 +288,7 @@ module TestIRB
       )
 
       assert_empty err
-      assert_match(/\Aprocessing time: .+\n=> 3\n=> nil\n=> 3\n/, out)
+      assert_match(/\Aprocessing time: .+\n=> 3\n=> 3\n/, out)
     end
 
     def test_measure_enabled_by_rc_with_custom
@@ -320,7 +318,7 @@ module TestIRB
         conf: conf,
       )
       assert_empty err
-      assert_match(/\Acustom processing time: .+\n=> 3\n=> nil\n=> 3\n/, out)
+      assert_match(/\Acustom processing time: .+\n=> 3\n=> 3\n/, out)
     end
 
     def test_measure_with_custom
@@ -352,7 +350,7 @@ module TestIRB
       )
 
       assert_empty err
-      assert_match(/\A=> 3\nCUSTOM is added\.\n=> nil\ncustom processing time: .+\n=> 3\n=> nil\n=> 3\n/, out)
+      assert_match(/\A=> 3\nCUSTOM is added\.\ncustom processing time: .+\n=> 3\n=> 3\n/, out)
     end
 
     def test_measure_toggle
@@ -372,17 +370,19 @@ module TestIRB
         }
       }
       out, err = execute_lines(
-        "measure :foo",
-        "measure :on, :bar",
-        "3\n",
+        "measure :foo\n",
+        "1\n",
+        "measure :on, :bar\n",
+        "2\n",
         "measure :off, :foo\n",
-        "measure :off, :bar\n",
         "3\n",
+        "measure :off, :bar\n",
+        "4\n",
         conf: conf
       )
 
       assert_empty err
-      assert_match(/\AFOO is added\.\n=> nil\nfoo\nBAR is added\.\n=> nil\nbar\nfoo\n=> 3\nbar\nfoo\n=> nil\nbar\n=> nil\n=> 3\n/, out)
+      assert_match(/\AFOO is added\.\nfoo\n=> 1\nBAR is added\.\nbar\nfoo\n=> 2\nbar\n=> 3\n=> 4\n/, out)
     end
 
     def test_measure_with_proc_warning
@@ -401,14 +401,13 @@ module TestIRB
       out, err = execute_lines(
         "3\n",
         "measure do\n",
-        "end\n",
         "3\n",
         conf: conf,
         main: c
       )
 
       assert_match(/to add custom measure/, err)
-      assert_match(/\A=> 3\n=> nil\n=> 3\n/, out)
+      assert_match(/\A=> 3\n=> 3\n/, out)
       assert_empty(c.class_variables)
     end
   end
@@ -427,8 +426,7 @@ module TestIRB
         /=> "bug17564"\n/,
         /=> "bug17564"\n/,
         /   => "hi"\n/,
-        /   => nil\n/,
-        /=> "hi"\n/,
+        /   => "hi"\n/,
       ], out)
     end
 
@@ -455,8 +453,7 @@ module TestIRB
           /=> "bug17564"\n/,
           /=> "bug17564"\n/,
           /   => "hi"\n/,
-          /   => nil\n/,
-          /=> "bug17564"\n/,
+          /   => "bug17564"\n/,
         ], out)
     end
 
@@ -483,12 +480,11 @@ module TestIRB
   class CwwsTest < WorkspaceCommandTestCase
     def test_cwws_returns_the_current_workspace_object
       out, err = execute_lines(
-        "cwws",
-        "self.class"
+        "cwws"
       )
 
       assert_empty err
-      assert_include(out, self.class.name)
+      assert_include(out, "Current workspace: #{self}")
     end
   end
 
@@ -553,7 +549,8 @@ module TestIRB
       out, err = execute_lines(
         "pushws Foo.new\n",
         "popws\n",
-        "cwws.class",
+        "cwws\n",
+        "self.class",
       )
       assert_empty err
       assert_include(out, "=> #{self.class}")
@@ -572,19 +569,20 @@ module TestIRB
     def test_chws_replaces_the_current_workspace
       out, err = execute_lines(
         "chws #{self.class}::Foo.new\n",
-        "cwws.class",
+        "cwws\n",
+        "self.class\n"
       )
       assert_empty err
+      assert_include(out, "Current workspace: #<#{self.class.name}::Foo")
       assert_include(out, "=> #{self.class}::Foo")
     end
 
     def test_chws_does_nothing_when_receiving_no_argument
       out, err = execute_lines(
         "chws\n",
-        "cwws.class",
       )
       assert_empty err
-      assert_include(out, "=> #{self.class}")
+      assert_include(out, "Current workspace: #{self}")
     end
   end
 
@@ -729,18 +727,18 @@ module TestIRB
     def test_ls_grep_empty
       out, err = execute_lines("ls\n")
       assert_empty err
-      assert_match(/whereami/, out)
-      assert_match(/show_source/, out)
+      assert_match(/assert/, out)
+      assert_match(/refute/, out)
 
       [
-        "ls grep: /whereami/\n",
-        "ls -g whereami\n",
-        "ls -G whereami\n",
+        "ls grep: /assert/\n",
+        "ls -g assert\n",
+        "ls -G assert\n",
       ].each do |line|
         out, err = execute_lines(line)
         assert_empty err
-        assert_match(/whereami/, out)
-        assert_not_match(/show_source/, out)
+        assert_match(/assert/, out)
+        assert_not_match(/refute/, out)
       end
     end
 
@@ -757,10 +755,7 @@ module TestIRB
 
   class ShowDocTest < CommandTestCase
     def test_show_doc
-      out, err = execute_lines(
-        "show_doc String#gsub\n",
-        "\n",
-      )
+      out, err = execute_lines("show_doc String#gsub")
 
       # the former is what we'd get without document content installed, like on CI
       # the latter is what we may get locally
@@ -770,18 +765,13 @@ module TestIRB
     ensure
       # this is the only way to reset the redefined method without coupling the test with its implementation
       EnvUtil.suppress_warning { load "irb/command/help.rb" }
-    end
+    end if defined?(RDoc)
 
     def test_show_doc_without_rdoc
-      out, err = without_rdoc do
-        execute_lines(
-          "show_doc String#gsub\n",
-          "\n",
-        )
+      _, err = without_rdoc do
+        execute_lines("show_doc String#gsub")
       end
 
-      # if it fails to require rdoc, it only returns the command object
-      assert_match(/=> nil\n/, out)
       assert_include(err, "Can't display document because `rdoc` is not installed.\n")
     ensure
       # this is the only way to reset the redefined method without coupling the test with its implementation
@@ -950,4 +940,19 @@ module TestIRB
 
   end
 
+  class HelperMethodInsallTest < CommandTestCase
+    def test_helper_method_install
+      IRB::ExtendCommandBundle.module_eval do
+        def foobar
+          "test_helper_method_foobar"
+        end
+      end
+
+      out, err = execute_lines("foobar.upcase")
+      assert_empty err
+      assert_include(out, '=> "TEST_HELPER_METHOD_FOOBAR"')
+    ensure
+      IRB::ExtendCommandBundle.remove_method :foobar
+    end
+  end
 end

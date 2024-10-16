@@ -661,6 +661,25 @@ class TestTranscode < Test::Unit::TestCase
     check_both_ways("\u00A0", "\xFF", 'IBM863') # non-breaking space
   end
 
+  def test_IBM864
+    check_both_ways("\u00B0", "\x80", 'IBM864') # °
+    check_both_ways("\u2518", "\x8F", 'IBM864') # ┘
+    check_both_ways("\u03B2", "\x90", 'IBM864') # β
+    check_both_ways("\uFE73", "\x9F", 'IBM864') # ﹳ
+    check_both_ways("\u00A0", "\xA0", 'IBM864') # non-breaking space
+    check_both_ways("\uFEA5", "\xAF", 'IBM864') # ﺥ
+    check_both_ways("\u0660", "\xB0", 'IBM864') # ٠
+    check_both_ways("\u061F", "\xBF", 'IBM864') # ؟
+    check_both_ways("\u00A2", "\xC0", 'IBM864') # ¢
+    check_both_ways("\uFEA9", "\xCF", 'IBM864') # ﺩ
+    check_both_ways("\uFEAB", "\xD0", 'IBM864') # ﺫ
+    check_both_ways("\uFEC9", "\xDF", 'IBM864') # ﻉ
+    check_both_ways("\u0640", "\xE0", 'IBM864') # ـ
+    check_both_ways("\uFEE1", "\xEF", 'IBM864') # ﻡ
+    check_both_ways("\uFE7D", "\xF0", 'IBM864') # ﹽ
+    check_both_ways("\u25A0", "\xFE", 'IBM864') # ■
+  end
+
   def test_IBM865
     check_both_ways("\u00C7", "\x80", 'IBM865') # Ç
     check_both_ways("\u00C5", "\x8F", 'IBM865') # Å
@@ -1615,6 +1634,8 @@ class TestTranscode < Test::Unit::TestCase
     assert_equal("\e$B%*!+%,%I%J!+%N!+%P%\\%^!+%Q%]%\"\e(B".force_encoding("cp50220"),
         "\xB5\xDE\xB6\xDE\xC4\xDE\xC5\xDE\xC9\xDE\xCA\xDE\xCE\xDE\xCF\xDE\xCA\xDF\xCE\xDF\xB1".
                  encode("cp50220", "sjis"))
+    assert_equal("\e$B\x21\x23\e(I\x7E\e(B".force_encoding("cp50220"),
+                 "\x8E\xA1\x8E\xFE".encode("cp50220", "cp51932"))
   end
 
   def test_iso_2022_jp_1

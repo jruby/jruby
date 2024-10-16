@@ -67,6 +67,25 @@ EOT
 
   def test_dump_strict
     assert_equal '{}', dump({}, strict: true)
+
+    assert_equal '{"array":[42,4.2,"forty-two",true,false,null]}', dump({
+      "array" => [42, 4.2, "forty-two", true, false, nil]
+    }, strict: true)
+
+    assert_equal '{"int":42,"float":4.2,"string":"forty-two","true":true,"false":false,"nil":null,"hash":{}}', dump({
+      "int" => 42,
+      "float" => 4.2,
+      "string" => "forty-two",
+      "true" => true,
+      "false" => false,
+      "nil" => nil,
+      "hash" => {},
+    }, strict: true)
+
+    assert_equal '[]', dump([], strict: true)
+
+    assert_equal '42', dump(42, strict: true)
+    assert_equal 'true', dump(true, strict: true)
   end
 
   def test_generate_pretty
@@ -243,7 +262,7 @@ EOT
 
   def test_gc
     if respond_to?(:assert_in_out_err) && !(RUBY_PLATFORM =~ /java/)
-      assert_in_out_err(%w[-rjson], <<-EOS, [], [])
+      assert_in_out_err(%w[-rjson -Ilib -Iext], <<-EOS, [], [])
         bignum_too_long_to_embed_as_string = 1234567890123456789012345
         expect = bignum_too_long_to_embed_as_string.to_s
         GC.stress = true
@@ -419,7 +438,23 @@ EOT
     end
   end
 
+  def test_invalid_encoding_string
+    error = assert_raise(JSON::GeneratorError) do
+      "\x82\xAC\xEF".to_json
+    end
+    assert_includes error.message, "source sequence is illegal/malformed utf-8"
+  end
+
   if defined?(JSON::Ext::Generator) and RUBY_PLATFORM != "java"
+    def test_valid_utf8_in_different_encoding
+      utf8_string = "€™"
+      wrong_encoding_string = utf8_string.b
+      # This behavior is historical. Not necessary desirable. We should deprecated it.
+      # The pure and java version of the gem already don't behave this way.
+      assert_equal utf8_string.to_json, wrong_encoding_string.to_json
+      assert_equal JSON.dump(utf8_string), JSON.dump(wrong_encoding_string)
+    end
+
     def test_string_ext_included_calls_super
       included = false
 

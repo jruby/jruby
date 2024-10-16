@@ -129,9 +129,9 @@ class TestFloat < Test::Unit::TestCase
     assert_in_delta(a, 0, Float::EPSILON)
     a = Float("-.0")
     assert_in_delta(a, 0, Float::EPSILON)
-    assert_raise(ArgumentError){Float("0.")}
-    assert_raise(ArgumentError){Float("+0.")}
-    assert_raise(ArgumentError){Float("-0.")}
+    assert_equal(0.0, Float("0."))
+    assert_equal(0.0, Float("+0."))
+    assert_equal(0.0, Float("-0."))
     assert_raise(ArgumentError){Float(".")}
     assert_raise(ArgumentError){Float("+")}
     assert_raise(ArgumentError){Float("+.")}
@@ -139,12 +139,12 @@ class TestFloat < Test::Unit::TestCase
     assert_raise(ArgumentError){Float("-.")}
     assert_raise(ArgumentError){Float("1e")}
     assert_raise(ArgumentError){Float("1__1")}
-    assert_raise(ArgumentError){Float("1.")}
-    assert_raise(ArgumentError){Float("1.e+00")}
-    assert_raise(ArgumentError){Float("0x.1")}
-    assert_raise(ArgumentError){Float("0x1.")}
-    assert_raise(ArgumentError){Float("0x1.0")}
-    assert_raise(ArgumentError){Float("0x1.p+0")}
+    assert_equal(1.0, Float("1."))
+    assert_equal(1.0, Float("1.e+00"))
+    assert_equal(0.0625, Float("0x.1"))
+    assert_equal(1.0, Float("0x1."))
+    assert_equal(1.0, Float("0x1.0"))
+    assert_equal(1.0, Float("0x1.p+0"))
     # add expected behaviour here.
     assert_equal(10, Float("1_0"))
 
@@ -191,7 +191,7 @@ class TestFloat < Test::Unit::TestCase
         break
       end
     end
-    assert_nil(x, ->{"%a" % x})
+    assert_equal(1.0, x, ->{"%a" % x})
   end
 
   def test_divmod
@@ -530,6 +530,10 @@ class TestFloat < Test::Unit::TestCase
     assert_raise(TypeError) {1.0.floor(nil)}
     def (prec = Object.new).to_int; 2; end
     assert_equal(0.99, 0.998.floor(prec))
+
+    assert_equal(-10000000000, -1.0.floor(-10), "[Bug #20654]")
+    assert_equal(-100000000000000000000, -1.0.floor(-20), "[Bug #20654]")
+    assert_equal(-100000000000000000000000000000000000000000000000000, -1.0.floor(-50), "[Bug #20654]")
   end
 
   def test_ceil_with_precision
@@ -557,6 +561,10 @@ class TestFloat < Test::Unit::TestCase
     assert_raise(TypeError) {1.0.ceil(nil)}
     def (prec = Object.new).to_int; 2; end
     assert_equal(0.99, 0.981.ceil(prec))
+
+    assert_equal(10000000000, 1.0.ceil(-10), "[Bug #20654]")
+    assert_equal(100000000000000000000, 1.0.ceil(-20), "[Bug #20654]")
+    assert_equal(100000000000000000000000000000000000000000000000000, 1.0.ceil(-50), "[Bug #20654]")
   end
 
   def test_truncate_with_precision
@@ -825,10 +833,10 @@ class TestFloat < Test::Unit::TestCase
     assert_equal(15, Float('0xf'))
     assert_equal(15, Float('0xfp0'))
     assert_raise(ArgumentError) { Float('0xfp') }
-    assert_raise(ArgumentError) { Float('0xf.') }
+    assert_equal(15, Float('0xf.'))
     assert_raise(ArgumentError) { Float('0xf.p') }
-    assert_raise(ArgumentError) { Float('0xf.p0') }
-    assert_raise(ArgumentError) { Float('0xf.f') }
+    assert_equal(15, Float('0xf.p0'))
+    assert_equal(15.9375, Float('0xf.f'))
     assert_raise(ArgumentError) { Float('0xf.fp') }
     begin
       verbose_bak, $VERBOSE = $VERBOSE, nil
@@ -842,6 +850,14 @@ class TestFloat < Test::Unit::TestCase
     o = Object.new
     def o.to_f; inf = Float::INFINITY; inf/inf; end
     assert_predicate(Float(o), :nan?)
+
+    assert_raise(Encoding::CompatibilityError) {Float("0".encode("utf-16be"))}
+    assert_raise(Encoding::CompatibilityError) {Float("0".encode("utf-16le"))}
+    assert_raise(Encoding::CompatibilityError) {Float("0".encode("utf-32be"))}
+    assert_raise(Encoding::CompatibilityError) {Float("0".encode("utf-32le"))}
+    assert_raise(Encoding::CompatibilityError) {Float("0".encode("iso-2022-jp"))}
+
+    assert_raise_with_message(ArgumentError, /\u{1f4a1}/) {Float("\u{1f4a1}")}
   end
 
   def test_invalid_str

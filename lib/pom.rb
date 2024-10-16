@@ -17,9 +17,9 @@ end
 default_gems = [
     # treat RGs update special:
     # - we do not want bin/update_rubygems or bin/gem overrides
-    ['rubygems-update', '3.5.6', { bin: false, require_paths: ['lib'] }],
+    ['rubygems-update', '3.5.21', { bin: false, require_paths: ['lib'] }],
     ['benchmark', '0.3.0'],
-    ['bundler', '2.5.6'],
+    ['bundler', '2.5.21'],
     ['cgi', '0.4.1'],
     # Currently using a stub gem for JRuby until we can incorporate our code.
     # https://github.com/ruby/date/issues/48
@@ -36,8 +36,10 @@ default_gems = [
     # https://github.com/ruby/fcntl/issues/9
     # ['fcntl', '1.0.1'],
     ['ffi', '1.16.3'],
-    # ['fiddle', '1.1.0'],
     ['fileutils', '1.7.2'],
+    # This version is accurate, but fiddle install needs mkmf which needs fileutils. We can't install it independently
+    # at build time, so instead we continue to version the files and will work out the build sequence separately.
+    #['fiddle', '1.1.3'],
     ['find', '0.2.0'],
     ['forwardable', '1.3.3'],
     ['io-console', '0.7.2'],
@@ -45,28 +47,28 @@ default_gems = [
     # ['io-nonblock', '0.1.0'],
     ['io-wait', '0.3.1'],
     ['ipaddr', '1.2.6'],
-    ['irb', '1.13.0'],
+    ['irb', '1.14.1'],
     ['jar-dependencies', '0.4.1'],
     ['jruby-readline', '1.3.7'],
     ['jruby-openssl', '0.15.0'],
     ['json', '2.7.2'],
-    ['logger', '1.6.0'],
+    ['logger', '1.6.1'],
     ['net-http', '0.4.1'],
     ['net-protocol', '0.2.2'],
     ['open3', '0.2.1'],
     # https://github.com/ruby/openssl/issues/20#issuecomment-1022872855
     # ['openssl', '3.0.0'],
     ['open-uri', '0.4.1'],
-    ['optparse', '0.4.0'],
+    ['optparse', '0.5.0'],
     ['ostruct', '0.6.0'],
     # https://github.com/ruby/pathname/issues/17
     # ['pathname', '0.2.0'],
     ['pp', '0.5.0'],
     ['prettyprint', '0.2.0'],
     ['pstore', '0.1.3'],
-    ['psych', '5.1.2'],
+    ['psych', '5.2.0.beta1'],
     ['rake-ant', '1.0.6'],
-    ['rdoc', '6.6.2'],
+    ['rdoc', '6.7.0'],
     # Ext removed from CRuby in 3.3, equivalent for us would be to remove jruby-readline but unknown implications.
     # The gem below just attempts to load the extension, and failing that loads reline. Our current readline.rb in
     # jruby-readline does largely the same, but it finds the extension and does not load reline.
@@ -74,7 +76,7 @@ default_gems = [
     # ['readline', '0.0.4'],
     # Will be solved with readline
     # ['readline-ext', '0.1.4'],
-    ['reline', '0.4.3'],
+    ['reline', '0.5.10'],
     # https://github.com/ruby/resolv/issues/19
     # ['resolv', '0.2.1'],
     ['ruby2_keywords', '0.0.5'],
@@ -91,13 +93,13 @@ default_gems = [
       ['ffi-bindings-libfixposix', '0.5.1.0'],
     ['syntax_suggest', '2.0.0'],
     ['tempfile', '0.2.1'],
-    ['time', '0.3.0'],
+    ['time', '0.4.0'],
     ['timeout', '0.4.1'],
     # https://github.com/ruby/tmpdir/issues/13
     # ['tmpdir', '0.1.2'],
     ['tsort', '0.2.0'],
     ['un', '0.3.0'],
-    ['uri', '0.13.0'],
+    ['uri', '0.13.1'],
     ['weakref', '0.1.3'],
     # https://github.com/ruby/win32ole/issues/12
     # ['win32ole', '1.8.8'],
@@ -110,32 +112,32 @@ bundled_gems = [
     ['abbrev', '0.1.2'],
     ['base64', '0.2.0'],
     # Extension still lives in JRuby. See https://github.com/ruby/bigdecimal/issues/268
-    ['bigdecimal', '3.1.6'],
-    ['csv', '3.2.8'],
+    ['bigdecimal', '3.1.8'],
+    ['csv', '3.3.0'],
     # Newer versions require deep control over CRuby internals, needs work to support JRuby.
     # ['debug', '1.9.1'],
     ['debug', '0.2.1'],
     ['drb', '2.2.1'],
     ['getoptlong', '0.2.1'],
     ['matrix', '0.4.2'],
-    ['minitest', '5.22.2'],
+    ['minitest', '5.25.1'],
     ['mutex_m', '0.2.0'],
-    ['net-ftp', '0.3.7'],
-    ['net-imap', '0.4.10'],
+    ['net-ftp', '0.3.8'],
+    ['net-imap', '0.4.17'],
     ['net-pop', '0.1.2'],
-    ['net-smtp', '0.4.0.1'],
+    ['net-smtp', '0.5.0'],
     ['nkf', '0.2.0'],
     ['observer', '0.1.2'],
+    ['power_assert', '2.0.4'],
     ['prime', '0.1.2'],
-    ['power_assert', '2.0.3'],
-    ['racc', '1.7.3'],
+    ['racc', '1.8.1'],
     ['rake', '${rake.version}'],
     # Depends on many CRuby internals
     # ['rbs', '2.0.0'],
     ['resolv-replace', '0.1.1'],
-    ['rexml', '3.3.4'],
+    ['rexml', '3.3.8'],
     ['rinda', '0.2.0'],
-    ['rss', '0.3.0'],
+    ['rss', '0.3.1'],
     # https://github.com/ruby/syslog/issues/1
     # ['syslog', '0.1.0'],
     ['test-unit', '3.6.2'],

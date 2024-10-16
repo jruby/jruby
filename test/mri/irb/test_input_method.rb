@@ -1,13 +1,17 @@
 # frozen_string_literal: false
 
 require "irb"
-require "rdoc"
+begin
+  require "rdoc"
+rescue LoadError
+end
 require_relative "helper"
 
 module TestIRB
   class InputMethodTest < TestCase
     def setup
       @conf_backup = IRB.conf.dup
+      IRB.init_config(nil)
       IRB.conf[:LC_MESSAGES] = IRB::Locale.new
       save_encodings
     end
@@ -33,6 +37,23 @@ module TestIRB
       assert_not_nil Reline.dig_perfect_match_proc
     end
 
+    def test_colorize
+      IRB.conf[:USE_COLORIZE] = true
+      IRB.conf[:VERBOSE] = false
+      original_colorable = IRB::Color.method(:colorable?)
+      IRB::Color.instance_eval { undef :colorable? }
+      IRB::Color.define_singleton_method(:colorable?) { true }
+      workspace = IRB::WorkSpace.new(binding)
+      input_method = IRB::RelineInputMethod.new(IRB::RegexpCompletor.new)
+      IRB.conf[:MAIN_CONTEXT] = IRB::Irb.new(workspace, input_method).context
+      assert_equal "\e[1m$\e[0m\e[m", Reline.output_modifier_proc.call('$', complete: false)
+      assert_equal "\e[1m$\e[0m\e[m  \e[34m\e[1m1\e[0m + \e[34m\e[1m2\e[0m", Reline.output_modifier_proc.call('$  1 + 2', complete: false)
+      assert_equal "\e[32m\e[1m$a\e[0m", Reline.output_modifier_proc.call('$a', complete: false)
+    ensure
+      IRB::Color.instance_eval { undef :colorable? }
+      IRB::Color.define_singleton_method(:colorable?, original_colorable)
+    end
+
     def test_initialization_without_use_autocomplete
       original_show_doc_proc = Reline.dialog_proc(:show_doc)&.dialog_proc
       empty_proc = Proc.new {}
@@ -49,6 +70,7 @@ module TestIRB
     end
 
     def test_initialization_with_use_autocomplete
+      omit 'This test requires RDoc' unless defined?(RDoc)
       original_show_doc_proc = Reline.dialog_proc(:show_doc)&.dialog_proc
       empty_proc = Proc.new {}
       Reline.add_dialog_proc(:show_doc, empty_proc)
@@ -88,17 +110,18 @@ module TestIRB
       @driver = RDoc::RI::Driver.new(use_stdout: true)
     end
 
-    def display_document(target, bind)
+    def display_document(target, bind, driver = nil)
       input_method = IRB::RelineInputMethod.new(IRB::RegexpCompletor.new)
+      input_method.instance_variable_set(:@rdoc_ri_driver, driver) if driver
       input_method.instance_variable_set(:@completion_params, ['', target, '', bind])
-      input_method.display_document(target, driver: @driver)
+      input_method.display_document(target)
     end
 
     def test_perfectly_matched_namespace_triggers_document_display
       omit unless has_rdoc_content?
 
       out, err = capture_output do
-        display_document("String", binding)
+        display_document("String", binding, @driver)
       end
 
       assert_empty(err)
@@ -109,7 +132,7 @@ module TestIRB
     def test_perfectly_matched_multiple_namespaces_triggers_document_display
       result = nil
       out, err = capture_output do
-        result = display_document("{}.nil?", binding)
+        result = display_document("{}.nil?", binding, @driver)
       end
 
       assert_empty(err)
@@ -131,7 +154,7 @@ module TestIRB
     def test_not_matched_namespace_triggers_nothing
       result = nil
       out, err = capture_output do
-        result = display_document("Stri", binding)
+        result = display_document("Stri", binding, @driver)
       end
 
       assert_empty(err)
@@ -156,7 +179,7 @@ module TestIRB
     def test_perfect_matching_handles_nil_namespace
       out, err = capture_output do
         # symbol literal has `nil` doc namespace so it's a good test subject
-        assert_nil(display_document(":aiueo", binding))
+        assert_nil(display_document(":aiueo", binding, @driver))
       end
 
       assert_empty(err)
@@ -168,5 +191,5 @@ module TestIRB
     def has_rdoc_content?
       File.exist?(RDoc::RI::Paths::BASE)
     end
-  end
+  end if defined?(RDoc)
 end

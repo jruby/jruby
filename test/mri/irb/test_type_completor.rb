@@ -9,7 +9,7 @@ rescue LoadError
   return
 end
 
-require 'irb/completion'
+require 'irb'
 require 'tempfile'
 require_relative './helper'
 
@@ -25,6 +25,22 @@ module TestIRB
 
     def empty_binding
       binding
+    end
+
+    def test_build_completor
+      IRB.init_config(nil)
+      verbose, $VERBOSE = $VERBOSE, nil
+      original_completor = IRB.conf[:COMPLETOR]
+      workspace = IRB::WorkSpace.new(Object.new)
+      @context = IRB::Context.new(nil, workspace, TestInputMethod.new)
+      IRB.conf[:COMPLETOR] = nil
+      expected_default_completor = RUBY_VERSION >= '3.4' ? 'IRB::TypeCompletor' : 'IRB::RegexpCompletor'
+      assert_equal expected_default_completor, @context.send(:build_completor).class.name
+      IRB.conf[:COMPLETOR] = :type
+      assert_equal 'IRB::TypeCompletor', @context.send(:build_completor).class.name
+    ensure
+      $VERBOSE = verbose
+      IRB.conf[:COMPLETOR] = original_completor
     end
 
     def assert_completion(preposing, target, binding: empty_binding, include: nil, exclude: nil)
@@ -53,6 +69,16 @@ module TestIRB
       candidates = @completor.completion_candidates('(', ')', '', bind: binding)
       assert_equal [], candidates
       assert_doc_namespace('(', ')', nil)
+    end
+
+    def test_command_completion
+      binding.eval("some_var = 1")
+      # completion for help command's argument should only include command names
+      assert_include(@completor.completion_candidates('help ', 's', '', bind: binding), 'show_source')
+      assert_not_include(@completor.completion_candidates('help ', 's', '', bind: binding), 'some_var')
+
+      assert_include(@completor.completion_candidates('', 'show_s', '', bind: binding), 'show_source')
+      assert_not_include(@completor.completion_candidates(';', 'show_s', '', bind: binding), 'show_source')
     end
   end
 

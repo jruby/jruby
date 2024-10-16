@@ -662,8 +662,8 @@ CODE
     assert_equal(Encoding::UTF_8, "#{s}x".encoding)
   end
 
-  def test_string_interpolations_across_size_pools_get_embedded
-    omit if GC::INTERNAL_CONSTANTS[:SIZE_POOL_COUNT] == 1
+  def test_string_interpolations_across_heaps_get_embedded
+    omit if GC::INTERNAL_CONSTANTS[:HEAP_COUNT] == 1
 
     require 'objspace'
     base_slot_size = GC::INTERNAL_CONSTANTS[:BASE_SLOT_SIZE]
@@ -1969,6 +1969,22 @@ CODE
     assert_equal("hel", $&)
     assert_equal(false, S("hello").start_with?(/el/))
     assert_nil($&)
+  end
+
+  def test_start_with_timeout_memory_leak
+    assert_no_memory_leak([], "#{<<~"begin;"}", "#{<<~'end;'}", "[Bug #20653]", rss: true)
+      regex = Regexp.new("^#{"(a*)" * 10_000}x$", timeout: 0.000001)
+      str = "a" * 1_000_000 + "x"
+
+      code = proc do
+        str.start_with?(regex)
+      rescue
+      end
+
+      10.times(&code)
+    begin;
+      1_000.times(&code)
+    end;
   end
 
   def test_strip
@@ -3356,7 +3372,11 @@ CODE
     assert_same(str, +str)
     assert_not_same(str, -str)
 
-    str = "bar".freeze
+    require 'objspace'
+
+    str = "test_uplus_minus_str".freeze
+    assert_includes ObjectSpace.dump(str), '"fstring":true'
+
     assert_predicate(str, :frozen?)
     assert_not_predicate(+str, :frozen?)
     assert_predicate(-str, :frozen?)
@@ -3364,8 +3384,8 @@ CODE
     assert_not_same(str, +str)
     assert_same(str, -str)
 
-    bar = %w(b a r).join('')
-    assert_same(str, -bar, "uminus deduplicates [Feature #13077]")
+    bar = -%w(test uplus minus str).join('_')
+    assert_same(str, bar, "uminus deduplicates [Feature #13077] str: #{ObjectSpace.dump(str)} bar: #{ObjectSpace.dump(bar)}")
   end
 
   def test_uminus_frozen
@@ -3608,6 +3628,104 @@ CODE
     assert_bytesplice_raise(ArgumentError, S("hello"), 0, 5, "bye", 0)
     assert_bytesplice_raise(ArgumentError, S("hello"), 0, 5, "bye", 0..-1)
     assert_bytesplice_raise(ArgumentError, S("hello"), 0..-1, "bye", 0, 3)
+  end
+
+  def test_append_bytes_into_binary
+    buf = S("".b)
+    assert_equal Encoding::BINARY, buf.encoding
+
+    buf.append_as_bytes(S("hello"))
+    assert_equal "hello".b, buf
+    assert_equal Encoding::BINARY, buf.encoding
+
+    buf.append_as_bytes(S("こんにちは"))
+    assert_equal S("helloこんにちは".b), buf
+    assert_equal Encoding::BINARY, buf.encoding
+  end
+
+  def test_append_bytes_into_utf8
+    buf = S("")
+    assert_equal Encoding::UTF_8, buf.encoding
+
+    buf.append_as_bytes(S("hello"))
+    assert_equal S("hello"), buf
+    assert_equal Encoding::UTF_8, buf.encoding
+    assert_predicate buf, :ascii_only?
+    assert_predicate buf, :valid_encoding?
+
+    buf.append_as_bytes(S("こんにちは"))
+    assert_equal S("helloこんにちは"), buf
+    assert_equal Encoding::UTF_8, buf.encoding
+    refute_predicate buf, :ascii_only?
+    assert_predicate buf, :valid_encoding?
+
+    buf.append_as_bytes(S("\xE2\x82".b))
+    assert_equal S("helloこんにちは\xE2\x82"), buf
+    assert_equal Encoding::UTF_8, buf.encoding
+    refute_predicate buf, :valid_encoding?
+
+    buf.append_as_bytes(S("\xAC".b))
+    assert_equal S("helloこんにちは€"), buf
+    assert_equal Encoding::UTF_8, buf.encoding
+    assert_predicate buf, :valid_encoding?
+  end
+
+  def test_append_bytes_into_utf32
+    buf = S("abc".encode(Encoding::UTF_32LE))
+    assert_equal Encoding::UTF_32LE, buf.encoding
+
+    buf.append_as_bytes("def")
+    assert_equal Encoding::UTF_32LE, buf.encoding
+    refute_predicate buf, :valid_encoding?
+  end
+
+  def test_chilled_string
+    chilled_string = eval('"chilled"')
+
+    assert_not_predicate chilled_string, :frozen?
+
+    assert_not_predicate chilled_string.dup, :frozen?
+    assert_not_predicate chilled_string.clone, :frozen?
+
+    # @+ treat the original string as frozen
+    assert_not_predicate(+chilled_string, :frozen?)
+    assert_not_same chilled_string, +chilled_string
+
+    # @- treat the original string as mutable
+    assert_predicate(-chilled_string, :frozen?)
+    assert_not_same chilled_string, -chilled_string
+  end
+
+  def test_chilled_string_setivar
+    deprecated = Warning[:deprecated]
+    Warning[:deprecated] = false
+
+    String.class_eval <<~RUBY, __FILE__, __LINE__ + 1
+      def setivar!
+        @ivar = 42
+        @ivar
+      end
+    RUBY
+    chilled_string = eval('"chilled"')
+    begin
+      assert_equal 42, chilled_string.setivar!
+    ensure
+      String.undef_method(:setivar!)
+    end
+  ensure
+    Warning[:deprecated] = deprecated
+  end
+
+  def test_chilled_string_substring
+    deprecated = Warning[:deprecated]
+    Warning[:deprecated] = false
+    chilled_string = eval('"a chilled string."')
+    substring = chilled_string[0..-1]
+    assert_equal("a chilled string.", substring)
+    chilled_string[0..-1] = "This string is defrosted."
+    assert_equal("a chilled string.", substring)
+  ensure
+    Warning[:deprecated] = deprecated
   end
 
   private

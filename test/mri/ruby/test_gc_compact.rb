@@ -8,8 +8,8 @@ end
 
 class TestGCCompact < Test::Unit::TestCase
   module CompactionSupportInspector
-    def supports_auto_compact?
-      GC::OPTS.include?("GC_COMPACTION_SUPPORTED")
+    def supports_compact?
+      GC.respond_to?(:compact)
     end
   end
 
@@ -17,7 +17,7 @@ class TestGCCompact < Test::Unit::TestCase
     include CompactionSupportInspector
 
     def setup
-      omit "autocompact not supported on this platform" unless supports_auto_compact?
+      omit "GC compaction not supported on this platform" unless supports_compact?
       super
     end
   end
@@ -83,7 +83,7 @@ class TestGCCompact < Test::Unit::TestCase
     include CompactionSupportInspector
 
     def assert_not_implemented(method, *args)
-      omit "autocompact is supported on this platform" if supports_auto_compact?
+      omit "autocompact is supported on this platform" if supports_compact?
 
       assert_raise(NotImplementedError) { GC.send(method, *args) }
       refute(GC.respond_to?(method), "GC.#{method} should be defined as rb_f_notimplement")
@@ -146,7 +146,7 @@ class TestGCCompact < Test::Unit::TestCase
   end
 
   def test_ast_compacts
-    assert_separately([], "#{<<~"begin;"}\n#{<<~"end;"}", timeout: 10, signal: :SEGV)
+    assert_separately([], "#{<<~"begin;"}\n#{<<~"end;"}", timeout: 10)
     begin;
       def walk_ast ast
         children = ast.children.grep(RubyVM::AbstractSyntaxTree::Node)
@@ -185,7 +185,7 @@ class TestGCCompact < Test::Unit::TestCase
   end
 
   def test_updating_references_for_heap_allocated_shared_arrays
-    assert_separately(%w[-robjspace], "#{<<~"begin;"}\n#{<<~"end;"}", timeout: 10, signal: :SEGV)
+    assert_separately(%w[-robjspace], "#{<<~"begin;"}\n#{<<~"end;"}", timeout: 10)
     begin;
       ary = []
       50.times { |i| ary << i }
@@ -209,7 +209,7 @@ class TestGCCompact < Test::Unit::TestCase
   def test_updating_references_for_embed_shared_arrays
     omit if GC::INTERNAL_CONSTANTS[:SIZE_POOL_COUNT] == 1
 
-    assert_separately(%w[-robjspace], "#{<<~"begin;"}\n#{<<~"end;"}", timeout: 10, signal: :SEGV)
+    assert_separately(%w[-robjspace], "#{<<~"begin;"}\n#{<<~"end;"}", timeout: 10)
     begin;
       ary = Array.new(50)
       50.times { |i| ary[i] = i }
@@ -233,7 +233,7 @@ class TestGCCompact < Test::Unit::TestCase
   end
 
   def test_updating_references_for_heap_allocated_frozen_shared_arrays
-    assert_separately(%w[-robjspace], "#{<<~"begin;"}\n#{<<~"end;"}", timeout: 10, signal: :SEGV)
+    assert_separately(%w[-robjspace], "#{<<~"begin;"}\n#{<<~"end;"}", timeout: 10)
     begin;
       ary = []
       50.times { |i| ary << i }
@@ -258,7 +258,7 @@ class TestGCCompact < Test::Unit::TestCase
   def test_updating_references_for_embed_frozen_shared_arrays
     omit if GC::INTERNAL_CONSTANTS[:SIZE_POOL_COUNT] == 1
 
-    assert_separately(%w[-robjspace], "#{<<~"begin;"}\n#{<<~"end;"}", timeout: 10, signal: :SEGV)
+    assert_separately(%w[-robjspace], "#{<<~"begin;"}\n#{<<~"end;"}", timeout: 10)
     begin;
       ary = Array.new(50)
       50.times { |i| ary[i] = i }
@@ -283,10 +283,10 @@ class TestGCCompact < Test::Unit::TestCase
     end;
   end
 
-  def test_moving_arrays_down_size_pools
+  def test_moving_arrays_down_heaps
     omit if GC::INTERNAL_CONSTANTS[:SIZE_POOL_COUNT] == 1
 
-    assert_separately(%w[-robjspace], "#{<<~"begin;"}\n#{<<~"end;"}", timeout: 10, signal: :SEGV)
+    assert_separately(%w[-robjspace], "#{<<~"begin;"}\n#{<<~"end;"}", timeout: 10)
     begin;
       ARY_COUNT = 50000
 
@@ -305,10 +305,10 @@ class TestGCCompact < Test::Unit::TestCase
     end;
   end
 
-  def test_moving_arrays_up_size_pools
+  def test_moving_arrays_up_heaps
     omit if GC::INTERNAL_CONSTANTS[:SIZE_POOL_COUNT] == 1
 
-    assert_separately(%w[-robjspace], "#{<<~"begin;"}\n#{<<~"end;"}", timeout: 10, signal: :SEGV)
+    assert_separately(%w[-robjspace], "#{<<~"begin;"}\n#{<<~"end;"}", timeout: 10)
     begin;
       ARY_COUNT = 50000
 
@@ -329,10 +329,10 @@ class TestGCCompact < Test::Unit::TestCase
     end;
   end
 
-  def test_moving_objects_between_size_pools
+  def test_moving_objects_between_heaps
     omit if GC::INTERNAL_CONSTANTS[:SIZE_POOL_COUNT] == 1
 
-    assert_separately(%w[-robjspace], "#{<<~"begin;"}\n#{<<~"end;"}", timeout: 10, signal: :SEGV)
+    assert_separately(%w[-robjspace], "#{<<~"begin;"}\n#{<<~"end;"}", timeout: 60)
     begin;
       class Foo
         def add_ivars
@@ -361,10 +361,10 @@ class TestGCCompact < Test::Unit::TestCase
     end;
   end
 
-  def test_moving_strings_up_size_pools
+  def test_moving_strings_up_heaps
     omit if GC::INTERNAL_CONSTANTS[:SIZE_POOL_COUNT] == 1
 
-    assert_separately(%w[-robjspace], "#{<<~"begin;"}\n#{<<~"end;"}", timeout: 30, signal: :SEGV)
+    assert_separately(%w[-robjspace], "#{<<~"begin;"}\n#{<<~"end;"}", timeout: 30)
     begin;
       STR_COUNT = 50000
 
@@ -382,10 +382,10 @@ class TestGCCompact < Test::Unit::TestCase
     end;
   end
 
-  def test_moving_strings_down_size_pools
+  def test_moving_strings_down_heaps
     omit if GC::INTERNAL_CONSTANTS[:SIZE_POOL_COUNT] == 1
 
-    assert_separately(%w[-robjspace], "#{<<~"begin;"}\n#{<<~"end;"}", timeout: 30, signal: :SEGV)
+    assert_separately(%w[-robjspace], "#{<<~"begin;"}\n#{<<~"end;"}", timeout: 30)
     begin;
       STR_COUNT = 50000
 
@@ -402,12 +402,12 @@ class TestGCCompact < Test::Unit::TestCase
     end;
   end
 
-  def test_moving_hashes_down_size_pools
+  def test_moving_hashes_down_heaps
     omit if GC::INTERNAL_CONSTANTS[:SIZE_POOL_COUNT] == 1
     # AR and ST hashes are in the same size pool on 32 bit
     omit unless RbConfig::SIZEOF["uint64_t"] <= RbConfig::SIZEOF["void*"]
 
-    assert_separately(%w[-robjspace], "#{<<~"begin;"}\n#{<<~"end;"}", timeout: 30, signal: :SEGV)
+    assert_separately(%w[-robjspace], "#{<<~"begin;"}\n#{<<~"end;"}", timeout: 30)
     begin;
       HASH_COUNT = 50000
 
@@ -425,7 +425,7 @@ class TestGCCompact < Test::Unit::TestCase
     end;
   end
 
-  def test_moving_objects_between_size_pools_keeps_shape_frozen_status
+  def test_moving_objects_between_heaps_keeps_shape_frozen_status
     # [Bug #19536]
     assert_separately([], "#{<<~"begin;"}\n#{<<~"end;"}")
     begin;

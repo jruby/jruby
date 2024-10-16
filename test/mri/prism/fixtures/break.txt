@@ -1,25 +1,29 @@
-break
+tap { break }
 
-break (1), (2), (3)
+tap { break (1), (2), (3) }
 
-break 1
+tap { break 1 }
 
-break 1, 2,
-3
+tap { break 1, 2,
+3 }
 
-break 1, 2, 3
+tap { break 1, 2, 3 }
 
-break [1, 2, 3]
+tap { break [1, 2, 3] }
 
-break(
+tap { break(
   1
   2
-)
+) }
 
-break()
+tap { break() }
 
-break(1)
+tap { break(1) }
 
 foo { break 42 } == 42
 
 foo { |a| break } == 42
+
+while _ && break; end
+
+until _ && break; end

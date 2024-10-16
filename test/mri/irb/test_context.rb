@@ -28,36 +28,6 @@ module TestIRB
       restore_encodings
     end
 
-    def test_last_value
-      assert_nil(@context.last_value)
-      assert_nil(@context.evaluate('_', 1))
-      obj = Object.new
-      @context.set_last_value(obj)
-      assert_same(obj, @context.last_value)
-      assert_same(obj, @context.evaluate('_', 1))
-    end
-
-    def test_evaluate_with_encoding_error_without_lineno
-      if RUBY_ENGINE == 'truffleruby'
-        omit "Remove me after https://github.com/ruby/prism/issues/2129 is addressed and adopted in TruffleRuby"
-      end
-
-      if RUBY_VERSION >= "3.4."
-        omit "Now raises SyntaxError"
-      end
-
-      assert_raise_with_message(EncodingError, /invalid symbol/) {
-        @context.evaluate(%q[:"\xAE"], 1)
-        # The backtrace of this invalid encoding hash doesn't contain lineno.
-      }
-    end
-
-    def test_evaluate_still_emits_warning
-      assert_warning("(irb):1: warning: END in method; use at_exit\n") do
-        @context.evaluate(%q[def foo; END {}; end], 1)
-      end
-    end
-
     def test_eval_input
       verbose, $VERBOSE = $VERBOSE, nil
       input = TestInputMethod.new([
@@ -382,7 +352,7 @@ module TestIRB
         end
         assert_empty err
         assert_equal("=> \n#{value}\n", out)
-        irb.context.evaluate('A.remove_method(:inspect)', 0)
+        irb.context.evaluate_expression('A.remove_method(:inspect)', 0)
 
         input.reset
         irb.context.echo = true
@@ -392,7 +362,7 @@ module TestIRB
         end
         assert_empty err
         assert_equal("=> #{value_first_line[0..(input.winsize.last - 9)]}...\n=> \n#{value}\n", out)
-        irb.context.evaluate('A.remove_method(:inspect)', 0)
+        irb.context.evaluate_expression('A.remove_method(:inspect)', 0)
 
         input.reset
         irb.context.echo = true
@@ -402,7 +372,7 @@ module TestIRB
         end
         assert_empty err
         assert_equal("=> \n#{value}\n=> \n#{value}\n", out)
-        irb.context.evaluate('A.remove_method(:inspect)', 0)
+        irb.context.evaluate_expression('A.remove_method(:inspect)', 0)
 
         input.reset
         irb.context.echo = false
@@ -412,7 +382,7 @@ module TestIRB
         end
         assert_empty err
         assert_equal("", out)
-        irb.context.evaluate('A.remove_method(:inspect)', 0)
+        irb.context.evaluate_expression('A.remove_method(:inspect)', 0)
 
         input.reset
         irb.context.echo = false
@@ -422,7 +392,7 @@ module TestIRB
         end
         assert_empty err
         assert_equal("", out)
-        irb.context.evaluate('A.remove_method(:inspect)', 0)
+        irb.context.evaluate_expression('A.remove_method(:inspect)', 0)
 
         input.reset
         irb.context.echo = false
@@ -432,7 +402,7 @@ module TestIRB
         end
         assert_empty err
         assert_equal("", out)
-        irb.context.evaluate('A.remove_method(:inspect)', 0)
+        irb.context.evaluate_expression('A.remove_method(:inspect)', 0)
       end
     end
 
@@ -691,6 +661,14 @@ module TestIRB
       assert_equal("irb(!ArgumentError)>", irb.send(:format_prompt, 'irb(%M)>', nil, 1, 1))
     end
 
+    def test_prompt_format
+      main = 'main'
+      irb = IRB::Irb.new(IRB::WorkSpace.new(main), TestInputMethod.new)
+      assert_equal('%% main %m %main %%m >', irb.send(:format_prompt, '%%%% %m %%m %%%m %%%%m %l', '>', 1, 1))
+      assert_equal('42,%i, 42,%3i,042,%03i', irb.send(:format_prompt, '%i,%%i,%3i,%%3i,%03i,%%03i', nil, 42, 1))
+      assert_equal('42,%n, 42,%3n,042,%03n', irb.send(:format_prompt, '%n,%%n,%3n,%%3n,%03n,%%03n', nil, 1, 42))
+    end
+
     def test_lineno
       input = TestInputMethod.new([
         "\n",
@@ -727,6 +705,8 @@ module TestIRB
     def test_build_completor
       verbose, $VERBOSE = $VERBOSE, nil
       original_completor = IRB.conf[:COMPLETOR]
+      IRB.conf[:COMPLETOR] = nil
+      assert_match /IRB::(Regexp|Type)Completor/, @context.send(:build_completor).class.name
       IRB.conf[:COMPLETOR] = :regexp
       assert_equal 'IRB::RegexpCompletor', @context.send(:build_completor).class.name
       IRB.conf[:COMPLETOR] = :unknown
