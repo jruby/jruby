@@ -54,6 +54,7 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.api.Error;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -428,28 +429,38 @@ public class RubyDir extends RubyObject implements Closeable {
     }
 
     /** Changes the current directory to <code>path</code> */
-    @JRubyMethod(optional = 1, checkArity = false, meta = true)
-    public static IRubyObject chdir(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        int argc = Arity.checkArgumentCount(context, args, 0, 1);
+    @JRubyMethod(meta = true)
+    public static IRubyObject chdir(ThreadContext context, IRubyObject recv, IRubyObject _path, Block block) {
+        Ruby runtime = context.runtime;
 
+        RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, _path));
+
+        return chdirCommon(context, block, runtime, path);
+    }
+
+    /** Changes the current directory to <code>path</code> */
+    @JRubyMethod(meta = true)
+    public static IRubyObject chdir(ThreadContext context, IRubyObject recv, Block block) {
         Ruby runtime = context.runtime;
         RubyHash env = context.runtime.getENV();
 
-        if(argc == 0 && env.op_aref(context, runtime.newString("LOG_DIR")).isNil() &&
+        if (env.op_aref(context, runtime.newString("LOG_DIR")).isNil() &&
                 env.op_aref(context, runtime.newString("HOME")).isNil()){
             throw runtime.newArgumentError("HOME/LOGDIR not set");
         }
 
-        RubyString path = argc == 1 ?
-                StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, args[0])) :
-                getHomeDirectoryPath(context);
+        RubyString path = getHomeDirectoryPath(context);
 
+        return chdirCommon(context, block, runtime, path);
+    }
+
+    private static IRubyObject chdirCommon(ThreadContext context, Block block, Ruby runtime, RubyString path) {
         String adjustedPath = RubyFile.adjustRootPathOnWindows(runtime, path.asJavaString(), null);
         checkDirIsTwoSlashesOnWindows(runtime, adjustedPath);
 
         adjustedPath = getExistingDir(runtime, adjustedPath).canonicalPath();
 
-      if (context.runtime.getChdirThread() != null && context.getThread() != context.runtime.getChdirThread()) {
+        if (context.runtime.getChdirThread() != null && context.getThread() != context.runtime.getChdirThread()) {
             throw runtime.newRuntimeError("conflicting chdir during another chdir block");
         }
 
@@ -477,6 +488,11 @@ public class RubyDir extends RubyObject implements Closeable {
         }
 
         return result;
+    }
+
+    @JRubyMethod(name = "chdir")
+    public IRubyObject chdir(ThreadContext context) {
+        return chdir(context, this.getMetaClass(), path, Block.NULL_BLOCK);
     }
 
     /**
@@ -1199,6 +1215,18 @@ public class RubyDir extends RubyObject implements Closeable {
     @Deprecated
     public static RubyArray entries(IRubyObject recv, IRubyObject path, IRubyObject arg, IRubyObject opts) {
         return entries(recv.getRuntime().getCurrentContext(), recv, path, opts);
+    }
+
+    @Deprecated
+    public static IRubyObject chdir(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        switch (args.length) {
+            case 0:
+                return chdir(context, recv, block);
+            case 1:
+                return chdir(context, recv, args[0], block);
+            default:
+                throw Error.argumentError(context, args.length, 0, 1);
+        }
     }
 
 }
