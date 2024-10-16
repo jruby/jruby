@@ -4117,7 +4117,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 advice = argv[0];
                 break;
             default:
-                Arity.raiseArgumentError(runtime, argv, 1, 3);
+                Arity.raiseArgumentError(context, argv, 1, 3);
         }
 
         PosixFadvise fadvise = adviceArgCheck(context, advice);
@@ -4201,7 +4201,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             RubyArray vAry = v.convertToArray();
             int n = vAry.size();
 
-            Arity.checkArgumentCount(runtime, n, 0, 3);
+            Arity.checkArgumentCount(context, n, 0, 3);
 
             opt = ArgsUtil.getOptionsArg(runtime, vAry.toJavaArrayMaybeUnsafe());
 
@@ -4386,7 +4386,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 string = argv[1];
                 break;
             default:
-                Arity.raiseArgumentError(runtime, argv.length, 2, 4);
+                Arity.raiseArgumentError(context, argv.length, 2, 4);
         }
 
         final RubyHash optHash;

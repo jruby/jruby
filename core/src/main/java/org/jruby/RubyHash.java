@@ -1390,7 +1390,7 @@ public class RubyHash extends RubyObject implements Map {
      *
      */
     public IRubyObject fetch(ThreadContext context, IRubyObject[] args, Block block) {
-        Arity.checkArgumentCount(context.runtime, args.length, 1, 2);
+        Arity.checkArgumentCount(context, args.length, 1, 2);
 
         switch(args.length) {
             case 1: return fetch(context, args[0], block);

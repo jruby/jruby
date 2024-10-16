@@ -359,18 +359,23 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         }
     }
 
-    @JRubyMethod(name = "readpartial", required = 1, optional = 1, checkArity = false)
+    @Deprecated
     public IRubyObject readpartial(IRubyObject[] args) {
-        Ruby runtime = getRuntime();
+        return readpartial(getRuntime().getCurrentContext(), args);
+    }
 
-        int argc = Arity.checkArgumentCount(runtime, args, 1, 2);
+    @JRubyMethod(name = "readpartial", required = 1, optional = 1, checkArity = false)
+    public IRubyObject readpartial(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
+
+        int argc = Arity.checkArgumentCount(context, args, 1, 2);
 
         try {
             int len = RubyNumeric.fix2int(args[0]);
             if (len < 0) throw runtime.newArgumentError("negative length " + len + " given");
 
             if (argc > 1 && !args[1].isNil()) {
-                return readPartial(runtime, len, castAsString(runtime.getCurrentContext(), args[1]));
+                return readPartial(runtime, len, castAsString(context, args[1]));
             }
 
             return readPartial(runtime, len, null);

@@ -880,7 +880,7 @@ public class RubyMatchData extends RubyObject {
         check();
 
         Ruby runtime = context.runtime;
-        int argc = Arity.checkArgumentCount(runtime, args.length, 0, 0, true);
+        int argc = Arity.checkArgumentCount(context, args.length, 0, 0, true);
         RubyHash hash = RubyHash.newSmallHash(runtime);
         if (regexp == context.nil) return hash;
 

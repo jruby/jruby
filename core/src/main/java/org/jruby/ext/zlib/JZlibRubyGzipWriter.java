@@ -298,9 +298,14 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return realIo;
     }
 
-    @JRubyMethod(name = "flush", optional = 1, checkArity = false)
+    @Deprecated
     public IRubyObject flush(IRubyObject[] args) {
-        int argc = Arity.checkArgumentCount(getRuntime(), args, 0, 1);
+        return flush(getRuntime().getCurrentContext(), args);
+    }
+
+    @JRubyMethod(name = "flush", optional = 1, checkArity = false)
+    public IRubyObject flush(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 0, 1);
 
         int flush = JZlib.Z_SYNC_FLUSH;
         
@@ -317,12 +322,12 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
             }
             io.flush();
         } catch (IOException ioe) {
-            throw getRuntime().newIOErrorFromException(ioe);
+            throw context.runtime.newIOErrorFromException(ioe);
         } finally {
             io.setSyncFlush(tmp);
         }
         
-        return getRuntime().getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = "mtime=")

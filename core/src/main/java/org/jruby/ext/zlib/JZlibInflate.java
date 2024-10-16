@@ -70,15 +70,20 @@ public class JZlibInflate extends ZStream {
         }
     }
 
-    @JRubyMethod(name = "initialize", optional = 1, checkArity = false, visibility = PRIVATE)
+    @Deprecated
     public IRubyObject _initialize(IRubyObject[] args) {
-        int argc = Arity.checkArgumentCount(getRuntime(), args, 0, 1);
+         return _initialize(getRuntime().getCurrentContext(), args);
+    }
+
+    @JRubyMethod(name = "initialize", optional = 1, checkArity = false, visibility = PRIVATE)
+    public IRubyObject _initialize(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 0, 1);
 
         windowBits = JZlib.DEF_WBITS;
 
         if (args.length > 0 && !args[0].isNil()) {
             windowBits = RubyNumeric.fix2int(args[0]);
-            checkWindowBits(getRuntime(), windowBits, true);
+            checkWindowBits(context.runtime, windowBits, true);
         }
 
         init(windowBits);

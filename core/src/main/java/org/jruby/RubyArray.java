@@ -649,7 +649,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         case 2:
             return initializeCommon(context, args[0], args[1], block);
         default:
-            Arity.raiseArgumentError(getRuntime(), args.length, 0, 2);
+            Arity.raiseArgumentError(context, args.length, 0, 2);
             return null; // not reached
         }
     }
@@ -972,7 +972,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         case 2:
             return fetch(context, args[0], args[1], block);
         default:
-            Arity.raiseArgumentError(context.runtime, args.length, 1, 2);
+            Arity.raiseArgumentError(context, args.length, 1, 2);
             return null; // not reached
         }
     }
@@ -1181,12 +1181,16 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         spliceOne(pos, val); // rb_ary_new4
     }
 
-    @JRubyMethod(name = "insert", required = 1, rest = true, checkArity = false)
+    @Deprecated
     public IRubyObject insert(IRubyObject[] args) {
-        final Ruby runtime = metaClass.runtime;
-        ThreadContext context = runtime.getCurrentContext();
+        return insert(getRuntime().getCurrentContext(), args);
+    }
 
-        int argc = Arity.checkArgumentCount(runtime, args, 1, -1);
+    @JRubyMethod(name = "insert", required = 1, rest = true, checkArity = false)
+    public IRubyObject insert(ThreadContext context, IRubyObject[] args) {
+        final Ruby runtime = context.runtime;
+
+        int argc = Arity.checkArgumentCount(context, args, 1, -1);
 
         modifyCheck();
 
@@ -1623,13 +1627,14 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     @Deprecated
     public IRubyObject aref(IRubyObject[] args) {
+        ThreadContext context = getRuntime().getCurrentContext();
         switch (args.length) {
-        case 1:
-            return aref(getRuntime().getCurrentContext(), args[0]);
+            case 1:
+            return aref(context, args[0]);
         case 2:
             return aref(args[0], args[1]);
         default:
-            Arity.raiseArgumentError(getRuntime(), args.length, 1, 2);
+            Arity.raiseArgumentError(context, args.length, 1, 2);
             return null; // not reached
         }
     }
@@ -1855,7 +1860,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         case 1:
             return first(args[0]);
         default:
-            Arity.raiseArgumentError(getRuntime(), args.length, 0, 1);
+            Arity.raiseArgumentError(getRuntime().getCurrentContext(), args.length, 0, 1);
             return null; // not reached
         }
     }
@@ -1901,7 +1906,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         case 1:
             return last(args[0]);
         default:
-            Arity.raiseArgumentError(getRuntime(), args.length, 0, 1);
+            Arity.raiseArgumentError(getRuntime().getCurrentContext(), args.length, 0, 1);
             return null; // not reached
         }
     }
@@ -3212,7 +3217,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         case 2:
             return slice_bang(args[0], args[1]);
         default:
-            Arity.raiseArgumentError(getRuntime(), args.length, 1, 2);
+            Arity.raiseArgumentError(getRuntime().getCurrentContext(), args.length, 1, 2);
             return null; // not reached
         }
     }

@@ -116,7 +116,7 @@ public final class TopSelfFactory {
         singletonClass.addMethod("using", new JavaMethod.JavaMethodN(singletonClass, Visibility.PRIVATE, "using") {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-                Arity.checkArgumentCount(context.runtime, args, 1, 1);
+                Arity.checkArgumentCount(context, args, 1, 1);
                 RubyModule cref = context.getCurrentStaticScope().getOverlayModuleForWrite(context);
                 // unclear what the equivalent check would be for us
 //                rb_control_frame_t * prev_cfp = previous_frame(GET_THREAD());

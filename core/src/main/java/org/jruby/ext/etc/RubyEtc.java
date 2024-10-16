@@ -215,11 +215,16 @@ public class RubyEtc {
         return RubyString.newString(context.runtime, bytes);
     }
 
-    @JRubyMethod(optional = 1, checkArity = false, module = true)
+    @Deprecated
     public static synchronized IRubyObject getpwuid(IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = recv.getRuntime();
+        return getpwuid(recv.getRuntime().getCurrentContext(), recv, args);
+    }
 
-        int argc = Arity.checkArgumentCount(runtime, args, 0, 1);
+    @JRubyMethod(optional = 1, checkArity = false, module = true)
+    public static synchronized IRubyObject getpwuid(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
+
+        int argc = Arity.checkArgumentCount(context, args, 0, 1);
 
         POSIX posix = runtime.getPosix();
         IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
@@ -228,7 +233,7 @@ public class RubyEtc {
             Passwd pwd = posix.getpwuid(uid);
             if(pwd == null) {
                 if (Platform.IS_WINDOWS) {  // MRI behavior
-                    return recv.getRuntime().getNil();
+                    return runtime.getNil();
                 }
                 throw runtime.newArgumentError("can't find user for " + uid);
             }
@@ -399,11 +404,16 @@ public class RubyEtc {
         }
     }
 
-    @JRubyMethod(optional = 1, checkArity = false, module = true)
+    @Deprecated
     public static synchronized IRubyObject getgrgid(IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = recv.getRuntime();
+        return getgrgid(recv.getRuntime().getCurrentContext(), recv, args);
+    }
 
-        int argc = Arity.checkArgumentCount(runtime, args, 0, 1);
+    @JRubyMethod(optional = 1, checkArity = false, module = true)
+    public static synchronized IRubyObject getgrgid(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
+
+        int argc = Arity.checkArgumentCount(context, args, 0, 1);
 
         POSIX posix = runtime.getPosix();
 

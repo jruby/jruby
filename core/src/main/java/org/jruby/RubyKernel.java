@@ -880,22 +880,32 @@ public class RubyKernel {
         return context.runtime.newFixnum(Math.round((System.nanoTime() - startTime) / 1_000_000_000.0));
     }
 
+    @Deprecated
+    public static IRubyObject exit(IRubyObject recv, IRubyObject[] args) {
+        return exit(recv.getRuntime().getCurrentContext(), recv, args);
+    }
+
     // FIXME: Add at_exit and finalizers to exit, then make exit_bang not call those.
     @JRubyMethod(optional = 1, module = true, visibility = PRIVATE)
-    public static IRubyObject exit(IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = recv.getRuntime();
+    public static IRubyObject exit(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
 
-        Arity.checkArgumentCount(runtime, args, 0, 1);
+        Arity.checkArgumentCount(context, args, 0, 1);
 
         exit(runtime, args, false);
         return runtime.getNil(); // not reached
     }
 
-    @JRubyMethod(name = "exit!", optional = 1, checkArity = false, module = true, visibility = PRIVATE)
+    @Deprecated
     public static IRubyObject exit_bang(IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = recv.getRuntime();
+        return exit_bang(recv.getRuntime().getCurrentContext(), recv, args);
+    }
 
-        Arity.checkArgumentCount(runtime, args, 0, 1);
+    @JRubyMethod(name = "exit!", optional = 1, checkArity = false, module = true, visibility = PRIVATE)
+    public static IRubyObject exit_bang(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
+
+        Arity.checkArgumentCount(context, args, 0, 1);
 
         exit(runtime, args, true);
         return runtime.getNil(); // not reached
@@ -1222,7 +1232,7 @@ public class RubyKernel {
             case 1: return load(context, recv, args[0], block);
             case 2: return load(context, recv, args[0], args[1], block);
         }
-        Arity.raiseArgumentError(context.runtime, args.length, 1, 2);
+        Arity.raiseArgumentError(context, args.length, 1, 2);
         return null; // not reached
     }
 
@@ -2367,9 +2377,14 @@ public class RubyKernel {
         return ((RubyBasicObject)self).to_s();
     }
 
-    @JRubyMethod(name = "extend", required = 1, rest = true, checkArity = false)
+    @Deprecated
     public static IRubyObject extend(IRubyObject self, IRubyObject[] args) {
-        Arity.checkArgumentCount(self.getRuntime(), args, 1, -1);
+        return extend(self.getRuntime().getCurrentContext(), self, args);
+    }
+
+    @JRubyMethod(name = "extend", required = 1, rest = true, checkArity = false)
+    public static IRubyObject extend(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 1, -1);
 
         return ((RubyBasicObject)self).extend(args);
     }
@@ -2511,7 +2526,7 @@ public class RubyKernel {
             case 2:
                 return caller(context, recv, args[0], args[1]);
             default:
-                Arity.checkArgumentCount(context.runtime, args, 0, 2);
+                Arity.checkArgumentCount(context, args, 0, 2);
                 return null; // not reached
         }
     }
@@ -2526,7 +2541,7 @@ public class RubyKernel {
             case 2:
                 return caller_locations(context, recv, args[0], args[1]);
             default:
-                Arity.checkArgumentCount(context.runtime, args, 0, 2);
+                Arity.checkArgumentCount(context, args, 0, 2);
                 return null; // not reached
         }
     }

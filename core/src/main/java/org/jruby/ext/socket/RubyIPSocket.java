@@ -215,7 +215,7 @@ public class RubyIPSocket extends RubyBasicSocket {
             case 2:
                 return recvfrom(context, args[0], args[1]);
             default:
-                Arity.raiseArgumentError(context.runtime, args, 1, 2);
+                Arity.raiseArgumentError(context, args, 1, 2);
                 return null; // not reached
         }
     }

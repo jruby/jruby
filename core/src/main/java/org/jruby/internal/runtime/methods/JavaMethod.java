@@ -286,7 +286,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     }
 
     protected static IRubyObject raiseArgumentError(JavaMethod method, ThreadContext context, String name, int given, int min, int max) {
-        Arity.raiseArgumentError(context.runtime, name, given, min, max);
+        Arity.raiseArgumentError(context, name, given, min, max);
         throw new AssertionError("expected to throw ArgumentError"); // never reached
     }
 

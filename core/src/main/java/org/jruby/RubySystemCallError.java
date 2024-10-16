@@ -186,36 +186,41 @@ public class RubySystemCallError extends RubyStandardError {
 
         return exceptionClass;
     }
+
+    @Deprecated
+    @Override
+    public IRubyObject initialize(IRubyObject[] args, Block unused) {
+        return initialize(getRuntime().getCurrentContext(), args);
+    }
     
     @JRubyMethod(optional = 2, checkArity = false, visibility = PRIVATE)
-    @Override
-    public IRubyObject initialize(IRubyObject[] args, Block block) {
-        Ruby runtime = getRuntime();
+    public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
 
-        int argc = Arity.checkArgumentCount(runtime, args, 0, 2);
+        int argc = Arity.checkArgumentCount(context, args, 0, 2);
 
         RubyClass sCallErorrClass = runtime.getSystemCallError();
         RubyClass klass = getMetaClass().getRealClass();
 
-        IRubyObject msg = runtime.getNil();
-        IRubyObject err = runtime.getNil();
+        IRubyObject msg = context.nil;
+        IRubyObject err = context.nil;
 
         boolean isErrnoClass = !klass.equals(sCallErorrClass);
 
         if (!isErrnoClass) {
             // one optional, one required args
-            Arity.checkArgumentCount(runtime, args, 1, 2);
+            Arity.checkArgumentCount(context, args, 1, 2);
             msg = args[0];
             if (argc == 2) {
                 err = args[1];
             }
             if (argc == 1 && (msg instanceof RubyFixnum)) {
                 err = msg;
-                msg = runtime.getNil();
+                msg = context.nil;
             }
         } else {
             // one optional and no required args
-            Arity.checkArgumentCount(runtime, args, 0, 1);
+            Arity.checkArgumentCount(context, args, 0, 1);
             if (argc == 1) {
                 msg = args[0];
             }

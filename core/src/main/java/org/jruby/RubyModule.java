@@ -3257,9 +3257,14 @@ public class RubyModule extends RubyObject {
         return instance_methods(args);
     }
 
-    @JRubyMethod(name = "instance_methods", optional = 1, checkArity = false)
+    @Deprecated
     public RubyArray instance_methods(IRubyObject[] args) {
-        Arity.checkArgumentCount(getRuntime(), args, 0, 1);
+        return instance_methods(getRuntime().getCurrentContext(), args);
+    }
+
+    @JRubyMethod(name = "instance_methods", optional = 1, checkArity = false)
+    public RubyArray instance_methods(ThreadContext context, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 0, 1);
 
         return instanceMethods(args, PRIVATE, false, true);
     }
@@ -3269,9 +3274,14 @@ public class RubyModule extends RubyObject {
         return public_instance_methods(args);
     }
 
-    @JRubyMethod(name = "public_instance_methods", optional = 1, checkArity = false)
+    @Deprecated
     public RubyArray public_instance_methods(IRubyObject[] args) {
-        Arity.checkArgumentCount(getRuntime(), args, 0, 1);
+        return public_instance_methods(getRuntime().getCurrentContext(), args);
+    }
+
+    @JRubyMethod(name = "public_instance_methods", optional = 1, checkArity = false)
+    public RubyArray public_instance_methods(ThreadContext context, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 0, 1);
 
         return instanceMethods(args, PUBLIC, false, false);
     }
@@ -3290,22 +3300,32 @@ public class RubyModule extends RubyObject {
         return newMethod(null, TypeConverter.checkID(symbol).idString(), false, PUBLIC);
     }
 
+    @Deprecated
+    public RubyArray protected_instance_methods(IRubyObject[] args) {
+        return protected_instance_methods(getRuntime().getCurrentContext(), args);
+    }
+
     /** rb_class_protected_instance_methods
      *
      */
     @JRubyMethod(name = "protected_instance_methods", optional = 1, checkArity = false)
-    public RubyArray protected_instance_methods(IRubyObject[] args) {
-        Arity.checkArgumentCount(getRuntime(), args, 0, 1);
+    public RubyArray protected_instance_methods(ThreadContext context, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 0, 1);
 
         return instanceMethods(args, PROTECTED, false, false);
+    }
+
+    @Deprecated
+    public RubyArray private_instance_methods(IRubyObject[] args) {
+        return private_instance_methods(getRuntime().getCurrentContext(), args);
     }
 
     /** rb_class_private_instance_methods
      *
      */
     @JRubyMethod(name = "private_instance_methods", optional = 1, checkArity = false)
-    public RubyArray private_instance_methods(IRubyObject[] args) {
-        Arity.checkArgumentCount(getRuntime(), args, 0, 1);
+    public RubyArray private_instance_methods(ThreadContext context, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 0, 1);
 
         return instanceMethods(args, PRIVATE, false, false);
     }
@@ -3368,13 +3388,17 @@ public class RubyModule extends RubyObject {
         return obj;
     }
 
+    @Deprecated
+    public RubyModule include(IRubyObject[] modules) {
+        return include(getRuntime().getCurrentContext(), modules);
+    }
+
     /** rb_mod_include
      *
      */
     @JRubyMethod(name = "include", required = 1, rest = true, checkArity = false)
-    public RubyModule include(IRubyObject[] modules) {
-        var context = getRuntime().getCurrentContext();
-        int argc = Arity.checkArgumentCount(context.runtime, modules, 1, -1);
+    public RubyModule include(ThreadContext context, IRubyObject[] modules) {
+        int argc = Arity.checkArgumentCount(context, modules, 1, -1);
 
         if (isRefinement()) throw typeError(context, "Refinement#include has been removed");
 

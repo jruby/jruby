@@ -264,7 +264,7 @@ public class RubyComplex extends RubyNumeric {
             case 1: return newInstanceBang(context, recv, args[0]);
             case 2: return newInstanceBang(context, recv, args[0], args[1]);
         }
-        Arity.raiseArgumentError(context.runtime, args.length, 1, 2);
+        Arity.raiseArgumentError(context, args.length, 1, 2);
         return null;
     }
 
@@ -349,7 +349,7 @@ public class RubyComplex extends RubyNumeric {
             case 1: return newInstance(context, recv, args[0]);
             case 2: return newInstance(context, recv, args[0], args[1]);
         }
-        Arity.raiseArgumentError(context.runtime, args.length, 1, 2);
+        Arity.raiseArgumentError(context, args.length, 1, 2);
         return null;
     }
 
@@ -434,7 +434,7 @@ public class RubyComplex extends RubyNumeric {
             case 1: return convert(context, clazz, args[0]);
             case 2: return convert(context, clazz, args[0], args[1]);
         }
-        Arity.raiseArgumentError(context.runtime, args.length, 1, 2);
+        Arity.raiseArgumentError(context, args.length, 1, 2);
         return null;
     }
 

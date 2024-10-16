@@ -276,7 +276,7 @@ public class RubyRational extends RubyNumeric {
             case 1: return newInstance(context, (RubyClass) clazz, args[0]);
             case 2: return newInstance(context, (RubyClass) clazz, args[0], args[1]);
         }
-        Arity.raiseArgumentError(context.runtime, args.length, 1, 1);
+        Arity.raiseArgumentError(context, args.length, 1, 1);
         return null;
     }
 
@@ -367,7 +367,7 @@ public class RubyRational extends RubyNumeric {
         case 1: return convert(context, clazz, args[0]);        
         case 2: return convert(context, clazz, args[0], args[1]);
         }
-        Arity.raiseArgumentError(context.runtime, args.length, 1, 1);
+        Arity.raiseArgumentError(context, args.length, 1, 1);
         return null;
     }
 

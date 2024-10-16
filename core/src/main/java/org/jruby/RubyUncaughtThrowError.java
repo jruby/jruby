@@ -72,10 +72,15 @@ public class RubyUncaughtThrowError extends RubyArgumentError {
         return new UncaughtThrowError(message, this);
     }
 
+    @Deprecated
     @Override
-    @JRubyMethod(required = 2, optional = 1, checkArity = false, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block block) {
-        int argc = Arity.checkArgumentCount(getRuntime(), args, 2, 3);
+        return initialize(getRuntime().getCurrentContext(), args, block);
+    }
+
+    @JRubyMethod(required = 2, optional = 1, checkArity = false, visibility = Visibility.PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
+        int argc = Arity.checkArgumentCount(context, args, 2, 3);
 
         this.tag = args[0]; this.value = args[1];
         if ( argc > 2 ) this.message = args[2];

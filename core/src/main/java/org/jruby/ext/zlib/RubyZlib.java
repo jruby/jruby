@@ -188,7 +188,7 @@ public class RubyZlib {
 
     @JRubyMethod(name = "crc32", optional = 2, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject crc32(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        args = Arity.scanArgs(context.runtime, args, 0, 2);
+        args = Arity.scanArgs(context, args, 0, 2);
         long start = 0;
         ByteList bytes = null;
         if (!args[0].isNil()) bytes = args[0].convertToString().getByteList();
@@ -216,7 +216,7 @@ public class RubyZlib {
 
     @JRubyMethod(name = "adler32", optional = 2, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject adler32(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        args = Arity.scanArgs(context.runtime, args, 0, 2);
+        args = Arity.scanArgs(context, args, 0, 2);
         int start = 1;
         ByteList bytes = null;
         if (!args[0].isNil()) bytes = args[0].convertToString().getByteList();

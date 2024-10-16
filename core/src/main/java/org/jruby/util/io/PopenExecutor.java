@@ -326,7 +326,7 @@ public class PopenExecutor {
                 break;
             default: {
                 int ex = opt.isNil() ? 0 : 1;
-                Arity.raiseArgumentError(runtime, argc + ex, 1 + ex, 2 + ex);
+                Arity.raiseArgumentError(context, argc + ex, 1 + ex, 2 + ex);
                 return null; // not reached
             }
         }
@@ -1761,7 +1761,7 @@ public class PopenExecutor {
         RubyString prog;
         int i;
 
-        Arity.checkArgumentCount(runtime, argv, 1, Integer.MAX_VALUE);
+        Arity.checkArgumentCount(context, argv, 1, Integer.MAX_VALUE);
 
         prog = null;
 

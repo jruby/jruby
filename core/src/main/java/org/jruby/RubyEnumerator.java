@@ -589,7 +589,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
         Ruby runtime = context.runtime;
 
-        IRubyObject size = Arity.checkArgumentCount(runtime, args, 0, 1) == 1 ? args[0] : null;
+        IRubyObject size = Arity.checkArgumentCount(context, args, 0, 1) == 1 ? args[0] : null;
 
         return initializeWithSize(context, size, block);
     }

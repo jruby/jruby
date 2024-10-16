@@ -34,6 +34,8 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 
 import static org.jruby.runtime.Visibility.*;
+
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -72,12 +74,17 @@ public class RubySystemExit extends RubyException {
         return new SystemExit(message, this);
     }
 
-    @JRubyMethod(optional = 2, checkArity = false, visibility = PRIVATE)
+    @Deprecated
     @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
-        Ruby runtime = getRuntime();
+        return initialize(getRuntime().getCurrentContext(), args, block);
+    }
 
-        int argc = Arity.checkArgumentCount(runtime, args, 0, 2);
+    @JRubyMethod(optional = 2, checkArity = false, visibility = PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
+        Ruby runtime = context.runtime;
+
+        int argc = Arity.checkArgumentCount(context, args, 0, 2);
 
         if (argc > 0) {
             final IRubyObject arg = args[0];

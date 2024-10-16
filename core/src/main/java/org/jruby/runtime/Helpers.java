@@ -2777,7 +2777,7 @@ public class Helpers {
     public static void irCheckArgsArrayArity(ThreadContext context, RubyArray args, int required, int opt, boolean rest) {
         int numArgs = args.size();
         if (numArgs < required || (!rest && numArgs > (required + opt))) {
-            Arity.raiseArgumentError(context.runtime, numArgs, required, required + opt);
+            Arity.raiseArgumentError(context, numArgs, required, required + opt);
         }
     }
 

@@ -184,7 +184,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
     @JRubyMethod(rest = true)
     public IRubyObject new_instance2(ThreadContext context, IRubyObject[] args, Block unusedBlock) {
         final Ruby runtime = context.runtime;
-        Arity.checkArgumentCount(runtime, args, 2, 2);
+        Arity.checkArgumentCount(context, args, 2, 2);
 
         final IRubyObject self = args[0];
         final Object[] convertedArgs = convertArguments((RubyArray) args[1]); // constructor arguments
@@ -243,11 +243,16 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         return new RuntimeException("Dead code... If you see this, file a bug: JPCtIEC fail"); // greppable
     }
 
-    @JRubyMethod(required = 1, optional = 1, checkArity = false)
+    @Deprecated
     public IRubyObject new_instance(IRubyObject[] args, Block block) {
-        final Ruby runtime = getRuntime();
+        return new_instance2(getRuntime().getCurrentContext(), args, block);
+    }
 
-        final int last = Arity.checkArgumentCount(runtime, args, 1, 2) - 1;
+    @JRubyMethod(required = 1, optional = 1, checkArity = false)
+    public IRubyObject new_instance(ThreadContext context, IRubyObject[] args, Block block) {
+        final Ruby runtime = context.runtime;
+
+        final int last = Arity.checkArgumentCount(context, args, 1, 2) - 1;
 
         final RubyProc proc;
         // Is there a supplied proc arg or do we assume a block was supplied

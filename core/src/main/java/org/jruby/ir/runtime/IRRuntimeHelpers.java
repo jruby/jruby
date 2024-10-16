@@ -606,7 +606,7 @@ public class IRRuntimeHelpers {
                 if (last.isRuby2KeywordHash() && last.isEmpty()) return;
             }
             //System.out.println("C: " + context.getFile() + ":" + context.getLine());
-            Arity.raiseArgumentError(context.runtime, argsLength, required, rest ? UNLIMITED_ARGUMENTS : (required + opt));
+            Arity.raiseArgumentError(context, argsLength, required, rest ? UNLIMITED_ARGUMENTS : (required + opt));
         }
     }
 
@@ -616,7 +616,7 @@ public class IRRuntimeHelpers {
 
         if ((block == null || block.type.checkArity) && (argsLength < required || (!rest && argsLength > (required + opt)))) {
             //System.out.println("C: " + context.getFile() + ":" + context.getLine());
-            Arity.raiseArgumentError(context.runtime, argsLength, required, rest ? UNLIMITED_ARGUMENTS : (required + opt));
+            Arity.raiseArgumentError(context, argsLength, required, rest ? UNLIMITED_ARGUMENTS : (required + opt));
         }
 
         if (restKey == -1 && keywords != UNDEFINED) checkForExtraUnwantedKeywordArgs(context, scope, (RubyHash) keywords);

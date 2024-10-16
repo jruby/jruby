@@ -437,7 +437,7 @@ public class JavaInterfaceTemplate {
 
         @Override // method_missing impl
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            Arity.checkArgumentCount(context.runtime, name, args.length, 1, -1);
+            Arity.checkArgumentCount(context, name, args.length, 1, -1);
 
             return callImpl(context, clazz, block, args);
         }

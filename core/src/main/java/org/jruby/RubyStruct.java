@@ -229,16 +229,21 @@ public class RubyStruct extends RubyObject {
 
     // Struct methods
 
+    @Deprecated
+    public static RubyClass newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
+        return newInstance(recv.getRuntime().getCurrentContext(), recv, args, block);
+    }
+
     /** Create new Struct class.
      *
      * MRI: rb_struct_s_def / make_struct
      *
      */
     @JRubyMethod(name = "new", rest = true, checkArity = false, meta = true, keywords = true)
-    public static RubyClass newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = recv.getRuntime();
+    public static RubyClass newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        Ruby runtime = context.runtime;
 
-        int argc = Arity.checkArgumentCount(runtime, args, 0, -1);
+        int argc = Arity.checkArgumentCount(context, args, 0, -1);
 
         String name = null;
         boolean nilName = false;
@@ -260,7 +265,7 @@ public class RubyStruct extends RubyObject {
             final IRubyObject opts = args[argc - 1];
             if (opts instanceof RubyHash) {
                 argc--;
-                keywordInitValue = extractKeywordArg(runtime.getCurrentContext(), (RubyHash) opts, "keyword_init");
+                keywordInitValue = extractKeywordArg(context, (RubyHash) opts, "keyword_init");
             }
         }
 
@@ -295,7 +300,6 @@ public class RubyStruct extends RubyObject {
         } else {
             IRubyObject type = superClass.getConstantAt(name);
             if (type != null) {
-                ThreadContext context = runtime.getCurrentContext();
                 runtime.getWarnings().warn(ID.STRUCT_CONSTANT_REDEFINED, context.getFile(), context.getLine(), "redefining constant " + type);
                 superClass.deleteConstant(name);
             }
@@ -306,7 +310,7 @@ public class RubyStruct extends RubyObject {
         newStruct.setReifiedClass(RubyStruct.class);
         newStruct.setClassIndex(ClassIndex.STRUCT);
 
-        newStruct.setInternalVariable(SIZE_VAR, member.length(runtime.getCurrentContext()));
+        newStruct.setInternalVariable(SIZE_VAR, member.length(context));
         newStruct.setInternalVariable(MEMBER_VAR, member);
         newStruct.setInternalVariable(KEYWORD_INIT_VAR, keywordInitValue);
 
@@ -328,7 +332,7 @@ public class RubyStruct extends RubyObject {
             block = block.cloneBlockForEval(newStruct, EvalType.MODULE_EVAL);
             // Struct bodies should be public by default, so set block visibility to public. JRUBY-1185.
             block.getBinding().setVisibility(Visibility.PUBLIC);
-            block.yieldNonArray(runtime.getCurrentContext(), newStruct, newStruct);
+            block.yieldNonArray(context, newStruct, newStruct);
         }
 
         return newStruct;
@@ -989,7 +993,7 @@ public class RubyStruct extends RubyObject {
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            Arity.checkArgumentCount(context.runtime, name, args, 0, 0);
+            Arity.checkArgumentCount(context, name, args, 0, 0);
             return ((RubyStruct)self).get(index);
         }
 
@@ -1018,7 +1022,7 @@ public class RubyStruct extends RubyObject {
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            Arity.checkArgumentCount(context.runtime, name, args, 1, 1);
+            Arity.checkArgumentCount(context, name, args, 1, 1);
             return ((RubyStruct)self).set(args[0], index);
         }
 

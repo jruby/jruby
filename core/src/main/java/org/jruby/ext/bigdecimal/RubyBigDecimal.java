@@ -377,7 +377,7 @@ public class RubyBigDecimal extends RubyNumeric {
         // than do an expensive constant lookup.
         RubyModule c = (RubyModule)recv;
 
-        args = Arity.scanArgs(context.runtime, args, 1, 1);
+        args = Arity.scanArgs(context, args, 1, 1);
 
         long mode = Convert.castAsFixnum(context, args[0]).getLongValue();
         IRubyObject value = args[1];

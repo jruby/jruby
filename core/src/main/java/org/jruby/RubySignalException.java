@@ -73,7 +73,7 @@ public class RubySignalException extends RubyException {
 
         if (sig.isNil()) {
             sig = args[0];
-            Arity.checkArgumentCount(context.runtime, args, 1, argnum);
+            Arity.checkArgumentCount(context, args, 1, argnum);
         } else {
             argnum = 2;
         }
