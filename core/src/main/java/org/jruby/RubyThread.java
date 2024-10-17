@@ -940,18 +940,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return RubyString.newString(runtime, rubyName);
     }
 
-    /**
-     * Returns the current Ruby thread.
-     * @param runtime
-     * @return current ruby thread
-     */
-    public static RubyThread current(final Ruby runtime) {
-        return runtime.getCurrentContext().getThread();
-    }
-
     @JRubyMethod(meta = true)
     public static RubyThread current(IRubyObject recv) {
-        return current(recv.getRuntime());
+        return recv.getRuntime().getCurrentContext().getThread();
     }
 
     @JRubyMethod(meta = true)
