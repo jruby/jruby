@@ -3980,7 +3980,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                     ops |= SelectionKey.OP_ACCEPT | SelectionKey.OP_READ;
                 }
                 if ((fix.getIntValue() & IOEvent.IO_WRITABLE.value) != 0) {
-                    ops |= SelectionKey.OP_WRITE | SelectionKey.OP_WRITE;
+                    ops |= SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE;
                 }
             } else {
                 throw context.runtime.newArgumentError("unsupported mode: " + argv[1].getType());
