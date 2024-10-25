@@ -44,7 +44,7 @@ default_gems = [
     # https://github.com/ruby/fcntl/issues/9
     # ['fcntl', '1.0.1'],
     ['ffi', '1.16.3'],
-    # ['fiddle', '1.1.0'],
+    ['fiddle', '1.1.4'],
     ['fileutils', '1.6.0'],
     ['find', '0.1.1'],
     ['forwardable', '1.3.2'],
