@@ -397,7 +397,7 @@ jobs:
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v3
         with:
-          distribution: 'adopt-openj9'
+          distribution: 'semeru'
           java-version: '17'
           cache: 'maven'
       - name: bootstrap
