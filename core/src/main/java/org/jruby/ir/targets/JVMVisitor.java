@@ -1191,14 +1191,7 @@ public class JVMVisitor extends IRVisitor {
             }
         }
         if (compoundstring.isFrozen()) {
-            if (runtime.getInstanceConfig().isDebuggingFrozenStringLiteral()) {
-                jvmMethod().loadContext();
-                jvmAdapter().ldc(compoundstring.getFile());
-                jvmAdapter().ldc(compoundstring.getLine());
-                jvmMethod().invokeIRHelper("freezeLiteralString", sig(RubyString.class, RubyString.class, ThreadContext.class, String.class, int.class));
-            } else {
-                jvmMethod().invokeIRHelper("freezeLiteralString", sig(RubyString.class, RubyString.class));
-            }
+            jvmMethod().invokeIRHelper("freezeLiteralString", sig(RubyString.class, RubyString.class));
         }
         jvmStoreLocal(compoundstring.getResult());
     }

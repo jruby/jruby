@@ -1415,7 +1415,6 @@ public abstract class RubyParserBase {
                 DStrNode newDStr = new DStrNode(head.getLine(), ((DStrNode) tail).getEncoding());
                 newDStr.add(head);
                 newDStr.addAll(tail);
-                if (frozenStringLiterals) newDStr.setFrozen(true);
                 return newDStr;
             } 
 
