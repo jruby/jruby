@@ -79,6 +79,19 @@ module Fiddle
       raise TypeError.new("cannot convert #{dl_type} to ffi") unless ffi_type
       ffi_type
     end
+
+    module LibC
+      extend FFI::Library
+      ffi_lib FFI::Library::LIBC
+      attach_function :malloc, [ :size_t ], :pointer
+      attach_function :malloc_direct, :malloc, [ :size_t ], :long
+      attach_function :realloc, [ :pointer, :size_t ], :pointer
+      FREE = attach_function :free, [ :pointer ], :void
+    end
+  end
+
+  def self.malloc(size)
+    JRuby::LibC.malloc_direct(size)
   end
 
   class Function
@@ -251,7 +264,7 @@ module Fiddle
     end
 
     def self.malloc(size, free = nil)
-      self.new(LibC.malloc(size), size, free ? free : LibC::FREE)
+      self.new(JRuby::LibC.malloc(size), size, free ? free : JRuby::LibC::FREE)
     end
 
     def null?
