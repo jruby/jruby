@@ -2344,6 +2344,7 @@ public class RubyEnumerable {
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject[] largs, Block blk) {
+            ThreadContext.resetCallInfo(context);
             final Ruby runtime = context.runtime;
             final boolean blockGiven = block.isGiven();
 
@@ -2386,6 +2387,7 @@ public class RubyEnumerable {
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject[] largs, Block blk) {
+            ThreadContext.resetCallInfo(context);
             IRubyObject value;
             if (largs.length == 0) {
                 value = context.nil;
