@@ -2220,6 +2220,7 @@ public class RubyEnumerable {
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
+            ThreadContext.resetCallInfo(context);
             InternalVariables variables = enumerator.getInternalVariables();
             final IRubyObject enumerable = (IRubyObject) variables.getInternalVariable("chunk_enumerable");
             final RubyProc categorize = (RubyProc) variables.getInternalVariable("chunk_categorize");
