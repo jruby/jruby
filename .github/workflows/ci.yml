@@ -403,7 +403,7 @@ jobs:
       - name: bootstrap
         run: mvn -Pbootstrap clean package
       - name: bundle install
-        run: bin/jruby --dev -S bundle install
+        run: bin/jruby -S bundle install
       - name: test profile
         run: "tool/maven-ci-script.sh"
         env:
