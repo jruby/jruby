@@ -2302,12 +2302,14 @@ public class RubyEnumerable {
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
+            ThreadContext.resetCallInfo(context);
             result.append(packEnumValues(context, args));
             return context.nil;
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject arg, Block block) {
+            ThreadContext.resetCallInfo(context);
             result.append(arg);
             return context.nil;
         }
