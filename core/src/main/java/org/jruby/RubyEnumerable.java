@@ -2220,6 +2220,7 @@ public class RubyEnumerable {
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
+            ThreadContext.resetCallInfo(context);
             InternalVariables variables = enumerator.getInternalVariables();
             final IRubyObject enumerable = (IRubyObject) variables.getInternalVariable("chunk_enumerable");
             final RubyProc categorize = (RubyProc) variables.getInternalVariable("chunk_categorize");
@@ -2302,12 +2303,14 @@ public class RubyEnumerable {
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
+            ThreadContext.resetCallInfo(context);
             result.append(packEnumValues(context, args));
             return context.nil;
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject arg, Block block) {
+            ThreadContext.resetCallInfo(context);
             result.append(arg);
             return context.nil;
         }
@@ -2342,6 +2345,7 @@ public class RubyEnumerable {
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject[] largs, Block blk) {
+            ThreadContext.resetCallInfo(context);
             final Ruby runtime = context.runtime;
             final boolean blockGiven = block.isGiven();
 
@@ -2384,6 +2388,7 @@ public class RubyEnumerable {
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject[] largs, Block blk) {
+            ThreadContext.resetCallInfo(context);
             IRubyObject value;
             if (largs.length == 0) {
                 value = context.nil;
