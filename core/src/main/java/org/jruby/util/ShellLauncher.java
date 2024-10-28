@@ -198,6 +198,11 @@ public class ShellLauncher {
             return processError;
         }
 
+        public long pid() {
+            // no pid for a script so we return -1
+            return -1;
+        }
+
         public int waitFor() throws InterruptedException {
             processThread.join();
             return result;
@@ -978,6 +983,10 @@ public class ShellLauncher {
 
         public FileChannel getOutput() {
             return outputChannel;
+        }
+
+        public long pid() {
+            return PID_GETTER.getPid(child);
         }
 
         public FileChannel getError() {
