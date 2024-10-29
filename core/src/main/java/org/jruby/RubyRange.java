@@ -81,6 +81,8 @@ import org.jruby.util.TypeConverter;
 import static org.jruby.RubyEnumerator.SizeFn;
 
 import static org.jruby.runtime.Visibility.PRIVATE;
+import static org.jruby.util.RubyStringBuilder.str;
+import static org.jruby.util.RubyStringBuilder.types;
 
 /**
  * @author jpetersen
@@ -1269,18 +1271,24 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod
     public IRubyObject size(ThreadContext context) {
-        if (begin instanceof RubyNumeric) {
+        if (begin instanceof RubyInteger) {
             if (end instanceof RubyNumeric) {
                 return RubyNumeric.intervalStepSize(context, begin, end, RubyFixnum.one(context.runtime), isExclusive);
             }
             if (end.isNil()) {
                 return dbl2num(context.runtime, Double.POSITIVE_INFINITY);
             }
-        } else if (begin.isNil() && end instanceof RubyNumeric) {
-            return dbl2num(context.runtime, Double.POSITIVE_INFINITY);
+        }
+
+        if (!discreteObject(begin)) {
+            throw typeError(context, str(context.runtime, "can't iterate from ", types(context, begin.getMetaClass())));
         }
 
         return context.nil;
+    }
+
+    private boolean discreteObject(IRubyObject object) {
+        return object.respondsTo("succ");
     }
 
     public final boolean isExcludeEnd() {
