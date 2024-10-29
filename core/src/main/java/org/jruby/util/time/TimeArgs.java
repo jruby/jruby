@@ -19,6 +19,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.function.Function;
 
+import static org.jruby.RubyTime.TIME_SCALE;
+
 public class TimeArgs {
     private final int year;
     private final int month;
@@ -30,7 +32,8 @@ public class TimeArgs {
     private final IRubyObject usecObj;
     private final boolean dst;
 
-    public TimeArgs(ThreadContext context, IRubyObject year, IRubyObject month, IRubyObject day, IRubyObject hour, IRubyObject minute, IRubyObject second, IRubyObject usec, boolean dst) {
+    public TimeArgs(ThreadContext context, IRubyObject year, IRubyObject month, IRubyObject day, IRubyObject hour,
+                    IRubyObject minute, IRubyObject second, IRubyObject usec, boolean dst) {
         this.year = parseYear(context, year);
         this.month = parseMonth(context, month);
         this.day = parseIntOrDefault(context, day, 1);
@@ -142,12 +145,12 @@ public class TimeArgs {
                 } else {
                     double secs = RubyFloat.num2dbl(context, secondObj);
 
-                    if (secs < 0 || secs >= RubyTime.TIME_SCALE) {
+                    if (secs < 0 || secs >= TIME_SCALE) {
                         throw runtime.newArgumentError("argument out of range.");
                     }
 
                     millis = (int) (secs * 1000) % 1000;
-                    nanos = ((long) (secs * 1000000000) % 1000000);
+                    nanos = ((long) (secs * TIME_SCALE) % 1000000);
                 }
             }
         } else if (usecObj instanceof RubyRational) {
@@ -177,7 +180,7 @@ public class TimeArgs {
         } else {
             int usec = parseIntArg(context, usecObj).isNil() ? 0 : RubyNumeric.num2int(usecObj);
 
-            if (usec < 0 || usec >= RubyTime.TIME_SCALE / 1000) {
+            if (usec < 0 || usec >= TIME_SCALE / 1000) {
                 throw runtime.newArgumentError("argument out of range.");
             }
 
