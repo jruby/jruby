@@ -62,7 +62,9 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.util.ByteList;
+import org.jruby.util.ConvertBytes;
 import org.jruby.util.RubyDateFormatter;
+import org.jruby.util.RubyTimeParser;
 import org.jruby.util.Sprintf;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.time.TimeArgs;
@@ -81,8 +83,10 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static java.lang.Integer.parseInt;
 import static org.jruby.RubyComparable.invcmp;
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
@@ -90,6 +94,7 @@ import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
+import static org.jruby.util.TypeConverter.typeAsString;
 
 /** The Time class.
  *
@@ -101,7 +106,7 @@ public class RubyTime extends RubyObject {
 
     private static final BigDecimal ONE_MILLION_BD = BigDecimal.valueOf(1000000);
     private static final BigDecimal ONE_BILLION_BD = BigDecimal.valueOf(1000000000);
-    public static final int TIME_SCALE = 1000000000;
+    public static final int TIME_SCALE = 1_000_000_000;
 
     private DateTime dt;
     private long nsec;
@@ -1159,7 +1164,7 @@ public class RubyTime extends RubyObject {
     public RubyNumeric subsec(final ThreadContext context) {
         long nanosec = dt.getMillisOfSecond() * 1_000_000 + this.nsec;
 
-        RubyNumeric subsec = (RubyNumeric) RubyRational.newRationalCanonicalize(context, nanosec, 1_000_000_000);
+        RubyNumeric subsec = (RubyNumeric) RubyRational.newRationalCanonicalize(context, nanosec, TIME_SCALE);
         return subsec.isZero() ? RubyFixnum.zero(context.runtime) : subsec;
     }
 
@@ -1725,74 +1730,94 @@ public class RubyTime extends RubyObject {
         return context.nil;
     }
 
-    @JRubyMethod(name = "initialize", optional = 7, checkArity = false, visibility = PRIVATE, keywords = true)
+    @JRubyMethod(name = "initialize", optional = 8, checkArity = false, visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
-        IRubyObject zone = null;
-        IRubyObject nil = context.nil;
+        int argc = args.length - (keywords ? 1 : 0);
+        IRubyObject zone = context.nil;
+        IRubyObject precision = context.nil;
 
-        int argc = args.length;
         if (keywords) {
-            IRubyObject in = ArgsUtil.extractKeywordArg(context, args[argc - 1], "in");
-            if (in != null) {
-                if (argc > 7) {
+            IRubyObject[] opts = ArgsUtil.extractKeywordArgs(context, args[args.length - 1], "in", "precision");
+            if (opts[0] != null) {
+                if (args.length > 7) {
                     throw context.runtime.newArgumentError("timezone argument given as positional and keyword arguments");
                 }
-                zone = in;
-            } else {
-                if (argc > 6) {
-                    zone = args[6];
-                }
+                zone = opts[0];
+            } else if (args.length > 6) {
+                zone = args[6];
             }
-        } else if (argc > 6) {
+
+            if (opts[1] != null) {
+                if (!(opts[1] instanceof RubyNumeric)) {
+                    // Weird error since all numerics work at this point so why mention Integer?
+                    throw typeError(context, str(context.runtime, "no implicit conversion of ", typeAsString(opts[1]), " into Integer"));
+                }
+                precision = opts[1];
+            }
+        } else if (args.length > 6) {
             zone = args[6];
         }
 
+        IRubyObject nil = context.nil;
+
         switch (argc) {
-            case 0:
-                return initialize(context);
-            case 1:
-                return zone != null ?
-                        initializeNow(context, zone) :
-                        initialize(context, args[0], nil, nil, nil, nil, nil);
+            case 0: return initializeNow(context, zone);
+            case 1: return timeInitParse(context, args[0], zone, precision);
             case 2:
-                return zone != null ?
-                        initialize(context, args[0], nil, nil, nil, nil, nil, zone) :
-                        initialize(context, args[0], args[1], nil, nil, nil, nil);
+                return keywords ?
+                        initialize(context, args[0], nil, nil, nil, nil, nil, precision, zone) :
+                        initialize(context, args[0], args[1], nil, nil, nil, nil, precision);
             case 3:
-                return zone != null ?
-                        initialize(context, args[0], args[1], nil, nil, nil, nil, zone) :
-                        initialize(context, args[0], args[1], args[2], nil, nil, nil);
+                return keywords ?
+                        initialize(context, args[0], args[1], nil, nil, nil, nil, precision, zone) :
+                        initialize(context, args[0], args[1], args[2], nil, nil, nil, precision);
             case 4:
-                return zone != null ?
-                        initialize(context, args[0], args[1], args[2], nil, nil, nil, zone) :
-                        initialize(context, args[0], args[1], args[2], args[3], nil, nil);
+                return keywords ?
+                        initialize(context, args[0], args[1], args[2], nil, nil, nil, precision, zone) :
+                        initialize(context, args[0], args[1], args[2], args[3], nil, nil, precision);
             case 5:
-                return zone != null ?
-                        initialize(context, args[0], args[1], args[2], args[3], nil, nil, zone) :
-                        initialize(context, args[0], args[1], args[2], args[3], args[4], nil);
+                return keywords ?
+                        initialize(context, args[0], args[1], args[2], args[3], nil, nil, precision, zone) :
+                        initialize(context, args[0], args[1], args[2], args[3], args[4], nil, precision);
             case 6:
-                return zone != null ?
-                        initialize(context, args[0], args[1], args[2], args[3], args[4], nil, zone) :
-                        initialize(context, args[0], args[1], args[2], args[3], args[4], args[5]);
+                return keywords ?
+                        initialize(context, args[0], args[1], args[2], args[3], args[4], nil, precision, zone) :
+                        initialize(context, args[0], args[1], args[2], args[3], args[4], args[5], precision);
             case 7:
-                return initialize(context, args[0], args[1], args[2], args[3], args[4], args[5], zone);
+                return initialize(context, args[0], args[1], args[2], args[3], args[4], args[5], precision, zone);
             default:
                 throw context.runtime.newArgumentError(argc, 0, 7);
+
         }
     }
 
-    private IRubyObject initialize(ThreadContext context, IRubyObject year, IRubyObject month, IRubyObject day, IRubyObject hour, IRubyObject minute, IRubyObject second) {
-        IRubyObject nil = context.nil;
+    private IRubyObject timeInitParse(ThreadContext context, IRubyObject arg, IRubyObject zone, IRubyObject precision) {
+        IRubyObject strArg = arg.checkStringType();
+        if (strArg.isNil()) {
+            return initialize(context, arg, context.nil, context.nil, context.nil, context.nil, context.nil, precision, zone);
+        }
+        RubyString str = (RubyString) strArg;
 
-        TimeArgs timeArgs = new TimeArgs(context, year, month, day, hour, minute, second, nil, false);
+        if (!str.getEncoding().isAsciiCompatible()) {
+            throw argumentError(context, "time string should have ASCII compatible encoding");
+        }
+
+        return new RubyTimeParser().parse(context, this, str, zone, precision);
+    }
+
+    private IRubyObject initialize(ThreadContext context, IRubyObject year, IRubyObject month, IRubyObject day,
+                                   IRubyObject hour, IRubyObject minute, IRubyObject second, IRubyObject usec) {
+        TimeArgs timeArgs = new TimeArgs(context, year, month, day, hour, minute, second, usec, false);
 
         timeArgs.initializeTime(context, this, getLocalTimeZone(context.runtime));
 
-        return nil;
+        return context.nil;
     }
 
-    private IRubyObject initialize(ThreadContext context, IRubyObject year, IRubyObject month, IRubyObject day, IRubyObject hour, IRubyObject minute, IRubyObject second, IRubyObject zone) {
+    public IRubyObject initialize(ThreadContext context, IRubyObject year, IRubyObject month, IRubyObject day,
+                                  IRubyObject hour, IRubyObject minute, IRubyObject second, IRubyObject usec,
+                                  IRubyObject zone) {
         Ruby runtime = context.runtime;
         IRubyObject nil = context.nil;
 
@@ -1803,7 +1828,7 @@ public class RubyTime extends RubyObject {
         boolean dst = false;
 
         if (zone.isNil()) {
-            return initialize(context, year, month, day, hour, minute, second);
+            return initialize(context, year, month, day, hour, minute, second, usec);
         } else if (zone == runtime.newSymbol("dst")) {
             dst = true;
             dtz = getLocalTimeZone(runtime);
@@ -1825,7 +1850,7 @@ public class RubyTime extends RubyObject {
             }
         }
 
-        TimeArgs timeArgs = new TimeArgs(context, year, month, day, hour, minute, second, nil, dst);
+        TimeArgs timeArgs = new TimeArgs(context, year, month, day, hour, minute, second, usec, dst);
 
         timeArgs.initializeTime(context, this, dtz);
 
