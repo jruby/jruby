@@ -3,7 +3,6 @@ package org.jruby.ext.fiber;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
-import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
 import org.jruby.RubyFixnum;
@@ -40,6 +39,7 @@ import java.util.function.BiConsumer;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.castAsHash;
+import static org.jruby.api.Error.frozenError;
 import static org.jruby.api.Error.typeError;
 
 public class ThreadFiber extends RubyObject implements ExecutionContext {
@@ -794,7 +794,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         if (hashArg == context.nil) return;
 
         var hash = castAsHash(context, hashArg, "storage must be a Hash");
-        if (hash.isFrozen()) throw context.runtime.newFrozenError("storage must not be frozen");
+        if (hash.isFrozen()) throw frozenError(context, hash, "storage must not be frozen");
 
         hash.visitAll(context, (ctx, self, key, value, index) -> {
             if (!(key instanceof RubySymbol)) throw typeError(context, key, "Symbol");

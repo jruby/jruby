@@ -1,8 +1,10 @@
 package org.jruby.api;
 
 import org.jruby.Ruby;
+import org.jruby.RubyFrozenError;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.FrozenError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.ThreadContext;
@@ -12,6 +14,18 @@ import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
 
 public class Error {
+    /**
+     * Create a frozen error with a simple ASCII String.
+     *
+     * @param context the current thread context
+     * @param object which is the frozen object
+     * @param message to be displayed in the error
+     * @return the error
+     */
+    public static RaiseException frozenError(ThreadContext context, IRubyObject object, String message) {
+        return RubyFrozenError.newFrozenError(context, context.runtime.newString(message), object).toThrowable();
+    }
+
     /**
      * Create a TypeError with the given message.
      *
