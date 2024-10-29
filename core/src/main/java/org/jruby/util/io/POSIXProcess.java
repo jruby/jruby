@@ -38,6 +38,10 @@ public class POSIXProcess extends Process {
         return null;
     }
 
+    public long pid() {
+        return finalPid;
+    }
+
     @Override
     public synchronized int waitFor() throws InterruptedException {
         if (exitValue == null) {
