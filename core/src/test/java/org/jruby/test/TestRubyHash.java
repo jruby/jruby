@@ -59,7 +59,7 @@ public class TestRubyHash extends Base {
      */
     public void testConstructors() throws Exception {
         result = eval("hash = Hash['b', 200]; p hash");
-        assertEquals("{\"b\"=>200}", result);
+        assertEquals("{\"b\" => 200}", result);
         result = eval("hash = Hash.new(); p hash['test']");
         assertEquals("nil", result);
         result = eval("hash = Hash.new('default'); p hash['test']");
@@ -96,11 +96,11 @@ public class TestRubyHash extends Base {
      */
     public void testConversions() throws Exception {
         result = eval("p $h.to_s");
-        assertEquals("\"{\\\"foo\\\"=>\\\"bar\\\"}\"", result);
+        assertEquals("\"{\\\"foo\\\" => \\\"bar\\\"}\"", result);
         result = eval("p $h.to_a");
         assertEquals("[[\"foo\", \"bar\"]]", result);
         result = eval("p $h.to_hash");
-        assertEquals("{\"foo\"=>\"bar\"}", result);
+        assertEquals("{\"foo\" => \"bar\"}", result);
     }
 
     /**
@@ -118,15 +118,15 @@ public class TestRubyHash extends Base {
      */
     public void testIterating() throws Exception {
         assertEquals("[\"foo\", \"bar\"]", eval("$h.each {|pair| p pair}"));
-        assertEquals("{\"foo\"=>\"bar\"}", eval("p $h.each {|pair| }"));
+        assertEquals("{\"foo\" => \"bar\"}", eval("p $h.each {|pair| }"));
         assertTrue(eval("$h.each_pair {|pair| p pair}").indexOf("[\"foo\", \"bar\"]") != -1);
-        assertTrue(eval("p $h.each_pair {|pair| }").indexOf("{\"foo\"=>\"bar\"}") != -1);
+        assertTrue(eval("p $h.each_pair {|pair| }").indexOf("{\"foo\" => \"bar\"}") != -1);
 
         assertEquals("\"foo\"", eval("$h.each_key {|k| p k}"));
-        assertEquals("{\"foo\"=>\"bar\"}", eval("p $h.each_key {|k| }"));
+        assertEquals("{\"foo\" => \"bar\"}", eval("p $h.each_key {|k| }"));
 
         assertEquals("\"bar\"", eval("$h.each_value {|v| p v}"));
-        assertEquals("{\"foo\"=>\"bar\"}", eval("p $h.each_value {|v| }"));
+        assertEquals("{\"foo\" => \"bar\"}", eval("p $h.each_value {|v| }"));
     }
 
     /**
@@ -135,25 +135,25 @@ public class TestRubyHash extends Base {
     public void testDeleting() throws Exception {
         eval("$delete_h = {1=>2,3=>4}");
         assertEquals("2", eval("p $delete_h.delete(1)"));
-        assertEquals("{3=>4}", eval("p $delete_h"));
+        assertEquals("{3 => 4}", eval("p $delete_h"));
         assertEquals("nil", eval("p $delete_h.delete(100)"));
         assertEquals("100", eval("$delete_h.delete(100) {|x| p x }"));
 
         eval("$delete_h = {1=>2,3=>4,5=>6}");
-        assertEquals("{1=>2}", eval("p $delete_h.delete_if {|k,v| k >= 3}"));
-        assertEquals("{1=>2}", eval("p $delete_h"));
+        assertEquals("{1 => 2}", eval("p $delete_h.delete_if {|k,v| k >= 3}"));
+        assertEquals("{1 => 2}", eval("p $delete_h"));
 
         eval("$delete_h.clear");
         assertEquals("{}", eval("p $delete_h"));
 
         eval("$delete_h = {1=>2,3=>4,5=>6}");
-        assertEquals("{1=>2}", eval("p $delete_h.reject {|k,v| k >= 3}"));
+        assertEquals("{1 => 2}", eval("p $delete_h.reject {|k,v| k >= 3}"));
         assertEquals("3", eval("p $delete_h.size"));
 
         eval("$delete_h = {1=>2,3=>4,5=>6}");
         eval("p $delete_h");
 
-        assertEquals("{1=>2}", eval("p $delete_h.reject! {|k,v| k >= 3}"));
+        assertEquals("{1 => 2}", eval("p $delete_h.reject! {|k,v| k >= 3}"));
         assertEquals("1", eval("p $delete_h.size"));
         assertEquals("nil", eval("p $delete_h.reject! {|k,v| false}"));
     }

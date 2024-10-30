@@ -928,8 +928,14 @@ public class RubyHash extends RubyObject implements Map {
 
             if (index > 0) bytes.append((byte) ',').append((byte) ' ');
 
-            str.catWithCodeRange(keyStr);
-            bytes.append((byte) '=').append((byte) '>');
+            boolean keyIsSymbol = key instanceof RubySymbol;
+
+            str.catWithCodeRange(keyIsSymbol ? (RubyString) keyStr.substr(context.runtime, 1, keyStr.length() - 1) : keyStr);
+            if (keyIsSymbol) {
+                bytes.append(':').append(' ');
+            } else {
+                bytes.append(' ').append('=').append('>').append(' ');
+            }
             str.catWithCodeRange(valStr);
         }
     };
