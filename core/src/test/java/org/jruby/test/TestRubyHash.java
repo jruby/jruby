@@ -59,7 +59,7 @@ public class TestRubyHash extends Base {
      */
     public void testConstructors() throws Exception {
         result = eval("hash = Hash['b', 200]; p hash");
-        assertEquals("{\"b\"=>200}", result);
+        assertEquals("{\"b\" => 200}", result);
         result = eval("hash = Hash.new(); p hash['test']");
         assertEquals("nil", result);
         result = eval("hash = Hash.new('default'); p hash['test']");
@@ -96,7 +96,7 @@ public class TestRubyHash extends Base {
      */
     public void testConversions() throws Exception {
         result = eval("p $h.to_s");
-        assertEquals("\"{\\\"foo\\\"=>\\\"bar\\\"}\"", result);
+        assertEquals("\"{\\\"foo\\\" => \\\"bar\\\"}\"", result);
         result = eval("p $h.to_a");
         assertEquals("[[\"foo\", \"bar\"]]", result);
         result = eval("p $h.to_hash");
@@ -118,7 +118,7 @@ public class TestRubyHash extends Base {
      */
     public void testIterating() throws Exception {
         assertEquals("[\"foo\", \"bar\"]", eval("$h.each {|pair| p pair}"));
-        assertEquals("{\"foo\"=>\"bar\"}", eval("p $h.each {|pair| }"));
+        assertEquals("{\"foo\" => \"bar\"}", eval("p $h.each {|pair| }"));
         assertTrue(eval("$h.each_pair {|pair| p pair}").indexOf("[\"foo\", \"bar\"]") != -1);
         assertTrue(eval("p $h.each_pair {|pair| }").indexOf("{\"foo\"=>\"bar\"}") != -1);
 
@@ -135,7 +135,7 @@ public class TestRubyHash extends Base {
     public void testDeleting() throws Exception {
         eval("$delete_h = {1=>2,3=>4}");
         assertEquals("2", eval("p $delete_h.delete(1)"));
-        assertEquals("{3=>4}", eval("p $delete_h"));
+        assertEquals("{3 => 4}", eval("p $delete_h"));
         assertEquals("nil", eval("p $delete_h.delete(100)"));
         assertEquals("100", eval("$delete_h.delete(100) {|x| p x }"));
 
