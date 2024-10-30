@@ -185,9 +185,9 @@ describe "a java.util.Map instance" do
     h.clear
     h.put(1, 100); h.put(2, 200); h.put(3, 300)
     test_equal({1=>100, 2=>200}, h.reject { |k, v| k > 2 })
-    expect( h.inspect ).to include "{1=>100, 2=>200, 3=>300}"
+    expect( h.inspect ).to include "{1 => 100, 2 => 200, 3 => 300}"
     test_equal({1=>100, 2=>200}, h.reject! { |k, v| k > 2 })
-    expect( h.inspect ).to include "{1=>100, 2=>200}"
+    expect( h.inspect ).to include "{1 => 100, 2 => 200}"
 
     test_equal({"c"=>300, "d"=>400, "e"=>500}, h.ruby_replace({"c"=>300, "d"=>400, "e"=>500}))
     test_equal(Java::JavaUtil::LinkedHashMap, h.class)
