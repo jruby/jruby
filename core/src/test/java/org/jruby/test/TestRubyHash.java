@@ -100,7 +100,7 @@ public class TestRubyHash extends Base {
         result = eval("p $h.to_a");
         assertEquals("[[\"foo\", \"bar\"]]", result);
         result = eval("p $h.to_hash");
-        assertEquals("{\"foo\"=>\"bar\"}", result);
+        assertEquals("{\"foo\" => \"bar\"}", result);
     }
 
     /**
@@ -120,13 +120,13 @@ public class TestRubyHash extends Base {
         assertEquals("[\"foo\", \"bar\"]", eval("$h.each {|pair| p pair}"));
         assertEquals("{\"foo\" => \"bar\"}", eval("p $h.each {|pair| }"));
         assertTrue(eval("$h.each_pair {|pair| p pair}").indexOf("[\"foo\", \"bar\"]") != -1);
-        assertTrue(eval("p $h.each_pair {|pair| }").indexOf("{\"foo\"=>\"bar\"}") != -1);
+        assertTrue(eval("p $h.each_pair {|pair| }").indexOf("{\"foo\" => \"bar\"}") != -1);
 
         assertEquals("\"foo\"", eval("$h.each_key {|k| p k}"));
-        assertEquals("{\"foo\"=>\"bar\"}", eval("p $h.each_key {|k| }"));
+        assertEquals("{\"foo\" => \"bar\"}", eval("p $h.each_key {|k| }"));
 
         assertEquals("\"bar\"", eval("$h.each_value {|v| p v}"));
-        assertEquals("{\"foo\"=>\"bar\"}", eval("p $h.each_value {|v| }"));
+        assertEquals("{\"foo\" => \"bar\"}", eval("p $h.each_value {|v| }"));
     }
 
     /**
@@ -140,20 +140,20 @@ public class TestRubyHash extends Base {
         assertEquals("100", eval("$delete_h.delete(100) {|x| p x }"));
 
         eval("$delete_h = {1=>2,3=>4,5=>6}");
-        assertEquals("{1=>2}", eval("p $delete_h.delete_if {|k,v| k >= 3}"));
-        assertEquals("{1=>2}", eval("p $delete_h"));
+        assertEquals("{1 => 2}", eval("p $delete_h.delete_if {|k,v| k >= 3}"));
+        assertEquals("{1 => 2}", eval("p $delete_h"));
 
         eval("$delete_h.clear");
         assertEquals("{}", eval("p $delete_h"));
 
         eval("$delete_h = {1=>2,3=>4,5=>6}");
-        assertEquals("{1=>2}", eval("p $delete_h.reject {|k,v| k >= 3}"));
+        assertEquals("{1 => 2}", eval("p $delete_h.reject {|k,v| k >= 3}"));
         assertEquals("3", eval("p $delete_h.size"));
 
         eval("$delete_h = {1=>2,3=>4,5=>6}");
         eval("p $delete_h");
 
-        assertEquals("{1=>2}", eval("p $delete_h.reject! {|k,v| k >= 3}"));
+        assertEquals("{1 => 2}", eval("p $delete_h.reject! {|k,v| k >= 3}"));
         assertEquals("1", eval("p $delete_h.size"));
         assertEquals("nil", eval("p $delete_h.reject! {|k,v| false}"));
     }
