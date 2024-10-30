@@ -141,8 +141,15 @@ public class IOInputStream extends InputStream {
         if (readValue.isNil()) return -1;
 
         ByteList str = readValue.convertToString().getByteList();
-        System.arraycopy(str.getUnsafeBytes(), str.getBegin(), b, off, str.getRealSize());
 
-        return str.getRealSize();
+        int readSize = str.realSize();
+
+        if (readSize > len) {
+            throw runtime.newIOError("read call of " + len + " bytes produced a String of length " + readSize);
+        }
+
+        System.arraycopy(str.getUnsafeBytes(), str.getBegin(), b, off, readSize);
+
+        return readSize;
      }
 }
