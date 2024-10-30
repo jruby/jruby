@@ -199,7 +199,7 @@ public class Options {
     public static final Option<Boolean> JI_LOAD_LAZY = bool(JAVA_INTEGRATION, "ji.load.lazy", true, "Load Java support (class extensions) lazily on demand or ahead of time.");
     public static final Option<Boolean> JI_CLOSE_CLASSLOADER = bool(JAVA_INTEGRATION, "ji.close.classloader", false, "Close the JRubyClassLoader used by each runtime");
     public static final Option<String> JI_NESTED_JAR_TMPDIR = string(JAVA_INTEGRATION, "ji.nested.jar.tmpdir", "Use specified dir as a base for unpacking nested jar files.");
-    public static final Option<Boolean> JI_EAGER_CONSTANTS = bool(JAVA_INTEGRATION, "ji.eager.constants", false, "Eagerly bind Java:: constants for newly-encountered classes");
+    public static final Option<Boolean> JI_EAGER_CONSTANTS = bool(JAVA_INTEGRATION, "ji.eager.constants", true, "Eagerly bind Java:: constants for newly-encountered classes");
 
     public static final Option<Integer> PROFILE_MAX_METHODS = integer(PROFILING, "profile.max.methods", 100000, "Maximum number of methods to consider for profiling.");
 
