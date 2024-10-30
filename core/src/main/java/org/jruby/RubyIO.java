@@ -3923,6 +3923,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                     Getline.getlineCall(context, GETLINE_YIELD, io, io.getReadEncoding(context), args[1], block, keywords);
                     break;
                 case 3:
+                case 4:
                     Getline.getlineCall(context, GETLINE_YIELD, io, io.getReadEncoding(context), args[1], args[2], block, keywords);
                     break;
             }
