@@ -190,7 +190,7 @@ public class JavaPackage extends RubyModule {
 
     RubyModule relativeJavaProxyClass(final Ruby runtime, final IRubyObject name) {
         final String fullName = packageRelativeName( name.toString() ).toString();
-        return Java.getProxyClass(runtime, Java.getJavaClass(runtime, fullName), true);
+        return Java.getProxyClass(runtime, Java.getJavaClass(runtime, fullName));
     }
 
     @JRubyMethod(name = "respond_to?")

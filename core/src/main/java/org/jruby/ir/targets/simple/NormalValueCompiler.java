@@ -174,14 +174,7 @@ public class NormalValueCompiler implements ValueCompiler {
             }
         }
         if (frozen) {
-            if (debugFrozen) {
-                compiler.loadContext();
-                compiler.adapter.ldc(file);
-                compiler.adapter.ldc(file);
-                compiler.invokeIRHelper("freezeLiteralString", sig(RubyString.class, RubyString.class, ThreadContext.class, String.class, int.class));
-            } else {
-                compiler.invokeIRHelper("freezeLiteralString", sig(RubyString.class, RubyString.class));
-            }
+            compiler.invokeIRHelper("freezeLiteralString", sig(RubyString.class, RubyString.class));
         }
 
         if (chilled) {

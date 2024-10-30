@@ -16,22 +16,24 @@ jobs:
     strategy:
       matrix:
         target: ['test:jruby:int', 'spec:ruby:fast', 'spec:ji', 'spec:ffi']
-        java-version: ['17', '21']
+        java-version: ['17', '21', '23']
       fail-fast: false
 
     name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }})
 
     steps:
-      - name: Bootstrap build
-        uses: jruby/jruby-ci-build@fbd2cf981aaff3eae190ac20086fa161be3d9060
-        with:
-          java-version: 17
+      - name: checkout
+        uses: actions/checkout@v3
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
+      - name: bootstrap
+        run: mvn -Pbootstrap clean package
+      - name: bundle install
+        run: bin/jruby --dev -S bundle install
       - name: rake ${{ matrix.target }}
         run: bin/jruby -S rake ${{ matrix.target }}
 
@@ -46,16 +48,18 @@ jobs:
     name: rake ${{ matrix.target }} (Java 17)
 
     steps:
-      - name: Bootstrap build
-        uses: jruby/jruby-ci-build@fbd2cf981aaff3eae190ac20086fa161be3d9060
-        with:
-          java-version: 17
+      - name: checkout
+        uses: actions/checkout@v3
       - name: set up java 17
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: '17'
           cache: 'maven'
+      - name: bootstrap
+        run: mvn -Pbootstrap clean package
+      - name: bundle install
+        run: bin/jruby --dev -S bundle install
       - name: rake ${{ matrix.target }}
         run: bin/jruby -S rake ${{ matrix.target }}
 
@@ -69,16 +73,18 @@ jobs:
       JRUBY_OPTS: '--dev'
 
     steps:
-      - name: Bootstrap build
-        uses: jruby/jruby-ci-build@fbd2cf981aaff3eae190ac20086fa161be3d9060
-        with:
-          java-version: 17
+      - name: checkout
+        uses: actions/checkout@v3
       - name: set up java 17
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: 17
           cache: 'maven'
+      - name: bootstrap
+        run: mvn -Pbootstrap clean package
+      - name: bundle install
+        run: bin/jruby --dev -S bundle install
       - name: rake test:jruby
         run: bin/jruby --dev -S rake test:jruby
 
@@ -88,7 +94,7 @@ jobs:
     strategy:
       matrix:
         target: ['test:mri:core:jit', 'test:jruby:jit', 'spec:compiler', 'spec:ruby:fast:jit', 'spec:ji']
-        java-version: ['17', '21']
+        java-version: ['17', '21', '23']
       fail-fast: false
 
     name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }} +indy)
@@ -97,16 +103,18 @@ jobs:
       JRUBY_OPTS: '-Xcompile.invokedynamic -X+C -Xjit.threshold=0'
 
     steps:
-      - name: Bootstrap build
-        uses: jruby/jruby-ci-build@fbd2cf981aaff3eae190ac20086fa161be3d9060
-        with:
-          java-version: 17
+      - name: checkout
+        uses: actions/checkout@v3
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
+      - name: bootstrap
+        run: mvn -Pbootstrap clean package
+      - name: bundle install
+        run: bin/jruby --dev -S bundle install
       - name: rake ${{ matrix.target }}
         run: bin/jruby -S rake ${{ matrix.target }}
 
@@ -116,22 +124,24 @@ jobs:
     strategy:
       matrix:
         package-flags: ['-Pmain', '-Pdist', '-Pcomplete', '-Posgi', '-Ptest', '-Pmain,test -Dinvoker.test=extended']
-        java-version: [17, 21]
+        java-version: [17, 21, 23]
       fail-fast: false
 
     name: mvn ${{ matrix.package-flags }} (Java ${{ matrix.java-version }})
 
     steps:
-      - name: Bootstrap build
-        uses: jruby/jruby-ci-build@fbd2cf981aaff3eae190ac20086fa161be3d9060
-        with:
-          java-version: 17
+      - name: checkout
+        uses: actions/checkout@v3
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
+      - name: bootstrap
+        run: mvn -Pbootstrap clean package
+      - name: bundle install
+        run: bin/jruby --dev -S bundle install
       - name: mvn package ${{ matrix.package-flags }}
         run: tool/maven-ci-script.sh
         env:
@@ -143,23 +153,25 @@ jobs:
     strategy:
       matrix:
         package-flags: ['-Pjruby-jars', '-Pjruby-jars,test -Dinvoker.test=extended', '-Pjruby_complete_jar_extended -Dinvoker.skip=true']
-        java-version: [17, 21]
+        java-version: [17, 21, 23]
       fail-fast: false
 
 
     name: mvn ${{ matrix.package-flags }} (Java ${{ matrix.java-version }})
 
     steps:
-      - name: Bootstrap build
-        uses: jruby/jruby-ci-build@fbd2cf981aaff3eae190ac20086fa161be3d9060
-        with:
-          java-version: 17
+      - name: checkout
+        uses: actions/checkout@v3
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v3
         with:
           distribution: temurin
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
+      - name: bootstrap
+        run: mvn -Pbootstrap clean package
+      - name: bundle install
+        run: bin/jruby --dev -S bundle install
       - name: mvn package ${{ matrix.package-flags }}
         run: tool/maven-ci-script.sh
         env:
@@ -175,16 +187,18 @@ jobs:
       JRUBY_OPTS: '-Xjit.threshold=0'
 
     steps:
-      - name: Bootstrap build
-        uses: jruby/jruby-ci-build@fbd2cf981aaff3eae190ac20086fa161be3d9060
-        with:
-          java-version: 17
+      - name: checkout
+        uses: actions/checkout@v3
       - name: set up java 17
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: 17
           cache: 'maven'
+      - name: bootstrap
+        run: mvn -Pbootstrap clean package
+      - name: bundle install
+        run: bin/jruby --dev -S bundle install
       - name: rake spec:regression
         run: bin/jruby -S rake spec:regression
 
@@ -201,16 +215,18 @@ jobs:
       JDK_JAVA_OPTS: "-Djdk.io.File.enableADS=true"
 
     steps:
-      - name: Bootstrap build
-        uses: jruby/jruby-ci-build@fbd2cf981aaff3eae190ac20086fa161be3d9060
-        with:
-          java-version: 17
+      - name: checkout
+        uses: actions/checkout@v3
       - name: set up java 17
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: 17
           cache: 'maven'
+      - name: bootstrap
+        run: mvn -Pbootstrap clean package
+      - name: bundle install
+        run: bin/jruby --dev -S bundle install
       - name: rake test:jruby
         run: bin/jruby -S rake test:jruby TESTOPTS="--no-show-detail-immediately"
         env:
@@ -280,16 +296,18 @@ jobs:
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
 
     steps:
-      - name: Bootstrap build
-        uses: jruby/jruby-ci-build@fbd2cf981aaff3eae190ac20086fa161be3d9060
-        with:
-          java-version: 17
+      - name: checkout
+        uses: actions/checkout@v3
       - name: set up java
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: 17
           cache: 'maven'
+      - name: bootstrap
+        run: mvn -Pbootstrap clean package
+      - name: bundle install
+        run: bin/jruby --dev -S bundle install
       - name: sequel
         run: tool/sequel-github-actions.sh
 
@@ -300,16 +318,18 @@ jobs:
       fail-fast: false
 
     steps:
-      - name: Bootstrap build
-        uses: jruby/jruby-ci-build@fbd2cf981aaff3eae190ac20086fa161be3d9060
-        with:
-          java-version: 17
+      - name: checkout
+        uses: actions/checkout@v3
       - name: set up java 17
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: 17
           cache: 'maven'
+      - name: bootstrap
+        run: mvn -Pbootstrap clean package
+      - name: bundle install
+        run: bin/jruby --dev -S bundle install
       - name: concurrent-ruby
         run: tool/concurrent-ruby-github-actions.sh
 
@@ -374,16 +394,18 @@ jobs:
     name: mvn -Ptest (OpenJ9 Java 17)
 
     steps:
-      - name: Bootstrap build
-        uses: jruby/jruby-ci-build@fbd2cf981aaff3eae190ac20086fa161be3d9060
-        with:
-          java-version: 17
+      - name: checkout
+        uses: actions/checkout@v3
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v3
         with:
-          distribution: 'adopt-openj9'
+          distribution: 'semeru'
           java-version: '17'
           cache: 'maven'
+      - name: bootstrap
+        run: mvn -Pbootstrap clean package
+      - name: bundle install
+        run: bin/jruby -S bundle install
       - name: test profile
         run: "tool/maven-ci-script.sh"
         env:
@@ -400,16 +422,18 @@ jobs:
     name: rake ${{ matrix.target }} (Java 17)
 
     steps:
-      - name: Bootstrap build
-        uses: jruby/jruby-ci-build@fbd2cf981aaff3eae190ac20086fa161be3d9060
-        with:
-          java-version: 17
+      - name: checkout
+        uses: actions/checkout@v3
       - name: set up java 17
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: '17'
           cache: 'maven'
+      - name: bootstrap
+        run: mvn -Pbootstrap clean package
+      - name: bundle install
+        run: bin/jruby --dev -S bundle install
       - name: rake ${{ matrix.target }}
         continue-on-error: true
         run: "bin/jruby -S rake ${{ matrix.target }}"

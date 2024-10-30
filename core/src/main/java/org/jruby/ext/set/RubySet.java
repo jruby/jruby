@@ -931,6 +931,13 @@ public class RubySet extends RubyObject implements Set {
     @Override
     @JRubyMethod
     public RubyFixnum hash() { // @hash.hash
+        RubyHash hash = this.hash;
+
+        if (hash == null) {
+            // Emulate set.rb for jruby/jruby#8393
+            return ((RubyBasicObject) getRuntime().getNil()).hash();
+        }
+
         return hash.hash();
     }
 

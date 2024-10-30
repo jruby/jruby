@@ -67,6 +67,7 @@ lib/ruby/stdlib/English*
 lib/ruby/stdlib/erb*
 lib/ruby/stdlib/error_highlight*
 lib/ruby/stdlib/ffi*
+lib/ruby/stdlib/fiddle*
 lib/ruby/stdlib/fileutils*
 lib/ruby/stdlib/find*
 lib/ruby/stdlib/forwardable*

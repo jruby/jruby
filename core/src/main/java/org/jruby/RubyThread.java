@@ -42,6 +42,7 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.Vector;
 import java.util.WeakHashMap;
@@ -2587,7 +2588,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public IRubyObject setFiberScheduler(IRubyObject scheduler) {
 //        VM_ASSERT(ruby_thread_has_gvl_p());
 
-        scheduler.getClass(); // !null
+        Objects.requireNonNull(scheduler);
 
         if (scheduler != null && !scheduler.isNil()) {
             FiberScheduler.verifyInterface(scheduler);
