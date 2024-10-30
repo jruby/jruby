@@ -4995,7 +4995,7 @@ public class RubyModule extends RubyObject {
         return value;
     }
 
-    private void setParentForModule(final String name, final IRubyObject value) {
+    public void setParentForModule(final String name, final IRubyObject value) {
         // if adding a module under a constant name, set that module's basename to the constant name
         if ( value instanceof RubyModule ) {
             RubyModule module = (RubyModule) value;

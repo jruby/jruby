@@ -850,7 +850,7 @@ public class Java implements Library {
         assert clazz == proxyClass.dataGetStruct() :
             "not a Java proxy wrapper: " + proxyClass.dataGetStruct() + " expected: " + clazz;
 
-        if (!eagerSet || !Modifier.isPublic(clazz.getModifiers())) return;
+        if (!Modifier.isPublic(clazz.getModifiers())) return;
 
         final String fullName = clazz.getName();
 
@@ -872,8 +872,13 @@ public class Java implements Library {
 
         if ( parentModule != null && // TODO a Java Ruby class should not validate (as well)
             ( IdUtil.isConstant(className) || parentModule instanceof JavaPackage ) ) {
-            // setConstant without validation since Java class name might be lower-case
-            setProxyClass(runtime, parentModule, className, proxyClass, false);
+            if (eagerSet) {
+                // setConstant without validation since Java class name might be lower-case
+                setProxyClass(runtime, parentModule, className, proxyClass, false);
+            } else {
+                // just set parent and name
+                parentModule.setParentForModule(className, proxyClass);
+            }
         }
     }
 
