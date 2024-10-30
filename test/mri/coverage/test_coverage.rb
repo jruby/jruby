@@ -11,7 +11,8 @@ class TestCoverage < Test::Unit::TestCase
   # through.
   ARGV = ["-rcoverage"]
 
-  if RubyVM::InstructionSequence.compile('').to_a[4][:parser] == :prism
+  if RUBY_ENGINE != 'jruby' &&
+     RubyVM::InstructionSequence.compile('').to_a[4][:parser] == :prism
     ARGV << "-W:no-experimental"
     ARGV << "--parser=prism"
   end
