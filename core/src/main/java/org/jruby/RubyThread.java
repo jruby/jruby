@@ -1030,6 +1030,30 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return locals;
     }
 
+    /**
+     * Clear the fiber local variable storage for this thread.
+     * Meant for Java consumers when reusing threads (e.g. during thread pooling).
+     * @see #clearThreadLocals()
+     */
+    public void clearFiberLocals() {
+        final Map<IRubyObject, IRubyObject> locals = getFiberLocals();
+        synchronized (locals) {
+            locals.clear();
+        }
+    }
+
+    /**
+     * Clear the thread local variable storage for this thread.
+     * Meant for Java consumers when reusing threads (e.g. during thread pooling).
+     * @see #clearFiberLocals()
+     */
+    public void clearThreadLocals() {
+        final Map<IRubyObject, IRubyObject> locals = getThreadLocals();
+        synchronized (locals) {
+            locals.clear();
+        }
+    }
+
     @Override
     public final Map<Object, IRubyObject> getContextVariables() {
         return contextVariables;
