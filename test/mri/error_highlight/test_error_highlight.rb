@@ -1,6 +1,7 @@
 require "test/unit"
 
 require "error_highlight"
+require "did_you_mean"
 require "tempfile"
 
 class ErrorHighlightTest < Test::Unit::TestCase
@@ -193,6 +194,15 @@ undefined method `foo' for #{ NIL_RECV_MESSAGE }
         foo(
           42
         )
+    end
+  end
+
+  def test_CALL_arg_7
+    assert_error_message(ArgumentError, <<~END) do
+tried to create Proc object without a block (ArgumentError)
+    END
+
+      Proc.new
     end
   end
 
@@ -872,7 +882,7 @@ uninitialized constant ErrorHighlightTest::NotDefined
     def test_COLON2_5
       # Unfortunately, we cannot identify which `NotDefined` caused the NameError
       assert_error_message(NameError, <<~END) do
-uninitialized constant ErrorHighlightTest::NotDefined
+  uninitialized constant ErrorHighlightTest::NotDefined
       END
 
         ErrorHighlightTest::NotDefined::NotDefined
@@ -1231,7 +1241,7 @@ nil can't be coerced into Integer (TypeError)
     assert_error_message(NoMethodError, <<~END) do
 undefined method `time' for #{ ONE_RECV_MESSAGE }
 
-{:first_lineno=>#{ __LINE__ + 3 }, :first_column=>7, :last_lineno=>#{ __LINE__ + 3 }, :last_column=>12, :snippet=>"      1.time {}\\n"}
+#{{ first_lineno: __LINE__ + 3, first_column: 7, last_lineno: __LINE__ + 3, last_column: 12, snippet: "      1.time {}\n" }.inspect}
     END
 
       1.time {}
@@ -1334,6 +1344,11 @@ undefined method `foo' for #{ NIL_RECV_MESSAGE }
 
   def test_spot_with_node
     omit unless RubyVM::AbstractSyntaxTree.respond_to?(:node_id_for_backtrace_location)
+
+    # We can't revisit instruction sequences to find node ids if the prism
+    # compiler was used instead of the parse.y compiler. In that case, we'll
+    # omit some tests.
+    omit if RubyVM::InstructionSequence.compile("").to_a[4][:parser] == :prism
 
     begin
       raise_name_error

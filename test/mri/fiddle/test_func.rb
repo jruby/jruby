@@ -26,6 +26,10 @@ module Fiddle
     end
 
     def test_string
+      if RUBY_ENGINE == "jruby"
+        omit("Function that returns string doesn't work with JRuby")
+      end
+
       under_gc_stress do
         f = Function.new(@libc['strcpy'], [TYPE_VOIDP, TYPE_VOIDP], TYPE_VOIDP)
         buff = +"000"
@@ -60,6 +64,10 @@ module Fiddle
     end
 
     def test_qsort1
+      if RUBY_ENGINE == "jruby"
+        omit("The untouched sanity check is broken on JRuby: https://github.com/jruby/jruby/issues/8365")
+      end
+
       closure_class = Class.new(Closure) do
         def call(x, y)
           Pointer.new(x)[0] <=> Pointer.new(y)[0]
@@ -70,25 +78,32 @@ module Fiddle
         qsort = Function.new(@libc['qsort'],
                              [TYPE_VOIDP, TYPE_SIZE_T, TYPE_SIZE_T, TYPE_VOIDP],
                              TYPE_VOID)
-        buff = "9341"
+        untouched = "9341"
+        buff = +"9341"
         qsort.call(buff, buff.size, 1, callback)
         assert_equal("1349", buff)
 
         bug4929 = '[ruby-core:37395]'
-        buff = "9341"
+        buff = +"9341"
         under_gc_stress do
           qsort.call(buff, buff.size, 1, callback)
         end
         assert_equal("1349", buff, bug4929)
+
+        # Ensure the test didn't mutate String literals
+        assert_equal("93" + "41", untouched)
       end
     ensure
-      # Ensure freeing all closures.
-      # See https://github.com/ruby/fiddle/issues/102#issuecomment-1241763091 .
-      not_freed_closures = []
-      ObjectSpace.each_object(Fiddle::Closure) do |closure|
-        not_freed_closures << closure unless closure.freed?
+      # We can't use ObjectSpace with JRuby.
+      unless RUBY_ENGINE == "jruby"
+        # Ensure freeing all closures.
+        # See https://github.com/ruby/fiddle/issues/102#issuecomment-1241763091 .
+        not_freed_closures = []
+        ObjectSpace.each_object(Fiddle::Closure) do |closure|
+          not_freed_closures << closure unless closure.freed?
+        end
+        assert_equal([], not_freed_closures)
       end
-      assert_equal([], not_freed_closures)
     end
 
     def test_snprintf
@@ -113,37 +128,36 @@ module Fiddle
                                 :variadic,
                               ],
                               :int)
-      output_buffer = " " * 1024
-      output = Pointer[output_buffer]
+      Pointer.malloc(1024, Fiddle::RUBY_FREE) do |output|
+        written = snprintf.call(output,
+                                output.size,
+                                "int: %d, string: %.*s, const string: %s\n",
+                                :int, -29,
+                                :int, 4,
+                                :voidp, "Hello",
+                                :const_string, "World")
+        assert_equal("int: -29, string: Hell, const string: World\n",
+                     output[0, written])
 
-      written = snprintf.call(output,
-                              output.size,
-                              "int: %d, string: %.*s, const string: %s\n",
-                              :int, -29,
-                              :int, 4,
-                              :voidp, "Hello",
-                              :const_string, "World")
-      assert_equal("int: -29, string: Hell, const string: World\n",
-                   output_buffer[0, written])
+        string_like_class = Class.new do
+          def initialize(string)
+            @string = string
+          end
 
-      string_like_class = Class.new do
-        def initialize(string)
-          @string = string
+          def to_str
+            @string
+          end
         end
-
-        def to_str
-          @string
-        end
+        written = snprintf.call(output,
+                                output.size,
+                                "string: %.*s, const string: %s, uint: %u\n",
+                                :int, 2,
+                                :voidp, "Hello",
+                                :const_string, string_like_class.new("World"),
+                                :int, 29)
+        assert_equal("string: He, const string: World, uint: 29\n",
+                     output[0, written])
       end
-      written = snprintf.call(output,
-                              output.size,
-                              "string: %.*s, const string: %s, uint: %u\n",
-                              :int, 2,
-                              :voidp, "Hello",
-                              :const_string, string_like_class.new("World"),
-                              :int, 29)
-      assert_equal("string: He, const string: World, uint: 29\n",
-                   output_buffer[0, written])
     end
 
     def test_rb_memory_view_available_p

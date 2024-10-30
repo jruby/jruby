@@ -101,6 +101,27 @@ module OpenSSL::TestPairM
     }
   end
 
+  def test_getbyte
+    ssl_pair {|s1, s2|
+      s1 << "a"
+      assert_equal(97, s2.getbyte)
+    }
+  end
+
+  def test_readbyte
+    ssl_pair {|s1, s2|
+      s1 << "b"
+      assert_equal(98, s2.readbyte)
+    }
+  end
+
+  def test_readbyte_eof
+    ssl_pair {|s1, s2|
+      s2.close
+      assert_raise(EOFError) { s1.readbyte }
+    }
+  end
+
   def test_gets
     ssl_pair {|s1, s2|
       s1 << "abc\n\n$def123ghi"
@@ -250,12 +271,17 @@ module OpenSSL::TestPairM
 
       buf = +"garbage"
       assert_equal :wait_readable, s2.read_nonblock(100, buf, exception: false)
-      assert_equal "", buf
+      assert_equal "garbage", buf
 
       s1.close
       buf = +"garbage"
-      assert_equal nil, s2.read(100, buf)
+      assert_nil s2.read(100, buf)
       assert_equal "", buf
+
+      buf = +"garbage"
+      ret = s2.read(0, buf)
+      assert_same buf, ret
+      assert_equal "", ret
     }
   end
 

@@ -115,7 +115,7 @@ class TestRDocGeneratorDarkfish < RDoc::TestCase
     assert_match(%r[Klass/Inner\.html".*>Inner<], summary)
 
     klass = File.binread('Klass.html')
-    klassnav = klass[%r[<div class="nav-section">.*<div id="class-metadata">]m]
+    klassnav = klass[%r[<div class="nav-section">.*]m]
     assert_match(
       %r[<li>\s*<details open>\s*<summary>\s*<a href=\S+>Heading 1</a>\s*</summary>\s*<ul]m,
       klassnav
@@ -320,6 +320,51 @@ class TestRDocGeneratorDarkfish < RDoc::TestCase
     @g.generate
 
     assert_main_title(File.binread('index.html'), title)
+  end
+
+  def test_meta_tags_for_index
+    @options.title = "My awesome Ruby project"
+    @g.generate
+
+    content = File.binread("index.html")
+
+    assert_include(content, '<meta name="keywords" content="ruby,documentation,My awesome Ruby project">')
+    assert_include(content, '<meta name="description" content="Documentation for My awesome Ruby project">')
+  end
+
+  def test_meta_tags_for_classes
+    top_level = @store.add_file("file.rb")
+    top_level.add_class(@klass.class, @klass.name)
+    inner = @klass.add_class(RDoc::NormalClass, "Inner")
+    inner.add_comment("This is a normal class. It is fully documented.", top_level)
+
+    @g.generate
+
+    content = File.binread("Klass/Inner.html")
+    assert_include(content, '<meta name="keywords" content="ruby,class,Klass::Inner">')
+    assert_include(
+      content,
+      '<meta name="description" content="class Klass::Inner: This is a normal class. It is fully documented.">',
+    )
+  end
+
+  def test_meta_tags_for_pages
+    top_level = @store.add_file("CONTRIBUTING.rdoc", parser: RDoc::Parser::Simple)
+    top_level.comment = <<~RDOC
+      = Contributing
+
+      Here are the instructions for contributing. Begin by installing Ruby.
+    RDOC
+
+    @g.generate
+
+    content = File.binread("CONTRIBUTING_rdoc.html")
+    assert_include(content, '<meta name="keywords" content="ruby,documentation,CONTRIBUTING">')
+    assert_include(
+      content,
+      "<meta name=\"description\" content=\"CONTRIBUTING: Contributing Here are the instructions for contributing." \
+      " Begin by installing Ruby.\">",
+    )
   end
 
   ##

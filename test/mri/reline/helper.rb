@@ -22,14 +22,29 @@ module Reline
   class <<self
     def test_mode(ansi: false)
       @original_iogate = IOGate
-      remove_const('IOGate')
-      const_set('IOGate', ansi ? Reline::ANSI : Reline::GeneralIO)
+
       if ENV['RELINE_TEST_ENCODING']
         encoding = Encoding.find(ENV['RELINE_TEST_ENCODING'])
       else
         encoding = Encoding::UTF_8
       end
-      Reline::GeneralIO.reset(encoding: encoding) unless ansi
+
+      if ansi
+        new_io_gate = ANSI.new
+        # Setting ANSI gate's screen size through set_screen_size will also change the tester's stdin's screen size
+        # Let's avoid that side-effect by stubbing the get_screen_size method
+        new_io_gate.define_singleton_method(:get_screen_size) do
+          [24, 80]
+        end
+        new_io_gate.define_singleton_method(:encoding) do
+          encoding
+        end
+      else
+        new_io_gate = Dumb.new(encoding: encoding)
+      end
+
+      remove_const('IOGate')
+      const_set('IOGate', new_io_gate)
       core.config.instance_variable_set(:@test_mode, true)
       core.config.reset
     end
@@ -37,7 +52,6 @@ module Reline
     def test_reset
       remove_const('IOGate')
       const_set('IOGate', @original_iogate)
-      Reline::GeneralIO.reset
       Reline.instance_variable_set(:@core, nil)
     end
 
@@ -71,14 +85,6 @@ module Reline
   end
 end
 
-def start_pasting
-  Reline::GeneralIO.start_pasting
-end
-
-def finish_pasting
-  Reline::GeneralIO.finish_pasting
-end
-
 class Reline::TestCase < Test::Unit::TestCase
   private def convert_str(input, options = {}, normalized = nil)
     return nil if input.nil?
@@ -90,7 +96,7 @@ class Reline::TestCase < Test::Unit::TestCase
       end
     }.join
   rescue Encoding::UndefinedConversionError, Encoding::InvalidByteSequenceError
-    input.unicode_normalize!(:nfc)
+    input = input.unicode_normalize(:nfc)
     if normalized
       options[:undef] = :replace
       options[:replace] = '?'
@@ -129,9 +135,14 @@ class Reline::TestCase < Test::Unit::TestCase
     end
   end
 
-  def assert_line(expected)
-    expected = convert_str(expected)
-    assert_equal(expected, @line_editor.line)
+  def assert_line_around_cursor(before, after)
+    before = convert_str(before)
+    after = convert_str(after)
+    line = @line_editor.current_line
+    byte_pointer = @line_editor.instance_variable_get(:@byte_pointer)
+    actual_before = line.byteslice(0, byte_pointer)
+    actual_after = line.byteslice(byte_pointer..)
+    assert_equal([before, after], [actual_before, actual_after])
   end
 
   def assert_byte_pointer_size(expected)
@@ -142,16 +153,8 @@ class Reline::TestCase < Test::Unit::TestCase
       expected.bytesize, byte_pointer,
       <<~EOM)
         <#{expected.inspect} (#{expected.encoding.inspect})> expected but was
-        <#{chunk.inspect} (#{chunk.encoding.inspect})> in <Terminal #{Reline::GeneralIO.encoding.inspect}>
+        <#{chunk.inspect} (#{chunk.encoding.inspect})> in <Terminal #{Reline::Dumb.new.encoding.inspect}>
       EOM
-  end
-
-  def assert_cursor(expected)
-    assert_equal(expected, @line_editor.instance_variable_get(:@cursor))
-  end
-
-  def assert_cursor_max(expected)
-    assert_equal(expected, @line_editor.instance_variable_get(:@cursor_max))
   end
 
   def assert_line_index(expected)
@@ -165,7 +168,7 @@ class Reline::TestCase < Test::Unit::TestCase
   def assert_key_binding(input, method_symbol, editing_modes = [:emacs, :vi_insert, :vi_command])
     editing_modes.each do |editing_mode|
       @config.editing_mode = editing_mode
-      assert_equal(method_symbol, @config.editing_mode.default_key_bindings[input.bytes])
+      assert_equal(method_symbol, @config.editing_mode.get(input.bytes))
     end
   end
 end

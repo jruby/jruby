@@ -8,6 +8,8 @@ module Fiddle
   class TestClosure < Fiddle::TestCase
     def teardown
       super
+      # We can't use ObjectSpace with JRuby.
+      return if RUBY_ENGINE == "jruby"
       # Ensure freeing all closures.
       # See https://github.com/ruby/fiddle/issues/102#issuecomment-1241763091 .
       not_freed_closures = []
@@ -28,19 +30,6 @@ module Fiddle
 
       assert_raise(TypeError) do
         Closure.new(TYPE_INT, ['meow!'])
-      end
-    end
-
-    def test_type_symbol
-      Closure.create(:int, [:void]) do |closure|
-        assert_equal([
-                       TYPE_INT,
-                       [TYPE_VOID],
-                     ],
-                     [
-                       closure.instance_variable_get(:@ctype),
-                       closure.instance_variable_get(:@args),
-                     ])
       end
     end
 
@@ -69,6 +58,11 @@ module Fiddle
     end
 
     def test_const_string
+      if ffi_backend?
+        omit("Closure with :const_string works but " +
+             "Function with :const_string doesn't work with FFI backend")
+      end
+
       closure_class = Class.new(Closure) do
         def call(string)
           @return_string = "Hello! #{string}"
@@ -94,7 +88,12 @@ module Fiddle
     end
 
     def test_free
-      Closure.create(:int, [:void]) do |closure|
+      closure_class = Class.new(Closure) do
+        def call
+          10
+        end
+      end
+      closure_class.create(:int, [:void]) do |closure|
         assert(!closure.freed?)
         closure.free
         assert(closure.freed?)
@@ -115,10 +114,19 @@ module Fiddle
     end
 
     def test_memsize_ruby_dev_42480
+      if RUBY_ENGINE == "jruby"
+        omit("We can't use ObjectSpace with JRuby")
+      end
+
       require 'objspace'
+      closure_class = Class.new(Closure) do
+        def call
+          10
+        end
+      end
       n = 10000
       n.times do
-        Closure.create(:int, [:void]) do |closure|
+        closure_class.create(:int, [:void]) do |closure|
           ObjectSpace.memsize_of(closure)
         end
       end
@@ -147,6 +155,18 @@ module Fiddle
             assert_equal(arg, v, n)
           end
         end
+      end
+    end
+
+    def test_ractor_shareable
+      omit("Need Ractor") unless defined?(Ractor)
+      closure_class = Class.new(Closure) do
+        def call
+          0
+        end
+      end
+      closure_class.create(:int, [:void]) do |c|
+        assert_ractor_shareable(c)
       end
     end
   end
