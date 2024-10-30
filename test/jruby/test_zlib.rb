@@ -429,6 +429,7 @@ class TestZlib < Test::Unit::TestCase
 
   def self.create_gzip_stream(string)
     s = StringIO.new
+    s.set_encoding(Encoding::BINARY, Encoding::BINARY)
     Zlib::GzipWriter.wrap(s) { |io|
       io.write("hello")
     }
