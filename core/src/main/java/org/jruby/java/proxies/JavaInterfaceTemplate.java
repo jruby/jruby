@@ -303,12 +303,9 @@ public class JavaInterfaceTemplate {
 
     private static IRubyObject newInterfaceProxy(final IRubyObject self) {
         final RubyClass current = self.getMetaClass();
-        final Ruby runtime = current.getRuntime();
         // construct the new interface impl and set it into the object
         Object impl = Java.newInterfaceImpl(self, Java.getInterfacesFromRubyClass(current));
-        RubyClass proxyClass = (RubyClass) Java.getProxyClass(runtime, impl.getClass());
-        // we do not want the (InterfaceImpl) proxy-class in this case to be set on the Ruby side
-        IRubyObject implWrapper = Java.getInstanceInternal(runtime, impl, proxyClass, false);
+        IRubyObject implWrapper = Java.getInstance(self.getRuntime(), impl);
         JavaUtilities.set_java_object(self, self, implWrapper); // self.dataWrapStruct(newObject);
         return implWrapper;
     }
