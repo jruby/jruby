@@ -219,27 +219,9 @@ module KernelSpecs
       block_given?
     end
 
-    def self.accept_block_inside_block()
-      yield_self {
-        block_given?
-      }
-    end
-
-    def self.accept_block_as_argument_inside_block(&block)
-      yield_self {
-        block_given?
-      }
-    end
-
     class << self
       define_method(:defined_block) do
         block_given?
-      end
-
-      define_method(:defined_block_inside_block) do
-        yield_self {
-          block_given?
-        }
       end
     end
   end
@@ -253,27 +235,9 @@ module KernelSpecs
       self.send(:block_given?)
     end
 
-    def self.accept_block_inside_block
-      yield_self {
-        self.send(:block_given?)
-      }
-    end
-
-    def self.accept_block_as_argument_inside_block(&block)
-      yield_self {
-        self.send(:block_given?)
-      }
-    end
-
     class << self
       define_method(:defined_block) do
         self.send(:block_given?)
-      end
-
-      define_method(:defined_block_inside_block) do
-        yield_self {
-          self.send(:block_given?)
-        }
       end
     end
   end
@@ -287,27 +251,9 @@ module KernelSpecs
       Kernel.block_given?
     end
 
-    def self.accept_block_inside_block
-      yield_self {
-        Kernel.block_given?
-      }
-    end
-
-    def self.accept_block_as_argument_inside_block(&block)
-      yield_self {
-        Kernel.block_given?
-      }
-    end
-
     class << self
       define_method(:defined_block) do
         Kernel.block_given?
-      end
-
-      define_method(:defined_block_inside_block) do
-        yield_self {
-          Kernel.block_given?
-        }
       end
     end
   end
