@@ -1662,7 +1662,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     @JRubyMethod(name = "__send__", omit = true, keywords = true)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, Block block) {
-        String name = RubySymbol.checkID(arg0);
+        String name = RubySymbol.idStringFromObject(context, arg0);
 
         StaticScope staticScope = context.getCurrentStaticScope();
 
@@ -1670,7 +1670,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
     @JRubyMethod(name = "__send__", omit = true, keywords = true)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        String name = RubySymbol.checkID(arg0);
+        String name = RubySymbol.idStringFromObject(context, arg0);
 
         StaticScope staticScope = context.getCurrentStaticScope();
 
@@ -1679,7 +1679,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
     @JRubyMethod(name = "__send__", omit = true, keywords = true)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        String name = RubySymbol.checkID(arg0);
+        String name = RubySymbol.idStringFromObject(context, arg0);
 
         StaticScope staticScope = context.getCurrentStaticScope();
 
@@ -1711,7 +1711,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
               args[argc - 1] = dupIfKeywordRestAtCallsite(context, args[argc - 1]);
             }
         }
-        String name = RubySymbol.checkID(args[0]);
+        String name = RubySymbol.idStringFromObject(context, args[0]);
 
         StaticScope staticScope = context.getCurrentStaticScope();
 

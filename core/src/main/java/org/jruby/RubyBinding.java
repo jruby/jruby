@@ -172,7 +172,7 @@ public class RubyBinding extends RubyObject {
 
     // MRI: check_local_id
     private String checkLocalId(ThreadContext context, IRubyObject obj) {
-        String id = RubySymbol.checkID(obj);
+        String id = RubySymbol.idStringFromObject(context, obj);
 
         if (!RubyLexer.isIdentifierChar(id.charAt(0))) {
             throw context.runtime.newNameError(str(context.runtime, "wrong local variable name `", obj, "' for ", this), id);
