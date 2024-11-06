@@ -1256,11 +1256,17 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return invokedynamic(metaClass.runtime.getCurrentContext(), this, EQL, other).isTrue();
     }
 
+    @Deprecated
+    @Override
+    public void addFinalizer(IRubyObject f) {
+        addFinalizer(getRuntime().getCurrentContext(), f);
+    }
+
     /**
      * Adds the specified object as a finalizer for this object.
      */
     @Override
-    public void addFinalizer(IRubyObject f) {
+    public IRubyObject addFinalizer(ThreadContext context, IRubyObject f) {
         Finalizer finalizer = (Finalizer) getInternalVariable("__finalizer__");
         if (finalizer == null) {
             IRubyObject fixnumId = registerWithObjectSpace();
@@ -1269,7 +1275,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             setInternalVariable("__finalizer__", finalizer);
             getRuntime().addFinalizer(finalizer);
         }
-        finalizer.addFinalizer(f);
+        return finalizer.addFinalizer(context, f);
     }
 
     private IRubyObject registerWithObjectSpace() {
@@ -1305,6 +1311,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public void removeFinalizers() {
+        checkFrozen();
         Finalizer finalizer = (Finalizer) getInternalVariable("__finalizer__");
         if (finalizer != null) {
             finalizer.removeFinalizers();
@@ -1680,7 +1687,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     @JRubyMethod(name = "__send__", omit = true, keywords = true)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, Block block) {
-        String name = RubySymbol.checkID(arg0);
+        String name = RubySymbol.idStringFromObject(context, arg0);
 
         StaticScope staticScope = context.getCurrentStaticScope();
 
@@ -1688,7 +1695,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
     @JRubyMethod(name = "__send__", omit = true, keywords = true)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        String name = RubySymbol.checkID(arg0);
+        String name = RubySymbol.idStringFromObject(context, arg0);
 
         StaticScope staticScope = context.getCurrentStaticScope();
 
@@ -1697,7 +1704,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
     @JRubyMethod(name = "__send__", omit = true, keywords = true)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        String name = RubySymbol.checkID(arg0);
+        String name = RubySymbol.idStringFromObject(context, arg0);
 
         StaticScope staticScope = context.getCurrentStaticScope();
 
@@ -1729,7 +1736,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
               args[argc - 1] = dupIfKeywordRestAtCallsite(context, args[argc - 1]);
             }
         }
-        String name = RubySymbol.checkID(args[0]);
+        String name = RubySymbol.idStringFromObject(context, args[0]);
 
         StaticScope staticScope = context.getCurrentStaticScope();
 
@@ -1955,13 +1962,41 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             this.finalized = new AtomicBoolean(false);
         }
 
+        @Deprecated
         public void addFinalizer(IRubyObject finalizer) {
+            addFinalizer(finalizer.getRuntime().getCurrentContext(), finalizer);
+        }
+
+        public IRubyObject addFinalizer(ThreadContext context, IRubyObject finalizer) {
             if (firstFinalizer == null) {
                 firstFinalizer = finalizer;
-            } else {
-                if (finalizers == null) finalizers = new ArrayList<>(4);
-                finalizers.add(finalizer);
+
+                return finalizer;
             }
+
+            IRubyObject existing = firstFinalizer;
+
+            if (existing.op_equal(context, finalizer).isTrue()) {
+                // do not add equivalent finalizer twice
+                return existing;
+            }
+
+            if (finalizers == null) {
+                finalizers = new ArrayList<>(4);
+            } else {
+                for (int i = 0; i < finalizers.size(); i++) {
+                    existing = finalizers.get(i);
+
+                    if (existing.op_equal(context, finalizer).isTrue()) {
+                        // do not add equivalent finalizer twice
+                        return existing;
+                    }
+                }
+            }
+
+            finalizers.add(finalizer);
+
+            return finalizer;
         }
 
         public void removeFinalizers() {

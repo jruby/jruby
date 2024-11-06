@@ -120,8 +120,13 @@ public class ObjectSpace {
         return createAndRegisterObjectId(rubyObject);
     }
 
+    @Deprecated
     public void addFinalizer(IRubyObject object, IRubyObject proc) {
-        object.addFinalizer(proc);
+        addFinalizer(object.getRuntime().getCurrentContext(), object, proc);
+    }
+
+    public IRubyObject addFinalizer(ThreadContext context, IRubyObject object, IRubyObject proc) {
+        return object.addFinalizer(context, proc);
     }
 
     public void removeFinalizers(long id) {

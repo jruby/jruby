@@ -132,6 +132,9 @@ public class Mutex extends RubyObject implements DataType {
 
         this.lockingThread = thread;
 
+        // always check for thread interrupts after acquiring lock
+        thread.pollThreadEvents(context);
+
         return this;
     }
 

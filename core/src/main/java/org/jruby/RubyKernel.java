@@ -2182,7 +2182,7 @@ public class RubyKernel {
             throw context.runtime.newArgumentError("no method name given");
         }
 
-        String name = RubySymbol.checkID(args[0]);
+        String name = RubySymbol.idStringFromObject(context, args[0]);
 
         if (args.length > 1) {
             args[args.length - 1] = dupIfKeywordRestAtCallsite(context, args[args.length - 1]);

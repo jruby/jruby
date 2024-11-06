@@ -133,7 +133,7 @@ bundled_gems = [
     # Depends on many CRuby internals
     # ['rbs', '2.0.0'],
     ['resolv-replace', '0.1.1'],
-    ['rexml', '3.3.8'],
+    ['rexml', '3.3.9'],
     ['rinda', '0.2.0'],
     ['rss', '0.3.1'],
     # https://github.com/ruby/syslog/issues/1

@@ -231,8 +231,12 @@ public class UndefinedValue extends Operand implements IRubyObject {
     @Override
     public boolean eql(IRubyObject other) { throw undefinedOperation(); }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void addFinalizer(IRubyObject finalizer) { throw undefinedOperation(); }
+
+    @Override
+    public IRubyObject addFinalizer(ThreadContext context, IRubyObject finalizer) { throw undefinedOperation(); }
 
     @Override
     public void removeFinalizers() { throw undefinedOperation(); }

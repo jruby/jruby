@@ -3050,7 +3050,7 @@ public class RubyModule extends RubyObject {
         checkFrozen();
 
         for (IRubyObject name: args) {
-            String id = RubySymbol.checkID(name);
+            String id = RubySymbol.idStringFromObject(context, name);
 
             // FIXME: id == null or bad symbol error missing
 

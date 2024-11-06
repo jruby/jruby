@@ -134,47 +134,38 @@ public class RubyGlobal {
         // Version information:
         IRubyObject version;
         IRubyObject patchlevel;
-        IRubyObject release = runtime.newString(Constants.COMPILE_DATE);
-        release.setFrozen(true);
-        IRubyObject platform = runtime.newString(Constants.PLATFORM);
-        release.setFrozen(true);
-        IRubyObject engine = runtime.newString(Constants.ENGINE);
-        release.setFrozen(true);
+        IRubyObject release = RubyString.newFString(runtime, Constants.COMPILE_DATE);
+        IRubyObject platform = RubyString.newFString(runtime, Constants.PLATFORM);
+        IRubyObject engine = RubyString.newFString(runtime, Constants.ENGINE);
 
-        version = runtime.newString(Constants.RUBY_VERSION);
-        release.setFrozen(true);
+        version = RubyString.newFString(runtime, Constants.RUBY_VERSION);
         patchlevel = runtime.newFixnum(0);
         runtime.defineGlobalConstant("RUBY_VERSION", version);
         runtime.defineGlobalConstant("RUBY_PATCHLEVEL", patchlevel);
         runtime.defineGlobalConstant("RUBY_RELEASE_DATE", release);
         runtime.defineGlobalConstant("RUBY_PLATFORM", platform);
 
-        IRubyObject description = runtime.newString(OutputStrings.getVersionString());
-        release.setFrozen(true);
+        IRubyObject description = RubyString.newFString(runtime, OutputStrings.getVersionString());
         runtime.defineGlobalConstant("RUBY_DESCRIPTION", description);
 
-        IRubyObject copyright = runtime.newString(OutputStrings.getCopyrightString());
-        release.setFrozen(true);
+        IRubyObject copyright = RubyString.newFString(runtime, OutputStrings.getCopyrightString());
         runtime.defineGlobalConstant("RUBY_COPYRIGHT", copyright);
 
         runtime.defineGlobalConstant("RELEASE_DATE", release);
         runtime.defineGlobalConstant("PLATFORM", platform);
 
-        IRubyObject jrubyVersion = runtime.newString(Constants.VERSION);
-        release.setFrozen(true);
-        IRubyObject jrubyRevision = runtime.newString(Constants.REVISION);
-        release.setFrozen(true);
+        IRubyObject jrubyVersion = RubyString.newFString(runtime, Constants.VERSION);
+        IRubyObject jrubyRevision = RubyString.newFString(runtime, Constants.REVISION);
         runtime.defineGlobalConstant("JRUBY_VERSION", jrubyVersion);
         runtime.defineGlobalConstant("JRUBY_REVISION", jrubyRevision);
-        runtime.defineGlobalConstant("RUBY_REVISION", runtime.newString(Constants.REVISION));
+        runtime.defineGlobalConstant("RUBY_REVISION", RubyString.newFString(runtime, Constants.REVISION));
         runtime.defineGlobalConstant("RUBY_ENGINE", engine);
         runtime.defineGlobalConstant("RUBY_ENGINE_VERSION", jrubyVersion);
 
         RubyInstanceConfig.Verbosity verbosity = runtime.getInstanceConfig().getVerbosity();
         runtime.defineVariable(new WarningGlobalVariable(runtime, "$-W", verbosity), GLOBAL);
 
-        IRubyObject defaultRS = runtime.newString(runtime.getInstanceConfig().getRecordSeparator());
-        release.setFrozen(true);
+        IRubyObject defaultRS = RubyString.newFString(runtime, runtime.getInstanceConfig().getRecordSeparator());
         GlobalVariable rs = new StringGlobalVariable(runtime, "$/", defaultRS);
         runtime.defineVariable(rs, GLOBAL);
         runtime.setRecordSeparatorVar(rs);
