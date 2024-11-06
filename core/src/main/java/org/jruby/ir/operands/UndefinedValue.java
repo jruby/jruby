@@ -236,7 +236,7 @@ public class UndefinedValue extends Operand implements IRubyObject {
     public void addFinalizer(IRubyObject finalizer) { throw undefinedOperation(); }
 
     @Override
-    public void addFinalizer(ThreadContext context, IRubyObject finalizer) { throw undefinedOperation(); }
+    public IRubyObject addFinalizer(ThreadContext context, IRubyObject finalizer) { throw undefinedOperation(); }
 
     @Override
     public void removeFinalizers() { throw undefinedOperation(); }

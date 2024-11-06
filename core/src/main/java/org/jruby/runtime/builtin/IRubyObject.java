@@ -316,8 +316,9 @@ public interface IRubyObject {
     public void addFinalizer(IRubyObject finalizer);
 
     @SuppressWarnings("deprecation")
-    public default void addFinalizer(ThreadContext context, IRubyObject finalizer) {
+    public default IRubyObject addFinalizer(ThreadContext context, IRubyObject finalizer) {
         addFinalizer(finalizer);
+        return finalizer;
     }
 
     public void removeFinalizers();

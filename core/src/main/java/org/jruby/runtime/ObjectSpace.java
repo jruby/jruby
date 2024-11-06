@@ -125,8 +125,8 @@ public class ObjectSpace {
         addFinalizer(object.getRuntime().getCurrentContext(), object, proc);
     }
 
-    public void addFinalizer(ThreadContext context, IRubyObject object, IRubyObject proc) {
-        object.addFinalizer(context, proc);
+    public IRubyObject addFinalizer(ThreadContext context, IRubyObject object, IRubyObject proc) {
+        return object.addFinalizer(context, proc);
     }
 
     public void removeFinalizers(long id) {

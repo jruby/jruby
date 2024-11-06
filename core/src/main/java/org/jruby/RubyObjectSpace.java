@@ -98,7 +98,7 @@ public class RubyObjectSpace {
             if (blockReferencesObject(obj, block)) referenceWarning(runtime);
             finalizer = runtime.newProc(Block.Type.PROC, block);
         }
-        runtime.getObjectSpace().addFinalizer(context, obj, finalizer);
+        finalizer = runtime.getObjectSpace().addFinalizer(context, obj, finalizer);
         return runtime.newArray(RubyFixnum.zero(runtime), finalizer);
     }
 
