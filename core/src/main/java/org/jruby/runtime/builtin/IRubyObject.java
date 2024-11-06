@@ -312,7 +312,14 @@ public interface IRubyObject {
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other);
     public boolean eql(IRubyObject other);
 
+    @Deprecated
     public void addFinalizer(IRubyObject finalizer);
+
+    @SuppressWarnings("deprecation")
+    public default IRubyObject addFinalizer(ThreadContext context, IRubyObject finalizer) {
+        addFinalizer(finalizer);
+        return finalizer;
+    }
 
     public void removeFinalizers();
 

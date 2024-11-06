@@ -53,6 +53,7 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ContextAwareBlockBody;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
@@ -1471,21 +1472,48 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return object.convertToString().getByteList().toString();
     }
 
-    // MRI: rb_check_id
+    @Deprecated
     public static String checkID(IRubyObject object) {
-        if (object instanceof RubySymbol) return ((RubySymbol) object).idString();
+        return idStringFromObject(object.getRuntime().getCurrentContext(), object);
+    }
 
-        if (!(object instanceof RubyString)) {
-            IRubyObject tmp = TypeConverter.checkStringType(object.getRuntime(), object);
+    // MRI: rb_check_id but producing a Java String
+    public static String idStringFromObject(ThreadContext context, IRubyObject object) {
+        IRubyObject symOrStr = prepareID(object.getRuntime().getCurrentContext(), object);
 
-            if (tmp.isNil()) {
-                throw object.getRuntime().newTypeError(str(object.getRuntime(), "", object, " is not a symbol nor a string"));
-            }
+        if (symOrStr instanceof RubySymbol) return ((RubySymbol) symOrStr).idString();
 
-            object = tmp;
+        return ((RubyString) symOrStr).getByteList().toString();
+    }
+
+    // MRI: rb_check_id
+    public static RubySymbol idSymbolFromObject(ThreadContext context, IRubyObject object) {
+        IRubyObject symOrStr = prepareID(context, object);
+
+        if (symOrStr instanceof RubySymbol) return (RubySymbol) symOrStr;
+
+        return newSymbol(context.runtime, ((RubyString) symOrStr).getByteList());
+    }
+
+    /**
+     * Return the given object if it is a Symbol or String, or convert it to a String.
+     *
+     * @param context the current context
+     * @param object the object
+     * @return the object, if it is a Symbol or String, or a String produced by calling #to_str on the object.
+     */
+    public static IRubyObject prepareID(ThreadContext context, IRubyObject object) {
+        if (object instanceof RubySymbol || object instanceof RubyString) return object;
+
+        Ruby runtime = context.runtime;
+
+        IRubyObject tmp = TypeConverter.checkStringType(context, sites(context).to_str_checked, object);
+
+        if (tmp.isNil()) {
+            throw runtime.newTypeError(str(runtime, "", object, " is not a symbol nor a string"));
         }
 
-        return ((RubyString) object).getByteList().toString();
+        return tmp;
     }
 
     public static final class SymbolProcBody extends ContextAwareBlockBody {
@@ -1569,6 +1597,10 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         public ArgumentDescriptor[] getArgumentDescriptors() {
             return ArgumentDescriptor.SYMBOL_PROC;
         }
+    }
+
+    private static JavaSites.SymbolSites sites(ThreadContext context) {
+        return context.sites.Symbol;
     }
 
     @Deprecated

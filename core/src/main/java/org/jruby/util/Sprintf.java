@@ -1550,7 +1550,7 @@ public class Sprintf {
         } // main while loop (offset < length)
 
         // MRI behavior: validate only the unnumbered arguments
-        if (args.positionIndex >= 0 && args.nextIndex < args.length) {
+        if (args.rubyHash == null && args.positionIndex >= 0 && args.nextIndex <= args.length) {
             if (args.runtime.isDebug()) {
                 args.raiseArgumentError("too many arguments for format string");
             } else if (args.runtime.isVerbose()) {

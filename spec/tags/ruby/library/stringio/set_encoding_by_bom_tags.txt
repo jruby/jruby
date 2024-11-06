@@ -1,0 +1,18 @@
+fails(waiting on release of ruby/stringio#101):StringIO#set_encoding_by_bom returns nil if not readable
+fails(waiting on release of ruby/stringio#101):StringIO#set_encoding_by_bom returns the result encoding if found BOM UTF-8 sequence
+fails(waiting on release of ruby/stringio#101):StringIO#set_encoding_by_bom returns the result encoding if found BOM UTF_16LE sequence
+fails(waiting on release of ruby/stringio#101):StringIO#set_encoding_by_bom returns the result encoding if found BOM UTF_16BE sequence
+fails(waiting on release of ruby/stringio#101):StringIO#set_encoding_by_bom returns the result encoding if found BOM UTF_32LE sequence
+fails(waiting on release of ruby/stringio#101):StringIO#set_encoding_by_bom returns the result encoding if found BOM UTF_32BE sequence
+fails(waiting on release of ruby/stringio#101):StringIO#set_encoding_by_bom returns nil if io is empty
+fails(waiting on release of ruby/stringio#101):StringIO#set_encoding_by_bom returns nil if UTF-8 BOM sequence is incomplete
+fails(waiting on release of ruby/stringio#101):StringIO#set_encoding_by_bom returns nil if UTF-16BE BOM sequence is incomplete
+fails(waiting on release of ruby/stringio#101):StringIO#set_encoding_by_bom returns nil if UTF-16LE/UTF-32LE BOM sequence is incomplete
+fails(waiting on release of ruby/stringio#101):StringIO#set_encoding_by_bom returns UTF-16LE if UTF-32LE BOM sequence is incomplete
+fails(waiting on release of ruby/stringio#101):StringIO#set_encoding_by_bom returns nil if UTF-32BE BOM sequence is incomplete
+fails(waiting on release of ruby/stringio#101):StringIO#set_encoding_by_bom returns nil if found BOM sequence not provided
+fails(waiting on release of ruby/stringio#101):StringIO#set_encoding_by_bom does not raise exception if io not in binary mode
+fails(waiting on release of ruby/stringio#101):StringIO#set_encoding_by_bom does not raise exception if encoding already set
+fails(waiting on release of ruby/stringio#101):StringIO#set_encoding_by_bom does not raise exception if encoding conversion is already set
+fails(waiting on release of ruby/stringio#101):StringIO#set_encoding_by_bom raises FrozenError when io is frozen
+fails(waiting on release of ruby/stringio#101):StringIO#set_encoding_by_bom does not raise FrozenError when initial string is frozen

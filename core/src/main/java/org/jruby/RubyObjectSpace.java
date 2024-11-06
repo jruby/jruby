@@ -70,9 +70,14 @@ public class RubyObjectSpace {
         return objectSpaceModule;
     }
 
-    @JRubyMethod(required = 1, optional = 1, checkArity = false, module = true, visibility = PRIVATE)
+    @Deprecated
     public static IRubyObject define_finalizer(IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = recv.getRuntime();
+        return define_finalizer(recv.getRuntime().getCurrentContext(), recv, args, block);
+    }
+
+    @JRubyMethod(required = 1, optional = 1, checkArity = false, module = true, visibility = PRIVATE)
+    public static IRubyObject define_finalizer(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+        Ruby runtime = context.runtime;
 
         int argc = Arity.checkArgumentCount(runtime, args, 1, 2);
 
@@ -93,7 +98,7 @@ public class RubyObjectSpace {
             if (blockReferencesObject(obj, block)) referenceWarning(runtime);
             finalizer = runtime.newProc(Block.Type.PROC, block);
         }
-        runtime.getObjectSpace().addFinalizer(obj, finalizer);
+        finalizer = runtime.getObjectSpace().addFinalizer(context, obj, finalizer);
         return runtime.newArray(RubyFixnum.zero(runtime), finalizer);
     }
 
