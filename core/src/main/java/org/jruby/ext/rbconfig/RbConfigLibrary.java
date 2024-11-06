@@ -241,6 +241,7 @@ public class RbConfigLibrary implements Library {
         setConfig(context, CONFIG, "MAJOR", major);
         setConfig(context, CONFIG, "MINOR", minor);
         setConfig(context, CONFIG, "TEENY", teeny);
+        setConfig(context, CONFIG, "PATCHLEVEL", "0");
         setConfig(context, CONFIG, "ruby_version", major + '.' + minor + ".0");
         // Rubygems is too specific on host cpu so until we have real need lets default to universal
         //setConfig(CONFIG, "arch", System.getProperty("os.arch") + "-java" + System.getProperty("java.specification.version"));
