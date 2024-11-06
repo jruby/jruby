@@ -1242,11 +1242,17 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return invokedynamic(metaClass.runtime.getCurrentContext(), this, EQL, other).isTrue();
     }
 
+    @Deprecated
+    @Override
+    public void addFinalizer(IRubyObject f) {
+        addFinalizer(getRuntime().getCurrentContext(), f);
+    }
+
     /**
      * Adds the specified object as a finalizer for this object.
      */
     @Override
-    public void addFinalizer(IRubyObject f) {
+    public void addFinalizer(ThreadContext context, IRubyObject f) {
         Finalizer finalizer = (Finalizer) getInternalVariable("__finalizer__");
         if (finalizer == null) {
             // since this is the first time we're registering a finalizer, we
@@ -1262,7 +1268,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             setInternalVariable("__finalizer__", finalizer);
             getRuntime().addFinalizer(finalizer);
         }
-        finalizer.addFinalizer(f);
+        finalizer.addFinalizer(context, f);
     }
 
     /**
@@ -1918,11 +1924,27 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             this.finalized = new AtomicBoolean(false);
         }
 
+        @Deprecated
         public void addFinalizer(IRubyObject finalizer) {
+            addFinalizer(finalizer.getRuntime().getCurrentContext(), finalizer);
+        }
+
+        public void addFinalizer(ThreadContext context, IRubyObject finalizer) {
             if (firstFinalizer == null) {
                 firstFinalizer = finalizer;
             } else {
-                if (finalizers == null) finalizers = new ArrayList<IRubyObject>(4);
+                if (firstFinalizer.op_equal(context, finalizer).isTrue()) {
+                    // do not add equivalent finalizer twice
+                    return;
+                }
+
+                if (finalizers == null) {
+                    finalizers = new ArrayList<IRubyObject>(4);
+                } else if (finalizers.stream().anyMatch((f) -> finalizer.op_equal(context, finalizer).isTrue())) {
+                    // do not add equivalent finalizer twice
+                    return;
+                }
+
                 finalizers.add(finalizer);
             }
         }
