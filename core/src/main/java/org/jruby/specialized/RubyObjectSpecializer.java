@@ -178,6 +178,7 @@ public class RubyObjectSpecializer {
             String clsPath = genericClassName(i);
             JiteClass jcls = generateJiteClass(clsPath, i);
             Files.write(Paths.get(targetPath, clsPath + ".class"), jcls.toBytes(JDKVersion.V1_8));
+            Files.write(Paths.get(targetPath, clsPath + "Allocator.class"), jcls.getChildClasses().get(0).toBytes(JDKVersion.V1_8));
         }
     }
 
