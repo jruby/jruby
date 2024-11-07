@@ -86,12 +86,13 @@ public class RubyThreadGroup extends RubyObject {
             if (threadGroup.enclosed_p(block).isTrue()) throw typeError(context, "can't move from the enclosed thread group");
         }
 
-        // always set group when added explicitly
-        thread.setThreadGroup(this);
-
         // we only add live threads
-        if (thread.isAlive()) addDirectly(thread);
-
+        if (thread.isAlive()) {
+            addDirectly(thread);
+        } else {
+            thread.setThreadGroup(this);
+        }
+        
         return this;
     }
     
