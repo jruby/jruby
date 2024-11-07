@@ -95,12 +95,11 @@ public class RubyThreadGroup extends RubyObject {
             }
         }
 
-        // always set group when added explicitly
-        thread.setThreadGroup(this);
-
         // we only add live threads
         if (thread.alive_p(context).isTrue()) {
             addDirectly(thread);
+        } else {
+            thread.setThreadGroup(this);
         }
         
         return this;
