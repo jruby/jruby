@@ -6,6 +6,7 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFile;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
@@ -362,6 +363,26 @@ public class Convert {
      */
     public static RubyFixnum asFixnum(ThreadContext context, int value) {
         return RubyFixnum.newFixnum(context.runtime, value);
+    }
+
+    /**
+     * Create a Ruby Float from a java double.
+     * @param context the current thread context
+     * @param value the double value
+     * @return the Ruby Float
+     */
+    public static RubyFloat asFloat(ThreadContext context, double value) {
+        return RubyFloat.newFloat(context.runtime, value);
+    }
+
+    /**
+     * Create a Ruby Float from a java long.
+     * @param context the current thread context
+     * @param value the long value
+     * @return the Ruby Float
+     */
+    public static RubyFloat asFloat(ThreadContext context, long value) {
+        return RubyFloat.newFloat(context.runtime, value);
     }
 
     /**
