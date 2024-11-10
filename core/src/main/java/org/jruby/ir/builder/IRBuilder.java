@@ -1734,11 +1734,10 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     public Operand buildMatch(Variable result, Operand regexp) {
-        Variable tempLastLine = temp();
-        addResultInstr(new GetGlobalVariableInstr(tempLastLine, symbol("$_")));
+        Variable lastLine = addResultInstr(new GetGlobalVariableInstr(temp(), symbol("$_")));
 
         if (result == null) result = temp();
-        return addResultInstr(new MatchInstr(scope, result, regexp, tempLastLine));
+        return addResultInstr(new MatchInstr(scope, result, regexp, lastLine));
     }
 
     protected Operand buildModule(ByteList name, U cpath, U bodyNode, StaticScope scope, int line, int endLine) {
