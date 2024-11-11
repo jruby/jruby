@@ -87,8 +87,12 @@ public class RubyThreadGroup extends RubyObject {
         }
 
         // we only add live threads
-        if (thread.isAlive()) addDirectly(thread);
-
+        if (thread.isAlive()) {
+            addDirectly(thread);
+        } else {
+            thread.setThreadGroup(this);
+        }
+        
         return this;
     }
     

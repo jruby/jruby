@@ -1,9 +1,5 @@
-require_relative '../../spec_helper'
+require_relative '../../shared/queue/freeze'
 
 describe "Queue#freeze" do
-  ruby_version_is "3.3" do
-    it "raises TypeError" do
-      -> { Queue.new.freeze }.should raise_error(TypeError)
-    end
-  end
+  it_behaves_like :queue_freeze, :freeze, -> { Queue.new }
 end

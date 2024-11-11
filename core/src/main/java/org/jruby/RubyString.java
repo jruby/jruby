@@ -1080,6 +1080,17 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         }
     }
 
+    /**
+     * Create anew or deduplicate a RubyString based on the given Java String content.
+     *
+     * @param runtime the JRuby runtime
+     * @param content the Java String content
+     * @return a frozen, deduplicated RubyString hosting the given content
+     */
+    public static RubyString newFString(Ruby runtime, String content) {
+        return runtime.freezeAndDedupString(newString(runtime, content));
+    }
+
     // MRI: rb_str_new_frozen, at least in spirit
     // also aliased to rb_str_new4
     public RubyString newFrozen() {

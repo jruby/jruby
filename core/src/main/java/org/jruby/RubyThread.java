@@ -1102,7 +1102,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "[]")
     public IRubyObject op_aref(ThreadContext context, IRubyObject key) {
-        key = getSymbolKey(key);
+        key = RubySymbol.idSymbolFromObject(context, key);
         final Map<IRubyObject, IRubyObject> locals = getFiberLocals();
         synchronized (locals) {
             IRubyObject value;
@@ -1111,10 +1111,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     @JRubyMethod(name = "[]=")
-    public IRubyObject op_aset(IRubyObject key, IRubyObject value) {
-        checkFrozen();
+    public IRubyObject op_aset(ThreadContext context, IRubyObject key, IRubyObject value) {
+        if (isFrozen()) {
+            throw getRuntime().newFrozenError(this, "can't modify frozen thread locals");
+        }
 
-        key = getSymbolKey(key);
+        key = RubySymbol.idSymbolFromObject(context, key);
         final Map<IRubyObject, IRubyObject> locals = getFiberLocals();
         synchronized (locals) {
             locals.put(key, value);
@@ -1124,7 +1126,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "key?")
     public RubyBoolean key_p(ThreadContext context, IRubyObject key) {
-        key = getSymbolKey(key);
+        key = RubySymbol.idSymbolFromObject(context, key);
         final Map<IRubyObject, IRubyObject> locals = getFiberLocals();
         synchronized (locals) {
             return asBoolean(context, locals.containsKey(key));
@@ -1147,7 +1149,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "thread_variable?")
     public IRubyObject thread_variable_p(ThreadContext context, IRubyObject key) {
-        key = getSymbolKey(key);
+        key = RubySymbol.idSymbolFromObject(context, key);
         final Map<IRubyObject, IRubyObject> locals = getThreadLocals();
         synchronized (locals) {
             return asBoolean(context, locals.containsKey(key));
@@ -1156,7 +1158,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "thread_variable_get")
     public IRubyObject thread_variable_get(ThreadContext context, IRubyObject key) {
-        key = getSymbolKey(key);
+        key = RubySymbol.idSymbolFromObject(context, key);
         final Map<IRubyObject, IRubyObject> locals = getThreadLocals();
         synchronized (locals) {
             IRubyObject value;
@@ -1167,7 +1169,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     @JRubyMethod(name = "thread_variable_set")
     public IRubyObject thread_variable_set(ThreadContext context, IRubyObject key, IRubyObject value) {
         checkFrozen();
-        key = getSymbolKey(key);
+        key = RubySymbol.idSymbolFromObject(context, key);
         final Map<IRubyObject, IRubyObject> locals = getThreadLocals();
         synchronized (locals) {
             locals.put(key, value);
@@ -2689,5 +2691,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             default:
                 throw context.runtime.newArgumentError(args.length, 0, 1);
         }
+    }
+
+    @Deprecated
+    public IRubyObject op_aset(IRubyObject key, IRubyObject value) {
+        return op_aset(getRuntime().getCurrentContext(), key, value);
     }
 }

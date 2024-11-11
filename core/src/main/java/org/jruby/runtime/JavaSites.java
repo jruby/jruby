@@ -55,6 +55,7 @@ public class JavaSites {
     public final StructSites Struct = new StructSites();
     public final DigestSites Digest = new DigestSites();
     public final MethodSites Method = new MethodSites();
+    public final SymbolSites Symbol = new SymbolSites();
     public final ProcSites Proc = new ProcSites();
 
     public static class BasicObjectSites {
@@ -550,6 +551,10 @@ public class JavaSites {
 
     public static class MethodSites {
         public final CallSite curry = new FunctionalCachingCallSite("curry");
+    }
+
+    public static class SymbolSites {
+        public final CheckedSites to_str_checked = new CheckedSites("to_str");
     }
 
     public static class ProcSites {
