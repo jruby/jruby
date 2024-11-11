@@ -31,6 +31,7 @@ package org.jruby.util;
 import static com.headius.backport9.buffer.Buffers.clearBuffer;
 import static com.headius.backport9.buffer.Buffers.flipBuffer;
 import static java.lang.System.out;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 
 import java.io.File;
@@ -424,8 +425,9 @@ public class ShellLauncher {
     }
 
     public static File findPathExecutable(Ruby runtime, String fname) {
+        ThreadContext context = runtime.getCurrentContext();
         RubyHash env = (RubyHash) runtime.getObject().getConstant("ENV");
-        IRubyObject pathObject = env.op_aref(runtime.getCurrentContext(), RubyString.newString(runtime, PATH_ENV));
+        IRubyObject pathObject = env.op_aref(context, newString(context, PATH_ENV));
         return findPathExecutable(runtime, fname, pathObject);
     }
 
@@ -434,8 +436,9 @@ public class ShellLauncher {
         String[] pathNodes;
 
         if (pathObject == null || pathObject.isNil()) {
+            ThreadContext context = runtime.getCurrentContext();
             RubyHash env = (RubyHash) runtime.getObject().getConstant("ENV");
-            pathObject = env.op_aref(runtime.getCurrentContext(), RubyString.newString(runtime, PATH_ENV));
+            pathObject = env.op_aref(context, newString(context, PATH_ENV));
         }
 
         if (pathObject.isNil() || pathObject.convertToString().size() == 0) {

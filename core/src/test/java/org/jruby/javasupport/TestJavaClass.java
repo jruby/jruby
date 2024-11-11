@@ -1,8 +1,11 @@
 package org.jruby.javasupport;
 
+import org.jruby.runtime.ThreadContext;
 import org.junit.Test;
 
 import org.jruby.*;
+
+import static org.jruby.api.Create.newString;
 
 public class TestJavaClass extends junit.framework.TestCase {
 
@@ -168,7 +171,8 @@ public class TestJavaClass extends junit.framework.TestCase {
     }
 
     static void requireJava(final Ruby runtime) {
-        runtime.getModule("Kernel").callMethod(runtime.getCurrentContext(), "require", runtime.newString("java"));
+        ThreadContext context = runtime.getCurrentContext();
+        runtime.getModule("Kernel").callMethod(context, "require", newString(context, "java"));
     }
 
 }

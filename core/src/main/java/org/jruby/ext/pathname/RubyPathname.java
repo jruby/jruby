@@ -31,6 +31,7 @@ package org.jruby.ext.pathname;
 
 import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newString;
 
 import org.jruby.*;
 import org.jruby.anno.JRubyClass;
@@ -252,7 +253,7 @@ public class RubyPathname extends RubyObject {
 
     @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {
-        return context.runtime.newString("#<Pathname:" + getPath() + ">");
+        return newString(context, "#<Pathname:" + getPath() + ">");
     }
 
     @JRubyMethod(required = 1, optional = 1, checkArity = false, writes = BACKREF)

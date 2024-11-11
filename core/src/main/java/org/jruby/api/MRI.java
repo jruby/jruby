@@ -14,14 +14,6 @@ import org.jruby.util.ByteList;
 import org.jruby.util.ByteListHolder;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.IOEncodable;
-import org.jruby.util.io.OpenFile;
-
-import java.util.function.Supplier;
-
-import static org.jruby.RubyString.newBinaryString;
-import static org.jruby.RubyString.newEmptyString;
-import static org.jruby.RubyString.newString;
-import static org.jruby.util.StringSupport.searchNonAscii;
 
 public class MRI {
     public static int rb_pipe(ThreadContext context, int[] pipes) {

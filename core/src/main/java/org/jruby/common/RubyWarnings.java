@@ -48,6 +48,7 @@ import org.jruby.util.TypeConverter;
 import org.jruby.util.func.TriFunction;
 
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Create.newString;
 import static org.jruby.util.RubyStringBuilder.str;
 
 /**
@@ -129,7 +130,8 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         } else {
             fullMessage = fileName + ": " + message + '\n'; // warn(fileName, message) behave as in MRI
         }
-        writeWarningDyncall(runtime.getCurrentContext(), runtime.newString(fullMessage));
+        ThreadContext context = runtime.getCurrentContext();
+        writeWarningDyncall(context, newString(context, fullMessage));
     }
 
     // MRI: rb_write_warning_str
@@ -338,7 +340,8 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     public void warn(ID id, String fileName, String message) {
         if (!runtime.warningsEnabled()) return;
 
-        warn(runtime.getCurrentContext(), runtime.newString(fileName + " warning: " + message + '\n'));
+        ThreadContext context = runtime.getCurrentContext();
+        warn(context, newString(context, fileName + " warning: " + message + '\n'));
     }
 
     @Deprecated

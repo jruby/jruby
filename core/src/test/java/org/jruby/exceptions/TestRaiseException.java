@@ -21,6 +21,8 @@ import org.jruby.test.Base;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
+import static org.jruby.api.Create.newString;
+
 public class TestRaiseException extends Base {
 
     public void testBacktrace() {
@@ -291,6 +293,7 @@ public class TestRaiseException extends Base {
     }
 
     public void testRubyExceptionBacktraceIncludesJavaOrigin() {
+        ThreadContext context = runtime.getCurrentContext();
         String script =
                 "require 'java'\n" +
                         "hash = Hash.new { org.jruby.test.ThrowFromJava.new.throwIt }\n" +
@@ -299,7 +302,7 @@ public class TestRaiseException extends Base {
 
         RubyArray trace = (RubyArray) runtime.evalScriptlet(script);
 
-        String fullTrace = trace.join(runtime.getCurrentContext(), runtime.newString("\n")).toString();
+        String fullTrace = trace.join(context, newString(context, "\n")).toString();
         // System.out.println(fullTrace);
 
         // NOTE: 'unknown' JRuby packages e.g. "org.jruby.test" should not be filtered
@@ -466,7 +469,7 @@ public class TestRaiseException extends Base {
             assertEquals(backtrace, e.getException().backtrace());
         }
 
-        RubyString message = ruby.newString("blah");
+        RubyString message = newString(ruby.getCurrentContext(), "blah");
         try {
             throw RaiseException.from(ruby, ruby.getException(), message);
         } catch (Exception e) {

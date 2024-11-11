@@ -86,6 +86,7 @@ import java.util.regex.Pattern;
 import static java.lang.Integer.parseInt;
 import static org.jruby.RubyComparable.invcmp;
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.invokedynamic;
@@ -917,11 +918,11 @@ public class RubyTime extends RubyObject {
             sec(), min(), hour(),
             mday(), month(), year(),
             wday(), yday(), isdst(),
-            getTimezoneShortName(context.runtime));
+            getTimezoneShortName(context));
     }
 
-    private RubyString getTimezoneShortName(Ruby runtime) {
-        return RubyString.newString(runtime, dt.getZone().getShortName(dt.getMillis()));
+    private RubyString getTimezoneShortName(ThreadContext context) {
+        return newString(context, dt.getZone().getShortName(dt.getMillis()));
     }
 
     @JRubyMethod
@@ -1319,7 +1320,7 @@ public class RubyTime extends RubyObject {
             se >>>= 8;
         }
 
-        RubyString string = RubyString.newString(context.runtime, new ByteList(dumpValue, false));
+        RubyString string = newString(context, new ByteList(dumpValue, false));
 
         // 1.9 includes more nsecs
         copyInstanceVariablesInto(string);

@@ -60,6 +60,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -365,13 +366,13 @@ public class RubyDigest {
         @JRubyMethod(name = "bubblebabble", meta = true)
         public static IRubyObject bubblebabble(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
             byte[] digest = sites(context).digest.call(context, recv, recv, arg0).convertToString().getBytes();
-            return RubyString.newString(recv.getRuntime(), BubbleBabble.bubblebabble(digest, 0, digest.length));
+            return newString(context, BubbleBabble.bubblebabble(digest, 0, digest.length));
         }
 
         @JRubyMethod(name = "bubblebabble", meta = true)
         public static IRubyObject bubblebabble(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
             byte[] digest = sites(context).digest.call(context, recv, recv, arg0, arg1).convertToString().getBytes();
-            return RubyString.newString(recv.getRuntime(), BubbleBabble.bubblebabble(digest, 0, digest.length));
+            return newString(context, BubbleBabble.bubblebabble(digest, 0, digest.length));
         }
 
         @JRubyMethod()
@@ -490,7 +491,7 @@ public class RubyDigest {
         @JRubyMethod(name = "bubblebabble", meta = true)
         public static RubyString bubblebabble(ThreadContext context, IRubyObject recv, IRubyObject arg) {
             byte[] digest = sites(context).digest.call(context, recv, recv, arg).convertToString().getBytes();
-            return RubyString.newString(context.runtime, BubbleBabble.bubblebabble(digest, 0, digest.length));
+            return newString(context, BubbleBabble.bubblebabble(digest, 0, digest.length));
         }
 
         @Deprecated
@@ -595,7 +596,7 @@ public class RubyDigest {
         @JRubyMethod()
         public IRubyObject bubblebabble(ThreadContext context) {
             final byte[] digest = algo.digest();
-            return RubyString.newString(context.runtime, BubbleBabble.bubblebabble(digest, 0, digest.length));
+            return newString(context, BubbleBabble.bubblebabble(digest, 0, digest.length));
         }
 
         private void setAlgorithm(Metadata metadata) throws NoSuchAlgorithmException {

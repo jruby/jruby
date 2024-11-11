@@ -41,6 +41,8 @@ import org.jruby.util.NoFunctionalitySignalFacade;
 import java.util.*;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
 
 @JRubyModule(name="Signal")
 public class RubySignal {
@@ -182,13 +184,12 @@ public class RubySignal {
         long sig = rubySig.convertToInteger().getLongValue();
         String signame = signo2signm(sig);
         if (signame == null) {
-            if(sig == 0) {
-                return RubyString.newString(context.runtime, "EXIT");
-            } else {
-                throw context.runtime.newArgumentError("invalid signal number: " + rubySig);
-            }
+            if (sig == 0) return newString(context, "EXIT");
+
+            throw argumentError(context, "invalid signal number: " + rubySig);
         }
-        return context.runtime.newString(signame);
+
+        return newString(context, signame);
     }
 
     // MRI: signo2signm

@@ -28,7 +28,6 @@
 
 package org.jruby;
 
-import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
@@ -45,6 +44,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Sprintf;
 
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Create.newString;
 
 /**
  * The Java representation of a Ruby NameError.
@@ -145,7 +145,7 @@ public class RubyNameError extends RubyStandardError {
 
             if (!singleton) {
                 separator = RubyString.newString(runtime, (byte) ':');
-                className = RubyString.newString(runtime, object.getMetaClass().getRealClass().getName());
+                className = newString(context, object.getMetaClass().getRealClass().getName());
             } else {
                 className = separator = RubyString.newEmptyString(runtime);
             }
@@ -157,7 +157,7 @@ public class RubyNameError extends RubyStandardError {
             ByteList msgBytes = new ByteList(message.length() + description.size() + 16, USASCIIEncoding.INSTANCE); // name.size()
             Sprintf.sprintf(msgBytes, message, arr);
 
-            return runtime.newString(msgBytes);
+            return newString(context, msgBytes);
         }
     }
 
@@ -260,9 +260,8 @@ public class RubyNameError extends RubyStandardError {
     @JRubyMethod
     @Override
     public IRubyObject to_s(ThreadContext context) {
-        if (message == context.nil) {
-            return context.runtime.newString(getMetaClass().getRealClass().getName());
-        }
+        if (message == context.nil) return newString(context, getMetaClass().getRealClass().getName());
+
         RubyString str = message.convertToString();
         if (str != message) message = str;
         return message;

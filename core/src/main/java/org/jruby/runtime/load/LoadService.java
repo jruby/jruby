@@ -79,6 +79,8 @@ import org.jruby.util.collections.StringArraySet;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.newSymbol;
 import static org.jruby.util.URLUtil.getPath;
 
 /**
@@ -302,37 +304,36 @@ public class LoadService {
     public static class LoadPathMethods {
         @JRubyMethod
         public static IRubyObject resolve_feature_path(ThreadContext context, IRubyObject self, IRubyObject pathArg) {
-            Ruby runtime = context.runtime;
-            RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, pathArg));
+            RubyString path = StringSupport.checkEmbeddedNulls(context.runtime, RubyFile.get_path(context, pathArg));
             String file = path.toString();
             LibrarySearcher.FoundLibrary[] libraryHolder = {null};
-            char extension = runtime.getLoadService().searchForRequire(file, libraryHolder);
+            char extension = context.runtime.getLoadService().searchForRequire(file, libraryHolder);
 
             if (extension == 0) return context.nil;
 
             RubySymbol ext;
             switch (extension) {
                 case 'r':
-                    ext = runtime.newSymbol("rb");
+                    ext = newSymbol(context, "rb");
                     break;
                 case 's':
-                    ext = runtime.newSymbol("so"); // FIXME: should this be so or jar?
+                    ext = newSymbol(context, "so"); // FIXME: should this be so or jar?
                     break;
                 default:
-                    ext = runtime.newSymbol("unknown");
+                    ext = newSymbol(context, "unknown");
                     break;
             }
 
             RubyString name;
             if (libraryHolder[0] == null) {
                 // FIXME: Our builtin libraries are returning 'r' is ext but has no loader.
-                ext = runtime.newSymbol("so"); // FIXME: should this be so or jar?
+                ext = newSymbol(context, "so"); // FIXME: should this be so or jar?
                 name = path;
             } else {
-                name = runtime.newString(libraryHolder[0].getLoadName());
+                name = newString(context, libraryHolder[0].getLoadName());
             }
 
-            return runtime.newArray(ext, name);
+            return context.runtime.newArray(ext, name);
         }
     }
 

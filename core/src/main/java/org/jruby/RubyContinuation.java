@@ -35,6 +35,8 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Create.newString;
+
 /**
  * Minimal RubyContinuation class to support third-party users.
  */
@@ -93,7 +95,7 @@ public class RubyContinuation extends RubyObject {
     public IRubyObject call(ThreadContext context, IRubyObject[] args) {
         if (disabled) {
             RubyKernel.raise(context, context.runtime.getThreadError(),
-                    new IRubyObject[]{context.runtime.newString("continuations can not be called from outside their scope")},
+                    new IRubyObject[]{newString(context, "continuations can not be called from outside their scope")},
                     Block.NULL_BLOCK);
         }
         continuation.args = args;

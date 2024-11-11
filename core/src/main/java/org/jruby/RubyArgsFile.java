@@ -44,6 +44,7 @@ import static org.jruby.RubyArgsFile.Next.Stream;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.anno.FrameField.LASTLINE;
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Create.newString;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
 import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -205,7 +206,7 @@ public class RubyArgsFile extends RubyObject {
             } else if (next_p == Stream) {
                 currentFile = runtime.getGlobalVariables().get("$stdin");
                 if (!filenameEqlDash((RubyString) $FILENAME.getAccessor().getValue())) {
-                    $FILENAME.forceValue(runtime.newString("-"));
+                    $FILENAME.forceValue(newString(context, "-"));
                 }
             }
 
@@ -245,7 +246,7 @@ public class RubyArgsFile extends RubyObject {
                 backupFile.delete();
                 file.renameTo(backupFile);
                 currentFile = RubyFile.open(context, runtime.getFile(), //reopen
-                        new IRubyObject[]{runtime.newString(backup)}, Block.NULL_BLOCK);
+                        new IRubyObject[]{newString(context, backup)}, Block.NULL_BLOCK);
             } else {
                 throw runtime.newIOError("Windows doesn't support inplace editing without a backup");
             }
@@ -253,7 +254,7 @@ public class RubyArgsFile extends RubyObject {
             createNewFile(file);
 
             runtime.getGlobalVariables().set("$stdout", RubyFile.open(context, runtime.getFile(),
-                    new IRubyObject[]{runtime.newString(filename), runtime.newString("w")}, Block.NULL_BLOCK));
+                    new IRubyObject[]{newString(context, filename), newString(context, "w")}, Block.NULL_BLOCK));
         }
 
         private void inplaceEdit(ThreadContext context, String filename, String extension) throws RaiseException {
@@ -271,7 +272,7 @@ public class RubyArgsFile extends RubyObject {
             runtime.getPosix().chmod(filename, stat.mode());
             runtime.getPosix().chown(filename, stat.uid(), stat.gid());
             runtime.getGlobalVariables().set("$stdout", (RubyIO) RubyFile.open(context, runtime.getFile(),
-                    new IRubyObject[]{runtime.newString(filename), runtime.newString("w")}, Block.NULL_BLOCK));
+                    new IRubyObject[]{newString(context, filename), newString(context, "w")}, Block.NULL_BLOCK));
         }
 
         public boolean isCurrentFile(RubyIO io) {

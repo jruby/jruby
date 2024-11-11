@@ -37,6 +37,7 @@ import org.jruby.util.RubyStringBuilder;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newString;
 import static org.jruby.javasupport.JavaUtil.convertJavaToUsableRubyObject;
 import static org.jruby.javasupport.JavaUtil.unwrapJavaObject;
 import static org.jruby.util.Inspector.*;
@@ -197,15 +198,13 @@ public abstract class JavaUtilRegex {
         }
 
         private static IRubyObject[] groups(final ThreadContext context, final IRubyObject self, final int off) {
-            final Ruby runtime = context.runtime;
             final java.util.regex.Matcher matcher = unwrapJavaObject(self);
             final IRubyObject[] arr = new IRubyObject[ matcher.groupCount() - off + 1 ];
             for ( int i = 0; i < arr.length; i++ ) {
                 if ( matcher.start(i + off) == -1 ) {
                     arr[i] = context.nil;
-                }
-                else {
-                    arr[i] = runtime.newString(matcher.group(i + off));
+                } else {
+                    arr[i] = newString(context, matcher.group(i + off));
                 }
             }
             return arr;
@@ -215,11 +214,11 @@ public abstract class JavaUtilRegex {
         public static IRubyObject aref(final ThreadContext context, final IRubyObject self, final IRubyObject idx) {
             final java.util.regex.Matcher matcher = unwrapJavaObject(self);
             if ( idx instanceof RubySymbol || idx instanceof RubyString ) {
-                return context.runtime.newString( matcher.group(idx.toString()) );
+                return newString(context, matcher.group(idx.toString()));
             }
             if ( idx instanceof RubyInteger ) {
                 final int group = ((RubyInteger) idx).getIntValue();
-                return context.runtime.newString( matcher.group(group) );
+                return newString(context, matcher.group(group));
             }
             return to_a(context, self).aref(context, idx); // Range
         }

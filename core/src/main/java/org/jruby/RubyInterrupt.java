@@ -37,6 +37,8 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import static org.jruby.api.Create.newString;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.util.ArraySupport;
 
@@ -76,7 +78,7 @@ public class RubyInterrupt extends RubySignalException {
         if (args.length > 0) {
             args = ArraySupport.newCopy(signo, args);
         } else {
-            args = new IRubyObject[]{signo, runtime.newString("Interrupt")};
+            args = new IRubyObject[]{signo, newString(context, "Interrupt")};
         }
 
         super.initialize(context, args, block);

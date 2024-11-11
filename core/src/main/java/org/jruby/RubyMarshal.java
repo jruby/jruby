@@ -52,6 +52,7 @@ import org.jruby.util.IOInputStream;
 import org.jruby.util.IOOutputStream;
 import org.jruby.util.io.TransparentByteArrayOutputStream;
 
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -120,13 +121,8 @@ public class RubyMarshal {
 
         dumpToStream(context, objectToDump, outputStream, depthLimit);
 
-        if (io != null) {
-            return io;
-        }
-
-        RubyString result = RubyString.newString(context.runtime, new ByteList(stringOutput.getRawBytes(), 0, stringOutput.size(), false));
-
-        return result;
+        return io != null ? io :
+                newString(context, new ByteList(stringOutput.getRawBytes(), 0, stringOutput.size(), false));
     }
 
     @JRubyMethod(name = {"load", "restore"}, required = 1, optional = 2, checkArity = false, module = true, visibility = Visibility.PRIVATE)

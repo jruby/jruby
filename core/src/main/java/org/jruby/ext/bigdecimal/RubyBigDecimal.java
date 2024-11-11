@@ -60,6 +60,7 @@ import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
 
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -306,7 +307,7 @@ public class RubyBigDecimal extends RubyNumeric {
             m = m * 10 + (precisionAndValue.charAt(i) - '0');
         }
         String value = precisionAndValue.substring(precisionAndValue.indexOf(':') + 1);
-        return (RubyBigDecimal) newInstance(context, recv, RubyString.newString(context.runtime, value), RubyFixnum.newFixnum(context.runtime, m), true, true);
+        return (RubyBigDecimal) newInstance(context, recv, newString(context, value), RubyFixnum.newFixnum(context.runtime, m), true, true);
     }
 
     @JRubyMethod(meta = true)

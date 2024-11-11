@@ -72,6 +72,8 @@ import static jnr.constants.platform.ProtocolFamily.PF_INET;
 import static jnr.constants.platform.ProtocolFamily.PF_INET6;
 import static jnr.constants.platform.Sock.SOCK_DGRAM;
 import static jnr.constants.platform.Sock.SOCK_STREAM;
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.ext.socket.Addrinfo.AI_CANONNAME;
 
 /**
@@ -79,18 +81,16 @@ import static org.jruby.ext.socket.Addrinfo.AI_CANONNAME;
  */
 public class SocketUtils {
     public static IRubyObject gethostname(ThreadContext context) {
-        Ruby runtime = context.runtime;
-
         try {
-            return RubyString.newString(context.runtime, InetAddress.getLocalHost().getHostName());
+            return newString(context, InetAddress.getLocalHost().getHostName());
 
-        } catch(UnknownHostException e) {
+        } catch (UnknownHostException e) {
 
             try {
-                return RubyString.newString(context.runtime, InetAddress.getByAddress(new byte[]{0, 0, 0, 0}).getHostName());
+                return newString(context, InetAddress.getByAddress(new byte[]{0, 0, 0, 0}).getHostName());
 
-            } catch(UnknownHostException e2) {
-                throw sockerr(runtime, "gethostname: name or service not known");
+            } catch (UnknownHostException e2) {
+                throw sockerr(context.runtime, "gethostname: name or service not known");
 
             }
         }
@@ -100,7 +100,7 @@ public class SocketUtils {
         Ruby runtime = context.runtime;
         IRubyObject ret0, ret1, ret2, ret3;
 
-        ret0 = runtime.newString(Sockaddr.addressFromString(runtime, args[0].convertToString().toString()).getCanonicalHostName());
+        ret0 = newString(context, Sockaddr.addressFromString(runtime, args[0].convertToString().toString()).getCanonicalHostName());
         ret1 = runtime.newArray();
         ret2 = runtime.newFixnum(2); // AF_INET
         ret3 = args[0];
@@ -157,10 +157,10 @@ public class SocketUtils {
             InetAddress addr = getRubyInetAddress(hostname.convertToString().toString());
             IRubyObject ret0, ret1, ret2, ret3;
 
-            ret0 = runtime.newString(addr.getCanonicalHostName());
+            ret0 = newString(context, addr.getCanonicalHostName());
             ret1 = runtime.newArray();
             ret2 = runtime.newFixnum(AF_INET);
-            ret3 = runtime.newString(new ByteList(addr.getAddress()));
+            ret3 = newString(context, new ByteList(addr.getAddress()));
             return RubyArray.newArray(runtime, ret0, ret1, ret2, ret3);
 
         } catch(UnknownHostException e) {
@@ -197,10 +197,10 @@ public class SocketUtils {
 
             if (sock_dgram) {
                 c = new IRubyObject[7];
-                c[0] = runtime.newString(is_ipv6 ? "AF_INET6" : "AF_INET");
+                c[0] = newString(context, is_ipv6 ? "AF_INET6" : "AF_INET");
                 c[1] = runtime.newFixnum(port);
-                c[2] = runtime.newString(getHostAddress(context, address, reverse));
-                c[3] = runtime.newString(address.getHostAddress());
+                c[2] = newString(context, getHostAddress(context, address, reverse));
+                c[3] = newString(context, address.getHostAddress());
                 c[4] = runtime.newFixnum(is_ipv6 ? PF_INET6 : PF_INET);
                 c[5] = runtime.newFixnum(SOCK_DGRAM);
                 c[6] = runtime.newFixnum(IPPROTO_UDP);
@@ -209,10 +209,10 @@ public class SocketUtils {
 
             if (sock_stream) {
                 c = new IRubyObject[7];
-                c[0] = runtime.newString(is_ipv6 ? "AF_INET6" : "AF_INET");
+                c[0] = newString(context, is_ipv6 ? "AF_INET6" : "AF_INET");
                 c[1] = runtime.newFixnum(port);
-                c[2] = runtime.newString(getHostAddress(context, address, reverse));
-                c[3] = runtime.newString(address.getHostAddress());
+                c[2] = newString(context, getHostAddress(context, address, reverse));
+                c[3] = newString(context, address.getHostAddress());
                 c[4] = runtime.newFixnum(is_ipv6 ? PF_INET6 : PF_INET);
                 c[5] = runtime.newFixnum(SOCK_STREAM);
                 c[6] = runtime.newFixnum(IPPROTO_TCP);
@@ -338,7 +338,6 @@ public class SocketUtils {
     }
 
     public static IRubyObject getnameinfo(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
         int flags = args.length == 2 ? RubyNumeric.num2int(args[1]) : 0;
         IRubyObject arg0 = args[0];
         String host, port;
@@ -348,7 +347,7 @@ public class SocketUtils {
             final int len = ary.size();
 
             if (len < 3 || len > 4) {
-                throw runtime.newArgumentError("array size should be 3 or 4, "+ len +" given");
+                throw argumentError(context, "array size should be 3 or 4, "+ len +" given");
             }
 
             // if array has 4 elements, third element is ignored
@@ -362,9 +361,7 @@ public class SocketUtils {
             if (!m.matches()) {
                 RubyArray portAndHost = Sockaddr.unpack_sockaddr_in(context, arg0);
 
-                if (portAndHost.size() != 2) {
-                    throw runtime.newArgumentError("invalid address representation");
-                }
+                if (portAndHost.size() != 2) throw argumentError(context, "invalid address representation");
 
                 port = portAndHost.eltInternal(0).toString();
                 host = portAndHost.eltInternal(1).toString();
@@ -372,63 +369,38 @@ public class SocketUtils {
             } else if ((host = m.group(IPV4_HOST_GROUP)) == null || host.length() == 0 ||
                     (port = m.group(IPV4_PORT_GROUP)) == null || port.length() == 0) {
 
-                throw runtime.newArgumentError("invalid address string");
-
+                throw argumentError(context, "invalid address string");
             } else {
-
                 // Try IPv6
                 try {
                     InetAddress ipv6_addr = InetAddress.getByName(host);
 
-                    if (ipv6_addr instanceof Inet6Address) {
-                        host = ipv6_addr.getHostAddress();
-                    }
-
+                    if (ipv6_addr instanceof Inet6Address) host = ipv6_addr.getHostAddress();
                 } catch (UnknownHostException uhe) {
-                    throw runtime.newArgumentError("invalid address string");
-
+                    throw argumentError(context, "invalid address string");
                 }
             }
-
         } else {
-            throw runtime.newArgumentError("invalid args");
-
+            throw argumentError(context, "invalid args");
         }
 
         InetAddress addr;
 
         try {
             addr = InetAddress.getByName(host);
-
         } catch (UnknownHostException e) {
-            throw sockerr(runtime, "unknown host: "+ host);
-
+            throw sockerr(context.runtime, "unknown host: "+ host);
         }
 
-        if ((flags & NI_NUMERICHOST.intValue()) == 0) {
-            host = addr.getCanonicalHostName();
-
-        } else {
-            host = addr.getHostAddress();
-
-        }
+        host = (flags & NI_NUMERICHOST.intValue()) == 0 ? addr.getCanonicalHostName() : addr.getHostAddress();
 
         Service serv = Service.getServiceByPort(Integer.parseInt(port), null);
 
         if (serv != null) {
-
-            if ((flags & NI_NUMERICSERV.intValue()) == 0) {
-                port = serv.getName();
-
-            } else {
-                port = Integer.toString(serv.getPort());
-
-            }
-
+            port = (flags & NI_NUMERICSERV.intValue()) == 0 ? serv.getName() : Integer.toString(serv.getPort());
         }
 
-        return runtime.newArray(runtime.newString(host), runtime.newString(port));
-
+        return context.runtime.newArray(newString(context, host), newString(context, port));
     }
 
     public static IRubyObject ip_address_list(ThreadContext context) {

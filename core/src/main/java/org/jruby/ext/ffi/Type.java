@@ -18,6 +18,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -191,8 +192,7 @@ public abstract class Type extends RubyObject {
 
         @JRubyMethod(name = "inspect")
         public final IRubyObject inspect(ThreadContext context) {
-            return RubyString.newString(context.runtime,
-                    String.format("#<FFI::Type::Builtin:%s size=%d alignment=%d>",
+            return newString(context, String.format("#<FFI::Type::Builtin:%s size=%d alignment=%d>",
                     nativeType.name(), size, alignment));
         }
         

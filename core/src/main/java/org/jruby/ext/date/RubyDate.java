@@ -60,6 +60,7 @@ import java.util.GregorianCalendar;
 
 import static org.jruby.RubyRegexp.*;
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ext.date.DateUtils.*;
 import static org.jruby.util.Numeric.*;
@@ -1552,7 +1553,7 @@ public class RubyDate extends RubyObject {
         if (sg == Double.NEGATIVE_INFINITY || sg == Double.POSITIVE_INFINITY) return (long) sg;
 
         if (Double.isNaN(sg) || sg < REFORM_BEGIN_JD && sg > REFORM_END_JD) {
-            RubyKernel.warn(context, null, RubyString.newString(context.runtime, "invalid start is ignored"));
+            RubyKernel.warn(context, null, newString(context, "invalid start is ignored"));
             return DEFAULT_SG;
         }
         ;
@@ -1566,7 +1567,7 @@ public class RubyDate extends RubyObject {
     static int val2off(ThreadContext context, IRubyObject of) {
         final int off = offset_to_sec(context, of);
         if (off == INVALID_OFFSET) {
-            RubyKernel.warn(context, null, RubyString.newString(context.runtime, "invalid offset is ignored"));
+            RubyKernel.warn(context, null, newString(context, "invalid offset is ignored"));
             return 0;
         }
         return off;

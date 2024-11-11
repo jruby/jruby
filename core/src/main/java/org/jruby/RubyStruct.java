@@ -61,6 +61,7 @@ import org.jruby.util.RecursiveComparator;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.numericToLong;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
@@ -671,8 +672,7 @@ public class RubyStruct extends RubyObject {
     *
     */
     private RubyString inspectStruct(final ThreadContext context, final boolean recur) {
-        final Ruby runtime = context.runtime;
-        RubyString buffer = RubyString.newString(runtime, new ByteList(32));
+        RubyString buffer = newString(context, new ByteList(32));
         buffer.cat(STRUCT_BEG);
 
         String cname = getMetaClass().getRealClass().getName();
@@ -704,7 +704,7 @@ public class RubyStruct extends RubyObject {
         }
 
         buffer.cat('>');
-        return (RubyString) buffer;
+        return buffer;
     }
 
     @JRubyMethod(name = {"inspect", "to_s"})

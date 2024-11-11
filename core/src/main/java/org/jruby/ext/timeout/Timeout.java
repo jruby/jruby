@@ -52,6 +52,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.threading.DaemonThreadFactory;
 import org.jruby.util.ByteList;
 
+import static org.jruby.api.Create.newString;
+
 public class Timeout {
     public static final String EXECUTOR_VARIABLE = "__executor__";
 
@@ -82,7 +84,7 @@ public class Timeout {
     static { TIMEOUT_MESSAGE.setEncoding(UTF8Encoding.INSTANCE); }
 
     private static RubyString defaultTimeoutMessage(final ThreadContext context) {
-        RubyString message = RubyString.newString(context.runtime, TIMEOUT_MESSAGE);
+        RubyString message = newString(context, TIMEOUT_MESSAGE);
         message.setFrozen(true);
         return message;
     }

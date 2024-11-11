@@ -48,6 +48,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asString;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 
 @Deprecated
@@ -72,7 +73,7 @@ public class JavaField {
 
     @JRubyMethod
     public RubyString value_type(ThreadContext context) {
-        return context.runtime.newString(field.getType().getName());
+        return newString(context, field.getType().getName());
     }
 
     @JRubyMethod(name = "public?")
@@ -161,7 +162,7 @@ public class JavaField {
 
     @JRubyMethod
     public RubyString name(ThreadContext context) {
-        return context.runtime.newString(field.getName());
+        return newString(context, field.getName());
     }
 
     public AccessibleObject accessibleObject() {

@@ -13,6 +13,8 @@ import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectMarshal;
+
+import static org.jruby.api.Create.newString;
 import static org.jruby.runtime.Visibility.*;
 
 import org.jruby.runtime.ThreadContext;
@@ -269,7 +271,7 @@ public class RubySystemCallError extends RubyStandardError {
             val += " - " + msg.convertToString();
         }
 
-        message = runtime.newString(val);
+        message = newString(context, val);
         return this;
     }
 

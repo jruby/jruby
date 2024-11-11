@@ -97,6 +97,8 @@ import org.jruby.common.IRubyWarnings.ID;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.newSymbol;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.RubyStringBuilder.ids;
@@ -513,14 +515,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         @JRubyMethod
         public IRubyObject absolute_path(ThreadContext context) {
-            Ruby runtime = context.runtime;
-            return runtime.newString(
-                    runtime.getLoadService().getPathForLocation(element.getFileName()));
+            return newString(context, context.runtime.getLoadService().getPathForLocation(element.getFileName()));
         }
 
         @JRubyMethod
         public IRubyObject base_label(ThreadContext context) {
-            if (baseLabel == null) baseLabel = context.runtime.newString(element.getMethodName());
+            if (baseLabel == null) baseLabel = newString(context, element.getMethodName());
             return baseLabel;
         }
 
@@ -533,7 +533,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         public IRubyObject label(ThreadContext context) {
             if (element.getFrameType() == FrameType.BLOCK) {
                 // NOTE: "block in " + ... logic, now, also at RubyStackTraceElement.to_s_mri
-                if (label == null) label = context.runtime.newString("block in " + element.getMethodName());
+                if (label == null) label = newString(context, "block in " + element.getMethodName());
                 return label;
             }
 
@@ -1343,8 +1343,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = { "inspect", "to_s"})
     public RubyString inspect(ThreadContext context) {
-        final Ruby runtime = context.runtime;
-        RubyString result = runtime.newString("#<");
+        RubyString result = newString(context, "#<");
 
         result.cat(getMetaClass().getRealClass().toRubyString(context));
         result.cat(':');
@@ -1353,7 +1352,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             String id = threadImpl.getRubyName(); // thread.name
             if (notEmpty(id)) {
                 result.cat('@');
-                result.cat(runtime.newSymbol(id).getBytes());
+                result.cat(newSymbol(context, id).getBytes());
             }
             if (notEmpty(file) && line >= 0) {
                 result.cat(' ');

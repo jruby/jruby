@@ -59,6 +59,7 @@ import org.jruby.runtime.marshal.DataType;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newString;
 import static org.jruby.util.RubyStringBuilder.types;
 
 /**
@@ -402,17 +403,14 @@ public class RubyProc extends RubyObject implements DataType {
 
     @JRubyMethod
     public IRubyObject source_location(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        if (file != null) {
-            return runtime.newArray(runtime.newString(file), asFixnum(context, line + 1 /*zero-based*/));
-        }
+        if (file != null) return context.runtime.newArray(newString(context, file), asFixnum(context, line + 1 /*zero-based*/));
 
         if (block != null) {
             Binding binding = block.getBinding();
 
             // block+binding may exist for a core method, which will have a null filename
             if (binding.getFile() != null) {
-                return runtime.newArray(
+                return context.runtime.newArray(
                         Convert.asString(context, binding.getFile()),
                         asFixnum(context, binding.getLine() + 1 /*zero-based*/));
             }

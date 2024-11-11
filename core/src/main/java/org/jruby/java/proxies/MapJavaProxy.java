@@ -56,6 +56,7 @@ import org.jruby.util.TypeConverter;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newString;
 import static org.jruby.util.Inspector.*;
 
 /**
@@ -467,7 +468,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
     // NOTE: keep Map#to_s -> toString as with other Java types
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s(ThreadContext context) {
-        return RubyString.newString(context.runtime, getMapObject().toString());
+        return newString(context, getMapObject().toString());
     }
 
     /** rb_hash_rehash

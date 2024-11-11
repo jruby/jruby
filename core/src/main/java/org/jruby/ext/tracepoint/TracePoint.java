@@ -21,6 +21,7 @@ import org.jruby.util.TypeConverter;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newString;
 import static org.jruby.util.RubyStringBuilder.str;
 
 public class TracePoint extends RubyObject {
@@ -174,10 +175,10 @@ public class TracePoint extends RubyObject {
     public IRubyObject inspect(ThreadContext context) {
         if (inside) {
             // TODO: event-specific inspect output
-            return context.runtime.newString("#<TracePoint:" + eventName + ">");
+            return newString(context, "#<TracePoint:" + eventName + ">");
         }
         
-        return context.runtime.newString("#<TracePoint:" + (enabled ? "enabled" : "disabled") + ">");
+        return newString(context, "#<TracePoint:" + (enabled ? "enabled" : "disabled") + ">");
     }
     
     @JRubyMethod
@@ -207,7 +208,7 @@ public class TracePoint extends RubyObject {
     public IRubyObject path(ThreadContext context) {
         checkInside(context);
         
-        return file == null ? context.nil : context.runtime.newString(file);
+        return file == null ? context.nil : newString(context, file);
     }
     
     @JRubyMethod

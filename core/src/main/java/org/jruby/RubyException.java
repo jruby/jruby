@@ -59,6 +59,7 @@ import java.io.PrintStream;
 import java.util.List;
 
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -355,8 +356,7 @@ public class RubyException extends RubyObject {
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s(ThreadContext context) {
         final IRubyObject msg = getMessage();
-        if ( ! msg.isNil() ) return msg.asString();
-        return context.runtime.newString(getMetaClass().getRealClass().getName());
+        return !msg.isNil() ? msg.asString() : newString(context, getMetaClass().getRealClass().getName());
     }
 
     @JRubyMethod(name = "message")
@@ -376,7 +376,7 @@ public class RubyException extends RubyObject {
 
         if (exception.isEmpty()) return rubyClass;
 
-        return RubyString.newString(context.runtime, str(context.runtime, "#<", rubyClass, ": ", exception, ">"));
+        return newString(context, str(context.runtime, "#<", rubyClass, ": ", exception, ">"));
     }
 
     @Override

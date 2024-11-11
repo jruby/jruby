@@ -14,6 +14,8 @@ import jnr.posix.util.Platform;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Create.newString;
+
 public class ShellLauncherTest extends TestCase {
 
     private Ruby runtime;
@@ -66,7 +68,7 @@ public class ShellLauncherTest extends TestCase {
     public void testSingleArgumentCommandOnWindowsIsOnlyRunByShellIfCommandContainsSpaces() {
         if (Platform.IS_WINDOWS) {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            RubyString cmd = RubyString.newString(runtime, "nonexistentcmd");
+            RubyString cmd = newString(runtime.getCurrentContext(), "nonexistentcmd");
             try {
                 ShellLauncher.runAndWait(runtime, new IRubyObject[]{cmd}, baos);
                 fail("should have raised an exception");
@@ -89,10 +91,11 @@ public class ShellLauncherTest extends TestCase {
 
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ThreadContext context = runtime.getCurrentContext();
             int result = ShellLauncher.runAndWait(runtime, new IRubyObject[] {
-                RubyString.newString(runtime, "ls"),
-                RubyString.newString(runtime, "-1"),
-                RubyString.newString(runtime, testDir.getName()),
+                newString(context, "ls"),
+                newString(context, "-1"),
+                newString(context, testDir.getName()),
             }, baos);
 
             if (result == 0) {
@@ -106,12 +109,12 @@ public class ShellLauncherTest extends TestCase {
     }
     public void testUsesRubyEnvPathToRunShellPrograms() {
         RubyHash env = (RubyHash) runtime.getObject().getConstant("ENV");
-        RubyString path = runtime.newString("PATH");
-        RubyString utilPath = runtime.newString(System.getProperty("jruby.home") + "/core/src/test/java/org/jruby/util");
         ThreadContext context = runtime.getCurrentContext();
-        env.op_aset(context, path, 
+        RubyString path = newString(context, "PATH");
+        RubyString utilPath = newString(context, System.getProperty("jruby.home") + "/core/src/test/java/org/jruby/util");
+        env.op_aset(context, path,
                 env.op_aref(context, path).convertToString()
-                .op_plus(context, runtime.newString(File.pathSeparator)).convertToString()
+                .op_plus(context, newString(context, File.pathSeparator)).convertToString()
                 .op_plus(context, utilPath));
 
         String cmd = "shell_launcher_test";
@@ -119,7 +122,7 @@ public class ShellLauncherTest extends TestCase {
             cmd += ".bat";
         }
         int code = ShellLauncher.runAndWait(runtime, new IRubyObject[] {
-           RubyString.newString(runtime, cmd)
+           newString(context, cmd)
         });
         assertEquals(0, code);
     }

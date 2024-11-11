@@ -68,6 +68,7 @@ import org.jruby.runtime.load.LoadServiceResourceInputStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
 
+import static org.jruby.api.Create.newString;
 import static org.jruby.parser.ParserType.*;
 
 /**
@@ -223,7 +224,8 @@ public class Parser {
         if (scriptLines == null || !(scriptLines instanceof RubyHash)) return null;
 
         RubyArray list = length == -1 ? runtime.newArray() : runtime.newArray(length);
-        ((RubyHash) scriptLines).op_aset(runtime.getCurrentContext(), runtime.newString(file), list);
+        ThreadContext context = runtime.getCurrentContext();
+        ((RubyHash) scriptLines).op_aset(context, newString(context, file), list);
         return list;
     }
 

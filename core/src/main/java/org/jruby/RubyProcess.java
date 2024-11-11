@@ -55,6 +55,8 @@ import org.jruby.runtime.ThreadContext;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.newSymbol;
 import static org.jruby.runtime.Helpers.throwException;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -127,22 +129,24 @@ public class RubyProcess {
             }
         }
 
+        ThreadContext context = runtime.getCurrentContext();
+
         process.defineConstant("WNOHANG", runtime.newFixnum(1));
         process.defineConstant("WUNTRACED", runtime.newFixnum(2));
 
         // FIXME: These should come out of jnr-constants
         // TODO: other clock types
-        process.defineConstant("CLOCK_REALTIME", RubySymbol.newSymbol(runtime, CLOCK_REALTIME));
-        process.defineConstant("CLOCK_MONOTONIC", RubySymbol.newSymbol(runtime, CLOCK_MONOTONIC));
+        process.defineConstant("CLOCK_REALTIME", newSymbol(context, CLOCK_REALTIME));
+        process.defineConstant("CLOCK_MONOTONIC", newSymbol(context, CLOCK_MONOTONIC));
 
         RubyClass tmsStruct = RubyStruct.newInstance(
                 runtime.getStructClass(),
                 new IRubyObject[]{
-                        runtime.newString("Tms"),
-                        runtime.newSymbol("utime"),
-                        runtime.newSymbol("stime"),
-                        runtime.newSymbol("cutime"),
-                        runtime.newSymbol("cstime")},
+                        newString(context, "Tms"),
+                        newSymbol(context, "utime"),
+                        newSymbol(context, "stime"),
+                        newSymbol(context, "cutime"),
+                        newSymbol(context, "cstime")},
                 Block.NULL_BLOCK);
 
         process.defineConstant("Tms", tmsStruct);

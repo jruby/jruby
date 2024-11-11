@@ -30,6 +30,8 @@ import org.jruby.util.FileResource;
 import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.JRubyFile;
 
+import static org.jruby.api.Create.newString;
+
 @JRubyClass(name = "FFI::DynamicLibrary", parent = "Object")
 public class DynamicLibrary extends RubyObject {
     
@@ -150,7 +152,7 @@ public class DynamicLibrary extends RubyObject {
     }
     @JRubyMethod(name = "name")
     public IRubyObject name(ThreadContext context) {
-        return name != null ? RubyString.newString(context.runtime, name) : context.nil;
+        return name != null ? newString(context, name) : context.nil;
     }
     public static final class Symbol extends Pointer {
         private final DynamicLibrary library;
@@ -170,14 +172,13 @@ public class DynamicLibrary extends RubyObject {
         
         @JRubyMethod(name = "inspect")
         public IRubyObject inspect(ThreadContext context) {
-            return RubyString.newString(context.runtime,
-                String.format("#<%s library=%s symbol=%s address=%#x>", 
+            return newString(context, String.format("#<%s library=%s symbol=%s address=%#x>",
                     getMetaClass().getName(), library.name, name, getAddress()));
         }
 
         @JRubyMethod(name = "to_s")
         public IRubyObject to_s(ThreadContext context) {
-            return RubyString.newString(context.runtime, name);
+            return newString(context, name);
         }
 
         @Override

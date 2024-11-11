@@ -50,6 +50,7 @@ import static jnr.constants.platform.ProtocolFamily.PF_UNSPEC;
 import static jnr.constants.platform.Sock.*;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newString;
 import static org.jruby.ext.socket.SocketUtils.IP_V4_MAPPED_ADDRESS_PREFIX;
 import static org.jruby.ext.socket.SocketUtils.sockerr;
 
@@ -348,7 +349,7 @@ public class Addrinfo extends RubyObject {
             val.append(" (").append(inspectName).append(")");
         }
        
-        return context.runtime.newString(String.format(base, val.toString()));
+        return newString(context, String.format(base, val.toString()));
     }
 
     @JRubyMethod
@@ -356,7 +357,7 @@ public class Addrinfo extends RubyObject {
         if (socketAddress instanceof UnixSocketAddress) {
             String path = getUnixSocketAddress().path();
 
-            return context.runtime.newString(path.startsWith("/") ? path : "UNIX " + path);
+            return newString(context, path.startsWith("/") ? path : "UNIX " + path);
         }
 
         int port = getInetSocketAddress().getPort();
@@ -365,14 +366,14 @@ public class Addrinfo extends RubyObject {
             String host = ipv6_ip();
             String hostPort = port == 0 ? host : "[" + host + "]:" + port;
 
-            return context.runtime.newString(hostPort);
+            return newString(context, hostPort);
         }
 
         String portString = port == 0 ? "" : ":" + port;
         String host = (looksLikeV4ButIsV6 ? IP_V4_MAPPED_ADDRESS_PREFIX : "") +
                 getInetSocketAddress().getAddress().getHostAddress();
 
-        return context.runtime.newString(host + portString);
+        return newString(context, host + portString);
     }
 
     @JRubyMethod(rest = true, meta = true)
@@ -467,9 +468,9 @@ public class Addrinfo extends RubyObject {
         if (!displaysCanonical) return context.nil;
 
         if (socketAddress instanceof InetSocketAddress) {
-            return context.runtime.newString(getInetSocketAddress().getAddress().getCanonicalHostName());
+            return newString(context, getInetSocketAddress().getAddress().getCanonicalHostName());
         } else if (socketAddress instanceof UnixSocketAddress) {
-            return context.runtime.newString(getUnixSocketAddress().path());
+            return newString(context, getUnixSocketAddress().path());
         }
         throw context.runtime.newNotImplementedError("canonname not implemented for socket address: " + socketAddress);
     }
@@ -508,10 +509,11 @@ public class Addrinfo extends RubyObject {
             throw sockerr(context.runtime, "need IPv4 or IPv6 address");
         }
         // TODO: (gf) for IPv6 link-local address this appends a numeric interface index (like MS-Windows), should append interface name on Linux
-        String fullHost = ((InetSocketAddress) socketAddress).getAddress().getHostAddress();
-        String host = (getAddressFamily() == AF_INET6) ? ipv6_ip() : fullHost;
+        String host = (getAddressFamily() == AF_INET6) ?
+                ipv6_ip() :
+                ((InetSocketAddress) socketAddress).getAddress().getHostAddress();
 
-        return context.runtime.newString(host);
+        return newString(context, host);
     }
 
     @JRubyMethod(notImplemented = true)
@@ -696,7 +698,7 @@ public class Addrinfo extends RubyObject {
         String path = getUnixSocketAddress().humanReadablePath();
         int index = path.indexOf(0);
         if (index != -1) path = path.substring(0, index);
-        return context.runtime.newString(path);
+        return newString(context, path);
     }
 
     @JRubyMethod(name = {"to_sockaddr", "to_s"})
@@ -863,11 +865,10 @@ public class Addrinfo extends RubyObject {
     }
 
     public IRubyObject getnameinfo(ThreadContext context, int flags) {
-        Ruby runtime = context.runtime;
         boolean unix = socketType == SocketType.UNIX;
         RubyString hostname = unix ?
                 (RubyString) SocketUtils.gethostname(context) :
-                runtime.newString(getInetSocketAddress().getHostName());
+                newString(context, getInetSocketAddress().getHostName());
 
         String serviceName;
         if ((flags & NameInfo.NI_NUMERICSERV.intValue()) != 0) {
@@ -878,7 +879,7 @@ public class Addrinfo extends RubyObject {
             serviceName = Service.getServiceByPort(getPort(), protocol.getName()).getName();
         }
 
-        return runtime.newArray(hostname, runtime.newString(serviceName));
+        return context.runtime.newArray(hostname, newString(context, serviceName));
     }
 
 
@@ -896,7 +897,7 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod
     public IRubyObject to_str(ThreadContext context){
-        return context.runtime.newString(toString());
+        return newString(context, toString());
     }
 
     public Inet6Address getInet6Address() {

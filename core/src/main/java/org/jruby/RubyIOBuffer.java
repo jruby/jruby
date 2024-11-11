@@ -27,6 +27,7 @@ import java.util.Arrays;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 
 public class RubyIOBuffer extends RubyObject {
@@ -501,46 +502,20 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "to_s")
     public RubyString to_s(ThreadContext context) {
-        RubyString result = RubyString.newString(context.runtime, "#<");
+        RubyString result = newString(context, "#<");
 
-        result.append(this.getMetaClass().name(context));
+        result.append(getMetaClass().name(context));
         result.cat(String.format(" %d+%d", System.identityHashCode(base), size).getBytes());
 
-        if (base == null) {
-            result.cat(" NULL".getBytes());
-        }
-
-        if (isExternal()) {
-            result.cat(" EXTERNAL".getBytes());
-        }
-
-        if (isInternal()) {
-            result.cat(" INTERNAL".getBytes());
-        }
-
-        if (isMapped()) {
-            result.cat(" MAPPED".getBytes());
-        }
-
-        if (isShared()) {
-            result.cat(" SHARED".getBytes());
-        }
-
-        if (isLocked()) {
-            result.cat(" LOCKED".getBytes());
-        }
-
-        if (isReadonly()) {
-            result.cat(" READONLY".getBytes());
-        }
-
-        if (source != null) {
-            result.cat(" SLICE".getBytes());
-        }
-
-        if (!validate()) {
-            result.cat(" INVALID".getBytes());
-        }
+        if (base == null) result.cat(" NULL".getBytes());
+        if (isExternal()) result.cat(" EXTERNAL".getBytes());
+        if (isInternal()) result.cat(" INTERNAL".getBytes());
+        if (isMapped()) result.cat(" MAPPED".getBytes());
+        if (isShared()) result.cat(" SHARED".getBytes());
+        if (isLocked()) result.cat(" LOCKED".getBytes());
+        if (isReadonly()) result.cat(" READONLY".getBytes());
+        if (source != null) result.cat(" SLICE".getBytes());
+        if (!validate()) result.cat(" INVALID".getBytes());
 
         return result.cat(">".getBytes());
     }

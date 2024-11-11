@@ -31,6 +31,7 @@ import org.jruby.ext.socket.SocketUtils;
 import org.jruby.ext.socket.SocketUtilsIPV6;
 import org.jruby.runtime.Helpers;
 
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 
 public class Sockaddr {
@@ -264,8 +265,7 @@ public class Sockaddr {
                 if (i != 4 && i % 2 == 0) formatAddr.append(':');
                 formatAddr.append(Integer.toHexString(val.get(i) & 0xff | 0x100).substring(1));
             }
-            ip = RubyString.newString(runtime,
-                                      SocketUtilsIPV6.getIPV6Address(formatAddr.toString()));
+            ip = newString(context, SocketUtilsIPV6.getIPV6Address(formatAddr.toString()));
         }
 
         return RubyArray.newArray(runtime, runtime.newFixnum(port), ip);
