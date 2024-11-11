@@ -89,7 +89,18 @@ import org.jruby.internal.runtime.methods.SynchronizedDynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
+import org.jruby.ir.instructions.CallBase;
+import org.jruby.ir.instructions.ClassSuperInstr;
+import org.jruby.ir.instructions.InstanceSuperInstr;
+import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.instructions.ModuleSuperInstr;
+import org.jruby.ir.instructions.SuperInstr;
+import org.jruby.ir.instructions.UnresolvedSuperInstr;
+import org.jruby.ir.interpreter.InterpreterContext;
+import org.jruby.ir.operands.WrappedIRClosure;
+import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.targets.indy.Bootstrap;
+import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.binding.MethodGatherer;
 import org.jruby.parser.StaticScope;
@@ -102,6 +113,7 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.MethodIndex;
+import org.jruby.runtime.MixedModeIRBlockBody;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -1619,7 +1631,7 @@ public class RubyModule extends RubyObject {
      * failed to return a result. Cache superclass definitions in this class.
      *
      * MRI: method_entry_get_without_cache
-     * 
+     *
      * @param id The name of the method to search for
      * @param cacheUndef Flag for caching UndefinedMethod. This should normally be true.
      * @return The method, or UndefinedMethod if not found
@@ -2381,19 +2393,25 @@ public class RubyModule extends RubyObject {
 
         // If we know it comes from IR we can convert this directly to a method and
         // avoid overhead of invoking it as a block
-        if (block.getBody() instanceof IRBlockBody &&
-                runtime.getInstanceConfig().getCompileMode().shouldJIT()) { // FIXME: Once Interp and Mixed Methods are one class we can fix this to work in interp mode too.
+        if (block.getBody() instanceof IRBlockBody) {
             IRBlockBody body = (IRBlockBody) block.getBody();
-            IRClosure closure = body.getScope();
 
-            // closure may be null from AOT scripts
-            if (closure != null) {
-                // Ask closure to give us a method equivalent.
-                IRMethod method = closure.convertToMethod(name.getBytes());
-                if (method != null) {
-                    newMethod = new DefineMethodMethod(method, visibility, this, context.getFrameBlock());
-                    Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
-                    return name;
+            IRClosure closure = rewriteClosure(name, body.getScope());
+
+            body = new MixedModeIRBlockBody(closure, body.getSignature());
+            block = new Block(body, block.getBinding(), block.type);
+
+            if (runtime.getInstanceConfig().getCompileMode().shouldJIT()) { // FIXME: Once Interp and Mixed Methods are one class we can fix this to work in interp mode too.
+
+                // closure may be null from AOT scripts
+                if (closure != null) {
+                    // Ask closure to give us a method equivalent.
+                    IRMethod method = closure.convertToMethod(name.getBytes());
+                    if (method != null) {
+                        newMethod = new DefineMethodMethod(method, visibility, this, context.getFrameBlock());
+                        Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
+                        return name;
+                    }
                 }
             }
         }
@@ -2402,6 +2420,77 @@ public class RubyModule extends RubyObject {
         Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
 
         return name;
+    }
+
+    private IRClosure rewriteClosure(RubySymbol name, IRClosure closure) {
+        // FIXME: This should be somewhere within IRClosure or at least within .ir package space.
+        // If we have a super containing closure but it has been built it means we have already been here.
+        if ((closure.usesSuper() || closure.childUsesSuper()) && closure.getFullInterpreterContext() == null) {
+            // We depend on using startup because ACP has not been called and the method rewriting opto below depends
+            // on us still having AST available which would not be the case by the time we made it to full.
+            closure = closure.cloneStartup();
+
+            InterpreterContext ic = closure.getInterpreterContext();
+            Instr[] list = ic.getInstructions();
+
+            List<Instr> instrs = new ArrayList<>(Arrays.asList(list));
+
+            for (int i = 0; i < instrs.size(); i++) {
+                Instr instr = instrs.get(i);
+
+                if (instr instanceof CallBase && ((CallBase) instr).hasLiteralClosure()) {
+                    CallBase callBase = (CallBase) instr;
+
+                    WrappedIRClosure closureArg = (WrappedIRClosure) callBase.getClosureArg();
+
+                    IRClosure wrapped = closureArg.getClosure();
+                    IRClosure rewritten = rewriteClosure(name, wrapped);
+
+                    closure.removeClosure(wrapped);
+                    closure.addClosure(rewritten);
+
+                    callBase.setClosureArg(new WrappedIRClosure(closureArg.getSelf(), rewritten));
+                }
+
+                if (instr instanceof SuperInstr) {
+                    SuperInstr superInstr = (SuperInstr) instr;
+                    instrs.remove(i);
+
+                    if (this.isSingleton()) {
+                        instrs.add(i, new ClassSuperInstr(
+                                closure,
+                                superInstr.getResult(),
+                                superInstr.getDefiningModule(),
+                                name,
+                                superInstr.getCallArgs(),
+                                superInstr.getClosureArg(),
+                                superInstr.isPotentiallyRefined()));
+                    } else if (this.isModule()) {
+                        instrs.add(i, new ModuleSuperInstr(
+                                closure,
+                                superInstr.getResult(),
+                                name,
+                                superInstr.getReceiver(),
+                                superInstr.getCallArgs(),
+                                superInstr.getClosureArg(),
+                                superInstr.isPotentiallyRefined()));
+                    } else {
+                        instrs.add(i, new InstanceSuperInstr(
+                                closure,
+                                superInstr.getResult(),
+                                superInstr.getDefiningModule(),
+                                name,
+                                superInstr.getCallArgs(),
+                                superInstr.getClosureArg(),
+                                superInstr.isPotentiallyRefined()));
+                    }
+                }
+            }
+
+            ic.setInstructionsRaw(instrs);
+        }
+
+        return closure;
     }
 
     @JRubyMethod(name = "define_method", reads = VISIBILITY)
@@ -2465,6 +2554,7 @@ public class RubyModule extends RubyObject {
         // various instructions can tell this scope is not an ordinary block but a block representing
         // a method definition.
         block.getBody().getStaticScope().makeArgumentScope();
+        block.getBody().getStaticScope().setModule(this);
 
         return new ProcMethod(this, proc, visibility, name);
     }

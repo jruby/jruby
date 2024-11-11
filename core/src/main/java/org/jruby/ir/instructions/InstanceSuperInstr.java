@@ -49,13 +49,13 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.EnumSet;
 
-public class InstanceSuperInstr extends CallInstr {
+public class InstanceSuperInstr extends SuperInstr {
     private final boolean isLiteralBlock;
 
     // clone constructor
     protected InstanceSuperInstr(IRScope scope, Variable result, Operand definingModule, RubySymbol name, Operand[] args,
                                  Operand closure, boolean isPotentiallyRefined, CallSite callSite, long callSiteId) {
-        super(scope, Operation.INSTANCE_SUPER, CallType.SUPER, result, name, definingModule, args, closure,
+        super(scope, Operation.INSTANCE_SUPER, result, definingModule, name, args, closure,
                 isPotentiallyRefined, callSite, callSiteId);
 
         isLiteralBlock = closure instanceof WrappedIRClosure;
@@ -64,7 +64,7 @@ public class InstanceSuperInstr extends CallInstr {
     // normal constructor
     public InstanceSuperInstr(IRScope scope, Variable result, Operand definingModule, RubySymbol name, Operand[] args,
                               Operand closure, boolean isPotentiallyRefined) {
-        super(scope, Operation.INSTANCE_SUPER, CallType.SUPER, result, name, definingModule, args, closure, isPotentiallyRefined);
+        super(scope, Operation.INSTANCE_SUPER, result, definingModule, name, args, closure, isPotentiallyRefined);
 
         isLiteralBlock = closure instanceof WrappedIRClosure;
     }
