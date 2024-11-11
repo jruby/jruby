@@ -280,7 +280,7 @@ public class JavaUtil {
      */
     @SuppressWarnings("deprecation")
     public static boolean isJavaObject(final IRubyObject object) {
-        return object instanceof JavaProxy || object.dataGetStruct() instanceof JavaObject;
+        return object instanceof JavaProxy;
     }
 
     /**
@@ -291,10 +291,7 @@ public class JavaUtil {
      */
     @SuppressWarnings("deprecation")
     public static <T> T unwrapJavaObject(final IRubyObject object) {
-        if ( object instanceof JavaProxy ) {
-            return (T) ((JavaProxy) object).getObject();
-        }
-        return (T) ((JavaObject) object.dataGetStruct()).getValue();
+        return (T) ((JavaProxy) object).getObject();
     }
 
     /**
@@ -309,9 +306,6 @@ public class JavaUtil {
             return (T) ((JavaProxy) object).getObject();
         }
         final Object unwrap = object.dataGetStruct();
-        if ( unwrap instanceof JavaObject ) {
-            return (T) ((JavaObject) unwrap).getValue();
-        }
         return (T) object; // assume correct instance
     }
 
@@ -319,9 +313,6 @@ public class JavaUtil {
     public static Object unwrapJavaValue(final Ruby runtime, final IRubyObject object, final String errorMessage) {
         if ( object instanceof JavaProxy ) {
             return ((JavaProxy) object).getObject();
-        }
-        if ( object instanceof JavaObject ) {
-            return ((JavaObject) object).getValue();
         }
         final Object unwrap = object.dataGetStruct();
         if ( unwrap instanceof IRubyObject ) {
@@ -342,13 +333,9 @@ public class JavaUtil {
      * <p>Note: Returns null if not a wrapped Java value.</p>
      * @return unwrapped Java (object's) value
      */
-    @SuppressWarnings("deprecation")
     public static <T> T unwrapJavaValue(final IRubyObject object) {
         if ( object instanceof JavaProxy ) {
             return (T) ((JavaProxy) object).getObject();
-        }
-        if ( object instanceof JavaObject ) {
-            return (T) ((JavaObject) object).getValue();
         }
         final Object unwrap = object.dataGetStruct();
         if ( unwrap instanceof IRubyObject ) {
@@ -1125,21 +1112,11 @@ public class JavaUtil {
         final ThreadContext context = runtime.getCurrentContext();
 
         IRubyObject origObject = rubyObject;
-        if (rubyObject.dataGetStruct() instanceof JavaObject) {
-            rubyObject = (IRubyObject) rubyObject.dataGetStruct();
-            if ( rubyObject == null ) {
-                throw new RuntimeException("dataGetStruct returned null for " + origObject.getType().getName());
-            }
-        } else if (rubyObject.respondsTo("java_object")) {
+        if (rubyObject.respondsTo("java_object")) {
             rubyObject = rubyObject.callMethod(context, "java_object");
             if( rubyObject == null ) {
                 throw new RuntimeException("java_object returned null for " + origObject.getType().getName());
             }
-        }
-
-        if (rubyObject instanceof JavaObject) {
-            Object value =  ((JavaObject) rubyObject).getValue();
-            return convertArgument(runtime, value, value.getClass());
         }
 
         if (javaClass == Object.class || javaClass == null) {
@@ -1187,7 +1164,7 @@ public class JavaUtil {
  				return  BigInteger.valueOf( rubyNumeric.getLongValue() );
          	}
         }
-        if (javaClass == BigDecimal.class && !(rubyObject instanceof JavaObject)) {
+        if (javaClass == BigDecimal.class) {
          	if (rubyObject.respondsTo("to_f")) {
              	double double_value = ((RubyNumeric)rubyObject.callMethod(context, "to_f")).getDoubleValue();
              	return new BigDecimal(double_value);
@@ -1198,7 +1175,7 @@ public class JavaUtil {
             if ( isDuckTypeConvertable(rubyObject.getClass(), javaClass) ) {
                 return convertProcToInterface(context, (RubyObject) rubyObject, javaClass);
             }
-            return ((JavaObject) rubyObject).getValue();
+            return rubyObject.toJava(javaClass);
         }
         catch (ClassCastException ex) {
             if (runtime.getDebug().isTrue()) ex.printStackTrace();
@@ -1500,9 +1477,6 @@ public class JavaUtil {
             if (result == null) {
                 result = object.callMethod(recv.getRuntime().getCurrentContext(), "to_java_object");
             }
-            if (result instanceof JavaObject) {
-                recv.getRuntime().getJavaSupport().getObjectProxyCache().put(((JavaObject) result).getValue(), object);
-            }
             return result;
         }
 
@@ -1511,19 +1485,12 @@ public class JavaUtil {
 
     @Deprecated
     public static IRubyObject java_to_primitive(IRubyObject recv, IRubyObject object, Block unusedBlock) {
-        if (object instanceof JavaObject) {
-            return JavaUtil.convertJavaToRuby(recv.getRuntime(), ((JavaObject) object).getValue());
-        }
-
         return object;
     }
 
     @Deprecated
     @SuppressWarnings("deprecation")
     public static IRubyObject primitive_to_java(IRubyObject recv, IRubyObject object, Block unusedBlock) {
-        if (object instanceof JavaObject) {
-            return object;
-        }
         Ruby runtime = recv.getRuntime();
         Object javaObject;
         switch (object.getMetaClass().getClassIndex()) {
@@ -1572,12 +1539,6 @@ public class JavaUtil {
           }
         }
 
-        if (argument instanceof JavaObject) {
-            argument = ((JavaObject) argument).getValue();
-            if (argument == null) {
-                return null;
-            }
-        }
         Class<?> type = primitiveToWrapper(parameterType);
 
         if (argument.getClass() == type) return argument;
@@ -1618,9 +1579,6 @@ public class JavaUtil {
      */
     @Deprecated
     public static IRubyObject java_to_ruby(Ruby runtime, IRubyObject object) {
-        if (object instanceof JavaObject) {
-            return JavaUtil.convertJavaToUsableRubyObject(runtime, ((JavaObject) object).getValue());
-        }
         return object;
     }
 
@@ -1667,26 +1625,9 @@ public class JavaUtil {
         }
     }
 
-    @Deprecated
-    public static JavaObject unwrapJavaObject(Ruby runtime, IRubyObject convertee, String errorMessage) {
-        IRubyObject obj = convertee;
-        if(!(obj instanceof JavaObject)) {
-            if (obj.dataGetStruct() != null && (obj.dataGetStruct() instanceof JavaObject)) {
-                obj = (JavaObject)obj.dataGetStruct();
-            } else {
-                throw runtime.newTypeError(errorMessage);
-            }
-        }
-        return (JavaObject)obj;
-    }
-
-    @SuppressWarnings("deprecation")
     public static <T> T unwrapJava(final Object wrapped, final T defaultValue) {
         if ( wrapped instanceof JavaProxy ) {
             return (T) ((JavaProxy) wrapped).getObject();
-        }
-        if ( wrapped instanceof JavaObject ) { // handles JavaClass as well
-            return (T) ((JavaObject) wrapped).getValue();
         }
         return defaultValue;
     }
