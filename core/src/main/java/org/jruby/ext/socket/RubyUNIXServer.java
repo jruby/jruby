@@ -47,6 +47,7 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newString;
 
 @JRubyClass(name="UNIXServer", parent="UNIXSocket")
 public class RubyUNIXServer extends RubyUNIXSocket {
@@ -160,16 +161,12 @@ public class RubyUNIXServer extends RubyUNIXSocket {
 
     @JRubyMethod
     public IRubyObject path(ThreadContext context) {
-        return context.runtime.newString(openFile.getPath());
+        return newString(context, openFile.getPath());
     }
 
     @JRubyMethod
     public IRubyObject addr(ThreadContext context) {
-        Ruby runtime = context.runtime;
-
-        return runtime.newArray(
-                runtime.newString("AF_UNIX"),
-                runtime.newString(openFile.getPath()));
+        return context.runtime.newArray(newString(context, "AF_UNIX"), newString(context, openFile.getPath()));
     }
 
     @JRubyMethod

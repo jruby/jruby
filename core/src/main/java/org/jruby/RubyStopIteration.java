@@ -35,6 +35,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Create.newString;
+
 /**
  /**
  * The Java representation of a Ruby StopIteration.
@@ -53,9 +55,8 @@ public class RubyStopIteration extends RubyIndexError {
     }
 
     public static RubyStopIteration newInstance(ThreadContext context, IRubyObject result, String message) {
-        final Ruby runtime = context.runtime;
-        RubyClass StopIteration = runtime.getStopIteration();
-        final IRubyObject msg = message == null ? context.nil : runtime.newString(message);
+        RubyClass StopIteration = context.runtime.getStopIteration();
+        final IRubyObject msg = message == null ? context.nil : newString(context, message);
         RubyStopIteration instance = (RubyStopIteration)
                 StopIteration.newInstance(context, msg, Block.NULL_BLOCK);
         instance.result = result;

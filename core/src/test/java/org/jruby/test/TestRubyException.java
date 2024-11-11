@@ -35,11 +35,14 @@ import org.jruby.RubyArray;
 import org.jruby.RubyException;
 import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.ThreadContext;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.jruby.api.Create.newString;
 
 public class TestRubyException extends TestCase {
 
@@ -91,7 +94,7 @@ public class TestRubyException extends TestCase {
 	}
 
 	public void testPrintBackTraceWithString() {
-		exception.set_backtrace(RubyArray.newArray(runtime, RubyString.newString(runtime, testLine(0))));
+		exception.set_backtrace(RubyArray.newArray(runtime, newString(runtime.getCurrentContext(), testLine(0))));
 
 		String[] lines = printError();
 
@@ -112,9 +115,10 @@ public class TestRubyException extends TestCase {
 	}
 
 	private void setBackTrace(int lineCount) {
+		ThreadContext context = runtime.getCurrentContext();
 		List traceLines = new ArrayList();
 		for (int i=0; i<lineCount; i++)
-			traceLines.add(RubyString.newString(runtime, testLine(i)));
+			traceLines.add(newString(context, testLine(i)));
 		exception.set_backtrace(RubyArray.newArray(runtime, traceLines));
 	}
 	

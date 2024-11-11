@@ -1,9 +1,12 @@
 package org.jruby;
 
 import org.joni.Regex;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.test.Base;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
+
+import static org.jruby.api.Create.newString;
 
 public class TestRegexpCache extends Base {
 
@@ -13,16 +16,18 @@ public class TestRegexpCache extends Base {
 
         RubyRegexp.quotedPatternCache.clear();
 
+        ThreadContext context = runtime.getCurrentContext();
+
         // Should be the same object if cached
         //Regex regex = RubyRegexp.getQuotedRegexpFromCache(runtime, GH2078_TEST_BYTELIST, RegexpOptions.NULL_OPTIONS, false);
         //assertSame(regex, RubyRegexp.getQuotedRegexpFromCache(runtime, GH2078_TEST_BYTELIST, RegexpOptions.NULL_OPTIONS, false));
         //assertSame(regex, RubyRegexp.getQuotedRegexpFromCache(runtime, GH2078_TEST_BYTELIST.dup(), RegexpOptions.NULL_OPTIONS, false));
-        RubyString str = RubyString.newString(runtime, ByteList.create("GH2078"));
+        RubyString str = newString(context, ByteList.create("GH2078"));
 
         Regex regex = RubyRegexp.getQuotedRegexpFromCache(runtime, str, RegexpOptions.NULL_OPTIONS);
         assertSame(regex, RubyRegexp.getQuotedRegexpFromCache(runtime, str, RegexpOptions.NULL_OPTIONS));
         assertSame(regex, RubyRegexp.getQuotedRegexpFromCache(runtime, (RubyString) str.dup(), RegexpOptions.NULL_OPTIONS));
-        assertSame(regex, RubyRegexp.getQuotedRegexpFromCache(runtime, RubyString.newString(runtime, "GH2078"), RegexpOptions.NULL_OPTIONS));
+        assertSame(regex, RubyRegexp.getQuotedRegexpFromCache(runtime, newString(context, "GH2078"), RegexpOptions.NULL_OPTIONS));
         assertSame(regex, RubyRegexp.getQuotedRegexpFromCache(runtime, str.newFrozen(), RegexpOptions.NULL_OPTIONS));
 
         // Should only have one entry
@@ -41,7 +46,8 @@ public class TestRegexpCache extends Base {
     }
 
     public void testByteListCacheKeySharing() {
-        RubyString str = RubyString.newString(runtime, "regexp");
+        ThreadContext context = runtime.getCurrentContext();
+        RubyString str = newString(context, "regexp");
         ByteList strBytes = str.getByteList();
 
         RubyRegexp.patternCache.clear();
@@ -55,7 +61,7 @@ public class TestRegexpCache extends Base {
         assertNotNull( RubyRegexp.patternCache.get(strBytes) );
 
         // str[0] = 'R'
-        str.op_aset(runtime.getCurrentContext(), runtime.newFixnum(0), RubyString.newString(runtime, "R"));
+        str.op_aset(runtime.getCurrentContext(), runtime.newFixnum(0), newString(context, "R"));
 
         assertEquals(ByteList.create("Regexp"), strBytes);
 

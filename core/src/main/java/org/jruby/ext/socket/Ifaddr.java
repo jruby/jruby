@@ -18,6 +18,7 @@ import java.net.UnknownHostException;
 import jnr.constants.platform.InterfaceInfo;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newString;
 
 /**
  *
@@ -88,12 +89,12 @@ public class Ifaddr extends RubyObject {
 
     @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {
-        return context.runtime.newString("#<Socket::Ifaddr: " + name + " " + flagStatus + ">");
+        return newString(context, "#<Socket::Ifaddr: " + name + " " + flagStatus + ">");
     }
 
     @JRubyMethod
     public IRubyObject name(ThreadContext context) {
-        return context.runtime.newString(name);
+        return newString(context, name);
     }
 
     @JRubyMethod

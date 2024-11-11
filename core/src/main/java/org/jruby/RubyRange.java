@@ -44,6 +44,7 @@ import java.util.List;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.API;
+import org.jruby.api.JRubyAPI;
 import org.jruby.exceptions.JumpException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -60,6 +61,7 @@ import org.jruby.runtime.ThreadContext;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyNumeric.*;
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.hashEnd;
 import static org.jruby.runtime.Helpers.hashStart;
@@ -374,7 +376,7 @@ public class RubyRange extends RubyObject {
 
     private static IRubyObject inspectValueRecursive(ThreadContext context, IRubyObject state, IRubyObject obj, boolean recur) {
         return recur ?
-                RubyString.newString(context.runtime, ((RubyRange) obj).isExclusive ? "(... ... ...)" : "(... .. ...)") :
+                newString(context, ((RubyRange) obj).isExclusive ? "(... ... ...)" : "(... .. ...)") :
                 inspect(context, obj);
     }
 
@@ -1139,7 +1141,7 @@ public class RubyRange extends RubyObject {
         return first(context, null);
     }
 
-    @JRubyMethod
+    @JRubyMethod @JRubyAPI
     public IRubyObject begin(ThreadContext context) {
         return begin;
     }
@@ -1204,7 +1206,7 @@ public class RubyRange extends RubyObject {
         return end;
     }
 
-    @JRubyMethod
+    @JRubyMethod @JRubyAPI
     public IRubyObject end(ThreadContext context) {
         return end;
     }

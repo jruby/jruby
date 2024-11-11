@@ -80,6 +80,8 @@ import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.collections.WeakValuedMap;
 
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -793,7 +795,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
         Ruby runtime = context.runtime;
         if (args.length == 0) {
-            return runtime.getRegexp().newInstance(context, runtime.newString("(?!)"), Block.NULL_BLOCK);
+            return runtime.getRegexp().newInstance(context, newString(context, "(?!)"), Block.NULL_BLOCK);
         } else if (args.length == 1) {
             IRubyObject re = TypeConverter.convertToTypeWithCheck(args[0], runtime.getRegexp(), "to_regexp");
             return !re.isNil() ? re : newRegexpFromStr(runtime, quote(context, recv, args[0]), 0);
@@ -816,13 +818,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                         if (hasAsciiIncompat == null) { // First regexp of union sets kcode.
                             hasAsciiIncompat = enc;
                         } else if (hasAsciiIncompat != enc) { // n kcode doesn't match first one
-                            throw runtime.newArgumentError("incompatible encodings: " + hasAsciiIncompat + " and " + enc);
+                            throw argumentError(context, "incompatible encodings: " + hasAsciiIncompat + " and " + enc);
                         }
                     } else if (regex.getOptions().isFixed()) {
                         if (hasAsciiCompatFixed == null) { // First regexp of union sets kcode.
                             hasAsciiCompatFixed = enc;
                         } else if (hasAsciiCompatFixed != enc) { // n kcode doesn't match first one
-                            throw runtime.newArgumentError("incompatible encodings: " + hasAsciiCompatFixed + " and " + enc);
+                            throw argumentError(context, "incompatible encodings: " + hasAsciiCompatFixed + " and " + enc);
                         }
                     } else {
                         hasAsciiOnly = true;
@@ -836,7 +838,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                         if (hasAsciiIncompat == null) { // First regexp of union sets kcode.
                             hasAsciiIncompat = enc;
                         } else if (hasAsciiIncompat != enc) { // n kcode doesn't match first one
-                            throw runtime.newArgumentError("incompatible encodings: " + hasAsciiIncompat + " and " + enc);
+                            throw argumentError(context, "incompatible encodings: " + hasAsciiIncompat + " and " + enc);
                         }
                     } else if (str.isAsciiOnly()) {
                         hasAsciiOnly = true;
@@ -844,7 +846,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                         if (hasAsciiCompatFixed == null) { // First regexp of union sets kcode.
                             hasAsciiCompatFixed = enc;
                         } else if (hasAsciiCompatFixed != enc) { // n kcode doesn't match first one
-                            throw runtime.newArgumentError("incompatible encodings: " + hasAsciiCompatFixed + " and " + enc);
+                            throw argumentError(context, "incompatible encodings: " + hasAsciiCompatFixed + " and " + enc);
                         }
                     }
                     re = quote(str);
@@ -852,10 +854,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
                 if (hasAsciiIncompat != null) {
                     if (hasAsciiOnly) {
-                        throw runtime.newArgumentError("ASCII incompatible encoding: " + hasAsciiIncompat);
+                        throw argumentError(context, "ASCII incompatible encoding: " + hasAsciiIncompat);
                     }
                     if (hasAsciiCompatFixed != null) {
-                        throw runtime.newArgumentError("incompatible encodings: " + hasAsciiIncompat + " and " + hasAsciiCompatFixed);
+                        throw argumentError(context, "incompatible encodings: " + hasAsciiIncompat + " and " + hasAsciiCompatFixed);
                     }
                 }
 
@@ -1388,12 +1390,17 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
      *
      */
     @JRubyMethod
-    public IRubyObject source() {
+    public IRubyObject source(ThreadContext context) {
         check();
-        Encoding enc = (pattern == null) ? str.getEncoding() : pattern.getEncoding();
+        var enc = pattern == null ? str.getEncoding() : pattern.getEncoding();
         ByteList newStr = str.dup();
         newStr.setEncoding(enc);
-        return RubyString.newString(metaClass.runtime, newStr);
+        return newString(context, newStr);
+    }
+
+    @Deprecated
+    public IRubyObject source() {
+        return source(getCurrentContext());
     }
 
     public ByteList rawSource() {
@@ -1502,7 +1509,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             RegexpSupport.appendRegexpString(runtime, result, bytes, p, len, enc, null);
 
             result.append((byte)')');
-            return (RubyString) RubyString.newString(runtime, result, getEncoding());
+            return RubyString.newString(runtime, result, getEncoding());
         } while (true);
     }
 
@@ -1743,7 +1750,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             if (c != '\\' || s == e) continue;
 
             if (val == null) {
-                val = RubyString.newString(runtime, new ByteList(ss - p));
+                val = newString(context, new ByteList(ss - p));
             }
             EncodingUtils.encStrBufCat(runtime, val, sBytes, p, ss - p, strEnc);
 

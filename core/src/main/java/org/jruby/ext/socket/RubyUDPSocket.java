@@ -74,6 +74,7 @@ import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.UnsupportedAddressTypeException;
 
+import static org.jruby.api.Create.newString;
 import static org.jruby.runtime.Helpers.extractExceptionOnlyArg;
 
 /**
@@ -519,7 +520,7 @@ public class RubyUDPSocket extends RubyIPSocket {
             status = " (closed)";
         }
 
-        return getRuntime().newString("#<" + className + ':' + path + status + inspectExtraInfo(openFile) + '>');
+        return newString(context, "#<" + className + ':' + path + status + inspectExtraInfo(openFile) + '>');
     }
 
     private String inspectExtraInfo(OpenFile openFile) {

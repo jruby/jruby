@@ -58,6 +58,7 @@ import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyModule.undefinedMethodMessage;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.javasupport.JavaUtil.convertJavaToUsableRubyObject;
 import static org.jruby.javasupport.JavaUtil.isJavaObject;
@@ -235,7 +236,7 @@ public abstract class JavaLang {
             if ( len == 0 ) return RubyArray.newEmptyArray(runtime);
             IRubyObject[] backtrace = new IRubyObject[len];
             for ( int i=0; i < len; i++ ) {
-                backtrace[i] = RubyString.newString(runtime, stackTrace[i].toString());
+                backtrace[i] = newString(context, stackTrace[i].toString());
             }
             return RubyArray.newArrayMayCopy(runtime, backtrace);
         }
@@ -249,7 +250,7 @@ public abstract class JavaLang {
         public static IRubyObject message(final ThreadContext context, final IRubyObject self) {
             java.lang.Throwable throwable = unwrapIfJavaObject(self);
             final java.lang.String msg = throwable.getLocalizedMessage(); // does getMessage
-            return msg == null ? RubyString.newEmptyString(context.runtime) : RubyString.newString(context.runtime, msg);
+            return msg == null ? RubyString.newEmptyString(context.runtime) : newString(context, msg);
         }
 
         @JRubyMethod
@@ -436,8 +437,8 @@ public abstract class JavaLang {
 
         @JRubyMethod(name = "inspect")
         public static IRubyObject inspect(final ThreadContext context, final IRubyObject self) {
-            java.lang.Number val = (java.lang.Number) self.toJava(java.lang.Number.class);
-            return context.runtime.newString(val.toString());
+            java.lang.Number val = self.toJava(java.lang.Number.class);
+            return newString(context, val.toString());
         }
 
     }
@@ -520,7 +521,7 @@ public abstract class JavaLang {
 
         @JRubyMethod // make to_s an improved class.name version
         public static IRubyObject to_s(final ThreadContext context, final IRubyObject self) {
-            return RubyString.newString(context.runtime, getClassName(self));
+            return newString(context, getClassName(self));
         }
 
         @JRubyMethod
@@ -883,14 +884,12 @@ public abstract class JavaLang {
 
         @JRubyMethod(name = "to_s", alias = "to_str")
         public static IRubyObject to_s(final ThreadContext context, final IRubyObject self) {
-            java.lang.String str = (java.lang.String) self.toJava(java.lang.String.class);
-            return RubyString.newString(context.runtime, str);
+            return newString(context, self.toJava(java.lang.String.class));
         }
 
         @JRubyMethod(name = "inspect")
         public static IRubyObject inspect(final ThreadContext context, final IRubyObject self) {
-            java.lang.String str = (java.lang.String) self.toJava(java.lang.String.class);
-            return RubyString.newString(context.runtime, str).inspect();
+            return newString(context, self.toJava(java.lang.String.class)).inspect();
         }
 
     }
@@ -940,7 +939,7 @@ public abstract class JavaLang {
         @Override
         public IRubyObject call(final ThreadContext context, final IRubyObject self, final RubyModule clazz, final java.lang.String name) {
             java.lang.Object val = unwrapIfJavaObject(self);
-            return context.runtime.newString(val.toString());
+            return newString(context, val.toString());
         }
 
     }

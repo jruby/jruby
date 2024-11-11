@@ -45,6 +45,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.EncodingUtils;
 
 import static org.jruby.api.Convert.numericToLong;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 
 
@@ -173,7 +174,7 @@ public class Sprintf {
             if (object == null) {
                 object = rubyHash.getIfNone();
                 if (object == RubyBasicObject.UNDEF) {
-                    RubyString nameStr = RubyString.newString(runtime, name);
+                    RubyString nameStr = newString(runtime.getCurrentContext(), name);
                     raiseKeyError("key" + startDelim + nameStr + endDelim + " not found", rubyHash, nameSym);
                 } else if (rubyHash.hasDefaultProc()) {
                     object = object.callMethod(runtime.getCurrentContext(), "call", nameSym);
@@ -482,7 +483,7 @@ public class Sprintf {
 
                     if (nameEnd == nameStart) raiseArgumentError(args, ERR_MALFORMED_NAME);
                     ByteList newName = new ByteList(format, nameStart, nameEnd - nameStart, encoding, false);
-                    if (name != null) raiseArgumentError(args, "named<" + RubyString.newString(runtime, newName) + "> after <" + RubyString.newString(runtime, name) + ">");
+                    if (name != null) raiseArgumentError(args, "named<" + newString(runtime.getCurrentContext(), newName) + "> after <" + RubyString.newString(runtime, name) + ">");
                     name = newName;
                     // we retrieve value from hash so we can generate argument error as side-effect.
                     args.nextObject = args.getHashValue(name, '<', '>');

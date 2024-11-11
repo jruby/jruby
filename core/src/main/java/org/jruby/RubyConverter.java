@@ -59,6 +59,7 @@ import java.util.Map;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
@@ -182,7 +183,7 @@ public class RubyConverter extends RubyObject {
 
     @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {
-        return RubyString.newString(context.runtime, "#<Encoding::Converter: " + ec.sourceEncoding + " to " + ec.destinationEncoding + ">");
+        return newString(context, "#<Encoding::Converter: " + ec.sourceEncoding + " to " + ec.destinationEncoding + ">");
     }
 
     @JRubyMethod
@@ -197,9 +198,10 @@ public class RubyConverter extends RubyObject {
             if (EncodingUtils.DECORATOR_P(tr.getSource(), tr.getDestination())) {
                 v = RubyString.newString(runtime, tr.getDestination());
             } else {
+                var encodingService = runtime.getEncodingService();
                 v = runtime.newArray(
-                        runtime.getEncodingService().convertEncodingToRubyEncoding(runtime.getEncodingService().findEncodingOrAliasEntry(tr.getSource()).getEncoding()),
-                        runtime.getEncodingService().convertEncodingToRubyEncoding(runtime.getEncodingService().findEncodingOrAliasEntry(tr.getDestination()).getEncoding()));
+                        encodingService.convertEncodingToRubyEncoding(encodingService.findEncodingOrAliasEntry(tr.getSource()).getEncoding()),
+                        encodingService.convertEncodingToRubyEncoding(encodingService.findEncodingOrAliasEntry(tr.getDestination()).getEncoding()));
             }
             result.push(v);
         }

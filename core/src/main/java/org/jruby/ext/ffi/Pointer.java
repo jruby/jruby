@@ -12,6 +12,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Create.newString;
 import static org.jruby.runtime.Visibility.*;
 
 /**
@@ -145,7 +146,7 @@ public class Pointer extends AbstractMemory {
                 ? String.format("#<%s address=0x%x size=%s>", getMetaClass().getName(), getAddress(), size)
                 : String.format("#<%s address=0x%x>", getMetaClass().getName(), getAddress());
 
-        return RubyString.newString(context.runtime, s);
+        return newString(context, s);
     }
 
     @JRubyMethod(name = { "address", "to_i" })

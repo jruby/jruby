@@ -27,6 +27,7 @@ import org.jruby.util.ByteList;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.jruby.api.Create.newString;
 import static org.jruby.ir.builder.StringStyle.Chilled;
 import static org.jruby.ir.builder.StringStyle.Frozen;
 import static org.jruby.util.StringSupport.*;
@@ -227,7 +228,7 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
         IRubyObject obj = (IRubyObject) piece.retrieve(context, null, null, null, null);
         if (obj instanceof Appendable app) {
             // Construct a new String vs retrieve since the retrieve would be a frozen string.
-            RubyString last = RubyString.newString(context.runtime, lastString.getByteList().dup());
+            RubyString last = newString(context, lastString.getByteList().dup());
             app.appendIntoString(last);
             ByteList newByteList = last.getByteList();
             return asOperand(newByteList);

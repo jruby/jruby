@@ -110,6 +110,7 @@ import static com.headius.backport9.buffer.Buffers.limitBuffer;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.anno.FrameField.LASTLINE;
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.ThreadContext.*;
 import static org.jruby.runtime.Visibility.*;
@@ -5200,11 +5201,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     @JRubyMethod(name = {"path", "to_path"})
     public IRubyObject path(ThreadContext context) {
         final String path = getPath();
-        if (path != null) {
-            RubyString newPath = context.runtime.newString(path);
-            return newPath;
-        }
-        return context.nil;
+        return path != null ? newString(context, path) : context.nil;
     }
 
     public String getPath() {
@@ -5600,12 +5597,12 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @Deprecated
     public IRubyObject getline(ThreadContext context, ByteList separator) {
-        return getline(context, RubyString.newString(context.runtime, separator), -1);
+        return getline(context, newString(context, separator), -1);
     }
 
     @Deprecated
     public IRubyObject getline(ThreadContext context, ByteList separator, long limit) {
-        return getline(context, RubyString.newString(context.runtime, separator), limit);
+        return getline(context, newString(context, separator), limit);
     }
 
     @Deprecated

@@ -1211,7 +1211,7 @@ public class JVMVisitor extends IRVisitor {
         final IRBytecodeAdapter m = jvmMethod();
 
         if (instr.getOptions().isOnce() && instr.getRegexp() != null) {
-            visit(new Regexp(instr.getRegexp().source().convertToString().getByteList(), instr.getOptions()));
+            visit(new Regexp(instr.getRegexp().source(runtime.getCurrentContext()).convertToString().getByteList(), instr.getOptions()));
             jvmStoreLocal(instr.getResult());
             return;
         }

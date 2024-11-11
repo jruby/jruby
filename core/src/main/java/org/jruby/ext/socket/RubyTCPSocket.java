@@ -57,6 +57,7 @@ import java.nio.channels.SocketChannel;
 
 import static jnr.constants.platform.AddressFamily.AF_INET;
 import static jnr.constants.platform.AddressFamily.AF_INET6;
+import static org.jruby.api.Create.newString;
 
 public class RubyTCPSocket extends RubyIPSocket {
     static void createTCPSocket(Ruby runtime) {
@@ -232,7 +233,7 @@ public class RubyTCPSocket extends RubyIPSocket {
         try {
             InetAddress addr = InetAddress.getByName(hostString);
 
-            ret0 = runtime.newString(do_not_reverse_lookup(context, recv).isTrue() ? addr.getHostAddress() : addr.getCanonicalHostName());
+            ret0 = newString(context, do_not_reverse_lookup(context, recv).isTrue() ? addr.getHostAddress() : addr.getCanonicalHostName());
             ret1 = runtime.newArray();
 
             if (addr instanceof Inet4Address) {
@@ -241,7 +242,7 @@ public class RubyTCPSocket extends RubyIPSocket {
                 ret2 = runtime.newFixnum(AF_INET6);
             }
 
-            ret3 = runtime.newString(addr.getHostAddress());
+            ret3 = newString(context, addr.getHostAddress());
 
             return RubyArray.newArray(runtime, ret0, ret1, ret2, ret3);
         }

@@ -43,6 +43,7 @@ package org.jruby;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.anno.FrameField;
 import org.jruby.anno.TypePopulator;
+import org.jruby.api.Create;
 import org.jruby.compiler.Constantizable;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.exceptions.LocalJumpError;
@@ -731,7 +732,7 @@ public final class Ruby implements Constantizable {
 
         // Require in all libraries specified on command line
         for (String scriptName : this.config.getRequiredLibraries()) {
-            topSelf.callMethod(context, "require", RubyString.newString(this, scriptName));
+            topSelf.callMethod(context, "require", Create.newString(context, scriptName));
         }
     }
 

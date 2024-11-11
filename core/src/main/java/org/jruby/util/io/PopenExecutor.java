@@ -43,8 +43,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.jruby.RubyString.newString;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newString;
 
 /**
  * Port of MRI's popen+exec logic.
@@ -166,7 +166,7 @@ public class PopenExecutor {
                 script = script + "exec ";
             }
 
-            prog = (RubyString)prog.strDup(runtime).prepend(context, newString(runtime, script));
+            prog = (RubyString)prog.strDup(runtime).prepend(context, newString(context, script));
             eargp.chdir_dir = null;
             eargp.chdirGiven = false;
         }
@@ -1838,7 +1838,7 @@ public class PopenExecutor {
 
             // if we're launching org.jruby.Main, adjust args to -C to new dir
             if ((arg = ShellLauncher.changeDirInsideJar(runtime, arg)) != null) {
-                prog = newString(runtime, arg);
+                prog = newString(context, arg);
             } else if (virtualCWD.startsWith("uri:classloader:")) {
                 // can't switch to uri:classloader URL, so just run in cwd
             } else if (!eargp.chdirGiven) {
@@ -1854,17 +1854,17 @@ public class PopenExecutor {
 
             IRubyObject[] newArgv = new IRubyObject[argc];
 
-            newArgv[0] = newString(runtime, "sh");
-            newArgv[1] = newString(runtime, "-c");
-            newArgv[2] = newString(runtime, "cd -- \"$1\"; shift; exec \"$@\"");
-            newArgv[3] = newString(runtime, "sh");
-            newArgv[4] = newString(runtime, eargp.chdir_dir);
+            newArgv[0] = newString(context, "sh");
+            newArgv[1] = newString(context, "-c");
+            newArgv[2] = newString(context, "cd -- \"$1\"; shift; exec \"$@\"");
+            newArgv[3] = newString(context, "sh");
+            newArgv[4] = newString(context, eargp.chdir_dir);
 
             System.arraycopy(argv, 0, newArgv, SH_CHDIR_ARG_COUNT, argv.length);
 
             argv = newArgv;
 
-            prog = newString(runtime, "/bin/sh");
+            prog = newString(context, "/bin/sh");
 
             eargp.chdirGiven = false;
         }
@@ -1921,7 +1921,7 @@ public class PopenExecutor {
             String abspath;
             abspath = dlnFindExeR(runtime, eargp.command_name.toString(), eargp.path_env);
             if (abspath != null)
-                eargp.command_abspath = StringSupport.checkEmbeddedNulls(runtime, newString(runtime, abspath));
+                eargp.command_abspath = StringSupport.checkEmbeddedNulls(runtime, newString(context, abspath));
             else
                 eargp.command_abspath = null;
         }

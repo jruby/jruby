@@ -49,8 +49,11 @@ import org.jruby.exceptions.RaiseException;
 import jnr.posix.util.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Constants;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import static org.jruby.api.Create.newString;
 
 /**
  * Unit test for the ruby class.
@@ -156,17 +159,15 @@ public class TestRuby extends Base {
     }
     
     public void testPrintErrorShouldPrintErrorMessageAndStacktraceWhenBacktraceIsPresent() {
+        ThreadContext context = runtime.getCurrentContext();
         final ByteArrayOutputStream err = new ByteArrayOutputStream();
         RubyInstanceConfig config = new RubyInstanceConfig() {{
             setInput(System.in); setOutput(System.out); setError(new PrintStream(err)); setObjectSpaceEnabled(false);
             setTraceType(TraceType.traceTypeFor("mri"));
         }};
         Ruby ruby = Ruby.newInstance(config);
-        RubyException exception = (RubyException)runtime.getClass("NameError").newInstance(ruby.getCurrentContext(), new IRubyObject[]{ruby.newString("A message")},  Block.NULL_BLOCK);
-        RubyString[] lines = new RubyString[]{
-            RubyString.newString(ruby, "Line 1"),
-            RubyString.newString(ruby, "Line 2"),
-        };
+        RubyException exception = (RubyException)runtime.getClass("NameError").newInstance(context, new IRubyObject[]{ newString(context, "A message")},  Block.NULL_BLOCK);
+        RubyString[] lines = new RubyString[] { newString(context, "Line 1"), newString(context, "Line 2") };
         RubyArray backtrace = RubyArray.newArray(ruby, Arrays.<IRubyObject>asList(lines));
         exception.set_backtrace(backtrace);
         ruby.printError(exception);
@@ -174,6 +175,7 @@ public class TestRuby extends Base {
     }
     
     public void testPrintErrorShouldOnlyPrintErrorMessageWhenBacktraceIsNil() {
+        ThreadContext context = runtime.getCurrentContext();
         final ByteArrayOutputStream err = new ByteArrayOutputStream();
         // use MRI formatting, since JRuby formatting is a bit different
         RubyInstanceConfig config = new RubyInstanceConfig() {{
@@ -181,7 +183,7 @@ public class TestRuby extends Base {
             setTraceType(TraceType.traceTypeFor("mri"));
         }};
         Ruby ruby = Ruby.newInstance(config);
-        RubyException exception = (RubyException)runtime.getClass("NameError").newInstance(ruby.getCurrentContext(), new IRubyObject[]{ruby.newString("A message")},  Block.NULL_BLOCK);
+        RubyException exception = (RubyException)runtime.getClass("NameError").newInstance(ruby.getCurrentContext(), new IRubyObject[]{newString(context, "A message")},  Block.NULL_BLOCK);
         ruby.printError(exception);
         //        assertEquals(":[0,0]:[0,7]: A message (NameError)\n", err.toString());
     }

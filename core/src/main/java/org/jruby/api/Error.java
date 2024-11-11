@@ -10,10 +10,37 @@ import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Create.newString;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
 
 public class Error {
+    /**
+     * Return an instance of ArgumentError with the given message.
+     *
+     * @param context the current thread context
+     * @param message to be the message of the exception.  Note that this message should
+     *                be properly formatted using RubyStringBuilder.str() or you
+     *                absolutely know it is clean ASCII-7BIT
+     * @return the created exception
+     */
+    public static ArgumentError argumentError(ThreadContext context, String message) {
+        return (ArgumentError) context.runtime.newArgumentError(message);
+    }
+
+    /**
+     * Return an instance of ArgumentError for the given argument list length, min, and max.
+     *
+     * @param context the current thread context
+     * @param length the length of the given argument array
+     * @param min the minimum length required
+     * @param max the maximum length required
+     * @return the created exception
+     */
+    public static ArgumentError argumentError(ThreadContext context, int length, int min, int max) {
+        return (ArgumentError) context.runtime.newArgumentError(length, min, max);
+    }
+
     /**
      * Create a frozen error with a simple ASCII String.
      *
@@ -23,7 +50,7 @@ public class Error {
      * @return the error
      */
     public static RaiseException frozenError(ThreadContext context, IRubyObject object, String message) {
-        return RubyFrozenError.newFrozenError(context, context.runtime.newString(message), object).toThrowable();
+        return RubyFrozenError.newFrozenError(context, newString(context, message), object).toThrowable();
     }
 
     /**
@@ -110,34 +137,7 @@ public class Error {
         return error;
     }
 
-    /**
-     * Return an instance of ArgumentError with the given message.
-     *
-     * @param context the current thread context
-     * @param message to be the message of the exception.  Note that this message should
-     *                be properly formatted using RubyStringBuilder.str() or you
-     *                absolutely know it is clean ASCII-7BIT
-     * @return the created exception
-     */
-    public static ArgumentError argumentError(ThreadContext context, String message) {
-        return (ArgumentError) context.runtime.newArgumentError(message);
-    }
-
     private static IRubyObject typeFor(Ruby runtime, IRubyObject object) {
         return object instanceof RubyModule ? types(runtime, (RubyModule) object) : object.getMetaClass().getRealClass();
-    }
-
-
-    /**
-     * Return an instance of ArgumentError for the given argument list length, min, and max.
-     *
-     * @param context the current thread context
-     * @param length the length of the given argument array
-     * @param min the minimum length required
-     * @param max the maximum length required
-     * @return the created exception
-     */
-    public static ArgumentError argumentError(ThreadContext context, int length, int min, int max) {
-        return (ArgumentError) context.runtime.newArgumentError(length, min, max);
     }
 }

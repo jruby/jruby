@@ -40,6 +40,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Create.newString;
 
 /**
  * An RubyArray that maintains an O(1) Set for fast include? operations.
@@ -76,7 +77,7 @@ public class StringArraySet extends RubyArray {
     }
 
     public final void deleteString(ThreadContext context, String element) {
-        final RubyString item = context.runtime.newString(element);
+        final RubyString item = newString(context, element);
         synchronized (this) {
             super.delete(context, item, Block.NULL_BLOCK);
             set.remove(element); // assuming no array duplicities

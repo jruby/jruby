@@ -9,6 +9,8 @@ import org.jruby.internal.runtime.methods.DescriptorInfo;
 
 import java.util.Arrays;
 
+import static org.jruby.api.Create.newString;
+
 /**
  * A description of a single argument in a Ruby argument list.  Primarily used in Method.to_proc.
  */
@@ -70,20 +72,20 @@ public class ArgumentDescriptor {
             case keyreq:
                 return ((RubyString) name.asString().dup()).catString(":");
             case keyrest:
-                return context.runtime.newString("**").cat(name.asString());
+                return newString(context, "**").cat(name.asString());
             case block:
-                return context.runtime.newString("&").cat(name.asString());
+                return newString(context, "&").cat(name.asString());
             case rest:
-                return context.runtime.newString("*").cat(name.asString());
+                return newString(context, "*").cat(name.asString());
             case anonrest:
-                return context.runtime.newString("*");
+                return newString(context, "*");
             case anonkeyrest:
-                return context.runtime.newString("**");
+                return newString(context, "**");
             case anonreq:
             case anonopt:
-                return context.runtime.newString("_");
+                return newString(context, "_");
             case nokey:
-                return context.runtime.newString("**nil");
+                return newString(context, "**nil");
         }
 
         // not reached

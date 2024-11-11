@@ -19,6 +19,9 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.newSymbol;
+
 public class TraceEventManager {
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     public static final MethodHandle TRACE_ON = Binder
@@ -220,8 +223,7 @@ public class TraceEventManager {
             if (file == null) file = "(ruby)";
             if (type == null) type = context.nil;
 
-            Ruby runtime = context.runtime;
-            RubyBinding binding = RubyBinding.newBinding(runtime, context.currentBinding());
+            RubyBinding binding = RubyBinding.newBinding(context.runtime, context.currentBinding());
 
             // FIXME: Ultimately we should be getting proper string for this event type
             switch (eventName) {
@@ -237,10 +239,10 @@ public class TraceEventManager {
             context.preTrace();
             try {
                 traceFunc.call(context, new IRubyObject[]{
-                        runtime.newString(eventName), // event name
-                        runtime.newString(file), // filename
-                        runtime.newFixnum(line), // line numbers should be 1-based
-                        name != null ? runtime.newSymbol(name) : runtime.getNil(),
+                        newString(context, eventName), // event name
+                        newString(context, file), // filename
+                        context.runtime.newFixnum(line), // line numbers should be 1-based
+                        name != null ? newSymbol(context, name) : context.nil,
                         binding,
                         type
                 });

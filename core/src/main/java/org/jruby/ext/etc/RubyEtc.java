@@ -39,6 +39,8 @@ import java.nio.ByteBuffer;
 
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.numericToLong;
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.newSymbol;
 
 @JRubyModule(name="Etc")
 public class RubyEtc {
@@ -202,7 +204,7 @@ public class RubyEtc {
         
         if (ret == -1) {
             if (posix.errno() == 0) {
-                return context.runtime.getNil();
+                return context.nil;
             } else if (posix.errno() == Errno.EOPNOTSUPP.intValue()) {
                 throw context.runtime.newNotImplementedError("confstr() function is unimplemented on this machine");
             } else {
@@ -211,8 +213,7 @@ public class RubyEtc {
         }
 
         buf.flip();
-        ByteList bytes = new ByteList(buf.array(), 0, n - 1);
-        return RubyString.newString(context.runtime, bytes);
+        return newString(context, new ByteList(buf.array(), 0, n - 1));
     }
 
     @Deprecated
@@ -569,24 +570,23 @@ public class RubyEtc {
 
     @JRubyMethod(module = true)
     public static synchronized IRubyObject uname(ThreadContext context, IRubyObject self) {
-        Ruby runtime = context.runtime;
-        RubyHash uname = RubyHash.newHash(runtime);
+        RubyHash uname = RubyHash.newHash(context.runtime);
 
         uname.op_aset(context,
-                runtime.newSymbol("sysname"),
-                runtime.newString(SafePropertyAccessor.getProperty("os.name", "unknown")));
+                newSymbol(context, "sysname"),
+                newString(context, SafePropertyAccessor.getProperty("os.name", "unknown")));
         try {
             uname.op_aset(context,
-                    runtime.newSymbol("nodename"),
-                    runtime.newString(InetAddress.getLocalHost().getHostName()));
+                    newSymbol(context, "nodename"),
+                    newString(context, InetAddress.getLocalHost().getHostName()));
         } catch (UnknownHostException uhe) {
             uname.op_aset(context,
-                    runtime.newSymbol("nodename"),
-                    runtime.newString("unknown"));
+                    newSymbol(context, "nodename"),
+                    newString(context, "unknown"));
         }
-        uname.put(runtime.newSymbol("release"), runtime.newString("unknown"));
-        uname.put(runtime.newSymbol("version"), runtime.newString(SafePropertyAccessor.getProperty("os.version")));
-        uname.put(runtime.newSymbol("machine"), runtime.newString(SafePropertyAccessor.getProperty("os.arch")));
+        uname.put(newSymbol(context, "release"), newString(context, "unknown"));
+        uname.put(newSymbol(context, "version"), newString(context, SafePropertyAccessor.getProperty("os.version")));
+        uname.put(newSymbol(context, "machine"), newString(context, SafePropertyAccessor.getProperty("os.arch")));
 
         return uname;
     }

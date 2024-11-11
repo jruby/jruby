@@ -12,6 +12,8 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import static org.jruby.api.Create.newString;
 import static org.jruby.runtime.Visibility.*;
 
 
@@ -166,8 +168,7 @@ public final class Buffer extends AbstractMemory {
 
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect(ThreadContext context) {
-        return RubyString.newString(context.runtime,
-                String.format("#<Buffer size=%d>", size));
+        return newString(context, String.format("#<Buffer size=%d>", size));
     }
 
     

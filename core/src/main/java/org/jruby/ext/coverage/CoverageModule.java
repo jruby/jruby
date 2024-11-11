@@ -42,6 +42,7 @@ import org.jruby.util.TypeConverter;
 import org.jruby.util.collections.IntList;
 
 import static org.jruby.api.Convert.castAsSymbol;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ext.coverage.CoverageData.CoverageDataState.*;
 import static org.jruby.ext.coverage.CoverageData.EVAL;
@@ -255,7 +256,7 @@ public class CoverageModule {
                     }
                 }
 
-                RubyString key = RubyString.newString(runtime, entry.getKey());
+                RubyString key = newString(context, entry.getKey());
                 IRubyObject value = ary;
 
                 if (mode != 0) {

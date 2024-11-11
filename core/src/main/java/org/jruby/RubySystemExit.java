@@ -33,6 +33,7 @@ import org.jruby.exceptions.SystemExit;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 
+import static org.jruby.api.Create.newString;
 import static org.jruby.runtime.Visibility.*;
 
 import org.jruby.runtime.ThreadContext;
@@ -57,11 +58,12 @@ public class RubySystemExit extends RubyException {
     }
 
     public static RubySystemExit newInstance(Ruby runtime, int status, String message) {
+        ThreadContext context = runtime.getCurrentContext();
         final RubyClass klass = runtime.getSystemExit();
         final IRubyObject[] args = new IRubyObject[] {
-            runtime.newFixnum(status), runtime.newString(message)
+            runtime.newFixnum(status), newString(context, message)
         };
-        return (RubySystemExit) klass.newInstance(runtime.getCurrentContext(), args, Block.NULL_BLOCK);
+        return (RubySystemExit) klass.newInstance(context, args, Block.NULL_BLOCK);
     }
 
     protected RubySystemExit(Ruby runtime, RubyClass exceptionClass) {

@@ -41,6 +41,8 @@ import org.jruby.util.io.Sockaddr;
 
 import java.net.InetSocketAddress;
 
+import static org.jruby.api.Create.newString;
+
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
@@ -84,8 +86,6 @@ public class RubyIPSocket extends RubyBasicSocket {
 
     @JRubyMethod
     public IRubyObject recvfrom(ThreadContext context, IRubyObject _length) {
-        Ruby runtime = context.runtime;
-
         IRubyObject result = recv(context, _length);
         InetSocketAddress sender = getInetRemoteSocket();
 
@@ -103,13 +103,13 @@ public class RubyIPSocket extends RubyBasicSocket {
         }
 
         IRubyObject addressArray = context.runtime.newArrayNoCopy(
-                runtime.newString("AF_INET"),
-                runtime.newFixnum(port),
-                runtime.newString(hostName),
-                runtime.newString(hostAddress)
+                newString(context, "AF_INET"),
+                context.runtime.newFixnum(port),
+                newString(context, hostName),
+                newString(context, hostAddress)
         );
 
-        return runtime.newArray(result, addressArray);
+        return context.runtime.newArray(result, addressArray);
     }
 
     @JRubyMethod

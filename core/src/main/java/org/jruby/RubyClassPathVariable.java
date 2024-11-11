@@ -39,6 +39,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newString;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -113,7 +114,7 @@ public class RubyClassPathVariable extends RubyObject {
         final ThreadContext context = getRuntime().getCurrentContext();
         URL[] urls = context.runtime.getJRubyClassLoader().getURLs();
         for(int i=0,j=urls.length;i<j;i++) {
-            block.yield(context, context.runtime.newString(urls[i].toString()));
+            block.yield(context, newString(context, urls[i].toString()));
         }
         return context.nil;
     }

@@ -52,6 +52,8 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PUBLIC;
 
@@ -102,27 +104,25 @@ public class Module {
     }
 
     private static IRubyObject javaImport(ThreadContext context, RubyModule target, IRubyObject klass, Block block) {
-        final Ruby runtime = context.runtime;
-
         final Class<?> javaClass;
         if (klass instanceof RubyString) {
             final String className = klass.asJavaString();
             if (!JavaUtilities.validJavaIdentifier(className)) {
-                throw runtime.newArgumentError("not a valid Java identifier: " + className);
+                throw argumentError(context, "not a valid Java identifier: " + className);
             }
             if (className.contains("::")) {
-                throw runtime.newArgumentError("must use Java style name: " + className);
+                throw argumentError(context, "must use Java style name: " + className);
             }
-            javaClass = Java.getJavaClass(runtime, className); // raises NameError if not found
+            javaClass = Java.getJavaClass(context.runtime, className); // raises NameError if not found
         } else if (klass instanceof JavaPackage) {
-            throw runtime.newArgumentError("java_import does not work for Java packages (try include_package instead)");
+            throw argumentError(context, "java_import does not work for Java packages (try include_package instead)");
         } else if (klass instanceof RubyModule) {
             javaClass = JavaUtil.getJavaClass((RubyModule) klass, null);
             if (javaClass == null) {
-                throw runtime.newArgumentError("not a Java class or interface: " + klass.inspect());
+                throw argumentError(context, "not a Java class or interface: " + klass.inspect());
             }
         } else {
-            throw runtime.newArgumentError("invalid Java class or interface: " + klass.inspect() + " (of type " + klass.getType() + ")");
+            throw argumentError(context, "invalid Java class or interface: " + klass.inspect() + " (of type " + klass.getType() + ")");
         }
 
         String constant;
@@ -130,17 +130,17 @@ public class Module {
             int i = javaClass.getName().lastIndexOf('.');
             String packageName = i != -1 ? javaClass.getName().substring(0, i) : "";
             String className = javaClass.getSimpleName();
-            IRubyObject ret = block.yieldSpecific(context, runtime.newString(packageName), runtime.newString(className));
+            IRubyObject ret = block.yieldSpecific(context, newString(context, packageName), newString(context, className));
             constant = ret.convertToString().asJavaString();
         } else {
             constant = javaClass.getSimpleName();
         }
 
         try {
-            return Java.setProxyClass(runtime, target, constant, javaClass);
+            return Java.setProxyClass(context.runtime, target, constant, javaClass);
         } catch (NameError e) {
             String message = "cannot import Java class " + javaClass.getName() + " as '" + constant + "' : " + e.getException().getMessage();
-            throw (RaiseException) runtime.newNameError(message, constant).initCause(e);
+            throw (RaiseException) context.runtime.newNameError(message, constant).initCause(e);
         }
     }
 

@@ -83,6 +83,9 @@ import static jnr.constants.platform.TCP.TCP_KEEPIDLE;
 import static jnr.constants.platform.TCP.TCP_KEEPINTVL;
 import static jnr.constants.platform.TCP.TCP_NODELAY;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.newSymbol;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.Helpers.extractExceptionOnlyArg;
 import static org.jruby.runtime.Helpers.throwErrorFromException;
 import static com.headius.backport9.buffer.Buffers.flipBuffer;
@@ -226,7 +229,6 @@ public class RubyBasicSocket extends RubyIO {
 
         Channel channel = getChannel();
 
-        Ruby runtime = context.runtime;
         if (channel instanceof DatagramChannel) {
             try {
                 DatagramChannel dgram = (DatagramChannel) channel;
@@ -236,7 +238,7 @@ public class RubyBasicSocket extends RubyIO {
                 flipBuffer(buffer);
                 bytes = new ByteList(buffer.array(), buffer.position(), buffer.limit());
             } catch (Exception e) {
-                throwErrorFromException(runtime, e);
+                throwErrorFromException(context.runtime, e);
                 return null; // not reached
             }
         } else {
@@ -249,7 +251,7 @@ public class RubyBasicSocket extends RubyIO {
             return str;
         }
 
-        return RubyString.newString(runtime, bytes);
+        return newString(context, bytes);
     }
 
     @JRubyMethod(required = 1, optional = 3, checkArity = false)
@@ -303,43 +305,41 @@ public class RubyBasicSocket extends RubyIO {
             bytes = doReadNonblock(context, buffer, exception);
         }
 
-        return handleReturnBytes(runtime, bytes, str, "recvfrom(2)", exception);
+        return handleReturnBytes(context, bytes, str, "recvfrom(2)", exception);
     }
 
-    private IRubyObject handleReturnBytes(Ruby runtime, ByteList bytes, IRubyObject str, String exMessage, boolean exception) {
+    private IRubyObject handleReturnBytes(ThreadContext context, ByteList bytes, IRubyObject str, String exMessage, boolean exception) {
         if (bytes == null) {
-            if (!exception) return runtime.newSymbol("wait_readable");
-            throw runtime.newErrnoEAGAINReadableError(exMessage);
+            if (!exception) return newSymbol(context, "wait_readable");
+            throw context.runtime.newErrnoEAGAINReadableError(exMessage);
         }
 
-        if (str != null && str != runtime.getNil()) {
+        if (str != null && str != context.nil) {
             str = str.convertToString();
             ((RubyString) str).setValue(bytes);
             return str;
         }
 
-        return RubyString.newString(runtime, bytes);
+        return newString(context, bytes);
     }
 
     @Override
     @JRubyMethod
     public IRubyObject read_nonblock(ThreadContext context, IRubyObject arg0) {
-        Ruby runtime = context.runtime;
         Channel channel = getChannel();
 
         if (!(channel instanceof DatagramChannel)) {
             return super.read_nonblock(context, arg0);
         }
 
-        if (!ArgsUtil.getOptionsArg(runtime, arg0).isNil()) throw runtime.newArgumentError(0, 1, 3);
+        if (!ArgsUtil.getOptionsArg(context.runtime, arg0).isNil()) throw argumentError(context, 0, 1, 3);
 
-        return readNonblockCommon(context, runtime, (DatagramChannel) channel, arg0, context.nil, true);
+        return readNonblockCommon(context, (DatagramChannel) channel, arg0, context.nil, true);
     }
 
     @Override
     @JRubyMethod
     public IRubyObject read_nonblock(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        Ruby runtime = context.runtime;
         Channel channel = getChannel();
 
         if (!(channel instanceof DatagramChannel)) {
@@ -349,7 +349,7 @@ public class RubyBasicSocket extends RubyIO {
         boolean exception = true;
         IRubyObject str = context.nil;
 
-        IRubyObject maybeHash = ArgsUtil.getOptionsArg(runtime, arg1);
+        IRubyObject maybeHash = ArgsUtil.getOptionsArg(context.runtime, arg1);
 
         if (maybeHash.isNil()) {
             str = arg1;
@@ -357,13 +357,12 @@ public class RubyBasicSocket extends RubyIO {
             exception = ArgsUtil.extractKeywordArg(context, "exception", maybeHash) != context.fals;
         }
 
-        return readNonblockCommon(context, runtime, (DatagramChannel) channel, arg0, str, exception);
+        return readNonblockCommon(context, (DatagramChannel) channel, arg0, str, exception);
     }
 
     @Override
     @JRubyMethod
     public IRubyObject read_nonblock(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        Ruby runtime = context.runtime;
         Channel channel = getChannel();
 
         if (!(channel instanceof DatagramChannel)) {
@@ -372,16 +371,16 @@ public class RubyBasicSocket extends RubyIO {
 
         boolean exception = true;
 
-        IRubyObject maybeHash = ArgsUtil.getOptionsArg(runtime, arg2);
+        IRubyObject maybeHash = ArgsUtil.getOptionsArg(context.runtime, arg2);
 
         if (!maybeHash.isNil()) {
             exception = ArgsUtil.extractKeywordArg(context, "exception", maybeHash) != context.fals;
         }
 
-        return readNonblockCommon(context, runtime, (DatagramChannel) channel, arg0, arg1, exception);
+        return readNonblockCommon(context, (DatagramChannel) channel, arg0, arg1, exception);
     }
 
-    private IRubyObject readNonblockCommon(ThreadContext context, Ruby runtime, DatagramChannel channel, IRubyObject length, IRubyObject str, boolean exception) {
+    private IRubyObject readNonblockCommon(ThreadContext context, DatagramChannel channel, IRubyObject length, IRubyObject str, boolean exception) {
         final ByteBuffer buffer = ByteBuffer.allocate(RubyNumeric.fix2int(length));
 
         ByteList bytes;
@@ -389,7 +388,7 @@ public class RubyBasicSocket extends RubyIO {
         try {
             DatagramChannel dgram = channel;
 
-            getOpenFile().setBlocking(runtime, false);
+            getOpenFile().setBlocking(context.runtime, false);
 
             dgram.receive(buffer);
 
@@ -400,16 +399,16 @@ public class RubyBasicSocket extends RubyIO {
                 bytes = new ByteList(buffer.array(), buffer.position(), buffer.limit());
             }
         } catch (Exception ex) {
-            if (exception) throwErrorFromException(runtime, ex);
+            if (exception) throwErrorFromException(context.runtime, ex);
             return context.nil;
         } finally {
             if (Platform.IS_LINUX) {
                 // unset nonblocking to emulate recv(... MSG_DONTWAIT) leaving it blocking
-                getOpenFile().setBlocking(runtime, true);
+                getOpenFile().setBlocking(context.runtime, true);
             }
         }
 
-        return handleReturnBytes(runtime, bytes, str, "read_nonblock", exception);
+        return handleReturnBytes(context, bytes, str, "read_nonblock", exception);
     }
 
     @JRubyMethod
@@ -621,7 +620,7 @@ public class RubyBasicSocket extends RubyIO {
         }
 
         UnixSocketAddress unix = getUnixSocketAddress();
-        return Addrinfo.unix(context, runtime.getClass("Addrinfo"), runtime.newString(unix.path()));
+        return Addrinfo.unix(context, runtime.getClass("Addrinfo"), newString(context, unix.path()));
     }
 
     @JRubyMethod
@@ -638,7 +637,7 @@ public class RubyBasicSocket extends RubyIO {
         UnixSocketAddress unix = getUnixRemoteSocket();
 
          if (unix != null) {
-             return Addrinfo.unix(context, runtime.getClass("Addrinfo"), runtime.newString(unix.path()));
+             return Addrinfo.unix(context, runtime.getClass("Addrinfo"), newString(context, unix.path()));
          }
 
          throw runtime.newErrnoENOTCONNError();
@@ -971,20 +970,20 @@ public class RubyBasicSocket extends RubyIO {
     protected IRubyObject addrFor(ThreadContext context, InetSocketAddress addr, boolean reverse) {
         final Ruby runtime = context.runtime;
         boolean ipV6 = addr.getAddress() instanceof Inet6Address;
-        IRubyObject ret0 = runtime.newString(ipV6 ? "AF_INET6" : "AF_INET");
+        IRubyObject ret0 = newString(context, ipV6 ? "AF_INET6" : "AF_INET");
         IRubyObject ret1 = runtime.newFixnum(addr.getPort());
         IRubyObject ret2;
         String hostAddress = addr.getAddress().getHostAddress();
         if (!reverse || doNotReverseLookup(context)) {
             ret2 = ipV6 && hostAddress.equals("0:0:0:0:0:0:0:0") ?
-                    runtime.newString("::") :
-                    runtime.newString(hostAddress);
+                    newString(context, "::") :
+                    newString(context, hostAddress);
         } else {
-            ret2 = runtime.newString(addr.getHostName());
+            ret2 = newString(context, addr.getHostName());
         }
         IRubyObject ret3 = ipV6 && hostAddress.equals("0:0:0:0:0:0:0:0") ?
-                runtime.newString("::") :
-                runtime.newString(hostAddress);
+                newString(context, "::") :
+                newString(context, hostAddress);
 
         return RubyArray.newArray(runtime, ret0, ret1, ret2, ret3);
     }

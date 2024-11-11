@@ -111,6 +111,7 @@ import static org.jruby.anno.FrameField.SELF;
 import static org.jruby.anno.FrameField.VISIBILITY;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
@@ -1206,7 +1207,7 @@ public class RubyKernel {
         file = runtime.getLoadService().getPathForLocation(file);
 
         RubyClass fileClass = runtime.getFile();
-        IRubyObject realpath = RubyFile.realpath(context, fileClass, runtime.newString(file));
+        IRubyObject realpath = RubyFile.realpath(context, fileClass, newString(context, file));
         IRubyObject dirname = RubyFile.dirname(context, fileClass, realpath);
         IRubyObject absoluteFeature = RubyFile.expand_path(context, fileClass, relativePath, dirname);
 
@@ -1590,7 +1591,7 @@ public class RubyKernel {
             proc = RubyProc.newProc(context.runtime, block, Block.Type.PROC);
         } else if (argc == 2) {
             if (args[1] instanceof RubyString) {
-                RubyString rubyString = context.runtime.newString("proc {");
+                RubyString rubyString = newString(context, "proc {");
                 RubyString s = rubyString.catWithCodeRange(((RubyString) args[1])).cat('}');
                 proc = (RubyProc) evalCommon(context, recv, new IRubyObject[] { s });
             } else {
@@ -1885,7 +1886,7 @@ public class RubyKernel {
             length = newPos;
         }
         ByteList buf = new ByteList(out, 0, length, runtime.getDefaultExternalEncoding(), false);
-        return RubyString.newString(runtime, buf);
+        return newString(context, buf);
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)
@@ -2167,8 +2168,8 @@ public class RubyKernel {
 
         __FILE__ = runtime.getLoadService().getPathForLocation(__FILE__);
 
-        RubyString path = RubyFile.expandPathInternal(context, RubyString.newString(runtime, __FILE__), null, false, true);
-        return RubyString.newString(runtime, RubyFile.dirname(context, path.asJavaString()));
+        RubyString path = RubyFile.expandPathInternal(context, newString(context, __FILE__), null, false, true);
+        return newString(context, RubyFile.dirname(context, path.asJavaString()));
     }
 
     @JRubyMethod(module = true)

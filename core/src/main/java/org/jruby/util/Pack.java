@@ -52,6 +52,7 @@ import org.jruby.util.io.EncodingUtils;
 
 import static com.headius.backport9.buffer.Buffers.markBuffer;
 import static com.headius.backport9.buffer.Buffers.positionBuffer;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.TypeConverter.toFloat;
@@ -1611,7 +1612,7 @@ public class Pack {
     }
 
     private static IRubyObject appendOrYield(ThreadContext context, Block block, RubyArray result, ByteList item, int mode) {
-        RubyString itemStr = RubyString.newString(context.runtime, item);
+        RubyString itemStr = newString(context, item);
         if (mode == UNPACK_1) {
             return itemStr;
         } else {

@@ -55,6 +55,7 @@ import org.jruby.util.io.EncodingUtils;
 
 import java.io.IOException;
 
+import static org.jruby.api.Create.newString;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 /**
@@ -80,11 +81,8 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
 
     @JRubyMethod(name = "open", required = 1, optional = 3, checkArity = false, meta = true)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        int argc = Arity.checkArgumentCount(context, args, 1, 4);
-
-        Ruby runtime = recv.getRuntime();
-        
-        args[0] = Helpers.invoke(context, runtime.getFile(), "open", args[0], runtime.newString("wb"));
+        Arity.checkArgumentCount(context, args, 1, 4);
+        args[0] = Helpers.invoke(context, context.runtime.getFile(), "open", args[0], newString(context, "wb"));
         
         JZlibRubyGzipWriter gzio = newInstance(recv, args);
         

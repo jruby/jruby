@@ -43,6 +43,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.castAsRange;
+import static org.jruby.api.Error.argumentError;
 
 /** Implementation of the Comparable module.
  *
@@ -70,7 +71,7 @@ public class RubyComparable {
         if (val instanceof RubyFixnum fixnum) return Integer.compare(RubyNumeric.fix2int(fixnum), 0);
         if (val instanceof RubyBignum bignum) return bignum.signum() == -1 ? -1 : 1;
 
-        RubyFixnum zero = RubyFixnum.zero(context.runtime);
+        var zero = RubyFixnum.zero(context.runtime);
 
         if (op_gt.call(context, val, val, zero).isTrue()) return 1;
         if (op_lt.call(context, val, val, zero).isTrue()) return -1;
@@ -123,7 +124,7 @@ public class RubyComparable {
      *
      */
     public static IRubyObject invcmp(final ThreadContext context, ThreadContext.RecursiveFunctionEx<IRubyObject> func, IRubyObject recv, IRubyObject other) {
-        IRubyObject result = context.safeRecurse(func, recv, other, "<=>", true);
+        var result = context.safeRecurse(func, recv, other, "<=>", true);
 
         if (result.isNil()) return result;
         return RubyFixnum.newFixnum(context.runtime, -cmpint(context, result, recv, other));
@@ -145,7 +146,7 @@ public class RubyComparable {
     private static IRubyObject callCmpMethod(final ThreadContext context, final IRubyObject recv, final IRubyObject other, IRubyObject returnValueOnError) {
         if (recv == other) return context.tru;
 
-        IRubyObject result = context.safeRecurse(
+        var result = context.safeRecurse(
                 (ctx, obj, self, recur) -> recur ? ctx.nil : sites(ctx).op_cmp.call(ctx, self, self, obj),
                 other, recv, "<=>", true);
 
@@ -161,7 +162,7 @@ public class RubyComparable {
     // <=> may return nil in many circumstances, e.g. 3 <=> NaN
     @JRubyMethod(name = ">")
     public static RubyBoolean op_gt(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        IRubyObject result = sites(context).op_cmp.call(context, recv, recv, other);
+        var result = sites(context).op_cmp.call(context, recv, recv, other);
 
         if (result.isNil()) cmperr(recv, other);
 
@@ -173,7 +174,7 @@ public class RubyComparable {
      */
     @JRubyMethod(name = ">=")
     public static RubyBoolean op_ge(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        IRubyObject result = sites(context).op_cmp.call(context, recv, recv, other);
+        var result = sites(context).op_cmp.call(context, recv, recv, other);
 
         if (result.isNil()) cmperr(recv, other);
 
@@ -185,15 +186,11 @@ public class RubyComparable {
      */
     @JRubyMethod(name = "<")
     public static RubyBoolean op_lt(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        IRubyObject result = sites(context).op_cmp.call(context, recv, recv, other);
-
-        if (result.isNil()) cmperr(recv, other);
-
-        return asBoolean(context, cmpint(context, result, recv, other) < 0);
+        return op_lt(context, sites(context).op_cmp, recv, other);
     }
 
     public static RubyBoolean op_lt(ThreadContext context, CallSite cmp, IRubyObject recv, IRubyObject other) {
-        IRubyObject result = cmp.call(context, recv, recv, other);
+        var result = cmp.call(context, recv, recv, other);
 
         if (result.isNil()) cmperr(recv, other);
 
@@ -205,7 +202,7 @@ public class RubyComparable {
      */
     @JRubyMethod(name = "<=")
     public static RubyBoolean op_le(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        IRubyObject result = sites(context).op_cmp.call(context, recv, recv, other);
+        var result = sites(context).op_cmp.call(context, recv, recv, other);
 
         if (result.isNil()) cmperr(recv, other);
 
@@ -222,11 +219,11 @@ public class RubyComparable {
 
     @JRubyMethod(name = "clamp")
     public static IRubyObject clamp(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        RubyRange range = castAsRange(context, arg);
-        IRubyObject min = range.begin(context);
-        IRubyObject max = range.end(context);
+        var range = castAsRange(context, arg);
+        var min = range.begin(context);
+        var max = range.end(context);
 
-        if (!max.isNil() && range.isExcludeEnd()) throw context.runtime.newArgumentError("cannot clamp with an exclusive range");
+        if (!max.isNil() && range.isExcludeEnd()) throw argumentError(context, "cannot clamp with an exclusive range");
 
         return clamp(context, recv, min, max);
     }

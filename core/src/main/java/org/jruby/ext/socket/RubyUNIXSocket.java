@@ -68,6 +68,7 @@ import java.nio.channels.Channel;
 
 import static com.headius.backport9.buffer.Buffers.flipBuffer;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 
 
@@ -112,15 +113,15 @@ public class RubyUNIXSocket extends RubyBasicSocket {
     public IRubyObject addr(ThreadContext context) {
         final Ruby runtime = context.runtime;
 
-        return runtime.newArray( runtime.newString("AF_UNIX"),  RubyString.newEmptyString(runtime) );
+        return runtime.newArray(newString(context, "AF_UNIX"),  RubyString.newEmptyString(runtime) );
     }
 
     @JRubyMethod
     public IRubyObject peeraddr(ThreadContext context) {
         final Ruby runtime = context.runtime;
         final String _path = getUnixRemoteSocket().path();
-        final RubyString path = (_path == null) ? RubyString.newEmptyString(runtime) : runtime.newString(_path);
-        return runtime.newArray( runtime.newString("AF_UNIX"), path );
+        final RubyString path = _path == null ? RubyString.newEmptyString(runtime) : newString(context, _path);
+        return runtime.newArray( newString(context, "AF_UNIX"), path );
     }
 
     @JRubyMethod(name = "recvfrom", required = 1, optional = 1, checkArity = false)

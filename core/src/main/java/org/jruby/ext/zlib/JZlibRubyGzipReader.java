@@ -63,6 +63,7 @@ import java.util.List;
 import static org.jruby.RubyIO.PARAGRAPH_SEPARATOR;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.castAsString;
+import static org.jruby.api.Create.newString;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 /**
@@ -94,9 +95,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
     public static IRubyObject open(final ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Arity.checkArgumentCount(context, args, 1, 2);
 
-        Ruby runtime = recv.getRuntime();
-
-        args[0] = Helpers.invoke(context, runtime.getFile(), "open", args[0], runtime.newString("rb"));
+        args[0] = Helpers.invoke(context, context.runtime.getFile(), "open", args[0], newString(context, "rb"));
 
         JZlibRubyGzipReader gzio = newInstance(recv, args);
 
@@ -108,8 +107,6 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
     }
 
     public IRubyObject initialize(ThreadContext context, IRubyObject stream) {
-        Ruby runtime = context.runtime;
-
         realIo = stream;
 
         try {
@@ -122,13 +119,12 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
             io.readHeader();
 
         } catch (IOException e) {
-            RaiseException re = RubyZlib.newGzipFileError(runtime, "not in gzip format");
+            RaiseException re = RubyZlib.newGzipFileError(context.runtime, "not in gzip format");
 
             byte[] input = io.getAvailIn();
             if (input != null && input.length > 0) {
                 RubyException rubye = re.getException();
-                rubye.setInstanceVariable("@input", 
-                        RubyString.newString(runtime, new ByteList(input, 0, input.length)));
+                rubye.setInstanceVariable("@input", newString(context, new ByteList(input, 0, input.length)));
             }
 
             throw re;
@@ -137,7 +133,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         position = 0;
         line = 0;
         bufferedStream = new PushbackInputStream(new BufferedInputStream(io), 512);
-        mtime = org.jruby.RubyTime.newTime(runtime, io.getModifiedTime() * 1000);
+        mtime = org.jruby.RubyTime.newTime(context.runtime, io.getModifiedTime() * 1000);
 
         return this;
     }
@@ -516,18 +512,16 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
     @JRubyMethod(name = "getc")
     public IRubyObject getc(ThreadContext context) {
-        Ruby runtime = context.runtime;
-
         try {
             int value = bufferedStream.read();
-            if (value == -1) return runtime.getNil();
+            if (value == -1) return context.nil;
 
             position++;
             // TODO: must handle encoding. Move encoding handling methods to util class from RubyIO and use it.
             // TODO: StringIO needs a love, too.
-            return runtime.newString(String.valueOf((char) (value & 0xFF)));
+            return newString(context, String.valueOf((char) (value & 0xFF)));
         } catch (IOException ioe) {
-            throw runtime.newIOErrorFromException(ioe);
+            throw context.runtime.newIOErrorFromException(ioe);
         }
     }
 

@@ -51,6 +51,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.SafePropertyAccessor;
 
+import static org.jruby.api.Create.newString;
+
 @JRubyModule(name="Config")
 public class RbConfigLibrary implements Library {
     // Ruby's designation for some platforms, minus version numbers in some cases
@@ -222,7 +224,7 @@ public class RbConfigLibrary implements Library {
         normalizedHome = getNormalizedHome(runtime);
 
         // Ruby installed directory.
-        rbConfig.setConstant("TOPDIR", RubyString.newString(runtime, normalizedHome));
+        rbConfig.setConstant("TOPDIR", newString(context, normalizedHome));
         RubyString destDir = RubyString.newEmptyString(runtime);
         // DESTDIR on make install.
         rbConfig.setConstant("DESTDIR", destDir);
@@ -230,7 +232,7 @@ public class RbConfigLibrary implements Library {
         // The hash configurations stored.
         final RubyHash CONFIG = new RubyHash(runtime, 48);
 
-        CONFIG.fastASetCheckString(runtime, runtime.newString("DESTDIR"), destDir);
+        CONFIG.fastASetCheckString(runtime, newString(context, "DESTDIR"), destDir);
 
         String[] versionParts;
         versionParts = Constants.RUBY_VERSION.split("\\.");
@@ -507,8 +509,7 @@ public class RbConfigLibrary implements Library {
     }
 
     private static void setConfig(ThreadContext context, RubyHash hash, String key, String value) {
-        final Ruby runtime = context.runtime;
-        hash.fastASetCheckString(runtime, runtime.newString(key), runtime.newString(value));
+        hash.fastASetCheckString(context.runtime, newString(context, key), newString(context, value));
     }
 
     public static String jrubyScript() {

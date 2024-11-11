@@ -46,6 +46,7 @@ import java.lang.reflect.InvocationTargetException;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Create.newString;
 import static org.jruby.javasupport.JavaUtil.convertJavaArrayToRuby;
 import static org.jruby.javasupport.JavaUtil.convertJavaToUsableRubyObject;
 import static org.jruby.javasupport.JavaUtil.inspectObject;
@@ -642,7 +643,7 @@ public abstract class JavaUtil {
             // NOTE: might need work but showing type here is a bit confusing as
             // java.util.TimeZone's impl type is Java::SunUtilCalendar::ZoneInfo
             java.util.TimeZone tz = unwrapIfJavaObject(self);
-            return RubyString.newString(context.runtime, tz.getID());
+            return newString(context, tz.getID());
             // also the toString format is very verbose to use:
             // sun.util.calendar.ZoneInfo[id=\"Europe/Prague\",offset=3600000,dstSavings=3600000,useDaylight=true,transitions=141,lastRule=java.util.SimpleTimeZone[...]]
         }

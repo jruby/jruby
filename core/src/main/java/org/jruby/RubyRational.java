@@ -53,6 +53,7 @@ import org.jruby.util.Numeric;
 import org.jruby.util.TypeConverter;
 
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ast.util.ArgsUtil.hasExceptionOption;
 import static org.jruby.runtime.Helpers.invokedynamic;
@@ -1525,7 +1526,7 @@ public class RubyRational extends RubyNumeric {
             RubyString ifp = (RubyString)a.eltInternal(0);
             IRubyObject exp = a.size() != 2 ? nil : a.eltInternal(1);
             
-            a = ifp.split(context, runtime.newString("."));
+            a = ifp.split(context, newString(context, "."));
             IRubyObject ip = a.eltInternal(0);
             IRubyObject fp = a.size() != 2 ? nil : a.eltInternal(1);
             

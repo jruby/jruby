@@ -59,6 +59,7 @@ import org.joni.Regex;
 import org.joni.Region;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.JRubyAPI;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.JumpException;
@@ -94,6 +95,7 @@ import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.StringSupport.CR_7BIT;
@@ -1375,7 +1377,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     private RubyString multiplyByteList(ThreadContext context, IRubyObject arg) {
         long longLen = numericToLong(context, arg);
-        if (longLen < 0) throw context.runtime.newArgumentError("negative argument");
+        if (longLen < 0) throw argumentError(context, "negative argument");
         if (size() == 0) return (RubyString) dup();
 
         int len = checkInt(context, longLen);
@@ -6812,7 +6814,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return this;
     }
 
-    @JRubyMethod
+    @JRubyMethod @JRubyAPI
     public IRubyObject freeze(ThreadContext context) {
         if (isChilled()) flags &= ~CHILLED_F;
         if (isFrozen()) return this;

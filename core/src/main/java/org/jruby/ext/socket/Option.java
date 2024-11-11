@@ -25,6 +25,7 @@ import java.util.Locale;
 
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.checkToInteger;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 
 public class Option extends RubyObject {
@@ -81,7 +82,7 @@ public class Option extends RubyObject {
 
     @JRubyMethod
     public IRubyObject data(ThreadContext context) {
-        return RubyString.newString(context.runtime, data).freeze(context);
+        return newString(context, data).freeze(context);
     }
 
     // rb_sockopt_inspect
@@ -118,7 +119,7 @@ public class Option extends RubyObject {
             .append(optionValue())
             .append('>');
 
-        return context.runtime.newString(buf.toString());
+        return newString(context, buf.toString());
     }
 
     private String noPrefix(ProtocolFamily family) {
@@ -249,7 +250,7 @@ public class Option extends RubyObject {
 
     @JRubyMethod
     public IRubyObject to_s(ThreadContext context) {
-        return RubyString.newString(context.runtime, data);
+        return newString(context, data);
     }
 
     private static void validateDataSize(ThreadContext context, ByteList data, int size) {

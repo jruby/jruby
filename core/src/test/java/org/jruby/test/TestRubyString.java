@@ -35,7 +35,10 @@ import org.jruby.RubyArray;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.util.ByteList;
+
+import static org.jruby.api.Create.newString;
 
 /**
  * Test case for functionality in RubyArray
@@ -62,11 +65,12 @@ public class TestRubyString extends Base {
     }
 
     public void testSplit() throws RaiseException {
-        RubyString str = RubyString.newString(runtime, "JRuby is so awesome!");
-        RubyArray res = str.split(runtime.newString(" "));
+        ThreadContext context = runtime.getCurrentContext();
+        RubyString str = newString(context, "JRuby is so awesome!");
+        RubyArray res = str.split(newString(context, " "));
         assertEquals(4, res.size());
         assertEquals("JRuby", res.get(0));
-        res = str.split(runtime.newString(" "), 2);
+        res = str.split(newString(context, " "), 2);
         assertEquals(2, res.size());
         assertEquals("JRuby", res.get(0));
         assertEquals("is so awesome!", res.get(1));

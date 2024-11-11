@@ -90,6 +90,7 @@ import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.Type;
 
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ir.operands.UndefinedValue.UNDEFINED;
 import static org.jruby.runtime.Block.Type.LAMBDA;
@@ -961,7 +962,7 @@ public class IRRuntimeHelpers {
         public void raiseIfError(ThreadContext context) {
             if (invalidKwargs != null) {
                 //System.out.println("RAISEEEEE: " + context.getFile() + ":" + context.getLine());
-                RubyString errorMessage = (RubyString) invalidKwargs.join(context, context.runtime.newString(", "));
+                RubyString errorMessage = (RubyString) invalidKwargs.join(context, newString(context, ", "));
                 String prefix = invalidKwargs.size() == 1 ? "unknown keyword: " : "unknown keywords: ";
 
                 throw context.runtime.newArgumentError(prefix + errorMessage);
@@ -2504,7 +2505,7 @@ public class IRRuntimeHelpers {
         String file = currScope.getFile();
 
         // FIXME: Not very efficient to do all this every time
-        return context.runtime.newString(file);
+        return newString(context, file);
     }
 
     @JIT

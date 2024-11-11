@@ -69,6 +69,8 @@ import static org.jruby.RubyFile.filePathConvert;
 import static org.jruby.RubyString.UTF8;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.io.EncodingUtils.newExternalStringWithEncoding;
 
@@ -325,7 +327,7 @@ public class RubyDir extends RubyObject implements Closeable {
         String base = options.base;
 
         if (base != null && !base.isEmpty() && !(JRubyFile.createResource(context, base).exists())){
-            dirs = new ArrayList<ByteList>();
+            dirs = new ArrayList<>();
         } else {
             IRubyObject tmp = args[0].checkArrayType();
             String dir = base == null || base.isEmpty() ? runtime.getCurrentDirectory() : base;
@@ -339,10 +341,10 @@ public class RubyDir extends RubyObject implements Closeable {
 
         if (block.isGiven()) {
             for (int i = 0; i < dirs.size(); i++) {
-                block.yield(context, RubyString.newString(runtime, dirs.get(i)));
+                block.yield(context, newString(context, dirs.get(i)));
             }
 
-            return runtime.getNil();
+            return context.nil;
         }
 
         return asRubyStringList(runtime, dirs);
@@ -444,8 +446,8 @@ public class RubyDir extends RubyObject implements Closeable {
         Ruby runtime = context.runtime;
         RubyHash env = context.runtime.getENV();
 
-        if (env.op_aref(context, runtime.newString("LOG_DIR")).isNil() &&
-                env.op_aref(context, runtime.newString("HOME")).isNil()){
+        if (env.op_aref(context, newString(context, "LOG_DIR")).isNil() &&
+                env.op_aref(context, newString(context, "HOME")).isNil()){
             throw runtime.newArgumentError("HOME/LOGDIR not set");
         }
 
@@ -1168,20 +1170,19 @@ public class RubyDir extends RubyObject implements Closeable {
     private static final ByteList user_home = new ByteList(new byte[] {'u','s','e','r','.','h','o','m','e'}, false);
 
     static RubyString getHomeDirectoryPath(ThreadContext context, IRubyObject home) {
-        Ruby runtime = context.runtime;
         RubyHash env = context.runtime.getENV();
 
         if (home == null || home == context.nil) {
-            IRubyObject ENV_JAVA = runtime.getObject().getConstant("ENV_JAVA");
-            home = ENV_JAVA.callMethod(context, "[]", RubyString.newString(runtime, user_home, UTF8));
+            IRubyObject ENV_JAVA = context.runtime.getObject().getConstant("ENV_JAVA");
+            home = ENV_JAVA.callMethod(context, "[]", newString(context, user_home, UTF8));
         }
 
         if (home == null || home == context.nil) {
-            home = env.op_aref(context, runtime.newString("LOGDIR"));
+            home = env.op_aref(context, newString(context, "LOGDIR"));
         }
 
         if (home == null || home == context.nil) {
-            throw runtime.newArgumentError("user.home/LOGDIR not set");
+            throw argumentError(context, "user.home/LOGDIR not set");
         }
 
         return (RubyString) home.dup();
@@ -1225,7 +1226,7 @@ public class RubyDir extends RubyObject implements Closeable {
             case 1:
                 return chdir(context, recv, args[0], block);
             default:
-                throw Error.argumentError(context, args.length, 0, 1);
+                throw argumentError(context, args.length, 0, 1);
         }
     }
 

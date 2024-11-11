@@ -50,6 +50,7 @@ import org.jruby.util.ClasspathLauncher;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newString;
 import static org.jruby.util.URLUtil.getPath;
 
 /**
@@ -148,11 +149,11 @@ public class JRubyUtilLibrary implements Library {
             while (e.hasMoreElements()) {
                 final URL entry = e.nextElement();
                 if (path) {
-                    resources.append( RubyString.newString(runtime, getPath(entry)) );
+                    resources.append( newString(context, getPath(entry)) );
                 } else if (raw) {
                     resources.append( Java.getInstance(runtime, entry) );
                 } else {
-                    resources.append( RubyString.newString(runtime, entry.toString()) ); // toExternalForm
+                    resources.append( newString(context, entry.toString()) ); // toExternalForm
                 }
             }
         } catch (IOException ex) {
@@ -163,27 +164,24 @@ public class JRubyUtilLibrary implements Library {
 
     @JRubyMethod(meta = true) // for RubyGems' JRuby defaults
     public static IRubyObject classpath_launcher(ThreadContext context, IRubyObject recv) {
-        final Ruby runtime = context.runtime;
-        String launcher = runtime.getInstanceConfig().getEnvironment().get("RUBY");
-        if ( launcher == null ) launcher = ClasspathLauncher.jrubyCommand(runtime);
-        return runtime.newString(launcher);
+        String launcher = context.runtime.getInstanceConfig().getEnvironment().get("RUBY");
+        if ( launcher == null ) launcher = ClasspathLauncher.jrubyCommand(context.runtime);
+        return newString(context, launcher);
     }
 
     @JRubyMethod(name = "extra_gem_paths", meta = true) // used from RGs' JRuby defaults
     public static IRubyObject extra_gem_paths(ThreadContext context, IRubyObject recv) {
-        final Ruby runtime = context.runtime;
-        final List<String> extraGemPaths = runtime.getInstanceConfig().getExtraGemPaths();
+        final List<String> extraGemPaths = context.runtime.getInstanceConfig().getExtraGemPaths();
         IRubyObject[] extra_gem_paths = new IRubyObject[extraGemPaths.size()];
         int i = 0; for (String gemPath : extraGemPaths) {
-            extra_gem_paths[i++] = runtime.newString(gemPath);
+            extra_gem_paths[i++] = newString(context, gemPath);
         }
-        return RubyArray.newArrayNoCopy(runtime, extra_gem_paths);
+        return RubyArray.newArrayNoCopy(context.runtime, extra_gem_paths);
     }
 
     @JRubyMethod(name = "current_directory", meta = true) // used from JRuby::ProcessManager
     public static IRubyObject current_directory(ThreadContext context, IRubyObject recv) {
-        final Ruby runtime = context.runtime;
-        return runtime.newString(runtime.getCurrentDirectory());
+        return newString(context, context.runtime.getCurrentDirectory());
     }
 
     @JRubyMethod(name = "set_last_exit_status", meta = true) // used from JRuby::ProcessManager

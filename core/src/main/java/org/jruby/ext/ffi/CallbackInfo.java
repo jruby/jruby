@@ -42,6 +42,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Convert.castAsArray;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -177,7 +178,7 @@ public class CallbackInfo extends Type {
             }
         }
         sb.append(" ], ").append(returnType.toString().toLowerCase()).append('>');
-        return context.runtime.newString(sb.toString());
+        return newString(context, sb.toString());
     }
     @Override
     public final String toString() {

@@ -12,6 +12,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Convert.castAsClass;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 
 
@@ -58,7 +59,7 @@ public final class StructByValue extends Type {
 
     @JRubyMethod(name = "to_s")
     public final IRubyObject to_s(ThreadContext context) {
-        return RubyString.newString(context.runtime, String.format("#<FFI::StructByValue:%s>", structClass.getName()));
+        return newString(context, String.format("#<FFI::StructByValue:%s>", structClass.getName()));
     }
 
     @JRubyMethod(name = "layout")
