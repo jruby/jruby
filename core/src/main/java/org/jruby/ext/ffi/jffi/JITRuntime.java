@@ -428,6 +428,7 @@ public final class JITRuntime {
     private static final PointerParameterStrategy DIRECT_MEMORY_IO = new MemoryIOParameterStrategy(true);
     private static final PointerParameterStrategy HEAP_MEMORY_IO = new MemoryIOParameterStrategy(false);
     private static final PointerParameterStrategy NIL_POINTER_STRATEGY = new NilPointerParameterStrategy();
+    private static final PointerParameterStrategy INTEGER_POINTER_STRATEGY = new IntegerPointerParameterStrategy();
     private static final PointerParameterStrategy HEAP_STRING_POINTER_STRATEGY = new StringParameterStrategy(false, false);
     private static final PointerParameterStrategy TRANSIENT_STRING_PARAMETER_STRATEGY = new StringParameterStrategy(false, true);
     private static final PointerParameterStrategy DIRECT_STRING_PARAMETER_STRATEGY = new StringParameterStrategy(true, true);
@@ -441,6 +442,9 @@ public final class JITRuntime {
 
         } else if (parameter instanceof RubyString) {
             return HEAP_STRING_POINTER_STRATEGY;
+
+        } else if (parameter instanceof RubyInteger) {
+            return INTEGER_POINTER_STRATEGY;
 
         }
         
