@@ -36,7 +36,7 @@ public class BSwitchInstr extends MultiBranchInstr {
         super(Operation.B_SWITCH);
 
         // We depend on the jump table being sorted, so ensure that's the case here
-        assert jumpsAreSorted(jumps);
+        assert jumpsAreSorted(jumps) : "jump table must be sorted";
 
         // Switch cases must not have an empty "case" value (GH-6440)
         assert operand != null : "Switch cases must not have an empty \"case\" value";
@@ -108,17 +108,37 @@ public class BSwitchInstr extends MultiBranchInstr {
     public static BSwitchInstr decode(IRReaderDecoder d) {
         try {
             Operand[] jumpOperands = d.decodeOperandArray();
+            Operand operand = d.decodeOperand();
+            Label rubyCase = d.decodeLabel();
+            Label[] targets = d.decodeLabelArray();
+            Label elseTarget = d.decodeLabel();
+            Class<?> expectedClass = Class.forName(d.decodeString());
+
             int[] jumps = new int[jumpOperands.length];
             for (int i = 0; i < jumps.length; i++) {
-                Operand operand = jumpOperands[i];
-                if (operand instanceof Symbol) {
-                    jumps[i] = ((Symbol) operand).getSymbol().getId();
-                } else if (operand instanceof Fixnum) {
-                    jumps[i] = (int) ((Fixnum) operand).getValue();
+                Operand jumpOperand = jumpOperands[i];
+                if (jumpOperand instanceof Symbol) {
+                    jumps[i] = ((Symbol) jumpOperand).getSymbol().getId();
+                } else if (jumpOperand instanceof Fixnum) {
+                    jumps[i] = (int) ((Fixnum) jumpOperand).getValue();
                 }
             }
 
-            return new BSwitchInstr(jumps, jumpOperands, d.decodeOperand(), d.decodeLabel(), d.decodeLabelArray(), d.decodeLabel(), Class.forName(d.decodeString()));
+            int[] sortedJumps = jumps.clone();
+            Arrays.sort(sortedJumps);
+
+            Operand[] sortedJumpOperands = jumpOperands.clone();
+            Label[] sortedTargets = targets.clone();
+
+            for (int i = 0; i < jumps.length; i++) {
+                int oldJump = jumps[i];
+                int newIndex = Arrays.binarySearch(sortedJumps, oldJump);
+
+                sortedJumpOperands[newIndex] = jumpOperands[i];
+                sortedTargets[newIndex] = targets[i];
+            }
+
+            return new BSwitchInstr(sortedJumps, sortedJumpOperands, operand, rubyCase, sortedTargets, elseTarget, expectedClass);
         } catch (Exception e) {
             // should never happen unless encode was corrupted
             Helpers.throwException(e);
