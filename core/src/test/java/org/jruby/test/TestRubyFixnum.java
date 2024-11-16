@@ -2,47 +2,50 @@ package org.jruby.test;
 
 import org.jruby.*;
 
+import org.jruby.runtime.ThreadContext;
 import org.junit.Test;
+
+import static org.jruby.api.Create.newFixnum;
 
 public class TestRubyFixnum extends junit.framework.TestCase {
 
-    private Ruby runtime = Ruby.newInstance();
+    final private ThreadContext context = Ruby.newInstance().getCurrentContext();
 
     @Test
     public void testZero() {
-        RubyFixnum num = runtime.newFixnum(0);
-        assertEquals(new RubyFixnum(runtime, 0), num);
+        RubyFixnum num = newFixnum(context, 0);
+        assertEquals(new RubyFixnum(context.runtime, 0), num);
 
-        num = RubyFixnum.zero(runtime);
-        assertEquals(runtime.newFixnum(0), num);
+        num = RubyFixnum.zero(context.runtime);
+        assertEquals(newFixnum(context, 0), num);
         assertEquals(0, num.getLongValue());
     }
 
     @Test
     public void testMinusOne() {
-        RubyFixnum num = RubyFixnum.minus_one(runtime);
-        assertEquals(runtime.newFixnum(-1), num);
+        RubyFixnum num = RubyFixnum.minus_one(context.runtime);
+        assertEquals(newFixnum(context, -1), num);
         assertEquals(-1, num.getLongValue());
     }
 
     @Test
     public void testOne() {
-        RubyFixnum num = RubyFixnum.one(runtime);
-        assertEquals(runtime.newFixnum(1), num);
+        RubyFixnum num = RubyFixnum.one(context.runtime);
+        assertEquals(newFixnum(context, 1), num);
         assertEquals(1, num.getLongValue());
     }
 
     @Test
     public void testTwo() {
-        RubyFixnum num = RubyFixnum.two(runtime);
-        assertEquals(runtime.newFixnum(2), num);
+        RubyFixnum num = RubyFixnum.two(context.runtime);
+        assertEquals(newFixnum(context, 2), num);
         assertEquals(2, num.getLongValue());
     }
 
     @Test
     public void testFour() {
-        RubyFixnum num = RubyFixnum.four(runtime);
-        assertEquals(runtime.newFixnum(4), num);
+        RubyFixnum num = RubyFixnum.four(context.runtime);
+        assertEquals(newFixnum(context, 4), num);
         assertEquals(4, num.getLongValue());
     }
 

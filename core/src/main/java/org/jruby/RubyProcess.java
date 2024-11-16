@@ -55,8 +55,7 @@ import org.jruby.runtime.ThreadContext;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Create.newString;
-import static org.jruby.api.Create.newSymbol;
+import static org.jruby.api.Create.*;
 import static org.jruby.runtime.Helpers.throwException;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -1332,18 +1331,21 @@ public class RubyProcess {
 
     @Deprecated
     public static IRubyObject gid(IRubyObject recv) {
-        return gid(recv.getRuntime());
+        return gid(recv.getRuntime().getCurrentContext());
     }
     @JRubyMethod(name = "gid", module = true, visibility = PRIVATE)
     public static IRubyObject gid(ThreadContext context, IRubyObject recv) {
-        return gid(context.runtime);
+        return gid(context);
     }
+    public static IRubyObject gid(ThreadContext context) {
+        return Platform.IS_WINDOWS ?
+                RubyFixnum.zero(context.runtime) :
+                newFixnum(context, checkErrno(context.runtime, context.runtime.getPosix().getgid()));
+    }
+
+    @Deprecated
     public static IRubyObject gid(Ruby runtime) {
-        if (Platform.IS_WINDOWS) {
-            // MRI behavior on Windows
-            return RubyFixnum.zero(runtime);
-        }
-        return runtime.newFixnum(checkErrno(runtime, runtime.getPosix().getgid()));
+        return gid(runtime.getCurrentContext());
     }
 
     @JRubyMethod(name = "maxgroups", module = true, visibility = PRIVATE)
@@ -1849,14 +1851,18 @@ public class RubyProcess {
 
     @Deprecated
     public static IRubyObject pid(IRubyObject recv) {
-        return pid(recv.getRuntime());
+        return pid(recv.getRuntime().getCurrentContext());
     }
     @JRubyMethod(name = "pid", module = true, visibility = PRIVATE)
     public static IRubyObject pid(ThreadContext context, IRubyObject recv) {
-        return pid(context.runtime);
+        return pid(context);
     }
+    @Deprecated
     public static IRubyObject pid(Ruby runtime) {
-        return runtime.newFixnum(runtime.getPosix().getpid());
+        return pid(runtime.getCurrentContext());
+    }
+    public static IRubyObject pid(ThreadContext context) {
+        return newFixnum(context, context.runtime.getPosix().getpid());
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE, notImplemented = true)

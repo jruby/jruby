@@ -46,6 +46,7 @@ import java.lang.reflect.InvocationTargetException;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Create.newString;
 import static org.jruby.javasupport.JavaUtil.convertJavaArrayToRuby;
 import static org.jruby.javasupport.JavaUtil.convertJavaToUsableRubyObject;
@@ -420,7 +421,6 @@ public abstract class JavaUtil {
 
         @JRubyMethod(name = "index") // list.index { |val| val > 0 }
         public static IRubyObject index(final ThreadContext context, final IRubyObject self, final Block block) {
-            final Ruby runtime = context.runtime;
             if ( ! block.isGiven() ) { // list.index ... Enumerator.new(self, :index)
                 return enumeratorize(context.runtime, self, "index");
             }
@@ -428,15 +428,15 @@ public abstract class JavaUtil {
             final java.util.List list = unwrapIfJavaObject(self);
             if ( list instanceof java.util.RandomAccess ) {
                 for ( int i = 0; i < list.size(); i++ ) {
-                    IRubyObject ret = block.yield(context, convertJavaToUsableRubyObject(runtime, list.get(i)));
-                    if ( ret.isTrue() ) return runtime.newFixnum(i);
+                    IRubyObject ret = block.yield(context, convertJavaToUsableRubyObject(context.runtime, list.get(i)));
+                    if ( ret.isTrue() ) return newFixnum(context, i);
                 }
             }
             else {
                 int i = 0;
                 for ( Object elem : list ) {
-                    IRubyObject ret = block.yield(context, convertJavaToUsableRubyObject(runtime, elem));
-                    if ( ret.isTrue() ) return runtime.newFixnum(i);
+                    IRubyObject ret = block.yield(context, convertJavaToUsableRubyObject(context.runtime, elem));
+                    if ( ret.isTrue() ) return newFixnum(context, i);
                     i++;
                 }
             }
@@ -447,14 +447,13 @@ public abstract class JavaUtil {
         public static IRubyObject index(final ThreadContext context, final IRubyObject self, final IRubyObject val,
             final Block ignoredBlock) {
 
-            final Ruby runtime = context.runtime;
             final java.util.List list = unwrapIfJavaObject(self);
             if ( list instanceof java.util.RandomAccess ) {
                 for ( int i = 0; i < list.size(); i++ ) {
                     final Object elem = list.get(i);
                     if ( val == elem ||
-                        invokedynamic(context, val, OP_EQUAL, convertJavaToUsableRubyObject(runtime, elem)).isTrue() ) {
-                        return runtime.newFixnum(i);
+                        invokedynamic(context, val, OP_EQUAL, convertJavaToUsableRubyObject(context.runtime, elem)).isTrue() ) {
+                        return newFixnum(context, i);
                     }
                 }
             }
@@ -462,8 +461,8 @@ public abstract class JavaUtil {
                 int i = 0;
                 for ( Object elem : list ) {
                     if ( val == elem ||
-                        invokedynamic(context, val, OP_EQUAL, convertJavaToUsableRubyObject(runtime, elem)).isTrue() ) {
-                        return runtime.newFixnum(i);
+                        invokedynamic(context, val, OP_EQUAL, convertJavaToUsableRubyObject(context.runtime, elem)).isTrue() ) {
+                        return newFixnum(context, i);
                     }
                     i++;
                 }
@@ -482,7 +481,7 @@ public abstract class JavaUtil {
             if ( list instanceof java.util.RandomAccess ) {
                 for ( int i = list.size() - 1; i >= 0; i-- ) {
                     IRubyObject ret = block.yield(context, convertJavaToUsableRubyObject(runtime, list.get(i)));
-                    if ( ret.isTrue() ) return runtime.newFixnum(i);
+                    if ( ret.isTrue() ) return newFixnum(context, i);
                 }
             }
             else {
@@ -490,7 +489,7 @@ public abstract class JavaUtil {
                 for ( java.util.ListIterator it = list.listIterator(i); it.hasPrevious(); ) {
                     final Object elem = it.previous();
                     IRubyObject ret = block.yield(context, convertJavaToUsableRubyObject(runtime, elem));
-                    if ( ret.isTrue() ) return runtime.newFixnum(i);
+                    if ( ret.isTrue() ) return newFixnum(context, i);
                     i--;
                 }
             }
@@ -508,7 +507,7 @@ public abstract class JavaUtil {
                     final Object elem = list.get(i);
                     if ( val == elem ||
                         invokedynamic(context, val, OP_EQUAL, convertJavaToUsableRubyObject(runtime, elem)).isTrue() ) {
-                        return runtime.newFixnum(i);
+                        return newFixnum(context, i);
                     }
                 }
             }
@@ -518,7 +517,7 @@ public abstract class JavaUtil {
                     final Object elem = it.previous();
                     if ( val == elem ||
                         invokedynamic(context, val, OP_EQUAL, convertJavaToUsableRubyObject(runtime, elem)).isTrue() ) {
-                        return runtime.newFixnum(i);
+                        return newFixnum(context, i);
                     }
                     i--;
                 }

@@ -68,6 +68,7 @@ import java.nio.channels.Channel;
 
 import static com.headius.backport9.buffer.Buffers.flipBuffer;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 
@@ -253,7 +254,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         ByteBuffer inFdBuf = inMessage.getControls()[0].getData();
         inFdBuf.order(ByteOrder.nativeOrder());
 
-        IRubyObject fd = runtime.newFixnum(inFdBuf.getInt());
+        IRubyObject fd = newFixnum(context, inFdBuf.getInt());
 
         if (klass.isNil()) {
             return fd;

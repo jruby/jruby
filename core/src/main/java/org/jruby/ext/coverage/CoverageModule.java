@@ -42,6 +42,7 @@ import org.jruby.util.TypeConverter;
 import org.jruby.util.collections.IntList;
 
 import static org.jruby.api.Convert.castAsSymbol;
+import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ext.coverage.CoverageData.CoverageDataState.*;
@@ -191,15 +192,13 @@ public class CoverageModule {
 
     @JRubyMethod(module = true)
     public static IRubyObject peek_result(ThreadContext context, IRubyObject self) {
-        Ruby runtime = context.runtime;
-
-        CoverageData coverageData = runtime.getCoverageData();
+        CoverageData coverageData = context.runtime.getCoverageData();
 
         if (!coverageData.isCoverageEnabled()) {
-            throw runtime.newRuntimeError("coverage measurement is not enabled");
+            throw context.runtime.newRuntimeError("coverage measurement is not enabled");
         }
 
-        return convertCoverageToRuby(context, runtime, coverageData.getCoverage(), coverageData.getCurrentMode());
+        return convertCoverageToRuby(context, coverageData.getCoverage(), coverageData.getCurrentMode());
     }
 
     @JRubyMethod(name = "running?", module = true)
@@ -238,7 +237,8 @@ public class CoverageModule {
         return context.fals;
     }
 
-    private static IRubyObject convertCoverageToRuby(ThreadContext context, Ruby runtime, Map<String, IntList> coverage, int mode) {
+    private static IRubyObject convertCoverageToRuby(ThreadContext context, Map<String, IntList> coverage, int mode) {
+        Ruby runtime = context.runtime;
         // populate a Ruby Hash with coverage data
         RubyHash covHash = RubyHash.newHash(runtime);
         if (coverage != null) {
@@ -250,9 +250,9 @@ public class CoverageModule {
                 for (int i = 0; i < val.size(); i++) {
                     int integer = val.get(i);
                     if (oneshot) {
-                        ary.push(runtime.newFixnum(integer + 1));
+                        ary.push(newFixnum(context, integer + 1));
                     } else {
-                        ary.store(i, integer == -1 ? context.nil : runtime.newFixnum(integer));
+                        ary.store(i, integer == -1 ? context.nil : newFixnum(context, integer));
                     }
                 }
 

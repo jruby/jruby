@@ -13,6 +13,7 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -72,17 +73,16 @@ public class ArrayUtils {
     }
 
     public static IRubyObject concatArraysDirect(ThreadContext context, Object original, IRubyObject additional) {
-        final Ruby runtime = context.runtime;
         final int oldLength = Array.getLength(original);
         final int addLength = RubyFixnum.fix2int(Helpers.invoke(context, additional, "length"));
 
-        ArrayJavaProxy proxy = ArrayUtils.newProxiedArray(runtime, original.getClass().getComponentType(), oldLength + addLength);
+        ArrayJavaProxy proxy = ArrayUtils.newProxiedArray(context.runtime, original.getClass().getComponentType(), oldLength + addLength);
 
         System.arraycopy(original, 0, proxy.getObject(), 0, oldLength);
 
         for (int i = 0; i < addLength; i++) {
-            IRubyObject val = Helpers.invoke(context, additional, "[]", runtime.newFixnum(i));
-            proxy.setValue(runtime, oldLength + i, val); // [ oldLen + i ] = val
+            IRubyObject val = Helpers.invoke(context, additional, "[]", newFixnum(context, i));
+            proxy.setValue(context.runtime, oldLength + i, val); // [ oldLen + i ] = val
         }
 
         return proxy;

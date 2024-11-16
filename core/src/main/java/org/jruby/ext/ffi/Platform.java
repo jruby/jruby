@@ -295,7 +295,7 @@ public class Platform {
     public static void createPlatformModule(Ruby runtime, RubyModule ffi) {
         RubyModule module = ffi.defineModuleUnder("Platform");
         Platform platform = Platform.getPlatform();
-        OS_TYPE os = platform.getOS();
+
         module.defineConstant("ADDRESS_SIZE", runtime.newFixnum(platform.addressSize));
         module.defineConstant("LONG_SIZE", runtime.newFixnum(platform.longSize));
         module.defineConstant("LONG_DOUBLE_SIZE", runtime.newFixnum(128));

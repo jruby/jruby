@@ -70,6 +70,8 @@ import java.util.function.BiConsumer;
 
 import static org.jruby.RubyBasicObject.getMetaClass;
 import static org.jruby.api.Convert.castAsString;
+import static org.jruby.api.Create.newFixnum;
+import static org.jruby.api.Create.newSymbol;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.marshal.MarshalCommon.TYPE_IVAR;
 import static org.jruby.runtime.marshal.MarshalCommon.TYPE_UCLASS;
@@ -443,8 +445,7 @@ public class NewMarshal {
     }
 
     private void userCommon(ThreadContext context, RubyOutputStream out, IRubyObject value, CacheEntry cacheEntry) {
-        Ruby runtime = context.runtime;
-        RubyFixnum depthLimitFixnum = runtime.newFixnum(depthLimit);
+        RubyFixnum depthLimitFixnum = newFixnum(context, depthLimit);
         final RubyClass klass = getMetaClass(value);
         IRubyObject dumpResult;
         if (cacheEntry != null) {
@@ -462,39 +463,38 @@ public class NewMarshal {
 
             if (size > 0) {
                 out.write(TYPE_IVAR);
-                dumpUserdefBase(out, runtime, klass, marshaled);
+                dumpUserdefBase(out, context, klass, marshaled);
 
                 writeInt(out, size);
 
                 ivarAccessors.forEach(new VariableDumper(context, out, marshaled));
             } else {
-                dumpUserdefBase(out, runtime, klass, marshaled);
+                dumpUserdefBase(out, context, klass, marshaled);
             }
         } else {
-            dumpUserdefBase(out, runtime, klass, marshaled);
+            dumpUserdefBase(out, context, klass, marshaled);
         }
 
         registerLinkTarget(value);
     }
 
-    private void dumpUserdefBase(RubyOutputStream out, Ruby runtime, RubyClass klass, RubyString marshaled) {
+    private void dumpUserdefBase(RubyOutputStream out, ThreadContext context, RubyClass klass, RubyString marshaled) {
         out.write(TYPE_USERDEF);
-        writeAndRegisterSymbol(out, RubySymbol.newSymbol(runtime, klass.getRealClass().getName()));
+        writeAndRegisterSymbol(out, newSymbol(context, klass.getRealClass().getName()));
         writeString(out, marshaled.getByteList());
     }
 
     public void writeUserClass(ThreadContext context, RubyOutputStream out, RubyClass type) {
-        Ruby runtime = context.runtime;
         out.write(TYPE_UCLASS);
 
         // w_unique
         if (type.getName().charAt(0) == '#') {
-
+            Ruby runtime = context.runtime;
             throw typeError(context, str(runtime, "can't dump anonymous class ", types(runtime, type)));
         }
         
         // w_symbol
-        writeAndRegisterSymbol(out, RubySymbol.newSymbol(runtime, type.getName()));
+        writeAndRegisterSymbol(out, newSymbol(context, type.getName()));
     }
 
     public void dumpVariables(ThreadContext context, RubyOutputStream out, IRubyObject value) {

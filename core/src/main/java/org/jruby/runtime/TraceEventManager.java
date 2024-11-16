@@ -19,8 +19,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.jruby.api.Create.newString;
-import static org.jruby.api.Create.newSymbol;
+import static org.jruby.api.Create.*;
 
 public class TraceEventManager {
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
@@ -234,14 +233,13 @@ public class TraceEventManager {
                     eventName = "c-call";
                     break;
             }
-            ;
 
             context.preTrace();
             try {
                 traceFunc.call(context, new IRubyObject[]{
                         newString(context, eventName), // event name
                         newString(context, file), // filename
-                        context.runtime.newFixnum(line), // line numbers should be 1-based
+                        newFixnum(context, line), // line numbers should be 1-based
                         name != null ? newSymbol(context, name) : context.nil,
                         binding,
                         type

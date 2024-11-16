@@ -60,6 +60,7 @@ import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
 
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 
@@ -418,7 +419,7 @@ public class RubyBigDecimal extends RubyNumeric {
             }
 
             RoundingMode javaRoundingMode = javaRoundingModeFromRubyRoundingMode(context, value);
-            RubyFixnum roundingMode = runtime.newFixnum(rubyRoundingModeFromJavaRoundingMode(context, javaRoundingMode));
+            RubyFixnum roundingMode = newFixnum(context, rubyRoundingModeFromJavaRoundingMode(context, javaRoundingMode));
             c.setInternalModuleVariable("vpRoundingMode", roundingMode);
 
             return roundingMode;
@@ -1922,9 +1923,8 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod
     public RubyArray precision_scale(ThreadContext context) {
-        Ruby runtime = context.runtime;
         int [] ary = getPrecisionScale();
-        return runtime.newArray(runtime.newFixnum(ary[0]), runtime.newFixnum(ary[1]));
+        return context.runtime.newArray(newFixnum(context, ary[0]), newFixnum(context, ary[1]));
     }
 
     private int [] getPrecisionScale() {

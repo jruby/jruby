@@ -31,7 +31,9 @@ import org.jruby.ext.socket.SocketUtils;
 import org.jruby.ext.socket.SocketUtilsIPV6;
 import org.jruby.runtime.Helpers;
 
+import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
 public class Sockaddr {
@@ -237,13 +239,10 @@ public class Sockaddr {
     }
 
     public static RubyArray unpack_sockaddr_in(ThreadContext context, ByteList val) {
-        final Ruby runtime = context.runtime;
+        AddressFamily af = getAddressFamilyFromSockaddr(context, val);
 
-        AddressFamily af = getAddressFamilyFromSockaddr(runtime, val);
-
-        if (af != AddressFamily.AF_INET &&
-            af != AddressFamily.AF_INET6) {
-            throw runtime.newArgumentError("not an AF_INET/AF_INET6 sockaddr");
+        if (af != AddressFamily.AF_INET && af != AddressFamily.AF_INET6) {
+            throw argumentError(context, "not an AF_INET/AF_INET6 sockaddr");
         }
 
         int port = ((val.get(2)&0xff) << 8) + (val.get(3)&0xff);
@@ -259,7 +258,7 @@ public class Sockaddr {
                       .append(val.get(6) & 0xff)
                       .append('.')
                       .append(val.get(7) & 0xff);
-            ip = RubyString.newString(runtime, formatAddr);
+            ip = newString(context, formatAddr.toString());
         } else {                                    // if af == AddressFamily.AF_INET6
             for (int i = 4; i <= 19; i++) {
                 if (i != 4 && i % 2 == 0) formatAddr.append(':');
@@ -268,7 +267,7 @@ public class Sockaddr {
             ip = newString(context, SocketUtilsIPV6.getIPV6Address(formatAddr.toString()));
         }
 
-        return RubyArray.newArray(runtime, runtime.newFixnum(port), ip);
+        return RubyArray.newArray(context.runtime, newFixnum(context, port), ip);
     }
 
     public static IRubyObject pack_sockaddr_un(ThreadContext context, String unixpath) {
@@ -339,15 +338,18 @@ public class Sockaddr {
         ds.write(port);
     }
 
-    public static AddressFamily getAddressFamilyFromSockaddr(Ruby runtime, ByteList val) {
-        if (val.length() < 2) {
-            throw runtime.newArgumentError("too short sockaddr");
-        }
+    public static AddressFamily getAddressFamilyFromSockaddr(ThreadContext context, ByteList val) {
+        if (val.length() < 2) throw argumentError(context, "too short sockaddr");
 
         int high = val.get(0) & 0xff;
         int low = val.get(1) & 0xff;
 
         return AddressFamily.valueOf((high << 8) + low);
+    }
+
+    @Deprecated
+    public static AddressFamily getAddressFamilyFromSockaddr(Ruby runtime, ByteList val) {
+        return getAddressFamilyFromSockaddr(runtime.getCurrentContext(), val);
     }
 
     private static RuntimeException sockerr(Ruby runtime, String msg) {

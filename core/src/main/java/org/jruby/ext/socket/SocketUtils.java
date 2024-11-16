@@ -72,6 +72,7 @@ import static jnr.constants.platform.ProtocolFamily.PF_INET;
 import static jnr.constants.platform.ProtocolFamily.PF_INET6;
 import static jnr.constants.platform.Sock.SOCK_DGRAM;
 import static jnr.constants.platform.Sock.SOCK_STREAM;
+import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.ext.socket.Addrinfo.AI_CANONNAME;
@@ -102,14 +103,13 @@ public class SocketUtils {
 
         ret0 = newString(context, Sockaddr.addressFromString(runtime, args[0].convertToString().toString()).getCanonicalHostName());
         ret1 = runtime.newArray();
-        ret2 = runtime.newFixnum(2); // AF_INET
+        ret2 = newFixnum(context, 2); // AF_INET
         ret3 = args[0];
 
         return RubyArray.newArray(runtime, ret0, ret1, ret2, ret3);
     }
 
     public static IRubyObject getservbyname(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
         String name = args[0].convertToString().toString();
         String proto = args.length ==  1 ? "tcp" : args[1].convertToString().toString();
         Service service = Service.getServiceByName(name, proto);
@@ -117,21 +117,16 @@ public class SocketUtils {
 
         if (service != null) {
             port = service.getPort();
-
         } else {
-
             // MRI behavior: try to convert the name string to port directly
             try {
                 port = Integer.parseInt(name.trim());
-
             } catch (NumberFormatException nfe) {
-                throw sockerr(runtime, "no such service " + name + "/" + proto);
-
+                throw sockerr(context.runtime, "no such service " + name + "/" + proto);
             }
-
         }
 
-        return runtime.newFixnum(port);
+        return newFixnum(context, port);
     }
 
     @Deprecated
@@ -175,7 +170,6 @@ public class SocketUtils {
      * def self.getaddrinfo(host, port, family = nil, socktype = nil, protocol = nil, flags = nil, reverse_lookup = nil)
      */
     public static IRubyObject getaddrinfo(final ThreadContext context, IRubyObject[] args) {
-        final Ruby runtime = context.runtime;
         final List<IRubyObject> l = new ArrayList<IRubyObject>();
 
         buildAddrinfoList(context, args, true, (address, port, sock, reverse, usesCanonical) -> {
@@ -186,10 +180,8 @@ public class SocketUtils {
             if (sock != null) {
                 if (sock == SOCK_STREAM) {
                     sock_dgram = false;
-
                 } else if (sock == SOCK_DGRAM) {
                     sock_stream = false;
-
                 }
             }
 
@@ -198,29 +190,29 @@ public class SocketUtils {
             if (sock_dgram) {
                 c = new IRubyObject[7];
                 c[0] = newString(context, is_ipv6 ? "AF_INET6" : "AF_INET");
-                c[1] = runtime.newFixnum(port);
+                c[1] = newFixnum(context, port);
                 c[2] = newString(context, getHostAddress(context, address, reverse));
                 c[3] = newString(context, address.getHostAddress());
-                c[4] = runtime.newFixnum(is_ipv6 ? PF_INET6 : PF_INET);
-                c[5] = runtime.newFixnum(SOCK_DGRAM);
-                c[6] = runtime.newFixnum(IPPROTO_UDP);
-                l.add(RubyArray.newArrayMayCopy(runtime, c));
+                c[4] = newFixnum(context, is_ipv6 ? PF_INET6.longValue() : PF_INET.longValue());
+                c[5] = newFixnum(context, SOCK_DGRAM.longValue());
+                c[6] = newFixnum(context, IPPROTO_UDP.longValue());
+                l.add(RubyArray.newArrayMayCopy(context.runtime, c));
             }
 
             if (sock_stream) {
                 c = new IRubyObject[7];
                 c[0] = newString(context, is_ipv6 ? "AF_INET6" : "AF_INET");
-                c[1] = runtime.newFixnum(port);
+                c[1] = newFixnum(context, port);
                 c[2] = newString(context, getHostAddress(context, address, reverse));
                 c[3] = newString(context, address.getHostAddress());
-                c[4] = runtime.newFixnum(is_ipv6 ? PF_INET6 : PF_INET);
-                c[5] = runtime.newFixnum(SOCK_STREAM);
-                c[6] = runtime.newFixnum(IPPROTO_TCP);
-                l.add(RubyArray.newArrayMayCopy(runtime, c));
+                c[4] = newFixnum(context, is_ipv6 ? PF_INET6.longValue() : PF_INET.longValue());
+                c[5] = newFixnum(context, SOCK_STREAM.longValue());
+                c[6] = newFixnum(context, IPPROTO_TCP.longValue());
+                l.add(RubyArray.newArrayMayCopy(context.runtime, c));
             }
         });
 
-        return runtime.newArray(l);
+        return context.runtime.newArray(l);
     }
 
     public static List<Addrinfo> getaddrinfoList(ThreadContext context, IRubyObject[] args) {
