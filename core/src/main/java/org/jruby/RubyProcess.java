@@ -56,6 +56,7 @@ import org.jruby.runtime.ThreadContext;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.Helpers.throwException;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -93,6 +94,7 @@ import java.util.function.ToIntFunction;
 public class RubyProcess {
 
     public static RubyModule createProcessModule(Ruby runtime) {
+        var context = runtime.getCurrentContext();
         RubyModule process = runtime.defineModule("Process");
 
         RubyClass process_status = process.defineClassUnder("Status", runtime.getObject(), RubyProcess::newAllocatedProcessStatus);
@@ -124,14 +126,12 @@ public class RubyProcess {
             runtime.loadConstantSet(process, jnr.constants.platform.RLIM.class);
             for (RLIMIT r : RLIMIT.values()) {
                 if (!r.defined()) continue;
-                process.defineConstant(r.name(), runtime.newFixnum(r.intValue()));
+                process.defineConstant(r.name(), newFixnum(context, r.intValue()));
             }
         }
 
-        ThreadContext context = runtime.getCurrentContext();
-
-        process.defineConstant("WNOHANG", runtime.newFixnum(1));
-        process.defineConstant("WUNTRACED", runtime.newFixnum(2));
+        process.defineConstant("WNOHANG", newFixnum(context, 1));
+        process.defineConstant("WUNTRACED", newFixnum(context, 2));
 
         // FIXME: These should come out of jnr-constants
         // TODO: other clock types
@@ -238,7 +238,7 @@ public class RubyProcess {
             int argc = Arity.checkArgumentCount(context, args, 0, 2);
 
             long pid = argc > 0 ? args[0].convertToInteger().getLongValue() : -1;
-            int flags = argc > 1 ? (int) args[1].convertToInteger().getLongValue() : 0;
+            int flags = argc > 1 ? args[1].convertToInteger().getIntValue() : 0;
 
             return waitpidStatus(context, pid, flags);
             //checkErrno(runtime, pid, ECHILD);
@@ -326,25 +326,22 @@ public class RubyProcess {
             return getRuntime().getNil();
         }
 
-        @JRubyMethod
+        @Deprecated
         public IRubyObject exitstatus() {
-            if (PosixShim.WAIT_MACROS.WIFEXITED(status)) {
-                return getRuntime().newFixnum(PosixShim.WAIT_MACROS.WEXITSTATUS(status));
-            }
-            return getRuntime().getNil();
+            return exitstatus(getCurrentContext());
+        }
+        @JRubyMethod
+        public IRubyObject exitstatus(ThreadContext context) {
+            return PosixShim.WAIT_MACROS.WIFEXITED(status) ?
+                newFixnum(context, PosixShim.WAIT_MACROS.WEXITSTATUS(status)) : context.nil;
         }
 
         @JRubyMethod(name = ">>")
         public IRubyObject op_rshift(ThreadContext context, IRubyObject other) {
             long places = other.convertToInteger().getLongValue();
 
-            if (places < 0) {
-                throw context.runtime.newArgumentError("negative shift value: " + places);
-            }
-
-            if (places > Integer.MAX_VALUE || places < Integer.MIN_VALUE) {
-                throw context.runtime.newRangeError("shift value out of range: " + places);
-            }
+            if (places < 0) throw argumentError(context, "negative shift value: " + places);
+            if (places > Integer.MAX_VALUE) throw context.runtime.newRangeError("shift value out of range: " + places);
 
             switch ((int) places) {
                 case 7:
@@ -567,25 +564,25 @@ public class RubyProcess {
 
         @JRubyMethod(name = "switch", module = true, visibility = PRIVATE)
         public static IRubyObject switch_rb(ThreadContext context, IRubyObject self, Block block) {
-            Ruby runtime = context.runtime;
-            int uid = checkErrno(runtime, runtime.getPosix().getuid());
-            int euid = checkErrno(runtime, runtime.getPosix().geteuid());
+            var posix = context.runtime.getPosix();
+            int uid = checkErrno(context, posix.getuid());
+            int euid = checkErrno(context, posix.geteuid());
 
             if (block.isGiven()) {
                 try {
-                    checkErrno(runtime, runtime.getPosix().seteuid(uid));
-                    checkErrno(runtime, runtime.getPosix().setuid(euid));
+                    checkErrno(context, posix.seteuid(uid));
+                    checkErrno(context, posix.setuid(euid));
 
-                    return block.yield(context, runtime.getNil());
+                    return block.yield(context, context.nil);
                 } finally {
-                    checkErrno(runtime, runtime.getPosix().seteuid(euid));
-                    checkErrno(runtime, runtime.getPosix().setuid(uid));
+                    checkErrno(context, posix.seteuid(euid));
+                    checkErrno(context, posix.setuid(uid));
                 }
             } else {
-                checkErrno(runtime, runtime.getPosix().seteuid(uid));
-                checkErrno(runtime, runtime.getPosix().setuid(euid));
+                checkErrno(context, posix.seteuid(uid));
+                checkErrno(context, posix.setuid(euid));
 
-                return RubyFixnum.zero(runtime);
+                return RubyFixnum.zero(context.runtime);
             }
         }
     }
@@ -655,25 +652,25 @@ public class RubyProcess {
 
         @JRubyMethod(name = "switch", module = true, visibility = PRIVATE)
         public static IRubyObject switch_rb(ThreadContext context, IRubyObject self, Block block) {
-            Ruby runtime = context.runtime;
-            int gid = checkErrno(runtime, runtime.getPosix().getgid());
-            int egid = checkErrno(runtime, runtime.getPosix().getegid());
+            var posix = context.runtime.getPosix();
+            int gid = checkErrno(context, posix.getgid());
+            int egid = checkErrno(context, posix.getegid());
 
             if (block.isGiven()) {
                 try {
-                    checkErrno(runtime, runtime.getPosix().setegid(gid));
-                    checkErrno(runtime, runtime.getPosix().setgid(egid));
+                    checkErrno(context, posix.setegid(gid));
+                    checkErrno(context, posix.setgid(egid));
 
-                    return block.yield(context, runtime.getNil());
+                    return block.yield(context, context.nil);
                 } finally {
-                    checkErrno(runtime, runtime.getPosix().setegid(egid));
-                    checkErrno(runtime, runtime.getPosix().setgid(gid));
+                    checkErrno(context, posix.setegid(egid));
+                    checkErrno(context, posix.setgid(gid));
                 }
             } else {
-                checkErrno(runtime, runtime.getPosix().setegid(gid));
-                checkErrno(runtime, runtime.getPosix().setgid(egid));
+                checkErrno(context, posix.setegid(gid));
+                checkErrno(context, posix.setgid(egid));
 
-                return RubyFixnum.zero(runtime);
+                return RubyFixnum.zero(context.runtime);
             }
         }
     }
@@ -1073,22 +1070,16 @@ public class RubyProcess {
     public static IRubyObject waitpid(Ruby runtime, IRubyObject[] args) {
         long pid = -1;
         int flags = 0;
-        if (args.length > 0) {
-            pid = args[0].convertToInteger().getLongValue();
-        }
-        if (args.length > 1) {
-            flags = (int)args[1].convertToInteger().getLongValue();
-        }
+        if (args.length > 0) pid = args[0].convertToInteger().getLongValue();
+        if (args.length > 1) flags = (int)args[1].convertToInteger().getLongValue();
+
+        var context = runtime.getCurrentContext();
 
         pid = waitpid(runtime, pid, flags);
 
-        checkErrno(runtime, pid, ECHILD);
+        checkErrno(context, pid, ECHILD);
 
-        if (pid == 0) {
-            return runtime.getNil();
-        }
-
-        return runtime.newFixnum(pid);
+        return pid == 0 ? context.nil : newFixnum(context, pid);
     }
 
     static IRubyObject waitpidStatus(ThreadContext context, long pid, int flags) {
@@ -1103,22 +1094,22 @@ public class RubyProcess {
         return RubyProcess.RubyStatus.newProcessStatus(runtime, status[0], res);
     }
 
-    // MRI: rb_waitpid
+    @Deprecated
     public static long waitpid(Ruby runtime, long pid, int flags) {
-        int[] status = new int[1];
-        POSIX posix = runtime.getPosix();
-        ThreadContext context = runtime.getCurrentContext();
+        return waitpid(runtime.getCurrentContext(), pid, flags);
+    }
+
+    // MRI: rb_waitpid
+    public static long waitpid(ThreadContext context, long pid, int flags) {
+        var posix = context.runtime.getPosix();
 
         posix.errno(0);
 
+        int[] status = new int[1];
         int res = pthreadKillable(context, ctx -> posix.waitpid(pid, status, flags));
 
-        if (res > 0) {
-            context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, status[0], res));
-        }
-        else {
-            context.setLastExitStatus(runtime.getNil());
-        }
+        context.setLastExitStatus(res > 0 ?
+                RubyProcess.RubyStatus.newProcessStatus(context.runtime, status[0], res) : context.nil);
 
         return res;
     }
@@ -1218,7 +1209,7 @@ public class RubyProcess {
 
         int pid = pthreadKillable(context, ctx -> posix.wait(status));
 
-        checkErrno(runtime, pid, ECHILD);
+        checkErrno(context, pid, ECHILD);
 
         context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, status[0], pid));
         return asFixnum(context, pid);
@@ -1257,7 +1248,7 @@ public class RubyProcess {
     }
     @JRubyMethod(name = "setsid", module = true, visibility = PRIVATE)
     public static IRubyObject setsid(ThreadContext context, IRubyObject recv) {
-        return asFixnum(context, checkErrno(context.runtime, context.runtime.getPosix().setsid()));
+        return asFixnum(context, checkErrno(context, context.runtime.getPosix().setsid()));
     }
 
     @Deprecated
@@ -1271,7 +1262,7 @@ public class RubyProcess {
     }
     @JRubyMethod(name = "setpgrp", module = true, visibility = PRIVATE)
     public static IRubyObject setpgrp(ThreadContext context, IRubyObject recv) {
-        return asFixnum(context, checkErrno(context.runtime, context.runtime.getPosix().setpgid(0, 0)));
+        return asFixnum(context, checkErrno(context, context.runtime.getPosix().setpgid(0, 0)));
     }
 
     @Deprecated
@@ -1298,7 +1289,7 @@ public class RubyProcess {
             }
             gid = (int)group.getGID();
         }
-        checkErrno(runtime, runtime.getPosix().setegid(gid));
+        checkErrno(runtime.getCurrentContext(), runtime.getPosix().setegid(gid));
         return RubyFixnum.zero(runtime);
     }
 
@@ -1308,7 +1299,7 @@ public class RubyProcess {
     }
     @JRubyMethod(name = "euid", module = true, visibility = PRIVATE)
     public static IRubyObject euid(ThreadContext context, IRubyObject recv) {
-        return asFixnum(context, checkErrno(context.runtime, context.runtime.getPosix().geteuid()));
+        return asFixnum(context, checkErrno(context, context.runtime.getPosix().geteuid()));
     }
 
     @Deprecated
@@ -1322,11 +1313,12 @@ public class RubyProcess {
     }
     @JRubyMethod(name = "uid=", module = true, visibility = PRIVATE)
     public static IRubyObject uid_set(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        return uid_set(context.runtime, arg);
+        checkErrno(context, context.runtime.getPosix().setuid((int)arg.convertToInteger().getLongValue()));
+        return RubyFixnum.zero(context.runtime);
     }
+    @Deprecated
     public static IRubyObject uid_set(Ruby runtime, IRubyObject arg) {
-        checkErrno(runtime, runtime.getPosix().setuid((int)arg.convertToInteger().getLongValue()));
-        return RubyFixnum.zero(runtime);
+        return uid_set(runtime.getCurrentContext(), null, arg);
     }
 
     @Deprecated
@@ -1340,7 +1332,7 @@ public class RubyProcess {
     public static IRubyObject gid(ThreadContext context) {
         return Platform.IS_WINDOWS ?
                 RubyFixnum.zero(context.runtime) :
-                newFixnum(context, checkErrno(context.runtime, context.runtime.getPosix().getgid()));
+                newFixnum(context, checkErrno(context, context.runtime.getPosix().getgid()));
     }
 
     @Deprecated
@@ -1359,14 +1351,16 @@ public class RubyProcess {
     }
     @JRubyMethod(name = "getpriority", module = true, visibility = PRIVATE)
     public static IRubyObject getpriority(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
-        return getpriority(context.runtime, arg1, arg2);
-    }
-    public static IRubyObject getpriority(Ruby runtime, IRubyObject arg1, IRubyObject arg2) {
-        int which = (int)arg1.convertToInteger().getLongValue();
-        int who = (int)arg2.convertToInteger().getLongValue();
-        int result = checkErrno(runtime, runtime.getPosix().getpriority(which, who));
+        int which = arg1.convertToInteger().getIntValue();
+        int who = arg2.convertToInteger().getIntValue();
+        int result = checkErrno(context, context.runtime.getPosix().getpriority(which, who));
 
-        return runtime.newFixnum(result);
+        return newFixnum(context, result);
+    }
+
+    @Deprecated
+    public static IRubyObject getpriority(Ruby runtime, IRubyObject arg1, IRubyObject arg2) {
+        return getpriority(runtime.getCurrentContext(), null, arg1, arg2);
     }
 
     @Deprecated
@@ -1375,10 +1369,11 @@ public class RubyProcess {
     }
     @JRubyMethod(name = "uid", module = true, visibility = PRIVATE)
     public static IRubyObject uid(ThreadContext context, IRubyObject recv) {
-        return uid(context.runtime);
+        return newFixnum(context, checkErrno(context, context.runtime.getPosix().getuid()));
     }
+    @Deprecated
     public static IRubyObject uid(Ruby runtime) {
-        return runtime.newFixnum(checkErrno(runtime, runtime.getPosix().getuid()));
+        return uid(runtime.getCurrentContext(), null);
     }
 
     @JRubyMethod(name = "waitpid2", rest = true, module = true, visibility = PRIVATE)
@@ -1410,12 +1405,12 @@ public class RubyProcess {
     }
     @JRubyMethod(name = "ppid", module = true, visibility = PRIVATE)
     public static IRubyObject ppid(ThreadContext context, IRubyObject recv) {
-        return ppid(context.runtime);
+        int result = checkErrno(context, context.runtime.getPosix().getppid());
+
+        return newFixnum(context, result);
     }
     public static IRubyObject ppid(Ruby runtime) {
-        int result = checkErrno(runtime, runtime.getPosix().getppid());
-
-        return runtime.newFixnum(result);
+        return ppid(runtime.getCurrentContext(), null);
     }
 
     @Deprecated
@@ -1424,12 +1419,14 @@ public class RubyProcess {
     }
     @JRubyMethod(name = "gid=", module = true, visibility = PRIVATE)
     public static IRubyObject gid_set(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        return gid_set(context.runtime, arg);
-    }
-    public static IRubyObject gid_set(Ruby runtime, IRubyObject arg) {
-        int result = checkErrno(runtime, runtime.getPosix().setgid((int)arg.convertToInteger().getLongValue()));
+        int result = checkErrno(context, context.runtime.getPosix().setgid(arg.convertToInteger().getIntValue()));
 
-        return runtime.newFixnum(result);
+        return newFixnum(context, result);
+
+    }
+    @Deprecated
+    public static IRubyObject gid_set(Ruby runtime, IRubyObject arg) {
+        return gid_set(runtime.getCurrentContext(), null, arg);
     }
 
     @Deprecated
@@ -1452,7 +1449,7 @@ public class RubyProcess {
     public static IRubyObject euid_set(Ruby runtime, IRubyObject arg) {
         int uid;
         if (arg instanceof RubyInteger || arg.checkStringType().isNil()) {
-            uid = (int)arg.convertToInteger().getLongValue();
+            uid = arg.convertToInteger().getIntValue();
         } else {
             Passwd password = runtime.getPosix().getpwnam(arg.asJavaString());
             if (password == null) {
@@ -1460,7 +1457,7 @@ public class RubyProcess {
             }
             uid = (int)password.getUID();
         }
-        checkErrno(runtime, runtime.getPosix().seteuid(uid));
+        checkErrno(runtime.getCurrentContext(), runtime.getPosix().seteuid(uid));
         return RubyFixnum.zero(runtime);
     }
 
@@ -1470,16 +1467,17 @@ public class RubyProcess {
     }
     @JRubyMethod(name = "setpriority", module = true, visibility = PRIVATE)
     public static IRubyObject setpriority(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-        return setpriority(context.runtime, arg1, arg2, arg3);
+        int which = arg1.convertToInteger().getIntValue();
+        int who = arg2.convertToInteger().getIntValue();
+        int prio = arg3.convertToInteger().getIntValue();
+        var posix = context.runtime.getPosix();
+        posix.errno(0);
+        return newFixnum(context, checkErrno(context, posix.setpriority(which, who, prio)));
     }
-    public static IRubyObject setpriority(Ruby runtime, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-        int which = (int)arg1.convertToInteger().getLongValue();
-        int who = (int)arg2.convertToInteger().getLongValue();
-        int prio = (int)arg3.convertToInteger().getLongValue();
-        runtime.getPosix().errno(0);
-        int result = checkErrno(runtime, runtime.getPosix().setpriority(which, who, prio));
 
-        return runtime.newFixnum(result);
+    @Deprecated
+    public static IRubyObject setpriority(Ruby runtime, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+        return setpriority(runtime.getCurrentContext(), null, arg1, arg2, arg3);
     }
 
     @Deprecated
@@ -1488,12 +1486,14 @@ public class RubyProcess {
     }
     @JRubyMethod(name = "setpgid", module = true, visibility = PRIVATE)
     public static IRubyObject setpgid(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
-        return setpgid(context.runtime, arg1, arg2);
+        int pid = arg1.convertToInteger().getIntValue();
+        int gid = arg2.convertToInteger().getIntValue();
+        return newFixnum(context, checkErrno(context, context.runtime.getPosix().setpgid(pid, gid)));
     }
+
+    @Deprecated
     public static IRubyObject setpgid(Ruby runtime, IRubyObject arg1, IRubyObject arg2) {
-        int pid = (int)arg1.convertToInteger().getLongValue();
-        int gid = (int)arg2.convertToInteger().getLongValue();
-        return runtime.newFixnum(checkErrno(runtime, runtime.getPosix().setpgid(pid, gid)));
+        return setpgid(runtime.getCurrentContext(), null, arg1, arg2);
     }
 
     @Deprecated
@@ -1502,10 +1502,13 @@ public class RubyProcess {
     }
     @JRubyMethod(name = "getpgid", module = true, visibility = PRIVATE)
     public static IRubyObject getpgid(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        return getpgid(context.runtime, arg);
+        int pgid = arg.convertToInteger().getIntValue();
+        return newFixnum(context, checkErrno(context, context.runtime.getPosix().getpgid(pgid)));
+
     }
+    @Deprecated
     public static IRubyObject getpgid(Ruby runtime, IRubyObject arg) {
-        return runtime.newFixnum(checkErrno(runtime, runtime.getPosix().getpgid((int)arg.convertToInteger().getLongValue())));
+        return getpgid(runtime.getCurrentContext(), null, arg);
     }
 
     @Deprecated
@@ -1538,17 +1541,16 @@ public class RubyProcess {
     }
     @JRubyMethod(name = "egid", module = true, visibility = PRIVATE)
     public static IRubyObject egid(ThreadContext context, IRubyObject recv) {
-        return egid(context.runtime);
-    }
-    public static IRubyObject egid(Ruby runtime) {
-        if (Platform.IS_WINDOWS) {
-            // MRI behavior on Windows
-            return RubyFixnum.zero(runtime);
-        }
-        return runtime.newFixnum(checkErrno(runtime, runtime.getPosix().getegid()));
+        return Platform.IS_WINDOWS ? RubyFixnum.zero(context.runtime) :
+                newFixnum(context, checkErrno(context, context.runtime.getPosix().getegid()));
     }
 
-    private static int parseSignalString(Ruby runtime, String value) {
+    @Deprecated
+    public static IRubyObject egid(Ruby runtime) {
+        return egid(runtime.getCurrentContext(), null);
+    }
+
+    private static int parseSignalString(ThreadContext context, String value) {
         boolean negative = value.startsWith("-");
 
         // Gets rid of the - if there is one present.
@@ -1558,7 +1560,7 @@ public class RubyProcess {
         String signalName = value.startsWith("SIG") ? value.substring(3) : value;
         int signalValue = (int) RubySignal.signm2signo(signalName);
 
-        if (signalValue == 0) throw runtime.newArgumentError("unsupported name '" + signalName + "'");
+        if (signalValue == 0) throw argumentError(context, "unsupported name '" + signalName + "'");
 
         return negative ? -signalValue : signalValue;
     }
@@ -1569,29 +1571,24 @@ public class RubyProcess {
     }
     @JRubyMethod(name = "kill", rest = true, module = true, visibility = PRIVATE)
     public static IRubyObject kill(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return kill(context.runtime, args);
-    }
-    public static IRubyObject kill(Ruby runtime, IRubyObject[] args) {
-        if (args.length < 2) {
-            throw runtime.newArgumentError("wrong number of arguments -- kill(sig, pid...)");
-        }
+        if (args.length < 2) throw argumentError(context, "wrong number of arguments -- kill(sig, pid...)");
 
         int signal;
         if (args[0] instanceof RubyFixnum) {
             signal = (int) ((RubyFixnum) args[0]).getLongValue();
         } else if (args[0] instanceof RubySymbol) {
-            signal = parseSignalString(runtime, args[0].toString());
+            signal = parseSignalString(context, args[0].toString());
         } else if (args[0] instanceof RubyString) {
-            signal = parseSignalString(runtime, args[0].toString());
+            signal = parseSignalString(context, args[0].toString());
         } else {
-            signal = parseSignalString(runtime, args[0].checkStringType().toString());
+            signal = parseSignalString(context, args[0].checkStringType().toString());
         }
 
         boolean processGroupKill = signal < 0;
 
         if (processGroupKill) {
             if (Platform.IS_WINDOWS) {
-                throw  runtime.newErrnoEINVALError("group signals not implemented in windows");
+                throw context.runtime.newErrnoEINVALError("group signals not implemented in windows");
             }
             signal = -signal;
         }
@@ -1602,24 +1599,24 @@ public class RubyProcess {
                 if (signal == 0) {
                     jnr.ffi.Pointer ptr = kernel32().OpenProcess(PROCESS_QUERY_INFORMATION, 0, pid);
                     if(ptr != null && ptr.address() != -1) {
-                       try {
-                           IntByReference status = new IntByReference(0);
-                           if(kernel32().GetExitCodeProcess(ptr, status) == 0) {
-                              throw runtime.newErrnoEPERMError("unable to call GetExitCodeProcess " + pid);
-                           } else {
-                               if(status.intValue() != STILL_ACTIVE) {
-                                   throw runtime.newErrnoEPERMError("Process exists but is not alive anymore " + pid);
-                               }
-                           }
-                       } finally {
-                         kernel32().CloseHandle(ptr);
-                       }
+                        try {
+                            IntByReference status = new IntByReference(0);
+                            if(kernel32().GetExitCodeProcess(ptr, status) == 0) {
+                                throw context.runtime.newErrnoEPERMError("unable to call GetExitCodeProcess " + pid);
+                            } else {
+                                if(status.intValue() != STILL_ACTIVE) {
+                                    throw context.runtime.newErrnoEPERMError("Process exists but is not alive anymore " + pid);
+                                }
+                            }
+                        } finally {
+                            kernel32().CloseHandle(ptr);
+                        }
 
                     } else {
                         if (kernel32().GetLastError() == ERROR_INVALID_PARAMETER) {
-                            throw runtime.newErrnoESRCHError();
+                            throw context.runtime.newErrnoESRCHError();
                         } else {
-                            throw runtime.newErrnoEPERMError("Process does not exist " + pid);
+                            throw context.runtime.newErrnoEPERMError("Process does not exist " + pid);
                         }
                     }
                 } else if (signal == 9) { //SIGKILL
@@ -1628,43 +1625,48 @@ public class RubyProcess {
                         try {
                             IntByReference status = new IntByReference(0);
                             if(kernel32().GetExitCodeProcess(ptr, status) == 0) {
-                                throw runtime.newErrnoEPERMError("unable to call GetExitCodeProcess " + pid); // todo better error messages
+                                throw context.runtime.newErrnoEPERMError("unable to call GetExitCodeProcess " + pid); // todo better error messages
                             } else {
                                 if (status.intValue() == STILL_ACTIVE) {
                                     if (kernel32().TerminateProcess(ptr, 0) == 0) {
-                                       throw runtime.newErrnoEPERMError("unable to call TerminateProcess " + pid);
-                                     }
-                                     // success
+                                        throw context.runtime.newErrnoEPERMError("unable to call TerminateProcess " + pid);
+                                    }
+                                    // success
                                 }
                             }
                         } finally {
-                           kernel32().CloseHandle(ptr);
+                            kernel32().CloseHandle(ptr);
                         }
                     } else {
                         if (kernel32().GetLastError() == ERROR_INVALID_PARAMETER) {
-                            throw runtime.newErrnoESRCHError();
+                            throw context.runtime.newErrnoESRCHError();
                         } else {
-                            throw runtime.newErrnoEPERMError("Process does not exist " + pid);
+                            throw context.runtime.newErrnoEPERMError("Process does not exist " + pid);
                         }
                     }
                 } else {
-                    throw runtime.newNotImplementedError("this signal not yet implemented in windows");
+                    throw context.runtime.newNotImplementedError("this signal not yet implemented in windows");
                 }
             }
         } else {
-            POSIX posix = runtime.getPosix();
+            POSIX posix = context.runtime.getPosix();
             for (int i = 1; i < args.length; i++) {
                 int pid = RubyNumeric.num2int(args[i]);
 
                 // FIXME: It may be possible to killpg on systems which support it.  POSIX library
                 // needs to tell whether a particular method works or not
-                if (pid == 0) pid = runtime.getPosix().getpid();
-                checkErrno(runtime, posix.kill(processGroupKill ? -pid : pid, signal));
+                if (pid == 0) pid = context.runtime.getPosix().getpid();
+                checkErrno(context, posix.kill(processGroupKill ? -pid : pid, signal));
             }
         }
 
-        return runtime.newFixnum(args.length - 1);
+        return newFixnum(context, args.length - 1);
 
+    }
+
+    @Deprecated
+    public static IRubyObject kill(Ruby runtime, IRubyObject[] args) {
+        return kill(runtime.getCurrentContext(), null, args);
     }
 
     @JRubyMethod(name = "detach", module = true, visibility = PRIVATE)
@@ -1915,16 +1917,16 @@ public class RubyProcess {
         public int handle(Ruby runtime, int result) {return result;}
     };
 
-    private static int checkErrno(Ruby runtime, int result) {
-        return (int) checkErrno(runtime, result, IGNORE);
+    private static int checkErrno(ThreadContext context, int result) {
+        return (int) checkErrno(context, result, IGNORE);
     }
 
-    private static long checkErrno(Ruby runtime, long result, NonNativeErrno nonNative) {
+    private static long checkErrno(ThreadContext context, long result, NonNativeErrno nonNative) {
         if (result == -1) {
-            if (runtime.getPosix().isNative()) {
-                raiseErrnoIfSet(runtime, nonNative);
+            if (context.runtime.getPosix().isNative()) {
+                raiseErrnoIfSet(context.runtime, nonNative);
             } else {
-                nonNative.handle(runtime, (int) result);
+                nonNative.handle(context.runtime, (int) result);
             }
         }
         return result;

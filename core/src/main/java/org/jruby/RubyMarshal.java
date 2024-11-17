@@ -52,6 +52,7 @@ import org.jruby.util.IOInputStream;
 import org.jruby.util.IOOutputStream;
 import org.jruby.util.io.TransparentByteArrayOutputStream;
 
+import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 
@@ -64,11 +65,12 @@ import static org.jruby.api.Error.typeError;
 public class RubyMarshal {
 
     public static RubyModule createMarshalModule(Ruby runtime) {
+        var context = runtime.getCurrentContext();
         RubyModule module = runtime.defineModule("Marshal");
 
         module.defineAnnotatedMethods(RubyMarshal.class);
-        module.defineConstant("MAJOR_VERSION", runtime.newFixnum(Constants.MARSHAL_MAJOR));
-        module.defineConstant("MINOR_VERSION", runtime.newFixnum(Constants.MARSHAL_MINOR));
+        module.defineConstant("MAJOR_VERSION", newFixnum(context, Constants.MARSHAL_MAJOR));
+        module.defineConstant("MINOR_VERSION", newFixnum(context, Constants.MARSHAL_MINOR));
 
         return module;
     }

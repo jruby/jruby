@@ -39,6 +39,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.SafePropertyAccessor;
 
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Create.newFixnum;
+import static org.jruby.api.Create.newString;
 
 /**
  *
@@ -293,17 +295,18 @@ public class Platform {
                 && (addressSize == 32 || addressSize == 64);
     }
     public static void createPlatformModule(Ruby runtime, RubyModule ffi) {
+        var context = runtime.getCurrentContext();
         RubyModule module = ffi.defineModuleUnder("Platform");
         Platform platform = Platform.getPlatform();
 
-        module.defineConstant("ADDRESS_SIZE", runtime.newFixnum(platform.addressSize));
-        module.defineConstant("LONG_SIZE", runtime.newFixnum(platform.longSize));
-        module.defineConstant("LONG_DOUBLE_SIZE", runtime.newFixnum(128));
-        module.defineConstant("BYTE_ORDER", runtime.newFixnum(BYTE_ORDER));
-        module.defineConstant("BIG_ENDIAN", runtime.newFixnum(BIG_ENDIAN));
-        module.defineConstant("LITTLE_ENDIAN", runtime.newFixnum(LITTLE_ENDIAN));
+        module.defineConstant("ADDRESS_SIZE", newFixnum(context, platform.addressSize));
+        module.defineConstant("LONG_SIZE", newFixnum(context, platform.longSize));
+        module.defineConstant("LONG_DOUBLE_SIZE", newFixnum(context, 128));
+        module.defineConstant("BYTE_ORDER", newFixnum(context, BYTE_ORDER));
+        module.defineConstant("BIG_ENDIAN", newFixnum(context, BIG_ENDIAN));
+        module.defineConstant("LITTLE_ENDIAN", newFixnum(context, LITTLE_ENDIAN));
         if (OS == OS_TYPE.LINUX) {
-            module.defineConstant("GNU_LIBC", runtime.newString(LIBC));
+            module.defineConstant("GNU_LIBC", newString(context, LIBC));
         }
         module.defineAnnotatedMethods(Platform.class);
     }

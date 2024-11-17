@@ -1,10 +1,7 @@
 package org.jruby.api;
 
 import org.jcodings.Encoding;
-import org.jruby.Ruby;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyString;
-import org.jruby.RubySymbol;
+import org.jruby.*;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.util.ByteList;
 
@@ -21,7 +18,7 @@ public class Create {
     }
 
     /**
-     * Creates a new RubyString from the provided long.
+     * Creates a new RubyFixnum from the provided long.
      *
      * @param context the current thread context
      * @param value the bytes to become a fixnum
@@ -29,6 +26,17 @@ public class Create {
      */
     public static RubyFixnum newFixnum(ThreadContext context, long value) {
         return RubyFixnum.newFixnum(context.runtime, value);
+    }
+
+    /**
+     * Creates a new RubyFloat from the provided double.
+     *
+     * @param context the current thread context
+     * @param value the bytes to become a float
+     * @return the new RubyFloat
+     */
+    public static RubyFloat newFloat(ThreadContext context, double value) {
+        return RubyFloat.newFloat(context.runtime, value);
     }
 
     /**

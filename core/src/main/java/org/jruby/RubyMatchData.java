@@ -60,6 +60,7 @@ import org.jruby.util.ByteListHolder;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.StringSupport;
 
+import static org.jruby.RubyFixnum.newFixnum;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -638,7 +639,7 @@ public class RubyMatchData extends RubyObject {
     public IRubyObject size(ThreadContext context) {
         check();
         Ruby runtime = context.runtime;
-        return regs == null ? RubyFixnum.one(runtime) : RubyFixnum.newFixnum(runtime, regs.getNumRegs());
+        return regs == null ? RubyFixnum.one(runtime) : newFixnum(runtime, regs.getNumRegs());
     }
 
     /**
@@ -658,7 +659,7 @@ public class RubyMatchData extends RubyObject {
 
         updateCharOffset();
 
-        return RubyFixnum.newFixnum(runtime, charOffsets.getBeg(i));
+        return newFixnum(runtime, charOffsets.getBeg(i));
     }
 
     /** match_end
@@ -682,7 +683,7 @@ public class RubyMatchData extends RubyObject {
             e = charOffsets.getEnd(i);
         }
 
-        return RubyFixnum.newFixnum(runtime, e);
+        return newFixnum(runtime, e);
     }
 
     @Deprecated
@@ -719,7 +720,7 @@ public class RubyMatchData extends RubyObject {
             e = charOffsets.getEnd(i);
         }
 
-        return runtime.newArray(RubyFixnum.newFixnum(runtime, b), RubyFixnum.newFixnum(runtime, e));
+        return runtime.newArray(newFixnum(runtime, b), newFixnum(runtime, e));
     }
 
     /** match_pre_match
@@ -777,7 +778,7 @@ public class RubyMatchData extends RubyObject {
                 end,
                 str.getCodeRange());
 
-        return RubyFixnum.newFixnum(runtime, length);
+        return newFixnum(runtime, length);
     }
 
     private int nthToIndex(ThreadContext context, IRubyObject id) {
@@ -872,7 +873,7 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod
     @Override
     public RubyFixnum hash() {
-        return metaClass.runtime.newFixnum( hashCode() );
+        return newFixnum(getRuntime(), hashCode());
     }
 
     @JRubyMethod(keywords = true, optional = 1)

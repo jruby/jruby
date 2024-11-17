@@ -4180,11 +4180,11 @@ public final class Ruby implements Constantizable {
     }
 
     public RaiseException newSystemExit(int status) {
-        return RubySystemExit.newInstance(this, status, "exit").toThrowable();
+        return RubySystemExit.newInstance(this.getCurrentContext(), status, "exit").toThrowable();
     }
 
     public RaiseException newSystemExit(int status, String message) {
-        return RubySystemExit.newInstance(this, status, message).toThrowable();
+        return RubySystemExit.newInstance(this.getCurrentContext(), status, message).toThrowable();
     }
 
     /**

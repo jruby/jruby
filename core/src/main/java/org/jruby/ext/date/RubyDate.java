@@ -60,6 +60,7 @@ import java.util.GregorianCalendar;
 
 import static org.jruby.RubyRegexp.*;
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ext.date.DateUtils.*;
@@ -108,13 +109,14 @@ public class RubyDate extends RubyObject {
     long subMillisNum = 0, subMillisDen = 1; // @sub_millis
 
     static RubyClass createDateClass(Ruby runtime) {
+        var context = runtime.getCurrentContext();
         RubyClass Date = runtime.defineClass("Date", runtime.getObject(), RubyDate::new);
         Date.setReifiedClass(RubyDate.class);
         Date.includeModule(runtime.getComparable());
         Date.defineAnnotatedMethods(RubyDate.class);
-        Date.setConstant("ITALY", runtime.newFixnum(ITALY));
-        Date.setConstant("ENGLAND", runtime.newFixnum(ENGLAND));
-        Date.setConstant("VERSION", runtime.newString("3.2.2"));
+        Date.setConstant("ITALY", newFixnum(context, ITALY));
+        Date.setConstant("ENGLAND", newFixnum(context, ENGLAND));
+        Date.setConstant("VERSION", newString(context, "3.2.2"));
 
         RubyClass dateError = runtime.defineClassUnder("Error", runtime.getArgumentError(), runtime.getArgumentError().getAllocator(), Date);
         runtime.setDateError(dateError);

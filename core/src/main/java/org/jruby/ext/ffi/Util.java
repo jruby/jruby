@@ -31,13 +31,8 @@ package org.jruby.ext.ffi;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import org.jruby.Ruby;
-import org.jruby.RubyBignum;
-import org.jruby.RubyHash;
-import org.jruby.RubyInteger;
-import org.jruby.RubyNumeric;
-import org.jruby.RubyString;
-import org.jruby.RubySymbol;
+
+import org.jruby.*;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -122,38 +117,38 @@ public final class Util {
     }
 
     public static final IRubyObject newSigned8(Ruby runtime, byte value) {
-        return runtime.newFixnum(value);
+        return RubyFixnum.newFixnum(runtime, value);
     }
 
     public static final IRubyObject newUnsigned8(Ruby runtime, byte value) {
-        return runtime.newFixnum(value < 0 ? (long)((value & 0x7FL) + 0x80L) : value);
+        return RubyFixnum.newFixnum(runtime, value < 0 ? (long)((value & 0x7FL) + 0x80L) : value);
     }
 
     public static final IRubyObject newSigned16(Ruby runtime, short value) {
-        return runtime.newFixnum(value);
+        return RubyFixnum.newFixnum(runtime, value);
     }
 
     public static final IRubyObject newUnsigned16(Ruby runtime, short value) {
-        return runtime.newFixnum(value < 0 ? (long)((value & 0x7FFFL) + 0x8000L) : value);
+        return RubyFixnum.newFixnum(runtime, value < 0 ? (long)((value & 0x7FFFL) + 0x8000L) : value);
     }
 
     public static final IRubyObject newSigned32(Ruby runtime, int value) {
-        return runtime.newFixnum(value);
+        return RubyFixnum.newFixnum(runtime, value);
     }
 
     public static final IRubyObject newUnsigned32(Ruby runtime, int value) {
-        return runtime.newFixnum(value < 0 ? (long)((value & 0x7FFFFFFFL) + 0x80000000L) : value);
+        return RubyFixnum.newFixnum(runtime, value < 0 ? (long)((value & 0x7FFFFFFFL) + 0x80000000L) : value);
     }
 
     public static final IRubyObject newSigned64(Ruby runtime, long value) {
-        return runtime.newFixnum(value);
+        return RubyFixnum.newFixnum(runtime, value);
     }
 
     private static final BigInteger UINT64_BASE = BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.ONE);
     public static final IRubyObject newUnsigned64(Ruby runtime, long value) {
         return value < 0
                     ? RubyBignum.newBignum(runtime, BigInteger.valueOf(value & 0x7fffffffffffffffL).add(UINT64_BASE))
-                    : runtime.newFixnum(value);
+                    : RubyFixnum.newFixnum(runtime, value);
     }
 
     @Deprecated

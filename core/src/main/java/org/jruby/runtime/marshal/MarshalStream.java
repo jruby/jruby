@@ -67,6 +67,7 @@ import org.jruby.runtime.encoding.MarshalEncoding;
 
 import static org.jruby.RubyBasicObject.getMetaClass;
 import static org.jruby.api.Convert.castAsString;
+import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.marshal.MarshalCommon.*;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -367,7 +368,7 @@ public class MarshalStream extends FilterOutputStream {
 
     private void userCommon(IRubyObject value, CacheEntry entry) throws IOException {
         var context = runtime.getCurrentContext();
-        RubyFixnum depthLimitFixnum = runtime.newFixnum(depthLimit);
+        RubyFixnum depthLimitFixnum = newFixnum(context, depthLimit);
         final RubyClass klass = getMetaClass(value);
         IRubyObject dumpResult;
         if (entry != null) {
@@ -381,7 +382,7 @@ public class MarshalStream extends FilterOutputStream {
         List<Variable<Object>> variables = null;
         if (marshaled.hasVariables()) {
             variables = marshaled.getMarshalVariableList();
-            if (variables.size() > 0) {
+            if (!variables.isEmpty()) {
                 write(TYPE_IVAR);
             } else {
                 variables = null;

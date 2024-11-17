@@ -35,6 +35,7 @@ import java.util.Map;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.internal.runtime.SplitSuperState;
@@ -455,7 +456,7 @@ public class ConcreteJavaProxy extends JavaProxy {
      */
     @Override
     public IRubyObject id() {
-        return getRuntime().newFixnum(System.identityHashCode(getObject()));
+        return RubyFixnum.newFixnum(getRuntime(), System.identityHashCode(getObject()));
     }
 
     @Override

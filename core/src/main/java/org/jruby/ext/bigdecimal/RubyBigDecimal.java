@@ -142,7 +142,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
         bigDecimal.setInternalModuleVariable("vpPrecLimit", RubyFixnum.zero(runtime));
         bigDecimal.setInternalModuleVariable("vpExceptionMode", RubyFixnum.zero(runtime));
-        bigDecimal.setInternalModuleVariable("vpRoundingMode", runtime.newFixnum(ROUND_HALF_UP));
+        bigDecimal.setInternalModuleVariable("vpRoundingMode", RubyFixnum.newFixnum(runtime, ROUND_HALF_UP));
 
         bigDecimal.defineAnnotatedMethods(RubyBigDecimal.class);
         bigDecimal.defineAnnotatedConstants(RubyBigDecimal.class);
@@ -1001,7 +1001,7 @@ public class RubyBigDecimal extends RubyNumeric {
     @Override
     @JRubyMethod
     public RubyFixnum hash() {
-        return getRuntime().newFixnum(absStripTrailingZeros().hashCode() * value.signum());
+        return RubyFixnum.newFixnum(getRuntime(), absStripTrailingZeros().hashCode() * value.signum());
     }
 
     @Override
@@ -1829,9 +1829,14 @@ public class RubyBigDecimal extends RubyNumeric {
         return RubyArray.newArray(runtime, new RubyBigDecimal(runtime, div), new RubyBigDecimal(runtime, mod));
     }
 
-    @JRubyMethod
+    @Deprecated
     public IRubyObject exponent() {
-        return getRuntime().newFixnum(getExponent());
+        return exponent(getCurrentContext());
+    }
+
+    @JRubyMethod
+    public IRubyObject exponent(ThreadContext context) {
+        return newFixnum(context, getExponent());
     }
 
     @JRubyMethod(name = "finite?")

@@ -52,6 +52,7 @@ import org.jruby.RubyTime;
 import org.jruby.lexer.StrftimeLexer;
 import org.jruby.runtime.ThreadContext;
 
+import static org.jruby.api.Create.newFixnum;
 import static org.jruby.util.CommonByteLists.*;
 import static org.jruby.util.RubyDateFormatter.FieldType.*;
 
@@ -573,7 +574,7 @@ public class RubyDateFormatter {
                         if (sub_millis == null) { // Time
                             RubyTimeOutputFormatter.formatNumber((ByteList) data, nsec, 6, '0');
                         } else { // Date, DateTime
-                            formatSubMillisGt3(runtime, (ByteList) data, width, sub_millis);
+                            formatSubMillisGt3(runtime.getCurrentContext(), (ByteList) data, width, sub_millis);
                         }
                     }
 
@@ -627,11 +628,10 @@ public class RubyDateFormatter {
         return output;
     }
 
-    private static void formatSubMillisGt3(final Ruby runtime, final ByteList buff,
+    private static void formatSubMillisGt3(ThreadContext context, final ByteList buff,
                                            final int width, RubyNumeric sub_millis) {
         final int prec = width - 3;
-        final ThreadContext context = runtime.getCurrentContext();
-        RubyNumeric power = (RubyNumeric) runtime.newFixnum(10).op_pow(context, prec);
+        RubyNumeric power = (RubyNumeric) newFixnum(context, 10).op_pow(context, prec);
         RubyNumeric truncated = (RubyNumeric) sub_millis.numerator(context).
                 convertToInteger().op_mul(context, power);
         truncated = (RubyNumeric) truncated.idiv(context, sub_millis.denominator(context));

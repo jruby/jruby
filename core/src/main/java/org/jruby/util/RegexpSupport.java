@@ -408,10 +408,9 @@ public class RegexpSupport {
         byte[]chBuf = new byte[enc.maxLength()];
         int chLen = 0;
 
-        p = readEscapedByte(runtime, chBuf, chLen++, bytes, p, end, str, mode);
-        while (chLen < enc.maxLength() && StringSupport.MBCLEN_NEEDMORE_P(StringSupport.preciseLength(enc, chBuf, 0, chLen))) {
+        do {
             p = readEscapedByte(runtime, chBuf, chLen++, bytes, p, end, str, mode);
-        }
+        } while (chLen < enc.maxLength() && StringSupport.MBCLEN_NEEDMORE_P(StringSupport.preciseLength(enc, chBuf, 0, chLen)));
 
         int cl = StringSupport.preciseLength(enc, chBuf, 0, chLen);
         if (cl == -1) {

@@ -55,6 +55,7 @@ import org.jruby.util.io.EncodingUtils;
 
 import java.io.IOException;
 
+import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Create.newString;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
@@ -362,27 +363,28 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return getRuntime().newFixnum(crc);
     }
 
-    @JRubyMethod(name = "write")
+    @Deprecated
     public IRubyObject write(IRubyObject p1) {
-        Ruby runtime = getRuntime();
+        return write(getCurrentContext(), p1);
+    }
+
+    @JRubyMethod(name = "write")
+    public IRubyObject write(ThreadContext context, IRubyObject p1) {
         RubyString str = p1.asString();
 
-        if (enc2 != null
-                && enc2 != ASCIIEncoding.INSTANCE) {
-            str = EncodingUtils.strConvEncOpts(runtime.getCurrentContext(), str, str.getEncoding(),
-                    enc2, 0, runtime.getNil());
-        
+        if (enc2 != null && enc2 != ASCIIEncoding.INSTANCE) {
+            str = EncodingUtils.strConvEncOpts(context, str, str.getEncoding(), enc2, 0, context.nil);
         }
         
         try {
             // TODO: jzlib-1.1.0.jar throws IndexOutOfBoundException for zero length buffer.
-            if (str.size() > 0) {
+            if (!str.isEmpty()) {
                 io.write(str.getByteList().getUnsafeBytes(), str.getByteList().begin(), str.getByteList().length());
             }
             
-            return runtime.newFixnum(str.getByteList().length());
+            return newFixnum(context, str.getByteList().length());
         } catch (IOException ioe) {
-            throw runtime.newIOErrorFromException(ioe);
+            throw context.runtime.newIOErrorFromException(ioe);
         }
     }
 

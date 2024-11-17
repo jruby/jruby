@@ -58,12 +58,15 @@ public class RubySystemExit extends RubyException {
         return systemExitClass;
     }
 
+    @Deprecated
     public static RubySystemExit newInstance(Ruby runtime, int status, String message) {
-        ThreadContext context = runtime.getCurrentContext();
-        final RubyClass klass = runtime.getSystemExit();
-        final IRubyObject[] args = new IRubyObject[] {
-            runtime.newFixnum(status), newString(context, message)
-        };
+        return newInstance(runtime.getCurrentContext(), status, message);
+    }
+
+    public static RubySystemExit newInstance(ThreadContext context, int status, String message) {
+        final RubyClass klass = context.runtime.getSystemExit();
+        final IRubyObject[] args = new IRubyObject[] { newFixnum(context, status), newString(context, message) };
+
         return (RubySystemExit) klass.newInstance(context, args, Block.NULL_BLOCK);
     }
 

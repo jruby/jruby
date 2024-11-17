@@ -457,23 +457,28 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         return RubyNumeric.int2fix(getRuntime(), position);
     }
 
-    @JRubyMethod(name = "readchar")
+    @Deprecated
     public IRubyObject readchar() {
+        return readchar(getCurrentContext());
+    }
+
+    @JRubyMethod(name = "readchar")
+    public IRubyObject readchar(ThreadContext context) {
         try {
             int value = bufferedStream.read();
-            if (value == -1) throw getRuntime().newEOFError();
+            if (value == -1) throw context.runtime.newEOFError();
 
             position++;
             
-            return getRuntime().newFixnum(value);
+            return newFixnum(context, value);
         } catch (IOException ioe) {
-            throw getRuntime().newIOErrorFromException(ioe);
+            throw context.runtime.newIOErrorFromException(ioe);
         }
     }
 
     @Deprecated
     public IRubyObject getc() {
-        return getbyte(getRuntime().getCurrentContext());
+        return getbyte(getCurrentContext());
     }
 
     @JRubyMethod(name = "getbyte")
@@ -492,12 +497,12 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
     @Deprecated
     public IRubyObject getbyte() {
-        return getbyte(getRuntime().getCurrentContext());
+        return getbyte(getCurrentContext());
     }
 
     @Deprecated
     public IRubyObject readbyte() {
-        return readbyte(getRuntime().getCurrentContext());
+        return readbyte(getCurrentContext());
     }
 
     @JRubyMethod(name = "readbyte")
@@ -615,7 +620,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         
         if (os == 255) os = (byte) 0x0b; // NTFS filesystem (NT), because CRuby's test_zlib expect it.
         
-        return getRuntime().newFixnum(os & 0xff);
+        return RubyFixnum.newFixnum(getRuntime(), os & 0xff);
     }
 
     @Override

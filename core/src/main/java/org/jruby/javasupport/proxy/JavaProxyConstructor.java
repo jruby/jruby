@@ -142,7 +142,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
 
     @JRubyMethod
     public RubyFixnum arity() {
-        return getRuntime().newFixnum(getArity());
+        return RubyFixnum.newFixnum(getRuntime(), getArity());
     }
 
     public final int getArity() {

@@ -539,7 +539,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     @Deprecated
     @Override
     public RubyFixnum hash() {
-        return metaClass.runtime.newFixnum(hashCode());
+        return hash(getCurrentContext());
     }
 
     @JRubyMethod

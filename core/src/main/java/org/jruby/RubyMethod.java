@@ -154,7 +154,7 @@ public class RubyMethod extends AbstractRubyMethod {
      */
     @JRubyMethod
     public RubyFixnum arity() {
-        return getRuntime().newFixnum(method.getSignature().arityValue());
+        return RubyFixnum.newFixnum(getRuntime(), method.getSignature().arityValue());
     }
 
     @JRubyMethod(name = "eql?")

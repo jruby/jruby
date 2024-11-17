@@ -2739,6 +2739,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return asBoolean(context, isEmpty());
     }
 
+    @JRubyAPI
     public boolean isEmpty() {
         return value.length() == 0;
     }

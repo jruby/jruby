@@ -27,6 +27,7 @@ import java.util.Arrays;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 
@@ -35,6 +36,8 @@ public class RubyIOBuffer extends RubyObject {
     public static final Runtime FFI_RUNTIME = Runtime.getSystemRuntime();
 
     public static RubyClass createIOBufferClass(Ruby runtime) {
+        var context = runtime.getCurrentContext();
+
         RubyClass IOBuffer = runtime.getIO().defineClassUnder("Buffer", runtime.getObject(), RubyIOBuffer::new);
 
         IOBuffer.includeModule(runtime.getComparable());
@@ -44,8 +47,8 @@ public class RubyIOBuffer extends RubyObject {
 
         RubyClass IO = runtime.getIO();
 
-        IO.setConstant("READABLE", runtime.newFixnum(OpenFile.READABLE));
-        IO.setConstant("WRITABLE", runtime.newFixnum(OpenFile.WRITABLE));
+        IO.setConstant("READABLE", newFixnum(context, OpenFile.READABLE));
+        IO.setConstant("WRITABLE", newFixnum(context, OpenFile.WRITABLE));
 
         return IOBuffer;
     }
