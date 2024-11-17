@@ -57,6 +57,10 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         super(method, visibility, implementationClass);
 
         if (!implementationClass.getRuntime().getInstanceConfig().isJitEnabled()) setCallCount(-1);
+        else {
+            time = System.nanoTime();
+        }
+
         // This is so profiled callsite can access the sites original method (callsites has IRScope in it).
         method.compilable = this;
     }
