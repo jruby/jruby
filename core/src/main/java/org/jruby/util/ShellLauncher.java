@@ -28,9 +28,27 @@
 
 package org.jruby.util;
 
-import static com.headius.backport9.buffer.Buffers.clearBuffer;
-import static com.headius.backport9.buffer.Buffers.flipBuffer;
-import static java.lang.System.out;
+import jnr.posix.util.Platform;
+import org.jruby.Main;
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyHash;
+import org.jruby.RubyIO;
+import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyModule;
+import org.jruby.RubyString;
+import org.jruby.RubySymbol;
+import org.jruby.ast.util.ArgsUtil;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.ext.rbconfig.RbConfigLibrary;
+import org.jruby.javasupport.Java;
+import org.jruby.runtime.Helpers;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.io.ChannelHelper;
+import org.jruby.util.io.IOOptions;
+import org.jruby.util.io.ModeFlags;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -59,24 +77,9 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.jruby.Main;
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.RubyHash;
-import org.jruby.RubyIO;
-import org.jruby.RubyInstanceConfig;
-import org.jruby.RubyModule;
-import org.jruby.RubyString;
-import jnr.posix.util.Platform;
-import org.jruby.ast.util.ArgsUtil;
-import org.jruby.javasupport.Java;
-import org.jruby.runtime.Helpers;
-import org.jruby.ext.rbconfig.RbConfigLibrary;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.io.ChannelHelper;
-import org.jruby.util.io.IOOptions;
-import org.jruby.util.io.ModeFlags;
+import static com.headius.backport9.buffer.Buffers.clearBuffer;
+import static com.headius.backport9.buffer.Buffers.flipBuffer;
+import static java.lang.System.out;
 
 /**
  * This mess of a class is what happens when all Java gives you is
@@ -109,6 +112,7 @@ public class ShellLauncher {
         Pattern.compile("[*?{}\\[\\]<>()~&|$;'`\\\\\"\\n]");
 
     private static final Pattern WIN_ENVVAR_PATTERN = Pattern.compile("%\\w+%");
+    public static final ProcessBuilder.Redirect REDIRECT_ERROR_TO_OUT = ProcessBuilder.Redirect.to(new File("REDIRECT ERROR TO OUT"));
 
     private static class ScriptThreadProcess extends Process implements Runnable {
         private final String[] argArray;
@@ -478,6 +482,8 @@ public class ShellLauncher {
         File pwd = new File(runtime.getCurrentDirectory());
         LaunchConfig cfg = new LaunchConfig(runtime, rawArgs, true);
 
+        cfg.processArguments();
+
         try {
             Process process;
             try {
@@ -525,6 +531,8 @@ public class ShellLauncher {
 
         File pwd = new File(runtime.getCurrentDirectory());
         LaunchConfig cfg = new LaunchConfig(runtime, rawArgs, true);
+
+        cfg.processArguments();
 
         try {
             Process process;
@@ -588,6 +596,36 @@ public class ShellLauncher {
                 .start();
     }
 
+    public static Process buildProcess(Ruby runtime, LaunchConfig cfg, String[] args, String[] env, File pwd) throws IOException {
+        ProcessBuilder builder = new ProcessBuilder(args);
+
+        // duplicate this logic or improve jnr-posix ProcessMaker to support redirects
+        Map<String, String> environment = builder.environment();
+        environment.clear();
+        Map<String, String> newEnvironment = runtime.getPosix().newProcessMaker().environment(env).environment();
+        newEnvironment.forEach((k, v) -> environment.put(k, v));
+
+        builder.directory(pwd);
+
+        if (cfg.redirectIn != null) {
+            builder.redirectInput(cfg.redirectIn);
+        }
+
+        if (cfg.redirectOut != null) {
+            builder.redirectOutput(cfg.redirectOut);
+        }
+
+        if (cfg.redirectErr != null) {
+            if (cfg.redirectErr == REDIRECT_ERROR_TO_OUT) {
+                builder.redirectErrorStream(true);
+            } else {
+                builder.redirectError(cfg.redirectErr);
+            }
+        }
+
+        return builder.start();
+    }
+
     public static long runExternalWithoutWait(Ruby runtime, IRubyObject[] rawArgs) {
         return runWithoutWait(runtime, rawArgs, runtime.getOutputStream());
     }
@@ -599,6 +637,8 @@ public class ShellLauncher {
     public static int execAndWait(Ruby runtime, IRubyObject[] rawArgs, Map mergeEnv) {
         File pwd = new File(runtime.getCurrentDirectory());
         LaunchConfig cfg = new LaunchConfig(runtime, rawArgs, true);
+
+        cfg.processArguments();
 
         if (cfg.shouldRunInProcess()) {
             log(runtime, "ExecAndWait in-process");
@@ -890,6 +930,9 @@ public class ShellLauncher {
 
             String[] args = parseCommandLine(runtime.getCurrentContext(), runtime, strings);
             LaunchConfig cfg = new LaunchConfig(runtime, strings, true);
+
+            cfg.processArguments();
+
             boolean useShell = Platform.IS_WINDOWS ? cfg.shouldRunInShell() : false;
             if (addShell) for (String arg : args) useShell |= shouldUseShell(arg);
 
@@ -1117,11 +1160,132 @@ public class ShellLauncher {
 
     public static class LaunchConfig {
         public LaunchConfig(Ruby runtime, IRubyObject[] rawArgs, boolean doExecutableSearch) {
+            this(runtime, rawArgs, ProcessBuilder.Redirect.PIPE, null, doExecutableSearch);
+        }
+
+        public LaunchConfig(Ruby runtime, IRubyObject[] rawArgs, ProcessBuilder.Redirect defaultRedirect, File defaultChdir, boolean doExecutableSearch) {
             this.runtime = runtime;
             this.rawArgs = rawArgs;
             this.doExecutableSearch = doExecutableSearch;
+            this.redirectIn = defaultRedirect;
+            this.redirectOut = defaultRedirect;
+            this.redirectErr = defaultRedirect;
+            this.chdir = defaultChdir;
+        }
+
+        public void processArguments() {
             shell = getShell(runtime);
-            args = parseCommandLine(runtime.getCurrentContext(), runtime, rawArgs);
+            args = parseCommandLine(runtime.getCurrentContext(), runtime, processOptions(rawArgs));
+        }
+
+        private IRubyObject[] processOptions(IRubyObject[] args) {
+            if (args.length > 1) {
+                IRubyObject tmp = TypeConverter.checkHashType(runtime, args[args.length - 1], false);
+
+                if (tmp instanceof RubyHash) {
+                    options = (RubyHash) tmp;
+                    args = Arrays.copyOf(args, args.length - 1);
+
+                    for (Map.Entry<IRubyObject, IRubyObject> entry : (Set<Map.Entry<IRubyObject, IRubyObject>>) options.directEntrySet()) {
+                        IRubyObject key = entry.getKey();
+                        IRubyObject value = entry.getValue();
+
+                        if (key instanceof RubyFixnum || key instanceof RubyIO) {
+                            throw redirectNotSupported(runtime, key, value);
+                        }
+
+                        if (!(key instanceof RubySymbol) && !(key instanceof RubyString)) {
+                            throw runtime.newArgumentError("bad keyword argument: " + key.inspect());
+                        }
+
+                        switch (key.toString()) {
+                            case "unsetenv_others":
+                            case "pgroup":
+                            case "new_pgroup":
+                            case "rlimit_resourcename":
+                            case "umask":
+                            case "close_others":
+                                throw runtime.newNotImplementedError("native support unavailable, option not supported: " + key.inspect());
+
+                            case "chdir":
+                                if (value instanceof RubyString) {
+                                    chdir = new File(value.toString());
+                                    break;
+                                }
+
+                                throw redirectNotSupported(runtime, key, value);
+
+                            case "in":
+                                // "in" redirect only supports string filename bare or as only element of an array
+                                value = unwrapInOutRedirectArray(runtime, key, value);
+
+                                if (value instanceof RubyString) {
+                                    redirectIn = ProcessBuilder.Redirect.from(new File(value.toString()));
+                                    break;
+                                }
+
+                                throw redirectNotSupported(runtime, key, value);
+
+                            case "out":
+                                // "out" redirect only supports string filename
+                                if (value instanceof RubyString) {
+                                    redirectOut = ProcessBuilder.Redirect.from(new File(value.toString()));
+                                    break;
+                                }
+
+                                throw redirectNotSupported(runtime, key, value);
+
+                            case "err":
+                                // "err" redirect only supports string filename, or [:child, :out]
+                                if (value instanceof RubyString) {
+                                    redirectErr = ProcessBuilder.Redirect.from(new File(value.toString()));
+                                    break;
+                                }
+
+                                if (value instanceof RubyArray) {
+                                    RubyArray toArray = (RubyArray) value;
+
+                                    if (toArray.size() == 2) {
+                                        IRubyObject elt0 = toArray.eltOk(0);
+                                        IRubyObject elt1 = toArray.eltOk(1);
+
+                                        if (elt0 instanceof RubySymbol &&
+                                                elt0.toString().equals("child") &&
+                                                elt1 instanceof RubySymbol &&
+                                                elt1.toString().equals("out")) {
+                                            redirectErr = REDIRECT_ERROR_TO_OUT;
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                throw redirectNotSupported(runtime, key, value);
+                        }
+                    }
+                }
+            }
+
+            return args;
+        }
+
+        private IRubyObject unwrapInOutRedirectArray(Ruby runtime, IRubyObject key, IRubyObject value) {
+            if (value instanceof RubyArray) {
+                RubyArray fromArray = (RubyArray) value;
+
+                int size = fromArray.size();
+                if (size != 1) {
+                    throw redirectNotSupported(runtime, key, value);
+                }
+
+                value = fromArray.eltOk(0);
+            }
+            return value;
+        }
+
+        private RaiseException redirectNotSupported(Ruby runtime, IRubyObject key, IRubyObject value) {
+            return runtime.newNotImplementedError(
+                    "native support unavailable, redirect not supported: "
+                            + key.inspect() + " => " + value.inspect());
         }
 
         /**
@@ -1363,13 +1527,19 @@ public class ShellLauncher {
         private final Ruby runtime;
         private final boolean doExecutableSearch;
         private final IRubyObject[] rawArgs;
-        private final String shell;
-        private final String[] args;
+        private String shell;
+        private String[] args;
         private String[] execArgs;
         private boolean cmdBuiltin = false;
 
         private String executable;
         private File executableFile;
+
+        ProcessBuilder.Redirect redirectIn;
+        ProcessBuilder.Redirect redirectOut;
+        ProcessBuilder.Redirect redirectErr;
+        File chdir;
+        RubyHash options;
     }
 
     public static Process run(Ruby runtime, IRubyObject[] rawArgs, boolean doExecutableSearch) throws IOException {
@@ -1427,14 +1597,23 @@ public class ShellLauncher {
 
     public static Process run(Ruby runtime, Map env, String dir, IRubyObject[] rawArgs, boolean doExecutableSearch, boolean forceExternalProcess) throws IOException {
         Process aProcess;
-        File pwd = new File(dir);
-        LaunchConfig cfg = new LaunchConfig(runtime, rawArgs, doExecutableSearch);
+        String virtualCWD = runtime.getCurrentDirectory();
+        File chdir = null;
+
+        // default chdir is virtual cwd
+        if (virtualCWD != System.getProperty("user.dir")) {
+            chdir = new File(virtualCWD);
+        }
+
+        LaunchConfig cfg = new LaunchConfig(runtime, rawArgs, ProcessBuilder.Redirect.INHERIT, chdir, doExecutableSearch);
+
+        cfg.processArguments();
 
         try {
             if (!forceExternalProcess && cfg.shouldRunInProcess()) {
                 log(runtime, "Launching in-process");
                 ScriptThreadProcess ipScript = new ScriptThreadProcess(runtime,
-                        expandGlobs(runtime, cfg.getExecArgs()), getCurrentEnv(runtime, env), pwd);
+                        expandGlobs(runtime, cfg.getExecArgs()), getCurrentEnv(runtime, env), cfg.chdir);
                 ipScript.start();
                 return ipScript;
             } else {
@@ -1450,7 +1629,7 @@ public class ShellLauncher {
                 String[] args = cfg.getExecArgs();
                 if (dir.startsWith("uri:classloader:")) {
                     // system commands can't run with a URI for the current dir, so the best we can use is user.dir
-                    pwd = new File(System.getProperty("user.dir"));
+                    chdir = new File(System.getProperty("user.dir"));
 
                     // only if we inside a jar and spawning org.jruby.Main we
                     // change to the current directory inside the jar
@@ -1459,7 +1638,7 @@ public class ShellLauncher {
                                 "org.jruby.Main -C " + dir);
                     }
                 }
-                aProcess = buildProcess(runtime, args, getCurrentEnv(runtime, env), pwd);
+                aProcess = buildProcess(runtime, args, getCurrentEnv(runtime, env), cfg.chdir);
             }
         } catch (SecurityException se) {
             throw runtime.newSecurityError(se.getLocalizedMessage());

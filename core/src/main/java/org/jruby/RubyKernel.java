@@ -2000,8 +2000,7 @@ public class RubyKernel {
         long[] tuple;
 
         try {
-            args = dropLastArgIfOptions(runtime, args);
-            if (! Platform.IS_WINDOWS && args[args.length -1].asJavaString().matches(".*[^&]&\\s*")) {
+            if (! Platform.IS_WINDOWS && args[args.length -1].toString().matches(".*[^&]&\\s*")) {
                 // looks like we need to send process to the background
                 ShellLauncher.runWithoutWait(runtime, args);
                 return 0;
@@ -2014,17 +2013,6 @@ public class RubyKernel {
         // RubyStatus uses real native status now, so we unshift Java's shifted exit status
         context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, tuple[0] << 8, tuple[1]));
         return (int) tuple[0];
-    }
-
-    private static IRubyObject[] dropLastArgIfOptions(final Ruby runtime, final IRubyObject[] args) {
-        IRubyObject lastArg = args[args.length - 1];
-        if (lastArg instanceof RubyHash) {
-            if (!((RubyHash) lastArg).isEmpty()) {
-                runtime.getWarnings().warn(ID.UNSUPPORTED_SUBPROCESS_OPTION, "system does not support options in JRuby yet: " + lastArg);
-            }
-            return Arrays.copyOf(args, args.length - 1);
-        }
-        return args;
     }
 
     public static IRubyObject exec(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
@@ -2083,6 +2071,8 @@ public class RubyKernel {
             IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
             try {
                 ShellLauncher.LaunchConfig cfg = new ShellLauncher.LaunchConfig(runtime, args, true);
+
+                cfg.processArguments();
 
                 // Duplicated in part from ShellLauncher.runExternalAndWait
                 if (cfg.shouldRunInShell()) {
