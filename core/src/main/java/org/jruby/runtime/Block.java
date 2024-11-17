@@ -89,7 +89,7 @@ public class Block implements FunctionOneOrTwoOrThree<ThreadContext, IRubyObject
     /**
      * All Block variables should either refer to a real block or this NULL_BLOCK.
      */
-    public static final Block NULL_BLOCK = new Block(BlockBody.NULL_BODY, new Binding(null, new Frame(), Visibility.PUBLIC));
+    public static final Block NULL_BLOCK = new Block(BlockBody.NULL_BODY, new Binding(null, new Frame(null), Visibility.PUBLIC));
 
     static {
         // Ensure dummy frame is updated with NULL_BLOCK since it may clinit first.
