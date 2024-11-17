@@ -200,7 +200,6 @@ public class RaiseException extends JumpException {
         context.runtime.incrementExceptionCount();
         if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.logException(exception);
 
-        doSetLastError(context);
         doCallEventHook(context);
 
         if (backtrace == null) {
@@ -263,10 +262,6 @@ public class RaiseException extends JumpException {
         if (context.runtime.hasEventHooks()) {
             context.runtime.callEventHooks(context, RubyEvent.RAISE, context.getFile(), context.getLine(), context.getFrameName(), context.getFrameKlazz());
         }
-    }
-
-    private void doSetLastError(final ThreadContext context) {
-        context.setErrorInfo(exception); // $!
     }
 
     /**

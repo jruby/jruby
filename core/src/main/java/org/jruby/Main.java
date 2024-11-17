@@ -292,6 +292,9 @@ public class Main {
                     doRunFromMain(runtime, in, filename);
                 }
                 status = new Status();
+            } catch (RaiseException ex) {
+                runtime.getCurrentContext().setErrorInfo(ex.getException()); // set $! (accessible in at_exit blocks)
+                throw ex;
             } finally {
                 try {
                     runtime.tearDown();
