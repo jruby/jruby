@@ -827,6 +827,25 @@ describe "A Ruby class implementing an interface" do
 
     expect(java_cls.interfaces).to include(java.lang.Runnable.java_class)
   end
+
+
+  describe "that extends a specializable RubyObject" do
+    class C1
+    end
+
+    it "produces a Java class that extends that specialized type" do
+      # construct C1 first to use specialized class
+      c1obj = C1.new
+
+      c2 = Class.new(C1) do
+        include ReturnsInterface
+      end
+
+      c2obj = c2.new
+
+      expect(JRuby.ref(c2obj).getClass.getSuperclass).to eq(JRuby.ref(c1obj).getClass)
+    end
+  end
 end
 
 describe "A class that extends a DelegateClass" do
