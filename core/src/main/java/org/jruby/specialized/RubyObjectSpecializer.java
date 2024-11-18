@@ -36,17 +36,12 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ClassDefiningClassLoader;
-import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.cli.Options;
 import org.jruby.util.collections.NonBlockingHashMapLong;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.tree.LabelNode;
 
-import java.lang.invoke.CallSite;
-import java.lang.invoke.LambdaMetafactory;
-import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.util.Set;
 
 import static org.jruby.util.CodegenUtils.ci;
@@ -60,13 +55,17 @@ public class RubyObjectSpecializer {
 
     public static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
-    private static ClassAndAllocator getClassForSize(int size) {
-        return SPECIALIZED_CLASSES.get(size);
+    private final Ruby runtime;
+
+    private ClassAndAllocator getClassForSize(int size) {
+        return specializedClasses.get(size);
     }
 
-    private static final NonBlockingHashMapLong<ClassAndAllocator> SPECIALIZED_CLASSES = new NonBlockingHashMapLong<>();
+    private final NonBlockingHashMapLong<ClassAndAllocator> specializedClasses = new NonBlockingHashMapLong<>();
 
-    private static final ClassDefiningClassLoader LOADER = new OneShotClassLoader(Ruby.getClassLoader());
+    public RubyObjectSpecializer(Ruby runtime) {
+        this.runtime = runtime;
+    }
 
     static class ClassAndAllocator {
         final Class cls;
@@ -78,7 +77,7 @@ public class RubyObjectSpecializer {
         }
     }
 
-    public static ObjectAllocator specializeForVariables(RubyClass klass, Set<String> foundVariables) {
+    public ObjectAllocator specializeForVariables(RubyClass klass, Set<String> foundVariables) {
         int size = foundVariables.size();
 
         // clamp to max object width (jruby/jruby#
@@ -108,11 +107,11 @@ public class RubyObjectSpecializer {
         if (className != null) {
             final String clsPath = "org/jruby/gen/" + className;
 
-            synchronized (LOADER) {
+            synchronized (this) {
                 Class specialized;
                 try {
                     // try loading class without generating
-                    specialized = LOADER.loadClass(clsPath.replace('/', '.'));
+                    specialized = runtime.getJRubyClassLoader().loadClass(clsPath.replace('/', '.'));
                 } catch (ClassNotFoundException cnfe) {
                     // generate specialized class
                     specialized = generateInternal(size, clsPath);
@@ -124,7 +123,7 @@ public class RubyObjectSpecializer {
                     cna = new ClassAndAllocator(specialized, allocator);
 
                     if (!Options.REIFY_VARIABLES_NAME.load()) {
-                        SPECIALIZED_CLASSES.put(size, cna);
+                        specializedClasses.put(size, cna);
                     }
                 } catch (Throwable t) {
                     throw new RuntimeException(t);
@@ -155,7 +154,7 @@ public class RubyObjectSpecializer {
         return cna.allocator;
     }
 
-    private static Class generateInternal(int size, final String clsPath) {
+    private Class generateInternal(int size, final String clsPath) {
         // ensure only one thread will attempt to generate and define the new class
         final String baseName = p(RubyObject.class);
 
@@ -264,8 +263,8 @@ public class RubyObjectSpecializer {
         block.label(defaultError);
     }
 
-    private static Class defineClass(JiteClass jiteClass) {
-        return LOADER.defineClass(classNameFromJiteClass(jiteClass), jiteClass.toBytes(JDKVersion.V1_8));
+    private Class defineClass(JiteClass jiteClass) {
+        return runtime.getJRubyClassLoader().defineClass(classNameFromJiteClass(jiteClass), jiteClass.toBytes(JDKVersion.V1_8));
     }
 
     private static String classNameFromJiteClass(JiteClass jiteClass) {
