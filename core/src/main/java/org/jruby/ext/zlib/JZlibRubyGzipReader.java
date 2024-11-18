@@ -65,6 +65,7 @@ import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.castAsString;
 import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 /**
@@ -326,16 +327,10 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
             if (argc == 0 || args[0].isNil()) return readAll();
 
             int len = RubyNumeric.fix2int(args[0]);
-            
-            if (len < 0) throw runtime.newArgumentError("negative length " + len + " given");
-
-            if (len > 0) {
-                // rb_gzfile_read
+            if (len < 0) throw argumentError(context, "negative length " + len + " given");
+            if (len > 0) { // rb_gzfile_read
                 ByteList buf = readSize(len);
-                
-                if (buf == null) return runtime.getNil();
-                
-                return runtime.newString(buf);
+                return buf == null ? context.nil : newString(context, buf);
             }
 
             return RubyString.newEmptyBinaryString(runtime);
@@ -363,37 +358,33 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
     @JRubyMethod(name = "readpartial", required = 1, optional = 1, checkArity = false)
     public IRubyObject readpartial(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-
         int argc = Arity.checkArgumentCount(context, args, 1, 2);
 
         try {
             int len = RubyNumeric.fix2int(args[0]);
-            if (len < 0) throw runtime.newArgumentError("negative length " + len + " given");
+            if (len < 0) throw argumentError(context, "negative length " + len + " given");
 
-            if (argc > 1 && !args[1].isNil()) {
-                return readPartial(runtime, len, castAsString(context, args[1]));
-            }
-
-            return readPartial(runtime, len, null);
+            return argc > 1 && !args[1].isNil() ?
+                    readPartial(context, len, castAsString(context, args[1])) :
+                    readPartial(context, len, null);
         } catch (IOException ioe) {
-            throw runtime.newIOErrorFromException(ioe);
+            throw context.runtime.newIOErrorFromException(ioe);
         }
     }
 
-    private IRubyObject readPartial(Ruby runtime, int len, RubyString outbuf) throws IOException {
+    private IRubyObject readPartial(ThreadContext context, int len, RubyString outbuf) throws IOException {
         ByteList val = newReadByteList(10);
         byte[] buffer = new byte[len];
         int read = bufferedStream.read(buffer, 0, len);
 
-        if (read == -1) return runtime.getNil();
+        if (read == -1) return context.nil;
 
         val.append(buffer, 0, read);
         this.position += val.length();
 
         if (outbuf != null) outbuf.view(val);
 
-        return newStr(runtime, val);
+        return newStr(context.runtime, val);
     }
 
     private RubyString readAll() throws IOException {

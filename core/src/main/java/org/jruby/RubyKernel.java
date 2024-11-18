@@ -111,7 +111,8 @@ import static org.jruby.anno.FrameField.SELF;
 import static org.jruby.anno.FrameField.VISIBILITY;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.*;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
@@ -179,7 +180,7 @@ public class RubyKernel {
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject at_exit(ThreadContext context, IRubyObject recv, Block block) {
-        if (!block.isGiven()) throw context.runtime.newArgumentError("called without a block");
+        if (!block.isGiven()) throw argumentError(context, "called without a block");
 
         return context.runtime.pushExitBlock(context.runtime.newProc(Block.Type.PROC, block));
     }
@@ -188,11 +189,8 @@ public class RubyKernel {
     public static IRubyObject autoload_p(ThreadContext context, final IRubyObject recv, IRubyObject symbol) {
         RubyModule module = IRRuntimeHelpers.getCurrentClassBase(context, recv);
 
-        if (module == null || module.isNil()) {
-            return context.nil;
-        }
-
-        return module.autoload_p(context, symbol);
+        return module == null || module.isNil() ?
+                context.nil : module.autoload_p(context, symbol);
     }
 
     @JRubyMethod(required = 2, module = true, visibility = PRIVATE, reads = {SCOPE})
@@ -208,11 +206,9 @@ public class RubyKernel {
         Visibility lastVis = context.getLastVisibility();
         CallType lastCallType = context.getLastCallType();
 
-        if (args.length == 0 || !(args[0] instanceof RubySymbol)) {
-            throw context.runtime.newArgumentError("no id given");
-        }
+        if (args.length == 0 || !(args[0] instanceof RubySymbol sym)) throw argumentError(context, "no id given");
 
-        return methodMissingDirect(context, recv, (RubySymbol) args[0], lastVis, lastCallType, args);
+        return methodMissingDirect(context, recv, sym, lastVis, lastCallType, args);
     }
 
     protected static IRubyObject methodMissingDirect(ThreadContext context, IRubyObject recv, RubySymbol symbol, Visibility lastVis, CallType lastCallType, IRubyObject[] args) {
@@ -258,7 +254,6 @@ public class RubyKernel {
 
     @JRubyMethod(name = "open", required = 1, optional = 3, checkArity = false, module = true, visibility = PRIVATE, keywords = true)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = context.runtime;
         boolean redirect = false;
         int callInfo = ThreadContext.resetCallInfo(context);
         boolean keywords = hasKeywords(callInfo);
@@ -275,12 +270,12 @@ public class RubyKernel {
                 } else {
                     IRubyObject cmd = PopenExecutor.checkPipeCommand(context, tmp);
                     if (cmd != context.nil) {
-                        if (PopenExecutor.nativePopenAvailable(runtime)) {
+                        if (PopenExecutor.nativePopenAvailable(context.runtime)) {
                             args[0] = cmd;
-                            return PopenExecutor.popen(context, args, runtime.getIO(), block);
-                        } else {
-                            throw runtime.newArgumentError("pipe open is not supported without native subprocess logic");
+                            return PopenExecutor.popen(context, args, context.runtime.getIO(), block);
                         }
+
+                        throw argumentError(context, "pipe open is not supported without native subprocess logic");
                     }
                 }
             }
@@ -302,7 +297,7 @@ public class RubyKernel {
 
         // We had to save callInfo from original call because kwargs needs to still pass through to IO#open
         context.callInfo = callInfo;
-        return RubyIO.open(context, runtime.getFile(), args, block);
+        return RubyIO.open(context, context.runtime.getFile(), args, block);
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)
@@ -397,39 +392,45 @@ public class RubyKernel {
     }
 
     private static boolean checkExceptionOpt(ThreadContext context, RubyClass rubyClass, IRubyObject opts) {
-        boolean exception = true;
-
         IRubyObject maybeOpts = ArgsUtil.getOptionsArg(context.runtime, opts, false);
+        if (maybeOpts.isNil()) return true;
 
-        if (!maybeOpts.isNil()) {
-            IRubyObject exObj = ArgsUtil.extractKeywordArg(context,  opts, "exception");
+        IRubyObject exObj = ArgsUtil.extractKeywordArg(context,  opts, "exception");
 
-            if (exObj != context.tru && exObj != context.fals) {
-                throw context.runtime.newArgumentError("'" + rubyClass.getName() + "': expected true or false as exception: " + exObj);
-            }
-            exception = exObj.isTrue();
+        if (exObj != context.tru && exObj != context.fals) {
+            throw argumentError(context, "'" + rubyClass.getName() + "': expected true or false as exception: " + exObj);
         }
 
-        return exception;
+        return  exObj.isTrue();
     }
 
+    @Deprecated(since = "10.0", forRemoval = true)
     public static RubyFloat new_float(IRubyObject recv, IRubyObject object) {
         return (RubyFloat) new_float(recv.getRuntime().getCurrentContext(), object, true);
     }
 
     private static final ByteList ZEROx = new ByteList(new byte[] { '0','x' }, false);
 
+    @Deprecated(since = "10.0", forRemoval = true)
     public static RubyFloat new_float(final Ruby runtime, IRubyObject object) {
         return (RubyFloat) new_float(runtime.getCurrentContext(), object, true);
+    }
+
+    public static RubyFloat new_float(ThreadContext context, IRubyObject object) {
+        return (RubyFloat) new_float(context, object, true);
     }
 
     private static BigInteger SIXTEEN = BigInteger.valueOf(16L);
     private static BigInteger MINUS_ONE = BigInteger.valueOf(-1L);
 
-    private static RaiseException floatError(Ruby runtime, ByteList string) {
-        throw runtime.newArgumentError(str(runtime, "invalid value for Float(): ", runtime.newString(string)));
+    private static RaiseException floatError(ThreadContext context, ByteList string) {
+        throw argumentError(context, str(context.runtime, "invalid value for Float(): ", newString(context, string)));
     }
 
+    @Deprecated(since = "10.0", forRemoval = true)
+    public static double parseHexidecimalExponentString2(Ruby runtime, ByteList str) {
+        return parseHexidecimalExponentString2(runtime.getCurrentContext(), str);
+    }
     /**
      * Parse hexidecimal exponential notation:
      * <a href="https://en.wikipedia.org/wiki/Hexadecimal#Hexadecimal_exponential_notation">...</a>
@@ -439,10 +440,11 @@ public class RubyKernel {
      * @param str the bytelist to be parsed
      * @return the result.
      */
-    public static double parseHexidecimalExponentString2(Ruby runtime, ByteList str) {
+
+    public static double parseHexidecimalExponentString2(ThreadContext context, ByteList str) {
         byte[] bytes = str.unsafeBytes();
         int length = str.length();
-        if (length <= 2) throw floatError(runtime, str);
+        if (length <= 2) throw floatError(context, str);
         int sign = 1;
         int letter;
         int i = str.begin();
@@ -457,9 +459,9 @@ public class RubyKernel {
 
         // Skip '0x'
         letter = bytes[i++];
-        if (letter != '0') throw floatError(runtime, str);
+        if (letter != '0') throw floatError(context, str);
         letter = bytes[i++];
-        if (letter != 'x') throw floatError(runtime, str);
+        if (letter != 'x') throw floatError(context, str);
 
         int exponent = 0;
         int explicitExponent = 0;
@@ -468,7 +470,7 @@ public class RubyKernel {
         boolean explicitExponentFound = false;
         BigInteger value = BigInteger.valueOf(0L);
 
-        if (i == length || bytes[i] == '_' || bytes[i] == 'p' || bytes[i] == 'P') throw floatError(runtime, str);
+        if (i == length || bytes[i] == '_' || bytes[i] == 'p' || bytes[i] == 'P') throw floatError(context, str);
 
         for(; i < length && !explicitExponentFound; i++) {
             letter = bytes[i];
@@ -478,7 +480,7 @@ public class RubyKernel {
                     continue;
                 case 'p':                              // Explicit exponent "1.23(p)1a"
                 case 'P':
-                    if (bytes[i-1] == '_' || i == length - 1) throw floatError(runtime, str);
+                    if (bytes[i-1] == '_' || i == length - 1) throw floatError(context, str);
                     explicitExponentFound = true;
                     continue;
                 case '_':
@@ -487,7 +489,7 @@ public class RubyKernel {
 
             // base 16 value representing main pieces of number
             int digit = Character.digit(letter, 16);
-            if (Character.forDigit(digit, 16) == 0) throw floatError(runtime, str);
+            if (Character.forDigit(digit, 16) == 0) throw floatError(context, str);
             value = value.multiply(SIXTEEN).add(BigInteger.valueOf(digit));
 
             if (periodFound) exponent++;
@@ -500,17 +502,17 @@ public class RubyKernel {
             } else if (bytes[i] == '+') {
                 i++;
             } else if (bytes[i] == '_') {
-                throw floatError(runtime, str);
+                throw floatError(context, str);
             }
 
             for (; i < length; i++) { // base 10 value representing base 2 exponent
                 letter = bytes[i];
                 if (letter == '_') {
-                    if (i == length - 1) throw floatError(runtime, str);
+                    if (i == length - 1) throw floatError(context, str);
                     continue;
                 }
                 int digit = Character.digit(letter, 10);
-                if (Character.forDigit(digit, 10) == 0) throw floatError(runtime, str);
+                if (Character.forDigit(digit, 10) == 0) throw floatError(context, str);
                 explicitExponent = explicitExponent * 10 + digit;
             }
         }
@@ -523,23 +525,18 @@ public class RubyKernel {
     public static IRubyObject new_float(ThreadContext context, IRubyObject object, boolean exception) {
         Ruby runtime = context.runtime;
 
-        if (object instanceof RubyInteger){
-            return new_float(runtime, (RubyInteger) object);
-        }
-        if (object instanceof RubyFloat) {
-            return object;
-        }
-        if (object instanceof RubyString) {
-            RubyString str = (RubyString) object;
+        if (object instanceof RubyInteger)return new_float(context, (RubyInteger) object);
+        if (object instanceof RubyFloat) return object;
+        if (object instanceof RubyString str) {
             ByteList bytes = str.getByteList();
-            if (bytes.getRealSize() == 0){ // rb_cstr_to_dbl case
-                if (!exception) return runtime.getNil();
-                throw runtime.newArgumentError("invalid value for Float(): " + object.inspect());
+            if (bytes.isEmpty()) { // rb_cstr_to_dbl case
+                if (!exception) return context.nil;
+                throw argumentError(context, "invalid value for Float(): " + object.inspect());
             }
 
             if (bytes.startsWith(ZEROx)) { // startsWith("0x")
                 if (bytes.indexOf('p') != -1 || bytes.indexOf('P') != -1) {
-                    return runtime.newFloat(parseHexidecimalExponentString2(runtime, bytes));
+                    return newFloat(context, parseHexidecimalExponentString2(context, bytes));
                 }
                 IRubyObject inum = ConvertBytes.byteListToInum(runtime, bytes, 16, true, exception);
                 if (!exception && inum.isNil()) return inum;
@@ -559,16 +556,15 @@ public class RubyKernel {
             if (exception) throw re;
         }
 
-        if (!exception) return runtime.getNil();
+        if (!exception) return context.nil;
 
         return TypeConverter.handleUncoercibleObject(runtime, object, runtime.getFloat(), true);
     }
 
-    static RubyFloat new_float(final Ruby runtime, RubyInteger num) {
-        if (num instanceof RubyBignum) {
-            return RubyFloat.newFloat(runtime, RubyBignum.big2dbl((RubyBignum) num));
-        }
-        return RubyFloat.newFloat(runtime, num.getDoubleValue());
+    static RubyFloat new_float(ThreadContext context, RubyInteger num) {
+        return num instanceof RubyBignum ?
+                newFloat(context, RubyBignum.big2dbl((RubyBignum) num)) :
+                newFloat(context, num.getDoubleValue());
     }
 
     @JRubyMethod(name = "Hash", required = 1, module = true, visibility = PRIVATE)
@@ -992,9 +988,7 @@ public class RubyKernel {
 
     @JRubyMethod(name = {"sprintf", "format"}, required = 1, rest = true, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject sprintf(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        if (args.length == 0) {
-            throw context.runtime.newArgumentError("sprintf must have at least one argument");
-        }
+        if (args.length == 0) throw argumentError(context, "sprintf must have at least one argument");
 
         RubyString str = RubyString.stringValue(args[0]);
 
@@ -1015,36 +1009,24 @@ public class RubyKernel {
         return sprintf(recv.getRuntime().getCurrentContext(), recv, args);
     }
     public static IRubyObject raise(ThreadContext context, IRubyObject self, IRubyObject arg0) {
-        final Ruby runtime = context.runtime;
-
         // semi extract_raise_opts :
-        IRubyObject cause;
-        if (arg0 instanceof RubyHash) {
-            RubyHash opt = (RubyHash) arg0;
-            RubySymbol key;
-            if (!opt.isEmpty() && (opt.has_key_p(context, runtime.newSymbol("cause")) == runtime.getTrue())) {
-                throw runtime.newArgumentError("only cause is given with no arguments");
-            }
+        if (arg0 instanceof RubyHash opt && !opt.isEmpty() &&
+                opt.has_key_p(context, newSymbol(context, "cause")) == context.tru) {
+                throw argumentError(context, "only cause is given with no arguments");
         }
 
-        cause = context.getErrorInfo(); // returns nil for no error-info
+        IRubyObject cause = context.getErrorInfo(); // returns nil for no error-info
 
         maybeRaiseJavaException(context, arg0);
 
-        RaiseException raise;
-        if (arg0 instanceof RubyString) {
-            raise = ((RubyException) runtime.getRuntimeError().newInstance(context, arg0)).toThrowable();
-        } else {
-            raise = convertToException(context, arg0, null).toThrowable();
-        }
+        RaiseException raise = arg0 instanceof RubyString ?
+                ((RubyException) context.runtime.getRuntimeError().newInstance(context, arg0)).toThrowable() :
+                convertToException(context, arg0, null).toThrowable();
 
-        if (runtime.isDebug()) {
-            printExceptionSummary(runtime, raise.getException());
-        }
+        var exception = raise.getException();
 
-        if (raise.getException().getCause() == null && cause != raise.getException()) {
-            raise.getException().setCause(cause);
-        }
+        if (context.runtime.isDebug()) printExceptionSummary(context, exception);
+        if (exception.getCause() == null && cause != exception) exception.setCause(cause);
 
         throw raise;
     }
@@ -1063,11 +1045,11 @@ public class RubyKernel {
             if (last instanceof RubyHash) {
                 RubyHash opt = (RubyHash) last;
                 RubySymbol key;
-                if (!opt.isEmpty() && (opt.has_key_p(context, key = runtime.newSymbol("cause")) == runtime.getTrue())) {
+                if (!opt.isEmpty() && (opt.has_key_p(context, key = newSymbol(context, "cause")) == context.tru)) {
                     cause = opt.delete(context, key, Block.NULL_BLOCK);
                     forceCause = true;
                     if (opt.isEmpty() && --argc == 0) { // more opts will be passed along
-                        throw runtime.newArgumentError("only cause is given with no arguments");
+                        throw argumentError(context, "only cause is given with no arguments");
                     }
                 }
             }
@@ -1108,13 +1090,9 @@ public class RubyKernel {
                 break;
         }
 
-        if (runtime.isDebug()) {
-            printExceptionSummary(runtime, raise.getException());
-        }
-
-        if (forceCause || argc > 0 && raise.getException().getCause() == null && cause != raise.getException()) {
-            raise.getException().setCause(cause);
-        }
+        var exception = raise.getException();
+        if (runtime.isDebug()) printExceptionSummary(context, exception);
+        if (forceCause || argc > 0 && exception.getCause() == null && cause != exception) exception.setCause(cause);
 
         throw raise;
     }
@@ -1160,16 +1138,16 @@ public class RubyKernel {
         return (RubyException) exception;
     }
 
-    private static void printExceptionSummary(Ruby runtime, RubyException rEx) {
+    private static void printExceptionSummary(ThreadContext context, RubyException rEx) {
         RubyStackTraceElement[] elements = rEx.getBacktraceElements();
         RubyStackTraceElement firstElement = elements.length > 0 ? elements[0] :
                 new RubyStackTraceElement("", "", "(empty)", 0, false);
         String msg = String.format("Exception '%s' at %s:%s - %s\n",
                 rEx.getMetaClass(),
                 firstElement.getFileName(), firstElement.getLineNumber(),
-                TypeConverter.convertToType(rEx, runtime.getString(), "to_s"));
+                TypeConverter.convertToType(rEx, context.runtime.getString(), "to_s"));
 
-        runtime.getErrorStream().print(msg);
+        context.runtime.getErrorStream().print(msg);
     }
 
     /**
@@ -1388,12 +1366,8 @@ public class RubyKernel {
             lev = defaultLevel;
         }
 
-        if (lev < 0) {
-            throw context.runtime.newArgumentError("negative level (" + lev + ')');
-        }
-        if (len < 0) {
-            throw context.runtime.newArgumentError("negative size (" + len + ')');
-        }
+        if (lev < 0) throw argumentError(context, "negative level (" + lev + ')');
+        if (len < 0) throw argumentError(context, "negative size (" + len + ')');
 
         return func.apply(context, lev, len);
     }
@@ -1501,17 +1475,13 @@ public class RubyKernel {
                 IRubyObject[] ret = ArgsUtil.extractKeywordArgs(context, (RubyHash) opts, "uplevel", "category");
                 if (ret[0] != null) {
                     explicitUplevel = true;
-                    if ((uplevel = RubyNumeric.num2int(ret[0])) < 0) {
-                        throw context.runtime.newArgumentError("negative level (" + uplevel + ")");
-                    }
+                    uplevel = RubyNumeric.num2int(ret[0]);
+                    if (uplevel < 0) throw argumentError(context, "negative level (" + uplevel + ")");
                 }
 
                 if (ret[1] != null) {
-                    if (ret[1].isNil()) {
-                        category = ret[1];
-                    } else {
-                        category = TypeConverter.convertToType(ret[1], context.runtime.getSymbol(), "to_sym");
-                    }
+                    category = ret[1].isNil() ?
+                            context.nil : TypeConverter.convertToType(ret[1], context.runtime.getSymbol(), "to_sym");
                 }
             }
         }
@@ -1660,15 +1630,9 @@ public class RubyKernel {
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static RubyProc lambda(ThreadContext context, IRubyObject recv, Block block) {
         // existing procs remain procs vs becoming lambdas.
-        Block.Type type = block.type;
+        if (block.type == Block.Type.PROC) throw argumentError(context, "the lambda method requires a literal block");
 
-        if (type == Block.Type.PROC) {
-            throw context.runtime.newArgumentError("the lambda method requires a literal block");
-        } else {
-            type = Block.Type.LAMBDA;
-        }
-
-        return context.runtime.newProc(type, block);
+        return context.runtime.newProc(Block.Type.LAMBDA, block);
     }
 
     @Deprecated
@@ -1823,7 +1787,7 @@ public class RubyKernel {
         case '>': case '-':
             break;
         default:
-            throw context.runtime.newArgumentError("unknown command ?" + (char) cmd);
+            throw argumentError(context, "unknown command ?" + (char) cmd);
         }
         return cmd;
     }
@@ -2179,9 +2143,7 @@ public class RubyKernel {
 
     @JRubyMethod(rest = true, keywords = true, reads = SCOPE)
     public static IRubyObject public_send(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        if (args.length == 0) {
-            throw context.runtime.newArgumentError("no method name given");
-        }
+        if (args.length == 0) throw argumentError(context, "no method name given");
 
         String name = RubySymbol.idStringFromObject(context, args[0]);
 
@@ -2573,7 +2535,7 @@ public class RubyKernel {
             case 1:
                 return RubyRandom.randKernel(context, recv, args[0]);
             default:
-                throw context.runtime.newArgumentError(args.length, 0, 1);
+                throw argumentError(context, args.length, 0, 1);
         }
     }
 
@@ -2601,7 +2563,7 @@ public class RubyKernel {
             case 1:
                 return sleep(context, recv, args[0]);
             default:
-                throw context.runtime.newArgumentError(args.length, 0, 1);
+                throw argumentError(context, args.length, 0, 1);
         }
     }
 
@@ -2613,7 +2575,7 @@ public class RubyKernel {
             case 3:
                 return test(context, recv, args[0], args[1], args[2]);
             default:
-                throw context.runtime.newArgumentError(args.length, 2, 3);
+                throw argumentError(context, args.length, 2, 3);
         }
     }
 }

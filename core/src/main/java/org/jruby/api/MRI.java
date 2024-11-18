@@ -211,7 +211,7 @@ public class MRI {
     }
 
     public static int rb_enc_codepoint_len(ThreadContext context, byte[] pBytes, int p, int e, int[] len_p, Encoding enc) {
-        return EncodingUtils.encCodepointLength(context.runtime, pBytes, p, e, len_p, enc);
+        return EncodingUtils.encCodepointLength(context, pBytes, p, e, len_p, enc);
     }
 
     public static RubyString rb_str_escape(ThreadContext context, RubyString str) {

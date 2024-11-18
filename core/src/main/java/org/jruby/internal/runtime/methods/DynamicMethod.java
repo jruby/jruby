@@ -51,6 +51,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.MethodData;
 import org.jruby.util.CodegenUtils;
 
+import static org.jruby.api.Error.argumentError;
+
 /**
  * DynamicMethod represents a method handle in JRuby, to provide both entry
  * points into AST and bytecode interpreters, but also to provide handles to
@@ -252,11 +254,11 @@ public abstract class DynamicMethod {
             if (required == 1) {
                 return call(context, self, klazz, respondToMethodName, name).isTrue();
             } else if (required != 2) {
-                throw context.runtime.newArgumentError(respondToMethodName + " " + "must accept 1 or 2 arguments (requires " + required + ")");
+                throw argumentError(context, respondToMethodName + " " + "must accept 1 or 2 arguments (requires " + required + ")");
             }
         }
 
-        return call(context, self, klazz, respondToMethodName, name, context.runtime.getTrue()).isTrue();
+        return call(context, self, klazz, respondToMethodName, name, context.tru).isTrue();
     }
 
     /**

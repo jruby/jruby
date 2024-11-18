@@ -722,7 +722,7 @@ public final class ArrayJavaProxy extends JavaProxy {
     @Override
     @JRubyMethod
     public RubyFixnum hash() {
-        return super.hash();
+        return RubyFixnum.newFixnum(getRuntime(), hashCode());
     }
 
     @Override

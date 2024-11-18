@@ -32,6 +32,7 @@ package org.jruby.ext.pathname;
 import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
 
 import org.jruby.*;
 import org.jruby.anno.JRubyClass;
@@ -160,16 +161,12 @@ public class RubyPathname extends RubyObject {
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject path) {
-        if (path.respondsTo("to_path")) {
-            path = path.callMethod(context, "to_path");
-        }
+        if (path.respondsTo("to_path")) path = path.callMethod(context, "to_path");
 
         RubyString str = path.convertToString();
-        if (str.getByteList().indexOf('\0') != -1) {
-            throw context.runtime.newArgumentError("pathname contains null byte");
-        }
+        if (str.getByteList().indexOf('\0') != -1) throw argumentError(context, "pathname contains null byte");
 
-        this.setPath((RubyString) str.dup());
+        setPath((RubyString) str.dup());
         return this;
     }
 

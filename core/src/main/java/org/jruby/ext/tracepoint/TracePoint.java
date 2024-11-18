@@ -22,6 +22,7 @@ import org.jruby.util.TypeConverter;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.util.RubyStringBuilder.str;
 
 public class TracePoint extends RubyObject {
@@ -45,11 +46,9 @@ public class TracePoint extends RubyObject {
     
     @JRubyMethod(rest = true, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] _events, final Block block) {
-        final Ruby runtime = context.runtime;
-        
         ArrayList<RubyEvent> events = new ArrayList<RubyEvent>(_events.length);
         for (int i = 0; i < _events.length; i++) {
-            RubySymbol _event = (RubySymbol) TypeConverter.convertToType(context, _events[i], runtime.getSymbol(), sites(context).to_sym);
+            RubySymbol _event = (RubySymbol) TypeConverter.convertToType(context, _events[i], context.runtime.getSymbol(), sites(context).to_sym);
 
             String eventName = _event.asJavaString().toUpperCase();
             RubyEvent event = null;
@@ -57,7 +56,7 @@ public class TracePoint extends RubyObject {
                 event = RubyEvent.valueOf(eventName);
             } catch (IllegalArgumentException iae) {}
 
-            if (event == null) throw runtime.newArgumentError(str(runtime, "unknown event: ", _event));
+            if (event == null) throw argumentError(context, str(context.runtime, "unknown event: ", _event));
 
             // a_call is call | b_call | c_call, and same as a_return.
             if (event == RubyEvent.A_CALL) {
@@ -73,14 +72,10 @@ public class TracePoint extends RubyObject {
             }
         }
         
-        final EnumSet<RubyEvent> eventSet;
-        if (events.size() > 0) {
-            eventSet = EnumSet.copyOf(events);
-        } else {
-            eventSet = RubyEvent.ALL_EVENTS_ENUMSET;
-        }
+        final EnumSet<RubyEvent> eventSet = !events.isEmpty() ?
+                EnumSet.copyOf(events) : RubyEvent.ALL_EVENTS_ENUMSET;
 
-        if (!block.isGiven()) throw runtime.newArgumentError("must be called with a block");
+        if (!block.isGiven()) throw argumentError(context, "must be called with a block");
 
         final ThreadContext threadToTrace = context;
         hook = new EventHook() {

@@ -25,6 +25,8 @@ import org.jruby.util.log.LoggerFactory;
 import org.jruby.util.TypeConverter;
 
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Create.newSymbol;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.util.RubyStringBuilder.str;
 
 public class TraceType {
@@ -380,10 +382,9 @@ public class TraceType {
     }
 
     private static IRubyObject checkHighlightKeyword(ThreadContext context, IRubyObject optArg, boolean autoTTYDetect) {
-        Ruby runtime = context.runtime;
         IRubyObject highlightArg = context.nil;
 
-        RubySymbol highlightSym = runtime.newSymbol("highlight");
+        RubySymbol highlightSym = newSymbol(context, "highlight");
         if (!optArg.isNil()) {
             RubyHash optHash = (RubyHash) optArg;
 
@@ -393,12 +394,12 @@ public class TraceType {
             if (!(highlightArg.isNil()
                     || highlightArg == context.tru
                     || highlightArg == context.fals)) {
-                throw context.runtime.newArgumentError("expected true or false as highlight: " + highlightArg);
+                throw argumentError(context, "expected true or false as highlight: " + highlightArg);
             }
         }
 
         if (highlightArg.isNil()) {
-            highlightArg = asBoolean(context, autoTTYDetect && RubyException.to_tty_p(context, runtime.getException()).isTrue());
+            highlightArg = asBoolean(context, autoTTYDetect && RubyException.to_tty_p(context, context.runtime.getException()).isTrue());
         }
 
         return highlightArg;
@@ -408,9 +409,9 @@ public class TraceType {
         if (vOrder == null || vOrder.isNil()) return false;
 
         IRubyObject id = TypeConverter.checkID(vOrder);
-        if (id == context.runtime.newSymbol("bottom")) return true;
-        if (id == context.runtime.newSymbol("top")) return false;
-        throw context.runtime.newArgumentError(str(context.runtime, "expected :top or :bottom as order: ", vOrder));
+        if (id == newSymbol(context, "bottom")) return true;
+        if (id == newSymbol(context, "top")) return false;
+        throw argumentError(context, str(context.runtime, "expected :top or :bottom as order: ", vOrder));
     }
 
     private static RubyString printBacktraceMRI(IRubyObject exception, IRubyObject opts, boolean highlight, boolean reverse) {

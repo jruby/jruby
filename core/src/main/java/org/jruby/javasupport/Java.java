@@ -99,8 +99,7 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.collections.NonBlockingHashMapLong;
 
 import static org.jruby.api.Convert.*;
-import static org.jruby.api.Error.typeError;
-import static org.jruby.api.Error.withException;
+import static org.jruby.api.Error.*;
 import static org.jruby.runtime.Visibility.*;
 
 @JRubyModule(name = "Java")
@@ -715,17 +714,14 @@ public class Java implements Library {
             final JavaProxyConstructor[] constructors, final IRubyObject arg0) {
             JavaProxyConstructor forArity = checkCallableForArity(1, constructors, 0);
 
-            if ( forArity == null ) {
-                throw context.runtime.newArgumentError("wrong number of arguments for constructor");
-            }
+            if (forArity == null) throw argumentError(context, "wrong number of arguments for constructor");
 
             final JavaProxyConstructor matching = CallableSelector.matchingCallableArityOne(
                 context.runtime, this, new JavaProxyConstructor[] { forArity }, arg0
             );
 
-            if ( matching == null ) {
-                throw context.runtime.newArgumentError("wrong number of arguments for constructor");
-            }
+            if ( matching == null ) throw argumentError(context, "wrong number of arguments for constructor");
+
             return matching;
         }
 
@@ -734,17 +730,14 @@ public class Java implements Library {
             final JavaProxyConstructor[] constructors, final int arity, final IRubyObject[] args) {
             JavaProxyConstructor forArity = checkCallableForArity(arity, constructors, 0);
 
-            if ( forArity == null ) {
-                throw context.runtime.newArgumentError("wrong number of arguments for constructor");
-            }
+            if ( forArity == null ) throw argumentError(context, "wrong number of arguments for constructor");
 
             final JavaProxyConstructor matching = CallableSelector.matchingCallableArityN(
                 context.runtime, this, new JavaProxyConstructor[] { forArity }, args
             );
 
-            if ( matching == null ) {
-                throw context.runtime.newArgumentError("wrong number of arguments for constructor");
-            }
+            if ( matching == null ) throw argumentError(context, "wrong number of arguments for constructor");
+
             return matching;
         }
 
@@ -752,17 +745,14 @@ public class Java implements Library {
             final JavaProxyConstructor[] constructors, final IRubyObject arg0) {
             ArrayList<JavaProxyConstructor> forArity = findCallablesForArity(1, constructors);
 
-            if ( forArity.size() == 0 ) {
-                throw context.runtime.newArgumentError("wrong number of arguments for constructor");
-            }
+            if (forArity.isEmpty()) throw argumentError(context, "wrong number of arguments for constructor");
 
             final JavaProxyConstructor matching = CallableSelector.matchingCallableArityOne(
                     context.runtime, this, forArity.toArray(new JavaProxyConstructor[forArity.size()]), arg0
             );
 
-            if ( matching == null ) {
-                throw context.runtime.newArgumentError("wrong number of arguments for constructor");
-            }
+            if (matching == null) throw argumentError(context, "wrong number of arguments for constructor");
+
             return matching;
         }
 
@@ -771,16 +761,14 @@ public class Java implements Library {
             final JavaProxyConstructor[] constructors, final int arity, final IRubyObject... args) {
             ArrayList<JavaProxyConstructor> forArity = findCallablesForArity(arity, constructors);
 
-            if ( forArity.size() == 0 ) {
-                throw context.runtime.newArgumentError("wrong number of arguments for constructor");
-            }
+            if (forArity.isEmpty()) throw argumentError(context, "wrong number of arguments for constructor");
+
             final JavaProxyConstructor matching = CallableSelector.matchingCallableArityN(
                 context.runtime, this, forArity.toArray(new JavaProxyConstructor[forArity.size()]), args
             );
 
-            if ( matching == null ) {
-                throw context.runtime.newArgumentError("wrong number of arguments for constructor");
-            }
+            if (matching == null) throw argumentError(context, "wrong number of arguments for constructor");
+
             return matching;
         }
 
@@ -789,16 +777,14 @@ public class Java implements Library {
             final T[] constructors, final CallableCache<ParameterTypes> cache, final int arity, final IRubyObject... args) {
             ArrayList<T> forArity = findCallablesForArity(arity, constructors);
 
-            if ( forArity.size() == 0 ) {
-                throw context.runtime.newArgumentError("wrong number of arguments for constructor");
-            }
+            if (forArity.isEmpty()) throw argumentError(context, "wrong number of arguments for constructor");
+
             final ParameterTypes matching = CallableSelector.matchingCallableArityN(
                 context.runtime, cache, forArity.toArray(new ParameterTypes[forArity.size()]), args
             );
 
-            if ( matching == null ) {
-                throw context.runtime.newArgumentError("wrong number of arguments for constructor");
-            }
+            if (matching == null) throw argumentError(context, "wrong number of arguments for constructor");
+
             return (T) matching;
         }
 
@@ -947,9 +933,7 @@ public class Java implements Library {
         final RubyModule parentPackage, final String name, final boolean cacheMethod) {
         final Ruby runtime = context.runtime;
 
-        if ( name.length() == 0 ) {
-            throw runtime.newArgumentError("empty class or package name");
-        }
+        if (name.isEmpty()) throw argumentError(context, "empty class or package name");
 
         final String fullName = JavaPackage.buildPackageName(parentPackage, name).toString();
 
@@ -1264,9 +1248,8 @@ public class Java implements Library {
 
     private static RubyModule getProxyUnderClass(final ThreadContext context,
         final RubyModule enclosingClass, final String name) {
-        final Ruby runtime = context.runtime;
 
-        if (name.length() == 0) throw runtime.newArgumentError("empty class name");
+        if (name.isEmpty()) throw argumentError(context, "empty class name");
 
         Class<?> enclosing = JavaUtil.getJavaClass(enclosingClass, null);
 
@@ -1274,7 +1257,7 @@ public class Java implements Library {
 
         final String fullName = enclosing.getName() + '$' + name;
 
-        final RubyModule result = getProxyClassOrNull(runtime, fullName);
+        final RubyModule result = getProxyClassOrNull(context.runtime, fullName);
         //if ( result != null && cacheMethod ) bindJavaPackageOrClassMethod(enclosingClass, name, result);
         return result;
     }
@@ -1332,7 +1315,7 @@ public class Java implements Library {
         final IRubyObject name = args[0];
         if ( args.length > 1 ) {
             final int count = args.length - 1;
-            throw context.runtime.newArgumentError("Java does not have a method '"+ name +"' with " + count + " arguments");
+            throw argumentError(context, "Java does not have a method '"+ name +"' with " + count + " arguments");
         }
         return method_missing(context, self, name);
     }

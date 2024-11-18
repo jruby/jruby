@@ -68,6 +68,7 @@ import org.jruby.runtime.Visibility;
 import static org.jruby.anno.FrameField.*;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.castAsModule;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
 import static org.jruby.runtime.Helpers.invokeChecked;
@@ -955,7 +956,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         // MRI: immutable_obj_clone
         if (isSpecialObject()) {
             final Ruby runtime = context.runtime;
-            if (freeze == runtime.getFalse()) throw runtime.newArgumentError(str(runtime, "can't unfreeze ", types(runtime, getType())));
+            if (freeze == runtime.getFalse()) throw argumentError(context, str(runtime, "can't unfreeze ", types(runtime, getType())));
 
             return this;
         }
@@ -1678,11 +1679,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         Visibility lastVis = context.getLastVisibility();
         CallType lastCallType = context.getLastCallType();
 
-        if (args.length == 0 || !(args[0] instanceof RubySymbol)) {
-            throw context.runtime.newArgumentError("no id given");
-        }
+        if (args.length == 0 || !(args[0] instanceof RubySymbol sym)) throw argumentError(context, "no id given");
 
-        return RubyKernel.methodMissingDirect(context, recv, (RubySymbol)args[0], lastVis, lastCallType, args);
+        return RubyKernel.methodMissingDirect(context, recv, sym, lastVis, lastCallType, args);
     }
 
     @JRubyMethod(name = "__send__", omit = true, keywords = true)

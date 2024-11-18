@@ -724,7 +724,6 @@ public class RubyClass extends RubyModule {
      * MRI: check_funcall_respond_to
      */
     private static boolean checkFuncallRespondTo(ThreadContext context, RubyClass klass, IRubyObject recv, RespondToCallSite respondToSite) {
-        final Ruby runtime = context.runtime;
         DynamicMethod me = respondToSite.retrieveCache(klass).method;
 
         // NOTE: isBuiltin here would be NOEX_BASIC in MRI, a flag only added to respond_to?, method_missing, and
@@ -733,13 +732,11 @@ public class RubyClass extends RubyModule {
 
         int required = me.getSignature().required();
 
-        if (required > 2) throw runtime.newArgumentError("respond_to? must accept 1 or 2 arguments (requires " + required + ")");
+        if (required > 2) throw argumentError(context, "respond_to? must accept 1 or 2 arguments (requires " + required + ")");
 
-        if (required == 1) {
-            return respondToSite.respondsTo(context, recv, recv);
-        } else {
-            return respondToSite.respondsTo(context, recv, recv, true);
-        }
+        return required == 1 ?
+                respondToSite.respondsTo(context, recv, recv) :
+                respondToSite.respondsTo(context, recv, recv, true);
     }
 
     // MRI: check_funcall_callable

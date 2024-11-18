@@ -481,12 +481,9 @@ public class RubyBasicSocket extends RubyIO {
 
     @JRubyMethod
     public IRubyObject setsockopt(ThreadContext context, IRubyObject option) {
-        if (option instanceof Option) {
-            Option rsockopt = (Option) option;
-            return setsockopt(context, rsockopt.level(context), rsockopt.optname(context), rsockopt.data(context));
-        } else {
-            throw context.runtime.newArgumentError(option.toString() + " is not a Socket::Option");
-        }
+        if (!(option instanceof Option sockopt)) throw argumentError(context, option + " is not a Socket::Option");
+
+        return setsockopt(context, sockopt.level(context), sockopt.optname(context), sockopt.data(context));
     }
 
     @JRubyMethod
@@ -857,7 +854,6 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     private static IRubyObject shutdownInternal(ThreadContext context, OpenFile fptr, int how) {
-        Ruby runtime = context.runtime;
         Channel channel;
 
         switch (how) {
@@ -865,36 +861,31 @@ public class RubyBasicSocket extends RubyIO {
             channel = fptr.channel();
             try {
                 SocketType.forChannel(channel).shutdownInput(channel);
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 // MRI ignores errors from shutdown()
             }
 
             fptr.setMode(fptr.getMode() & ~OpenFile.READABLE);
 
-            return RubyFixnum.zero(runtime);
-
+            return RubyFixnum.zero(context.runtime);
         case 1:
             channel = fptr.channel();
             try {
                 SocketType.forChannel(channel).shutdownOutput(channel);
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 // MRI ignores errors from shutdown()
             }
 
             fptr.setMode(fptr.getMode() & ~OpenFile.WRITABLE);
 
-            return RubyFixnum.zero(runtime);
-
+            return RubyFixnum.zero(context.runtime);
         case 2:
             shutdownInternal(context, fptr, 0);
             shutdownInternal(context, fptr, 1);
 
-            return RubyFixnum.zero(runtime);
-
+            return RubyFixnum.zero(context.runtime);
         default:
-            throw runtime.newArgumentError("`how' should be either :SHUT_RD, :SHUT_WR, :SHUT_RDWR");
+            throw argumentError(context, "`how' should be either :SHUT_RD, :SHUT_WR, :SHUT_RDWR");
         }
     }
 

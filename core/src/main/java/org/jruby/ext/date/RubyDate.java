@@ -62,6 +62,7 @@ import static org.jruby.RubyRegexp.*;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ext.date.DateUtils.*;
 import static org.jruby.util.Numeric.*;
@@ -243,39 +244,35 @@ public class RubyDate extends RubyObject {
     private RubyFixnum DAY_MS_CACHE;
 
     private long initMillis(final ThreadContext context, IRubyObject ajd) {
-        final Ruby runtime = context.runtime;
         // cannot use DateTimeUtils.fromJulianDay since we need to keep ajd as a Rational for precision
 
         // millis, @sub_millis = ((ajd - UNIX_EPOCH_IN_AJD) * 86400000).divmod(1)
 
         IRubyObject val;
-        if (ajd instanceof RubyFixnum) {
-            val = ((RubyFixnum) ajd).op_minus(context, 4881175 / 2);
+        if (ajd instanceof RubyFixnum fix) {
+            val = fix.op_minus(context, 4881175 / 2);
             val = ((RubyFixnum) val).op_mul(context, DAY_MS);
-            val = ((RubyInteger) val).op_plus(context, RubyFixnum.newFixnum(runtime, DAY_MS / 2)); // missing 1/2
-        }
-        else {
-            RubyRational _UNIX_EPOCH_IN_AJD = RubyRational.newRational(runtime, -4881175, 2); // -(1970-01-01)
+            val = ((RubyInteger) val).op_plus(context, newFixnum(context, DAY_MS / 2)); // missing 1/2
+        } else {
+            RubyRational _UNIX_EPOCH_IN_AJD = RubyRational.newRational(context.runtime, -4881175, 2); // -(1970-01-01)
             val = _UNIX_EPOCH_IN_AJD.op_plus(context, ajd);
             val = DAY_MS(context).op_mul(context, val);
         }
 
-        if (val instanceof RubyFixnum) {
-            return ((RubyFixnum) val).getLongValue();
-        }
+        if (val instanceof RubyFixnum fix) return fix.getLongValue();
 
         // fallback
         val = ((RubyNumeric) val).divmod(context, RubyFixnum.one(context.runtime));
         IRubyObject millis = ((RubyArray) val).eltInternal(0);
-        if (!(millis instanceof RubyFixnum)) { // > java.lang.Long::MAX_VALUE
-            throw runtime.newArgumentError("Date out of range: millis=" + millis + " (" + millis.getMetaClass() + ")");
+        if (!(millis instanceof RubyFixnum ms)) { // > java.lang.Long::MAX_VALUE
+            throw argumentError(context, "Date out of range: millis=" + millis + " (" + millis.getMetaClass() + ")");
         }
 
         IRubyObject subMillis = ((RubyArray) val).eltInternal(1);
         this.subMillisNum = ((RubyNumeric) subMillis).numerator(context).convertToInteger().getLongValue();
         this.subMillisDen = ((RubyNumeric) subMillis).denominator(context).convertToInteger().getLongValue();
 
-        return ((RubyFixnum) millis).getLongValue();
+        return ms.getLongValue();
     }
 
     private RubyFixnum DAY_MS(final ThreadContext context) {
@@ -1511,14 +1508,13 @@ public class RubyDate extends RubyObject {
         if (off == 0) {
             if (sg == ITALY) return CHRONO_ITALY_UTC;
             zone = DateTimeZone.UTC;
-        }
-        else {
+        } else {
             try {
                 zone = DateTimeZone.forOffsetMillis(off * 1000); // off in seconds
             } // NOTE: JODA only allows 'valid': -23:59:59.999 to +23:59:59.999
             catch (IllegalArgumentException ex) { // while MRI handles 25/24 fine
                 debug(context, "invalid offset", ex);
-                throw context.runtime.newArgumentError("invalid offset: " + off);
+                throw argumentError(context, "invalid offset: " + off);
             }
         }
         return getChronology(context, sg, zone);

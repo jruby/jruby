@@ -25,7 +25,7 @@ public class Error {
      * @return the created exception
      */
     public static ArgumentError argumentError(ThreadContext context, String message) {
-        return (ArgumentError) context.runtime.newArgumentError(message);
+        return (ArgumentError) context.runtime.newRaiseException(context.runtime.getArgumentError(), message);
     }
 
     /**

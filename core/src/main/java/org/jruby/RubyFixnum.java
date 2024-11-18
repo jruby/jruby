@@ -60,6 +60,7 @@ import org.jruby.util.cli.Options;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.Numeric.f_odd_p;
 
@@ -374,29 +375,24 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
     @Override
     public RubyArray digits(ThreadContext context, IRubyObject base) {
         long value = getLongValue();
-
         if (value < 0) throw context.runtime.newMathDomainError("out of domain");
 
         base = base.convertToInteger();
-
         if (base instanceof RubyBignum) return RubyArray.newArray(context.runtime, newFixnum(context.runtime, value));
 
         long longBase = ((RubyFixnum) base).value;
-        if (longBase < 0) throw context.runtime.newArgumentError("negative radix");
-        if (longBase < 2) throw context.runtime.newArgumentError("invalid radix: " + longBase);
+        if (longBase < 0) throw argumentError(context, "negative radix");
+        if (longBase < 2) throw argumentError(context, "invalid radix: " + longBase);
 
-        if (value == 0) {
-            return RubyArray.newArray(context.runtime, zero(context.runtime));
-        } else {
-            RubyArray res = RubyArray.newArray(context.runtime, 0);
+        if (value == 0) return RubyArray.newArray(context.runtime, zero(context.runtime));
 
-            while (value > 0) {
-                res.append(newFixnum(context.runtime, value % longBase));
-                value /= longBase;
-            }
-
-            return res;
+        RubyArray res = RubyArray.newArray(context.runtime, 0);
+        while (value > 0) {
+            res.append(newFixnum(context.runtime, value % longBase));
+            value /= longBase;
         }
+
+        return res;
     }
 
 

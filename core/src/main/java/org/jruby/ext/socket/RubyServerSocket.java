@@ -52,6 +52,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -130,14 +131,12 @@ public class RubyServerSocket extends RubySocket {
         try {
             if (soType == Sock.SOCK_STREAM) {
                 channel = ServerSocketChannel.open();
-            }
-            else {
+            } else {
                 throw runtime.newArgumentError("unsupported server socket type '" + soType + "'");
             }
 
             return newChannelFD(runtime, channel);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw sockerr(runtime, "initialize: " + e.toString(), e);
         }
     }

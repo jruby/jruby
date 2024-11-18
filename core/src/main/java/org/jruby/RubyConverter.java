@@ -60,6 +60,7 @@ import java.util.Map;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
@@ -309,28 +310,16 @@ public class RubyConverter extends RubyObject {
         }
 
         while (true) {
-            if (outputByteOffsetObj.isNil()) {
-                outputByteoffset = outBytes.getRealSize();
-            }
+            if (outputByteOffsetObj.isNil()) outputByteoffset = outBytes.getRealSize();
 
-            if (outputByteoffset < 0) {
-                throw runtime.newArgumentError("negative output offset");
-            }
-
-            if (outBytes.getRealSize() < outputByteoffset) {
-                throw runtime.newArgumentError("output offset too big");
-            }
-
-            if (outputBytesize < 0) {
-                throw runtime.newArgumentError("negative bytesize");
-            }
+            if (outputByteoffset < 0) throw argumentError(context, "negative output offset");
+            if (outBytes.getRealSize() < outputByteoffset) throw argumentError(context, "output offset too big");
+            if (outputBytesize < 0) throw argumentError(context, "negative bytesize");
 
             long outputByteEnd = outputByteoffset + outputBytesize;
 
-            if (outputByteEnd > Integer.MAX_VALUE) {
-                // overflow check
-                throw runtime.newArgumentError("output offset + bytesize too big");
-            }
+            // overflow check
+            if (outputByteEnd > Integer.MAX_VALUE) throw argumentError(context, "output offset + bytesize too big");
 
             outBytes.ensure((int)outputByteEnd);
 
@@ -348,7 +337,7 @@ public class RubyConverter extends RubyObject {
 
             if (outputBytesizeObj.isNil() && res == EConvResult.DestinationBufferFull) {
                 if (Integer.MAX_VALUE / 2 < outputBytesize) {
-                    throw runtime.newArgumentError("too long conversion result");
+                    throw argumentError(context, "too long conversion result");
                 }
                 outputBytesize *= 2;
                 outputByteOffsetObj = context.nil;
@@ -389,7 +378,7 @@ public class RubyConverter extends RubyObject {
             }
 
             if (retStr.equals(EConvResult.Finished.symbolicName())) {
-                throw context.runtime.newArgumentError("converter already finished");
+                throw argumentError(context, "converter already finished");
             }
 
             if (!retStr.equals(EConvResult.SourceBufferEmpty.symbolicName())) {
@@ -573,7 +562,6 @@ public class RubyConverter extends RubyObject {
     // econv_insert_output
     @JRubyMethod
     public IRubyObject insert_output(ThreadContext context, IRubyObject string) {
-        Ruby runtime = context.runtime;
         byte[] insertEnc;
 
         int ret;
@@ -583,15 +571,13 @@ public class RubyConverter extends RubyObject {
         string = EncodingUtils.rbStrEncode(
                 context,
                 string,
-                runtime.getEncodingService().findEncodingObject(insertEnc),
+                context.runtime.getEncodingService().findEncodingObject(insertEnc),
                 0,
                 context.nil);
 
         ByteList stringBL = ((RubyString)string).getByteList();
         ret = ec.insertOutput(stringBL.getUnsafeBytes(), stringBL.getBegin(), stringBL.getRealSize(), insertEnc);
-        if (ret == -1) {
-            throw runtime.newArgumentError("too big string");
-        }
+        if (ret == -1) throw argumentError(context, "too big string");
 
         return context.nil;
     }

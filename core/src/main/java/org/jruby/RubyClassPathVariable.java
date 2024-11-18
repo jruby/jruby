@@ -40,6 +40,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -79,7 +80,7 @@ public class RubyClassPathVariable extends RubyObject {
                 }
                 context.runtime.getJRubyClassLoader().addURL(url);
             } catch (MalformedURLException mue) {
-                throw context.runtime.newArgumentError(mue.getLocalizedMessage());
+                throw argumentError(context, mue.getLocalizedMessage());
             }
         }
         return this;

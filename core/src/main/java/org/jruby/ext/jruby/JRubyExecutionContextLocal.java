@@ -39,6 +39,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Error.argumentError;
+
 public abstract class JRubyExecutionContextLocal extends RubyObject {
     private IRubyObject default_value;
     private RubyProc default_proc;
@@ -52,9 +54,8 @@ public abstract class JRubyExecutionContextLocal extends RubyObject {
     @JRubyMethod(name = "initialize", optional = 1, checkArity = false, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
         if (block.isGiven()) {
-            if (args.length != 0) {
-                throw context.runtime.newArgumentError("wrong number of arguments");
-            }
+            if (args.length != 0) throw argumentError(context, "wrong number of arguments");
+
             default_proc = block.getProcObject();
             if (default_proc == null) {
                 default_proc = RubyProc.newProc(context.runtime, block, block.type == Block.Type.LAMBDA ? block.type : Block.Type.PROC);
@@ -63,7 +64,7 @@ public abstract class JRubyExecutionContextLocal extends RubyObject {
             if (args.length == 1) {
                 default_value = args[0];
             } else if (args.length != 0) {
-                throw context.runtime.newArgumentError("wrong number of arguments");
+                throw argumentError(context, "wrong number of arguments");
             }
         }
         return context.nil;

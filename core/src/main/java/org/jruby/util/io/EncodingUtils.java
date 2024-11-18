@@ -61,8 +61,8 @@ import static org.jruby.RubyString.newBinaryString;
 import static org.jruby.RubyString.newEmptyString;
 import static org.jruby.api.Convert.checkToInteger;
 import static org.jruby.api.Convert.asInt;
-import static org.jruby.api.Create.newFixnum;
-import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.*;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.StringSupport.CR_UNKNOWN;
 import static org.jruby.util.StringSupport.searchNonAscii;
@@ -85,15 +85,21 @@ public class EncodingUtils {
     public static Encoding toEncoding(ThreadContext context, IRubyObject enc) {
         RubyString encStr = enc.convertToString();
         if (!encStr.getEncoding().isAsciiCompatible()) {
-            throw context.runtime.newArgumentError("invalid encoding name (non ASCII)");
+            throw argumentError(context, "invalid encoding name (non ASCII)");
         }
         Encoding idx = context.runtime.getEncodingService().getEncodingFromObject(encStr);
         // check for missing encoding is in getEncodingFromObject
         return idx;
     }
 
+    @Deprecated
     public static IRubyObject[] openArgsToArgs(Ruby runtime, IRubyObject firstElement, RubyHash options) {
-        IRubyObject value = hashARef(runtime, options, "open_args");
+        return openArgsToArgs(runtime.getCurrentContext(), firstElement, options);
+    }
+
+    @Deprecated
+    public static IRubyObject[] openArgsToArgs(ThreadContext context, IRubyObject firstElement, RubyHash options) {
+        IRubyObject value = hashARef(context, options, "open_args");
 
         if (value.isNil()) return new IRubyObject[] { firstElement, options };
 
@@ -110,39 +116,44 @@ public class EncodingUtils {
         return args;
     }
 
+    @Deprecated
+    public static void extractBinmode(Ruby runtime, IRubyObject optionsArg, int[] fmode_p) {
+        extractBinmode(runtime.getCurrentContext(), optionsArg, fmode_p);
+    }
+
     // FIXME: This could be smarter amount determining whether optionsArg is a RubyHash and !null (invariant)
     // mri: extract_binmode
-    public static void extractBinmode(Ruby runtime, IRubyObject optionsArg, int[] fmode_p) {
+    public static void extractBinmode(ThreadContext context, IRubyObject optionsArg, int[] fmode_p) {
         int fmodeMask = 0;
 
-        IRubyObject textMode = hashARef(runtime, optionsArg, "textmode");
-        IRubyObject binMode = hashARef(runtime, optionsArg, "binmode");
+        IRubyObject textMode = hashARef(context, optionsArg, "textmode");
+        IRubyObject binMode = hashARef(context, optionsArg, "binmode");
 
         boolean textKwarg = !textMode.isNil();
         boolean textOption = (fmode_p[0] & OpenFile.TEXTMODE) != 0;
         boolean binKwarg = !binMode.isNil();
         boolean binOption = (fmode_p[0] & OpenFile.BINMODE) != 0;
 
-        if ((textKwarg || textOption) && (binKwarg || binOption)) throw runtime.newArgumentError("both textmode and binmode specified");
+        if ((textKwarg || textOption) && (binKwarg || binOption)) throw argumentError(context, "both textmode and binmode specified");
 
         if (textKwarg) {
-            if (textOption) throw runtime.newArgumentError("textmode specified twice");
+            if (textOption) throw argumentError(context, "textmode specified twice");
             if (textMode.isTrue()) fmodeMask |= OpenFile.TEXTMODE;
         }
         if (binKwarg) {
-            if (binOption) throw runtime.newArgumentError("binmode specified twice");
+            if (binOption) throw argumentError(context, "binmode specified twice");
             if (binMode.isTrue()) fmodeMask |= OpenFile.BINMODE;
         }
 
         fmode_p[0] |= fmodeMask;
     }
 
-    private static IRubyObject hashARef(Ruby runtime, IRubyObject hash, String symbol) {
-        if (hash == null || !(hash instanceof RubyHash)) return runtime.getNil();
+    private static IRubyObject hashARef(ThreadContext context, IRubyObject hash, String symbol) {
+        if (hash == null || !(hash instanceof RubyHash)) return context.nil;
 
-        IRubyObject value = ((RubyHash) hash).fastARef(runtime.newSymbol(symbol));
+        IRubyObject value = ((RubyHash) hash).fastARef(newSymbol(context, symbol));
 
-        return value == null ? runtime.getNil() : value;
+        return value == null ? context.nil : value;
     }
 
     // MRI: rb_ascii8bit_encoding
@@ -245,7 +256,7 @@ public class EncodingUtils {
                     fmode_p[0] = ModeFlags.getOpenFileFlagsFor(oflags_p[0]);
                 } else {
                     String p = vmode(vmodeAndVperm_p).convertToString().asJavaString();
-                    fmode_p[0] = OpenFile.ioModestrFmode(runtime, p);
+                    fmode_p[0] = OpenFile.ioModestrFmode(context, p);
                     oflags_p[0] = OpenFile.ioFmodeOflags(fmode_p[0]);
                     int colonSplit = p.indexOf(":");
 
@@ -272,10 +283,10 @@ public class EncodingUtils {
                 ecopts_p[0] = context.nil;
             } else {
                 if (!hasVmode) {
-                    IRubyObject v = ((RubyHash) options).op_aref(context, runtime.newSymbol("mode"));
+                    IRubyObject v = ((RubyHash) options).op_aref(context, newSymbol(context, "mode"));
                     if (!v.isNil()) {
                         if (vmode(vmodeAndVperm_p) != null && !vmode(vmodeAndVperm_p).isNil()) {
-                            throw runtime.newArgumentError("mode specified twice");
+                            throw argumentError(context, "mode specified twice");
                         }
                         hasVmode = true;
                         vmode(vmodeAndVperm_p, v);
@@ -283,7 +294,7 @@ public class EncodingUtils {
                     }
                 }
 
-                IRubyObject v = ((RubyHash) options).op_aref(context, runtime.newSymbol("flags"));
+                IRubyObject v = ((RubyHash) options).op_aref(context, newSymbol(context, "flags"));
                 if (!v.isNil()) {
                     v = v.convertToInteger();
                     oflags_p[0] |= RubyNumeric.num2int(v);
@@ -291,7 +302,7 @@ public class EncodingUtils {
                     fmode_p[0] = ModeFlags.getOpenFileFlagsFor(oflags_p[0]);
                 }
 
-                extractBinmode(runtime, options, fmode_p);
+                extractBinmode(context, options, fmode_p);
                 // Differs from MRI but we open with ModeFlags
                 if ((fmode_p[0] & OpenFile.BINMODE) != 0) {
                     oflags_p[0] |= ModeFlags.BINARY;
@@ -303,10 +314,10 @@ public class EncodingUtils {
                     fmode_p[0] |= DEFAULT_TEXTMODE;
                 }
                 
-                v = hashARef(runtime, options, "perm");
+                v = hashARef(context, options, "perm");
                 if (!v.isNil()) {
                     if (vperm(vmodeAndVperm_p) != null && !vperm(vmodeAndVperm_p).isNil()) {
-                        throw runtime.newArgumentError("perm specified twice");
+                        throw argumentError(context, "perm specified twice");
                     }
 
                     vperm(vmodeAndVperm_p, v);
@@ -314,7 +325,7 @@ public class EncodingUtils {
                     /* perm no use, just ignore */
                 }
 
-                IRubyObject extraFlags = hashARef(runtime, options, "flags");
+                IRubyObject extraFlags = hashARef(context, options, "flags");
                 if (!extraFlags.isNil()) {
                     oflags_p[0] |= extraFlags.convertToInteger().getIntValue();
                 }
@@ -327,7 +338,7 @@ public class EncodingUtils {
                 }
 
                 if (ioExtractEncodingOption(context, ioEncodable, options, fmode_p)) {
-                    if (hasEnc) throw runtime.newArgumentError("encoding specified twice");
+                    if (hasEnc) throw argumentError(context, "encoding specified twice");
                 }
 
                 ecflags = SET_UNIVERSAL_NEWLINE_DECORATOR_IF_ENC2(ioEncodable.getEnc2(), ecflags);
@@ -605,7 +616,7 @@ public class EncodingUtils {
             if ((dst.getUnsafeBytes().length - dst.getBegin()) - dlen < length + maxOutput) {
                 long newCapa = dlen + length + maxOutput;
                 if (Integer.MAX_VALUE < newCapa) {
-                    throw context.runtime.newArgumentError("too long string");
+                    throw argumentError(context, "too long string");
                 }
                 dst.ensure((int)newCapa);
                 dst.setRealSize(dlen);
@@ -650,18 +661,18 @@ public class EncodingUtils {
         RubyHash optHash2 = (RubyHash)opthash;
         ecflags = econvOpts(context, opthash, ecflags);
 
-        v = optHash2.op_aref(context, context.runtime.newSymbol("replace"));
+        v = optHash2.op_aref(context, newSymbol(context, "replace"));
         if (!v.isNil()) {
             RubyString v_str = v.convertToString();
             if (v_str.scanForCodeRange() == StringSupport.CR_BROKEN) {
-                throw context.runtime.newArgumentError("replacement string is broken: " + v_str);
+                throw argumentError(context, "replacement string is broken: " + v_str);
             }
             v = v_str.freeze(context);
             newhash = RubyHash.newHash(context.runtime);
-            ((RubyHash)newhash).op_aset(context, context.runtime.newSymbol("replace"), v);
+            ((RubyHash)newhash).op_aset(context, newSymbol(context, "replace"), v);
         }
 
-        v = optHash2.op_aref(context, context.runtime.newSymbol("fallback"));
+        v = optHash2.op_aref(context, newSymbol(context, "fallback"));
         if (!v.isNil()) {
             IRubyObject h = TypeConverter.checkHashType(context.runtime, v);
             boolean condition;
@@ -673,16 +684,14 @@ public class EncodingUtils {
             }
 
             if (condition) {
-                if (newhash.isNil()) {
-                    newhash = RubyHash.newHash(context.runtime);
-                }
-                ((RubyHash)newhash).op_aset(context, context.runtime.newSymbol("fallback"), v);
+                if (newhash.isNil()) newhash = RubyHash.newHash(context.runtime);
+
+                ((RubyHash)newhash).op_aset(context, newSymbol(context, "fallback"), v);
             }
         }
 
-        if (!newhash.isNil()) {
-            newhash.setFrozen(true);
-        }
+        if (!newhash.isNil()) newhash.setFrozen(true);
+
         opts[0] = newhash;
 
         return ecflags;
@@ -690,42 +699,35 @@ public class EncodingUtils {
 
     // econv_opts
     public static int econvOpts(ThreadContext context, IRubyObject opt, int ecflags) {
-        Ruby runtime = context.runtime;
-        IRubyObject v;
-
-        v = ((RubyHash)opt).op_aref(context, runtime.newSymbol("invalid"));
-        if (v.isNil()) {
-        } else if (v.toString().equals("replace")) {
+        IRubyObject v = ((RubyHash)opt).op_aref(context, newSymbol(context, "invalid"));
+        if (!v.isNil()) {
+            if (!v.toString().equals("replace")) throw argumentError(context, "unknown value for invalid character option");
             ecflags |= EConvFlags.INVALID_REPLACE;
-        } else {
-            throw runtime.newArgumentError("unknown value for invalid character option");
         }
 
-        v = ((RubyHash)opt).op_aref(context, runtime.newSymbol("undef"));
-        if (v.isNil()) {
-        } else if (v.toString().equals("replace")) {
+        v = ((RubyHash)opt).op_aref(context, newSymbol(context, "undef"));
+        if (!v.isNil()) {
+            if (!v.toString().equals("replace")) throw argumentError(context, "unknown value for undefined character option");
             ecflags |= EConvFlags.UNDEF_REPLACE;
-        } else {
-            throw runtime.newArgumentError("unknown value for undefined character option");
         }
 
-        v = ((RubyHash)opt).op_aref(context, runtime.newSymbol("replace"));
+        v = ((RubyHash)opt).op_aref(context, newSymbol(context, "replace"));
         if (!v.isNil() && (ecflags & EConvFlags.INVALID_REPLACE) != 0) {
             ecflags |= EConvFlags.UNDEF_REPLACE;
         }
 
-        v = ((RubyHash)opt).op_aref(context, runtime.newSymbol("xml"));
+        v = ((RubyHash)opt).op_aref(context, newSymbol(context, "xml"));
         if (!v.isNil()) {
             if (v.toString().equals("text")) {
                 ecflags |= EConvFlags.XML_TEXT_DECORATOR | EConvFlags.UNDEF_HEX_CHARREF;
             } else if (v.toString().equals("attr")) {
                 ecflags |= EConvFlags.XML_ATTR_CONTENT_DECORATOR | EConvFlags.XML_ATTR_QUOTE_DECORATOR | EConvFlags.UNDEF_HEX_CHARREF;
             } else {
-                throw runtime.newArgumentError("unexpected value for xml option: " + v);
+                throw argumentError(context, "unexpected value for xml option: " + v);
             }
         }
 
-        v = ((RubyHash)opt).op_aref(context, runtime.newSymbol("newline"));
+        v = ((RubyHash)opt).op_aref(context, newSymbol(context, "newline"));
         if (!v.isNil()) {
             ecflags &= ~EConvFlags.NEWLINE_DECORATOR_MASK;
             if (v.toString().equals("universal")) {
@@ -736,29 +738,29 @@ public class EncodingUtils {
                 ecflags |= EConvFlags.CR_NEWLINE_DECORATOR;
             } else if (v.toString().equals("lf")) {
 //                ecflags |= ECONV_LF_NEWLINE_DECORATOR;
-            } else if (v instanceof RubySymbol) {
-                throw runtime.newArgumentError("unexpected value for newline option: " + ((RubySymbol) v).to_s(context).toString());
+            } else if (v instanceof RubySymbol sym) {
+                throw argumentError(context, "unexpected value for newline option: " + sym.to_s(context).toString());
             } else {
-                throw runtime.newArgumentError("unexpected value for newline option");
+                throw argumentError(context, "unexpected value for newline option");
             }
         }
 
         int setflags = 0;
         boolean newlineflag = false;
 
-        v = ((RubyHash)opt).op_aref(context, runtime.newSymbol("universal_newline"));
+        v = ((RubyHash)opt).op_aref(context, newSymbol(context, "universal_newline"));
         if (v.isTrue()) {
             setflags |= EConvFlags.UNIVERSAL_NEWLINE_DECORATOR;
         }
         newlineflag |= !v.isNil();
 
-        v = ((RubyHash)opt).op_aref(context, runtime.newSymbol("crlf_newline"));
+        v = ((RubyHash)opt).op_aref(context, newSymbol(context, "crlf_newline"));
         if (v.isTrue()) {
             setflags |= EConvFlags.CRLF_NEWLINE_DECORATOR;
         }
         newlineflag |= !v.isNil();
 
-        v = ((RubyHash)opt).op_aref(context, runtime.newSymbol("cr_newline"));
+        v = ((RubyHash)opt).op_aref(context, newSymbol(context, "cr_newline"));
         if (v.isTrue()) {
             setflags |= EConvFlags.CR_NEWLINE_DECORATOR;
         }
@@ -999,7 +1001,7 @@ public class EncodingUtils {
         transcodeLoop(context, bytes, fromPos, dest.unsafeBytes(), new Ptr(destBegin), start + slen, destBegin + blen, dest, strTranscodingResize, sname, dname, ecflags, ecopt);
 
         if (fromPos.p != start + slen) {
-            throw context.runtime.newArgumentError("not fully converted, " + (slen - fromPos.p) + " bytes left");
+            throw argumentError(context, "not fully converted, " + (slen - fromPos.p) + " bytes left");
         }
 
         dest.setEncoding(to);
@@ -1035,7 +1037,7 @@ public class EncodingUtils {
     public static IRubyObject strTranscode(ThreadContext context, IRubyObject toEncoding, IRubyObject forcedEncoding, IRubyObject opts, RubyString str, TranscodeResult result) {
         IRubyObject tmp = TypeConverter.checkHashType(context.runtime, opts);
         if (tmp.isNil()) {
-            throw context.runtime.newArgumentError(3, 0, 2);
+            throw argumentError(context, 3, 0, 2);
         }
 
         IRubyObject[] ecopts_p = {context.nil};
@@ -1083,8 +1085,6 @@ public class EncodingUtils {
     }
 
     private static RubyString strTranscode(ThreadContext context, IRubyObject toEncoding, IRubyObject forceEncoding, RubyString str, int ecflags, IRubyObject ecopts, TranscodeResult result, boolean explicitlyInvalidReplace) {
-        Ruby runtime = context.runtime;
-
         // simplified strTranscodeEncArgs logic to avoid the carrier arrays
         Encoding denc = toEncodingIndex(context, toEncoding);
         byte[] dname = (denc == null) ? toEncoding.convertToString().getBytes() : denc.getName();
@@ -1114,7 +1114,7 @@ public class EncodingUtils {
         ByteList fromp = sp;
         int slen = str.size();
         int blen = slen + 30;
-        dest = RubyString.newStringLight(runtime, blen);
+        dest = RubyString.newStringLight(context.runtime, blen);
         ByteList destp = dest.getByteList();
 
         byte[] frompBytes = fromp.unsafeBytes();
@@ -1124,14 +1124,12 @@ public class EncodingUtils {
         transcodeLoop(context, frompBytes, frompPos, destpBytes, destpPos, frompPos.p + slen, destpPos.p + blen, destp, strTranscodingResize, sname, dname, ecflags, ecopts);
 
         if (frompPos.p != sp.begin() + slen) {
-            throw runtime.newArgumentError("not fully converted, " + (slen - frompPos.p) + " bytes left");
+            throw argumentError(context, "not fully converted, " + (slen - frompPos.p) + " bytes left");
         }
 
         // MRI sets length of dest here, but we've already done it in the inner transcodeLoop
 
-        if (denc == null) {
-            denc = defineDummyEncoding(context, dname);
-        }
+        if (denc == null) denc = defineDummyEncoding(context, dname);
 
         return result.apply(context, str, denc, dest);
     }
@@ -1188,7 +1186,7 @@ public class EncodingUtils {
     // enc_check_duplication
     public static void encCheckDuplication(ThreadContext context, byte[] name) {
         if (encRegistered(name)) {
-            throw context.runtime.newArgumentError("encoding " + new String(name) + " is already registered");
+            throw argumentError(context, "encoding " + new String(name) + " is already registered");
         }
     }
 
@@ -1805,18 +1803,17 @@ public class EncodingUtils {
 
     // validate_enc_binmode
     public static void validateEncodingBinmode(ThreadContext context, int[] fmode_p, int ecflags, IOEncodable ioEncodable) {
-        Ruby runtime = context.runtime;
         int fmode = fmode_p[0];
 
         if ((fmode & OpenFile.READABLE) != 0 &&
                 ioEncodable.getEnc2() == null &&
                 (fmode & OpenFile.BINMODE) == 0 &&
-                !(ioEncodable.getEnc() != null ? ioEncodable.getEnc() : runtime.getDefaultExternalEncoding()).isAsciiCompatible()) {
-            throw runtime.newArgumentError("ASCII incompatible encoding needs binmode");
+                !(ioEncodable.getEnc() != null ? ioEncodable.getEnc() : context.runtime.getDefaultExternalEncoding()).isAsciiCompatible()) {
+            throw argumentError(context, "ASCII incompatible encoding needs binmode");
         }
 
         if ((fmode & OpenFile.BINMODE) != 0 && (ecflags & EConvFlags.NEWLINE_DECORATOR_MASK) != 0) {
-            throw runtime.newArgumentError("newline decorator with binary mode");
+            throw argumentError(context, "newline decorator with binary mode");
         }
 
         if ((fmode & OpenFile.BINMODE) == 0 && (EncodingUtils.DEFAULT_TEXTMODE != 0 || (ecflags & EConvFlags.NEWLINE_DECORATOR_MASK) != 0)) {
@@ -1830,9 +1827,7 @@ public class EncodingUtils {
 
     // rb_enc_set_default_external
     public static void rbEncSetDefaultExternal(ThreadContext context, IRubyObject encoding) {
-        if (encoding.isNil()) {
-            throw context.runtime.newArgumentError("default external can not be nil");
-        }
+        if (encoding.isNil()) throw argumentError(context, "default external can not be nil");
 
         Encoding[] enc_p = {context.runtime.getDefaultExternalEncoding()};
         encSetDefaultEncoding(context, enc_p, encoding, "external");
@@ -2031,7 +2026,6 @@ public class EncodingUtils {
 
     // econv_args
     public static void econvArgs(ThreadContext context, IRubyObject[] args, byte[][] encNames, Encoding[] encs, int[] ecflags_p, IRubyObject[] ecopts_p) {
-        Ruby runtime = context.runtime;
         IRubyObject snamev = context.nil;
         IRubyObject dnamev = context.nil;
         IRubyObject flags = context.nil;
@@ -2049,16 +2043,15 @@ public class EncodingUtils {
             }
 
             IRubyObject tmp;
-            if (!(tmp = TypeConverter.checkHashType(runtime, flags)).isNil()) {
+            if (!(tmp = TypeConverter.checkHashType(context.runtime, flags)).isNil()) {
                 opt = tmp;
                 flags = context.nil;
             }
         }
 
         if (!flags.isNil()) {
-            if (!opt.isNil()) {
-                throw runtime.newArgumentError(args.length, 3);
-            }
+            if (!opt.isNil()) throw context.runtime.newArgumentError(args.length, 3);
+
             ecflags_p[0] = (int)flags.convertToInteger().getLongValue();
             ecopts_p[0] = context.nil;
         } else if (!opt.isNil()) {
@@ -2068,25 +2061,19 @@ public class EncodingUtils {
             ecopts_p[0] = context.nil;
         }
 
-        encs[0] = runtime.getEncodingService().getEncodingFromObjectNoError(snamev);
-        if (encs[0] == null) {
-            snamev = snamev.convertToString();
-        }
-        encs[1] = runtime.getEncodingService().getEncodingFromObjectNoError(dnamev);
-        if (encs[1] == null) {
-            dnamev = dnamev.convertToString();
-        }
+        encs[0] = context.runtime.getEncodingService().getEncodingFromObjectNoError(snamev);
+        if (encs[0] == null) snamev = snamev.convertToString();
+
+        encs[1] = context.runtime.getEncodingService().getEncodingFromObjectNoError(dnamev);
+        if (encs[1] == null) dnamev = dnamev.convertToString();
 
         encNames[0] = encs[0] != null ? encs[0].getName() : ((RubyString)snamev).getBytes();
         encNames[1] = encs[1] != null ? encs[1].getName() : ((RubyString)dnamev).getBytes();
-
-        return;
     }
 
     // rb_econv_init_by_convpath
-    public static EConv econvInitByConvpath(ThreadContext context, IRubyObject convpath, byte[][] encNames, Encoding[] encs) {
-        final Ruby runtime = context.runtime;
-        final EConv ec = TranscoderDB.alloc(convpath.convertToArray().size());
+    public static EConv econvInitByConvpath(ThreadContext context, IRubyObject convpathArg, byte[][] encNames, Encoding[] encs) {
+        final EConv ec = TranscoderDB.alloc(convpathArg.convertToArray().size());
 
         IRubyObject[] sname_v = {context.nil};
         IRubyObject[] dname_v = {context.nil};
@@ -2097,12 +2084,14 @@ public class EncodingUtils {
 
         boolean first = true;
 
-        for (int i = 0; i < ((RubyArray)convpath).size(); i++) {
-            IRubyObject elt = ((RubyArray)convpath).eltOk(i);
+        var convpath = (RubyArray) convpathArg;
+
+        for (int i = 0; i < convpath.size(); i++) {
+            IRubyObject elt = convpath.eltOk(i);
             IRubyObject pair;
             if (!(pair = elt.checkArrayType()).isNil()) {
                 if (((RubyArray)pair).size() != 2) {
-                    throw context.runtime.newArgumentError("not a 2-element array in convpath");
+                    throw argumentError(context, "not a 2-element array in convpath");
                 }
                 sname_v[0] = ((RubyArray)pair).eltOk(0);
                 encArg(context, sname_v[0], sname, senc);
@@ -2115,7 +2104,7 @@ public class EncodingUtils {
             if (DECORATOR_P(sname[0], dname[0])) {
                 boolean ret = ec.addConverter(sname[0], dname[0], ec.numTranscoders);
                 if (!ret) {
-                    throw runtime.newArgumentError("decoration failed: " + new String(dname[0]));
+                    throw argumentError(context, "decoration failed: " + new String(dname[0]));
                 }
             } else {
                 int j = ec.numTranscoders;
@@ -2129,7 +2118,7 @@ public class EncodingUtils {
                     }
                 });
                 if (ret == -1 || arg[1] == -1) {
-                    throw runtime.newArgumentError("adding conversion failed: " + new String(sname[0]) + " to " + new String(dname[0]));
+                    throw argumentError(context, "adding conversion failed: " + new String(sname[0]) + " to " + new String(dname[0]));
                 }
                 if (first) {
                     first = false;
@@ -2272,11 +2261,16 @@ public class EncodingUtils {
         return StringSupport.codePoint(enc, pBytes, p, e);
     }
 
+    @Deprecated
     public static int encCodepointLength(Ruby runtime, byte[] pBytes, int p, int e, int[] len_p, Encoding enc) {
+        return encCodepointLength(runtime.getCurrentContext(), pBytes, p, e, len_p, enc);
+    }
+
+    public static int encCodepointLength(ThreadContext context, byte[] pBytes, int p, int e, int[] len_p, Encoding enc) {
         try {
             return encCodepointLength(pBytes, p, e, len_p, enc);
         } catch (IllegalArgumentException ex) {
-            throw runtime.newArgumentError(ex.getMessage());
+            throw argumentError(context, ex.getMessage());
         }
     }
 
@@ -2286,7 +2280,7 @@ public class EncodingUtils {
         RubyString str = _str.convertToString();
         cr = str.scanForCodeRange();
         if (cr == StringSupport.CR_BROKEN) {
-            throw context.runtime.newArgumentError("replacement must be valid byte sequence '" + str + "'");
+            throw argumentError(context, "replacement must be valid byte sequence '" + str + "'");
         }
         else {
             Encoding e = STR_ENC_GET(str);
@@ -2407,7 +2401,7 @@ public class EncodingUtils {
     public static int encCodelen(ThreadContext context, int c, Encoding enc) {
         int n = enc.codeToMbcLength(c);
         if (n == 0) {
-            throw context.runtime.newArgumentError("invalid codepoint 0x" + Long.toHexString(c & 0xFFFFFFFFL) + " in " + enc);
+            throw argumentError(context, "invalid codepoint 0x" + Long.toHexString(c & 0xFFFFFFFFL) + " in " + enc);
         }
         return n;
     }

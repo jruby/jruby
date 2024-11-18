@@ -51,6 +51,7 @@ import org.jruby.util.ClasspathLauncher;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.util.URLUtil.getPath;
 
 /**
@@ -215,10 +216,13 @@ public class JRubyUtilLibrary implements Library {
     @JRubyMethod(module = true, name = { "load_ext" })
     public static IRubyObject load_ext(ThreadContext context, IRubyObject recv, IRubyObject klass) {
         if (klass instanceof RubySymbol) {
-            switch(((RubySymbol) klass).asJavaString()) {
-                case "string" : CoreExt.loadStringExtensions(context.runtime); return context.tru;
-                default : throw context.runtime.newArgumentError(':' + ((RubySymbol) klass).asJavaString());
-            }
+            return switch (klass.asJavaString()) {
+                case "string" -> {
+                    CoreExt.loadStringExtensions(context.runtime);
+                    yield context.tru;
+                }
+                default -> throw argumentError(context, ':' + klass.asJavaString());
+            };
         }
         return loadExtension(context.runtime, klass.convertToString().toString()) ? context.tru : context.fals;
     }

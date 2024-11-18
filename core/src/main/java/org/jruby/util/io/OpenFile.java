@@ -51,6 +51,7 @@ import org.jruby.util.cli.Options;
 
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newFixnum;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.util.StringSupport.*;
 
 public class OpenFile implements Finalizable {
@@ -212,12 +213,15 @@ public class OpenFile implements Finalizable {
         return mode;
     }
 
+    @Deprecated
     public String getModeAsString(Ruby runtime) {
+        return getModeAsString(runtime.getCurrentContext());
+    }
+
+    public String getModeAsString(ThreadContext context) {
         String modeString = getStringFromMode(mode);
 
-        if (modeString == null) {
-            throw runtime.newArgumentError("Illegal access modenum " + Integer.toOctalString(mode));
-        }
+        if (modeString == null) throw argumentError(context, "Illegal access modenum " + Integer.toOctalString(mode));
 
         return modeString;
     }
@@ -246,10 +250,15 @@ public class OpenFile implements Finalizable {
         return oflags;
     }
 
-    // MRI: rb_io_oflags_modestr
+    @Deprecated
     public static String ioOflagsModestr(Ruby runtime, int oflags) {
+        return ioOflagsModestr(runtime.getCurrentContext(), oflags);
+    }
+
+    // MRI: rb_io_oflags_modestr
+    public static String ioOflagsModestr(ThreadContext context, int oflags) {
         if ((oflags & OpenFlags.O_EXLOCK.intValue()) != 0) {
-            throw runtime.newArgumentError("exclusive access mode is not supported");
+            throw argumentError(context, "exclusive access mode is not supported");
         }
         int accmode = oflags & (OpenFlags.O_RDONLY.intValue()|OpenFlags.O_WRONLY.intValue()|OpenFlags.O_RDWR.intValue());
         if ((oflags & OpenFlags.O_APPEND.intValue()) != 0) {
@@ -262,7 +271,7 @@ public class OpenFile implements Finalizable {
         }
         switch (OpenFlags.valueOf(oflags & (OpenFlags.O_RDONLY.intValue()|OpenFlags.O_WRONLY.intValue()|OpenFlags.O_RDWR.intValue()))) {
             default:
-                throw runtime.newArgumentError("invalid access oflags 0x" + Integer.toHexString(oflags));
+                throw argumentError(context, "invalid access oflags 0x" + Integer.toHexString(oflags));
             case O_RDONLY:
                 return MODE_BINARY(oflags, "r", "rb");
             case O_WRONLY:
@@ -272,9 +281,14 @@ public class OpenFile implements Finalizable {
         }
     }
 
-    // MRI: rb_io_modestr_oflags
+    @Deprecated
     public static int ioModestrOflags(Ruby runtime, String modestr) {
-        return ioFmodeOflags(ioModestrFmode(runtime, modestr));
+        return ioModestrOflags(runtime.getCurrentContext(), modestr);
+    }
+
+    // MRI: rb_io_modestr_oflags
+    public static int ioModestrOflags(ThreadContext context, String modestr) {
+        return ioFmodeOflags(ioModestrFmode(context, modestr));
     }
 
     // MRI: rb_io_fmode_oflags
@@ -314,12 +328,17 @@ public class OpenFile implements Finalizable {
         return oflags;
     }
 
+    @Deprecated
     public static int ioModestrFmode(Ruby runtime, String modestr) {
+        return ioModestrFmode(runtime.getCurrentContext(), modestr);
+    }
+
+    public static int ioModestrFmode(ThreadContext context, String modestr) {
         int fmode = 0;
         char[] mChars = modestr.toCharArray(), pChars = null;
         int m = 0, p = 0;
 
-        if (mChars.length == 0) throw runtime.newArgumentError("invalid access mode " + modestr);
+        if (mChars.length == 0) throw argumentError(context, "invalid access mode " + modestr);
 
         switch (mChars[m++]) {
             case 'r':
@@ -332,7 +351,7 @@ public class OpenFile implements Finalizable {
                 fmode |= OpenFile.WRITABLE | OpenFile.APPEND | OpenFile.CREATE;
                 break;
             default:
-                throw runtime.newArgumentError("invalid access mode " + modestr);
+                throw argumentError(context, "invalid access mode " + modestr);
         }
 
         loop: while (m < mChars.length) {
@@ -347,26 +366,28 @@ public class OpenFile implements Finalizable {
                     fmode |= OpenFile.READWRITE;
                     break;
                 case 'x':
-                    if (mChars[0] != 'w') {
-                        throw runtime.newArgumentError("invalid access mode " + modestr);
-                    }
+                    if (mChars[0] != 'w') throw argumentError(context, "invalid access mode " + modestr);
+
                     fmode |= OpenFile.EXCLUSIVE;
                     break;
                 case ':':
                     pChars = mChars;
                     p = m;
-                    if ((fmode & OpenFile.BINMODE) != 0 && (fmode & OpenFile.TEXTMODE) != 0)
-                        throw runtime.newArgumentError("invalid access mode " + modestr);
+                    if ((fmode & OpenFile.BINMODE) != 0 && (fmode & OpenFile.TEXTMODE) != 0) {
+                        throw argumentError(context, "invalid access mode " + modestr);
+                    }
                     break loop;
                 default:
-                    throw runtime.newArgumentError("invalid access mode " + modestr);
+                    throw argumentError(context, "invalid access mode " + modestr);
             }
         }
 
-        if ((fmode & OpenFile.BINMODE) != 0 && (fmode & OpenFile.TEXTMODE) != 0)
-            throw runtime.newArgumentError("invalid access mode " + modestr);
-        if (p != 0 && ioEncnameBomP(new String(pChars, p, pChars.length - p), 0))
+        if ((fmode & OpenFile.BINMODE) != 0 && (fmode & OpenFile.TEXTMODE) != 0) {
+            throw argumentError(context, "invalid access mode " + modestr);
+        }
+        if (p != 0 && ioEncnameBomP(new String(pChars, p, pChars.length - p), 0)) {
             fmode |= OpenFile.SETENC_BY_BOM;
+        }
 
         return fmode;
     }
@@ -2337,7 +2358,7 @@ public class OpenFile implements Finalizable {
             if (writeconvAsciicompat != null)
                 common_encoding = writeconvAsciicompat;
             else if (EncodingUtils.MODE_BTMODE(fmode, EncodingUtils.DEFAULT_TEXTMODE, 0, 1) != 0 && !strEncoding.isAsciiCompatible()) {
-                throw context.runtime.newArgumentError("ASCII incompatible string written for text mode IO without encoding conversion: %s" + strEncoding.toString());
+                throw argumentError(context, "ASCII incompatible string written for text mode IO without encoding conversion: %s" + strEncoding.toString());
             }
         } else {
             if (encs.enc2 != null)

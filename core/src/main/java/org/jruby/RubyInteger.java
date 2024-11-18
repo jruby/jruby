@@ -62,6 +62,7 @@ import java.math.RoundingMode;
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.Numeric.f_gcd;
 import static org.jruby.util.Numeric.f_lcm;
@@ -654,7 +655,7 @@ public abstract class RubyInteger extends RubyNumeric {
             case HALF_EVEN:
                 return int_round_half_even(n, f);
         }
-        throw context.runtime.newArgumentError("invalid rounding mode: " + roundingMode);
+        throw argumentError(context, "invalid rounding mode: " + roundingMode);
     }
 
     private static boolean doRoundCheck(ThreadContext context, RoundingMode roundingMode, RubyInteger num, RubyNumeric n, IRubyObject f) {
@@ -666,7 +667,7 @@ public abstract class RubyInteger extends RubyNumeric {
             case HALF_EVEN:
                 return int_half_p_half_even(context, num, n, f);
         }
-        throw context.runtime.newArgumentError("invalid rounding mode: " + roundingMode);
+        throw argumentError(context, "invalid rounding mode: " + roundingMode);
     }
 
     protected boolean int_round_zero_p(ThreadContext context, int ndigits) {
@@ -674,12 +675,9 @@ public abstract class RubyInteger extends RubyNumeric {
         return (-0.415241 * ndigits - 0.125 > bytes);
     }
 
-    protected static long int_round_half_even(long x, long y)
-    {
+    protected static long int_round_half_even(long x, long y) {
         long z = +(x + y / 2) / y;
-        if ((z * y - x) * 2 == y) {
-            z &= ~1;
-        }
+        if ((z * y - x) * 2 == y) z &= ~1;
         return z * y;
     }
 
@@ -988,16 +986,12 @@ public abstract class RubyInteger extends RubyNumeric {
 
             if (beg.isNil()) {
                 if (!negativeInt(context, end)) {
-                    if (!isExclusive) {
-                        end = ((RubyInteger) end).op_plus(context, asFixnum(context, 1));
-                    }
+                    if (!isExclusive) end = ((RubyInteger) end).op_plus(context, asFixnum(context, 1));
 
                     RubyInteger mask = generateMask(context, end);
-                    if (((RubyInteger) op_and(context, mask)).isZero()) {
-                        return asFixnum(context, 0);
-                    } else {
-                        throw context.runtime.newArgumentError("The beginless range for Integer#[] results in infinity");
-                    }
+                    if (((RubyInteger) op_and(context, mask)).isZero()) return asFixnum(context, 0);
+
+                    throw argumentError(context, "The beginless range for Integer#[] results in infinity");
                 } else {
                     return asFixnum(context, 0);
                 }

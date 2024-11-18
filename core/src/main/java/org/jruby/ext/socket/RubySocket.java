@@ -87,6 +87,7 @@ import java.util.regex.Pattern;
 import static org.jruby.api.Convert.castAsFixnum;
 import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Create.newSymbol;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -672,7 +673,7 @@ public class RubySocket extends RubyBasicSocket {
                 return Sockaddr.addressFromSockaddr_in(context, arg);
 
             default:
-                throw context.runtime.newArgumentError("unsupported protocol family '" + soProtocolFamily + "'");
+                throw argumentError(context, "unsupported protocol family '" + soProtocolFamily + "'");
         }
     }
 

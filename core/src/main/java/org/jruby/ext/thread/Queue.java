@@ -57,6 +57,7 @@ import org.jruby.util.TypeConverter;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
 /*
@@ -414,17 +415,12 @@ public class Queue extends RubyObject implements DataType {
         long timeoutNS = 0;
 
         IRubyObject _timeout = ArgsUtil.extractKeywordArg(context, "timeout", _opts);
-
         if (!_timeout.isNil()) {
-            if (nonblock) {
-                throw context.runtime.newArgumentError("can't set a timeout if non_block is enabled");
-            }
+            if (nonblock) throw argumentError(context, "can't set a timeout if non_block is enabled");
 
             timeoutNS = queueTimeoutToNanos(context, _timeout);
 
-            if (timeoutNS == 0 && count.get() == 0) {
-                return context.nil;
-            }
+            if (timeoutNS == 0 && count.get() == 0) return context.nil;
         }
 
         return popCommon(context, nonblock, timeoutNS);

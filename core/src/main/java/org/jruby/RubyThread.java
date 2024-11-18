@@ -2610,13 +2610,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      *
      * MRI: rb_fiber_scheduler_set
      */
-    public IRubyObject setFiberScheduler(IRubyObject scheduler) {
+    public IRubyObject setFiberScheduler(ThreadContext context, IRubyObject scheduler) {
 //        VM_ASSERT(ruby_thread_has_gvl_p());
 
         Objects.requireNonNull(scheduler);
 
         if (scheduler != null && !scheduler.isNil()) {
-            FiberScheduler.verifyInterface(scheduler);
+            FiberScheduler.verifyInterface(context, scheduler);
         }
 
         if (!this.scheduler.isNil()) {

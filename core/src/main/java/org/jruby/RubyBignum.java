@@ -53,6 +53,7 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 
 import static org.jruby.RubyFixnum.zero;
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -345,8 +346,8 @@ public class RubyBignum extends RubyInteger {
         BigInteger bigBase = base instanceof RubyBignum ?
                 ((RubyBignum) base).value : long2big(((RubyFixnum) base).value);
 
-        if (bigBase.signum() == -1) throw context.runtime.newArgumentError("negative radix");
-        if (bigBase.compareTo(BigInteger.valueOf(2)) == -1) throw context.runtime.newArgumentError("invalid radix: " + bigBase);
+        if (bigBase.signum() == -1) throw argumentError(context, "negative radix");
+        if (bigBase.compareTo(BigInteger.valueOf(2)) == -1) throw argumentError(context, "invalid radix: " + bigBase);
 
         if (self.signum() == 0) {
             return RubyArray.newArray(context.runtime, zero(context.runtime));
@@ -397,14 +398,11 @@ public class RubyBignum extends RubyInteger {
     @Override
     public IRubyObject coerce(IRubyObject other) {
         final Ruby runtime = getRuntime();
-        if (other instanceof RubyFixnum) {
-            return runtime.newArray(newBignum(runtime, ((RubyFixnum) other).value), this);
-        }
-        if (other instanceof RubyBignum) {
-            return runtime.newArray(newBignum(runtime, ((RubyBignum) other).value), this);
-        }
+        ThreadContext context = runtime.getCurrentContext();
+        if (other instanceof RubyFixnum fix) return runtime.newArray(newBignum(runtime, fix.value), this);
+        if (other instanceof RubyBignum big) return runtime.newArray(newBignum(runtime, big.value), this);
 
-        return RubyArray.newArray(runtime, RubyKernel.new_float(runtime, other), RubyKernel.new_float(runtime, this));
+        return RubyArray.newArray(runtime, RubyKernel.new_float(context, other), RubyKernel.new_float(context, this));
     }
 
     /** rb_big_uminus
@@ -420,15 +418,10 @@ public class RubyBignum extends RubyInteger {
      */
     @Override
     public IRubyObject op_plus(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyFixnum) {
-            return op_plus(context, ((RubyFixnum) other).value);
-        }
-        if (other instanceof RubyBignum) {
-            return op_plus(context, ((RubyBignum) other).value);
-        }
-        if (other instanceof RubyFloat) {
-            return addFloat((RubyFloat) other);
-        }
+        if (other instanceof RubyFixnum fix) return op_plus(context, fix.value);
+        if (other instanceof RubyBignum big) return op_plus(context, big.value);
+        if (other instanceof RubyFloat flote) return addFloat(flote);
+
         return addOther(context, other);
     }
 

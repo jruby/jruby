@@ -58,6 +58,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Convert.castAsModule;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
 public class JavaInterfaceTemplate {
@@ -368,9 +369,7 @@ public class JavaInterfaceTemplate {
     public static IRubyObject impl(ThreadContext context, IRubyObject self, IRubyObject[] args, final Block implBlock) {
         final Ruby runtime = context.runtime;
 
-        if ( ! implBlock.isGiven() ) {
-            throw runtime.newArgumentError("block required to call #impl on a Java interface");
-        }
+        if (!implBlock.isGiven()) throw argumentError(context, "block required to call #impl on a Java interface");
 
         boolean allMethods = true;
         final IRubyObject[] methodNames;
