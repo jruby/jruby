@@ -156,7 +156,7 @@ public class JavaUtil {
     }
 
     public static IRubyObject convertJavaToRuby(Ruby runtime, int i) {
-        return runtime.newFixnum(i);
+        return RubyFixnum.newFixnum(runtime, i);
     }
 
     public static IRubyObject convertJavaToRuby(Ruby runtime, long l) {

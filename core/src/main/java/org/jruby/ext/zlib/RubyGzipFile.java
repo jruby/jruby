@@ -48,6 +48,8 @@ import org.jruby.util.ByteList;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.IOEncodable;
 
+import static org.jruby.api.Create.newFixnum;
+
 /**
  *
  */
@@ -183,14 +185,24 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return EncodingUtils.strConvEncOpts(runtime.getCurrentContext(), RubyString.newString(runtime, value), enc2, enc, ecflags, ecopts);
     }
 
-    @JRubyMethod(name = "os_code")
+    @Deprecated
     public IRubyObject os_code() {
-        return getRuntime().newFixnum(osCode & 0xff);
+        return os_code(getCurrentContext());
+    }
+
+    @JRubyMethod(name = "os_code")
+    public IRubyObject os_code(ThreadContext context) {
+        return newFixnum(context, osCode & 0xff);
+    }
+
+    @Deprecated
+    public IRubyObject closed_p() {
+        return closed_p(getCurrentContext());
     }
 
     @JRubyMethod(name = "closed?")
-    public IRubyObject closed_p() {
-        return closed ? getRuntime().getTrue() : getRuntime().getFalse();
+    public IRubyObject closed_p(ThreadContext context) {
+        return closed ? context.tru : context.fals;
     }
 
     protected boolean isClosed() {
@@ -218,9 +230,14 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return nullFreeComment == null ? getRuntime().getNil() : nullFreeComment;
     }
 
-    @JRubyMethod(name = "crc")
+    @Deprecated
     public IRubyObject crc() {
-        return getRuntime().newFixnum(0);
+        return crc(getCurrentContext());
+    }
+
+    @JRubyMethod(name = "crc")
+    public IRubyObject crc(ThreadContext context) {
+        return newFixnum(context, 0);
     }
 
     @JRubyMethod(name = "mtime")
@@ -228,9 +245,14 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return mtime;
     }
 
-    @JRubyMethod(name = "sync")
+    @Deprecated
     public IRubyObject sync() {
-        return sync ? getRuntime().getTrue() : getRuntime().getFalse();
+        return sync(getCurrentContext());
+    }
+
+    @JRubyMethod(name = "sync")
+    public IRubyObject sync(ThreadContext context) {
+        return sync ? context.tru : context.fals;
     }
 
     @JRubyMethod(name = "finish")
@@ -247,14 +269,19 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return realIo;
     }
 
-    @JRubyMethod(name = "level")
+    @Deprecated
     public IRubyObject level() {
-        return getRuntime().newFixnum(level);
+        return level(getCurrentContext());
+    }
+
+    @JRubyMethod(name = "level")
+    public IRubyObject level(ThreadContext context) {
+        return newFixnum(context, level);
     }
 
     @JRubyMethod(name = "sync=")
     public IRubyObject set_sync(IRubyObject arg) {
-        sync = ((RubyBoolean) arg).isTrue();
+        sync = arg.isTrue();
         return sync ? getRuntime().getTrue() : getRuntime().getFalse();
     }
     

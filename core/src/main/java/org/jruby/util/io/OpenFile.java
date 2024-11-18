@@ -50,6 +50,7 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newFixnum;
 import static org.jruby.util.StringSupport.*;
 
 public class OpenFile implements Finalizable {
@@ -935,7 +936,7 @@ public class OpenFile implements Finalizable {
              * POSIX doesn't specify it.
              * We assumes it is closed.  */
             if ((posix.close(fd) < 0) && err.isNil())
-                err = noraise ? context.tru : runtime.newFixnum(posix.getErrno().intValue());
+                err = noraise ? context.tru : newFixnum(context, posix.getErrno().intValue());
         }
 
         if (!err.isNil() && !noraise) {

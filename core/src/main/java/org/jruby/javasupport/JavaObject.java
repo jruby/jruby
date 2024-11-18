@@ -170,7 +170,7 @@ public class JavaObject extends RubyObject {
     @JRubyMethod
     @Override
     public RubyFixnum hash() {
-        return getRuntime().newFixnum(hashCode());
+        return RubyFixnum.newFixnum(getRuntime(), hashCode());
     }
 
     @JRubyMethod

@@ -56,6 +56,7 @@ import org.jruby.runtime.ThreadContext;
 
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.numericToLong;
+import static org.jruby.api.Create.newFixnum;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -75,6 +76,7 @@ public class RubyZlib {
      *
      */
     public static RubyModule createZlibModule(Ruby runtime) {
+        ThreadContext context = runtime.getCurrentContext();
         RubyModule mZlib = runtime.defineModule("Zlib");
         mZlib.defineAnnotatedMethods(RubyZlib.class);
 
@@ -108,45 +110,45 @@ public class RubyZlib {
         mZlib.defineConstant("ZLIB_VERSION", runtime.newString(ZLIB_VERSION));
         mZlib.defineConstant("VERSION", runtime.newString(VERSION));
 
-        mZlib.defineConstant("BINARY", runtime.newFixnum(Z_BINARY));
-        mZlib.defineConstant("ASCII", runtime.newFixnum(Z_ASCII));
-        mZlib.defineConstant("UNKNOWN", runtime.newFixnum(Z_UNKNOWN));
+        mZlib.defineConstant("BINARY", newFixnum(context, Z_BINARY));
+        mZlib.defineConstant("ASCII", newFixnum(context, Z_ASCII));
+        mZlib.defineConstant("UNKNOWN", newFixnum(context, Z_UNKNOWN));
 
-        mZlib.defineConstant("DEF_MEM_LEVEL", runtime.newFixnum(8));
-        mZlib.defineConstant("MAX_MEM_LEVEL", runtime.newFixnum(9));
+        mZlib.defineConstant("DEF_MEM_LEVEL", newFixnum(context, 8));
+        mZlib.defineConstant("MAX_MEM_LEVEL", newFixnum(context, 9));
 
-        mZlib.defineConstant("OS_UNIX", runtime.newFixnum(OS_UNIX));
-        mZlib.defineConstant("OS_UNKNOWN", runtime.newFixnum(OS_UNKNOWN));
-        mZlib.defineConstant("OS_CODE", runtime.newFixnum(OS_CODE));
-        mZlib.defineConstant("OS_ZSYSTEM", runtime.newFixnum(OS_ZSYSTEM));
-        mZlib.defineConstant("OS_VMCMS", runtime.newFixnum(OS_VMCMS));
-        mZlib.defineConstant("OS_VMS", runtime.newFixnum(OS_VMS));
-        mZlib.defineConstant("OS_RISCOS", runtime.newFixnum(OS_RISCOS));
-        mZlib.defineConstant("OS_MACOS", runtime.newFixnum(OS_MACOS));
-        mZlib.defineConstant("OS_OS2", runtime.newFixnum(OS_OS2));
-        mZlib.defineConstant("OS_AMIGA", runtime.newFixnum(OS_AMIGA));
-        mZlib.defineConstant("OS_QDOS", runtime.newFixnum(OS_QDOS));
-        mZlib.defineConstant("OS_WIN32", runtime.newFixnum(OS_WIN32));
-        mZlib.defineConstant("OS_ATARI", runtime.newFixnum(OS_ATARI));
-        mZlib.defineConstant("OS_MSDOS", runtime.newFixnum(OS_MSDOS));
-        mZlib.defineConstant("OS_CPM", runtime.newFixnum(OS_CPM));
-        mZlib.defineConstant("OS_TOPS20", runtime.newFixnum(OS_TOPS20));
+        mZlib.defineConstant("OS_UNIX", newFixnum(context, OS_UNIX));
+        mZlib.defineConstant("OS_UNKNOWN", newFixnum(context, OS_UNKNOWN));
+        mZlib.defineConstant("OS_CODE", newFixnum(context, OS_CODE));
+        mZlib.defineConstant("OS_ZSYSTEM", newFixnum(context, OS_ZSYSTEM));
+        mZlib.defineConstant("OS_VMCMS", newFixnum(context, OS_VMCMS));
+        mZlib.defineConstant("OS_VMS", newFixnum(context, OS_VMS));
+        mZlib.defineConstant("OS_RISCOS", newFixnum(context, OS_RISCOS));
+        mZlib.defineConstant("OS_MACOS", newFixnum(context, OS_MACOS));
+        mZlib.defineConstant("OS_OS2", newFixnum(context, OS_OS2));
+        mZlib.defineConstant("OS_AMIGA", newFixnum(context, OS_AMIGA));
+        mZlib.defineConstant("OS_QDOS", newFixnum(context, OS_QDOS));
+        mZlib.defineConstant("OS_WIN32", newFixnum(context, OS_WIN32));
+        mZlib.defineConstant("OS_ATARI", newFixnum(context, OS_ATARI));
+        mZlib.defineConstant("OS_MSDOS", newFixnum(context, OS_MSDOS));
+        mZlib.defineConstant("OS_CPM", newFixnum(context, OS_CPM));
+        mZlib.defineConstant("OS_TOPS20", newFixnum(context, OS_TOPS20));
 
-        mZlib.defineConstant("DEFAULT_STRATEGY", runtime.newFixnum(JZlib.Z_DEFAULT_STRATEGY));
-        mZlib.defineConstant("FILTERED", runtime.newFixnum(JZlib.Z_FILTERED));
-        mZlib.defineConstant("HUFFMAN_ONLY", runtime.newFixnum(JZlib.Z_HUFFMAN_ONLY));
+        mZlib.defineConstant("DEFAULT_STRATEGY", newFixnum(context, JZlib.Z_DEFAULT_STRATEGY));
+        mZlib.defineConstant("FILTERED", newFixnum(context, JZlib.Z_FILTERED));
+        mZlib.defineConstant("HUFFMAN_ONLY", newFixnum(context, JZlib.Z_HUFFMAN_ONLY));
 
-        mZlib.defineConstant("NO_FLUSH", runtime.newFixnum(JZlib.Z_NO_FLUSH));
-        mZlib.defineConstant("SYNC_FLUSH", runtime.newFixnum(JZlib.Z_SYNC_FLUSH));
-        mZlib.defineConstant("FULL_FLUSH", runtime.newFixnum(JZlib.Z_FULL_FLUSH));
-        mZlib.defineConstant("FINISH", runtime.newFixnum(JZlib.Z_FINISH));
+        mZlib.defineConstant("NO_FLUSH", newFixnum(context, JZlib.Z_NO_FLUSH));
+        mZlib.defineConstant("SYNC_FLUSH", newFixnum(context, JZlib.Z_SYNC_FLUSH));
+        mZlib.defineConstant("FULL_FLUSH", newFixnum(context, JZlib.Z_FULL_FLUSH));
+        mZlib.defineConstant("FINISH", newFixnum(context, JZlib.Z_FINISH));
 
-        mZlib.defineConstant("NO_COMPRESSION", runtime.newFixnum(JZlib.Z_NO_COMPRESSION));
-        mZlib.defineConstant("BEST_SPEED", runtime.newFixnum(JZlib.Z_BEST_SPEED));
-        mZlib.defineConstant("DEFAULT_COMPRESSION", runtime.newFixnum(JZlib.Z_DEFAULT_COMPRESSION));
-        mZlib.defineConstant("BEST_COMPRESSION", runtime.newFixnum(JZlib.Z_BEST_COMPRESSION));
+        mZlib.defineConstant("NO_COMPRESSION", newFixnum(context, JZlib.Z_NO_COMPRESSION));
+        mZlib.defineConstant("BEST_SPEED", newFixnum(context, JZlib.Z_BEST_SPEED));
+        mZlib.defineConstant("DEFAULT_COMPRESSION", newFixnum(context, JZlib.Z_DEFAULT_COMPRESSION));
+        mZlib.defineConstant("BEST_COMPRESSION", newFixnum(context, JZlib.Z_BEST_COMPRESSION));
 
-        mZlib.defineConstant("MAX_WBITS", runtime.newFixnum(JZlib.MAX_WBITS));
+        mZlib.defineConstant("MAX_WBITS", newFixnum(context, JZlib.MAX_WBITS));
 
         // ZStream actually *isn't* allocatable
         RubyClass cZStream = mZlib.defineOrGetClassUnder("ZStream", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);

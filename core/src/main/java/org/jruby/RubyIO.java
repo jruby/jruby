@@ -110,6 +110,7 @@ import static com.headius.backport9.buffer.Buffers.limitBuffer;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.anno.FrameField.LASTLINE;
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.ThreadContext.*;
@@ -192,7 +193,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
 
         ThreadContext context = runtime.getCurrentContext();
-        initializeCommon(context, new ChannelFD(channel, runtime.getPosix(), runtime.getFilenoUtil()), runtime.newFixnum(ModeFlags.oflagsFrom(runtime.getPosix(), channel)), context.nil);
+        var posix = runtime.getPosix();
+        initializeCommon(context, new ChannelFD(channel, posix, runtime.getFilenoUtil()),
+                newFixnum(context, ModeFlags.oflagsFrom(posix, channel)), context.nil);
     }
 
     public RubyIO(Ruby runtime, ShellLauncher.POpenProcess process, IOOptions ioOptions) {
@@ -336,14 +339,15 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         ioClass.defineAnnotatedMethods(RubyIO.class);
 
+        ThreadContext context = runtime.getCurrentContext();
         // Constants for seek
-        ioClass.setConstant("SEEK_SET", runtime.newFixnum(PosixShim.SEEK_SET));
-        ioClass.setConstant("SEEK_CUR", runtime.newFixnum(PosixShim.SEEK_CUR));
-        ioClass.setConstant("SEEK_END", runtime.newFixnum(PosixShim.SEEK_END));
+        ioClass.setConstant("SEEK_SET", newFixnum(context, PosixShim.SEEK_SET));
+        ioClass.setConstant("SEEK_CUR", newFixnum(context, PosixShim.SEEK_CUR));
+        ioClass.setConstant("SEEK_END", newFixnum(context, PosixShim.SEEK_END));
 
-        ioClass.setConstant("READABLE", runtime.newFixnum(IOEvent.IO_READABLE.getValue()));
-        ioClass.setConstant("WRITABLE", runtime.newFixnum(IOEvent.IO_WRITABLE.getValue()));
-        ioClass.setConstant("PRIORITY", runtime.newFixnum(IOEvent.IO_PRIORITY.getValue()));
+        ioClass.setConstant("READABLE", newFixnum(context, IOEvent.IO_READABLE.getValue()));
+        ioClass.setConstant("WRITABLE", newFixnum(context, IOEvent.IO_WRITABLE.getValue()));
+        ioClass.setConstant("PRIORITY", newFixnum(context, IOEvent.IO_PRIORITY.getValue()));
 
         ioClass.defineModuleUnder("WaitReadable");
         ioClass.defineModuleUnder("WaitWritable");

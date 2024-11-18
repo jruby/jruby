@@ -61,6 +61,7 @@ import static org.jruby.RubyString.newBinaryString;
 import static org.jruby.RubyString.newEmptyString;
 import static org.jruby.api.Convert.checkToInteger;
 import static org.jruby.api.Convert.asInt;
+import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.StringSupport.CR_UNKNOWN;
@@ -286,7 +287,7 @@ public class EncodingUtils {
                 if (!v.isNil()) {
                     v = v.convertToInteger();
                     oflags_p[0] |= RubyNumeric.num2int(v);
-                    vmode(vmodeAndVperm_p, runtime.newFixnum(oflags_p[0]));
+                    vmode(vmodeAndVperm_p, newFixnum(context, oflags_p[0]));
                     fmode_p[0] = ModeFlags.getOpenFileFlagsFor(oflags_p[0]);
                 }
 

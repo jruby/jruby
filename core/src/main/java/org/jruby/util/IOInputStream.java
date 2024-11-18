@@ -37,8 +37,11 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyIO;
 import org.jruby.RubyString;
 import org.jruby.runtime.CallSite;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.MethodIndex;
+
+import static org.jruby.api.Create.newFixnum;
 
 /**
  * This class wraps a IRubyObject in an InputStream. Depending on which messages
@@ -130,13 +133,11 @@ public class IOInputStream extends InputStream {
     public int read(byte[] b, int off, int len) throws IOException {
         InputStream in = this.in;
 
-        if (in != null) {
-            return in.read(b, off, len);
-        }
+        if (in != null) return in.read(b, off, len);
 
-        Ruby runtime = this.runtime;
         IRubyObject io = this.io;
-        IRubyObject readValue = readAdapter.call(runtime.getCurrentContext(), io, io, runtime.newFixnum(len));
+        ThreadContext context = runtime.getCurrentContext();
+        IRubyObject readValue = readAdapter.call(context, io, io, newFixnum(context, len));
 
         if (readValue.isNil()) return -1;
 
@@ -145,7 +146,7 @@ public class IOInputStream extends InputStream {
         int readSize = str.realSize();
 
         if (readSize > len) {
-            throw runtime.newIOError("read call of " + len + " bytes produced a String of length " + readSize);
+            throw context.runtime.newIOError("read call of " + len + " bytes produced a String of length " + readSize);
         }
 
         System.arraycopy(str.getUnsafeBytes(), str.getBegin(), b, off, readSize);

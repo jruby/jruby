@@ -35,10 +35,7 @@ import java.util.Set;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.RubyString;
-import org.jruby.RubySymbol;
+import org.jruby.*;
 import org.jruby.ast.DefHolder;
 import org.jruby.ast.Node;
 import org.jruby.lexer.LexerSource;
@@ -496,7 +493,7 @@ public class RipperParserBase {
         if (indent <= 0) return array;
 
         lexer.setHeredocIndent(0);
-        dispatch("on_heredoc_dedent", array, getRuntime().newFixnum(indent));
+        dispatch("on_heredoc_dedent", array, RubyFixnum.newFixnum(getRuntime(), indent));
 
         return array;
     }

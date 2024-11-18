@@ -39,8 +39,8 @@ import java.nio.ByteBuffer;
 
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.numericToLong;
-import static org.jruby.api.Create.newString;
-import static org.jruby.api.Create.newSymbol;
+import static org.jruby.api.Create.*;
+import static org.jruby.api.Error.argumentError;
 
 @JRubyModule(name="Etc")
 public class RubyEtc {
@@ -66,6 +66,7 @@ public class RubyEtc {
     }
     
     public static RubyModule createEtcModule(Ruby runtime) {
+        var context = runtime.getCurrentContext();
         RubyModule etcModule = runtime.defineModule("Etc");
 
         runtime.setEtc(etcModule);
@@ -76,15 +77,15 @@ public class RubyEtc {
         if (!Platform.IS_WINDOWS) {
             for (Constant c : ConstantSet.getConstantSet("Sysconf")) {
                 String name = c.name().substring(1); // leading "_"
-                etcModule.setConstant(name, runtime.newFixnum(c.intValue()));
+                etcModule.setConstant(name, newFixnum(context, c.intValue()));
             }
             for (Constant c : ConstantSet.getConstantSet("Confstr")) {
                 String name = c.name().substring(1); // leading "_"
-                etcModule.setConstant(name, runtime.newFixnum(c.intValue()));
+                etcModule.setConstant(name, newFixnum(context, c.intValue()));
             }
             for (Constant c : ConstantSet.getConstantSet("Pathconf")) {
                 String name = c.name().substring(1); // leading "_"
-                etcModule.setConstant(name, runtime.newFixnum(c.intValue()));
+                etcModule.setConstant(name, newFixnum(context, c.intValue()));
             }
         }
         
@@ -126,22 +127,22 @@ public class RubyEtc {
         runtime.getEtc().defineConstant("Group", runtime.getGroupStruct());
     }
     
-    private static IRubyObject setupPasswd(Ruby runtime, Passwd passwd) {
+    private static IRubyObject setupPasswd(ThreadContext context, Passwd passwd) {
         IRubyObject[] args = new IRubyObject[] {
-                runtime.newString(passwd.getLoginName()),
-                runtime.newString(passwd.getPassword()),
-                runtime.newFixnum(passwd.getUID()),
-                runtime.newFixnum(passwd.getGID()),
-                runtime.newString(passwd.getGECOS()),
-                runtime.newString(passwd.getHome()),
-                runtime.newString(passwd.getShell()),
-                runtime.newFixnum(passwd.getPasswdChangeTime()),
-                runtime.newString(passwd.getAccessClass()),
-                runtime.newFixnum(passwd.getExpire())
+                newString(context, passwd.getLoginName()),
+                newString(context, passwd.getPassword()),
+                newFixnum(context, passwd.getUID()),
+                newFixnum(context, passwd.getGID()),
+                newString(context, passwd.getGECOS()),
+                newString(context, passwd.getHome()),
+                newString(context, passwd.getShell()),
+                newFixnum(context, passwd.getPasswdChangeTime()),
+                newString(context, passwd.getAccessClass()),
+                newFixnum(context, passwd.getExpire())
 
         };
         
-        return RubyStruct.newStruct(runtime.getPasswdStruct(), args, Block.NULL_BLOCK);
+        return RubyStruct.newStruct(context.runtime.getPasswdStruct(), args, Block.NULL_BLOCK);
     }
 
     
@@ -225,7 +226,7 @@ public class RubyEtc {
     public static synchronized IRubyObject getpwuid(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
 
-        int argc = Arity.checkArgumentCount(context, args, 0, 1);
+        Arity.checkArgumentCount(context, args, 0, 1);
 
         POSIX posix = runtime.getPosix();
         IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
@@ -233,12 +234,11 @@ public class RubyEtc {
             int uid = args.length == 0 ? posix.getuid() : RubyNumeric.fix2int(args[0]);
             Passwd pwd = posix.getpwuid(uid);
             if(pwd == null) {
-                if (Platform.IS_WINDOWS) {  // MRI behavior
-                    return runtime.getNil();
-                }
-                throw runtime.newArgumentError("can't find user for " + uid);
+                if (Platform.IS_WINDOWS) return context.nil;
+
+                throw argumentError(context, "can't find user for " + uid);
             }
-            return setupPasswd(runtime, pwd);
+            return setupPasswd(context, pwd);
         } catch (RaiseException re) {
             if (runtime.getNotImplementedError().isInstance(re.getException())) {
                 runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
@@ -249,7 +249,7 @@ public class RubyEtc {
             if (runtime.getDebug().isTrue()) {
                 runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.getpwuid is not supported by JRuby on this platform");
             }
-            return runtime.getNil();
+            return context.nil;
         }
     }
 
@@ -258,14 +258,14 @@ public class RubyEtc {
         Ruby runtime = recv.getRuntime();
         String nam = name.convertToString().toString();
         try {
+            ThreadContext context = runtime.getCurrentContext();
             Passwd pwd = runtime.getPosix().getpwnam(nam);
             if (pwd == null) {
-                if (Platform.IS_WINDOWS) {  // MRI behavior
-                    return runtime.getNil();
-                }
-                throw runtime.newArgumentError("can't find user for " + nam);
+                if (Platform.IS_WINDOWS) return context.nil;
+
+                throw argumentError(context, "can't find user for " + nam);
             }
-            return setupPasswd(recv.getRuntime(), pwd);
+            return setupPasswd(context, pwd);
         } catch (RaiseException e) {
             throw e;
         } catch (Exception e) {
@@ -294,7 +294,7 @@ public class RubyEtc {
                 try {
                     Passwd pw;
                     while((pw = posix.getpwent()) != null) {
-                        block.yield(context, setupPasswd(runtime, pw));
+                        block.yield(context, setupPasswd(context, pw));
                     }
                 } finally {
                     posix.endpwent();
@@ -304,7 +304,7 @@ public class RubyEtc {
 
             Passwd pw = posix.getpwent();
             if (pw != null) {
-                return setupPasswd(runtime, pw);
+                return setupPasswd(runtime.getCurrentContext(), pw);
             } else {
                 return runtime.getNil();
             }
@@ -370,7 +370,7 @@ public class RubyEtc {
         try {
             Passwd passwd = runtime.getPosix().getpwent();
             if (passwd != null) {
-                return setupPasswd(runtime, passwd);
+                return setupPasswd(runtime.getCurrentContext(), passwd);
             } else {
                 return runtime.getNil();
             }
@@ -536,15 +536,13 @@ public class RubyEtc {
     
     @JRubyMethod(module = true)
     public static synchronized IRubyObject systmpdir(ThreadContext context, IRubyObject recv) {
-        Ruby runtime = context.getRuntime();
         ByteList tmp = ByteList.create(System.getProperty("java.io.tmpdir")); // default for all platforms except Windows
         if (Platform.IS_WINDOWS) {
             String commonAppData = System.getenv("CSIDL_COMMON_APPDATA");
             if (commonAppData != null) tmp = ByteList.create(commonAppData);
         }
-        RubyString ret = RubyString.newString(runtime, tmp, runtime.getDefaultExternalEncoding());
 
-        return ret;
+        return newString(context, tmp, context.runtime.getDefaultExternalEncoding());
     }
     
     @JRubyMethod(module = true)
@@ -565,7 +563,7 @@ public class RubyEtc {
     @JRubyMethod(module = true)
     public static synchronized IRubyObject nprocessors(ThreadContext context, IRubyObject recv) {
         int nprocs = Runtime.getRuntime().availableProcessors();
-        return RubyFixnum.newFixnum(context.getRuntime(), nprocs);
+        return newFixnum(context, nprocs);
     }
 
     @JRubyMethod(module = true)

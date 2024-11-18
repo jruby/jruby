@@ -66,7 +66,7 @@ public class JavaArray extends JavaObject {
     }
 
     public RubyFixnum length() {
-        return getRuntime().newFixnum(getLength());
+        return RubyFixnum.newFixnum(getRuntime(), getLength());
     }
 
     public int getLength() {

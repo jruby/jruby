@@ -80,6 +80,7 @@ import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.collections.WeakValuedMap;
 
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
@@ -204,6 +205,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     public static RubyClass createRegexpClass(Ruby runtime) {
+        var context = runtime.getCurrentContext();
         RubyClass regexpClass = runtime.defineClass("Regexp", runtime.getObject(), RubyRegexp::new);
 
         regexpClass.setClassIndex(ClassIndex.REGEXP);
@@ -211,17 +213,17 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
         regexpClass.kindOf = new RubyModule.JavaClassKindOf(RubyRegexp.class);
 
-        regexpClass.defineConstant("IGNORECASE", runtime.newFixnum(RE_OPTION_IGNORECASE));
-        regexpClass.defineConstant("EXTENDED", runtime.newFixnum(RE_OPTION_EXTENDED));
-        regexpClass.defineConstant("MULTILINE", runtime.newFixnum(RE_OPTION_MULTILINE));
+        regexpClass.defineConstant("IGNORECASE", newFixnum(context, (RE_OPTION_IGNORECASE)));
+        regexpClass.defineConstant("EXTENDED", newFixnum(context, (RE_OPTION_EXTENDED)));
+        regexpClass.defineConstant("MULTILINE", newFixnum(context, (RE_OPTION_MULTILINE)));
 
-        regexpClass.defineConstant("FIXEDENCODING", runtime.newFixnum(RE_FIXED));
-        regexpClass.defineConstant("NOENCODING", runtime.newFixnum(RE_NONE));
+        regexpClass.defineConstant("FIXEDENCODING", newFixnum(context, (RE_FIXED)));
+        regexpClass.defineConstant("NOENCODING", newFixnum(context, (RE_NONE)));
 
         regexpClass.defineAnnotatedMethods(RubyRegexp.class);
         regexpClass.getSingletonClass().defineAlias("compile", "new");
 
-        runtime.setRubyTimeout(runtime.getNil());
+        runtime.setRubyTimeout(context.nil);
 
         return regexpClass;
     }
@@ -1037,7 +1039,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         while (len-- > 0) {
             hash = hash * 33 + bytes[p++];
         }
-        return metaClass.runtime.newFixnum(hash + (hash >> 5));
+        return RubyFixnum.newFixnum(getRuntime(), hash + (hash >> 5));
     }
 
     @JRubyMethod(name = {"==", "eql?"})
@@ -1105,7 +1107,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         int pos = matchPos(context, str, strp, true, 0);
         if (pos < 0) return context.nil;
         pos = strp[0].subLength(pos);
-        return RubyFixnum.newFixnum(context.runtime, pos);
+        return newFixnum(context, pos);
     }
 
     /** rb_reg_match_m
@@ -1566,7 +1568,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             RubyArray ary = RubyArray.newBlankArrayInternal(runtime, backrefs.length);
 
             for (int idx = 0; idx<backrefs.length; idx++) {
-                ary.storeInternal(idx, RubyFixnum.newFixnum(runtime, backrefs[idx]));
+                ary.storeInternal(idx, newFixnum(context, backrefs[idx]));
             }
             RubyString name = RubyString.newStringShared(runtime, e.name, e.nameP, e.nameEnd - e.nameP);
             hash.fastASet(name.freeze(context), ary);

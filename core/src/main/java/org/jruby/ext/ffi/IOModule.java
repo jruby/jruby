@@ -41,6 +41,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.OpenFile;
 
 import static com.headius.backport9.buffer.Buffers.limitBuffer;
+import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -59,7 +60,6 @@ public class IOModule {
         if (!(src instanceof RubyIO)) throw typeError(context, "wrong argument (expected IO)");
         if (!(dst instanceof AbstractMemory)) throw typeError(context, "wrong argument (expected FFI memory)");
 
-        Ruby runtime = context.runtime;
         try {
             OpenFile openFile = ((RubyIO) src).getOpenFile();
             openFile.checkClosed();
@@ -70,7 +70,7 @@ public class IOModule {
             int count = RubyNumeric.num2int(rbLength);
 
             if (count > buffer.remaining()) {
-                throw runtime.newIndexError("read count too big for output buffer");
+                throw context.runtime.newIndexError("read count too big for output buffer");
             }
 
             if (count < buffer.remaining()) {
@@ -79,11 +79,11 @@ public class IOModule {
             }
 
             // TODO: This used to use ChannelStream and honor its buffers; it does not honor OpenFile buffers now
-            return runtime.newFixnum(openFile.readChannel().read(buffer));
+            return newFixnum(context, openFile.readChannel().read(buffer));
         } catch (EOFException e) {
-            return runtime.newFixnum(-1);
+            return newFixnum(context, -1);
         } catch (IOException e) {
-            throw runtime.newIOErrorFromException(e);
+            throw context.runtime.newIOErrorFromException(e);
         }
     }
 }

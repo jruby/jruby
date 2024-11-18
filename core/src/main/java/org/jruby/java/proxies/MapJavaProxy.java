@@ -56,6 +56,7 @@ import org.jruby.util.TypeConverter;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Create.newString;
 import static org.jruby.util.Inspector.*;
 
@@ -154,7 +155,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
 
         @Override
         public RubyFixnum hash(ThreadContext context) {
-            return getRuntime().newFixnum( mapDelegate().hashCode() );
+            return newFixnum(context, mapDelegate().hashCode());
         }
 
         @Override

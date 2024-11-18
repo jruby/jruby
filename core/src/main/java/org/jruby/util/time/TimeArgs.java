@@ -20,6 +20,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import java.util.function.Function;
 
 import static org.jruby.RubyTime.TIME_SCALE;
+import static org.jruby.api.Create.newFixnum;
+import static org.jruby.api.Error.argumentError;
 
 public class TimeArgs {
     private final int year;
@@ -107,8 +109,6 @@ public class TimeArgs {
     }
 
     public void initializeTime(ThreadContext context, RubyTime time, DateTimeZone dtz) {
-        Ruby runtime = context.runtime;
-
         // set up with min values and then add to allow rolling over
         DateTime dt = new DateTime(year, month, 1, 0, 0, 0, 0, DateTimeZone.UTC);
         long instant = dt.getMillis();
@@ -131,11 +131,9 @@ public class TimeArgs {
                 if (secondObj instanceof RubyRational) {
                     RubyRational rat = (RubyRational) secondObj;
 
-                    if (rat.isNegative()) {
-                        throw runtime.newArgumentError("argument out of range.");
-                    }
+                    if (rat.isNegative()) throw argumentError(context, "argument out of range.");
 
-                    RubyRational nsec = (RubyRational) rat.op_mul(context, runtime.newFixnum(1_000_000_000));
+                    RubyRational nsec = (RubyRational) rat.op_mul(context, newFixnum(context, 1_000_000_000));
 
                     long fullNanos = nsec.getLongValue();
                     long fullMillis = fullNanos / 1_000_000;
@@ -145,9 +143,7 @@ public class TimeArgs {
                 } else {
                     double secs = RubyFloat.num2dbl(context, secondObj);
 
-                    if (secs < 0 || secs >= TIME_SCALE) {
-                        throw runtime.newArgumentError("argument out of range.");
-                    }
+                    if (secs < 0 || secs >= TIME_SCALE) throw argumentError(context, "argument out of range.");
 
                     millis = (int) (secs * 1000) % 1000;
                     nanos = ((long) (secs * TIME_SCALE) % 1000000);
@@ -156,22 +152,16 @@ public class TimeArgs {
         } else if (usecObj instanceof RubyRational) {
             RubyRational rat = (RubyRational) usecObj;
 
-            if (rat.isNegative()) {
-                throw runtime.newArgumentError("argument out of range.");
-            }
+            if (rat.isNegative()) throw argumentError(context, "argument out of range.");
 
-            RubyRational nsec = (RubyRational) rat.op_mul(context, runtime.newFixnum(1000));
+            RubyRational nsec = (RubyRational) rat.op_mul(context, newFixnum(context, 1000));
 
             long tmpNanos = (long) nsec.getDoubleValue(context);
 
             millis = tmpNanos / 1_000_000;
             nanos = tmpNanos % 1_000_000;
-        } else if (usecObj instanceof RubyFloat) {
-            RubyFloat flo = (RubyFloat) usecObj;
-
-            if (flo.isNegative()) {
-                throw runtime.newArgumentError("argument out of range.");
-            }
+        } else if (usecObj instanceof RubyFloat flo) {
+            if (flo.isNegative()) throw argumentError(context, "argument out of range.");
 
             double micros = flo.getDoubleValue();
 
@@ -180,9 +170,7 @@ public class TimeArgs {
         } else {
             int usec = parseIntArg(context, usecObj).isNil() ? 0 : RubyNumeric.num2int(usecObj);
 
-            if (usec < 0 || usec >= TIME_SCALE / 1000) {
-                throw runtime.newArgumentError("argument out of range.");
-            }
+            if (usec < 0 || usec >= TIME_SCALE / 1000) throw argumentError(context, "argument out of range.");
 
             int usecPart = usec % 1000;
             int msecPart = usec / 1000;
@@ -203,7 +191,7 @@ public class TimeArgs {
             dt = dt.withZoneRetainFields(dtz);
             dt = adjustZoneOffset(dtz, dt, dst);
         } catch (IllegalFieldValueException e) {
-            throw runtime.newArgumentError("time out of range");
+            throw argumentError(context, "time out of range");
         }
 
         time.setDateTime(dt);

@@ -54,6 +54,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 
+import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -235,8 +236,6 @@ public class RubyTCPServer extends RubyTCPSocket {
 
     @JRubyMethod(name = "sysaccept")
     public IRubyObject sysaccept(ThreadContext context) {
-        Ruby runtime = context.runtime;
-
         try {
             RubyThread thread = context.getThread();
 
@@ -253,12 +252,12 @@ public class RubyTCPServer extends RubyTCPSocket {
 
                     connected.finishConnect();
 
-                    return runtime.newFixnum(FilenoUtil.filenoFrom(connected));
+                    return newFixnum(context, FilenoUtil.filenoFrom(connected));
                 }
             }
 
         } catch(IOException e) {
-            throw runtime.newIOErrorFromException(e);
+            throw context.runtime.newIOErrorFromException(e);
         }
     }
 

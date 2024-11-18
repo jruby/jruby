@@ -318,7 +318,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
         @JRubyMethod
         public RubyFixnum arity() {
-            return getRuntime().newFixnum(getArity());
+            return RubyFixnum.newFixnum(getRuntime(), getArity());
         }
 
         @Override

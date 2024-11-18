@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import static org.jruby.api.Create.newFixnum;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -16,6 +17,7 @@ import static org.junit.Assert.fail;
 
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -90,19 +92,20 @@ public class JavaEmbedUtilsTest {
     @Test
     public void testJavaToRubyPrimitive() {
         final Ruby runtime = Ruby.newInstance();
+        ThreadContext context = runtime.getCurrentContext();
 
         IRubyObject v;
         v = JavaEmbedUtils.javaToRuby(runtime, -100L);
-        assertEquals(runtime.newFixnum(-100), v);
+        assertEquals(newFixnum(context, -100), v);
 
         v = JavaEmbedUtils.javaToRuby(runtime, 200);
-        assertEquals(runtime.newFixnum(200), v);
+        assertEquals(newFixnum(context, 200), v);
 
         v = JavaEmbedUtils.javaToRuby(runtime, (short) 200);
-        assertEquals(runtime.newFixnum(200), v);
+        assertEquals(newFixnum(context, 200), v);
 
         v = JavaEmbedUtils.javaToRuby(runtime, (byte) 100);
-        assertEquals(runtime.newFixnum(100), v);
+        assertEquals(newFixnum(context, 100), v);
 
         v = JavaEmbedUtils.javaToRuby(runtime, 10.0f);
         assertEquals(runtime.newFloat(10.0), v);
@@ -111,25 +114,26 @@ public class JavaEmbedUtilsTest {
         assertEquals(runtime.newFloat(10.0), v);
 
         v = JavaEmbedUtils.javaToRuby(runtime, true);
-        assertSame(runtime.getTrue(), v);
+        assertSame(context.tru, v);
 
         v = JavaEmbedUtils.javaToRuby(runtime, false);
-        assertSame(runtime.getFalse(), v);
+        assertSame(context.fals, v);
     }
 
     @Test
     public void testJavaToRuby() {
         final Ruby runtime = Ruby.newInstance();
+        ThreadContext context = runtime.getCurrentContext();
 
         IRubyObject v;
         v = JavaEmbedUtils.javaToRuby(runtime, "");
         assertEquals(runtime.newString(), v);
 
         v = JavaEmbedUtils.javaToRuby(runtime, Long.valueOf(42L));
-        assertEquals(runtime.newFixnum(42), v);
+        assertEquals(newFixnum(context, 42), v);
 
         v = JavaEmbedUtils.javaToRuby(runtime, Boolean.TRUE);
-        assertSame(runtime.getTrue(), v);
+        assertSame(context.tru, v);
 
         v = JavaEmbedUtils.javaToRuby(runtime, new StringBuilder());
         assertEquals(ConcreteJavaProxy.class, v.getClass()); // no more JavaObject wrapping!

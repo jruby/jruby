@@ -59,6 +59,7 @@ import org.jruby.runtime.marshal.DataType;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Create.newString;
 import static org.jruby.util.RubyStringBuilder.types;
 
@@ -386,14 +387,20 @@ public class RubyProc extends RubyObject implements DataType {
         return newBlock.call(context, args, passedBlock);
     }
 
-    @JRubyMethod(name = "arity")
+    @Deprecated
     public RubyFixnum arity() {
+        return arity(getCurrentContext());
+    }
+
+    @JRubyMethod(name = "arity")
+    public RubyFixnum arity(ThreadContext context) {
         Signature signature = block.getSignature();
 
-        if (block.type == Block.Type.LAMBDA) return getRuntime().newFixnum(signature.arityValue());
+        if (block.type == Block.Type.LAMBDA) return newFixnum(context, signature.arityValue());
 
         // FIXME: Consider min/max like MRI here instead of required + kwarg count.
-        return getRuntime().newFixnum(signature.hasRest() ? signature.arityValue() : signature.required() + signature.getRequiredKeywordForArityCount());
+        return newFixnum(context, signature.hasRest() ?
+                signature.arityValue() : signature.required() + signature.getRequiredKeywordForArityCount());
     }
 
     @JRubyMethod(name = "to_proc")

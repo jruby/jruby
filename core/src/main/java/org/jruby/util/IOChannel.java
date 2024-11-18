@@ -46,6 +46,8 @@ import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.callsite.RespondToCallSite;
 
+import static org.jruby.api.Create.newFixnum;
+
 /**
  * Wrap an IO object in a Channel.
  *
@@ -88,10 +90,11 @@ public abstract class IOChannel implements Channel {
     }
 
     protected static int read(Ruby runtime, IRubyObject io, FunctionalCachingCallSite read, ByteBuffer dst) throws IOException {
+        ThreadContext context = runtime.getCurrentContext();
         int remaining = dst.remaining();
 
         CacheEntry readMethodEntry = read.retrieveCache(io);
-        RubyFixnum remainingFixnum = runtime.newFixnum(remaining);
+        RubyFixnum remainingFixnum = newFixnum(context, remaining);
         IRubyObject readValue;
         if (readMethodEntry.method.getSignature().isTwoArguments()) {
             if (dst.hasArray()) {
@@ -99,9 +102,9 @@ public abstract class IOChannel implements Channel {
             } else {
                 readValue = RubyString.newStringLight(runtime, remaining);
             }
-            read.call(runtime.getCurrentContext(), io, io, remainingFixnum, readValue);
+            read.call(context, io, io, remainingFixnum, readValue);
         } else {
-            readValue = read.call(runtime.getCurrentContext(), io, io, remainingFixnum);
+            readValue = read.call(context, io, io, remainingFixnum);
         }
 
         int returnValue = -1;

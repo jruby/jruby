@@ -2841,7 +2841,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "hash")
     @Override
     public RubyFixnum hash() {
-        return getRuntime().newFixnum(id);
+        return RubyFixnum.newFixnum(getRuntime(), id);
     }
 
     /** rb_mod_to_s

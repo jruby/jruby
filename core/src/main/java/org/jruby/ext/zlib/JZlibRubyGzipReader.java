@@ -63,6 +63,7 @@ import java.util.List;
 import static org.jruby.RubyIO.PARAGRAPH_SEPARATOR;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.castAsString;
+import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Create.newString;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
@@ -456,57 +457,58 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         return RubyNumeric.int2fix(getRuntime(), position);
     }
 
-    @JRubyMethod(name = "readchar")
+    @Deprecated
     public IRubyObject readchar() {
+        return readchar(getCurrentContext());
+    }
+
+    @JRubyMethod(name = "readchar")
+    public IRubyObject readchar(ThreadContext context) {
         try {
             int value = bufferedStream.read();
-            if (value == -1) throw getRuntime().newEOFError();
+            if (value == -1) throw context.runtime.newEOFError();
 
             position++;
             
-            return getRuntime().newFixnum(value);
+            return newFixnum(context, value);
         } catch (IOException ioe) {
-            throw getRuntime().newIOErrorFromException(ioe);
+            throw context.runtime.newIOErrorFromException(ioe);
         }
     }
 
     @Deprecated
     public IRubyObject getc() {
-        return getbyte(getRuntime().getCurrentContext());
+        return getbyte(getCurrentContext());
     }
 
     @JRubyMethod(name = "getbyte")
     public IRubyObject getbyte(ThreadContext context) {
-        Ruby runtime = context.runtime;
-
         try {
             int value = bufferedStream.read();
-            if (value == -1) return runtime.getNil();
+            if (value == -1) return context.nil;
 
             position++;
 
-            return runtime.newFixnum(value);
+            return newFixnum(context, value);
         } catch (IOException ioe) {
-            throw runtime.newIOErrorFromException(ioe);
+            throw context.runtime.newIOErrorFromException(ioe);
         }
     }
 
     @Deprecated
     public IRubyObject getbyte() {
-        return getbyte(getRuntime().getCurrentContext());
+        return getbyte(getCurrentContext());
     }
 
     @Deprecated
     public IRubyObject readbyte() {
-        return readbyte(getRuntime().getCurrentContext());
+        return readbyte(getCurrentContext());
     }
 
     @JRubyMethod(name = "readbyte")
     public IRubyObject readbyte(ThreadContext context) {
         IRubyObject dst = getbyte(context);
-        if (dst.isNil()) {
-            throw context.runtime.newEOFError();
-        }
+        if (dst.isNil()) throw context.runtime.newEOFError();
         return dst;
     }
 
@@ -618,7 +620,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         
         if (os == 255) os = (byte) 0x0b; // NTFS filesystem (NT), because CRuby's test_zlib expect it.
         
-        return getRuntime().newFixnum(os & 0xff);
+        return RubyFixnum.newFixnum(getRuntime(), os & 0xff);
     }
 
     @Override
@@ -733,19 +735,18 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
     @JRubyMethod
     public IRubyObject each_byte(ThreadContext context, Block block) {
-        final Ruby runtime = context.runtime;
-        if (!block.isGiven()) return RubyEnumerator.enumeratorize(runtime, this, "each_byte");
+        if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, this, "each_byte");
 
         try {
             int value = bufferedStream.read();
 
             while (value != -1) {
                 position++;
-                block.yield(context, runtime.newFixnum(value));
+                block.yield(context, newFixnum(context, value));
                 value = bufferedStream.read();
             }
         } catch (IOException ioe) {
-            throw runtime.newIOErrorFromException(ioe);
+            throw context.runtime.newIOErrorFromException(ioe);
         }
 
         return context.nil;

@@ -85,6 +85,8 @@ import java.util.Enumeration;
 import java.util.regex.Pattern;
 
 import static org.jruby.api.Convert.castAsFixnum;
+import static org.jruby.api.Create.newFixnum;
+import static org.jruby.api.Create.newSymbol;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -496,34 +498,27 @@ public class RubySocket extends RubyBasicSocket {
     }
 
     private IRubyObject doConnectNonblock(ThreadContext context, SocketAddress addr, boolean ex) {
-        Ruby runtime = context.runtime;
-
         Channel channel = getChannel();
 
-        if ( ! (channel instanceof SelectableChannel) ) {
-            throw runtime.newErrnoENOPROTOOPTError();
-        }
+        if (!(channel instanceof SelectableChannel)) throw context.runtime.newErrnoENOPROTOOPTError();
 
-        boolean result = tryConnect(context, runtime, channel, addr, ex, false);
+        boolean result = tryConnect(context, channel, addr, ex, false);
 
         if ( !result ) {
-            if (!ex) return runtime.newSymbol("wait_writable");
-            throw runtime.newErrnoEINPROGRESSWritableError();
+            if (!ex) return newSymbol(context, "wait_writable");
+            throw context.runtime.newErrnoEINPROGRESSWritableError();
         }
 
-        return runtime.newFixnum(0);
+        return newFixnum(context, 0);
     }
 
     protected IRubyObject doConnect(ThreadContext context, SocketAddress addr, boolean ex) {
-        Ruby runtime = context.runtime;
-        Channel channel = getChannel();
+        tryConnect(context, getChannel(), addr, ex, true);
 
-        tryConnect(context, runtime, channel, addr, ex, true);
-
-        return runtime.newFixnum(0);
+        return newFixnum(context, 0);
     }
 
-    private boolean tryConnect(ThreadContext context, Ruby runtime, Channel channel, SocketAddress addr, boolean ex, boolean blocking) {
+    private boolean tryConnect(ThreadContext context, Channel channel, SocketAddress addr, boolean ex, boolean blocking) {
         SelectableChannel selectable = (SelectableChannel) channel;
 
         // whether to clean up after a failed connection
@@ -549,10 +544,10 @@ public class RubySocket extends RubyBasicSocket {
                         } else if (channel instanceof UnixSocketChannel) {
                             result = ((UnixSocketChannel) channel).connect((UnixSocketAddress) addr);
 
-                        } else if (channel instanceof DatagramChannel) {
-                            ((DatagramChannel) channel).connect(addr);
+                        } else if (channel instanceof DatagramChannel datagram) {
+                            datagram.connect(addr);
                         } else {
-                            throw runtime.newErrnoENOPROTOOPTError();
+                            throw context.runtime.newErrnoENOPROTOOPTError();
                         }
 
                         if (!blocking || result) return result;
@@ -570,25 +565,25 @@ public class RubySocket extends RubyBasicSocket {
             throw context.runtime.newErrnoECONNREFUSEDError();
         } catch (AlreadyConnectedException e) {
             if (!ex) return false;
-            throw runtime.newErrnoEISCONNError();
+            throw context.runtime.newErrnoEISCONNError();
         } catch (ConnectionPendingException e) {
-            throw runtime.newErrnoEINPROGRESSWritableError();
+            throw context.runtime.newErrnoEINPROGRESSWritableError();
         } catch (UnknownHostException e) {
             cleanup = true;
-            throw SocketUtils.sockerr(runtime, "connect(2): unknown host");
+            throw SocketUtils.sockerr(context.runtime, "connect(2): unknown host");
         } catch (SocketException e) {
             cleanup = true;
-            throw buildSocketException(runtime, e, "connect(2)", addr);
+            throw buildSocketException(context.runtime, e, "connect(2)", addr);
         } catch (IOException e) {
             cleanup = true;
-            throw sockerr(runtime, "connect(2): name or service not known", e);
+            throw sockerr(context.runtime, "connect(2): name or service not known", e);
         } catch (IllegalArgumentException e) {
             cleanup = true;
-            throw sockerr(runtime, e.getMessage(), e);
+            throw sockerr(context.runtime, e.getMessage(), e);
         } finally {
             // Some exceptions indicate failure to connect, which leaves the channel closed.
             // At this point the socket channel is no longer usable, so we clean up.
-            if (cleanup) getOpenFile().cleanup(runtime, true);
+            if (cleanup) getOpenFile().cleanup(context.runtime, true);
         }
     }
 

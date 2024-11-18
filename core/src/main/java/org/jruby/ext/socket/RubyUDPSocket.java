@@ -74,6 +74,7 @@ import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.UnsupportedAddressTypeException;
 
+import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Create.newString;
 import static org.jruby.runtime.Helpers.extractExceptionOnlyArg;
 
@@ -314,31 +315,25 @@ public class RubyUDPSocket extends RubyIPSocket {
     @JRubyMethod
     public IRubyObject send(ThreadContext context, IRubyObject _mesg, IRubyObject _flags) {
         // TODO: implement flags
-        final Ruby runtime = context.runtime;
 
         try {
-            int written;
-
             RubyString data = _mesg.convertToString();
             ByteList dataBL = data.getByteList();
             ByteBuffer buf = ByteBuffer.wrap(dataBL.unsafeBytes(), dataBL.begin(), dataBL.realSize());
 
-            written = ((DatagramChannel) this.getChannel()).write(buf);
+            int written = ((DatagramChannel) this.getChannel()).write(buf);
 
-            return runtime.newFixnum(written);
-        }
-        catch (NotYetConnectedException e) {
-            throw runtime.newErrnoEDESTADDRREQError("send(2)");
-        }
-        catch (UnknownHostException e) {
-            throw SocketUtils.sockerr(runtime, "send: name or service not known");
-        }
-        catch (IOException e) { // SocketException
-            throw runtime.newIOErrorFromException(e);
-        }
-        catch (RaiseException e) { throw e; }
-        catch (Exception e) {
-            throw sockerr(runtime, e.getLocalizedMessage(), e);
+            return newFixnum(context, written);
+        } catch (NotYetConnectedException e) {
+            throw context.runtime.newErrnoEDESTADDRREQError("send(2)");
+        } catch (UnknownHostException e) {
+            throw SocketUtils.sockerr(context.runtime, "send: name or service not known");
+        } catch (IOException e) { // SocketException
+            throw context.runtime.newIOErrorFromException(e);
+        } catch (RaiseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw sockerr(context.runtime, e.getLocalizedMessage(), e);
         }
     }
 
@@ -419,7 +414,7 @@ public class RubyUDPSocket extends RubyIPSocket {
                         written = sendDP.getLength();
                     }
 
-                    return runtime.newFixnum(written);
+                    return newFixnum(context, written);
                 } catch (NoRouteToHostException nrthe) {
                     if (i+1 < addrs.length) {
                         continue;

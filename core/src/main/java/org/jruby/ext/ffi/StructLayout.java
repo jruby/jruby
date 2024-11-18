@@ -62,6 +62,7 @@ import org.jruby.util.ByteList;
 
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.castAsArray;
+import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.*;
 
@@ -275,14 +276,14 @@ public final class StructLayout extends Type {
      */
     @JRubyMethod(name = "offsets")
     public IRubyObject offsets(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        RubyArray offsets = RubyArray.newArray(runtime);
+        RubyArray offsets = RubyArray.newArray(context.runtime);
 
         for (IRubyObject name : fieldNames) {
-            RubyArray offset = RubyArray.newArray(runtime);
+            RubyArray offset = RubyArray.newArray(context.runtime);
             // Assemble a [ :name, offset ] array
+
             offset.append(name);
-            offset.append(runtime.newFixnum(getMember(runtime, name).offset));
+            offset.append(newFixnum(context, getMember(context.runtime, name).offset));
             offsets.append(offset);
         }
 

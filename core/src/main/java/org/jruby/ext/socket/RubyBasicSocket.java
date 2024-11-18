@@ -83,8 +83,7 @@ import static jnr.constants.platform.TCP.TCP_KEEPIDLE;
 import static jnr.constants.platform.TCP.TCP_KEEPINTVL;
 import static jnr.constants.platform.TCP.TCP_NODELAY;
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Create.newString;
-import static org.jruby.api.Create.newSymbol;
+import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.Helpers.extractExceptionOnlyArg;
 import static org.jruby.runtime.Helpers.throwErrorFromException;
@@ -968,10 +967,9 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     protected IRubyObject addrFor(ThreadContext context, InetSocketAddress addr, boolean reverse) {
-        final Ruby runtime = context.runtime;
         boolean ipV6 = addr.getAddress() instanceof Inet6Address;
         IRubyObject ret0 = newString(context, ipV6 ? "AF_INET6" : "AF_INET");
-        IRubyObject ret1 = runtime.newFixnum(addr.getPort());
+        IRubyObject ret1 = newFixnum(context, addr.getPort());
         IRubyObject ret2;
         String hostAddress = addr.getAddress().getHostAddress();
         if (!reverse || doNotReverseLookup(context)) {
@@ -985,7 +983,7 @@ public class RubyBasicSocket extends RubyIO {
                 newString(context, "::") :
                 newString(context, hostAddress);
 
-        return RubyArray.newArray(runtime, ret0, ret1, ret2, ret3);
+        return RubyArray.newArray(context.runtime, ret0, ret1, ret2, ret3);
     }
 
     protected static String bindContextMessage(IRubyObject host, int port) {

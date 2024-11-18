@@ -28,10 +28,7 @@
 package org.jruby.ext.zlib;
 
 import com.jcraft.jzlib.JZlib;
-import org.jruby.Ruby;
-import org.jruby.RubyClass;
-import org.jruby.RubyNumeric;
-import org.jruby.RubyString;
+import org.jruby.*;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
@@ -336,7 +333,7 @@ public class JZlibInflate extends ZStream {
 
     @Override
     public IRubyObject avail_in() {
-        return getRuntime().newFixnum(flater.avail_in);
+        return RubyFixnum.newFixnum(getRuntime(), flater.avail_in);
     }
 
     private static void resetBuffer(ByteList l) {

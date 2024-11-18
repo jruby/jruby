@@ -100,7 +100,7 @@ public class JavaProxyReflectionObject extends RubyObject {
     @Override
     @JRubyMethod
     public RubyFixnum hash() {
-        return getRuntime().newFixnum(hashCode());
+        return RubyFixnum.newFixnum(getRuntime(), hashCode());
     }
 
     @Override

@@ -33,6 +33,7 @@ import org.jruby.exceptions.SystemExit;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 
+import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Create.newString;
 import static org.jruby.runtime.Visibility.*;
 
@@ -57,12 +58,15 @@ public class RubySystemExit extends RubyException {
         return systemExitClass;
     }
 
+    @Deprecated
     public static RubySystemExit newInstance(Ruby runtime, int status, String message) {
-        ThreadContext context = runtime.getCurrentContext();
-        final RubyClass klass = runtime.getSystemExit();
-        final IRubyObject[] args = new IRubyObject[] {
-            runtime.newFixnum(status), newString(context, message)
-        };
+        return newInstance(runtime.getCurrentContext(), status, message);
+    }
+
+    public static RubySystemExit newInstance(ThreadContext context, int status, String message) {
+        final RubyClass klass = context.runtime.getSystemExit();
+        final IRubyObject[] args = new IRubyObject[] { newFixnum(context, status), newString(context, message) };
+
         return (RubySystemExit) klass.newInstance(context, args, Block.NULL_BLOCK);
     }
 
@@ -84,8 +88,6 @@ public class RubySystemExit extends RubyException {
 
     @JRubyMethod(optional = 2, checkArity = false, visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
-        Ruby runtime = context.runtime;
-
         int argc = Arity.checkArgumentCount(context, args, 0, 2);
 
         if (argc > 0) {
@@ -93,18 +95,15 @@ public class RubySystemExit extends RubyException {
             if (arg instanceof RubyFixnum) {
                 this.status = arg;
                 if (argc > 1) this.message = args[1]; // (status, message)
-            }
-            else if (arg instanceof RubyBoolean) {
-                this.status = runtime.newFixnum( arg == runtime.getTrue() ? 0 : 1 );
+            } else if (arg instanceof RubyBoolean) {
+                this.status = newFixnum(context, arg == context.tru ? 0 : 1 );
                 if (argc > 1) this.message = args[1]; // (status, message)
-            }
-            else {
+            } else {
                 this.message = arg;
-                this.status = RubyFixnum.zero(runtime);
+                this.status = RubyFixnum.zero(context.runtime);
             }
-        }
-        else {
-            this.status = RubyFixnum.zero(runtime);
+        } else {
+            this.status = RubyFixnum.zero(context.runtime);
         }
         super.initialize(NULL_ARRAY, block);
         return this;

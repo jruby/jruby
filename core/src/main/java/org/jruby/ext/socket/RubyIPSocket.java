@@ -41,6 +41,7 @@ import org.jruby.util.io.Sockaddr;
 
 import java.net.InetSocketAddress;
 
+import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Create.newString;
 
 /**
@@ -104,7 +105,7 @@ public class RubyIPSocket extends RubyBasicSocket {
 
         IRubyObject addressArray = context.runtime.newArrayNoCopy(
                 newString(context, "AF_INET"),
-                context.runtime.newFixnum(port),
+                newFixnum(context, port),
                 newString(context, hostName),
                 newString(context, hostAddress)
         );

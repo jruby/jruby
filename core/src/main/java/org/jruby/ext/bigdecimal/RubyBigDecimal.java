@@ -60,6 +60,7 @@ import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
 
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 
@@ -141,7 +142,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
         bigDecimal.setInternalModuleVariable("vpPrecLimit", RubyFixnum.zero(runtime));
         bigDecimal.setInternalModuleVariable("vpExceptionMode", RubyFixnum.zero(runtime));
-        bigDecimal.setInternalModuleVariable("vpRoundingMode", runtime.newFixnum(ROUND_HALF_UP));
+        bigDecimal.setInternalModuleVariable("vpRoundingMode", RubyFixnum.newFixnum(runtime, ROUND_HALF_UP));
 
         bigDecimal.defineAnnotatedMethods(RubyBigDecimal.class);
         bigDecimal.defineAnnotatedConstants(RubyBigDecimal.class);
@@ -418,7 +419,7 @@ public class RubyBigDecimal extends RubyNumeric {
             }
 
             RoundingMode javaRoundingMode = javaRoundingModeFromRubyRoundingMode(context, value);
-            RubyFixnum roundingMode = runtime.newFixnum(rubyRoundingModeFromJavaRoundingMode(context, javaRoundingMode));
+            RubyFixnum roundingMode = newFixnum(context, rubyRoundingModeFromJavaRoundingMode(context, javaRoundingMode));
             c.setInternalModuleVariable("vpRoundingMode", roundingMode);
 
             return roundingMode;
@@ -1000,7 +1001,7 @@ public class RubyBigDecimal extends RubyNumeric {
     @Override
     @JRubyMethod
     public RubyFixnum hash() {
-        return getRuntime().newFixnum(absStripTrailingZeros().hashCode() * value.signum());
+        return RubyFixnum.newFixnum(getRuntime(), absStripTrailingZeros().hashCode() * value.signum());
     }
 
     @Override
@@ -1828,9 +1829,14 @@ public class RubyBigDecimal extends RubyNumeric {
         return RubyArray.newArray(runtime, new RubyBigDecimal(runtime, div), new RubyBigDecimal(runtime, mod));
     }
 
-    @JRubyMethod
+    @Deprecated
     public IRubyObject exponent() {
-        return getRuntime().newFixnum(getExponent());
+        return exponent(getCurrentContext());
+    }
+
+    @JRubyMethod
+    public IRubyObject exponent(ThreadContext context) {
+        return newFixnum(context, getExponent());
     }
 
     @JRubyMethod(name = "finite?")
@@ -1922,9 +1928,8 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod
     public RubyArray precision_scale(ThreadContext context) {
-        Ruby runtime = context.runtime;
         int [] ary = getPrecisionScale();
-        return runtime.newArray(runtime.newFixnum(ary[0]), runtime.newFixnum(ary[1]));
+        return context.runtime.newArray(newFixnum(context, ary[0]), newFixnum(context, ary[1]));
     }
 
     private int [] getPrecisionScale() {
