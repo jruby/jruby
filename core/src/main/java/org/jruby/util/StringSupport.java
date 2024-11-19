@@ -65,6 +65,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.jruby.RubyString.scanForCodeRange;
+import static org.jruby.api.Error.argumentError;
 
 public final class StringSupport {
     public static final int CR_7BIT_F    = ObjectFlags.CR_7BIT_F;
@@ -576,11 +577,15 @@ public final class StringSupport {
         return enc.mbcToCode(bytes, p, end);
     }
 
+    @Deprecated
     public static int codePoint(Ruby runtime, Encoding enc, byte[] bytes, int p, int end) {
+        return codePoint(runtime.getCurrentContext(), enc, bytes, p, end);
+    }
+    public static int codePoint(ThreadContext context, Encoding enc, byte[] bytes, int p, int end) {
         try {
             return codePoint(enc, bytes, p, end);
         } catch (IllegalArgumentException e) {
-            throw runtime.newArgumentError(e.getMessage());
+            throw argumentError(context, e.getMessage());
         }
     }
 

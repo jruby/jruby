@@ -63,6 +63,7 @@ import org.jruby.util.Numeric;
 import org.jruby.util.Sprintf;
 
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.Numeric.f_abs;
 import static org.jruby.util.Numeric.f_add;
@@ -301,7 +302,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @Override
     public IRubyObject coerce(IRubyObject other) {
         final Ruby runtime = metaClass.runtime;
-        return runtime.newArray(RubyKernel.new_float(runtime, other), this);
+        return runtime.newArray(RubyKernel.new_float(runtime.getCurrentContext(), other), this);
     }
 
     /** flo_uminus
@@ -1059,7 +1060,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
             case HALF_EVEN:
                 return roundHalfEven(number, scale);
         }
-        throw context.runtime.newArgumentError("invalid rounding mode: " + roundingMode);
+        throw argumentError(context, "invalid rounding mode: " + roundingMode);
     }
 
     private static double roundHalfUp(double x, double s) {

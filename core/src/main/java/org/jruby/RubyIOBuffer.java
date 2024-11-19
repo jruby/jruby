@@ -27,8 +27,8 @@ import java.util.Arrays;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Create.newFixnum;
-import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.*;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
 public class RubyIOBuffer extends RubyObject {
@@ -80,6 +80,12 @@ public class RubyIOBuffer extends RubyObject {
     @JRubyConstant
     public static final int NETWORK_ENDIAN = BIG_ENDIAN;
 
+    public static RubyIOBuffer newBuffer(ThreadContext context, ByteBuffer base, int size, int flags) {
+        if (base == null) return newBuffer(context.runtime, size, flags);
+
+        return new RubyIOBuffer(context.runtime, context.runtime.getIOBuffer(), base, size, flags);
+    }
+
     public static RubyIOBuffer newBuffer(Ruby runtime, ByteBuffer base, int size, int flags) {
         if (base == null) return newBuffer(runtime, size, flags);
 
@@ -94,7 +100,7 @@ public class RubyIOBuffer extends RubyObject {
         ByteList bytes = string.getByteList();
         int size = bytes.realSize();
 
-        return newBuffer(context.runtime, ByteBuffer.wrap(bytes.unsafeBytes(), bytes.begin(), size), size, flags);
+        return newBuffer(context, ByteBuffer.wrap(bytes.unsafeBytes(), bytes.begin(), size), size, flags);
     }
 
     public RubyIOBuffer(Ruby runtime, RubyClass metaClass) {
@@ -137,15 +143,13 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(meta = true)
     public static IRubyObject string(ThreadContext context, IRubyObject self, IRubyObject _length, Block block) {
-        Ruby runtime = context.runtime;
-
         int size = _length.convertToInteger().getIntValue();
-        if (size < 0) throw runtime.newArgumentError("negative string size (or size too big)");
-        RubyString string = RubyString.newString(runtime, new byte[size]);
+        if (size < 0) throw argumentError(context, "negative string size (or size too big)");
+        RubyString string = RubyString.newString(context.runtime, new byte[size]);
         ByteList bytes = string.getByteList();
         ByteBuffer wrap = ByteBuffer.wrap(bytes.unsafeBytes(), bytes.begin(), size);
 
-        RubyIOBuffer buffer = newBuffer(context.runtime, wrap, size, 0);
+        RubyIOBuffer buffer = newBuffer(context, wrap, size, 0);
 
         block.yieldSpecific(context, buffer);
 
@@ -201,22 +205,14 @@ public class RubyIOBuffer extends RubyObject {
     }
 
     private static int getSizeFromFile(ThreadContext context, RubyFile _file) {
-        int size;
         long file_size = _file.getSize(context);
+        if (file_size < 0) throw argumentError(context, "Invalid negative file size!");
 
-        // Compiler can confirm that we handled file_size < 0 case:
-        if (file_size < 0) {
-            throw context.runtime.newArgumentError("Invalid negative file size!");
-        }
         // Here, we assume that file_size is positive:
-        else if (file_size > Integer.MAX_VALUE) {
-            throw context.runtime.newArgumentError("File larger than address space!");
-        }
-        else {
-            // This conversion should be safe:
-            size = (int) file_size;
-        }
-        return size;
+        if (file_size > Integer.MAX_VALUE) throw argumentError(context, "File larger than address space!");
+
+        // This conversion should be safe:
+        return (int) file_size;
     }
 
     @JRubyMethod(name = "map", required = 1, optional = 3, meta = true)
@@ -676,10 +672,7 @@ public class RubyIOBuffer extends RubyObject {
     @JRubyMethod(name = "slice")
     public IRubyObject slice(ThreadContext context, IRubyObject _offset) {
         int offset = RubyNumeric.num2int(_offset);
-
-        if (offset < 0) {
-            throw context.runtime.newArgumentError("Offset can't be negative!");
-        }
+        if (offset < 0) throw argumentError(context, "Offset can't be negative!");
 
         return slice(context, offset, size - offset);
     }
@@ -687,16 +680,10 @@ public class RubyIOBuffer extends RubyObject {
     @JRubyMethod(name = "slice")
     public IRubyObject slice(ThreadContext context, IRubyObject _offset, IRubyObject _length) {
         int offset = RubyNumeric.num2int(_offset);
+        if (offset < 0) throw argumentError(context, "Offset can't be negative!");
 
-        if (offset < 0) {
-            throw context.runtime.newArgumentError("Offset can't be negative!");
-        }
-        
         int length = RubyNumeric.num2int(_length);
-
-        if (length < 0) {
-            throw context.runtime.newArgumentError("Length can't be negative!");
-        }
+        if (length < 0) throw argumentError(context, "Length can't be negative!");
 
         return slice(context, offset, length);
     }
@@ -711,14 +698,12 @@ public class RubyIOBuffer extends RubyObject {
         ByteBuffer slice = base.slice();
         base.clear();
 
-        return newBuffer(context.runtime, slice, length, flags);
+        return newBuffer(context, slice, length, flags);
     }
 
     // MRI: io_buffer_validate_range
     private void validateRange(ThreadContext context, int offset, int length) {
-        if (offset + length > size) {
-            throw context.runtime.newArgumentError("Specified offset+length is bigger than the buffer size!");
-        }
+        if (offset + length > size) throw argumentError(context, "Specified offset+length is bigger than the buffer size!");
     }
 
     @JRubyMethod(name = "<=>")
@@ -788,14 +773,9 @@ public class RubyIOBuffer extends RubyObject {
     // MRI: rb_io_buffer_clear
     private IRubyObject clear(ThreadContext context, int value, int offset, int length) {
         ByteBuffer buffer = getBufferForWriting(context);
+        if (offset + length > size) throw argumentError(context, "The given offset + length out of bounds!");
 
-        if (offset + length > size) {
-            throw context.runtime.newArgumentError("The given offset + length out of bounds!");
-        }
-
-        if (buffer.hasArray()) {
-            Arrays.fill(buffer.array(), offset, offset + length, (byte) value);
-        }
+        if (buffer.hasArray()) Arrays.fill(buffer.array(), offset, offset + length, (byte) value);
 
         return this;
     }
@@ -1018,16 +998,16 @@ public class RubyIOBuffer extends RubyObject {
         buffer.putDouble(offset, Double.longBitsToDouble(Long.reverseBytes(Double.doubleToLongBits(value))));
     }
 
-    private static IRubyObject wrap(Ruby runtime, long value) {
-        return RubyFixnum.newFixnum(runtime, value);
+    private static IRubyObject wrap(ThreadContext context, long value) {
+        return newFixnum(context, value);
     }
 
-    private static IRubyObject wrap(Ruby runtime, BigInteger value) {
-        return RubyBignum.newBignum(runtime, value);
+    private static IRubyObject wrap(ThreadContext context, BigInteger value) {
+        return RubyBignum.newBignum(context.runtime, value);
     }
 
-    private static IRubyObject wrap(Ruby runtime, double value) {
-        return RubyFloat.newFloat(runtime, value);
+    private static IRubyObject wrap(ThreadContext context, double value) {
+        return newFloat(context, value);
     }
 
     private static long unwrapLong(IRubyObject value) {
@@ -1054,74 +1034,66 @@ public class RubyIOBuffer extends RubyObject {
     }
 
     private static IRubyObject getValue(ThreadContext context, ByteBuffer buffer, int size, DataType dataType, int offset) {
-        Ruby runtime = context.runtime;
-
         // TODO: validate size
 
         switch (dataType) {
             case S8:
-                return wrap(runtime, readByte(context, buffer, offset));
+                return wrap(context, readByte(context, buffer, offset));
             case U8:
-                return wrap(runtime, readUnsignedByte(context, buffer, offset));
+                return wrap(context, readUnsignedByte(context, buffer, offset));
             case u16:
-                return wrap(runtime, readUnsignedShort(context, buffer, offset, ByteOrder.LITTLE_ENDIAN));
+                return wrap(context, readUnsignedShort(context, buffer, offset, ByteOrder.LITTLE_ENDIAN));
             case U16:
-                return wrap(runtime, readUnsignedShort(context, buffer, offset, ByteOrder.BIG_ENDIAN));
+                return wrap(context, readUnsignedShort(context, buffer, offset, ByteOrder.BIG_ENDIAN));
             case s16:
-                return wrap(runtime, readShort(context, buffer, offset, ByteOrder.LITTLE_ENDIAN));
+                return wrap(context, readShort(context, buffer, offset, ByteOrder.LITTLE_ENDIAN));
             case S16:
-                return wrap(runtime, readShort(context, buffer, offset, ByteOrder.BIG_ENDIAN));
+                return wrap(context, readShort(context, buffer, offset, ByteOrder.BIG_ENDIAN));
             case u32:
-                return wrap(runtime, readUnsignedInt(context, buffer, offset, ByteOrder.LITTLE_ENDIAN));
+                return wrap(context, readUnsignedInt(context, buffer, offset, ByteOrder.LITTLE_ENDIAN));
             case U32:
-                return wrap(runtime, readUnsignedInt(context, buffer, offset, ByteOrder.BIG_ENDIAN));
+                return wrap(context, readUnsignedInt(context, buffer, offset, ByteOrder.BIG_ENDIAN));
             case s32:
-                return wrap(runtime, readInt(context, buffer, offset, ByteOrder.LITTLE_ENDIAN));
+                return wrap(context, readInt(context, buffer, offset, ByteOrder.LITTLE_ENDIAN));
             case S32:
-                return wrap(runtime, readInt(context, buffer, offset, ByteOrder.BIG_ENDIAN));
+                return wrap(context, readInt(context, buffer, offset, ByteOrder.BIG_ENDIAN));
             case u64:
-                return wrap(runtime, readUnsignedLong(context, buffer, offset, ByteOrder.LITTLE_ENDIAN));
+                return wrap(context, readUnsignedLong(context, buffer, offset, ByteOrder.LITTLE_ENDIAN));
             case U64:
-                return wrap(runtime, readUnsignedLong(context, buffer, offset, ByteOrder.BIG_ENDIAN));
+                return wrap(context, readUnsignedLong(context, buffer, offset, ByteOrder.BIG_ENDIAN));
             case s64:
-                return wrap(runtime, readLong(context, buffer, offset, ByteOrder.LITTLE_ENDIAN));
+                return wrap(context, readLong(context, buffer, offset, ByteOrder.LITTLE_ENDIAN));
             case S64:
-                return wrap(runtime, readLong(context, buffer, offset, ByteOrder.BIG_ENDIAN));
+                return wrap(context, readLong(context, buffer, offset, ByteOrder.BIG_ENDIAN));
             case f32:
-                return wrap(runtime, readFloat(context, buffer, offset, ByteOrder.LITTLE_ENDIAN));
+                return wrap(context, readFloat(context, buffer, offset, ByteOrder.LITTLE_ENDIAN));
             case F32:
-                return wrap(runtime, readFloat(context, buffer, offset, ByteOrder.BIG_ENDIAN));
+                return wrap(context, readFloat(context, buffer, offset, ByteOrder.BIG_ENDIAN));
             case f64:
-                return wrap(runtime, readDouble(context, buffer, offset, ByteOrder.LITTLE_ENDIAN));
+                return wrap(context, readDouble(context, buffer, offset, ByteOrder.LITTLE_ENDIAN));
             case F64:
-                return wrap(runtime, readDouble(context, buffer, offset, ByteOrder.BIG_ENDIAN));
+                return wrap(context, readDouble(context, buffer, offset, ByteOrder.BIG_ENDIAN));
         }
 
-        throw runtime.newArgumentError("Unknown data_type: " + dataType); // should never happen
+        throw argumentError(context, "Unknown data_type: " + dataType); // should never happen
     }
 
     @JRubyMethod(name = "get_values")
     public IRubyObject get_values(ThreadContext context, IRubyObject dataTypes, IRubyObject _offset) {
-        Ruby runtime = context.runtime;
-
         int offset = RubyNumeric.num2int(_offset);
-
         int size = this.size;
-
         ByteBuffer buffer = getBufferForReading(context);
 
-        if (!(dataTypes instanceof RubyArray)) {
-            throw runtime.newArgumentError("Argument data_types should be an array!");
+        if (!(dataTypes instanceof RubyArray dataTypesArray)) {
+            throw argumentError(context, "Argument data_types should be an array!");
         }
 
-        RubyArray<?> dataTypesArray = (RubyArray<?>) dataTypes;
         int dataTypesSize = dataTypesArray.size();
-        RubyArray values = RubyArray.newArray(runtime, dataTypesSize);
+        RubyArray values = RubyArray.newArray(context.runtime, dataTypesSize);
 
         for (long i = 0; i < dataTypesSize; i++) {
             IRubyObject type = dataTypesArray.eltOk(i);
             DataType dataType = getDataType(type);
-
             IRubyObject value = getValue(context, buffer, size, dataType, offset);
 
             offset += dataType.type.size();
@@ -1254,7 +1226,7 @@ public class RubyIOBuffer extends RubyObject {
         Ruby runtime = context.runtime;
 
         for (int i = 0 ; i < count; i++) {
-            IRubyObject value = wrap(runtime, readByte(context, buffer, offset + i));
+            IRubyObject value = wrap(context, readByte(context, buffer, offset + i));
             block.yieldSpecific(context, value);
         }
 
@@ -1321,7 +1293,7 @@ public class RubyIOBuffer extends RubyObject {
                 return;
         }
 
-        throw context.runtime.newArgumentError("Unknown data_type: " + dataType); // should never happen
+        throw argumentError(context, "Unknown data_type: " + dataType); // should never happen
     }
 
     @JRubyMethod(name = "set_value")
@@ -1339,26 +1311,20 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "set_values")
     public IRubyObject set_values(ThreadContext context, IRubyObject _dataTypes, IRubyObject _offset, IRubyObject _values) {
-        Ruby runtime = context.runtime;
-
         int offset = RubyNumeric.num2int(_offset);
-
         int size = this.size;
-
         ByteBuffer buffer = getBufferForWriting(context);
 
-        if (!(_dataTypes instanceof RubyArray)) {
-            throw runtime.newArgumentError("Argument data_types should be an array!");
+        if (!(_dataTypes instanceof RubyArray dataTypes)) {
+            throw argumentError(context, "Argument data_types should be an array!");
         }
-        RubyArray<?> dataTypes = (RubyArray<?>) _dataTypes;
 
-        if (!(_values instanceof RubyArray)) {
-            throw runtime.newArgumentError("Argument values should be an array!");
+        if (!(_values instanceof RubyArray values)) {
+            throw argumentError(context, "Argument values should be an array!");
         }
-        RubyArray<?> values = (RubyArray<?>) _values;
 
         if (dataTypes.size() != values.size()) {
-            throw runtime.newArgumentError("Argument data_types and values should have the same length!");
+            throw argumentError(context, "Argument data_types and values should have the same length!");
         }
 
         int dataTypesSize = dataTypes.size();
@@ -1366,7 +1332,6 @@ public class RubyIOBuffer extends RubyObject {
         for (long i = 0; i < dataTypesSize; i++) {
             IRubyObject type = dataTypes.eltOk(i);
             DataType dataType = getDataType(type);
-
             IRubyObject value = values.eltOk(i);
 
             setValue(context, buffer, size, dataType, offset, value);
@@ -1374,7 +1339,7 @@ public class RubyIOBuffer extends RubyObject {
             offset += dataType.type.size();
         }
 
-        return RubyFixnum.newFixnum(runtime, offset);
+        return newFixnum(context, offset);
     }
 
     @JRubyMethod(name = "copy")
@@ -1433,7 +1398,7 @@ public class RubyIOBuffer extends RubyObject {
 
     public IRubyObject copy(ThreadContext context, RubyIOBuffer source, int offset, int length, int sourceOffset) {
         if (sourceOffset > length) {
-            throw context.runtime.newArgumentError("The given source offset is bigger than the source itself!");
+            throw argumentError(context, "The given source offset is bigger than the source itself!");
         }
 
         ByteBuffer sourceBuffer = source.getBufferForReading(context);
@@ -1446,7 +1411,7 @@ public class RubyIOBuffer extends RubyObject {
     // MRI: io_buffer_copy_from
     public IRubyObject copy(ThreadContext context, RubyString source, int offset, int length, int sourceOffset) {
         if (sourceOffset > length) {
-            throw context.runtime.newArgumentError("The given source offset is bigger than the source itself!");
+            throw argumentError(context, "The given source offset is bigger than the source itself!");
         }
 
         bufferCopy(context, offset, source.getByteList(), sourceOffset, source.size(), length);
@@ -1969,7 +1934,7 @@ public class RubyIOBuffer extends RubyObject {
     private int extractLength(ThreadContext context, IRubyObject _length, int offset) {
         if (!_length.isNil()) {
             if (RubyNumeric.negativeInt(context, _length)) {
-                throw context.runtime.newArgumentError("Length can't be negative!");
+                throw argumentError(context, "Length can't be negative!");
             }
 
             return RubyNumeric.num2int(_length);
@@ -1980,7 +1945,7 @@ public class RubyIOBuffer extends RubyObject {
 
     private int defaultLength(ThreadContext context, int offset) {
         if (offset > size) {
-            throw context.runtime.newArgumentError("The given offset is bigger than the buffer size!");
+            throw argumentError(context, "The given offset is bigger than the buffer size!");
         }
 
         // Note that the "length" is computed by the size the offset.
@@ -1990,7 +1955,7 @@ public class RubyIOBuffer extends RubyObject {
     // MRI: offset parts of io_buffer_extract_length_offset and io_buffer_extract_offset
     private static int extractOffset(ThreadContext context, IRubyObject _offset) {
         if (RubyNumeric.negativeInt(context, _offset)) {
-            throw context.runtime.newArgumentError("Offset can't be negative!");
+            throw argumentError(context, "Offset can't be negative!");
         }
 
         return RubyNumeric.num2int(_offset);
@@ -1998,7 +1963,7 @@ public class RubyIOBuffer extends RubyObject {
 
     private static int extractSize(ThreadContext context, IRubyObject _size) {
         if (RubyNumeric.negativeInt(context, _size)) {
-            throw context.runtime.newArgumentError("Size can't be negative!");
+            throw argumentError(context, "Size can't be negative!");
         }
 
         return RubyNumeric.num2int(_size);

@@ -46,6 +46,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newFixnum;
+import static org.jruby.api.Error.argumentError;
 
 /**
  * The "SizedQueue" class from the 'thread' library.
@@ -82,18 +83,14 @@ public class SizedQueue extends Queue {
     @JRubyMethod(name = "max=")
     public synchronized IRubyObject max_set(ThreadContext context, IRubyObject arg) {
         initializedCheck();
-        Ruby runtime = context.runtime;
-        int max = RubyNumeric.num2int(arg), diff = 0;
 
-        if (max <= 0) {
-            throw runtime.newArgumentError("queue size must be positive");
-        }
+        int max = RubyNumeric.num2int(arg), diff = 0;
+        if (max <= 0) throw argumentError(context, "queue size must be positive");
 
         fullyLock();
         try {
-            if (count.get() >= capacity && max > capacity) {
-                diff = max - capacity;
-            }
+            if (count.get() >= capacity && max > capacity) diff = max - capacity;
+
             capacity = max;
             while (diff-- > 0) {
                 notFull.signal();
@@ -178,17 +175,12 @@ public class SizedQueue extends Queue {
         long timeoutNS = 0;
 
         IRubyObject _timeout = ArgsUtil.extractKeywordArg(context, "timeout", _opts);
-
         if (!_timeout.isNil()) {
-            if (nonblock) {
-                throw context.runtime.newArgumentError("can't set a timeout if non_block is enabled");
-            }
+            if (nonblock) throw argumentError(context, "can't set a timeout if non_block is enabled");
 
             timeoutNS = queueTimeoutToNanos(context, _timeout);
 
-            if (timeoutNS == 0 && count.get() == capacity) {
-                return context.nil;
-            }
+            if (timeoutNS == 0 && count.get() == capacity) return context.nil;
         }
 
         return pushCommon(context, arg0, nonblock, timeoutNS);
@@ -198,19 +190,14 @@ public class SizedQueue extends Queue {
         try {
             RubyThread thread = context.getThread();
             if (nonblock) {
-                boolean result = offerInternal(context, arg0);
-                if (!result) {
-                    throw context.runtime.newThreadError("queue full");
-                }
+                if (!offerInternal(context, arg0)) throw context.runtime.newThreadError("queue full");
+
                 return this;
             }
 
-            RubyThread.Task<IRubyObject, IRubyObject> task;
-            if (timeoutNS != 0) {
-                task = new BlockingOfferTask(timeoutNS);
-            } else {
-                task = blockingPutTask;
-            }
+            RubyThread.Task<IRubyObject, IRubyObject> task = timeoutNS != 0 ?
+                    new BlockingOfferTask(timeoutNS) :
+                    blockingPutTask;
 
             return thread.executeTaskBlocking(context, arg0, task);
         } catch (InterruptedException ie) {

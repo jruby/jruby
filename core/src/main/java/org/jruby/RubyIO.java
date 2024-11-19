@@ -110,8 +110,8 @@ import static com.headius.backport9.buffer.Buffers.limitBuffer;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.anno.FrameField.LASTLINE;
 import static org.jruby.api.Convert.*;
-import static org.jruby.api.Create.newFixnum;
-import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.*;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.ThreadContext.*;
 import static org.jruby.runtime.Visibility.*;
@@ -442,12 +442,11 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     // io_reopen
     protected RubyIO reopenIO(ThreadContext context, RubyIO nfile) {
-        Ruby runtime = context.runtime;
         OpenFile fptr, orig;
         ChannelFD fd, fd2;
         long pos = 0;
 
-        nfile = TypeConverter.ioGetIO(runtime, nfile);
+        nfile = TypeConverter.ioGetIO(context.runtime, nfile);
         fptr = getOpenFileChecked();
         orig = nfile.getOpenFileChecked();
 
@@ -456,9 +455,12 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             if ((fptr.stdio_file == System.in && !orig.isReadable()) ||
                     (fptr.stdio_file == System.out && !orig.isWritable()) ||
                     (fptr.stdio_file == System.err && !orig.isWritable())) {
-                throw runtime.newArgumentError(fptr.PREP_STDIO_NAME() + " can't change access mode from \"" + fptr.getModeAsString(runtime) + "\" to \"" + orig.getModeAsString(runtime) + "\"");
+                throw argumentError(context, fptr.PREP_STDIO_NAME() + " can't change access mode from \"" +
+                        fptr.getModeAsString(context) + "\" to \"" + orig.getModeAsString(context) + "\"");
             }
         }
+
+        Ruby runtime = context.runtime;
         // FIXME: three lock acquires...trying to reduce risk of deadlock, but not sure it's possible.
 
         boolean locked = fptr.lock();
@@ -638,7 +640,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 if (fptr.IS_PREP_STDIO() &&
                         ((fptr.getMode() & OpenFile.READWRITE) & (fmode_p[0] & OpenFile.READWRITE)) !=
                                 (fptr.getMode() & OpenFile.READWRITE)) {
-                    throw runtime.newArgumentError(fptr.PREP_STDIO_NAME() + " can't change access mode from \"" + fptr.getModeAsString(runtime) + "\" to \"" + OpenFile.getStringFromMode(fmode_p[0]));
+                    throw argumentError(context, fptr.PREP_STDIO_NAME() + " can't change access mode from \"" +
+                            fptr.getModeAsString(context) + "\" to \"" + OpenFile.getStringFromMode(fmode_p[0]));
                 }
                 fptr.setMode(fmode_p[0]);
                 fptr.encs = convconfig;
@@ -952,17 +955,13 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         int ofmode;
         int[] oflags_p = {ModeFlags.RDONLY};
 
-        if(opt != null && !opt.isNil() && !(opt instanceof RubyHash) && !(sites(context).respond_to_to_hash.respondsTo(context, opt, opt))) {
-            throw runtime.newArgumentError("last argument must be a hash!");
+        if (opt != null && !opt.isNil() && !(opt instanceof RubyHash) && !(sites(context).respond_to_to_hash.respondsTo(context, opt, opt))) {
+            throw argumentError(context, "last argument must be a hash!");
         }
 
-        if (opt != null && !opt.isNil()) {
-            opt = opt.convertToHash();
-        }
+        if (opt != null && !opt.isNil()) opt = opt.convertToHash();
 
-        if (!fd.ch.isOpen()) {
-            throw runtime.newErrnoEBADFError();
-        }
+        if (!fd.ch.isOpen()) throw runtime.newErrnoEBADFError();
 
         IRubyObject vperm = asFixnum(context, 0);
         API.ModeAndPermission pm = new API.ModeAndPermission(vmodeArg, vperm);
@@ -1116,13 +1115,13 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         fptr = getOpenFile();
         if (!fptr.isBinmode()) {
-            throw context.runtime.newArgumentError("ASCII incompatible encoding needs binmode");
+            throw argumentError(context, "ASCII incompatible encoding needs binmode");
         }
 
         if (getEnc2() != null) {
-            throw context.runtime.newArgumentError("encoding conversion is set");
+            throw argumentError(context, "encoding conversion is set");
         } else if (getEnc() != null && getEnc() != ASCIIEncoding.INSTANCE) {
-            throw context.runtime.newArgumentError("encoding is set to " + getEnc() + " already");
+            throw argumentError(context, "encoding is set to " + getEnc() + " already");
         }
 
         if (EncodingUtils.ioSetEncodingByBOM(context, this) == null) return context.nil;
@@ -1250,7 +1249,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             oflags = asInt(context, (RubyInteger) intmode);
         else {
             vmode = vmode.convertToString();
-            oflags = OpenFile.ioModestrOflags(runtime, vmode.toString());
+            oflags = OpenFile.ioModestrOflags(context, vmode.toString());
         }
         int perm = (vperm.isNil()) ? 0666 : RubyNumeric.num2int(vperm);
 
@@ -2652,7 +2651,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         @Override
         public RubyIO getline(ThreadContext context, RubyIO self, IRubyObject rs, int limit, boolean chomp, Block block) {
             if (limit == 0) {
-                throw context.runtime.newArgumentError("invalid limit: 0 for foreach");
+                throw argumentError(context, "invalid limit: 0 for foreach");
             }
 
             IRubyObject line;
@@ -3272,12 +3271,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     private IRubyObject getPartialCommon(ThreadContext context, Ruby runtime, IRubyObject length, IRubyObject str, boolean nonblock, boolean noException) {
         OpenFile fptr;
         final int len;
-        if ( ( len = RubyNumeric.num2int(length) ) < 0 ) {
-            throw runtime.newArgumentError("negative length " + len + " given");
-        }
+        if ( ( len = RubyNumeric.num2int(length) ) < 0 ) throw argumentError(context, "negative length " + len + " given");
 
         str = EncodingUtils.setStrBuf(runtime, str, len);
-
         fptr = getOpenFileChecked();
 
         final boolean locked = fptr.lock();
@@ -3313,7 +3309,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                         if (!nonblock && fptr.waitReadable(context))
                             continue again;
                         if (nonblock && (e == Errno.EWOULDBLOCK || e == Errno.EAGAIN)) {
-                            if (noException) return runtime.newSymbol("wait_readable");
+                            if (noException) return newSymbol(context, "wait_readable");
                             throw runtime.newErrnoEAGAINReadableError("read would block");
                         }
                         return nonblockEOF(runtime, noException);
@@ -3484,7 +3480,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     protected void checkLength(ThreadContext context, int len) {
         if (len < 0) {
-            throw context.runtime.newArgumentError("negative length " + len + " given");
+            throw argumentError(context, "negative length " + len + " given");
         }
     }
 
@@ -3651,7 +3647,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     // rb_io_each_codepoint
     private IRubyObject eachCodePointCommon(ThreadContext context, Block block, String methodName) {
-        Ruby runtime = context.runtime;
         OpenFile fptr;
         Encoding enc;
         int c;
@@ -3679,25 +3674,23 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                             if (!StringSupport.MBCLEN_NEEDMORE_P(r))
                                 break;
                             if (fptr.cbuf.len == fptr.cbuf.capa) {
-                                throw runtime.newIOError("too long character");
+                                throw context.runtime.newIOError("too long character");
                             }
                         }
                         if (fptr.moreChar(context) == OpenFile.MORE_CHAR_FINISHED) {
                             fptr.clearReadConversion();
                             if (!StringSupport.MBCLEN_CHARFOUND_P(r)) {
-                                enc = fptr.encs.enc;
-                                throw runtime.newArgumentError("invalid byte sequence in " + enc);
+                                throw argumentError(context, "invalid byte sequence in " + fptr.encs.enc);
                             }
                             return this;
                         }
                     }
                     if (StringSupport.MBCLEN_INVALID_P(r)) {
-                        enc = fptr.encs.enc;
-                        throw runtime.newArgumentError("invalid byte sequence in " + enc);
+                        throw argumentError(context, "invalid byte sequence in " + fptr.encs.enc);
                     }
                     n = StringSupport.MBCLEN_CHARFOUND_LEN(r);
                     if (fptr.encs.enc != null) {
-                        c = StringSupport.codePoint(runtime, fptr.encs.enc, fptr.cbuf.ptr, fptr.cbuf.off, fptr.cbuf.off + fptr.cbuf.len);
+                        c = StringSupport.codePoint(context, fptr.encs.enc, fptr.cbuf.ptr, fptr.cbuf.off, fptr.cbuf.off + fptr.cbuf.len);
                     }
                     else {
                         c = fptr.cbuf.ptr[fptr.cbuf.off] & 0xFF;
@@ -3708,33 +3701,33 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 }
             }
             fptr.NEED_NEWLINE_DECORATOR_ON_READ_CHECK();
-            enc = fptr.inputEncoding(runtime);
+            enc = fptr.inputEncoding(context.runtime);
             while (fptr.fillbuf(context) >= 0) {
                 r = StringSupport.preciseLength(enc, fptr.rbuf.ptr, fptr.rbuf.off, fptr.rbuf.off + fptr.rbuf.len);
                 if (StringSupport.MBCLEN_CHARFOUND_P(r) &&
                         (n = StringSupport.MBCLEN_CHARFOUND_LEN(r)) <= fptr.rbuf.len) {
-                    c = StringSupport.codePoint(runtime, enc, fptr.rbuf.ptr, fptr.rbuf.off, fptr.rbuf.off + fptr.rbuf.len);
+                    c = StringSupport.codePoint(context, enc, fptr.rbuf.ptr, fptr.rbuf.off, fptr.rbuf.off + fptr.rbuf.len);
                     fptr.rbuf.off += n;
                     fptr.rbuf.len -= n;
                     block.yield(context, asFixnum(context, c & 0xFFFFFFFF));
                 } else if (StringSupport.MBCLEN_INVALID_P(r)) {
-                    throw runtime.newArgumentError("invalid byte sequence in " + enc);
+                    throw argumentError(context, "invalid byte sequence in " + enc);
                 } else if (StringSupport.MBCLEN_NEEDMORE_P(r)) {
                     byte[] cbuf = new byte[8];
                     int p = 0;
                     int more = StringSupport.MBCLEN_NEEDMORE_LEN(r);
-                    if (more > cbuf.length) throw runtime.newArgumentError("invalid byte sequence in " + enc);
+                    if (more > cbuf.length) throw argumentError(context, "invalid byte sequence in " + enc);
                     more += n = fptr.rbuf.len;
-                    if (more > cbuf.length) throw runtime.newArgumentError("invalid byte sequence in " + enc);
+                    if (more > cbuf.length) throw argumentError(context, "invalid byte sequence in " + enc);
                     while ((n = fptr.readBufferedData(cbuf, p, more)) > 0) {
                         p += n;
                         if ((more -= n) <= 0) break;
 
-                        if (fptr.fillbuf(context) < 0) throw runtime.newArgumentError("invalid byte sequence in " + enc);
+                        if (fptr.fillbuf(context) < 0) throw argumentError(context, "invalid byte sequence in " + enc);
                         if ((n = fptr.rbuf.len) > more) n = more;
                     }
                     r = enc.length(cbuf, 0, p);
-                    if (!StringSupport.MBCLEN_CHARFOUND_P(r)) throw runtime.newArgumentError("invalid byte sequence in " + enc);
+                    if (!StringSupport.MBCLEN_CHARFOUND_P(r)) throw argumentError(context, "invalid byte sequence in " + enc);
                     c = enc.mbcToCode(cbuf, 0, p);
                     block.yield(context, asFixnum(context, c));
                 } else {
@@ -3991,7 +3984,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 throw e; // won't happen
             }
             final double t = _timeout.convertToFloat().getDoubleValue();
-            if ( t < 0 ) throw context.runtime.newArgumentError("negative timeout");
+            if ( t < 0 ) throw argumentError(context, "negative timeout");
             timeout = (long) (t * 1000); // ms
         }
 
@@ -4053,7 +4046,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                         ops |= SelectionKey.OP_ACCEPT | SelectionKey.OP_READ | SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE;
                         break;
                     default:
-                        throw context.runtime.newArgumentError("unsupported mode: " + sym);
+                        throw argumentError(context, "unsupported mode: " + sym);
                 }
             } else if (argv[1] instanceof RubyFixnum) {
                 RubyFixnum fix = (RubyFixnum) argv[1];
@@ -4064,7 +4057,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                     ops |= SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE;
                 }
             } else {
-                throw context.runtime.newArgumentError("unsupported mode: " + argv[1].getType());
+                throw argumentError(context, "unsupported mode: " + argv[1].getType());
             }
         } else {
             ops |= SelectionKey.OP_ACCEPT | SelectionKey.OP_READ;
@@ -4101,7 +4094,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
         else {
             tv = (long)(RubyTime.convertTimeInterval(context, timeout) * 1000);
-            if (tv < 0) throw context.runtime.newArgumentError("time interval must be positive");
+            if (tv < 0) throw argumentError(context, "time interval must be positive");
         }
         return tv;
     }
@@ -4252,9 +4245,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         if ((recv == runtime.getIO()) && (cmd = PopenExecutor.checkPipeCommand(context, filename)) != context.nil) {
             runtime.getWarnings().warn("IO process creation with a leading '|' is deprecated and will be removed in Ruby 4.0; use IO.popen instead");
             if (PopenExecutor.nativePopenAvailable(runtime)) {
-                return (RubyIO) PopenExecutor.pipeOpen(context, cmd, OpenFile.ioOflagsModestr(runtime, oflags), fmode, convconfig);
+                return (RubyIO) PopenExecutor.pipeOpen(context, cmd, OpenFile.ioOflagsModestr(context, oflags), fmode, convconfig);
             } else {
-                throw runtime.newArgumentError("pipe open is not supported without native subprocess logic");
+                throw argumentError(context, "pipe open is not supported without native subprocess logic");
             }
         }
         return (RubyIO) ((RubyFile) runtime.getFile().allocate()).fileOpenGeneric(context, filename, oflags, fmode, convconfig, perm);
@@ -4712,7 +4705,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         fptr2 = w.getOpenFileChecked();
         fptr2.setSync(true);
 
-        EncodingUtils.extractBinmode(runtime, opt, fmode_p);
+        EncodingUtils.extractBinmode(context, opt, fmode_p);
 
         if (EncodingUtils.DEFAULT_TEXTMODE != 0) {
             if ((fptr.getMode() & OpenFile.TEXTMODE) != 0 && (fmode_p[0] & OpenFile.BINMODE) != 0) {
@@ -4812,7 +4805,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         try {
             if (arg1 == runtime.getArgsFile() || !(arg1 instanceof RubyFile || arg1 instanceof RubyString || arg1.respondsTo("to_path"))) {
                 if (offset != null) {
-                    throw Error.argumentError(context, "cannot specify src_offset for non-IO");
+                    throw argumentError(context, "cannot specify src_offset for non-IO");
                 }
 
                 if (sites.respond_to_readpartial.respondsTo(context, arg1, arg1, true)) {
@@ -5179,10 +5172,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                         ops |= SelectionKey.OP_ACCEPT | SelectionKey.OP_READ | SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE;
                         break;
                     default:
-                        throw context.runtime.newArgumentError("unsupported mode: " + sym);
+                        throw argumentError(context, "unsupported mode: " + sym);
                 }
             } else {
-                throw context.runtime.newArgumentError("unsupported mode: " + argv[1].getType());
+                throw argumentError(context, "unsupported mode: " + argv[1].getType());
             }
         } else {
             ops |= SelectionKey.OP_ACCEPT | SelectionKey.OP_READ;
@@ -5377,12 +5370,12 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         for (Object opt : opts.directKeySet()) {
             if (opt instanceof RubySymbol) {
                 if (!ALL_SPAWN_OPTIONS.contains(((RubySymbol) opt).idString())) {
-                    throw context.runtime.newArgumentError("wrong exec option symbol: " + opt);
+                    throw argumentError(context, "wrong exec option symbol: " + opt);
                 }
             }
             else if (opt instanceof RubyString) {
                 if (!ALL_SPAWN_OPTIONS.contains(((RubyString) opt).toString())) {
-                    throw context.runtime.newArgumentError("wrong exec option: " + opt);
+                    throw argumentError(context, "wrong exec option: " + opt);
                 }
             }
         }
@@ -5867,7 +5860,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             case 2:
                 return write_nonblock(context, argv[0], argv[1]);
             default:
-                throw context.runtime.newArgumentError(argv.length, 1, 2);
+                throw argumentError(context, argv.length, 1, 2);
         }
     }
 
@@ -5921,7 +5914,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             case 3:
                 return pipe(context, klass, argv[0], argv[1], argv[2], block);
             default:
-                throw context.runtime.newArgumentError(argv.length, 0, 3);
+                throw argumentError(context, argv.length, 0, 3);
         }
     }
 

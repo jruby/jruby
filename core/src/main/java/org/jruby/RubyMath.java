@@ -38,6 +38,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Create.newFloat;
+
 @JRubyModule(name="Math")
 public class RubyMath {
     /** Create the Math module and add it to the Ruby runtime.
@@ -635,7 +637,7 @@ public class RubyMath {
 
     @JRubyMethod(name = "gamma", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat gamma(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        double value = RubyKernel.new_float(context.runtime, x).value;
+        double value = RubyKernel.new_float(context, x).value;
         double result = nemes_gamma(value);
         /* note nemes_gamma can return Double.POSITIVE_INFINITY or Double.NEGATIVE_INFINITY
          * when value is an integer less than 1.
@@ -653,12 +655,10 @@ public class RubyMath {
             }
         }
 
-        if (Double.isNaN(value)) {
-            return RubyFloat.newFloat(context.runtime, Double.NaN);
-        }
+        if (Double.isNaN(value)) return newFloat(context, Double.NaN);
 
         domainCheck(recv, result, "gamma");
-        return RubyFloat.newFloat(context.runtime, result);
+        return newFloat(context, result);
 
     }
 
@@ -674,14 +674,14 @@ public class RubyMath {
 
     @JRubyMethod(name = "lgamma", module = true, visibility = Visibility.PRIVATE)
     public static RubyArray lgamma(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        double value = RubyKernel.new_float(context.runtime, x).value;
+        double value = RubyKernel.new_float(context, x).value;
         // JRUBY-4653: Could this error checking done more elegantly?
         if (value < 0 && Double.isInfinite(value)) throw context.runtime.newMathDomainError("lgamma");
 
         NemesLogGamma l = new NemesLogGamma(value);
 
         return RubyArray.newArray(context.runtime, 
-                RubyFloat.newFloat(context.runtime, l.value), RubyInteger.int2fix(context.runtime, (int) l.sign));
+                newFloat(context, l.value), RubyInteger.int2fix(context.runtime, (int) l.sign));
     }
 
     public static double nemes_gamma(double x) {

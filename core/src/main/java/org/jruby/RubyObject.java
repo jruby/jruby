@@ -221,6 +221,7 @@ public class RubyObject extends RubyBasicObject {
      * Simple helper to print any objects.
      * @deprecated no longer used - uses Java's System.out
      */
+    @Deprecated
     public static void puts(Object obj) {
         System.out.println(obj.toString());
     }

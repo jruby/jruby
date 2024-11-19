@@ -11,6 +11,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.ThreadContext.resetCallInfo;
 
 /**
@@ -192,7 +193,7 @@ public class Getline {
             // We get args from multiple sources so we are form-fitting this as if we are processing it from
             // the original method.  We should not be doing this processing this deep into this IO processing.
             if (argc == 3) {
-                throw runtime.newArgumentError(argc, 0, 2);
+                throw argumentError(context, argc, 0, 2);
             } else {
                 throw runtime.newTypeError("no implicit conversion of Hash into Integer");
             }
@@ -239,9 +240,8 @@ public class Getline {
                             (rs_s.size() > 0 && !enc_io.isAsciiCompatible()))) {
                 if (rs == runtime.getGlobalVariables().getDefaultSeparator()) {
                     rs = RubyString.newStringLight(runtime, 2, enc_io).cat('\n', enc_io);
-                }
-                else {
-                    throw runtime.newArgumentError("encoding mismatch: " + enc_io + " IO with " + enc_rs + " RS");
+                } else {
+                    throw argumentError(context, "encoding mismatch: " + enc_io + " IO with " + enc_rs + " RS");
                 }
             }
         }

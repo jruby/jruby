@@ -95,6 +95,7 @@ import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -2623,7 +2624,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                             (c == '#' &&
                                     p < end &&
                                     MBCLEN_CHARFOUND_P(StringSupport.preciseLength(enc, bytes, p, end)) &&
-                                    ((cc = codePoint(runtime, enc, bytes, p, end)) == '$' ||
+                                    ((cc = codePoint(runtime.getCurrentContext(), enc, bytes, p, end)) == '$' ||
                                             cc == '@' || cc == '{')
                             )
                     )) {
@@ -4680,7 +4681,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         Object splitPattern = determineSplitPattern(context, pat);
 
         if (splitPattern == context.nil) {                  // AWK SPLIT
-            result = awkSplit(context.runtime, limit, lim);
+            result = awkSplit(context, limit, lim);
         } else if (splitPattern instanceof ByteList bytelist) {      // OPTIMIZED STRING SPLIT
             // no need to check for broken strings because both have to be 7 bit to be at this point.
             switch (bytelist.realSize()) {
@@ -4717,7 +4718,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                     c = len == StringSupport.preciseLength(spatEnc, bytes, p, p + len) ? spatEnc.mbcToCode(bytes, p, p + len) : -1;
                 }
                 if (c == ' ') {
-                    result = awkSplit(runtime, limit, lim);
+                    result = awkSplit(context, limit, lim);
                 } else {
                     result = stringSplit(context, splitString, limit, lim);
                 }
@@ -4825,8 +4826,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     // MRI: rb_str_split_m, when split_type = awk
-    private RubyArray awkSplit(final Ruby runtime, boolean limit, int lim) {
-        RubyArray result = runtime.newArray();
+    private RubyArray awkSplit(final ThreadContext context, boolean limit, int lim) {
+        RubyArray result = context.runtime.newArray();
 
         byte[]bytes = value.getUnsafeBytes();
         int p = value.getBegin();
@@ -4844,7 +4845,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             if (singlebyte) {
                 c = bytes[p++] & 0xff;
             } else {
-                c = StringSupport.codePoint(runtime, enc, bytes, p, end);
+                c = StringSupport.codePoint(context, enc, bytes, p, end);
                 p += StringSupport.length(enc, bytes, p, end);
             }
 
@@ -4860,7 +4861,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             } else {
                 // MRI uses rb_isspace
                 if (ASCII.isSpace(c)) {
-                    result.append(makeSharedString(runtime, b, e - b));
+                    result.append(makeSharedString(context.runtime, b, e - b));
                     skip = true;
                     b = p - ptr;
                     if (limit) i++;
@@ -4870,7 +4871,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             }
         }
 
-        if (len > 0 && (limit || len > b || lim < 0)) result.append(makeSharedString(runtime, b, len - b));
+        if (len > 0 && (limit || len > b || lim < 0)) result.append(makeSharedString(context.runtime, b, len - b));
         return result;
     }
 
@@ -5805,11 +5806,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private IRubyObject multiByteLStrip(ThreadContext context, Encoding enc, byte[]bytes, int s, int end) {
-        final Ruby runtime = context.runtime;
         int p = s;
 
         while (p < end) {
-            int c = codePoint(runtime, enc, bytes, p, end);
+            int c = codePoint(context, enc, bytes, p, end);
             if (!ASCII.isSpace(c) && c != 0) break;
             p += codeLength(enc, c);
         }
@@ -5866,7 +5866,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     // In 1.9 we strip any combination of \0 and \s
     private IRubyObject multiByteRStrip(ThreadContext context) {
-        final Ruby runtime = context.runtime;
         byte[] bytes = value.getUnsafeBytes();
         int start = value.getBegin();
         int end = start + value.getRealSize();
@@ -5874,7 +5873,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         int endp = end;
         int prev;
         while ((prev = enc.prevCharHead(bytes, start, endp, end)) != -1) {
-            int point = codePoint(runtime, enc, bytes, prev, end);
+            int point = codePoint(context, enc, bytes, prev, end);
             if (point != 0 && !ASCII.isSpace(point)) break;
             endp = prev;
         }
@@ -5928,7 +5927,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
                 int n = 0;
                 int[] len_p = {0};
-                int c = EncodingUtils.encCodepointLength(runtime, countBytes, begin, begin + size, len_p, enc);
+                int c = EncodingUtils.encCodepointLength(context, countBytes, begin, begin + size, len_p, enc);
 
                 final byte[] bytes = value.unsafeBytes();
                 int i = value.begin();
@@ -6390,7 +6389,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     // MRI: rb_str_enumerate_codepoints
     private IRubyObject enumerateCodepoints(ThreadContext context, String name, Block block, boolean wantarray) {
-        Ruby runtime = context.runtime;
         RubyString str = this;
         byte[] ptrBytes;
         int ptr, end;
@@ -6400,7 +6398,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         if (block.isGiven()) {
             if (wantarray) {
-                runtime.getWarnings().warning(ID.BLOCK_DEPRECATED, "passing a block to String#" + name + " is deprecated");
+                context.runtime.getWarnings().warning(ID.BLOCK_DEPRECATED, "passing a block to String#" + name + " is deprecated");
                 wantarray = false;
             }
         }
@@ -6415,13 +6413,13 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         end = ptr + strByteList.getRealSize();
         enc = EncodingUtils.getEncoding(strByteList);
 
-        RubyArray ary = wantarray ? RubyArray.newArray(runtime, str.strLength(strByteList, enc)) : null;
+        RubyArray ary = wantarray ? RubyArray.newArray(context.runtime, str.strLength(strByteList, enc)) : null;
 
         while (ptr < end) {
-            int c = codePoint(runtime, enc, ptrBytes, ptr, end);
+            int c = codePoint(context, enc, ptrBytes, ptr, end);
             int n = codeLength(enc, c);
-            if (wantarray) ary.append(RubyFixnum.newFixnum(runtime, c));
-            else block.yield(context, RubyFixnum.newFixnum(runtime, c));
+            if (wantarray) ary.append(newFixnum(context, c));
+            else block.yield(context, newFixnum(context, c));
             ptr += n;
         }
 
@@ -6834,6 +6832,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      * @param value The new java.lang.String this RubyString should encapsulate
      * @deprecated
      */
+    @Deprecated
     public void setValue(CharSequence value) {
         view(ByteList.plain(value), false);
     }

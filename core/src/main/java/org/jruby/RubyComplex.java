@@ -53,6 +53,7 @@ import java.util.Arrays;
 import java.util.function.BiFunction;
 
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
@@ -452,21 +453,15 @@ public class RubyComplex extends RubyNumeric {
      */
     @JRubyMethod(name = "convert", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject convert(ThreadContext context, IRubyObject recv, IRubyObject a1, IRubyObject a2) {
-        Ruby runtime = context.runtime;
-
-        IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(runtime, a2, false);
-
-        if (maybeKwargs.isNil()) {
-            return convertCommon(context, recv, a1, a2, true);
-        }
+        IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(context.runtime, a2, false);
+        if (maybeKwargs.isNil()) return convertCommon(context, recv, a1, a2, true);
 
         IRubyObject exception = ArgsUtil.extractKeywordArg(context, "exception", (RubyHash) maybeKwargs);
         if (exception instanceof RubyBoolean) {
-            if (a1 instanceof RubyComplex) return a1;
-            return convertCommon(context, recv, a1, null, exception.isTrue());
+            return a1 instanceof RubyComplex ? a1 : convertCommon(context, recv, a1, null, exception.isTrue());
         }
 
-        throw runtime.newArgumentError("`Complex': expected true or false as exception: " + exception); 
+        throw argumentError(context, "`Complex': expected true or false as exception: " + exception);
     }
 
     /** nucomp_s_convert
@@ -487,7 +482,7 @@ public class RubyComplex extends RubyNumeric {
             return convertCommon(context, recv, a1, a2, exception.isTrue());
         }
 
-        throw runtime.newArgumentError("`Complex': expected true or false as exception: " + exception); 
+        throw argumentError(context, "`Complex': expected true or false as exception: " + exception);
     }
 
     // MRI: nucomp_s_convert
@@ -1308,13 +1303,13 @@ public class RubyComplex extends RubyNumeric {
         if (str.hasNul()) {
             if (!raise) return context.nil;
 
-            throw context.runtime.newArgumentError("string contains null byte");
+            throw argumentError(context, "string contains null byte");
         }
 
         IRubyObject[] ary = str_to_c_internal(context, str);
         if (ary[0] == context.nil || ary[1].convertToString().getByteList().length() > 0) {
             if (raise) {
-                throw context.runtime.newArgumentError(str(context.runtime, "invalid value for convert(): ", str.callMethod(context, "inspect")));
+                throw argumentError(context, str(context.runtime, "invalid value for convert(): ", str.callMethod(context, "inspect")));
             }
 
             return context.nil;

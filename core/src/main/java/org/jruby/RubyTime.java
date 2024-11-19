@@ -1049,6 +1049,7 @@ public class RubyTime extends RubyObject {
         return asFixnum(context, dt.getSecondOfMinute());
     }
 
+    @Deprecated(since = "10.0", forRemoval = true)
     public RubyInteger sec() {
         return sec(getCurrentContext());
     }
@@ -1058,7 +1059,7 @@ public class RubyTime extends RubyObject {
         return asFixnum(context, dt.getMinuteOfHour());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0", forRemoval = true)
     public RubyInteger min() {
         return min(getCurrentContext());
     }
@@ -1068,7 +1069,7 @@ public class RubyTime extends RubyObject {
         return asFixnum(context, dt.getHourOfDay());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0", forRemoval = true)
     public RubyInteger hour() {
         return hour(getCurrentContext());
     }
@@ -1078,7 +1079,7 @@ public class RubyTime extends RubyObject {
         return asFixnum(context, dt.getDayOfMonth());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0", forRemoval = true)
     public RubyInteger mday() {
         return mday(getCurrentContext());
     }
@@ -1088,6 +1089,7 @@ public class RubyTime extends RubyObject {
         return asFixnum(context, dt.getMonthOfYear());
     }
 
+    @Deprecated(since = "10.0", forRemoval = true)
     public RubyInteger month() {
         return month(getCurrentContext());
     }
@@ -1097,7 +1099,7 @@ public class RubyTime extends RubyObject {
         return asFixnum(context, dt.getYear());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0", forRemoval = true)
     public RubyInteger year() {
         return year(getCurrentContext());
     }
@@ -1107,7 +1109,7 @@ public class RubyTime extends RubyObject {
         return asFixnum(context, (dt.getDayOfWeek() % 7));
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0", forRemoval = true)
     public RubyInteger wday() {
         return wday(getCurrentContext());
     }
@@ -1117,6 +1119,7 @@ public class RubyTime extends RubyObject {
         return asFixnum(context, dt.getDayOfYear());
     }
 
+    @Deprecated(since = "10.0", forRemoval = true)
     public RubyInteger yday() {
         return yday(getCurrentContext());
     }

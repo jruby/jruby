@@ -62,6 +62,7 @@ import java.math.RoundingMode;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.Numeric.f_abs;
 import static org.jruby.util.Numeric.f_arg;
@@ -135,7 +136,7 @@ public class RubyNumeric extends RubyObject {
             }
         }
 
-        throw context.runtime.newArgumentError("invalid rounding mode: " + halfArg);
+        throw argumentError(context, "invalid rounding mode: " + halfArg);
     }
 
     // The implementations of these are all bonus (see above)
@@ -653,37 +654,26 @@ public class RubyNumeric extends RubyObject {
     @Deprecated // no longer used
     protected final IRubyObject coerceRelOp(ThreadContext context, String method, IRubyObject other) {
         RubyArray ary = doCoerce(context, other, false);
-        if (ary == null) {
-            return RubyComparable.cmperr(this, other);
-        }
 
-        return unwrapCoerced(context, method, other, ary);
+        return ary == null ? RubyComparable.cmperr(context, this, other) : unwrapCoerced(context, method, other, ary);
     }
 
     protected final IRubyObject coerceRelOp(ThreadContext context, CallSite site, IRubyObject other) {
         RubyArray ary = doCoerce(context, other, false);
-        if (ary == null) {
-            return RubyComparable.cmperr(this, other);
-        }
 
-        return unwrapCoerced(context, site, other, ary);
+        return ary == null ? RubyComparable.cmperr(context, this, other) : unwrapCoerced(context, site, other, ary);
     }
 
     private IRubyObject unwrapCoerced(ThreadContext context, String method, IRubyObject other, RubyArray ary) {
         IRubyObject result = (ary.eltInternal(0)).callMethod(context, method, ary.eltInternal(1));
-        if (result == context.nil) {
-            return RubyComparable.cmperr(this, other);
-        }
-        return result;
+
+        return result == context.nil ? RubyComparable.cmperr(context,this, other) : result;
     }
 
     private IRubyObject unwrapCoerced(ThreadContext context, CallSite site, IRubyObject other, RubyArray ary) {
         IRubyObject car = ary.eltInternal(0);
         IRubyObject result = site.call(context, car, car, ary.eltInternal(1));
-        if (result == context.nil) {
-            return RubyComparable.cmperr(this, other);
-        }
-        return result;
+        return result == context.nil ? RubyComparable.cmperr(context, this, other) : result;
     }
 
     public RubyNumeric asNumeric() {
@@ -728,10 +718,11 @@ public class RubyNumeric extends RubyObject {
     @JRubyMethod(name = "coerce")
     public IRubyObject coerce(IRubyObject other) {
         final Ruby runtime = metaClass.runtime;
+        ThreadContext context = runtime.getCurrentContext();
         if (metaClass == other.getMetaClass()) return runtime.newArray(other, this);
 
-        IRubyObject cdr = RubyKernel.new_float(runtime, this);
-        IRubyObject car = RubyKernel.new_float(runtime, other);
+        IRubyObject cdr = RubyKernel.new_float(context, this);
+        IRubyObject car = RubyKernel.new_float(context, other);
 
         return runtime.newArray(car, cdr);
     }
@@ -1596,9 +1587,7 @@ public class RubyNumeric extends RubyObject {
     protected static IRubyObject compareWithZero(ThreadContext context, IRubyObject num, JavaSites.CheckedSites site) {
         IRubyObject zero = RubyFixnum.zero(context.runtime);
         IRubyObject r = getMetaClass(num).finvokeChecked(context, num, site, zero);
-        if (r == null) {
-            RubyComparable.cmperr(num, zero);
-        }
+        if (r == null) RubyComparable.cmperr(context, num, zero);
         return r;
     }
 

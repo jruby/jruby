@@ -91,6 +91,7 @@ import org.objectweb.asm.Type;
 
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ir.operands.UndefinedValue.UNDEFINED;
 import static org.jruby.runtime.Block.Type.LAMBDA;
@@ -965,7 +966,7 @@ public class IRRuntimeHelpers {
                 RubyString errorMessage = (RubyString) invalidKwargs.join(context, newString(context, ", "));
                 String prefix = invalidKwargs.size() == 1 ? "unknown keyword: " : "unknown keywords: ";
 
-                throw context.runtime.newArgumentError(prefix + errorMessage);
+                throw argumentError(context, prefix + errorMessage);
             }
         }
     }
@@ -2117,7 +2118,7 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static RaiseException newRequiredKeywordArgumentError(ThreadContext context, String id) {
-        return context.runtime.newArgumentError(str(context.runtime, "missing keyword: ", ids(context.runtime, id)));
+        return argumentError(context, str(context.runtime, "missing keyword: ", ids(context.runtime, id)));
     }
 
     public static void pushExitBlock(ThreadContext context, Block blk) {

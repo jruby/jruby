@@ -201,7 +201,7 @@ public class TimeArgs {
     private static int parseYear(ThreadContext context, IRubyObject _year) {
         if (_year instanceof RubyString yr) {
             if (!yr.getEncoding().isAsciiCompatible()) {
-                throw context.runtime.newArgumentError("time string should have ASCII compatible encoding");
+                throw argumentError(context, "time string should have ASCII compatible encoding");
             }
             _year = RubyNumeric.str2inum(context.runtime, yr, 10, false);
         }
@@ -238,14 +238,14 @@ public class TimeArgs {
             try {
                 month = Integer.parseInt(monthStr);
             } catch (NumberFormatException ex) {
-                throw context.runtime.newArgumentError("argument out of range.");
+                throw argumentError(context, "argument out of range.");
             }
         } else {
             month = RubyNumeric.num2int(_month);
         }
 
         if (month < 1 || month > 12) {
-            throw context.runtime.newArgumentError("argument out of range: for month: " + month);
+            throw argumentError(context, "argument out of range: for month: " + month);
         }
 
         return month;
@@ -266,16 +266,16 @@ public class TimeArgs {
     }
 
     private void validateDayHourMinuteSecond(ThreadContext context) {
-        if (day < 1 || day > 31) throw context.runtime.newArgumentError("argument out of range for day");
+        if (day < 1 || day > 31) throw argumentError(context, "argument out of range for day");
 
-        if (hour < 0 || hour > 24) throw context.runtime.newArgumentError("argument out of range for hour");
+        if (hour < 0 || hour > 24) throw argumentError(context, "argument out of range for hour");
 
         if ((minute < 0 || minute > 59) || (hour == 24 && minute > 0)) {
-            throw context.runtime.newArgumentError("argument out of range for minute");
+            throw argumentError(context, "argument out of range for minute");
         }
 
         if ((second < 0 || second > 60) || (hour == 24 && second > 0)) {
-            throw context.runtime.newArgumentError("argument out of range");
+            throw argumentError(context, "argument out of range");
         }
     }
 

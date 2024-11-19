@@ -94,18 +94,19 @@ public class RubyComparable {
         return cmpint(context, op_gt, op_lt, cmpResult, a, b);
     }
 
+    @Deprecated
+    public static IRubyObject cmperr(IRubyObject recv, IRubyObject other) {
+        return cmperr(recv.getRuntime().getCurrentContext(), recv, other);
+    }
+
     /** rb_cmperr
      *
      */
-    public static IRubyObject cmperr(IRubyObject recv, IRubyObject other) {
-        IRubyObject target;
-        if (other.isImmediate() || !(other.isNil() || other.isTrue() || other == recv.getRuntime().getFalse())) {
-            target = other.inspect();
-        } else {
-            target = other.getType();
-        }
+    public static IRubyObject cmperr(ThreadContext context, IRubyObject recv, IRubyObject other) {
+        IRubyObject target = other.isImmediate() || !(other.isNil() || other.isTrue() || other == context.fals) ?
+                other.inspect() : other.getType();
 
-        throw recv.getRuntime().newArgumentError("comparison of " + recv.getType() + " with " + target + " failed");
+        throw argumentError(context, "comparison of " + recv.getType() + " with " + target + " failed");
     }
 
     /** rb_invcmp
@@ -164,7 +165,7 @@ public class RubyComparable {
     public static RubyBoolean op_gt(ThreadContext context, IRubyObject recv, IRubyObject other) {
         var result = sites(context).op_cmp.call(context, recv, recv, other);
 
-        if (result.isNil()) cmperr(recv, other);
+        if (result.isNil()) cmperr(context, recv, other);
 
         return asBoolean(context, cmpint(context, result, recv, other) > 0);
     }
@@ -176,7 +177,7 @@ public class RubyComparable {
     public static RubyBoolean op_ge(ThreadContext context, IRubyObject recv, IRubyObject other) {
         var result = sites(context).op_cmp.call(context, recv, recv, other);
 
-        if (result.isNil()) cmperr(recv, other);
+        if (result.isNil()) cmperr(context, recv, other);
 
         return asBoolean(context, cmpint(context, result, recv, other) >= 0);
     }
@@ -192,7 +193,7 @@ public class RubyComparable {
     public static RubyBoolean op_lt(ThreadContext context, CallSite cmp, IRubyObject recv, IRubyObject other) {
         var result = cmp.call(context, recv, recv, other);
 
-        if (result.isNil()) cmperr(recv, other);
+        if (result.isNil()) cmperr(context, recv, other);
 
         return asBoolean(context, cmpint(context, result, recv, other) < 0);
     }
@@ -204,7 +205,7 @@ public class RubyComparable {
     public static RubyBoolean op_le(ThreadContext context, IRubyObject recv, IRubyObject other) {
         var result = sites(context).op_cmp.call(context, recv, recv, other);
 
-        if (result.isNil()) cmperr(recv, other);
+        if (result.isNil()) cmperr(context, recv, other);
 
         return asBoolean(context, cmpint(context, result, recv, other) <= 0);
     }
@@ -236,7 +237,7 @@ public class RubyComparable {
         CallSite op_cmp = sites.op_cmp;
 
         if (!min.isNil() && !max.isNil() && cmpAndCmpint(context, op_cmp, op_gt, op_lt, min, max) > 0) {
-            throw context.runtime.newArgumentError("min argument must be smaller than max argument");
+            throw argumentError(context, "min argument must be smaller than max argument");
         }
 
         if (!min.isNil()) {

@@ -32,6 +32,7 @@ import static com.headius.backport9.buffer.Buffers.clearBuffer;
 import static com.headius.backport9.buffer.Buffers.flipBuffer;
 import static java.lang.System.out;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
 import java.io.File;
@@ -237,9 +238,12 @@ public class ShellLauncher {
         return getModifiedEnv(runtime, mergeEnv == null ? Collections.EMPTY_LIST : mergeEnv.entrySet(), false);
     }
 
+    @Deprecated
     public static String[] getModifiedEnv(Ruby runtime, Collection mergeEnv, boolean clearEnv) {
-        ThreadContext context = runtime.getCurrentContext();
+        return getModifiedEnv(runtime.getCurrentContext(), mergeEnv, clearEnv);
+    }
 
+    public static String[] getModifiedEnv(ThreadContext context, Collection mergeEnv, boolean clearEnv) {
         // disable tracing for the dup call below
         boolean traceEnabled = context.isEventHooksEnabled();
         context.setEventHooksEnabled(false);
@@ -248,9 +252,9 @@ public class ShellLauncher {
             // dup for JRUBY-6603 (avoid concurrent modification while we walk it)
             RubyHash hash = null;
             if (clearEnv) {
-                hash = RubyHash.newHash(runtime);
+                hash = RubyHash.newHash(context.runtime);
             } else {
-                hash = (RubyHash) runtime.getObject().getConstant("ENV").dup();
+                hash = (RubyHash) context.runtime.getObject().getConstant("ENV").dup();
             }
 
             if (mergeEnv != null) {
@@ -272,9 +276,7 @@ public class ShellLauncher {
                     for (int j = 0; j < mergeEnv.size(); j++) {
                         RubyArray e = ((RubyArray)mergeEnv).eltOk(j).convertToArray();
                         // if there are not two elements, raise ArgumentError
-                        if (e.size() != 2) {
-                            throw runtime.newArgumentError("env assignments must come in pairs");
-                        }
+                        if (e.size() != 2) throw argumentError(context, "env assignments must come in pairs");
 
                         // if the key is nil, raise TypeError
                         IRubyObject key = e.eltOk(0);

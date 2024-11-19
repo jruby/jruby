@@ -355,7 +355,7 @@ public class PopenExecutor {
             if (!env.isNil()) execargSetenv(context, eargp, env);
         }
         EncodingUtils.extractModeEncoding(context, convconfig, pmode, opt, oflags_p, fmode_p);
-        modestr = OpenFile.ioOflagsModestr(runtime, oflags_p[0]);
+        modestr = OpenFile.ioOflagsModestr(context, oflags_p[0]);
 
         port = new PopenExecutor().pipeOpen(context, eargp, modestr, fmode_p[0], convconfig);
 //        This is cleanup for failure to exec in the child.
@@ -380,32 +380,20 @@ public class PopenExecutor {
     // MRI: rb_check_exec_env
     public static RubyArray checkExecEnv(ThreadContext context, RubyHash hash, ExecArg pathArg) {
         Ruby runtime = context.runtime;
-        RubyArray env;
+        RubyArray env = runtime.newArray();
 
-        env = runtime.newArray();
         for (Map.Entry<IRubyObject, IRubyObject> entry : (Set<Map.Entry<IRubyObject, IRubyObject>>)hash.directEntrySet()) {
             IRubyObject key = entry.getKey();
             IRubyObject val = entry.getValue();
-            String k;
-
             RubyString keyString = StringSupport.checkEmbeddedNulls(runtime, key).export(context);
+            String k = keyString.toString();
 
-            k = keyString.toString();
+            if (k.indexOf('=') != -1) throw argumentError(context, "environment name contains a equal : " + k);
 
-            if (k.indexOf('=') != -1)
-                throw runtime.newArgumentError("environment name contains a equal : " + k);
+            if (!val.isNil()) val = StringSupport.checkEmbeddedNulls(runtime, val);
+            if (!val.isNil()) val = ((RubyString) val).export(context);
 
-            if (!val.isNil()) {
-                val = StringSupport.checkEmbeddedNulls(runtime, val);
-            }
-
-            if (!val.isNil()) {
-                val = ((RubyString) val).export(context);
-            }
-
-            if (k.equalsIgnoreCase("PATH")) {
-                pathArg.path_env = val;
-            }
+            if (k.equalsIgnoreCase("PATH")) pathArg.path_env = val;
 
             env.push(runtime.newArray(keyString, val));
         }
@@ -1042,7 +1030,7 @@ public class PopenExecutor {
 
         RubyArray env = eargp.env_modification;
         if (env != null) {
-            eargp.envp_str = ShellLauncher.getModifiedEnv(context.runtime, env, clearEnv);
+            eargp.envp_str = ShellLauncher.getModifiedEnv(context, env, clearEnv);
         }
 
         if (eargp.umaskGiven) {
@@ -1242,7 +1230,7 @@ public class PopenExecutor {
                 IRubyObject elt = ((RubyArray)ary).eltOk(i);
                 int fd = RubyNumeric.fix2int(((RubyArray)elt).eltOk(0));
                 if (h.fastARef(newFixnum(context, fd)) != null) {
-                    throw context.runtime.newArgumentError("fd " + fd + " specified twice");
+                    throw argumentError(context, "fd " + fd + " specified twice");
                 }
                 if (ary == eargp.fd_open || ary == eargp.fd_dup2)
                     h.op_aset(context, newFixnum(context, fd), context.tru);
@@ -1524,7 +1512,7 @@ public class PopenExecutor {
                     if (flags.isNil())
                         intFlags = OpenFlags.O_RDONLY.intValue();
                     else if (flags instanceof RubyString)
-                        intFlags = OpenFile.ioModestrOflags(context.runtime, flags.toString());
+                        intFlags = OpenFile.ioModestrOflags(context, flags.toString());
                     else
                         intFlags = flags.convertToInteger().getIntValue();
                     flags = newFixnum(context, intFlags);
@@ -1742,9 +1730,8 @@ public class PopenExecutor {
         tmp = TypeConverter.checkArrayType(runtime, argv[0]);
         if (!tmp.isNil()) {
             RubyArray arrayArg = (RubyArray) tmp;
-            if (arrayArg.size() != 2) {
-                throw runtime.newArgumentError("wrong first argument");
-            }
+            if (arrayArg.size() != 2) throw argumentError(context, "wrong first argument");
+
             prog = arrayArg.eltOk(0).convertToString();
             argv[0] = arrayArg.eltOk(1);
             StringSupport.checkEmbeddedNulls(runtime, prog);

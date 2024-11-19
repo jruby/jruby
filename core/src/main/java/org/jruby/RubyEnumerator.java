@@ -47,6 +47,7 @@ import java.util.stream.Stream;
 
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.numericToLong;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
@@ -419,7 +420,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
     @JRubyMethod(name = "each_slice")
     public IRubyObject each_slice(ThreadContext context, IRubyObject arg, final Block block) {
         int size = (int) numericToLong(context, arg);
-        if (size <= 0) throw context.runtime.newArgumentError("invalid size");
+        if (size <= 0) throw argumentError(context, "invalid size");
 
         return block.isGiven() ? RubyEnumerable.each_sliceCommon(context, this, size, block) :
                 enumeratorize(context.runtime, getType(), this, "each_slice", arg);
@@ -428,7 +429,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
     @JRubyMethod(name = "each_cons")
     public IRubyObject each_cons(ThreadContext context, IRubyObject arg, final Block block) {
         int size = (int) numericToLong(context, arg);
-        if (size <= 0) throw context.runtime.newArgumentError("invalid size");
+        if (size <= 0) throw argumentError(context, "invalid size");
         return block.isGiven() ? RubyEnumerable.each_consCommon(context, this, size, block) :
                 enumeratorize(context.runtime, getType(), this, "each_cons", arg);
     }
@@ -571,24 +572,15 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
     public static IRubyObject produce(ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
         int argc = Arity.checkArgumentCount(context, args, 0, 1);
 
-        IRubyObject init;
+        if (!block.isGiven()) throw argumentError(context, "no block given");
 
-        if (!block.isGiven()) throw context.runtime.newArgumentError("no block given");
-
-        if (argc == 0) {
-            init = null;
-        } else {
-            init = args[0];
-        }
-
+        IRubyObject init = argc == 0 ? null : args[0];
         RubyProducer producer = RubyProducer.newProducer(context, init, block);
         return enumeratorizeWithSize(context, producer, "each", RubyProducer::size);
     }
 
     @Deprecated
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
-        Ruby runtime = context.runtime;
-
         IRubyObject size = Arity.checkArgumentCount(context, args, 0, 1) == 1 ? args[0] : null;
 
         return initializeWithSize(context, size, block);

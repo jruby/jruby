@@ -69,6 +69,7 @@ import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyObject.equalInternal;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.numericToLong;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.runtime.Helpers.invokedynamic;
@@ -266,17 +267,16 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "take")
     public static IRubyObject take(ThreadContext context, IRubyObject self, IRubyObject n, Block block) {
-        final Ruby runtime = context.runtime;
         final long len = numericToLong(context, n);
 
-        if (len < 0) throw runtime.newArgumentError("attempt to take negative size");
-        if (len == 0) return runtime.newEmptyArray();
+        if (len < 0) throw argumentError(context, "attempt to take negative size");
+        if (len == 0) return context.runtime.newEmptyArray();
 
-        final RubyArray result = runtime.newArray();
+        final RubyArray result = context.runtime.newArray();
 
         try {
             // Atomic ?
-            each(context, eachSite(context), self, new JavaInternalBlockBody(runtime, Signature.OPTIONAL) {
+            each(context, eachSite(context), self, new JavaInternalBlockBody(context.runtime, Signature.OPTIONAL) {
                 long i = len; // Atomic ?
                 @Override
                 public IRubyObject yield(ThreadContext context1, IRubyObject[] args) {
@@ -327,7 +327,7 @@ public class RubyEnumerable {
         final Ruby runtime = context.runtime;
         final long len = numericToLong(context, n);
 
-        if (len < 0) throw runtime.newArgumentError("attempt to drop negative size");
+        if (len < 0) throw argumentError(context, "attempt to drop negative size");
 
         final RubyArray result = runtime.newArray();
 
@@ -411,7 +411,7 @@ public class RubyEnumerable {
         final long firstCount = numericToLong(context, num);
 
         if (firstCount == 0) return runtime.newEmptyArray();
-        if (firstCount < 0) throw runtime.newArgumentError("attempt to take negative size");
+        if (firstCount < 0) throw argumentError(context, "attempt to take negative size");
         final RubyArray result = RubyArray.newArray(runtime, firstCount);
 
         try {
@@ -1072,7 +1072,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = {"inject", "reduce"})
     public static IRubyObject inject(ThreadContext context, IRubyObject self, final Block block) {
-        if (!block.isGiven()) throw context.runtime.newArgumentError("wrong number of arguments (given 0, expected 1..2)");
+        if (!block.isGiven()) throw argumentError(context, "wrong number of arguments (given 0, expected 1..2)");
 
         return injectCommon(context, self, null, block);
     }
@@ -1251,7 +1251,7 @@ public class RubyEnumerable {
     @JRubyMethod(name = "each_slice")
     public static IRubyObject each_slice(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
         int size = (int) numericToLong(context, arg);
-        if (size <= 0) throw context.runtime.newArgumentError("invalid size");
+        if (size <= 0) throw argumentError(context, "invalid size");
 
         return block.isGiven() ? each_sliceCommon(context, self, size, block) :
                 enumeratorizeWithSize(context, self, "each_slice", new IRubyObject[]{arg}, RubyEnumerable::eachSliceSize);
@@ -1259,7 +1259,7 @@ public class RubyEnumerable {
 
     static IRubyObject each_sliceCommon(ThreadContext context, IRubyObject self, final int size, final Block block) {
         final Ruby runtime = context.runtime;
-        if (size <= 0) throw runtime.newArgumentError("invalid slice size");
+        if (size <= 0) throw argumentError(context, "invalid slice size");
 
         final SingleObject<RubyArray> result = new SingleObject<>(runtime.newArray(size));
 
@@ -1286,7 +1286,7 @@ public class RubyEnumerable {
         assert args != null && args.length > 0 && args[0] instanceof RubyNumeric; // #each_slice ensures arg[0] is numeric
         long sliceSize = ((RubyNumeric) args[0]).getLongValue();
         if (sliceSize <= 0) {
-            throw runtime.newArgumentError("invalid slice size");
+            throw argumentError(context, "invalid slice size");
         }
 
         IRubyObject size = RubyEnumerable.size(context, self, args);
@@ -1301,7 +1301,7 @@ public class RubyEnumerable {
     @JRubyMethod(name = "each_cons")
     public static IRubyObject each_cons(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
         int size = (int) numericToLong(context, arg);
-        if (size <= 0) throw context.runtime.newArgumentError("invalid size");
+        if (size <= 0) throw argumentError(context, "invalid size");
         return block.isGiven() ? each_consCommon(context, self, size, block) : enumeratorizeWithSize(context, self, "each_cons", new IRubyObject[] { arg }, (SizeFn) RubyEnumerable::eachConsSize);
     }
 
@@ -1328,7 +1328,7 @@ public class RubyEnumerable {
         assert args != null && args.length > 0 && args[0] instanceof RubyNumeric; // #each_cons ensures arg[0] is numeric
         long consSize = ((RubyNumeric) args[0]).getLongValue();
         if (consSize <= 0) {
-            throw runtime.newArgumentError("invalid size");
+            throw argumentError(context, "invalid size");
         }
 
         IRubyObject size = ((SizeFn) RubyEnumerable::size).size(context, self, args);
@@ -1717,7 +1717,7 @@ public class RubyEnumerable {
             case 1:
                 return all_p(context, self, args[0], block);
             default:
-                throw context.runtime.newArgumentError(args.length, 0, 1);
+                throw argumentError(context, args.length, 0, 1);
         }
     }
 
@@ -1807,7 +1807,7 @@ public class RubyEnumerable {
             case 1:
                 return any_pCommon(context, eachSite(context), self, args[0], block);
             default:
-                throw context.runtime.newArgumentError(args.length, 0, 1);
+                throw argumentError(context, args.length, 0, 1);
         }
     }
 
@@ -2364,11 +2364,12 @@ public class RubyEnumerable {
         }
 
         private void callImpl(final Ruby runtime, IRubyObject value) {
+            ThreadContext context = runtime.getCurrentContext();
             IRubyObject ary = TypeConverter.checkArrayType(runtime, value);
-            if (ary.isNil()) throw typeError(runtime.getCurrentContext(), "wrong element type ", value, " (expected array)");
+            if (ary.isNil()) throw typeError(context, "wrong element type ", value, " (expected array)");
             final RubyArray array = (RubyArray) ary;
             if (array.size() != 2) {
-                throw runtime.newArgumentError("element has wrong array length (expected 2, was " + array.size() + ")");
+                throw argumentError(context, "element has wrong array length (expected 2, was " + array.size() + ")");
             }
             result.fastASetCheckString(runtime, array.eltOk(0), array.eltOk(1));
         }

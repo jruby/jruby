@@ -81,6 +81,7 @@ import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.Inspector.*;
@@ -173,11 +174,11 @@ public class RubyHash extends RubyObject implements Map {
                     IRubyObject key;
                     IRubyObject val = nil;
                     if (v == nil) {
-                        throw runtime.newArgumentError("wrong element type " + e.getMetaClass() + " at " + i + " (expected array)");
+                        throw argumentError(context, "wrong element type " + e.getMetaClass() + " at " + i + " (expected array)");
                     }
                     switch (((RubyArray) v).getLength()) {
                     default:
-                        throw runtime.newArgumentError("invalid number of elements (" + ((RubyArray) v).getLength() + " for 1..2)");
+                        throw argumentError(context, "invalid number of elements (" + ((RubyArray) v).getLength() + " for 1..2)");
                     case 2:
                         val = ((RubyArray) v).entry(1);
                     case 1:
@@ -189,9 +190,7 @@ public class RubyHash extends RubyObject implements Map {
             }
         }
 
-        if ((args.length & 1) != 0) {
-            throw runtime.newArgumentError("odd number of arguments for Hash");
-        }
+        if ((args.length & 1) != 0) throw argumentError(context, "odd number of arguments for Hash");
 
         RubyHash hash = (RubyHash) ((RubyClass) recv).allocate();
         for (int i=0; i < args.length; i+=2) hash.fastASetCheckString(runtime, args[i], args[i+1]);
@@ -1123,7 +1122,7 @@ public class RubyHash extends RubyObject implements Map {
 
             RubyArray ary = (RubyArray) keyValue;
             if (ary.getLength() != 2) {
-                throw context.runtime.newArgumentError("element has wrong array length " + "(expected 2, was " + ary.getLength() + ")");
+                throw argumentError(context, "element has wrong array length " + "(expected 2, was " + ary.getLength() + ")");
             }
 
             result.fastASet(ary.eltInternal(0), ary.eltInternal(1));

@@ -51,6 +51,7 @@ import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Create.newSymbol;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.lexer.LexingCommon.*;
 
 public class RubyRipper extends RubyObject {
@@ -300,11 +301,9 @@ public class RubyRipper extends RubyObject {
 
     @JRubyMethod
     public IRubyObject column(ThreadContext context) {
-        if (!parser.hasStarted()) throw context.runtime.newArgumentError("method called for uninitialized object");
+        if (!parser.hasStarted()) throw argumentError(context, "method called for uninitialized object");
             
-        if (!parseStarted) return context.nil;
-        
-        return asFixnum(context, parser.getColumn());
+        return !parseStarted ? context.nil : asFixnum(context, parser.getColumn());
     }
 
     @JRubyMethod
@@ -328,11 +327,9 @@ public class RubyRipper extends RubyObject {
 
     @JRubyMethod
     public IRubyObject lineno(ThreadContext context) {
-        if (!parser.hasStarted()) throw context.runtime.newArgumentError("method called for uninitialized object");
+        if (!parser.hasStarted()) throw argumentError(context, "method called for uninitialized object");
         
-        if (!parseStarted) return context.nil;
-            
-        return asFixnum(context, parser.getLineno());
+        return !parseStarted ? context.nil : asFixnum(context, parser.getLineno());
     }
 
     @JRubyMethod

@@ -43,6 +43,7 @@ import java.net.InetSocketAddress;
 
 import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -182,25 +183,23 @@ public class RubyIPSocket extends RubyBasicSocket {
         } else if (noreverse == context.nil) {
             return null;
         } else {
-            Ruby runtime = context.runtime;
-
-            TypeConverter.checkType(context, noreverse, runtime.getSymbol());
-            switch (noreverse.toString()) {
-                case "numeric": return true;
-                case "hostname": return false;
-                default: throw runtime.newArgumentError("invalid reverse_lookup flag: " + noreverse);
-            }
+            TypeConverter.checkType(context, noreverse, context.runtime.getSymbol());
+            return switch (noreverse.toString()) {
+                case "numeric" -> true;
+                case "hostname" -> false;
+                default -> throw argumentError(context, "invalid reverse_lookup flag: " + noreverse);
+            };
         }
     }
 
     @Deprecated
     public IRubyObject addr() {
-        return addr(getRuntime().getCurrentContext());
+        return addr(getCurrentContext());
     }
 
     @Deprecated
     public IRubyObject peeraddr() {
-        return peeraddr(getRuntime().getCurrentContext());
+        return peeraddr(getCurrentContext());
     }
 
     @Deprecated

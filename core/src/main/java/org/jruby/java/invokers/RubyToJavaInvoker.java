@@ -55,6 +55,7 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.collections.IntHashMap;
 import org.jruby.util.collections.NonBlockingHashMapLong;
 
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.util.CodegenUtils.prettyParams;
 
 public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMethod {
@@ -695,12 +696,14 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
         final StringBuilder error = new StringBuilder(48);
 
         error.append("no ");
-        if ( isConstructor() ) error.append("constructor");
-        else {
-            error.append("method '").append( name ).append("'");
+        if (isConstructor()) {
+            error.append("constructor");
+        } else {
+            error.append("method '").append(name).append("'");
         }
-        error.append(" (for zero arguments) on ").append( formatReceiver(receiver) );
-        return runtime.newArgumentError( error.toString() );
+        error.append(" (for zero arguments) on ").append(formatReceiver(receiver));
+
+        return argumentError(runtime.getCurrentContext(), error.toString());
     }
 
     private static Class<?> getClass(final IRubyObject object) {

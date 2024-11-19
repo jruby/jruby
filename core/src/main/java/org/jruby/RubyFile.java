@@ -84,6 +84,7 @@ import static org.jruby.RubyInteger.singleCharByteList;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.StringSupport.*;
@@ -696,17 +697,15 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     public static String dirname(ThreadContext context, final String filename, int level) {
-        if (level < 0) {
-            throw context.runtime.newArgumentError("negative level: " + level);
-        }
+        if (level < 0) throw argumentError(context, "negative level: " + level);
+
         final RubyClass File = context.runtime.getFile();
         IRubyObject sep = File.getConstant("SEPARATOR");
         final String separator; final char separatorChar;
         if (sep instanceof RubyString && ((RubyString) sep).size() == 1) {
             separatorChar = ((RubyString) sep).getByteList().charAt(0);
             separator = (separatorChar == '/') ? "/" : String.valueOf(separatorChar);
-        }
-        else {
+        } else {
             separator = sep.toString();
             separatorChar = separator.isEmpty() ? '\0' : separator.charAt(0);
         }
@@ -1268,7 +1267,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             int newMask = (int) args[0].convertToInteger().getLongValue();
             oldMask = PosixShim.umask(context.runtime.getPosix(), newMask);
         } else {
-            throw context.runtime.newArgumentError("wrong number of arguments");
+            throw argumentError(context, "wrong number of arguments");
         }
 
         return asFixnum(context, oldMask);
@@ -2171,7 +2170,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                     path = RubyDir.getHomeDirectoryPath(context, checkHome(context)).toString();
 
                     if (raiseOnRelativePath && !isAbsolutePath(path)) {
-                        throw context.runtime.newArgumentError("non-absolute home");
+                        throw argumentError(context, "non-absolute home");
                     }
                 } else {
                     // No directory delimeter.  Rest of string is username
@@ -2184,7 +2183,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 path = RubyDir.getHomeDirectoryPath(context, checkHome(context)).toString() + path.substring(1);
 
                 if (raiseOnRelativePath && !isAbsolutePath(path)) {
-                    throw context.runtime.newArgumentError("non-absolute home");
+                    throw argumentError(context, "non-absolute home");
                 }
             } else if (userEnd > 1){
                 // '~user/...' as path to expand
@@ -2192,14 +2191,14 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 IRubyObject dir = RubyDir.getHomeDirectoryPath(context, user);
 
                 if (dir.isNil()) {
-                    throw context.runtime.newArgumentError("user " + user + " does not exist");
+                    throw argumentError(context, "user " + user + " does not exist");
                 }
 
                 path = dir + (pathLength == userEnd ? "" : path.substring(userEnd));
 
                 // getpwd (or /etc/passwd fallback) returns a home which is not absolute!!! [mecha-unlikely]
                 if (raiseOnRelativePath && !isAbsolutePath(path)) {
-                    throw context.runtime.newArgumentError("non-absolute home of " + user);
+                    throw argumentError(context, "non-absolute home of " + user);
                 }
             }
         }
@@ -2378,7 +2377,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 element = arg.convertToString().toString();
             } else if (arg instanceof RubyArray) {
                 if (context.runtime.isInspecting(arg)) {
-                    throw context.runtime.newArgumentError("recursive array");
+                    throw argumentError(context, "recursive array");
                 } else {
                     element = joinImplInspecting(separator, context, recv, args, ((RubyArray) arg)).toString();
                 }
@@ -2519,7 +2518,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             case 2:
                 return dirname(context, recv, args[0], args[1]);
             default:
-                throw context.runtime.newArgumentError(args.length, 1, 2);
+                throw argumentError(context, args.length, 1, 2);
         }
     }
 
@@ -2531,7 +2530,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             case 2:
                 return expand_path(context, recv, args[0], args[1]);
             default:
-                throw context.runtime.newArgumentError(args.length, 1, 2);
+                throw argumentError(context, args.length, 1, 2);
         }
     }
 
@@ -2543,7 +2542,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             case 2:
                 return expandPathInternal(context, args[0], args[1], expandUser, canonicalize);
             default:
-                throw context.runtime.newArgumentError(args.length, 1, 2);
+                throw argumentError(context, args.length, 1, 2);
         }
     }
 
@@ -2555,7 +2554,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             case 2:
                 absolute_path(context, recv, args[0], args[1]);
             default:
-                throw context.runtime.newArgumentError(args.length, 1, 2);
+                throw argumentError(context, args.length, 1, 2);
         }
     }
 
@@ -2567,7 +2566,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             case 2:
                 realdirpath(context, recv, args[0], args[1]);
             default:
-                throw context.runtime.newArgumentError(args.length, 1, 2);
+                throw argumentError(context, args.length, 1, 2);
         }
     }
 
@@ -2588,7 +2587,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             case 3:
                 return fnmatch(context, recv, args[0], args[1], args[2]);
             default:
-                throw context.runtime.newArgumentError(args.length, 2, 3);
+                throw argumentError(context, args.length, 2, 3);
         }
     }
 }

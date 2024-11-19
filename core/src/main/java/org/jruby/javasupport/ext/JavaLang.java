@@ -59,6 +59,7 @@ import static org.jruby.RubyModule.undefinedMethodMessage;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.javasupport.JavaUtil.convertJavaToUsableRubyObject;
 import static org.jruby.javasupport.JavaUtil.isJavaObject;
@@ -805,9 +806,8 @@ public abstract class JavaLang {
             if (length instanceof RubyArray) { // n-dimensional array
                 IRubyObject[] aryLengths = ((RubyArray) length).toJavaArrayMaybeUnsafe();
                 final int len = aryLengths.length;
-                if (len == 0) {
-                    throw context.runtime.newArgumentError("empty dimensions specifier for java array");
-                }
+                if (len == 0) throw argumentError(context, "empty dimensions specifier for java array");
+
                 final int[] dimensions = new int[len];
                 for (int i = len; --i >= 0; ) {
                     dimensions[i] = Convert.castAsInteger(context, aryLengths[i]).getIntValue();
@@ -815,7 +815,7 @@ public abstract class JavaLang {
                 return ArrayJavaProxy.newArray(context.runtime, klass, dimensions);
             }
 
-            throw context.runtime.newArgumentError("invalid length or dimensions specifier for java array - must be Integer or Array of Integer");
+            throw argumentError(context, "invalid length or dimensions specifier for java array - must be Integer or Array of Integer");
         }
 
     }

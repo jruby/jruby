@@ -79,6 +79,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
@@ -460,21 +461,22 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return inspect(metaClass.runtime);
     }
 
-    @JRubyMethod(name = "inspect")
-    public IRubyObject inspect(ThreadContext context) {
-        return inspect(context.runtime);
+    @Deprecated
+    final RubyString inspect(final Ruby runtime) {
+        return (RubyString) inspect(runtime.getCurrentContext());
     }
 
-    final RubyString inspect(final Ruby runtime) {
+    @JRubyMethod(name = "inspect")
+    public IRubyObject inspect(ThreadContext context) {
         // TODO: 1.9 rb_enc_symname_p
-        Encoding resenc = runtime.getDefaultInternalEncoding();
-        if (resenc == null) resenc = runtime.getDefaultExternalEncoding();
+        Encoding resenc = context.runtime.getDefaultInternalEncoding();
+        if (resenc == null) resenc = context.runtime.getDefaultExternalEncoding();
 
-        RubyString str = RubyString.newString(runtime, getBytes());
+        RubyString str = newString(context, getBytes());
 
-        if (!(isPrintable(runtime) && (resenc.equals(getBytes().getEncoding()) || str.isAsciiOnly()) &&
+        if (!(isPrintable(context) && (resenc.equals(getBytes().getEncoding()) || str.isAsciiOnly()) &&
                 isSymbolName(symbol))) {
-            str = str.inspect(runtime);
+            str = str.inspect(context.runtime);
         }
 
         ByteList result = new ByteList(str.getByteList().getRealSize() + 1);
@@ -482,7 +484,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         result.append((byte)':');
         result.append(str.getByteList());
 
-        return RubyString.newString(runtime, result);
+        return newString(context, result);
     }
 
     @Override
@@ -842,7 +844,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return true;
     }
 
-    private boolean isPrintable(final Ruby runtime) {
+    private boolean isPrintable(ThreadContext context) {
         ByteList symbolBytes = getBytes();
         int p = symbolBytes.getBegin();
         int end = p + symbolBytes.getRealSize();
@@ -850,7 +852,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         Encoding enc = symbolBytes.getEncoding();
 
         while (p < end) {
-            int c = codePoint(runtime, enc, bytes, p, end);
+            int c = codePoint(context, enc, bytes, p, end);
 
             if (!enc.isPrint(c)) return false;
 

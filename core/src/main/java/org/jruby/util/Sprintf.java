@@ -364,6 +364,7 @@ public class Sprintf {
     private static void rubySprintfToBuffer(final ByteList buf, final CharSequence charFormat,
                                                final Args args, final boolean usePrefixForZero) {
         final Ruby runtime = args.runtime;
+        ThreadContext context = runtime.getCurrentContext();
         final byte[] format;
         final Encoding encoding;
 
@@ -603,7 +604,6 @@ public class Sprintf {
 
                 case 'c': {
                     arg = args.getArg();
-                    ThreadContext context = runtime.getCurrentContext();
 
                     int c; int n;
                     IRubyObject tmp = arg.checkStringType();
@@ -656,7 +656,7 @@ public class Sprintf {
 
                     ByteList bytes = new ByteList();
                     final boolean positive = isPositive(arg);
-                    double fval = RubyKernel.new_float(runtime, arg).getDoubleValue();
+                    double fval = RubyKernel.new_float(context, arg).getDoubleValue();
                     boolean negative = fval < 0.0d || (fval == 0.0d && Double.doubleToLongBits(fval) == Double.doubleToLongBits(-0.0));
                     boolean isnan = Double.isNaN(fval);
                     boolean isinf = fval == Double.POSITIVE_INFINITY || fval == Double.NEGATIVE_INFINITY;
@@ -972,8 +972,6 @@ public class Sprintf {
                     if (num != null) { // else -> goto float_value;
                         if ((flags & FLAG_PRECISION) == 0) precision = 6; // default_float_precision;
 
-                        ThreadContext context = runtime.getCurrentContext();
-
                         if (num.isNegative()) {
                             num = (RubyInteger) num.op_uminus(context);
                             sign = -1;
@@ -1047,7 +1045,7 @@ public class Sprintf {
                 float_value: {
                     arg = args.getArg();
 
-                    double fval = RubyKernel.new_float(runtime, arg).getDoubleValue();
+                    double fval = RubyKernel.new_float(context, arg).getDoubleValue();
                     boolean isnan = Double.isNaN(fval);
                     boolean isinf = fval == Double.POSITIVE_INFINITY || fval == Double.NEGATIVE_INFINITY;
                     boolean negative = fval < 0.0d || (fval == 0.0d && Double.doubleToLongBits(fval) == Double.doubleToLongBits(-0.0));

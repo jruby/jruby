@@ -72,6 +72,7 @@ import static org.jruby.RubyBasicObject.getMetaClass;
 import static org.jruby.api.Convert.castAsString;
 import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Create.newSymbol;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.marshal.MarshalCommon.TYPE_IVAR;
 import static org.jruby.runtime.marshal.MarshalCommon.TYPE_UCLASS;
@@ -141,7 +142,7 @@ public class NewMarshal {
     public void dumpObject(ThreadContext context, RubyOutputStream out, IRubyObject value) {
         depth++;
         
-        if (depth > depthLimit) throw context.runtime.newArgumentError("exceed depth limit");
+        if (depth > depthLimit) throw argumentError(context, "exceed depth limit");
 
         writeAndRegister(context, out, value);
 

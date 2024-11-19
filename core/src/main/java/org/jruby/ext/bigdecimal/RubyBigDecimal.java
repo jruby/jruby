@@ -60,8 +60,8 @@ import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
 
 import static org.jruby.api.Convert.*;
-import static org.jruby.api.Create.newFixnum;
-import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.*;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -332,7 +332,7 @@ public class RubyBigDecimal extends RubyNumeric {
         IRubyObject old = limit(context, recv);
 
         if (arg == context.nil) return old;
-        if (Convert.castAsFixnum(context, arg).getLongValue() < 0) throw context.runtime.newArgumentError("argument must be positive");
+        if (Convert.castAsFixnum(context, arg).getLongValue() < 0) throw argumentError(context, "argument must be positive");
 
         ((RubyModule) recv).setInternalModuleVariable("vpPrecLimit", arg);
 
@@ -372,8 +372,6 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(required = 1, optional = 1, checkArity = false, meta = true)
     public static IRubyObject mode(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-
         // FIXME: I doubt any of the constants referenced in this method
         // are ever redefined -- should compare to the known values, rather
         // than do an expensive constant lookup.
@@ -386,7 +384,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
         if ((mode & EXCEPTION_ALL) != 0) {
             if (value.isNil()) return c.searchInternalModuleVariable("vpExceptionMode");
-            if (!(value instanceof RubyBoolean)) throw context.runtime.newArgumentError("second argument must be true or false");
+            if (!(value instanceof RubyBoolean)) throw argumentError(context, "second argument must be true or false");
 
             long newExceptionMode = c.searchInternalModuleVariable("vpExceptionMode").convertToInteger().getLongValue();
 
@@ -408,15 +406,13 @@ public class RubyBigDecimal extends RubyNumeric {
                 newExceptionMode = enable ? newExceptionMode | EXCEPTION_ZERODIVIDE : newExceptionMode &  ~(EXCEPTION_ZERODIVIDE);
             }
 
-            RubyFixnum fixnumMode = RubyFixnum.newFixnum(runtime, newExceptionMode);
+            RubyFixnum fixnumMode = newFixnum(context, newExceptionMode);
             c.setInternalModuleVariable("vpExceptionMode", fixnumMode);
             return fixnumMode;
         }
 
         if (mode == ROUND_MODE) {
-            if (value == context.nil) {
-                return c.searchInternalModuleVariable("vpRoundingMode");
-            }
+            if (value == context.nil) return c.searchInternalModuleVariable("vpRoundingMode");
 
             RoundingMode javaRoundingMode = javaRoundingModeFromRubyRoundingMode(context, value);
             RubyFixnum roundingMode = newFixnum(context, rubyRoundingModeFromJavaRoundingMode(context, javaRoundingMode));
@@ -429,33 +425,33 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     // The Fixnum cast should be fine because these are internal variables and user code cannot change them.
-    private static long bigDecimalVar(Ruby runtime, String variableName) {
-        return ((RubyFixnum) runtime.getClass("BigDecimal").searchInternalModuleVariable(variableName)).getLongValue();
+    private static long bigDecimalVar(ThreadContext context, String variableName) {
+        return ((RubyFixnum) context.runtime.getClass("BigDecimal").searchInternalModuleVariable(variableName)).getLongValue();
     }
 
-    private static RoundingMode getRoundingMode(Ruby runtime) {
-        IRubyObject mode = runtime.getClass("BigDecimal").searchInternalModuleVariable("vpRoundingMode");
-        return javaRoundingModeFromRubyRoundingMode(runtime.getCurrentContext(), mode);
+    private static RoundingMode getRoundingMode(ThreadContext context) {
+        IRubyObject mode = context.runtime.getClass("BigDecimal").searchInternalModuleVariable("vpRoundingMode");
+        return javaRoundingModeFromRubyRoundingMode(context, mode);
     }
 
-    private static boolean isNaNExceptionMode(Ruby runtime) {
-        return (bigDecimalVar(runtime, "vpExceptionMode") & EXCEPTION_NaN) != 0;
+    private static boolean isNaNExceptionMode(ThreadContext context) {
+        return (bigDecimalVar(context, "vpExceptionMode") & EXCEPTION_NaN) != 0;
     }
 
-    private static boolean isInfinityExceptionMode(Ruby runtime) {
-        return (bigDecimalVar(runtime, "vpExceptionMode") & EXCEPTION_INFINITY) != 0;
+    private static boolean isInfinityExceptionMode(ThreadContext context) {
+        return (bigDecimalVar(context, "vpExceptionMode") & EXCEPTION_INFINITY) != 0;
     }
 
-    private static boolean isOverflowExceptionMode(Ruby runtime) {
-        return (bigDecimalVar(runtime, "vpExceptionMode") & EXCEPTION_OVERFLOW) != 0;
+    private static boolean isOverflowExceptionMode(ThreadContext context) {
+        return (bigDecimalVar(context, "vpExceptionMode") & EXCEPTION_OVERFLOW) != 0;
     }
 
-    private static boolean isUnderflowExceptionMode(Ruby runtime) {
-        return (bigDecimalVar(runtime, "vpExceptionMode") & EXCEPTION_UNDERFLOW) != 0;
+    private static boolean isUnderflowExceptionMode(ThreadContext context) {
+        return (bigDecimalVar(context, "vpExceptionMode") & EXCEPTION_UNDERFLOW) != 0;
     }
 
-    private static boolean isZeroDivideExceptionMode(Ruby runtime) {
-        return (bigDecimalVar(runtime, "vpExceptionMode") & EXCEPTION_ZERODIVIDE) != 0;
+    private static boolean isZeroDivideExceptionMode(ThreadContext context) {
+        return (bigDecimalVar(context, "vpExceptionMode") & EXCEPTION_ZERODIVIDE) != 0;
     }
 
     private static RubyBigDecimal cannotBeCoerced(ThreadContext context, IRubyObject value, boolean must) {
@@ -498,7 +494,7 @@ public class RubyBigDecimal extends RubyNumeric {
                 throw context.runtime.newFloatDomainError("NaN");
             }
 
-            MathContext mathContext = new MathContext(RubyFloat.DIG + 1, getRoundingMode(context.runtime));
+            MathContext mathContext = new MathContext(RubyFloat.DIG + 1, getRoundingMode(context));
             // uses value.toString to prevent a precision error
             // e.g. new BigDecimal(64.4) -> 64.400000000000005684341886080801486968994140625
             //      new BigDecimal("64.4") -> 64.4
@@ -516,11 +512,11 @@ public class RubyBigDecimal extends RubyNumeric {
             case BIGDECIMAL:
                 return (RubyBigDecimal) value;
             case FIXNUM:
-                return newInstance(context.runtime, context.runtime.getClass("BigDecimal"), (RubyFixnum) value, MathContext.UNLIMITED);
+                return newInstance(context, context.runtime.getClass("BigDecimal"), (RubyFixnum) value, MathContext.UNLIMITED);
             case BIGNUM:
-                return newInstance(context.runtime, context.runtime.getClass("BigDecimal"), (RubyBignum) value, MathContext.UNLIMITED);
+                return newInstance(context, context.runtime.getClass("BigDecimal"), (RubyBignum) value, MathContext.UNLIMITED);
             case FLOAT:
-                return newInstance(context.runtime, context.runtime.getClass("BigDecimal"), (RubyFloat) value, new MathContext(RubyFloat.DIG));
+                return newInstance(context, context.runtime.getClass("BigDecimal"), (RubyFloat) value, new MathContext(RubyFloat.DIG));
             case RATIONAL:
                 return newInstance(context, context.runtime.getClass("BigDecimal"), (RubyRational) value, new MathContext(RubyFloat.DIG));
         }
@@ -536,14 +532,14 @@ public class RubyBigDecimal extends RubyNumeric {
         return new RubyBigDecimal(runtime, (RubyClass) recv, arg.value, arg.zeroSign, arg.infinitySign, arg.isNaN);
     }
 
-    private static RubyBigDecimal newInstance(Ruby runtime, IRubyObject recv, RubyFixnum arg, MathContext mathContext) {
+    private static RubyBigDecimal newInstance(ThreadContext context, IRubyObject recv, RubyFixnum arg, MathContext mathContext) {
         final long value = arg.getLongValue();
-        if (value == 0) return getZero(runtime, 1);
-        return new RubyBigDecimal(runtime, (RubyClass) recv, new BigDecimal(value, mathContext));
+        if (value == 0) return getZero(context, 1);
+        return new RubyBigDecimal(context.runtime, (RubyClass) recv, new BigDecimal(value, mathContext));
     }
 
     private static RubyBigDecimal newInstance(ThreadContext context, IRubyObject recv, RubyRational arg, MathContext mathContext) {
-        if (arg.getNumerator().isZero()) return getZero(context.runtime, 1);
+        if (arg.getNumerator().isZero()) return getZero(context, 1);
 
         BigDecimal num = toBigDecimal(context, arg.getNumerator());
         BigDecimal den = toBigDecimal(context, arg.getDenominator());
@@ -557,27 +553,27 @@ public class RubyBigDecimal extends RubyNumeric {
         return new RubyBigDecimal(context.runtime, (RubyClass) recv, value);
     }
 
-    private static RubyBigDecimal newInstance(Ruby runtime, IRubyObject recv, RubyFloat arg, MathContext mathContext) {
+    private static RubyBigDecimal newInstance(ThreadContext context, IRubyObject recv, RubyFloat arg, MathContext mathContext) {
         // precision can be no more than float digits
-        if (mathContext.getPrecision() > RubyFloat.DIG + 1) throw runtime.newArgumentError("precision too large");
+        if (mathContext.getPrecision() > RubyFloat.DIG + 1) throw argumentError(context, "precision too large");
 
-        RubyBigDecimal res = newFloatSpecialCases(runtime, arg);
+        RubyBigDecimal res = newFloatSpecialCases(context, arg);
         if (res != null) return res;
 
-        return new RubyBigDecimal(runtime, (RubyClass) recv, new BigDecimal(arg.toString(), mathContext));
+        return new RubyBigDecimal(context.runtime, (RubyClass) recv, new BigDecimal(arg.toString(), mathContext));
     }
 
-    private static RubyBigDecimal newFloatSpecialCases(Ruby runtime, RubyFloat val) {
-        if (val.isNaN()) return getNaN(runtime);
-        if (val.isInfinite()) return getInfinity(runtime, val.getDoubleValue() == Double.POSITIVE_INFINITY ? 1 : -1);
-        if (val.isZero()) return getZero(runtime, Double.doubleToLongBits(val.getDoubleValue()) == NEGATIVE_ZERO_LONG_BITS ? -1 : 1);
+    private static RubyBigDecimal newFloatSpecialCases(ThreadContext context, RubyFloat val) {
+        if (val.isNaN()) return getNaN(context);
+        if (val.isInfinite()) return getInfinity(context, val.getDoubleValue() == Double.POSITIVE_INFINITY ? 1 : -1);
+        if (val.isZero()) return getZero(context, Double.doubleToLongBits(val.getDoubleValue()) == NEGATIVE_ZERO_LONG_BITS ? -1 : 1);
         return null;
     }
 
-    private static RubyBigDecimal newInstance(Ruby runtime, IRubyObject recv, RubyBignum arg, MathContext mathContext) {
+    private static RubyBigDecimal newInstance(ThreadContext context, IRubyObject recv, RubyBignum arg, MathContext mathContext) {
         final BigInteger value = arg.getBigIntegerValue();
-        if (value.equals(BigInteger.ZERO)) return getZero(runtime, 1);
-        return new RubyBigDecimal(runtime, (RubyClass) recv, new BigDecimal(value, mathContext));
+        if (value.equals(BigInteger.ZERO)) return getZero(context, 1);
+        return new RubyBigDecimal(context.runtime, (RubyClass) recv, new BigDecimal(value, mathContext));
     }
 
     private static IRubyObject newInstance(ThreadContext context, RubyClass recv, RubyString arg, MathContext mathContext, boolean strict, boolean exception) {
@@ -589,7 +585,7 @@ public class RubyBigDecimal extends RubyNumeric {
         if (e == 0) {
             switch (str[0]) {
                 case '0':
-                    return getZero(context.runtime, 1);
+                    return getZero(context, 1);
                 case '1': case '2': case '3': case '4':
                 case '5': case '6': case '7': case '8': case '9':
                     return new RubyBigDecimal(context.runtime, recv, BigDecimal.valueOf(str[0] - '0'));
@@ -606,17 +602,17 @@ public class RubyBigDecimal extends RubyNumeric {
                 if (!strict) return context.nil;
                 throw invalidArgumentError(context, arg);
             case 'N' :
-                if ( contentEquals("NaN", str, s, e) ) return getNaN(context.runtime);
+                if ( contentEquals("NaN", str, s, e) ) return getNaN(context);
                 break;
             case 'I' :
-                if ( contentEquals("Infinity", str, s, e) ) return getInfinity(context.runtime, 1);
+                if ( contentEquals("Infinity", str, s, e) ) return getInfinity(context, 1);
                 break;
             case '-' :
-                if ( contentEquals("-Infinity", str, s, e) ) return getInfinity(context.runtime, -1);
+                if ( contentEquals("-Infinity", str, s, e) ) return getInfinity(context, -1);
                 sign = -1;
                 break;
             case '+' :
-                if ( contentEquals("+Infinity", str, s, e) ) return getInfinity(context.runtime, +1);
+                if ( contentEquals("+Infinity", str, s, e) ) return getInfinity(context, +1);
                 break;
         }
 
@@ -721,43 +717,37 @@ public class RubyBigDecimal extends RubyNumeric {
             else if (isExponentOutOfRange(str, exp + 1, e)) {
                 // Handle infinity (Integer.MIN_VALUE + 1) < expValue < Integer.MAX_VALUE
                 // checking the sign of exponent part.
-                if (isZeroBase(str, s, exp) || str[exp + 1] == '-') return getZero(context.runtime, sign);
-                return getInfinity(context.runtime, sign);
+                if (isZeroBase(str, s, exp) || str[exp + 1] == '-') return getZero(context, sign);
+                return getInfinity(context, sign);
             }
-        }
-        else if ( lastSign > s ) {
+        } else if ( lastSign > s ) {
             e = lastSign - 1; // ignored tail junk e.g. "5-6" -> "-6"
         }
 
         BigDecimal decimal;
         try {
             decimal = new BigDecimal(str, s, e - s + 1, mathContext);
-        }
-        catch (ArithmeticException ex) {
-            return checkOverUnderFlow(context.runtime, ex, false, strict, exception);
-        }
-        catch (NumberFormatException ex) {
+        } catch (ArithmeticException ex) {
+            return checkOverUnderFlow(context, ex, false, strict, exception);
+        } catch (NumberFormatException ex) {
             return handleInvalidArgument(context, arg, strict, exception);
         }
 
         // MRI behavior: -0 and +0 are two different things
-        if (decimal.signum() == 0) return getZero(context.runtime, sign);
+        if (decimal.signum() == 0) return getZero(context, sign);
 
         return new RubyBigDecimal(context.runtime, recv, decimal);
     }
 
     private static IRubyObject handleInvalidArgument(ThreadContext context, RubyString arg, boolean strict, boolean exception) {
-        if (!strict) {
-            return getZero(context.runtime, 1);
-        }
-        if (!exception) {
-            return context.nil;
-        }
+        if (!strict) return getZero(context, 1);
+        if (!exception) return context.nil;
+
         throw invalidArgumentError(context, arg);
     }
 
     private static RaiseException invalidArgumentError(ThreadContext context, RubyString arg) {
-        return context.runtime.newArgumentError("invalid value for BigDecimal(): \"" + arg + "\"");
+        return argumentError(context, "invalid value for BigDecimal(): \"" + arg + "\"");
     }
 
     private static boolean contentEquals(final String str1, final char[] str2, final int s2, final int e2) {
@@ -826,9 +816,9 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private static IRubyObject handleMissingPrecision(ThreadContext context, String name, boolean strict, boolean exception) {
-        if (!strict) return getZero(context.runtime, 1);
+        if (!strict) return getZero(context, 1);
         if (!exception) return context.nil;
-        throw context.runtime.newArgumentError("can't omit precision for a " + name + ".");
+        throw argumentError(context, "can't omit precision for a " + name + ".");
     }
 
     // Left for arjdbc (being phased out from 61.3 forward and newer points of newer arjdbc versions)
@@ -844,28 +834,28 @@ public class RubyBigDecimal extends RubyNumeric {
             case RATIONAL:
                 return handleMissingPrecision(context, "Rational", strict, exception);
             case FLOAT:
-                RubyBigDecimal res = newFloatSpecialCases(context.runtime, (RubyFloat) arg);
+                RubyBigDecimal res = newFloatSpecialCases(context, (RubyFloat) arg);
                 if (res != null) return res;
                 return handleMissingPrecision(context, "Float", strict, exception);
             case FIXNUM:
-                return newInstance(context.runtime, recv, (RubyFixnum) arg, MathContext.UNLIMITED);
+                return newInstance(context, recv, (RubyFixnum) arg, MathContext.UNLIMITED);
             case BIGNUM:
-                return newInstance(context.runtime, recv, (RubyBignum) arg, MathContext.UNLIMITED);
+                return newInstance(context, recv, (RubyBignum) arg, MathContext.UNLIMITED);
             case BIGDECIMAL:
                 return arg;
             case COMPLEX:
                 RubyComplex c = (RubyComplex) arg;
                 if (!((RubyNumeric)c.image()).isZero()) {
-                    throw context.runtime.newArgumentError("Unable to make a BigDecimal from non-zero imaginary number");
+                    throw argumentError(context, "Unable to make a BigDecimal from non-zero imaginary number");
                 }
         }
 
         IRubyObject maybeString = arg.checkStringType();
 
         if (maybeString.isNil()) {
-            if (!strict) return getZero(context.runtime, 1);
+            if (!strict) return getZero(context, 1);
             if (!exception) return context.nil;
-            throw context.runtime.newTypeError("no implicit conversion of " + arg.inspect() + "into to String");
+            throw typeError(context, "no implicit conversion of " + arg.inspect() + "into to String");
         }
         return newInstance(context, (RubyClass) recv, maybeString.convertToString(), MathContext.UNLIMITED, strict, exception);
     }
@@ -882,12 +872,12 @@ public class RubyBigDecimal extends RubyNumeric {
 
         int digits = (int) mathArg.convertToInteger().getLongValue();
         if (digits < 0) {
-            if (!strict) return getZero(context.runtime, 1);
+            if (!strict) return getZero(context, 1);
             if (!exception) return context.nil;
-            throw context.runtime.newArgumentError("argument must be positive");
+            throw argumentError(context, "argument must be positive");
         }
 
-        MathContext mathContext = new MathContext(digits, getRoundingMode(context.runtime));
+        MathContext mathContext = new MathContext(digits, getRoundingMode(context));
 
         switch (((RubyBasicObject) arg).getNativeClassIndex()) {
             case RATIONAL:
@@ -897,17 +887,17 @@ public class RubyBigDecimal extends RubyNumeric {
                 }
                 return newInstance(context, recv, (RubyRational) arg, mathContext);
             case FLOAT:
-                RubyBigDecimal res = newFloatSpecialCases(context.runtime, (RubyFloat) arg);
+                RubyBigDecimal res = newFloatSpecialCases(context, (RubyFloat) arg);
                 if (res != null) return res;
                 // mri uses SIZE_MAX
                 if (digits == Integer.MAX_VALUE) {
                     return handleMissingPrecision(context, "Float", strict, exception);
                 }
-                return newInstance(context.runtime, recv, (RubyFloat) arg, mathContext);
+                return newInstance(context, recv, (RubyFloat) arg, mathContext);
             case FIXNUM:
-                return newInstance(context.runtime, recv, (RubyFixnum) arg, mathContext);
+                return newInstance(context, recv, (RubyFixnum) arg, mathContext);
             case BIGNUM:
-                return newInstance(context.runtime, recv, (RubyBignum) arg, mathContext);
+                return newInstance(context, recv, (RubyBignum) arg, mathContext);
             case BIGDECIMAL:
                 // mri uses SIZE_MAX
                 if (digits == Integer.MAX_VALUE) {
@@ -917,7 +907,7 @@ public class RubyBigDecimal extends RubyNumeric {
             case COMPLEX:
                 RubyComplex c = (RubyComplex) arg;
                 if (!((RubyNumeric)c.image()).isZero()) {
-                    throw context.runtime.newArgumentError("Unable to make a BigDecimal from non-zero imaginary number");
+                    throw argumentError(context, "Unable to make a BigDecimal from non-zero imaginary number");
                 }
                 return newInstance(context, recv, c.real(), mathArg, strict, exception);
         }
@@ -932,54 +922,52 @@ public class RubyBigDecimal extends RubyNumeric {
         return newInstance(context, (RubyClass) recv, (RubyString) maybeString, MathContext.UNLIMITED, strict, exception);
     }
 
-    private static RubyBigDecimal getZero(final Ruby runtime, final int sign) {
+    private static RubyBigDecimal getZero(ThreadContext context, final int sign) {
         String constantName = sign < 0 ? "NEGATIVE_ZERO" : "POSITIVE_ZERO";
-        return (RubyBigDecimal)runtime.getClass("BigDecimal").getConstant(constantName);
+        return (RubyBigDecimal) context.runtime.getClass("BigDecimal").getConstant(constantName);
     }
 
-    private static RubyBigDecimal getNaN(final Ruby runtime) {
-        if ( isNaNExceptionMode(runtime) ) {
-            throw newNaNFloatDomainError(runtime);
-        }
-        return (RubyBigDecimal)runtime.getClass("BigDecimal").getConstant("NAN");
+    private static RubyBigDecimal getNaN(ThreadContext context) {
+        if ( isNaNExceptionMode(context) ) throw newNaNFloatDomainError(context);
+
+        return (RubyBigDecimal) context.runtime.getClass("BigDecimal").getConstant("NAN");
     }
 
-    private static RaiseException newNaNFloatDomainError(final Ruby runtime) {
-        return runtime.newFloatDomainError("Computation results to 'NaN'(Not a Number)");
+    private static RaiseException newNaNFloatDomainError(ThreadContext context) {
+        return context.runtime.newFloatDomainError("Computation results to 'NaN'(Not a Number)");
     }
 
     private enum InfinityErrorMsgType {To, In}
 
-    private static RubyBigDecimal getInfinity(final Ruby runtime, final int sign) {
-        return getInfinity(runtime, sign, InfinityErrorMsgType.To);
+    private static RubyBigDecimal getInfinity(ThreadContext context, final int sign) {
+        return getInfinity(context, sign, InfinityErrorMsgType.To);
     }
 
-    private static RubyBigDecimal getInfinity(final Ruby runtime, final int sign, final InfinityErrorMsgType type) {
-        if ( isInfinityExceptionMode(runtime) ) {
-            throw newInfinityFloatDomainError(runtime, sign, type);
-        }
+    private static RubyBigDecimal getInfinity(ThreadContext context, final int sign, final InfinityErrorMsgType type) {
+        if (isInfinityExceptionMode(context)) throw newInfinityFloatDomainError(context, sign, type);
+
         String constantName = sign < 0 ? "NEGATIVE_INFINITY" : "INFINITY";
-        return (RubyBigDecimal)runtime.getClass("BigDecimal").getConstant(constantName);
+        return (RubyBigDecimal) context.runtime.getClass("BigDecimal").getConstant(constantName);
     }
 
-    private static RaiseException newInfinityFloatDomainError(final Ruby runtime, final int sign) {
-        return newInfinityFloatDomainError(runtime, sign, InfinityErrorMsgType.To);
+    private static RaiseException newInfinityFloatDomainError(ThreadContext context, final int sign) {
+        return newInfinityFloatDomainError(context, sign, InfinityErrorMsgType.To);
     }
 
-    private static RaiseException newInfinityFloatDomainError(final Ruby runtime, final int sign, final InfinityErrorMsgType type) {
+    private static RaiseException newInfinityFloatDomainError(ThreadContext context, final int sign, final InfinityErrorMsgType type) {
         if (type == InfinityErrorMsgType.To) {
-            return runtime.newFloatDomainError("Computation results to " + (sign < 0 ? "'-Infinity'" : "'Infinity'"));
+            return context.runtime.newFloatDomainError("Computation results to " + (sign < 0 ? "'-Infinity'" : "'Infinity'"));
         } else {
-            return runtime.newFloatDomainError("Computation results in " + (sign < 0 ? "'-Infinity'" : "'Infinity'"));
+            return context.runtime.newFloatDomainError("Computation results in " + (sign < 0 ? "'-Infinity'" : "'Infinity'"));
         }
     }
 
-    private RubyBigDecimal setResult() {
-        return setResult(0);
+    private RubyBigDecimal setResult(ThreadContext context) {
+        return setResult(context, 0);
     }
 
-    private RubyBigDecimal setResult(int prec) {
-        if (prec == 0) prec = getPrecLimit(getRuntime());
+    private RubyBigDecimal setResult(ThreadContext context, int prec) {
+        if (prec == 0) prec = getPrecLimit(context);
         int exponent;
         if (prec > 0 && this.value.scale() > (prec - (exponent = getExponent()))) {
             this.value = this.value.setScale(prec - exponent, RoundingMode.HALF_UP);
@@ -1028,17 +1016,17 @@ public class RubyBigDecimal extends RubyNumeric {
         RubyBigDecimal val = getVpValueWithPrec(context, other, false);
 
         if (val == null) return callCoerced(context, sites(context).op_mod, other, true);
-        if (isNaN() || val.isNaN() || isInfinity() && val.isInfinity()) return getNaN(context.runtime);
+        if (isNaN() || val.isNaN() || isInfinity() && val.isInfinity()) return getNaN(context);
         if (val.isZero()) throw context.runtime.newZeroDivisionError();
-        if (isInfinity()) return getNaN(context.runtime);
+        if (isInfinity()) return getNaN(context);
         if (val.isInfinity()) return this;
-        if (isZero()) return getZero(context.runtime, value.signum());
+        if (isZero()) return getZero(context, value.signum());
 
         // Java and MRI definitions of modulo are different.
         BigDecimal modulo = value.remainder(val.value);
         if (modulo.signum() * val.value.signum() < 0) modulo = modulo.add(val.value);
 
-        return new RubyBigDecimal(context.runtime, modulo).setResult();
+        return new RubyBigDecimal(context.runtime, modulo).setResult(context);
     }
 
     @Override
@@ -1048,25 +1036,25 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private IRubyObject remainderInternal(ThreadContext context, RubyBigDecimal val, IRubyObject arg) {
-        if (isInfinity() || isNaN()) return getNaN(context.runtime);
+        if (isInfinity() || isNaN()) return getNaN(context);
         if (val == null) return callCoerced(context, sites(context).remainder, arg, true);
         if (val.isInfinity()) return this;
-        if (val.isNaN() || val.isZero()) return getNaN(context.runtime);
+        if (val.isNaN() || val.isZero()) return getNaN(context);
 
         // Java and MRI definitions of remainder are the same.
-        return new RubyBigDecimal(context.runtime, value.remainder(val.value)).setResult();
+        return new RubyBigDecimal(context.runtime, value.remainder(val.value)).setResult(context);
     }
 
     @JRubyMethod(name = "*")
     public IRubyObject op_mul(ThreadContext context, IRubyObject arg) {
         RubyBigDecimal val = getVpValueWithPrec(context, arg, false);
         if (val == null) return callCoerced(context, sites(context).op_times, arg, true);
-        return multImpl(context.runtime, val);
+        return multImpl(context, val);
     }
 
     @JRubyMethod(name = "mult")
     public IRubyObject mult2(ThreadContext context, IRubyObject b, IRubyObject n) {
-        final int mx = getPrecisionInt(context.runtime, n);
+        final int mx = getPrecisionInt(context, n);
         if (mx == 0) return op_mul(context, b);
 
         RubyBigDecimal val = getVpValueWithPrec(context, b, false);
@@ -1074,79 +1062,78 @@ public class RubyBigDecimal extends RubyNumeric {
             return callCoerced(context, sites(context).op_times, b, true);
         }
 
-        return multImpl(context.runtime, val).setResult(mx);
+        return multImpl(context, val).setResult(context, mx);
     }
 
-    private RubyBigDecimal multImpl(final Ruby runtime, RubyBigDecimal val) {
-        if ( isNaN() || val.isNaN() ) return getNaN(runtime);
+    private RubyBigDecimal multImpl(ThreadContext context, RubyBigDecimal val) {
+        if ( isNaN() || val.isNaN() ) return getNaN(context);
 
         if ( isZero() || val.isZero() ) {
-            if ((isInfinity() && val.isZero()) || (isZero() && val.isInfinity())) return getNaN(runtime);
+            if ((isInfinity() && val.isZero()) || (isZero() && val.isInfinity())) return getNaN(context);
 
             int sign1 = isZero()? zeroSign : value.signum();
             int sign2 = val.isZero() ?  val.zeroSign : val.value.signum();
-            return getZero(runtime, sign1 * sign2);
+            return getZero(context, sign1 * sign2);
         }
 
         if ( isInfinity() || val.isInfinity() ) {
             int sign1 = isInfinity() ? infinitySign : value.signum();
             int sign2 = val.isInfinity() ? val.infinitySign : val.value.signum();
-            return getInfinity(runtime, sign1 * sign2);
+            return getInfinity(context, sign1 * sign2);
         }
 
         int mx = value.precision() + val.value.precision();
 
-        MathContext mathContext = new MathContext(mx, getRoundingMode(runtime));
+        MathContext mathContext = new MathContext(mx, getRoundingMode(context));
         BigDecimal result;
         try {
             result = value.multiply(val.value, mathContext);
         }
         catch (ArithmeticException ex) {
-            return (RubyBigDecimal) checkOverUnderFlow(runtime, ex, false, true, true);
+            return (RubyBigDecimal) checkOverUnderFlow(context, ex, false, true, true);
         }
-        return new RubyBigDecimal(runtime, result).setResult();
+        return new RubyBigDecimal(context.runtime, result).setResult(context);
     }
 
-    private static IRubyObject checkOverUnderFlow(final Ruby runtime, final ArithmeticException ex, boolean nullDefault, boolean strict, boolean exception) {
+    private static IRubyObject checkOverUnderFlow(ThreadContext context, final ArithmeticException ex,
+                                                  boolean nullDefault, boolean strict, boolean exception) {
         String message = ex.getMessage();
         if (message == null) message = "";
         message = message.toLowerCase(Locale.ENGLISH);
         if (message.contains("underflow")) {
-            if (isUnderflowExceptionMode(runtime)) {
-                return handleFloatDomainError(runtime, message, strict, exception);
-            }
-            return getZero(runtime, 1);
+            return isUnderflowExceptionMode(context) ?
+                    handleFloatDomainError(context, message, strict, exception) :
+                    getZero(context, 1);
         }
         if (message.contains("overflow")) {
-            if (isOverflowExceptionMode(runtime)) {
-                return handleFloatDomainError(runtime, message, strict, exception);
-            }
-            return getInfinity(runtime, 1); // TODO sign?
+            return isOverflowExceptionMode(context) ?
+                    handleFloatDomainError(context, message, strict, exception) :
+                    getInfinity(context, 1); // TODO sign?
         }
-        if (nullDefault) return null;
-        return handleFloatDomainError(runtime, message, strict, exception);
+
+        return nullDefault ? null : handleFloatDomainError(context, message, strict, exception);
     }
 
-    private static IRubyObject handleFloatDomainError(Ruby runtime, String message, boolean strict, boolean exception) {
-        if (!strict) return getZero(runtime, 1);
-        if (!exception) return runtime.getNil();
-        throw runtime.newFloatDomainError(message);
+    private static IRubyObject handleFloatDomainError(ThreadContext context, String message, boolean strict, boolean exception) {
+        if (!strict) return getZero(context, 1);
+        if (!exception) return context.nil;
+        throw context.runtime.newFloatDomainError(message);
     }
 
     // Calculate appropriate zero or infinity depending on exponent...
     private RubyBigDecimal newPowOfInfinity(ThreadContext context, RubyNumeric exp) {
         if (Numeric.f_negative_p(context, exp)) {
-            if (infinitySign >= 0) return getZero(context.runtime, 0);
+            if (infinitySign >= 0) return getZero(context, 0);
 
             // (-Infinity) ** (-even_integer) -> +0 AND (-Infinity) ** (-odd_integer) -> -0
-            if (Numeric.f_integer_p(context, exp)) return getZero(context.runtime, isEven(exp) ? 1 : -1);
+            if (Numeric.f_integer_p(context, exp)) return getZero(context, isEven(exp) ? 1 : -1);
 
-            return getZero(context.runtime, -1); // (-Infinity) ** (-non_integer) -> -0
+            return getZero(context, -1); // (-Infinity) ** (-non_integer) -> -0
         }
 
-        if (infinitySign >= 0) return getInfinity(context.runtime, 1);
+        if (infinitySign >= 0) return getInfinity(context, 1);
 
-        if (Numeric.f_integer_p(context, exp)) return getInfinity(context.runtime, isEven(exp) ? 1 : -1);
+        if (Numeric.f_integer_p(context, exp)) return getInfinity(context, isEven(exp) ? 1 : -1);
 
         throw context.runtime.newMathDomainError("a non-integral exponent for a negative base");
     }
@@ -1155,25 +1142,25 @@ public class RubyBigDecimal extends RubyNumeric {
     private RubyBigDecimal newPowOfZero(ThreadContext context, RubyNumeric exp) {
         if (Numeric.f_negative_p(context, exp)) {
             /* (+0) ** (-num)  -> Infinity */
-            if (zeroSign >= 0) return getInfinity(context.runtime, 1);
+            if (zeroSign >= 0) return getInfinity(context, 1);
 
             // (-0) ** (-even_integer) -> +Infinity  AND (-0) ** (-odd_integer) -> -Infinity
-            if (Numeric.f_integer_p(context, exp)) return getInfinity(context.runtime, isEven(exp) ? 1 : -1);
+            if (Numeric.f_integer_p(context, exp)) return getInfinity(context, isEven(exp) ? 1 : -1);
 
-            return getInfinity(context.runtime, -1); // (-0) ** (-non_integer) -> Infinity
+            return getInfinity(context, -1); // (-0) ** (-non_integer) -> Infinity
         }
 
-        if (Numeric.f_zero_p(context, exp)) return new RubyBigDecimal(context.runtime, BigDecimal.ONE);
-
-        return getZero(context.runtime, 1);
+        return Numeric.f_zero_p(context, exp) ?
+                new RubyBigDecimal(context.runtime, BigDecimal.ONE) :
+                getZero(context, 1);
     }
 
-    private static IRubyObject vpPrecLimit(final Ruby runtime) {
-        return runtime.getClass("BigDecimal").searchInternalModuleVariable("vpPrecLimit");
+    private static IRubyObject vpPrecLimit(ThreadContext context) {
+        return context.runtime.getClass("BigDecimal").searchInternalModuleVariable("vpPrecLimit");
     }
 
-    private static int getPrecLimit(final Ruby runtime) {
-        return RubyNumeric.fix2int(vpPrecLimit(runtime));
+    private static int getPrecLimit(ThreadContext context) {
+        return RubyNumeric.fix2int(vpPrecLimit(context));
     }
 
     @JRubyMethod(name = "**")
@@ -1188,17 +1175,15 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = "power")
     public IRubyObject op_power(ThreadContext context, IRubyObject exp, IRubyObject prec) {
-        final Ruby runtime = context.runtime;
-
-        if (isNaN()) return getNaN(runtime);
+        if (isNaN()) return getNaN(context);
         if (!(exp instanceof RubyNumeric)) throw typeError(context, exp, "scalar Numeric");
 
         if (exp instanceof RubyBignum || exp instanceof RubyFixnum) {
         } else if (exp instanceof RubyFloat) {
             double d = ((RubyFloat) exp).getValue();
             if (d == Math.round(d)) {
-                exp = RubyNumeric.fixable(runtime, d) ?
-                        RubyFixnum.newFixnum(runtime, (long) d) : RubyBignum.newBignorm(runtime, d);
+                exp = RubyNumeric.fixable(context.runtime, d) ?
+                        newFixnum(context, (long) d) : RubyBignum.newBignorm(context.runtime, d);
             }
         } else if (exp instanceof RubyRational) {
             if (Numeric.f_zero_p(context, Numeric.f_numerator(context, exp))) {
@@ -1207,7 +1192,7 @@ public class RubyBigDecimal extends RubyNumeric {
                 exp = Numeric.f_numerator(context, exp);
             }
         } else if (exp instanceof RubyBigDecimal) {
-            IRubyObject zero = RubyNumeric.int2fix(runtime, 0);
+            IRubyObject zero = RubyNumeric.int2fix(context.runtime, 0);
             IRubyObject rounded = ((RubyBigDecimal)exp).round(context, new IRubyObject[]{zero});
             if (((RubyBigDecimal)exp).eql_p(context, rounded).isTrue()) {
                 exp = ((RubyBigDecimal)exp).to_int();
@@ -1236,22 +1221,22 @@ public class RubyBigDecimal extends RubyNumeric {
         } else if (exp instanceof RubyBignum) {
             BigDecimal absValue = value.abs();
             if (absValue.equals(BigDecimal.ONE)) {
-                return new RubyBigDecimal(runtime, BigDecimal.ONE, 0, 1) ;
+                return new RubyBigDecimal(context.runtime, BigDecimal.ONE, 0, 1) ;
             } else if (absValue.compareTo(BigDecimal.ONE) == -1) {
                 if (Numeric.f_negative_p(context, exp)) {
-                    return getInfinity(runtime, (isEven((RubyBignum)exp) ? 1 : -1 ) * value.signum());
+                    return getInfinity(context, (isEven((RubyBignum)exp) ? 1 : -1 ) * value.signum());
                 } else if (Numeric.f_negative_p(context, this) && isEven((RubyBignum)exp)) {
-                    return getZero(runtime, -1);
+                    return getZero(context, -1);
                 } else {
-                    return getZero(runtime, 1);
+                    return getZero(context, 1);
                 }
             } else {
                 if (!Numeric.f_negative_p(context, exp)) {
-                    return getInfinity(runtime, (isEven((RubyBignum)exp) ? 1 : -1 ) * value.signum());
+                    return getInfinity(context, (isEven((RubyBignum)exp) ? 1 : -1 ) * value.signum());
                 } else if(value.signum() == -1 && isEven((RubyBignum)exp)) {
-                    return getZero(runtime, -1);
+                    return getZero(context, -1);
                 } else {
-                    return getZero(runtime, 1);
+                    return getZero(context, 1);
                 }
             }
         } else if ( ! ( exp instanceof RubyInteger ) ) {
@@ -1260,17 +1245,15 @@ public class RubyBigDecimal extends RubyNumeric {
             BigDecimal expVal = BigDecimal.valueOf( ((RubyNumeric) exp).getDoubleValue() );
             BigDecimal[] divAndRem = expVal.divideAndRemainder(BigDecimal.ONE);
             times = divAndRem[0].intValueExact(); rem = divAndRem[1].doubleValue();
-        }
-        else {
+        } else {
             times = RubyNumeric.fix2int(exp); rem = 0;
         }
 
         BigDecimal pow;
         if ( times < 0 ) {
-            if (isZero()) return getInfinity(context.runtime, value.signum());
+            if (isZero()) return getInfinity(context, value.signum());
             pow = powNegative(times);
-        }
-        else {
+        } else {
             pow = value.pow(times);
         }
 
@@ -1280,11 +1263,9 @@ public class RubyBigDecimal extends RubyNumeric {
             pow = pow.multiply( BigDecimal.valueOf(remPow) );
         }
 
-        if (!prec.isNil()) {
-            pow = pow.setScale(nx, getRoundingMode(context.runtime));
-        }
+        if (!prec.isNil()) pow = pow.setScale(nx, getRoundingMode(context));
 
-        return new RubyBigDecimal(runtime, pow);
+        return new RubyBigDecimal(context.runtime, pow);
     }
 
     // mri bigdecimal_power_by_bigdecimal
@@ -1316,7 +1297,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = "+")
     public IRubyObject op_plus(ThreadContext context, IRubyObject b) {
-        return addInternal(context, getVpValueWithPrec(context, b, false), b, vpPrecLimit(context.runtime));
+        return addInternal(context, getVpValueWithPrec(context, b, false), b, vpPrecLimit(context));
     }
 
     @JRubyMethod(name = "add")
@@ -1325,7 +1306,6 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private IRubyObject addInternal(ThreadContext context, RubyBigDecimal val, IRubyObject b, IRubyObject digits) {
-        final Ruby runtime = context.runtime;
         int prec = getPositiveInt(context, digits);
         if (val == null) {
             // TODO:
@@ -1336,46 +1316,39 @@ public class RubyBigDecimal extends RubyNumeric {
             // We'll use ours for now, thus providing an ability to add Floats.
             RubyBigDecimal ret = (RubyBigDecimal) callCoerced(context, sites(context).op_plus, b, true);
             if (ret != null) {
-                ret.setResult(prec);
+                ret.setResult(context, prec);
             }
             return ret;
         }
 
         RubyBigDecimal res = addSpecialCases(context, val);
         if ( res != null ) return res;
-        MathContext mathContext = new MathContext(prec, getRoundingMode(runtime));
-        return new RubyBigDecimal(runtime, value.add(val.value, mathContext)).setResult(prec);
+        MathContext mathContext = new MathContext(prec, getRoundingMode(context));
+        return new RubyBigDecimal(context.runtime, value.add(val.value, mathContext)).setResult(context, prec);
     }
 
     private static int getPositiveInt(ThreadContext context, IRubyObject arg) {
         int value = Convert.castAsFixnum(context, arg).getIntValue();
-        if (value < 0) throw context.runtime.newArgumentError("argument must be positive");
+        if (value < 0) throw argumentError(context, "argument must be positive");
         return value;
     }
 
     private RubyBigDecimal addSpecialCases(ThreadContext context, RubyBigDecimal val) {
-        if (isNaN() || val.isNaN) {
-            return getNaN(context.runtime);
-        }
+        if (isNaN() || val.isNaN) return getNaN(context);
+
         if (isZero()) {
-            if (val.isZero()) {
-                return getZero(context.runtime, zeroSign == val.zeroSign ? zeroSign : 1);
-            }
-            if (val.isInfinity()) {
-                return getInfinity(context.runtime, val.infinitySign);
-            }
+            if (val.isZero()) return getZero(context, zeroSign == val.zeroSign ? zeroSign : 1);
+            if (val.isInfinity()) return getInfinity(context, val.infinitySign);
             return new RubyBigDecimal(context.runtime, val.value);
         }
 
         int sign = infinitySign * val.infinitySign;
 
-        if (sign > 0) return getInfinity(context.runtime, infinitySign);
-        if (sign < 0) return getNaN(context.runtime);
+        if (sign > 0) return getInfinity(context, infinitySign);
+        if (sign < 0) return getNaN(context);
         if (sign == 0) {
             sign = infinitySign + val.infinitySign;
-            if (sign != 0) {
-                return getInfinity(context.runtime, sign);
-            }
+            if (sign != 0) return getInfinity(context, sign);
         }
         return null;
     }
@@ -1389,9 +1362,9 @@ public class RubyBigDecimal extends RubyNumeric {
     @Override
     @JRubyMethod(name = "-@")
     public IRubyObject op_uminus(ThreadContext context) {
-        if (isNaN()) return getNaN(context.runtime);
-        if (isInfinity()) return getInfinity(context.runtime, -infinitySign);
-        if (isZero()) return getZero(context.runtime, -zeroSign);
+        if (isNaN()) return getNaN(context);
+        if (isInfinity()) return getInfinity(context, -infinitySign);
+        if (isZero()) return getZero(context, -zeroSign);
 
         return new RubyBigDecimal(context.runtime, value.negate());
     }
@@ -1407,36 +1380,29 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private IRubyObject subInternal(ThreadContext context, RubyBigDecimal val, IRubyObject b, int prec) {
-        if (val == null) return ((RubyBigDecimal)callCoerced(context, sites(context).op_minus, b, true)).setResult(prec);
+        if (val == null) return ((RubyBigDecimal)callCoerced(context, sites(context).op_minus, b, true)).setResult(context, prec);
         RubyBigDecimal res = subSpecialCases(context, val);
-        return res != null ? res : new RubyBigDecimal(context.runtime, value.subtract(val.value)).setResult(prec);
+        return res != null ? res : new RubyBigDecimal(context.runtime, value.subtract(val.value)).setResult(context, prec);
     }
 
     private RubyBigDecimal subSpecialCases(ThreadContext context, RubyBigDecimal val) {
-        if (isNaN() || val.isNaN()) {
-            return getNaN(context.runtime);
-        }
+        if (isNaN() || val.isNaN()) return getNaN(context);
+
         if (isZero()) {
-            if (val.isZero()) return getZero(context.runtime, zeroSign * val.zeroSign);
-            if (val.isInfinity()) return getInfinity(context.runtime, val.infinitySign * -1);
+            if (val.isZero()) return getZero(context, zeroSign * val.zeroSign);
+            if (val.isInfinity()) return getInfinity(context, val.infinitySign * -1);
             return new RubyBigDecimal(context.runtime, val.value.negate());
         }
 
         int sign = infinitySign * val.infinitySign;
 
-        if (sign > 0) return getNaN(context.runtime);
-        if (sign < 0) return getInfinity(context.runtime, infinitySign);
+        if (sign > 0) return getNaN(context);
+        if (sign < 0) return getInfinity(context, infinitySign);
         if (sign == 0) {
-            if (isInfinity()) {
-                return this;
-            }
-            if (val.isInfinity()) {
-                return getInfinity(context.runtime, val.infinitySign * -1);
-            }
+            if (isInfinity()) return this;
+            if (val.isInfinity()) return getInfinity(context, val.infinitySign * -1);
             sign = infinitySign + val.infinitySign;
-            if (sign != 0) {
-                return getInfinity(context.runtime, sign);
-            }
+            if (sign != 0) return getInfinity(context, sign);
         }
         return null;
     }
@@ -1447,7 +1413,7 @@ public class RubyBigDecimal extends RubyNumeric {
         RubyBigDecimal val = getVpValueWithPrec(context, other, false);
         if (val == null) return callCoerced(context, sites(context).op_quo, other, true);
 
-        if (isNaN() || val.isNaN()) return getNaN(context.runtime);
+        if (isNaN() || val.isNaN()) return getNaN(context);
 
         RubyBigDecimal div = divSpecialCases(context, val);
         if (div != null) return div;
@@ -1473,7 +1439,6 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private RubyBigDecimal quoImpl(ThreadContext context, RubyBigDecimal that) {
-        Ruby runtime = context.runtime;
         int mx = this.getPrecisionScale()[0];
         int mxb = that.getPrecisionScale()[0];
         if (mx < mxb) mx = mxb;
@@ -1482,14 +1447,14 @@ public class RubyBigDecimal extends RubyNumeric {
             mx = VP_DOUBLE_FIG * 2;
         }
 
-        final int limit = getPrecLimit(runtime);
+        final int limit = getPrecLimit(context);
         if (limit > 0 && limit < mx) mx = limit;
         mx = (mx + 8) / BASE_FIG * BASE_FIG;
 
-        RoundingMode mode = getRoundingMode(runtime);
+        RoundingMode mode = getRoundingMode(context);
         MathContext mathContext = new MathContext(mx * 2, mode);
         BigDecimal ret = divide(this.value, that.value, mathContext).setScale(mx, mode);
-        return new RubyBigDecimal(context.runtime, ret).setResult(limit);
+        return new RubyBigDecimal(context.runtime, ret).setResult(context, limit);
     }
 
     // NOTE: base on Android's
@@ -1536,15 +1501,15 @@ public class RubyBigDecimal extends RubyNumeric {
         RubyBigDecimal thiz = getVpValue(context, a, true);
         RubyBigDecimal that = getVpValue(context, b, true);
 
-        if (thiz.isNaN() || that.isNaN()) return getNaN(context.runtime);
+        if (thiz.isNaN() || that.isNaN()) return getNaN(context);
 
         RubyBigDecimal div = thiz.divSpecialCases(context, that);
         if (div != null) return div;
 
         int mx = thiz.value.precision() + that.value.precision() + 2;
 
-        MathContext mathContext = new MathContext((mx * 2 + 2) * BASE_FIG, getRoundingMode(context.runtime));
-        return new RubyBigDecimal(context.runtime, thiz.value.divide(that.value, mathContext)).setResult(ix);
+        MathContext mathContext = new MathContext((mx * 2 + 2) * BASE_FIG, getRoundingMode(context));
+        return new RubyBigDecimal(context.runtime, thiz.value.divide(that.value, mathContext)).setResult(context, ix);
     }
 
     // mri : BigDecimal_div3
@@ -1554,25 +1519,24 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private RubyInteger idiv(ThreadContext context, RubyRational val) {
-        if (isNaN()) throw newNaNFloatDomainError(context.runtime);
+        if (isNaN()) throw newNaNFloatDomainError(context);
         if (isInfinity()) { // NOTE: MRI is inconsistent with div(other, d) impl
-            throw newInfinityFloatDomainError(context.runtime, infinitySign);
+            throw newInfinityFloatDomainError(context, infinitySign);
         }
         if (val.isZero()) throw context.runtime.newZeroDivisionError();
 
         BigDecimal result = this.value.multiply(toBigDecimal(context, val.getDenominator()))
                                       .divideToIntegralValue(toBigDecimal(context, val.getNumerator()));
-        return toInteger(context.runtime, result);
+        return toInteger(context, result);
     }
 
     private static final BigDecimal MAX_FIX = BigDecimal.valueOf(RubyFixnum.MAX);
     private static final BigDecimal MIN_FIX = BigDecimal.valueOf(RubyFixnum.MIN);
 
-    private static RubyInteger toInteger(final Ruby runtime, final BigDecimal result) {
-        if (result.compareTo(MAX_FIX) <= 0 && result.compareTo(MIN_FIX) >= 0) {
-            return RubyFixnum.newFixnum(runtime, result.longValue());
-        }
-        return RubyBignum.newBignum(runtime, result.toBigInteger());
+    private static RubyInteger toInteger(ThreadContext context, final BigDecimal result) {
+        return result.compareTo(MAX_FIX) <= 0 && result.compareTo(MIN_FIX) >= 0 ?
+                newFixnum(context, result.longValue()) :
+                RubyBignum.newBignum(context.runtime, result.toBigInteger());
     }
 
     // mri : BigDecimal_div2
@@ -1582,15 +1546,15 @@ public class RubyBigDecimal extends RubyNumeric {
         if (digits.isNil()) {
             if (val == null) return callCoerced(context, sites(context).div, other, true);
 
-            if (isNaN() || val.isNaN()) throw newNaNFloatDomainError(context.runtime);
+            if (isNaN() || val.isNaN()) throw newNaNFloatDomainError(context);
             if (isInfinity()) { // NOTE: MRI is inconsistent with div(other, d) impl
-                if (val.isInfinity()) throw newNaNFloatDomainError(context.runtime);
-                throw newInfinityFloatDomainError(context.runtime, infinitySign);
+                if (val.isInfinity()) throw newNaNFloatDomainError(context);
+                throw newInfinityFloatDomainError(context, infinitySign);
             }
             if (val.isZero()) throw context.runtime.newZeroDivisionError();
 
             if (val.isInfinity()) return RubyFixnum.zero(context.runtime);
-            return toInteger(context.runtime, this.value.divideToIntegralValue(val.value));
+            return toInteger(context, this.value.divideToIntegralValue(val.value));
         }
 
         final int scale = RubyNumeric.fix2int(digits);
@@ -1599,43 +1563,38 @@ public class RubyBigDecimal extends RubyNumeric {
         if (scale == 0) return op_divide(context, other);
 
         val = getVpValue(context, other, true);
-        if (isNaN() || val.isNaN()) return getNaN(context.runtime);
+        if (isNaN() || val.isNaN()) return getNaN(context);
 
         RubyBigDecimal div = divSpecialCases(context, val);
         if (div != null) return div;
 
-        MathContext mathContext = new MathContext(scale, getRoundingMode(context.runtime));
-        return new RubyBigDecimal(context.runtime, value.divide(val.value, mathContext)).setResult(scale);
+        MathContext mathContext = new MathContext(scale, getRoundingMode(context));
+        return new RubyBigDecimal(context.runtime, value.divide(val.value, mathContext)).setResult(context, scale);
     }
 
     private RubyBigDecimal divSpecialCases(ThreadContext context, RubyBigDecimal val) {
         if (isInfinity()) {
-            if (val.isInfinity()) return getNaN(context.runtime);
-            return getInfinity(context.runtime, infinitySign * val.value.signum());
+            return val.isInfinity() ? getNaN(context) : getInfinity(context, infinitySign * val.value.signum());
         }
-        if (val.isInfinity()) return getZero(context.runtime, value.signum() * val.infinitySign);
+        if (val.isInfinity()) return getZero(context, value.signum() * val.infinitySign);
 
         if (val.isZero()) {
-            if (isZero()) return getNaN(context.runtime);
-            if (isZeroDivideExceptionMode(context.runtime)) {
-                throw context.runtime.newFloatDomainError("Divide by zero");
-            }
+            if (isZero()) return getNaN(context);
+            if (isZeroDivideExceptionMode(context)) throw context.runtime.newFloatDomainError("Divide by zero");
+
             int sign1 = isInfinity() ? infinitySign : value.signum();
-            return getInfinity(context.runtime, sign1 * val.zeroSign, InfinityErrorMsgType.In);
+            return getInfinity(context, sign1 * val.zeroSign, InfinityErrorMsgType.In);
         }
-        if (isZero()) return getZero(context.runtime, zeroSign * val.value.signum());
+        if (isZero()) return getZero(context, zeroSign * val.value.signum());
 
         return null;
     }
 
     private IRubyObject cmp(ThreadContext context, final IRubyObject arg, final char op) {
         final int e;
-        RubyBigDecimal rb;
-        if (arg instanceof RubyRational) {
-            rb = getVpValueWithPrec(context, arg, false);
-        } else {
-            rb = getVpValue(context, arg, false);
-        }
+        RubyBigDecimal rb = arg instanceof RubyRational ?
+                getVpValueWithPrec(context, arg, false) : getVpValue(context, arg, false);
+
         if (rb == null) {
             String id = "!=";
             switch (op) {
@@ -1658,7 +1617,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
             IRubyObject cmp = callCoerced(context, id, arg);
             if (cmp == context.nil) { // arg.coerce failed
-                throw context.runtime.newArgumentError("comparison of BigDecimal with "+ errMessageType(context, arg) +" failed");
+                throw argumentError(context, "comparison of BigDecimal with "+ errMessageType(context, arg) +" failed");
             }
             return cmp;
         }
@@ -1722,12 +1681,17 @@ public class RubyBigDecimal extends RubyNumeric {
         return cmp(context, arg, 'G');
     }
 
-    @JRubyMethod
+    @Deprecated(since = "10.0", forRemoval = true)
     public IRubyObject abs() {
-        if (isNaN()) return getNaN(getRuntime());
-        if (isInfinity()) return getInfinity(getRuntime(), 1);
+        return abs(getCurrentContext());
+    }
 
-        return new RubyBigDecimal(getRuntime(), value.abs()).setResult();
+    @JRubyMethod
+    public IRubyObject abs(ThreadContext context) {
+        if (isNaN()) return getNaN(context);
+        if (isInfinity()) return getInfinity(context, 1);
+
+        return new RubyBigDecimal(context.runtime, value.abs()).setResult(context);
     }
 
     @JRubyMethod
@@ -1806,14 +1770,16 @@ public class RubyBigDecimal extends RubyNumeric {
         RubyBigDecimal val = getVpValueWithPrec(context, other, false);
         if (val == null) return callCoerced(context, sites(context).divmod, other, true);
 
-        if (isNaN() || val.isNaN() || isInfinity() && val.isInfinity()) return RubyArray.newArray(runtime, getNaN(runtime), getNaN(runtime));
+        if (isNaN() || val.isNaN() || isInfinity() && val.isInfinity()) {
+            return RubyArray.newArray(runtime, getNaN(context), getNaN(context));
+        }
         if (val.isZero()) throw runtime.newZeroDivisionError();
         if (isInfinity()) {
             int sign = (infinitySign == val.value.signum()) ? 1 : -1;
-            return RubyArray.newArray(runtime, getInfinity(runtime, sign), getNaN(runtime));
+            return RubyArray.newArray(runtime, getInfinity(context, sign), getNaN(context));
         }
-        if (val.isInfinity()) return RubyArray.newArray(runtime, getZero(runtime, val.value.signum()), this);
-        if (isZero()) return RubyArray.newArray(runtime, getZero(runtime, value.signum()), getZero(runtime, value.signum()));
+        if (val.isInfinity()) return RubyArray.newArray(runtime, getZero(context, val.value.signum()), this);
+        if (isZero()) return RubyArray.newArray(runtime, getZero(context, value.signum()), getZero(context, value.signum()));
 
         // Java and MRI definitions of divmod are different.
         BigDecimal[] divmod = value.divideAndRemainder(val.value);
@@ -1850,8 +1816,8 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private RubyBigDecimal floorNaNInfinityCheck(ThreadContext context) {
-        if (isNaN()) throw newNaNFloatDomainError(context.runtime);
-        if (isInfinity()) throw newInfinityFloatDomainError(context.runtime, infinitySign);
+        if (isNaN()) throw newNaNFloatDomainError(context);
+        if (isInfinity()) throw newInfinityFloatDomainError(context, infinitySign);
         return null;
     }
 
@@ -1869,18 +1835,17 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyMethod
     public IRubyObject floor(ThreadContext context, IRubyObject arg) {
         RubyBigDecimal res = floorNaNInfinityCheck(context);
-        if (res != null) return res;
-        return floorImpl(context, RubyNumeric.fix2int(arg));
+        return res != null ? res : floorImpl(context, RubyNumeric.fix2int(arg));
      }
 
     @JRubyMethod
     public IRubyObject frac(ThreadContext context) {
-        if (isNaN()) return getNaN(context.runtime);
-        if (isInfinity()) return getInfinity(context.runtime, infinitySign);
+        if (isNaN()) return getNaN(context);
+        if (isInfinity()) return getInfinity(context, infinitySign);
 
-        if (value.scale() > 0 && value.precision() < value.scale()) return new RubyBigDecimal(context.runtime, value);
-
-        return new RubyBigDecimal(context.runtime, value.subtract(((RubyBigDecimal)fix()).value));
+        return value.scale() > 0 && value.precision() < value.scale() ?
+                new RubyBigDecimal(context.runtime, value) :
+                new RubyBigDecimal(context.runtime, value.subtract(((RubyBigDecimal)fix()).value));
     }
 
     @JRubyMethod(name = "infinite?")
@@ -1991,27 +1956,24 @@ public class RubyBigDecimal extends RubyNumeric {
     public IRubyObject round(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 0, 2);
 
-        Ruby runtime = context.runtime;
-
         // Special treatment for BigDecimal::NAN and BigDecimal::INFINITY
         //
         // If round is called without any argument, we should raise a
         // FloatDomainError. Otherwise, we don't have to call round ;
         // we can simply return the number itself.
         if (isNaN()) {
-            if (argc == 0) {
-                throw newNaNFloatDomainError(runtime);
-            }
-            return getNaN(runtime);
+            if (argc == 0) throw newNaNFloatDomainError(context);
+
+            return getNaN(context);
         }
         if (isInfinity()) {
             if (argc == 0) {
-                throw newInfinityFloatDomainError(runtime, infinitySign);
+                throw newInfinityFloatDomainError(context, infinitySign);
             }
-            return getInfinity(runtime, infinitySign);
+            return getInfinity(context, infinitySign);
         }
 
-        RoundingMode mode = getRoundingMode(runtime);
+        RoundingMode mode = getRoundingMode(context);
         int scale = 0;
         boolean roundToInt = false;
 
@@ -2021,7 +1983,7 @@ public class RubyBigDecimal extends RubyNumeric {
                 scale = num2int(args[0]);
                 break;
             case 1:
-                if (ArgsUtil.getOptionsArg(runtime, args[0]) == context.nil) {
+                if (ArgsUtil.getOptionsArg(context.runtime, args[0]) == context.nil) {
                     scale = num2int(args[0]);
                     if (scale < 1) {
                         roundToInt = true;
@@ -2044,12 +2006,12 @@ public class RubyBigDecimal extends RubyNumeric {
             // ...round to that digit
             BigDecimal rounded = normalized.setScale(0, mode);
             // ...and shift the result back to the left (multiply by 10**(abs(scale)))
-            bigDecimal = new RubyBigDecimal(runtime, rounded.movePointLeft(scale));
+            bigDecimal = new RubyBigDecimal(context.runtime, rounded.movePointLeft(scale));
         } else {
-            bigDecimal = new RubyBigDecimal(runtime, value.setScale(scale, mode));
+            bigDecimal = new RubyBigDecimal(context.runtime, value.setScale(scale, mode));
         }
 
-        return roundToInt ? bigDecimal.to_int(runtime) : bigDecimal;
+        return roundToInt ? bigDecimal.to_int(context.runtime) : bigDecimal;
     }
 
     public IRubyObject round(ThreadContext context, IRubyObject scale, IRubyObject mode) {
@@ -2072,17 +2034,17 @@ public class RubyBigDecimal extends RubyNumeric {
         } else if (mode.equals(RoundingMode.HALF_EVEN)) {
             return ROUND_HALF_EVEN;
         } else {
-            throw context.runtime.newArgumentError("invalid rounding mode");
+            throw argumentError(context, "invalid rounding mode");
         }
     }
 
     //this relies on the Ruby rounding enumerations == Java ones, which they (currently) all are
     private static RoundingMode javaRoundingModeFromRubyRoundingMode(ThreadContext context, IRubyObject arg) {
-        if (arg == context.nil) return getRoundingMode(context.runtime);
+        if (arg == context.nil) return getRoundingMode(context);
         IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, arg);
         if (opts != context.nil) {
             arg = ArgsUtil.extractKeywordArg(context, (RubyHash) opts, "half");
-            if (arg == null || arg == context.nil) return getRoundingMode(context.runtime);
+            if (arg == null || arg == context.nil) return getRoundingMode(context);
             String roundingMode;
             if (arg instanceof RubySymbol) {
                 roundingMode = arg.asJavaString();
@@ -2097,7 +2059,7 @@ public class RubyBigDecimal extends RubyNumeric {
                 case "even" :
                     return RoundingMode.HALF_EVEN;
                 default :
-                    throw context.runtime.newArgumentError("invalid rounding mode (" + roundingMode + ")");
+                    throw argumentError(context, "invalid rounding mode (" + roundingMode + ")");
             }
         }
         if (arg instanceof RubySymbol) {
@@ -2123,7 +2085,7 @@ public class RubyBigDecimal extends RubyNumeric {
                 case "floor" :
                     return RoundingMode.FLOOR;
                 default :
-                    throw context.runtime.newArgumentError("invalid rounding mode (" + roundingMode + ")");
+                    throw argumentError(context, "invalid rounding mode (" + roundingMode + ")");
             }
         } else {
             int ordinal = num2int(arg);
@@ -2143,7 +2105,7 @@ public class RubyBigDecimal extends RubyNumeric {
                 case ROUND_HALF_EVEN :
                     return RoundingMode.HALF_EVEN;
                 default :
-                    throw context.runtime.newArgumentError("invalid rounding mode");
+                    throw argumentError(context, "invalid rounding mode");
             }
         }
     }
@@ -2198,53 +2160,66 @@ public class RubyBigDecimal extends RubyNumeric {
         return val.precision() - val.scale();
     }
 
-    @JRubyMethod
+    @Deprecated(since = "10.0", forRemoval = true)
     public IRubyObject sqrt(IRubyObject arg) {
-        Ruby runtime = getRuntime();
-        if (isNaN()) throw runtime.newFloatDomainError("sqrt of 'NaN'(Not a Number)");
-        if ((isInfinity() && infinitySign < 0) || value.signum() < 0) throw runtime.newFloatDomainError("sqrt of negative value");
-        if (isInfinity() && infinitySign > 0) return getInfinity(runtime, 1);
+        return sqrt(getCurrentContext(), arg);
+    }
 
-        int n = RubyNumeric.num2int(precision(runtime.getCurrentContext())) * (getPrecisionInt(runtime, arg) + 1);
+    @JRubyMethod
+    public IRubyObject sqrt(ThreadContext context, IRubyObject arg) {
+        if (isNaN()) throw context.runtime.newFloatDomainError("sqrt of 'NaN'(Not a Number)");
+        if ((isInfinity() && infinitySign < 0) || value.signum() < 0) {
+            throw context.runtime.newFloatDomainError("sqrt of negative value");
+        }
+        if (isInfinity() && infinitySign > 0) return getInfinity(context, 1);
 
-        return new RubyBigDecimal(runtime, bigSqrt(value, new MathContext(n, RoundingMode.HALF_UP))).setResult();
+        int n = RubyNumeric.num2int(precision(context)) * (getPrecisionInt(context, arg) + 1);
+
+        return new RubyBigDecimal(context.runtime, bigSqrt(value, new MathContext(n, RoundingMode.HALF_UP))).setResult(context);
     }
 
     // MRI: GetPrecisionInt(VALUE v)
-    private static int getPrecisionInt(final Ruby runtime, final IRubyObject v) {
+    private static int getPrecisionInt(ThreadContext context, final IRubyObject v) {
         int n = RubyNumeric.num2int(v);
-        if (n < 0) throw runtime.newArgumentError("negative precision");
+        if (n < 0) throw argumentError(context, "negative precision");
         return n;
     }
 
-    @JRubyMethod
-    public IRubyObject to_f() { return toFloat(getRuntime(), true); }
+    @Deprecated(since = "10.0", forRemoval = true)
+    public IRubyObject to_f() {
+        return toFloat(getCurrentContext(), true);
+    }
 
-    private RubyFloat toFloat(final Ruby runtime, final boolean checkFlow) {
-        if (isNaN()) return RubyFloat.newFloat(runtime, Double.NaN);
-        if (isInfinity()) return RubyFloat.newFloat(runtime, infinitySign < 0 ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY);
-        if (isZero()) return RubyFloat.newFloat(runtime, zeroSign < 0 ? -0.0 : 0.0);
+    @JRubyMethod
+    public IRubyObject to_f(ThreadContext context) {
+        return toFloat(context, true);
+    }
+
+    private RubyFloat toFloat(ThreadContext context, final boolean checkFlow) {
+        if (isNaN()) return newFloat(context, Double.NaN);
+        if (isInfinity()) return newFloat(context, infinitySign < 0 ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY);
+        if (isZero()) return newFloat(context, zeroSign < 0 ? -0.0 : 0.0);
 
         int exponent = getExponent();
         if (exponent > RubyFloat.MAX_10_EXP + VP_DOUBLE_FIG) {
-            if (checkFlow && isOverflowExceptionMode(runtime)) {
-                throw runtime.newFloatDomainError("BigDecimal to Float conversion");
+            if (checkFlow && isOverflowExceptionMode(context)) {
+                throw context.runtime.newFloatDomainError("BigDecimal to Float conversion");
             }
-            return RubyFloat.newFloat(getRuntime(), value.signum() > 0 ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY);
+            return newFloat(context, value.signum() > 0 ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY);
         }
         if (exponent < RubyFloat.MIN_10_EXP - VP_DOUBLE_FIG) {
-            if (checkFlow && isUnderflowExceptionMode(runtime)) {
-                throw runtime.newFloatDomainError("BigDecimal to Float conversion");
+            if (checkFlow && isUnderflowExceptionMode(context)) {
+                throw context.runtime.newFloatDomainError("BigDecimal to Float conversion");
             }
-            return RubyFloat.newFloat(getRuntime(), 0);
+            return newFloat(context, 0);
         }
 
-        return RubyFloat.newFloat(runtime, SafeDoubleParser.doubleValue(value));
+        return newFloat(context, SafeDoubleParser.doubleValue(value));
     }
 
     @Override
     public RubyFloat convertToFloat() {
-        return toFloat(getRuntime(), false);
+        return toFloat(getRuntime().getCurrentContext(), false);
     }
 
     public final IRubyObject to_int() {
@@ -2449,9 +2424,9 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @Override
     public String toString() {
-        if ( isNaN() ) return "NaN";
-        if ( isInfinity() ) return infinityString(infinitySign);
-        if ( isZero() ) return zeroSign < 0 ? "-0.0" : "0.0";
+        if (isNaN()) return "NaN";
+        if (isInfinity()) return infinityString(infinitySign);
+        if (isZero()) return zeroSign < 0 ? "-0.0" : "0.0";
 
         return engineeringValue(null).toString();
     }
@@ -2462,33 +2437,35 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     // Note: #fix has only no-arg form, but truncate allows optional parameter.
-
-    @JRubyMethod
+    @Deprecated(since = "10.0", forRemoval = true)
     public IRubyObject fix() {
-        return truncateInternal(getRuntime(), 0);
+        return fix(getCurrentContext());
     }
 
-    private RubyBigDecimal truncateInternal(final Ruby runtime, int arg) {
-        if (isNaN()) return getNaN(runtime);
-        if (isInfinity()) return getInfinity(runtime, infinitySign);
+    @JRubyMethod
+    public IRubyObject fix(ThreadContext context) {
+        return truncateInternal(context, 0);
+    }
+
+    private RubyBigDecimal truncateInternal(ThreadContext context, int arg) {
+        if (isNaN()) return getNaN(context);
+        if (isInfinity()) return getInfinity(context, infinitySign);
 
         int precision = value.precision() - value.scale() + arg;
 
-        if (precision > 0) {
-            return new RubyBigDecimal(runtime, value.round(new MathContext(precision, RoundingMode.DOWN)));
-        }
-
-        return getZero(runtime, this.zeroSign);
+        return precision > 0 ?
+                new RubyBigDecimal(context.runtime, value.round(new MathContext(precision, RoundingMode.DOWN))) :
+                getZero(context, this.zeroSign);
     }
 
     @JRubyMethod
     public IRubyObject truncate(ThreadContext context) {
-        return truncateInternal(context.runtime, 0).to_int(context.runtime);
+        return truncateInternal(context, 0).to_int(context.runtime);
     }
 
     @JRubyMethod
     public IRubyObject truncate(ThreadContext context, IRubyObject arg) {
-        return truncateInternal(context.runtime, RubyNumeric.fix2int(arg));
+        return truncateInternal(context, RubyNumeric.fix2int(arg));
     }
 
     @Override

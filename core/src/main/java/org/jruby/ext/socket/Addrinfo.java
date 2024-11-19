@@ -302,7 +302,7 @@ public class Addrinfo extends RubyObject {
                 }
 
             } else {
-                this.socketAddress = Sockaddr.sockaddrFromBytes(runtime, sockaddrArg.convertToString().getBytes());
+                this.socketAddress = Sockaddr.sockaddrFromBytes(context, sockaddrArg.convertToString().getBytes());
                 this.pfamily = protocolFamilyArg.isNil() ? PF_UNSPEC: SocketUtils.protocolFamilyFromArg(protocolFamilyArg);
                 if (!protocolArg.isNil()) this.protocol = SocketUtils.protocolFromArg(protocolArg);
                 if (!socketTypeArg.isNil()) this.sock = SocketUtils.sockFromArg(socketTypeArg);

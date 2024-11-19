@@ -243,7 +243,7 @@ public class RubyDir extends RubyObject implements Closeable {
 
                 if (rets[1] != null) {
                     if (!(rets[1] instanceof RubyBoolean)) {
-                        throw context.runtime.newArgumentError(str(runtime, "expected true or false as sort:", rets[1]));
+                        throw argumentError(context, str(runtime, "expected true or false as sort:", rets[1]));
                     }
                     options.sort = !runtime.getFalse().equals(rets[1]); // weirdly only explicit false is honored for sort.
                 }
@@ -299,7 +299,7 @@ public class RubyDir extends RubyObject implements Closeable {
         if (!(arg instanceof RubyString)) {
             str = RubyFile.get_path(context, arg);
         } else if (StringSupport.strNullCheck(arg)[0] == null) {
-            throw context.runtime.newArgumentError("nul-separated glob pattern is deprecated");
+            throw argumentError(context, "nul-separated glob pattern is deprecated");
         } else {
             str = (RubyString) arg;
             // FIXME: It is possible this can just be EncodingUtils.strCompatAndValid() but the spec says specifically it must be ascii compat which is more constrained than that method.
@@ -433,54 +433,52 @@ public class RubyDir extends RubyObject implements Closeable {
     /** Changes the current directory to <code>path</code> */
     @JRubyMethod(meta = true)
     public static IRubyObject chdir(ThreadContext context, IRubyObject recv, IRubyObject _path, Block block) {
-        Ruby runtime = context.runtime;
+        RubyString path = StringSupport.checkEmbeddedNulls(context.runtime, RubyFile.get_path(context, _path));
 
-        RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, _path));
-
-        return chdirCommon(context, block, runtime, path);
+        return chdirCommon(context, block, path);
     }
 
     /** Changes the current directory to <code>path</code> */
     @JRubyMethod(meta = true)
     public static IRubyObject chdir(ThreadContext context, IRubyObject recv, Block block) {
-        Ruby runtime = context.runtime;
         RubyHash env = context.runtime.getENV();
 
         if (env.op_aref(context, newString(context, "LOG_DIR")).isNil() &&
                 env.op_aref(context, newString(context, "HOME")).isNil()){
-            throw runtime.newArgumentError("HOME/LOGDIR not set");
+            throw argumentError(context, "HOME/LOGDIR not set");
         }
 
         RubyString path = getHomeDirectoryPath(context);
 
-        return chdirCommon(context, block, runtime, path);
+        return chdirCommon(context, block, path);
     }
 
-    private static IRubyObject chdirCommon(ThreadContext context, Block block, Ruby runtime, RubyString path) {
+    private static IRubyObject chdirCommon(ThreadContext context, Block block, RubyString path) {
+        Ruby runtime = context.runtime;
         String adjustedPath = RubyFile.adjustRootPathOnWindows(runtime, path.asJavaString(), null);
         checkDirIsTwoSlashesOnWindows(runtime, adjustedPath);
 
         adjustedPath = getExistingDir(runtime, adjustedPath).canonicalPath();
 
-        if (context.runtime.getChdirThread() != null && context.getThread() != context.runtime.getChdirThread()) {
+        if (runtime.getChdirThread() != null && context.getThread() != runtime.getChdirThread()) {
             throw runtime.newRuntimeError("conflicting chdir during another chdir block");
         }
 
-        if(!block.isGiven() && context.runtime.getChdirThread() != null) {
+        if(!block.isGiven() && runtime.getChdirThread() != null) {
             context.runtime.getWarnings().warn("conflicting chdir during another chdir block");
         }
 
         IRubyObject result;
 
         if (block.isGiven()) {
-            context.runtime.setChdirThread(context.getThread());
+            runtime.setChdirThread(context.getThread());
             final String oldCwd = runtime.getCurrentDirectory();
 
             runtime.setCurrentDirectory(adjustedPath);
             try {
                 result = block.yield(context, path);
             } finally {
-                context.runtime.setChdirThread(null);
+                runtime.setChdirThread(null);
                 getExistingDir(runtime, oldCwd); // needed in case the block deleted the oldCwd
                 runtime.setCurrentDirectory(oldCwd);
             }
@@ -1140,7 +1138,7 @@ public class RubyDir extends RubyObject implements Closeable {
             }
         }
 
-        throw runtime.newArgumentError("user " + user + " doesn't exist");
+        throw argumentError(context, "user " + user + " doesn't exist");
     }
 
     private static RubyString newFilesystemString(Ruby runtime, String home) {
