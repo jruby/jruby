@@ -66,7 +66,7 @@ public class RubyClassPathVariable extends RubyObject {
     public IRubyObject append(ThreadContext context, IRubyObject obj) {
         IRubyObject[] paths;
         if (obj.respondsTo("to_a")) {
-            paths = ((RubyArray) obj.callMethod(context, "to_a")).toJavaArrayMaybeUnsafe();
+            paths = ((RubyArray<?>) obj.callMethod(context, "to_a")).toJavaArrayMaybeUnsafe();
         } else {
             paths = new IRubyObject[] { obj };
         }
@@ -107,15 +107,15 @@ public class RubyClassPathVariable extends RubyObject {
         return asFixnum(context, context.runtime.getJRubyClassLoader().getURLs().length);
     }
     public IRubyObject size() {
-        return size(getCurrentContext());
+        return size(getRuntime().getCurrentContext());
     }
 
     @JRubyMethod
     public IRubyObject each(Block block) {
         final ThreadContext context = getRuntime().getCurrentContext();
         URL[] urls = context.runtime.getJRubyClassLoader().getURLs();
-        for(int i=0,j=urls.length;i<j;i++) {
-            block.yield(context, newString(context, urls[i].toString()));
+        for (URL url: urls) {
+            block.yield(context, newString(context, url.toString()));
         }
         return context.nil;
     }

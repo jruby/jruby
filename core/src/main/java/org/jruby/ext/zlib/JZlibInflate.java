@@ -78,10 +78,7 @@ public class JZlibInflate extends ZStream {
 
         windowBits = JZlib.DEF_WBITS;
 
-        if (args.length > 0 && !args[0].isNil()) {
-            windowBits = RubyNumeric.fix2int(args[0]);
-            checkWindowBits(context.runtime, windowBits, true);
-        }
+        if (argc > 0 && !args[0].isNil()) windowBits = checkWindowBits(context, RubyNumeric.fix2int(args[0]), true);
 
         init(windowBits);
         return this;

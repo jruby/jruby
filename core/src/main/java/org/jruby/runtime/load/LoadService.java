@@ -37,7 +37,6 @@ package org.jruby.runtime.load;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.security.AccessControlException;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
@@ -62,10 +61,8 @@ import org.jruby.RubyThread;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.CatchThrow;
 import org.jruby.exceptions.JumpException;
-import org.jruby.exceptions.LoadError;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.StandardError;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.platform.Platform;
@@ -147,7 +144,6 @@ public class LoadService {
     static final Logger LOG = LoggerFactory.getLogger(LoadService.class);
 
     private final LoadTimer loadTimer;
-    private boolean canGetAbsolutePath = true;
 
     public enum SuffixType {
         Source(LibrarySearcher.Suffix.SOURCES),
@@ -291,13 +287,14 @@ public class LoadService {
 
     protected void addPath(String path) {
         // Empty paths do not need to be added
-        if (path == null || path.length() == 0) return;
-        final RubyArray loadPath = this.loadPath;
+        if (path == null || path.isEmpty()) return;
+        var loadPath = this.loadPath;
         synchronized(loadPath) {
             final RubyString pathToAdd = runtime.newString(path.replace('\\', '/'));
+            var context = runtime.getCurrentContext();
             // Do not add duplicated paths
-            if (loadPath.includes(runtime.getCurrentContext(), pathToAdd)) return;
-            loadPath.append(pathToAdd);
+            if (loadPath.includes(context, pathToAdd)) return;
+            loadPath.append(context, pathToAdd);
         }
     }
 
@@ -964,20 +961,9 @@ public class LoadService {
     }
 
     protected String resolveLoadName(LoadServiceResource foundResource, String previousPath) {
-        if (canGetAbsolutePath) {
-            try {
-                String path = foundResource.getAbsolutePath();
-                if (Platform.IS_WINDOWS) {
-                    path = path.replace('\\', '/');
-                }
-                return path;
-            } catch (AccessControlException ace) {
-                // can't get absolute path in this security context, so we give up forever
-                runtime.getWarnings().warn("can't canonicalize loaded names due to security restrictions; disabling");
-                canGetAbsolutePath = false;
-            }
-        }
-        return resolveLoadName(foundResource, previousPath);
+        String path = foundResource.getAbsolutePath();
+        if (Platform.IS_WINDOWS) path = path.replace('\\', '/');
+        return path;
     }
 
     public String getMainScript() {

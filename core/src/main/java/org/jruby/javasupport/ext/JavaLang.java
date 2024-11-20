@@ -146,13 +146,10 @@ public abstract class JavaLang {
 
         @JRubyMethod(name = { "to_a", "entries" }) // @override Enumerable#to_a
         public static IRubyObject to_a(final ThreadContext context, final IRubyObject self, final Block block) {
-            final Ruby runtime = context.runtime;
-            final RubyArray ary = runtime.newArray();
-            java.lang.Iterable iterable = unwrapIfJavaObject(self);
-            java.util.Iterator iterator = iterable.iterator();
-            while ( iterator.hasNext() ) {
-                final Object value = iterator.next();
-                ary.append( convertJavaToUsableRubyObject(runtime, value) );
+            final var ary = context.runtime.newArray();
+            java.lang.Iterable<?> iterable = unwrapIfJavaObject(self);
+            for (Object o: iterable) {
+                ary.append(context, convertJavaToUsableRubyObject(context.runtime, o));
             }
             return ary;
         }
@@ -908,7 +905,7 @@ public abstract class JavaLang {
             // <#Java::JavaLang::Thread:760 [foo] bar TIMED_WAITING>
 
             RubyString buf = inspectPrefix(context, self.getMetaClass());
-            RubyStringBuilder.cat(context.runtime, buf, Long.toString(thread.getId()));
+            RubyStringBuilder.cat(context.runtime, buf, Long.toString(thread.threadId()));
             RubyStringBuilder.cat(context.runtime, buf, ' ');
             RubyStringBuilder.cat(context.runtime, buf, thread.getName());
             RubyStringBuilder.cat(context.runtime, buf, ' ');

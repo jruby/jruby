@@ -73,7 +73,7 @@ public final class TopSelfFactory {
         singletonClass.addMethod("include", new JavaMethod.JavaMethodN(singletonClass, Visibility.PRIVATE, "include") {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-                return context.runtime.getObject().include(args);
+                return context.runtime.getObject().include(context, args);
             }
         });
         

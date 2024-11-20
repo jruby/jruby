@@ -789,9 +789,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     public static IRubyObject union(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         IRubyObject obj;
         if (args.length == 1 && !(obj = args[0].checkArrayType()).isNil()) {
-            RubyArray ary = (RubyArray)obj;
+            var ary = (RubyArray<?>) obj;
             IRubyObject[] tmp = new IRubyObject[ary.size()];
-            ary.copyInto(tmp, 0);
+            ary.copyInto(context, tmp, 0);
             args = tmp;
         }
 
@@ -1547,7 +1547,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
             NameEntry e = i.next();
             RubyString name = RubyString.newStringShared(runtime, e.name, e.nameP, e.nameEnd - e.nameP, pattern.getEncoding());
-            ary.storeInternal(index++, name);
+            ary.storeInternal(context, index++, name);
         }
         return ary;
     }
@@ -1568,7 +1568,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             RubyArray ary = RubyArray.newBlankArrayInternal(runtime, backrefs.length);
 
             for (int idx = 0; idx<backrefs.length; idx++) {
-                ary.storeInternal(idx, newFixnum(context, backrefs[idx]));
+                ary.storeInternal(context, idx, newFixnum(context, backrefs[idx]));
             }
             RubyString name = RubyString.newStringShared(runtime, e.name, e.nameP, e.nameEnd - e.nameP);
             hash.fastASet(name.freeze(context), ary);

@@ -268,9 +268,9 @@ public class RubySocket extends RubyBasicSocket {
             while (en.hasMoreElements()) {
                 NetworkInterface iface = en.nextElement();
                 // create interface link layer ifaddr
-                list.append(new Ifaddr(context.runtime, Ifaddr, iface));
+                list.append(context, new Ifaddr(context.runtime, Ifaddr, iface));
                 for ( InterfaceAddress iaddr : iface.getInterfaceAddresses() ) {
-                    list.append(new Ifaddr(context.runtime, Ifaddr, iface, iaddr));
+                    list.append(context, new Ifaddr(context.runtime, Ifaddr, iface, iaddr));
                 }
             }
         }

@@ -7,13 +7,14 @@ package org.jruby.lexer;
 import org.jcodings.Encoding;
 import org.jruby.RubyArray;
 import org.jruby.RubyIO;
-import org.jruby.RubyString;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.ChannelHelper;
 
 import java.io.ByteArrayInputStream;
 import java.nio.channels.Channel;
+
+import static org.jruby.api.Create.newString;
 
 /**
  *  Lexer source for ripper when we have all bytes available to us.
@@ -57,7 +58,11 @@ public class ByteListLexerSource extends LexerSource {
         ByteList line = completeSource.makeShared(offset, end - offset);
         offset = end;
 
-        if (scriptLines != null) scriptLines.append(RubyString.newString(scriptLines.getRuntime(), line));
+
+        if (scriptLines != null) {
+            var context = scriptLines.getRuntime().getCurrentContext();
+            scriptLines.append(context, newString(context, line));
+        }
 
         return line;
     }

@@ -110,7 +110,7 @@ public class RubyEtc {
                 runtime.newSymbol("expire")
         };
         
-        runtime.setPasswdStruct(RubyStruct.newInstance(runtime.getStructClass(), args, Block.NULL_BLOCK));
+        runtime.setPasswdStruct(RubyStruct.newInstance(runtime.getCurrentContext(), runtime.getStructClass(), args, Block.NULL_BLOCK));
         runtime.getEtc().defineConstant("Passwd", runtime.getPasswdStruct());
     }
 
@@ -123,7 +123,7 @@ public class RubyEtc {
                 runtime.newSymbol("mem")
         };
         
-        runtime.setGroupStruct(RubyStruct.newInstance(runtime.getStructClass(), args, Block.NULL_BLOCK));
+        runtime.setGroupStruct(RubyStruct.newInstance(runtime.getCurrentContext(), runtime.getStructClass(), args, Block.NULL_BLOCK));
         runtime.getEtc().defineConstant("Group", runtime.getGroupStruct());
     }
     

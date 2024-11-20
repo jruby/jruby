@@ -341,7 +341,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
             this.mtime = RubyTime.newTime(runtime, RubyNumeric.fix2long(arg) * 1000);
         }
         try {
-            io.setModifiedTime(this.mtime.to_i().getLongValue());
+            io.setModifiedTime(this.mtime.to_i(runtime.getCurrentContext()).getLongValue());
         } catch (GZIPException e) {
             throw RubyZlib.newGzipFileError(runtime, "header is already written");
         }
@@ -351,7 +351,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
 
     @Override
     @JRubyMethod(name = "crc")
-    public IRubyObject crc() {
+    public IRubyObject crc(ThreadContext context) {
         long crc = 0L;
         
         try {

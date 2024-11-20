@@ -121,7 +121,7 @@ public class TestAdoptedThreading extends TestCase {
         
         RubyThreadGroup rtg = (RubyThreadGroup)container.runScriptlet("ThreadGroup::Default");
         
-        int initialCount = ((RubyArray)rtg.list(Block.NULL_BLOCK)).getLength();
+        int initialCount = ((RubyArray)rtg.list(container.getProvider().getRuntime().getCurrentContext(), Block.NULL_BLOCK)).getLength();
 
         Thread pausyThread = new Thread() {
             public void run() {

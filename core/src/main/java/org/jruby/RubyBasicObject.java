@@ -68,6 +68,8 @@ import org.jruby.runtime.Visibility;
 import static org.jruby.anno.FrameField.*;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.castAsModule;
+import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newSymbol;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
@@ -2828,9 +2830,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     Fred.new.instance_variables   #=&gt; [:"{@literal @}iv"]
      */
     public RubyArray instance_variables(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        RubyArray array = RubyArray.newArray(runtime, getMetaClass().getVariableAccessorsForRead().size());
-        forEachInstanceVariableName(name -> array.append(runtime.newSymbol(name)));
+        var array = newArray(context, getMetaClass().getVariableAccessorsForRead().size());
+        forEachInstanceVariableName(name -> array.append(context, newSymbol(context, name)));
         return array;
     }
 

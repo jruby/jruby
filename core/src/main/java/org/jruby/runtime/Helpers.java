@@ -2019,31 +2019,31 @@ public class Helpers {
         IRubyObject tmp = value.checkArrayType();
 
         if (tmp.isNil()) {
-            return convertSplatToJavaArray(value.getRuntime(), value);
+            return convertSplatToJavaArray(value.getRuntime().getCurrentContext(), value);
         }
         return ((RubyArray)tmp).toJavaArrayMaybeUnsafe();
     }
 
-    private static IRubyObject[] convertSplatToJavaArray(Ruby runtime, IRubyObject value) {
+    private static IRubyObject[] convertSplatToJavaArray(ThreadContext context, IRubyObject value) {
         // Object#to_a is obsolete.  We match Ruby's hack until to_a goes away.  Then we can
         // remove this hack too.
 
         RubyClass metaClass = value.getMetaClass();
         CacheEntry entry = metaClass.searchWithCache("to_a");
         DynamicMethod method = entry.method;
-        if (method.isUndefined() || method.isImplementedBy(runtime.getKernel())) {
+        if (method.isUndefined() || method.isImplementedBy(context.runtime.getKernel())) {
             return new IRubyObject[] {value};
         }
 
-        IRubyObject avalue = method.call(runtime.getCurrentContext(), value, entry.sourceModule, "to_a");
+        IRubyObject avalue = method.call(context, value, entry.sourceModule, "to_a");
         if (!(avalue instanceof RubyArray)) {
             if (avalue.isNil()) {
                 return new IRubyObject[] {value};
             } else {
-                throw typeError(runtime.getCurrentContext(), "`to_a' did not return Array");
+                throw typeError(context, "`to_a' did not return Array");
             }
         }
-        return ((RubyArray)avalue).toJavaArray();
+        return ((RubyArray)avalue).toJavaArray(context);
     }
 
     @SuppressWarnings("deprecation") @Deprecated // no longer used
@@ -2532,7 +2532,7 @@ public class Helpers {
 
     @Deprecated
     public static RubyArray argsPush(ThreadContext context, RubyArray first, IRubyObject second) {
-        return ((RubyArray)first.dup()).append(second);
+        return ((RubyArray)first.dup()).append(context, second);
     }
 
     @JIT @Interp
@@ -2545,7 +2545,7 @@ public class Helpers {
             return array;
         }
 
-        return ((RubyArray)first.dup()).append(second);
+        return ((RubyArray)first.dup()).append(context, second);
     }
 
     public static RubyArray argsCat(ThreadContext context, IRubyObject first, IRubyObject second) {
@@ -3122,6 +3122,7 @@ public class Helpers {
      *
      * @deprecated Use finvoke if you do not want visibility-checking or invokeFrom if you do.
      */
+    @Deprecated(since = "9.4-", forRemoval = true)
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject[] args, CallType callType, Block block) {
         return self.getMetaClass().invoke(context, self, name, args, callType, block);
     }
@@ -3134,6 +3135,7 @@ public class Helpers {
      *
      * @deprecated Use finvoke if you do not want visibility-checking or invokeFrom if you do.
      */
+    @Deprecated(since = "9.4-", forRemoval = true)
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject arg, CallType callType, Block block) {
         return self.getMetaClass().invoke(context, self, name, arg, callType, block);
     }
@@ -3146,6 +3148,7 @@ public class Helpers {
      *
      * @deprecated Use finvoke if you do not want visibility-checking or invokeFrom if you do.
      */
+    @Deprecated(since = "9.4-", forRemoval = true)
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, CallType callType) {
         return Helpers.invoke(context, self, name, IRubyObject.NULL_ARRAY, callType, Block.NULL_BLOCK);
     }

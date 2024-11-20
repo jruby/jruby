@@ -39,8 +39,6 @@ import org.jruby.api.Convert;
 import org.jruby.java.util.ArrayUtils;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import static org.jruby.api.Convert.castAsInteger;
-import static org.jruby.api.Error.typeError;
 import static org.jruby.javasupport.Java.castToJavaObject;
 
 /**

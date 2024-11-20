@@ -209,9 +209,10 @@ public class RubyDate extends RubyObject {
      * <p>Note: since <code>Date.new</code> is a <code>civil</code> alias, this won't ever get used</p>
      * @deprecated kept due AR-JDBC (uses RubyClass.newInstance(...) to 'fast' allocate a Date instance)
      */
+    @Deprecated(since = "9.4-")
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public RubyDate initialize(ThreadContext context, IRubyObject dt) {
-        this.dt = (DateTime) JavaUtil.unwrapJavaValue(dt);
+        this.dt = JavaUtil.unwrapJavaValue(dt);
         return this;
     }
 
@@ -297,50 +298,49 @@ public class RubyDate extends RubyObject {
      * @deprecated internal Date.new!
      */
     @JRubyMethod(name = "new!", meta = true, visibility = Visibility.PRIVATE)
+    @Deprecated(since = "9.4-")
     public static RubyDate new_(ThreadContext context, IRubyObject self) {
-        if (isDateTime(context.runtime, self)) {
-            return new RubyDateTime(context.runtime, 0, CHRONO_ITALY_UTC);
-        }
-        return new RubyDate(context.runtime, 0, CHRONO_ITALY_UTC);
+        return isDateTime(context.runtime, self) ?
+                new RubyDateTime(context.runtime, 0, CHRONO_ITALY_UTC) :
+                new RubyDate(context.runtime, 0, CHRONO_ITALY_UTC);
     }
 
     /**
      * @deprecated internal Date.new!
      */
+    @Deprecated(since = "9.4-")
     @JRubyMethod(name = "new!", meta = true, visibility = Visibility.PRIVATE)
     public static RubyDate new_(ThreadContext context, IRubyObject self, IRubyObject ajd) {
         if (ajd instanceof JavaProxy) { // backwards - compatibility with JRuby's date.rb
-            if (isDateTime(context.runtime, self)) {
-                return new RubyDateTime(context.runtime, (RubyClass) self, JavaUtil.unwrapJavaValue(ajd));
-            }
-            return new RubyDate(context.runtime, (RubyClass) self, JavaUtil.unwrapJavaValue(ajd));
+            return isDateTime(context.runtime, self) ?
+                    new RubyDateTime(context.runtime, (RubyClass) self, JavaUtil.unwrapJavaValue(ajd)) :
+                    new RubyDate(context.runtime, (RubyClass) self, JavaUtil.unwrapJavaValue(ajd));
         }
-        if (isDateTime(context.runtime, self)) {
-            return new RubyDateTime(context, (RubyClass) self, ajd, CHRONO_ITALY_UTC, 0);
-        }
-        return new RubyDate(context, (RubyClass) self, ajd, CHRONO_ITALY_UTC, 0);
+        return isDateTime(context.runtime, self) ?
+                new RubyDateTime(context, (RubyClass) self, ajd, CHRONO_ITALY_UTC, 0) :
+                new RubyDate(context, (RubyClass) self, ajd, CHRONO_ITALY_UTC, 0);
     }
 
     /**
      * @deprecated internal Date.new!
      */
+    @Deprecated(since = "9.4-")
     @JRubyMethod(name = "new!", meta = true, visibility = Visibility.PRIVATE)
     public static RubyDate new_(ThreadContext context, IRubyObject self, IRubyObject ajd, IRubyObject of) {
-        if (isDateTime(context.runtime, self)) {
-            return new RubyDateTime(context.runtime, (RubyClass) self).initialize(context, ajd, of);
-        }
-        return new RubyDate(context.runtime, (RubyClass) self).initialize(context, ajd, of);
+        return isDateTime(context.runtime, self) ?
+                new RubyDateTime(context.runtime, (RubyClass) self).initialize(context, ajd, of) :
+                new RubyDate(context.runtime, (RubyClass) self).initialize(context, ajd, of);
     }
 
     /**
      * @deprecated internal Date.new!
      */
+    @Deprecated(since = "9.4-")
     @JRubyMethod(name = "new!", meta = true, visibility = Visibility.PRIVATE)
     public static RubyDate new_(ThreadContext context, IRubyObject self, IRubyObject ajd, IRubyObject of, IRubyObject sg) {
-        if (isDateTime(context.runtime, self)) {
-            return new RubyDateTime(context.runtime, (RubyClass) self).initialize(context, ajd, of, sg);
-        }
-        return new RubyDate(context.runtime, (RubyClass) self).initialize(context, ajd, of, sg);
+        return isDateTime(context.runtime, self) ?
+                new RubyDateTime(context.runtime, (RubyClass) self).initialize(context, ajd, of, sg) :
+                new RubyDate(context.runtime, (RubyClass) self).initialize(context, ajd, of, sg);
     }
 
     /**

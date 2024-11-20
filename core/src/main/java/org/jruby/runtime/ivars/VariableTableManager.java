@@ -683,6 +683,7 @@ public class VariableTableManager {
      * @return the lazy accessor for object_id
      * @deprecated Use {@link #getObjectIdAccessorForRead()} or {@link #getObjectIdAccessorForWrite()}
      */
+    @Deprecated(since = "9.4-", forRemoval = true)
     public VariableAccessorField getObjectIdAccessorField() {
         return objectIdVariableAccessorField;
     }
@@ -693,6 +694,7 @@ public class VariableTableManager {
      * @return the lazy accessor for FFI handle
      * @deprecated Use {@link #getFFIHandleAccessorForRead()} or {@link #getFFIHandleAccessorForWrite()}
      */
+    @Deprecated(since = "9.4-", forRemoval = true)
     public VariableAccessorField getFFIHandleAccessorField() {
         return ffiHandleVariableAccessorField;
     }
@@ -703,6 +705,7 @@ public class VariableTableManager {
      * @return the lazy accessor for object group
      * @deprecated Use {@link #getObjectGroupAccessorForRead()} or {@link #getObjectGroupAccessorForWrite()}
      */
+    @Deprecated(since = "9.4-", forRemoval = true)
     public VariableAccessorField getObjectGroupAccessorField() {
         return objectGroupVariableAccessorField;
     }

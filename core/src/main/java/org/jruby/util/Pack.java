@@ -1599,7 +1599,7 @@ public class Pack {
         if (mode == UNPACK_BLOCK) {
             block.yield(context, item);
         } else if (mode == UNPACK_ARRAY) {
-            result.append(item);
+            result.append(context, item);
         }
     }
 

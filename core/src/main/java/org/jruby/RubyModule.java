@@ -140,7 +140,9 @@ import static org.jruby.anno.FrameField.SCOPE;
 import static org.jruby.anno.FrameField.SELF;
 import static org.jruby.anno.FrameField.VISIBILITY;
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Create.newSymbol;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.ir.runtime.IRRuntimeHelpers.newArray;
 import static org.jruby.runtime.Visibility.MODULE_FUNCTION;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PROTECTED;
@@ -1604,19 +1606,6 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    /**
-     * This method is not intended for use by normal users; it is a fast-path
-     * method that skips synchronization and hierarchy invalidation to speed
-     * boot-time method definition.
-     *
-     * @param id The name to which to bind the method
-     * @param method The method to bind
-     * @deprecated No longer used, internal API!
-     */
-    public final void addMethodAtBootTimeOnly(String id, DynamicMethod method) {
-        putMethod(getRuntime(), id, method);
-    }
-
     public void removeMethod(ThreadContext context, String id) {
         testFrozen("class/module");
 
@@ -2404,7 +2393,7 @@ public class RubyModule extends RubyObject {
      */
     public void setMethodVisibility(IRubyObject[] methods, Visibility visibility) {
         if (methods.length == 1 && methods[0] instanceof RubyArray) {
-            setMethodVisibility(((RubyArray<?>) methods[0]).toJavaArray(), visibility);
+            setMethodVisibility(((RubyArray<?>) methods[0]).toJavaArray(getRuntime().getCurrentContext()), visibility);
             return;
         }
 
@@ -2765,7 +2754,7 @@ public class RubyModule extends RubyObject {
 
         for (RubyModule p = getSuperClass(); p != null; p = p.getSuperClass()) {
             if (p.isIncluded()) {
-                ary.append(p.getDelegate().getOrigin());
+                ary.append(context, p.getDelegate().getOrigin());
             }
         }
 
@@ -3239,27 +3228,40 @@ public class RubyModule extends RubyObject {
         }
     }
 
+    /**
+     * @param runtime
+     * @param seen
+     * @param ary
+     * @param not
+     * @param visibility
+     * @deprecated Use {@link RubyModule#addMethodSymbols(ThreadContext, Set, RubyArray, boolean, Visibility)} instead
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     protected void addMethodSymbols(Ruby runtime, Set<String> seen, RubyArray ary, boolean not, Visibility visibility) {
+        addMethodSymbols(getCurrentContext(), seen, ary, not, visibility);
+    }
+
+    protected void addMethodSymbols(ThreadContext context, Set<String> seen, RubyArray ary, boolean not, Visibility visibility) {
         getMethods().forEach((id, method) -> {
             if (method instanceof RefinedMarker) return;
 
             if (seen.add(id)) { // false - not added (already seen)
                 if ((!not && method.getVisibility() == visibility || (not && method.getVisibility() != visibility))
                         && !method.isUndefined()) {
-                    ary.append(runtime.newSymbol(id));
+                    ary.append(context, newSymbol(context, id));
                 }
             }
         });
     }
 
     @Deprecated
-    public RubyArray instance_methods19(IRubyObject[] args) {
+    public RubyArray<?> instance_methods19(IRubyObject[] args) {
         return instance_methods(args);
     }
 
     @Deprecated
-    public RubyArray instance_methods(IRubyObject[] args) {
-        return instance_methods(getRuntime().getCurrentContext(), args);
+    public RubyArray<?> instance_methods(IRubyObject[] args) {
+        return instance_methods(getCurrentContext(), args);
     }
 
     @JRubyMethod(name = "instance_methods", optional = 1, checkArity = false)
@@ -3270,13 +3272,13 @@ public class RubyModule extends RubyObject {
     }
 
     @Deprecated
-    public RubyArray public_instance_methods19(IRubyObject[] args) {
+    public RubyArray<?> public_instance_methods19(IRubyObject[] args) {
         return public_instance_methods(args);
     }
 
     @Deprecated
-    public RubyArray public_instance_methods(IRubyObject[] args) {
-        return public_instance_methods(getRuntime().getCurrentContext(), args);
+    public RubyArray<?> public_instance_methods(IRubyObject[] args) {
+        return public_instance_methods(getCurrentContext(), args);
     }
 
     @JRubyMethod(name = "public_instance_methods", optional = 1, checkArity = false)
@@ -3332,11 +3334,11 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "undefined_instance_methods")
     public IRubyObject undefined_instance_method(ThreadContext context) {
-        RubyArray list = context.runtime.newArray();
+        var list = context.runtime.newArray();
 
         getMethods().forEach((id, method) -> {
             if (method instanceof RefinedMarker) return;
-            if (method.isUndefined()) list.append(context.runtime.newSymbol(id));
+            if (method.isUndefined()) list.append(context, newSymbol(context, id));
         });
 
         return list;
@@ -3843,13 +3845,12 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "nesting", reads = SCOPE, meta = true)
     public static RubyArray nesting(ThreadContext context, IRubyObject recv, Block block) {
-        Ruby runtime = context.runtime;
-        RubyModule object = runtime.getObject();
+        RubyModule object = context.runtime.getObject();
         StaticScope scope = context.getCurrentStaticScope();
-        RubyArray result = runtime.newArray();
+        var result = context.runtime.newArray();
 
         for (StaticScope current = scope; current.getModule() != object; current = current.getPreviousCRefScope()) {
-            result.append(current.getModule());
+            result.append(context, current.getModule());
         }
 
         return result;
@@ -4457,15 +4458,13 @@ public class RubyModule extends RubyObject {
         return constantsCommon(context, false, allConstants.isTrue());
     }
 
-    private RubyArray constantsCommon(ThreadContext context, boolean replaceModule, boolean allConstants) {
-        Ruby runtime = context.runtime;
-
-        Collection<String> constantNames = constantsCommon(runtime, replaceModule, allConstants, false);
-        RubyArray array = RubyArray.newBlankArrayInternal(runtime, constantNames.size());
+    private RubyArray<?> constantsCommon(ThreadContext context, boolean replaceModule, boolean allConstants) {
+        Collection<String> constantNames = constantsCommon(context.runtime, replaceModule, allConstants, false);
+        var array = RubyArray.newBlankArrayInternal(context.runtime, constantNames.size());
 
         int i = 0;
         for (String name : constantNames) {
-            array.storeInternal(i++, runtime.newSymbol(name));
+            array.storeInternal(context, i++, newSymbol(context, name));
         }
         array.realLength = i;
         return array;
@@ -4610,10 +4609,10 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "refinements")
     public IRubyObject refinements(ThreadContext context) {
-        RubyArray<RubyModule> refinementModules = context.runtime.newArray();
+        RubyArray<RubyModule> refinementModules = newArray(context);
 
         refinements.forEach((key, value) -> {
-            refinementModules.append(value);
+            refinementModules.append(context, value);
         });
         return refinementModules;
     }

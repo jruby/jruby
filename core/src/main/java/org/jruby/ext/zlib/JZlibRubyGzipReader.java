@@ -593,7 +593,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
     @Override
     @JRubyMethod
-    public IRubyObject crc() {
+    public IRubyObject crc(ThreadContext context) {
         long crc = 0;
 
         try {
@@ -601,17 +601,17 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         } catch (GZIPException e) {
         }
 
-        return getRuntime().newFixnum(crc);
+        return newFixnum(context, crc);
     }
 
     @Override
     @JRubyMethod
-    public IRubyObject os_code() {
+    public IRubyObject os_code(ThreadContext context) {
         int os = io.getOS();
         
         if (os == 255) os = (byte) 0x0b; // NTFS filesystem (NT), because CRuby's test_zlib expect it.
         
-        return RubyFixnum.newFixnum(getRuntime(), os & 0xff);
+        return newFixnum(context, os & 0xff);
     }
 
     @Override

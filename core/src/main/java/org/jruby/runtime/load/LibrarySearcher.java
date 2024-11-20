@@ -407,7 +407,7 @@ public class LibrarySearcher {
 
         name.setFrozen(true);
 
-        loadedFeatures.append(name);
+        loadedFeatures.append(runtime.getCurrentContext(), name);
 
         snapshotLoadedFeatures();
 
@@ -415,7 +415,7 @@ public class LibrarySearcher {
     }
 
     protected synchronized RubyArray snapshotLoadedFeatures() {
-        return (RubyArray) loadedFeaturesSnapshot.replace(this.loadService.loadedFeatures);
+        return (RubyArray) loadedFeaturesSnapshot.replace(runtime.getCurrentContext(), this.loadService.loadedFeatures);
     }
 
     protected synchronized void addFeatureToIndex(String name, IRubyObject featurePath) {

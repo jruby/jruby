@@ -13,9 +13,7 @@ public class AsetCallSite extends MonomorphicCallSite {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1) {
-        if (getMetaClass(self) == context.runtime.getArray()) {
-            return ((RubyArray) self).aset(arg0, arg1);
-        }
-        return super.call(context, caller, self, arg0, arg1);
+        return getMetaClass(self) == context.runtime.getArray() ?
+                ((RubyArray) self).aset(context, arg0, arg1) : super.call(context, caller, self, arg0, arg1);
     }
 }

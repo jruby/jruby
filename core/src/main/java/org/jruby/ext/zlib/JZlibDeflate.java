@@ -58,31 +58,27 @@ public class JZlibDeflate extends ZStream {
     private com.jcraft.jzlib.Deflater flater = null;
     private int flush = JZlib.Z_NO_FLUSH;
 
-    @Deprecated
+    @Deprecated(since = "9.4", forRemoval = true)
     public static IRubyObject s_deflate(IRubyObject recv, IRubyObject[] args) {
         return s_deflate(recv.getRuntime().getCurrentContext(), recv, args);
     }
 
     @JRubyMethod(name = "deflate", required = 1, optional = 1, checkArity = false, meta = true)
     public static IRubyObject s_deflate(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
         args = Arity.scanArgs(context, args, 1, 1);
         int level = JZlib.Z_DEFAULT_COMPRESSION;
-        if (!args[1].isNil()) {
-            level = RubyNumeric.fix2int(args[1]);
-            checkLevel(runtime, level);
-        }
+        if (!args[1].isNil()) level = checkLevel(context, RubyNumeric.fix2int(args[1]));
 
-        RubyClass klass = (RubyClass)(recv.isClass() ? recv : runtime.getClassFromPath("Zlib::Deflate"));
+        RubyClass klass = (RubyClass)(recv.isClass() ? recv : context.runtime.getClassFromPath("Zlib::Deflate"));
         JZlibDeflate deflate = (JZlibDeflate) klass.allocate();
-        deflate.init(level, JZlib.DEF_WBITS, 8, JZlib.Z_DEFAULT_STRATEGY);
+        deflate.init(context, level, JZlib.DEF_WBITS, 8, JZlib.Z_DEFAULT_STRATEGY);
 
         try {
             IRubyObject result = deflate.deflate(args[0].convertToString().getByteList(), JZlib.Z_FINISH);
             deflate.close();
             return result;
         } catch (IOException ioe) {
-            throw runtime.newIOErrorFromException(ioe);
+            throw context.runtime.newIOErrorFromException(ioe);
         }
     }
 
@@ -100,28 +96,17 @@ public class JZlibDeflate extends ZStream {
         args = Arity.scanArgs(context, args, 0, 4);
         level = -1;
         windowBits = JZlib.MAX_WBITS;
-        int memlevel = 8;
         strategy = 0;
-        if (!args[0].isNil()) {
-            level = RubyNumeric.fix2int(args[0]);
-            checkLevel(getRuntime(), level);
-        }
-        if (!args[1].isNil()) {
-            windowBits = RubyNumeric.fix2int(args[1]);
-            checkWindowBits(getRuntime(), windowBits, false);
-        }
-        if (!args[2].isNil()) {
-            memlevel = RubyNumeric.fix2int(args[2]);
-            // We accepts any memlevel and ignores it. Memory setting means nothing on Java platform.
-        }
-        if (!args[3].isNil()) {
-            strategy = RubyNumeric.fix2int(args[3]);
-        }
-        init(level, windowBits, memlevel, strategy);
+        if (!args[0].isNil()) level = checkLevel(context, RubyNumeric.fix2int(args[0]));
+        if (!args[1].isNil()) windowBits = checkWindowBits(context, RubyNumeric.fix2int(args[1]), false);
+        int memlevel = !args[2].isNil() ? RubyNumeric.fix2int(args[2]) : 8; // ignored. Memory setting means nothing on Java.
+        if (!args[3].isNil()) strategy = RubyNumeric.fix2int(args[3]);
+
+        init(context, level, windowBits, memlevel, strategy);
         return this;
     }
 
-    private void init(int level, int windowBits, int memlevel, int strategy) {
+    private void init(ThreadContext context, int level, int windowBits, int memlevel, int strategy) {
         flush = JZlib.Z_NO_FLUSH;
         flater = new com.jcraft.jzlib.Deflater();
 
@@ -129,11 +114,11 @@ public class JZlibDeflate extends ZStream {
         // Then we should remove checkLevel, checkWindowsBits and checkStrategy.
         int err = flater.init(level, windowBits, memlevel);
         if (err == com.jcraft.jzlib.JZlib.Z_STREAM_ERROR) {
-            throw RubyZlib.newStreamError(getRuntime(), "stream error");
+            throw RubyZlib.newStreamError(context.runtime, "stream error");
         }
         err = flater.params(level, strategy);
         if (err == com.jcraft.jzlib.JZlib.Z_STREAM_ERROR) {
-            throw RubyZlib.newStreamError(getRuntime(), "stream error");
+            throw RubyZlib.newStreamError(context.runtime, "stream error");
         }
 
         collected = new byte[BASE_SIZE];
@@ -184,7 +169,7 @@ public class JZlibDeflate extends ZStream {
     @JRubyMethod(name = "params")
     public IRubyObject params(ThreadContext context, IRubyObject level, IRubyObject strategy) {
         int l = RubyNumeric.fix2int(level);
-        checkLevel(getRuntime(), l);
+        checkLevel(context, l);
 
         int s = RubyNumeric.fix2int(strategy);
         checkStrategy(getRuntime(), s);
@@ -277,7 +262,7 @@ public class JZlibDeflate extends ZStream {
 
     @Override
     protected void internalReset() {
-        init(level, windowBits, 8, strategy);
+        init(getRuntime().getCurrentContext(), level, windowBits, 8, strategy);
     }
 
     @Override

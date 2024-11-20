@@ -138,7 +138,7 @@ public class RubyProcess {
         process.defineConstant("CLOCK_REALTIME", newSymbol(context, CLOCK_REALTIME));
         process.defineConstant("CLOCK_MONOTONIC", newSymbol(context, CLOCK_MONOTONIC));
 
-        RubyClass tmsStruct = RubyStruct.newInstance(
+        RubyClass tmsStruct = RubyStruct.newInstance(context,
                 runtime.getStructClass(),
                 new IRubyObject[]{
                         newString(context, "Tms"),
@@ -603,7 +603,7 @@ public class RubyProcess {
             return eid(context.runtime);
         }
         public static IRubyObject eid(Ruby runtime) {
-            return egid(runtime);
+            return egid(runtime.getCurrentContext(), null);
         }
 
         @Deprecated
@@ -679,7 +679,7 @@ public class RubyProcess {
     public static class Sys {
         @Deprecated
         public static IRubyObject getegid(IRubyObject self) {
-            return egid(self.getRuntime());
+            return egid(self.getRuntime().getCurrentContext(), null);
         }
         @JRubyMethod(name = "getegid", module = true, visibility = PRIVATE)
         public static IRubyObject getegid(ThreadContext context, IRubyObject self) {
@@ -742,11 +742,11 @@ public class RubyProcess {
 
         @Deprecated
         public static IRubyObject setuid(IRubyObject recv, IRubyObject arg) {
-            return uid_set(recv.getRuntime(), arg);
+            return uid_set(recv.getRuntime().getCurrentContext(), null, arg);
         }
         @JRubyMethod(name = "setuid", module = true, visibility = PRIVATE)
         public static IRubyObject setuid(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-            return uid_set(context.runtime, arg);
+            return uid_set(context, null, arg);
         }
     }
 
@@ -757,7 +757,7 @@ public class RubyProcess {
 
     @JRubyMethod(name = "exit!", optional = 1, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject exit_bang(IRubyObject recv, IRubyObject[] args) {
-        return RubyKernel.exit_bang(recv, args);
+        return RubyKernel.exit_bang(recv.getRuntime().getCurrentContext(), recv, args);
     }
 
     @JRubyMethod(name = "groups", module = true, visibility = PRIVATE)
@@ -1226,15 +1226,16 @@ public class RubyProcess {
     }
     public static IRubyObject waitall(Ruby runtime) {
         POSIX posix = runtime.getPosix();
-        RubyArray results = runtime.newArray();
+        var results = runtime.newArray();
 
         int[] status = new int[1];
-        ThreadContext context = runtime.getCurrentContext();
+        var context = runtime.getCurrentContext();
 
         int result = pthreadKillable(context, ctx -> posix.wait(status));
 
         while (result != -1) {
-            results.append(runtime.newArray(asFixnum(context, result), RubyProcess.RubyStatus.newProcessStatus(runtime, status[0], result)));
+            results.append(context, runtime.newArray(asFixnum(context, result),
+                    RubyProcess.RubyStatus.newProcessStatus(runtime, status[0], result)));
 
             result = pthreadKillable(context, ctx -> posix.wait(status));
         }
@@ -1309,7 +1310,7 @@ public class RubyProcess {
 
     @Deprecated
     public static IRubyObject uid_set(IRubyObject recv, IRubyObject arg) {
-        return uid_set(recv.getRuntime(), arg);
+        return uid_set(recv.getRuntime().getCurrentContext(), null, arg);
     }
     @JRubyMethod(name = "uid=", module = true, visibility = PRIVATE)
     public static IRubyObject uid_set(ThreadContext context, IRubyObject recv, IRubyObject arg) {
@@ -1537,7 +1538,7 @@ public class RubyProcess {
 
     @Deprecated
     public static IRubyObject egid(IRubyObject recv) {
-        return egid(recv.getRuntime());
+        return egid(recv.getRuntime().getCurrentContext(), recv);
     }
     @JRubyMethod(name = "egid", module = true, visibility = PRIVATE)
     public static IRubyObject egid(ThreadContext context, IRubyObject recv) {
@@ -1895,7 +1896,7 @@ public class RubyProcess {
 
     @JRubyMethod(name = "exit", optional = 1, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject exit(IRubyObject recv, IRubyObject[] args) {
-        return RubyKernel.exit(recv, args);
+        return RubyKernel.exit(recv.getRuntime().getCurrentContext(), recv, args);
     }
 
     @JRubyMethod(name = "setproctitle", module = true, visibility = PRIVATE)

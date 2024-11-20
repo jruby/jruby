@@ -37,8 +37,6 @@ import static org.jruby.runtime.Visibility.PUBLIC;
 import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
-import static org.jruby.util.RubyStringBuilder.str;
-import static org.jruby.util.RubyStringBuilder.types;
 import static org.objectweb.asm.Opcodes.ACC_BRIDGE;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
@@ -1015,7 +1013,7 @@ public class RubyClass extends RubyModule {
 
     @JRubyMethod
     public IRubyObject subclasses(ThreadContext context) {
-        RubyArray<RubyClass> subs = RubyArray.newArray(context.runtime);
+        var subs = RubyArray.newArray(context.runtime);
 
         concreteSubclasses(subs);
 
@@ -1241,7 +1239,7 @@ public class RubyClass extends RubyModule {
         checkInheritable(superClass.getRuntime().getCurrentContext(), superClass);
     }
 
-    private static void checkInheritable(ThreadContext context, IRubyObject superClass) {
+    public static void checkInheritable(ThreadContext context, IRubyObject superClass) {
         if (!(superClass instanceof RubyClass)) {
             throw typeError(context, "superclass must be a Class (" + superClass.getMetaClass() + " given)");
         }
@@ -2785,6 +2783,7 @@ public class RubyClass extends RubyModule {
      *
      * @deprecated Use finvoke if you do not want visibility-checking or invokeFrom if you do.
      */
+    @Deprecated(since = "9.4-", forRemoval = true)
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
                               CallType callType, Block block) {
         CacheEntry entry = searchWithCache(name);
@@ -2805,6 +2804,7 @@ public class RubyClass extends RubyModule {
      *
      * @deprecated Use finvoke if you do not want visibility-checking or invokeFrom if you do.
      */
+    @Deprecated(since = "9.4-")
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
                               IRubyObject[] args, CallType callType, Block block) {
         assert args != null;
@@ -2826,6 +2826,7 @@ public class RubyClass extends RubyModule {
      *
      * @deprecated Use finvoke if you do not want visibility-checking or invokeFrom if you do.
      */
+    @Deprecated(since = "9.4-")
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
                               IRubyObject arg, CallType callType, Block block) {
         CacheEntry entry = searchWithCache(name);
@@ -2846,6 +2847,7 @@ public class RubyClass extends RubyModule {
      *
      * @deprecated Use finvoke if you do not want visibility-checking or invokeFrom if you do.
      */
+    @Deprecated(since = "9.4-", forRemoval = true)
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
                               IRubyObject arg0, IRubyObject arg1, CallType callType, Block block) {
         CacheEntry entry = searchWithCache(name);
@@ -2866,6 +2868,7 @@ public class RubyClass extends RubyModule {
      *
      * @deprecated Use finvoke if you do not want visibility-checking or invokeFrom if you do.
      */
+    @Deprecated(since = "9.4-", forRemoval = true)
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
                               IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, CallType callType, Block block) {
         CacheEntry entry = searchWithCache(name);
@@ -2886,6 +2889,7 @@ public class RubyClass extends RubyModule {
      *
      * @deprecated Use finvoke if you do not want visibility-checking or invokeFrom if you do.
      */
+    @Deprecated(since = "9.4-", forRemoval = true)
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
                               CallType callType) {
         CacheEntry entry = searchWithCache(name);
@@ -2906,6 +2910,7 @@ public class RubyClass extends RubyModule {
      *
      * @deprecated Use finvoke if you do not want visibility-checking or invokeFrom if you do.
      */
+    @Deprecated(since = "9.4-", forRemoval = true)
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
                               IRubyObject[] args, CallType callType) {
         assert args != null;
@@ -2927,6 +2932,7 @@ public class RubyClass extends RubyModule {
      *
      * @deprecated Use finvoke if you do not want visibility-checking or invokeFrom if you do.
      */
+    @Deprecated(since = "9.4-", forRemoval = true)
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
                               IRubyObject arg, CallType callType) {
         CacheEntry entry = searchWithCache(name);
@@ -2947,6 +2953,7 @@ public class RubyClass extends RubyModule {
      *
      * @deprecated Use finvoke if you do not want visibility-checking or invokeFrom if you do.
      */
+    @Deprecated(since = "9.4-", forRemoval = true)
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
                               IRubyObject arg0, IRubyObject arg1, CallType callType) {
         CacheEntry entry = searchWithCache(name);
@@ -2967,6 +2974,7 @@ public class RubyClass extends RubyModule {
      *
      * @deprecated Use finvoke if you do not want visibility-checking or invokeFrom if you do.
      */
+    @Deprecated(since = "9.4-", forRemoval = true)
     public IRubyObject invoke(ThreadContext context, IRubyObject self, String name,
                               IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, CallType callType) {
         CacheEntry entry = searchWithCache(name);

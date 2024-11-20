@@ -37,6 +37,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PUBLIC;
 
@@ -81,7 +82,7 @@ public class RubyNoMatchingPatternKeyError extends RubyStandardError {
 
     @JRubyMethod(visibility = PRIVATE, optional = 2, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
-        int callInfo = context.resetCallInfo();
+        int callInfo = resetCallInfo(context);
 
         switch (args.length) {
             case 0:

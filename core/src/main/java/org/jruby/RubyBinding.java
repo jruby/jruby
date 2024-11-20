@@ -189,9 +189,7 @@ public class RubyBinding extends RubyObject {
     }
     @JRubyMethod
     public IRubyObject local_variables(ThreadContext context) {
-        Ruby runtime = context.runtime;
-
-        return binding.getEvalScope(runtime).getStaticScope().getLocalVariables(runtime);
+        return binding.getEvalScope(context.runtime).getStaticScope().getLocalVariables(context);
     }
 
     @JRubyMethod(name = "receiver")

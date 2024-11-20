@@ -62,11 +62,9 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.util.ByteList;
-import org.jruby.util.ConvertBytes;
 import org.jruby.util.RubyDateFormatter;
 import org.jruby.util.RubyTimeParser;
 import org.jruby.util.Sprintf;
-import org.jruby.util.TypeConverter;
 import org.jruby.util.time.TimeArgs;
 
 import java.io.Serializable;
@@ -83,7 +81,6 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static java.lang.Integer.parseInt;
 import static org.jruby.RubyComparable.invcmp;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newString;
@@ -94,7 +91,6 @@ import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 import static org.jruby.util.RubyStringBuilder.str;
-import static org.jruby.util.RubyStringBuilder.types;
 import static org.jruby.util.TypeConverter.typeAsString;
 
 /** The Time class.
@@ -156,7 +152,7 @@ public class RubyTime extends RubyObject {
 
         if (entry.key != tz) runtime.tzVar = (RubyString) entry.key;
 
-        return (entry.value instanceof RubyString) ? ((RubyString) entry.value).asJavaString() : null;
+        return (entry.value instanceof RubyString) ? entry.value.asJavaString() : null;
     }
 
     public static DateTimeZone getLocalTimeZone(Ruby runtime) {
@@ -940,7 +936,7 @@ public class RubyTime extends RubyObject {
         return asFixnum(context, Math.floorDiv(getTimeInMillis(), (long) 1000));
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4-", forRemoval = true)
     public RubyInteger to_i() {
         return to_i(getCurrentContext());
     }
@@ -958,7 +954,7 @@ public class RubyTime extends RubyObject {
         return asFixnum(context, getNanos());
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4-", forRemoval = true)
     public RubyInteger nsec() {
         return nsec(getCurrentContext());
     }
@@ -1015,11 +1011,13 @@ public class RubyTime extends RubyObject {
     /**
      * @deprecated use {@link #setMicros(int)} instead
      */
+    @Deprecated(since = "9.4-", forRemoval = true)
     public void setMicroseconds(long micros) { setMicros((int) micros); }
 
     /**
      * @deprecated use {@link #getMicros()} instead
      */
+    @Deprecated(since = "9.4-", forRemoval = true)
     public long microseconds() {
     	return getMicros();
     }
@@ -1179,6 +1177,7 @@ public class RubyTime extends RubyObject {
         return asFixnum(context, offset / 1000);
     }
 
+    @Deprecated(since = "9.4-", forRemoval = true)
     public RubyInteger gmt_offset() {
         return gmt_offset(getCurrentContext());
     }

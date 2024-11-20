@@ -613,7 +613,7 @@ public class Sprintf {
                             n = 0;
                         } else {
                             ByteList bl = ((RubyString) tmp).getByteList();
-                            c = StringSupport.codePoint(runtime, encoding, bl.unsafeBytes(), bl.begin(), bl.begin() + bl.realSize());
+                            c = StringSupport.codePoint(context, encoding, bl.unsafeBytes(), bl.begin(), bl.begin() + bl.realSize());
                             n = StringSupport.codeLength(bl.getEncoding(), c);
                         }
                     } else {

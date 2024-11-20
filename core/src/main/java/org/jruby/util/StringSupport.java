@@ -577,10 +577,11 @@ public final class StringSupport {
         return enc.mbcToCode(bytes, p, end);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0", forRemoval = true)
     public static int codePoint(Ruby runtime, Encoding enc, byte[] bytes, int p, int end) {
         return codePoint(runtime.getCurrentContext(), enc, bytes, p, end);
     }
+
     public static int codePoint(ThreadContext context, Encoding enc, byte[] bytes, int p, int end) {
         try {
             return codePoint(enc, bytes, p, end);
@@ -2230,7 +2231,7 @@ public final class StringSupport {
                 }
             }
             line = str.substr(runtime, subptr - ptr, subend - subptr);
-            if (wantarray) ary.append(line);
+            if (wantarray) ary.append(context, line);
             else {
                 block.yieldSpecific(context, line);
                 str.modifyCheck(strBytes, len);
@@ -2248,7 +2249,7 @@ public final class StringSupport {
                 }
             }
             line = str.substr(runtime, subptr - ptr, pend - subptr);
-            if (wantarray) ary.append(line);
+            if (wantarray) ary.append(context, line);
             else block.yieldSpecific(context, line);
         }
 
@@ -2282,7 +2283,7 @@ public final class StringSupport {
             if (subptr == NULL_POINTER) break;
             RubyString line = str.makeSharedString(context.runtime, subptr - ptr,
                     subend - subptr + (chomp ? 0 : rslen));
-            if (ary != null) ary.append(line); // wantarray
+            if (ary != null) ary.append(context, line); // wantarray
             else {
                 block.yield(context, line);
                 str.modifyCheck(strBytes, len);

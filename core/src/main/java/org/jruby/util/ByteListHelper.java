@@ -115,6 +115,7 @@ public class ByteListHelper {
      * @return last T from headVisitor
      * @deprecated This was only used by Module#const_defined, but was difficult to match MRI's equivalent in this form
      */
+    @Deprecated(since = "9.4-", forRemoval = true)
     public static <T> T split(ByteList value, ByteList pattern, Visit<ByteList, T> bodyVisitor, Visit<ByteList, T> headVisitor) {
         if (headVisitor == null) headVisitor = bodyVisitor;
 

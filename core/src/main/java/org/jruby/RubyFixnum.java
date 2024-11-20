@@ -388,7 +388,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
 
         RubyArray res = RubyArray.newArray(context.runtime, 0);
         while (value > 0) {
-            res.append(newFixnum(context.runtime, value % longBase));
+            res.append(context, newFixnum(context.runtime, value % longBase));
             value /= longBase;
         }
 

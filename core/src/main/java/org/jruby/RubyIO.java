@@ -2667,11 +2667,11 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         @Override
         public RubyArray getline(ThreadContext context, RubyIO self, IRubyObject rs, int limit, boolean chomp, Block block) {
             
-            RubyArray ary = context.runtime.newArray();
+            var ary = context.runtime.newArray();
             IRubyObject line;
 
             while ((line = self.getlineImpl(context, rs, limit, chomp)) != context.nil) {
-                ary.append(line);
+                ary.append(context, line);
             }
 
             return ary;
@@ -4502,7 +4502,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         final IRubyObject[] cmdPlusArgs;
         final RubyHash env;
 
-        RubyPOpen(Ruby runtime, IRubyObject[] args) {
+        RubyPOpen(ThreadContext context, IRubyObject[] args) {
             IRubyObject[] _cmdPlusArgs;
             IRubyObject _env;
             IRubyObject _cmd;
@@ -4510,8 +4510,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             int firstArg = 0;
             int argc = args.length;
 
-            if (argc > 0 && !(_env = TypeConverter.checkHashType(runtime, args[0])).isNil()) {
-                if (argc < 2) throw runtime.newArgumentError(1, 2);
+            if (argc > 0 && !(_env = TypeConverter.checkHashType(context.runtime, args[0])).isNil()) {
+                if (argc < 2) throw context.runtime.newArgumentError(1, 2);
                 firstArg++;
                 argc--;
             } else {
@@ -4521,39 +4521,39 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             IRubyObject arg0 = args[firstArg].checkArrayType();
 
             if (arg0.isNil()) {
-                if ((arg0 = TypeConverter.checkStringType(runtime, args[firstArg])).isNil()) {
-                    throw typeError(runtime.getCurrentContext(), args[firstArg], "String");
+                if ((arg0 = TypeConverter.checkStringType(context.runtime, args[firstArg])).isNil()) {
+                    throw typeError(context, args[firstArg], "String");
                 }
                 _cmdPlusArgs = null;
                 _cmd = arg0;
             } else {
                 RubyArray arg0Ary = (RubyArray) arg0;
-                if (arg0Ary.isEmpty()) throw runtime.newArgumentError("wrong number of arguments");
+                if (arg0Ary.isEmpty()) throw argumentError(context, "wrong number of arguments");
                 if (arg0Ary.eltOk(0) instanceof RubyHash) {
                     // leading hash, use for env
-                    _env = arg0Ary.delete_at(0);
+                    _env = arg0Ary.delete_at(context,0);
                 }
-                if (arg0Ary.isEmpty()) throw runtime.newArgumentError("wrong number of arguments");
+                if (arg0Ary.isEmpty()) throw argumentError(context, "wrong number of arguments");
                 if (arg0Ary.size() > 1 && arg0Ary.eltOk(arg0Ary.size() - 1) instanceof RubyHash) {
                     // trailing hash, use for opts
                     _env = arg0Ary.eltOk(arg0Ary.size() - 1);
                 }
-                _cmdPlusArgs = arg0Ary.toJavaArray();
+                _cmdPlusArgs = arg0Ary.toJavaArray(context);
                 _cmd = _cmdPlusArgs[0];
             }
 
             if (Platform.IS_WINDOWS) {
                 String commandString = _cmd.convertToString().toString().replace('/', '\\');
-                _cmd = runtime.newString(commandString);
+                _cmd = newString(context, commandString);
                 if (_cmdPlusArgs != null) _cmdPlusArgs[0] = _cmd;
             } else {
                 _cmd = _cmd.convertToString();
                 if (_cmdPlusArgs != null) _cmdPlusArgs[0] = _cmd;
             }
 
-            this.cmd = (RubyString)_cmd;
+            this.cmd = (RubyString) _cmd;
             this.cmdPlusArgs = _cmdPlusArgs;
-            this.env = (RubyHash)_env;
+            this.env = (RubyHash) _env;
         }
     }
 
@@ -4606,7 +4606,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             args = ArraySupport.newCopy(args, 0, argc - 1);
         }
 
-        RubyPOpen pOpen = new RubyPOpen(runtime, args);
+        RubyPOpen pOpen = new RubyPOpen(context, args);
 
         if (isDash(pOpen.cmd)) {
             throw runtime.newNotImplementedError("popen(\"-\") is unimplemented");

@@ -147,7 +147,7 @@ public class JavaInterfaceTemplate {
             // to the list of intentions unless we're past the point of no return or
             // already intend to implement the given interface
             if ( ! ( javaInterfaces.isFrozen() || javaInterfaces.includes(context, javaClass) ) ) {
-                javaInterfaces.append(javaClass);
+                javaInterfaces.append(context, javaClass);
             }
         }
     }
@@ -331,9 +331,9 @@ public class JavaInterfaceTemplate {
             }
             else {
                 // already set up append_features, just add the interface if we haven't already
-                final RubyArray interfaceModules = getInterfaceModules(module);
+                final var interfaceModules = getInterfaceModules(module);
                 if ( ! interfaceModules.includes(context, self) ) {
-                    interfaceModules.append(self);
+                    interfaceModules.append(context, self);
                 }
             }
         }
@@ -346,7 +346,7 @@ public class JavaInterfaceTemplate {
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg, Block block) {
             RubyModule target = castAsModule(context, arg, "append_features called with non-module");
-            target.include( getInterfaceModules(self).toJavaArrayMaybeUnsafe() );
+            target.include(context, getInterfaceModules(self).toJavaArrayMaybeUnsafe() );
 
             return Helpers.invokeAs(context, clazz.getSuperClass(), self, name, arg, block);
         }

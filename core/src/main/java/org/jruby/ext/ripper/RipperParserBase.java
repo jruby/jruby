@@ -362,7 +362,8 @@ public class RipperParserBase {
     }
 
     protected IRubyObject backref_error(IRubyObject ref, IRubyObject expr) {
-        RubyString str = getRuntime().newString("Can't set variable ");
+        var runtime = ref.getRuntime();
+        RubyString str = runtime.newString("Can't set variable ");
         str = str.append(ref);
 
         return dispatch("on_assign_error",  str, expr);
@@ -385,14 +386,10 @@ public class RipperParserBase {
     }
 
     public IRubyObject keyword_arg(IRubyObject key, IRubyObject value) {
-        RubyArray array = RubyArray.newArray(context.runtime, 2);
+        var array = RubyArray.newArray(context.runtime, 2);
 
-        array.append(key);
-        if (value != null) {
-            array.append(value);
-        } else {
-            array.append(context.nil);
-        }
+        array.append(context, key);
+        array.append(context, value != null ? value : context.nil);
 
         return array;
     }
@@ -680,15 +677,15 @@ public class RipperParserBase {
     }
 
     public IRubyObject new_array_pattern(int _line, IRubyObject constant, IRubyObject preArg, RubyArray arrayPattern) {
-        RubyArray preArgs = (RubyArray) arrayPattern.eltOk(0);
+        var preArgs = (RubyArray<?>) arrayPattern.eltOk(0);
         IRubyObject restArg = arrayPattern.eltOk(1);
         IRubyObject postArgs = arrayPattern.eltOk(2);
 
         if (preArg != null) {
             if (preArgs != null) {
-                preArgs.unshift(preArg);
+                preArgs.unshift(context, preArg);
             } else {
-                preArgs = RubyArray.newArray(getRuntime());
+                preArgs = RubyArray.newArray(context.runtime);
                 preArgs.add(preArg);
             }
         }

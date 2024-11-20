@@ -61,7 +61,6 @@ import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.util.ByteList;
 
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Convert.castAsArray;
 import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.*;
@@ -176,11 +175,10 @@ public final class StructLayout extends Type {
         int index = 0;
         for (IRubyObject obj : fields) {
             
-            if (!(obj instanceof Field)) {
+            if (!(obj instanceof Field f)) {
                 throw typeError(context, obj, context.runtime.getModule("FFI").getClass("StructLayout").getClass("Field"));
             }
 
-            Field f = (Field) obj;
             if (!(f.name instanceof RubySymbol)) throw typeError(context, "fields list contains field with invalid name");
             if (f.type.getNativeSize() < 1 && index < (fields.size() - 1)) throw typeError(context, "sizeof field == 0");
 
@@ -262,9 +260,9 @@ public final class StructLayout extends Type {
      */
     @JRubyMethod(name = "members")
     public IRubyObject members(ThreadContext context) {
-        RubyArray mbrs = RubyArray.newArray(context.runtime, fieldNames.size());
+        var mbrs = RubyArray.newArray(context.runtime, fieldNames.size());
         for (IRubyObject name : fieldNames) {
-            mbrs.append(name);
+            mbrs.append(context, name);
         }
         return mbrs;
     }
@@ -276,15 +274,15 @@ public final class StructLayout extends Type {
      */
     @JRubyMethod(name = "offsets")
     public IRubyObject offsets(ThreadContext context) {
-        RubyArray offsets = RubyArray.newArray(context.runtime);
+        var offsets = RubyArray.newArray(context.runtime);
 
         for (IRubyObject name : fieldNames) {
-            RubyArray offset = RubyArray.newArray(context.runtime);
+            var offset = RubyArray.newArray(context.runtime);
             // Assemble a [ :name, offset ] array
 
-            offset.append(name);
-            offset.append(newFixnum(context, getMember(context.runtime, name).offset));
-            offsets.append(offset);
+            offset.append(context, name);
+            offset.append(context, newFixnum(context, getMember(context.runtime, name).offset));
+            offsets.append(context, offset);
         }
 
         return offsets;

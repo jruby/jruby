@@ -96,14 +96,14 @@ public abstract class JavaLangReflect {
 
         @JRubyMethod // alias argument_types parameter_types
         public static IRubyObject argument_types(final ThreadContext context, final IRubyObject self) {
-            final java.lang.reflect.Constructor thiz = JavaUtil.unwrapJavaObject(self);
+            final java.lang.reflect.Constructor<?> thiz = JavaUtil.unwrapJavaObject(self);
             return convertJavaToUsableRubyObject(context.runtime, thiz.getParameterTypes());
         }
 
         // NOTE: (legacy) JavaConstructor compat - converting arguments
         @JRubyMethod(name = {"newInstance", "new_instance"}, rest = true)
         public static IRubyObject new_instance(final ThreadContext context, final IRubyObject self, final IRubyObject[] args) {
-            final java.lang.reflect.Constructor thiz = JavaUtil.unwrapJavaObject(self);
+            final java.lang.reflect.Constructor<?> thiz = JavaUtil.unwrapJavaObject(self);
             final Object[] javaArgs;
             if (args.length == 0) {
                 javaArgs = NO_ARGS;
@@ -122,18 +122,18 @@ public abstract class JavaLangReflect {
 
         @JRubyMethod(name = "public?")
         public static IRubyObject public_p(ThreadContext context, final IRubyObject self) {
-            final java.lang.reflect.Constructor thiz = JavaUtil.unwrapJavaObject(self);
+            final java.lang.reflect.Constructor<?> thiz = JavaUtil.unwrapJavaObject(self);
             return isPublic(context, self, thiz.getModifiers());
         }
 
-        @Deprecated
+        @Deprecated(since = "9.4", forRemoval = true)
         public static IRubyObject public_p(final IRubyObject self) {
-            return public_p(((RubyBasicObject) self).getCurrentContext(), self);
+            return public_p(self.getRuntime().getCurrentContext(), self);
         }
 
         @JRubyMethod(name = "protected?")
         public static IRubyObject protected_p(ThreadContext context, final IRubyObject self) {
-            final java.lang.reflect.Constructor thiz = JavaUtil.unwrapJavaObject(self);
+            final java.lang.reflect.Constructor<?> thiz = JavaUtil.unwrapJavaObject(self);
             return isProtected(context, self, thiz.getModifiers());
         }
 
@@ -144,7 +144,7 @@ public abstract class JavaLangReflect {
 
         @JRubyMethod(name = "private?")
         public static IRubyObject private_p(ThreadContext context, final IRubyObject self) {
-            final java.lang.reflect.Constructor thiz = JavaUtil.unwrapJavaObject(self);
+            final java.lang.reflect.Constructor<?> thiz = JavaUtil.unwrapJavaObject(self);
             return isPrivate(context, self, thiz.getModifiers());
         }
 
@@ -155,7 +155,7 @@ public abstract class JavaLangReflect {
 
         @JRubyMethod(name = "final?")
         public static IRubyObject final_p(ThreadContext context, final IRubyObject self) {
-            final java.lang.reflect.Constructor thiz = JavaUtil.unwrapJavaObject(self);
+            final java.lang.reflect.Constructor<?> thiz = JavaUtil.unwrapJavaObject(self);
             return isFinal(context, self, thiz.getModifiers());
         }
 
@@ -166,7 +166,7 @@ public abstract class JavaLangReflect {
 
         @JRubyMethod(name = "static?")
         public static IRubyObject static_p(ThreadContext context, final IRubyObject self) {
-            final java.lang.reflect.Constructor thiz = JavaUtil.unwrapJavaObject(self);
+            final java.lang.reflect.Constructor<?> thiz = JavaUtil.unwrapJavaObject(self);
             return isStatic(context, self, thiz.getModifiers());
         }
 
@@ -298,7 +298,7 @@ public abstract class JavaLangReflect {
         }
 
         public static IRubyObject static_p(final IRubyObject self) {
-            return static_p(((RubyBasicObject) self).getCurrentContext(), self);
+            return static_p(self.getRuntime().getCurrentContext(), self);
         }
 
     }
