@@ -37,6 +37,7 @@ import org.jruby.util.RubyStringBuilder;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
 import static org.jruby.javasupport.JavaUtil.convertJavaToUsableRubyObject;
 import static org.jruby.javasupport.JavaUtil.unwrapJavaObject;
@@ -154,7 +155,7 @@ public abstract class JavaUtilRegex {
                 beg = asFixnum(context, matcher.start(group));
                 end = asFixnum(context, matcher.end(group));
             }
-            return RubyArray.newArray(context.runtime, beg, end);
+            return newArray(context, beg, end);
         }
 
         @JRubyMethod(name = { "length", "size" })

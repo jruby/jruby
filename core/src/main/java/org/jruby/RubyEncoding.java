@@ -592,7 +592,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     public IRubyObject names(ThreadContext context) {
         EncodingService service = context.runtime.getEncodingService();
         Entry entry = service.findEncodingOrAliasEntry(name);
-        var result = context.runtime.newArray();
+        var result = newArray(context);
         HashEntryIterator i;
         i = service.getEncodings().entryIterator();
         while (i.hasNext()) {

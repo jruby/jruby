@@ -53,6 +53,7 @@ import org.jruby.util.Numeric;
 import org.jruby.util.TypeConverter;
 
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ast.util.ArgsUtil.hasExceptionOption;
@@ -992,22 +993,21 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = "coerce")
     public IRubyObject op_coerce(ThreadContext context, IRubyObject other) {
-        Ruby runtime = context.runtime;
         if (other instanceof RubyFixnum || other instanceof RubyBignum) {
-            return runtime.newArray(RubyRational.newRationalBang(context, getMetaClass(), other), this);
+            return newArray(context, RubyRational.newRationalBang(context, getMetaClass(), other), this);
         } else if (other instanceof RubyFloat) {
-            return runtime.newArray(other, r_to_f(context, this));
+            return newArray(context, other, r_to_f(context, this));
         } else if (other instanceof RubyRational) {
-            return runtime.newArray(other, this);
+            return newArray(context, other, this);
         } else if (other instanceof RubyComplex otherComplex) {
             if (k_exact_p(otherComplex.getImage()) && f_zero_p(context, otherComplex.getImage())) {
-                return runtime.newArray(RubyRational.newRationalBang(context, getMetaClass(), otherComplex.getReal()), this);
+                return newArray(context, RubyRational.newRationalBang(context, getMetaClass(), otherComplex.getReal()), this);
             } else {
-                return runtime.newArray(other, RubyComplex.newComplexCanonicalize(context, this));
+                return newArray(context, other, RubyComplex.newComplexCanonicalize(context, this));
             }
         }
 
-        throw typeError(context, str(runtime, other.getMetaClass(), " can't be coerced into ", getMetaClass()));
+        throw typeError(context, str(context.runtime, other.getMetaClass(), " can't be coerced into ", getMetaClass()));
     }
 
     @Override
@@ -1031,7 +1031,7 @@ public class RubyRational extends RubyNumeric {
         if (num2dbl(context, other) == 0.0) throw context.runtime.newZeroDivisionError();
 
         IRubyObject val = f_floor(context, f_div(context, this, other));
-        return context.runtime.newArray(val, f_sub(context, this, f_mul(context, other, val)));
+        return newArray(context, val, f_sub(context, this, f_mul(context, other, val)));
     }
 
     /** nurat_rem
@@ -1435,7 +1435,7 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = "marshal_dump", visibility = Visibility.PRIVATE)
     public IRubyObject marshal_dump(ThreadContext context) {
-        RubyArray dump = context.runtime.newArray(num, den);
+        var dump = newArray(context, num, den);
         if (hasVariables()) dump.syncVariables(this);
         return dump;
     }

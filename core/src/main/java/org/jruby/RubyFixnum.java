@@ -40,6 +40,7 @@ package org.jruby;
 import java.math.BigInteger;
 
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.api.Create;
 import org.jruby.compiler.Constantizable;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -60,6 +61,8 @@ import org.jruby.util.cli.Options;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.Numeric.f_odd_p;
@@ -386,7 +389,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
 
         if (value == 0) return RubyArray.newArray(context.runtime, zero(context.runtime));
 
-        RubyArray res = RubyArray.newArray(context.runtime, 0);
+        var res = newArray(context, 0);
         while (value > 0) {
             res.append(context, newFixnum(context.runtime, value % longBase));
             value /= longBase;
@@ -769,20 +772,16 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
     }
 
     private IRubyObject divmodFixnum(ThreadContext context, RubyFixnum other) {
-        final Ruby runtime = context.runtime;
-
         final long x = this.value;
         final long y = other.value;
-        if (y == 0) {
-            throw runtime.newZeroDivisionError();
-        }
+        if (y == 0) throw context.runtime.newZeroDivisionError();
 
         long mod; final RubyInteger integerDiv;
         if (y == -1) {
             if (x == MIN) {
-                integerDiv = RubyBignum.newBignum(runtime, BigInteger.valueOf(x).negate());
+                integerDiv = RubyBignum.newBignum(context.runtime, BigInteger.valueOf(x).negate());
             } else {
-                integerDiv = RubyFixnum.newFixnum(runtime, -x);
+                integerDiv = Create.newFixnum(context, -x);
             }
             mod = 0;
         } else {
@@ -794,10 +793,10 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
                 div -= 1; // horrible sudden thought: might this overflow? probably not?
                 mod += y;
             }
-            integerDiv = RubyFixnum.newFixnum(runtime, div);
+            integerDiv = Create.newFixnum(context, div);
         }
-        IRubyObject fixMod = RubyFixnum.newFixnum(runtime, mod);
-        return RubyArray.newArray(runtime, integerDiv, fixMod);
+        IRubyObject fixMod = Create.newFixnum(context, mod);
+        return newArray(context, integerDiv, fixMod);
     }
 
     /** fix_pow

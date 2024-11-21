@@ -31,6 +31,7 @@
 
 package org.jruby;
 
+import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Error.*;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PUBLIC;
@@ -1013,10 +1014,8 @@ public class RubyClass extends RubyModule {
 
     @JRubyMethod
     public IRubyObject subclasses(ThreadContext context) {
-        var subs = RubyArray.newArray(context.runtime);
-
+        var subs = newArray(context);
         concreteSubclasses(subs);
-
         return subs;
     }
 

@@ -50,6 +50,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
+import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.util.CommonByteLists.*;
 import static org.jruby.util.RubyStringBuilder.inspectIdentifierByteList;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -380,26 +382,17 @@ public class RipperParserBase {
     }
 
     public IRubyObject method_optarg(IRubyObject method, IRubyObject arg) {
-        if (arg == null) return method;
-
-        return dispatch("on_method_add_arg", method, arg);
+        return arg == null ? method : dispatch("on_method_add_arg", method, arg);
     }
 
     public IRubyObject keyword_arg(IRubyObject key, IRubyObject value) {
-        var array = RubyArray.newArray(context.runtime, 2);
-
-        array.append(context, key);
-        array.append(context, value != null ? value : context.nil);
-
-        return array;
+        return newArray(context, key, value != null ? value : context.nil);
     }
 
     public IRubyObject new_args(int _line, IRubyObject f, IRubyObject o, IRubyObject r, IRubyObject p, ArgsTailHolder tail) {
-        if (tail != null) {
-            return dispatch("on_params", f, o, r, p, tail.getKeywordArgs(), tail.getKeywordRestArg(), tail.getBlockArg());
-        }
-
-        return dispatch("on_params", f, o, r, p, null, null, null);
+        return tail != null ?
+                dispatch("on_params", f, o, r, p, tail.getKeywordArgs(), tail.getKeywordRestArg(), tail.getBlockArg()) :
+                dispatch("on_params", f, o, r, p, null, null, null);
     }
 
     public ArgsTailHolder new_args_tail(int line, IRubyObject kwarg, IRubyObject kwargRest, ByteList block) {
@@ -440,11 +433,11 @@ public class RipperParserBase {
     }
     
     public IRubyObject new_array(IRubyObject ...args) {
-        return context.runtime.newArray(args);
+        return newArray(context, args);
     }
 
     public IRubyObject new_assoc(IRubyObject key, IRubyObject value) {
-        return RubyArray.newArray(context.runtime, key, value);
+        return newArray(context, key, value);
     }    
     
     public IRubyObject new_bv(ByteList identifier) {
@@ -685,8 +678,7 @@ public class RipperParserBase {
             if (preArgs != null) {
                 preArgs.unshift(context, preArg);
             } else {
-                preArgs = RubyArray.newArray(context.runtime);
-                preArgs.add(preArg);
+                preArgs = newArray(context, preArg);
             }
         }
 
@@ -745,21 +737,13 @@ public class RipperParserBase {
     }
 
     public RubyArray new_hash_pattern_tail(int _line, IRubyObject keywordArgs, IRubyObject keywordRestValue) {
-        IRubyObject restArg;
+        // To not make parser construct an array we will just detect the case of '**' with no arguments before it.
+        if (keywordArgs == null) keywordArgs = newEmptyArray(context);
 
-        // To not make parser construct an array we will just detect the case of '**' with no arguments
-        // before it.
-        if (keywordArgs == null) {
-            keywordArgs = getRuntime().newEmptyArray();
-        }
+        IRubyObject restArg = keywordRestValue != null ?
+                dispatch("on_var_field", keywordRestValue) : context.nil;
 
-        if (keywordRestValue != null) {
-            restArg = dispatch("on_var_field", keywordRestValue);
-        } else {                                   // '**'
-            restArg = context.nil;
-        }
-
-        return RubyArray.newArray(getRuntime(), keywordArgs, restArg);
+        return newArray(context, keywordArgs, restArg);
     }
 
     public IRubyObject makeNullNil(IRubyObject value) {

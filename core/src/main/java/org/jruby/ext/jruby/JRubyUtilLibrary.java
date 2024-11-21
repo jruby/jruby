@@ -50,8 +50,7 @@ import org.jruby.util.ClasspathLauncher;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Create.newString;
-import static org.jruby.api.Create.newSymbol;
+import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.util.URLUtil.getPath;
 
@@ -134,7 +133,7 @@ public class JRubyUtilLibrary implements Library {
         int argc = Arity.checkArgumentCount(context, args, 1, 2);
         final ClassLoader loader = context.runtime.getJRubyClassLoader();
         final String name = args[0].convertToString().asJavaString();
-        final var resources = RubyArray.newArray(context.runtime);
+        final var resources = newArray(context);
 
         boolean raw = false, path = false;
         if (argc > 1 && args[1] instanceof RubyHash) {
@@ -426,12 +425,9 @@ public class JRubyUtilLibrary implements Library {
      * This was added for Bootsnap in https://github.com/Shopify/bootsnap/issues/162
      */
     @JRubyMethod(module = true)
-    @Deprecated
+    @Deprecated(since = "9.4-", forRemoval = true)
     public static RubyArray internal_libraries(ThreadContext context, IRubyObject self) {
-        Ruby runtime = context.runtime;
-
-        runtime.getWarnings().warn("JRuby::Util.internal_libraries is deprecated");
-
-        return runtime.newEmptyArray();
+        context.runtime.getWarnings().warn("JRuby::Util.internal_libraries is deprecated");
+        return newEmptyArray(context);
     }
 }

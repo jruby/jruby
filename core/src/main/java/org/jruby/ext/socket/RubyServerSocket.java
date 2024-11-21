@@ -52,6 +52,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
@@ -158,9 +159,7 @@ public class RubyServerSocket extends RubySocket {
                         SocketChannel socketChannel = (SocketChannel)((RubySocket)socket).getChannel();
                         InetSocketAddress addr = (InetSocketAddress)socketChannel.socket().getRemoteSocketAddress();
 
-                        return context.runtime.newArray(
-                                socket,
-                                Sockaddr.packSockaddrFromAddress(context, addr));
+                        return newArray(context, socket, Sockaddr.packSockaddrFromAddress(context, addr));
                     } finally {
                         selectable.configureBlocking(oldBlocking);
                     }
@@ -197,7 +196,7 @@ public class RubyServerSocket extends RubySocket {
                 RubySocket rubySocket = new RubySocket(runtime, runtime.getClass("Socket"));
                 rubySocket.initFromServer(runtime, sock, socket);
 
-                return runtime.newArray(rubySocket, new Addrinfo(runtime, runtime.getClass("Addrinfo"), socket.getRemoteAddress()));
+                return newArray(context, rubySocket, new Addrinfo(runtime, runtime.getClass("Addrinfo"), socket.getRemoteAddress()));
             }
             throw runtime.newErrnoENOPROTOOPTError();
         }

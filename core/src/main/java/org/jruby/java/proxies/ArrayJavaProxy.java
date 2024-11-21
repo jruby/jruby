@@ -5,6 +5,7 @@ import java.util.Arrays;
 
 import org.jruby.*;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Create;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.util.ArrayUtils;
 import org.jruby.javasupport.Java;
@@ -19,6 +20,7 @@ import org.jruby.util.ConvertBytes;
 import org.jruby.util.RubyStringBuilder;
 
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.javasupport.ext.JavaLang.Character.inspectCharValue;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
@@ -477,12 +479,12 @@ public final class ArrayJavaProxy extends JavaProxy {
 
         for ( int i = 0; i < length; i++ ) {
             IRubyObject element = ArrayUtils.arefDirect(runtime, array, converter, i);
-            final RubyInteger index = RubyFixnum.newFixnum(runtime, i);
+            final RubyInteger index = newFixnum(context, i);
 
             if (twoArguments) {
                 block.yieldSpecific(context, element, index);
             } else {
-                block.yield(context, RubyArray.newArray(runtime, element, index));
+                block.yield(context, Create.newArray(context, element, index));
             }
         }
         return this;

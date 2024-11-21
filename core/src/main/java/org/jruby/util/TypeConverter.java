@@ -51,6 +51,7 @@ import org.jruby.runtime.JavaSites.TypeConverterSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newSymbol;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
@@ -480,9 +481,7 @@ public class TypeConverter {
         if (tmp == context.nil) {
             TypeConverterSites sites = sites(context);
             tmp = convertToTypeWithCheck(context, val, context.runtime.getArray(), sites.to_a_checked);
-            if (tmp == context.nil) {
-                return context.runtime.newArray(val);
-            }
+            if (tmp == context.nil) return newArray(context, val);
         }
         return (RubyArray) tmp;
     }

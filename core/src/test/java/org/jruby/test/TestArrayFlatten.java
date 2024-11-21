@@ -8,26 +8,23 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newFixnum;
 
 public class TestArrayFlatten extends TestCase {
 
     public void testFlatten() {
-        Ruby runtime = Ruby.newInstance();
-        ThreadContext context = runtime.getCurrentContext();
-        RubyArray keys = runtime.newArray();
-        RubyArray values = runtime.newArray();
-        
-//        int n = 10;
-        int n = 10000;
-        for (int i = 0; i < n; ++i) {
-            keys.append(newFixnum(context, i));
-            values.append(newFixnum(context, i));
+        var context = Ruby.newInstance().getCurrentContext();
+        var keys = newArray(context);
+        var values = newArray(context);
+
+        for (int i = 0; i < 10_000; ++i) {
+            keys.append(context, newFixnum(context, i));
+            values.append(context, newFixnum(context, i));
         }
         
-        RubyArray temp = (RubyArray) keys.zip(context, new IRubyObject[] {values}, Block.NULL_BLOCK);
-        RubyArray preHash = (RubyArray) temp.flatten(context);
-        
+        var preHash = ((RubyArray<?>) keys.zip(context, new IRubyObject[] {values}, Block.NULL_BLOCK)).flatten(context);
+
         assertNotNull("We have a hash back", preHash);
     }
 }

@@ -56,8 +56,7 @@ import org.jruby.util.TypeConverter;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Create.newFixnum;
-import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.*;
 import static org.jruby.util.Inspector.*;
 
 /**
@@ -298,40 +297,37 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         @Override
         protected RubyBoolean any_p_i(ThreadContext context, Block block) {
             final Ruby runtime = context.runtime;
-            for ( Map.Entry entry : entrySet() ) {
+            for (var entry : entrySet()) {
                 final IRubyObject key = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getKey());
                 final IRubyObject val = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getValue());
-                if ( block.yield(context, RubyArray.newArray(runtime, key, val)).isTrue() ) {
-                    return runtime.getTrue();
-                }
+
+                if ( block.yield(context, newArray(context, key, val)).isTrue() ) return context.tru;
             }
-            return runtime.getFalse();
+            return context.fals;
         }
 
         @Override
         protected RubyBoolean any_p_i_fast(ThreadContext context, Block block) {
             final Ruby runtime = context.runtime;
-            for ( Map.Entry entry : entrySet() ) {
+            for (var entry: entrySet()) {
                 final IRubyObject key = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getKey());
                 final IRubyObject val = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getValue());
-                if ( block.yieldArray(context, runtime.newArray(key, val), null).isTrue() ) {
-                    return runtime.getTrue();
-                }
+
+                if (block.yieldArray(context, newArray(context, key, val), null).isTrue()) return context.tru;
             }
-            return runtime.getFalse();
+            return context.fals;
         }
 
         @Override
         protected RubyBoolean any_p_p(ThreadContext context, IRubyObject pattern) {
             final Ruby runtime = context.runtime;
-            for ( Map.Entry entry : entrySet() ) {
+            for (var entry: entrySet() ) {
                 final IRubyObject key = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getKey());
                 final IRubyObject val = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getValue());
-                if ( pattern.callMethod(context, "===", RubyArray.newArray(runtime, key, val)).isTrue() ) {
-                    return runtime.getTrue();
-                }
+
+                if ( pattern.callMethod(context, "===", newArray(context, key, val)).isTrue() ) return context.tru;
             }
-            return runtime.getFalse();
+            return context.fals;
         }
 
         @Override

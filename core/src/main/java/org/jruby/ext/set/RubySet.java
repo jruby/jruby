@@ -52,6 +52,7 @@ import java.util.Set;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Error.argumentError;
 
 /**
@@ -945,7 +946,6 @@ public class RubySet extends RubyObject implements Set {
     }
 
     private IRubyObject divideTSort(ThreadContext context, final Block block) {
-        final Ruby runtime = context.runtime;
         final RubyHash dig = DivideTSortHash.newInstance(context);
 
         /*
@@ -955,7 +955,7 @@ public class RubySet extends RubyObject implements Set {
           }
          */
         for ( IRubyObject u : elementsOrdered() ) {
-            var a = runtime.newArray();
+            var a = newArray(context);
             dig.fastASet(u, a);
             for ( IRubyObject v : elementsOrdered() ) {
                 IRubyObject ret = block.call(context, u, v);
@@ -970,11 +970,11 @@ public class RubySet extends RubyObject implements Set {
           }
           set
          */
-        final RubyClass Set = runtime.getClass("Set");
-        final RubySet set = new RubySet(runtime, Set);
+        final RubyClass Set = context.runtime.getClass("Set");
+        final RubySet set = new RubySet(context.runtime, Set);
         set.allocHash(context, dig.size());
         sites(context).each_strongly_connected_component.call(context, this, dig, new Block(
-            new JavaInternalBlockBody(runtime, Signature.ONE_REQUIRED) {
+            new JavaInternalBlockBody(context.runtime, Signature.ONE_REQUIRED) {
                 @Override
                 public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
                     return doYield(context, null, args[0]);

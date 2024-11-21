@@ -54,6 +54,7 @@ import org.jruby.runtime.callsite.CacheEntry;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newFixnum;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
 
@@ -277,11 +278,8 @@ public class RubyMethod extends AbstractRubyMethod {
     @JRubyMethod
     public IRubyObject source_location(ThreadContext context) {
         String filename = getFilename();
-        if (filename != null) {
-            return context.runtime.newArray(Convert.asString(context, filename), asFixnum(context, getLine()));
-        }
-
-        return context.nil;
+        return filename == null ? context.nil :
+                newArray(context, Convert.asString(context, filename), asFixnum(context, getLine()));
     }
 
     @JRubyMethod

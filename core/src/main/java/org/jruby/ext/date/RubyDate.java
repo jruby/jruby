@@ -60,8 +60,7 @@ import java.util.GregorianCalendar;
 
 import static org.jruby.RubyRegexp.*;
 import static org.jruby.api.Convert.*;
-import static org.jruby.api.Create.newFixnum;
-import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ext.date.DateUtils.*;
@@ -1397,12 +1396,8 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod // [ ajd, @of, @sg ]
     public IRubyObject marshal_dump(ThreadContext context) {
-        final Ruby runtime = context.runtime;
-        return context.runtime.newArrayNoCopy(new IRubyObject[] {
-                ajd(context),
-                RubyRational.newRationalCanonicalize(context, off, DAY_IN_SECONDS),
-                RubyFixnum.newFixnum(runtime, start)
-        });
+        return newArrayNoCopy(context, ajd(context), RubyRational.newRationalCanonicalize(context, off, DAY_IN_SECONDS),
+                newFixnum(context, start));
     }
 
     @JRubyMethod(meta = true)

@@ -10,6 +10,7 @@ import org.jruby.internal.runtime.methods.DescriptorInfo;
 import java.util.Arrays;
 
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.newSymbol;
 
 /**
  * A description of a single argument in a Ruby argument list.  Primarily used in Method.to_proc.
@@ -40,9 +41,19 @@ public class ArgumentDescriptor {
         this(type, null);
     }
 
+    /**
+     * @param runtime
+     * @param isLambda
+     * @return ""
+     * @deprecated Use {@link ArgumentDescriptor#toArrayForm(ThreadContext, boolean)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public final RubyArray toArrayForm(Ruby runtime, boolean isLambda) {
-        ArgumentType argType = type == ArgumentType.req && !isLambda ? ArgumentType.opt : type;
+        return toArrayForm(runtime.getCurrentContext(), isLambda);
+    }
 
+    public final RubyArray toArrayForm(ThreadContext context, boolean isLambda) {
+        ArgumentType argType = type == ArgumentType.req && !isLambda ? ArgumentType.opt : type;
         RubySymbol name = this.name;
 
         // FIXME: When consolidating block and method parameter arg descriptors eliminate this special *,** handling.
@@ -52,13 +63,13 @@ public class ArgumentDescriptor {
         // methods we have no reference to runtime to construct the symbol for `*` or `**`.
         if (!type.anonymous && name.getBytes().length() == 0) {
             if (type == ArgumentType.rest) {
-                name = runtime.newSymbol("*");
+                name = newSymbol(context, "*");
             } else if (type == ArgumentType.keyrest) {
-                name = runtime.newSymbol("**");
+                name = newSymbol(context, "**");
             }
         }
 
-        return argType.toArrayForm(runtime, name);
+        return argType.toArrayForm(context, name);
     }
 
     public RubyString asParameterName(ThreadContext context) {

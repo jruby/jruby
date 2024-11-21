@@ -960,7 +960,7 @@ public class Pack {
 
     private static IRubyObject unpackInternal(ThreadContext context, RubyString encoded, ByteList formatString, int mode, long offset, Block block) {
         final Ruby runtime = context.runtime;
-        final RubyArray result = (mode == UNPACK_BLOCK) || (mode == UNPACK_1) ? null : runtime.newArray();
+        final var result = mode == UNPACK_BLOCK || mode == UNPACK_1 ? null : newArray(context);
         final ByteList encodedString = encoded.getByteList();
 
         int len = encodedString.realSize();

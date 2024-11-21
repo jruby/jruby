@@ -53,6 +53,7 @@ import java.util.Arrays;
 import java.util.function.BiFunction;
 
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.invokedynamic;
@@ -845,10 +846,10 @@ public class RubyComplex extends RubyNumeric {
      */
     @JRubyMethod(name = "coerce")
     public IRubyObject coerce(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyComplex) return context.runtime.newArray(other, this);
+        if (other instanceof RubyComplex) return newArray(context, other, this);
 
         if (other instanceof RubyNumeric numeric && f_real_p(context, other)) {
-            return context.runtime.newArray(newComplexBang(context, getMetaClass(), numeric), this);
+            return newArray(context, newComplexBang(context, getMetaClass(), numeric), this);
         }
 
         Ruby runtime = context.runtime;
@@ -890,7 +891,7 @@ public class RubyComplex extends RubyNumeric {
     @JRubyMethod(name = {"rectangular", "rect"})
     @Override
     public IRubyObject rect(ThreadContext context) {
-        return context.runtime.newArray(real, image);
+        return newArray(context, real, image);
     }
 
     /** nucomp_polar 
@@ -899,7 +900,7 @@ public class RubyComplex extends RubyNumeric {
     @JRubyMethod(name = "polar")
     @Override
     public IRubyObject polar(ThreadContext context) {
-        return context.runtime.newArray(f_abs(context, this), f_arg(context, this));
+        return newArray(context, f_abs(context, this), f_arg(context, this));
     }
 
     /** nucomp_conjugate
@@ -1076,7 +1077,7 @@ public class RubyComplex extends RubyNumeric {
      */
     @JRubyMethod(name = "marshal_dump", visibility = Visibility.PRIVATE)
     public IRubyObject marshal_dump(ThreadContext context) {
-        RubyArray dump = context.runtime.newArray(real, image);
+        var dump = newArray(context, real, image);
         if (hasVariables()) dump.syncVariables(this);
         return dump;
     }

@@ -38,6 +38,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newFloat;
 
 @JRubyModule(name="Math")
@@ -46,10 +47,11 @@ public class RubyMath {
      * 
      */
     public static RubyModule createMathModule(Ruby runtime) {
+        var context = runtime.getCurrentContext();
         RubyModule result = runtime.defineModule("Math");
 
-        result.defineConstant("E", RubyFloat.newFloat(runtime, Math.E));
-        result.defineConstant("PI", RubyFloat.newFloat(runtime, Math.PI));
+        result.defineConstant("E", newFloat(context, Math.E));
+        result.defineConstant("PI", newFloat(context, Math.PI));
         
         result.defineAnnotatedMethods(RubyMath.class);
 
@@ -84,25 +86,22 @@ public class RubyMath {
 
     @JRubyMethod(name = "atan2", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat atan2(ThreadContext context, IRubyObject recv, IRubyObject x, IRubyObject y) {
-        double valuea = RubyNumeric.num2dbl(context, x);
-        double valueb = RubyNumeric.num2dbl(context, y);
-        
-        return RubyFloat.newFloat(context.runtime, Math.atan2(valuea, valueb));
+        return newFloat(context, Math.atan2(RubyNumeric.num2dbl(context, x), RubyNumeric.num2dbl(context, y)));
     }
 
     @JRubyMethod(name = "cos", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat cos(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        return RubyFloat.newFloat(context.runtime, Math.cos(RubyNumeric.num2dbl(context, x)));
+        return newFloat(context, Math.cos(RubyNumeric.num2dbl(context, x)));
     }
 
     @JRubyMethod(name = "sin", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat sin(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        return RubyFloat.newFloat(context.runtime, Math.sin(RubyNumeric.num2dbl(context, x)));
+        return newFloat(context, Math.sin(RubyNumeric.num2dbl(context, x)));
     }
 
     @JRubyMethod(name = "tan", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat tan(ThreadContext context, IRubyObject recv,  IRubyObject x) {
-        return RubyFloat.newFloat(context.runtime, Math.tan(RubyNumeric.num2dbl(context, x)));
+        return newFloat(context, Math.tan(RubyNumeric.num2dbl(context, x)));
     }
 
     @JRubyMethod(name = "asin", module = true, visibility = Visibility.PRIVATE)
@@ -111,7 +110,7 @@ public class RubyMath {
 
         if (value < -1.0 || value > 1.0) throw context.runtime.newMathDomainError("asin");
 
-        return RubyFloat.newFloat(context.runtime, Math.asin(value));
+        return newFloat(context, Math.asin(value));
     }
 
     @JRubyMethod(name = "acos", module = true, visibility = Visibility.PRIVATE)
@@ -120,31 +119,31 @@ public class RubyMath {
 
         if (value < -1.0 || value > 1.0) throw context.runtime.newMathDomainError("acos");
 
-        return RubyFloat.newFloat(context.runtime, Math.acos(value));
+        return newFloat(context, Math.acos(value));
     }
 
     @JRubyMethod(name = "atan", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat atan(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        return RubyFloat.newFloat(context.runtime, Math.atan(RubyNumeric.num2dbl(context, x)));
+        return newFloat(context, Math.atan(RubyNumeric.num2dbl(context, x)));
     }
 
     @JRubyMethod(name = "cosh", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat cosh(ThreadContext context, IRubyObject recv, IRubyObject x) {
         double value = RubyNumeric.num2dbl(context, x);
         
-        return RubyFloat.newFloat(context.runtime, (Math.exp(value) + Math.exp(-value)) / 2.0);
+        return newFloat(context, (Math.exp(value) + Math.exp(-value)) / 2.0);
     }
 
     @JRubyMethod(name = "sinh", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat sinh(ThreadContext context, IRubyObject recv, IRubyObject x) {
         double value = RubyNumeric.num2dbl(context, x);
         
-        return RubyFloat.newFloat(context.runtime, (Math.exp(value) - Math.exp(-value)) / 2.0);
+        return newFloat(context, (Math.exp(value) - Math.exp(-value)) / 2.0);
     }
 
     @JRubyMethod(name = "tanh", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat tanh(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        return RubyFloat.newFloat(context.runtime, Math.tanh(RubyNumeric.num2dbl(context, x)));
+        return newFloat(context, Math.tanh(RubyNumeric.num2dbl(context, x)));
     }
 
     @JRubyMethod(name = "acosh", module = true, visibility = Visibility.PRIVATE)
@@ -162,7 +161,7 @@ public class RubyMath {
             result = 0.69314718055994530941723212145818 + Math.log(value);
         }
         
-        return RubyFloat.newFloat(context.runtime,result);
+        return newFloat(context, result);
     }
 
     public static final double[] ASINH_COEF = {
@@ -208,7 +207,7 @@ public class RubyMath {
             if (value < 0) result *= -1;
         }
 
-        return RubyFloat.newFloat(context.runtime, result);        
+        return newFloat(context, result);
     }
     
     public static final double[] ATANH_COEF = {
@@ -253,7 +252,7 @@ public class RubyMath {
             result = Double.NaN;
         }
 
-        return RubyFloat.newFloat(context.runtime, result);
+        return newFloat(context, result);
     }
 
     @JRubyMethod(name = "exp", module = true, visibility = Visibility.PRIVATE)
@@ -262,7 +261,7 @@ public class RubyMath {
     }
 
     public static RubyFloat exp(ThreadContext context, IRubyObject exponent) {
-        return RubyFloat.newFloat(context.runtime, Math.exp(RubyNumeric.num2dbl(context, exponent)));
+        return newFloat(context, Math.exp(RubyNumeric.num2dbl(context, exponent)));
     }
 
     // MRI : get_double_rshift
@@ -296,14 +295,12 @@ public class RubyMath {
     }
 
     public static RubyFloat log(ThreadContext context, IRubyObject val) {
-        double [] ret = get_double_rshift(context, val);
+        double[] ret = get_double_rshift(context, val);
 
-        if (ret[0] < 0) {
-            throw context.runtime.newMathDomainError("log");
-        }
+        if (ret[0] < 0) throw context.runtime.newMathDomainError("log");
 
         /* log(d * 2 ** numbits) */
-        return RubyFloat.newFloat(context.runtime, Math.log(ret[0]) + ret[1] * LOG_E_2);
+        return newFloat(context, Math.log(ret[0]) + ret[1] * LOG_E_2);
     }
 
     @JRubyMethod(name = "log", module = true, visibility = Visibility.PRIVATE)
@@ -311,19 +308,14 @@ public class RubyMath {
         double [] ret = get_double_rshift(context, val);
         double _base = RubyNumeric.num2dbl(context, base);
 
-        if (ret[0] < 0 || _base < 0) {
-            throw context.runtime.newMathDomainError("log");
-        }
+        if (ret[0] < 0 || _base < 0) throw context.runtime.newMathDomainError("log");
 
         /* log(d * 2 ** numbits) / log(base) */
-        return RubyFloat.newFloat(context.runtime, Math.log(ret[0]) / Math.log(_base) + ret[1]);
+        return newFloat(context, Math.log(ret[0]) / Math.log(_base) + ret[1]);
     }
 
     public static RubyFloat log(ThreadContext context, IRubyObject recv, IRubyObject... args) {
-        if (args.length == 2) {
-            return log(context, recv, args[0], args[1]);
-        }
-        return log(context, recv, args[0]);
+        return args.length == 2 ? log(context, recv, args[0], args[1]) : log(context, recv, args[0]);
     }
 
     /** Returns the base 10 logarithm of x.
@@ -333,12 +325,10 @@ public class RubyMath {
     public static RubyFloat log10(ThreadContext context, IRubyObject recv, IRubyObject x) {
         double [] ret = get_double_rshift(context, x);
 
-        if (ret[0] < 0) {
-            throw context.runtime.newMathDomainError("log10");
-        }
+        if (ret[0] < 0) throw context.runtime.newMathDomainError("log10");
 
         /* log10(d * 2 ** numbits) */
-        return RubyFloat.newFloat(context.runtime, Math.log10(ret[0]) + ret[1] * LOG_10_2);
+        return newFloat(context, Math.log10(ret[0]) + ret[1] * LOG_10_2);
     }
 
     /** Returns the base 2 logarithm of x.
@@ -348,12 +338,10 @@ public class RubyMath {
     public static RubyFloat log2(ThreadContext context, IRubyObject recv, IRubyObject x) {
         double [] ret = get_double_rshift(context, x);
 
-        if (ret[0] < 0) {
-            throw context.runtime.newMathDomainError("log2");
-        }
+        if (ret[0] < 0) throw context.runtime.newMathDomainError("log2");
 
         /* log2(d * 2 ** numbits) */
-        return RubyFloat.newFloat(context.runtime, Math.log(ret[0]) / LOG_E_2 + ret[1]);
+        return newFloat(context, Math.log(ret[0]) / LOG_E_2 + ret[1]);
     }
 
     @JRubyMethod(name = "sqrt", module = true, visibility = Visibility.PRIVATE)
@@ -362,14 +350,12 @@ public class RubyMath {
 
         if (value < 0) throw context.runtime.newMathDomainError("sqrt");
 
-        return RubyFloat.newFloat(context.runtime, value == 0.0 ? 0.0 : Math.sqrt(value));
+        return newFloat(context, value == 0.0 ? 0.0 : Math.sqrt(value));
     }
 
     @JRubyMethod(name = "cbrt", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat cbrt(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        double result = Math.cbrt(RubyNumeric.num2dbl(context, x));
-        
-        return RubyFloat.newFloat(context.runtime, result);
+        return newFloat(context, Math.cbrt(RubyNumeric.num2dbl(context, x)));
     }
 
     @Deprecated
@@ -395,7 +381,7 @@ public class RubyMath {
             result = 0;
         }
         
-        return RubyFloat.newFloat(context.runtime,result);
+        return newFloat(context, result);
     }    
     
     
@@ -425,9 +411,7 @@ public class RubyMath {
             for (; mantissa >= 1.0; mantissa *= 0.5, exponent +=1) { }
         }
 	 
-        return RubyArray.newArray(context.runtime, 
-                                 RubyFloat.newFloat(context.runtime, sign * mantissa),
-                                 RubyNumeric.int2fix(context.runtime, exponent));
+        return newArray(context, newFloat(context, sign * mantissa), RubyNumeric.int2fix(context.runtime, exponent));
     }
 
     /*
@@ -438,12 +422,9 @@ public class RubyMath {
         double m = RubyNumeric.num2dbl(context, mantissa);
         int e = RubyNumeric.num2int(exponent);
 
-        if (e > 1023) {
-            // avoid overflow. Math.power(2.0, 1024) is greater than Math.MAX_VALUE.
-            return RubyFloat.newFloat(context.runtime, m * Math.pow(2.0, e - 1023) * Math.pow(2.0, 1023));
-        }
-
-        return RubyFloat.newFloat(context.runtime, m * Math.pow(2.0, e));
+        return e > 1023 ? // avoid overflow. Math.power(2.0, 1024) is greater than Math.MAX_VALUE.
+                newFloat(context, m * Math.pow(2.0, e - 1023) * Math.pow(2.0, 1023)) :
+                newFloat(context, m * Math.pow(2.0, e));
     }
 
     public static final double[] ERFC_COEF = {
@@ -466,23 +447,22 @@ public class RubyMath {
     @JRubyMethod(name = "erf", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat erf(ThreadContext context, IRubyObject recv, IRubyObject x) {
         double value = RubyNumeric.num2dbl(context, x);
-
-        double  result;
         double  y = Math.abs(value);
+        double  result;
 
         if (y <= 1.49012e-08) {
             result = 2 * value / 1.77245385090551602729816748334;
         } else if (y <= 1) {
             result = value * (1 + chebylevSerie(2 * value * value - 1, ERFC_COEF));
         } else if (y < 6.013687357) {
-            result = sign(1 - erfc(context, recv, RubyFloat.newFloat(context.runtime, y)).value, value);
+            result = sign(1 - erfc(context, recv, newFloat(context, y)).value, value);
         } else if (Double.isNaN(y)) {
             result = Double.NaN;
         } else {
             result = sign(1, value);
         }
         
-        return RubyFloat.newFloat(context.runtime,result);
+        return newFloat(context,result);
     }
 
     public static final double[] ERFC2_COEF = {
@@ -571,7 +551,7 @@ public class RubyMath {
                 if (value < 0) result = 2.0 - result;
             }
         }
-        return RubyFloat.newFloat(context.runtime,result);        
+        return newFloat(context, result);
     }
 
     private static final double FACTORIAL[] = {
@@ -680,8 +660,7 @@ public class RubyMath {
 
         NemesLogGamma l = new NemesLogGamma(value);
 
-        return RubyArray.newArray(context.runtime, 
-                newFloat(context, l.value), RubyInteger.int2fix(context.runtime, (int) l.sign));
+        return newArray(context, newFloat(context, l.value), RubyInteger.int2fix(context.runtime, (int) l.sign));
     }
 
     public static double nemes_gamma(double x) {

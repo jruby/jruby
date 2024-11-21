@@ -38,6 +38,7 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Create.newArray;
 import static org.jruby.util.RubyStringBuilder.ids;
 import static org.jruby.util.RubyStringBuilder.str;
 
@@ -84,7 +85,7 @@ public class ExitableInterpreterEngine extends InterpreterEngine {
                 // FIXME: We are forcing a boxing to a Ruby array we probably do not need but did it anyways so it matched the
                 // interface of interpreterengine (re-consider this).
                 return new ExitableReturn(
-                		context.runtime.newArray(interpreterContext.getArgs(context, self, currScope, currDynScope, temp)),
+                		newArray(context, interpreterContext.getArgs(context, self, currScope, currDynScope, temp)),
         				((CallBase)instrs[ipc]).prepareBlock(context, self, currScope, currDynScope, temp));
             }
 
@@ -111,7 +112,7 @@ public class ExitableInterpreterEngine extends InterpreterEngine {
                         break;
                     case RET_OP:
                         processReturnOp(context, block, instr, operation, currDynScope, temp, self, currScope);
-                        return new ExitableReturn(context.runtime.newArray(), Block.NULL_BLOCK);
+                        return new ExitableReturn(newArray(context), Block.NULL_BLOCK);
                     case BRANCH_OP:
                         switch (operation) {
                             case JUMP:

@@ -9,6 +9,8 @@ import org.jruby.java.util.ArrayUtils;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.asInt;
+import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Error.typeError;
 
@@ -79,15 +81,13 @@ public class ArrayJavaAddons {
 
     @JRubyMethod
     public static IRubyObject dimensions(ThreadContext context, IRubyObject rubyArray) {
-        return dimensions(context, rubyArray, context.runtime.newEmptyArray());
+        return dimensions(context, rubyArray, newEmptyArray(context));
     }
 
     @JRubyMethod
     public static IRubyObject dimensions(ThreadContext context, IRubyObject rubyArray, IRubyObject dims) {
-        final Ruby runtime = context.runtime;
-        if ( ! ( rubyArray instanceof RubyArray ) ) {
-            return runtime.newEmptyArray();
-        }
+        if (!(rubyArray instanceof RubyArray)) return newEmptyArray(context);
+
         assert dims instanceof RubyArray;
 
         return calcDimensions(context, (RubyArray<?>) rubyArray, (RubyArray<?>) dims, 0);
@@ -95,15 +95,12 @@ public class ArrayJavaAddons {
 
     @JRubyMethod
     public static IRubyObject dimensions(ThreadContext context, IRubyObject rubyArray, IRubyObject dims, IRubyObject index) {
-        final Ruby runtime = context.runtime;
-        if ( ! ( rubyArray instanceof RubyArray ) ) {
-            return runtime.newEmptyArray();
-        }
+        if (!(rubyArray instanceof RubyArray)) return newEmptyArray(context);
+
         assert dims instanceof RubyArray;
         assert index instanceof RubyFixnum;
 
-        final int i = (int) ((RubyFixnum) index).getLongValue();
-        return calcDimensions(context, (RubyArray<?>) rubyArray, (RubyArray<?>) dims, i);
+        return calcDimensions(context, (RubyArray<?>) rubyArray, (RubyArray<?>) dims, asInt(context, (RubyFixnum) index));
     }
 
     private static RubyArray<?> calcDimensions(ThreadContext context,

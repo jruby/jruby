@@ -63,8 +63,7 @@ import java.util.List;
 import static org.jruby.RubyIO.PARAGRAPH_SEPARATOR;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.castAsString;
-import static org.jruby.api.Create.newFixnum;
-import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
@@ -706,7 +705,6 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
         if (argc != 0 && args[0].isNil()) {
             array.add(read(context, IRubyObject.NULL_ARRAY));
-
         } else {
             ByteList sep = ((RubyString) context.runtime.getGlobalVariables().get("$/")).getByteList();
 
@@ -721,7 +719,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
             }
         }
 
-        return getRuntime().newArray(array);
+        return newArray(context, array);
     }
 
     @JRubyMethod

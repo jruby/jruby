@@ -950,7 +950,7 @@ public class RubyKernel {
      */
     @JRubyMethod(name = "global_variables", module = true, visibility = PRIVATE)
     public static RubyArray global_variables(ThreadContext context, IRubyObject recv) {
-        RubyArray globalVariables = context.runtime.newArray();
+        var globalVariables = newArray(context);
 
         for (String globalVariableName : context.runtime.getGlobalVariables().getNames()) {
             globalVariables.append(context, newSymbol(context, globalVariableName));

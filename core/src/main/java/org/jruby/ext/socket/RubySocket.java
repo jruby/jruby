@@ -85,8 +85,7 @@ import java.util.Enumeration;
 import java.util.regex.Pattern;
 
 import static org.jruby.api.Convert.castAsFixnum;
-import static org.jruby.api.Create.newFixnum;
-import static org.jruby.api.Create.newSymbol;
+import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
@@ -261,7 +260,7 @@ public class RubySocket extends RubyBasicSocket {
 
     @JRubyMethod(meta = true)
     public static IRubyObject getifaddrs(ThreadContext context, IRubyObject recv) {
-        RubyArray list = RubyArray.newArray(context.runtime);
+        var list = newArray(context);
         RubyClass Ifaddr = (RubyClass) context.runtime.getClassFromPath("Socket::Ifaddr");
         try {
             Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces();
@@ -383,8 +382,7 @@ public class RubySocket extends RubyBasicSocket {
             sock1.initFieldsFromDescriptor(runtime, fd1);
             sock1.initSocket(fd1);
 
-            return runtime.newArray(sock0, sock1);
-
+            return newArray(context, sock0, sock1);
         } catch (IOException ioe) {
             throw runtime.newIOErrorFromException(ioe);
         }

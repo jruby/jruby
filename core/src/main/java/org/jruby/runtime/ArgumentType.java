@@ -5,6 +5,9 @@ import org.jruby.RubyArray;
 import org.jruby.RubySymbol;
 import org.jruby.internal.runtime.methods.DescriptorInfo;
 
+import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newSymbol;
+
 /**
  * The diffierent types of arguments identified in a method.
  */
@@ -66,10 +69,21 @@ public enum ArgumentType {
         }
     }
 
+    /**
+     * @param runtime
+     * @param name
+     * @return ""
+     * @deprecated Use #{@link ArgumentType#toArrayForm(ThreadContext, RubySymbol)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public RubyArray toArrayForm(Ruby runtime, RubySymbol name) {
-        RubySymbol typeName = runtime.newSymbol(typeId);
+        return toArrayForm(runtime.getCurrentContext(), name);
+    }
 
-        return anonymous ? runtime.newArray(typeName) : runtime.newArray(typeName, name);
+    public RubyArray toArrayForm(ThreadContext context, RubySymbol name) {
+        RubySymbol typeName = newSymbol(context, typeId);
+
+        return anonymous ? newArray(context, typeName) : newArray(context, typeName, name);
     }
 
     public ArgumentType anonymousForm() {

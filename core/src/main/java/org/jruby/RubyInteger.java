@@ -62,6 +62,7 @@ import java.math.RoundingMode;
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.Numeric.f_gcd;
@@ -796,7 +797,7 @@ public abstract class RubyInteger extends RubyNumeric {
     @JRubyMethod(name = "gcdlcm")
     public IRubyObject gcdlcm(ThreadContext context, IRubyObject other) {
         final RubyInteger otherInt = RubyInteger.intValue(context, other);
-        return context.runtime.newArray(f_gcd(context, this, otherInt), f_lcm(context, this, otherInt));
+        return newArray(context, f_gcd(context, this, otherInt), f_lcm(context, this, otherInt));
     }
 
     static RubyInteger intValue(ThreadContext context, IRubyObject num) {

@@ -62,6 +62,7 @@ import java.math.RoundingMode;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.Numeric.f_abs;
@@ -717,14 +718,13 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "coerce")
     public IRubyObject coerce(IRubyObject other) {
-        final Ruby runtime = metaClass.runtime;
-        ThreadContext context = runtime.getCurrentContext();
-        if (metaClass == other.getMetaClass()) return runtime.newArray(other, this);
+        var context = getRuntime().getCurrentContext();
+        if (metaClass == other.getMetaClass()) return newArray(context, other, this);
 
         IRubyObject cdr = RubyKernel.new_float(context, this);
         IRubyObject car = RubyKernel.new_float(context, other);
 
-        return runtime.newArray(car, cdr);
+        return newArray(context, car, cdr);
     }
 
     /** num_uplus
@@ -821,7 +821,7 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "divmod")
     public IRubyObject divmod(ThreadContext context, IRubyObject other) {
-        return RubyArray.newArray(context.runtime, div(context, other), modulo(context, other));
+        return newArray(context, div(context, other), modulo(context, other));
     }
 
     /** num_fdiv */
@@ -1505,7 +1505,7 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = {"rectangular", "rect"})
     public IRubyObject rect(ThreadContext context) {
-        return context.runtime.newArray(this, RubyFixnum.zero(context.runtime));
+        return newArray(context, this, RubyFixnum.zero(context.runtime));
     }
 
     /** numeric_polar
@@ -1513,7 +1513,7 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "polar")
     public IRubyObject polar(ThreadContext context) {
-        return context.runtime.newArray(f_abs(context, this), f_arg(context, this));
+        return newArray(context, f_abs(context, this), f_arg(context, this));
     }
 
     /** numeric_real

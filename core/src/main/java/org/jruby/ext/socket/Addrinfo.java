@@ -879,7 +879,7 @@ public class Addrinfo extends RubyObject {
             serviceName = Service.getServiceByPort(getPort(), protocol.getName()).getName();
         }
 
-        return context.runtime.newArray(hostname, newString(context, serviceName));
+        return newArray(context, hostname, newString(context, serviceName));
     }
 
 

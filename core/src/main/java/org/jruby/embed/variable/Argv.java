@@ -117,7 +117,7 @@ public class Argv extends AbstractVariable {
     public synchronized void inject() {
         final Ruby runtime = getRuntime();
 
-        final RubyArray argv = RubyArray.newArray(runtime);
+        final var argv = RubyArray.newArray(runtime);
         if ( javaObject instanceof Collection ) {
             argv.addAll( (Collection) javaObject );
         }

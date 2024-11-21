@@ -76,8 +76,7 @@ import org.jruby.util.collections.StringArraySet;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-import static org.jruby.api.Create.newString;
-import static org.jruby.api.Create.newSymbol;
+import static org.jruby.api.Create.*;
 import static org.jruby.util.URLUtil.getPath;
 
 /**
@@ -207,7 +206,8 @@ public class LoadService {
      * @param prependDirectories
      */
     public void init(List<String> prependDirectories) {
-        loadPath = RubyArray.newArray(runtime);
+        var context = runtime.getCurrentContext();
+        loadPath = newArray(context);
         loadPath.getMetaClass().defineAnnotatedMethods(LoadPathMethods.class);
 
         String jrubyHome = runtime.getJRubyHome();
@@ -221,10 +221,10 @@ public class LoadService {
 
         // add $RUBYLIB paths
         RubyHash env = (RubyHash) runtime.getObject().getConstant("ENV");
-        RubyString env_rubylib = runtime.newString("RUBYLIB");
-        ThreadContext currentContext = runtime.getCurrentContext();
-        if (env.has_key_p(currentContext, env_rubylib).isTrue()) {
-            String rubylib = env.op_aref(currentContext, env_rubylib).toString();
+        RubyString env_rubylib = newString(context, "RUBYLIB");
+
+        if (env.has_key_p(context, env_rubylib).isTrue()) {
+            String rubylib = env.op_aref(context, env_rubylib).toString();
             String[] paths = rubylib.split(File.pathSeparator);
             addPaths(paths);
         }
@@ -248,9 +248,8 @@ public class LoadService {
                     addPath(RbConfigLibrary.getVendorDir(runtime));
                 }
                 String rubygemsDir = RbConfigLibrary.getRubygemsDir(runtime);
-                if (rubygemsDir != null) {
-                    addPath(rubygemsDir);
-                }
+                if (rubygemsDir != null) addPath(rubygemsDir);
+
                 addPath(RbConfigLibrary.getRubyLibDir(runtime));
             }
 
@@ -330,7 +329,7 @@ public class LoadService {
                 name = newString(context, libraryHolder[0].getLoadName());
             }
 
-            return context.runtime.newArray(ext, name);
+            return newArray(context, ext, name);
         }
     }
 

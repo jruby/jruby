@@ -68,8 +68,7 @@ import org.jruby.runtime.Visibility;
 import static org.jruby.anno.FrameField.*;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.castAsModule;
-import static org.jruby.api.Create.newArray;
-import static org.jruby.api.Create.newSymbol;
+import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
@@ -2298,17 +2297,17 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     final IRubyObject methodsImpl(ThreadContext context, final boolean all) {
-        final RubyArray methods = RubyArray.newArray(context.runtime);
+        final var methods = newArray(context);
         final Set<String> seen = new HashSet<>();
 
         RubyClass metaClass = getMetaClass();
         if (metaClass.isSingleton()) {
-            metaClass.populateInstanceMethodNames(seen, methods, PRIVATE, false, true, false);
+            metaClass.populateInstanceMethodNames(context, seen, methods, PRIVATE, false, true, false);
             if (all) {
-                metaClass.getSuperClass().populateInstanceMethodNames(seen, methods, PRIVATE, false, true, true);
+                metaClass.getSuperClass().populateInstanceMethodNames(context, seen, methods, PRIVATE, false, true, true);
             }
         } else if (all) {
-            metaClass.populateInstanceMethodNames(seen, methods, PRIVATE, false, true, true);
+            metaClass.populateInstanceMethodNames(context, seen, methods, PRIVATE, false, true, true);
         } // else - do nothing, leave empty
 
         return methods;
@@ -2397,19 +2396,16 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     a.singleton_methods         #=&gt; ["two", "one", "three"]
      */
     // TODO: This is almost RubyModule#instance_methods on the metaClass.  Perhaps refactor.
-    public RubyArray singleton_methods(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-        boolean all = (args.length == 1) ? args[0].isTrue() : true;
-
+    public RubyArray singleton_methods(final ThreadContext context, IRubyObject[] args) {
+        boolean all = args.length != 1 || args[0].isTrue();
         RubyClass klass = metaClass;
         RubyModule origin = klass.getMethodLocation();
-
         Set<RubySymbol> names = (klass.isSingleton() || all) ? new HashSet<>() : Collections.EMPTY_SET;
 
         if (klass.isSingleton()) {
             // TODO: needs to use method_entry_i logic from MRI
             origin.getMethods().forEach((k, v) -> {
-                if (v.getVisibility() != PRIVATE) names.add(runtime.newSymbol(k));
+                if (v.getVisibility() != PRIVATE) names.add(newSymbol(context, k));
             });
             klass = klass.getSuperClass();
         }
@@ -2418,16 +2414,16 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             while (klass != null && (klass.isSingleton() || klass.isIncluded())) {
                 if (klass != origin) {
                     klass.getMethods().forEach((k, v) -> {
-                        if (v.getVisibility() != PRIVATE) names.add(runtime.newSymbol(k));
+                        if (v.getVisibility() != PRIVATE) names.add(newSymbol(context, k));
                     });
                 }
                 klass = klass.getSuperClass();
             }
         }
 
-        if (names.isEmpty()) return runtime.newEmptyArray();
+        if (names.isEmpty()) return newEmptyArray(context);
 
-        return RubyArray.newArray(runtime, names);
+        return RubyArray.newArray(context.runtime, names);
     }
 
     public IRubyObject singleton_method(IRubyObject name) {
@@ -2520,9 +2516,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *  The default to_a method is deprecated.
      */
     public RubyArray to_a(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        runtime.getWarnings().warn(ID.DEPRECATED_METHOD, "default 'to_a' will be obsolete");
-        return runtime.newArray(this);
+        context.runtime.getWarnings().warn(ID.DEPRECATED_METHOD, "default 'to_a' will be obsolete");
+        return newArray(context,this);
     }
 
     /** rb_obj_instance_eval

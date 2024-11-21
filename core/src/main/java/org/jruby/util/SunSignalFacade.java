@@ -50,6 +50,7 @@ import sun.misc.SignalHandler;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newFixnum;
 
 /**
@@ -196,7 +197,7 @@ public class SunSignalFacade implements SignalFacade {
                 callback = jsHandler.blockCallback;
             } else {
                 ret = jsHandler.block;
-                return RubyArray.newArray(runtime, ret, handledBoolean);
+                return newArray(runtime.getCurrentContext(), ret, handledBoolean);
             }
         }
 

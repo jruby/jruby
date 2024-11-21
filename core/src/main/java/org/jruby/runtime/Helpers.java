@@ -82,6 +82,7 @@ import org.jcodings.unicode.UnicodeEncoding;
 
 import static org.jruby.RubyBasicObject.getMetaClass;
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_EMPTY;
 import static org.jruby.runtime.Visibility.*;
@@ -424,10 +425,9 @@ public class Helpers {
 
     public static RubyArray viewArgsArray(ThreadContext context, RubyArray rubyArray, int preArgsCount, int postArgsCount) {
         int n = rubyArray.getLength();
-        if (preArgsCount + postArgsCount >= n) {
-            return RubyArray.newEmptyArray(context.runtime);
-        }
-        return (RubyArray)rubyArray.subseq(context.runtime.getArray(), preArgsCount, n - preArgsCount - postArgsCount, true);
+        return preArgsCount + postArgsCount >= n ?
+                newEmptyArray(context) :
+                (RubyArray<?>) rubyArray.subseq(context.runtime.getArray(), preArgsCount, n - preArgsCount - postArgsCount, true);
     }
 
     public static Class[] getStaticMethodParams(Class target, int args) {
@@ -1912,45 +1912,52 @@ public class Helpers {
     }
 
     public static RubyArray arrayValue(IRubyObject value) {
-        Ruby runtime = value.getRuntime();
-        return arrayValue(runtime.getCurrentContext(), runtime, value);
+        return arrayValue(value.getRuntime().getCurrentContext(), value);
     }
 
+    /**
+     * @param context
+     * @param runtime
+     * @param value
+     * @return ""
+     * @deprecated Use {@link Helpers#arrayValue(ThreadContext, IRubyObject)}
+     */
+    @Deprecated(since = "10.0")
     public static RubyArray arrayValue(ThreadContext context, Ruby runtime, IRubyObject value) {
+        return arrayValue(context, value);
+    }
+
+    public static RubyArray arrayValue(ThreadContext context, IRubyObject value) {
         IRubyObject tmp = value.checkArrayType();
 
         if (tmp.isNil()) {
             if (value.respondsTo("to_a")) {
                 IRubyObject avalue = value.callMethod(context, "to_a");
-                if (!(avalue instanceof RubyArray)) {
-                    if (avalue.isNil()) {
-                        return runtime.newArray(value);
-                    } else {
-                        throw typeError(context, "`to_a' did not return Array");
-                    }
-                }
-                return (RubyArray)avalue;
+                if (avalue instanceof RubyArray ary) return ary;
+                if (avalue.isNil()) return newArray(context, value);
+
+                throw typeError(context, "`to_a' did not return Array");
             } else {
                 CacheEntry entry = value.getMetaClass().searchWithCache("method_missing");
                 DynamicMethod methodMissing = entry.method;
-                if (methodMissing.isUndefined() || runtime.isDefaultMethodMissing(methodMissing)) {
-                    return runtime.newArray(value);
+                if (methodMissing.isUndefined() || context.runtime.isDefaultMethodMissing(methodMissing)) {
+                    return newArray(context, value);
                 } else {
-                    IRubyObject avalue = methodMissing.call(context, value, entry.sourceModule, "to_a", new IRubyObject[] {runtime.newSymbol("to_a")}, Block.NULL_BLOCK);
+                    IRubyObject avalue = methodMissing.call(context, value, entry.sourceModule, "to_a",
+                            new IRubyObject[] {newSymbol(context, "to_a")}, Block.NULL_BLOCK);
                     if (!(avalue instanceof RubyArray)) {
                         if (avalue.isNil()) {
-                            return runtime.newArray(value);
+                            return newArray(context, value);
                         } else {
                             throw typeError(context, "`to_a' did not return Array");
                         }
                     }
-                    return (RubyArray)avalue;
+                    return (RubyArray<?>)avalue;
                 }
             }
         }
-        RubyArray arr = (RubyArray) tmp;
 
-        return arr.aryDup();
+        return ((RubyArray<?>) tmp).aryDup();
     }
 
     // mri: rb_Array
@@ -1969,7 +1976,7 @@ public class Helpers {
 
         return respondsTo_to_ary(value) ?
                 TypeConverter.convertToTypeUnchecked(context, value, context.runtime.getArray(), "to_ary", false) :
-                context.runtime.newArray(value);
+                newArray(context, value);
     }
 
     private static boolean respondsTo_to_ary(IRubyObject value) {
@@ -2001,13 +2008,10 @@ public class Helpers {
         return array.getLength() == 1 ? array.first() : array;
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.4-") // not used
     public static RubyArray splatValue(IRubyObject value) {
-        if (value.isNil()) {
-            return value.getRuntime().newArray(value);
-        }
-
-        return arrayValue(value);
+        var context = value.getRuntime().getCurrentContext();
+        return value.isNil() ? newArray(context, value) : arrayValue(context, value);
     }
 
     @Deprecated // no longer used
@@ -2668,15 +2672,26 @@ public class Helpers {
         return parms;
     }
 
-    /** Convert a parameter list from ArgumentDescriptor format to "Array of Array" format */
+    /**
+     * @param runtime
+     * @param argsDesc
+     * @param isLambda
+     * @return ""
+     * @deprecated Use {@link Helpers#argumentDescriptorsToParameters(ThreadContext, ArgumentDescriptor[], boolean)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public static RubyArray argumentDescriptorsToParameters(Ruby runtime, ArgumentDescriptor[] argsDesc, boolean isLambda) {
+        return argumentDescriptorsToParameters(runtime.getCurrentContext(), argsDesc, isLambda);
+    }
+
+    /** Convert a parameter list from ArgumentDescriptor format to "Array of Array" format */
+    public static RubyArray argumentDescriptorsToParameters(ThreadContext context, ArgumentDescriptor[] argsDesc, boolean isLambda) {
         if (argsDesc == null) Thread.dumpStack();
 
-        final RubyArray params = RubyArray.newBlankArray(runtime, argsDesc.length);
+        final var params = newArray(context, argsDesc.length);
 
         for (int i = 0; i < argsDesc.length; i++) {
-            ArgumentDescriptor param = argsDesc[i];
-            params.store(i, param.toArrayForm(runtime, isLambda));
+            params.store(i, argsDesc[i].toArrayForm(context, isLambda));
         }
 
         return params;

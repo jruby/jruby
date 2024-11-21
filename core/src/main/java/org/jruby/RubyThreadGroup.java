@@ -42,6 +42,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.WeakHashSet;
 
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -145,7 +146,7 @@ public class RubyThreadGroup extends RubyObject {
 
     @JRubyMethod
     public IRubyObject list(ThreadContext context, Block block) {
-        var ary = RubyArray.newArray(context.runtime);
+        var ary = newArray(context);
         synchronized (rubyThreadList) {
             for (RubyThread thread : rubyThreadList) {
                 if (thread != null) ary.append(context, thread);

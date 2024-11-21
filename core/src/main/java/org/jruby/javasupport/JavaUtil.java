@@ -49,6 +49,7 @@ import static java.lang.Character.isUpperCase;
 import static java.lang.Character.isDigit;
 import static java.lang.Character.toLowerCase;
 import static java.lang.Character.toUpperCase;
+import static org.jruby.api.Create.newArrayNoCopy;
 import static org.jruby.api.Error.typeError;
 
 import java.math.BigDecimal;
@@ -129,17 +130,15 @@ public class JavaUtil {
         final IRubyObject[] rubyElements = new IRubyObject[length];
         for ( int i = 0; i < length; i++ ) {
             final Object element = Array.get(array, i);
-            if ( element instanceof ArrayJavaProxy ) {
-                rubyElements[i] = convertJavaArrayToRubyWithNesting(context, ((ArrayJavaProxy) element).getObject());
-            }
-            else if ( element != null && element.getClass().isArray() ) {
+            if (element instanceof ArrayJavaProxy proxy) {
+                rubyElements[i] = convertJavaArrayToRubyWithNesting(context, proxy.getObject());
+            } else if (element != null && element.getClass().isArray()) {
                 rubyElements[i] = convertJavaArrayToRubyWithNesting(context, element);
-            }
-            else {
+            } else {
                 rubyElements[i] = convertJavaToUsableRubyObject(context.runtime, element);
             }
         }
-        return context.runtime.newArrayNoCopy(rubyElements);
+        return newArrayNoCopy(context, rubyElements);
     }
 
     public static JavaConverter getJavaConverter(Class clazz) {

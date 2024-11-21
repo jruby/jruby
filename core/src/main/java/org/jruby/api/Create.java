@@ -7,27 +7,26 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
+import java.util.List;
+
 import static org.jruby.RubyArray.checkLength;
 import static org.jruby.runtime.Helpers.validateBufferLength;
 
 public class Create {
     /**
-     * Create a new array that is sized with the specificed length.
+     * Create a new array with the default allocation size
      *
      * @param context the current thread context
-     * @param length the size to allocate for the array
      * @return the new array
      */
-    public static RubyArray<?> newArray(ThreadContext context, int length) {
-        var values = IRubyObject.array(validateBufferLength(context.runtime, length));
-        Helpers.fillNil(values, 0, length, context.runtime);
-        return new RubyArray<>(context.runtime, values, 0, 0);
+    // mri: rb_ary_new2
+    public static RubyArray newArray(ThreadContext context) {
+        return RubyArray.newArray(context.runtime);
     }
 
     /**
-     * Create a new array with the allocation size specified by the provided length.
-     * This method will additionally make sure the long value will fit into an
-     * int size.
+     * Create a new array with the allocation size specified by the provided length filled with nil.
+     * This method will additionally make sure the long value will fit into an int size.
      *
      * @param context the current thread context
      * @param length the size to allocate for the array
@@ -36,7 +35,77 @@ public class Create {
     // mri: rb_ary_new2
     public static RubyArray<?> newArray(ThreadContext context, long length) {
         checkLength(context, length);
-        return RubyArray.newArray(context.runtime, (int)length);
+        return RubyArray.newBlankArray(context.runtime, (int)length);
+    }
+
+    /**
+     * Create a new array with a single element.
+     *
+     * @param context the current thread context
+     * @param one the lone element in the array
+     * @return the new array
+     */
+    public static RubyArray<?> newArray(ThreadContext context, IRubyObject one) {
+        return RubyArray.newArray(context.runtime, one);
+    }
+
+    /**
+     * Create a new array with two elements.
+     *
+     * @param context the current thread context
+     * @param one the lone element in the array
+     * @param two the lone element in the array
+     * @return the new array
+     */
+    // mri: rb_assoc_new
+    public static RubyArray<?> newArray(ThreadContext context, IRubyObject one, IRubyObject two) {
+        return RubyArray.newArray(context.runtime, one, two);
+    }
+
+    /**
+     * Create a new array with many elements.
+     *
+     * @param context the current thread context
+     * @param elements the elements of the array
+     * @return the new array
+     */
+    public static RubyArray<?> newArray(ThreadContext context, IRubyObject... elements) {
+        return RubyArray.newArray(context.runtime, elements);
+    }
+
+    /**
+     * Create a new array with many elements from a java.util.List.
+     *
+     * @param context the current thread context
+     * @param list the elements of the array
+     * @return the new array
+     */
+    public static RubyArray<?> newArray(ThreadContext context, List<IRubyObject> list) {
+        return RubyArray.newArray(context.runtime, list);
+    }
+
+    /**
+     * Create a new array with many elements but do not copy the incoming array of elements..
+     *
+     * @param context the current thread context
+     * @param elements the elements of the array
+     * @return the new array
+     */
+    public static RubyArray<?> newArrayNoCopy(ThreadContext context, IRubyObject... elements) {
+        return RubyArray.newArrayNoCopy(context.runtime, elements);
+    }
+
+
+    /**
+     * Create a new array which is intended to be empty for its entire lifetime.
+     * It can still grow but the intention is you think it won't grow (or cannot).
+     *
+     * @param context the current thread context
+     * @return the new array
+     */
+    // mri: rb_ary_new2
+    public static RubyArray<?> newEmptyArray(ThreadContext context) {
+        return RubyArray.newEmptyArray(context.runtime);
     }
 
     /**
@@ -121,10 +190,22 @@ public class Create {
      * Creates a new RubySymbol from the provided java String.
      *
      * @param context the current thread context
-     * @param string the contents to become a string
+     * @param string the contents to become a symbol
      * @return the new RubyString
      */
     public static RubySymbol newSymbol(ThreadContext context, String string) {
         return context.runtime.newSymbol(string);
     }
+
+    /**
+     * Creates a new RubySymbol from the provided java String.
+     *
+     * @param context the current thread context
+     * @param bytelist the contents to become a symbol
+     * @return the new RubyString
+     */
+    public static RubySymbol newSymbol(ThreadContext context, ByteList bytelist) {
+        return context.runtime.newSymbol(bytelist);
+    }
+
 }

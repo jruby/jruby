@@ -207,7 +207,7 @@ public class RubyArithmeticSequence extends RubyObject {
         long n = numericToLong(context, num);
 
         if (n < 0) throw argumentError(context, "attempt to take negative size");
-        if (n == 0) return context.runtime.newEmptyArray();
+        if (n == 0) return newEmptyArray(context);
 
         boolean x = excludeEnd.isTrue();
 
@@ -275,12 +275,9 @@ public class RubyArithmeticSequence extends RubyObject {
             if (n > len) n = (long)len;
 
             if (Double.isInfinite(unit)) {
-                if (len > 0) {
-                    ary = newArray(context, 1);
-                    ary.append(context, newFloat(context, beg));
-                } else {
-                    ary = context.runtime.newEmptyArray();
-                }
+                ary = len > 0 ?
+                        newArray(context, 1).append(context, newFloat(context, beg)) :
+                        newEmptyArray(context);
             } else if (unit == 0) {
                 IRubyObject val = newFloat(context, beg);
                 ary = newArray(context, n);
@@ -453,13 +450,12 @@ public class RubyArithmeticSequence extends RubyObject {
     @JRubyMethod
     public IRubyObject last(ThreadContext context, IRubyObject num) {
         IRubyObject b = begin, e = end, s = step, len_1, len;
-        RubyArray ary;
         boolean last_is_adjusted;
 
         if (e.isNil()) throw context.runtime.newRangeError("cannot get the last element of endless arithmetic sequence");
 
         len_1 = ((RubyNumeric)((RubyNumeric)e).op_minus(context, b)).idiv(context, s);
-        if (Numeric.f_negative_p(context, len_1)) return num == null ? context.nil : context.runtime.newEmptyArray();
+        if (Numeric.f_negative_p(context, len_1)) return num == null ? context.nil : newEmptyArray(context);
 
         IRubyObject last = ((RubyNumeric)b).op_plus(context, Numeric.f_mul(context, s, len_1));
         if ((last_is_adjusted = excludeEnd.isTrue()) && Helpers.rbEqual(context, last, e).isTrue()) {
@@ -485,7 +481,7 @@ public class RubyArithmeticSequence extends RubyObject {
         long n = numericToLong(context, nv);
         if (n < 0) throw argumentError(context, "negative array size");
 
-        ary = newArray(context, n);
+        var ary = newArray(context, n);
         b = ((RubyNumeric)last).op_minus(context, Numeric.f_mul(context, s, nv));
         while (n > 0) {
             b = ((RubyNumeric)b).op_plus(context, s);
@@ -500,28 +496,19 @@ public class RubyArithmeticSequence extends RubyObject {
     public IRubyObject size(ThreadContext context) {
         Ruby runtime = context.runtime;
         IRubyObject len_1, len, last;
-        int x;
 
         if (begin instanceof RubyFloat || end instanceof RubyFloat || step instanceof RubyFloat) {
             double ee, n;
 
             if (end.isNil()) {
-                if (Numeric.f_negative_p(context, step)) {
-                    ee = Double.NEGATIVE_INFINITY;
-                } else {
-                    ee = Double.POSITIVE_INFINITY;
-                }
+                ee = Numeric.f_negative_p(context, step) ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
             } else {
                 ee = num2dbl(end);
             }
 
             n = floatStepSize(num2dbl(begin), ee, num2dbl(step), excludeEnd.isTrue());
-            if (Double.isInfinite(n)) {
-                return dbl2num(runtime, n);
-            }
-            if (RubyNumeric.posFixable(n)) {
-                return int2fix(runtime, (long)n);
-            }
+            if (Double.isInfinite(n)) return dbl2num(runtime, n);
+            if (RubyNumeric.posFixable(n)) return int2fix(runtime, (long)n);
 
             return RubyBignum.newBignorm(runtime, n);
         }

@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Create.newFixnum;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
@@ -77,6 +78,7 @@ public class JavaEmbedUtilsTest {
     @Test
     public void testAPIUsageTheNonGenericWay() { // before <T> generic signatures were introduced (JRuby <= 9.4.0)
         final Ruby runtime = Ruby.newInstance();
+        var context = runtime.getCurrentContext();
         IRubyObject str = runtime.evalScriptlet("'foo'");
         Object javaStr = JavaEmbedUtils.rubyToJava(runtime, str, String.class);
         assertEquals("foo", javaStr);
@@ -85,7 +87,7 @@ public class JavaEmbedUtilsTest {
         javaStr = JavaEmbedUtils.rubyToJava(runtime, str, Object.class);
         assertEquals("barbarbar", javaStr);
 
-        Object val = JavaEmbedUtils.rubyToJava(runtime.newEmptyArray());
+        Object val = JavaEmbedUtils.rubyToJava(newEmptyArray(context));
         assertEquals("org.jruby.RubyArray", val.getClass().getName());
     }
 

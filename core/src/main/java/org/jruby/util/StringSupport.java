@@ -65,6 +65,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.jruby.RubyString.scanForCodeRange;
+import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Error.argumentError;
 
 public final class StringSupport {
@@ -2171,14 +2172,13 @@ public final class StringSupport {
         }
 
         if (arg == context.nil) { // rs
-            if (wantarray) return RubyArray.newArray(runtime, str);
-            else {
-                block.yieldSpecific(context, str);
-                return orig;
-            }
+            if (wantarray) return newArray(context, str);
+
+            block.yieldSpecific(context, str);
+            return orig;
         }
 
-        final RubyArray ary = wantarray ? RubyArray.newArray(runtime) : null;
+        final var ary = wantarray ? newArray(context) : null;
 
         final IRubyObject defaultSep = runtime.getGlobalVariables().get("$/");
         RubyString rs = arg.convertToString();

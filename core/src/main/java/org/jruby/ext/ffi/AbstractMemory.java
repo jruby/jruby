@@ -50,6 +50,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -1780,7 +1781,7 @@ abstract public class AbstractMemory extends MemoryObject {
         if (op == null) throw typeError(context, "cannot get memory reader for type " + type);
 
         int len = checkArrayLength(lenArg);
-        RubyArray arr = RubyArray.newArray(context.runtime, len);
+        var arr = newArray(context, len);
 
         for (int i = 0, off = 0; i < len; i++, off += type.size) {
             arr.add(op.get(context, getMemoryIO(), off));
@@ -1795,7 +1796,7 @@ abstract public class AbstractMemory extends MemoryObject {
         DynamicMethod method = getMetaClass().searchMethod(reader.asJavaString());
         
         int len = checkArrayLength(lenArg);
-        RubyArray arr = RubyArray.newArray(context.runtime, len);
+        var arr = newArray(context, len);
 
         for (int i = 0, off = 0; i < len; i++, off += type.size) {
             arr.add(method.call(context, this.slice(context.runtime, off, type.size), this.getMetaClass(), reader.asJavaString()));
@@ -1878,16 +1879,13 @@ abstract public class AbstractMemory extends MemoryObject {
     @JRubyMethod(name = { "get_array_of_string" })
     public IRubyObject get_array_of_string(ThreadContext context, IRubyObject rbOffset) {
         final int POINTER_SIZE = (Platform.getPlatform().addressSize() / 8);
-
-        final Ruby runtime = context.runtime;
-        final RubyArray arr = RubyArray.newArray(runtime);
+        final var arr = newArray(context);
 
         for (long off = getOffset(rbOffset); off <= size - POINTER_SIZE; off += POINTER_SIZE) {
             final MemoryIO mem = getMemoryIO().getMemoryIO(off);
-            if (mem == null || mem.isNull()) {
-                break;
-            }
-            arr.add(MemoryUtil.getTaintedString(runtime, mem, 0));
+            if (mem == null || mem.isNull()) break;
+
+            arr.add(MemoryUtil.getTaintedString(context.runtime, mem, 0));
         }
 
         return arr;
@@ -1898,15 +1896,11 @@ abstract public class AbstractMemory extends MemoryObject {
         final int POINTER_SIZE = (Platform.getPlatform().addressSize() / 8);
         final long off = getOffset(rbOffset);
         final int count = Util.int32Value(rbCount);
-
-        final Ruby runtime = context.runtime;
-        final RubyArray arr = RubyArray.newArray(runtime, count);
+        final var arr = newArray(context, count);
 
         for (int i = 0; i < count; ++i) {
             final MemoryIO mem = getMemoryIO().getMemoryIO(off + (i * POINTER_SIZE));
-            arr.add(mem != null && !mem.isNull()
-                    ? MemoryUtil.getTaintedString(runtime, mem, 0)
-                    : runtime.getNil());
+            arr.add(mem != null && !mem.isNull() ? MemoryUtil.getTaintedString(context.runtime, mem, 0) : context.nil);
         }
 
         return arr;
@@ -2058,10 +2052,10 @@ abstract public class AbstractMemory extends MemoryObject {
     public IRubyObject get_array_of_pointer(ThreadContext context, IRubyObject offset, IRubyObject length) {
         final int POINTER_SIZE = (Platform.getPlatform().addressSize / 8);
         int count = Util.int32Value(length);
-        Ruby runtime = context.runtime;
-        RubyArray arr = RubyArray.newArray(runtime, count);
+        var arr = newArray(context, count);
         long off = getOffset(offset);
 
+        Ruby runtime = context.runtime;
         for (int i = 0; i < count; ++i) {
             arr.add(getPointer(runtime, off + (i * POINTER_SIZE)));
         }
@@ -2072,7 +2066,7 @@ abstract public class AbstractMemory extends MemoryObject {
     @JRubyMethod(name = { "put_array_of_pointer" })
     public IRubyObject put_array_of_pointer(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
         final int POINTER_SIZE = (Platform.getPlatform().addressSize / 8);
-        final RubyArray arr = (RubyArray) arrParam;
+        final var arr = (RubyArray<?>) arrParam;
         final int count = arr.getLength();
 
         long off = getOffset(offset);

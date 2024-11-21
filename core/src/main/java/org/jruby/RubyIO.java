@@ -2667,7 +2667,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         @Override
         public RubyArray getline(ThreadContext context, RubyIO self, IRubyObject rs, int limit, boolean chomp, Block block) {
             
-            var ary = context.runtime.newArray();
+            var ary = newArray(context);
             IRubyObject line;
 
             while ((line = self.getlineImpl(context, rs, limit, chomp)) != context.nil) {
@@ -4674,8 +4674,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         PosixShim posix = new PosixShim(runtime);
         Channel[] fds = posix.pipe();
-        if (fds == null)
-            throw runtime.newErrnoFromErrno(posix.getErrno(), "opening pipe");
+        if (fds == null) throw runtime.newErrnoFromErrno(posix.getErrno(), "opening pipe");
 
 //        args[0] = klass;
 //        args[1] = INT2NUM(pipes[0]);
@@ -4730,11 +4729,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
         fptr2.setMode(fptr2.getMode() | fmode_p[0]);
 
-        ret = runtime.newArray(r, w);
-        if (block.isGiven()) {
-            return ensureYieldClosePipes(context, ret, r, w, block);
-        }
-        return ret;
+        ret = newArray(context, r, w);
+        return block.isGiven() ?
+            ensureYieldClosePipes(context, ret, r, w, block) : ret;
     }
 
     // MRI: rb_ensure(... pipe_pair_close ...)
