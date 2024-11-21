@@ -174,24 +174,24 @@ add_log() {
 
 # Logic to process "arguments files" on both Java 8 and Java 9+
 process_java_opts() {
-    local java_opts_file="$1" java_opts=
+    local java_opts_file="$1"
     if [ -r "$java_opts_file" ]; then
         add_log
         add_log "Adding Java options from: $java_opts_file"
 
-        while read -r line; do
-            if [ "$line" ]; then
-                java_opts="${java_opts} ${line}"
-                add_log "  $line"
-            fi
-        done < "$java_opts_file"
-
         # On Java 9+, add an @argument for the given file.
         # On earlier versions the file contents will be read and expanded on the Java command line.
         if $use_modules; then
-            java_opts_from_files="$java_opts_from_files @$java_opts_file"
+            append java_opts_from_files "@$java_opts_file"
         else
-            java_opts_from_files="$java_opts_from_files $java_opts"
+            local line=
+            while read -r line; do
+                if [ "$line" ]; then
+                    # shellcheck disable=2086  # Split options on whitespace
+                    append java_opts_from_files $line
+                    add_log "  $line"
+                fi
+            done < "$java_opts_file"
         fi
     fi
 }
@@ -685,12 +685,14 @@ fi
 
 # ----- Final prepration of the Java command line -----------------------------
 
-# Include all options from files at the beginning of the Java command line
-JAVA_OPTS="$java_opts_from_files $JAVA_OPTS"
-
 # Don't quote JAVA_OPTS; we want it to expand
 # shellcheck disable=2086
-prepend java_args "$JAVACMD" $JAVA_OPTS "$JFFI_OPTS"
+prepend java_args $JAVA_OPTS "$JFFI_OPTS"
+
+# Include all options from files at the beginning of the Java command line
+preextend java_args java_opts_from_files
+
+prepend java_args "$JAVACMD"
 
 if $NO_BOOTCLASSPATH || $VERIFY_JRUBY; then
     if $use_modules; then
