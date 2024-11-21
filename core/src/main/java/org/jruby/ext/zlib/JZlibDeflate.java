@@ -94,13 +94,10 @@ public class JZlibDeflate extends ZStream {
     @JRubyMethod(name = "initialize", optional = 4, checkArity = false, visibility = PRIVATE)
     public IRubyObject _initialize(ThreadContext context, IRubyObject[] args) {
         args = Arity.scanArgs(context, args, 0, 4);
-        level = -1;
-        windowBits = JZlib.MAX_WBITS;
-        strategy = 0;
-        if (!args[0].isNil()) level = checkLevel(context, RubyNumeric.fix2int(args[0]));
-        if (!args[1].isNil()) windowBits = checkWindowBits(context, RubyNumeric.fix2int(args[1]), false);
+        level = !args[0].isNil() ? checkLevel(context, RubyNumeric.fix2int(args[0])) : -1;
+        windowBits = !args[1].isNil() ? checkWindowBits(context, RubyNumeric.fix2int(args[1]), false) : JZlib.MAX_WBITS;
         int memlevel = !args[2].isNil() ? RubyNumeric.fix2int(args[2]) : 8; // ignored. Memory setting means nothing on Java.
-        if (!args[3].isNil()) strategy = RubyNumeric.fix2int(args[3]);
+        strategy = !args[3].isNil() ? RubyNumeric.fix2int(args[3]) : 0;
 
         init(context, level, windowBits, memlevel, strategy);
         return this;

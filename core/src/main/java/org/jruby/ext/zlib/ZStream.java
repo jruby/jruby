@@ -205,8 +205,8 @@ public abstract class ZStream extends RubyObject {
      * decompression) and MAX_WBITS + 32(automatic detection of gzip and LZ77).
      */
     // TODO: remove when JZlib checks the given windowBits
-    static int checkWindowBits(ThreadContext context, int wbits, boolean forInflate) {
-        wbits = Math.abs(wbits);
+    static int checkWindowBits(ThreadContext context, int value, boolean forInflate) {
+        int wbits = Math.abs(value);
         if ((wbits & 0xf) < 8) {
             throw RubyZlib.newStreamError(context.runtime, "stream error: invalid window bits");
         }
@@ -221,7 +221,7 @@ public abstract class ZStream extends RubyObject {
             throw RubyZlib.newStreamError(context.runtime, "stream error: invalid window bits");
         }
 
-        return wbits;
+        return value;
     }
 
     // TODO: remove when JZlib checks the given strategy
