@@ -61,16 +61,16 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
     }
 
     @Override
-    public RubyArray aryDup() {
+    public RubyArray<?> aryDup() {
         if (!packed()) return super.aryDup();
         return new RubyArrayOneObject(getRuntime().getArray(), this);
     }
 
     @Override
-    public IRubyObject rb_clear() {
-        if (!packed()) return super.rb_clear();
+    public IRubyObject rb_clear(ThreadContext context) {
+        if (!packed()) return super.rb_clear(context);
 
-        modifyCheck();
+        modifyCheck(context);
 
         // fail packing, but defer [] creation in case it is never needed
         value = null;
@@ -81,41 +81,37 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
     }
 
     @Override
-    public void copyInto(IRubyObject[] target, int start) {
+    public void copyInto(ThreadContext context, IRubyObject[] target, int start) {
         if (!packed()) {
-            super.copyInto(target, start);
+            super.copyInto(context, target, start);
             return;
         }
         target[start] = value;
     }
 
     @Override
-    public void copyInto(IRubyObject[] target, int start, int len) {
+    public void copyInto(ThreadContext context, IRubyObject[] target, int start, int len) {
         if (!packed()) {
-            super.copyInto(target, start, len);
+            super.copyInto(context, target, start, len);
             return;
         }
         if (len != 1) {
-            unpack();
-            super.copyInto(target, start, len);
+            unpack(context);
+            super.copyInto(context, target, start, len);
             return;
         }
         target[start] = value;
     }
 
     @Override
-    protected RubyArray dupImpl(Ruby runtime, RubyClass metaClass) {
+    protected RubyArray<?> dupImpl(Ruby runtime, RubyClass metaClass) {
         if (!packed()) return super.dupImpl(runtime, metaClass);
         return new RubyArrayOneObject(metaClass, this);
     }
 
     @Override
     public boolean includes(ThreadContext context, IRubyObject item) {
-        if (!packed()) return super.includes(context, item);
-
-        if (equalInternal(context, value, item)) return true;
-
-        return false;
+        return !packed() ? super.includes(context, item) : equalInternal(context, value, item);
     }
 
     @Override
@@ -158,26 +154,26 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
     protected IRubyObject internalRotateBang(ThreadContext context, int cnt) {
         if (!packed()) return super.internalRotateBang(context, cnt);
 
-        modifyCheck();
+        modifyCheck(context);
 
         return context.nil;
     }
 
     @Override
-    public IRubyObject op_plus(IRubyObject obj) {
-        if (!packed()) return super.op_plus(obj);
-        RubyArray y = obj.convertToArray();
-        if (y.size() == 0) return new RubyArrayOneObject(this);
-        return super.op_plus(y);
+    public IRubyObject op_plus(ThreadContext context, IRubyObject obj) {
+        if (!packed()) return super.op_plus(context, obj);
+        var y = obj.convertToArray();
+        if (y.isEmpty()) return new RubyArrayOneObject(this);
+        return super.op_plus(context, y);
     }
 
     @Override
-    public IRubyObject replace(IRubyObject orig) {
-        if (!packed()) return super.replace(orig);
+    public IRubyObject replace(ThreadContext context, IRubyObject orig) {
+        if (!packed()) return super.replace(context, orig);
 
-        modifyCheck();
+        modifyCheck(context);
 
-        RubyArray origArr = orig.convertToArray();
+        var origArr = orig.convertToArray();
 
         if (this == orig) return this;
 
@@ -186,20 +182,19 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
             return this;
         }
 
-        unpack();
+        unpack(context);
 
-        return super.replace(origArr);
+        return super.replace(context, origArr);
     }
 
     @Override
-    public IRubyObject reverse_bang() {
-        if (!packed()) return super.reverse_bang();
-
+    public IRubyObject reverse_bang(ThreadContext context) {
+        if (!packed()) return super.reverse_bang(context);
         return this;
     }
 
     @Override
-    protected RubyArray safeReverse() {
+    protected RubyArray<?> safeReverse() {
         if (!packed()) return super.safeReverse();
 
         return new RubyArrayOneObject(this);
@@ -220,14 +215,14 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
     }
 
     @Override
-    protected void storeInternal(final int index, final IRubyObject value) {
+    protected void storeInternal(ThreadContext context, final int index, final IRubyObject value) {
         if (index == 0 && packed()) {
             this.value = value;
             return;
         }
 
-        if (packed()) unpack(); // index > 0
-        super.storeInternal(index, value);
+        if (packed()) unpack(context); // index > 0
+        super.storeInternal(context, index, value);
     }
 
     @Override
@@ -237,7 +232,7 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
         if (len == 0) return newEmptyArray(metaClass.getClassRuntime());
 
         if (beg != 0 || len != 1) {
-            unpack();
+            unpack(metaClass.getRuntime().getCurrentContext());
             return super.subseq(metaClass, beg, len, light);
         }
 
@@ -245,8 +240,8 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
     }
 
     @Override
-    public IRubyObject[] toJavaArray() {
-        if (!packed()) return super.toJavaArray();
+    public IRubyObject[] toJavaArray(ThreadContext context) {
+        if (!packed()) return super.toJavaArray(context);
 
         return arrayOf(value);
     }
@@ -259,7 +254,7 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
     }
 
     @Override
-    public RubyArray collectArray(ThreadContext context, Block block) {
+    public RubyArray<?> collectArray(ThreadContext context, Block block) {
         if (!packed()) return super.collectArray(context, block);
 
         if (!block.isGiven()) return makeShared();
@@ -268,7 +263,7 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
     }
 
     @Override
-    protected RubyArray makeShared() {
+    protected RubyArray<?> makeShared() {
         if (!packed()) return super.makeShared();
 
         return new RubyArrayOneObject(this);

@@ -83,15 +83,15 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0) {
         IRubyObject[] args;
         if (canCallDirect()) {
-            if (arg0 instanceof RubyArray) { // Unwrap the array arg
-                args = IRRuntimeHelpers.convertValueIntoArgArray(context, (RubyArray) arg0, signature);
+            if (arg0 instanceof RubyArray<?> ary) { // Unwrap the array arg
+                args = IRRuntimeHelpers.convertValueIntoArgArray(context, ary, signature);
             } else {
                 args = new IRubyObject[] { arg0 };
             }
             return yieldDirect(context, block, args, null);
         } else {
-            if (arg0 instanceof RubyArray) { // Unwrap the array arg
-                args = IRRuntimeHelpers.convertValueIntoArgArray(context, (RubyArray) arg0, signature);
+            if (arg0 instanceof RubyArray<?> ary) { // Unwrap the array arg
+                args = IRRuntimeHelpers.convertValueIntoArgArray(context, ary, signature);
 
                 // FIXME: arity error is against new args but actual error shows arity of original args.
                 if (block.type == Block.Type.LAMBDA) signature.checkArity(context.runtime, args);
@@ -131,7 +131,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     public static IRubyObject[] toAry(ThreadContext context, IRubyObject value) {
         final IRubyObject ary = Helpers.aryToAry(context, value);
 
-        if (ary instanceof RubyArray) return ((RubyArray) ary).toJavaArray();
+        if (ary instanceof RubyArray<?> array) return array.toJavaArray(context);
         if (ary == context.nil) return new IRubyObject[] { value };
 
         throw typeError(context, "", value, "#to_ary should return Array");

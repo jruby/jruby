@@ -10,7 +10,6 @@ import jnr.unixsocket.UnixSocketAddress;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
-import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyInteger;
 import org.jruby.RubyObject;
@@ -50,6 +49,7 @@ import static jnr.constants.platform.ProtocolFamily.PF_UNSPEC;
 import static jnr.constants.platform.Sock.*;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
 import static org.jruby.ext.socket.SocketUtils.IP_V4_MAPPED_ADDRESS_PREFIX;
 import static org.jruby.ext.socket.SocketUtils.sockerr;
@@ -497,9 +497,9 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod
     public IRubyObject ip_unpack(ThreadContext context) {
-        RubyArray ary = RubyArray.newArray(context.runtime, 2);
-        ary.append(ip_address(context));
-        ary.append(ip_port(context));
+        var ary = newArray(context, 2);
+        ary.append(context, ip_address(context));
+        ary.append(context, ip_port(context));
         return ary;
     }
 

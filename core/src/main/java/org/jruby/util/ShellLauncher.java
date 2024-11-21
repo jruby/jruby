@@ -518,7 +518,7 @@ public class ShellLauncher {
             env = null;
         }
 
-        IRubyObject[] rawArgs = args.convertToArray().toJavaArray();
+        IRubyObject[] rawArgs = args.convertToArray().toJavaArray(runtime.getCurrentContext());
 
         OutputStream output = runtime.getOutputStream();
         OutputStream error = runtime.getErrorStream();

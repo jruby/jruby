@@ -950,11 +950,10 @@ public class RubyKernel {
      */
     @JRubyMethod(name = "global_variables", module = true, visibility = PRIVATE)
     public static RubyArray global_variables(ThreadContext context, IRubyObject recv) {
-        Ruby runtime = context.runtime;
-        RubyArray globalVariables = runtime.newArray();
+        RubyArray globalVariables = context.runtime.newArray();
 
-        for (String globalVariableName : runtime.getGlobalVariables().getNames()) {
-            globalVariables.append(runtime.newSymbol(globalVariableName));
+        for (String globalVariableName : context.runtime.getGlobalVariables().getNames()) {
+            globalVariables.append(context, newSymbol(context, globalVariableName));
         }
 
         return globalVariables;
@@ -967,7 +966,7 @@ public class RubyKernel {
      */
     @JRubyMethod(name = "local_variables", module = true, visibility = PRIVATE, reads = SCOPE)
     public static RubyArray local_variables(ThreadContext context, IRubyObject recv) {
-        return context.getCurrentStaticScope().getLocalVariables(context.runtime);
+        return context.getCurrentStaticScope().getLocalVariables(context);
     }
 
     @JRubyMethod(name = "binding", module = true, visibility = PRIVATE,
@@ -1705,13 +1704,13 @@ public class RubyKernel {
 
         switch (cmd) {
         case 'A': // ?A  | Time    | Last access time for file1
-            return context.runtime.newFileStat(fileResource(arg1).path(), false).atime(context);
+            return context.runtime.newFileStat(fileResource(context, arg1).path(), false).atime(context);
         case 'b': // ?b  | boolean | True if file1 is a block device
             return RubyFileTest.blockdev_p(context, recv, arg1);
         case 'c': // ?c  | boolean | True if file1 is a character device
             return RubyFileTest.chardev_p(context, recv, arg1);
         case 'C': // ?C  | Time    | Last change time for file1
-            return context.runtime.newFileStat(fileResource(arg1).path(), false).ctime(context);
+            return context.runtime.newFileStat(fileResource(context, arg1).path(), false).ctime(context);
         case 'd': // ?d  | boolean | True if file1 exists and is a directory
             return RubyFileTest.directory_p(context, recv, arg1);
         case 'e': // ?e  | boolean | True if file1 exists
@@ -1725,7 +1724,7 @@ public class RubyKernel {
         case 'k': // ?k  | boolean | True if file1 exists and has the sticky bit set
             return RubyFileTest.sticky_p(context, recv, arg1);
         case 'M': // ?M  | Time    | Last modification time for file1
-            return context.runtime.newFileStat(fileResource(arg1).path(), false).mtime(context);
+            return context.runtime.newFileStat(fileResource(context, arg1).path(), false).mtime(context);
         case 'l': // ?l  | boolean | True if file1 exists and is a symbolic link
             return RubyFileTest.symlink_p(context, recv, arg1);
         case 'o': // ?o  | boolean | True if file1 exists and is owned by the caller's effective uid
@@ -1961,11 +1960,11 @@ public class RubyKernel {
         IRubyObject env = args[0];
         IRubyObject prog = args[1];
         IRubyObject options = args[2];
-        RubyArray cmdArgs = (RubyArray) args[3];
+        var cmdArgs = (RubyArray<?>) args[3];
 
         if (options instanceof RubyHash) checkExecOptions(context, (RubyHash) options);
 
-        return execCommon(context, env, prog, options, cmdArgs.toJavaArray());
+        return execCommon(context, env, prog, options, cmdArgs.toJavaArray(context));
     }
 
     static void checkExecOptions(ThreadContext context, RubyHash opts) {

@@ -336,12 +336,8 @@ public class JRubyLibrary implements Library {
                     @Override
                     protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject value) {
                         if (klass != value) {
-                            if (recurseAll) {
-                                return subclasses.append(value);
-                            }
-                            if (((RubyClass) value).superclass(context) == klass) {
-                                return subclasses.append(value);
-                            }
+                            if (recurseAll) return subclasses.append(context, value);
+                            if (((RubyClass) value).superclass(context) == klass) return subclasses.append(context, value);
                         }
                         return context.nil;
                     }

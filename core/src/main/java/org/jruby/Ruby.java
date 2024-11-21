@@ -301,7 +301,7 @@ public final class Ruby implements Constantizable {
                 RubyInstanceConfig.POOL_MAX,
                 RubyInstanceConfig.POOL_TTL,
                 TimeUnit.SECONDS,
-                new SynchronousQueue<Runnable>(),
+                new SynchronousQueue<>(),
                 new DaemonThreadFactory("Ruby-" + getRuntimeNumber() + "-Worker"));
 
         fiberExecutor = new ThreadPoolExecutor(
@@ -309,7 +309,7 @@ public final class Ruby implements Constantizable {
                 Integer.MAX_VALUE,
                 RubyInstanceConfig.FIBER_POOL_TTL,
                 TimeUnit.SECONDS,
-                new SynchronousQueue<Runnable>(),
+                new SynchronousQueue<>(),
                 new DaemonThreadFactory("Ruby-" + getRuntimeNumber() + "-Fiber"));
 
         // initialize the root of the class hierarchy completely
@@ -601,7 +601,7 @@ public final class Ruby implements Constantizable {
                         case 2:
                             return RubyKernel.gsub(context1, self, args[0], args[1], block);
                         default:
-                            throw newArgumentError(String.format("wrong number of arguments %d for 1..2", args.length));
+                            throw argumentError(context1, String.format("wrong number of arguments %d for 1..2", args.length));
                     }
                 }
             });
@@ -638,7 +638,7 @@ public final class Ruby implements Constantizable {
     private void initDefaultEncodings() {
         // External should always have a value, but Encoding.external_encoding{,=} will lazily setup
         String encoding = this.config.getExternalEncoding();
-        if (encoding != null && !encoding.equals("")) {
+        if (encoding != null && !encoding.isEmpty()) {
             Encoding loadedEncoding = encodingService.loadEncoding(ByteList.create(encoding));
             if (loadedEncoding == null) throw new MainExitException(1, "unknown encoding name - " + encoding);
             setDefaultExternalEncoding(loadedEncoding);
@@ -656,7 +656,7 @@ public final class Ruby implements Constantizable {
         }
 
         encoding = this.config.getInternalEncoding();
-        if (encoding != null && !encoding.equals("")) {
+        if (encoding != null && !encoding.isEmpty()) {
             Encoding loadedEncoding = encodingService.loadEncoding(ByteList.create(encoding));
             if (loadedEncoding == null) throw new MainExitException(1, "unknown encoding name - " + encoding);
             setDefaultInternalEncoding(loadedEncoding);
@@ -1326,6 +1326,7 @@ public final class Ruby implements Constantizable {
     /**
      * @deprecated use #newInstance()
      */
+    @Deprecated(since = "9.4-", forRemoval = true)
     public static Ruby getDefaultInstance() {
         return newInstance();
     }
@@ -2494,15 +2495,9 @@ public final class Ruby implements Constantizable {
     }
 
     /**
-     * @deprecated internal API, to be hidden
-     */
-    public RubyRandom.RandomType getDefaultRand() {
-        return getDefaultRandom().getRandomType();
-    }
-
-    /**
      * @deprecated the modified field is now unused and deprecated and the set is ignored
      */
+    @Deprecated(since = "9.4-", forRemoval = true)
     public void setDefaultRand(RubyRandom.RandomType defaultRand) {
     }
 
@@ -3306,7 +3301,7 @@ public final class Ruby implements Constantizable {
         // Fetches (and unsets) the SIGEXIT handler, if one exists.
         IRubyObject trapResult = RubySignal.__jtrap_osdefault_kernel(this.getNil(), this.newString("EXIT"));
         if (trapResult instanceof RubyArray) {
-            IRubyObject[] trapResultEntries = ((RubyArray) trapResult).toJavaArray();
+            IRubyObject[] trapResultEntries = ((RubyArray<?>) trapResult).toJavaArray(context);
             IRubyObject exitHandlerProc = trapResultEntries[0];
             if (exitHandlerProc instanceof RubyProc) {
                 ((RubyProc) exitHandlerProc).call(context, getSingleNilArray());
@@ -4817,6 +4812,7 @@ public final class Ruby implements Constantizable {
     /**
      * @deprecated internal API, to be removed
      */
+    @Deprecated(since = "9.4-", forRemoval = true)
     public Random getRandom() {
         return random;
     }

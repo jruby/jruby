@@ -53,6 +53,7 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 
 import static org.jruby.RubyFixnum.zero;
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
@@ -352,11 +353,11 @@ public class RubyBignum extends RubyInteger {
         if (self.signum() == 0) {
             return RubyArray.newArray(context.runtime, zero(context.runtime));
         } else {
-            RubyArray res = RubyArray.newArray(context.runtime, 0);
+            RubyArray res = newArray(context, 0);
 
             while (self.signum() > 0) {
                 BigInteger q = self.mod(bigBase);
-                res.append(RubyBignum.newBignum(context.runtime, q));
+                res.append(context, RubyBignum.newBignum(context.runtime, q));
                 self = self.divide(bigBase);
             }
 

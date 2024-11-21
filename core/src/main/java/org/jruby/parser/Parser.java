@@ -88,7 +88,7 @@ public class Parser {
 
     protected ParseResult parse(String fileName, int lineNumber, InputStream in, Encoding encoding,
                              DynamicScope existingScope, ParserType type) {
-        RubyArray list = getLines(type == EVAL, fileName, -1);
+        var list = getLines(type == EVAL, fileName, -1);
 
         if (in instanceof LoadServiceResourceInputStream) {
             ByteList source = new ByteList(((LoadServiceResourceInputStream) in).getBytes(), encoding);
@@ -138,7 +138,7 @@ public class Parser {
     public Node parse(String file, ByteList content, DynamicScope blockScope,
             ParserConfiguration configuration) {
         configuration.setDefaultEncoding(content.getEncoding());
-        RubyArray list = getLines(configuration.isEvalParse(), file, -1);
+        var list = getLines(configuration.isEvalParse(), file, -1);
         LexerSource lexerSource = new ByteListLexerSource(file, configuration.getLineNumber(), content, list);
         return parse(file, lexerSource, blockScope, configuration);
     }
@@ -146,7 +146,7 @@ public class Parser {
     @Deprecated
     public Node parse(String file, byte[] content, DynamicScope blockScope,
             ParserConfiguration configuration) {
-        RubyArray list = getLines(configuration.isEvalParse(), file, -1);
+        var list = getLines(configuration.isEvalParse(), file, -1);
         ByteList in = new ByteList(content, configuration.getDefaultEncoding());
         LexerSource lexerSource = new ByteListLexerSource(file, configuration.getLineNumber(), in,  list);
         return parse(file, lexerSource, blockScope, configuration);
@@ -158,7 +158,7 @@ public class Parser {
         if (content instanceof LoadServiceResourceInputStream) {
             return parse(file, ((LoadServiceResourceInputStream) content).getBytes(), blockScope, configuration);
         } else {
-            RubyArray list = getLines(configuration.isEvalParse(), file, -1);
+            var list = getLines(configuration.isEvalParse(), file, -1);
             boolean requiresClosing = false;
             RubyIO io;
             if (content instanceof FileInputStream) {
@@ -217,25 +217,25 @@ public class Parser {
         return result.getAST();
     }
 
-    protected RubyArray getLines(boolean isEvalParse, String file, int length) {
+    protected RubyArray<?> getLines(boolean isEvalParse, String file, int length) {
         if (isEvalParse && !runtime.getCoverageData().isEvalCovered()) return null;
 
         IRubyObject scriptLines = runtime.getObject().getConstantAt("SCRIPT_LINES__");
-        if (scriptLines == null || !(scriptLines instanceof RubyHash)) return null;
+        if (!(scriptLines instanceof RubyHash)) return null;
 
-        RubyArray list = length == -1 ? runtime.newArray() : runtime.newArray(length);
+        var list = length == -1 ? runtime.newArray() : runtime.newArray(length);
         ThreadContext context = runtime.getCurrentContext();
         ((RubyHash) scriptLines).op_aset(context, newString(context, file), list);
         return list;
     }
 
     public IRubyObject getLineStub(ThreadContext context, ParseResult result, int lineCount) {
-        RubyArray lines = context.runtime.newArray();
+        var lines = context.runtime.newArray();
         LineStubVisitor lineVisitor = new LineStubVisitor(context.runtime, lines);
         lineVisitor.visitRootNode(((RootNode) result));
 
         for (int i = 0; i <= lineCount - lines.size(); i++) {
-            lines.append(context.nil);
+            lines.append(context, context.nil);
         }
         return lines;
     }

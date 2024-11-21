@@ -53,7 +53,7 @@ import static org.jruby.RubyNumeric.num2dbl;
 
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.numericToLong;
-import static org.jruby.api.Create.newFixnum;
+import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.Helpers.hashEnd;
 import static org.jruby.runtime.Helpers.hashStart;
@@ -109,11 +109,12 @@ public class RubyArithmeticSequence extends RubyObject {
         this.generatedBy = generatedBy;
         this.method = method;
         this.args = args;
+        ThreadContext context = runtime.getCurrentContext();
         setInstanceVariable(OBJECT, generatedBy);
-        setInstanceVariable(METHOD, RubyString.newString(runtime, method));
+        setInstanceVariable(METHOD, newString(context, method));
         setInstanceVariable(ARGS, args != null ? RubyArray.newArrayMayCopy(runtime, args) : RubyArray.newEmptyArray(runtime));
-        setInstanceVariable(GENERATOR, runtime.getNil());
-        setInstanceVariable(LOOKAHEAD, RubyArray.newArray(runtime, 4));
+        setInstanceVariable(GENERATOR, context.nil);
+        setInstanceVariable(LOOKAHEAD, newArray(context, 4));
         setInstanceVariable(FEEDVALUE, new RubyEnumerator.FeedValue(runtime));
     }
 
@@ -185,14 +186,13 @@ public class RubyArithmeticSequence extends RubyObject {
     // arith_seq_first
     @JRubyMethod
     public IRubyObject first(ThreadContext context, IRubyObject num) {
-        Ruby runtime = context.runtime;
         IRubyObject b = begin, e = end, s = step;
         RubyArray ary;
 
         if (num == null) {
             if (b.isNil()) return context.nil;
             if (!e.isNil()) {
-                IRubyObject zero = int2fix(runtime, 0);
+                IRubyObject zero = newFixnum(context, 0);
                 CallSite op_cmp = sites(context).op_cmp;
                 CallSite op_gt = sites(context).op_gt;
                 CallSite op_lt = sites(context).op_lt;
@@ -207,23 +207,23 @@ public class RubyArithmeticSequence extends RubyObject {
         long n = numericToLong(context, num);
 
         if (n < 0) throw argumentError(context, "attempt to take negative size");
-        if (n == 0) return runtime.newEmptyArray();
+        if (n == 0) return context.runtime.newEmptyArray();
 
         boolean x = excludeEnd.isTrue();
 
         if (b instanceof RubyFixnum && e.isNil() && s instanceof RubyFixnum) {
             long i = fix2long(b);
             long unit = fix2long(s);
-            ary = RubyArray.newArray(runtime, n);
-            while (n > 0 && fixable(runtime, i)) {
-                ary.append(RubyFixnum.newFixnum(runtime, i));
+            ary = newArray(context, n);
+            while (n > 0 && fixable(context.runtime, i)) {
+                ary.append(context, newFixnum(context, i));
                 i += unit;  /* FIXABLE + FIXABLE never overflow; */
                 --n;
             }
             if (n > 0) {
-                b = RubyFixnum.newFixnum(runtime, i);
+                b = newFixnum(context, i);
                 while (n > 0) {
-                    ary.append(b);
+                    ary.append(context, b);
                     b = ((RubyInteger)b).op_plus(context, s);
                     --n;
                 }
@@ -241,9 +241,9 @@ public class RubyArithmeticSequence extends RubyObject {
 
                 len = end - i;
                 if (len < 0) len = 0;
-                ary = RubyArray.newArray(runtime, (n < len) ? n : len);
+                ary = newArray(context, Math.min(n, len));
                 while (n > 0 && i < end) {
-                    ary.append(newFixnum(context, i));
+                    ary.append(context, newFixnum(context, i));
                     if (i + unit < i) break;
                     i += unit;
                     --n;
@@ -253,9 +253,9 @@ public class RubyArithmeticSequence extends RubyObject {
 
                 len = i - end;
                 if (len < 0) len = 0;
-                ary = RubyArray.newArray(runtime, (n < len) ? n : len);
+                ary = newArray(context, Math.min(n, len));
                 while (n > 0 && i > end) {
-                    ary.append(RubyFixnum.newFixnum(runtime, i));
+                    ary.append(context, newFixnum(context, i));
                     if (i + unit > i) break;
                     i += unit;
                     --n;
@@ -276,30 +276,30 @@ public class RubyArithmeticSequence extends RubyObject {
 
             if (Double.isInfinite(unit)) {
                 if (len > 0) {
-                    ary = RubyArray.newArray(runtime, 1);
-                    ary.append(dbl2num(runtime, beg));
+                    ary = newArray(context, 1);
+                    ary.append(context, newFloat(context, beg));
                 } else {
-                    ary = runtime.newEmptyArray();
+                    ary = context.runtime.newEmptyArray();
                 }
             } else if (unit == 0) {
-                IRubyObject val = dbl2num(runtime, beg);
-                ary = RubyArray.newArray(runtime, n);
+                IRubyObject val = newFloat(context, beg);
+                ary = newArray(context, n);
                 for (i = 0; i < len; ++i) {
-                    ary.append(val);
+                    ary.append(context, val);
                 }
             } else {
-                ary = RubyArray.newArray(runtime, n);
+                ary = newArray(context, n);
                 for (i = 0; i < n; ++i) {
                     double d = i * unit + beg;
                     if (unit >= 0 ? end < d : d < end) d = end;
-                    ary.append(dbl2num(runtime, d));
+                    ary.append(context, newFloat(context, d));
                 }
             }
 
             return ary;
         }
 
-        return Helpers.invokeSuper(context, this, runtime.getEnumerator(), "first", num, Block.NULL_BLOCK);
+        return Helpers.invokeSuper(context, this, context.runtime.getEnumerator(), "first", num, Block.NULL_BLOCK);
     }
 
     // arith_seq_eq
@@ -382,7 +382,7 @@ public class RubyArithmeticSequence extends RubyObject {
 
                 if (args[argc - 1] instanceof RubyHash) {
                     boolean allKey = true;
-                    IRubyObject [] keys = ((RubyHash)args[argc - 1]).keys().toJavaArray();
+                    IRubyObject [] keys = ((RubyHash)args[argc - 1]).keys().toJavaArray(context);
                     for (IRubyObject key : keys) {
                         if (!(key instanceof RubySymbol)) {
                             allKey = false;
@@ -403,7 +403,7 @@ public class RubyArithmeticSequence extends RubyObject {
                 }
                 
                 if (!kwds.isNil()) {
-                    IRubyObject [] keys = ((RubyHash)kwds).keys().toJavaArray();
+                    IRubyObject [] keys = ((RubyHash)kwds).keys().toJavaArray(context);
                     for (IRubyObject key : keys) {
                         IRubyObject value = ((RubyHash)kwds).fastARef(key);
                         str.append(((RubySymbol)key).getBytes());
@@ -452,15 +452,14 @@ public class RubyArithmeticSequence extends RubyObject {
     // arith_seq_last
     @JRubyMethod
     public IRubyObject last(ThreadContext context, IRubyObject num) {
-        Ruby runtime = context.runtime;
         IRubyObject b = begin, e = end, s = step, len_1, len;
         RubyArray ary;
         boolean last_is_adjusted;
 
-        if (e.isNil()) throw runtime.newRangeError("cannot get the last element of endless arithmetic sequence");
+        if (e.isNil()) throw context.runtime.newRangeError("cannot get the last element of endless arithmetic sequence");
 
         len_1 = ((RubyNumeric)((RubyNumeric)e).op_minus(context, b)).idiv(context, s);
-        if (Numeric.f_negative_p(context, len_1)) return num == null ? context.nil : runtime.newEmptyArray();
+        if (Numeric.f_negative_p(context, len_1)) return num == null ? context.nil : context.runtime.newEmptyArray();
 
         IRubyObject last = ((RubyNumeric)b).op_plus(context, Numeric.f_mul(context, s, len_1));
         if ((last_is_adjusted = excludeEnd.isTrue()) && Helpers.rbEqual(context, last, e).isTrue()) {
@@ -472,7 +471,7 @@ public class RubyArithmeticSequence extends RubyObject {
         if (last_is_adjusted) {
             len = len_1;
         } else {
-            len = ((RubyNumeric)len_1).op_plus(context, int2fix(runtime, 1));
+            len = ((RubyNumeric)len_1).op_plus(context, newFixnum(context, 1));
         }
 
         IRubyObject nv = num;
@@ -486,11 +485,11 @@ public class RubyArithmeticSequence extends RubyObject {
         long n = numericToLong(context, nv);
         if (n < 0) throw argumentError(context, "negative array size");
 
-        ary = RubyArray.newArray(runtime, n);
+        ary = newArray(context, n);
         b = ((RubyNumeric)last).op_minus(context, Numeric.f_mul(context, s, nv));
         while (n > 0) {
             b = ((RubyNumeric)b).op_plus(context, s);
-            ary.append(b);
+            ary.append(context, b);
             --n;
         }
 

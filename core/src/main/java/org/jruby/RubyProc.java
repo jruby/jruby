@@ -61,6 +61,7 @@ import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Create.newString;
+import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.util.RubyStringBuilder.types;
 
 /**
@@ -433,7 +434,7 @@ public class RubyProc extends RubyObject implements DataType {
 
     @JRubyMethod(keywords = true)
     public IRubyObject parameters(ThreadContext context, IRubyObject opts) {
-        int callInfo = context.resetCallInfo();
+        int callInfo = resetCallInfo(context);
         boolean isLambda = (callInfo & ThreadContext.CALL_KEYWORD) != 0 ?
                 ArgsUtil.extractKeywordArg(context, (RubyHash) opts, "lambda").isTrue() :
                 isLambda();

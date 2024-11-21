@@ -12,7 +12,7 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 
 import static org.jruby.api.Error.argumentError;
-import static org.jruby.runtime.ThreadContext.resetCallInfo;
+import static org.jruby.api.Error.typeError;
 
 /**
  * Encapsulation of the prepare_getline_args logic from MRI, used by StringIO and IO.
@@ -192,11 +192,9 @@ public class Getline {
         if (optArg instanceof RubyHash && !keywords) {
             // We get args from multiple sources so we are form-fitting this as if we are processing it from
             // the original method.  We should not be doing this processing this deep into this IO processing.
-            if (argc == 3) {
-                throw argumentError(context, argc, 0, 2);
-            } else {
-                throw runtime.newTypeError("no implicit conversion of Hash into Integer");
-            }
+            if (argc == 3) throw argumentError(context, argc, 0, 2);
+
+            throw typeError(context, "no implicit conversion of Hash into Integer");
         }
         opt = ArgsUtil.getOptionsArg(runtime, optArg);
 

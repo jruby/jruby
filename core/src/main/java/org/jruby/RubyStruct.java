@@ -59,9 +59,10 @@ import org.jruby.util.ByteList;
 import org.jruby.util.RecursiveComparator;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
-import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Convert.numericToLong;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.newSymbol;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
@@ -85,8 +86,8 @@ public class RubyStruct extends RubyObject {
 
     /**
      * Constructor for RubyStruct.
-     * @param runtime
-     * @param rubyClass
+     * @param runtime the runtime
+     * @param rubyClass the class
      */
     private RubyStruct(Ruby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
@@ -216,12 +217,12 @@ public class RubyStruct extends RubyObject {
     private static IRubyObject extractKeywordArg(final ThreadContext context, final RubyHash options, String validKey) {
         if (options.isEmpty()) return null;
 
-        final RubySymbol testKey = context.runtime.newSymbol(validKey);
+        final RubySymbol testKey = newSymbol(context, validKey);
         IRubyObject ret = options.fastARef(testKey);
 
         if (ret == null || options.size() > 1) { // other (unknown) keys in options
             options.visitAll(context, (ctxt, self, key, value, index) -> {
-                if (!key.equals(testKey)) throw ctxt.runtime.newTypeError("unknown keyword: " + key.inspect());
+                if (!key.equals(testKey)) throw typeError(ctxt, "unknown keyword: " + key.inspect());
             });
         }
 
@@ -243,13 +244,12 @@ public class RubyStruct extends RubyObject {
     @JRubyMethod(name = "new", rest = true, checkArity = false, meta = true, keywords = true)
     public static RubyClass newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.runtime;
-
         int argc = Arity.checkArgumentCount(context, args, 0, -1);
 
         String name = null;
         boolean nilName = false;
-        RubyArray member = runtime.newArray();
-        IRubyObject keywordInitValue = runtime.getNil();
+        var member = runtime.newArray();
+        IRubyObject keywordInitValue = context.nil;
 
         if (argc > 0) {
             IRubyObject firstArgAsString = args[0].checkStringType();
@@ -274,20 +274,17 @@ public class RubyStruct extends RubyObject {
         for (int i = (name == null && !nilName) ? 0 : 1; i < argc; i++) {
             IRubyObject arg = args[i];
             RubySymbol sym;
-            if (arg instanceof RubySymbol) {
-                sym = (RubySymbol) arg;
+            if (arg instanceof RubySymbol sym1) {
+                sym = sym1;
             } else if (arg instanceof RubyString) {
                 sym = runtime.newSymbol(arg.convertToString().getByteList());
             } else {
-                sym = runtime.newSymbol(arg.asJavaString());
+                sym = newSymbol(context, arg.asJavaString());
             }
-            if (tmpMemberSet.contains(sym)) {
-                throw runtime.newArgumentError("duplicate member: " + sym);
-            } else {
-                tmpMemberSet.add(sym);
-            }
+            if (tmpMemberSet.contains(sym)) throw argumentError(context, "duplicate member: " + sym);
 
-            member.append(sym);
+            tmpMemberSet.add(sym);
+            member.append(context, sym);
         }
 
         RubyClass newStruct;
@@ -585,7 +582,7 @@ public class RubyStruct extends RubyObject {
 
         for (int i = 0; i < values.length; i++) {
             if (block.yield(context, values[i]).isTrue()) {
-                array.append(values[i]);
+                array.append(context, values[i]);
             }
         }
 
@@ -849,30 +846,31 @@ public class RubyStruct extends RubyObject {
     @JRubyMethod(rest = true)
     public IRubyObject values_at(IRubyObject[] args) {
         final Ruby runtime = metaClass.runtime;
+        var context = runtime.getCurrentContext();
         final int olen = values.length;
         RubyArray result = getRuntime().newArray(args.length);
 
         for (int i = 0; i < args.length; i++) {
             final IRubyObject arg = args[i];
-            if (arg instanceof RubyFixnum ) {
-                result.append( aref(arg) );
+            if (arg instanceof RubyFixnum) {
+                result.append(context, aref(arg));
                 continue;
             }
 
             final int [] begLen = new int[2];
             if (arg instanceof RubyRange &&
-                    RubyRange.rangeBeginLength(runtime.getCurrentContext(),(RubyRange) args[i], olen, begLen, 1).isTrue()) {
+                    RubyRange.rangeBeginLength(runtime.getCurrentContext(), args[i], olen, begLen, 1).isTrue()) {
                 final int beg = begLen[0];
                 final int len = begLen[1];
-                int end = olen < beg + len ? olen : beg + len;
+                int end = Math.min(olen, beg + len);
                 int j;
                 for (j = beg; j < end; j++) {
                     result.push(aref(j));
                 }
                 if ( beg + len > j ) {
                     IRubyObject [] tmp = new IRubyObject[beg + len - j];
-                    Helpers.fillNil(tmp, getRuntime());
-                    result.push(tmp);
+                    Helpers.fillNil(tmp, runtime);
+                    result.push(context, tmp);
                 }
                 continue;
             }

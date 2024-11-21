@@ -51,6 +51,7 @@ import org.jruby.util.ClasspathLauncher;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.newSymbol;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.util.URLUtil.getPath;
 
@@ -131,12 +132,9 @@ public class JRubyUtilLibrary implements Library {
     @JRubyMethod(module = true, name = "class_loader_resources", alias = "classloader_resources", required = 1, optional = 1, checkArity = false)
     public static IRubyObject class_loader_resources(ThreadContext context, IRubyObject recv, IRubyObject... args) {
         int argc = Arity.checkArgumentCount(context, args, 1, 2);
-
-        final Ruby runtime = context.runtime;
-
-        final ClassLoader loader = runtime.getJRubyClassLoader();
+        final ClassLoader loader = context.runtime.getJRubyClassLoader();
         final String name = args[0].convertToString().asJavaString();
-        final RubyArray resources = RubyArray.newArray(runtime);
+        final var resources = RubyArray.newArray(context.runtime);
 
         boolean raw = false, path = false;
         if (argc > 1 && args[1] instanceof RubyHash) {
@@ -150,11 +148,11 @@ public class JRubyUtilLibrary implements Library {
             while (e.hasMoreElements()) {
                 final URL entry = e.nextElement();
                 if (path) {
-                    resources.append( newString(context, getPath(entry)) );
+                    resources.append(context, newString(context, getPath(entry)));
                 } else if (raw) {
-                    resources.append( Java.getInstance(runtime, entry) );
+                    resources.append(context, Java.getInstance(context.runtime, entry));
                 } else {
-                    resources.append( newString(context, entry.toString()) ); // toExternalForm
+                    resources.append(context, newString(context, entry.toString())); // toExternalForm
                 }
             }
         } catch (IOException ex) {
@@ -409,16 +407,14 @@ public class JRubyUtilLibrary implements Library {
 
     /**
      * Provide stats on how many method and constant invalidations have occurred globally.
-     *
      * This was added for Pry in https://github.com/jruby/jruby/issues/4384
      */
     @JRubyMethod(name = "cache_stats", module = true)
     public static IRubyObject cache_stats(ThreadContext context, IRubyObject self) {
-        Ruby runtime = context.runtime;
-
-        RubyHash stat = RubyHash.newHash(runtime);
-        stat.op_aset(context, runtime.newSymbol("method_invalidation_count"), asFixnum(context, runtime.getCaches().getMethodInvalidationCount()));
-        stat.op_aset(context, runtime.newSymbol("constant_invalidation_count"), asFixnum(context, runtime.getCaches().getConstantInvalidationCount()));
+        RubyHash stat = RubyHash.newHash(context.runtime);
+        var caches = context.runtime.getCaches();
+        stat.op_aset(context, newSymbol(context, "method_invalidation_count"), asFixnum(context, caches.getMethodInvalidationCount()));
+        stat.op_aset(context, newSymbol(context, "constant_invalidation_count"), asFixnum(context, caches.getConstantInvalidationCount()));
 
         return stat;
     }

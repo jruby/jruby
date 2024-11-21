@@ -109,7 +109,7 @@ public class RubyStringBuilder {
                             (c == '#' &&
                                     p < end &&
                                     MBCLEN_CHARFOUND_P(StringSupport.preciseLength(enc, bytes, p, end)) &&
-                                    ((cc = codePoint(runtime, enc, bytes, p, end)) == '$' ||
+                                    ((cc = codePoint(runtime.getCurrentContext(), enc, bytes, p, end)) == '$' ||
                                             cc == '@' || cc == '{')
                             )
                     )) {

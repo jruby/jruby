@@ -102,7 +102,7 @@ public class VariadicInvoker extends RubyObject {
 
         final Type returnType = org.jruby.ext.ffi.Util.findType(context, rbReturnType, typeMap);
 
-        if (!(rbParameterTypes instanceof RubyArray)) {
+        if (!(rbParameterTypes instanceof RubyArray<?> paramTypes)) {
             throw typeError(context, "Invalid parameter array ", rbParameterTypes, " (expected Array)");
         }
 
@@ -112,13 +112,12 @@ public class VariadicInvoker extends RubyObject {
         CallingConvention callConvention = "stdcall".equals(convention)
                         ? CallingConvention.STDCALL : CallingConvention.DEFAULT;
 
-        RubyArray paramTypes = (RubyArray) rbParameterTypes;
-        RubyArray fixed = RubyArray.newArray(context.runtime);
+        var fixed = RubyArray.newArray(context.runtime);
         int fixedParamCount = 0;
         for (int i = 0; i < paramTypes.getLength(); ++i) {
             Type type = (Type)paramTypes.entry(i);
             if (type.getNativeType() != org.jruby.ext.ffi.NativeType.VARARGS) {
-                fixed.append(type);
+                fixed.append(context, type);
                 fixedParamCount++;
             }
         }

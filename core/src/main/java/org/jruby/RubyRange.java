@@ -61,7 +61,8 @@ import org.jruby.runtime.ThreadContext;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyNumeric.*;
 import static org.jruby.api.Convert.*;
-import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.*;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.hashEnd;
 import static org.jruby.runtime.Helpers.hashStart;
@@ -1172,7 +1173,7 @@ public class RubyRange extends RubyObject {
                     if (n-- <= 0) {
                         throw JumpException.SPECIAL_JUMP;
                     }
-                    result.append(larg);
+                    result.append(context, larg);
                     return ctx.nil;
                 }
             });
@@ -1225,7 +1226,7 @@ public class RubyRange extends RubyObject {
 
     // MRI rb_int_range_last
     private RubyArray intRangeLast(ThreadContext context, IRubyObject arg) {
-        IRubyObject one = RubyInteger.int2fix(context.runtime, 1);
+        IRubyObject one = newFixnum(context, 1);
         IRubyObject len1, len, nv, b;
 
         len1 = ((RubyInteger)end).op_minus(context, begin);
@@ -1242,15 +1243,15 @@ public class RubyRange extends RubyObject {
         }
 
         long n = numericToLong(context, arg);
-        if (n < 0) throw context.runtime.newArgumentError("negative array size");
+        if (n < 0) throw argumentError(context, "negative array size");
 
-        nv = RubyInteger.int2fix(context.runtime, n);
+        nv = newFixnum(context, n);
         if (Numeric.f_gt_p(context, nv, len)) {
              nv = len;
              n = numericToLong(context, nv);
         }
 
-        RubyArray array = RubyArray.newArray(context.runtime, n);
+        RubyArray<?> array = newArray(context, n);
         b = ((RubyInteger)end).op_minus(context, nv);
         while (n > 0) {
             b = ((RubyInteger)b).op_plus(context, one);

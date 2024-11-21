@@ -29,7 +29,6 @@ package org.jruby.ext.zlib;
 
 import com.jcraft.jzlib.JZlib;
 import org.jruby.Ruby;
-import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyObject;
@@ -192,10 +191,11 @@ public abstract class ZStream extends RubyObject {
     }
 
     // TODO: remove when JZlib checks the given level
-    static void checkLevel(Ruby runtime, int level) {
+    static int checkLevel(ThreadContext context, int level) {
         if ((level < 0 || level > 9) && level != JZlib.Z_DEFAULT_COMPRESSION) {
-            throw RubyZlib.newStreamError(runtime, "stream error: invalid level");
+            throw RubyZlib.newStreamError(context.runtime, "stream error: invalid level");
         }
+        return level;
     }
 
     /**
@@ -205,21 +205,23 @@ public abstract class ZStream extends RubyObject {
      * decompression) and MAX_WBITS + 32(automatic detection of gzip and LZ77).
      */
     // TODO: remove when JZlib checks the given windowBits
-    static void checkWindowBits(Ruby runtime, int wbits, boolean forInflate) {
-        wbits = Math.abs(wbits);
+    static int checkWindowBits(ThreadContext context, int value, boolean forInflate) {
+        int wbits = Math.abs(value);
         if ((wbits & 0xf) < 8) {
-            throw RubyZlib.newStreamError(runtime, "stream error: invalid window bits");
+            throw RubyZlib.newStreamError(context.runtime, "stream error: invalid window bits");
         }
         if ((wbits & 0xf) != 0xf) {
             // windowBits < 15 for reducing memory is meaningless on Java platform. 
-            runtime.getWarnings().warn("windowBits < 15 is ignored on this platform");
+            context.runtime.getWarnings().warn("windowBits < 15 is ignored on this platform");
             // continue
         }
         if (forInflate && wbits > JZlib.MAX_WBITS + 32) {
-            throw RubyZlib.newStreamError(runtime, "stream error: invalid window bits");
+            throw RubyZlib.newStreamError(context.runtime, "stream error: invalid window bits");
         } else if (!forInflate && wbits > JZlib.MAX_WBITS + 16) {
-            throw RubyZlib.newStreamError(runtime, "stream error: invalid window bits");
+            throw RubyZlib.newStreamError(context.runtime, "stream error: invalid window bits");
         }
+
+        return value;
     }
 
     // TODO: remove when JZlib checks the given strategy

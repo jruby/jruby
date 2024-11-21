@@ -59,6 +59,8 @@ import org.jruby.util.io.EncodingUtils;
 import static com.headius.backport9.buffer.Buffers.clearBuffer;
 import static com.headius.backport9.buffer.Buffers.flipBuffer;
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newString;
 
 @JRubyClass(name="Encoding")
 public class RubyEncoding extends RubyObject implements Constantizable {
@@ -492,28 +494,27 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     @SuppressWarnings("unchecked")
     @JRubyMethod(name = "name_list", meta = true)
     public static IRubyObject name_list(ThreadContext context, IRubyObject recv) {
-        Ruby runtime = context.runtime;
-        EncodingService service = runtime.getEncodingService();
+        EncodingService service = context.runtime.getEncodingService();
 
-        RubyArray result = runtime.newArray(service.getEncodings().size() + service.getAliases().size());
+        var result = newArray(context, service.getEncodings().size() + service.getAliases().size());
         HashEntryIterator i;
         i = service.getEncodings().entryIterator();
         while (i.hasNext()) {
             CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e =
                 ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)i.next());
-            result.append(RubyString.newUsAsciiStringShared(runtime, e.bytes, e.p, e.end - e.p).freeze(context));
+            result.append(context, RubyString.newUsAsciiStringShared(context.runtime, e.bytes, e.p, e.end - e.p).freeze(context));
         }
         i = service.getAliases().entryIterator();
         while (i.hasNext()) {
             CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e =
                 ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)i.next());
-            result.append(RubyString.newUsAsciiStringShared(runtime, e.bytes, e.p, e.end - e.p).freeze(context));
+            result.append(context, RubyString.newUsAsciiStringShared(context.runtime, e.bytes, e.p, e.end - e.p).freeze(context));
         }
 
-        result.append(runtime.newString(EXTERNAL));
-        result.append(runtime.newString(FILESYSTEM));
-        result.append(runtime.newString(INTERNAL));
-        result.append(runtime.newString(LOCALE));
+        result.append(context, newString(context, EXTERNAL));
+        result.append(context, newString(context, FILESYSTEM));
+        result.append(context, newString(context, INTERNAL));
+        result.append(context, newString(context, LOCALE));
 
         return result;
     }
@@ -589,18 +590,16 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     @SuppressWarnings("unchecked")
     @JRubyMethod(name = "names")
     public IRubyObject names(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        EncodingService service = runtime.getEncodingService();
+        EncodingService service = context.runtime.getEncodingService();
         Entry entry = service.findEncodingOrAliasEntry(name);
-
-        RubyArray result = runtime.newArray();
+        var result = context.runtime.newArray();
         HashEntryIterator i;
         i = service.getEncodings().entryIterator();
         while (i.hasNext()) {
             CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e =
                 ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)i.next());
             if (e.value == entry) {
-                result.append(RubyString.newUsAsciiStringShared(runtime, e.bytes, e.p, e.end - e.p).freeze(context));
+                result.append(context, RubyString.newUsAsciiStringShared(context.runtime, e.bytes, e.p, e.end - e.p).freeze(context));
             }
         }
         i = service.getAliases().entryIterator();
@@ -608,11 +607,11 @@ public class RubyEncoding extends RubyObject implements Constantizable {
             CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e =
                 ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)i.next());
             if (e.value == entry) {
-                result.append(RubyString.newUsAsciiStringShared(runtime, e.bytes, e.p, e.end - e.p).freeze(context));
+                result.append(context, RubyString.newUsAsciiStringShared(context.runtime, e.bytes, e.p, e.end - e.p).freeze(context));
             }
         }
-        result.append(runtime.newString(EXTERNAL));
-        result.append(runtime.newString(LOCALE));
+        result.append(context, newString(context, EXTERNAL));
+        result.append(context, newString(context, LOCALE));
 
         return result;
     }

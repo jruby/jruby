@@ -133,14 +133,22 @@ public class RubyThreadGroup extends RubyObject {
         return enclosed_p(getRuntime().getCurrentContext(), block);
     }
 
-    @JRubyMethod
+    /**
+     * @param block
+     * @return ""
+     * @deprecated Use {@link RubyThreadGroup#list(ThreadContext, Block)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public IRubyObject list(Block block) {
-        RubyArray ary = RubyArray.newArray(getRuntime());
+        return list(getCurrentContext(), block);
+    }
+
+    @JRubyMethod
+    public IRubyObject list(ThreadContext context, Block block) {
+        var ary = RubyArray.newArray(context.runtime);
         synchronized (rubyThreadList) {
             for (RubyThread thread : rubyThreadList) {
-                if (thread != null) {
-                    ary.append(thread);
-                }
+                if (thread != null) ary.append(context, thread);
             }
         }
         return ary;

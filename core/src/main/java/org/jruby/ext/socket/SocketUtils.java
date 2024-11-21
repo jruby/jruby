@@ -399,12 +399,12 @@ public class SocketUtils {
         Ruby runtime = context.runtime;
 
         try {
-            RubyArray list = RubyArray.newArray(runtime);
+            var list = RubyArray.newArray(runtime);
             RubyClass addrInfoCls = runtime.getClass("Addrinfo");
 
             for (Enumeration<NetworkInterface> networkIfcs = NetworkInterface.getNetworkInterfaces(); networkIfcs.hasMoreElements() ; ) {
                 for (Enumeration<InetAddress> addresses = networkIfcs.nextElement().getInetAddresses(); addresses.hasMoreElements() ; ) {
-                    list.append(new Addrinfo(runtime, addrInfoCls, addresses.nextElement()));
+                    list.append(context, new Addrinfo(runtime, addrInfoCls, addresses.nextElement()));
                 }
             }
 

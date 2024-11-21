@@ -2,7 +2,6 @@ package org.jruby.management;
 
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Method;
-import java.security.AccessControlException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -84,7 +83,7 @@ public class BeanManagerImpl implements BeanManager {
 
     public boolean tryShutdownAgent() {
         try {
-            Class agent = Class.forName("sun.management.Agent");
+            Class<?> agent = Class.forName("sun.management.Agent");
             Method shutdown = agent.getDeclaredMethod("stopRemoteManagementAgent");
             Java.trySetAccessible(shutdown);
             shutdown.invoke(null);
@@ -96,7 +95,7 @@ public class BeanManagerImpl implements BeanManager {
 
     public boolean tryRestartAgent() {
         try {
-            Class agent = Class.forName("sun.management.Agent");
+            Class<?> agent = Class.forName("sun.management.Agent");
             Method start = agent.getMethod("startAgent");
             Java.trySetAccessible(start);
             start.invoke(null);
@@ -114,17 +113,9 @@ public class BeanManagerImpl implements BeanManager {
             mbs.registerMBean(bean, beanName);
         } catch (InstanceAlreadyExistsException ex) {
             LOG.warn("mbean already registered: {}", name);
-        } catch (MBeanRegistrationException ex) {
+        } catch (MBeanRegistrationException | NotCompliantMBeanException | MalformedObjectNameException |
+                 NullPointerException ex) {
             LOG.error(ex);
-        } catch (NotCompliantMBeanException ex) {
-            LOG.error(ex);
-        } catch (MalformedObjectNameException ex) {
-            LOG.error(ex);
-        } catch (NullPointerException ex) {
-            LOG.error(ex);
-        } catch (AccessControlException ex) {
-            // ignore...bean doesn't get registered
-            // TODO: Why does that bother me?
         } catch (SecurityException ex) {
             // ignore...bean doesn't get registered
             // TODO: Why does that bother me?
@@ -142,15 +133,8 @@ public class BeanManagerImpl implements BeanManager {
             ObjectName beanName = new ObjectName(name);
             mbs.unregisterMBean(beanName);
         } catch (InstanceNotFoundException ex) {
-        } catch (MBeanRegistrationException ex) {
+        } catch (MBeanRegistrationException | NullPointerException | MalformedObjectNameException ex) {
             LOG.error(ex);
-        } catch (MalformedObjectNameException ex) {
-            LOG.error(ex);
-        } catch (NullPointerException ex) {
-            LOG.error(ex);
-        } catch (AccessControlException ex) {
-            // ignore...bean doesn't get registered
-            // TODO: Why does that bother me?
         } catch (SecurityException ex) {
             // ignore...bean doesn't get registered
             // TODO: Why does that bother me?

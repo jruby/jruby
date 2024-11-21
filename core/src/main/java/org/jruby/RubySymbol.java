@@ -931,11 +931,12 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @JRubyMethod(meta = true)
     public static IRubyObject all_symbols(ThreadContext context, IRubyObject recv) {
-        return context.runtime.getSymbolTable().all_symbols();
+        return context.runtime.getSymbolTable().all_symbols(context);
     }
     @Deprecated
     public static IRubyObject all_symbols(IRubyObject recv) {
-        return recv.getRuntime().getSymbolTable().all_symbols();
+        var runtime = recv.getRuntime();
+        return runtime.getSymbolTable().all_symbols(runtime.getCurrentContext());
     }
 
     public static RubySymbol unmarshalFrom(UnmarshalStream input, UnmarshalStream.MarshalState state) throws java.io.IOException {
@@ -1404,15 +1405,23 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
             return null;
         }
 
+        /**
+         * @return ""
+         * @deprecated Use {@link RubySymbol#all_symbols(ThreadContext, IRubyObject)} instead.
+         */
+        @Deprecated(since = "10.0", forRemoval = true)
         public RubyArray all_symbols() {
+            return all_symbols(runtime.getCurrentContext());
+        }
+
+        public RubyArray all_symbols(ThreadContext context) {
             SymbolEntry[] table = this.symbolTable;
             RubyArray array = runtime.newArray(this.size);
-            RubySymbol symbol;
 
             for (int i = table.length; --i >= 0; ) {
                 for (SymbolEntry e = table[i]; e != null; e = e.next) {
-                    symbol = e.symbol.get();
-                    if (symbol != null) array.append(symbol);
+                    var symbol = e.symbol.get();
+                    if (symbol != null) array.append(context, symbol);
                 }
             }
             return array;
@@ -1594,9 +1603,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         IRubyObject tmp = TypeConverter.checkStringType(context, sites(context).to_str_checked, object);
 
-        if (tmp.isNil()) {
-            throw runtime.newTypeError(str(runtime, "", object, " is not a symbol nor a string"));
-        }
+        if (tmp.isNil()) throw typeError(context, str(runtime, "", object, " is not a symbol nor a string"));
 
         return tmp;
     }
@@ -1631,7 +1638,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
             }
 
             final IRubyObject self = array.shift(context);
-            return site.call(context, symbol, self, array.toJavaArray(), blockArg);
+            return site.call(context, symbol, self, array.toJavaArray(context), blockArg);
         }
 
         @Override

@@ -69,6 +69,7 @@ import static org.jruby.RubyFile.filePathConvert;
 import static org.jruby.RubyString.UTF8;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -335,7 +336,7 @@ public class RubyDir extends RubyObject implements Closeable {
             if (tmp.isNil()) {
                 dirs = Dir.push_glob(runtime, dir, globArgumentAsByteList(context, args[0]), options.flags, options.sort);
             } else {
-                dirs = dirGlobs(context, dir, ((RubyArray) tmp).toJavaArray(), options.flags, options.sort);
+                dirs = dirGlobs(context, dir, ((RubyArray) tmp).toJavaArray(context), options.flags, options.sort);
             }
         }
 
@@ -355,7 +356,7 @@ public class RubyDir extends RubyObject implements Closeable {
      */
     @JRubyMethod(name = "entries")
     public RubyArray entries() {
-        return newEntryArray(getRuntime(), snapshot, encoding, false);
+        return newEntryArray(getRuntime().getCurrentContext(), snapshot, encoding, false);
     }
 
     /**
@@ -390,11 +391,11 @@ public class RubyDir extends RubyObject implements Closeable {
         FileResource directory = JRubyFile.createResource(context, adjustedPath);
         String[] files = getEntries(context, directory, adjustedPath);
 
-        return newEntryArray(runtime, files, encoding, childrenOnly);
+        return newEntryArray(context, files, encoding, childrenOnly);
     }
 
-    private static RubyArray newEntryArray(Ruby runtime, String[] files, Encoding encoding, boolean childrenOnly) {
-        RubyArray result = RubyArray.newArray(runtime, files.length);
+    private static RubyArray newEntryArray(ThreadContext context, String[] files, Encoding encoding, boolean childrenOnly) {
+        var result = newArray(context, files.length);
         for (String file : files) {
             if (childrenOnly) { // removeIf(f -> f.equals(".") || f.equals(".."));
                 final int len = file.length();
@@ -402,7 +403,7 @@ public class RubyDir extends RubyObject implements Closeable {
                 if (len == 2 && file.charAt(0) == '.' && file.charAt(1) == '.') continue;
             }
 
-            result.append(newExternalStringWithEncoding(runtime, file, encoding));
+            result.append(context, newExternalStringWithEncoding(context.runtime, file, encoding));
         }
         return result;
     }
@@ -928,7 +929,7 @@ public class RubyDir extends RubyObject implements Closeable {
         Ruby runtime = context.runtime;
         RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, arg));
         RubyFileStat fileStat = runtime.newFileStat(path.asJavaString(), false);
-        boolean isDirectory = fileStat.directory_p().isTrue();
+        boolean isDirectory = fileStat.directory_p(context).isTrue();
         return asBoolean(context, isDirectory && entries(context, recv, arg).getLength() <= 2);
     }
 
@@ -940,7 +941,7 @@ public class RubyDir extends RubyObject implements Closeable {
         RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, arg));
 
         try {
-            return runtime.newFileStat(path.asJavaString(), false).directory_p();
+            return runtime.newFileStat(path.asJavaString(), false).directory_p(context);
         } catch (Exception e) {
             // Restore $!
             runtime.getGlobalVariables().set("$!", exception);
@@ -1046,6 +1047,7 @@ public class RubyDir extends RubyObject implements Closeable {
     /**
      * @deprecated no longer used
      */
+    @Deprecated(since = "9.4-")
     protected static List<String> getContents(FileResource directory) {
         final String[] contents = directory.list();
 
@@ -1064,6 +1066,7 @@ public class RubyDir extends RubyObject implements Closeable {
     /**
      * @deprecated no longer used
      */
+    @Deprecated(since = "9.4-")
     protected static List<RubyString> getContents(FileResource directory, Ruby runtime) {
         final String[] contents = directory.list();
 

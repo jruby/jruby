@@ -604,7 +604,7 @@ public class RubySet extends RubyObject implements Set {
         return this;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0", forRemoval = true)
     protected void addImpl(final Ruby runtime, final IRubyObject obj) {
         addImpl(runtime.getCurrentContext(), obj);
     }
@@ -955,11 +955,11 @@ public class RubySet extends RubyObject implements Set {
           }
          */
         for ( IRubyObject u : elementsOrdered() ) {
-            RubyArray a;
-            dig.fastASet(u, a = runtime.newArray());
+            var a = runtime.newArray();
+            dig.fastASet(u, a);
             for ( IRubyObject v : elementsOrdered() ) {
                 IRubyObject ret = block.call(context, u, v);
-                if ( ret.isTrue() ) a.append(v);
+                if ( ret.isTrue() ) a.append(context, v);
             }
         }
 

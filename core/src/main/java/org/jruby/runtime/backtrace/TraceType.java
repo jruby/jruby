@@ -94,6 +94,7 @@ public class TraceType {
     /**
      * @deprecated use {@link #logException(org.jruby.RubyException)}
      */
+    @Deprecated(since = "9.4-", forRemoval = true)
     public static void dumpException(RubyException exception) {
         logException(exception);
     }
@@ -119,6 +120,7 @@ public class TraceType {
     /**
      * @deprecated use {@link #logCaller(org.jruby.RubyArray)}
      */
+    @Deprecated(since = "9.4-", forRemoval = true)
     public static void dumpCaller(RubyArray trace) {
         logCaller(trace);
     }
@@ -142,6 +144,7 @@ public class TraceType {
     /**
      * @deprecated use {@link #logCaller(org.jruby.runtime.backtrace.RubyStackTraceElement[]) }
      */
+    @Deprecated(since = "9.4-", forRemoval = true)
     public static void dumpCaller(RubyStackTraceElement[] trace) {
         logCaller(trace);
     }
@@ -155,6 +158,7 @@ public class TraceType {
     /**
      * @deprecated use {@link #logWarning(org.jruby.runtime.backtrace.RubyStackTraceElement[])}
      */
+    @Deprecated(since = "9.4-", forRemoval = true)
     public static void dumpWarning(RubyStackTraceElement[] trace) {
         logWarning(trace);
     }

@@ -65,7 +65,7 @@ public class JavaMath {
 
         @JRubyMethod(name = "to_f") // override from java.lang.Number
         public static IRubyObject to_f(ThreadContext context, IRubyObject self) {
-            return asRubyBigDecimal(context.runtime, unwrapIfJavaObject(self)).to_f();
+            return asRubyBigDecimal(context.runtime, unwrapIfJavaObject(self)).to_f(context);
         }
 
         @JRubyMethod(name = { "to_i", "to_int" }) // override from java.lang.Number

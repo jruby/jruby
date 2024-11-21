@@ -76,12 +76,8 @@ public class JZlibInflate extends ZStream {
     public IRubyObject _initialize(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 0, 1);
 
-        windowBits = JZlib.DEF_WBITS;
-
-        if (args.length > 0 && !args[0].isNil()) {
-            windowBits = RubyNumeric.fix2int(args[0]);
-            checkWindowBits(context.runtime, windowBits, true);
-        }
+        windowBits = argc > 0 && !args[0].isNil() ?
+                checkWindowBits(context, RubyNumeric.fix2int(args[0]), true) : JZlib.DEF_WBITS;
 
         init(windowBits);
         return this;

@@ -4574,11 +4574,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return RubyNumeric.str2fnum(getRuntime(), this, false);
     }
 
-    private void populateCapturesForSplit(Ruby runtime, RubyArray result, RubyMatchData match) {
+    private void populateCapturesForSplit(ThreadContext context, RubyArray result, RubyMatchData match) {
         for (int i = 1; i < match.numRegs(); i++) {
             int beg = match.begin(i);
             if (beg == -1) continue;
-            result.append(makeSharedString(runtime, beg, match.end(i) - beg));
+            result.append(context, makeSharedString(context.runtime, beg, match.end(i) - beg));
         }
     }
 
@@ -4777,7 +4777,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     private RubyArray regexSplit(ThreadContext context, RubyRegexp pattern, boolean limit, int lim) {
         Ruby runtime = context.runtime;
 
-        RubyArray result = runtime.newArray();
+        var result = runtime.newArray();
 
         int ptr = value.getBegin();
         int len = value.getRealSize();
@@ -4795,10 +4795,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             end = match.begin(0);
             if (start == end && match.begin(0) == match.end(0)) {
                 if (len == 0 && start != 0) {
-                    result.append(newEmptyString(runtime, metaClass));
+                    result.append(context, newEmptyString(runtime, metaClass));
                     break;
                 } else if (lastNull) {
-                    result.append(makeSharedString(runtime, beg, StringSupport.length(enc, bytes, ptr + beg, ptr + len)));
+                    result.append(context, makeSharedString(runtime, beg, StringSupport.length(enc, bytes, ptr + beg, ptr + len)));
                     beg = start;
                 } else {
                     if ((ptr + start) == ptr + len) {
@@ -4810,17 +4810,17 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                     continue;
                 }
             } else {
-                result.append(makeSharedString(runtime, beg, end - beg));
+                result.append(context, makeSharedString(runtime, beg, end - beg));
                 beg = match.end(0);
                 start = beg;
             }
             lastNull = false;
 
-            if (captures) populateCapturesForSplit(runtime, result, match);
+            if (captures) populateCapturesForSplit(context, result, match);
             if (limit && lim <= ++i) break;
         }
 
-        if (len > 0 && (limit || len > beg || lim < 0)) result.append(makeSharedString(runtime, beg, len - beg));
+        if (len > 0 && (limit || len > beg || lim < 0)) result.append(context, makeSharedString(runtime, beg, len - beg));
 
         return result;
     }
@@ -4861,7 +4861,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             } else {
                 // MRI uses rb_isspace
                 if (ASCII.isSpace(c)) {
-                    result.append(makeSharedString(context.runtime, b, e - b));
+                    result.append(context, makeSharedString(context.runtime, b, e - b));
                     skip = true;
                     b = p - ptr;
                     if (limit) i++;
@@ -4871,7 +4871,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             }
         }
 
-        if (len > 0 && (limit || len > b || lim < 0)) result.append(makeSharedString(context.runtime, b, len - b));
+        if (len > 0 && (limit || len > b || lim < 0)) result.append(context, makeSharedString(context.runtime, b, len - b));
         return result;
     }
 
@@ -4891,16 +4891,16 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         for (; index < realSize; index++) {
             if (bytes[begin + index] == pat) {
-                result.append(makeSharedString(runtime, startSegment, index - startSegment));
+                result.append(context, makeSharedString(runtime, startSegment, index - startSegment));
                 startSegment = index + 1;
                 if (limit && lim <= ++i) break;
             }
         }
 
         if (limit) {
-            result.append(makeSharedString(runtime, startSegment, realSize - startSegment));
+            result.append(context, makeSharedString(runtime, startSegment, realSize - startSegment));
         } else if (index > startSegment || lim < 0) {
-            result.append(makeSharedString(runtime, startSegment, index - startSegment));
+            result.append(context, makeSharedString(runtime, startSegment, index - startSegment));
         }
 
         return result;
@@ -4924,13 +4924,13 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         int i = 1;
 
         while (p < realSize && (e = asciiIndexOf(bytes, begin, realSize, patternBytes, patternBegin, patternRealSize, p)) >= 0) {
-            result.append(makeSharedString(runtime, p, e - p));
+            result.append(context, makeSharedString(runtime, p, e - p));
             p = e + pattern.getRealSize();
             if (limit && lim <= ++i) break;
         }
 
         if (realSize > 0 && (limit || realSize > p || lim < 0)) {
-            result.append(makeSharedString(runtime, p, realSize - p));
+            result.append(context, makeSharedString(runtime, p, realSize - p));
         }
 
         return result;
@@ -4962,13 +4962,13 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 p = t;
                 continue;
             }
-            result.append(makeSharedString(runtime, p, e - p));
+            result.append(context, makeSharedString(runtime, p, e - p));
             p = e + pattern.getRealSize();
             if (limit && lim <= ++i) break;
         }
 
         if (realSize > 0 && (limit || realSize > p || lim < 0)) {
-            result.append(makeSharedString(runtime, p, realSize - p));
+            result.append(context, makeSharedString(runtime, p, realSize - p));
         }
 
         return result;
@@ -5097,7 +5097,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 last = prev;
                 prev = startp[0];
                 if (ary == null) ary = context.runtime.newArray(4);
-                ary.append(result);
+                ary.append(context, result);
             }
             if (last >= 0) patternSearch(context, pat, str, last);
             return ary == null ? context.runtime.newEmptyArray() : ary;
@@ -6418,7 +6418,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         while (ptr < end) {
             int c = codePoint(context, enc, ptrBytes, ptr, end);
             int n = codeLength(enc, c);
-            if (wantarray) ary.append(newFixnum(context, c));
+            if (wantarray) ary.append(context, newFixnum(context, c));
             else block.yield(context, newFixnum(context, c));
             ptr += n;
         }
@@ -6520,7 +6520,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             int len = matcher.match(ptr, end, Option.DEFAULT);
             if (len <= 0) break;
             RubyString result = newStringShared(runtime, ptrBytes, ptr, len, enc);
-            if (wantarray) ary.append(result);
+            if (wantarray) ary.append(context, result);
             else block.yield(context, result);
             ptr += len;
         }

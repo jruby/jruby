@@ -100,7 +100,7 @@ public class JavaEmbedUtils {
             }
 
             public IRubyObject[] convertToJavaArray(IRubyObject array) {
-                return ((RubyArray) array).toJavaArray();
+                return ((RubyArray<?>) array).toJavaArray(array.getRuntime().getCurrentContext());
             }
 
             public RubyInteger convertToRubyInteger(IRubyObject obj) {

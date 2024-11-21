@@ -1361,23 +1361,37 @@ public class Java implements Library {
         return JavaUtil.java_to_primitive(recv, object, unusedBlock);
     }
 
-    // TODO: Formalize conversion mechanisms between Java and Ruby
-    @JRubyMethod(required = 2, module = true, visibility = PRIVATE)
+    /**
+     * @param recv
+     * @param wrapper
+     * @param interfaces
+     * @param block
+     * @return ""
+     * @deprecated Use
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public static IRubyObject new_proxy_instance2(IRubyObject recv, final IRubyObject wrapper,
                                                   final IRubyObject interfaces, Block block) {
-        IRubyObject[] javaClasses = ((RubyArray) interfaces).toJavaArray();
+        return new_proxy_instance2(recv.getRuntime().getCurrentContext(), recv, wrapper, interfaces, block);
+    }
+
+        // TODO: Formalize conversion mechanisms between Java and Ruby
+    @JRubyMethod(required = 2, module = true, visibility = PRIVATE)
+    public static IRubyObject new_proxy_instance2(ThreadContext context, IRubyObject recv, final IRubyObject wrapper,
+                                                  final IRubyObject interfaces, Block block) {
+        IRubyObject[] javaClasses = ((RubyArray) interfaces).toJavaArray(context);
 
         // Create list of interface names to proxy (and make sure they really are interfaces)
         Class[] unwrapped = new Class[javaClasses.length];
         for (int i = 0; i < javaClasses.length; i++) {
             final Class<?> klass = JavaUtil.unwrapJava(javaClasses[i]); // TypeError if not a Java wrapper
-            if (!klass.isInterface()) {
-                throw recv.getRuntime().newArgumentError("Java interface expected, got: " + klass);
-            }
+
+            if (!klass.isInterface()) throw argumentError(context, "Java interface expected, got: " + klass);
+
             unwrapped[i] = klass;
         }
 
-        return getInstance(recv.getRuntime(), newInterfaceImpl(wrapper, unwrapped));
+        return getInstance(context.runtime, newInterfaceImpl(wrapper, unwrapped));
     }
 
     public static Object newInterfaceImpl(final IRubyObject wrapper, Class[] interfaces) {

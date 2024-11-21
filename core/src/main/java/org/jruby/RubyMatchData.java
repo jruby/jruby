@@ -307,7 +307,7 @@ public class RubyMatchData extends RubyObject {
         return this.regexp = RubyRegexp.newRegexp(metaClass.runtime, (ByteList) pattern.getUserObject(), pattern);
     }
 
-    private RubyArray match_array(ThreadContext context, int start) {
+    private RubyArray<?> match_array(ThreadContext context, int start) {
         Ruby runtime = context.runtime;
         check();
 
@@ -321,10 +321,10 @@ public class RubyMatchData extends RubyObject {
             }
         } else {
             int count = regs.getNumRegs() - start;
-            RubyArray arr = RubyArray.newBlankArray(runtime, count);
+            var arr = RubyArray.newBlankArray(runtime, count);
             for (int i=0; i < count; i++) {
                 int beg = regs.getBeg(i+start);
-                arr.storeInternal(i, beg == -1 ?
+                arr.storeInternal(context, i, beg == -1 ?
                         context.nil :
                         str.makeSharedString(runtime, beg, regs.getEnd(i+start) - beg));
             }
@@ -456,11 +456,11 @@ public class RubyMatchData extends RubyObject {
 
         for (IRubyObject arg : args) {
             if (arg instanceof RubyFixnum) {
-                result.append(RubyRegexp.nth_match(arg.convertToInteger().getIntValue(), this));
+                result.append(context, RubyRegexp.nth_match(arg.convertToInteger().getIntValue(), this));
             } else {
                 int num = namevToBackrefNumber(context, arg);
                 if (num >= 0) {
-                    result.append(RubyRegexp.nth_match(num, this));
+                    result.append(context, RubyRegexp.nth_match(num, this));
                 } else {
                     matchAryAref(context, arg, result);
                 }
@@ -560,13 +560,13 @@ public class RubyMatchData extends RubyObject {
         if (len == 0) return result;
 
         for (j = beg; j < end; j++) {
-            result.append(RubyRegexp.nth_match(j, this));
+            result.append(context, RubyRegexp.nth_match(j, this));
         }
 
         // if not enough groups, force length to be as wide as desired by setting last value to nil
         if (wantedEnd > j) {
             int newLength = result.size() + wantedEnd - j;
-            result.storeInternal(newLength - 1, context.nil);
+            result.storeInternal(context, newLength - 1, context.nil);
         }
 
         return result;
@@ -941,7 +941,7 @@ public class RubyMatchData extends RubyObject {
             Iterable<IRubyObject> iterable = () -> arr.rubyStream().iterator();
             for (IRubyObject obj : iterable) {
                 if (!(obj instanceof RubySymbol)) {
-                    throw runtime.newTypeError(str(runtime, "wrong argument type ", obj.getMetaClass(), " (expected Symbol)"));
+                    throw typeError(context, str(runtime, "wrong argument type ", obj.getMetaClass(), " (expected Symbol)"));
                 }
                 RubySymbol requestedKey = (RubySymbol) obj;
 
@@ -954,7 +954,7 @@ public class RubyMatchData extends RubyObject {
                 hash.op_aset(context, requestedKey, value);
             }
         } else {
-            throw context.runtime.newTypeError(str(runtime, "wrong argument type ", what.getMetaClass(), " (expected Array)"));
+            throw typeError(context, str(runtime, "wrong argument type ", what.getMetaClass(), " (expected Array)"));
         }
         return hash;
     }

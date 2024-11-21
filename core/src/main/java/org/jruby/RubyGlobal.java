@@ -97,16 +97,17 @@ import java.util.Set;
  */
 public class RubyGlobal {
     public static void initARGV(Ruby runtime) {
+        var context = runtime.getCurrentContext();
         // define ARGV and $* for this runtime
-        RubyArray argvArray = runtime.newArray();
+        var argvArray = runtime.newArray();
         String[] argv = runtime.getInstanceConfig().getArgv();
 
         for (String arg : argv) {
-            argvArray.append(RubyString.newInternalFromJavaExternal(runtime, arg));
+            argvArray.append(context, RubyString.newInternalFromJavaExternal(runtime, arg));
         }
 
         if (runtime.getObject().getConstantNoConstMissing("ARGV") != null) {
-            ((RubyArray)runtime.getObject().getConstant("ARGV")).replace(argvArray);
+            ((RubyArray<?>)runtime.getObject().getConstant("ARGV")).replace(context, argvArray);
         } else {
             runtime.getObject().setConstantQuiet("ARGV", argvArray);
             runtime.getGlobalVariables().define("$*", new ValueAccessor(argvArray), GLOBAL);
@@ -461,13 +462,13 @@ public class RubyGlobal {
         @JRubyMethod(name = "fetch", required = 1, optional = 2)
         public IRubyObject fetch(ThreadContext context, IRubyObject[] args, Block block) {
             EnvStringValidation.ensureValidEnvString(context.runtime, args[0], "key");
-            
-            switch(args.length) {
-                case 1: return super.fetch(context, args[0], block);
-                case 2: return super.fetch(context, args[0], args[1], block);
-            }
 
-            return null;
+            return switch (args.length) {
+                case 1 -> super.fetch(context, args[0], block);
+                case 2 -> super.fetch(context, args[0], args[1], block);
+                default -> null;
+            };
+
         }
 
         @JRubyMethod(name = "fetch", required = 1)
@@ -497,11 +498,11 @@ public class RubyGlobal {
             return this;
         }
 
-        private static final VisitorWithState<RubyArray> EachVisitor = new VisitorWithState<RubyArray>() {
+        private static final VisitorWithState<RubyArray<?>> EachVisitor = new VisitorWithState<>() {
             @Override
-            public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, RubyArray ary) {
-                ary.append(newString(context, key));
-                ary.append(newName(context, key, value));
+            public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, RubyArray<?> ary) {
+                ary.append(context, newString(context, key));
+                ary.append(context, newName(context, key, value));
             }
         };
 
@@ -553,7 +554,7 @@ public class RubyGlobal {
         private static final VisitorWithState<RubyArray> StoreKeyVisitor = new VisitorWithState<RubyArray>() {
             @Override
             public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, RubyArray keys) {
-                keys.storeInternal(index, newString(context, key));
+                keys.storeInternal(context, index, newString(context, key));
             }
         };
 

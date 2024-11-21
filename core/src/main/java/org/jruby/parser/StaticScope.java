@@ -65,6 +65,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.DynamicScopeGenerator;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
+import static org.jruby.api.Create.newSymbol;
+
 /**
  * StaticScope represents lexical scoping of variables and module/class constants.
  * 
@@ -458,17 +460,27 @@ public class StaticScope implements Serializable, Cloneable {
     }
 
     /**
+     * @param runtime
+     * @return ""
+     * @deprecated Use {@link StaticScope#getLocalVariables(ThreadContext)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
+    public RubyArray getLocalVariables(Ruby runtime) {
+        return getLocalVariables(runtime.getCurrentContext());
+    }
+
+    /**
      * Convenience wrapper around {@link #collectVariables(IntFunction, BiConsumer)}.
      *
-     * @param runtime current runtime
+     * @param context the current context
      * @return populated RubyArray
      */
-    public RubyArray getLocalVariables(Ruby runtime) {
+    public RubyArray getLocalVariables(ThreadContext context) {
         return collectVariables(
-                runtime::newArray,
+                context.runtime::newArray,
                 (array, id) -> {
-                    RubySymbol symbol = runtime.newSymbol(id);
-                    if (symbol.validLocalVariableName()) array.append(symbol);
+                    RubySymbol symbol = newSymbol(context, id);
+                    if (symbol.validLocalVariableName()) array.append(context, symbol);
                 });
     }
 

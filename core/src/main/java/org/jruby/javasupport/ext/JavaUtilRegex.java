@@ -231,7 +231,7 @@ public abstract class JavaUtilRegex {
 
         @JRubyMethod(rest = true)
         public static IRubyObject values_at(final ThreadContext context, final IRubyObject self, final IRubyObject[] args) {
-            return to_a(context, self).values_at(args);
+            return to_a(context, self).values_at(context, args);
         }
 
     }

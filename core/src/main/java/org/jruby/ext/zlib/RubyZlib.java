@@ -56,6 +56,7 @@ import org.jruby.runtime.ThreadContext;
 
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.numericToLong;
+import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newFixnum;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -245,17 +246,28 @@ public class RubyZlib {
         return JZlibInflate.s_inflate(context, recv, string);
     }
 
-    @JRubyMethod(required = 1, optional = 1, checkArity = false, module = true)
+    /**
+     * @param recv
+     * @param args
+     * @return ""
+     * @deprecated Use {@link RubyZlib#deflate(ThreadContext, IRubyObject, IRubyObject[])} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public static IRubyObject deflate(IRubyObject recv, IRubyObject[] args) {
-        return JZlibDeflate.s_deflate(recv, args);
+        return deflate(((RubyBasicObject) recv).getRuntime().getCurrentContext(), recv, args);
+    }
+
+    @JRubyMethod(required = 1, optional = 1, checkArity = false, module = true)
+    public static IRubyObject deflate(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return JZlibDeflate.s_deflate(context, recv, args);
     }
 
     @JRubyMethod(name = "crc_table", module = true, visibility = PRIVATE)
     public static IRubyObject crc_table(ThreadContext context, IRubyObject recv) {
         int[] table = com.jcraft.jzlib.CRC32.getCRC32Table();
-        RubyArray array = context.runtime.newArray(table.length);
-        for (int i = 0; i < table.length; i++) {
-            array.append(asFixnum(context, table[i] & 0xffffffffL));
+        var array = newArray(context, table.length);
+        for (int j : table) {
+            array.append(context, asFixnum(context, j & 0xffffffffL));
         }
         return array;
     }

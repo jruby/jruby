@@ -511,7 +511,7 @@ public class IRRuntimeHelpers {
         switch (signature.arityValue()) {
             case -1:
                 return signature.opt() > 1 && value instanceof RubyArray ?
-                        ((RubyArray) value).toJavaArray() :
+                        ((RubyArray) value).toJavaArray(context) :
                         new IRubyObject[] { value };
             case  0:
             case  1:
@@ -527,7 +527,7 @@ public class IRRuntimeHelpers {
     public static IRubyObject[] convertValueIntoArgArray(ThreadContext context, RubyArray array, org.jruby.runtime.Signature signature) {
         switch (signature.arityValue()) {
             case -1:
-                return array.toJavaArray();
+                return array.toJavaArray(context);
             case 0:
             case 1:
                 return signature.rest() == org.jruby.runtime.Signature.Rest.ANON ?
@@ -1788,7 +1788,7 @@ public class IRRuntimeHelpers {
         if (superClass == UNDEFINED) {
             sc = null;
         } else {
-            RubyClass.checkInheritable((IRubyObject) superClass);
+            RubyClass.checkInheritable(context, (IRubyObject) superClass);
 
             sc = (RubyClass) superClass;
         }
@@ -2188,7 +2188,7 @@ public class IRRuntimeHelpers {
         IRubyObject ary;
         if (args.length == 1 && (ary = Helpers.aryOrToAry(context, args[0])) != context.nil) {
             if (!(ary instanceof RubyArray)) throw typeError(context, "", args[0], "#to_ary should return Array");
-            args = ((RubyArray) ary).toJavaArray();
+            args = ((RubyArray) ary).toJavaArray(context);
         }
         return args;
     }
@@ -2407,7 +2407,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static IRubyObject[] singleBlockArgToArray(IRubyObject value) {
         return value instanceof RubyArray ?
-                ((RubyArray) value).toJavaArray() :
+                ((RubyArray) value).toJavaArray(value.getRuntime().getCurrentContext()) :
                 new IRubyObject[] { value };
     }
 
@@ -2577,9 +2577,7 @@ public class IRRuntimeHelpers {
     }
 
     private static void putConst(ThreadContext context, IRubyObject self, IRubyObject module, String id, IRubyObject value, String filename, int line) {
-        if (!(module instanceof RubyModule)) {
-            throw context.getRuntime().newTypeError("" + module.inspect() + " is not a class/module");
-        }
+        if (!(module instanceof RubyModule)) throw typeError(context, module.inspect() + " is not a class/module");
 
         warnSetConstInRefinement(context, self);
 

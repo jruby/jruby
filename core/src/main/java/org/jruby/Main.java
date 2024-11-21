@@ -279,7 +279,7 @@ public class Main {
                     return doCheckSyntax(runtime, in, filename);
                 } else {
                     // proceed to run the script
-                    doRunFromMain(runtime, in, filename);
+                    runtime.runFromMain(in, filename);
                 }
                 status = new Status();
             } finally {
@@ -390,12 +390,6 @@ public class Main {
             }
         }
         return new Status(mee.getStatus());
-    }
-
-    private void doRunFromMain(Ruby runtime, InputStream in, String filename) {
-        doCheckSecurityManager();
-
-        runtime.runFromMain(in, filename);
     }
 
     private Status doCheckSyntax(Ruby runtime, InputStream in, String filename) throws RaiseException {
@@ -519,13 +513,6 @@ public class Main {
         if (Platform.IS_GCJ) {
             System.err.println("Fatal: GCJ (GNU Compiler for Java) is not supported by JRuby.");
             System.exit(1);
-        }
-    }
-
-    private void doCheckSecurityManager() {
-        if (Main.class.getClassLoader() == null && System.getSecurityManager() != null) {
-            System.err.println("Warning: security manager and JRuby running from boot classpath.\n" +
-                    "Run from jruby.jar or set env VERIFY_JRUBY=true to enable security.");
         }
     }
 

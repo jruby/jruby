@@ -46,8 +46,7 @@ import java.lang.reflect.InvocationTargetException;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.api.Convert.asBoolean;
-import static org.jruby.api.Create.newFixnum;
-import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.*;
 import static org.jruby.javasupport.JavaUtil.convertJavaArrayToRuby;
 import static org.jruby.javasupport.JavaUtil.convertJavaToUsableRubyObject;
 import static org.jruby.javasupport.JavaUtil.inspectObject;
@@ -161,14 +160,13 @@ public abstract class JavaUtil {
 
         @JRubyMethod(name = { "first", "ruby_first" }) // re-def Enumerable#first(n)
         public static IRubyObject first(final ThreadContext context, final IRubyObject self, final IRubyObject count) {
-            final java.util.Collection coll = unwrapIfJavaObject(self);
+            final java.util.Collection<?> coll = unwrapIfJavaObject(self);
             int len = count.convertToInteger().getIntValue();
             int size = coll.size(); if ( len > size ) len = size;
-            final Ruby runtime = context.runtime;
-            if ( len == 0 ) return RubyArray.newEmptyArray(runtime);
-            final RubyArray arr = RubyArray.newArray(runtime, len);
-            int i = 0; for ( java.util.Iterator it = coll.iterator(); i < len; i++ ) {
-                arr.append( convertJavaToUsableRubyObject(runtime, it.next() ) );
+            if ( len == 0 ) return RubyArray.newEmptyArray(context.runtime);
+            final var arr = newArray(context, len);
+            int i = 0; for ( java.util.Iterator<?> it = coll.iterator(); i < len; i++ ) {
+                arr.append(context, convertJavaToUsableRubyObject(context.runtime, it.next()));
             }
             return arr;
         }

@@ -167,7 +167,7 @@ public class RubyHash extends RubyObject implements Map {
             tmp = TypeConverter.convertToTypeWithCheck(args[0], runtime.getArray(), "to_ary");
             if (tmp != nil) {
                 RubyHash hash = (RubyHash) ((RubyClass) recv).allocate();
-                RubyArray arr = (RubyArray) tmp;
+                var arr = (RubyArray<?>) tmp;
                 for (int i = 0, j = arr.getLength(); i<j; i++) {
                     IRubyObject e = arr.entry(i);
                     IRubyObject v = TypeConverter.convertToTypeWithCheck(e, runtime.getArray(), "to_ary");
@@ -176,13 +176,13 @@ public class RubyHash extends RubyObject implements Map {
                     if (v == nil) {
                         throw argumentError(context, "wrong element type " + e.getMetaClass() + " at " + i + " (expected array)");
                     }
-                    switch (((RubyArray) v).getLength()) {
+                    switch (((RubyArray<?>) v).getLength()) {
                     default:
-                        throw argumentError(context, "invalid number of elements (" + ((RubyArray) v).getLength() + " for 1..2)");
+                        throw argumentError(context, "invalid number of elements (" + ((RubyArray<?>) v).getLength() + " for 1..2)");
                     case 2:
-                        val = ((RubyArray) v).entry(1);
+                        val = ((RubyArray<?>) v).entry(1);
                     case 1:
-                        key = ((RubyArray) v).entry(0);
+                        key = ((RubyArray<?>) v).entry(0);
                         hash.fastASetCheckString(runtime, key, val);
                     }
                 }
@@ -1008,7 +1008,7 @@ public class RubyHash extends RubyObject implements Map {
     private static final VisitorWithState<RubyArray> StoreKeyValueVisitor = new VisitorWithState<RubyArray>() {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, RubyArray result) {
-            result.storeInternal(index, RubyArray.newArray(context.runtime, key, value));
+            result.storeInternal(context, index, RubyArray.newArray(context.runtime, key, value));
         }
     };
 
@@ -1856,7 +1856,7 @@ public class RubyHash extends RubyObject implements Map {
     private static final VisitorWithState<RubyArray> StoreKeyVisitor = new VisitorWithState<RubyArray>() {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, RubyArray keys) {
-            keys.storeInternal(index, key);
+            keys.storeInternal(context, index, key);
         }
     };
 
@@ -1884,7 +1884,7 @@ public class RubyHash extends RubyObject implements Map {
     public static final VisitorWithState<RubyArray> StoreValueVisitor = new VisitorWithState<RubyArray>() {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, RubyArray values) {
-            values.storeInternal(index, value);
+            values.storeInternal(context, index, value);
         }
     };
 
@@ -2191,7 +2191,7 @@ public class RubyHash extends RubyObject implements Map {
     public RubyArray values_at(ThreadContext context, IRubyObject[] args) {
         RubyArray result = RubyArray.newBlankArrayInternal(context.runtime, args.length);
         for (int i = 0; i < args.length; i++) {
-            result.storeInternal(i, op_aref(context, args[i]));
+            result.storeInternal(context, i, op_aref(context, args[i]));
         }
         return result;
     }
@@ -2200,7 +2200,7 @@ public class RubyHash extends RubyObject implements Map {
     public RubyArray fetch_values(ThreadContext context, IRubyObject[] args, Block block) {
         RubyArray result = RubyArray.newBlankArrayInternal(context.runtime, args.length);
         for (int i = 0; i < args.length; i++) {
-            result.storeInternal(i, fetch(context, args[i], block));
+            result.storeInternal(context, i, fetch(context, args[i], block));
         }
         return result;
     }
@@ -2943,6 +2943,7 @@ public class RubyHash extends RubyObject implements Map {
      * Note: this is included as a compatibility measure for AR-JDBC
      * @deprecated use RubyHash.op_aset instead
      */
+    @Deprecated(forRemoval = true)
     public IRubyObject aset(IRubyObject key, IRubyObject value) {
         return op_aset(metaClass.runtime.getCurrentContext(), key, value);
     }
@@ -2951,6 +2952,7 @@ public class RubyHash extends RubyObject implements Map {
      * Note: this is included as a compatibility measure for Mongrel+JRuby
      * @deprecated use RubyHash.op_aref instead
      */
+    @Deprecated(forRemoval = true)
     public IRubyObject aref(IRubyObject key) {
         return op_aref(metaClass.runtime.getCurrentContext(), key);
     }

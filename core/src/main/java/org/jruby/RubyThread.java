@@ -368,13 +368,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         while (--idx >= 0) {
             RubyHash mask = interruptMaskStack.get(idx);
 
-            for (int j = 0; j < ancestorsLen; j++) {
-                IRubyObject klass = ancestors.get(j);
-                IRubyObject sym;
-
-                if (!(sym = mask.op_aref(context, klass)).isNil()) {
-                    return checkInterruptMask(context, sym);
-                }
+            for (IRubyObject klass: ancestors) {
+                IRubyObject sym =  mask.op_aref(context, klass);
+                if (!sym.isNil()) return checkInterruptMask(context, sym);
             }
         }
         return INTERRUPT_NONE;
@@ -1854,6 +1850,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         /**
          * @deprecated Prefer version that receives ByteBuffer rather than recreating every time.
          */
+        @Deprecated(since = "9.4-")
         public default int run(ThreadContext context, Data data, byte[] bytes, int start, int length) throws InterruptedException {
             return run(context, data, ByteBuffer.wrap(bytes), start, length);
         }
@@ -1863,16 +1860,15 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     /**
      * Execute an interruptible regexp operation with the given function and bytess.
-     *
-     * @param context the current context
-     * @param data a data object
-     * @param bytes the bytes to write
-     * @param start start range of bytes to write
-     * @param length length of bytes to write
-     * @param task the write task
-     * @param <Data> the type of the data object
-     * @return the number of bytes written
-     * @throws InterruptedException
+     * @param context
+     * @param matcher
+     * @param start
+     * @param range
+     * @param option
+     * @param task
+     * @return ""
+     * @param <Data>
+     * @throws InterruptedException when interrupted
      */
     public <Data> int executeRegexp(
             ThreadContext context,

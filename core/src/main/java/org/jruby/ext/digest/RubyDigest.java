@@ -69,7 +69,7 @@ import static org.jruby.api.Error.typeError;
 @JRubyModule(name="Digest")
 public class RubyDigest {
 
-    private static final Map<String, MessageDigest> CLONEABLE_DIGESTS = new HashMap<String, MessageDigest>(8, 1);
+    private static final Map<String, MessageDigest> CLONEABLE_DIGESTS = new HashMap<>(8, 1);
     static {
         // standard digests from JCA specification; if we can retrieve and clone, save them
         for (String name : new String[] {"MD2", "MD5", "SHA-1", "SHA-256", "SHA-384", "SHA-512"}) {
@@ -150,21 +150,32 @@ public class RubyDigest {
 
     private static ByteList toHex(byte[] val) {
         ByteList byteList = new ByteList(val.length * 2);
-        for (int i = 0, j = val.length; i < j; i++) {
-            int b = val[i] & 0xFF;
+        for (byte value: val) {
+            int b = value & 0xFF;
             byteList.append(digits[b >> 4]);
             byteList.append(digits[b & 0xF]);
         }
         return byteList;
     }
 
-    private static RubyString toHexString(Ruby runtime, byte[] val) {
-        return RubyString.newStringNoCopy(runtime, new ByteList(ByteList.plain(toHex(val)), USASCIIEncoding.INSTANCE));
+    private static RubyString toHexString(ThreadContext context, byte[] val) {
+        return RubyString.newStringNoCopy(context.runtime, new ByteList(ByteList.plain(toHex(val)), USASCIIEncoding.INSTANCE));
+    }
+
+    /**
+     * @param self
+     * @param arg
+     * @return ""
+     * @deprecated Use {@link RubyDigest#hexencode(ThreadContext, IRubyObject, IRubyObject)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
+    public static RubyString hexencode(IRubyObject self, IRubyObject arg) {
+        return hexencode(self.getRuntime().getCurrentContext(), self, arg);
     }
 
     @JRubyMethod(name = "hexencode", meta = true)
-    public static RubyString hexencode(IRubyObject self, IRubyObject arg) {
-        return toHexString(self.getRuntime(), arg.convertToString().getBytes());
+    public static RubyString hexencode(ThreadContext context, IRubyObject self, IRubyObject arg) {
+        return toHexString(context, arg.convertToString().getBytes());
     }
 
     @JRubyMethod(name = "bubblebabble", meta = true)
@@ -173,23 +184,7 @@ public class RubyDigest {
         return RubyString.newString(recv.getRuntime(), BubbleBabble.bubblebabble(bytes.unsafeBytes(), bytes.begin(), bytes.length()));
     }
 
-    private static class Metadata {
-
-        private final String name;
-        private final int blockLength;
-
-        Metadata(String name, int blockLength) {
-            this.name = name;
-            this.blockLength = blockLength;
-        }
-
-        String getName() {
-            return name;
-        }
-
-        int getBlockLength() {
-            return blockLength;
-        }
+    private record Metadata(String name, int blockLength) {
     }
 
 
@@ -264,34 +259,34 @@ public class RubyDigest {
     @JRubyModule(name = "Digest::Instance")
     public static class DigestInstance {
 
-        private static IRubyObject throwUnimplError(IRubyObject self, String name) {
-            throw self.getRuntime().newRuntimeError(String.format("%s does not implement %s()", self.getMetaClass().getRealClass().getName(), name));
+        private static IRubyObject throwUnimplError(ThreadContext context, IRubyObject self, String name) {
+            throw context.runtime.newRuntimeError(String.format("%s does not implement %s()", self.getMetaClass().getRealClass().getName(), name));
         }
 
         /* instance methods that should be overridden */
         @JRubyMethod(name = {"update", "<<"})
         public static IRubyObject update(ThreadContext context, IRubyObject self, IRubyObject arg) {
-            return throwUnimplError(self, "update");
+            return throwUnimplError(context, self, "update");
         }
 
         @JRubyMethod()
         public static IRubyObject finish(ThreadContext context, IRubyObject self) {
-            return throwUnimplError(self, "finish");
+            return throwUnimplError(context, self, "finish");
         }
 
         @JRubyMethod()
         public static IRubyObject reset(ThreadContext context, IRubyObject self) {
-            return throwUnimplError(self, "reset");
+            return throwUnimplError(context, self, "reset");
         }
 
         @JRubyMethod()
         public static IRubyObject digest_length(ThreadContext context, IRubyObject self) {
-            return digest(context, self, IRubyObject.NULL_ARRAY).convertToString().bytesize();
+            return digest(context, self, IRubyObject.NULL_ARRAY).convertToString().bytesize(context);
         }
 
         @JRubyMethod()
         public static IRubyObject block_length(ThreadContext context, IRubyObject self) {
-            return throwUnimplError(self, "block_length");
+            return throwUnimplError(context, self, "block_length");
         }
 
         /* instance methods that may be overridden */
@@ -308,13 +303,13 @@ public class RubyDigest {
                 str1 = to_s(context, self).convertToString();
                 str2 = oth.convertToString();
             }
-            boolean ret = str1.bytesize().eql(str2.bytesize()) && (str1.eql(str2));
+            boolean ret = str1.bytesize(context).eql(str2.bytesize(context)) && (str1.eql(str2));
             return ret ? context.tru : context.fals;
         }
 
         @JRubyMethod()
         public static IRubyObject inspect(ThreadContext context, IRubyObject self) {
-            return RubyString.newStringNoCopy(self.getRuntime(), ByteList.plain("#<" + self.getMetaClass().getRealClass().getName() + ": " + hexdigest(context, self, IRubyObject.NULL_ARRAY) + ">"));
+            return RubyString.newStringNoCopy(context.runtime, ByteList.plain("#<" + self.getMetaClass().getRealClass().getName() + ": " + hexdigest(context, self, IRubyObject.NULL_ARRAY) + ">"));
         }
 
         /* instance methods that need not usually be overridden */
@@ -325,10 +320,7 @@ public class RubyDigest {
 
         @JRubyMethod
         public static IRubyObject digest(ThreadContext context, IRubyObject self) {
-            IRubyObject clone = self.rbClone();
-            IRubyObject value = clone.callMethod(context, "finish");
-            clone.callMethod(context, "reset");
-            return value;
+            return digest_bang(context, self.rbClone());
         }
 
         @JRubyMethod
@@ -350,17 +342,17 @@ public class RubyDigest {
 
         @JRubyMethod
         public static IRubyObject hexdigest(ThreadContext context, IRubyObject self) {
-            return toHexString(context.runtime, digest(context, self).convertToString().getBytes());
+            return toHexString(context, digest(context, self).convertToString().getBytes());
         }
 
         @JRubyMethod
         public static IRubyObject hexdigest(ThreadContext context, IRubyObject self, IRubyObject arg0) {
-            return toHexString(context.runtime, digest(context, self, arg0).convertToString().getBytes());
+            return toHexString(context, digest(context, self, arg0).convertToString().getBytes());
         }
 
         @JRubyMethod(name = "hexdigest!")
         public static IRubyObject hexdigest_bang(ThreadContext context, IRubyObject self) {
-            return toHexString(context.runtime, digest_bang(context, self).convertToString().getBytes());
+            return toHexString(context, digest_bang(context, self).convertToString().getBytes());
         }
 
         @JRubyMethod(name = "bubblebabble", meta = true)
@@ -399,7 +391,7 @@ public class RubyDigest {
 
         @Deprecated
         public static IRubyObject hexdigest(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-            return toHexString(context.runtime, digest(context, self, args).convertToString().getBytes());
+            return toHexString(context, digest(context, self, args).convertToString().getBytes());
         }
 
         @Deprecated
@@ -469,23 +461,20 @@ public class RubyDigest {
 
         @JRubyMethod(name = "hexdigest", required = 1, optional = 1, checkArity = false, meta = true)
         public static IRubyObject s_hexdigest(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-            Ruby runtime = recv.getRuntime();
             byte[] digest = recv.callMethod(context, "digest", args, Block.NULL_BLOCK).convertToString().getBytes();
-            return RubyDigest.toHexString(runtime, digest);
+            return RubyDigest.toHexString(context, digest);
         }
 
         @JRubyMethod(name = "hexdigest", meta = true)
         public static IRubyObject s_hexdigest(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
-            Ruby runtime = recv.getRuntime();
             byte[] digest = sites(context).digest.call(context, recv, recv, arg0).convertToString().getBytes();
-            return RubyDigest.toHexString(runtime, digest);
+            return RubyDigest.toHexString(context, digest);
         }
 
         @JRubyMethod(name = "hexdigest", meta = true)
         public static IRubyObject s_hexdigest(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
-            Ruby runtime = recv.getRuntime();
             byte[] digest = sites(context).digest.call(context, recv, recv, arg0, arg1).convertToString().getBytes();
-            return RubyDigest.toHexString(runtime, digest);
+            return RubyDigest.toHexString(context, digest);
         }
 
         @JRubyMethod(name = "bubblebabble", meta = true)
@@ -600,8 +589,8 @@ public class RubyDigest {
         }
 
         private void setAlgorithm(Metadata metadata) throws NoSuchAlgorithmException {
-           this.algo = createMessageDigest(metadata.getName());
-           this.blockLength = metadata.getBlockLength();
+           this.algo = createMessageDigest(metadata.name());
+           this.blockLength = metadata.blockLength();
         }
 
     }

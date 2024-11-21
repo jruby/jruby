@@ -116,7 +116,7 @@ public class PopenExecutor {
 //            #if defined(HAVE_FORK) || defined(HAVE_SPAWNV)
         if (pid > 0) {
             long ret;
-            ret = RubyProcess.waitpid(runtime, pid, 0);
+            ret = RubyProcess.waitpid(context, pid, 0);
             if (ret == -1)
                 throw runtime.newErrnoFromInt(runtime.getPosix().errno(), "Another thread waited the process started by system().");
         }
@@ -339,7 +339,7 @@ public class PopenExecutor {
 //            #endif
             tmp = ((RubyArray)tmp).aryDup();
             //            RBASIC_CLEAR_CLASS(tmp);
-            eargp = execargNew(context, ((RubyArray)tmp).toJavaArray(), opt, false, false);
+            eargp = execargNew(context, ((RubyArray)tmp).toJavaArray(context), opt, false, false);
             ((RubyArray)tmp).clear();
         } else {
             pname = pname.convertToString();

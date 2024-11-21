@@ -45,6 +45,7 @@ import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.anno.FrameField.LASTLINE;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
 import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -129,7 +130,7 @@ public class RubyArgsFile extends RubyObject {
         Stream,   // We are only getting from $stdin
         SameFile, // We are continuing to interact with the same file
         NextFile  // Time to advance to the next file.
-    };
+    }
 
     public static final class ArgsFileData {
 
@@ -238,7 +239,7 @@ public class RubyArgsFile extends RubyObject {
         private void inplaceEditWindows(ThreadContext context, String filename, String extension) throws RaiseException {
             File file = new File(filename);
 
-            if (extension.length() > 0) {
+            if (!extension.isEmpty()) {
                 String backup = filename + extension;
                 File backupFile = new File(backup);
 
@@ -261,7 +262,7 @@ public class RubyArgsFile extends RubyObject {
             File file = new File(filename);
             FileStat stat = runtime.getPosix().stat(filename);
 
-            if (extension.length() > 0) {
+            if (!extension.isEmpty()) {
                 file.renameTo(new File(filename + extension));
             } else {
                 file.delete();
@@ -309,7 +310,7 @@ public class RubyArgsFile extends RubyObject {
             data.inPlace = context.fals;
         } else {
             test = TypeConverter.convertToType(test, context.runtime.getString(), "to_str", false);
-            if (test.isNil() || ((RubyString) test).length() == 0) {
+            if (test.isNil() || ((RubyString) test).isEmpty()) {
                 data.inPlace = context.nil;
             } else {
                 StringSupport.checkStringSafety(context.runtime, test);
@@ -443,10 +444,10 @@ public class RubyArgsFile extends RubyObject {
 
         if (!(data.currentFile instanceof RubyIO)) return data.currentFile.callMethod(context, "readlines", args);
 
-        RubyArray ary = runtime.newArray();
+        var ary = runtime.newArray();
         IRubyObject line;
         while(!(line = argf_getline(context, recv, args)).isNil()) {
-            ary.append(line);
+            ary.append(context, line);
         }
         return ary;
     }
@@ -461,10 +462,10 @@ public class RubyArgsFile extends RubyObject {
         if (!data.next_argv(context)) return runtime.newEmptyArray();
         if (!(data.currentFile instanceof RubyIO)) return data.currentFile.callMethod(context, "to_a", args);
 
-        RubyArray ary = runtime.newArray();
+        var ary = runtime.newArray();
         IRubyObject line;
         while ((line = argf_getline(context, recv, args)) != context.nil) {
-            ary.append(line);
+            ary.append(context, line);
         }
         return ary;
     }
@@ -928,7 +929,7 @@ public class RubyArgsFile extends RubyObject {
     private static RubyIO getCurrentDataFile(ThreadContext context, String errorMessage) {
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
 
-        if (!data.next_argv(context)) throw context.runtime.newArgumentError(errorMessage);
+        if (!data.next_argv(context)) throw argumentError(context, errorMessage);
 
         return (RubyIO) data.currentFile;
     }

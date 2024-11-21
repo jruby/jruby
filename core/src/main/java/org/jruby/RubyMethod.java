@@ -36,13 +36,11 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.api.Convert;
 import org.jruby.internal.runtime.methods.AliasMethod;
-import org.jruby.internal.runtime.methods.DelegatingDynamicMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.IRMethodArgs;
 import org.jruby.internal.runtime.methods.PartialDelegatingMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.runtime.ArgumentDescriptor;
-import org.jruby.runtime.ArgumentType;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
@@ -56,6 +54,7 @@ import org.jruby.runtime.callsite.CacheEntry;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newFixnum;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
 
 /** 
@@ -153,8 +152,8 @@ public class RubyMethod extends AbstractRubyMethod {
      * @return the number of arguments of a method.
      */
     @JRubyMethod
-    public RubyFixnum arity() {
-        return RubyFixnum.newFixnum(getRuntime(), method.getSignature().arityValue());
+    public RubyFixnum arity(ThreadContext context) {
+        return newFixnum(context, method.getSignature().arityValue());
     }
 
     @JRubyMethod(name = "eql?")

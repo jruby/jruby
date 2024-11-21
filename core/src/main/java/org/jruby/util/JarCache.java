@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
-import java.security.AccessControlException;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -184,9 +183,6 @@ class JarCache {
                 index = new JarIndex(jarPath);
                 indexCache.put(cacheKey, new SoftJarIndex(cacheKey, index));
             } catch (IOException ioe) {
-                return null;
-            } catch (AccessControlException ace) {
-                // No permissions to index the given path, bail out
                 return null;
             }
         }
