@@ -35,7 +35,8 @@ public class Create {
     // mri: rb_ary_new2
     public static RubyArray<?> newArray(ThreadContext context, long length) {
         checkLength(context, length);
-        return RubyArray.newBlankArray(context.runtime, (int)length);
+        // FIXME: This should be newBlankArray but things go very wrong in a tough to figure out where sort of way.
+        return RubyArray.newArray(context.runtime, (int)length);
     }
 
     /**
