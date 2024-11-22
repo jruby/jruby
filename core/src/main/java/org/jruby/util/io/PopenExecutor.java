@@ -44,8 +44,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Create.newFixnum;
-import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 
 /**
@@ -379,23 +378,22 @@ public class PopenExecutor {
 
     // MRI: rb_check_exec_env
     public static RubyArray checkExecEnv(ThreadContext context, RubyHash hash, ExecArg pathArg) {
-        Ruby runtime = context.runtime;
-        RubyArray env = runtime.newArray();
+        var env = newArray(context);
 
         for (Map.Entry<IRubyObject, IRubyObject> entry : (Set<Map.Entry<IRubyObject, IRubyObject>>)hash.directEntrySet()) {
             IRubyObject key = entry.getKey();
             IRubyObject val = entry.getValue();
-            RubyString keyString = StringSupport.checkEmbeddedNulls(runtime, key).export(context);
+            RubyString keyString = StringSupport.checkEmbeddedNulls(context.runtime, key).export(context);
             String k = keyString.toString();
 
             if (k.indexOf('=') != -1) throw argumentError(context, "environment name contains a equal : " + k);
 
-            if (!val.isNil()) val = StringSupport.checkEmbeddedNulls(runtime, val);
+            if (!val.isNil()) val = StringSupport.checkEmbeddedNulls(context.runtime, val);
             if (!val.isNil()) val = ((RubyString) val).export(context);
 
             if (k.equalsIgnoreCase("PATH")) pathArg.path_env = val;
 
-            env.push(runtime.newArray(keyString, val));
+            env.push(newArray(context, keyString, val));
         }
 
         return env;
@@ -988,17 +986,17 @@ public class PopenExecutor {
 
             newary = sargp.fd_dup2;
             if (newary == null) {
-                newary = context.runtime.newArray();
+                newary = newArray(context);
                 sargp.fd_dup2 = newary;
             }
-            newary.push(context.runtime.newArray(newFixnum(context, fd), newFixnum(context, save_fd)));
+            newary.push(newArray(context, newFixnum(context, fd), newFixnum(context, save_fd)));
 
             newary = sargp.fd_close;
             if (newary == null) {
-                newary = context.runtime.newArray();
+                newary = newArray(context);
                 sargp.fd_close = newary;
             }
-            newary.push(context.runtime.newArray(newFixnum(context, save_fd), context.nil));
+            newary.push(newArray(context, newFixnum(context, save_fd), context.nil));
         }
 
         return 0;
@@ -1336,7 +1334,7 @@ public class PopenExecutor {
                     IRubyObject ary;
                     IRubyObject tmp, softlim, hardlim;
                     if (eargp.rlimit_limits == null)
-                        ary = eargp.rlimit_limits = context.runtime.newArray();
+                        ary = eargp.rlimit_limits = newArray(context);
                     else
                         ary = eargp.rlimit_limits;
                     tmp = TypeConverter.checkArrayType(context.runtime, val);
@@ -1352,7 +1350,7 @@ public class PopenExecutor {
                     } else {
                         softlim = hardlim = val.convertToInteger();
                     }
-                    tmp = RubyArray.newArray(context.runtime, newFixnum(context, rtype), softlim, hardlim);
+                    tmp = newArray(context, newFixnum(context, rtype), softlim, hardlim);
                     ((RubyArray)ary).push(tmp);
                 }
                 else if (id.equals("unsetenv_others")) {
@@ -1518,7 +1516,7 @@ public class PopenExecutor {
                     flags = newFixnum(context, intFlags);
                     perm = ((RubyArray)val).entry(2);
                     perm = perm.isNil() ? newFixnum(context, 0644) : perm.convertToInteger();
-                    param = RubyArray.newArray(context.runtime,
+                    param = newArray(context,
                             ((RubyString)path).strDup(context.runtime).export(context),
                             flags,
                             perm);
@@ -1555,10 +1553,7 @@ public class PopenExecutor {
                     flags = newFixnum(context, OpenFlags.O_RDONLY.intValue());
                 }
                 perm = newFixnum(context, 0644);
-                param = RubyArray.newArray(context.runtime,
-                        ((RubyString)path).strDup(context.runtime).export(context),
-                        flags,
-                        perm);
+                param = newArray(context, ((RubyString)path).strDup(context.runtime).export(context), flags, perm);
                 eargp.fd_open = checkExecRedirect1(context, eargp.fd_open, key, param);
                 break;
 
@@ -1617,20 +1612,16 @@ public class PopenExecutor {
 
     // MRI: check_exec_redirect1
     static RubyArray checkExecRedirect1(ThreadContext context, RubyArray ary, IRubyObject key, IRubyObject param) {
-        if (ary == null) {
-            ary = context.runtime.newArray();
-        }
+        if (ary == null) ary = newArray(context);
+
         if (!(key instanceof RubyArray)) {
             IRubyObject fd = checkExecRedirectFd(context, key, !param.isNil());
-            ary.push(context.runtime.newArray(fd, param));
-        }
-        else {
-            int i, n=0;
-            for (i = 0 ; i < ((RubyArray)key).size(); i++) {
+            ary.push(newArray(context, fd, param));
+        } else {
+            for (int i = 0 ; i < ((RubyArray)key).size(); i++) {
                 IRubyObject v = ((RubyArray)key).eltOk(i);
                 IRubyObject fd = checkExecRedirectFd(context, v, !param.isNil());
-                ary.push(context.runtime.newArray(fd, param));
-                n++;
+                ary.push(newArray(context, fd, param));
             }
         }
         return ary;
@@ -1655,13 +1646,13 @@ public class PopenExecutor {
         prog = execGetargs(context, argv_p, accept_shell, env_opt);
         IRubyObject opt = env_opt[1];
         RubyHash optHash;
-        RubySymbol exceptionSym = context.runtime.newSymbol("exception");
+        RubySymbol exceptionSym = newSymbol(context, "exception");
         if (allow_exc_opt && !opt.isNil() && (optHash = ((RubyHash) opt)).has_key_p(context, exceptionSym).isTrue()) {
             optHash = optHash.dupFast(context);
             exception = optHash.delete(context, exceptionSym);
         }
 
-        RubySymbol chdirSym = context.runtime.newSymbol("chdir");
+        RubySymbol chdirSym = newSymbol(context, "chdir");
         IRubyObject chdir;
         if (!optForChdir.isNil() && (chdir = ((RubyHash) optForChdir).delete(chdirSym)) != null) {
             eargp.chdirGiven = true;
@@ -1678,7 +1669,6 @@ public class PopenExecutor {
 
     // rb_exec_getargs
     private static RubyString execGetargs(ThreadContext context, IRubyObject[][] argv_p, boolean accept_shell, IRubyObject[] env_opt) {
-        Ruby runtime = context.runtime;
         IRubyObject hash;
         RubyString prog;
         int beg = 0;
@@ -1686,14 +1676,14 @@ public class PopenExecutor {
 
         // extract environment and options from args
         if (end >= 1) {
-            hash = TypeConverter.checkHashType(runtime, argv_p[0][end - 1]);
+            hash = TypeConverter.checkHashType(context.runtime, argv_p[0][end - 1]);
             if (!hash.isNil()) {
                 env_opt[1] = hash;
                 end--;
             }
         }
         if (end >= 1) {
-            hash = TypeConverter.checkHashType(runtime, argv_p[0][0]);
+            hash = TypeConverter.checkHashType(context.runtime, argv_p[0][0]);
             if (!hash.isNil()) {
                 env_opt[0] = hash;
                 beg++;
@@ -1707,9 +1697,7 @@ public class PopenExecutor {
         if (prog == null) {
             // use first arg as program name and clear argv if we can use sh
             prog = (RubyString)argv_p[0][0];
-            if (accept_shell && (end - beg) == 1) {
-                argv_p[0] = IRubyObject.NULL_ARRAY;
-            }
+            if (accept_shell && (end - beg) == 1) argv_p[0] = IRubyObject.NULL_ARRAY;
         }
 
         return prog;

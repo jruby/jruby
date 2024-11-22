@@ -60,8 +60,7 @@ import org.jruby.util.RecursiveComparator;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.api.Convert.*;
-import static org.jruby.api.Create.newString;
-import static org.jruby.api.Create.newSymbol;
+import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.invokedynamic;
@@ -243,12 +242,11 @@ public class RubyStruct extends RubyObject {
      */
     @JRubyMethod(name = "new", rest = true, checkArity = false, meta = true, keywords = true)
     public static RubyClass newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = context.runtime;
         int argc = Arity.checkArgumentCount(context, args, 0, -1);
 
         String name = null;
         boolean nilName = false;
-        var member = runtime.newArray();
+        var member = newArray(context);
         IRubyObject keywordInitValue = context.nil;
 
         if (argc > 0) {
@@ -256,7 +254,7 @@ public class RubyStruct extends RubyObject {
             if (!firstArgAsString.isNil()) {
                 RubySymbol nameSym = ((RubyString)firstArgAsString).intern();
                 if (!nameSym.validConstantName()) {
-                    throw runtime.newNameError(IDENTIFIER_NEEDS_TO_BE_CONSTANT, recv, nameSym.toString());
+                    throw context.runtime.newNameError(IDENTIFIER_NEEDS_TO_BE_CONSTANT, recv, nameSym.toString());
                 }
                 name = nameSym.idString();
             } else if (args[0].isNil()) {
@@ -277,7 +275,7 @@ public class RubyStruct extends RubyObject {
             if (arg instanceof RubySymbol sym1) {
                 sym = sym1;
             } else if (arg instanceof RubyString) {
-                sym = runtime.newSymbol(arg.convertToString().getByteList());
+                sym = newSymbol(context, arg.convertToString().getByteList());
             } else {
                 sym = newSymbol(context, arg.asJavaString());
             }
@@ -291,14 +289,14 @@ public class RubyStruct extends RubyObject {
         RubyClass superClass = (RubyClass)recv;
 
         if (name == null || nilName) {
-            newStruct = RubyClass.newClass(runtime, superClass);
+            newStruct = RubyClass.newClass(context.runtime, superClass);
             newStruct.setAllocator(RubyStruct::new);
             newStruct.makeMetaClass(superClass.metaClass);
             newStruct.inherit(superClass);
         } else {
             IRubyObject type = superClass.getConstantAt(name);
             if (type != null) {
-                runtime.getWarnings().warn(ID.STRUCT_CONSTANT_REDEFINED, context.getFile(), context.getLine(), "redefining constant " + type);
+                context.runtime.getWarnings().warn(ID.STRUCT_CONSTANT_REDEFINED, context.getFile(), context.getLine(), "redefining constant " + type);
                 superClass.deleteConstant(name);
             }
             newStruct = superClass.defineClassUnder(name, superClass, RubyStruct::new);
@@ -574,11 +572,9 @@ public class RubyStruct extends RubyObject {
 
     @JRubyMethod
     public IRubyObject select(ThreadContext context, Block block) {
-        if (!block.isGiven()) {
-            return enumeratorizeWithSize(context, this, "select", RubyStruct::size);
-        }
+        if (!block.isGiven()) return enumeratorizeWithSize(context, this, "select", RubyStruct::size);
 
-        RubyArray array = RubyArray.newArray(context.runtime);
+        var array = newArray(context);
 
         for (int i = 0; i < values.length; i++) {
             if (block.yield(context, values[i]).isTrue()) {
@@ -713,7 +709,7 @@ public class RubyStruct extends RubyObject {
     @JRubyMethod(name = {"to_a", "deconstruct", "values"})
     @Override
     public RubyArray to_a(ThreadContext context) {
-        return context.runtime.newArray(values);
+        return newArray(context, values);
     }
 
     @Deprecated
@@ -773,10 +769,10 @@ public class RubyStruct extends RubyObject {
     }
 
     public IRubyObject each_pairInternal(ThreadContext context, Block block) {
-        RubyArray member = __member__();
+        var member = __member__();
 
         for (int i = 0; i < values.length; i++) {
-            block.yield(context, RubyArray.newArray(context.runtime, member.eltInternal(i), values[i]));
+            block.yield(context, newArray(context, member.eltInternal(i), values[i]));
         }
 
         return this;
@@ -843,12 +839,20 @@ public class RubyStruct extends RubyObject {
         return values[newIdx] = value;
     }
 
-    @JRubyMethod(rest = true)
+    /**
+     * @param args
+     * @return ""
+     * @deprecated Use {@link RubyStruct#values_at(ThreadContext, IRubyObject[])} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public IRubyObject values_at(IRubyObject[] args) {
-        final Ruby runtime = metaClass.runtime;
-        var context = runtime.getCurrentContext();
+        return values_at(getCurrentContext(), args);
+    }
+
+    @JRubyMethod(rest = true)
+    public IRubyObject values_at(ThreadContext context, IRubyObject[] args) {
         final int olen = values.length;
-        RubyArray result = getRuntime().newArray(args.length);
+        var result = newArray(context, args.length);
 
         for (int i = 0; i < args.length; i++) {
             final IRubyObject arg = args[i];
@@ -858,8 +862,7 @@ public class RubyStruct extends RubyObject {
             }
 
             final int [] begLen = new int[2];
-            if (arg instanceof RubyRange &&
-                    RubyRange.rangeBeginLength(runtime.getCurrentContext(), args[i], olen, begLen, 1).isTrue()) {
+            if (arg instanceof RubyRange && RubyRange.rangeBeginLength(context, args[i], olen, begLen, 1).isTrue()) {
                 final int beg = begLen[0];
                 final int len = begLen[1];
                 int end = Math.min(olen, beg + len);
@@ -869,7 +872,7 @@ public class RubyStruct extends RubyObject {
                 }
                 if ( beg + len > j ) {
                     IRubyObject [] tmp = new IRubyObject[beg + len - j];
-                    Helpers.fillNil(tmp, runtime);
+                    Helpers.fillNil(tmp, context.runtime);
                     result.push(context, tmp);
                 }
                 continue;
@@ -1077,10 +1080,10 @@ public class RubyStruct extends RubyObject {
         return context.sites.Struct;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4-")
     @Override
     public RubyArray to_a() {
-        return getRuntime().newArray(values);
+        return to_a(getCurrentContext());
     }
 
 }

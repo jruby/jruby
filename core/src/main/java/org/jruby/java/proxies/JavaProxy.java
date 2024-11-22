@@ -59,6 +59,7 @@ import org.jruby.util.JRubyObjectInputStream;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.castAsModule;
+import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.arrayOf;
 
@@ -695,7 +696,7 @@ public class JavaProxy extends RubyObject {
 
         @JRubyMethod(meta = true, visibility = Visibility.PRIVATE)
         public static IRubyObject java_alias(ThreadContext context, IRubyObject clazz, IRubyObject newName, IRubyObject rubyName) {
-            return java_alias(context, clazz, newName, rubyName, context.runtime.newEmptyArray());
+            return java_alias(context, clazz, newName, rubyName, newEmptyArray(context));
         }
 
         @JRubyMethod(meta = true, visibility = Visibility.PRIVATE)

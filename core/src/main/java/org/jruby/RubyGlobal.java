@@ -71,6 +71,7 @@ import org.jruby.util.io.FilenoUtil;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.STDIO;
 
+import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.*;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -99,7 +100,7 @@ public class RubyGlobal {
     public static void initARGV(Ruby runtime) {
         var context = runtime.getCurrentContext();
         // define ARGV and $* for this runtime
-        var argvArray = runtime.newArray();
+        var argvArray = newArray(context);
         String[] argv = runtime.getInstanceConfig().getArgv();
 
         for (String arg : argv) {
@@ -120,6 +121,7 @@ public class RubyGlobal {
     }
 
     public static RubyHash createGlobalsAndENV(Ruby runtime) {
+        var context = runtime.getCurrentContext();
         GlobalVariables globals = runtime.getGlobalVariables();
 
         runtime.setTopLevelBinding(runtime.newBinding());
@@ -127,20 +129,17 @@ public class RubyGlobal {
 
         initARGV(runtime);
 
-        IAccessor d = new ValueAccessor(runtime.newString(
-                runtime.getInstanceConfig().displayedFileName()));
+        IAccessor d = new ValueAccessor(newString(context, runtime.getInstanceConfig().displayedFileName()));
         globals.define("$PROGRAM_NAME", d, GLOBAL);
         globals.define("$0", d, GLOBAL);
 
         // Version information:
-        IRubyObject version;
-        IRubyObject patchlevel;
         IRubyObject release = RubyString.newFString(runtime, Constants.COMPILE_DATE);
         IRubyObject platform = RubyString.newFString(runtime, Constants.PLATFORM);
         IRubyObject engine = RubyString.newFString(runtime, Constants.ENGINE);
+        IRubyObject version = RubyString.newFString(runtime, Constants.RUBY_VERSION);
+        IRubyObject patchlevel = newFixnum(context, 0);
 
-        version = RubyString.newFString(runtime, Constants.RUBY_VERSION);
-        patchlevel = runtime.newFixnum(0);
         runtime.defineGlobalConstant("RUBY_VERSION", version);
         runtime.defineGlobalConstant("RUBY_PATCHLEVEL", patchlevel);
         runtime.defineGlobalConstant("RUBY_RELEASE_DATE", release);
@@ -190,11 +189,11 @@ public class RubyGlobal {
         RubyInstanceConfig.Verbosity verbose = runtime.getInstanceConfig().getVerbosity();
         IRubyObject verboseValue;
         if (verbose == RubyInstanceConfig.Verbosity.NIL) {
-            verboseValue = runtime.getNil();
+            verboseValue = context.nil;
         } else if(verbose == RubyInstanceConfig.Verbosity.TRUE) {
-            verboseValue = runtime.getTrue();
+            verboseValue = context.tru;
         } else {
-            verboseValue = runtime.getFalse();
+            verboseValue = context.fals;
         }
         runtime.setVerbose(verboseValue);
         runtime.defineVariable(new VerboseGlobalVariable(runtime, "$VERBOSE"), GLOBAL);
@@ -232,7 +231,7 @@ public class RubyGlobal {
 
         // Fixme: Do we need the check or does Main.java not call this...they should consolidate
         if (globals.get("$*").isNil()) {
-            globals.defineReadonly("$*", new ValueAccessor(runtime.newArray()), GLOBAL);
+            globals.defineReadonly("$*", new ValueAccessor(newArray(context)), GLOBAL);
         }
 
         globals.defineReadonly("$-p",
@@ -250,9 +249,9 @@ public class RubyGlobal {
 
         String inplace = runtime.config.getInPlaceBackupExtension();
         if (inplace != null) {
-            runtime.defineVariable(new ArgfGlobalVariable(runtime, "$-i", runtime.newString(inplace)), GLOBAL);
+            runtime.defineVariable(new ArgfGlobalVariable(runtime, "$-i", newString(context, inplace)), GLOBAL);
         } else {
-            runtime.defineVariable(new ArgfGlobalVariable(runtime, "$-i", runtime.getNil()), GLOBAL);
+            runtime.defineVariable(new ArgfGlobalVariable(runtime, "$-i", context.nil), GLOBAL);
         }
 
         globals.alias("$-0", "$/");

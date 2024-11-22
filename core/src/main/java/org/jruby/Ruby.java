@@ -422,7 +422,7 @@ public final class Ruby implements Constantizable {
 
         if (profile.allowClass("Array")) {
             arrayClass = RubyArray.createArrayClass(this);
-            emptyFrozenArray = newEmptyArray();
+            emptyFrozenArray = Create.newEmptyArray(getCurrentContext());
             emptyFrozenArray.setFrozen(true);
         } else {
             arrayClass = null;
@@ -3395,42 +3395,52 @@ public final class Ruby implements Constantizable {
 
     // new factory methods ------------------------------------------------------------------------
 
+    @Deprecated(since = "10.0")
     public RubyArray newEmptyArray() {
         return RubyArray.newEmptyArray(this);
     }
 
+    @Deprecated(since = "10.0")
     public RubyArray newArray() {
         return RubyArray.newArray(this);
     }
 
+    @Deprecated(since = "10.0")
     public RubyArray newArrayLight() {
         return RubyArray.newArrayLight(this);
     }
 
+    @Deprecated(since = "10.0")
     public RubyArray newArray(IRubyObject object) {
         return RubyArray.newArray(this, object);
     }
 
+    @Deprecated(since = "10.0")
     public RubyArray newArray(IRubyObject car, IRubyObject cdr) {
         return RubyArray.newArray(this, car, cdr);
     }
 
+    @Deprecated(since = "10.0")
     public RubyArray newArray(IRubyObject... objects) {
         return RubyArray.newArray(this, objects);
     }
 
+    @Deprecated(since = "10.0")
     public RubyArray newArrayNoCopy(IRubyObject... objects) {
         return RubyArray.newArrayNoCopy(this, objects);
     }
 
+    @Deprecated(since = "10.0")
     public RubyArray newArrayNoCopyLight(IRubyObject... objects) {
         return RubyArray.newArrayNoCopyLight(this, objects);
     }
 
+    @Deprecated(since = "10.0")
     public RubyArray newArray(List<IRubyObject> list) {
         return RubyArray.newArray(this, list);
     }
 
+    @Deprecated(since = "10.0")
     public RubyArray newArray(int size) {
         return RubyArray.newArray(this, size);
     }

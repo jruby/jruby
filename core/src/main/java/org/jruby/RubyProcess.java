@@ -1218,24 +1218,32 @@ public class RubyProcess {
 
     @Deprecated
     public static IRubyObject waitall(IRubyObject recv) {
-        return waitall(recv.getRuntime());
+        return waitall(recv.getRuntime().getCurrentContext());
     }
     @JRubyMethod(name = "waitall", module = true, visibility = PRIVATE)
     public static IRubyObject waitall(ThreadContext context, IRubyObject recv) {
-        return waitall(context.runtime);
+        return waitall(context);
     }
+
+    /**
+     * @param runtime
+     * @return ""
+     * @deprecated Use {@link RubyProcess#waitall(ThreadContext)}
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public static IRubyObject waitall(Ruby runtime) {
-        POSIX posix = runtime.getPosix();
-        var results = runtime.newArray();
+        return waitall(runtime.getCurrentContext());
+    }
 
+    public static IRubyObject waitall(ThreadContext context) {
+        POSIX posix = context.runtime.getPosix();
+        var results = newArray(context);
         int[] status = new int[1];
-        var context = runtime.getCurrentContext();
-
         int result = pthreadKillable(context, ctx -> posix.wait(status));
 
         while (result != -1) {
-            results.append(context, runtime.newArray(asFixnum(context, result),
-                    RubyProcess.RubyStatus.newProcessStatus(runtime, status[0], result)));
+            results.append(context, newArray(context, asFixnum(context, result),
+                    RubyProcess.RubyStatus.newProcessStatus(context.runtime, status[0], result)));
 
             result = pthreadKillable(context, ctx -> posix.wait(status));
         }
@@ -1381,9 +1389,7 @@ public class RubyProcess {
     public static IRubyObject waitpid2(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         IRubyObject pid = waitpid(context, recv, args);
 
-        if (pid.isNil()) return pid;
-
-        return context.runtime.newArray(pid, context.getLastExitStatus());
+        return pid.isNil() ? context.nil : newArray(context, pid, context.getLastExitStatus());
     }
 
     public static IRubyObject waitpid2(Ruby runtime, IRubyObject[] args) {
@@ -1521,19 +1527,21 @@ public class RubyProcess {
         return getrlimit(context.runtime, arg);
     }
     public static IRubyObject getrlimit(Ruby runtime, IRubyObject arg) {
+        var context = runtime.getCurrentContext();
+
         if (Platform.IS_WINDOWS) {
             throw runtime.newNotImplementedError("Process#getrlimit is not implemented on Windows");
         }
 
         if (!runtime.getPosix().isNative()) {
             runtime.getWarnings().warn("Process#getrlimit not supported on this platform");
-            RubyFixnum max = runtime.newFixnum(Long.MAX_VALUE);
-            return runtime.newArray(max, max);
+            RubyFixnum max = newFixnum(context, Long.MAX_VALUE);
+            return newArray(context, max, max);
         }
 
         RLimit rlimit = runtime.getPosix().getrlimit(rlimitResourceType(runtime, arg));
 
-        return runtime.newArray(runtime.newFixnum(rlimit.rlimCur()), runtime.newFixnum(rlimit.rlimMax()));
+        return newArray(context, newFixnum(context, rlimit.rlimCur()), newFixnum(context, rlimit.rlimMax()));
     }
 
     @Deprecated

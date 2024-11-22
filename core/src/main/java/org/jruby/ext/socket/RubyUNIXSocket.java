@@ -68,8 +68,7 @@ import java.nio.channels.Channel;
 
 import static com.headius.backport9.buffer.Buffers.flipBuffer;
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Create.newFixnum;
-import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.typeError;
 
 
@@ -112,48 +111,24 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
     @JRubyMethod
     public IRubyObject addr(ThreadContext context) {
-        final Ruby runtime = context.runtime;
-
-        return runtime.newArray(newString(context, "AF_UNIX"),  RubyString.newEmptyString(runtime) );
+        return newArray(context, newString(context, "AF_UNIX"),  RubyString.newEmptyString(context.runtime) );
     }
 
     @JRubyMethod
     public IRubyObject peeraddr(ThreadContext context) {
-        final Ruby runtime = context.runtime;
         final String _path = getUnixRemoteSocket().path();
-        final RubyString path = _path == null ? RubyString.newEmptyString(runtime) : newString(context, _path);
-        return runtime.newArray( newString(context, "AF_UNIX"), path );
+        final RubyString path = _path == null ? RubyString.newEmptyString(context.runtime) : newString(context, _path);
+        return newArray(context, newString(context, "AF_UNIX"), path);
     }
 
     @JRubyMethod(name = "recvfrom", required = 1, optional = 1, checkArity = false)
     public IRubyObject recvfrom(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 1, 2);
-
-        Ruby runtime = context.runtime;
-
         IRubyObject _length = args[0];
-        IRubyObject _flags;
+        IRubyObject _flags = argc == 2 ? args[1] : context.nil;
+        int flags = _flags.isNil() ? 0 : RubyNumeric.fix2int(_flags); // TODO
 
-        if(argc == 2) {
-            _flags = args[1];
-        } else {
-            _flags = runtime.getNil();
-        }
-
-        // TODO
-        int flags;
-
-        _length = args[0];
-
-        if(_flags.isNil()) {
-            flags = 0;
-        } else {
-            flags = RubyNumeric.fix2int(_flags);
-        }
-
-        return runtime.newArray(
-                recv(context, _length),
-                peeraddr(context));
+        return newArray(context, recv(context, _length), peeraddr(context));
     }
 
     @JRubyMethod
@@ -287,7 +262,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
             RubyUNIXSocket sock2 = (RubyUNIXSocket)(Helpers.invoke(context, UNIXSocket, "allocate"));
             sock2.init_sock(runtime, sp[1], "");
 
-            return runtime.newArray(sock, sock2);
+            return newArray(context, sock, sock2);
 
         } catch (IOException ioe) {
             throw runtime.newIOErrorFromException(ioe);

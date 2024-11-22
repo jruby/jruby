@@ -58,6 +58,7 @@ import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyModule.undefinedMethodMessage;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
@@ -123,22 +124,21 @@ public abstract class JavaLang {
 
         @JRubyMethod
         public static IRubyObject each_with_index(final ThreadContext context, final IRubyObject self, final Block block) {
-            final Ruby runtime = context.runtime;
-            if ( ! block.isGiven() ) { // ... Enumerator.new(self, :each_with_index)
-                return enumeratorize(context.runtime, self, "each_with_index");
-            }
-            java.lang.Iterable iterable = unwrapIfJavaObject(self);
-            java.util.Iterator iterator = iterable.iterator();
+            // ... Enumerator.new(self, :each_with_index)
+            if (!block.isGiven()) return enumeratorize(context.runtime, self, "each_with_index");
+
+            java.lang.Iterable<?> iterable = unwrapIfJavaObject(self);
+            java.util.Iterator<?> iterator = iterable.iterator();
             final boolean twoArguments = block.getSignature().isTwoArguments();
             int i = 0; while ( iterator.hasNext() ) {
                 final RubyInteger index = asFixnum(context, i++);
                 final Object value = iterator.next();
-                final IRubyObject rValue = convertJavaToUsableRubyObject(runtime, value);
+                final IRubyObject rValue = convertJavaToUsableRubyObject(context.runtime, value);
 
                 if (twoArguments) {
                     block.yieldSpecific(context, rValue, index);
                 } else {
-                    block.yield(context, RubyArray.newArray(runtime, rValue, index));
+                    block.yield(context, newArray(context, rValue, index));
                 }
             }
             return self;
@@ -146,7 +146,7 @@ public abstract class JavaLang {
 
         @JRubyMethod(name = { "to_a", "entries" }) // @override Enumerable#to_a
         public static IRubyObject to_a(final ThreadContext context, final IRubyObject self, final Block block) {
-            final var ary = context.runtime.newArray();
+            final var ary = newArray(context);
             java.lang.Iterable<?> iterable = unwrapIfJavaObject(self);
             for (Object o: iterable) {
                 ary.append(context, convertJavaToUsableRubyObject(context.runtime, o));
@@ -425,12 +425,11 @@ public abstract class JavaLang {
 
         @JRubyMethod(name = "coerce")
         public static IRubyObject coerce(final ThreadContext context, final IRubyObject self, final IRubyObject type) {
-            java.lang.Number val = (java.lang.Number) self.toJava(java.lang.Number.class);
+            java.lang.Number val = self.toJava(java.lang.Number.class);
 
             // NOTE: a basic stub that always coverts Java numbers to Ruby ones (for simplicity)
             // gist being this is not expected to be used heavily, if so should get special care
-            final IRubyObject value = convertJavaToUsableRubyObject(context.runtime, val);
-            return context.runtime.newArray(type, value);
+            return newArray(context, type, convertJavaToUsableRubyObject(context.runtime, val));
         }
 
         @JRubyMethod(name = "inspect")
@@ -552,40 +551,40 @@ public abstract class JavaLang {
 
         @JRubyMethod
         public static IRubyObject java_instance_methods(final ThreadContext context, final IRubyObject self) {
-            final java.lang.Class klass = unwrapJavaObject(self);
-            final RubyArray methods = RubyArray.newArray(context.runtime);
-            for ( java.lang.reflect.Method method : klass.getMethods() ) {
-                if ( ! Modifier.isStatic(method.getModifiers()) ) methods.add(method);
+            final java.lang.Class<?> klass = unwrapJavaObject(self);
+            final var methods = newArray(context);
+            for (java.lang.reflect.Method method : klass.getMethods()) {
+                if (!Modifier.isStatic(method.getModifiers())) methods.add(method);
             }
             return methods;
         }
 
         @JRubyMethod
         public static IRubyObject declared_instance_methods(final ThreadContext context, final IRubyObject self) {
-            final java.lang.Class klass = unwrapJavaObject(self);
-            final RubyArray methods = RubyArray.newArray(context.runtime);
-            for ( java.lang.reflect.Method method : klass.getDeclaredMethods() ) {
-                if ( ! Modifier.isStatic(method.getModifiers()) ) methods.add(method);
+            final java.lang.Class<?> klass = unwrapJavaObject(self);
+            final var methods = newArray(context);
+            for (java.lang.reflect.Method method : klass.getDeclaredMethods()) {
+                if (!Modifier.isStatic(method.getModifiers())) methods.add(method);
             }
             return methods;
         }
 
         @JRubyMethod
         public static IRubyObject java_class_methods(final ThreadContext context, final IRubyObject self) {
-            final java.lang.Class klass = unwrapJavaObject(self);
-            final RubyArray methods = RubyArray.newArray(context.runtime);
+            final java.lang.Class<?> klass = unwrapJavaObject(self);
+            final var methods = newArray(context);
             for ( java.lang.reflect.Method method : klass.getMethods() ) {
-                if ( Modifier.isStatic(method.getModifiers()) ) methods.add(method);
+                if (Modifier.isStatic(method.getModifiers())) methods.add(method);
             }
             return methods;
         }
 
         @JRubyMethod
         public static IRubyObject declared_class_methods(final ThreadContext context, final IRubyObject self) {
-            final java.lang.Class klass = unwrapJavaObject(self);
-            final RubyArray methods = RubyArray.newArray(context.runtime);
-            for ( java.lang.reflect.Method method : klass.getDeclaredMethods() ) {
-                if ( Modifier.isStatic(method.getModifiers()) ) methods.add(method);
+            final java.lang.Class<?> klass = unwrapJavaObject(self);
+            final var methods = newArray(context);
+            for (java.lang.reflect.Method method : klass.getDeclaredMethods()) {
+                if (Modifier.isStatic(method.getModifiers())) methods.add(method);
             }
             return methods;
         }

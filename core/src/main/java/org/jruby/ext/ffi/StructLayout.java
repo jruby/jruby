@@ -61,7 +61,9 @@ import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.util.ByteList;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newFixnum;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.*;
 
@@ -260,7 +262,7 @@ public final class StructLayout extends Type {
      */
     @JRubyMethod(name = "members")
     public IRubyObject members(ThreadContext context) {
-        var mbrs = RubyArray.newArray(context.runtime, fieldNames.size());
+        var mbrs = newArray(context, fieldNames.size());
         for (IRubyObject name : fieldNames) {
             mbrs.append(context, name);
         }
@@ -274,15 +276,10 @@ public final class StructLayout extends Type {
      */
     @JRubyMethod(name = "offsets")
     public IRubyObject offsets(ThreadContext context) {
-        var offsets = RubyArray.newArray(context.runtime);
+        var offsets = newArray(context, fieldNames.size());
 
-        for (IRubyObject name : fieldNames) {
-            var offset = RubyArray.newArray(context.runtime);
-            // Assemble a [ :name, offset ] array
-
-            offset.append(context, name);
-            offset.append(context, newFixnum(context, getMember(context.runtime, name).offset));
-            offsets.append(context, offset);
+        for (IRubyObject name : fieldNames) { // Assemble a [ :name, offset ] array
+            offsets.append(context, newArray(context, name, newFixnum(context, getMember(context, name).offset)));
         }
 
         return offsets;
@@ -290,12 +287,12 @@ public final class StructLayout extends Type {
 
     @JRubyMethod(name = "offset_of")
     public IRubyObject offset_of(ThreadContext context, IRubyObject fieldName) {
-        return getField(context.runtime, fieldName).offset(context);
+        return getField(context, fieldName).offset(context);
     }
     
     @JRubyMethod(name = "[]")
     public IRubyObject aref(ThreadContext context, IRubyObject fieldName) {
-        return getField(context.runtime, fieldName);
+        return getField(context, fieldName);
     }
 
     @JRubyMethod
@@ -305,15 +302,12 @@ public final class StructLayout extends Type {
 
     @JRubyMethod(name = "__union!")
     public IRubyObject union_bang(ThreadContext context) {
-        Ruby runtime = context.runtime;
-
         NativeType[] alignmentTypes = {
                 NativeType.CHAR, NativeType.SHORT, NativeType.INT, NativeType.LONG,
                 NativeType.FLOAT, NativeType.DOUBLE, NativeType.LONGDOUBLE
         };
 
         NativeType t = null;
-        int count, i;
 
         for (NativeType alignmentType : alignmentTypes) {
             if (Type.getNativeAlignment(alignmentType) == alignment) {
@@ -323,7 +317,7 @@ public final class StructLayout extends Type {
         }
 
         if (t == null) {
-            throw runtime.newRuntimeError("cannot create libffi union representation for alignment " + alignment);
+            throw context.runtime.newRuntimeError("cannot create libffi union representation for alignment " + alignment);
         }
 
         // FIXME: wot
@@ -339,11 +333,11 @@ public final class StructLayout extends Type {
     }
 
     final IRubyObject getValue(ThreadContext context, IRubyObject name, Storage cache, IRubyObject ptr) {
-        return getMember(context.runtime, name).get(context, cache, AbstractMemory.cast(context, ptr));
+        return getMember(context, name).get(context, cache, AbstractMemory.cast(context, ptr));
     }
 
     final void putValue(ThreadContext context, IRubyObject name, Storage cache, IRubyObject ptr, IRubyObject value) {
-        getMember(context.runtime, name).put(context, cache, AbstractMemory.cast(context, ptr), value);
+        getMember(context, name).put(context, cache, AbstractMemory.cast(context, ptr), value);
     }
 
     @Override
@@ -380,7 +374,7 @@ public final class StructLayout extends Type {
      * @param name The name of the struct field.
      * @return A <code>Member</code> descriptor.
      */
-    final Member getMember(Ruby runtime, IRubyObject name) {
+    final Member getMember(ThreadContext context, IRubyObject name) {
         Member m;
         int idx = symbolIndex(name, identityLookupTable.length);
         while ((m = identityLookupTable[idx]) != null) {
@@ -391,11 +385,9 @@ public final class StructLayout extends Type {
         }
 
         Member f = memberMap.get(name);
-        if (f != null) {
-            return f;
-        }
+        if (f != null) return f;
 
-        throw runtime.newArgumentError("Unknown field: " + name);
+        throw argumentError(context, "Unknown field: " + name);
     }
 
     /**
@@ -404,8 +396,8 @@ public final class StructLayout extends Type {
      * @param name The name of the struct field.
      * @return A <code>Member</code> descriptor.
      */
-    final Field getField(Ruby runtime, IRubyObject name) {
-        return getMember(runtime, name).field;
+    final Field getField(ThreadContext context, IRubyObject name) {
+        return getMember(context, name).field;
     }
 
     public final int getSize() {

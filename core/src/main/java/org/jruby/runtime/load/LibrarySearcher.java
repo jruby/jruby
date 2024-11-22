@@ -33,6 +33,9 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.collections.StringArraySet;
 import org.jruby.util.func.TriFunction;
 
+import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newString;
+
 public class LibrarySearcher {
     public static final char EXTENSION_TYPE = 's';
     public static final char SOURCE_TYPE = 'r';
@@ -52,16 +55,16 @@ public class LibrarySearcher {
     private final Map<StringWrapper, Feature> loadedFeaturesIndex = new ConcurrentHashMap<>(64);
 
     public LibrarySearcher(LoadService loadService) {
-        Ruby runtime = loadService.runtime;
+        this.runtime = loadService.runtime;
+        var context = runtime.getCurrentContext();
 
-        this.runtime = runtime;
-        this.loadPath = RubyArray.newArray(runtime);
+        this.loadPath = newArray(context);
         this.loadService = loadService;
-        this.cwdPathEntry = new NormalPathEntry(runtime.newString("."));
-        this.classloaderPathEntry = new NormalPathEntry(runtime.newString(URLResource.URI_CLASSLOADER));
+        this.cwdPathEntry = new NormalPathEntry(newString(context, "."));
+        this.classloaderPathEntry = new NormalPathEntry(newString(context, URLResource.URI_CLASSLOADER));
         this.nullPathEntry = new NullPathEntry();
         this.homePathEntry = new HomePathEntry();
-        this.loadedFeaturesSnapshot = runtime.newArray();
+        this.loadedFeaturesSnapshot = newArray(context);
     }
 
     public List<LibrarySearcher.PathEntry> getExpandedLoadPath() {

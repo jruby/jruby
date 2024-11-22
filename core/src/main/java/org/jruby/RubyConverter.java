@@ -59,6 +59,7 @@ import java.util.Map;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
@@ -189,18 +190,16 @@ public class RubyConverter extends RubyObject {
 
     @JRubyMethod
     public IRubyObject convpath(ThreadContext context) {
-        Ruby runtime = context.runtime;
-
-        RubyArray result = runtime.newArray();
+        var result = newArray(context);
 
         for (int i = 0; i < ec.numTranscoders; i++) {
             Transcoder tr = ec.elements[i].transcoding.transcoder;
             IRubyObject v;
             if (EncodingUtils.DECORATOR_P(tr.getSource(), tr.getDestination())) {
-                v = RubyString.newString(runtime, tr.getDestination());
+                v = RubyString.newString(context.runtime, tr.getDestination());
             } else {
-                var encodingService = runtime.getEncodingService();
-                v = runtime.newArray(
+                var encodingService = context.runtime.getEncodingService();
+                v = newArray(context,
                         encodingService.convertEncodingToRubyEncoding(encodingService.findEncodingOrAliasEntry(tr.getSource()).getEncoding()),
                         encodingService.convertEncodingToRubyEncoding(encodingService.findEncodingOrAliasEntry(tr.getDestination()).getEncoding()));
             }
@@ -515,8 +514,7 @@ public class RubyConverter extends RubyObject {
     }
 
     @JRubyMethod(meta = true, required = 2, optional = 1, checkArity = false)
-    public static IRubyObject search_convpath(ThreadContext context, IRubyObject self, IRubyObject[] argv) {
-        final Ruby runtime = context.runtime;
+    public static IRubyObject search_convpath(final ThreadContext context, IRubyObject self, IRubyObject[] argv) {
         final IRubyObject nil = context.nil;
         final byte[][] encNames = {null, null};
         final Encoding[] encs = {null, null};
@@ -527,30 +525,22 @@ public class RubyConverter extends RubyObject {
         EncodingUtils.econvArgs(context, argv, encNames, encs, ecflags_p, ecopts_p);
 
         TranscoderDB.searchPath(encNames[0], encNames[1], new TranscoderDB.SearchPathCallback() {
-            final EncodingService es = runtime.getEncodingService();
+            final EncodingService es = context.runtime.getEncodingService();
 
             public void call(byte[] source, byte[] destination, int depth) {
-                IRubyObject v;
+                if (convpath[0] == nil) convpath[0] = newArray(context);
 
-                if (convpath[0] == nil) {
-                    convpath[0] = runtime.newArray();
-                }
+                IRubyObject v = EncodingUtils.DECORATOR_P(encNames[0], encNames[1]) ?
+                        RubyString.newString(context.runtime, encNames[2]) :
+                        newArray(context,
+                                es.convertEncodingToRubyEncoding(es.findEncodingOrAliasEntry(source).getEncoding()),
+                                es.convertEncodingToRubyEncoding(es.findEncodingOrAliasEntry(destination).getEncoding()));
 
-                if (EncodingUtils.DECORATOR_P(encNames[0], encNames[1])) {
-                    v = RubyString.newString(runtime, encNames[2]);
-                } else {
-                    v = runtime.newArray(
-                            es.convertEncodingToRubyEncoding(es.findEncodingOrAliasEntry(source).getEncoding()),
-                            es.convertEncodingToRubyEncoding(es.findEncodingOrAliasEntry(destination).getEncoding()));
-                }
-
-                ((RubyArray)convpath[0]).store(depth, v);
+                ((RubyArray<?>)convpath[0]).store(depth, v);
             }
         });
 
-        if (convpath[0].isNil()) {
-            throw EncodingUtils.econvOpenExc(context, encNames[0], encNames[1], 0);
-        }
+        if (convpath[0].isNil()) throw EncodingUtils.econvOpenExc(context, encNames[0], encNames[1], 0);
 
         if (EncodingUtils.decorateConvpath(context, convpath[0], ecflags_p[0]) == -1) {
             throw EncodingUtils.econvOpenExc(context, encNames[0], encNames[1], ecflags_p[0]);

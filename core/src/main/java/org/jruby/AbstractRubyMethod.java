@@ -52,6 +52,7 @@ import org.jruby.runtime.marshal.DataType;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newArray;
 
 /**
  * @see RubyMethod
@@ -125,11 +126,9 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
     public IRubyObject source_location(ThreadContext context) {
         String filename = getFilename();
 
-        if (filename != null) {
-            return context.runtime.newArray(Convert.asString(context, filename), asFixnum(context, getLine()));
-        }
-
-        return context.nil;
+        return filename != null ?
+                newArray(context, Convert.asString(context, filename), asFixnum(context, getLine())) :
+                context.nil;
     }
 
     public String getFilename() {

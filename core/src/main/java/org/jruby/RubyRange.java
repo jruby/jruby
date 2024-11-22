@@ -1153,13 +1153,11 @@ public class RubyRange extends RubyObject {
 
         if (arg == null) return begin;
 
-        final Ruby runtime = context.runtime;
         final int num = RubyNumeric.num2int(arg);
-        if (num < 0) {
-            throw context.runtime.newArgumentError("negative array size (or size too big)");
-        }
+        if (num < 0) throw argumentError(context, "negative array size (or size too big)");
+
         // TODO (CON): this could be packed if we know there are at least num elements in range
-        final RubyArray result = runtime.newArray(num);
+        final var result = newArray(context, num);
         try {
             RubyEnumerable.callEach(context, sites(context).each, this, Signature.ONE_ARGUMENT, new BlockCallback() {
                 int n = num;
@@ -1198,7 +1196,7 @@ public class RubyRange extends RubyObject {
     public IRubyObject minmax(ThreadContext context, Block block) {
         if (block.isGiven()) return Helpers.invokeSuper(context, this, context.runtime.getRange(), "minmax", NULL_ARRAY, block);
 
-        return RubyArray.newArray(context.runtime, callMethod("min"), callMethod("max"));
+        return newArray(context, callMethod("min"), callMethod("max"));
     }
 
     @JRubyMethod

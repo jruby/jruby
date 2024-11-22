@@ -45,6 +45,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
+import org.jruby.api.Create;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.DAsgnNode;
 import org.jruby.ast.DVarNode;

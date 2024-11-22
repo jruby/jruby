@@ -57,7 +57,7 @@ import java.nio.channels.SocketChannel;
 
 import static jnr.constants.platform.AddressFamily.AF_INET;
 import static jnr.constants.platform.AddressFamily.AF_INET6;
-import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.*;
 
 public class RubyTCPSocket extends RubyIPSocket {
     static void createTCPSocket(Ruby runtime) {
@@ -226,28 +226,17 @@ public class RubyTCPSocket extends RubyIPSocket {
 
     @JRubyMethod(meta = true)
     public static IRubyObject gethostbyname(ThreadContext context, IRubyObject recv, IRubyObject hostname) {
-        Ruby runtime = context.runtime;
-        IRubyObject ret0, ret1, ret2, ret3;
-        String hostString = hostname.convertToString().toString();
-
         try {
-            InetAddress addr = InetAddress.getByName(hostString);
+            var addr = InetAddress.getByName(hostname.convertToString().toString());
 
-            ret0 = newString(context, do_not_reverse_lookup(context, recv).isTrue() ? addr.getHostAddress() : addr.getCanonicalHostName());
-            ret1 = runtime.newArray();
-
-            if (addr instanceof Inet4Address) {
-                ret2 = runtime.newFixnum(AF_INET);
-            } else { // if (addr instanceof Inet6Address) {
-                ret2 = runtime.newFixnum(AF_INET6);
-            }
-
-            ret3 = newString(context, addr.getHostAddress());
-
-            return RubyArray.newArray(runtime, ret0, ret1, ret2, ret3);
+            return RubyArray.newArray(context.runtime,
+                    newString(context, do_not_reverse_lookup(context, recv).isTrue() ? addr.getHostAddress() : addr.getCanonicalHostName()),
+                    newArray(context),
+                    newFixnum(context, addr instanceof Inet4Address ? AF_INET.longValue() : AF_INET6.longValue()),
+                    newString(context, addr.getHostAddress()));
         }
         catch(UnknownHostException e) {
-            throw SocketUtils.sockerr(runtime, "gethostbyname: name or service not known");
+            throw SocketUtils.sockerr(context.runtime, "gethostbyname: name or service not known");
         }
     }
 

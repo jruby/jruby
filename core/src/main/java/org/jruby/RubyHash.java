@@ -81,6 +81,7 @@ import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -1008,7 +1009,7 @@ public class RubyHash extends RubyObject implements Map {
     private static final VisitorWithState<RubyArray> StoreKeyValueVisitor = new VisitorWithState<RubyArray>() {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, RubyArray result) {
-            result.storeInternal(context, index, RubyArray.newArray(context.runtime, key, value));
+            result.storeInternal(context, index, newArray(context, key, value));
         }
     };
 
@@ -1115,12 +1116,12 @@ public class RubyHash extends RubyObject implements Map {
         RubyHash result = newHash(context.runtime);
 
         visitAll(context, (ctxt, self, key, value, index) -> {
-            IRubyObject elt = block.yieldArray(ctxt, ctxt.runtime.newArray(key, value), null);
+            IRubyObject elt = block.yieldArray(ctxt, newArray(ctxt, key, value), null);
             IRubyObject keyValue = elt.checkArrayType();
 
             if (keyValue == ctxt.nil) throw typeError(context, "wrong element type ", elt, " (expected array)");
 
-            RubyArray ary = (RubyArray) keyValue;
+            var ary = (RubyArray<?>) keyValue;
             if (ary.getLength() != 2) {
                 throw argumentError(context, "element has wrong array length " + "(expected 2, was " + ary.getLength() + ")");
             }
@@ -1591,7 +1592,7 @@ public class RubyHash extends RubyObject implements Map {
     private static final VisitorWithState<Block> YieldArrayVisitor = new VisitorWithState<Block>() {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Block block) {
-            block.yieldArray(context, context.runtime.newArray(key, value), null);
+            block.yieldArray(context, newArray(context, key, value), null);
         }
     };
 
@@ -1613,11 +1614,11 @@ public class RubyHash extends RubyObject implements Map {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Block block) {
             if (block.type == Block.Type.LAMBDA) {
-                block.call(context, context.runtime.newArray(key, value));
+                block.call(context, newArray(context, key, value));
             } else if (block.getSignature().isSpreadable()) {
                 block.yieldSpecific(context, key, value);
             } else {
-                block.yield(context, context.runtime.newArray(key, value));
+                block.yield(context, newArray(context, key, value));
             }
         }
     };
@@ -1794,7 +1795,7 @@ public class RubyHash extends RubyObject implements Map {
         testFrozen("Hash");
         boolean[] modified = new boolean[] { false };
         iteratorVisitAll(context, (ctxt, self, key, value, index) -> {
-            if (!block.yieldArray(ctxt, ctxt.runtime.newArray(key, value), null).isTrue()) {
+            if (!block.yieldArray(ctxt, newArray(ctxt, key, value), null).isTrue()) {
                 testFrozen();
                 modified[0] = true;
                 self.remove(key);
@@ -1917,7 +1918,7 @@ public class RubyHash extends RubyObject implements Map {
 
         RubyHashEntry entry = head.nextAdded;
         if (entry != head) {
-            RubyArray result = RubyArray.newArray(context.runtime, entry.key, entry.value);
+            var result = newArray(context, entry.key, entry.value);
             internalDeleteEntry(entry);
             return result;
         }
@@ -2006,7 +2007,7 @@ public class RubyHash extends RubyObject implements Map {
     private static final VisitorWithState<Block> DeleteIfVisitor = new VisitorWithState<Block>() {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Block block) {
-            if (block.yieldArray(context, RubyArray.newArray(context.runtime, key, value), null).isTrue()) {
+            if (block.yieldArray(context, newArray(context, key, value), null).isTrue()) {
                 self.delete(context, key, Block.NULL_BLOCK);
             }
         }
@@ -2105,7 +2106,7 @@ public class RubyHash extends RubyObject implements Map {
                 if (block.isGiven()) {
                     IRubyObject existing = internalGet(key);
                     if (existing != null) {
-                        value = block.yield(ctxt, RubyArray.newArray(ctxt.runtime, key, existing, value));
+                        value = block.yield(ctxt, newArray(ctxt, key, existing, value));
                     }
                 }
                 op_aset(ctxt, key, value);
@@ -2211,7 +2212,7 @@ public class RubyHash extends RubyObject implements Map {
             visitAll(context, FoundPairIfEqualKeyVisitor, obj);
             return context.nil;
         } catch (FoundPair found) {
-            return context.runtime.newArray(found.key, found.value);
+            return newArray(context, found.key, found.value);
         }
     }
 
@@ -2221,7 +2222,7 @@ public class RubyHash extends RubyObject implements Map {
             visitAll(context, FoundPairIfEqualValueVisitor, obj);
             return context.nil;
         } catch (FoundPair found) {
-            return context.runtime.newArray(found.key, found.value);
+            return newArray(context, found.key, found.value);
         }
     }
 
@@ -2340,7 +2341,7 @@ public class RubyHash extends RubyObject implements Map {
         iteratorEntry();
         try {
             for (RubyHashEntry entry = head.nextAdded; entry != head; entry = entry.nextAdded) {
-                IRubyObject newAssoc = RubyArray.newArray(context.runtime, entry.key, entry.value);
+                IRubyObject newAssoc = newArray(context, entry.key, entry.value);
                 if (block.yield(context, newAssoc).isTrue())
                     return context.tru;
             }
@@ -2354,8 +2355,7 @@ public class RubyHash extends RubyObject implements Map {
         iteratorEntry();
         try {
             for (RubyHashEntry entry = head.nextAdded; entry != head; entry = entry.nextAdded) {
-                if (block.yieldArray(context, context.runtime.newArray(entry.key, entry.value), null).isTrue())
-                    return context.tru;
+                if (block.yieldArray(context, newArray(context, entry.key, entry.value), null).isTrue()) return context.tru;
             }
             return context.fals;
         } finally {
@@ -2367,9 +2367,8 @@ public class RubyHash extends RubyObject implements Map {
         iteratorEntry();
         try {
             for (RubyHashEntry entry = head.nextAdded; entry != head; entry = entry.nextAdded) {
-                IRubyObject newAssoc = RubyArray.newArray(context.runtime, entry.key, entry.value);
-                if (pattern.callMethod(context, "===", newAssoc).isTrue())
-                    return context.tru;
+                IRubyObject newAssoc = newArray(context, entry.key, entry.value);
+                if (pattern.callMethod(context, "===", newAssoc).isTrue()) return context.tru;
             }
             return context.fals;
         } finally {

@@ -24,6 +24,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static com.headius.backport9.buffer.Buffers.flipBuffer;
+import static org.jruby.api.Create.newArray;
 
 /**
  * Created by headius on 6/3/14.
@@ -151,11 +152,11 @@ public class SelectExecutor {
 
         if (n == 0 && pendingReadFDs == null && n == 0 && unselectableReadFDs == null && unselectableWriteFDs == null) return context.nil; /* returns nil on timeout */
 
-        res = RubyArray.newArray(runtime, 3);
-        res.push(runtime.newArray(Math.min(n, maxReadReadySize())));
-        res.push(runtime.newArray(Math.min(n, maxWriteReadySize())));
+        res = newArray(context, 3);
+        res.push(newArray(context, Math.min(n, maxReadReadySize())));
+        res.push(newArray(context, Math.min(n, maxWriteReadySize())));
         // we never add anything for error since JDK does not provide a way to select for error
-        res.push(runtime.newArray(0));
+        res.push(newArray(context, 0));
 
         if (readKeyList != null) {
             list = (RubyArray) res.eltOk(0);

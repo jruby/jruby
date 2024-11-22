@@ -50,6 +50,9 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newArrayNoCopy;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.Inspector.inspectPrefix;
@@ -85,8 +88,7 @@ public class RubyObjectSpace {
 
     @JRubyMethod(required = 1, optional = 1, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject define_finalizer(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = context.runtime;
-
+        var runtime = context.runtime;
         int argc = Arity.checkArgumentCount(context, args, 1, 2);
 
         IRubyObject finalizer;
@@ -94,7 +96,7 @@ public class RubyObjectSpace {
         if (argc == 2) {
             finalizer = args[1];
             if (!finalizer.respondsTo("call")) {
-                throw runtime.newArgumentError("wrong type argument " + finalizer.getType() + " (should be callable)");
+                throw argumentError(context, "wrong type argument " + finalizer.getType() + " (should be callable)");
             }
             if (finalizer instanceof RubyMethod) {
                 if (((RubyMethod) finalizer).getReceiver() == obj) referenceWarning(runtime);
@@ -107,7 +109,7 @@ public class RubyObjectSpace {
             finalizer = runtime.newProc(Block.Type.PROC, block);
         }
         finalizer = runtime.getObjectSpace().addFinalizer(context, obj, finalizer);
-        return runtime.newArray(RubyFixnum.zero(runtime), finalizer);
+        return newArray(context, RubyFixnum.zero(runtime), finalizer);
     }
 
     private static void referenceWarning(Ruby runtime) {
@@ -270,18 +272,12 @@ public class RubyObjectSpace {
 
         @JRubyMethod(name = "keys")
         public IRubyObject keys(ThreadContext context) {
-            return context.runtime.newArrayNoCopy(
-                    getEntryStream()
-                            .map(Map.Entry::getKey)
-                            .toArray(IRubyObject[]::new));
+            return newArrayNoCopy(context, getEntryStream().map(Map.Entry::getKey).toArray(IRubyObject[]::new));
         }
 
         @JRubyMethod(name = "values")
         public IRubyObject values(ThreadContext context) {
-            return context.runtime.newArrayNoCopy(
-                    getEntryStream()
-                            .map(Map.Entry::getValue)
-                            .toArray(IRubyObject[]::new));
+            return newArrayNoCopy(context, getEntryStream().map(Map.Entry::getValue).toArray(IRubyObject[]::new));
         }
 
         @JRubyMethod(name = {"each", "each_pair"})

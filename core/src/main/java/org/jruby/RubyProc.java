@@ -59,8 +59,7 @@ import org.jruby.runtime.marshal.DataType;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Create.newFixnum;
-import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.*;
 import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.util.RubyStringBuilder.types;
 
@@ -411,14 +410,14 @@ public class RubyProc extends RubyObject implements DataType {
 
     @JRubyMethod
     public IRubyObject source_location(ThreadContext context) {
-        if (file != null) return context.runtime.newArray(newString(context, file), asFixnum(context, line + 1 /*zero-based*/));
+        if (file != null) return newArray(context, newString(context, file), asFixnum(context, line + 1 /*zero-based*/));
 
         if (block != null) {
             Binding binding = block.getBinding();
 
             // block+binding may exist for a core method, which will have a null filename
             if (binding.getFile() != null) {
-                return context.runtime.newArray(
+                return newArray(context,
                         Convert.asString(context, binding.getFile()),
                         asFixnum(context, binding.getLine() + 1 /*zero-based*/));
             }
@@ -445,8 +444,7 @@ public class RubyProc extends RubyObject implements DataType {
     private IRubyObject parametersCommon(ThreadContext context, boolean isLambda) {
         BlockBody body = this.getBlock().getBody();
 
-        return Helpers.argumentDescriptorsToParameters(context.runtime,
-                body.getArgumentDescriptors(), isLambda);
+        return Helpers.argumentDescriptorsToParameters(context, body.getArgumentDescriptors(), isLambda);
     }
 
     @JRubyMethod(name = "lambda?")

@@ -270,12 +270,12 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
 
     @JRubyMethod(name = "[]")
     public IRubyObject getFieldValue(ThreadContext context, IRubyObject fieldName) {
-        return layout.getMember(context.runtime, fieldName).get(context, this, getMemory());
+        return layout.getMember(context, fieldName).get(context, this, getMemory());
     }
 
     @JRubyMethod(name = "[]=")
     public IRubyObject setFieldValue(ThreadContext context, IRubyObject fieldName, IRubyObject fieldValue) {
-        layout.getMember(context.runtime, fieldName).put(context, this, getMemory(), fieldValue);
+        layout.getMember(context, fieldName).put(context, this, getMemory(), fieldValue);
 
         return fieldValue;
     }

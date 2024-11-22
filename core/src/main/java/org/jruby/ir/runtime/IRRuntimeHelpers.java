@@ -28,6 +28,7 @@ import org.jruby.RubyRational;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.api.Create;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
@@ -90,6 +91,7 @@ import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.Type;
 
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
@@ -727,7 +729,7 @@ public class IRRuntimeHelpers {
             return hash;
         }
 
-        return receiverSpecificArityKwargsCommon(context, last, callInfo, isKwarg);
+        return receiverSpecificArityKwargsCommon(context, last, callInfo, false);
     }
 
     private static IRubyObject receiverSpecificArityKwargsCommon(ThreadContext context, IRubyObject last, int callInfo, boolean isKwarg) {
@@ -955,7 +957,7 @@ public class IRRuntimeHelpers {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, StaticScope scope) {
             if (!isValidKeyword(scope, key)) {
-                if (invalidKwargs == null) invalidKwargs = context.runtime.newArray();
+                if (invalidKwargs == null) invalidKwargs = newArray(context);
                 invalidKwargs.add(key.inspect());
             }
         }
@@ -1266,12 +1268,10 @@ public class IRRuntimeHelpers {
     public static IRubyObject receiveRestArg(ThreadContext context, IRubyObject[] args, IRubyObject keywords, int required, int argIndex) {
         int argsLength = args.length + (keywords != UNDEFINED ? -1 : 0);
 
-        if (required == 0 && argsLength == args.length ) {
-            return RubyArray.newArray(context.runtime, args);
-        }
-        int remainingArguments = argsLength - required;
+        if (required == 0 && argsLength == args.length ) return RubyArray.newArray(context.runtime, args);
 
-        if (remainingArguments <= 0) return context.runtime.newEmptyArray();
+        int remainingArguments = argsLength - required;
+        if (remainingArguments <= 0) return newEmptyArray(context);
 
         return RubyArray.newArrayMayCopy(context.runtime, args, argIndex, remainingArguments);
     }
@@ -2017,22 +2017,22 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static RubyArray irSplat(ThreadContext context, IRubyObject ary) {
-        Ruby runtime = context.runtime;
         int callInfo = ThreadContext.resetCallInfo(context);
-        IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, ary, runtime.getArray(), sites(context).to_a_checked);
+        IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, ary, context.runtime.getArray(), sites(context).to_a_checked);
+        RubyArray<?> result;
         if (tmp.isNil()) {
-            tmp = runtime.newArray(ary);
+            result = newArray(context, ary);
             context.callInfo = callInfo;
         } else if (true /**RTEST(flag)**/) { // this logic is only used for bare splat, and MRI dups
-            tmp = ((RubyArray)tmp).aryDup();
+            result = (RubyArray<?>) ((RubyArray)tmp).aryDup();
 
             // We have concat'd an empty keyword rest.   This comes from MERGE_KEYWORDS noticing it is empty.
-            if (((RubyArray) tmp).last() == UNDEFINED) {
-                ((RubyArray) tmp).pop(context);
+            if (result.last() == UNDEFINED) {
+                result.pop(context);
                 context.callInfo |= callInfo | CALL_KEYWORD_EMPTY;
             }
         }
-        return (RubyArray)tmp;
+        return result;
     }
 
     /**
@@ -2042,16 +2042,12 @@ public class IRRuntimeHelpers {
      */
     @JIT @Interp
     public static RubyArray splatArray(ThreadContext context, IRubyObject ary, boolean dupArray) {
-        Ruby runtime = context.runtime;
-        IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, ary, runtime.getArray(), sites(context).to_a_checked);
+        IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, ary, context.runtime.getArray(), sites(context).to_a_checked);
 
-        if (tmp.isNil()) {
-            tmp = runtime.newArray(ary);
-        } else if (dupArray) {
-            tmp = ((RubyArray) tmp).aryDup();
-        }
+        if (tmp.isNil()) return newArray(context, ary);
+        if (dupArray) return ((RubyArray<?>) tmp).aryDup();
 
-        return (RubyArray) tmp;
+        return (RubyArray<?>) tmp;
     }
 
     /**
@@ -2061,14 +2057,11 @@ public class IRRuntimeHelpers {
      */
     @JIT @Interp
     public static RubyArray splatArray(ThreadContext context, IRubyObject ary) {
-        Ruby runtime = context.runtime;
-        IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, ary, runtime.getArray(), sites(context).to_a_checked);
+        IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, ary, context.runtime.getArray(), sites(context).to_a_checked);
 
-        if (tmp.isNil()) {
-            tmp = runtime.newArray(ary);
-        }
+        if (tmp.isNil()) return newArray(context, ary);
 
-        return (RubyArray) tmp;
+        return (RubyArray<?>) tmp;
     }
 
     /**
@@ -2078,16 +2071,9 @@ public class IRRuntimeHelpers {
      */
     @JIT @Interp
     public static RubyArray splatArrayDup(ThreadContext context, IRubyObject ary) {
-        Ruby runtime = context.runtime;
-        IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, ary, runtime.getArray(), sites(context).to_a_checked);
+        IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, ary, context.runtime.getArray(), sites(context).to_a_checked);
 
-        if (tmp.isNil()) {
-            tmp = runtime.newArray(ary);
-        } else  {
-            tmp = ((RubyArray) tmp).aryDup();
-        }
-
-        return (RubyArray) tmp;
+        return tmp.isNil() ? newArray(context, ary) : ((RubyArray<?>) tmp).aryDup();
     }
 
     public static IRubyObject irToAry(ThreadContext context, IRubyObject value) {
@@ -2493,12 +2479,12 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static RubyArray newArray(ThreadContext context, IRubyObject obj) {
-        return RubyArray.newArray(context.runtime, obj);
+        return Create.newArray(context, obj);
     }
 
     @JIT
     public static RubyArray newArray(ThreadContext context, IRubyObject obj0, IRubyObject obj1) {
-        return RubyArray.newArray(context.runtime, obj0, obj1);
+        return Create.newArray(context, obj0, obj1);
     }
 
     @JIT @Interp

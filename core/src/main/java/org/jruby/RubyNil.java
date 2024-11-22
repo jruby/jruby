@@ -47,6 +47,7 @@ import org.jruby.util.ByteList;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newEmptyArray;
 
 /**
  *
@@ -149,7 +150,7 @@ public class RubyNil extends RubyObject implements Constantizable {
      */
     @JRubyMethod
     public static RubyArray to_a(ThreadContext context, IRubyObject recv) {
-        return context.runtime.newEmptyArray();
+        return newEmptyArray(context);
     }
     
     @JRubyMethod

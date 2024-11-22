@@ -1725,7 +1725,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod
     public RubyArray coerce(ThreadContext context, IRubyObject other) {
-        return context.runtime.newArray(getVpValue(context, other, true), this);
+        return newArray(context, getVpValue(context, other, true), this);
     }
 
     @Override
@@ -1771,15 +1771,15 @@ public class RubyBigDecimal extends RubyNumeric {
         if (val == null) return callCoerced(context, sites(context).divmod, other, true);
 
         if (isNaN() || val.isNaN() || isInfinity() && val.isInfinity()) {
-            return RubyArray.newArray(runtime, getNaN(context), getNaN(context));
+            return newArray(context, getNaN(context), getNaN(context));
         }
         if (val.isZero()) throw runtime.newZeroDivisionError();
         if (isInfinity()) {
             int sign = (infinitySign == val.value.signum()) ? 1 : -1;
-            return RubyArray.newArray(runtime, getInfinity(context, sign), getNaN(context));
+            return newArray(context, getInfinity(context, sign), getNaN(context));
         }
-        if (val.isInfinity()) return RubyArray.newArray(runtime, getZero(context, val.value.signum()), this);
-        if (isZero()) return RubyArray.newArray(runtime, getZero(context, value.signum()), getZero(context, value.signum()));
+        if (val.isInfinity()) return newArray(context, getZero(context, val.value.signum()), this);
+        if (isZero()) return newArray(context, getZero(context, value.signum()), getZero(context, value.signum()));
 
         // Java and MRI definitions of divmod are different.
         BigDecimal[] divmod = value.divideAndRemainder(val.value);
@@ -1792,7 +1792,7 @@ public class RubyBigDecimal extends RubyNumeric {
             mod = mod.add(val.value);
         }
 
-        return RubyArray.newArray(runtime, new RubyBigDecimal(runtime, div), new RubyBigDecimal(runtime, mod));
+        return newArray(context, new RubyBigDecimal(runtime, div), new RubyBigDecimal(runtime, mod));
     }
 
     @Deprecated
@@ -1894,7 +1894,7 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyMethod
     public RubyArray precision_scale(ThreadContext context) {
         int [] ary = getPrecisionScale();
-        return context.runtime.newArray(newFixnum(context, ary[0]), newFixnum(context, ary[1]));
+        return newArray(context, newFixnum(context, ary[0]), newFixnum(context, ary[1]));
     }
 
     private int [] getPrecisionScale() {
@@ -1947,7 +1947,7 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyMethod
     public IRubyObject precs(ThreadContext context) {
         context.runtime.getWarnings().warn(IRubyWarnings.ID.DEPRECATED_METHOD, "BigDecimal#precs is deprecated and will be removed in the future; use BigDecimal#precision instead.");
-        return RubyArray.newArray(context.runtime,
+        return newArray(context,
                 asFixnum(context, getSignificantDigits().length()),
                 asFixnum(context, ((getAllDigits().length() / 4) + 1) * 4));
     }

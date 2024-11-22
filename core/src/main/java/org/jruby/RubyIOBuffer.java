@@ -1089,7 +1089,7 @@ public class RubyIOBuffer extends RubyObject {
         }
 
         int dataTypesSize = dataTypesArray.size();
-        RubyArray values = RubyArray.newArray(context.runtime, dataTypesSize);
+        var values = newArray(context, dataTypesSize);
 
         for (long i = 0; i < dataTypesSize; i++) {
             IRubyObject type = dataTypesArray.eltOk(i);
@@ -1178,12 +1178,9 @@ public class RubyIOBuffer extends RubyObject {
     }
 
     private RubyArray values(ThreadContext context, ByteBuffer buffer, DataType dataType, int offset, int count) {
-        Ruby runtime = context.runtime;
-
-        RubyArray values = RubyArray.newArray(runtime, count);
+        var values = newArray(context, count);
 
         for (int i = 0 ; i < count; i++) {
-            int currentOffset = offset;
             IRubyObject value = getValue(context, buffer, size, dataType, offset);
             offset += dataType.type.size();
             values.push(value);

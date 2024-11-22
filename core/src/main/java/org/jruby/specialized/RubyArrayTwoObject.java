@@ -7,6 +7,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyComparable;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
+import org.jruby.api.Create;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.JavaSites;
@@ -242,11 +243,10 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
     protected IRubyObject sortInternal(ThreadContext context, Block block) {
         if (!packed()) return super.sortInternal(context, block);
 
-
         IRubyObject car = this.car;
         IRubyObject cdr = this.cdr;
 
-        IRubyObject ret = block.yieldArray(context, newArray(context.runtime, car, cdr), null);
+        IRubyObject ret = block.yieldArray(context, Create.newArray(context, car, cdr), null);
         //TODO: ary_sort_check should be done here
         int compare = RubyComparable.cmpint(context, ret, car, cdr);
         if (compare > 0) reverse_bang(context);
@@ -350,28 +350,21 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
     @Override
     public RubyArray<?> collectArray(ThreadContext context, Block block) {
         if (!packed()) return super.collectArray(context, block);
-
         if (!block.isGiven()) return makeShared();
 
-        Ruby runtime = context.runtime;
-
         IRubyObject newCar = block.yieldNonArray(context, this.car, null);
-        if (realLength == 2) {
-            // no size change, yield last elt and return
-            return new RubyArrayTwoObject(
-                    runtime,
-                    newCar,
-                    block.yieldNonArray(context, cdr, null));
+
+        if (realLength == 2) { // no size change, yield last elt and return
+            return new RubyArrayTwoObject(context.runtime, newCar, block.yieldNonArray(context, cdr, null));
         }
 
         // size has changed, unpack and continue with loop form
         unpack(context);
 
         int currentLength = this.realLength;
+        if (currentLength == 0) return Create.newEmptyArray(context);
+
         IRubyObject[] arr = IRubyObject.array(currentLength);
-
-        if (currentLength == 0) return runtime.newEmptyArray();
-
         arr[0] = newCar;
 
         int i = 1;

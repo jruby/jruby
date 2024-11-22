@@ -50,6 +50,7 @@ import org.jruby.util.TypeConverter;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newArray;
 import static org.jruby.util.RubyStringBuilder.str;
 
 /**
@@ -201,6 +202,6 @@ public class RubyBinding extends RubyObject {
     public IRubyObject source_location(ThreadContext context) {
         IRubyObject filename = Convert.asString(context, binding.getFile()).freeze(context);
         RubyFixnum line = asFixnum(context, binding.getLine() + 1); /* zero-based */
-        return context.runtime.newArray(filename, line);
+        return newArray(context, filename, line);
     }
 }

@@ -398,12 +398,12 @@ public class RubyBignum extends RubyInteger {
      */
     @Override
     public IRubyObject coerce(IRubyObject other) {
-        final Ruby runtime = getRuntime();
-        ThreadContext context = runtime.getCurrentContext();
-        if (other instanceof RubyFixnum fix) return runtime.newArray(newBignum(runtime, fix.value), this);
-        if (other instanceof RubyBignum big) return runtime.newArray(newBignum(runtime, big.value), this);
+        var context = getRuntime().getCurrentContext();
 
-        return RubyArray.newArray(runtime, RubyKernel.new_float(context, other), RubyKernel.new_float(context, this));
+        if (other instanceof RubyFixnum fix) return newArray(context, newBignum(context.runtime, fix.value), this);
+        if (other instanceof RubyBignum big) return newArray(context, newBignum(context.runtime, big.value), this);
+
+        return newArray(context, RubyKernel.new_float(context, other), RubyKernel.new_float(context, this));
     }
 
     /** rb_big_uminus
@@ -579,14 +579,13 @@ public class RubyBignum extends RubyInteger {
     @JRubyMethod(name = "divmod")
     public IRubyObject divmod(ThreadContext context, IRubyObject other) {
         final BigInteger otherValue;
-        if (other instanceof RubyFixnum) {
-            otherValue = fix2big((RubyFixnum) other);
-        } else if (other instanceof RubyBignum) {
-            otherValue = ((RubyBignum) other).value;
+        if (other instanceof RubyFixnum fix) {
+            otherValue = fix2big(fix);
+        } else if (other instanceof RubyBignum big) {
+            otherValue = big.value;
         } else {
-            if (other instanceof RubyFloat && ((RubyFloat) other).value == 0) {
-                throw context.runtime.newZeroDivisionError();
-            }
+            if (other instanceof RubyFloat flote && flote.value == 0) throw context.runtime.newZeroDivisionError();
+
             return coerceBin(context, sites(context).divmod, other);
         }
 
@@ -598,8 +597,7 @@ public class RubyBignum extends RubyInteger {
             results[1] = otherValue.add(results[1]);
         }
 
-        Ruby runtime = context.runtime;
-        return RubyArray.newArray(runtime, bignorm(runtime, results[0]), bignorm(runtime, results[1]));
+        return newArray(context, bignorm(context.runtime, results[0]), bignorm(context.runtime, results[1]));
     }
 
     /** rb_big_modulo

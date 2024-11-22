@@ -37,6 +37,7 @@ import org.jruby.ext.bigdecimal.RubyBigDecimal;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Create.newArray;
 import static org.jruby.javasupport.JavaUtil.unwrapIfJavaObject;
 
 /**
@@ -75,7 +76,7 @@ public class JavaMath {
 
         @JRubyMethod(name = "coerce") // override from java.lang.Number
         public static IRubyObject coerce(final ThreadContext context, final IRubyObject self, final IRubyObject type) {
-            return context.runtime.newArray(type, asRubyBigDecimal(context.runtime, unwrapIfJavaObject(self)));
+            return newArray(context, type, asRubyBigDecimal(context.runtime, unwrapIfJavaObject(self)));
         }
 
         @JRubyMethod(name = "to_r")

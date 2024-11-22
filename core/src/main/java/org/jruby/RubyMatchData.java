@@ -48,6 +48,7 @@ import org.joni.exception.JOniException;
 import org.joni.exception.ValueException;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.api.Create;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -60,8 +61,8 @@ import org.jruby.util.ByteListHolder;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.StringSupport;
 
-import static org.jruby.RubyFixnum.newFixnum;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.RubyStringBuilder.str;
 
@@ -167,16 +168,15 @@ public class RubyMatchData extends RubyObject {
     private static void updatePairs(ByteList value, Encoding encoding, Pair[] pairs) {
         Arrays.sort(pairs);
 
-        int length = pairs.length;
         byte[] bytes = value.getUnsafeBytes();
         int p = value.getBegin();
         int s = p;
         int c = 0;
 
-        for (int i = 0; i < length; i++) {
-            int q = s + pairs[i].bytePos;
+        for (Pair pair : pairs) {
+            int q = s + pair.bytePos;
             c += StringSupport.strLength(encoding, bytes, p, q);
-            pairs[i].charPos = c;
+            pair.charPos = c;
             p = q;
         }
     }
@@ -308,29 +308,24 @@ public class RubyMatchData extends RubyObject {
     }
 
     private RubyArray<?> match_array(ThreadContext context, int start) {
-        Ruby runtime = context.runtime;
         check();
 
         if (regs == null) {
-            if (start != 0) return runtime.newEmptyArray();
-            if (begin == -1) {
-                return runtime.newArray(context.nil);
-            } else {
-                RubyString ss = str.makeSharedString(runtime, begin, end - begin);
-                return runtime.newArray(ss);
-            }
-        } else {
-            int count = regs.getNumRegs() - start;
-            var arr = RubyArray.newBlankArray(runtime, count);
-            for (int i=0; i < count; i++) {
-                int beg = regs.getBeg(i+start);
-                arr.storeInternal(context, i, beg == -1 ?
-                        context.nil :
-                        str.makeSharedString(runtime, beg, regs.getEnd(i+start) - beg));
-            }
-            return arr;
+            if (start != 0) return newEmptyArray(context);
+            return begin == -1 ?
+                    newArray(context, context.nil) :
+                    newArray(context, str.makeSharedString(context.runtime, begin, end - begin));
         }
 
+        int count = regs.getNumRegs() - start;
+        var arr = newArray(context, count);
+        for (int i=0; i < count; i++) {
+            int beg = regs.getBeg(i+start);
+            arr.storeInternal(context, i, beg == -1 ?
+                    context.nil :
+                    str.makeSharedString(context.runtime, beg, regs.getEnd(i+start) - beg));
+        }
+        return arr;
     }
 
     public IRubyObject group(long n) {
@@ -371,19 +366,15 @@ public class RubyMatchData extends RubyObject {
 
     @JRubyMethod
     public IRubyObject byteoffset(ThreadContext context, IRubyObject group) {
-        Ruby runtime = context.runtime;
-        int index = backrefNumber(runtime, group);
+        int index = backrefNumber(context.runtime, group);
         Region regs = this.regs;
 
-        backrefNumberCheck(runtime, index);
+        backrefNumberCheck(context, index);
 
         int start = regs.getBeg(index);
+        if (start < 0) return newArray(context, 2);
 
-        if (start < 0) return runtime.newArray(context.nil, context.nil);
-
-        int end = regs.getEnd(index);
-
-        return runtime.newArray(asFixnum(context, start), asFixnum(context, end));
+        return newArray(context, asFixnum(context, start), asFixnum(context, regs.getEnd(index)));
     }
 
     @JRubyMethod
@@ -450,9 +441,8 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod(rest = true)
     public IRubyObject values_at(ThreadContext context, IRubyObject[] args) {
         check();
-        Ruby runtime = context.runtime;
 
-        RubyArray result = RubyArray.newArray(runtime, args.length);
+        var result = newArray(context, args.length);
 
         for (IRubyObject arg : args) {
             if (arg instanceof RubyFixnum) {
@@ -555,7 +545,7 @@ public class RubyMatchData extends RubyObject {
 
         int olen = regs.getNumRegs();
         int wantedEnd = beg + len;
-        int j, end = olen < wantedEnd ? olen : wantedEnd;
+        int j, end = Math.min(olen, wantedEnd);
 
         if (len == 0) return result;
 
@@ -638,8 +628,7 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod(name = {"size", "length"})
     public IRubyObject size(ThreadContext context) {
         check();
-        Ruby runtime = context.runtime;
-        return regs == null ? RubyFixnum.one(runtime) : newFixnum(runtime, regs.getNumRegs());
+        return regs == null ? RubyFixnum.one(context.runtime) : newFixnum(context, regs.getNumRegs());
     }
 
     /**
@@ -648,18 +637,16 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod
     public IRubyObject begin(ThreadContext context, IRubyObject index) {
         check();
-        final Ruby runtime = context.runtime;
-        final int i = backrefNumber(runtime, index);
+        final int i = backrefNumber(context.runtime, index);
 
-        backrefNumberCheck(runtime, i);
+        backrefNumberCheck(context, i);
 
         int b = regs == null ? begin : regs.getBeg(i);
-
         if (b < 0) return context.nil;
 
         updateCharOffset();
 
-        return newFixnum(runtime, charOffsets.getBeg(i));
+        return newFixnum(context, charOffsets.getBeg(i));
     }
 
     /** match_end
@@ -669,13 +656,11 @@ public class RubyMatchData extends RubyObject {
     public IRubyObject end(ThreadContext context, IRubyObject index) {
         check();
 
-        final Ruby runtime = context.runtime;
-        final int i = backrefNumber(runtime, index);
+        final int i = backrefNumber(context.runtime, index);
 
-        backrefNumberCheck(runtime, i);
+        backrefNumberCheck(context, i);
 
         int e = regs == null ? end : regs.getEnd(i);
-
         if (e < 0) return context.nil;
 
         if ( ! str.singleByteOptimizable() ) {
@@ -683,7 +668,7 @@ public class RubyMatchData extends RubyObject {
             e = charOffsets.getEnd(i);
         }
 
-        return newFixnum(runtime, e);
+        return newFixnum(context, e);
     }
 
     @Deprecated
@@ -698,10 +683,8 @@ public class RubyMatchData extends RubyObject {
     public IRubyObject offset(ThreadContext context, IRubyObject index) {
         check();
 
-        final Ruby runtime = context.runtime;
-        final int i = backrefNumber(runtime, index);
-
-        backrefNumberCheck(runtime, i);
+        final int i = backrefNumber(context.runtime, index);
+        backrefNumberCheck(context, i);
 
         int b, e;
         if (regs == null) {
@@ -712,7 +695,7 @@ public class RubyMatchData extends RubyObject {
             e = regs.getEnd(i);
         }
 
-        if (b < 0) return runtime.newArray(context.nil, context.nil);
+        if (b < 0) return newArray(context, 2);
 
         if ( ! str.singleByteOptimizable() ) {
             updateCharOffset();
@@ -720,7 +703,7 @@ public class RubyMatchData extends RubyObject {
             e = charOffsets.getEnd(i);
         }
 
-        return runtime.newArray(newFixnum(runtime, b), newFixnum(runtime, e));
+        return newArray(context, newFixnum(context, b), newFixnum(context, e));
     }
 
     /** match_pre_match
@@ -736,13 +719,10 @@ public class RubyMatchData extends RubyObject {
 
     @JRubyMethod
     public IRubyObject match(ThreadContext context, IRubyObject nth) {
-        Ruby runtime = context.runtime;
-
         int index = nthToIndex(context, nth);
-
         Region regs = this.regs;
 
-        backrefNumberCheck(runtime, index);
+        backrefNumberCheck(context, index);
 
         int start = regs.getBeg(index);
 
@@ -750,25 +730,20 @@ public class RubyMatchData extends RubyObject {
 
         int end = regs.getEnd(index);
 
-        return str.makeSharedString(runtime, start, end - start);
+        return str.makeSharedString(context.runtime, start, end - start);
     }
 
     @JRubyMethod
     public IRubyObject match_length(ThreadContext context, IRubyObject nth) {
-        Ruby runtime = context.runtime;
-
         int index = nthToIndex(context, nth);
-
         Region regs = this.regs;
 
-        backrefNumberCheck(runtime, index);
+        backrefNumberCheck(context, index);
 
         int start = regs.getBeg(index);
-
         if (start < 0) return context.nil;
 
         int end = regs.getEnd(index);
-
         ByteList strBytes = str.getByteList();
 
         int length = StringSupport.strLength(
@@ -778,7 +753,7 @@ public class RubyMatchData extends RubyObject {
                 end,
                 str.getCodeRange());
 
-        return newFixnum(runtime, length);
+        return newFixnum(context, length);
     }
 
     private int nthToIndex(ThreadContext context, IRubyObject id) {
@@ -790,9 +765,9 @@ public class RubyMatchData extends RubyObject {
         return index;
     }
 
-    private void backrefNumberCheck(Ruby runtime, int i) {
+    private void backrefNumberCheck(ThreadContext context, int i) {
         if (i < 0 || (regs == null ? 1 : regs.getNumRegs()) <= i) {
-            throw runtime.newIndexError("index " + i + " out of matches");
+            throw context.runtime.newIndexError("index " + i + " out of matches");
         }
     }
 
@@ -873,7 +848,7 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod
     @Override
     public RubyFixnum hash() {
-        return newFixnum(getRuntime(), hashCode());
+        return newFixnum(getRuntime().getCurrentContext(), hashCode());
     }
 
     @JRubyMethod(keywords = true, optional = 1)

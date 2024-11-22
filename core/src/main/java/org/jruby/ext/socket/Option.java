@@ -23,10 +23,8 @@ import org.jruby.util.Sprintf;
 import java.nio.ByteBuffer;
 import java.util.Locale;
 
-import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Convert.checkToInteger;
-import static org.jruby.api.Create.newFixnum;
-import static org.jruby.api.Create.newString;
+import static org.jruby.api.Convert.*;
+import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.typeError;
 
 public class Option extends RubyObject {
@@ -240,8 +238,7 @@ public class Option extends RubyObject {
 
         int[] linger = Option.unpackLinger(data);
 
-        Ruby runtime = context.runtime;
-        return runtime.newArray(runtime.newBoolean(linger[0] != 0), newFixnum(context, linger[1]));
+        return newArray(context, asBoolean(context,linger[0] != 0), newFixnum(context, linger[1]));
     }
 
     @JRubyMethod

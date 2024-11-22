@@ -44,7 +44,7 @@ import static org.jruby.RubyArgsFile.Next.Stream;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.anno.FrameField.LASTLINE;
 import static org.jruby.api.Convert.*;
-import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
 import static org.jruby.runtime.ThreadContext.resetCallInfo;
@@ -53,8 +53,6 @@ import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariable;
-import org.jruby.internal.runtime.ReadonlyAccessor;
-import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -79,7 +77,7 @@ public class RubyArgsFile extends RubyObject {
 
         argfClass.defineAnnotatedMethods(RubyArgsFile.class);
 
-        IRubyObject argsFile = argfClass.newInstance(runtime.getCurrentContext(), new IRubyObject[] { null }, (Block) null);
+        IRubyObject argsFile = argfClass.newInstance(runtime.getCurrentContext(), new IRubyObject[] { null }, null);
 
         runtime.setArgsFile(argsFile);
         runtime.getGlobalVariables().defineReadonly("$<", new ArgsFileAccessor(runtime), GlobalVariable.Scope.GLOBAL);
@@ -104,13 +102,10 @@ public class RubyArgsFile extends RubyObject {
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE, rest = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
-        final Ruby runtime = context.runtime;
-        final RubyArray argv;
-        if (args.length == 1 && args[0] == null) {
-            argv = runtime.getObject().getConstant("ARGV").convertToArray();
-        } else {
-            argv = runtime.newArray(args);
-        }
+        var runtime = context.runtime;
+        final var argv = args.length == 1 && args[0] == null ?
+                runtime.getObject().getConstant("ARGV").convertToArray() :
+                newArray(context, args);
 
         // ARGF is intended to be a singleton from a Ruby perspective but it is still
         // possible for someone to ARGF.class.new.  We do still want a global view of
@@ -437,14 +432,13 @@ public class RubyArgsFile extends RubyObject {
     public static IRubyObject readlines(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 1);
 
-        Ruby runtime = context.runtime;
-        ArgsFileData data = ArgsFileData.getArgsFileData(runtime);
+        ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
 
-        if (!data.next_argv(context)) return runtime.newEmptyArray();
+        if (!data.next_argv(context)) return newEmptyArray(context);
 
         if (!(data.currentFile instanceof RubyIO)) return data.currentFile.callMethod(context, "readlines", args);
 
-        var ary = runtime.newArray();
+        var ary = newArray(context);
         IRubyObject line;
         while(!(line = argf_getline(context, recv, args)).isNil()) {
             ary.append(context, line);
@@ -456,13 +450,12 @@ public class RubyArgsFile extends RubyObject {
     public static IRubyObject to_a(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 1);
 
-        Ruby runtime = context.runtime;
-        ArgsFileData data = ArgsFileData.getArgsFileData(runtime);
+        ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
 
-        if (!data.next_argv(context)) return runtime.newEmptyArray();
+        if (!data.next_argv(context)) return newEmptyArray(context);
         if (!(data.currentFile instanceof RubyIO)) return data.currentFile.callMethod(context, "to_a", args);
 
-        var ary = runtime.newArray();
+        var ary = newArray(context);
         IRubyObject line;
         while ((line = argf_getline(context, recv, args)) != context.nil) {
             ary.append(context, line);

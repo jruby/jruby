@@ -31,8 +31,7 @@ import org.jruby.ext.socket.SocketUtils;
 import org.jruby.ext.socket.SocketUtilsIPV6;
 import org.jruby.runtime.Helpers;
 
-import static org.jruby.api.Create.newFixnum;
-import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
@@ -222,7 +221,7 @@ public class Sockaddr {
                 throw argumentError(context, "not an AF_INET/AF_INET6 sockaddr");
             }
 
-            return RubyArray.newArray(context.runtime, addrinfo.ip_port(context), addrinfo.ip_address(context));
+            return newArray(context, addrinfo.ip_port(context), addrinfo.ip_address(context));
         }
 
         return unpack_sockaddr_in(context, addr.convertToString().getByteList());
@@ -257,7 +256,7 @@ public class Sockaddr {
             ip = newString(context, SocketUtilsIPV6.getIPV6Address(formatAddr.toString()));
         }
 
-        return RubyArray.newArray(context.runtime, newFixnum(context, port), ip);
+        return newArray(context, newFixnum(context, port), ip);
     }
 
     public static IRubyObject pack_sockaddr_un(ThreadContext context, String unixpath) {

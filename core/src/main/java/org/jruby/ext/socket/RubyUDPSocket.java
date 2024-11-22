@@ -74,8 +74,7 @@ import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.UnsupportedAddressTypeException;
 
-import static org.jruby.api.Create.newFixnum;
-import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.*;
 import static org.jruby.runtime.Helpers.extractExceptionOnlyArg;
 
 /**
@@ -274,13 +273,11 @@ public class RubyUDPSocket extends RubyIPSocket {
 
     private static IRubyObject recvfrom_nonblock(RubyBasicSocket socket, ThreadContext context,
                                                  IRubyObject length, IRubyObject flags, IRubyObject str, boolean exception) {
-        final Ruby runtime = context.runtime;
-
         try {
-            ReceiveTuple tuple = doReceiveNonblockTuple(socket, runtime, RubyNumeric.fix2int(length));
+            ReceiveTuple tuple = doReceiveNonblockTuple(socket, context.runtime, RubyNumeric.fix2int(length));
 
             if (tuple == null) {
-                if (!exception) return context.runtime.newSymbol("wait_readable");
+                if (!exception) return newSymbol(context, "wait_readable");
                 throw context.runtime.newErrnoEAGAINReadableError("recvfrom(2)");
             }
 
@@ -288,27 +285,23 @@ public class RubyUDPSocket extends RubyIPSocket {
             if (str != null && !str.isNil()) {
                 str = str.convertToString();
                 ((RubyString) str).setValue(tuple.result.getByteList());
-            }
-            else {
+            } else {
                 str = tuple.result;
             }
 
             IRubyObject addressArray = socket.addrFor(context, tuple.sender, false);
 
-            return runtime.newArray(str, addressArray);
-        }
-        catch (UnknownHostException e) {
-            throw SocketUtils.sockerr(runtime, "recvfrom: name or service not known");
-        }
-        catch (PortUnreachableException e) {
-            throw runtime.newErrnoECONNREFUSEDError();
-        }
-        catch (IOException e) { // SocketException
-            throw runtime.newIOErrorFromException(e);
-        }
-        catch (RaiseException e) { throw e; }
-        catch (Exception e) {
-            throw sockerr(runtime, e.getLocalizedMessage(), e);
+            return newArray(context, str, addressArray);
+        } catch (UnknownHostException e) {
+            throw SocketUtils.sockerr(context.runtime, "recvfrom: name or service not known");
+        } catch (PortUnreachableException e) {
+            throw context.runtime.newErrnoECONNREFUSEDError();
+        } catch (IOException e) { // SocketException
+            throw context.runtime.newIOErrorFromException(e);
+        } catch (RaiseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw sockerr(context.runtime, e.getLocalizedMessage(), e);
         }
     }
 
@@ -478,7 +471,7 @@ public class RubyUDPSocket extends RubyIPSocket {
 
             IRubyObject addressArray = socket.addrFor(context, tuple.sender, false);
 
-            return runtime.newArray(tuple.result, addressArray);
+            return newArray(context, tuple.result, addressArray);
         }
         catch (UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "recvfrom: name or service not known");

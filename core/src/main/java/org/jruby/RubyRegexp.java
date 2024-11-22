@@ -80,8 +80,7 @@ import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.collections.WeakValuedMap;
 
 import static org.jruby.api.Convert.*;
-import static org.jruby.api.Create.newFixnum;
-import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.ThreadContext.resetCallInfo;
@@ -1539,14 +1538,14 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     @JRubyMethod
     public IRubyObject names(ThreadContext context) {
         check();
-        final Ruby runtime = context.runtime;
-        if (pattern.numberOfNames() == 0) return runtime.newEmptyArray();
 
-        RubyArray ary = RubyArray.newBlankArray(runtime, pattern.numberOfNames());
+        if (pattern.numberOfNames() == 0) return newEmptyArray(context);
+
+        var ary = RubyArray.newBlankArray(context.runtime, pattern.numberOfNames());
         int index = 0;
         for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
             NameEntry e = i.next();
-            RubyString name = RubyString.newStringShared(runtime, e.name, e.nameP, e.nameEnd - e.nameP, pattern.getEncoding());
+            RubyString name = RubyString.newStringShared(context.runtime, e.name, e.nameP, e.nameEnd - e.nameP, pattern.getEncoding());
             ary.storeInternal(context, index++, name);
         }
         return ary;

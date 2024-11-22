@@ -5,6 +5,8 @@ import org.jruby.RubyLocalJumpError;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Create.newArray;
+
 public class NullBlockBody extends BlockBody {
     public NullBlockBody() {
         super(Signature.NO_ARGUMENTS);
@@ -33,7 +35,7 @@ public class NullBlockBody extends BlockBody {
     }
     @Override
     public IRubyObject call(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1) {
-        throw context.runtime.newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, RubyArray.newArray(context.runtime, arg0, arg1), "no block given");
+        throw context.runtime.newLocalJumpError(RubyLocalJumpError.Reason.NOREASON, newArray(context, arg0, arg1), "no block given");
     }
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, Block block, IRubyObject arg0, IRubyObject arg1) {

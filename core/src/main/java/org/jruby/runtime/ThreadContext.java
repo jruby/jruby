@@ -81,6 +81,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.jruby.RubyBasicObject.NEVER;
+import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Error.typeError;
 
 public final class ThreadContext {
@@ -909,9 +910,9 @@ public final class ThreadContext {
         int traceLength = safeLength(level, length, fullTrace);
 
         // MRI started returning [] instead of nil some time after 1.9 (#4891)
-        if (traceLength < 0) return runtime.newEmptyArray();
+        if (traceLength < 0) return newEmptyArray(this);
 
-        RubyArray backTrace = RubyThread.Location.newLocationArray(runtime, fullTrace, level, traceLength);
+        var backTrace = RubyThread.Location.newLocationArray(runtime, fullTrace, level, traceLength);
         if (RubyInstanceConfig.LOG_CALLERS) TraceType.logCaller(backTrace);
         return backTrace;
     }

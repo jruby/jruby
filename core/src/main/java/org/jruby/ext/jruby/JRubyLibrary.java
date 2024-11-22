@@ -54,6 +54,7 @@ import java.io.ByteArrayInputStream;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.parser.ParserType.INLINE;
 
@@ -322,7 +323,7 @@ public class JRubyLibrary implements Library {
     private static RubyArray subclasses(ThreadContext context, final IRubyObject recv,
                                         final RubyClass klass, final boolean recurseAll) {
 
-        final RubyArray subclasses = RubyArray.newArray(context.runtime);
+        final var subclasses = newArray(context);
 
         RubyClass singletonClass = klass.getSingletonClass();
         RubyObjectSpace.each_objectInternal(context, recv, new IRubyObject[] { singletonClass },

@@ -42,8 +42,7 @@ import org.jruby.util.TypeConverter;
 import org.jruby.util.collections.IntList;
 
 import static org.jruby.api.Convert.castAsSymbol;
-import static org.jruby.api.Create.newFixnum;
-import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ext.coverage.CoverageData.CoverageDataState.*;
 import static org.jruby.ext.coverage.CoverageData.EVAL;
@@ -246,7 +245,7 @@ public class CoverageModule {
                 final IntList val = entry.getValue();
                 boolean oneshot = (mode & CoverageData.ONESHOT_LINES) != 0;
 
-                RubyArray ary = RubyArray.newArray(runtime, val.size());
+                var ary = newArray(context, val.size());
                 for (int i = 0; i < val.size(); i++) {
                     int integer = val.get(i);
                     if (oneshot) {

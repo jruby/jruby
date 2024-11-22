@@ -79,6 +79,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -1416,7 +1417,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         public RubyArray all_symbols(ThreadContext context) {
             SymbolEntry[] table = this.symbolTable;
-            RubyArray array = runtime.newArray(this.size);
+            var array = newArray(context, size);
 
             for (int i = table.length; --i >= 0; ) {
                 for (SymbolEntry e = table[i]; e != null; e = e.next) {

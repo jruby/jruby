@@ -42,6 +42,9 @@ import org.jruby.RubyString;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newString;
+
 /**
 * @author Anders
 */
@@ -78,10 +81,11 @@ public class TestObjectSpace extends TestCase {
     }
 
     public void testObjectSpace() {
-        IRubyObject o1 = runtime.newArray(10);
-        IRubyObject o2 = runtime.newArray(20);
-        IRubyObject o3 = runtime.newArray(30);
-        IRubyObject o4 = runtime.newString("hello");
+        var context = runtime.getCurrentContext();
+        IRubyObject o1 = newArray(context, 10);
+        IRubyObject o2 = newArray(context, 20);
+        IRubyObject o3 = newArray(context, 30);
+        IRubyObject o4 = newString(context, "hello");
 
         target.add(o1);
         target.add(o2);

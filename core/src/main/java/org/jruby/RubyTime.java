@@ -83,7 +83,7 @@ import java.util.regex.Pattern;
 
 import static org.jruby.RubyComparable.invcmp;
 import static org.jruby.api.Convert.*;
-import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.invokedynamic;
@@ -574,9 +574,18 @@ public class RubyTime extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = {"gmtime", "utc", "to_time"})
+    /**
+     * @return ""
+     * @deprecated Use {@link RubyTime#gmtime(ThreadContext)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public RubyTime gmtime() {
-        return adjustTimeZone(getRuntime(), DateTimeZone.UTC, false);
+        return gmtime(getCurrentContext());
+    }
+
+    @JRubyMethod(name = {"gmtime", "utc", "to_time"})
+    public RubyTime gmtime(ThreadContext context) {
+        return adjustTimeZone(context, DateTimeZone.UTC, false);
     }
 
     public final RubyTime localtime() {
@@ -585,26 +594,22 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = "localtime")
     public RubyTime localtime(ThreadContext context) {
-        return adjustTimeZone(context.runtime, getLocalTimeZone(context.runtime), false);
+        return adjustTimeZone(context, getLocalTimeZone(context.runtime), false);
     }
 
     @JRubyMethod(name = "localtime")
     public RubyTime localtime(ThreadContext context, IRubyObject arg) {
-        Ruby runtime = context.runtime;
-
         final DateTimeZone zone = getTimeZoneFromUtcOffset(context, arg);
 
-        if (zone == null) throw invalidUTCOffset(runtime);
+        if (zone == null) throw invalidUTCOffset(context.runtime);
 
-        return adjustTimeZone(runtime, zone, true);
+        return adjustTimeZone(context, zone, true);
     }
 
-    private RubyTime adjustTimeZone(Ruby runtime, final DateTimeZone zone, boolean isTzRelative) {
+    private RubyTime adjustTimeZone(ThreadContext context, final DateTimeZone zone, boolean isTzRelative) {
         boolean zoneOk = zone.equals(dt.getZone());
         if (zoneOk && isTzRelative == this.isTzRelative) return this;
-        if (isFrozen()) {
-            throw runtime.newFrozenError("Time", this);
-        }
+        if (isFrozen()) throw context.runtime.newFrozenError("Time", this);
         if (!zoneOk) dt = dt.withZone(zone);
         setIsTzRelative(isTzRelative);
         return this;
@@ -640,11 +645,7 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = "getlocal")
     public RubyTime getlocal(ThreadContext context, IRubyObject off) {
-        Ruby runtime = context.runtime;
-
-        if (off == context.nil) {
-            return newTime(runtime, dt.withZone(getLocalTimeZone(runtime)), nsec);
-        }
+        if (off == context.nil) return newTime(context.runtime, dt.withZone(getLocalTimeZone(context.runtime)), nsec);
 
         IRubyObject zone = off;
         DateTimeZone dtz;
@@ -656,14 +657,14 @@ public class RubyTime extends RubyObject {
         if ((dtz = getTimeZoneFromUtcOffset(context, off)) == null) {
             zone = findTimezone(context, zone);
             RubyTime t = (RubyTime) dup();
-            if (!zoneLocalTime(context, zone, t)) throw invalidUTCOffset(runtime, zone);
+            if (!zoneLocalTime(context, zone, t)) throw invalidUTCOffset(context.runtime, zone);
             return t;
         }
         else if (dtz == DateTimeZone.UTC) {
-            return ((RubyTime) dup()).gmtime();
+            return ((RubyTime) dup()).gmtime(context);
         }
 
-        return ((RubyTime) dup()).adjustTimeZone(runtime, dtz, false);
+        return ((RubyTime) dup()).adjustTimeZone(context, dtz, false);
     }
 
     @Deprecated
@@ -909,8 +910,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod
     @Override
     public RubyArray to_a(ThreadContext context) {
-        return RubyArray.newArrayNoCopy(
-            context.runtime,
+        return newArrayNoCopy(context,
             sec(), min(), hour(),
             mday(), month(), year(),
             wday(), yday(), isdst(),
@@ -1499,11 +1499,9 @@ public class RubyTime extends RubyObject {
         if (arg2.isNil() && (arg3 == null || arg3.isNil())) {
             RubyTime time = at1(context, recv, arg1);
 
-            time = time.gmtime();
+            time = time.gmtime(context);
 
-            if (!zone.isNil()) {
-                time = timeZoneLocal(context, zone, time);
-            }
+            if (!zone.isNil()) time = timeZoneLocal(context, zone, time);
 
             return time;
         }
@@ -1638,7 +1636,7 @@ public class RubyTime extends RubyObject {
         time.setNSec(nanosecs % 1000000);
 
         if (!zone.isNil()) {
-            time = timeZoneLocal(context, zone, time.gmtime());
+            time = timeZoneLocal(context, zone, time.gmtime(context));
         }
 
         return time;
@@ -2214,10 +2212,10 @@ public class RubyTime extends RubyObject {
             if (!zoneLocalTime(context, zone, time)) throw invalidUTCOffset(context.runtime, zone);
             return time;
         } else if (dtz == DateTimeZone.UTC) {
-            return time.gmtime();
+            return time.gmtime(context);
         }
 
-        time.adjustTimeZone(context.runtime, dtz, false);
+        time.adjustTimeZone(context, dtz, false);
 
         return time;
     }
@@ -2228,7 +2226,7 @@ public class RubyTime extends RubyObject {
         if (time instanceof RubyTime) {
             return ((RubyTime) time).getDateTime().withZoneRetainFields(DateTimeZone.UTC).getMillis();
         } else if (time instanceof RubyStruct) {
-            t = ((RubyStruct) time).aref(context.runtime.newSymbol("to_i")).convertToInteger().getLongValue();
+            t = ((RubyStruct) time).aref(newSymbol(context, "to_i")).convertToInteger().getLongValue();
         } else {
             t =  time.callMethod(context, "to_i").convertToInteger().getLongValue();
         }

@@ -82,8 +82,7 @@ import java.util.zip.ZipFile;
 
 import static org.jruby.RubyInteger.singleCharByteList;
 import static org.jruby.api.Convert.*;
-import static org.jruby.api.Create.newFixnum;
-import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -1189,10 +1188,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @JRubyMethod(meta = true)
     public static RubyArray split(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        Ruby runtime = context.runtime;
-        RubyString filename = StringSupport.checkEmbeddedNulls(runtime, get_path(context, arg));
+        RubyString filename = StringSupport.checkEmbeddedNulls(context.runtime, get_path(context, arg));
 
-        return runtime.newArray(dirname(context, recv, filename), basename(context, recv, filename));
+        return newArray(context, dirname(context, recv, filename), basename(context, recv, filename));
     }
 
     @JRubyMethod(meta = true)

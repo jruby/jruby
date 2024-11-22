@@ -21,7 +21,7 @@ import org.jruby.test.Base;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
-import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.*;
 
 public class TestRaiseException extends Base {
 
@@ -73,9 +73,10 @@ public class TestRaiseException extends Base {
     }
 
     public void testFromWithBacktrace() {
+        var context = runtime.getCurrentContext();
         final int count = runtime.getExceptionCount();
 
-        final IRubyObject backtrace = runtime.newArray();
+        final IRubyObject backtrace = newArray(context);
         RaiseException ex = RaiseException.from(runtime, runtime.getArgumentError(), "testFromWithBacktrace", backtrace);
 
         assertEquals( count + 1, runtime.getExceptionCount() );
@@ -86,10 +87,11 @@ public class TestRaiseException extends Base {
     }
 
     public void testFromLegacyOnlyPreRaisesOnce() {
+        var context = runtime.getCurrentContext();
         final int count = runtime.getExceptionCount();
 
-        final IRubyObject ex = runtime.getRuntimeError().newInstance(runtime.getCurrentContext(), Block.NULL_BLOCK);
-        RaiseException.from((RubyException) ex, runtime.newArrayLight());
+        final IRubyObject ex = runtime.getRuntimeError().newInstance(context, Block.NULL_BLOCK);
+        RaiseException.from((RubyException) ex, RubyArray.newArrayLight(runtime));
 
         assertEquals( count + 1, runtime.getExceptionCount() );
 
@@ -448,6 +450,7 @@ public class TestRaiseException extends Base {
 
     public void testNewRaiseException() {
         Ruby ruby = Ruby.newInstance();
+        var context = ruby.getCurrentContext();
 
         try {
             throw ruby.newRaiseException(ruby.getException(), "blah");
@@ -461,7 +464,7 @@ public class TestRaiseException extends Base {
             assertEquals("(Exception) blah", e.getMessage());
         }
 
-        RubyArray backtrace = ruby.newEmptyArray();
+        var backtrace = newEmptyArray(context);
         try {
             throw RaiseException.from(ruby, ruby.getException(), "blah", backtrace);
         } catch (Exception e) {
@@ -469,12 +472,12 @@ public class TestRaiseException extends Base {
             assertEquals(backtrace, e.getException().backtrace());
         }
 
-        RubyString message = newString(ruby.getCurrentContext(), "blah");
+        RubyString message = newString(context, "blah");
         try {
             throw RaiseException.from(ruby, ruby.getException(), message);
         } catch (Exception e) {
             assertEquals("(Exception) blah", e.getMessage());
-            assertEquals(message, e.getException().message(ruby.getCurrentContext()));
+            assertEquals(message, e.getException().message(context));
         }
 
         try {
@@ -494,7 +497,7 @@ public class TestRaiseException extends Base {
             throw RaiseException.from(ruby, "Exception", message);
         } catch (Exception e) {
             assertEquals("(Exception) blah", e.getMessage());
-            assertEquals(message, e.getException().message(ruby.getCurrentContext()));
+            assertEquals(message, e.getException().message(context));
         }
     }
 }

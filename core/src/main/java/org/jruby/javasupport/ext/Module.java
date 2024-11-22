@@ -52,6 +52,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -87,20 +88,18 @@ public class Module {
 
     @JRubyMethod(visibility = PRIVATE)
     public static IRubyObject java_import(ThreadContext context, IRubyObject self, IRubyObject arg, Block block) {
-        if (arg instanceof RubyArray) {
-            return java_import(context, self, ((RubyArray) arg).toJavaArrayMaybeUnsafe(), block);
-        }
-        return context.runtime.newArray( javaImport(context, (RubyModule) self, arg, block) );
+        return arg instanceof RubyArray ?
+                java_import(context, self, ((RubyArray<?>) arg).toJavaArrayMaybeUnsafe(), block) :
+                newArray(context, javaImport(context, (RubyModule) self, arg, block) );
     }
 
     @JRubyMethod(rest = true, visibility = PRIVATE)
     public static IRubyObject java_import(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-        final Ruby runtime = context.runtime;
-        IRubyObject[] classes = ((RubyArray) RubyArray.newArrayNoCopy(runtime, args).flatten(context)).toJavaArrayMaybeUnsafe();
+        IRubyObject[] classes = ((RubyArray) RubyArray.newArrayNoCopy(context.runtime, args).flatten(context)).toJavaArrayMaybeUnsafe();
         for (int i = 0; i < classes.length; i++) {
             classes[i] = javaImport(context, (RubyModule) self, classes[i], block);
         }
-        return runtime.newArray(classes);
+        return newArray(context, classes);
     }
 
     private static IRubyObject javaImport(ThreadContext context, RubyModule target, IRubyObject klass, Block block) {

@@ -15,6 +15,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newEmptyArray;
+
 // Represents an array [_, _, .., _] in ruby
 //
 // NOTE: This operand is only used in the initial stages of optimization.
@@ -123,11 +126,11 @@ public class Array extends Operand implements Iterable<Operand> {
     public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
         switch (elts.length) {
             case 0:
-                return context.runtime.newEmptyArray();
+                return newEmptyArray(context);
             case 1:
-                return context.runtime.newArray((IRubyObject) elts[0].retrieve(context, self, currScope, currDynScope, temp));
+                return newArray(context, (IRubyObject) elts[0].retrieve(context, self, currScope, currDynScope, temp));
             case 2:
-                return context.runtime.newArray((IRubyObject) elts[0].retrieve(context, self, currScope, currDynScope, temp),
+                return newArray(context, (IRubyObject) elts[0].retrieve(context, self, currScope, currDynScope, temp),
                         (IRubyObject) elts[1].retrieve(context, self, currScope, currDynScope, temp));
             default:
                 return RubyArray.newArrayMayCopy(context.runtime, retrieveArrayElts(context, self, currScope, currDynScope, temp));

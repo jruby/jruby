@@ -46,6 +46,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Create;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ClassIndex;
@@ -63,6 +64,7 @@ import org.jruby.util.Numeric;
 import org.jruby.util.Sprintf;
 
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.Numeric.f_abs;
@@ -301,8 +303,8 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @JRubyMethod(name = "coerce")
     @Override
     public IRubyObject coerce(IRubyObject other) {
-        final Ruby runtime = metaClass.runtime;
-        return runtime.newArray(RubyKernel.new_float(runtime.getCurrentContext(), other), this);
+        var context = metaClass.runtime.getCurrentContext();
+        return newArray(context, RubyKernel.new_float(context, other), this);
     }
 
     /** flo_uminus
@@ -446,18 +448,15 @@ public class RubyFloat extends RubyNumeric implements Appendable {
 
             double mod = Math.IEEEremainder(x, y);
             // MRI behavior:
-            if (Double.isNaN(mod)) {
-                throw context.runtime.newFloatDomainError("NaN");
-            }
+            if (Double.isNaN(mod)) throw context.runtime.newFloatDomainError("NaN");
+
             double div = Math.floor(x / y);
 
-            if (y * mod < 0) {
-                mod += y;
-            }
-            final Ruby runtime = context.runtime;
-            RubyInteger car = dbl2ival(runtime, div);
-            RubyFloat cdr = RubyFloat.newFloat(runtime, mod);
-            return RubyArray.newArray(runtime, car, cdr);
+            if (y * mod < 0) mod += y;
+
+            RubyInteger car = dbl2ival(context.runtime, div);
+            RubyFloat cdr = Create.newFloat(context, mod);
+            return newArray(context, car, cdr);
         default:
             return coerceBin(context, sites(context).divmod, other);
         }
