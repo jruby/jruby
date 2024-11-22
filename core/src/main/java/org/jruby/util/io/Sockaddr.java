@@ -17,7 +17,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
@@ -31,6 +30,7 @@ import org.jruby.ext.socket.SocketUtils;
 import org.jruby.ext.socket.SocketUtilsIPV6;
 import org.jruby.runtime.Helpers;
 
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
@@ -256,7 +256,7 @@ public class Sockaddr {
             ip = newString(context, SocketUtilsIPV6.getIPV6Address(formatAddr.toString()));
         }
 
-        return newArray(context, newFixnum(context, port), ip);
+        return newArray(context, asFixnum(context, port), ip);
     }
 
     public static IRubyObject pack_sockaddr_un(ThreadContext context, String unixpath) {

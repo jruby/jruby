@@ -50,7 +50,6 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.util.StringSupport.*;
 
@@ -936,7 +935,7 @@ public class OpenFile implements Finalizable {
             }
             else {
                 if (io_fflush(context) < 0 && err == context.nil) {
-                    err = RubyFixnum.newFixnum(runtime, posix.getErrno() == null ? 0 : posix.getErrno().longValue());
+                    err = asFixnum(context, posix.getErrno() == null ? 0 : posix.getErrno().longValue());
                 }
             }
         }
@@ -951,13 +950,13 @@ public class OpenFile implements Finalizable {
 	        /* stdio_file is deallocated anyway
              * even if fclose failed.  */
             if (posix.close(stdio_file) < 0 && err.isNil())
-                err = noraise ? context.tru : RubyNumeric.int2fix(runtime, posix.getErrno().intValue());
+                err = noraise ? context.tru : asFixnum(context, posix.getErrno().intValue());
         } else if (fd != null) {
             /* fptr->fd may be closed even if close fails.
              * POSIX doesn't specify it.
              * We assumes it is closed.  */
             if ((posix.close(fd) < 0) && err.isNil())
-                err = noraise ? context.tru : newFixnum(context, posix.getErrno().intValue());
+                err = noraise ? context.tru : asFixnum(context, posix.getErrno().intValue());
         }
 
         if (!err.isNil() && !noraise) {
@@ -2615,7 +2614,8 @@ public class OpenFile implements Finalizable {
                             }
                             break retry;
                         }
-                        return noalloc ? context.tru : RubyFixnum.newFixnum(runtime, (posix.getErrno() == null) ? 0 : posix.getErrno().longValue());
+                        return noalloc ?
+                                context.tru : asFixnum(context, (posix.getErrno() == null) ? 0 : posix.getErrno().longValue());
                     }
                     if (res == EConvResult.InvalidByteSequence ||
                             res == EConvResult.IncompleteInput ||

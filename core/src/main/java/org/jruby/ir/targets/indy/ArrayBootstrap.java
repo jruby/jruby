@@ -4,6 +4,7 @@ import com.headius.invokebinder.Binder;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
+import org.jruby.api.Create;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -22,7 +23,7 @@ import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 import java.util.stream.IntStream;
 
-import static org.jruby.api.Create.newFixnum;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
@@ -83,7 +84,7 @@ public class ArrayBootstrap {
 
     public static RubyArray fixnumArray(ThreadContext context, MutableCallSite site, long[] values) {
         return bindArray(context, site, values, values.length,
-                (runtime, vals, index) -> newFixnum(context, values[index]));
+                (runtime, vals, index) -> asFixnum(context, values[index]));
     }
 
     public static RubyArray floatArray(ThreadContext context, MutableCallSite site, double[] values) {

@@ -47,7 +47,7 @@ import org.jruby.runtime.callsite.CachingCallSite;
 
 import java.math.BigInteger;
 
-import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Error.typeError;
 
 public class Numeric {
@@ -108,26 +108,23 @@ public class Numeric {
         else { // RubyBignum || RubyFixnum
             cmp = x.getBigIntegerValue().compareTo(y.getBigIntegerValue());
         }
-        return RubyFixnum.newFixnum(context.runtime, cmp);
+        return asFixnum(context, cmp);
     }
 
     public static RubyFixnum f_cmp(ThreadContext context, RubyInteger x, long y) {
-        final int cmp;
-        if (x instanceof RubyFixnum) {
-            cmp = Long.compare(((RubyFixnum) x).getLongValue(), y);
-        }
-        else { // RubyBignum
-            cmp = x.getBigIntegerValue().compareTo(BigInteger.valueOf(y));
-        }
-        return RubyFixnum.newFixnum(context.runtime, cmp);
+        final int cmp = x instanceof RubyFixnum xx ?
+                Long.compare(xx.getLongValue(), y) :
+                x.getBigIntegerValue().compareTo(BigInteger.valueOf(y));
+
+        return asFixnum(context, cmp);
     }
 
     /** f_div
      *
      */
     public static IRubyObject f_div(ThreadContext context, IRubyObject x, IRubyObject y) {
-        if (y instanceof RubyFixnum && ((RubyFixnum) y).getLongValue() == 1) return x;
-        return sites(context).op_quo.call(context, x, x, y);
+        return y instanceof RubyFixnum yy && yy.getLongValue() == 1 ?
+                x : sites(context).op_quo.call(context, x, x, y);
     }
 
     /** f_gt_p
@@ -208,13 +205,12 @@ public class Numeric {
 
     // MRI: safe_mul
     public static IRubyObject safe_mul(ThreadContext context, IRubyObject a, IRubyObject b, boolean az, boolean bz) {
-        Ruby runtime = context.runtime;
         double v;
-        if (!az && bz && a instanceof RubyFloat && !Double.isNaN(v = ((RubyFloat)a).getDoubleValue())) {
-            a = v < 0.0d ? runtime.newFloat(-1.0d) : runtime.newFloat(1.0d);
+        if (!az && bz && a instanceof RubyFloat aa && !Double.isNaN(v = aa.getDoubleValue())) {
+            a = v < 0.0d ? asFloat(context, -1.0d) : asFloat(context, 1.0d);
         }
-        if (!bz && az && b instanceof RubyFloat && !Double.isNaN(v = ((RubyFloat)b).getDoubleValue())) {
-            b = v < 0.0d ? runtime.newFloat(-1.0) : runtime.newFloat(1.0);
+        if (!bz && az && b instanceof RubyFloat bb && !Double.isNaN(v = bb.getDoubleValue())) {
+            b = v < 0.0d ? asFloat(context, -1.0) : asFloat(context, 1.0);
         }
         return f_mul(context, a, b);
     }
@@ -602,8 +598,8 @@ public class Numeric {
      *
      */
     public static IRubyObject f_gcd(ThreadContext context, IRubyObject x, IRubyObject y) {
-        if (x instanceof RubyFixnum && y instanceof RubyFixnum && isLongMinValue((RubyFixnum) x)) {
-            return RubyFixnum.newFixnum(context.runtime, i_gcd(((RubyFixnum)x).getLongValue(), ((RubyFixnum)y).getLongValue()));
+        if (x instanceof RubyFixnum xx && y instanceof RubyFixnum yy && isLongMinValue(xx)) {
+            return asFixnum(context, i_gcd(xx.getLongValue(), yy.getLongValue()));
         }
 
         if (f_negative_p(context, x)) x = f_negate(context, x);
@@ -613,8 +609,8 @@ public class Numeric {
         if (f_zero_p(context, y)) return x;
 
         for (;;) {
-            if (x instanceof RubyFixnum && y instanceof RubyFixnum && isLongMinValue((RubyFixnum) x)) {
-                return RubyFixnum.newFixnum(context.runtime, i_gcd(((RubyFixnum)x).getLongValue(), ((RubyFixnum)y).getLongValue()));
+            if (x instanceof RubyFixnum xx && y instanceof RubyFixnum yy && isLongMinValue(xx)) {
+                return asFixnum(context, i_gcd(xx.getLongValue(), yy.getLongValue()));
             }
             IRubyObject z = x;
             x = f_mod(context, y, x);
@@ -624,15 +620,14 @@ public class Numeric {
 
     // 'fast' gcd version
     public static RubyInteger f_gcd(ThreadContext context, RubyInteger x, RubyInteger y) {
-        if (x instanceof RubyFixnum && y instanceof RubyFixnum && isLongMinValue((RubyFixnum) x))
-            return RubyFixnum.newFixnum(context.runtime, i_gcd(x.getLongValue(), y.getLongValue()));
+        if (x instanceof RubyFixnum xx && y instanceof RubyFixnum yy && isLongMinValue(xx)) {
+            return asFixnum(context, i_gcd(xx.getLongValue(), yy.getLongValue()));
+        }
 
         BigInteger gcd = x.getBigIntegerValue().gcd(y.getBigIntegerValue());
 
-        if (gcd.compareTo(RubyBignum.LONG_MAX) <= 0) { // gcd always positive
-            return RubyFixnum.newFixnum(context.runtime, gcd.longValue());
-        }
-        return RubyBignum.newBignum(context.runtime, gcd);
+        return gcd.compareTo(RubyBignum.LONG_MAX) <= 0 ? // gcd always positive
+            asFixnum(context, gcd.longValue()) : RubyBignum.newBignum(context.runtime, gcd);
     }
 
     /**
@@ -741,7 +736,7 @@ public class Numeric {
             z = x * z;
         } while(--y != 0);
         if (neg) z = -z;
-        return RubyFixnum.newFixnum(runtime, z);
+        return asFixnum(context, z);
     }
 
     // MRI: rb_num_pow

@@ -52,6 +52,7 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
+import org.jruby.api.Convert;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Constants;
@@ -69,9 +70,8 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 
 import static org.jruby.RubyBasicObject.getMetaClass;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.castAsString;
-import static org.jruby.api.Create.newFixnum;
-import static org.jruby.api.Create.newSymbol;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.marshal.MarshalCommon.TYPE_IVAR;
@@ -446,7 +446,7 @@ public class NewMarshal {
     }
 
     private void userCommon(ThreadContext context, RubyOutputStream out, IRubyObject value, CacheEntry cacheEntry) {
-        RubyFixnum depthLimitFixnum = newFixnum(context, depthLimit);
+        RubyFixnum depthLimitFixnum = asFixnum(context, depthLimit);
         final RubyClass klass = getMetaClass(value);
         IRubyObject dumpResult;
         if (cacheEntry != null) {
@@ -481,7 +481,7 @@ public class NewMarshal {
 
     private void dumpUserdefBase(RubyOutputStream out, ThreadContext context, RubyClass klass, RubyString marshaled) {
         out.write(TYPE_USERDEF);
-        writeAndRegisterSymbol(out, newSymbol(context, klass.getRealClass().getName()));
+        writeAndRegisterSymbol(out, Convert.asSymbol(context, klass.getRealClass().getName()));
         writeString(out, marshaled.getByteList());
     }
 
@@ -495,7 +495,7 @@ public class NewMarshal {
         }
         
         // w_symbol
-        writeAndRegisterSymbol(out, newSymbol(context, type.getName()));
+        writeAndRegisterSymbol(out, Convert.asSymbol(context, type.getName()));
     }
 
     public void dumpVariables(ThreadContext context, RubyOutputStream out, IRubyObject value) {

@@ -33,7 +33,7 @@ import org.jruby.exceptions.SystemExit;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 
-import static org.jruby.api.Create.newFixnum;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newString;
 import static org.jruby.runtime.Visibility.*;
 
@@ -65,7 +65,7 @@ public class RubySystemExit extends RubyException {
 
     public static RubySystemExit newInstance(ThreadContext context, int status, String message) {
         final RubyClass klass = context.runtime.getSystemExit();
-        final IRubyObject[] args = new IRubyObject[] { newFixnum(context, status), newString(context, message) };
+        final IRubyObject[] args = new IRubyObject[] { asFixnum(context, status), newString(context, message) };
 
         return (RubySystemExit) klass.newInstance(context, args, Block.NULL_BLOCK);
     }
@@ -96,7 +96,7 @@ public class RubySystemExit extends RubyException {
                 this.status = arg;
                 if (argc > 1) this.message = args[1]; // (status, message)
             } else if (arg instanceof RubyBoolean) {
-                this.status = newFixnum(context, arg == context.tru ? 0 : 1 );
+                this.status = asFixnum(context, arg == context.tru ? 0 : 1 );
                 if (argc > 1) this.message = args[1]; // (status, message)
             } else {
                 this.message = arg;

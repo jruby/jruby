@@ -52,7 +52,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Create.newArray;
-import static org.jruby.api.Create.newSymbol;
+import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -580,6 +580,6 @@ public class TypeConverter {
         if (object == context.fals) return false;
 
         throw argumentError(context,
-                str(context.runtime, "true or false is expected as ", newSymbol(context, id), ": ", object));
+                str(context.runtime, "true or false is expected as ", Convert.asSymbol(context, id), ": ", object));
     }
 }

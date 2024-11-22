@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 import com.headius.invokebinder.Binder;
 import jnr.constants.platform.Errno;
 import org.jruby.*;
+import org.jruby.api.Convert;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.MultipleAsgnNode;
@@ -1944,7 +1945,7 @@ public class Helpers {
                     return newArray(context, value);
                 } else {
                     IRubyObject avalue = methodMissing.call(context, value, entry.sourceModule, "to_a",
-                            new IRubyObject[] {newSymbol(context, "to_a")}, Block.NULL_BLOCK);
+                            new IRubyObject[] {Convert.asSymbol(context, "to_a")}, Block.NULL_BLOCK);
                     if (!(avalue instanceof RubyArray)) {
                         if (avalue.isNil()) {
                             return newArray(context, value);

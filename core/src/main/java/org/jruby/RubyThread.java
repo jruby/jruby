@@ -98,7 +98,7 @@ import org.jruby.common.IRubyWarnings.ID;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newString;
-import static org.jruby.api.Create.newSymbol;
+import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.RubyStringBuilder.ids;
@@ -1348,7 +1348,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             String id = threadImpl.getRubyName(); // thread.name
             if (notEmpty(id)) {
                 result.cat('@');
-                result.cat(newSymbol(context, id).getBytes());
+                result.cat(Convert.asSymbol(context, id).getBytes());
             }
             if (notEmpty(file) && line >= 0) {
                 result.cat(' ');

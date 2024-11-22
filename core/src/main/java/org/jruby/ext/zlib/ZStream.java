@@ -40,7 +40,6 @@ import org.jruby.runtime.ThreadContext;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Create.newFixnum;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -91,7 +90,7 @@ public abstract class ZStream extends RubyObject {
     @JRubyMethod
     public IRubyObject total_out(ThreadContext context) {
         checkClosed();
-        return newFixnum(context, internalTotalOut());
+        return asFixnum(context, internalTotalOut());
     }
 
     @JRubyMethod(name = "stream_end?")
@@ -169,7 +168,7 @@ public abstract class ZStream extends RubyObject {
     @JRubyMethod(name = "total_in")
     public IRubyObject total_in(ThreadContext context) {
         checkClosed();
-        return newFixnum(context, internalTotalIn());
+        return asFixnum(context, internalTotalIn());
     }
 
     @JRubyMethod(name = "finished?")

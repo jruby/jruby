@@ -875,7 +875,7 @@ public class RubyTime extends RubyObject {
 
         if (nanos != 0) {
             ByteList buf = new ByteList(9);
-            Sprintf.sprintf(buf, ".%09d", getRuntime().newFixnum(nanos));
+            Sprintf.sprintf(buf, ".%09d", asFixnum(getRuntime().getCurrentContext(), nanos));
 
             // Remove trailing zeroes
             int len = buf.realSize();
@@ -1262,7 +1262,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod
     @Override
     public RubyFixnum hash() {
-        return RubyFixnum.newFixnum(getRuntime(), hashCode());
+        return asFixnum(getRuntime().getCurrentContext(), hashCode());
     }
 
     @Override
@@ -2226,7 +2226,7 @@ public class RubyTime extends RubyObject {
         if (time instanceof RubyTime) {
             return ((RubyTime) time).getDateTime().withZoneRetainFields(DateTimeZone.UTC).getMillis();
         } else if (time instanceof RubyStruct) {
-            t = ((RubyStruct) time).aref(newSymbol(context, "to_i")).convertToInteger().getLongValue();
+            t = ((RubyStruct) time).aref(asSymbol(context, "to_i")).convertToInteger().getLongValue();
         } else {
             t =  time.callMethod(context, "to_i").convertToInteger().getLongValue();
         }

@@ -53,6 +53,7 @@ import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Convert;
+import org.jruby.api.Create;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.platform.Platform;
@@ -309,7 +310,7 @@ public class RubyBasicSocket extends RubyIO {
 
     private IRubyObject handleReturnBytes(ThreadContext context, ByteList bytes, IRubyObject str, String exMessage, boolean exception) {
         if (bytes == null) {
-            if (!exception) return newSymbol(context, "wait_readable");
+            if (!exception) return Convert.asSymbol(context, "wait_readable");
             throw context.runtime.newErrnoEAGAINReadableError(exMessage);
         }
 
@@ -960,7 +961,7 @@ public class RubyBasicSocket extends RubyIO {
     protected IRubyObject addrFor(ThreadContext context, InetSocketAddress addr, boolean reverse) {
         boolean ipV6 = addr.getAddress() instanceof Inet6Address;
         IRubyObject ret0 = newString(context, ipV6 ? "AF_INET6" : "AF_INET");
-        IRubyObject ret1 = newFixnum(context, addr.getPort());
+        IRubyObject ret1 = asFixnum(context, addr.getPort());
         IRubyObject ret2;
         String hostAddress = addr.getAddress().getHostAddress();
         if (!reverse || doNotReverseLookup(context)) {

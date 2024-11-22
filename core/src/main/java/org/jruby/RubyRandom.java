@@ -34,6 +34,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -357,11 +358,9 @@ public class RubyRandom extends RubyRandomBase {
     @JRubyMethod(name = "marshal_dump")
     public IRubyObject marshal_dump(ThreadContext context) {
         RubyBignum state = random.getState();
-        RubyInteger left = RubyFixnum.newFixnum(context.runtime, (long) random.getLeft());
-        RubyArray dump = RubyArray.newArray(context.runtime, state, left, random.getSeed());
-        if (hasVariables()) {
-            dump.syncVariables(this);
-        }
+        RubyInteger left = asFixnum(context, (long) random.getLeft());
+        var dump = newArray(context, state, left, random.getSeed());
+        if (hasVariables()) dump.syncVariables(this);
         return dump;
     }
 

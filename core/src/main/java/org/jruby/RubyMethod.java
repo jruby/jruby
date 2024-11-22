@@ -35,6 +35,7 @@ package org.jruby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.api.Convert;
+import org.jruby.api.Create;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.IRMethodArgs;
@@ -55,7 +56,6 @@ import org.jruby.runtime.callsite.CacheEntry;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newArray;
-import static org.jruby.api.Create.newFixnum;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
 
 /** 
@@ -154,7 +154,7 @@ public class RubyMethod extends AbstractRubyMethod {
      */
     @JRubyMethod
     public RubyFixnum arity(ThreadContext context) {
-        return newFixnum(context, method.getSignature().arityValue());
+        return asFixnum(context, method.getSignature().arityValue());
     }
 
     @JRubyMethod(name = "eql?")

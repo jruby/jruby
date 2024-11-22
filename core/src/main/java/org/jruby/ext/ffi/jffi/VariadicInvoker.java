@@ -12,6 +12,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Convert;
 import org.jruby.ext.ffi.Enums;
 import org.jruby.ext.ffi.NativeType;
 import org.jruby.ext.ffi.Pointer;
@@ -22,7 +23,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Create.newArray;
-import static org.jruby.api.Create.newSymbol;
+import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Error.typeError;
 
 @JRubyClass(name = "FFI::VariadicInvoker", parent = "Object")
@@ -82,22 +83,22 @@ public class VariadicInvoker extends RubyObject {
         boolean saveError = true;
         IRubyObject typeMap = null;
 
-        IRubyObject rbConvention = options.fastARef(newSymbol(context, "convention"));
+        IRubyObject rbConvention = options.fastARef(Convert.asSymbol(context, "convention"));
         if (rbConvention != null && !rbConvention.isNil()) {
             convention = rbConvention.asJavaString();
         }
 
-        IRubyObject rbSaveErrno = options.fastARef(newSymbol(context, "save_errno"));
+        IRubyObject rbSaveErrno = options.fastARef(Convert.asSymbol(context, "save_errno"));
         if (rbSaveErrno != null && !rbSaveErrno.isNil()) {
             saveError = rbSaveErrno.isTrue();
         }
 
-        enums = options.fastARef(newSymbol(context, "enums"));
+        enums = options.fastARef(Convert.asSymbol(context, "enums"));
         if (enums != null && !enums.isNil() && !(enums instanceof RubyHash || enums instanceof Enums)) {
             throw typeError(context, "wrong type for options[:enum] ", enums, " (expected Hash or Enums)");
         }
 
-        typeMap = options.fastARef(newSymbol(context, "type_map"));
+        typeMap = options.fastARef(Convert.asSymbol(context, "type_map"));
         if (typeMap != null && !typeMap.isNil() && !(typeMap instanceof RubyHash)) {
             throw typeError(context, "wrong type for options[:type_map] ", typeMap, " (expected Hash)");
         }

@@ -72,6 +72,7 @@ import static jnr.constants.platform.ProtocolFamily.PF_INET;
 import static jnr.constants.platform.ProtocolFamily.PF_INET6;
 import static jnr.constants.platform.Sock.SOCK_DGRAM;
 import static jnr.constants.platform.Sock.SOCK_STREAM;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.ext.socket.Addrinfo.AI_CANONNAME;
@@ -99,7 +100,7 @@ public class SocketUtils {
     public static IRubyObject gethostbyaddr(ThreadContext context, IRubyObject[] args) {
         var ret0 = newString(context, Sockaddr.addressFromString(context.runtime, args[0].convertToString().toString()).getCanonicalHostName());
         var ret1 = newArray(context);
-        var ret2 = newFixnum(context, 2); // AF_INET
+        var ret2 = asFixnum(context, 2); // AF_INET
         var ret3 = args[0];
 
         return RubyArray.newArray(context.runtime, ret0, ret1, ret2, ret3);
@@ -122,7 +123,7 @@ public class SocketUtils {
             }
         }
 
-        return newFixnum(context, port);
+        return asFixnum(context, port);
     }
 
     @Deprecated
@@ -148,7 +149,7 @@ public class SocketUtils {
             return RubyArray.newArray(context.runtime,
                     newString(context, addr.getCanonicalHostName()),
                     newArray(context),
-                    newFixnum(context, AF_INET.longValue()),
+                    asFixnum(context, AF_INET.longValue()),
                     newString(context, new ByteList(addr.getAddress())));
         } catch(UnknownHostException e) {
             throw sockerr(context.runtime, "gethostbyname: name or service not known");
@@ -180,23 +181,23 @@ public class SocketUtils {
             if (sock_dgram) {
                 list.add(RubyArray.newArrayMayCopy(context.runtime,
                         newString(context, is_ipv6 ? "AF_INET6" : "AF_INET"),
-                        newFixnum(context, port),
+                        asFixnum(context, port),
                         newString(context, getHostAddress(context, address, reverse)),
                         newString(context, address.getHostAddress()),
-                        newFixnum(context, is_ipv6 ? PF_INET6.longValue() : PF_INET.longValue()),
-                        newFixnum(context, SOCK_DGRAM.longValue()),
-                        newFixnum(context, IPPROTO_UDP.longValue())));
+                        asFixnum(context, is_ipv6 ? PF_INET6.longValue() : PF_INET.longValue()),
+                        asFixnum(context, SOCK_DGRAM.longValue()),
+                        asFixnum(context, IPPROTO_UDP.longValue())));
             }
 
             if (sock_stream) {
                 list.add(RubyArray.newArrayMayCopy(context.runtime,
                         newString(context, is_ipv6 ? "AF_INET6" : "AF_INET"),
-                        newFixnum(context, port),
+                        asFixnum(context, port),
                         newString(context, getHostAddress(context, address, reverse)),
                         newString(context, address.getHostAddress()),
-                        newFixnum(context, is_ipv6 ? PF_INET6.longValue() : PF_INET.longValue()),
-                        newFixnum(context, SOCK_STREAM.longValue()),
-                        newFixnum(context, IPPROTO_TCP.longValue())));
+                        asFixnum(context, is_ipv6 ? PF_INET6.longValue() : PF_INET.longValue()),
+                        asFixnum(context, SOCK_STREAM.longValue()),
+                        asFixnum(context, IPPROTO_TCP.longValue())));
             }
         });
 

@@ -7,6 +7,7 @@ import org.jruby.RubyBinding;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
+import org.jruby.api.Convert;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -19,6 +20,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
 
 public class TraceEventManager {
@@ -164,7 +166,7 @@ public class TraceEventManager {
 
         EventHook[] newHooks = new EventHook[hooks.size()];
         eventHooks = hooks.toArray(newHooks);
-        if (hooks.size() == 0) {
+        if (hooks.isEmpty()) {
             hasEventHooks = false;
 
             disableTraceSites();
@@ -239,8 +241,8 @@ public class TraceEventManager {
                 traceFunc.call(context, new IRubyObject[]{
                         newString(context, eventName), // event name
                         newString(context, file), // filename
-                        newFixnum(context, line), // line numbers should be 1-based
-                        name != null ? newSymbol(context, name) : context.nil,
+                        asFixnum(context, line), // line numbers should be 1-based
+                        name != null ? Convert.asSymbol(context, name) : context.nil,
                         binding,
                         type
                 });

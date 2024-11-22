@@ -28,12 +28,14 @@ package org.jruby.util;
 
 import org.jcodings.Encoding;
 import org.jruby.*;
+import org.jruby.api.Convert;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.math.BigInteger;
 import java.util.List;
 
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
 import static org.jruby.util.StrptimeParser.FormatBag.has;
 
@@ -66,46 +68,46 @@ public class RubyDateParser {
                                            Encoding encoding) {
         final RubyHash hash = RubyHash.newHash(context.runtime);
 
-        if (has(bag.getMDay())) setHashValue(context, hash, "mday", newFixnum(context, bag.getMDay()));
-        if (has(bag.getWDay())) setHashValue(context, hash, "wday", newFixnum(context, bag.getWDay()));
-        if (has(bag.getCWDay())) setHashValue(context, hash, "cwday", newFixnum(context, bag.getCWDay()));
-        if (has(bag.getYDay())) setHashValue(context, hash, "yday", newFixnum(context, bag.getYDay()));
-        if (has(bag.getCWeek())) setHashValue(context, hash, "cweek", newFixnum(context, bag.getCWeek()));
+        if (has(bag.getMDay())) setHashValue(context, hash, "mday", asFixnum(context, bag.getMDay()));
+        if (has(bag.getWDay())) setHashValue(context, hash, "wday", asFixnum(context, bag.getWDay()));
+        if (has(bag.getCWDay())) setHashValue(context, hash, "cwday", asFixnum(context, bag.getCWDay()));
+        if (has(bag.getYDay())) setHashValue(context, hash, "yday", asFixnum(context, bag.getYDay()));
+        if (has(bag.getCWeek())) setHashValue(context, hash, "cweek", asFixnum(context, bag.getCWeek()));
         if (has(bag.getCWYear())) setHashValue(context, hash, "cwyear", RubyBignum.newBignum(context.runtime, bag.getCWYear()));
-        if (has(bag.getMin())) setHashValue(context, hash, "min", newFixnum(context, bag.getMin()));
-        if (has(bag.getMon())) setHashValue(context, hash, "mon", newFixnum(context, bag.getMon()));
-        if (has(bag.getHour())) setHashValue(context, hash, "hour", newFixnum(context, bag.getHour()));
+        if (has(bag.getMin())) setHashValue(context, hash, "min", asFixnum(context, bag.getMin()));
+        if (has(bag.getMon())) setHashValue(context, hash, "mon", asFixnum(context, bag.getMon()));
+        if (has(bag.getHour())) setHashValue(context, hash, "hour", asFixnum(context, bag.getHour()));
         if (has(bag.getYear())) setHashValue(context, hash, "year", RubyBignum.newBignum(context.runtime, bag.getYear()));
-        if (has(bag.getSec())) setHashValue(context, hash, "sec", newFixnum(context, bag.getSec()));
-        if (has(bag.getWNum0())) setHashValue(context, hash, "wnum0", newFixnum(context, bag.getWNum0()));
-        if (has(bag.getWNum1())) setHashValue(context, hash, "wnum1", newFixnum(context, bag.getWNum1()));
+        if (has(bag.getSec())) setHashValue(context, hash, "sec", asFixnum(context, bag.getSec()));
+        if (has(bag.getWNum0())) setHashValue(context, hash, "wnum0", asFixnum(context, bag.getWNum0()));
+        if (has(bag.getWNum1())) setHashValue(context, hash, "wnum1", asFixnum(context, bag.getWNum1()));
 
         if (bag.getZone() != null) {
             final RubyString zone = RubyString.newString(context.runtime, bag.getZone(), encoding);
 
             setHashValue(context, hash, "zone", zone);
             int offset = TimeZoneConverter.dateZoneToDiff(bag.getZone());
-            if (offset != TimeZoneConverter.INVALID_ZONE) setHashValue(context, hash, "offset", newFixnum(context, offset));
+            if (offset != TimeZoneConverter.INVALID_ZONE) setHashValue(context, hash, "offset", asFixnum(context, offset));
         }
 
         if (has(bag.getSecFraction())) {
             final RubyInteger secFraction = toRubyInteger(context, bag.getSecFraction());
-            final RubyFixnum secFractionSize = newFixnum(context, (long) Math.pow(10, bag.getSecFractionSize()));
+            final RubyFixnum secFractionSize = asFixnum(context, (long) Math.pow(10, bag.getSecFractionSize()));
             setHashValue(context, hash, "sec_fraction",
                     RubyRational.newRationalCanonicalize(context, secFraction, secFractionSize));
         }
 
-        if (bag.has(bag.getSeconds())) {
+        if (has(bag.getSeconds())) {
             if (has(bag.getSecondsSize())) {
                 final RubyInteger seconds = toRubyInteger(context, bag.getSeconds());
-                final RubyFixnum secondsSize = newFixnum(context, (long) Math.pow(10, bag.getSecondsSize()));
+                final RubyFixnum secondsSize = asFixnum(context, (long) Math.pow(10, bag.getSecondsSize()));
                 setHashValue(context, hash, "seconds", RubyRational.newRationalCanonicalize(context, seconds, secondsSize));
             } else {
                 setHashValue(context, hash, "seconds", toRubyInteger(context, bag.getSeconds()));
             }
         }
         if (has(bag.getMerid())) {
-            setHashValue(context, hash, "_merid", newFixnum(context, bag.getMerid()));
+            setHashValue(context, hash, "_merid", asFixnum(context, bag.getMerid()));
         }
         if (has(bag.getCent())) {
             setHashValue(context, hash, "_cent", RubyBignum.newBignum(context.runtime, bag.getCent()));
@@ -122,11 +124,11 @@ public class RubyDateParser {
     private static RubyInteger toRubyInteger(ThreadContext context, final Number i) {
         return i instanceof BigInteger bigint ?
                 RubyBignum.newBignum(context.runtime, bigint) :
-                newFixnum(context, i.longValue());
+                asFixnum(context, i.longValue());
     }
 
     private static void setHashValue(final ThreadContext context, final RubyHash hash, final String key, final IRubyObject value) {
-        hash.fastASet(newSymbol(context, key), value);
+        hash.fastASet(Convert.asSymbol(context, key), value);
     }
 
 }

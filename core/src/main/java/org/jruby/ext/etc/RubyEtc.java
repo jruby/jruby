@@ -14,6 +14,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyHash;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.api.Convert;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import jnr.posix.Passwd;
@@ -77,15 +78,15 @@ public class RubyEtc {
         if (!Platform.IS_WINDOWS) {
             for (Constant c : ConstantSet.getConstantSet("Sysconf")) {
                 String name = c.name().substring(1); // leading "_"
-                etcModule.setConstant(name, newFixnum(context, c.intValue()));
+                etcModule.setConstant(name, asFixnum(context, c.intValue()));
             }
             for (Constant c : ConstantSet.getConstantSet("Confstr")) {
                 String name = c.name().substring(1); // leading "_"
-                etcModule.setConstant(name, newFixnum(context, c.intValue()));
+                etcModule.setConstant(name, asFixnum(context, c.intValue()));
             }
             for (Constant c : ConstantSet.getConstantSet("Pathconf")) {
                 String name = c.name().substring(1); // leading "_"
-                etcModule.setConstant(name, newFixnum(context, c.intValue()));
+                etcModule.setConstant(name, asFixnum(context, c.intValue()));
             }
         }
         
@@ -131,14 +132,14 @@ public class RubyEtc {
         IRubyObject[] args = new IRubyObject[] {
                 newString(context, passwd.getLoginName()),
                 newString(context, passwd.getPassword()),
-                newFixnum(context, passwd.getUID()),
-                newFixnum(context, passwd.getGID()),
+                asFixnum(context, passwd.getUID()),
+                asFixnum(context, passwd.getGID()),
                 newString(context, passwd.getGECOS()),
                 newString(context, passwd.getHome()),
                 newString(context, passwd.getShell()),
-                newFixnum(context, passwd.getPasswdChangeTime()),
+                asFixnum(context, passwd.getPasswdChangeTime()),
                 newString(context, passwd.getAccessClass()),
-                newFixnum(context, passwd.getExpire())
+                asFixnum(context, passwd.getExpire())
 
         };
         
@@ -563,7 +564,7 @@ public class RubyEtc {
     @JRubyMethod(module = true)
     public static synchronized IRubyObject nprocessors(ThreadContext context, IRubyObject recv) {
         int nprocs = Runtime.getRuntime().availableProcessors();
-        return newFixnum(context, nprocs);
+        return asFixnum(context, nprocs);
     }
 
     @JRubyMethod(module = true)
@@ -571,20 +572,20 @@ public class RubyEtc {
         RubyHash uname = RubyHash.newHash(context.runtime);
 
         uname.op_aset(context,
-                newSymbol(context, "sysname"),
+                Convert.asSymbol(context, "sysname"),
                 newString(context, SafePropertyAccessor.getProperty("os.name", "unknown")));
         try {
             uname.op_aset(context,
-                    newSymbol(context, "nodename"),
+                    Convert.asSymbol(context, "nodename"),
                     newString(context, InetAddress.getLocalHost().getHostName()));
         } catch (UnknownHostException uhe) {
             uname.op_aset(context,
-                    newSymbol(context, "nodename"),
+                    Convert.asSymbol(context, "nodename"),
                     newString(context, "unknown"));
         }
-        uname.put(newSymbol(context, "release"), newString(context, "unknown"));
-        uname.put(newSymbol(context, "version"), newString(context, SafePropertyAccessor.getProperty("os.version")));
-        uname.put(newSymbol(context, "machine"), newString(context, SafePropertyAccessor.getProperty("os.arch")));
+        uname.put(Convert.asSymbol(context, "release"), newString(context, "unknown"));
+        uname.put(Convert.asSymbol(context, "version"), newString(context, SafePropertyAccessor.getProperty("os.version")));
+        uname.put(Convert.asSymbol(context, "machine"), newString(context, SafePropertyAccessor.getProperty("os.arch")));
 
         return uname;
     }

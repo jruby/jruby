@@ -71,6 +71,7 @@ import org.jruby.util.io.FilenoUtil;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.STDIO;
 
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.*;
@@ -138,7 +139,7 @@ public class RubyGlobal {
         IRubyObject platform = RubyString.newFString(runtime, Constants.PLATFORM);
         IRubyObject engine = RubyString.newFString(runtime, Constants.ENGINE);
         IRubyObject version = RubyString.newFString(runtime, Constants.RUBY_VERSION);
-        IRubyObject patchlevel = newFixnum(context, 0);
+        IRubyObject patchlevel = asFixnum(context, 0);
 
         runtime.defineGlobalConstant("RUBY_VERSION", version);
         runtime.defineGlobalConstant("RUBY_PATCHLEVEL", patchlevel);
@@ -163,7 +164,7 @@ public class RubyGlobal {
         runtime.defineGlobalConstant("RUBY_ENGINE_VERSION", jrubyVersion);
 
         RubyInstanceConfig.Verbosity verbosity = runtime.getInstanceConfig().getVerbosity();
-        runtime.defineVariable(new WarningGlobalVariable(runtime, "$-W", verbosity), GLOBAL);
+        runtime.defineVariable(new WarningGlobalVariable(context, "$-W", verbosity), GLOBAL);
 
         IRubyObject defaultRS = RubyString.newFString(runtime, runtime.getInstanceConfig().getRecordSeparator());
         GlobalVariable rs = new StringGlobalVariable(runtime, "$/", defaultRS);
@@ -1104,12 +1105,12 @@ public class RubyGlobal {
     }
 
     private static class WarningGlobalVariable extends ReadonlyGlobalVariable {
-        public WarningGlobalVariable(Ruby runtime, String name, RubyInstanceConfig.Verbosity verbosity) {
-            super(runtime, name,
-                    verbosity == RubyInstanceConfig.Verbosity.NIL   ? RubyFixnum.newFixnum(runtime, 0) :
-                    verbosity == RubyInstanceConfig.Verbosity.FALSE ? RubyFixnum.newFixnum(runtime, 1) :
-                    verbosity == RubyInstanceConfig.Verbosity.TRUE  ? RubyFixnum.newFixnum(runtime, 2) :
-                    runtime.getNil()
+        public WarningGlobalVariable(ThreadContext context, String name, RubyInstanceConfig.Verbosity verbosity) {
+            super(context.runtime, name,
+                    verbosity == RubyInstanceConfig.Verbosity.NIL   ? asFixnum(context, 0) :
+                    verbosity == RubyInstanceConfig.Verbosity.FALSE ? asFixnum(context, 1) :
+                    verbosity == RubyInstanceConfig.Verbosity.TRUE  ? asFixnum(context, 2) :
+                    context.nil
                     );
         }
     }

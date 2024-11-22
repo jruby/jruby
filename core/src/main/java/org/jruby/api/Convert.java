@@ -18,6 +18,7 @@ import org.jruby.RubySymbol;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 import static org.jruby.RubyBignum.big2long;
 import static org.jruby.RubyNumeric.num2long;
@@ -36,7 +37,7 @@ import static org.jruby.util.TypeConverter.sites;
  * it to one.
  *
  * Methods where the parameter to `As` methods will omit the type from in front of as.  For example,
- * `longAsInteger` will be `asInteger(context, long)`.
+ * `longAsInteger` will be `asInteger(context, long)`.a
  */
 public class Convert {
     /**
@@ -432,5 +433,27 @@ public class Convert {
     public static long numericToLong(ThreadContext context, IRubyObject arg) {
         // FIXME: Move this logic out of numeric and into a place which accepts and uses context.
         return num2long(arg);
+    }
+
+    /**
+     * Creates a new RubySymbol from the provided java String.
+     *
+     * @param context the current thread context
+     * @param string the contents to become a symbol
+     * @return the new RubyString
+     */
+    public static RubySymbol asSymbol(ThreadContext context, String string) {
+        return context.runtime.newSymbol(string);
+    }
+
+    /**
+     * Creates a new RubySymbol from the provided java String.
+     *
+     * @param context the current thread context
+     * @param bytelist the contents to become a symbol
+     * @return the new RubyString
+     */
+    public static RubySymbol asSymbol(ThreadContext context, ByteList bytelist) {
+        return context.runtime.newSymbol(bytelist);
     }
 }

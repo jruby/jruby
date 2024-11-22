@@ -2,7 +2,6 @@ package org.jruby.runtime.callsite;
 
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
-import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -18,6 +17,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asFloat;
 
 /*
  * Note: I originally had a totalType changes thinking that we did not want to churn through
@@ -86,12 +88,12 @@ public class ProfilingCachingCallSite extends CachingCallSite {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, long fixnum) {
-        return call(context, caller, self, RubyFixnum.newFixnum(context.runtime, fixnum));
+        return call(context, caller, self, asFixnum(context, fixnum));
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, double flote) {
-        return call(context, caller, self, RubyFloat.newFloat(context.runtime, flote));
+        return call(context, caller, self, asFloat(context, flote));
     }
 
     @Override

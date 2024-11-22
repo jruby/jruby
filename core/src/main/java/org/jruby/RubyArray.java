@@ -95,7 +95,6 @@ import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyEnumerator.enumWithSize;
 import static org.jruby.api.Convert.*;
-import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.*;
@@ -726,7 +725,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                 }
             } else {
                 for (int i = 0; i < ilen; i++) {
-                    storeInternal(context, i, block.yield(context, newFixnum(context, i)));
+                    storeInternal(context, i, block.yield(context, asFixnum(context, i)));
                     realLength = i + 1;
                 }
             }
@@ -860,7 +859,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
-        return RubyFixnum.newFixnum(context.runtime, hashImpl(context));
+        return asFixnum(context, hashImpl(context));
     }
 
     private long hashImpl(final ThreadContext context) {
@@ -2689,7 +2688,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (rVal == -1) {
             return context.nil;
         } else {
-            return RubyFixnum.newFixnum(context.runtime, rVal);
+            return asFixnum(context, rVal);
         }
     }
 
@@ -3601,9 +3600,9 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             for (int i = 0; i < realLength; i++) {
                 if (block.yield(context, elt(i)).isTrue()) n++;
             }
-            return RubyFixnum.newFixnum(context.runtime, n);
+            return asFixnum(context, n);
         } else {
-            return RubyFixnum.newFixnum(context.runtime, realLength);
+            return asFixnum(context, realLength);
         }
     }
 
@@ -3615,7 +3614,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         for (int i = 0; i < realLength; i++) {
             if (equalInternal(context, elt(i), obj)) n++;
         }
-        return RubyFixnum.newFixnum(context.runtime, n);
+        return asFixnum(context, n);
     }
 
     /** rb_ary_nitems
@@ -4340,28 +4339,17 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
      */
     private static IRubyObject cycleSize(ThreadContext context, RubyArray self, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-        IRubyObject n = context.nil;
+        if (self.realLength == 0) return asFixnum(context, 0);
 
-        if (self.realLength == 0) {
-            return RubyFixnum.zero(runtime);
-        }
+        IRubyObject n = args != null && args.length > 0 ? args[0] : context.nil;
 
-        if (args != null && args.length > 0) {
-            n = args[0];
-        }
-
-        if (n == null || n.isNil()) {
-            return RubyFloat.newFloat(runtime, RubyFloat.INFINITY);
-        }
+        if (n == null || n.isNil()) return asFloat(context, RubyFloat.INFINITY);
 
         long multiple = numericToLong(context, n);
-        if (multiple <= 0) {
-            return RubyFixnum.zero(runtime);
-        }
+        if (multiple <= 0) return asFixnum(context, 0);
 
         RubyFixnum length = self.length(context);
-        return sites(context).op_times.call(context, length, length, RubyFixnum.newFixnum(runtime, multiple));
+        return sites(context).op_times.call(context, length, length, asFixnum(context, multiple));
     }
 
 
@@ -4694,12 +4682,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     }
 
     private static IRubyObject descendingFactorial(ThreadContext context, long from, long howMany) {
-        Ruby runtime = context.runtime;
-        IRubyObject cnt = howMany >= 0 ? RubyFixnum.one(runtime) : RubyFixnum.zero(runtime);
+        IRubyObject cnt = asFixnum(context, howMany >= 0 ?  1 : 0);
         CallSite op_times = sites(context).op_times;
         while (howMany-- > 0) {
-            RubyFixnum v = RubyFixnum.newFixnum(runtime, from--);
-            cnt = op_times.call(context, cnt, cnt, v);
+            cnt = op_times.call(context, cnt, cnt, asFixnum(context, from--));
         }
         return cnt;
     }
@@ -5243,9 +5229,9 @@ fixnum_loop:
             } else if (is_rational) {
                 result = RubyRational.newRational(runtime, sum, 1);
             } else if (is_float) {
-                result = RubyFloat.newFloat(runtime, (double) sum);
+                result = asFloat(context, (double) sum);
             } else {
-                result = RubyFixnum.newFixnum(runtime, sum);
+                result = asFixnum(context, sum);
             }
         }
         if (is_bignum) {
@@ -5276,7 +5262,7 @@ bignum_loop:
             if (is_rational) {
                 result = RubyRational.newInstance(context, RubyBignum.newBignum(runtime, sum));
             } else if (is_float) {
-                result = RubyFloat.newFloat(runtime, sum.doubleValue());
+                result = asFloat(context, sum.doubleValue());
             } else {
                 result = RubyBignum.newBignum(runtime, sum);
             }
@@ -5300,7 +5286,7 @@ rational_loop:
                         throw typeError(context, "BUG: unexpected type in rational part of Array#sum");
                     }
                 } else if (value instanceof RubyFloat) {
-                    result = RubyFloat.newFloat(runtime, ((RubyRational) result).getDoubleValue(context));
+                    result = asFloat(context, ((RubyRational) result).getDoubleValue(context));
                     is_float = true;
                     break rational_loop;
                 } else {
@@ -6029,7 +6015,7 @@ float_loop:
 
         public void add(Object obj) {
             Ruby runtime = metaClass.runtime;
-            insert(new IRubyObject[] { RubyFixnum.newFixnum(runtime, index++), JavaUtil.convertJavaToUsableRubyObject(runtime, obj) });
+            insert(new IRubyObject[] { asFixnum(runtime.getCurrentContext(), index++), JavaUtil.convertJavaToUsableRubyObject(runtime, obj) });
             last = -1;
         }
     }

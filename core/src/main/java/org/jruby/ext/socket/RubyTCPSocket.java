@@ -57,6 +57,7 @@ import java.nio.channels.SocketChannel;
 
 import static jnr.constants.platform.AddressFamily.AF_INET;
 import static jnr.constants.platform.AddressFamily.AF_INET6;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
 
 public class RubyTCPSocket extends RubyIPSocket {
@@ -232,7 +233,7 @@ public class RubyTCPSocket extends RubyIPSocket {
             return RubyArray.newArray(context.runtime,
                     newString(context, do_not_reverse_lookup(context, recv).isTrue() ? addr.getHostAddress() : addr.getCanonicalHostName()),
                     newArray(context),
-                    newFixnum(context, addr instanceof Inet4Address ? AF_INET.longValue() : AF_INET6.longValue()),
+                    asFixnum(context, addr instanceof Inet4Address ? AF_INET.longValue() : AF_INET6.longValue()),
                     newString(context, addr.getHostAddress()));
         }
         catch(UnknownHostException e) {

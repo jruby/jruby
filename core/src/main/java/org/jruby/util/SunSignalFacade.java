@@ -32,7 +32,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyFixnum;
-import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 
 import org.jruby.exceptions.MainExitException;
@@ -50,8 +49,8 @@ import sun.misc.SignalHandler;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newArray;
-import static org.jruby.api.Create.newFixnum;
 
 /**
  * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>
@@ -99,7 +98,7 @@ public class SunSignalFacade implements SignalFacade {
             ThreadContext context = runtime.getCurrentContext();
             IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
             try {
-                RubyFixnum signum = newFixnum(context, signal.getNumber());
+                RubyFixnum signum = asFixnum(context, signal.getNumber());
                 if (block != null) {
                     block.callMethod(context, "call", signum);
                 } else {

@@ -36,6 +36,7 @@ import java.util.List;
 
 import org.jruby.*;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Convert;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.java.proxies.ConcreteJavaProxy;
@@ -412,8 +413,8 @@ public class JRubyUtilLibrary implements Library {
     public static IRubyObject cache_stats(ThreadContext context, IRubyObject self) {
         RubyHash stat = RubyHash.newHash(context.runtime);
         var caches = context.runtime.getCaches();
-        stat.op_aset(context, newSymbol(context, "method_invalidation_count"), asFixnum(context, caches.getMethodInvalidationCount()));
-        stat.op_aset(context, newSymbol(context, "constant_invalidation_count"), asFixnum(context, caches.getConstantInvalidationCount()));
+        stat.op_aset(context, Convert.asSymbol(context, "method_invalidation_count"), asFixnum(context, caches.getMethodInvalidationCount()));
+        stat.op_aset(context, Convert.asSymbol(context, "constant_invalidation_count"), asFixnum(context, caches.getConstantInvalidationCount()));
 
         return stat;
     }

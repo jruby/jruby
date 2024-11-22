@@ -162,11 +162,11 @@ public class RubyRational extends RubyNumeric {
      * 
      */
     private static RubyRational newRationalBang(ThreadContext context, RubyClass clazz, IRubyObject x) {
-        return newRationalBang(context, clazz, x, RubyFixnum.one(context.runtime));
+        return newRationalBang(context, clazz, x, asFixnum(context, 1));
     }
 
     private static RubyRational newRationalBang(ThreadContext context, RubyClass clazz, long x) {
-        return newRationalBang(context, clazz, RubyFixnum.newFixnum(context.runtime, x), RubyFixnum.one(context.runtime));
+        return newRationalBang(context, clazz, asFixnum(context, x), asFixnum(context, 1));
     }
 
     @Override
@@ -615,22 +615,14 @@ public class RubyRational extends RubyNumeric {
      * 
      */
     private static RubyInteger f_imul(ThreadContext context, long a, long b) {
-        Ruby runtime = context.runtime;
-        if (a == 0 || b == 0) {
-            return RubyFixnum.zero(runtime);
-        }
-        if (a == 1) {
-            return RubyFixnum.newFixnum(runtime, b);
-        }
-        if (b == 1) {
-            return RubyFixnum.newFixnum(runtime, a);
-        }
+        if (a == 0 || b == 0) return asFixnum(context, 0);
+        if (a == 1) return asFixnum(context, b);
+        if (b == 1) return asFixnum(context, a);
 
         long c = a * b;
-        if (c / a != b) {
-            return (RubyInteger) RubyBignum.newBignum(runtime, a).op_mul(context, b);
-        }
-        return RubyFixnum.newFixnum(runtime, c);
+        return c / a != b ?
+                (RubyInteger) RubyBignum.newBignum(context.runtime, a).op_mul(context, b) :
+                asFixnum(context, c);
     }
     
     /** f_addsub
@@ -642,13 +634,13 @@ public class RubyRational extends RubyNumeric {
         RubyInteger newNum, newDen, g, a, b;
         if (anum instanceof RubyFixnum && aden instanceof RubyFixnum &&
             bnum instanceof RubyFixnum && bden instanceof RubyFixnum) {
-            long an = ((RubyFixnum)anum).getLongValue();
-            long ad = ((RubyFixnum)aden).getLongValue();
-            long bn = ((RubyFixnum)bnum).getLongValue();
-            long bd = ((RubyFixnum)bden).getLongValue();
+            long an = anum.getLongValue();
+            long ad = aden.getLongValue();
+            long bn = bnum.getLongValue();
+            long bd = bden.getLongValue();
             long ig = i_gcd(ad, bd);
 
-            g = RubyFixnum.newFixnum(context.runtime, ig);
+            g = asFixnum(context, ig);
             a = f_imul(context, an, bd / ig);
             b = f_imul(context, bn, ad / ig);
         } else {
@@ -884,17 +876,11 @@ public class RubyRational extends RubyNumeric {
     }
 
     public final IRubyObject op_expt(ThreadContext context, long other) {
-        Ruby runtime = context.runtime;
-
-        if (other == 0) {
-            return RubyRational.newRationalBang(context, getMetaClass(), 1);
-        }
+        if (other == 0) return RubyRational.newRationalBang(context, getMetaClass(), 1);
 
         // Deal with special cases of 0**n and 1**n
         if (den.isOne()) {
-            if (num.isOne()) {
-                return RubyRational.newRationalBang(context, getMetaClass(), 1);
-            }
+            if (num.isOne()) return RubyRational.newRationalBang(context, getMetaClass(), 1);
             if (f_minus_one_p(context, num)) {
                 return RubyRational.newRationalBang(context, getMetaClass(), other % 2 != 0 ? -1 : 1);
             }
@@ -905,7 +891,7 @@ public class RubyRational extends RubyNumeric {
         }
 
         // General case
-        return fix_expt(context, RubyFixnum.newFixnum(runtime, other), Long.signum(other));
+        return fix_expt(context, asFixnum(context, other), Long.signum(other));
     }
 
     private RubyNumeric fix_expt(ThreadContext context, RubyInteger other, final int sign) {
@@ -1228,27 +1214,19 @@ public class RubyRational extends RubyNumeric {
 
     // MRI: nurat_round_half_even
     private RubyInteger roundHalfEven(ThreadContext context) {
-
-        RubyInteger num = this.num, den = this.den;
-        RubyArray qr;
-
+        var num = this.num;
+        var den = this.den;
         final boolean neg = num.isNegative();
 
-        if (neg) {
-            num = (RubyInteger) num.op_uminus(context);
-        }
+        if (neg) num = (RubyInteger) num.op_uminus(context);
 
         num = (RubyInteger) ((RubyInteger) num.op_mul(context, 2)).op_plus(context, den);
         den = (RubyInteger) den.op_mul(context, 2);
-        qr = (RubyArray) num.divmod(context, den);
+        var qr = (RubyArray<?>) num.divmod(context, den);
         num = (RubyInteger) qr.eltOk(0);
-        if (((RubyInteger) qr.eltOk(1)).isZero()) {
-            num = (RubyInteger) num.op_and(context, RubyFixnum.newFixnum(context.runtime, ~1L));
-        }
 
-        if (neg) {
-            num = (RubyInteger) num.op_uminus(context);
-        }
+        if (((RubyInteger) qr.eltOk(1)).isZero()) num = (RubyInteger) num.op_and(context, asFixnum(context, ~1L));
+        if (neg) num = (RubyInteger) num.op_uminus(context);
 
         return num;
     }
@@ -1501,16 +1479,14 @@ public class RubyRational extends RubyNumeric {
     static IRubyObject[] str_to_r_internal(final ThreadContext context, final RubyString str, boolean raise) {
         str.verifyAsciiCompatible();
 
-        final Ruby runtime = context.runtime;
         final IRubyObject nil = context.nil;
-
         ByteList bytes = str.getByteList();
 
         if (bytes.getRealSize() == 0) return new IRubyObject[] { nil, str };
 
-        IRubyObject m = context.nil;
+        IRubyObject m;
         try {
-            m = RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.rat_pat).match_m(context, str, false);
+            m = RubyRegexp.newDummyRegexp(context.runtime, Numeric.RationalPatterns.rat_pat).match_m(context, str, false);
         } catch(RaiseException re) {
             context.setErrorInfo(context.nil);
             return new IRubyObject[]{context.nil};
@@ -1522,7 +1498,7 @@ public class RubyRational extends RubyNumeric {
             IRubyObject de = match.at(3);
             IRubyObject re = match.post_match(context);
             
-            RubyArray a = nu.split(context, RubyRegexp.newDummyRegexp(runtime, Numeric.RationalPatterns.an_e_pat));
+            var a = nu.split(context, RubyRegexp.newDummyRegexp(context.runtime, Numeric.RationalPatterns.an_e_pat));
             RubyString ifp = (RubyString)a.eltInternal(0);
             IRubyObject exp = a.size() != 2 ? nil : a.eltInternal(1);
             
@@ -1544,7 +1520,7 @@ public class RubyRational extends RubyNumeric {
                     i++;
                 }
 
-                RubyInteger l = (RubyInteger) RubyFixnum.newFixnum(runtime, 10).op_pow(context, count);
+                RubyInteger l = (RubyInteger) asFixnum(context, 10).op_pow(context, count);
                 v = f_mul(context, v, l);
                 v = f_add(context, v, f_to_i(context, fp));
                 v = f_div(context, v, l);
@@ -1552,17 +1528,17 @@ public class RubyRational extends RubyNumeric {
 
             if (si != nil) {
                 ByteList siBytes = si.convertToString().getByteList();
-                if (siBytes.length() > 0 && siBytes.get(0) == '-') v = f_negate(context, v); 
+                if (!siBytes.isEmpty() && siBytes.get(0) == '-') v = f_negate(context, v);
             }
 
             if (exp != nil) {
                 IRubyObject denExp = (RubyInteger) f_to_i(context, exp);
                 if (denExp instanceof RubyFixnum) {
-                    v = f_mul(context, v, f_expt(context, RubyFixnum.newFixnum(runtime, 10), denExp));
+                    v = f_mul(context, v, f_expt(context, asFixnum(context, 10), denExp));
                 } else if (f_negative_p(context, denExp)) {
-                    v = dbl2num(runtime, 0.0);
+                    v = asFloat(context, 0.0);
                 } else {
-                    v = dbl2num(runtime, Double.POSITIVE_INFINITY);
+                    v = asFloat(context, Double.POSITIVE_INFINITY);
                 }
             }
 

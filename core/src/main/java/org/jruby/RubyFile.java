@@ -45,6 +45,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.API;
+import org.jruby.api.Create;
 import org.jruby.exceptions.NotImplementedError;
 import org.jruby.runtime.*;
 import org.jruby.runtime.JavaSites.FileSites;
@@ -138,17 +139,17 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         // open flags
         /* open for reading only */
-        constants.setConstant("RDONLY", newFixnum(context, OpenFlags.O_RDONLY.intValue()));
+        constants.setConstant("RDONLY", asFixnum(context, OpenFlags.O_RDONLY.intValue()));
         /* open for writing only */
-        constants.setConstant("WRONLY", newFixnum(context, OpenFlags.O_WRONLY.intValue()));
+        constants.setConstant("WRONLY", asFixnum(context, OpenFlags.O_WRONLY.intValue()));
         /* open for reading and writing */
-        constants.setConstant("RDWR", newFixnum(context, OpenFlags.O_RDWR.intValue()));
+        constants.setConstant("RDWR", asFixnum(context, OpenFlags.O_RDWR.intValue()));
         /* append on each write */
-        constants.setConstant("APPEND", newFixnum(context, OpenFlags.O_APPEND.intValue()));
+        constants.setConstant("APPEND", asFixnum(context, OpenFlags.O_APPEND.intValue()));
         /* create file if it does not exist */
-        constants.setConstant("CREAT", newFixnum(context, OpenFlags.O_CREAT.intValue()));
+        constants.setConstant("CREAT", asFixnum(context, OpenFlags.O_CREAT.intValue()));
         /* error if CREAT and the file exists */
-        constants.setConstant("EXCL", newFixnum(context, OpenFlags.O_EXCL.intValue()));
+        constants.setConstant("EXCL", asFixnum(context, OpenFlags.O_EXCL.intValue()));
         if (    // O_NDELAY not defined in OpenFlags
                 //OpenFlags.O_NDELAY.defined() ||
                 OpenFlags.O_NONBLOCK.defined()) {
@@ -156,71 +157,71 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 //                #   define O_NONBLOCK O_NDELAY
             }
             /* do not block on open or for data to become available */
-            constants.setConstant("NONBLOCK", newFixnum(context, OpenFlags.O_NONBLOCK.intValue()));
+            constants.setConstant("NONBLOCK", asFixnum(context, OpenFlags.O_NONBLOCK.intValue()));
         } else if (Platform.IS_WINDOWS) {
             // FIXME: Should NONBLOCK exist for Windows fcntl flags?
-            constants.setConstant("NONBLOCK", newFixnum(context, 1));
+            constants.setConstant("NONBLOCK", asFixnum(context, 1));
         }
         /* truncate size to 0 */
-        constants.setConstant("TRUNC", newFixnum(context, OpenFlags.O_TRUNC.intValue()));
+        constants.setConstant("TRUNC", asFixnum(context, OpenFlags.O_TRUNC.intValue()));
         // FIXME: NOCTTY is showing up as undefined on Linux, but it should be defined.
 //        if (OpenFlags.O_NOCTTY.defined()) {
             /* not to make opened IO the controlling terminal device */
-            constants.setConstant("NOCTTY", newFixnum(context, OpenFlags.O_NOCTTY.intValue()));
+            constants.setConstant("NOCTTY", asFixnum(context, OpenFlags.O_NOCTTY.intValue()));
 //        }
         if (!OpenFlags.O_BINARY.defined()) {
-            constants.setConstant("BINARY", newFixnum(context, 0));
+            constants.setConstant("BINARY", asFixnum(context, 0));
         } else {
             /* disable line code conversion */
-            constants.setConstant("BINARY", newFixnum(context, OpenFlags.O_BINARY.intValue()));
+            constants.setConstant("BINARY", asFixnum(context, OpenFlags.O_BINARY.intValue()));
         }
 
-        constants.setConstant("SHARE_DELETE", newFixnum(context, ModeFlags.SHARE_DELETE));
+        constants.setConstant("SHARE_DELETE", asFixnum(context, ModeFlags.SHARE_DELETE));
 
         if (OpenFlags.O_SYNC.defined()) {
             /* any write operation perform synchronously */
-            constants.setConstant("SYNC", newFixnum(context, OpenFlags.O_SYNC.intValue()));
+            constants.setConstant("SYNC", asFixnum(context, OpenFlags.O_SYNC.intValue()));
         }
         // O_DSYNC and O_RSYNC are not in OpenFlags
 //        #ifdef O_DSYNC
 //        /* any write operation perform synchronously except some meta data */
-//        constants.setConstant("DSYNC", newFixnum(context, OpenFlags.O_DSYNC.intValue()));
+//        constants.setConstant("DSYNC", asFixnum(context, OpenFlags.O_DSYNC.intValue()));
 //        #endif
 //        #ifdef O_RSYNC
 //        /* any read operation perform synchronously. used with SYNC or DSYNC. */
-//        constants.setConstant("RSYNC", newFixnum(context, OpenFlags.O_RSYNC.intValue()));
+//        constants.setConstant("RSYNC", asFixnum(context, OpenFlags.O_RSYNC.intValue()));
 //        #endif
         if (OpenFlags.O_NOFOLLOW.defined()) {
             /* do not follow symlinks */
-            constants.setConstant("NOFOLLOW", newFixnum(context, OpenFlags.O_NOFOLLOW.intValue()));     /* FreeBSD, Linux */
+            constants.setConstant("NOFOLLOW", asFixnum(context, OpenFlags.O_NOFOLLOW.intValue()));     /* FreeBSD, Linux */
         }
         // O_NOATIME and O_DIRECT are not in OpenFlags
 //        #ifdef O_NOATIME
 //        /* do not change atime */
-//        constants.setConstant("NOATIME", newFixnum(context, OpenFlags.O_NOATIME.intValue()));     /* Linux */
+//        constants.setConstant("NOATIME", asFixnum(context, OpenFlags.O_NOATIME.intValue()));     /* Linux */
 //        #endif
 //        #ifdef O_DIRECT
 //        /*  Try to minimize cache effects of the I/O to and from this file. */
-//        constants.setConstant("DIRECT", newFixnum(context, OpenFlags.O_DIRECT.intValue()));
+//        constants.setConstant("DIRECT", asFixnum(context, OpenFlags.O_DIRECT.intValue()));
 //        #endif
         if (OpenFlags.O_TMPFILE.defined()) {
             /* Create an unnamed temporary file */
-            constants.setConstant("TMPFILE", newFixnum(context, OpenFlags.O_TMPFILE.intValue()));
+            constants.setConstant("TMPFILE", asFixnum(context, OpenFlags.O_TMPFILE.intValue()));
         }
 
         // case handling, escaping, path and dot matching
-        constants.setConstant("FNM_NOESCAPE", newFixnum(context, FNM_NOESCAPE));
-        constants.setConstant("FNM_CASEFOLD", newFixnum(context, FNM_CASEFOLD));
-        constants.setConstant("FNM_SYSCASE", newFixnum(context, FNM_SYSCASE));
-        constants.setConstant("FNM_DOTMATCH", newFixnum(context, FNM_DOTMATCH));
-        constants.setConstant("FNM_PATHNAME", newFixnum(context, FNM_PATHNAME));
-        constants.setConstant("FNM_EXTGLOB", newFixnum(context, FNM_EXTGLOB));
+        constants.setConstant("FNM_NOESCAPE", asFixnum(context, FNM_NOESCAPE));
+        constants.setConstant("FNM_CASEFOLD", asFixnum(context, FNM_CASEFOLD));
+        constants.setConstant("FNM_SYSCASE", asFixnum(context, FNM_SYSCASE));
+        constants.setConstant("FNM_DOTMATCH", asFixnum(context, FNM_DOTMATCH));
+        constants.setConstant("FNM_PATHNAME", asFixnum(context, FNM_PATHNAME));
+        constants.setConstant("FNM_EXTGLOB", asFixnum(context, FNM_EXTGLOB));
 
         // flock operations
-        constants.setConstant("LOCK_SH", newFixnum(context, RubyFile.LOCK_SH));
-        constants.setConstant("LOCK_EX", newFixnum(context, RubyFile.LOCK_EX));
-        constants.setConstant("LOCK_NB", newFixnum(context, RubyFile.LOCK_NB));
-        constants.setConstant("LOCK_UN", newFixnum(context, RubyFile.LOCK_UN));
+        constants.setConstant("LOCK_SH", asFixnum(context, RubyFile.LOCK_SH));
+        constants.setConstant("LOCK_EX", asFixnum(context, RubyFile.LOCK_EX));
+        constants.setConstant("LOCK_NB", asFixnum(context, RubyFile.LOCK_NB));
+        constants.setConstant("LOCK_UN", asFixnum(context, RubyFile.LOCK_UN));
 
         // NULL device
         constants.setConstant("NULL", newString(context, getNullDevice()));
@@ -1397,7 +1398,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     // rb_file_size but not using stat
     @JRubyMethod
     public IRubyObject size(ThreadContext context) {
-        return newFixnum(context, getSize(context));
+        return asFixnum(context, getSize(context));
     }
 
     final long getSize(ThreadContext context) {

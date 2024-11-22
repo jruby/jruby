@@ -8,6 +8,7 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Create;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
@@ -25,8 +26,7 @@ import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
 
-import static org.jruby.api.Convert.asBoolean;
-import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
@@ -47,8 +47,8 @@ public class RubyIOBuffer extends RubyObject {
 
         RubyClass IO = runtime.getIO();
 
-        IO.setConstant("READABLE", newFixnum(context, OpenFile.READABLE));
-        IO.setConstant("WRITABLE", newFixnum(context, OpenFile.WRITABLE));
+        IO.setConstant("READABLE", asFixnum(context, OpenFile.READABLE));
+        IO.setConstant("WRITABLE", asFixnum(context, OpenFile.WRITABLE));
 
         return IOBuffer;
     }
@@ -845,7 +845,7 @@ public class RubyIOBuffer extends RubyObject {
             }
         }
 
-        return RubyFixnum.newFixnum(context.runtime, getDataType(dataType).type.size());
+        return asFixnum(context, getDataType(dataType).type.size());
     }
 
     private boolean isBigEndian() {
@@ -999,7 +999,7 @@ public class RubyIOBuffer extends RubyObject {
     }
 
     private static IRubyObject wrap(ThreadContext context, long value) {
-        return newFixnum(context, value);
+        return asFixnum(context, value);
     }
 
     private static IRubyObject wrap(ThreadContext context, BigInteger value) {
@@ -1007,7 +1007,7 @@ public class RubyIOBuffer extends RubyObject {
     }
 
     private static IRubyObject wrap(ThreadContext context, double value) {
-        return newFloat(context, value);
+        return asFloat(context, value);
     }
 
     private static long unwrapLong(IRubyObject value) {
@@ -1138,13 +1138,11 @@ public class RubyIOBuffer extends RubyObject {
     }
 
     private IRubyObject each(ThreadContext context, ByteBuffer buffer, DataType dataType, int offset, int count, Block block) {
-        Ruby runtime = context.runtime;
-
         for (int i = 0 ; i < count; i++) {
             int currentOffset = offset;
             IRubyObject value = getValue(context, buffer, size, dataType, offset);
             offset += dataType.type.size();
-            block.yieldSpecific(context, RubyFixnum.newFixnum(runtime, currentOffset), value);
+            block.yieldSpecific(context, asFixnum(context, currentOffset), value);
         }
 
         return this;
@@ -1303,7 +1301,7 @@ public class RubyIOBuffer extends RubyObject {
 
         setValue(context, buffer, size, dataType, offset, _value);
 
-        return RubyFixnum.newFixnum(context.runtime, offset + dataType.type.size());
+        return asFixnum(context, offset + dataType.type.size());
     }
 
     @JRubyMethod(name = "set_values")
@@ -1336,7 +1334,7 @@ public class RubyIOBuffer extends RubyObject {
             offset += dataType.type.size();
         }
 
-        return newFixnum(context, offset);
+        return asFixnum(context, offset);
     }
 
     @JRubyMethod(name = "copy")
@@ -1402,7 +1400,7 @@ public class RubyIOBuffer extends RubyObject {
 
         bufferCopy(context, offset, sourceBuffer, sourceOffset, source.size, length);
 
-        return RubyFixnum.newFixnum(context.runtime, length);
+        return asFixnum(context, length);
     }
 
     // MRI: io_buffer_copy_from
@@ -1413,7 +1411,7 @@ public class RubyIOBuffer extends RubyObject {
 
         bufferCopy(context, offset, source.getByteList(), sourceOffset, source.size(), length);
 
-        return RubyFixnum.newFixnum(context.runtime, length);
+        return asFixnum(context, length);
     }
 
     private void bufferCopy(ThreadContext context, int offset, ByteBuffer sourceBuffer, int sourceOffset, int sourceSize, int length) {
@@ -1715,12 +1713,9 @@ public class RubyIOBuffer extends RubyObject {
         IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
 
         if (!scheduler.isNil()) {
-            Ruby runtime = context.runtime;
-            IRubyObject result = FiberScheduler.ioRead(context, scheduler, io, this, RubyFixnum.newFixnum(runtime, size), RubyFixnum.zero(runtime));
+            IRubyObject result = FiberScheduler.ioRead(context, scheduler, io, this, asFixnum(context, size), asFixnum(context, 0));
 
-            if (result != UNDEF) {
-                return result;
-            }
+            if (result != UNDEF) return result;
         }
 
         return read(context, io, size, 0);
@@ -1763,7 +1758,7 @@ public class RubyIOBuffer extends RubyObject {
         }
 
         if (!scheduler.isNil()) {
-            if (lengthInteger == null) lengthInteger = RubyFixnum.newFixnum(context.runtime, length);
+            if (lengthInteger == null) lengthInteger = asFixnum(context, length);
             IRubyObject result = FiberScheduler.ioRead(context, scheduler, io, this, lengthInteger, offsetInteger);
 
             if (result != UNDEF) {
@@ -1802,7 +1797,7 @@ public class RubyIOBuffer extends RubyObject {
             base.position(offset);
             base.limit(offset + size);
             int result = OpenFile.readInternal(context, fptr, fptr.fd(), base, offset, size);
-            return FiberScheduler.result(context.runtime, result, fptr.errno());
+            return FiberScheduler.result(context, result, fptr.errno());
         } finally {
             base.clear();
             if (locked) fptr.unlock();
@@ -1817,12 +1812,10 @@ public class RubyIOBuffer extends RubyObject {
         int length = defaultLength(context, offset);
 
         if (!scheduler.isNil()) {
-            Ruby runtime = context.runtime;
-            IRubyObject result = FiberScheduler.ioPRead(context, scheduler, io, this, fromInteger, RubyFixnum.newFixnum(runtime, length), RubyFixnum.zero(runtime));
+            IRubyObject result = FiberScheduler.ioPRead(context, scheduler, io, this, fromInteger,
+                    asFixnum(context, length), asFixnum(context, 0));
 
-            if (result != UNDEF) {
-                return result;
-            }
+            if (result != UNDEF) return result;
         }
 
         int from = RubyNumeric.num2int(_from);
@@ -1920,7 +1913,7 @@ public class RubyIOBuffer extends RubyObject {
             base.position(offset);
             base.limit(offset + size);
             int result = OpenFile.preadInternal(context, fptr, fptr.fd(), base, from, size);
-            return FiberScheduler.result(context.runtime, result, fptr.errno());
+            return FiberScheduler.result(context, result, fptr.errno());
         } finally {
             base.clear();
             if (locked) fptr.unlock();
@@ -1971,12 +1964,10 @@ public class RubyIOBuffer extends RubyObject {
         IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
 
         if (!scheduler.isNil()) {
-            Ruby runtime = context.runtime;
-            IRubyObject result = FiberScheduler.ioWrite(context, scheduler, io, this, RubyFixnum.newFixnum(runtime, size), RubyFixnum.zero(runtime));
+            IRubyObject result = FiberScheduler.ioWrite(context, scheduler, io, this,
+                    asFixnum(context, size), asFixnum(context, 0));
 
-            if (result != null) {
-                return result;
-            }
+            if (result != null) return result;
         }
 
         return write(context, io, size, 0);
@@ -2030,7 +2021,7 @@ public class RubyIOBuffer extends RubyObject {
             base.position(offset);
             base.limit(offset + size);
             int result = OpenFile.writeInternal(context, fptr, base, offset, size);
-            return FiberScheduler.result(context.runtime, result, fptr.errno());
+            return FiberScheduler.result(context, result, fptr.errno());
         } finally {
             base.clear();
             if (locked) fptr.unlock();
@@ -2045,12 +2036,10 @@ public class RubyIOBuffer extends RubyObject {
         int length = defaultLength(context, offset);
 
         if (!scheduler.isNil()) {
-            Ruby runtime = context.runtime;
-            IRubyObject result = FiberScheduler.ioPWrite(context, scheduler, io, this, fromInteger, RubyFixnum.newFixnum(runtime, length), RubyFixnum.zero(runtime));
+            IRubyObject result = FiberScheduler.ioPWrite(context, scheduler, io, this, fromInteger,
+                    asFixnum(context, length), asFixnum(context, 0));
 
-            if (result != null) {
-                return result;
-            }
+            if (result != null) return result;
         }
 
         int from = RubyNumeric.num2int(fromInteger);
@@ -2134,7 +2123,7 @@ public class RubyIOBuffer extends RubyObject {
             base.position(offset);
             base.limit(offset + size);
             int result = OpenFile.pwriteInternal(context, fptr, fptr.fd(), base, from, size);
-            return FiberScheduler.result(context.runtime, result, fptr.errno());
+            return FiberScheduler.result(context, result, fptr.errno());
         } finally {
             base.clear();
             if (locked) fptr.unlock();
