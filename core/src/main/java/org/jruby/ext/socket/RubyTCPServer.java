@@ -54,7 +54,8 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 
-import static org.jruby.api.Create.newFixnum;
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -91,7 +92,7 @@ public class RubyTCPServer extends RubyTCPSocket {
                 if (_host instanceof RubyFixnum) throw typeError(context, _host, "String");
 
                 RubyString hostString = _host.convertToString();
-                if (hostString.size() > 0) host = hostString.toString();
+                if (!hostString.isEmpty()) host = hostString.toString();
 
                 break;
             case 1:
@@ -99,7 +100,7 @@ public class RubyTCPServer extends RubyTCPSocket {
                 _port = args[0];
                 break;
             default:
-                throw runtime.newArgumentError(args.length, 1, 2);
+                throw argumentError(context, args.length, 1, 2);
         }
 
         int port = SocketUtils.getPortFrom(context, _port);
@@ -115,25 +116,18 @@ public class RubyTCPServer extends RubyTCPSocket {
             ssc.socket().bind(socket_address);
 
             initSocket(newChannelFD(runtime, ssc));
-
         } catch(UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "initialize: name or service not known");
-
         } catch(BindException e) {
             throw runtime.newErrnoFromBindException(e, bindContextMessage(_host, port));
-
         } catch(SocketException e) {
             String msg = e.getMessage();
 
-            if(msg.indexOf("Permission denied") != -1) {
-                throw runtime.newErrnoEACCESError("bind(2)");
-            } else {
-                throw SocketUtils.sockerr(runtime, "initialize: name or service not known");
-            }
-
+            throw msg.contains("Permission denied") ?
+                    runtime.newErrnoEACCESError("bind(2)") :
+                    SocketUtils.sockerr(runtime, "initialize: name or service not known");
         } catch(IOException e) {
             throw runtime.newIOErrorFromException(e);
-
         } catch (IllegalArgumentException iae) {
             throw SocketUtils.sockerr(runtime, iae.getMessage());
         }
@@ -252,7 +246,7 @@ public class RubyTCPServer extends RubyTCPSocket {
 
                     connected.finishConnect();
 
-                    return newFixnum(context, FilenoUtil.filenoFrom(connected));
+                    return asFixnum(context, FilenoUtil.filenoFrom(connected));
                 }
             }
 

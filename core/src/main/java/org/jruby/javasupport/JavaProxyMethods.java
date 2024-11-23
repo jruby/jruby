@@ -38,6 +38,8 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.asFixnum;
+
 public class JavaProxyMethods {
 
     private JavaProxyMethods() { /* no instances */ }
@@ -127,15 +129,11 @@ public class JavaProxyMethods {
     
     @JRubyMethod
     public static IRubyObject hash(ThreadContext context, IRubyObject recv) {
-        if (recv instanceof JavaProxy) {
-            return RubyFixnum.newFixnum(context.runtime, ((JavaProxy) recv).getObject().hashCode());
-        }
-        // NOTE: only JavaProxy includes JavaProxyMethods
-        // these is only here for 'manual' JavaObject wrapping :
-        if (recv.dataGetStruct() instanceof IRubyObject) {
-            return ((RubyBasicObject) recv.dataGetStruct()).hash();
-        }
-        return ((RubyBasicObject) recv).hash();
+        if (recv instanceof JavaProxy) return asFixnum(context, ((JavaProxy) recv).getObject().hashCode());
+
+        // NOTE: only JavaProxy includes JavaProxyMethods these are only here for 'manual' JavaObject wrapping
+        return recv.dataGetStruct() instanceof IRubyObject ?
+                ((RubyBasicObject) recv.dataGetStruct()).hash() : ((RubyBasicObject) recv).hash();
     }
     
     @JRubyMethod(name = "synchronized")

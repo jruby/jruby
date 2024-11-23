@@ -30,6 +30,7 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.api.Convert;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
@@ -130,11 +131,10 @@ public class RubyEnumerable {
     }
 
     private static IRubyObject countCommon(ThreadContext context, CallSite each, IRubyObject self, final Block block) {
-        final Ruby runtime = context.runtime;
         final SingleInt result = new SingleInt();
 
         if (block.isGiven()) {
-            each(context, each, self, new JavaInternalBlockBody(runtime, context, "Enumerable#count", block.getSignature()) {
+            each(context, each, self, new JavaInternalBlockBody(context.runtime, context, "Enumerable#count", block.getSignature()) {
                 public IRubyObject yield(ThreadContext context1, IRubyObject[] args) {
                     return this.yield(context1, packEnumValues(context1, args));
                 }
@@ -145,7 +145,7 @@ public class RubyEnumerable {
                 }
             });
         } else {
-            each(context, each, self, new JavaInternalBlockBody(runtime, context, "Enumerable#count", Signature.NO_ARGUMENTS) {
+            each(context, each, self, new JavaInternalBlockBody(context.runtime, context, "Enumerable#count", Signature.NO_ARGUMENTS) {
                 public IRubyObject yield(ThreadContext context1, IRubyObject[] args) {
                     result.i++;
                     return context1.nil;
@@ -157,17 +157,16 @@ public class RubyEnumerable {
                 }
             });
         }
-        return RubyFixnum.newFixnum(runtime, result.i);
+        return asFixnum(context, result.i);
     }
 
     @JRubyMethod(name = "count")
     public static IRubyObject count(ThreadContext context, IRubyObject self, final IRubyObject methodArg, final Block block) {
-        final Ruby runtime = context.runtime;
         final SingleInt result = new SingleInt();
 
-        if (block.isGiven()) runtime.getWarnings().warn(ID.BLOCK_UNUSED , "given block not used");
+        if (block.isGiven()) context.runtime.getWarnings().warn(ID.BLOCK_UNUSED , "given block not used");
 
-        each(context, eachSite(context), self, new JavaInternalBlockBody(runtime, context, "Enumerable#count", Signature.ONE_REQUIRED) {
+        each(context, eachSite(context), self, new JavaInternalBlockBody(context.runtime, context, "Enumerable#count", Signature.ONE_REQUIRED) {
             public IRubyObject yield(ThreadContext context1, IRubyObject[] args) {
                 return this.yield(context1, packEnumValues(context1, args));
             }
@@ -178,7 +177,7 @@ public class RubyEnumerable {
             }
         });
 
-        return RubyFixnum.newFixnum(runtime, result.i);
+        return asFixnum(context, result.i);
     }
 
     @JRubyMethod
@@ -688,7 +687,6 @@ public class RubyEnumerable {
     }
 
     public static IRubyObject find_indexCommon(ThreadContext context, CallSite each, IRubyObject self, final Block block, Signature callbackArity) {
-        final Ruby runtime = context.runtime;
         final SingleLong result = new SingleLong();
 
         try {
@@ -698,7 +696,7 @@ public class RubyEnumerable {
                 return ctx.nil;
             });
         } catch (JumpException.SpecialJump sj) {
-            return RubyFixnum.newFixnum(runtime, result.l);
+            return asFixnum(context, result.l);
         }
 
         return context.nil;
@@ -709,7 +707,6 @@ public class RubyEnumerable {
     }
 
     public static IRubyObject find_indexCommon(ThreadContext context, CallSite each, IRubyObject self, final IRubyObject cond) {
-        final Ruby runtime = context.runtime;
         final SingleLong result = new SingleLong(0);
 
         try {
@@ -725,7 +722,7 @@ public class RubyEnumerable {
                 }
             });
         } catch (JumpException.SpecialJump sj) {
-            return RubyFixnum.newFixnum(runtime, result.l);
+            return asFixnum(context, result.l);
         }
 
         return context.nil;
@@ -2169,8 +2166,8 @@ public class RubyEnumerable {
             final IRubyObject yielder = packEnumValues(context, args);
             final ChunkArg arg = new ChunkArg(context);
 
-            final RubySymbol alone = newSymbol(context, "_alone");
-            final RubySymbol separator = newSymbol(context, "_separator");
+            final RubySymbol alone = Convert.asSymbol(context, "_alone");
+            final RubySymbol separator = Convert.asSymbol(context, "_separator");
             final EnumerableSites sites = sites(context);
             final CallSite chunk_call = sites.chunk_call;
             final CallSite chunk_op_lshift = sites.chunk_op_lshift;

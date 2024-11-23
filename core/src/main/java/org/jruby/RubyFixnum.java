@@ -40,7 +40,7 @@ package org.jruby;
 import java.math.BigInteger;
 
 import org.jcodings.specific.USASCIIEncoding;
-import org.jruby.api.Create;
+import org.jruby.api.Convert;
 import org.jruby.compiler.Constantizable;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -62,7 +62,6 @@ import org.jruby.util.cli.Options;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newArray;
-import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.Numeric.f_odd_p;
@@ -214,14 +213,11 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
 
     @Override
     public RubyInteger negate() {
-        return negate(metaClass.runtime, value);
+        return negate(metaClass.runtime.getCurrentContext(), value);
     }
 
     public static RubyFixnum newFixnum(Ruby runtime, long value) {
-        if (USE_CACHE && isInCacheRange(value)) {
-            return cachedFixnum(runtime, value);
-        }
-        return new RubyFixnum(runtime, value);
+        return USE_CACHE && isInCacheRange(value) ? cachedFixnum(runtime, value) : new RubyFixnum(runtime, value);
     }
 
     public static RubyFixnum newFixnum(Ruby runtime, int value) {
@@ -309,9 +305,8 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
                     }
                 }
             } else {
-                final Ruby runtime = context.runtime;
                 for (long i = 0; i < value; i++) {
-                    block.yield(context, RubyFixnum.newFixnum(runtime, i));
+                    block.yield(context, asFixnum(context, i));
                 }
             }
             return this;
@@ -451,14 +446,13 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
      */
     @Override
     public IRubyObject op_uminus(ThreadContext context) {
-        return negate(context.runtime, value);
+        return negate(context, value);
     }
 
-    private static RubyInteger negate(final Ruby runtime, final long value) {
-        if (value == MIN) { // a gotcha
-            return RubyBignum.newBignum(runtime, BigInteger.valueOf(value).negate());
-        }
-        return RubyFixnum.newFixnum(runtime, -value);
+    private static RubyInteger negate(ThreadContext context, final long value) {
+        return value == MIN ?
+                RubyBignum.newBignum(context.runtime, BigInteger.valueOf(value).negate()) :
+                asFixnum(context, -value);
     }
 
     /** fix_plus
@@ -609,11 +603,10 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
 
     @Override
     public IRubyObject op_mul(ThreadContext context, long other) {
-        Ruby runtime = context.runtime;
         try {
-            return newFixnum(runtime, Math.multiplyExact(value, other));
+            return asFixnum(context, Math.multiplyExact(value, other));
         } catch (ArithmeticException ae) {
-            return RubyBignum.newBignum(runtime, value).op_mul(context, other);
+            return RubyBignum.newBignum(context.runtime, value).op_mul(context, other);
         }
     }
 
@@ -781,7 +774,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
             if (x == MIN) {
                 integerDiv = RubyBignum.newBignum(context.runtime, BigInteger.valueOf(x).negate());
             } else {
-                integerDiv = Create.newFixnum(context, -x);
+                integerDiv = Convert.asFixnum(context, -x);
             }
             mod = 0;
         } else {
@@ -793,9 +786,9 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
                 div -= 1; // horrible sudden thought: might this overflow? probably not?
                 mod += y;
             }
-            integerDiv = Create.newFixnum(context, div);
+            integerDiv = Convert.asFixnum(context, div);
         }
-        IRubyObject fixMod = Create.newFixnum(context, mod);
+        IRubyObject fixMod = Convert.asFixnum(context, mod);
         return newArray(context, integerDiv, fixMod);
     }
 
@@ -1480,15 +1473,9 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
     // MRI: rb_int_s_isqrt, Fixnum portion
     @Override
     public IRubyObject sqrt(ThreadContext context) {
-        Ruby runtime = context.runtime;
+        if (isNegative()) throw context.runtime.newMathDomainError("Numerical argument is out of domain - isqrt");
 
-        if (isNegative()) {
-            throw runtime.newMathDomainError("Numerical argument is out of domain - isqrt");
-        }
-
-        long sq = floorSqrt(value);
-        
-        return RubyFixnum.newFixnum(runtime, sq);
+        return asFixnum(context, floorSqrt(value));
     }
 
     @Override

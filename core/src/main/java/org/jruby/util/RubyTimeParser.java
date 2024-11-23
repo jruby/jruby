@@ -106,7 +106,7 @@ public class RubyTimeParser {
         if (!subsec.isNil()) {
             if (ndigits < TIME_SCALE_NUMDIGITS) {
                 int mul = (int) Math.pow(10, TIME_SCALE_NUMDIGITS - ndigits);
-                subsec = RubyFixnum.newFixnum(context.runtime, asLong(context, (RubyInteger) subsec) * mul);
+                subsec = asFixnum(context, asLong(context, (RubyInteger) subsec) * mul);
             } else if (ndigits > TIME_SCALE_NUMDIGITS) {
                 int mul = (int) Math.pow(10, ndigits - TIME_SCALE_NUMDIGITS);
                 subsec = RubyRational.newRational(context.runtime, asLong(context, (RubyInteger) subsec), mul);

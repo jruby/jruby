@@ -29,7 +29,6 @@ package org.jruby.ext.coverage;
 import java.util.Map;
 
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.RubyHash;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
@@ -41,6 +40,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.collections.IntList;
 
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.castAsSymbol;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.typeError;
@@ -249,9 +249,9 @@ public class CoverageModule {
                 for (int i = 0; i < val.size(); i++) {
                     int integer = val.get(i);
                     if (oneshot) {
-                        ary.push(newFixnum(context, integer + 1));
+                        ary.push(asFixnum(context, integer + 1));
                     } else {
-                        ary.store(i, integer == -1 ? context.nil : newFixnum(context, integer));
+                        ary.store(i, integer == -1 ? context.nil : asFixnum(context, integer));
                     }
                 }
 

@@ -52,6 +52,8 @@ import org.jruby.util.io.EncodingUtils;
 
 import static com.headius.backport9.buffer.Buffers.markBuffer;
 import static com.headius.backport9.buffer.Buffers.positionBuffer;
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asFloat;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
@@ -124,7 +126,7 @@ public class Pack {
         // single precision, little-endian
         converters['e'] = new Converter(4) {
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
-                return newFloat(context, decodeFloatLittleEndian(enc));
+                return asFloat(context, decodeFloatLittleEndian(enc));
             }
 
             @Override
@@ -135,7 +137,7 @@ public class Pack {
         // single precision, big-endian
         converters['g'] = new Converter(4) {
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
-                return newFloat(context, decodeFloatBigEndian(enc));
+                return asFloat(context, decodeFloatBigEndian(enc));
             }
 
             @Override
@@ -146,7 +148,7 @@ public class Pack {
         // single precision, native
         Converter tmp = new Converter(4) {
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
-                return newFloat(context, Platform.BYTE_ORDER == Platform.BIG_ENDIAN ?
+                return asFloat(context, Platform.BYTE_ORDER == Platform.BIG_ENDIAN ?
                         decodeFloatBigEndian(enc) : decodeFloatLittleEndian(enc));
             }
 
@@ -166,7 +168,7 @@ public class Pack {
         // double precision, little-endian
         converters['E'] = new Converter(8) {
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
-                return newFloat(context, decodeDoubleLittleEndian(enc));
+                return asFloat(context, decodeDoubleLittleEndian(enc));
             }
 
             @Override
@@ -177,7 +179,7 @@ public class Pack {
         // double precision, big-endian
         converters['G'] = new Converter(8) {
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
-                return newFloat(context, decodeDoubleBigEndian(enc));
+                return asFloat(context, decodeDoubleBigEndian(enc));
             }
 
             @Override
@@ -188,7 +190,7 @@ public class Pack {
         // double precision, native
         tmp = new Converter(8) {
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
-                return newFloat(context, Platform.BYTE_ORDER == Platform.BIG_ENDIAN ?
+                return asFloat(context, Platform.BYTE_ORDER == Platform.BIG_ENDIAN ?
                     decodeDoubleBigEndian(enc) : decodeDoubleLittleEndian(enc));
             }
 
@@ -203,7 +205,7 @@ public class Pack {
         // signed short, little-endian
         tmp = new QuadConverter(2, "Integer") {
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
-                return newFixnum(context, decodeShortUnsignedLittleEndian(enc));
+                return asFixnum(context, decodeShortUnsignedLittleEndian(enc));
             }
 
             @Override
@@ -216,7 +218,7 @@ public class Pack {
         // signed short, big-endian
         tmp = new QuadConverter(2, "Integer") {
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
-                return newFixnum(context, decodeShortUnsignedBigEndian(enc));
+                return asFixnum(context, decodeShortUnsignedBigEndian(enc));
             }
 
             @Override
@@ -229,7 +231,7 @@ public class Pack {
         // signed short, native
         converters['s'] = new QuadConverter(2, "Integer") {
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
-                return newFixnum(context, Platform.BYTE_ORDER == Platform.BIG_ENDIAN ?
+                return asFixnum(context, Platform.BYTE_ORDER == Platform.BIG_ENDIAN ?
                         decodeShortBigEndian(enc) : decodeShortLittleEndian(enc));
             }
 
@@ -241,7 +243,7 @@ public class Pack {
         // unsigned short, native
         converters['S'] = new QuadConverter(2, "Integer") {
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
-                return newFixnum(context, Platform.BYTE_ORDER == Platform.BIG_ENDIAN ?
+                return asFixnum(context, Platform.BYTE_ORDER == Platform.BIG_ENDIAN ?
                     decodeShortUnsignedBigEndian(enc) : decodeShortUnsignedLittleEndian(enc));
             }
 
@@ -253,7 +255,7 @@ public class Pack {
         // signed short, little endian
         converters['s' + LE] = new QuadConverter(2, "Integer") {
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
-                return newFixnum(context, decodeShortLittleEndian(enc));
+                return asFixnum(context, decodeShortLittleEndian(enc));
             }
 
             @Override
@@ -264,7 +266,7 @@ public class Pack {
         // signed short, big endian
         converters['s' + BE] = new QuadConverter(2, "Integer") {
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
-                return newFixnum(context, decodeShortBigEndian(enc));
+                return asFixnum(context, decodeShortBigEndian(enc));
             }
 
             @Override
@@ -277,7 +279,7 @@ public class Pack {
         converters['c'] = new Converter(1, "Integer") {
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
                 int c = enc.get();
-                return newFixnum(context, c > (char) 127 ? c-256 : c);
+                return asFixnum(context, c > (char) 127 ? c-256 : c);
             }
 
             public void encode(ThreadContext context, IRubyObject o, ByteList result) {
@@ -288,7 +290,7 @@ public class Pack {
         // unsigned char
         converters['C'] = new Converter(1, "Integer") {
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
-                return newFixnum(context, enc.get() & 0xFF);
+                return asFixnum(context, enc.get() & 0xFF);
             }
 
             public void encode(ThreadContext context, IRubyObject o, ByteList result){
@@ -300,7 +302,7 @@ public class Pack {
         // unsigned long, little-endian
         tmp = new Converter(4, "Integer") {
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
-                return newFixnum(context, decodeIntUnsignedLittleEndian(enc));
+                return asFixnum(context, decodeIntUnsignedLittleEndian(enc));
             }
             
             public void encode(ThreadContext context, IRubyObject o, ByteList result){
@@ -315,7 +317,7 @@ public class Pack {
         // unsigned long, big-endian
         tmp = new Converter(4, "Integer") {
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
-                return newFixnum(context, decodeIntUnsignedBigEndian(enc));
+                return asFixnum(context, decodeIntUnsignedBigEndian(enc));
             }
             
             public void encode(ThreadContext context, IRubyObject o, ByteList result){
@@ -330,7 +332,7 @@ public class Pack {
         // unsigned int, native
         tmp = new Converter(4, "Integer") {
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
-                return newFixnum(context, Platform.BYTE_ORDER == Platform.BIG_ENDIAN ?
+                return asFixnum(context, Platform.BYTE_ORDER == Platform.BIG_ENDIAN ?
                         decodeIntUnsignedBigEndian(enc) : decodeIntUnsignedLittleEndian(enc));
             }
             public void encode(ThreadContext context, IRubyObject o, ByteList result){
@@ -345,7 +347,7 @@ public class Pack {
         // int, native
         tmp = new Converter(4, "Integer") {
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
-                return newFixnum(context, unpackInt_i(enc));
+                return asFixnum(context, unpackInt_i(enc));
             }
             public void encode(ThreadContext context, IRubyObject o, ByteList result){
                 int s = o == context.nil ? 0 : (int)RubyNumeric.num2long(o);
@@ -359,7 +361,7 @@ public class Pack {
         // int, little endian
         tmp = new Converter(4, "Integer") {
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
-                return newFixnum(context, decodeIntLittleEndian(enc));
+                return asFixnum(context, decodeIntLittleEndian(enc));
             }
             public void encode(ThreadContext context, IRubyObject o, ByteList result){
                 int s = o == context.nil ? 0 : (int)RubyNumeric.num2long(o);
@@ -373,7 +375,7 @@ public class Pack {
         // int, big endian
         tmp = new Converter(4, "Integer") {
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
-                return newFixnum(context, decodeIntBigEndian(enc));
+                return asFixnum(context, decodeIntBigEndian(enc));
             }
             public void encode(ThreadContext context, IRubyObject o, ByteList result){
                 int s = o == context.nil ? 0 : (int)RubyNumeric.num2long(o);
@@ -433,7 +435,7 @@ public class Pack {
         // 64-bit number, native (as fixnum)
         tmp = new QuadConverter(8, "Integer") {
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
-                return newFixnum(context, Platform.BYTE_ORDER == Platform.BIG_ENDIAN ?
+                return asFixnum(context, Platform.BYTE_ORDER == Platform.BIG_ENDIAN ?
                         decodeLongBigEndian(enc) : decodeLongLittleEndian(enc));
             }
 
@@ -448,7 +450,7 @@ public class Pack {
         // 64-bit number, little-endian (as fixnum)
         tmp = new QuadConverter(8, "Integer") {
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
-                return newFixnum(context, decodeLongLittleEndian(enc));
+                return asFixnum(context, decodeLongLittleEndian(enc));
             }
 
             @Override
@@ -462,7 +464,7 @@ public class Pack {
         // 64-bit number, big-endian (as fixnum)
         tmp = new QuadConverter(8, "Integer") {
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
-                return newFixnum(context, decodeLongBigEndian(enc));
+                return asFixnum(context, decodeLongBigEndian(enc));
             }
 
             @Override
@@ -1125,7 +1127,7 @@ public class Pack {
             ul <<= 7;
             ul |= encode.get(pos) & 0x7f;
             if((encode.get(pos++) & 0x80) == 0) {
-                IRubyObject value = newFixnum(context, ul);
+                IRubyObject value = asFixnum(context, ul);
                 if (mode == UNPACK_1) return value;
 
                 appendOrYield(context, block, result, value, mode);
@@ -1202,7 +1204,7 @@ public class Pack {
                 // but should use UTF8Encoding facilities
                 // from Joni, once it starts prefroming
                 // UTF-8 content validation.
-                RubyFixnum item = newFixnum(context, utf8Decode(encode));
+                RubyFixnum item = asFixnum(context, utf8Decode(encode));
                 if (mode == UNPACK_1) {
                     return item;
                 }

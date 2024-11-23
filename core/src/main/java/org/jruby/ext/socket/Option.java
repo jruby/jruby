@@ -10,7 +10,6 @@ import org.jruby.RubyClass;
 import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
-import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Convert;
 import org.jruby.runtime.ThreadContext;
@@ -131,37 +130,21 @@ public class Option extends RubyObject {
 
     // from rb_sockopt_inspect
     private String optionValue() {
-        switch (option) {
-            case SO_DEBUG:
-            case SO_ACCEPTCONN:
-            case SO_BROADCAST:
-            case SO_REUSEADDR:
-            case SO_KEEPALIVE:
-            case SO_OOBINLINE:
-            case SO_SNDBUF:
-            case SO_RCVBUF:
-            case SO_DONTROUTE:
-            case SO_RCVLOWAT:
-            case SO_SNDLOWAT:
-                return String.valueOf(unpackInt(data));
-
-            case SO_LINGER:
+        return switch (option) {
+            case SO_DEBUG, SO_ACCEPTCONN, SO_BROADCAST, SO_REUSEADDR, SO_KEEPALIVE, SO_OOBINLINE, SO_SNDBUF, SO_RCVBUF,
+                 SO_DONTROUTE, SO_RCVLOWAT, SO_SNDLOWAT -> String.valueOf(unpackInt(data));
+            case SO_LINGER -> {
                 int[] linger = Option.unpackLinger(data);
 
-                return ((linger[0] == 0) ? "off " : "on ")  + linger[1] + "sec";
+                yield ((linger[0] == 0) ? "off " : "on ") + linger[1] + "sec";
+            }
+            case SO_RCVTIMEO, SO_SNDTIMEO ->
+                    Sprintf.getNumberFormat(Locale.getDefault()).format(unpackInt(data) / 1000.0);
+            case SO_ERROR -> Errno.valueOf(unpackInt(data)).description();
+            case SO_TYPE -> Sock.valueOf(unpackInt(data)).description();
+            default -> "";
+        };
 
-            case SO_RCVTIMEO:
-            case SO_SNDTIMEO:
-                return Sprintf.getNumberFormat(Locale.getDefault()).format(unpackInt(data) / 1000.0);
-
-            case SO_ERROR:
-                return Errno.valueOf(unpackInt(data)).description();
-
-            case SO_TYPE:
-                return Sock.valueOf(unpackInt(data)).description();
-        }
-
-        return "";
     }
 
     public static ByteList packInt(int i) {
@@ -182,7 +165,6 @@ public class Option extends RubyObject {
     }
 
     public static int[] unpackLinger(ByteList data) {
-        ByteList result = new ByteList(8);
         ByteBuffer buf = ByteBuffer.wrap(data.unsafeBytes(), data.begin(), data.realSize());
         int vonoff = Pack.unpackInt_i(buf);
         int vsecs = Pack.unpackInt_i(buf);
@@ -238,7 +220,7 @@ public class Option extends RubyObject {
 
         int[] linger = Option.unpackLinger(data);
 
-        return newArray(context, asBoolean(context,linger[0] != 0), newFixnum(context, linger[1]));
+        return newArray(context, asBoolean(context,linger[0] != 0), asFixnum(context, linger[1]));
     }
 
     @JRubyMethod

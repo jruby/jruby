@@ -9,9 +9,9 @@ import org.jruby.java.util.ArrayUtils;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asInt;
 import static org.jruby.api.Create.newEmptyArray;
-import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Error.typeError;
 
 public class ArrayJavaAddons {
@@ -112,7 +112,7 @@ public class ArrayJavaAddons {
 
         final long dim = ((RubyFixnum) dims.eltInternal(index)).getLongValue();
         if ( array.size() > dim ) {
-            dims.eltInternalSet(index, newFixnum(context, array.size()));
+            dims.eltInternalSet(index, asFixnum(context, array.size()));
         }
 
         for ( int i = 0; i < array.size(); i++ ) {

@@ -460,7 +460,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
             position++;
             
-            return newFixnum(context, value);
+            return asFixnum(context, value);
         } catch (IOException ioe) {
             throw context.runtime.newIOErrorFromException(ioe);
         }
@@ -479,7 +479,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
             position++;
 
-            return newFixnum(context, value);
+            return asFixnum(context, value);
         } catch (IOException ioe) {
             throw context.runtime.newIOErrorFromException(ioe);
         }
@@ -600,7 +600,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         } catch (GZIPException e) {
         }
 
-        return newFixnum(context, crc);
+        return asFixnum(context, crc);
     }
 
     @Override
@@ -610,7 +610,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         
         if (os == 255) os = (byte) 0x0b; // NTFS filesystem (NT), because CRuby's test_zlib expect it.
         
-        return newFixnum(context, os & 0xff);
+        return asFixnum(context, os & 0xff);
     }
 
     @Override
@@ -731,7 +731,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
             while (value != -1) {
                 position++;
-                block.yield(context, newFixnum(context, value));
+                block.yield(context, asFixnum(context, value));
                 value = bufferedStream.read();
             }
         } catch (IOException ioe) {
@@ -759,9 +759,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
      */
     @JRubyMethod(required = 1, optional = 1, checkArity = false, meta = true)
     public static IRubyObject zcat(ThreadContext context, IRubyObject klass, IRubyObject[] args, Block block) {
-        int argc = Arity.checkArgumentCount(context, args, 1, 2);
-
-        Ruby runtime = context.runtime;
+        Arity.checkArgumentCount(context, args, 1, 2);
 
         IRubyObject io, unused;
         JZlibRubyGzipReader obj;
@@ -777,9 +775,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
                     obj.each(context, IRubyObject.NULL_ARRAY, block);
                 }
                 else {
-                    if (buf == null) {
-                        buf = RubyString.newEmptyString(runtime);
-                    }
+                    if (buf == null) buf = RubyString.newEmptyString(context.runtime);
                     tmpbuf = obj.readAll();
                     buf.cat(tmpbuf);
                 }
@@ -790,17 +786,14 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
                 obj.finish();
                 if (!unused.isNil()) {
                     pos -= unused.callMethod(context, "length").convertToInteger().getLongValue();
-                    io.callMethod(context, "pos=", RubyFixnum.newFixnum(runtime, pos));
+                    io.callMethod(context, "pos=", asFixnum(context, pos));
                 }
             } while (pos < io.callMethod(context, "size").convertToInteger().getLongValue());
         } catch (IOException ioe) {
-            throw runtime.newIOErrorFromException(ioe);
+            throw context.runtime.newIOErrorFromException(ioe);
         }
 
-        if (block.isGiven()) {
-            return context.nil;
-        }
-        return buf;
+        return block.isGiven() ? context.nil : buf;
     }
 
     private void fixBrokenTrailingCharacter(ByteList result) throws IOException {

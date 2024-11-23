@@ -2,7 +2,6 @@ package org.jruby.api;
 
 import org.jcodings.Encoding;
 import org.jruby.*;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -10,7 +9,6 @@ import org.jruby.util.ByteList;
 import java.util.List;
 
 import static org.jruby.RubyArray.checkLength;
-import static org.jruby.runtime.Helpers.validateBufferLength;
 
 public class Create {
     /**
@@ -20,7 +18,7 @@ public class Create {
      * @return the new array
      */
     // mri: rb_ary_new2
-    public static RubyArray newArray(ThreadContext context) {
+    public static RubyArray<?> newArray(ThreadContext context) {
         return RubyArray.newArray(context.runtime);
     }
 
@@ -110,39 +108,6 @@ public class Create {
     }
 
     /**
-     * Creates a new RubyString from the provided int.
-     *
-     * @param context the current thread context
-     * @param value the bytes to become a fixnum
-     * @return the new RubyFixnum
-     */
-    public static RubyFixnum newFixnum(ThreadContext context, int value) {
-        return RubyFixnum.newFixnum(context.runtime, value);
-    }
-
-    /**
-     * Creates a new RubyFixnum from the provided long.
-     *
-     * @param context the current thread context
-     * @param value the bytes to become a fixnum
-     * @return the new RubyFixnum
-     */
-    public static RubyFixnum newFixnum(ThreadContext context, long value) {
-        return RubyFixnum.newFixnum(context.runtime, value);
-    }
-
-    /**
-     * Creates a new RubyFloat from the provided double.
-     *
-     * @param context the current thread context
-     * @param value the bytes to become a float
-     * @return the new RubyFloat
-     */
-    public static RubyFloat newFloat(ThreadContext context, double value) {
-        return RubyFloat.newFloat(context.runtime, value);
-    }
-
-    /**
      * Creates a new RubyString from the provided bytelist.
      *
      * @param context the current thread context
@@ -185,28 +150,6 @@ public class Create {
      */
     public static RubyString newString(ThreadContext context, String string) {
         return RubyString.newString(context.runtime, string);
-    }
-
-    /**
-     * Creates a new RubySymbol from the provided java String.
-     *
-     * @param context the current thread context
-     * @param string the contents to become a symbol
-     * @return the new RubyString
-     */
-    public static RubySymbol newSymbol(ThreadContext context, String string) {
-        return context.runtime.newSymbol(string);
-    }
-
-    /**
-     * Creates a new RubySymbol from the provided java String.
-     *
-     * @param context the current thread context
-     * @param bytelist the contents to become a symbol
-     * @return the new RubyString
-     */
-    public static RubySymbol newSymbol(ThreadContext context, ByteList bytelist) {
-        return context.runtime.newSymbol(bytelist);
     }
 
 }

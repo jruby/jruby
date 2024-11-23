@@ -31,7 +31,6 @@ import org.jcodings.Encoding;
 import org.jcodings.transcode.EConv;
 import org.joda.time.DateTime;
 import org.jruby.Ruby;
-import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
@@ -48,7 +47,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.IOEncodable;
 
-import static org.jruby.api.Create.newFixnum;
+import static org.jruby.api.Convert.asFixnum;
 
 /**
  *
@@ -192,7 +191,7 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
 
     @JRubyMethod(name = "os_code")
     public IRubyObject os_code(ThreadContext context) {
-        return newFixnum(context, osCode & 0xff);
+        return asFixnum(context, osCode & 0xff);
     }
 
     @Deprecated
@@ -237,7 +236,7 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
 
     @JRubyMethod(name = "crc")
     public IRubyObject crc(ThreadContext context) {
-        return newFixnum(context, 0);
+        return asFixnum(context, 0);
     }
 
     @JRubyMethod(name = "mtime")
@@ -276,7 +275,7 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
 
     @JRubyMethod(name = "level")
     public IRubyObject level(ThreadContext context) {
-        return newFixnum(context, level);
+        return asFixnum(context, level);
     }
 
     @JRubyMethod(name = "sync=")

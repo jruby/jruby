@@ -32,7 +32,6 @@ import java.nio.ByteOrder;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
@@ -51,6 +50,7 @@ import org.jruby.util.ByteList;
 
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -79,27 +79,19 @@ abstract public class AbstractMemory extends MemoryObject {
     }
     
     protected static final int calculateTypeSize(ThreadContext context, IRubyObject sizeArg) {
-        if (sizeArg instanceof RubyFixnum) {
-            return (int) ((RubyFixnum) sizeArg).getLongValue();
+        if (sizeArg instanceof RubyFixnum fix) return (int) fix.getLongValue();
+        if (sizeArg instanceof RubySymbol sym) return TypeSizeMapper.getTypeSize(context, sym);
+        if (sizeArg instanceof Type type) return type.getNativeSize();
 
-        } else if (sizeArg instanceof RubySymbol) {
-            return TypeSizeMapper.getTypeSize(context, (RubySymbol) sizeArg);
 
-        } else if (sizeArg instanceof Type) {
-            return ((Type) sizeArg).getNativeSize();
-
-        } else {
-            DynamicMethod sizeMethod;
-            if (sizeArg instanceof RubyClass && Struct.isStruct(context.runtime, (RubyClass) sizeArg)) {
-                return Struct.getStructSize(context.runtime, sizeArg);
-
-            } else if (!(sizeMethod = sizeArg.getMetaClass().searchMethod("size")).isUndefined()) {
-                return (int) numericToLong(context, sizeMethod.call(context, sizeArg, sizeArg.getMetaClass(), "size"));
-
-            } else {
-                throw context.runtime.newArgumentError("Invalid size argument");
-            }
+        if (sizeArg instanceof RubyClass && Struct.isStruct(context.runtime, (RubyClass) sizeArg)) {
+            return Struct.getStructSize(context.runtime, sizeArg);
         }
+
+        DynamicMethod sizeMethod = sizeArg.getMetaClass().searchMethod("size");
+        if (sizeMethod.isUndefined()) throw argumentError(context, "Invalid size argument");
+
+        return (int) numericToLong(context, sizeMethod.call(context, sizeArg, sizeArg.getMetaClass(), "size"));
     }
 
     protected static final RubyArray checkArray(IRubyObject obj) {
@@ -187,11 +179,7 @@ abstract public class AbstractMemory extends MemoryObject {
      */
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof AbstractMemory)) {
-            return false;
-        }
-        final AbstractMemory other = (AbstractMemory) obj;
-        return other.getMemoryIO().equals(getMemoryIO());
+        return obj instanceof AbstractMemory other && other.getMemoryIO().equals(getMemoryIO());
     }
     
     @JRubyMethod(name = "==")
@@ -226,7 +214,7 @@ abstract public class AbstractMemory extends MemoryObject {
      */
     @JRubyMethod(name = { "total", "size", "length" })
     public IRubyObject total(ThreadContext context) {
-        return RubyFixnum.newFixnum(context.runtime, size);
+        return asFixnum(context, size);
     }
     
     /**

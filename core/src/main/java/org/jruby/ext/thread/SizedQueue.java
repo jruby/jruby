@@ -45,7 +45,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Error.argumentError;
 
 /**
@@ -61,7 +60,7 @@ public class SizedQueue extends Queue {
         super(runtime, type);
 
         ThreadContext context = runtime.getCurrentContext();
-        initialize(context, newFixnum(context, max));
+        initialize(context, asFixnum(context, max));
     }
 
     public static RubyClass setup(RubyClass threadClass, RubyClass queueClass, RubyClass objectClass) {

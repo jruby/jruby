@@ -41,8 +41,7 @@ import org.jruby.runtime.JavaSites.ComparableSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import static org.jruby.api.Convert.asBoolean;
-import static org.jruby.api.Convert.castAsRange;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Error.argumentError;
 
 /** Implementation of the Comparable module.
@@ -126,9 +125,7 @@ public class RubyComparable {
      */
     public static IRubyObject invcmp(final ThreadContext context, ThreadContext.RecursiveFunctionEx<IRubyObject> func, IRubyObject recv, IRubyObject other) {
         var result = context.safeRecurse(func, recv, other, "<=>", true);
-
-        if (result.isNil()) return result;
-        return RubyFixnum.newFixnum(context.runtime, -cmpint(context, result, recv, other));
+        return result.isNil() ? context.nil : asFixnum(context, -cmpint(context, result, recv, other));
     }
 
     /*  ================

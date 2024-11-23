@@ -46,7 +46,7 @@ import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.callsite.RespondToCallSite;
 
-import static org.jruby.api.Create.newFixnum;
+import static org.jruby.api.Convert.asFixnum;
 
 /**
  * Wrap an IO object in a Channel.
@@ -94,7 +94,7 @@ public abstract class IOChannel implements Channel {
         int remaining = dst.remaining();
 
         CacheEntry readMethodEntry = read.retrieveCache(io);
-        RubyFixnum remainingFixnum = newFixnum(context, remaining);
+        RubyFixnum remainingFixnum = asFixnum(context, remaining);
         IRubyObject readValue;
         if (readMethodEntry.method.getSignature().isTwoArguments()) {
             if (dst.hasArray()) {

@@ -52,7 +52,7 @@ import org.jruby.util.IOInputStream;
 import org.jruby.util.IOOutputStream;
 import org.jruby.util.io.TransparentByteArrayOutputStream;
 
-import static org.jruby.api.Create.newFixnum;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 
@@ -69,8 +69,8 @@ public class RubyMarshal {
         RubyModule module = runtime.defineModule("Marshal");
 
         module.defineAnnotatedMethods(RubyMarshal.class);
-        module.defineConstant("MAJOR_VERSION", newFixnum(context, Constants.MARSHAL_MAJOR));
-        module.defineConstant("MINOR_VERSION", newFixnum(context, Constants.MARSHAL_MINOR));
+        module.defineConstant("MAJOR_VERSION", asFixnum(context, Constants.MARSHAL_MAJOR));
+        module.defineConstant("MINOR_VERSION", asFixnum(context, Constants.MARSHAL_MINOR));
 
         return module;
     }
@@ -140,7 +140,7 @@ public class RubyMarshal {
             RubyHash kwargs = ArgsUtil.extractKeywords(args[argc - 1]);
             if (kwargs != null) {
                 IRubyObject freezeOpt = ArgsUtil.getFreezeOpt(context, kwargs);
-                freeze = freezeOpt != null ? freezeOpt.isTrue() : false;
+                freeze = freezeOpt != null && freezeOpt.isTrue();
                 if (argc > 2) proc = args[1];
             } else {
                 proc = args[1];
@@ -209,21 +209,15 @@ public class RubyMarshal {
     @Deprecated
     public static IRubyObject dump(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         int argc = Arity.checkArgumentCount(context, args, 1, 3);
-
         IRubyObject objectToDump = args[0];
-        IRubyObject io = null;
         int depthLimit = -1;
 
-        switch (argc) {
-            case 1:
-                return dump(context, recv, args[0]);
-            case 2:
-                return dump(context, recv, args[0], args[1]);
-            case 3:
-                return dump(context, recv, args[0], args[1], args[2]);
-        }
-
-        return dumpCommon(context, objectToDump, io, depthLimit);
+        return switch (argc) {
+            case 1 -> dump(context, recv, args[0]);
+            case 2 -> dump(context, recv, args[0], args[1]);
+            case 3 -> dump(context, recv, args[0], args[1], args[2]);
+            default -> dumpCommon(context, objectToDump, null, depthLimit);
+        };
     }
 
     private static JavaSites.MarshalSites sites(ThreadContext context) {

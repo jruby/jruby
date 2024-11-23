@@ -9,8 +9,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newEmptyArray;
-import static org.jruby.api.Create.newFixnum;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -50,7 +50,7 @@ public class JavaEmbedUtilsTest {
         Thread.currentThread().setContextClassLoader( cl );
     }
 
-    private static List<String> EMPTY = Collections.emptyList();
+    private static final List<String> EMPTY = Collections.emptyList();
     
     @Test
     public void testAddClassloaderToLoadPathOnTCCL() throws Exception {
@@ -98,16 +98,16 @@ public class JavaEmbedUtilsTest {
 
         IRubyObject v;
         v = JavaEmbedUtils.javaToRuby(runtime, -100L);
-        assertEquals(newFixnum(context, -100), v);
+        assertEquals(asFixnum(context, -100), v);
 
         v = JavaEmbedUtils.javaToRuby(runtime, 200);
-        assertEquals(newFixnum(context, 200), v);
+        assertEquals(asFixnum(context, 200), v);
 
         v = JavaEmbedUtils.javaToRuby(runtime, (short) 200);
-        assertEquals(newFixnum(context, 200), v);
+        assertEquals(asFixnum(context, 200), v);
 
         v = JavaEmbedUtils.javaToRuby(runtime, (byte) 100);
-        assertEquals(newFixnum(context, 100), v);
+        assertEquals(asFixnum(context, 100), v);
 
         v = JavaEmbedUtils.javaToRuby(runtime, 10.0f);
         assertEquals(runtime.newFloat(10.0), v);
@@ -132,7 +132,7 @@ public class JavaEmbedUtilsTest {
         assertEquals(runtime.newString(), v);
 
         v = JavaEmbedUtils.javaToRuby(runtime, Long.valueOf(42L));
-        assertEquals(newFixnum(context, 42), v);
+        assertEquals(asFixnum(context, 42), v);
 
         v = JavaEmbedUtils.javaToRuby(runtime, Boolean.TRUE);
         assertSame(context.tru, v);

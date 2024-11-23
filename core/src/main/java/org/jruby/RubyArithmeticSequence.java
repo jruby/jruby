@@ -28,6 +28,7 @@ package org.jruby;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Create;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.Helpers;
@@ -51,8 +52,7 @@ import static org.jruby.RubyNumeric.dbl2num;
 import static org.jruby.RubyNumeric.int2fix;
 import static org.jruby.RubyNumeric.num2dbl;
 
-import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Convert.numericToLong;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.Helpers.hashEnd;
@@ -192,7 +192,7 @@ public class RubyArithmeticSequence extends RubyObject {
         if (num == null) {
             if (b.isNil()) return context.nil;
             if (!e.isNil()) {
-                IRubyObject zero = newFixnum(context, 0);
+                IRubyObject zero = asFixnum(context, 0);
                 CallSite op_cmp = sites(context).op_cmp;
                 CallSite op_gt = sites(context).op_gt;
                 CallSite op_lt = sites(context).op_lt;
@@ -216,12 +216,12 @@ public class RubyArithmeticSequence extends RubyObject {
             long unit = fix2long(s);
             ary = newArray(context, n);
             while (n > 0 && fixable(context.runtime, i)) {
-                ary.append(context, newFixnum(context, i));
+                ary.append(context, asFixnum(context, i));
                 i += unit;  /* FIXABLE + FIXABLE never overflow; */
                 --n;
             }
             if (n > 0) {
-                b = newFixnum(context, i);
+                b = asFixnum(context, i);
                 while (n > 0) {
                     ary.append(context, b);
                     b = ((RubyInteger)b).op_plus(context, s);
@@ -243,7 +243,7 @@ public class RubyArithmeticSequence extends RubyObject {
                 if (len < 0) len = 0;
                 ary = newArray(context, Math.min(n, len));
                 while (n > 0 && i < end) {
-                    ary.append(context, newFixnum(context, i));
+                    ary.append(context, asFixnum(context, i));
                     if (i + unit < i) break;
                     i += unit;
                     --n;
@@ -255,7 +255,7 @@ public class RubyArithmeticSequence extends RubyObject {
                 if (len < 0) len = 0;
                 ary = newArray(context, Math.min(n, len));
                 while (n > 0 && i > end) {
-                    ary.append(context, newFixnum(context, i));
+                    ary.append(context, asFixnum(context, i));
                     if (i + unit > i) break;
                     i += unit;
                     --n;
@@ -276,10 +276,10 @@ public class RubyArithmeticSequence extends RubyObject {
 
             if (Double.isInfinite(unit)) {
                 ary = len > 0 ?
-                        newArray(context, 1).append(context, newFloat(context, beg)) :
+                        newArray(context, 1).append(context, asFloat(context, beg)) :
                         newEmptyArray(context);
             } else if (unit == 0) {
-                IRubyObject val = newFloat(context, beg);
+                IRubyObject val = asFloat(context, beg);
                 ary = newArray(context, n);
                 for (i = 0; i < len; ++i) {
                     ary.append(context, val);
@@ -289,7 +289,7 @@ public class RubyArithmeticSequence extends RubyObject {
                 for (i = 0; i < n; ++i) {
                     double d = i * unit + beg;
                     if (unit >= 0 ? end < d : d < end) d = end;
-                    ary.append(context, newFloat(context, d));
+                    ary.append(context, asFloat(context, d));
                 }
             }
 
@@ -467,7 +467,7 @@ public class RubyArithmeticSequence extends RubyObject {
         if (last_is_adjusted) {
             len = len_1;
         } else {
-            len = ((RubyNumeric)len_1).op_plus(context, newFixnum(context, 1));
+            len = ((RubyNumeric)len_1).op_plus(context, asFixnum(context, 1));
         }
 
         IRubyObject nv = num;

@@ -86,7 +86,7 @@ public class Pointer extends AbstractMemory {
     
     @JRubyMethod(name = "size", meta = true, visibility = PUBLIC)
     public static IRubyObject size(ThreadContext context, IRubyObject recv) {
-        return RubyFixnum.newFixnum(context.getRuntime(), Factory.getInstance().sizeOf(NativeType.POINTER));
+        return asFixnum(context, Factory.getInstance().sizeOf(NativeType.POINTER));
     }
 
     @JRubyMethod(name = { "initialize" }, visibility = PRIVATE)

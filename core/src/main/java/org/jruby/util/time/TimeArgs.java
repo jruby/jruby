@@ -4,23 +4,18 @@ import org.joda.time.Chronology;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.IllegalFieldValueException;
-import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyFloat;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyRational;
 import org.jruby.RubyString;
-import org.jruby.RubyStruct;
 import org.jruby.RubyTime;
-import org.jruby.exceptions.ArgumentError;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.function.Function;
-
 import static org.jruby.RubyTime.TIME_SCALE;
-import static org.jruby.api.Create.newFixnum;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Error.argumentError;
 
 public class TimeArgs {
@@ -128,12 +123,10 @@ public class TimeArgs {
 
         if (usecObj.isNil()) {
             if (!secondObj.isNil()) {
-                if (secondObj instanceof RubyRational) {
-                    RubyRational rat = (RubyRational) secondObj;
-
+                if (secondObj instanceof RubyRational rat) {
                     if (rat.isNegative()) throw argumentError(context, "argument out of range.");
 
-                    RubyRational nsec = (RubyRational) rat.op_mul(context, newFixnum(context, 1_000_000_000));
+                    RubyRational nsec = (RubyRational) rat.op_mul(context, asFixnum(context, 1_000_000_000));
 
                     long fullNanos = nsec.getLongValue();
                     long fullMillis = fullNanos / 1_000_000;
@@ -149,12 +142,10 @@ public class TimeArgs {
                     nanos = ((long) (secs * TIME_SCALE) % 1000000);
                 }
             }
-        } else if (usecObj instanceof RubyRational) {
-            RubyRational rat = (RubyRational) usecObj;
-
+        } else if (usecObj instanceof RubyRational rat) {
             if (rat.isNegative()) throw argumentError(context, "argument out of range.");
 
-            RubyRational nsec = (RubyRational) rat.op_mul(context, newFixnum(context, 1000));
+            RubyRational nsec = (RubyRational) rat.op_mul(context, asFixnum(context, 1000));
 
             long tmpNanos = (long) nsec.getDoubleValue(context);
 

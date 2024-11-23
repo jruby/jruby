@@ -599,14 +599,11 @@ public final class Ruby implements Constantizable {
 
                 @Override
                 public IRubyObject call(ThreadContext context1, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                    switch (args.length) {
-                        case 1:
-                            return RubyKernel.gsub(context1, self, args[0], block);
-                        case 2:
-                            return RubyKernel.gsub(context1, self, args[0], args[1], block);
-                        default:
-                            throw argumentError(context1, String.format("wrong number of arguments %d for 1..2", args.length));
-                    }
+                    return switch (args.length) {
+                        case 1 -> RubyKernel.gsub(context1, self, args[0], block);
+                        case 2 -> RubyKernel.gsub(context1, self, args[0], args[1], block);
+                        default -> throw argumentError(context1, String.format("wrong number of arguments %d for 1..2", args.length));
+                    };
                 }
             });
         }

@@ -66,8 +66,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.encoding.MarshalEncoding;
 
 import static org.jruby.RubyBasicObject.getMetaClass;
-import static org.jruby.api.Convert.castAsString;
-import static org.jruby.api.Create.newFixnum;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.marshal.MarshalCommon.*;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -167,7 +166,7 @@ public class MarshalStream extends FilterOutputStream {
                     variables = value.getMarshalVariableList();
 
                     // check if any of those variables were actually set
-                    if (variables.size() > 0 || shouldMarshalEncoding(value)) {
+                    if (!variables.isEmpty() || shouldMarshalEncoding(value)) {
                         // write `I' instance var signet if class is NOT a direct subclass of Object
                         write(TYPE_IVAR);
                     } else {
@@ -176,15 +175,10 @@ public class MarshalStream extends FilterOutputStream {
                     }
                 }
                 final RubyClass meta = getMetaClass(value);
-                RubyClass type = meta;
-                switch(nativeClassIndex) {
-                case STRING:
-                case REGEXP:
-                case ARRAY:
-                case HASH:
-                    type = dumpExtended(meta);
-                    break;
-                }
+                RubyClass type = switch (nativeClassIndex) {
+                    case STRING, REGEXP, ARRAY, HASH -> dumpExtended(meta);
+                    default -> meta;
+                };
 
                 if (nativeClassIndex != meta.getClassIndex() &&
                         nativeClassIndex != ClassIndex.STRUCT &&
@@ -248,7 +242,7 @@ public class MarshalStream extends FilterOutputStream {
             switch (nativeClassIndex) {
             case ARRAY:
                 write('[');
-                RubyArray.marshalTo((RubyArray)value, this);
+                RubyArray.marshalTo((RubyArray<?>)value, this);
                 return;
             case FALSE:
                 write('F');
@@ -368,7 +362,7 @@ public class MarshalStream extends FilterOutputStream {
 
     private void userCommon(IRubyObject value, CacheEntry entry) throws IOException {
         var context = runtime.getCurrentContext();
-        RubyFixnum depthLimitFixnum = newFixnum(context, depthLimit);
+        RubyFixnum depthLimitFixnum = asFixnum(context, depthLimit);
         final RubyClass klass = getMetaClass(value);
         IRubyObject dumpResult;
         if (entry != null) {
@@ -390,14 +384,10 @@ public class MarshalStream extends FilterOutputStream {
         }
 
         write(TYPE_USERDEF);
-
-        writeAndRegisterSymbol(RubySymbol.newSymbol(runtime, klass.getRealClass().getName()).getBytes());
-
+        writeAndRegisterSymbol(asSymbol(context, klass.getRealClass().getName()).getBytes());
         writeString(marshaled.getByteList());
 
-        if (variables != null) {
-            dumpVariables(variables);
-        }
+        if (variables != null) dumpVariables(variables);
 
         registerLinkTarget(value);
     }

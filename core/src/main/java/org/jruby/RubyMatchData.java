@@ -48,7 +48,6 @@ import org.joni.exception.JOniException;
 import org.joni.exception.ValueException;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
-import org.jruby.api.Create;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -628,7 +627,7 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod(name = {"size", "length"})
     public IRubyObject size(ThreadContext context) {
         check();
-        return regs == null ? RubyFixnum.one(context.runtime) : newFixnum(context, regs.getNumRegs());
+        return regs == null ? RubyFixnum.one(context.runtime) : asFixnum(context, regs.getNumRegs());
     }
 
     /**
@@ -646,7 +645,7 @@ public class RubyMatchData extends RubyObject {
 
         updateCharOffset();
 
-        return newFixnum(context, charOffsets.getBeg(i));
+        return asFixnum(context, charOffsets.getBeg(i));
     }
 
     /** match_end
@@ -668,7 +667,7 @@ public class RubyMatchData extends RubyObject {
             e = charOffsets.getEnd(i);
         }
 
-        return newFixnum(context, e);
+        return asFixnum(context, e);
     }
 
     @Deprecated
@@ -703,7 +702,7 @@ public class RubyMatchData extends RubyObject {
             e = charOffsets.getEnd(i);
         }
 
-        return newArray(context, newFixnum(context, b), newFixnum(context, e));
+        return newArray(context, asFixnum(context, b), asFixnum(context, e));
     }
 
     /** match_pre_match
@@ -753,7 +752,7 @@ public class RubyMatchData extends RubyObject {
                 end,
                 str.getCodeRange());
 
-        return newFixnum(context, length);
+        return asFixnum(context, length);
     }
 
     private int nthToIndex(ThreadContext context, IRubyObject id) {
@@ -848,7 +847,7 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod
     @Override
     public RubyFixnum hash() {
-        return newFixnum(getRuntime().getCurrentContext(), hashCode());
+        return asFixnum(getRuntime().getCurrentContext(), hashCode());
     }
 
     @JRubyMethod(keywords = true, optional = 1)

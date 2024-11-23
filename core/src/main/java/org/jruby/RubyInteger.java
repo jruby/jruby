@@ -241,30 +241,21 @@ public abstract class RubyInteger extends RubyNumeric {
                 block.yield(context, nil);
                 context.pollThreadEvents();
             }
-            if (i <= to) {
-                block.yield(context, nil);
-            }
+            if (i <= to) block.yield(context, nil);
         } else {
-            Ruby runtime = context.runtime;
             long i;
             for (i = from; i < to; i++) {
-                block.yield(context, RubyFixnum.newFixnum(runtime, i));
+                block.yield(context, asFixnum(context, i));
                 context.pollThreadEvents();
             }
-            if (i <= to) {
-                block.yield(context, RubyFixnum.newFixnum(runtime, i));
-            }
+            if (i <= to) block.yield(context, asFixnum(context, i));
         }
     }
 
     static void duckUpto(ThreadContext context, IRubyObject from, IRubyObject to, Block block) {
-        Ruby runtime = context.runtime;
         IRubyObject i = from;
-        RubyFixnum one = RubyFixnum.one(runtime);
-        while (true) {
-            if (sites(context).op_gt.call(context, i, i, to).isTrue()) {
-                break;
-            }
+        RubyFixnum one = asFixnum(context, 1);
+        while (!sites(context).op_gt.call(context, i, i, to).isTrue()) {
             block.yield(context, i);
             i = sites(context).op_plus.call(context, i, i, one);
         }
@@ -303,18 +294,13 @@ public abstract class RubyInteger extends RubyNumeric {
             for (i = from; i > to; i--) {
                 block.yield(context, nil);
             }
-            if (i >= to) {
-                block.yield(context, nil);
-            }
+            if (i >= to) block.yield(context, nil);
         } else {
-            Ruby runtime = context.runtime;
             long i;
             for (i = from; i > to; i--) {
-                block.yield(context, RubyFixnum.newFixnum(runtime, i));
+                block.yield(context, asFixnum(context, i));
             }
-            if (i >= to) {
-                block.yield(context, RubyFixnum.newFixnum(runtime, i));
-            }
+            if (i >= to) block.yield(context, asFixnum(context, i));
         }
     }
 
@@ -336,26 +322,20 @@ public abstract class RubyInteger extends RubyNumeric {
      * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
      */
     private static IRubyObject downtoSize(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return intervalStepSize(context, recv, args[0], RubyFixnum.newFixnum(context.runtime, -1), false);
+        return intervalStepSize(context, recv, args[0], asFixnum(context, -1), false);
     }
 
     @JRubyMethod
     public IRubyObject times(ThreadContext context, Block block) {
-        if (block.isGiven()) {
-            Ruby runtime = context.runtime;
-            IRubyObject i = RubyFixnum.zero(runtime);
-            RubyFixnum one = RubyFixnum.one(runtime);
-            while (true) {
-                if (!((RubyInteger) i).op_lt(context, this).isTrue()) {
-                    break;
-                }
-                block.yield(context, i);
-                i = ((RubyInteger) i).op_plus(context, one);
-            }
-            return this;
-        } else {
-            return enumeratorizeWithSize(context, this, "times", RubyInteger::timesSize);
+        if (!block.isGiven()) return enumeratorizeWithSize(context, this, "times", RubyInteger::timesSize);
+
+        IRubyObject i = asFixnum(context, 0);
+        RubyFixnum one = asFixnum(context, 1);
+        while (((RubyInteger) i).op_lt(context, this).isTrue()) {
+            block.yield(context, i);
+            i = ((RubyInteger) i).op_plus(context, one);
         }
+        return this;
     }
 
     /**
@@ -615,30 +595,23 @@ public abstract class RubyInteger extends RubyNumeric {
      * MRI: rb_int_round
      */
     public RubyNumeric roundShared(ThreadContext context, int ndigits, RoundingMode roundingMode) {
-        Ruby runtime = context.runtime;
+        if (int_round_zero_p(context, ndigits)) return asFixnum(context, 0);
 
-        RubyNumeric f, h, n, r;
-
-        if (int_round_zero_p(context, ndigits)) {
-            return RubyFixnum.zero(runtime);
-        }
-
-        f = Numeric.int_pow(context, 10, -ndigits);
+        RubyNumeric f = Numeric.int_pow(context, 10, -ndigits);
         if (this instanceof RubyFixnum && f instanceof RubyFixnum) {
             long x = fix2long(this), y = fix2long(f);
             boolean neg = x < 0;
             if (neg) x = -x;
             x = doRound(context, roundingMode, x, y);
             if (neg) x = -x;
-            return RubyFixnum.newFixnum(runtime, x);
+            return asFixnum(context, x);
         }
-        if (f instanceof RubyFloat) {
-	        /* then int_pow overflow */
-            return RubyFixnum.zero(runtime);
-        }
-        h = (RubyNumeric) f.idiv(context, 2);
-        r = (RubyNumeric) this.op_mod(context, f);
-        n = (RubyNumeric) this.op_minus(context, r);
+
+        if (f instanceof RubyFloat) return asFixnum(context, 0); // then int_pow overflow
+
+        RubyNumeric h = (RubyNumeric) f.idiv(context, 2);
+        RubyNumeric r = (RubyNumeric) this.op_mod(context, f);
+        RubyNumeric n = (RubyNumeric) this.op_minus(context, r);
         r = (RubyNumeric) r.op_cmp(context, h);
         if (r.isPositive(context).isTrue() ||
                 (r.isZero() && doRoundCheck(context, roundingMode, this, n, f))) {
@@ -817,7 +790,7 @@ public abstract class RubyInteger extends RubyNumeric {
 
     @JRubyMethod(name = "digits")
     public RubyArray digits(ThreadContext context) {
-        return digits(context, RubyFixnum.newFixnum(context.runtime, 10));
+        return digits(context, asFixnum(context, 10));
     }
 
     @JRubyMethod(name = "digits")
@@ -849,21 +822,21 @@ public abstract class RubyInteger extends RubyNumeric {
     public abstract IRubyObject op_plus(ThreadContext context, IRubyObject other);
 
     public IRubyObject op_plus(ThreadContext context, long other) {
-        return op_plus(context, RubyFixnum.newFixnum(context.runtime, other));
+        return op_plus(context, asFixnum(context, other));
     }
 
     @JRubyMethod(name = "-")
     public abstract IRubyObject op_minus(ThreadContext context, IRubyObject other);
 
     public IRubyObject op_minus(ThreadContext context, long other) {
-        return op_minus(context, RubyFixnum.newFixnum(context.runtime, other));
+        return op_minus(context, asFixnum(context, other));
     }
 
     @JRubyMethod(name = "*")
     public abstract IRubyObject op_mul(ThreadContext context, IRubyObject other);
 
     public IRubyObject op_mul(ThreadContext context, long other) {
-        return op_mul(context, RubyFixnum.newFixnum(context.runtime, other));
+        return op_mul(context, asFixnum(context, other));
     }
 
     // MRI: rb_int_idiv, polymorphism handles fixnum vs bignum
@@ -882,7 +855,7 @@ public abstract class RubyInteger extends RubyNumeric {
     public abstract IRubyObject op_mod(ThreadContext context, IRubyObject other);
 
     public IRubyObject op_mod(ThreadContext context, long other) {
-        return op_mod(context, RubyFixnum.newFixnum(context.runtime, other));
+        return op_mod(context, asFixnum(context, other));
     }
 
     @JRubyMethod(name = "**")
@@ -1046,14 +1019,14 @@ public abstract class RubyInteger extends RubyNumeric {
     public abstract IRubyObject op_lshift(ThreadContext context, IRubyObject other);
 
     public RubyInteger op_lshift(ThreadContext context, long other) {
-        return (RubyInteger) op_lshift(context, RubyFixnum.newFixnum(context.runtime, other));
+        return (RubyInteger) op_lshift(context, asFixnum(context, other));
     }
 
     @JRubyMethod(name = ">>")
     public abstract IRubyObject op_rshift(ThreadContext context, IRubyObject other);
 
     public RubyInteger op_rshift(ThreadContext context, long other) {
-        return (RubyInteger) op_rshift(context, RubyFixnum.newFixnum(context.runtime, other));
+        return (RubyInteger) op_rshift(context, asFixnum(context, other));
     }
 
     @JRubyMethod(name = "to_f")
