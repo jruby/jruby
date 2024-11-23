@@ -70,6 +70,7 @@ import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.TraceEventManager;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
+import org.jruby.specialized.RubyObjectSpecializer;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.MRIRecursionGuard;
 import org.jruby.util.StringSupport;
@@ -346,6 +347,9 @@ public final class Ruby implements Constantizable {
         objectClass.setConstant("Class", classClass);
         objectClass.setConstant("Module", moduleClass);
         objectClass.setConstant("Refinement", refinementClass);
+
+        // specializer for RubyObject subclasses
+        objectSpecializer = new RubyObjectSpecializer(this);
 
         // Initialize Kernel and include into Object
         RubyModule kernel = kernelModule = RubyKernel.createKernelModule(this);
@@ -2603,6 +2607,10 @@ public final class Ruby implements Constantizable {
 
     public JavaSupport getJavaSupport() {
         return javaSupport;
+    }
+
+    public RubyObjectSpecializer getObjectSpecializer() {
+        return objectSpecializer;
     }
 
     public static ClassLoader getClassLoader() {
@@ -5579,6 +5587,9 @@ public final class Ruby implements Constantizable {
     // Java support
     private final JavaSupport javaSupport;
     private final JRubyClassLoader jrubyClassLoader;
+
+    // Object Specializer
+    private final RubyObjectSpecializer objectSpecializer;
 
     // Management/monitoring
     private final BeanManager beanManager;

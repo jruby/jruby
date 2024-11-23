@@ -112,7 +112,6 @@ public class RubyThreadGroup extends RubyObject {
     
     public void remove(RubyThread rubyThread) {
         synchronized (rubyThread) {
-            rubyThread.setThreadGroup(null);
             rubyThreadList.remove(rubyThread);
         }
     }
