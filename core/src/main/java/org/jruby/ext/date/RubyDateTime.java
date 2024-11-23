@@ -431,7 +431,7 @@ public class RubyDateTime extends RubyDate {
 
     @JRubyMethod(meta = true)
     public static RubyDateTime now(ThreadContext context, IRubyObject self) { // sg=ITALY
-        final DateTimeZone zone = RubyTime.getLocalTimeZone(context.runtime);
+        final DateTimeZone zone = RubyTime.getLocalTimeZone(context);
         if (zone == DateTimeZone.UTC) {
             return new RubyDateTime(context.runtime, (RubyClass) self, new DateTime(CHRONO_ITALY_UTC), 0);
         }
@@ -443,7 +443,7 @@ public class RubyDateTime extends RubyDate {
     @JRubyMethod(meta = true)
     public static RubyDateTime now(ThreadContext context, IRubyObject self, IRubyObject sg) {
         final long start = val2sg(context, sg);
-        final DateTimeZone zone = RubyTime.getLocalTimeZone(context.runtime);
+        final DateTimeZone zone = RubyTime.getLocalTimeZone(context);
         final DateTime dt = new DateTime(getChronology(context, start, zone));
         final int off = zone.getOffset(dt.getMillis()) / 1000;
         return new RubyDateTime(context.runtime, (RubyClass) self, dt, off, start);
@@ -506,7 +506,7 @@ public class RubyDateTime extends RubyDate {
         dt = new DateTime(
                 adjustJodaYear(dt.getYear()), dt.getMonthOfYear(), dt.getDayOfMonth(),
                 dt.getHourOfDay(), dt.getMinuteOfHour(), dt.getSecondOfMinute(),
-                dt.getMillisOfSecond(), RubyTime.getTimeZone(context.runtime, this.off)
+                dt.getMillisOfSecond(), RubyTime.getTimeZone(context, this.off)
         );
 
         RubyTime time = new RubyTime(context.runtime, context.runtime.getTime(), dt, true);

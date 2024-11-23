@@ -755,7 +755,7 @@ public class RubyDate extends RubyObject {
     }
 
     private static DateTime todayDate(final ThreadContext context, final Chronology chrono) {
-        org.joda.time.LocalDate today = new org.joda.time.LocalDate(RubyTime.getLocalTimeZone(context.runtime));
+        org.joda.time.LocalDate today = new org.joda.time.LocalDate(RubyTime.getLocalTimeZone(context));
         return new DateTime(today.getYear(), today.getMonthOfYear(), today.getDayOfMonth(), 0, 0, chrono);
     }
 
@@ -1632,14 +1632,11 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod // Time.local(year, mon, mday)
     public RubyTime to_time(ThreadContext context) {
-        final Ruby runtime = context.runtime;
         DateTime dt = this.dt;
 
         dt = new DateTime(adjustJodaYear(dt.getYear()), dt.getMonthOfYear(), dt.getDayOfMonth(),
-                0, 0, 0,
-                RubyTime.getLocalTimeZone(runtime)
-        );
-        return new RubyTime(runtime, runtime.getTime(), dt);
+                0, 0, 0, RubyTime.getLocalTimeZone(context));
+        return new RubyTime(context.runtime, context.runtime.getTime(), dt);
     }
 
     // date/format.rb

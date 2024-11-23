@@ -74,8 +74,7 @@ public class JavaTime {
             long nano = val.getNano();
             long millis = val.getEpochSecond() * 1000 + (nano / 1_000_000);
             nano = nano % 1_000_000;
-            final Ruby runtime = context.runtime;
-            return RubyTime.newTime(runtime, new DateTime(millis, RubyTime.getLocalTimeZone(runtime)), nano);
+            return RubyTime.newTime(context.runtime, new DateTime(millis, RubyTime.getLocalTimeZone(context)), nano);
         }
 
     }
@@ -91,17 +90,9 @@ public class JavaTime {
         @JRubyMethod(name = "to_time")
         public static IRubyObject to_time(ThreadContext context, IRubyObject self) {
             java.time.LocalDateTime val = unwrapIfJavaObject(self);
-            final Ruby runtime = context.runtime;
-            return toTime(runtime,
-                    val.getYear(),
-                    val.getMonthValue(),
-                    val.getDayOfMonth(),
-                    val.getHour(),
-                    val.getMinute(),
-                    val.getSecond(),
-                    val.getNano(),
-                    RubyTime.getLocalTimeZone(runtime)
-            );
+            return toTime(context, val.getYear(), val.getMonthValue(), val.getDayOfMonth(),
+                    val.getHour(), val.getMinute(), val.getSecond(),
+                    val.getNano(), RubyTime.getLocalTimeZone(context));
         }
 
     }
@@ -117,17 +108,9 @@ public class JavaTime {
         @JRubyMethod(name = "to_time")
         public static IRubyObject to_time(ThreadContext context, IRubyObject self) {
             java.time.OffsetDateTime val = unwrapIfJavaObject(self);
-            final Ruby runtime = context.runtime;
-            return toTime(runtime,
-                    val.getYear(),
-                    val.getMonthValue(),
-                    val.getDayOfMonth(),
-                    val.getHour(),
-                    val.getMinute(),
-                    val.getSecond(),
-                    val.getNano(),
-                    convertZone(val.getOffset().getId())
-            );
+            return toTime(context, val.getYear(), val.getMonthValue(), val.getDayOfMonth(),
+                    val.getHour(), val.getMinute(), val.getSecond(),
+                    val.getNano(), convertZone(val.getOffset().getId()));
         }
 
     }
@@ -143,22 +126,14 @@ public class JavaTime {
         @JRubyMethod(name = "to_time")
         public static IRubyObject to_time(ThreadContext context, IRubyObject self) {
             java.time.ZonedDateTime val = unwrapIfJavaObject(self);
-            final Ruby runtime = context.runtime;
-            return toTime(runtime,
-                    val.getYear(),
-                    val.getMonthValue(),
-                    val.getDayOfMonth(),
-                    val.getHour(),
-                    val.getMinute(),
-                    val.getSecond(),
-                    val.getNano(),
-                    convertZone(val.getZone().getId())
-            );
+            return toTime(context, val.getYear(), val.getMonthValue(), val.getDayOfMonth(),
+                    val.getHour(), val.getMinute(), val.getSecond(),
+                    val.getNano(), convertZone(val.getZone().getId()));
         }
 
     }
 
-    private static RubyTime toTime(final Ruby runtime,
+    private static RubyTime toTime(ThreadContext context,
                                    int year, int month, int day, int hour, int min, int sec, int nano,
                                    DateTimeZone zone) {
         int millisOfSec = nano / 1_000_000;
@@ -172,7 +147,7 @@ public class JavaTime {
                 millisOfSec,
                 zone
         );
-        return RubyTime.newTime(runtime, dt, nano % 1_000_000);
+        return RubyTime.newTime(context.runtime, dt, nano % 1_000_000);
     }
 
     /**
