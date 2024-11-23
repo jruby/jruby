@@ -1,1 +1,0 @@
-fails:Float#ceil with precision precision is negative returns 10**precision.abs when precision.abs is larger than the number digits of self
