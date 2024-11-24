@@ -27,4 +27,5 @@ open module org.jruby.base {
     requires me.qmx.jitescript;
     requires static slf4j.api;
     requires static org.osgi.core;
+    requires org.crac;
 }
