@@ -62,7 +62,6 @@ import org.jruby.util.ByteList;
 
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newArray;
-import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.*;
@@ -279,7 +278,7 @@ public final class StructLayout extends Type {
         var offsets = newArray(context, fieldNames.size());
 
         for (IRubyObject name : fieldNames) { // Assemble a [ :name, offset ] array
-            offsets.append(context, newArray(context, name, newFixnum(context, getMember(context, name).offset)));
+            offsets.append(context, newArray(context, name, asFixnum(context, getMember(context, name).offset)));
         }
 
         return offsets;

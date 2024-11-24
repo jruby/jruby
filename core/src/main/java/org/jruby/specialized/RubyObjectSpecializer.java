@@ -35,18 +35,14 @@ import org.jruby.RubyObject;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ClassDefiningClassLoader;
-import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.cli.Options;
 import org.jruby.util.collections.NonBlockingHashMapLong;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.tree.LabelNode;
 
-import java.lang.invoke.CallSite;
-import java.lang.invoke.LambdaMetafactory;
-import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Set;
 
 import static org.jruby.util.CodegenUtils.ci;
@@ -59,14 +55,19 @@ import static org.jruby.util.CodegenUtils.sig;
 public class RubyObjectSpecializer {
 
     public static final MethodHandles.Lookup LOOKUP = MethodHandles.publicLookup();
+    private static final String GENERATED_PACKAGE = "org/jruby/gen/";
 
-    private static ClassAndAllocator getClassForSize(int size) {
-        return SPECIALIZED_CLASSES.get(size);
+    private final Ruby runtime;
+
+    private ClassAndAllocator getClassForSize(int size) {
+        return specializedClasses.get(size);
     }
 
-    private static final NonBlockingHashMapLong<ClassAndAllocator> SPECIALIZED_CLASSES = new NonBlockingHashMapLong<>();
+    private final NonBlockingHashMapLong<ClassAndAllocator> specializedClasses = new NonBlockingHashMapLong<>();
 
-    private static final ClassDefiningClassLoader LOADER = new OneShotClassLoader(Ruby.getClassLoader());
+    public RubyObjectSpecializer(Ruby runtime) {
+        this.runtime = runtime;
+    }
 
     static class ClassAndAllocator {
         final Class cls;
@@ -78,57 +79,21 @@ public class RubyObjectSpecializer {
         }
     }
 
-    public static ObjectAllocator specializeForVariables(RubyClass klass, Set<String> foundVariables) {
-        int size = foundVariables.size();
+    public ObjectAllocator specializeForVariables(RubyClass klass, Set<String> foundVariables) {
+        // clamp to max object width
+        int size = Math.min(foundVariables.size(), Options.REIFY_VARIABLES_MAX.load());
 
-        // clamp to max object width (jruby/jruby#
-        size = Math.min(size, Options.REIFY_VARIABLES_MAX.load());
-
-        ClassAndAllocator cna = null;
-        String className = null;
+        ClassAndAllocator cna;
 
         if (Options.REIFY_VARIABLES_NAME.load()) {
-            className = klass.getName();
-
-            if (className.startsWith("#")) {
-                className = "Anonymous" + Integer.toHexString(System.identityHashCode(klass));
-            } else {
-                className = className.replace("::", "/");
-            }
+            // use Ruby class name for debugging, profiling
+            cna = generateSpecializedRubyObject(uniqueClassName(klass), size, false);
         } else {
-            // Generate class for specified size
+            // Generic class for specified size
             cna = getClassForSize(size);
 
             if (cna == null) {
-                className = "RubyObject" + size;
-            }
-        }
-
-        // if we have a className, proceed to generate
-        if (className != null) {
-            final String clsPath = "org/jruby/gen/" + className;
-
-            synchronized (LOADER) {
-                Class specialized;
-                try {
-                    // try loading class without generating
-                    specialized = LOADER.loadClass(clsPath.replace('/', '.'));
-                } catch (ClassNotFoundException cnfe) {
-                    // generate specialized class
-                    specialized = generateInternal(size, clsPath);
-                }
-
-                try {
-                    ObjectAllocator allocator = (ObjectAllocator) specialized.getDeclaredClasses()[0].getConstructor().newInstance();
-
-                    cna = new ClassAndAllocator(specialized, allocator);
-
-                    if (!Options.REIFY_VARIABLES_NAME.load()) {
-                        SPECIALIZED_CLASSES.put(size, cna);
-                    }
-                } catch (Throwable t) {
-                    throw new RuntimeException(t);
-                }
+                cna = generateSpecializedRubyObject(genericClassName(size), size, true);
             }
         }
 
@@ -155,7 +120,78 @@ public class RubyObjectSpecializer {
         return cna.allocator;
     }
 
-    private static Class generateInternal(int size, final String clsPath) {
+    private ClassAndAllocator generateSpecializedRubyObject(String className, int size, boolean cache) {
+        ClassAndAllocator cna;
+
+        synchronized (this) {
+            Class specialized;
+            try {
+                // try loading class without generating
+                specialized = runtime.getJRubyClassLoader().loadClass(className.replace('/', '.'));
+            } catch (ClassNotFoundException cnfe) {
+                // generate specialized class
+                specialized = generateInternal(className, size);
+            }
+
+            try {
+                ObjectAllocator allocator = (ObjectAllocator) specialized.getDeclaredClasses()[0].getConstructor().newInstance();
+
+                cna = new ClassAndAllocator(specialized, allocator);
+            } catch (Throwable t) {
+                throw new RuntimeException(t);
+            }
+        }
+
+        if (cache) {
+            specializedClasses.put(size, cna);
+        }
+
+        return cna;
+    }
+
+    private static String genericClassName(int size) {
+        return GENERATED_PACKAGE + "RubyObject" + size;
+    }
+
+    private static String uniqueClassName(RubyClass klass) {
+        String className = klass.getName();
+
+        if (className.startsWith("#")) {
+            className = "Anonymous" + Integer.toHexString(System.identityHashCode(klass));
+        } else {
+            className = className.replace("::", "/");
+        }
+
+        return GENERATED_PACKAGE + className;
+    }
+
+    /**
+     * Emit all generic RubyObject specializations to disk, so they do not need to generate at runtime.
+     */
+    public static void main(String[] args) throws Throwable {
+        String targetPath = args[0];
+
+        Files.createDirectories(Paths.get(targetPath, GENERATED_PACKAGE));
+
+        int maxVars = Options.REIFY_VARIABLES_MAX.load();
+        for (int i = 0; i <= maxVars; i++) {
+            String clsPath = genericClassName(i);
+            JiteClass jcls = generateJiteClass(clsPath, i);
+            Files.write(Paths.get(targetPath, clsPath + ".class"), jcls.toBytes(JDKVersion.V1_8));
+            Files.write(Paths.get(targetPath, clsPath + "Allocator.class"), jcls.getChildClasses().get(0).toBytes(JDKVersion.V1_8));
+        }
+    }
+
+    private Class generateInternal(final String clsPath, int size) {
+        final JiteClass jiteClass = generateJiteClass(clsPath, size);
+
+        Class specializedClass = defineClass(jiteClass);
+        defineClass(jiteClass.getChildClasses().get(0));
+
+        return specializedClass;
+    }
+
+    private static JiteClass generateJiteClass(String clsPath, int size) {
         // ensure only one thread will attempt to generate and define the new class
         final String baseName = p(RubyObject.class);
 
@@ -222,11 +258,7 @@ public class RubyObjectSpecializer {
                 }});
             }});
         }};
-
-        Class specializedClass = defineClass(jiteClass);
-        defineClass(jiteClass.getChildClasses().get(0));
-
-        return specializedClass;
+        return jiteClass;
     }
 
     private static void genGetSwitch(String clsPath, int size, CodeBlock block, int offsetVar) {
@@ -264,8 +296,8 @@ public class RubyObjectSpecializer {
         block.label(defaultError);
     }
 
-    private static Class defineClass(JiteClass jiteClass) {
-        return LOADER.defineClass(classNameFromJiteClass(jiteClass), jiteClass.toBytes(JDKVersion.V1_8));
+    private Class defineClass(JiteClass jiteClass) {
+        return runtime.getJRubyClassLoader().defineClass(classNameFromJiteClass(jiteClass), jiteClass.toBytes(JDKVersion.V1_8));
     }
 
     private static String classNameFromJiteClass(JiteClass jiteClass) {

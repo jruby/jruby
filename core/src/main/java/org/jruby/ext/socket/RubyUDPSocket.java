@@ -35,11 +35,11 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
-import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Convert;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
@@ -68,12 +68,12 @@ import java.net.StandardProtocolFamily;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AlreadyBoundException;
-import java.nio.channels.Channel;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.UnsupportedAddressTypeException;
 
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
 import static org.jruby.runtime.Helpers.extractExceptionOnlyArg;
 
@@ -277,7 +277,7 @@ public class RubyUDPSocket extends RubyIPSocket {
             ReceiveTuple tuple = doReceiveNonblockTuple(socket, context.runtime, RubyNumeric.fix2int(length));
 
             if (tuple == null) {
-                if (!exception) return newSymbol(context, "wait_readable");
+                if (!exception) return Convert.asSymbol(context, "wait_readable");
                 throw context.runtime.newErrnoEAGAINReadableError("recvfrom(2)");
             }
 
@@ -316,7 +316,7 @@ public class RubyUDPSocket extends RubyIPSocket {
 
             int written = ((DatagramChannel) this.getChannel()).write(buf);
 
-            return newFixnum(context, written);
+            return asFixnum(context, written);
         } catch (NotYetConnectedException e) {
             throw context.runtime.newErrnoEDESTADDRREQError("send(2)");
         } catch (UnknownHostException e) {
@@ -407,7 +407,7 @@ public class RubyUDPSocket extends RubyIPSocket {
                         written = sendDP.getLength();
                     }
 
-                    return newFixnum(context, written);
+                    return asFixnum(context, written);
                 } catch (NoRouteToHostException nrthe) {
                     if (i+1 < addrs.length) {
                         continue;

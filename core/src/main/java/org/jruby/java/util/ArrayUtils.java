@@ -13,7 +13,7 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import static org.jruby.api.Create.newFixnum;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -81,7 +81,7 @@ public class ArrayUtils {
         System.arraycopy(original, 0, proxy.getObject(), 0, oldLength);
 
         for (int i = 0; i < addLength; i++) {
-            IRubyObject val = Helpers.invoke(context, additional, "[]", newFixnum(context, i));
+            IRubyObject val = Helpers.invoke(context, additional, "[]", asFixnum(context, i));
             proxy.setValue(context.runtime, oldLength + i, val); // [ oldLen + i ] = val
         }
 

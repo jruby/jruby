@@ -37,6 +37,7 @@ package org.jruby;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+
 import org.jruby.api.Convert;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings;
@@ -396,10 +397,10 @@ public class RubyProc extends RubyObject implements DataType {
     public RubyFixnum arity(ThreadContext context) {
         Signature signature = block.getSignature();
 
-        if (block.type == Block.Type.LAMBDA) return newFixnum(context, signature.arityValue());
+        if (block.type == Block.Type.LAMBDA) return asFixnum(context, signature.arityValue());
 
         // FIXME: Consider min/max like MRI here instead of required + kwarg count.
-        return newFixnum(context, signature.hasRest() ?
+        return asFixnum(context, signature.hasRest() ?
                 signature.arityValue() : signature.required() + signature.getRequiredKeywordForArityCount());
     }
 

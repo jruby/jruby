@@ -46,6 +46,7 @@ import java.lang.reflect.InvocationTargetException;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
 import static org.jruby.javasupport.JavaUtil.convertJavaArrayToRuby;
 import static org.jruby.javasupport.JavaUtil.convertJavaToUsableRubyObject;
@@ -427,14 +428,14 @@ public abstract class JavaUtil {
             if ( list instanceof java.util.RandomAccess ) {
                 for ( int i = 0; i < list.size(); i++ ) {
                     IRubyObject ret = block.yield(context, convertJavaToUsableRubyObject(context.runtime, list.get(i)));
-                    if ( ret.isTrue() ) return newFixnum(context, i);
+                    if ( ret.isTrue() ) return asFixnum(context, i);
                 }
             }
             else {
                 int i = 0;
                 for ( Object elem : list ) {
                     IRubyObject ret = block.yield(context, convertJavaToUsableRubyObject(context.runtime, elem));
-                    if ( ret.isTrue() ) return newFixnum(context, i);
+                    if ( ret.isTrue() ) return asFixnum(context, i);
                     i++;
                 }
             }
@@ -451,7 +452,7 @@ public abstract class JavaUtil {
                     final Object elem = list.get(i);
                     if ( val == elem ||
                         invokedynamic(context, val, OP_EQUAL, convertJavaToUsableRubyObject(context.runtime, elem)).isTrue() ) {
-                        return newFixnum(context, i);
+                        return asFixnum(context, i);
                     }
                 }
             }
@@ -460,7 +461,7 @@ public abstract class JavaUtil {
                 for ( Object elem : list ) {
                     if ( val == elem ||
                         invokedynamic(context, val, OP_EQUAL, convertJavaToUsableRubyObject(context.runtime, elem)).isTrue() ) {
-                        return newFixnum(context, i);
+                        return asFixnum(context, i);
                     }
                     i++;
                 }
@@ -479,7 +480,7 @@ public abstract class JavaUtil {
             if ( list instanceof java.util.RandomAccess ) {
                 for ( int i = list.size() - 1; i >= 0; i-- ) {
                     IRubyObject ret = block.yield(context, convertJavaToUsableRubyObject(runtime, list.get(i)));
-                    if ( ret.isTrue() ) return newFixnum(context, i);
+                    if ( ret.isTrue() ) return asFixnum(context, i);
                 }
             }
             else {
@@ -487,7 +488,7 @@ public abstract class JavaUtil {
                 for ( java.util.ListIterator it = list.listIterator(i); it.hasPrevious(); ) {
                     final Object elem = it.previous();
                     IRubyObject ret = block.yield(context, convertJavaToUsableRubyObject(runtime, elem));
-                    if ( ret.isTrue() ) return newFixnum(context, i);
+                    if ( ret.isTrue() ) return asFixnum(context, i);
                     i--;
                 }
             }
@@ -505,7 +506,7 @@ public abstract class JavaUtil {
                     final Object elem = list.get(i);
                     if ( val == elem ||
                         invokedynamic(context, val, OP_EQUAL, convertJavaToUsableRubyObject(runtime, elem)).isTrue() ) {
-                        return newFixnum(context, i);
+                        return asFixnum(context, i);
                     }
                 }
             }
@@ -515,7 +516,7 @@ public abstract class JavaUtil {
                     final Object elem = it.previous();
                     if ( val == elem ||
                         invokedynamic(context, val, OP_EQUAL, convertJavaToUsableRubyObject(runtime, elem)).isTrue() ) {
-                        return newFixnum(context, i);
+                        return asFixnum(context, i);
                     }
                     i--;
                 }

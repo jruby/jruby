@@ -3,10 +3,11 @@ package org.jruby.runtime;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubySymbol;
+import org.jruby.api.Convert;
 import org.jruby.internal.runtime.methods.DescriptorInfo;
 
 import static org.jruby.api.Create.newArray;
-import static org.jruby.api.Create.newSymbol;
+import static org.jruby.api.Convert.asSymbol;
 
 /**
  * The diffierent types of arguments identified in a method.
@@ -81,7 +82,7 @@ public enum ArgumentType {
     }
 
     public RubyArray toArrayForm(ThreadContext context, RubySymbol name) {
-        RubySymbol typeName = newSymbol(context, typeId);
+        RubySymbol typeName = Convert.asSymbol(context, typeId);
 
         return anonymous ? newArray(context, typeName) : newArray(context, typeName, name);
     }

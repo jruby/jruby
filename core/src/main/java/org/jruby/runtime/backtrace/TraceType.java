@@ -10,13 +10,13 @@ import java.util.stream.Stream;
 import com.headius.backport9.stack.StackWalker;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
 import org.jruby.RubyHash;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.api.Convert;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -25,7 +25,7 @@ import org.jruby.util.log.LoggerFactory;
 import org.jruby.util.TypeConverter;
 
 import static org.jruby.api.Convert.asBoolean;
-import static org.jruby.api.Create.newSymbol;
+import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.util.RubyStringBuilder.str;
 
@@ -388,7 +388,7 @@ public class TraceType {
     private static IRubyObject checkHighlightKeyword(ThreadContext context, IRubyObject optArg, boolean autoTTYDetect) {
         IRubyObject highlightArg = context.nil;
 
-        RubySymbol highlightSym = newSymbol(context, "highlight");
+        RubySymbol highlightSym = Convert.asSymbol(context, "highlight");
         if (!optArg.isNil()) {
             RubyHash optHash = (RubyHash) optArg;
 
@@ -413,8 +413,8 @@ public class TraceType {
         if (vOrder == null || vOrder.isNil()) return false;
 
         IRubyObject id = TypeConverter.checkID(vOrder);
-        if (id == newSymbol(context, "bottom")) return true;
-        if (id == newSymbol(context, "top")) return false;
+        if (id == Convert.asSymbol(context, "bottom")) return true;
+        if (id == Convert.asSymbol(context, "top")) return false;
         throw argumentError(context, str(context.runtime, "expected :top or :bottom as order: ", vOrder));
     }
 

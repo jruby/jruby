@@ -154,7 +154,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
 
         @Override
         public RubyFixnum hash(ThreadContext context) {
-            return newFixnum(context, mapDelegate().hashCode());
+            return asFixnum(context, mapDelegate().hashCode());
         }
 
         @Override

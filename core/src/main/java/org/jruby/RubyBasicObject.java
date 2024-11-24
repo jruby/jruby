@@ -29,6 +29,7 @@
 package org.jruby;
 
 import org.jcodings.Encoding;
+import org.jruby.api.Convert;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.java.proxies.JavaProxy;
@@ -2405,7 +2406,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         if (klass.isSingleton()) {
             // TODO: needs to use method_entry_i logic from MRI
             origin.getMethods().forEach((k, v) -> {
-                if (v.getVisibility() != PRIVATE) names.add(newSymbol(context, k));
+                if (v.getVisibility() != PRIVATE) names.add(Convert.asSymbol(context, k));
             });
             klass = klass.getSuperClass();
         }
@@ -2414,7 +2415,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             while (klass != null && (klass.isSingleton() || klass.isIncluded())) {
                 if (klass != origin) {
                     klass.getMethods().forEach((k, v) -> {
-                        if (v.getVisibility() != PRIVATE) names.add(newSymbol(context, k));
+                        if (v.getVisibility() != PRIVATE) names.add(Convert.asSymbol(context, k));
                     });
                 }
                 klass = klass.getSuperClass();
@@ -2826,7 +2827,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     public RubyArray instance_variables(ThreadContext context) {
         var array = newArray(context, getMetaClass().getVariableAccessorsForRead().size());
-        forEachInstanceVariableName(name -> array.append(context, newSymbol(context, name)));
+        forEachInstanceVariableName(name -> array.append(context, Convert.asSymbol(context, name)));
         return array;
     }
 

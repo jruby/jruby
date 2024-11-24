@@ -31,7 +31,6 @@ package org.jruby.ext.ffi;
 import java.nio.ByteOrder;
 import java.util.regex.Pattern;
 import org.jruby.Ruby;
-import org.jruby.RubyBoolean;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ThreadContext;
@@ -39,7 +38,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.SafePropertyAccessor;
 
 import static org.jruby.api.Convert.asBoolean;
-import static org.jruby.api.Create.newFixnum;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newString;
 
 /**
@@ -299,12 +298,12 @@ public class Platform {
         RubyModule module = ffi.defineModuleUnder("Platform");
         Platform platform = Platform.getPlatform();
 
-        module.defineConstant("ADDRESS_SIZE", newFixnum(context, platform.addressSize));
-        module.defineConstant("LONG_SIZE", newFixnum(context, platform.longSize));
-        module.defineConstant("LONG_DOUBLE_SIZE", newFixnum(context, 128));
-        module.defineConstant("BYTE_ORDER", newFixnum(context, BYTE_ORDER));
-        module.defineConstant("BIG_ENDIAN", newFixnum(context, BIG_ENDIAN));
-        module.defineConstant("LITTLE_ENDIAN", newFixnum(context, LITTLE_ENDIAN));
+        module.defineConstant("ADDRESS_SIZE", asFixnum(context, platform.addressSize));
+        module.defineConstant("LONG_SIZE", asFixnum(context, platform.longSize));
+        module.defineConstant("LONG_DOUBLE_SIZE", asFixnum(context, 128));
+        module.defineConstant("BYTE_ORDER", asFixnum(context, BYTE_ORDER));
+        module.defineConstant("BIG_ENDIAN", asFixnum(context, BIG_ENDIAN));
+        module.defineConstant("LITTLE_ENDIAN", asFixnum(context, LITTLE_ENDIAN));
         if (OS == OS_TYPE.LINUX) {
             module.defineConstant("GNU_LIBC", newString(context, LIBC));
         }

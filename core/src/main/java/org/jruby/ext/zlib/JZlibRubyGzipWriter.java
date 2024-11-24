@@ -32,13 +32,11 @@ import com.jcraft.jzlib.GZIPException;
 import com.jcraft.jzlib.GZIPOutputStream;
 import com.jcraft.jzlib.JZlib;
 import org.jcodings.specific.ASCIIEncoding;
-import org.joda.time.DateTime;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyIO;
 import org.jruby.RubyKernel;
 import org.jruby.RubyNumeric;
-import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.RubyTime;
 import org.jruby.anno.JRubyClass;
@@ -55,7 +53,7 @@ import org.jruby.util.io.EncodingUtils;
 
 import java.io.IOException;
 
-import static org.jruby.api.Create.newFixnum;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newString;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
@@ -382,7 +380,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
                 io.write(str.getByteList().getUnsafeBytes(), str.getByteList().begin(), str.getByteList().length());
             }
             
-            return newFixnum(context, str.getByteList().length());
+            return asFixnum(context, str.getByteList().length());
         } catch (IOException ioe) {
             throw context.runtime.newIOErrorFromException(ioe);
         }

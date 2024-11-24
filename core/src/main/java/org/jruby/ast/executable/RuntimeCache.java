@@ -14,7 +14,6 @@ import org.jruby.RubyModule;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.runtime.Helpers;
@@ -30,8 +29,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
 import org.jruby.util.RegexpOptions;
 
-import static org.jruby.util.RubyStringBuilder.str;
-import static org.jruby.util.RubyStringBuilder.ids;
+import static org.jruby.api.Convert.asFixnum;
 
 public class RuntimeCache {
 
@@ -88,18 +86,12 @@ public class RuntimeCache {
 
     public final RubyFixnum getFixnum(ThreadContext context, int index, int value) {
         RubyFixnum fixnum = fixnums[index];
-        if (fixnum == null) {
-            return fixnums[index] = RubyFixnum.newFixnum(context.runtime, value);
-        }
-        return fixnum;
+        return fixnum == null ? fixnums[index] = asFixnum(context, value) : fixnum;
     }
 
     public final RubyFixnum getFixnum(ThreadContext context, int index, long value) {
         RubyFixnum fixnum = fixnums[index];
-        if (fixnum == null) {
-            return fixnums[index] = RubyFixnum.newFixnum(context.runtime, value);
-        }
-        return fixnum;
+        return fixnum == null ? fixnums[index] = asFixnum(context, value) : fixnum;
     }
 
     public final RubyFloat getFloat(ThreadContext context, int index, double value) {
@@ -202,7 +194,7 @@ public class RuntimeCache {
         CallSite[] sites = new CallSite[pieces.length - 1 / 2];
 
         // if there's no call sites, don't process it
-        if (pieces[0].length() != 0) {
+        if (!pieces[0].isEmpty()) {
             for (int i = 0; i < pieces.length - 1; i+=2) {
                 switch (pieces[i + 1].charAt(0)) {
                 case 'N':

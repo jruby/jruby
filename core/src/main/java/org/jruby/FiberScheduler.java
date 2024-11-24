@@ -202,11 +202,19 @@ public class FiberScheduler {
         }
     }
 
+    /**
+     * @param runtime
+     * @param result
+     * @param error
+     * @return ""
+     * @deprecated Use {@link FiberScheduler#result(ThreadContext, int, Errno)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public static IRubyObject result(Ruby runtime, int result, Errno error) {
-        if (result == -1) {
-            return RubyFixnum.newFixnum(runtime, error.value());
-        } else {
-            return RubyFixnum.newFixnum(runtime, result);
-        }
+        return result(runtime.getCurrentContext(), result, error);
+    }
+
+    public static IRubyObject result(ThreadContext context, int result, Errno error) {
+        return asFixnum(context, result == -1 ? error.value(): result);
     }
 }

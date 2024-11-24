@@ -29,6 +29,13 @@ end
 module PersistenceSpecUtils
   include CompilerSpecUtils
 
+  def initialize(*x, **y)
+    super
+    @persist_runtime = org.jruby.Ruby.newInstance
+  end
+
+  attr_reader :persist_runtime
+
   def run_in_method(src, filename = caller_locations[0].path, line = caller_locations[0].lineno)
     run( "def __temp; #{src}; end; __temp", filename, line)
   end
@@ -42,22 +49,34 @@ module PersistenceSpecUtils
   private
 
   def encode_decode_run(src, filename, line)
-    runtime = JRuby.runtime
-    manager = runtime.getIRManager()
-
-    method = JRuby.compile_ir(src, filename, false, line - 1)
-
-    top_self = runtime.top_self
+    # persist with separate runtime
+    jruby_module = persist_runtime.eval_scriptlet("require 'jruby'; JRuby")
+    persist_context = persist_runtime.current_context
+    persist_src = persist_runtime.new_string(src)
+    persist_filename = persist_runtime.new_string(src)
+    persist_line = persist_runtime.new_fixnum(line - 1)
+    method = org.jruby.ext.jruby.JRubyLibrary.compile_ir(
+      persist_context,
+      jruby_module,
+      [persist_src,
+       persist_filename,
+       persist_runtime.false,
+       persist_line].to_java(org.jruby.runtime.builtin.IRubyObject),
+      org.jruby.runtime.Block::NULL_BLOCK)
 
     # encode and decode
     baos = java.io.ByteArrayOutputStream.new
     writer = org.jruby.ir.persistence.IRWriterStream.new(baos)
     org.jruby.ir.persistence.IRWriter.persist(writer, method)
 
+    # interpret with test runtime
+    runtime = JRuby.runtime
+    manager = runtime.getIRManager()
+    top_self = runtime.top_self
+
     reader = org.jruby.ir.persistence.IRReaderStream.new(manager, baos.to_byte_array, filename.to_java)
     method = org.jruby.ir.persistence.IRReader.load(manager, reader)
 
-    # interpret
     interpreter = org.jruby.ir.interpreter.Interpreter.new
     interpreter.execute(runtime, method, top_self)
   end
@@ -592,42 +611,86 @@ modes.each do |mode|
 
     it "handles optimized homogeneous case/when" do
       run('
-        case "a"
-        when "b"
-          fail
-        when "a"
-          1
-        else
-          fail
+        ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"].map do |x|
+          case x
+          when "a"
+            1
+          when "b"
+            2
+          when "c"
+            3
+          when "d"
+            4
+          when "e"
+            5
+          when "f"
+            6
+          when "g"
+            7
+          when "h"
+            8
+          when "i"
+            9
+          when "j"
+            10
+          else
+            fail
+          end
         end
       ') do |result|
-        expect(result).to eq 1
+        expect(result).to eq [1,2,3,4,5,6,7,8,9,10]
       end
 
       run('
-        case :a
-        when :b
-          fail
-        when :a
-          1
-        else
-          fail
-        end
+        [:zxcvbnmzxcvbnm, :qwertyuiopqwertyuiop, :asdfghjklasdfghjkl, :a, :z].map do |x|
+          case x
+          when :zxcvbnmzxcvbnm
+            1
+          when :qwertyuiopqwertyuiop
+            2
+          when :asdfghjklasdfghjkl
+            3
+          when :a
+            4
+          when :z
+            5
+          else
+            fail
+          end
+          end
       ') do |result|
-        expect(result).to eq 1
+        expect(result).to eq [1,2,3,4,5]
       end
 
       run('
-        case 1
-        when 2
-          fail
-        when 1
-          1
-        else
-          fail
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map do |x|
+          case x
+          when 1
+            1
+          when 2
+            2
+          when 3
+            3
+          when 4
+            4
+          when 5
+            5
+          when 6
+            6
+          when 7
+            7
+          when 8
+            8
+          when 9
+            9
+          when 10
+            10
+          else
+            fail
+          end
         end
       ') do |result|
-        expect(result).to eq 1
+        expect(result).to eq [1,2,3,4,5,6,7,8,9,10]
       end
     end     
 

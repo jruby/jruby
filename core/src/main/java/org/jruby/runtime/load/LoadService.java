@@ -59,6 +59,7 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.RubyThread;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Convert;
 import org.jruby.exceptions.CatchThrow;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.MainExitException;
@@ -310,20 +311,20 @@ public class LoadService {
             RubySymbol ext;
             switch (extension) {
                 case 'r':
-                    ext = newSymbol(context, "rb");
+                    ext = Convert.asSymbol(context, "rb");
                     break;
                 case 's':
-                    ext = newSymbol(context, "so"); // FIXME: should this be so or jar?
+                    ext = Convert.asSymbol(context, "so"); // FIXME: should this be so or jar?
                     break;
                 default:
-                    ext = newSymbol(context, "unknown");
+                    ext = Convert.asSymbol(context, "unknown");
                     break;
             }
 
             RubyString name;
             if (libraryHolder[0] == null) {
                 // FIXME: Our builtin libraries are returning 'r' is ext but has no loader.
-                ext = newSymbol(context, "so"); // FIXME: should this be so or jar?
+                ext = Convert.asSymbol(context, "so"); // FIXME: should this be so or jar?
                 name = path;
             } else {
                 name = newString(context, libraryHolder[0].getLoadName());

@@ -1426,7 +1426,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @Override
     public RubyFixnum hash() {
         Ruby runtime = getRuntime();
-        return RubyFixnum.newFixnum(runtime, strHashCode(runtime));
+        return asFixnum(runtime.getCurrentContext(), strHashCode(runtime));
     }
 
     @Override
@@ -1804,8 +1804,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "casecmp")
     public IRubyObject casecmp(ThreadContext context, IRubyObject other) {
-        Ruby runtime = context.runtime;
-
         IRubyObject tmp = other.checkStringType();
         if (tmp.isNil()) return context.nil;
 
@@ -1814,14 +1812,14 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (enc == null) return context.nil;
 
         if (singleByteOptimizable() && otherStr.singleByteOptimizable()) {
-            return RubyFixnum.newFixnum(runtime, value.caseInsensitiveCmp(otherStr.value));
+            return asFixnum(context, value.caseInsensitiveCmp(otherStr.value));
         }
 
         final int ret = StringSupport.multiByteCasecmp(enc, value, otherStr.value);
 
-        if (ret < 0) return RubyFixnum.minus_one(runtime);
-        if (ret > 0) return RubyFixnum.one(runtime);
-        return RubyFixnum.zero(runtime);
+        if (ret < 0) return RubyFixnum.minus_one(context.runtime);
+        if (ret > 0) return RubyFixnum.one(context.runtime);
+        return RubyFixnum.zero(context.runtime);
     }
 
     @JRubyMethod(name = "casecmp?")
@@ -3528,7 +3526,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             pos = subLength(pos);
         }
 
-        return pos < 0 ? context.nil : RubyFixnum.newFixnum(context.runtime, pos);
+        return pos < 0 ? context.nil : asFixnum(context, pos);
     }
 
     private IRubyObject byteIndexCommon(ThreadContext context, IRubyObject sub, int pos) {
@@ -3652,7 +3650,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             pos = StringSupport.byterindex(value, pos, str, enc);
         }
 
-        return pos < 0 ? context.nil : RubyFixnum.newFixnum(context.runtime, pos);
+        return pos < 0 ? context.nil : asFixnum(context, pos);
     }
 
     private IRubyObject rindexCommon(ThreadContext context, final IRubyObject sub, int pos) {
@@ -3670,7 +3668,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                     pos, str, enc);
         }
 
-        return pos < 0 ? context.nil : RubyFixnum.newFixnum(context.runtime, pos);
+        return pos < 0 ? context.nil : asFixnum(context, pos);
     }
 
     @Deprecated
@@ -4334,7 +4332,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             if (c > e || (excl && c == e)) return this;
             while (true) {
                 ByteList s = RubyInteger.singleCharByteList(c);
-                block.yield(context, asSymbol ? newSymbol(context, s) : newStringShared(context.runtime, s, enc, CR_7BIT));
+                block.yield(context, asSymbol ? asSymbol(context, s) : newStringShared(context.runtime, s, enc, CR_7BIT));
 
                 if (!excl && c == e) break;
                 c++;
@@ -4365,7 +4363,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             IRubyObject b = stringToInum(10);
             IRubyObject e = end.stringToInum(10);
 
-            RubyArray argsArr = newArray(context, newFixnum(context, value.length()), context.nil);
+            RubyArray argsArr = newArray(context, asFixnum(context, value.length()), context.nil);
 
             if (b instanceof RubyFixnum && e instanceof RubyFixnum) {
                 long bl = RubyNumeric.fix2long(b);
@@ -4373,11 +4371,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
                 while (bl <= el) {
                     if (excl && bl == el) break;
-                    argsArr.eltSetOk(1, newFixnum(context, bl));
+                    argsArr.eltSetOk(1, asFixnum(context, bl));
                     ByteList to = new ByteList(value.length() + 5);
                     Sprintf.sprintf(to, "%.*d", argsArr);
                     RubyString str = RubyString.newStringNoCopy(context.runtime, to, USASCIIEncoding.INSTANCE, CR_7BIT);
-                    block.yield(context, asSymbol ? newSymbol(context, str.toString()) : str);
+                    block.yield(context, asSymbol ? asSymbol(context, str.toString()) : str);
                     bl++;
                     context.pollThreadEvents();
                 }
@@ -4390,7 +4388,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                     ByteList to = new ByteList(value.length() + 5);
                     Sprintf.sprintf(to, "%.*d", argsArr);
                     RubyString str = RubyString.newStringNoCopy(context.runtime, to, USASCIIEncoding.INSTANCE, CR_7BIT);
-                    block.yield(context, asSymbol ? newSymbol(context, str.toString()) : str);
+                    block.yield(context, asSymbol ? asSymbol(context, str.toString()) : str);
                     b = sites.succ.call(context, b, b);
                     context.pollThreadEvents();
                 }
@@ -4432,14 +4430,14 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         if (isAscii && ASCII.isDigit(value.getUnsafeBytes()[value.getBegin()])) {
             IRubyObject b = stringToInum(10);
-            RubyArray argsArr = newArray(context, newFixnum(context, value.length()), context.nil);
+            RubyArray argsArr = newArray(context, asFixnum(context, value.length()), context.nil);
             ByteList to;
 
             if (b instanceof RubyFixnum) {
                 long bl = RubyNumeric.fix2long(b);
 
                 while (bl < RubyFixnum.MAX) {
-                    argsArr.eltSetOk(1, newFixnum(context, bl));
+                    argsArr.eltSetOk(1, asFixnum(context, bl));
                     to = new ByteList(value.length() + 5);
                     Sprintf.sprintf(to, "%.*d", argsArr);
                     current = RubyString.newStringNoCopy(context.runtime, to, USASCIIEncoding.INSTANCE, CR_7BIT);
@@ -4448,7 +4446,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                     context.pollThreadEvents();
                 }
 
-                argsArr.eltSetOk(1, newFixnum(context, bl));
+                argsArr.eltSetOk(1, asFixnum(context, bl));
                 to = new ByteList(value.length() + 5);
                 Sprintf.sprintf(to, "%.*d", argsArr);
                 current = RubyString.newStringNoCopy(context.runtime, to, USASCIIEncoding.INSTANCE, CR_7BIT);
@@ -4486,7 +4484,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         int i = RubyNumeric.num2int(index);
         if (i < 0) i += value.getRealSize();
         if (i < 0 || i >= value.getRealSize()) return context.nil;
-        return newFixnum(context, value.getUnsafeBytes()[value.getBegin() + i] & 0xff);
+        return asFixnum(context, value.getUnsafeBytes()[value.getBegin() + i] & 0xff);
     }
 
     @JRubyMethod
@@ -6383,8 +6381,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         while (ptr < end) {
             int c = codePoint(context, enc, ptrBytes, ptr, end);
             int n = codeLength(enc, c);
-            if (wantarray) ary.append(context, newFixnum(context, c));
-            else block.yield(context, newFixnum(context, c));
+            if (wantarray) ary.append(context, asFixnum(context, c));
+            else block.yield(context, asFixnum(context, c));
             ptr += n;
         }
 
@@ -6404,7 +6402,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         IRubyObject[] ary = wantarray ? new IRubyObject[value.getRealSize()] : null;
         // Check the length every iteration, since the block can modify this string.
         for (int i=0; i < value.getRealSize(); i++) {
-            RubyFixnum bite = newFixnum(context, value.get(i) & 0xFF);
+            RubyFixnum bite = asFixnum(context, value.get(i) & 0xFF);
             if (wantarray) ary[i] = bite;
             else block.yield(context, bite);
         }
@@ -6429,12 +6427,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
      */
     private static IRubyObject eachGraphemeClusterSize(ThreadContext context, RubyString self, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
         ByteList value = self.getByteList();
         Encoding enc = value.getEncoding();
         if (!enc.isUnicode()) return self.rubyLength(context);
 
-        Regex reg = RubyRegexp.getRegexpFromCache(runtime, GRAPHEME_CLUSTER_PATTERN, enc, RegexpOptions.NULL_OPTIONS);
+        Regex reg = RubyRegexp.getRegexpFromCache(context.runtime, GRAPHEME_CLUSTER_PATTERN, enc, RegexpOptions.NULL_OPTIONS);
         int beg = value.getBegin();
         int end = beg + value.getRealSize();
         Matcher matcher = reg.matcher(value.getUnsafeBytes(), beg, end);
@@ -6446,7 +6443,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             count++;
             beg += len;
         }
-        return RubyFixnum.newFixnum(runtime, count);
+        return asFixnum(context, count);
     }
 
     private IRubyObject enumerateGraphemeClusters(ThreadContext context, String name, Block block, boolean wantarray) {
@@ -6515,8 +6512,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod
     public IRubyObject ord(ThreadContext context) {
-        final Ruby runtime = context.runtime;
-        return RubyFixnum.newFixnum(runtime, codePoint(runtime, this.value));
+        return asFixnum(context, codePoint(context.runtime, this.value));
     }
 
     @JRubyMethod
@@ -6544,10 +6540,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             CallSite op_plus = sites.op_plus;
             while (p < end) {
                 modifyCheck(bytes, len);
-                sum = op_plus.call(context, sum, sum, RubyFixnum.newFixnum(runtime, bytes[p++] & 0xff));
+                sum = op_plus.call(context, sum, sum, asFixnum(context, bytes[p++] & 0xff));
             }
             if (bits != 0) {
-                IRubyObject mod = sites.op_lshift.call(context, one, one, RubyFixnum.newFixnum(runtime, bits));
+                IRubyObject mod = sites.op_lshift.call(context, one, one, asFixnum(context, bits));
                 sum = sites.op_and.call(context, sum, sum, sites.op_minus.call(context, mod, mod, one));
             }
             return sum;
@@ -6557,7 +6553,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 modifyCheck(bytes, len);
                 sum += bytes[p++] & 0xff;
             }
-            return RubyFixnum.newFixnum(runtime, bits == 0 ? sum : sum & (1L << bits) - 1L);
+            return asFixnum(context, bits == 0 ? sum : sum & (1L << bits) - 1L);
         }
     }
 
@@ -6633,7 +6629,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         RubyHash options = (RubyHash) opt;
         long offset = 0;
         if (options.size() == 1) {
-            IRubyObject offsetArg = options.fastARef(newSymbol(context, "offset"));
+            IRubyObject offsetArg = options.fastARef(asSymbol(context, "offset"));
             if (offsetArg == null) throw argumentError(context, "unknown keyword: " + options.keys().first().inspect());
             offset = offsetArg.convertToInteger().getLongValue();
         }

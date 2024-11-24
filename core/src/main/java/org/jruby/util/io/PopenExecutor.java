@@ -21,6 +21,7 @@ import org.jruby.RubyProcess;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.api.API;
+
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.platform.Platform;
@@ -44,6 +45,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 
@@ -218,7 +220,7 @@ public class PopenExecutor {
 //                Arrays.asList(argv),
 //                eargp.envp_str == null ? Collections.EMPTY_LIST : Arrays.asList(eargp.envp_str)));
         // MRI does not do this check, but posix_spawn does not reliably ENOENT for bad filenames like ''
-        if (prog == null || prog.length() == 0) {
+        if (prog.isEmpty()) {
             errno = Errno.ENOENT;
             return -1;
         }
@@ -462,7 +464,7 @@ public class PopenExecutor {
 //                args == null ? Collections.EMPTY_LIST : Arrays.asList(args),
 //                envp == null ? Collections.EMPTY_LIST : Arrays.asList(envp)));
         // MRI does not do this check, but posix_spawn does not reliably ENOENT for bad filenames like ''
-        if (cmd == null || cmd.length() == 0) {
+        if (cmd == null || cmd.isEmpty()) {
             errno = Errno.ENOENT;
             return -1;
         }
@@ -719,7 +721,7 @@ public class PopenExecutor {
         if (readPipe != null) {
             // dup our read pipe's write end into stdout
             int readPipeWriteFD = readPipe[1];
-            eargp.fd_dup2 = checkExecRedirect1(context, eargp.fd_dup2, newFixnum(context, 1), newFixnum(context, readPipeWriteFD));
+            eargp.fd_dup2 = checkExecRedirect1(context, eargp.fd_dup2, asFixnum(context, 1), asFixnum(context, readPipeWriteFD));
 
             // close the other end of the pipe in the child
             int readPipeReadFD = readPipe[0];
@@ -729,7 +731,7 @@ public class PopenExecutor {
         if (writePipe != null) {
             // dup our write pipe's read end into stdin
             int writePipeReadFD = writePipe[0];
-            eargp.fd_dup2 = checkExecRedirect1(context, eargp.fd_dup2, newFixnum(context, 0), newFixnum(context, writePipeReadFD));
+            eargp.fd_dup2 = checkExecRedirect1(context, eargp.fd_dup2, asFixnum(context, 0), asFixnum(context, writePipeReadFD));
 
             // close the other end of the pipe in the child
             int writePipeWriteFD = writePipe[1];
@@ -774,9 +776,9 @@ public class PopenExecutor {
                     if (errmsg != null) errmsg[0] = "getrlimit";
                     return -1;
                 }
-                tmp = runtime.newArray(((RubyArray)elt).eltOk(0),
-                        runtime.newFixnum(rlim.rlim_cur),
-                        runtime.newFixnum(rlim.rlim_max));
+                tmp = newArray(context, ((RubyArray)elt).eltOk(0),
+                        asFixnum(context, rlim.rlim_cur),
+                        asFixnum(context, rlim.rlim_max));
                 if (sargp.rlimit_limits == null)
                     newary = sargp.rlimit_limits = runtime.newArray();
                 else
@@ -989,14 +991,14 @@ public class PopenExecutor {
                 newary = newArray(context);
                 sargp.fd_dup2 = newary;
             }
-            newary.push(newArray(context, newFixnum(context, fd), newFixnum(context, save_fd)));
+            newary.push(newArray(context, asFixnum(context, fd), asFixnum(context, save_fd)));
 
             newary = sargp.fd_close;
             if (newary == null) {
                 newary = newArray(context);
                 sargp.fd_close = newary;
             }
-            newary.push(newArray(context, newFixnum(context, save_fd), context.nil));
+            newary.push(newArray(context, asFixnum(context, save_fd), context.nil));
         }
 
         return 0;
@@ -1227,15 +1229,15 @@ public class PopenExecutor {
             for (i = 0; i < ((RubyArray)ary).size(); i++) {
                 IRubyObject elt = ((RubyArray)ary).eltOk(i);
                 int fd = RubyNumeric.fix2int(((RubyArray)elt).eltOk(0));
-                if (h.fastARef(newFixnum(context, fd)) != null) {
+                if (h.fastARef(asFixnum(context, fd)) != null) {
                     throw argumentError(context, "fd " + fd + " specified twice");
                 }
                 if (ary == eargp.fd_open || ary == eargp.fd_dup2)
-                    h.op_aset(context, newFixnum(context, fd), context.tru);
+                    h.op_aset(context, asFixnum(context, fd), context.tru);
                 else if (ary == eargp.fd_dup2_child)
-                    h.op_aset(context, newFixnum(context, fd), ((RubyArray)elt).eltOk(1));
+                    h.op_aset(context, asFixnum(context, fd), ((RubyArray)elt).eltOk(1));
                 else /* ary == eargp.fd_close */
-                    h.op_aset(context, newFixnum(context, fd), newFixnum(context, -1));
+                    h.op_aset(context, asFixnum(context, fd), asFixnum(context, -1));
                 if (maxhint < fd)
                     maxhint = fd;
                 if (ary == eargp.fd_dup2 || ary == eargp.fd_dup2_child) {
@@ -1265,7 +1267,7 @@ public class PopenExecutor {
                 int newfd = RubyNumeric.fix2int(elt.eltOk(0));
                 int oldfd = RubyNumeric.fix2int(elt.eltOk(1));
                 int lastfd = oldfd;
-                IRubyObject val = h.fastARef(newFixnum(context, lastfd));
+                IRubyObject val = h.fastARef(asFixnum(context, lastfd));
                 long depth = 0;
                 while (val instanceof RubyFixnum && 0 <= ((RubyFixnum)val).getIntValue()) {
                     lastfd = RubyNumeric.fix2int(val);
@@ -1280,11 +1282,11 @@ public class PopenExecutor {
                 }
                 if (oldfd != lastfd) {
                     IRubyObject val2;
-                    elt.store(1, newFixnum(context, lastfd));
-                    h.op_aset(context, newFixnum(context, newfd), newFixnum(context, lastfd));
-                    val = newFixnum(context, oldfd);
+                    elt.store(1, asFixnum(context, lastfd));
+                    h.op_aset(context, asFixnum(context, newfd), asFixnum(context, lastfd));
+                    val = asFixnum(context, oldfd);
                     while ((val2 = h.fastARef(val)) instanceof RubyFixnum) {
-                        h.op_aset(context, val, newFixnum(context, lastfd));
+                        h.op_aset(context, val, asFixnum(context, lastfd));
                         val = val2;
                     }
                 }
@@ -1350,7 +1352,7 @@ public class PopenExecutor {
                     } else {
                         softlim = hardlim = val.convertToInteger();
                     }
-                    tmp = newArray(context, newFixnum(context, rtype), softlim, hardlim);
+                    tmp = newArray(context, asFixnum(context, rtype), softlim, hardlim);
                     ((RubyArray)ary).push(tmp);
                 }
                 else if (id.equals("unsetenv_others")) {
@@ -1469,13 +1471,13 @@ public class PopenExecutor {
                     param = context.nil;
                     eargp.fd_close = checkExecRedirect1(context, eargp.fd_close, key, param);
                 } else if (id.equals("in")) {
-                    param = newFixnum(context, 0);
+                    param = asFixnum(context, 0);
                     eargp.fd_dup2 = checkExecRedirect1(context, eargp.fd_dup2, key, param);
                 } else if (id.equals("out")) {
-                    param = newFixnum(context, 1);
+                    param = asFixnum(context, 1);
                     eargp.fd_dup2 = checkExecRedirect1(context, eargp.fd_dup2, key, param);
                 } else if (id.equals("err")) {
-                    param = newFixnum(context, 2);
+                    param = asFixnum(context, 2);
                     eargp.fd_dup2 = checkExecRedirect1(context, eargp.fd_dup2, key, param);
                 } else {
                     throw argumentError(context, "wrong exec redirect symbol: " + id);
@@ -1513,9 +1515,9 @@ public class PopenExecutor {
                         intFlags = OpenFile.ioModestrOflags(context, flags.toString());
                     else
                         intFlags = flags.convertToInteger().getIntValue();
-                    flags = newFixnum(context, intFlags);
+                    flags = asFixnum(context, intFlags);
                     perm = ((RubyArray)val).entry(2);
-                    perm = perm.isNil() ? newFixnum(context, 0644) : perm.convertToInteger();
+                    perm = perm.isNil() ? asFixnum(context, 0644) : perm.convertToInteger();
                     param = newArray(context,
                             ((RubyString)path).strDup(context.runtime).export(context),
                             flags,
@@ -1531,7 +1533,7 @@ public class PopenExecutor {
                     key = checkExecRedirectFd(context, key, true);
                 }
                 if (key instanceof RubyFixnum && (((RubyFixnum)key).getIntValue() == 1 || ((RubyFixnum)key).getIntValue() == 2)) {
-                    flags = newFixnum(context, OpenFlags.O_WRONLY.intValue()|OpenFlags.O_CREAT.intValue()|OpenFlags.O_TRUNC.intValue());
+                    flags = asFixnum(context, OpenFlags.O_WRONLY.intValue()|OpenFlags.O_CREAT.intValue()|OpenFlags.O_TRUNC.intValue());
                 } else if (key instanceof RubyArray) {
                     RubyArray keyAry = (RubyArray) key;
                     int i;
@@ -1545,14 +1547,14 @@ public class PopenExecutor {
                         }
                     }
                     if (allOut) {
-                        flags = newFixnum(context, OpenFlags.O_WRONLY.intValue()|OpenFlags.O_CREAT.intValue()|OpenFlags.O_TRUNC.intValue());
+                        flags = asFixnum(context, OpenFlags.O_WRONLY.intValue()|OpenFlags.O_CREAT.intValue()|OpenFlags.O_TRUNC.intValue());
                     } else {
-                        flags = newFixnum(context, OpenFlags.O_RDONLY.intValue());
+                        flags = asFixnum(context, OpenFlags.O_RDONLY.intValue());
                     }
                 } else {
-                    flags = newFixnum(context, OpenFlags.O_RDONLY.intValue());
+                    flags = asFixnum(context, OpenFlags.O_RDONLY.intValue());
                 }
-                perm = newFixnum(context, 0644);
+                perm = asFixnum(context, 0644);
                 param = newArray(context, ((RubyString)path).strDup(context.runtime).export(context), flags, perm);
                 eargp.fd_open = checkExecRedirect1(context, eargp.fd_open, key, param);
                 break;
@@ -1607,7 +1609,7 @@ public class PopenExecutor {
         } else if (Platform.IS_WINDOWS && fd >= 3 && iskey) {
             throw argumentError(context, "wrong file descriptor (" + fd + ")");
         }
-        return newFixnum(context, fd);
+        return asFixnum(context, fd);
     }
 
     // MRI: check_exec_redirect1
@@ -1646,13 +1648,13 @@ public class PopenExecutor {
         prog = execGetargs(context, argv_p, accept_shell, env_opt);
         IRubyObject opt = env_opt[1];
         RubyHash optHash;
-        RubySymbol exceptionSym = newSymbol(context, "exception");
+        RubySymbol exceptionSym = asSymbol(context, "exception");
         if (allow_exc_opt && !opt.isNil() && (optHash = ((RubyHash) opt)).has_key_p(context, exceptionSym).isTrue()) {
             optHash = optHash.dupFast(context);
             exception = optHash.delete(context, exceptionSym);
         }
 
-        RubySymbol chdirSym = newSymbol(context, "chdir");
+        RubySymbol chdirSym = asSymbol(context, "chdir");
         IRubyObject chdir;
         if (!optForChdir.isNil() && (chdir = ((RubyHash) optForChdir).delete(chdirSym)) != null) {
             eargp.chdirGiven = true;

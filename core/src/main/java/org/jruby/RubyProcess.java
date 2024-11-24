@@ -43,6 +43,7 @@ import jnr.posix.Timeval;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.api.Convert;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
@@ -53,8 +54,7 @@ import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 
-import static org.jruby.api.Convert.asBoolean;
-import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.Helpers.throwException;
@@ -126,26 +126,26 @@ public class RubyProcess {
             runtime.loadConstantSet(process, jnr.constants.platform.RLIM.class);
             for (RLIMIT r : RLIMIT.values()) {
                 if (!r.defined()) continue;
-                process.defineConstant(r.name(), newFixnum(context, r.intValue()));
+                process.defineConstant(r.name(), asFixnum(context, r.intValue()));
             }
         }
 
-        process.defineConstant("WNOHANG", newFixnum(context, 1));
-        process.defineConstant("WUNTRACED", newFixnum(context, 2));
+        process.defineConstant("WNOHANG", asFixnum(context, 1));
+        process.defineConstant("WUNTRACED", asFixnum(context, 2));
 
         // FIXME: These should come out of jnr-constants
         // TODO: other clock types
-        process.defineConstant("CLOCK_REALTIME", newSymbol(context, CLOCK_REALTIME));
-        process.defineConstant("CLOCK_MONOTONIC", newSymbol(context, CLOCK_MONOTONIC));
+        process.defineConstant("CLOCK_REALTIME", Convert.asSymbol(context, CLOCK_REALTIME));
+        process.defineConstant("CLOCK_MONOTONIC", Convert.asSymbol(context, CLOCK_MONOTONIC));
 
         RubyClass tmsStruct = RubyStruct.newInstance(context,
                 runtime.getStructClass(),
                 new IRubyObject[]{
                         newString(context, "Tms"),
-                        newSymbol(context, "utime"),
-                        newSymbol(context, "stime"),
-                        newSymbol(context, "cutime"),
-                        newSymbol(context, "cstime")},
+                        Convert.asSymbol(context, "utime"),
+                        Convert.asSymbol(context, "stime"),
+                        Convert.asSymbol(context, "cutime"),
+                        Convert.asSymbol(context, "cstime")},
                 Block.NULL_BLOCK);
 
         process.defineConstant("Tms", tmsStruct);
@@ -190,10 +190,9 @@ public class RubyProcess {
             marshalStream.registerLinkTarget(status);
 
             marshalStream.dumpVariables(context, out, status, 3, (marshal, c, o, v, receiver) -> {
-                Ruby runtime = c.runtime;
                 // TODO: marshal these values directly
-                receiver.receive(marshal, c, o, "status", runtime.newFixnum(v.status));
-                receiver.receive(marshal, c, o, "pid", runtime.newFixnum(v.pid));
+                receiver.receive(marshal, c, o, "status", asFixnum(c, v.status));
+                receiver.receive(marshal, c, o, "pid", asFixnum(c, v.pid));
             });
         }
 
@@ -310,20 +309,34 @@ public class RubyProcess {
             return exited(getRuntime().getCurrentContext());
         }
 
-        @JRubyMethod
+        /**
+         * @return ""
+         * @deprecated Use {@link RubyStatus#stopsig(ThreadContext)} instead.
+         */
+        @Deprecated(since = "10.0", forRemoval = true)
         public IRubyObject stopsig() {
-            if (PosixShim.WAIT_MACROS.WIFSTOPPED(status)) {
-                return RubyFixnum.newFixnum(getRuntime(), PosixShim.WAIT_MACROS.WSTOPSIG(status));
-            }
-            return getRuntime().getNil();
+            return stopsig(getCurrentContext());
         }
 
         @JRubyMethod
+        public IRubyObject stopsig(ThreadContext context) {
+            return PosixShim.WAIT_MACROS.WIFSTOPPED(status) ?
+                    asFixnum(context, PosixShim.WAIT_MACROS.WSTOPSIG(status)) : context.nil;
+        }
+
+        /**
+         * @return ""
+         * @deprecated Use {@link RubyStatus#termsig(ThreadContext)} instead.
+         */
+        @Deprecated(since = "10.0", forRemoval = true)
         public IRubyObject termsig() {
-            if (PosixShim.WAIT_MACROS.WIFSIGNALED(status)) {
-                return RubyFixnum.newFixnum(getRuntime(), PosixShim.WAIT_MACROS.WTERMSIG(status));
-            }
-            return getRuntime().getNil();
+            return termsig(getCurrentContext());
+        }
+
+        @JRubyMethod
+        public IRubyObject termsig(ThreadContext context) {
+            return PosixShim.WAIT_MACROS.WIFSIGNALED(status) ?
+                asFixnum(context, PosixShim.WAIT_MACROS.WTERMSIG(status)) : context.nil;
         }
 
         @Deprecated
@@ -333,7 +346,7 @@ public class RubyProcess {
         @JRubyMethod
         public IRubyObject exitstatus(ThreadContext context) {
             return PosixShim.WAIT_MACROS.WIFEXITED(status) ?
-                newFixnum(context, PosixShim.WAIT_MACROS.WEXITSTATUS(status)) : context.nil;
+                asFixnum(context, PosixShim.WAIT_MACROS.WEXITSTATUS(status)) : context.nil;
         }
 
         @JRubyMethod(name = ">>")
@@ -1079,7 +1092,7 @@ public class RubyProcess {
 
         checkErrno(context, pid, ECHILD);
 
-        return pid == 0 ? context.nil : newFixnum(context, pid);
+        return pid == 0 ? context.nil : asFixnum(context, pid);
     }
 
     static IRubyObject waitpidStatus(ThreadContext context, long pid, int flags) {
@@ -1341,7 +1354,7 @@ public class RubyProcess {
     public static IRubyObject gid(ThreadContext context) {
         return Platform.IS_WINDOWS ?
                 RubyFixnum.zero(context.runtime) :
-                newFixnum(context, checkErrno(context, context.runtime.getPosix().getgid()));
+                asFixnum(context, checkErrno(context, context.runtime.getPosix().getgid()));
     }
 
     @Deprecated
@@ -1364,7 +1377,7 @@ public class RubyProcess {
         int who = arg2.convertToInteger().getIntValue();
         int result = checkErrno(context, context.runtime.getPosix().getpriority(which, who));
 
-        return newFixnum(context, result);
+        return asFixnum(context, result);
     }
 
     @Deprecated
@@ -1378,7 +1391,7 @@ public class RubyProcess {
     }
     @JRubyMethod(name = "uid", module = true, visibility = PRIVATE)
     public static IRubyObject uid(ThreadContext context, IRubyObject recv) {
-        return newFixnum(context, checkErrno(context, context.runtime.getPosix().getuid()));
+        return asFixnum(context, checkErrno(context, context.runtime.getPosix().getuid()));
     }
     @Deprecated
     public static IRubyObject uid(Ruby runtime) {
@@ -1414,7 +1427,7 @@ public class RubyProcess {
     public static IRubyObject ppid(ThreadContext context, IRubyObject recv) {
         int result = checkErrno(context, context.runtime.getPosix().getppid());
 
-        return newFixnum(context, result);
+        return asFixnum(context, result);
     }
     public static IRubyObject ppid(Ruby runtime) {
         return ppid(runtime.getCurrentContext(), null);
@@ -1428,7 +1441,7 @@ public class RubyProcess {
     public static IRubyObject gid_set(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         int result = checkErrno(context, context.runtime.getPosix().setgid(arg.convertToInteger().getIntValue()));
 
-        return newFixnum(context, result);
+        return asFixnum(context, result);
 
     }
     @Deprecated
@@ -1479,7 +1492,7 @@ public class RubyProcess {
         int prio = arg3.convertToInteger().getIntValue();
         var posix = context.runtime.getPosix();
         posix.errno(0);
-        return newFixnum(context, checkErrno(context, posix.setpriority(which, who, prio)));
+        return asFixnum(context, checkErrno(context, posix.setpriority(which, who, prio)));
     }
 
     @Deprecated
@@ -1495,7 +1508,7 @@ public class RubyProcess {
     public static IRubyObject setpgid(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
         int pid = arg1.convertToInteger().getIntValue();
         int gid = arg2.convertToInteger().getIntValue();
-        return newFixnum(context, checkErrno(context, context.runtime.getPosix().setpgid(pid, gid)));
+        return asFixnum(context, checkErrno(context, context.runtime.getPosix().setpgid(pid, gid)));
     }
 
     @Deprecated
@@ -1510,7 +1523,7 @@ public class RubyProcess {
     @JRubyMethod(name = "getpgid", module = true, visibility = PRIVATE)
     public static IRubyObject getpgid(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         int pgid = arg.convertToInteger().getIntValue();
-        return newFixnum(context, checkErrno(context, context.runtime.getPosix().getpgid(pgid)));
+        return asFixnum(context, checkErrno(context, context.runtime.getPosix().getpgid(pgid)));
 
     }
     @Deprecated
@@ -1535,13 +1548,13 @@ public class RubyProcess {
 
         if (!runtime.getPosix().isNative()) {
             runtime.getWarnings().warn("Process#getrlimit not supported on this platform");
-            RubyFixnum max = newFixnum(context, Long.MAX_VALUE);
+            RubyFixnum max = asFixnum(context, Long.MAX_VALUE);
             return newArray(context, max, max);
         }
 
         RLimit rlimit = runtime.getPosix().getrlimit(rlimitResourceType(runtime, arg));
 
-        return newArray(context, newFixnum(context, rlimit.rlimCur()), newFixnum(context, rlimit.rlimMax()));
+        return newArray(context, asFixnum(context, rlimit.rlimCur()), asFixnum(context, rlimit.rlimMax()));
     }
 
     @Deprecated
@@ -1551,7 +1564,7 @@ public class RubyProcess {
     @JRubyMethod(name = "egid", module = true, visibility = PRIVATE)
     public static IRubyObject egid(ThreadContext context, IRubyObject recv) {
         return Platform.IS_WINDOWS ? RubyFixnum.zero(context.runtime) :
-                newFixnum(context, checkErrno(context, context.runtime.getPosix().getegid()));
+                asFixnum(context, checkErrno(context, context.runtime.getPosix().getegid()));
     }
 
     @Deprecated
@@ -1669,7 +1682,7 @@ public class RubyProcess {
             }
         }
 
-        return newFixnum(context, args.length - 1);
+        return asFixnum(context, args.length - 1);
 
     }
 
@@ -1742,18 +1755,14 @@ public class RubyProcess {
     public static IRubyObject clock_gettime(ThreadContext context, IRubyObject self, IRubyObject _clock_id) {
         Ruby runtime = context.runtime;
 
-        return makeClockResult(runtime, getTimeForClock(_clock_id, runtime), CLOCK_UNIT_FLOAT_SECOND);
+        return makeClockResult(context, getTimeForClock(context, _clock_id), CLOCK_UNIT_FLOAT_SECOND);
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject clock_gettime(ThreadContext context, IRubyObject self, IRubyObject _clock_id, IRubyObject _unit) {
-        Ruby runtime = context.runtime;
+        if (!(_unit instanceof RubySymbol) && !_unit.isNil()) throw argumentError(context, "unexpected unit: " + _unit);
 
-        if (!(_unit instanceof RubySymbol) && !_unit.isNil()) {
-            throw runtime.newArgumentError("unexpected unit: " + _unit);
-        }
-
-        return makeClockResult(runtime, getTimeForClock(_clock_id, runtime), _unit.toString());
+        return makeClockResult(context, getTimeForClock(context, _clock_id), _unit.toString());
     }
 
     @JRubyMethod(rest = true, meta = true)
@@ -1764,7 +1773,7 @@ public class RubyProcess {
     /**
      * Get the time in nanoseconds corresponding to the requested clock.
      */
-    private static long getTimeForClock(IRubyObject _clock_id, Ruby runtime) throws RaiseException {
+    private static long getTimeForClock(ThreadContext context, IRubyObject _clock_id) throws RaiseException {
         long nanos;
 
         if (_clock_id instanceof RubySymbol) {
@@ -1772,7 +1781,7 @@ public class RubyProcess {
             if (clock_id.idString().equals(CLOCK_MONOTONIC)) {
                 nanos = System.nanoTime();
             } else if (clock_id.idString().equals(CLOCK_REALTIME)) {
-                POSIX posix = runtime.getPosix();
+                POSIX posix = context.runtime.getPosix();
                 if (posix.isNative()) {
                     Timeval tv = posix.allocateTimeval();
                     posix.gettimeofday(tv);
@@ -1781,11 +1790,11 @@ public class RubyProcess {
                     nanos = System.currentTimeMillis() * 1000000;
                 }
             } else {
-                throw runtime.newErrnoEINVALError("clock_gettime");
+                throw context.runtime.newErrnoEINVALError("clock_gettime");
             }
         } else {
             // TODO: probably need real clock_id values to do this right.
-            throw runtime.newErrnoEINVALError("clock_gettime");
+            throw context.runtime.newErrnoEINVALError("clock_gettime");
         }
         return nanos;
     }
@@ -1793,7 +1802,7 @@ public class RubyProcess {
     /**
      * Get the time resolution in nanoseconds corresponding to the requested clock.
      */
-    private static long getResolutionForClock(IRubyObject _clock_id, Ruby runtime) throws RaiseException {
+    private static long getResolutionForClock(ThreadContext context, IRubyObject _clock_id) throws RaiseException {
         long nanos;
 
         if (_clock_id instanceof RubySymbol) {
@@ -1803,61 +1812,52 @@ public class RubyProcess {
             } else if (clock_id.idString().equals(CLOCK_REALTIME)) {
                 nanos = 1000000;
             } else {
-                throw runtime.newErrnoEINVALError("clock_gettime");
+                throw context.runtime.newErrnoEINVALError("clock_gettime");
             }
         } else {
             // TODO: probably need real clock_id values to do this right.
-            throw runtime.newErrnoEINVALError("clock_gettime");
+            throw context.runtime.newErrnoEINVALError("clock_gettime");
         }
         return nanos;
     }
 
-    private static IRubyObject makeClockResult(Ruby runtime, long nanos, String unit) {
+    private static IRubyObject makeClockResult(ThreadContext context, long nanos, String unit) {
         if (unit.equals(CLOCK_UNIT_NANOSECOND)) {
-            return runtime.newFixnum(nanos);
+            return asFixnum(context, nanos);
         } else if (unit.equals(CLOCK_UNIT_MICROSECOND)) {
-            return runtime.newFixnum(nanos / 1000);
+            return asFixnum(context, nanos / 1000);
         } else if (unit.equals(CLOCK_UNIT_MILLISECOND)) {
-            return runtime.newFixnum(nanos / 1000000);
+            return asFixnum(context, nanos / 1000000);
         } else if (unit.equals(CLOCK_UNIT_SECOND)) {
-            return runtime.newFixnum(nanos / 1000000000);
+            return asFixnum(context, nanos / 1000000000);
         } else if (unit.equals(CLOCK_UNIT_FLOAT_MICROSECOND)) {
-            return runtime.newFloat(nanos / 1000.0);
+            return asFloat(context, nanos / 1000.0);
         } else if (unit.equals(CLOCK_UNIT_FLOAT_MILLISECOND)) {
-            return runtime.newFloat(nanos / 1000000.0);
+            return asFloat(context, nanos / 1000000.0);
         } else if (unit.equals(CLOCK_UNIT_FLOAT_SECOND) || unit.equals("")) {
-            return runtime.newFloat(nanos / 1000000000.0);
-        } else {
-            throw runtime.newArgumentError("unexpected unit: " + unit);
+            return asFloat(context, nanos / 1000000000.0);
         }
+
+        throw argumentError(context, "unexpected unit: " + unit);
     }
 
     // this is only in 2.1. See https://bugs.ruby-lang.org/issues/8658
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject clock_getres(ThreadContext context, IRubyObject self, IRubyObject _clock_id) {
-        Ruby runtime = context.runtime;
-
-        return makeClockResolutionResult(runtime, getResolutionForClock(_clock_id, runtime), CLOCK_UNIT_FLOAT_SECOND);
+        return makeClockResolutionResult(context, getResolutionForClock(context, _clock_id), CLOCK_UNIT_FLOAT_SECOND);
     }
 
     // this is only in 2.1. See https://bugs.ruby-lang.org/issues/8658
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject clock_getres(ThreadContext context, IRubyObject self, IRubyObject _clock_id, IRubyObject _unit) {
-        Ruby runtime = context.runtime;
+        if (!(_unit instanceof RubySymbol) && !_unit.isNil()) throw argumentError(context, "unexpected unit: " + _unit);
 
-        if (!(_unit instanceof RubySymbol) && !_unit.isNil()) {
-            throw runtime.newArgumentError("unexpected unit: " + _unit);
-        }
-
-        return makeClockResolutionResult(runtime, getResolutionForClock(_clock_id, runtime), _unit.toString());
+        return makeClockResolutionResult(context, getResolutionForClock(context, _clock_id), _unit.toString());
     }
 
-    private static IRubyObject makeClockResolutionResult(Ruby runtime, long nanos, String unit) {
-        if (unit.equals(CLOCK_UNIT_HERTZ)) {
-            return runtime.newFloat(1000000000.0 / nanos);
-        } else {
-            return makeClockResult(runtime, nanos, unit);
-        }
+    private static IRubyObject makeClockResolutionResult(ThreadContext context, long nanos, String unit) {
+        return unit.equals(CLOCK_UNIT_HERTZ) ?
+                asFloat(context, 1000000000.0 / nanos) : makeClockResult(context, nanos, unit);
     }
 
     @Deprecated
@@ -1873,7 +1873,7 @@ public class RubyProcess {
         return pid(runtime.getCurrentContext());
     }
     public static IRubyObject pid(ThreadContext context) {
-        return newFixnum(context, context.runtime.getPosix().getpid());
+        return asFixnum(context, context.runtime.getPosix().getpid());
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE, notImplemented = true)

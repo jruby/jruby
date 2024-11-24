@@ -30,18 +30,16 @@ package org.jruby.util;
 
 import java.io.InputStream;
 import java.io.IOException;
-import org.jcodings.Encoding;
 
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyIO;
-import org.jruby.RubyString;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.MethodIndex;
 
-import static org.jruby.api.Create.newFixnum;
+import static org.jruby.api.Convert.asFixnum;
 
 /**
  * This class wraps a IRubyObject in an InputStream. Depending on which messages
@@ -137,7 +135,7 @@ public class IOInputStream extends InputStream {
 
         IRubyObject io = this.io;
         ThreadContext context = runtime.getCurrentContext();
-        IRubyObject readValue = readAdapter.call(context, io, io, newFixnum(context, len));
+        IRubyObject readValue = readAdapter.call(context, io, io, asFixnum(context, len));
 
         if (readValue.isNil()) return -1;
 

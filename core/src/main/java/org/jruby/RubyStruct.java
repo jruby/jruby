@@ -216,7 +216,7 @@ public class RubyStruct extends RubyObject {
     private static IRubyObject extractKeywordArg(final ThreadContext context, final RubyHash options, String validKey) {
         if (options.isEmpty()) return null;
 
-        final RubySymbol testKey = newSymbol(context, validKey);
+        final RubySymbol testKey = asSymbol(context, validKey);
         IRubyObject ret = options.fastARef(testKey);
 
         if (ret == null || options.size() > 1) { // other (unknown) keys in options
@@ -275,9 +275,9 @@ public class RubyStruct extends RubyObject {
             if (arg instanceof RubySymbol sym1) {
                 sym = sym1;
             } else if (arg instanceof RubyString) {
-                sym = newSymbol(context, arg.convertToString().getByteList());
+                sym = asSymbol(context, arg.convertToString().getByteList());
             } else {
-                sym = newSymbol(context, arg.asJavaString());
+                sym = asSymbol(context, arg.asJavaString());
             }
             if (tmpMemberSet.contains(sym)) throw argumentError(context, "duplicate member: " + sym);
 

@@ -1099,23 +1099,20 @@ public class RubyBignum extends RubyInteger {
     @Override
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
         final BigInteger otherValue;
-        if (other instanceof RubyFixnum) {
-            otherValue = fix2big((RubyFixnum) other);
-        } else if (other instanceof RubyBignum) {
-            otherValue = ((RubyBignum) other).value;
-        } else if (other instanceof RubyFloat) {
-            RubyFloat flt = (RubyFloat) other;
-            if (flt.isInfinite()) {
-                if (flt.value > 0.0) return RubyFixnum.minus_one(context.runtime);
-                return RubyFixnum.one(context.runtime);
-            }
-            return dbl_cmp(context.runtime, big2dbl(this), flt.value);
+        if (other instanceof RubyFixnum fix) {
+            otherValue = fix2big(fix);
+        } else if (other instanceof RubyBignum big) {
+            otherValue = big.value;
+        } else if (other instanceof RubyFloat flt) {
+            return flt.isInfinite() ?
+                    asFixnum(context, flt.value > 0.0 ? -1 : 1) :
+                    dbl_cmp(context.runtime, big2dbl(this), flt.value);
         } else {
             return coerceCmp(context, sites(context).op_cmp, other);
         }
 
         // wow, the only time we can use the java protocol ;)
-        return RubyFixnum.newFixnum(context.runtime, value.compareTo(otherValue));
+        return asFixnum(context, value.compareTo(otherValue));
     }
 
     /** rb_big_eq

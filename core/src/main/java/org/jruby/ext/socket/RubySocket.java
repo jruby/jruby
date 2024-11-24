@@ -47,7 +47,6 @@ import jnr.netdb.Protocol;
 import jnr.unixsocket.UnixSocketAddress;
 import jnr.unixsocket.UnixSocketChannel;
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
@@ -84,10 +83,9 @@ import java.nio.channels.SocketChannel;
 import java.util.Enumeration;
 import java.util.regex.Pattern;
 
-import static org.jruby.api.Convert.castAsFixnum;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
-import static org.jruby.api.Error.typeError;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -504,17 +502,17 @@ public class RubySocket extends RubyBasicSocket {
         boolean result = tryConnect(context, channel, addr, ex, false);
 
         if ( !result ) {
-            if (!ex) return newSymbol(context, "wait_writable");
+            if (!ex) return Convert.asSymbol(context, "wait_writable");
             throw context.runtime.newErrnoEINPROGRESSWritableError();
         }
 
-        return newFixnum(context, 0);
+        return asFixnum(context, 0);
     }
 
     protected IRubyObject doConnect(ThreadContext context, SocketAddress addr, boolean ex) {
         tryConnect(context, getChannel(), addr, ex, true);
 
-        return newFixnum(context, 0);
+        return asFixnum(context, 0);
     }
 
     private boolean tryConnect(ThreadContext context, Channel channel, SocketAddress addr, boolean ex, boolean blocking) {

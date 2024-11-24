@@ -109,8 +109,7 @@ import static org.jruby.anno.FrameField.METHODNAME;
 import static org.jruby.anno.FrameField.SCOPE;
 import static org.jruby.anno.FrameField.SELF;
 import static org.jruby.anno.FrameField.VISIBILITY;
-import static org.jruby.api.Convert.asBoolean;
-import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
@@ -536,7 +535,7 @@ public class RubyKernel {
 
             if (bytes.startsWith(ZEROx)) { // startsWith("0x")
                 if (bytes.indexOf('p') != -1 || bytes.indexOf('P') != -1) {
-                    return newFloat(context, parseHexidecimalExponentString2(context, bytes));
+                    return asFloat(context, parseHexidecimalExponentString2(context, bytes));
                 }
                 IRubyObject inum = ConvertBytes.byteListToInum(runtime, bytes, 16, true, exception);
                 if (!exception && inum.isNil()) return inum;
@@ -563,8 +562,8 @@ public class RubyKernel {
 
     static RubyFloat new_float(ThreadContext context, RubyInteger num) {
         return num instanceof RubyBignum ?
-                newFloat(context, RubyBignum.big2dbl((RubyBignum) num)) :
-                newFloat(context, num.getDoubleValue());
+                asFloat(context, RubyBignum.big2dbl((RubyBignum) num)) :
+                asFloat(context, num.getDoubleValue());
     }
 
     @JRubyMethod(name = "Hash", required = 1, module = true, visibility = PRIVATE)
@@ -869,12 +868,10 @@ public class RubyKernel {
             // ignore; sleep gets interrupted
             interrupted = true;
         } finally {
-            if (interrupted) {
-                Thread.currentThread().interrupt();
-            }
+            if (interrupted) Thread.currentThread().interrupt();
         }
 
-        return context.runtime.newFixnum(Math.round((System.nanoTime() - startTime) / 1_000_000_000.0));
+        return asFixnum(context, Math.round((System.nanoTime() - startTime) / 1_000_000_000.0));
     }
 
     @Deprecated
@@ -953,7 +950,7 @@ public class RubyKernel {
         var globalVariables = newArray(context);
 
         for (String globalVariableName : context.runtime.getGlobalVariables().getNames()) {
-            globalVariables.append(context, newSymbol(context, globalVariableName));
+            globalVariables.append(context, asSymbol(context, globalVariableName));
         }
 
         return globalVariables;
@@ -1010,7 +1007,7 @@ public class RubyKernel {
     public static IRubyObject raise(ThreadContext context, IRubyObject self, IRubyObject arg0) {
         // semi extract_raise_opts :
         if (arg0 instanceof RubyHash opt && !opt.isEmpty() &&
-                opt.has_key_p(context, newSymbol(context, "cause")) == context.tru) {
+                opt.has_key_p(context, asSymbol(context, "cause")) == context.tru) {
                 throw argumentError(context, "only cause is given with no arguments");
         }
 
@@ -1041,10 +1038,9 @@ public class RubyKernel {
         IRubyObject cause = null;
         if (argc > 0) {
             IRubyObject last = args[argc - 1];
-            if (last instanceof RubyHash) {
-                RubyHash opt = (RubyHash) last;
+            if (last instanceof RubyHash opt) {
                 RubySymbol key;
-                if (!opt.isEmpty() && (opt.has_key_p(context, key = newSymbol(context, "cause")) == context.tru)) {
+                if (!opt.isEmpty() && (opt.has_key_p(context, key = asSymbol(context, "cause")) == context.tru)) {
                     cause = opt.delete(context, key, Block.NULL_BLOCK);
                     forceCause = true;
                     if (opt.isEmpty() && --argc == 0) { // more opts will be passed along

@@ -229,7 +229,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         ByteBuffer inFdBuf = inMessage.getControls()[0].getData();
         inFdBuf.order(ByteOrder.nativeOrder());
 
-        IRubyObject fd = newFixnum(context, inFdBuf.getInt());
+        IRubyObject fd = asFixnum(context, inFdBuf.getInt());
 
         if (klass.isNil()) {
             return fd;

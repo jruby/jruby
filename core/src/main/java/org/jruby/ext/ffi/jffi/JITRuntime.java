@@ -10,7 +10,7 @@ import org.jruby.runtime.callsite.CachingCallSite;
 
 import java.math.BigInteger;
 
-import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -192,148 +192,155 @@ public final class JITRuntime {
     }
     
     public static IRubyObject newSigned8(ThreadContext context, int value) {
-        return RubyFixnum.newFixnum(context.runtime, (byte) value);
+        return asFixnum(context, (byte) value);
     }
 
+    @Deprecated
     public static IRubyObject newSigned8(Ruby runtime, int value) {
-        return RubyFixnum.newFixnum(runtime, (byte) value);
+        return newSigned8(runtime.getCurrentContext(), value);
     }
 
     public static IRubyObject newSigned8(ThreadContext context, long value) {
-        return RubyFixnum.newFixnum(context.runtime, (byte) value);
+        return asFixnum(context, (byte) value);
     }
 
+    @Deprecated
     public static IRubyObject newSigned8(Ruby runtime, long value) {
-        return RubyFixnum.newFixnum(runtime, (byte) value);
+        return newSigned8(runtime.getCurrentContext(), value);
     }
 
     public static IRubyObject newUnsigned8(ThreadContext context, int value) {
         int n = (byte) value; // sign-extend the low 8 bits to 32
-        return RubyFixnum.newFixnum(context.runtime, n < 0 ? ((n & 0x7F) + 0x80) : n);
+        return asFixnum(context, n < 0 ? ((n & 0x7F) + 0x80) : n);
     }
 
+    @Deprecated
     public static IRubyObject newUnsigned8(Ruby runtime, int value) {
-        int n = (byte) value; // sign-extend the low 8 bits to 32
-        return RubyFixnum.newFixnum(runtime, n < 0 ? ((n & 0x7F) + 0x80) : n);
+        return newUnsigned8(runtime.getCurrentContext(), value);
     }
 
     public static IRubyObject newUnsigned8(ThreadContext context, long value) {
         int n = (byte) value; // sign-extend the low 8 bits to 32
-        return RubyFixnum.newFixnum(context.runtime, n < 0 ? ((n & 0x7F) + 0x80) : n);
+        return asFixnum(context, n < 0 ? ((n & 0x7F) + 0x80) : n);
     }
 
+    @Deprecated
     public static IRubyObject newUnsigned8(Ruby runtime, long value) {
-        int n = (byte) value; // sign-extend the low 8 bits to 32
-        return RubyFixnum.newFixnum(runtime, n < 0 ? ((n & 0x7F) + 0x80) : n);
+        return newUnsigned8(runtime.getCurrentContext(), value);
     }
 
     public static IRubyObject newSigned16(ThreadContext context, int value) {
-        return RubyFixnum.newFixnum(context.runtime, (short) value);
+        return asFixnum(context, (short) value);
     }
 
+    @Deprecated
     public static IRubyObject newSigned16(Ruby runtime, int value) {
-        return RubyFixnum.newFixnum(runtime, (short) value);
+        return newSigned16(runtime.getCurrentContext(), value);
     }
 
     public static IRubyObject newSigned16(ThreadContext context, long value) {
-        return RubyFixnum.newFixnum(context.runtime, (short) value);
+        return asFixnum(context, (short) value);
     }
 
+    @Deprecated
     public static IRubyObject newSigned16(Ruby runtime, long value) {
-        return RubyFixnum.newFixnum(runtime, (short) value);
+        return newSigned16(runtime.getCurrentContext(), value);
     }
 
     public static IRubyObject newUnsigned16(ThreadContext context, int value) {
         int n = (short) value; // sign-extend the low 16 bits to 32
-        return RubyFixnum.newFixnum(context.runtime, n < 0 ? ((n & 0x7FFF) + 0x8000) : n);
+        return asFixnum(context, n < 0 ? ((n & 0x7FFF) + 0x8000) : n);
     }
 
+    @Deprecated
     public static IRubyObject newUnsigned16(Ruby runtime, int value) {
-        int n = (short) value; // sign-extend the low 16 bits to 32
-        return RubyFixnum.newFixnum(runtime, n < 0 ? ((n & 0x7FFF) + 0x8000) : n);
+        return newUnsigned16(runtime.getCurrentContext(), value);
     }
 
     public static IRubyObject newUnsigned16(ThreadContext context, long value) {
         int n = (short) value; // sign-extend the low 16 bits to 32
-        return RubyFixnum.newFixnum(context.runtime, n < 0 ? ((n & 0x7FFF) + 0x8000) : n);
+        return asFixnum(context, n < 0 ? ((n & 0x7FFF) + 0x8000) : n);
     }
 
+    @Deprecated
     public static IRubyObject newUnsigned16(Ruby runtime, long value) {
-        int n = (short) value; // sign-extend the low 16 bits to 32
-        return RubyFixnum.newFixnum(runtime, n < 0 ? ((n & 0x7FFF) + 0x8000) : n);
+        return newUnsigned16(runtime.getCurrentContext(), value);
     }
 
     public static IRubyObject newSigned32(ThreadContext context, int value) {
-        return RubyFixnum.newFixnum(context.runtime, value);
+        return asFixnum(context, value);
     }
 
+    @Deprecated
     public static IRubyObject newSigned32(Ruby runtime, int value) {
-        return RubyFixnum.newFixnum(runtime, value);
+        return newSigned32(runtime.getCurrentContext(), value);
     }
 
     public static IRubyObject newSigned32(ThreadContext context, long value) {
-        return RubyFixnum.newFixnum(context.runtime, (int) value);
+        return asFixnum(context, (int) value);
     }
 
+    @Deprecated
     public static IRubyObject newSigned32(Ruby runtime, long value) {
-        return RubyFixnum.newFixnum(runtime, (int) value);
+        return newSigned32(runtime.getCurrentContext(), value);
     }
 
     public static IRubyObject newUnsigned32(ThreadContext context, int value) {
         long n = value;
-        return RubyFixnum.newFixnum(context.runtime, n < 0 ? ((n & 0x7FFFFFFFL) + 0x80000000L) : n);
+        return asFixnum(context, n < 0 ? ((n & 0x7FFFFFFFL) + 0x80000000L) : n);
     }
 
     public static IRubyObject newUnsigned32(Ruby runtime, int value) {
-        long n = value;
-        return RubyFixnum.newFixnum(runtime, n < 0 ? ((n & 0x7FFFFFFFL) + 0x80000000L) : n);
+        return newUnsigned32(runtime.getCurrentContext(), value);
     }
 
     public static IRubyObject newUnsigned32(ThreadContext context, long value) {
         long n = (int) value; // only keep the low 32 bits
-        return RubyFixnum.newFixnum(context.runtime, n < 0 ? ((n & 0x7FFFFFFFL) + 0x80000000L) : n);
+        return asFixnum(context, n < 0 ? ((n & 0x7FFFFFFFL) + 0x80000000L) : n);
     }
 
+    @Deprecated
     public static IRubyObject newUnsigned32(Ruby runtime, long value) {
-        long n = (int) value; // only keep the low 32 bits
-        return RubyFixnum.newFixnum(runtime, n < 0 ? ((n & 0x7FFFFFFFL) + 0x80000000L) : n);
+        return newUnsigned32(runtime.getCurrentContext(), value);
     }
 
     public static IRubyObject newSigned64(ThreadContext context, long value) {
-        return RubyFixnum.newFixnum(context.runtime, value);
+        return asFixnum(context, value);
     }
 
+    @Deprecated
     public static IRubyObject newSigned64(Ruby runtime, long value) {
-        return RubyFixnum.newFixnum(runtime, value);
+        return newSigned64(runtime.getCurrentContext(), value);
     }
 
     private static final BigInteger UINT64_BASE = BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.ONE);
     public static IRubyObject newUnsigned64(ThreadContext context, long value) {
-        return value < 0
-                ? RubyBignum.newBignum(context.runtime, BigInteger.valueOf(value & 0x7fffffffffffffffL).add(UINT64_BASE))
-                : RubyFixnum.newFixnum(context.runtime, value);
+        return value < 0 ?
+                RubyBignum.newBignum(context.runtime, BigInteger.valueOf(value & 0x7fffffffffffffffL).add(UINT64_BASE)) :
+                asFixnum(context, value);
     }
 
+    @Deprecated
     public static IRubyObject newUnsigned64(Ruby runtime, long value) {
-        return value < 0
-                ? RubyBignum.newBignum(runtime, BigInteger.valueOf(value & 0x7fffffffffffffffL).add(UINT64_BASE))
-                : RubyFixnum.newFixnum(runtime, value);
+        return newUnsigned64(runtime.getCurrentContext(), value);
     }
 
     public static IRubyObject newNil(ThreadContext context, int ignored) {
         return context.nil;
     }
 
+    @Deprecated
     public static IRubyObject newNil(Ruby runtime, int ignored) {
-        return runtime.getNil();
+        return newNil(runtime.getCurrentContext(), ignored);
     }
     
     public static IRubyObject newNil(ThreadContext context, long ignored) {
         return context.nil;
     }
 
+    @Deprecated
     public static IRubyObject newNil(Ruby runtime, long ignored) {
-        return runtime.getNil();
+        return newNil(runtime.getCurrentContext(), ignored);
     }
     
     public static IRubyObject newPointer32(ThreadContext context, int address) {
@@ -400,27 +407,30 @@ public final class JITRuntime {
     }
     
     public static IRubyObject newFloat32(ThreadContext context, int value) {
-        return RubyFloat.newFloat(context.runtime, Float.intBitsToFloat(value));
+        return asFloat(context, Float.intBitsToFloat(value));
     }
 
+    @Deprecated
     public static IRubyObject newFloat32(Ruby runtime, int value) {
-        return RubyFloat.newFloat(runtime, Float.intBitsToFloat(value));
+        return newFloat32(runtime.getCurrentContext(), value);
     }
     
     public static IRubyObject newFloat32(ThreadContext context, long value) {
-        return RubyFloat.newFloat(context.runtime, Float.intBitsToFloat((int) value));
+        return asFloat(context, Float.intBitsToFloat((int) value));
     }
 
+    @Deprecated
     public static IRubyObject newFloat32(Ruby runtime, long value) {
-        return RubyFloat.newFloat(runtime, Float.intBitsToFloat((int) value));
+        return newFloat32(runtime.getCurrentContext(), value);
     }
     
     public static IRubyObject newFloat64(ThreadContext context, long value) {
-        return RubyFloat.newFloat(context.runtime, Double.longBitsToDouble(value));
+        return asFloat(context, Double.longBitsToDouble(value));
     }
 
+    @Deprecated
     public static IRubyObject newFloat64(Ruby runtime, long value) {
-        return RubyFloat.newFloat(runtime, Double.longBitsToDouble(value));
+        return newFloat64(runtime.getCurrentContext(), value);
     }
 
     private static final PointerParameterStrategy DIRECT_MEMORY_OBJECT = new MemoryObjectParameterStrategy(true);

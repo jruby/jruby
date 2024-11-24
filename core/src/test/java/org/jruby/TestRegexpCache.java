@@ -6,7 +6,7 @@ import org.jruby.test.Base;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
 
-import static org.jruby.api.Create.newFixnum;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newString;
 
 public class TestRegexpCache extends Base {
@@ -62,7 +62,7 @@ public class TestRegexpCache extends Base {
         assertNotNull( RubyRegexp.patternCache.get(strBytes) );
 
         // str[0] = 'R'
-        str.op_aset(context, newFixnum(context, 0), newString(context, "R"));
+        str.op_aset(context, asFixnum(context, 0), newString(context, "R"));
 
         assertEquals(ByteList.create("Regexp"), strBytes);
 

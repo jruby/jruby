@@ -70,6 +70,7 @@ import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.TraceEventManager;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
+import org.jruby.specialized.RubyObjectSpecializer;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.MRIRecursionGuard;
 import org.jruby.util.StringSupport;
@@ -347,6 +348,9 @@ public final class Ruby implements Constantizable {
         objectClass.setConstant("Module", moduleClass);
         objectClass.setConstant("Refinement", refinementClass);
 
+        // specializer for RubyObject subclasses
+        objectSpecializer = new RubyObjectSpecializer(this);
+
         // Initialize Kernel and include into Object
         RubyModule kernel = kernelModule = RubyKernel.createKernelModule(this);
         objectClass.includeModule(kernelModule);
@@ -595,14 +599,11 @@ public final class Ruby implements Constantizable {
 
                 @Override
                 public IRubyObject call(ThreadContext context1, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                    switch (args.length) {
-                        case 1:
-                            return RubyKernel.gsub(context1, self, args[0], block);
-                        case 2:
-                            return RubyKernel.gsub(context1, self, args[0], args[1], block);
-                        default:
-                            throw argumentError(context1, String.format("wrong number of arguments %d for 1..2", args.length));
-                    }
+                    return switch (args.length) {
+                        case 1 -> RubyKernel.gsub(context1, self, args[0], block);
+                        case 2 -> RubyKernel.gsub(context1, self, args[0], args[1], block);
+                        default -> throw argumentError(context1, String.format("wrong number of arguments %d for 1..2", args.length));
+                    };
                 }
             });
         }
@@ -2603,6 +2604,10 @@ public final class Ruby implements Constantizable {
 
     public JavaSupport getJavaSupport() {
         return javaSupport;
+    }
+
+    public RubyObjectSpecializer getObjectSpecializer() {
+        return objectSpecializer;
     }
 
     public static ClassLoader getClassLoader() {
@@ -5579,6 +5584,9 @@ public final class Ruby implements Constantizable {
     // Java support
     private final JavaSupport javaSupport;
     private final JRubyClassLoader jrubyClassLoader;
+
+    // Object Specializer
+    private final RubyObjectSpecializer objectSpecializer;
 
     // Management/monitoring
     private final BeanManager beanManager;

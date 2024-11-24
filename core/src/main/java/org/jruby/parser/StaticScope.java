@@ -45,7 +45,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
-import org.jruby.api.Create;
+import org.jruby.api.Convert;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.DAsgnNode;
 import org.jruby.ast.DVarNode;
@@ -57,7 +57,6 @@ import org.jruby.ast.VCallNode;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Signature;
@@ -66,7 +65,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.DynamicScopeGenerator;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
-import static org.jruby.api.Create.newSymbol;
+import static org.jruby.api.Convert.asSymbol;
 
 /**
  * StaticScope represents lexical scoping of variables and module/class constants.
@@ -480,7 +479,7 @@ public class StaticScope implements Serializable, Cloneable {
         return collectVariables(
                 context.runtime::newArray,
                 (array, id) -> {
-                    RubySymbol symbol = newSymbol(context, id);
+                    RubySymbol symbol = Convert.asSymbol(context, id);
                     if (symbol.validLocalVariableName()) array.append(context, symbol);
                 });
     }

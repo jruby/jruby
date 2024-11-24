@@ -212,12 +212,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
         regexpClass.kindOf = new RubyModule.JavaClassKindOf(RubyRegexp.class);
 
-        regexpClass.defineConstant("IGNORECASE", newFixnum(context, (RE_OPTION_IGNORECASE)));
-        regexpClass.defineConstant("EXTENDED", newFixnum(context, (RE_OPTION_EXTENDED)));
-        regexpClass.defineConstant("MULTILINE", newFixnum(context, (RE_OPTION_MULTILINE)));
+        regexpClass.defineConstant("IGNORECASE", asFixnum(context, (RE_OPTION_IGNORECASE)));
+        regexpClass.defineConstant("EXTENDED", asFixnum(context, (RE_OPTION_EXTENDED)));
+        regexpClass.defineConstant("MULTILINE", asFixnum(context, (RE_OPTION_MULTILINE)));
 
-        regexpClass.defineConstant("FIXEDENCODING", newFixnum(context, (RE_FIXED)));
-        regexpClass.defineConstant("NOENCODING", newFixnum(context, (RE_NONE)));
+        regexpClass.defineConstant("FIXEDENCODING", asFixnum(context, (RE_FIXED)));
+        regexpClass.defineConstant("NOENCODING", asFixnum(context, (RE_NONE)));
 
         regexpClass.defineAnnotatedMethods(RubyRegexp.class);
         regexpClass.getSingletonClass().defineAlias("compile", "new");
@@ -476,8 +476,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         RubyString string = null;
         Encoding regexpEnc = null;
 
-        for (int i = 0; i < args.length; i++) {
-            RubyString str = args[i].convertToString();
+        for (IRubyObject arg : args) {
+            RubyString str = arg.convertToString();
             regexpEnc = processDRegexpElement(context.runtime, options, regexpEnc, context.encodingHolder(), str);
             string = string == null ? (RubyString) str.dup() : string.append(str);
         }
@@ -1106,7 +1106,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         int pos = matchPos(context, str, strp, true, 0);
         if (pos < 0) return context.nil;
         pos = strp[0].subLength(pos);
-        return newFixnum(context, pos);
+        return asFixnum(context, pos);
     }
 
     /** rb_reg_match_m
@@ -1567,7 +1567,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             RubyArray ary = RubyArray.newBlankArrayInternal(runtime, backrefs.length);
 
             for (int idx = 0; idx<backrefs.length; idx++) {
-                ary.storeInternal(context, idx, newFixnum(context, backrefs[idx]));
+                ary.storeInternal(context, idx, asFixnum(context, backrefs[idx]));
             }
             RubyString name = RubyString.newStringShared(runtime, e.name, e.nameP, e.nameEnd - e.nameP);
             hash.fastASet(name.freeze(context), ary);

@@ -5,12 +5,12 @@ import org.jruby.RubyArray;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
-import org.jruby.internal.runtime.methods.DescriptorInfo;
+import org.jruby.api.Convert;
 
 import java.util.Arrays;
 
 import static org.jruby.api.Create.newString;
-import static org.jruby.api.Create.newSymbol;
+import static org.jruby.api.Convert.asSymbol;
 
 /**
  * A description of a single argument in a Ruby argument list.  Primarily used in Method.to_proc.
@@ -63,9 +63,9 @@ public class ArgumentDescriptor {
         // methods we have no reference to runtime to construct the symbol for `*` or `**`.
         if (!type.anonymous && name.getBytes().length() == 0) {
             if (type == ArgumentType.rest) {
-                name = newSymbol(context, "*");
+                name = Convert.asSymbol(context, "*");
             } else if (type == ArgumentType.keyrest) {
-                name = newSymbol(context, "**");
+                name = Convert.asSymbol(context, "**");
             }
         }
 

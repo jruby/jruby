@@ -163,6 +163,16 @@ project 'JRuby Base' do
                                       '${project.build.outputDirectory}' ],
                      'executable' =>  'java',
                      'classpathScope' =>  'compile' )
+
+      execute_goals( 'exec',
+                     :id => 'specialized-object-generator',
+                     'arguments' => [ '-Djruby.bytecode.version=${base.java.version}',
+                                      '-classpath',
+                                      xml( '<classpath/>' ),
+                                      'org.jruby.specialized.RubyObjectSpecializer',
+                                      '${project.build.outputDirectory}' ],
+                     'executable' =>  'java',
+                     'classpathScope' =>  'compile' )
     end
   end
 

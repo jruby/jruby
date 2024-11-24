@@ -59,6 +59,8 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.time.*;
 
+import static org.jruby.api.Convert.asFixnum;
+
 /**
  * JRuby's <code>DateTime</code> implementation - 'native' parts.
  * In MRI, since 2.x, all of date.rb has been moved to native (C) code.
@@ -364,7 +366,7 @@ public class RubyDateTime extends RubyDate {
 
     private static void assertValidFraction(ThreadContext context, IRubyObject val, long ival) {
         if (val instanceof RubyRational) {
-            IRubyObject eql = ((RubyRational) val).op_equal(context, RubyFixnum.newFixnum(context.runtime, ival));
+            IRubyObject eql = ((RubyRational) val).op_equal(context, asFixnum(context, ival));
             if (eql != context.tru) throw newDateError(context, "invalid fraction");
         }
     }
@@ -499,19 +501,17 @@ public class RubyDateTime extends RubyDate {
 
     @JRubyMethod // Time.new(year, mon, mday, hour, min, sec + sec_fraction, (@of * 86400.0))
     public RubyTime to_time(ThreadContext context) {
-        final Ruby runtime = context.runtime;
         DateTime dt = this.dt;
 
         dt = new DateTime(
                 adjustJodaYear(dt.getYear()), dt.getMonthOfYear(), dt.getDayOfMonth(),
                 dt.getHourOfDay(), dt.getMinuteOfHour(), dt.getSecondOfMinute(),
-                dt.getMillisOfSecond(), RubyTime.getTimeZone(runtime, this.off)
+                dt.getMillisOfSecond(), RubyTime.getTimeZone(context.runtime, this.off)
         );
 
-        RubyTime time = new RubyTime(runtime, runtime.getTime(), dt, true);
+        RubyTime time = new RubyTime(context.runtime, context.runtime.getTime(), dt, true);
         if (subMillisNum != 0) {
-            RubyNumeric usec = (RubyNumeric)
-                    subMillis(runtime).op_mul(context, RubyFixnum.newFixnum(runtime, 1_000_000));
+            RubyNumeric usec = (RubyNumeric) subMillis(context).op_mul(context, asFixnum(context, 1_000_000));
             time.setNSec(usec.getLongValue());
         }
         return time;

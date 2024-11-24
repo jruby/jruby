@@ -199,8 +199,6 @@ public class Main {
             if (status.isExit()) {
                 System.exit(status.getStatus());
             }
-
-            System.exit(0);
         }
         catch (RaiseException ex) {
             System.exit( handleRaiseException(ex) );

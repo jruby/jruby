@@ -5,6 +5,7 @@ import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.ext.date.RubyDate.*;
 import static org.jruby.util.Numeric.*;
 
@@ -210,7 +211,7 @@ abstract class DateUtils {
         //if (safe_mul_p(d, DAY_IN_SECONDS)) {
         //    return LONG2FIX(FIX2LONG(d) * DAY_IN_SECONDS);
         //}
-        return RubyFixnum.newFixnum(context.runtime, DAY_IN_SECONDS).op_mul(context, d);
+        return asFixnum(context, DAY_IN_SECONDS).op_mul(context, d);
     }
 
     static final int INVALID_OFFSET = Integer.MIN_VALUE;
@@ -407,16 +408,16 @@ abstract class DateUtils {
                     it = (it % ((long) period));
                 }
 
-                nth[0] = RubyFixnum.newFixnum(context.runtime, inth);
+                nth[0] = asFixnum(context, inth);
                 return (int) it - 4712; /* unshift */
             }
         }
         // big:
         IRubyObject t;
-        t = f_add(context, y, RubyFixnum.newFixnum(context.runtime, 4712)); /* shift */
-        nth[0] = (RubyInteger) f_idiv(context, t, RubyFixnum.newFixnum(context.runtime, period));
+        t = f_add(context, y, asFixnum(context, 4712)); /* shift */
+        nth[0] = (RubyInteger) f_idiv(context, t, asFixnum(context, period));
         if (!f_zero_p(context, nth[0])) { // f_nonzero_p(*nth)
-            t = f_mod(context, t, RubyFixnum.newFixnum(context.runtime, period));
+            t = f_mod(context, t, asFixnum(context, period));
         }
         return t.convertToInteger().getIntValue() - 4712; /* unshift */
     }

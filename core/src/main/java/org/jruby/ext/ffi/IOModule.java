@@ -41,7 +41,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.OpenFile;
 
 import static com.headius.backport9.buffer.Buffers.limitBuffer;
-import static org.jruby.api.Create.newFixnum;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -79,9 +79,9 @@ public class IOModule {
             }
 
             // TODO: This used to use ChannelStream and honor its buffers; it does not honor OpenFile buffers now
-            return newFixnum(context, openFile.readChannel().read(buffer));
+            return asFixnum(context, openFile.readChannel().read(buffer));
         } catch (EOFException e) {
-            return newFixnum(context, -1);
+            return asFixnum(context, -1);
         } catch (IOException e) {
             throw context.runtime.newIOErrorFromException(e);
         }

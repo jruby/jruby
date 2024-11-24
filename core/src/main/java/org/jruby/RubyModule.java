@@ -2829,7 +2829,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "hash")
     @Override
     public RubyFixnum hash() {
-        return RubyFixnum.newFixnum(getRuntime(), id);
+        return asFixnum(getRuntime().getCurrentContext(), id);
     }
 
     /** rb_mod_to_s
@@ -3084,7 +3084,7 @@ public class RubyModule extends RubyObject {
             addAccessor(context, sym, getCurrentVisibilityForDefineMethod(context), args[0].isTrue(), writeable);
 
             return writeable ?
-                    newArray(context, sym, newSymbol(context, sym.getBytes().dup().append('='))) :
+                    newArray(context, sym, asSymbol(context, sym.getBytes().dup().append('='))) :
                     newArray(context, sym);
         }
 
@@ -3128,7 +3128,7 @@ public class RubyModule extends RubyObject {
             RubySymbol sym = TypeConverter.checkID(args[i]);
             ByteList writer = sym.getBytes().dup();
             writer.append('=');
-            result[i] = newSymbol(context, writer);
+            result[i] = asSymbol(context, writer);
 
             addAccessor(context, sym, visibility, false, true);
         }
@@ -3156,11 +3156,11 @@ public class RubyModule extends RubyObject {
             RubySymbol sym = TypeConverter.checkID(args[i]);
 
             ByteList reader = sym.getBytes().shallowDup();
-            result[i*2] = newSymbol(context, reader);
+            result[i*2] = asSymbol(context, reader);
 
             ByteList writer = sym.getBytes().dup();
             writer.append('=');
-            result[i*2+1] = newSymbol(context, writer);
+            result[i*2+1] = asSymbol(context, writer);
 
             // This is almost always already interned, since it will be called with a symbol in most cases
             // but when created from Java code, we might getService an argument that needs to be interned.
@@ -3238,7 +3238,7 @@ public class RubyModule extends RubyObject {
             if (seen.add(id)) { // false - not added (already seen)
                 if ((!not && method.getVisibility() == visibility || (not && method.getVisibility() != visibility))
                         && !method.isUndefined()) {
-                    ary.append(context, newSymbol(context, id));
+                    ary.append(context, asSymbol(context, id));
                 }
             }
         });
@@ -3328,7 +3328,7 @@ public class RubyModule extends RubyObject {
 
         getMethods().forEach((id, method) -> {
             if (method instanceof RefinedMarker) return;
-            if (method.isUndefined()) list.append(context, newSymbol(context, id));
+            if (method.isUndefined()) list.append(context, asSymbol(context, id));
         });
 
         return list;
@@ -3464,7 +3464,7 @@ public class RubyModule extends RubyObject {
 
         for (Map.Entry<String, DynamicMethod> entry : mod.methods.entrySet()) {
             String id = entry.getKey();
-            IRubyObject mapped = methodNames.fastARef(newSymbol(context, id));
+            IRubyObject mapped = methodNames.fastARef(asSymbol(context, id));
             if (mapped == NEVER) {
                 // unmapped
             } else if (mapped == context.nil) {
@@ -4103,7 +4103,7 @@ public class RubyModule extends RubyObject {
     public RubyArray class_variables(ThreadContext context) {
         var ary = newArray(context);
         for (String name : classVariablesCommon(true)) {
-            ary.add(newSymbol(context, name));
+            ary.add(asSymbol(context, name));
         }
         return ary;
     }
@@ -4112,7 +4112,7 @@ public class RubyModule extends RubyObject {
     public RubyArray class_variables(ThreadContext context, IRubyObject inherit) {
         var ary = newArray(context);
         for (String name : classVariablesCommon(inherit.isTrue())) {
-            ary.add(newSymbol(context, name));
+            ary.add(asSymbol(context, name));
         }
         return ary;
     }
@@ -4435,7 +4435,7 @@ public class RubyModule extends RubyObject {
 
         int i = 0;
         for (String name : constantNames) {
-            array.storeInternal(context, i++, newSymbol(context, name));
+            array.storeInternal(context, i++, asSymbol(context, name));
         }
         array.realLength = i;
         return array;

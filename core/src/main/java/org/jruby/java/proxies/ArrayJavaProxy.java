@@ -20,7 +20,6 @@ import org.jruby.util.ConvertBytes;
 import org.jruby.util.RubyStringBuilder;
 
 import static org.jruby.api.Convert.*;
-import static org.jruby.api.Create.newFixnum;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.javasupport.ext.JavaLang.Character.inspectCharValue;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
@@ -170,19 +169,17 @@ public final class ArrayJavaProxy extends JavaProxy {
     private boolean includes(final ThreadContext context, final byte[] array, final IRubyObject obj) {
         final int len = array.length;
         if ( len == 0 ) return false;
-        final Ruby runtime = context.runtime;
-        if ( obj instanceof RubyFixnum ) {
-            final long objVal = ((RubyInteger) obj).getLongValue();
+        if ( obj instanceof RubyFixnum fix) {
+            final long objVal = fix.getLongValue();
             if ( objVal < Byte.MIN_VALUE || objVal > Byte.MAX_VALUE ) return false;
 
-            for ( int i = 0; i < len; i++ ) {
-                if ( (byte) objVal == array[i] ) return true;
+            for (byte b : array) {
+                if ((byte) objVal == b) return true;
             }
             return false;
         }
-        for ( int i = 0; i < len; i++ ) {
-            IRubyObject value = RubyFixnum.newFixnum(runtime, array[i]);
-            if ( equalInternal(context, value, obj) ) return true;
+        for (byte b : array) {
+            if (equalInternal(context, asFixnum(context, b), obj)) return true;
         }
         return false;
     }
@@ -190,19 +187,17 @@ public final class ArrayJavaProxy extends JavaProxy {
     private boolean includes(final ThreadContext context, final short[] array, final IRubyObject obj) {
         final int len = array.length;
         if ( len == 0 ) return false;
-        final Ruby runtime = context.runtime;
-        if ( obj instanceof RubyFixnum ) {
-            final long objVal = ((RubyInteger) obj).getLongValue();
+        if (obj instanceof RubyFixnum fix) {
+            final long objVal = fix.getLongValue();
             if ( objVal < Short.MIN_VALUE || objVal > Short.MAX_VALUE ) return false;
 
-            for ( int i = 0; i < len; i++ ) {
-                if ( (short) objVal == array[i] ) return true;
+            for (short value : array) {
+                if ((short) objVal == value) return true;
             }
             return false;
         }
-        for ( int i = 0; i < len; i++ ) {
-            IRubyObject value = RubyFixnum.newFixnum(runtime, array[i]);
-            if ( equalInternal(context, value, obj) ) return true;
+        for (short item : array) {
+            if (equalInternal(context, asFixnum(context, item), obj)) return true;
         }
         return false;
     }
@@ -210,19 +205,17 @@ public final class ArrayJavaProxy extends JavaProxy {
     private boolean includes(final ThreadContext context, final int[] array, final IRubyObject obj) {
         final int len = array.length;
         if ( len == 0 ) return false;
-        final Ruby runtime = context.runtime;
-        if ( obj instanceof RubyFixnum ) {
-            final long objVal = ((RubyInteger) obj).getLongValue();
+        if (obj instanceof RubyFixnum fix) {
+            final long objVal = fix.getLongValue();
             if ( objVal < Integer.MIN_VALUE || objVal > Integer.MAX_VALUE ) return false;
 
-            for ( int i = 0; i < len; i++ ) {
-                if ( (int) objVal == array[i] ) return true;
+            for (int j : array) {
+                if ((int) objVal == j) return true;
             }
             return false;
         }
-        for ( int i = 0; i < len; i++ ) {
-            IRubyObject value = RubyFixnum.newFixnum(runtime, array[i]);
-            if ( equalInternal(context, value, obj) ) return true;
+        for (int j : array) {
+            if (equalInternal(context, asFixnum(context, j), obj)) return true;
         }
         return false;
     }
@@ -230,18 +223,16 @@ public final class ArrayJavaProxy extends JavaProxy {
     private boolean includes(final ThreadContext context, final long[] array, final IRubyObject obj) {
         final int len = array.length;
         if ( len == 0 ) return false;
-        final Ruby runtime = context.runtime;
-        if ( obj instanceof RubyFixnum ) {
-            final long objVal = ((RubyInteger) obj).getLongValue();
+        if ( obj instanceof RubyFixnum fix) {
+            final long objVal = fix.getLongValue();
 
-            for ( int i = 0; i < len; i++ ) {
-                if ( objVal == array[i] ) return true;
+            for (long l : array) {
+                if (objVal == l) return true;
             }
             return false;
         }
-        for ( int i = 0; i < len; i++ ) {
-            IRubyObject value = RubyFixnum.newFixnum(runtime, array[i]);
-            if ( equalInternal(context, value, obj) ) return true;
+        for (long l : array) {
+            if (equalInternal(context, asFixnum(context, l), obj)) return true;
         }
         return false;
     }
@@ -249,19 +240,17 @@ public final class ArrayJavaProxy extends JavaProxy {
     private boolean includes(final ThreadContext context, final char[] array, final IRubyObject obj) {
         final int len = array.length;
         if ( len == 0 ) return false;
-        final Ruby runtime = context.runtime;
-        if ( obj instanceof RubyFixnum ) {
-            final long objVal = ((RubyInteger) obj).getLongValue();
+        if (obj instanceof RubyFixnum fix) {
+            final long objVal = fix.getLongValue();
             if ( objVal < Character.MIN_VALUE || objVal > Character.MAX_VALUE ) return false;
 
-            for ( int i = 0; i < len; i++ ) {
-                if ( (int) objVal == array[i] ) return true;
+            for (char c : array) {
+                if ((int) objVal == c) return true;
             }
             return false;
         }
-        for ( int i = 0; i < len; i++ ) {
-            IRubyObject value = RubyFixnum.newFixnum(runtime, array[i]);
-            if ( equalInternal(context, value, obj) ) return true;
+        for (char c : array) {
+            if (equalInternal(context,  asFixnum(context, c), obj)) return true;
         }
         return false;
     }
@@ -272,14 +261,13 @@ public final class ArrayJavaProxy extends JavaProxy {
         if ( obj instanceof RubyBoolean bool) {
             final boolean objVal = bool.isTrue();
 
-            for ( int i = 0; i < len; i++ ) {
-                if ( objVal == array[i] ) return true;
+            for (boolean b : array) {
+                if (objVal == b) return true;
             }
             return false;
         }
-        for ( int i = 0; i < len; i++ ) {
-            IRubyObject value = asBoolean(context, array[i]);
-            if ( equalInternal(context, value, obj) ) return true;
+        for (boolean b : array) {
+            if (equalInternal(context, asBoolean(context, b), obj)) return true;
         }
         return false;
     }
@@ -287,18 +275,16 @@ public final class ArrayJavaProxy extends JavaProxy {
     private boolean includes(final ThreadContext context, final float[] array, final IRubyObject obj) {
         final int len = array.length;
         if ( len == 0 ) return false;
-        final Ruby runtime = context.runtime;
-        if ( obj instanceof RubyFloat ) {
-            final double objVal = ((RubyFloat) obj).getDoubleValue();
+        if ( obj instanceof RubyFloat flote) {
+            final double objVal = flote.getDoubleValue();
 
-            for ( int i = 0; i < len; i++ ) {
-                if ( (float) objVal == array[i] ) return true;
+            for (float v : array) {
+                if ((float) objVal == v) return true;
             }
             return false;
         }
-        for ( int i = 0; i < len; i++ ) {
-            IRubyObject value = RubyFloat.newFloat(runtime, array[i]);
-            if ( equalInternal(context, value, obj) ) return true;
+        for (float v : array) {
+            if (equalInternal(context, asFloat(context, v), obj)) return true;
         }
         return false;
     }
@@ -306,18 +292,16 @@ public final class ArrayJavaProxy extends JavaProxy {
     private boolean includes(final ThreadContext context, final double[] array, final IRubyObject obj) {
         final int len = array.length;
         if ( len == 0 ) return false;
-        final Ruby runtime = context.runtime;
-        if ( obj instanceof RubyFloat ) {
-            final double objVal = ((RubyFloat) obj).getDoubleValue();
+        if (obj instanceof RubyFloat flote) {
+            final double objVal = flote.getDoubleValue();
 
-            for ( int i = 0; i < len; i++ ) {
-                if ( objVal == array[i] ) return true;
+            for (double v : array) {
+                if (objVal == v) return true;
             }
             return false;
         }
-        for ( int i = 0; i < len; i++ ) {
-            IRubyObject value = RubyFloat.newFloat(runtime, array[i]);
-            if ( equalInternal(context, value, obj) ) return true;
+        for (double v : array) {
+            if (equalInternal(context, asFloat(context, v), obj)) return true;
         }
         return false;
     }
@@ -479,7 +463,7 @@ public final class ArrayJavaProxy extends JavaProxy {
 
         for ( int i = 0; i < length; i++ ) {
             IRubyObject element = ArrayUtils.arefDirect(runtime, array, converter, i);
-            final RubyInteger index = newFixnum(context, i);
+            final RubyInteger index = asFixnum(context, i);
 
             if (twoArguments) {
                 block.yieldSpecific(context, element, index);
@@ -673,11 +657,9 @@ public final class ArrayJavaProxy extends JavaProxy {
     @JRubyMethod(name = "eql?")
     public RubyBoolean eql_p(ThreadContext context, IRubyObject obj) {
         boolean equals = false;
-        if ( obj instanceof ArrayJavaProxy ) {
-            final ArrayJavaProxy that = (ArrayJavaProxy) obj;
+        if (obj instanceof ArrayJavaProxy that) {
             equals = arraysEquals(this.getObject(), that.getObject());
-        }
-        else if ( obj.getClass().isArray() ) {
+        } else if ( obj.getClass().isArray() ) {
             equals = arraysEquals(getObject(), obj);
         }
         return asBoolean(context, equals);
@@ -685,8 +667,7 @@ public final class ArrayJavaProxy extends JavaProxy {
 
     @Override
     public boolean equals(Object obj) {
-        if ( obj instanceof ArrayJavaProxy ) {
-            final ArrayJavaProxy that = (ArrayJavaProxy) obj;
+        if (obj instanceof ArrayJavaProxy that) {
             final Object thisArray = this.getObject();
             final Object thatArray = that.getObject();
             return arraysEquals(thisArray, thatArray);

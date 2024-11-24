@@ -29,26 +29,25 @@ public class FixnumCreationBenchmark {
 
     private static final Ruby RUBY = Ruby.newInstance();
 
-    private static final RubyFixnum ONE = RubyFixnum.newFixnum(RUBY, 1L);
+    private static final RubyFixnum ONE = asFixnum(RUBY.getCurrentContext(), 1L);
 
-    private static final RubyFixnum TWO = RubyFixnum.newFixnum(RUBY, 2L);
+    private static final RubyFixnum TWO = asFixnum(RUBY.getCurrentContext(), 2L);
 
     @Benchmark
     @OperationsPerInvocation(INVOCATIONS)
     public void benchFixnumCreation(final Blackhole blackhole) {
         final long time = System.currentTimeMillis();
-        final Ruby ruby = RUBY;
+        var context = RUBY.getCurrentContext();
         for (int i = 0; i < INVOCATIONS; i++) {
-            blackhole.consume(RubyFixnum.newFixnum(ruby, time));
+            blackhole.consume(asFixnum(context, time));
         }
     }
 
     @Benchmark
     @OutputTimeUnit(TimeUnit.SECONDS)
     public void benchStaticFib(final Blackhole blackhole) {
-        final Ruby ruby = RUBY;
-        final ThreadContext context = ruby.getCurrentContext();
-        blackhole.consume(fib(context, RubyFixnum.newFixnum(ruby, 30L)));
+        final ThreadContext context = RUBY.getCurrentContext();
+        blackhole.consume(fib(context, asFixnum(context, 30L)));
     }
 
     private static IRubyObject fib(final ThreadContext context, final IRubyObject object) {

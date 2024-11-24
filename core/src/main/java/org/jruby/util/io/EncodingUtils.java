@@ -36,6 +36,7 @@ import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.api.API;
+import org.jruby.api.Convert;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
@@ -59,8 +60,7 @@ import java.util.List;
 import static org.jruby.RubyString.encodeBytelist;
 import static org.jruby.RubyString.newBinaryString;
 import static org.jruby.RubyString.newEmptyString;
-import static org.jruby.api.Convert.checkToInteger;
-import static org.jruby.api.Convert.asInt;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
@@ -151,7 +151,7 @@ public class EncodingUtils {
     private static IRubyObject hashARef(ThreadContext context, IRubyObject hash, String symbol) {
         if (hash == null || !(hash instanceof RubyHash)) return context.nil;
 
-        IRubyObject value = ((RubyHash) hash).fastARef(newSymbol(context, symbol));
+        IRubyObject value = ((RubyHash) hash).fastARef(Convert.asSymbol(context, symbol));
 
         return value == null ? context.nil : value;
     }
@@ -283,7 +283,7 @@ public class EncodingUtils {
                 ecopts_p[0] = context.nil;
             } else {
                 if (!hasVmode) {
-                    IRubyObject v = ((RubyHash) options).op_aref(context, newSymbol(context, "mode"));
+                    IRubyObject v = ((RubyHash) options).op_aref(context, Convert.asSymbol(context, "mode"));
                     if (!v.isNil()) {
                         if (vmode(vmodeAndVperm_p) != null && !vmode(vmodeAndVperm_p).isNil()) {
                             throw argumentError(context, "mode specified twice");
@@ -294,11 +294,11 @@ public class EncodingUtils {
                     }
                 }
 
-                IRubyObject v = ((RubyHash) options).op_aref(context, newSymbol(context, "flags"));
+                IRubyObject v = ((RubyHash) options).op_aref(context, Convert.asSymbol(context, "flags"));
                 if (!v.isNil()) {
                     v = v.convertToInteger();
                     oflags_p[0] |= RubyNumeric.num2int(v);
-                    vmode(vmodeAndVperm_p, newFixnum(context, oflags_p[0]));
+                    vmode(vmodeAndVperm_p, asFixnum(context, oflags_p[0]));
                     fmode_p[0] = ModeFlags.getOpenFileFlagsFor(oflags_p[0]);
                 }
 
@@ -661,7 +661,7 @@ public class EncodingUtils {
         RubyHash optHash2 = (RubyHash)opthash;
         ecflags = econvOpts(context, opthash, ecflags);
 
-        v = optHash2.op_aref(context, newSymbol(context, "replace"));
+        v = optHash2.op_aref(context, Convert.asSymbol(context, "replace"));
         if (!v.isNil()) {
             RubyString v_str = v.convertToString();
             if (v_str.scanForCodeRange() == StringSupport.CR_BROKEN) {
@@ -669,10 +669,10 @@ public class EncodingUtils {
             }
             v = v_str.freeze(context);
             newhash = RubyHash.newHash(context.runtime);
-            ((RubyHash)newhash).op_aset(context, newSymbol(context, "replace"), v);
+            ((RubyHash)newhash).op_aset(context, Convert.asSymbol(context, "replace"), v);
         }
 
-        v = optHash2.op_aref(context, newSymbol(context, "fallback"));
+        v = optHash2.op_aref(context, Convert.asSymbol(context, "fallback"));
         if (!v.isNil()) {
             IRubyObject h = TypeConverter.checkHashType(context.runtime, v);
             boolean condition;
@@ -686,7 +686,7 @@ public class EncodingUtils {
             if (condition) {
                 if (newhash.isNil()) newhash = RubyHash.newHash(context.runtime);
 
-                ((RubyHash)newhash).op_aset(context, newSymbol(context, "fallback"), v);
+                ((RubyHash)newhash).op_aset(context, Convert.asSymbol(context, "fallback"), v);
             }
         }
 
@@ -699,24 +699,24 @@ public class EncodingUtils {
 
     // econv_opts
     public static int econvOpts(ThreadContext context, IRubyObject opt, int ecflags) {
-        IRubyObject v = ((RubyHash)opt).op_aref(context, newSymbol(context, "invalid"));
+        IRubyObject v = ((RubyHash)opt).op_aref(context, Convert.asSymbol(context, "invalid"));
         if (!v.isNil()) {
             if (!v.toString().equals("replace")) throw argumentError(context, "unknown value for invalid character option");
             ecflags |= EConvFlags.INVALID_REPLACE;
         }
 
-        v = ((RubyHash)opt).op_aref(context, newSymbol(context, "undef"));
+        v = ((RubyHash)opt).op_aref(context, Convert.asSymbol(context, "undef"));
         if (!v.isNil()) {
             if (!v.toString().equals("replace")) throw argumentError(context, "unknown value for undefined character option");
             ecflags |= EConvFlags.UNDEF_REPLACE;
         }
 
-        v = ((RubyHash)opt).op_aref(context, newSymbol(context, "replace"));
+        v = ((RubyHash)opt).op_aref(context, Convert.asSymbol(context, "replace"));
         if (!v.isNil() && (ecflags & EConvFlags.INVALID_REPLACE) != 0) {
             ecflags |= EConvFlags.UNDEF_REPLACE;
         }
 
-        v = ((RubyHash)opt).op_aref(context, newSymbol(context, "xml"));
+        v = ((RubyHash)opt).op_aref(context, Convert.asSymbol(context, "xml"));
         if (!v.isNil()) {
             if (v.toString().equals("text")) {
                 ecflags |= EConvFlags.XML_TEXT_DECORATOR | EConvFlags.UNDEF_HEX_CHARREF;
@@ -727,7 +727,7 @@ public class EncodingUtils {
             }
         }
 
-        v = ((RubyHash)opt).op_aref(context, newSymbol(context, "newline"));
+        v = ((RubyHash)opt).op_aref(context, Convert.asSymbol(context, "newline"));
         if (!v.isNil()) {
             ecflags &= ~EConvFlags.NEWLINE_DECORATOR_MASK;
             if (v.toString().equals("universal")) {
@@ -748,19 +748,19 @@ public class EncodingUtils {
         int setflags = 0;
         boolean newlineflag = false;
 
-        v = ((RubyHash)opt).op_aref(context, newSymbol(context, "universal_newline"));
+        v = ((RubyHash)opt).op_aref(context, Convert.asSymbol(context, "universal_newline"));
         if (v.isTrue()) {
             setflags |= EConvFlags.UNIVERSAL_NEWLINE_DECORATOR;
         }
         newlineflag |= !v.isNil();
 
-        v = ((RubyHash)opt).op_aref(context, newSymbol(context, "crlf_newline"));
+        v = ((RubyHash)opt).op_aref(context, Convert.asSymbol(context, "crlf_newline"));
         if (v.isTrue()) {
             setflags |= EConvFlags.CRLF_NEWLINE_DECORATOR;
         }
         newlineflag |= !v.isNil();
 
-        v = ((RubyHash)opt).op_aref(context, newSymbol(context, "cr_newline"));
+        v = ((RubyHash)opt).op_aref(context, Convert.asSymbol(context, "cr_newline"));
         if (v.isTrue()) {
             setflags |= EConvFlags.CR_NEWLINE_DECORATOR;
         }
