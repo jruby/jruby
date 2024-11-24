@@ -548,7 +548,7 @@ public class RubyDateFormatter {
                     break;
                 case FORMAT_ZONE_ID:
                     // Should be safe to assume all time zone labels will be ASCII 7bit.
-                    data = RubyTime.getRubyTimeZoneName(runtime, dt);
+                    data = RubyTime.getRubyTimeZoneName(runtime.getCurrentContext(), dt);
                     break;
                 case FORMAT_CENTURY:
                     type = NUMERIC;
