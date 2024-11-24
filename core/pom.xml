@@ -495,7 +495,7 @@ DO NOT MODIFY - GENERATED CODE
           <verbose>false</verbose>
           <showWarnings>true</showWarnings>
           <showDeprecation>true</showDeprecation>
-          <release>17</release>
+          <release>21</release>
           <useIncrementalCompilation>false</useIncrementalCompilation>
         </configuration>
       </plugin>
