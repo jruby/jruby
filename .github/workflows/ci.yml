@@ -39,7 +39,7 @@ jobs:
       - name: rake ${{ matrix.target }}
         run: bin/jruby -S rake ${{ matrix.target }}
 
-  rake-test-21:
+  rake-test:
     runs-on: ubuntu-latest
 
     strategy:
@@ -94,7 +94,7 @@ jobs:
       - name: rake test:jruby
         run: bin/jruby --dev -S rake test:jruby
 
-  rake-test-21-indy-off:
+  rake-test-indy-off:
     runs-on: ubuntu-latest
 
     strategy:
@@ -469,7 +469,7 @@ jobs:
     permissions:
       contents: none
     if: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/heads/jruby-9.5' }}
-    needs: [mvn-test, mvn-test-extended, mvn-test-windows, dependency-check, rake-test, rake-test-21-indy-off, rake-test-17, test-versions, sequel, concurrent-ruby, jruby-tests-dev, regression-specs-jit]
+    needs: [mvn-test, mvn-test-extended, mvn-test-windows, dependency-check, rake-test, rake-test-indy-off, rake-test, test-versions, sequel, concurrent-ruby, jruby-tests-dev, regression-specs-jit]
     uses: jruby/jruby/.github/workflows/snapshot-publish.yml@6cd0d4d96d9406635183d81cf91acc82cd78245f
     secrets:
       SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
