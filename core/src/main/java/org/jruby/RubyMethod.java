@@ -51,8 +51,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 
-import static org.jruby.api.Convert.asBoolean;
-import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
@@ -305,9 +304,7 @@ public class RubyMethod extends AbstractRubyMethod {
             RubyModule definedClass = method.getRealMethod().getDefinedClass();
             RubyModule module = sourceModule.findImplementer(definedClass);
 
-            if (module != null) {
-                superClass = module.getSuperClass();
-            }
+            if (module != null) superClass = module.getSuperClass();
         } else {
             superClass = sourceModule.getSuperClass();
         }
@@ -316,10 +313,7 @@ public class RubyMethod extends AbstractRubyMethod {
 
     @JRubyMethod
     public IRubyObject original_name(ThreadContext context) {
-        if (method instanceof AliasMethod) {
-            return context.runtime.newSymbol(((AliasMethod)method).getOldName());
-        }
-        return name(context);
+        return method instanceof AliasMethod ? asSymbol(context, ((AliasMethod)method).getOldName()) : name(context);
     }
 
     public IRubyObject getReceiver() {

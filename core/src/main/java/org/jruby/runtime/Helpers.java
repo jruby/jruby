@@ -83,6 +83,7 @@ import org.jcodings.unicode.UnicodeEncoding;
 
 import static org.jruby.RubyBasicObject.getMetaClass;
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
@@ -715,7 +716,7 @@ public class Helpers {
         private RubySymbol nameToSymbol(ThreadContext context, String name) {
             RubySymbol lastName = this.lastName;
             if (lastName == null || !name.equals(lastName.idString())) {
-                this.lastName = lastName = context.runtime.newSymbol(name);
+                this.lastName = lastName = asSymbol(context, name);
             }
             return lastName;
         }
@@ -1924,7 +1925,7 @@ public class Helpers {
                     return newArray(context, value);
                 } else {
                     IRubyObject avalue = methodMissing.call(context, value, entry.sourceModule, "to_a",
-                            new IRubyObject[] {Convert.asSymbol(context, "to_a")}, Block.NULL_BLOCK);
+                            new IRubyObject[] {asSymbol(context, "to_a")}, Block.NULL_BLOCK);
                     if (!(avalue instanceof RubyArray)) {
                         if (avalue.isNil()) {
                             return newArray(context, value);
@@ -2710,8 +2711,7 @@ public class Helpers {
             return definedMessage;
         }
 
-        if (receiver.callMethod(context, "respond_to_missing?",
-            new IRubyObject[]{context.runtime.newSymbol(name), context.fals}).isTrue()) {
+        if (receiver.callMethod(context, "respond_to_missing?", new IRubyObject[]{asSymbol(context, name), context.fals}).isTrue()) {
             return definedMessage;
         }
         return null;

@@ -234,7 +234,7 @@ public class RubyModule extends RubyObject {
 
         if (existingValue != null && existingValue != RubyObject.UNDEF) return context.nil;
 
-        defineAutoload(symbolStr, fileString);
+        defineAutoload(context, symbolStr, fileString);
 
         return context.nil;
     }
@@ -1496,11 +1496,9 @@ public class RubyModule extends RubyObject {
             try {
                 removeMethod(context, name);
             } catch (RaiseException t) {
-                if (!(t.getException() instanceof RubyNameError)) {
-                    throw t;
-                } else {
-                    runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
-                }
+                if (!(t.getException() instanceof RubyNameError)) throw t;
+
+                runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
             }
             return;
         }
@@ -1509,9 +1507,7 @@ public class RubyModule extends RubyObject {
         if (method.isUndefined()) raiseUndefinedNameError(name, runtime);
         methodLocation.addMethod(name, UndefinedMethod.getInstance());
 
-        RubySymbol nameSymbol = runtime.newSymbol(name);
-
-        methodUndefined(context, nameSymbol);
+        methodUndefined(context, asSymbol(context, name));
     }
 
     private void raiseUndefinedNameError(String name, Ruby runtime) {
@@ -1613,7 +1609,7 @@ public class RubyModule extends RubyObject {
             case "initialize" : warnMethodRemoval(context, id); break;
         }
 
-        RubySymbol name = context.runtime.newSymbol(id);
+        RubySymbol name = asSymbol(context, id);
         // We can safely reference methods here instead of doing getMethods() since if we
         // are adding we are not using a IncludedModule.
         Map<String, DynamicMethod> methodsForWrite = methodLocation.getMethodsForWrite();
@@ -4252,14 +4248,14 @@ public class RubyModule extends RubyObject {
         boolean firstConstant = true;
         while ( ( sep = name.indexOf("::") ) != -1 ) {
             final String segment = name.substring(0, sep);
-            IRubyObject obj = mod.getConstant(validateConstant(segment, symbol), inherit, inherit);
+            IRubyObject obj = mod.getConstant(context, validateConstant(segment, symbol), inherit, inherit);
             if (!(obj instanceof RubyModule)) throw typeError(context, segment + " does not refer to class/module");
             mod = (RubyModule) obj;
             name = name.substring(sep + 2);
             firstConstant = false;
         }
 
-        return mod.getConstant(validateConstant(name, symbol), firstConstant && inherit, firstConstant && inherit);
+        return mod.getConstant(context, validateConstant(name, symbol), firstConstant && inherit, firstConstant && inherit);
     }
 
     public static boolean isValidConstantPath(RubyString str) {
@@ -4335,7 +4331,7 @@ public class RubyModule extends RubyObject {
 
         while ( ( sep = name.indexOf("::") ) != -1 ) {
             final String segment = name.substring(0, sep);
-            IRubyObject obj = mod.getConstant(validateConstant(segment, symbol), inherit, inherit);
+            IRubyObject obj = mod.getConstant(context, validateConstant(segment, symbol), inherit, inherit);
             if (!(obj instanceof RubyModule)) throw typeError(context, segment + " does not refer to class/module");
             mod = (RubyModule) obj;
             name = name.substring(sep + 2);
@@ -4786,7 +4782,7 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject getConstant(String name, boolean inherit) {
-        return getConstant(name, inherit, true);
+        return getConstant(getRuntime().getCurrentContext(), name, inherit, true);
     }
 
     public SourceLocation getConstantSourceLocation(String name, boolean inherit, boolean includeObject) {
@@ -4799,17 +4795,26 @@ public class RubyModule extends RubyObject {
         return location;
     }
 
+    /**
+     * @param name
+     * @param inherit
+     * @param includeObject
+     * @return ""
+     * @deprecated Use {@link RubyModule#getConstant(ThreadContext, String, boolean, boolean)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public IRubyObject getConstant(String name, boolean inherit, boolean includeObject) {
+        return getConstant(getCurrentContext(), name, inherit, includeObject);
+    }
+
+    public IRubyObject getConstant(ThreadContext context, String name, boolean inherit, boolean includeObject) {
         assert name != null : "null name";
         //assert IdUtil.isConstant(name) : "invalid constant name: " + name;
         // NOTE: can not assert IdUtil.isConstant(name) until unmarshal-ing is using this for Java classes
         // since some classes won't assert the upper case first char (anonymous classes start with a digit)
 
         IRubyObject value = getConstantNoConstMissing(name, inherit, includeObject);
-        Ruby runtime = metaClass.runtime;
-
-        return value != null ? value :
-            callMethod(runtime.getCurrentContext(), "const_missing", runtime.newSymbol(name));
+        return value != null ? value : callMethod(context, "const_missing", asSymbol(context, name));
     }
 
     @Deprecated
@@ -5660,12 +5665,21 @@ public class RubyModule extends RubyObject {
     }
 
     /**
+     * @param symbol
+     * @param path
+     * @deprecated Use {@link RubyModule#defineAutoload(ThreadContext, String, RubyString)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
+    protected final void defineAutoload(String symbol, RubyString path) {
+        defineAutoload(getCurrentContext(), symbol, path);
+    }
+
+    /**
      * Define an autoload. ConstantMap holds UNDEF for the name as an autoload marker.
      */
-    protected final void defineAutoload(String symbol, RubyString path) {
+    protected final void defineAutoload(ThreadContext context, String symbol, RubyString path) {
         final Autoload existingAutoload = getAutoloadMap().get(symbol);
         if (existingAutoload == null || existingAutoload.getValue() == null) {
-            ThreadContext context = path.getRuntime().getCurrentContext();
             storeConstant(symbol, RubyObject.UNDEF, false, context.getFile(), context.getLine());
             RubyStackTraceElement caller = context.getSingleBacktrace();
             getAutoloadMapForWrite().put(symbol, new Autoload(symbol, path, caller.getFileName(), caller.getLineNumber()));

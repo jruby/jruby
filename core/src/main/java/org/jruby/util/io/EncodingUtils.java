@@ -355,8 +355,6 @@ public class EncodingUtils {
 
     // mri: rb_io_extract_encoding_option
     public static boolean ioExtractEncodingOption(ThreadContext context, IOEncodable ioEncodable, IRubyObject options, int[] fmode_p) {
-        Ruby runtime = context.runtime;
-
         IRubyObject encoding = context.nil;
         IRubyObject extenc = null;
         IRubyObject intenc = null;
@@ -368,16 +366,16 @@ public class EncodingUtils {
         if (options != null && !options.isNil()) {
             RubyHash opts = (RubyHash) options;
 
-            IRubyObject encodingOpt = opts.op_aref(context, runtime.newSymbol("encoding"));
+            IRubyObject encodingOpt = opts.op_aref(context, asSymbol(context, "encoding"));
             if (!encodingOpt.isNil()) encoding = encodingOpt;
-            IRubyObject externalOpt = opts.op_aref(context, runtime.newSymbol("external_encoding"));
+            IRubyObject externalOpt = opts.op_aref(context, asSymbol(context, "external_encoding"));
             if (!externalOpt.isNil()) extenc = externalOpt;
-            IRubyObject internalOpt = opts.op_aref(context, runtime.newSymbol("internal_encoding"));
+            IRubyObject internalOpt = opts.op_aref(context, asSymbol(context, "internal_encoding"));
             if (!internalOpt.isNil()) intenc = internalOpt;
         }
 
         if ((extenc != null || intenc != null) && !encoding.isNil()) {
-            runtime.getWarnings().warn("Ignoring encoding parameter '" + encoding + "': " +
+            context.runtime.getWarnings().warn("Ignoring encoding parameter '" + encoding + "': " +
                     (extenc == null ? "internal" : "external") + "_encoding is used");
             encoding = context.nil;
         }
@@ -776,16 +774,15 @@ public class EncodingUtils {
 
     // rb_econv_open_opts
     public static EConv econvOpenOpts(ThreadContext context, byte[] sourceEncoding, byte[] destinationEncoding, int ecflags, IRubyObject opthash) {
-        Ruby runtime = context.runtime;
         IRubyObject replacement;
 
         if (opthash == null || opthash.isNil()) {
             replacement = context.nil;
         } else {
             if (!(opthash instanceof RubyHash) || !opthash.isFrozen()) {
-                throw runtime.newRuntimeError("bug: EncodingUtils.econvOpenOpts called with invalid opthash");
+                throw context.runtime.newRuntimeError("bug: EncodingUtils.econvOpenOpts called with invalid opthash");
             }
-            replacement = ((RubyHash)opthash).op_aref(context, runtime.newSymbol("replace"));
+            replacement = ((RubyHash)opthash).op_aref(context, asSymbol(context, "replace"));
         }
 
         EConv ec = TranscoderDB.open(sourceEncoding, destinationEncoding, ecflags);
@@ -1145,7 +1142,7 @@ public class EncodingUtils {
         if ((ecflags & EConvFlags.INVALID_MASK) != 0 && explicitlyInvalidReplace) {
             IRubyObject rep = context.nil;
             if (!ecopts.isNil()) {
-                rep = ((RubyHash) ecopts).op_aref(context, context.runtime.newSymbol("replace"));
+                rep = ((RubyHash) ecopts).op_aref(context, asSymbol(context, "replace"));
             }
             IRubyObject scrubbed = str.encStrScrub(context, senc, rep, Block.NULL_BLOCK);
             if (!scrubbed.isNil()) {
@@ -1486,7 +1483,6 @@ public class EncodingUtils {
      * MRI: transcode_loop Ruby-related bits
      */
     public static void transcodeLoop(ThreadContext context, byte[] inBytes, Ptr inPos, byte[] outBytes, Ptr outPos, int inStop, int _outStop, ByteList destination, ResizeFunction resizeFunction, byte[] sname, byte[] dname, int ecflags, IRubyObject ecopts) {
-        Ruby runtime = context.runtime;
         EConv ec;
         IRubyObject fallback = context.nil;
         TranscodeFallback fallbackFunc = null;
@@ -1498,7 +1494,7 @@ public class EncodingUtils {
         }
 
         if (!ecopts.isNil() && ecopts instanceof RubyHash) {
-            fallback = ((RubyHash)ecopts).op_aref(context, runtime.newSymbol("fallback"));
+            fallback = ((RubyHash)ecopts).op_aref(context, asSymbol(context, "fallback"));
             if (fallback instanceof RubyHash) {
                 fallbackFunc = HASH_FALLBACK;
             } else if (fallback instanceof RubyProc) { // not quite same check as MRI
@@ -1513,7 +1509,7 @@ public class EncodingUtils {
         boolean success = transcodeLoop(ec, fallbackFunc, context, fallback, inBytes, inPos, outBytes, outPos, inStop, _outStop, destination, resizeFunction);
 
         if (!success) {
-            RaiseException re = makeEconvException(runtime, ec);
+            RaiseException re = makeEconvException(context.runtime, ec);
             ec.close();
             throw re;
         }

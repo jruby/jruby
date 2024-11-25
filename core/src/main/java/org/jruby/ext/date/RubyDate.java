@@ -1880,14 +1880,12 @@ public class RubyDate extends RubyObject {
     }
 
     static IRubyObject _parse_year(ThreadContext context, IRubyObject self, RubyString str, RubyHash hash) {
-        final Ruby runtime = context.runtime;
-        RubyRegexp re = RubyRegexp.newRegexp(runtime, _parse_year);
-        IRubyObject sub = subSpace(context, (RubyString) str, re);
-        if (sub != context.nil) {
-            hash.fastASet(runtime.newSymbol("year"), ((RubyString) ((RubyMatchData) sub).at(1)).to_i());
-            return context.tru;
-        }
-        return sub; // nil
+        RubyRegexp re = RubyRegexp.newRegexp(context.runtime, _parse_year);
+        IRubyObject sub = subSpace(context, str, re);
+        if (sub == context.nil) return context.nil;
+
+        hash.fastASet(asSymbol(context, "year"), ((RubyString) ((RubyMatchData) sub).at(1)).to_i());
+        return context.tru;
     }
 
     private static final ByteList _parse_mday;
@@ -2099,15 +2097,13 @@ public class RubyDate extends RubyObject {
     }
 
     private static IRubyObject hashGet(final ThreadContext context, final RubyHash hash, final String key) {
-        IRubyObject val = hash.fastARef(context.runtime.newSymbol(key));
-        if (val == null || val == context.nil) return null;
-        return val;
+        IRubyObject val = hash.fastARef(asSymbol(context, key));
+        return val == null || val == context.nil ? null : val;
     }
 
     private static boolean hashGetTest(final ThreadContext context, final RubyHash hash, final String key) {
-        IRubyObject val = hash.fastARef(context.runtime.newSymbol(key));
-        if (val == null || val == context.nil) return false;
-        return val.isTrue();
+        IRubyObject val = hash.fastARef(asSymbol(context, key));
+        return val == null || val == context.nil ? false : val.isTrue();
     }
 
     private static final ByteList SPACE = new ByteList(new byte[] { ' ' }, false);
@@ -2144,11 +2140,9 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod(name = "_parse_impl", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject _parse_impl(ThreadContext context, IRubyObject self, IRubyObject s, IRubyObject h) {
-        final Ruby runtime = context.runtime;
-
         RubyString str = (RubyString) s; RubyHash hash = (RubyHash) h;
 
-        str = str.gsubFast(context, newRegexp(runtime, _parse_impl), RubyString.newStringShared(context.runtime, SPACE), Block.NULL_BLOCK);
+        str = str.gsubFast(context, newRegexp(context.runtime, _parse_impl), RubyString.newStringShared(context.runtime, SPACE), Block.NULL_BLOCK);
 
         int flags = check_class(str);
         if ((flags & HAVE_ALPHA) == HAVE_ALPHA) {
@@ -2193,8 +2187,8 @@ public class RubyDate extends RubyObject {
             set_hash(context, hash, "offset", zone_to_diff(context, self, zone));
         }
 
-        hash.fastDelete(runtime.newSymbol("_bc"));
-        hash.fastDelete(runtime.newSymbol("_comp"));
+        hash.fastDelete(asSymbol(context, "_bc"));
+        hash.fastDelete(asSymbol(context, "_comp"));
 
         return hash;
     }
@@ -2411,7 +2405,7 @@ public class RubyDate extends RubyObject {
     }
 
     private static void set_hash(final ThreadContext context, RubyHash hash, String key, IRubyObject val) {
-        hash.fastASet(context.runtime.newSymbol(key), val);
+        hash.fastASet(asSymbol(context, key), val);
     }
 
     private static RubyInteger cstr2num(Ruby runtime, RubyString str, int bp, int ep) {

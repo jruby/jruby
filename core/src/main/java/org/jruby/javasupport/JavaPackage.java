@@ -216,7 +216,7 @@ public class JavaPackage extends RubyModule {
         }
         */
 
-        //if ( ! (mname instanceof RubySymbol) ) mname = context.runtime.newSymbol(name);
+        //if ( ! (mname instanceof RubySymbol) ) mname = asSymbol(context, name);
         //IRubyObject respond = Helpers.invoke(context, this, "respond_to_missing?", mname, asBoolean(context, includePrivate));
         //return asBoolean(context, respond.isTrue());
 

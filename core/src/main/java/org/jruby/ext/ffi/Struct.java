@@ -11,8 +11,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 
-import static org.jruby.api.Convert.asBoolean;
-import static org.jruby.api.Convert.castAsClass;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.*;
@@ -329,14 +328,13 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
 
     @JRubyMethod(name = "order")
     public final IRubyObject order(ThreadContext context) {
-        return context.runtime.newSymbol(getMemoryIO().order().equals(ByteOrder.LITTLE_ENDIAN) ? "little" : "big");
+        return asSymbol(context, getMemoryIO().order().equals(ByteOrder.LITTLE_ENDIAN) ? "little" : "big");
     }
 
     @JRubyMethod(name = "order")
     public final IRubyObject order(ThreadContext context, IRubyObject byte_order) {
         ByteOrder order = Util.parseByteOrder(context.runtime, byte_order);
-        return new Struct(context.runtime, getMetaClass(), layout,
-                getMemory().order(context.runtime, order));
+        return new Struct(context.runtime, getMetaClass(), layout, getMemory().order(context.runtime, order));
     }
 
     @JRubyMethod(name = "clear")

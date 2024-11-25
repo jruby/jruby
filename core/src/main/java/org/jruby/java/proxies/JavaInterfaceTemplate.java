@@ -57,6 +57,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Convert.castAsModule;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
@@ -446,8 +447,7 @@ public class JavaInterfaceTemplate {
 
             if ( methodNames.length == 1 ) {
                 if ( methodNames[0].equals(args[0]) ) return implBlock.call(context, args);
-            }
-            else if ( Arrays.binarySearch(methodNames, args[0]) >= 0 ) {
+            } else if (Arrays.binarySearch(methodNames, args[0]) >= 0) {
                 return implBlock.call(context, args);
             }
 
@@ -486,45 +486,38 @@ public class JavaInterfaceTemplate {
 
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, Block block) {
-                final IRubyObject[] nargs = new IRubyObject[] { context.runtime.newSymbol(name) };
-                return BlockInterfaceImpl.this.callImpl(context, klazz, block, nargs);
+                return BlockInterfaceImpl.this.callImpl(context, klazz, block, asSymbol(context, name));
             }
 
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, Block block) {
-                final IRubyObject[] nargs = new IRubyObject[] { context.runtime.newSymbol(name), arg0 };
-                return BlockInterfaceImpl.this.callImpl(context, klazz, block, nargs);
+                return BlockInterfaceImpl.this.callImpl(context, klazz, block, asSymbol(context, name), arg0);
             }
 
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
-                final IRubyObject[] nargs = new IRubyObject[] { context.runtime.newSymbol(name), arg0, arg1 };
-                return BlockInterfaceImpl.this.callImpl(context, klazz, block, nargs);
+                return BlockInterfaceImpl.this.callImpl(context, klazz, block, asSymbol(context, name), arg0, arg1);
             }
 
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-                final IRubyObject[] nargs = new IRubyObject[] { context.runtime.newSymbol(name), arg0, arg1, arg2 };
-                return BlockInterfaceImpl.this.callImpl(context, klazz, block, nargs);
+                return BlockInterfaceImpl.this.callImpl(context, klazz, block, asSymbol(context, name), arg0, arg1, arg2);
             }
 
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
-                switch (args.length) {
-                    case 0:
-                        return call(context, self, klazz, name, block);
-                    case 1:
-                        return call(context, self, klazz, name, args[0], block);
-                    case 2:
-                        return call(context, self, klazz, name, args[0], args[1], block);
-                    case 3:
-                        return call(context, self, klazz, name, args[0], args[1], args[2], block);
-                    default:
+                return switch (args.length) {
+                    case 0 -> call(context, self, klazz, name, block);
+                    case 1 -> call(context, self, klazz, name, args[0], block);
+                    case 2 -> call(context, self, klazz, name, args[0], args[1], block);
+                    case 3 -> call(context, self, klazz, name, args[0], args[1], args[2], block);
+                    default -> {
                         final IRubyObject[] nargs = new IRubyObject[args.length + 1];
-                        nargs[0] = context.runtime.newSymbol(name);
+                        nargs[0] = asSymbol(context, name);
                         System.arraycopy(args, 0, nargs, 1, args.length);
-                        return BlockInterfaceImpl.this.callImpl(context, klazz, block, nargs);
-                }
+                        yield BlockInterfaceImpl.this.callImpl(context, klazz, block, nargs);
+                    }
+                };
             }
 
         }

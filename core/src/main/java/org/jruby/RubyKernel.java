@@ -1449,7 +1449,7 @@ public class RubyKernel {
         if (method.getSignature().isOneArgument()) {
             sites(context).warn.call(context, recv, runtime.getWarning(), message);
         } else {
-            RubyHash keywords = RubyHash.newHash(runtime, runtime.newSymbol("category"), category);
+            RubyHash keywords = RubyHash.newHash(runtime, asSymbol(context, "category"), category);
             context.callInfo = ThreadContext.CALL_KEYWORD;
             sites(context).warn.call(context, recv, runtime.getWarning(), message, keywords);
         }
@@ -2093,29 +2093,21 @@ public class RubyKernel {
     @JRubyMethod(name = { "__method__" }, module = true, visibility = PRIVATE, reads = METHODNAME, omit = true)
     public static IRubyObject __method__(ThreadContext context, IRubyObject recv) {
         String frameName = context.getFrameName();
-        if (frameName == null || frameName == Ruby.ROOT_FRAME_NAME) {
-            return context.nil;
-        }
-        return context.runtime.newSymbol(frameName);
+        return frameName == null || frameName == Ruby.ROOT_FRAME_NAME ? context.nil : asSymbol(context, frameName);
     }
 
     @JRubyMethod(name = { "__callee__" }, module = true, visibility = PRIVATE, reads = METHODNAME, omit = true)
     public static IRubyObject __callee__(ThreadContext context, IRubyObject recv) {
         String frameName = context.getCalleeName();
-        if (frameName == null || frameName == Ruby.ROOT_FRAME_NAME) {
-            return context.nil;
-        }
-        return context.runtime.newSymbol(frameName);
+        return frameName == null || frameName == Ruby.ROOT_FRAME_NAME ? context.nil : asSymbol(context, frameName);
     }
 
     @JRubyMethod(name = "__dir__", module = true, visibility = PRIVATE, reads = FILENAME)
     public static IRubyObject __dir__(ThreadContext context, IRubyObject recv) {
-        Ruby runtime = context.runtime;
-
         // NOTE: not using __FILE__ = context.getFile() since it won't work with JIT
         String __FILE__ = context.getSingleBacktrace().getFileName();
 
-        __FILE__ = runtime.getLoadService().getPathForLocation(__FILE__);
+        __FILE__ = context.runtime.getLoadService().getPathForLocation(__FILE__);
 
         RubyString path = RubyFile.expandPathInternal(context, newString(context, __FILE__), null, false, true);
         return newString(context, RubyFile.dirname(context, path.asJavaString()));

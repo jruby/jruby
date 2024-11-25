@@ -303,10 +303,10 @@ public class IRRuntimeHelpers {
     // Used by JIT
     public static IRubyObject undefMethod(ThreadContext context, Object nameArg, DynamicScope currDynScope, IRubyObject self) {
         RubyModule module = IRRuntimeHelpers.findInstanceMethodContainer(context, currDynScope, self);
-        String name = (nameArg instanceof String) ? (String) nameArg : nameArg.toString();
+        String name = (nameArg instanceof String str) ? str : nameArg.toString();
 
         if (module == null) {
-            throw typeError(context, str(context.runtime, "No class to undef method '",  context.runtime.newSymbol(name), "'."));
+            throw typeError(context, str(context.runtime, "No class to undef method '",  asSymbol(context, name), "'."));
         }
 
         module.undef(context, name);
@@ -316,20 +316,12 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static double unboxFloat(IRubyObject val) {
-        if (val instanceof RubyFloat) {
-            return ((RubyFloat)val).getValue();
-        } else {
-            return ((RubyFixnum)val).getDoubleValue();
-        }
+        return val instanceof RubyFloat flote ? flote.getValue() : ((RubyFixnum)val).getDoubleValue();
     }
 
     @JIT
     public static long unboxFixnum(IRubyObject val) {
-        if (val instanceof RubyFloat) {
-            return (long)((RubyFloat)val).getValue();
-        } else {
-            return ((RubyFixnum)val).getLongValue();
-        }
+        return val instanceof RubyFloat flote ? (long) flote.getValue() : ((RubyFixnum)val).getLongValue();
     }
 
     public static boolean flt(double v1, double v2) {
@@ -1322,9 +1314,7 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static IRubyObject receiveKeywordArg(ThreadContext context, IRubyObject keywords, String id) {
-        RubySymbol key = context.runtime.newSymbol(id);
-
-        return receiveKeywordArg(keywords, key);
+        return receiveKeywordArg(keywords, asSymbol(context, id));
     }
 
     @Interp
@@ -1838,7 +1828,7 @@ public class IRRuntimeHelpers {
 
         if (!rubyClass.isRefinement()) {
             // FIXME: needs checkID and proper encoding to force hard symbol
-            obj.callMethod(context, "singleton_method_added", context.runtime.newSymbol(id));
+            obj.callMethod(context, "singleton_method_added", asSymbol(context, id));
         }
     }
 
@@ -1856,7 +1846,7 @@ public class IRRuntimeHelpers {
         rubyClass.addMethod(id, new CompiledIRMethod(variable, specific, specificArity, id, line, scope,
                 Visibility.PUBLIC, rubyClass, encodedArgumentDescriptors, receivesKeywordArgs, needsToFindImplementer));
 
-        if (!rubyClass.isRefinement()) obj.callMethod(context, "singleton_method_added", context.runtime.newSymbol(id));
+        if (!rubyClass.isRefinement()) obj.callMethod(context, "singleton_method_added", asSymbol(context, id));
     }
 
     private static RubyClass checkClassForDef(ThreadContext context, String id, IRubyObject obj) {
@@ -2367,8 +2357,7 @@ public class IRRuntimeHelpers {
      */
     @JIT
     public static RubyProc newSymbolProc(ThreadContext context, ByteList value) {
-        RubySymbol symbol = RubySymbol.newSymbol(context.runtime, value);
-        return IRRuntimeHelpers.newSymbolProc(context, symbol);
+        return IRRuntimeHelpers.newSymbolProc(context, asSymbol(context, value));
     }
 
     /**
@@ -2587,7 +2576,7 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static RubySymbol newDSymbol(ThreadContext context, IRubyObject symbol) {
-        return context.runtime.newSymbol(symbol.asString().getByteList());
+        return asSymbol(context, symbol.asString());
     }
 
     @JIT

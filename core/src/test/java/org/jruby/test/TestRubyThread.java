@@ -8,6 +8,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Create.newString;
+
 public class TestRubyThread extends Base {
 
     public void testExceptionDoesNotPropagate() throws InterruptedException {
@@ -81,22 +84,22 @@ public class TestRubyThread extends Base {
         final ThreadContext context = runtime.getCurrentContext();
         IRubyObject local;
 
-        local = otherThread.get().op_aref(context, runtime.newSymbol("foo"));
+        local = otherThread.get().op_aref(context, asSymbol(context, "foo"));
         assertEquals("bar", local.toString());
 
         otherThread.get().clearFiberLocals();
 
-        local = otherThread.get().op_aref(context, runtime.newSymbol("foo"));
-        assertSame(runtime.getNil(), local);
+        local = otherThread.get().op_aref(context, asSymbol(context, "foo"));
+        assertSame(context.nil, local);
         assertEquals(0, otherThread.get().keys().size());
 
-        local = otherThread.get().thread_variable_p(context, runtime.newString("local"));
-        assertSame(runtime.getTrue(), local);
+        local = otherThread.get().thread_variable_p(context, newString(context, "local"));
+        assertSame(context.tru, local);
 
         otherThread.get().clearThreadLocals();
 
-        local = otherThread.get().thread_variable_p(context, runtime.newString("local"));
-        assertSame(runtime.getFalse(), local);
+        local = otherThread.get().thread_variable_p(context, newString(context, "local"));
+        assertSame(context.fals, local);
 
         latch2.countDown();
     }

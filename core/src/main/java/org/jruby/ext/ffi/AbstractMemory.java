@@ -1834,18 +1834,14 @@ abstract public class AbstractMemory extends MemoryObject {
     @JRubyMethod(name = "read_string")
     public IRubyObject read_string(ThreadContext context, IRubyObject rbLength) {
         /* When a length is given, read_string acts like get_bytes */
-        if (rbLength.isNil()) {
-            return MemoryUtil.getTaintedString(context.runtime, getMemoryIO(), 0);
-        } else {
-            int len = Util.int32Value(rbLength);
-            if (len == 0) {
-                RubyString rstr = RubyString.newEmptyString(context.runtime);
-                rstr.setEncoding(ASCIIEncoding.INSTANCE);
-                return rstr;
-            } else {
-                return MemoryUtil.getTaintedByteString(context.runtime, getMemoryIO(), 0, len);
-            }
-        }
+        if (rbLength.isNil()) return MemoryUtil.getTaintedString(context.runtime, getMemoryIO(), 0);
+
+        int len = Util.int32Value(rbLength);
+        if (len != 0) return MemoryUtil.getTaintedByteString(context.runtime, getMemoryIO(), 0, len);
+
+        RubyString rstr = RubyString.newEmptyString(context.runtime);
+        rstr.setEncoding(ASCIIEncoding.INSTANCE);
+        return rstr;
     }
 
     @JRubyMethod(name = "get_string")
@@ -1993,15 +1989,12 @@ abstract public class AbstractMemory extends MemoryObject {
     private void putPointer(ThreadContext context, long offset, IRubyObject value) {
         DynamicMethod conversionMethod;
         
-        if (value instanceof Pointer) {
-            putPointer(context, offset, (Pointer) value);
-        
+        if (value instanceof Pointer ptr) {
+            putPointer(context, offset, ptr);
         } else if (value.isNil()) {
             getMemoryIO().putAddress(offset, 0L);
-        
         } else if (!(conversionMethod = value.getMetaClass().searchMethod("to_ptr")).isUndefined()) {
             putPointer(context, offset, conversionMethod.call(context, value, value.getMetaClass(), "to_ptr"));
-        
         } else {
             throw typeError(context, value, context.runtime.getFFI().pointerClass);
         }
@@ -2078,9 +2071,9 @@ abstract public class AbstractMemory extends MemoryObject {
 
     @JRubyMethod(name = "put_callback")
     public IRubyObject put_callback(ThreadContext context, IRubyObject offset, IRubyObject proc, IRubyObject cbInfo) {
-        if (!(cbInfo instanceof CallbackInfo)) throw argumentError(context, "invalid CallbackInfo");
+        if (!(cbInfo instanceof CallbackInfo info)) throw argumentError(context, "invalid CallbackInfo");
 
-        Pointer ptr = Factory.getInstance().getCallbackManager().getCallback(context.runtime, (CallbackInfo) cbInfo, proc);
+        Pointer ptr = Factory.getInstance().getCallbackManager().getCallback(context.runtime, info, proc);
         getMemoryIO().putMemoryIO(getOffset(offset), ptr.getMemoryIO());
         return this;
     }
@@ -2092,17 +2085,13 @@ abstract public class AbstractMemory extends MemoryObject {
 
     @JRubyMethod(name = "order")
     public final IRubyObject order(ThreadContext context) {
-        return context.runtime.newSymbol(getMemoryIO().order().equals(ByteOrder.LITTLE_ENDIAN) ? "little" : "big");
+        return asSymbol(context, getMemoryIO().order().equals(ByteOrder.LITTLE_ENDIAN) ? "little" : "big");
     }
 
     @JRubyMethod(name = "order")
     public final IRubyObject order(ThreadContext context, IRubyObject byte_order) {
         ByteOrder newOrder = Util.parseByteOrder(context.runtime, byte_order);
-        if (getMemoryIO().order().equals(newOrder)) {
-            return this; // no change
-        } else {
-            return order(context.runtime, newOrder);
-        }
+        return getMemoryIO().order().equals(newOrder) ? this : order(context.runtime, newOrder);
     }
 
     @JRubyMethod(name = "to_ptr")

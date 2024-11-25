@@ -198,7 +198,7 @@ public final class ArgsUtil {
     public static IRubyObject extractKeywordArg(ThreadContext context, final RubyHash options, String validKey) {
         if (options.isEmpty()) return null;
 
-        RubySymbol testKey = context.runtime.newSymbol(validKey);
+        RubySymbol testKey = asSymbol(context, validKey);
         IRubyObject ret = options.fastARef(testKey);
 
         if (ret == null || options.size() > 1) { // other (unknown) keys in options
@@ -217,7 +217,7 @@ public final class ArgsUtil {
      * @return nil if key not within options (no way to distinguish a key: nil and missing key)
      */
     public static IRubyObject extractKeywordArg(ThreadContext context, String keyword, final RubyHash opts) {
-        return opts.op_aref(context, context.runtime.newSymbol(keyword));
+        return opts.op_aref(context, asSymbol(context, keyword));
     }
 
     /**
@@ -231,9 +231,7 @@ public final class ArgsUtil {
     public static IRubyObject extractKeywordArg(ThreadContext context, String keyword, IRubyObject arg) {
         IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, arg);
 
-        if (opts == context.nil) return context.nil;
-
-        return extractKeywordArg(context, keyword, (RubyHash) opts);
+        return opts == context.nil ? context.nil : extractKeywordArg(context, keyword, (RubyHash) opts);
     }
 
     /**

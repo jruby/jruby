@@ -358,17 +358,13 @@ public class TraceType {
     }
 
     public static RubyString printFullMessage(ThreadContext context, IRubyObject exception, IRubyObject opts) {
-        Ruby runtime = context.runtime;
-        IRubyObject optArg = ArgsUtil.getOptionsArg(runtime, opts);
-
+        IRubyObject optArg = ArgsUtil.getOptionsArg(context.runtime, opts);
         IRubyObject highlightArg = checkHighlightKeyword(context, optArg, true);
         boolean reverse = checkOrderKeyword(context, optArg);
 
-        if (optArg.isNil()) {
-            optArg = RubyHash.newHash(runtime);
-        }
+        if (optArg.isNil()) optArg = RubyHash.newHash(context.runtime);
 
-        ((RubyHash) optArg).fastASet(runtime.newSymbol("highlight"), highlightArg);
+        ((RubyHash) optArg).fastASet(asSymbol(context, "highlight"), highlightArg);
 
         return printBacktraceMRI(exception, optArg, highlightArg.isTrue(), reverse);
     }
@@ -379,7 +375,7 @@ public class TraceType {
             reverse = false;
         } else {
             RubyHash optHash = (RubyHash) optArg;
-            IRubyObject highlightOrder = optHash.fastARef(context.runtime.newSymbol("order"));
+            IRubyObject highlightOrder = optHash.fastARef(asSymbol(context, "order"));
             reverse = determineDirection(context, highlightOrder);
         }
         return reverse;

@@ -57,8 +57,7 @@ import org.jruby.util.io.EncodingUtils;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.jruby.api.Convert.asBoolean;
-import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
@@ -227,9 +226,6 @@ public class RubyConverter extends RubyObject {
     @JRubyMethod(required = 2, optional = 4, checkArity = false)
     public IRubyObject primitive_convert(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 2, 6);
-
-        Ruby runtime = context.runtime;
-        
         RubyString input = null;
         RubyString output;
         IRubyObject outputByteOffsetObj = context.nil;
@@ -237,7 +233,6 @@ public class RubyConverter extends RubyObject {
         int outputByteoffset = -1;
         int outputBytesize = 0;
         int flags = 0;
-        
         int hashArg = -1;
 
         if (argc > 2 && !args[2].isNil()) {
@@ -259,10 +254,8 @@ public class RubyConverter extends RubyObject {
         }
         
         if (argc > 4 && !args[4].isNil()) {
-            if (argc > 5 && !args[5].isNil()) {
-                throw runtime.newArgumentError(argc, 5);
-            }
-            
+            if (argc > 5 && !args[5].isNil()) throw argumentError(context, argc, 5);
+
             if (args[4] instanceof RubyHash) {
                 hashArg = 4;
             } else {
@@ -272,12 +265,12 @@ public class RubyConverter extends RubyObject {
         
         IRubyObject opt;
         if (hashArg != -1 &&
-                !(opt = TypeConverter.checkHashType(runtime, args[hashArg])).isNil()) {
-            IRubyObject v = ((RubyHash)opt).op_aref(context, runtime.newSymbol("partial_input"));
+                !(opt = TypeConverter.checkHashType(context.runtime, args[hashArg])).isNil()) {
+            IRubyObject v = ((RubyHash)opt).op_aref(context, asSymbol(context, "partial_input"));
             if (v.isTrue()) {
                 flags |= EConvFlags.PARTIAL_INPUT;
             }
-            v = ((RubyHash)opt).op_aref(context, runtime.newSymbol("after_output"));
+            v = ((RubyHash)opt).op_aref(context, asSymbol(context, "after_output"));
             if (v.isTrue()) {
                 flags |= EConvFlags.AFTER_OUTPUT;
             }
@@ -343,11 +336,9 @@ public class RubyConverter extends RubyObject {
                 continue;
             }
 
-            if (ec.destinationEncoding != null) {
-                outBytes.setEncoding(ec.destinationEncoding);
-            }
+            if (ec.destinationEncoding != null) outBytes.setEncoding(ec.destinationEncoding);
 
-            return runtime.newSymbol(res.symbolicName());
+            return asSymbol(context, res.symbolicName());
         }
     }
 

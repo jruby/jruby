@@ -50,6 +50,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
+import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.util.CommonByteLists.*;
@@ -204,11 +205,11 @@ public class RipperParserBase {
     }
     
     public IRubyObject intern(String value) {
-        return context.runtime.newSymbol(value);
+        return asSymbol(context, value);
     }
 
     public IRubyObject intern(ByteList value) {
-        return context.runtime.newSymbol(value);
+        return asSymbol(context, value);
     }
 
     protected IRubyObject new_defined(long _line, IRubyObject value) {

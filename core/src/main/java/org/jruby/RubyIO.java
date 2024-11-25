@@ -980,7 +980,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             }
         }
 
-        if (opt != null && !opt.isNil() && ((RubyHash)opt).op_aref(context, runtime.newSymbol("autoclose")) == context.fals) {
+        if (opt != null && !opt.isNil() && ((RubyHash)opt).op_aref(context, asSymbol(context, "autoclose")) == context.fals) {
             fmode_p[0] |= OpenFile.PREP;
         }
 
@@ -1436,11 +1436,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
             if (n == -1) {
                 if (fptr.posix.getErrno() == Errno.EWOULDBLOCK || fptr.posix.getErrno() == Errno.EAGAIN) {
-                    if (no_exception) {
-                        return runtime.newSymbol("wait_writable");
-                    } else {
-                        throw runtime.newErrnoEAGAINWritableError("write would block");
-                    }
+                    if (no_exception) return asSymbol(context, "wait_writable");
+                    throw runtime.newErrnoEAGAINWritableError("write would block");
                 }
                 throw runtime.newErrnoFromErrno(fptr.posix.getErrno(), fptr.getPath());
             }
@@ -4200,7 +4197,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         if (opt == context.nil) {
             vmode = asFixnum(context, ModeFlags.RDONLY);
             vperm = asFixnum(context, 0666);
-        } else if ((v = ((RubyHash) opt).op_aref(context, runtime.newSymbol("open_args"))) != context.nil) {
+        } else if ((v = ((RubyHash) opt).op_aref(context, asSymbol(context, "open_args"))) != context.nil) {
             RubyArray vAry = v.convertToArray();
             int n = vAry.size();
 
@@ -5238,7 +5235,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         final Ruby runtime = context.runtime;
 
-        final IRubyObject mode = options.fastARef(runtime.newSymbol("mode"));
+        final IRubyObject mode = options.fastARef(asSymbol(context, "mode"));
         if (mode != null) {
             ioOptions = parseIOOptions(mode);
         }
@@ -5247,7 +5244,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         // :binmode option is ORed in with other options. It does
         // not obliterate what came before.
 
-        final RubySymbol binmode = runtime.newSymbol("binmode");
+        final RubySymbol binmode = asSymbol(context, "binmode");
         if (isTrue(options.fastARef(binmode))) {
             ioOptions = newIOOptions(runtime, ioOptions, ModeFlags.BINARY);
         }
@@ -5260,7 +5257,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             ioOptions = newIOOptions(runtime, ioOptions, ModeFlags.BINARY);
         }
 
-        if (isTrue(options.fastARef(runtime.newSymbol("textmode")))) {
+        if (isTrue(options.fastARef(asSymbol(context, "textmode")))) {
             ioOptions = newIOOptions(runtime, ioOptions, ModeFlags.TEXT);
         }
 
@@ -5268,7 +5265,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         // do a scan of args before anything opens.  We do this logic in a less
         // consistent way.  We should consider re-impling all IO/File construction
         // logic.
-        IRubyObject open_args = options.fastARef(runtime.newSymbol("open_args"));
+        IRubyObject open_args = options.fastARef(asSymbol(context, "open_args"));
         if (open_args != null) {
             RubyArray openArgs = open_args.convertToArray();
 
@@ -5357,10 +5354,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     static void checkUnsupportedOptions(ThreadContext context, RubyHash opts, String[] unsupported, String error) {
-        final Ruby runtime = context.runtime;
         for (String key : unsupported) {
-            if (opts.fastARef(runtime.newSymbol(key)) != null) {
-                runtime.getWarnings().warn(error + ": " + key);
+            if (opts.fastARef(asSymbol(context, key)) != null) {
+                context.runtime.getWarnings().warn(error + ": " + key);
             }
         }
     }
@@ -5691,7 +5687,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
                         runtime.getThreadService().registerNewThread(rubyThread);
 
-                        rubyThread.op_aset(runtime.newSymbol("pid"),  asFixnum(context, pid));
+                        rubyThread.op_aset(asSymbol(context, "pid"),  asFixnum(context, pid));
 
                         try {
                             int exitValue = tuple.process.waitFor();

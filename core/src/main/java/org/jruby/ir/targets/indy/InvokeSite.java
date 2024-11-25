@@ -65,6 +65,8 @@ import static java.lang.invoke.MethodHandles.foldArguments;
 import static java.lang.invoke.MethodHandles.insertArguments;
 import static java.lang.invoke.MethodHandles.lookup;
 import static java.lang.invoke.MethodType.methodType;
+import static org.jruby.RubySymbol.newSymbol;
+import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.runtime.Helpers.constructObjectArrayHandle;
 import static org.jruby.runtime.invokedynamic.JRubyCallSite.SITE_ID;
@@ -226,7 +228,7 @@ public abstract class InvokeSite extends MutableCallSite {
                             , new Class[]{RubyModule.class, String.class, IRubyObject.class},
                             entry.sourceModule,
                             site.name(),
-                            self.getRuntime().newSymbol(site.methodName))
+                            newSymbol(self.getRuntime(), site.methodName))
                     .insert(0, "method", DynamicMethod.class, method)
                     .collect("args", "arg.*", Helpers.constructObjectArrayHandle(site.arity + 1));
         } else {
@@ -235,7 +237,7 @@ public abstract class InvokeSite extends MutableCallSite {
                             .permute("context", "self", "args", "block")
                             .changeReturn(IRubyObject[].class))
                     .permute("args")
-                    .insert(0, "argName", IRubyObject.class, self.getRuntime().newSymbol(site.methodName))
+                    .insert(0, "argName", IRubyObject.class, newSymbol(self.getRuntime(), site.methodName))
                     .invokeStaticQuiet(LOOKUP, Helpers.class, "arrayOf");
 
             binder = SmartBinder.from(site.signature);
@@ -720,7 +722,7 @@ public abstract class InvokeSite extends MutableCallSite {
         if (literalClosure) {
             try {
                 if (passSymbol) {
-                    return method.call(context, self, sourceModule, "method_missing", Helpers.arrayOf(context.runtime.newSymbol(methodName), args), block);
+                    return method.call(context, self, sourceModule, "method_missing", Helpers.arrayOf(asSymbol(context,methodName), args), block);
                 } else {
                     return method.call(context, self, sourceModule, methodName, args, block);
                 }
@@ -729,11 +731,8 @@ public abstract class InvokeSite extends MutableCallSite {
             }
         }
 
-        if (passSymbol) {
-            return method.call(context, self, sourceModule, methodName, Helpers.arrayOf(context.runtime.newSymbol(methodName), args), block);
-        } else {
-            return method.call(context, self, sourceModule, methodName, args, block);
-        }
+        return method.call(context, self, sourceModule, methodName,
+                passSymbol ? Helpers.arrayOf(asSymbol(context, methodName), args) : args, block);
     }
 
     private static final MethodHandle ESCAPE_BLOCK = Binder.from(void.class, Block.class).invokeVirtualQuiet(LOOKUP, "escape");

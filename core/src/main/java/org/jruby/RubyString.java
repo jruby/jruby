@@ -1780,23 +1780,16 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private IRubyObject initialize(ThreadContext context, IRubyObject arg0, RubyHash opts) {
-        Ruby runtime = context.runtime;
-
-        if (arg0 != null) {
-            replace(arg0);
-        }
+        if (arg0 != null) replace(arg0);
 
         if (opts != null) {
-            IRubyObject encoding = opts.fastARef(context.runtime.newSymbol("encoding"));
-            IRubyObject capacity = opts.fastARef(context.runtime.newSymbol("capacity"));
+            IRubyObject encoding = opts.fastARef(asSymbol(context, "encoding"));
+            IRubyObject capacity = opts.fastARef(asSymbol(context, "capacity"));
 
-            if (!(capacity == null || capacity.isNil())) {
-                modify(capacity.convertToInteger().getIntValue());
-            }
-
-            if (!(encoding == null || encoding.isNil())) {
+            if (capacity != null && !capacity.isNil()) modify(capacity.convertToInteger().getIntValue());
+            if (encoding != null && !encoding.isNil()) {
                 modify();
-                setEncodingAndCodeRange(runtime.getEncodingService().getEncodingFromObject(encoding), CR_UNKNOWN);
+                setEncodingAndCodeRange(context.runtime.getEncodingService().getEncodingFromObject(encoding), CR_UNKNOWN);
             }
         }
 
@@ -4395,7 +4388,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private IRubyObject uptoCommonNoDigits(ThreadContext context, RubyString end, boolean excl, Block block, boolean asSymbol) {
-        Ruby runtime = context.runtime;
         int n = op_cmp(end);
         if (n > 0 || (excl && n == 0)) return this;
         StringSites sites = sites(context);
@@ -4406,11 +4398,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         while (!current.op_equal(context, afterEnd).isTrue()) {
             IRubyObject next = null;
             if (excl || !current.op_equal(context, end).isTrue()) next = succ.call(context, current, current);
-            block.yield(context, asSymbol ? runtime.newSymbol(current.toString()) : current);
+            block.yield(context, asSymbol ? asSymbol(context, current.toString()) : current);
             if (next == null) break;
             current = next.convertToString();
             if (excl && current.op_equal(context, end).isTrue()) break;
-            if (current.getByteList().length() > end.getByteList().length() || current.getByteList().length() == 0) break;
+            if (current.getByteList().length() > end.getByteList().length() || current.getByteList().isEmpty()) break;
             context.pollThreadEvents();
         }
         return this;

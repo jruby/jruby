@@ -67,8 +67,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 
 import static org.jruby.anno.FrameField.*;
-import static org.jruby.api.Convert.asBoolean;
-import static org.jruby.api.Convert.castAsModule;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
@@ -543,7 +542,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
 
         final ThreadContext context = runtime.getCurrentContext();
-        final RubySymbol mname = runtime.newSymbol(name);
+        final RubySymbol mname = asSymbol(context, name);
 
         // respond_to? or respond_to_missing? is not defined, so we must dispatch to trigger method_missing
         if ( respondTo.isUndefined() ) {
@@ -569,11 +568,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         CacheEntry entry = metaClass.searchWithCache("respond_to_missing?");
         DynamicMethod method = entry.method;
         // perhaps should try a smart version as for respondsTo above?
-        if ( method.isUndefined() ) return false;
-        final Ruby runtime = metaClass.runtime;
-        return method.call(runtime.getCurrentContext(), this, entry.sourceModule,
-            "respond_to_missing?", runtime.newSymbol(name), runtime.newBoolean(incPrivate)
-        ).isTrue();
+        if (method.isUndefined())return false;
+        var context = getRuntime().getCurrentContext();
+        return method.call(context, this, entry.sourceModule, "respond_to_missing?",
+                asSymbol(context, name), incPrivate ? context.tru : context.fals).isTrue();
     }
 
     /**
@@ -941,7 +939,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             }
         } else { // will always be true or false (MRI has bulletproofing to catch odd values (rb_bug explodes).
             // FIXME: MRI uses C module variables to make a single hash ever for this setup.  We build every time.
-            RubyHash opts = RubyHash.newHash(context.runtime, getRuntime().newSymbol("freeze"), freeze);
+            RubyHash opts = RubyHash.newHash(context.runtime, asSymbol(context, "freeze"), freeze);
             context.callInfo = CALL_KEYWORD;
             sites(context).initialize_clone.call(context, clone, clone, this, opts);
             if (freeze == context.tru) clone.freeze(context);
@@ -1154,7 +1152,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         for (Map.Entry<String, VariableAccessor> entry : metaClass.getVariableTableManager().getVariableAccessorsForRead().entrySet()) {
             Object value = entry.getValue().get(this);
             if (!(value instanceof IRubyObject)) continue;
-            RubySymbol symbol = runtime.newSymbol(entry.getKey());
+            RubySymbol symbol = asSymbol(context, entry.getKey());
             if (!symbol.validInstanceVariableName()) continue;
 
             IRubyObject obj = (IRubyObject) value;
@@ -2382,7 +2380,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         if (klass.isSingleton()) {
             // TODO: needs to use method_entry_i logic from MRI
             origin.getMethods().forEach((k, v) -> {
-                if (v.getVisibility() != PRIVATE) names.add(Convert.asSymbol(context, k));
+                if (v.getVisibility() != PRIVATE) names.add(asSymbol(context, k));
             });
             klass = klass.getSuperClass();
         }
@@ -2391,7 +2389,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             while (klass != null && (klass.isSingleton() || klass.isIncluded())) {
                 if (klass != origin) {
                     klass.getMethods().forEach((k, v) -> {
-                        if (v.getVisibility() != PRIVATE) names.add(Convert.asSymbol(context, k));
+                        if (v.getVisibility() != PRIVATE) names.add(asSymbol(context, k));
                     });
                 }
                 klass = klass.getSuperClass();
@@ -2802,7 +2800,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     public RubyArray instance_variables(ThreadContext context) {
         var array = newArray(context, getMetaClass().getVariableAccessorsForRead().size());
-        forEachInstanceVariableName(name -> array.append(context, Convert.asSymbol(context, name)));
+        forEachInstanceVariableName(name -> array.append(context, asSymbol(context, name)));
         return array;
     }
 

@@ -70,8 +70,7 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 
 import static org.jruby.RubyBasicObject.getMetaClass;
-import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Convert.castAsString;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.marshal.MarshalCommon.TYPE_IVAR;
@@ -422,18 +421,14 @@ public class NewMarshal {
         registerLinkTarget(value);
         out.write(TYPE_USRMARSHAL);
         final RubyClass klass = getMetaClass(value);
-        final Ruby runtime = context.runtime;
-        writeAndRegisterSymbol(out, RubySymbol.newSymbol(runtime, klass.getRealClass().getName()));
+        writeAndRegisterSymbol(out, asSymbol(context, klass.getRealClass().getName()));
 
-        IRubyObject marshaled;
-        if (entry != null) {
-            marshaled = entry.method.call(context, value, entry.sourceModule, "marshal_dump");
-        } else {
-            marshaled = value.callMethod(context, "marshal_dump");
-        }
-        if (getMetaClass(marshaled) == klass) {
-            throw runtime.newRuntimeError("marshal_dump returned same class instance");
-        }
+        IRubyObject marshaled = entry != null ?
+                entry.method.call(context, value, entry.sourceModule, "marshal_dump") :
+                value.callMethod(context, "marshal_dump");
+
+        if (getMetaClass(marshaled) == klass) throw context.runtime.newRuntimeError("marshal_dump returned same class instance");
+
         dumpObject(context, out, marshaled);
     }
 
@@ -481,7 +476,7 @@ public class NewMarshal {
 
     private void dumpUserdefBase(RubyOutputStream out, ThreadContext context, RubyClass klass, RubyString marshaled) {
         out.write(TYPE_USERDEF);
-        writeAndRegisterSymbol(out, Convert.asSymbol(context, klass.getRealClass().getName()));
+        writeAndRegisterSymbol(out, asSymbol(context, klass.getRealClass().getName()));
         writeString(out, marshaled.getByteList());
     }
 
@@ -495,7 +490,7 @@ public class NewMarshal {
         }
         
         // w_symbol
-        writeAndRegisterSymbol(out, Convert.asSymbol(context, type.getName()));
+        writeAndRegisterSymbol(out, asSymbol(context, type.getName()));
     }
 
     public void dumpVariables(ThreadContext context, RubyOutputStream out, IRubyObject value) {
@@ -542,7 +537,7 @@ public class NewMarshal {
 
     private static void dumpVariable(NewMarshal marshal, ThreadContext context, RubyOutputStream out, String name, Object value) {
         if (value instanceof IRubyObject) {
-            marshal.writeAndRegisterSymbol(out, RubySymbol.newSymbol(context.runtime, name));
+            marshal.writeAndRegisterSymbol(out, asSymbol(context, name));
             marshal.dumpObject(context, out, (IRubyObject) value);
         }
     }
@@ -576,15 +571,14 @@ public class NewMarshal {
      * 
      */
     private RubyClass dumpExtended(ThreadContext context, RubyOutputStream out, RubyClass type) {
-        if(type.isSingleton()) {
-            if (hasSingletonMethods(type) || type.hasVariables()) { // any ivars, since we don't have __attached__ ivar now
-                throw typeError(context, "singleton can't be dumped");
-            }
+        if (type.isSingleton()) {
+            // any ivars, since we don't have __attached__ ivar now
+            if (hasSingletonMethods(type) || type.hasVariables()) throw typeError(context, "singleton can't be dumped");
             type = type.getSuperClass();
         }
         while(type.isIncluded()) {
             out.write('e');
-            writeAndRegisterSymbol(out, RubySymbol.newSymbol(context.runtime, type.getOrigin().getName()));
+            writeAndRegisterSymbol(out, asSymbol(context, type.getOrigin().getName()));
             type = type.getSuperClass();
         }
         return type;

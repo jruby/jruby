@@ -61,6 +61,7 @@ import org.jruby.util.RegexpOptions;
 import org.jruby.util.StringSupport;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
@@ -912,10 +913,9 @@ public class RubyMatchData extends RubyObject {
 
             Iterable<IRubyObject> iterable = () -> arr.rubyStream().iterator();
             for (IRubyObject obj : iterable) {
-                if (!(obj instanceof RubySymbol)) {
+                if (!(obj instanceof RubySymbol requestedKey)) {
                     throw typeError(context, str(runtime, "wrong argument type ", obj.getMetaClass(), " (expected Symbol)"));
                 }
-                RubySymbol requestedKey = (RubySymbol) obj;
 
                 int index = nameToBackrefNumber(getPattern(), regs, requestedKey.getBytes());
                 if (index == -1) break;
@@ -941,7 +941,7 @@ public class RubyMatchData extends RubyObject {
     }
 
     private RubySymbol symbolFromNameEntry(ThreadContext context, NameEntry entry) {
-        return context.runtime.newSymbol(byteListFromNameEntry(context, entry, regexp.getEncoding()));
+        return asSymbol(context, byteListFromNameEntry(context, entry, regexp.getEncoding()));
     }
 
     private RubyString stringFromNameEntry(ThreadContext context, NameEntry entry) {

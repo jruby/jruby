@@ -1,7 +1,6 @@
 package org.jruby.ir.targets.indy;
 
 import org.jruby.RubyEncoding;
-import org.jruby.RubySymbol;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -13,6 +12,7 @@ import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
+import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
 
@@ -39,11 +39,9 @@ public class SymbolProcObjectSite extends LazyObjectSite {
     }
 
     public IRubyObject construct(ThreadContext context) {
-        RubySymbol symbol = RubySymbol.newSymbol(context.runtime,
-                new ByteList(
-                        RubyEncoding.encodeISO(value),
-                        IRRuntimeHelpers.retrieveJCodingsEncoding(context, encoding),
-                        false));
+        var symbol = asSymbol(context, new ByteList(RubyEncoding.encodeISO(value),
+                IRRuntimeHelpers.retrieveJCodingsEncoding(context, encoding), false));
+
         return IRRuntimeHelpers.newSymbolProc(context, symbol);
     }
 }
