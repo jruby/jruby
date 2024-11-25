@@ -54,7 +54,6 @@ import static org.jruby.RubyInstanceConfig.CompileMode;
  */
 public class Options {
     private static final List<Option> _loadedOptions = new ArrayList<>(240);
-    private static final boolean INVOKEDYNAMIC_DEFAULT = calculateInvokedynamicDefault();
     private static final boolean COLOR = System.console() != null;
 
     public static final String IR_PRINT_PATTERN_NO_PATTERN_STRING = "<NO_PATTERN>";
@@ -73,7 +72,7 @@ public class Options {
 
     public static final Option<CompileMode> COMPILE_MODE = enumeration(COMPILER, "compile.mode", CompileMode.class, CompileMode.JIT, "Set compilation mode. JIT = at runtime; FORCE = before execution.");
     public static final Option<Boolean> COMPILE_DUMP = bool(COMPILER, "compile.dump", false, "Dump to console all bytecode generated at runtime.");
-    public static final Option<Boolean> COMPILE_INVOKEDYNAMIC = bool(COMPILER, "compile.invokedynamic", INVOKEDYNAMIC_DEFAULT, "Use invokedynamic for optimizing Ruby code.");
+    public static final Option<Boolean> COMPILE_INVOKEDYNAMIC = bool(COMPILER, "compile.invokedynamic", true, "Use invokedynamic for optimizing Ruby code.");
     public static final Option<Boolean> COMPILE_CACHE_CLASSES = bool(COMPILER, "compile.cache.classes", false, "Use cache of compiled script classes");
     public static final Option<Boolean> COMPILE_CACHE_CLASSES_LOGGING = bool(COMPILER, "compile.cache.classes.logging", false, "Log whether cached script classes are being saved or used");
 
@@ -288,11 +287,6 @@ public class Options {
         }
         _loadedOptions.add(option);
         return option;
-    }
-
-    private static boolean calculateInvokedynamicDefault() {
-        // We were defaulting on for Java 8 and might again later if JEP 210 helps reduce warmup time.
-        return false;
     }
 
     private static Verbosity calculateVerbosityDefault() {
