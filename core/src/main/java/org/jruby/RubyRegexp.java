@@ -980,8 +980,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     private IRubyObject timeoutFromArg(ThreadContext context, IRubyObject arg) {
-        RubyHash kwargs = Convert.castAsHash(context, arg);
-        return kwargs.fastARef(context.runtime.newSymbol("timeout"));
+        return Convert.castAsHash(context, arg).fastARef(asSymbol(context, "timeout"));
     }
 
     private IRubyObject initializeByRegexp(RubyRegexp regexp, IRubyObject timeoutProvided) {
@@ -1618,7 +1617,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         if ((callInfo & ThreadContext.CALL_KEYWORD) != 0) {
             length--;
             RubyHash opts = Convert.castAsHash(context, args[args.length - 1]);
-            timeout = opts.fastARef(context.runtime.newSymbol("timeout"));
+            timeout = opts.fastARef(asSymbol(context, "timeout"));
         }
 
         RubyString string;

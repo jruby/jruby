@@ -52,8 +52,7 @@ import org.jruby.util.ByteList;
 
 import java.io.ByteArrayInputStream;
 
-import static org.jruby.api.Convert.asBoolean;
-import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.parser.ParserType.INLINE;
@@ -290,12 +289,9 @@ public class JRubyLibrary implements Library {
 
         RubyClass CompiledScript = (RubyClass) runtime.getModule("JRuby").getConstantAt("CompiledScript");
         // JRuby::CompiledScript#initialize(filename, class_name, content, bytes)
-        return CompiledScript.newInstance(context, new IRubyObject[] {
-                filename,
-                runtime.newSymbol(scope.getId()),
-                content,
-                Java.getInstance(runtime, bytes)
-        }, Block.NULL_BLOCK);
+        return CompiledScript.newInstance(context,
+                new IRubyObject[] {filename, asSymbol(context, scope.getId()), content, Java.getInstance(runtime, bytes)},
+                Block.NULL_BLOCK);
     }
 
     @Deprecated // @JRubyMethod(meta = true, visibility = Visibility.PRIVATE)
@@ -314,7 +310,7 @@ public class JRubyLibrary implements Library {
         boolean recurseAll = false;
         opts = ArgsUtil.getOptionsArg(context.runtime, opts);
         if (opts != context.nil) {
-            IRubyObject all = ((RubyHash) opts).fastARef(context.runtime.newSymbol("all"));
+            IRubyObject all = ((RubyHash) opts).fastARef(asSymbol(context, "all"));
             if (all != null) recurseAll = all.isTrue();
         }
         return subclasses(context, recv, arg instanceof RubyClass ? (RubyClass) arg : arg.getMetaClass(), recurseAll);

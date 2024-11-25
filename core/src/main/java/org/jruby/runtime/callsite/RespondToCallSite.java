@@ -11,6 +11,7 @@ import org.jruby.util.TypeConverter;
 
 import static org.jruby.RubyBasicObject.getMetaClass;
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asSymbol;
 
 public class RespondToCallSite extends MonomorphicCallSite {
     private volatile RespondToTuple respondToTuple = RespondToTuple.NULL_CACHE;
@@ -107,9 +108,7 @@ public class RespondToCallSite extends MonomorphicCallSite {
 
     private RubySymbol getRespondToNameSym(ThreadContext context) {
         RubySymbol sym = respondToNameSym;
-        if (sym == null) {
-            respondToNameSym = sym = context.runtime.newSymbol(respondToName);
-        }
+        if (sym == null) respondToNameSym = sym = asSymbol(context, respondToName);
         return sym;
     }
 

@@ -40,8 +40,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.collections.IntList;
 
-import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Convert.castAsSymbol;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ext.coverage.CoverageData.CoverageDataState.*;
@@ -94,7 +93,7 @@ public class CoverageModule {
                     mode |= LINES;
                     mode |= CoverageData.ONESHOT_LINES;
                 }
-            } else if (args[0] instanceof RubySymbol && args[0] == runtime.newSymbol("all")) {
+            } else if (args[0] instanceof RubySymbol && args[0] == asSymbol(context, "all")) {
                 mode |= CoverageData.ALL;
             } else {
                 throw typeError(context, str(runtime, "no implicit conversion of ", args[0].getMetaClass(), " into Hash"));
@@ -207,15 +206,11 @@ public class CoverageModule {
 
     @JRubyMethod(module = true)
     public static IRubyObject state(ThreadContext context, IRubyObject self) {
-        Ruby runtime = context.runtime;
-
-        switch (runtime.getCoverageData().getCurrentState()) {
-            case IDLE: return runtime.newSymbol("idle");
-            case SUSPENDED: return runtime.newSymbol("suspended");
-            case RUNNING: return runtime.newSymbol("running");
-        }
-
-        return context.nil;
+        return switch (context.runtime.getCoverageData().getCurrentState()) {
+            case IDLE -> asSymbol(context, "idle");
+            case SUSPENDED -> asSymbol(context, "suspended");
+            case RUNNING -> asSymbol(context, "running");
+        };
     }
 
     @JRubyMethod(module = true)
@@ -227,13 +222,8 @@ public class CoverageModule {
     public static IRubyObject supported_p(ThreadContext context, IRubyObject self, IRubyObject arg) {
         RubySymbol mode = castAsSymbol(context, arg);
 
-        if (mode == context.runtime.newSymbol("lines") ||
-                mode == context.runtime.newSymbol("oneshot_lines") ||
-                mode == context.runtime.newSymbol("eval")) {
-            return context.tru;
-        }
-
-        return context.fals;
+        return mode == asSymbol(context, "lines") || mode == asSymbol(context, "oneshot_lines") || mode == asSymbol(context, "eval") ?
+                context.tru : context.fals;
     }
 
     private static IRubyObject convertCoverageToRuby(ThreadContext context, Map<String, IntList> coverage, int mode) {
@@ -260,7 +250,7 @@ public class CoverageModule {
 
                 if (mode != 0) {
                     RubyHash oneshotHash = RubyHash.newSmallHash(runtime);
-                    RubySymbol linesKey = runtime.newSymbol(oneshot ? "oneshot_lines" : "lines");
+                    RubySymbol linesKey = asSymbol(context, oneshot ? "oneshot_lines" : "lines");
                     oneshotHash.fastASetSmall(linesKey, ary);
                     value = oneshotHash;
                 }

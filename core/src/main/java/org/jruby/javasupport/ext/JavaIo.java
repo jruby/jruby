@@ -35,6 +35,7 @@ import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.javasupport.JavaUtil.unwrapIfJavaObject;
 import static org.jruby.runtime.Visibility.PUBLIC;
 
@@ -133,7 +134,7 @@ public abstract class JavaIo {
 
     private static void setAutoclose(final ThreadContext context, final RubyIO io, final IRubyObject opts) {
         if ( opts != null && opts != context.nil ) {
-            IRubyObject autoclose = opts.callMethod(context, "[]", context.runtime.newSymbol("autoclose"));
+            IRubyObject autoclose = opts.callMethod(context, "[]", asSymbol(context, "autoclose"));
             if ( autoclose != context.nil ) io.setAutoclose( autoclose.isTrue() );
         }
     }

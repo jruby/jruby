@@ -784,10 +784,10 @@ public class RubyArgsFile extends RubyObject {
         final Ruby runtime = context.runtime;
         boolean noException = false;
         RubyString str = null;
-        if ( args.length > 1 ) {
+        if (args.length > 1) {
             IRubyObject opts = TypeConverter.checkHashType(runtime, args[args.length - 1]);
             if ( opts != context.nil &&
-                context.fals == ((RubyHash) opts).op_aref(context, runtime.newSymbol("exception")) ) {
+                context.fals == ((RubyHash) opts).op_aref(context, asSymbol(context, "exception")) ) {
                 noException = true;
             }
             if (args.length > 2 || opts == context.nil) {
@@ -807,19 +807,15 @@ public class RubyArgsFile extends RubyObject {
         }
 
         IRubyObject res = ((RubyIO) data.currentFile).getPartial(context, args, nonBlocking, noException);
-        if (res == context.nil) {
-            if (data.next_p == Stream) return RubyIO.nonblockEOF(runtime, noException);
+        if (res != context.nil) return res;
+        if (data.next_p == Stream) return RubyIO.nonblockEOF(runtime, noException);
 
-            argf_close(context, data.currentFile);
-            data.next_p = NextFile;
+        argf_close(context, data.currentFile);
+        data.next_p = NextFile;
 
-            if (data.argv.isEmpty()) return RubyIO.nonblockEOF(runtime, noException);
+        if (data.argv.isEmpty()) return RubyIO.nonblockEOF(runtime, noException);
 
-            if (args.length > 1 && args[1] instanceof RubyString ) return args[1];
-            return RubyString.newEmptyString(runtime);
-        }
-
-        return res;
+        return args.length > 1 && args[1] instanceof RubyString ? args[1] : RubyString.newEmptyString(runtime);
     }
 
     @JRubyMethod

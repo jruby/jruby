@@ -30,6 +30,7 @@ import org.jruby.util.DefinedMessage;
 import org.jruby.util.RegexpOptions;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asSymbol;
 
 public class RuntimeCache {
 
@@ -55,7 +56,7 @@ public class RuntimeCache {
     public final RubySymbol getSymbol(ThreadContext context, int index, String name, String encodingName) {
         RubySymbol symbol = symbols[index];
         if (symbol == null) {
-            symbol = context.runtime.newSymbol(name);
+            symbol = asSymbol(context, name);
             if (encodingName != null) {
                 symbol.associateEncoding(EncodingDB.getEncodings().get(encodingName.getBytes()).getEncoding());
             }

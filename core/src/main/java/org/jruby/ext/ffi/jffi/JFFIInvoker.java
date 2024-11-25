@@ -15,6 +15,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
@@ -87,8 +88,8 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
         IRubyObject enums = null;
         if (args[3] instanceof RubyHash) {
             RubyHash options = (RubyHash) args[3];
-            convention = options.fastARef(context.runtime.newSymbol("convention")).asJavaString();
-            enums = options.fastARef(context.runtime.newSymbol("enums"));
+            convention = options.fastARef(asSymbol(context, "convention")).asJavaString();
+            enums = options.fastARef(asSymbol(context, "enums"));
             if (enums != null && !enums.isNil() && !(enums instanceof RubyHash || enums instanceof Enums)) {
                 throw typeError(context, "wrong type for options[:enum] ", enums, " (expected Hash or Enums)");
             }
@@ -102,11 +103,9 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
             if (!(type instanceof Type te)) throw argumentError(context, "Invalid parameter type");
             parameterTypes[i] = te;
         }
-        MemoryIO fptr = ptr.getMemoryIO();
-        return new JFFIInvoker(context.runtime, (RubyClass) recv, fptr,
-                (Type) returnType, parameterTypes, 
-                "stdcall".equals(convention) ? CallingConvention.STDCALL : CallingConvention.DEFAULT,
-                enums);
+
+        return new JFFIInvoker(context.runtime, (RubyClass) recv, ptr.getMemoryIO(), returnType, parameterTypes,
+                "stdcall".equals(convention) ? CallingConvention.STDCALL : CallingConvention.DEFAULT, enums);
     }
 
     @Override

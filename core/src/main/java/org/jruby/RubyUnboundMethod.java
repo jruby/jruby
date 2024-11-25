@@ -193,9 +193,7 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
             RubyModule definedClass = method.getRealMethod().getDefinedClass();
             RubyModule module = sourceModule.findImplementer(definedClass);
 
-            if (module != null) {
-                superClass = module.getSuperClass();
-            }
+            if (module != null) superClass = module.getSuperClass();
         } else {
             superClass = sourceModule.getSuperClass();
         }

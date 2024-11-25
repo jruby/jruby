@@ -19,8 +19,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
 
-import static org.jruby.api.Convert.asBoolean;
-import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -163,17 +162,14 @@ public class TracePoint extends RubyObject {
     public IRubyObject event(ThreadContext context) {
         checkInside(context);
         
-        return eventName == null ? context.nil : context.runtime.newSymbol(eventName);
+        return eventName == null ? context.nil : asSymbol(context, eventName);
     }
     
     @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {
-        if (inside) {
-            // TODO: event-specific inspect output
-            return newString(context, "#<TracePoint:" + eventName + ">");
-        }
-        
-        return newString(context, "#<TracePoint:" + (enabled ? "enabled" : "disabled") + ">");
+        return inside ? // TODO: event-specific inspect output
+                newString(context, "#<TracePoint:" + eventName + ">") :
+                newString(context, "#<TracePoint:" + (enabled ? "enabled" : "disabled") + ">");
     }
     
     @JRubyMethod
@@ -187,7 +183,7 @@ public class TracePoint extends RubyObject {
     public IRubyObject method_id(ThreadContext context) {
         checkInside(context);
         
-        return name == null ? context.nil : context.runtime.newSymbol(name);
+        return name == null ? context.nil : asSymbol(context, name);
     }
 
     @JRubyMethod
@@ -195,8 +191,7 @@ public class TracePoint extends RubyObject {
         checkInside(context);
 
         // TODO: actually get called name, requires modifying trace handling in bindings
-
-        return name == null ? context.nil : context.runtime.newSymbol(name);
+        return name == null ? context.nil : asSymbol(context, name);
     }
     
     @JRubyMethod

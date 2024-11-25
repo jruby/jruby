@@ -45,8 +45,7 @@ import org.jruby.util.ByteList;
 import java.util.Spliterator;
 import java.util.stream.Stream;
 
-import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Convert.numericToLong;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.arrayOf;
@@ -264,14 +263,12 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
     }
 
     private IRubyObject initializeWithSize(ThreadContext context, IRubyObject size, Block block) {
-        Ruby runtime = context.runtime;
-
         checkSize(context, size);
 
-        IRubyObject object = runtime.getGenerator().newInstance(context, NULL_ARRAY, block);
-        IRubyObject method = runtime.newSymbol("each");
+        IRubyObject object = context.runtime.getGenerator().newInstance(context, NULL_ARRAY, block);
+        IRubyObject method = asSymbol(context, "each");
 
-        return initialize(runtime, object, method, NULL_ARRAY, size, null, false);
+        return initialize(context.runtime, object, method, NULL_ARRAY, size, null, false);
     }
 
     private IRubyObject initialize(Ruby runtime, IRubyObject object, IRubyObject method, IRubyObject[] methodArgs) {
@@ -344,8 +341,8 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         ArraySupport.copy(methodArgs, newArgs, 0, mlen);
         ArraySupport.copy(args, newArgs, mlen, args.length);
 
-        final Ruby runtime = context.runtime;
-        return new RubyEnumerator(runtime, getType(), object, runtime.newSymbol(method), newArgs, size, sizeFn, methodArgsHasKeywords).each(context, block);
+        return new RubyEnumerator(context.runtime, getType(), object, asSymbol(context, method), newArgs,
+                size, sizeFn, methodArgsHasKeywords).each(context, block);
     }
 
     @JRubyMethod(name = "inspect")

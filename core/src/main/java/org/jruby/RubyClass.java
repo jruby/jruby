@@ -31,6 +31,7 @@
 
 package org.jruby;
 
+import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Error.*;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -685,19 +686,18 @@ public class RubyClass extends RubyModule {
 
     // MRI: check_funcall_exec
     private static IRubyObject checkFuncallExec(ThreadContext context, IRubyObject self, String name, IRubyObject... args) {
-        return self.callMethod(context, "method_missing", ArraySupport.newCopy(context.runtime.newSymbol(name), args));
+        return self.callMethod(context, "method_missing", ArraySupport.newCopy(asSymbol(context, name), args));
     }
 
     // MRI: check_funcall_exec
     private static IRubyObject checkFuncallExec(ThreadContext context, IRubyObject self, String name, CallSite methodMissingSite, IRubyObject... args) {
-        return methodMissingSite.call(context, self, self, ArraySupport.newCopy(context.runtime.newSymbol(name), args));
+        return methodMissingSite.call(context, self, self, ArraySupport.newCopy(asSymbol(context, name), args));
     }
 
     // MRI: check_funcall_failed
     private static IRubyObject checkFuncallFailed(ThreadContext context, IRubyObject self, String name, RubyClass expClass, IRubyObject... args) {
-        if (self.respondsTo(name)) {
-            throw context.runtime.newRaiseException(expClass, name);
-        }
+        if (self.respondsTo(name)) throw context.runtime.newRaiseException(expClass, name);
+
         return null;
     }
 
@@ -714,7 +714,7 @@ public class RubyClass extends RubyModule {
         //       respond_to_missing? Same effect, I believe.
         if (me == null || me.isUndefined() || me.isBuiltin()) return true;
 
-        return me.callRespondTo(context, recv, "respond_to?", entry.sourceModule, context.runtime.newSymbol(mid));
+        return me.callRespondTo(context, recv, "respond_to?", entry.sourceModule, asSymbol(context, mid));
     }
 
     /**
@@ -756,7 +756,8 @@ public class RubyClass extends RubyModule {
         CacheEntry entry = klass.searchWithCache("respond_to_missing?");
         DynamicMethod me = entry.method;
         // MRI: basic_obj_respond_to_missing ...
-        if (!me.isUndefined() && !me.isBuiltin() && !me.callRespondTo(context, self, "respond_to_missing?", entry.sourceModule, runtime.newSymbol(method))) {
+        if (!me.isUndefined() && !me.isBuiltin() &&
+                !me.callRespondTo(context, self, "respond_to_missing?", entry.sourceModule, asSymbol(context, method))) {
             return null;
         }
 
@@ -778,7 +779,8 @@ public class RubyClass extends RubyModule {
         CacheEntry entry = respondToMissingSite.retrieveCache(klass);
         DynamicMethod me = entry.method;
         // MRI: basic_obj_respond_to_missing ...
-        if (!me.isUndefined() && !me.isBuiltin() && !me.callRespondTo(context, self, "respond_to_missing?", entry.sourceModule, runtime.newSymbol(method))) {
+        if (!me.isUndefined() && !me.isBuiltin() &&
+                !me.callRespondTo(context, self, "respond_to_missing?", entry.sourceModule, asSymbol(context, method))) {
             return null;
         }
 
@@ -2696,7 +2698,7 @@ public class RubyClass extends RubyModule {
             if (!method.equals(runtime.getRespondToMethod()) && !method.isUndefined()) {
 
                 // custom respond_to?, cache nothing and use slow path
-                if (method.call(context, target, cache.sourceModule, "respond_to?", runtime.newSymbol("marshal_load")).isTrue()) {
+                if (method.call(context, target, cache.sourceModule, "respond_to?", asSymbol(context, "marshal_load")).isTrue()) {
                     target.callMethod(context, "marshal_load", data);
                     return target;
                 } else {
@@ -2748,7 +2750,7 @@ public class RubyClass extends RubyModule {
             if (!method.equals(runtime.getRespondToMethod()) && !method.isUndefined()) {
 
                 // custom respond_to?, cache nothing and use slow path
-                if (method.call(context, this, cache.sourceModule, "respond_to?", runtime.newSymbol("_load")).isTrue()) {
+                if (method.call(context, this, cache.sourceModule, "respond_to?", asSymbol(context, "_load")).isTrue()) {
                     return callMethod(context, "_load", data);
                 } else {
                     throw typeError(context, "class ", this, " needs to have method `_load'");
@@ -2986,17 +2988,17 @@ public class RubyClass extends RubyModule {
         return method.call(context, self, entry.sourceModule, name, arg0, arg1, arg2);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4-", forRemoval = true)
     public VariableAccessorField getObjectIdAccessorField() {
         return variableTableManager.getObjectIdAccessorField();
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4-", forRemoval = true)
     public VariableAccessorField getFFIHandleAccessorField() {
         return variableTableManager.getFFIHandleAccessorField();
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4-", forRemoval = true)
     public VariableAccessorField getObjectGroupAccessorField() {
         return variableTableManager.getObjectGroupAccessorField();
     }

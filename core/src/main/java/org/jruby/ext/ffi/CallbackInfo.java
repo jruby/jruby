@@ -41,6 +41,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Convert.castAsArray;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
@@ -105,16 +106,14 @@ public class CallbackInfo extends Type {
      */
     @JRubyMethod(name = "new", meta = true, required = 2, optional = 1, checkArity = false)
     public static final IRubyObject newCallbackInfo(ThreadContext context, IRubyObject klass,
-            IRubyObject[] args)
-    {
+            IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 2, 3);
-
         IRubyObject returnType = args[0];
 
         if (!(returnType instanceof Type)) throw typeError(context, returnType.getMetaClass(), "FFI::Type");
         var paramTypes = Convert.castAsArray(context, args[1]);
 
-        if (returnType instanceof MappedType) returnType = ((MappedType) returnType).getRealType();
+        if (returnType instanceof MappedType mappedType) returnType = mappedType.getRealType();
 
         Type[] nativeParamTypes = new Type[paramTypes.size()];
         for (int i = 0; i < nativeParamTypes.length; ++i) {
@@ -125,8 +124,8 @@ public class CallbackInfo extends Type {
 
         boolean stdcall = false;
         if (argc > 2) {
-            if (!(args[2] instanceof RubyHash)) throw typeError(context, args[2], "Enums or Hash");
-            stdcall = "stdcall".equals(((RubyHash) args[2]).get(context.runtime.newSymbol("convention")));
+            if (!(args[2] instanceof RubyHash hash)) throw typeError(context, args[2], "Enums or Hash");
+            stdcall = "stdcall".equals(hash.get(asSymbol(context, "convention")));
         }
         
         try {

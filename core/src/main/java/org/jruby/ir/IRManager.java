@@ -46,6 +46,7 @@ import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.cli.Options;
 
+import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.ir.IRFlags.REQUIRES_DYNSCOPE;
 
 public class IRManager {
@@ -424,7 +425,7 @@ public class IRManager {
             }
             // FIXME: Broken with Prism
             LazyMethodDefinitionAST defn = new LazyMethodDefinitionAST(defNode);
-            IRMethod newMethod = new IRMethod(this, containingScope, defn, context.runtime.newSymbol(method).getBytes(), true, 0, defNode.getScope(), CoverageData.NONE);
+            IRMethod newMethod = new IRMethod(this, containingScope, defn, asSymbol(context, method).getBytes(), true, 0, defNode.getScope(), CoverageData.NONE);
 
             newMethod.prepareForCompilation();
 

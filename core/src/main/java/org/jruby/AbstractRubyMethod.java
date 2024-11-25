@@ -49,8 +49,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.marshal.DataType;
 
-import static org.jruby.api.Convert.asBoolean;
-import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
 
@@ -104,7 +103,7 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
 
     @JRubyMethod(name = "name")
     public IRubyObject name(ThreadContext context) {
-        return context.runtime.newSymbol(methodName);
+        return asSymbol(context, methodName);
     }
 
     public String getMethodName() {
@@ -173,18 +172,13 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
 
     @JRubyMethod
     public IRubyObject original_name(ThreadContext context) {
-        if (method instanceof AliasMethod) {
-            return context.runtime.newSymbol(((AliasMethod) method).getOldName());
-        }
-
-        return context.runtime.newSymbol(method.getName());
+        return asSymbol(context, method instanceof AliasMethod alias ? alias.getOldName() : method.getName());
     }
 
     public IRubyObject inspect(IRubyObject receiver) {
-        Ruby runtime = getRuntime();
-        ThreadContext context = runtime.getCurrentContext();
+        ThreadContext context = getRuntime().getCurrentContext();
 
-        RubyString str = RubyString.newString(runtime, "#<");
+        RubyString str = newString(context, "#<");
         String sharp = "#";
 
         str.catString(getType().getName()).catString(": ");
@@ -235,10 +229,10 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
             }
         }
         str.catString(sharp);
-        str.cat(runtime.newSymbol(this.methodName).asString());
+        str.cat(asSymbol(context, methodName).asString());
         if (!methodName.equals(method.getName())) {
             str.catString("(");
-            str.cat(runtime.newSymbol(method.getRealMethod().getName()).asString());
+            str.cat(asSymbol(context, method.getRealMethod().getName()).asString());
             str.catString(")");
         }
         if (method.isNotImplemented()) {
