@@ -93,7 +93,7 @@ import org.jruby.util.JavaNameMangler;
 import org.jruby.util.Loader;
 import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.StringSupport;
-import org.jruby.util.collections.ConcurrentWeakHashMap;
+import org.jruby.util.WeakIdentityHashMap;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.AnnotationVisitor;
@@ -1019,7 +1019,14 @@ public class RubyClass extends RubyModule {
 
     @JRubyMethod
     public IRubyObject subclasses(ThreadContext context) {
-        RubyArray<RubyClass> subs = RubyArray.newArray(context.runtime);
+        Map<RubyClass, Object> subclasses = this.subclasses;
+        int sizeEstimate = subclasses == null ? 0 : subclasses.size();
+
+        if (sizeEstimate == 0) {
+            return RubyArray.newEmptyArray(context.runtime);
+        }
+
+        RubyArray<RubyClass> subs = RubyArray.newArray(context.runtime, sizeEstimate);
 
         concreteSubclasses(subs);
 
@@ -1081,18 +1088,18 @@ public class RubyClass extends RubyModule {
         }
     }
 
-    private void concreteSubclasses(Collection<RubyClass> subs) {
+    private void concreteSubclasses(RubyArray<RubyClass> subs) {
         Map<RubyClass, Object> subclasses = this.subclasses;
         if (subclasses != null) {
-            Set<RubyClass> keys = subclasses.keySet();
-            for (RubyClass klass: keys) {
-                if (klass.isSingleton()) continue;
-                if (klass.isIncluded() || klass.isPrepended()) {
-                    klass.concreteSubclasses(subs);
-                    continue;
+            subclasses.forEach((klass, $) -> {
+                if (!klass.isSingleton()) {
+                    if (klass.isIncluded() || klass.isPrepended()) {
+                        klass.concreteSubclasses(subs);
+                    } else {
+                        subs.append(klass);
+                    }
                 }
-                subs.add(klass);
-            }
+            });
         }
     }
 
@@ -1112,7 +1119,7 @@ public class RubyClass extends RubyModule {
             synchronized (this) {
                 subclasses = this.subclasses;
                 if (subclasses == null) {
-                    this.subclasses = subclasses = new ConcurrentWeakHashMap<>(4, 0.75f, 1);
+                    this.subclasses = subclasses = Collections.synchronizedMap(new WeakHashMap<>(4));
                 }
             }
         }
