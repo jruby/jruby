@@ -73,6 +73,7 @@ import org.jruby.util.io.STDIO;
 
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.*;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -432,7 +433,7 @@ public class RubyGlobal {
             IRubyObject key = arg.convertToString();
             IRubyObject value = internalGet(key);
 
-            EnvStringValidation.ensureValidEnvString(context.runtime, key, "key");
+            EnvStringValidation.ensureValidEnvString(context, key, "key");
 
             if (value == null) return context.nil;
 
@@ -454,14 +455,14 @@ public class RubyGlobal {
         @JRubyMethod(name = "assoc")
         public IRubyObject assoc(final ThreadContext context, IRubyObject obj) {
             RubyString expected = verifyStringLike(context, obj).convertToString();
-            EnvStringValidation.ensureValidEnvString(context.getRuntime(), obj, "value");
+            EnvStringValidation.ensureValidEnvString(context, obj, "value");
 
             return super.assoc(context, expected);
         }
 
         @JRubyMethod(name = "fetch", required = 1, optional = 2)
         public IRubyObject fetch(ThreadContext context, IRubyObject[] args, Block block) {
-            EnvStringValidation.ensureValidEnvString(context.runtime, args[0], "key");
+            EnvStringValidation.ensureValidEnvString(context, args[0], "key");
 
             return switch (args.length) {
                 case 1 -> super.fetch(context, args[0], block);
@@ -473,14 +474,14 @@ public class RubyGlobal {
 
         @JRubyMethod(name = "fetch", required = 1)
         public IRubyObject fetch(ThreadContext context, IRubyObject key, Block block) {
-            EnvStringValidation.ensureValidEnvString(context.getRuntime(), key, "key");
+            EnvStringValidation.ensureValidEnvString(context, key, "key");
 
             return super.fetch(context, verifyStringLike(context, key.convertToString()), block);
         }
 
         @JRubyMethod
         public IRubyObject delete(ThreadContext context, IRubyObject key, Block block) {
-            EnvStringValidation.ensureValidEnvString(context.getRuntime(), key, "key");
+            EnvStringValidation.ensureValidEnvString(context, key, "key");
 
             return super.delete(context, verifyStringLike(context, key), block);
         }
@@ -517,7 +518,7 @@ public class RubyGlobal {
         public RubyBoolean has_key_p(ThreadContext context, IRubyObject key) {
             IRubyObject expected = verifyStringLike(context, key);
             
-            EnvStringValidation.ensureValidEnvString(context.runtime, key, "key");
+            EnvStringValidation.ensureValidEnvString(context, key, "key");
 
             return internalGetEntry(expected) == NO_ENTRY ? context.fals : context.tru;
         }
@@ -526,7 +527,7 @@ public class RubyGlobal {
         public IRubyObject has_value_pp(ThreadContext context, IRubyObject expected) {
             if (!isStringLike(expected)) return context.nil;
 
-            EnvStringValidation.ensureValidEnvString(context.runtime, expected, "value");
+            EnvStringValidation.ensureValidEnvString(context, expected, "value");
             
             return super.has_value_p(context, expected.convertToString());
         }
@@ -649,12 +650,8 @@ public class RubyGlobal {
 
         @JRubyMethod(name = "clone")
         public IRubyObject rbClone(ThreadContext context, IRubyObject _opts) {
-            Ruby runtime = context.runtime;
-
-            IRubyObject opts = ArgsUtil.getOptionsArg(runtime, _opts, true);
-            if (opts.isNil()) {
-                throw runtime.newArgumentError(1, 0);
-            }
+            IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, _opts, true);
+            if (opts.isNil()) throw argumentError(context, 1, 0);
 
             IRubyObject freeze = ArgsUtil.getFreezeOpt(context, opts);
             if (freeze != null && freeze.isTrue()) throw typeError(context, "cannot clone ENV");
@@ -727,12 +724,9 @@ public class RubyGlobal {
 
         private IRubyObject case_aware_op_aset(ThreadContext context, IRubyObject key, final IRubyObject value) {
             RubyString keyAsStr = verifyValidKey(context, verifyStringLike(context, key).convertToString(), value);
-
             if (!isCaseSensitive()) key = keyAsStr = getCorrectKey(keyAsStr);
 
-            if (value == context.nil) {
-                return super.delete(context, key, org.jruby.runtime.Block.NULL_BLOCK);
-            }
+            if (value == context.nil) return super.delete(context, key, org.jruby.runtime.Block.NULL_BLOCK);
 
             IRubyObject valueAsStr = newName(context, keyAsStr, verifyStringLike(context, value).convertToString());
 
@@ -743,8 +737,8 @@ public class RubyGlobal {
                 if (valueAsStr == context.nil) {
                     synchronized (Object.class) { posix.unsetenv(keyAsJava); }
                 } else {
-                    EnvStringValidation.ensureValidEnvString(context.getRuntime(), value, "value");
-                    EnvStringValidation.ensureValidEnvString(context.getRuntime(), key, "key");
+                    EnvStringValidation.ensureValidEnvString(context, value, "value");
+                    EnvStringValidation.ensureValidEnvString(context, key, "key");
 
                     final String valueAsJava = valueAsStr.asJavaString();
                     synchronized (Object.class) { posix.setenv(keyAsJava, valueAsJava, 1); }
@@ -1151,10 +1145,10 @@ public class RubyGlobal {
 
         @Override
         public IRubyObject set(IRubyObject value) {
-            if (runtime.getGlobalVariables().get("$!").isNil()) {
-                throw runtime.newArgumentError("$! not set");
-            }
-            runtime.getGlobalVariables().get("$!").callMethod(value.getRuntime().getCurrentContext(), "set_backtrace", value);
+            var context = runtime.getCurrentContext();
+            if (runtime.getGlobalVariables().get("$!").isNil()) throw argumentError(context, "$! not set");
+
+            runtime.getGlobalVariables().get("$!").callMethod(context, "set_backtrace", value);
             return value;
         }
     }
@@ -1269,15 +1263,15 @@ public class RubyGlobal {
     ));
 
     private static class EnvStringValidation {
-        public static void ensureValidEnvString(Ruby runtime, IRubyObject str, String type) {
+        public static void ensureValidEnvString(ThreadContext context, IRubyObject str, String type) {
             RubyString value = str.asString();
 
-            if(!value.getByteList().getEncoding().isAsciiCompatible()){
-                throw runtime.newArgumentError("bad environment variable " + type + ": ASCII incompatible encoding: " + value.getByteList().getEncoding().toString());
+            if (!value.getByteList().getEncoding().isAsciiCompatible()) {
+                throw argumentError(context, "bad environment variable " + type + ": ASCII incompatible encoding: " + value.getByteList().getEncoding().toString());
             }
 
             if (value.toString().contains("\0")) {
-                throw runtime.newArgumentError("bad environment variable " + type + ": contains null byte");
+                throw argumentError(context, "bad environment variable " + type + ": contains null byte");
             }
         }
     }

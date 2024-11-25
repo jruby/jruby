@@ -273,14 +273,11 @@ public abstract class JavaLang {
 
         @JRubyMethod(optional = 1)
         public static IRubyObject detailed_message(final ThreadContext context, final IRubyObject self, final IRubyObject[] args) {
-            switch (args.length) {
-                case 0:
-                    return detailed_message(context, self);
-                case 1:
-                    return detailed_message(context, self, args[0]);
-                default:
-                    throw context.runtime.newArgumentError(args.length, 0, 1);
-            }
+            return switch (args.length) {
+                case 0 -> detailed_message(context, self);
+                case 1 -> detailed_message(context, self, args[0]);
+                default -> throw argumentError(context, args.length, 0, 1);
+            };
         }
 
         @JRubyMethod // Ruby exception to_s is the same as message

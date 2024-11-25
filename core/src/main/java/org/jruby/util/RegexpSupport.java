@@ -32,6 +32,8 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 
+import static org.jruby.api.Error.argumentError;
+
 public class RegexpSupport {
 
     public enum ErrorMode {RAISE, PREPROCESS, DESC}
@@ -175,10 +177,9 @@ public class RegexpSupport {
     public static int raisePreprocessError(Ruby runtime, ByteList str, String err, ErrorMode mode) {
         switch (mode) {
             case RAISE:
-                Encoding enc = str.getEncoding();
-                raiseRegexpError(runtime, str, enc, RegexpOptions.NULL_OPTIONS, err);
+                raiseRegexpError(runtime, str, str.getEncoding(), RegexpOptions.NULL_OPTIONS, err);
             case PREPROCESS:
-                throw runtime.newArgumentError("regexp preprocess failed: " + err);
+                throw argumentError(runtime.getCurrentContext(), "regexp preprocess failed: " + err);
             case DESC:
                 // silent ?
         }

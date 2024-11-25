@@ -818,7 +818,7 @@ public class RubyHash extends RubyObject implements Map {
     public IRubyObject initialize(ThreadContext context, IRubyObject _default, final Block block) {
         modify();
 
-        if (block.isGiven()) throw context.runtime.newArgumentError(1, 0);
+        if (block.isGiven()) throw argumentError(context, 1, 0);
 
         ifNone = _default;
 
@@ -2988,12 +2988,11 @@ public class RubyHash extends RubyObject implements Map {
      */
     @Deprecated
     public IRubyObject default_value_get(ThreadContext context, IRubyObject[] args) {
-        switch (args.length) {
-            case 0: return default_value_get(context);
-            case 1: return default_value_get(context, args[0]);
-            default:
-                throw context.runtime.newArgumentError(args.length, 1);
-        }
+        return switch (args.length) {
+            case 0 -> default_value_get(context);
+            case 1 -> default_value_get(context, args[0]);
+            default -> throw argumentError(context, args.length, 1);
+        };
     }
 
     @Deprecated
@@ -3054,25 +3053,20 @@ public class RubyHash extends RubyObject implements Map {
 
     @Deprecated
     public IRubyObject any_p(ThreadContext context, IRubyObject[] args, Block block) {
-        switch (args.length) {
-            case 0:
-                return any_p(context, block);
-            case 1:
-                return any_p(context, args[0], block);
-            default:
-                throw context.runtime.newArgumentError(args.length, 0, 1);
-        }
+        return switch (args.length) {
+            case 0 -> any_p(context, block);
+            case 1 -> any_p(context, args[0], block);
+            default -> throw argumentError(context, args.length, 0, 1);
+        };
     }
 
     @Deprecated
     public IRubyObject initialize(IRubyObject[] args, final Block block) {
-        switch (args.length) {
-            case 0:
-                return initialize(getRuntime().getCurrentContext(), block);
-            case 1:
-                return initialize(getRuntime().getCurrentContext(), args[0], block);
-            default:
-                throw getRuntime().newArgumentError(args.length, 0, 1);
-        }
+        var context = getRuntime().getCurrentContext();
+        return switch (args.length) {
+            case 0 -> initialize(context, block);
+            case 1 -> initialize(context, args[0], block);
+            default -> throw argumentError(context, args.length, 0, 1);
+        };
     }
 }

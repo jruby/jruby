@@ -60,6 +60,7 @@ import java.util.List;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -268,14 +269,11 @@ public class RubyException extends RubyObject {
 
     @JRubyMethod(optional = 1)
     public IRubyObject detailed_message(ThreadContext context, IRubyObject[] args) {
-        switch (args.length) {
-            case 0:
-                return detailed_message(context);
-            case 1:
-                return detailed_message(context, args[0]);
-            default:
-                throw context.runtime.newArgumentError(args.length, 0, 1);
-        }
+        return switch (args.length) {
+            case 0 -> detailed_message(context);
+            case 1 -> detailed_message(context, args[0]);
+            default -> throw argumentError(context, args.length, 0, 1);
+        };
     }
 
     @JRubyMethod(visibility = PRIVATE)
@@ -298,16 +296,13 @@ public class RubyException extends RubyObject {
     }
 
     public IRubyObject initialize(IRubyObject[] args, Block block) {
-        switch (args.length) {
-            case 0:
-                return initialize(getRuntime().getCurrentContext());
-            case 1:
-                return initialize(getRuntime().getCurrentContext(), args[0]);
-            case 2:
-                return initialize(getRuntime().getCurrentContext(), args[0], args[1]);
-            default:
-                throw getRuntime().newArgumentError(args.length, 0, 2);
-        }
+        var context = getRuntime().getCurrentContext();
+        return switch (args.length) {
+            case 0 -> initialize(context);
+            case 1 -> initialize(context, args[0]);
+            case 2 -> initialize(context, args[0], args[1]);
+            default -> throw argumentError(context, args.length, 0, 2);
+        };
     }
 
     @JRubyMethod
@@ -349,7 +344,7 @@ public class RubyException extends RubyObject {
                 ret.initialize(args, Block.NULL_BLOCK); // This looks wrong, but it's the way MRI does it.
                 return ret;
             default :
-                throw getRuntime().newArgumentError("Wrong argument count");
+                throw argumentError(getRuntime().getCurrentContext(), "Wrong argument count");
         }
     }
 

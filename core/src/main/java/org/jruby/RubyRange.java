@@ -309,9 +309,7 @@ public class RubyRange extends RubyObject {
     private void init(ThreadContext context, IRubyObject begin, IRubyObject end, boolean isExclusive) {
         if (!(begin instanceof RubyFixnum && end instanceof RubyFixnum) && !end.isNil() && !begin.isNil()) {
             IRubyObject result = invokedynamic(context, begin, MethodNames.OP_CMP, end);
-            if (result.isNil()) {
-                throw context.runtime.newArgumentError("bad value for range");
-            }
+            if (result.isNil()) throw argumentError(context, "bad value for range");
         }
 
         this.begin = begin;
@@ -320,9 +318,7 @@ public class RubyRange extends RubyObject {
         this.isEndless = end.isNil();
         this.isBeginless = begin.isNil();
         this.isInited = true;
-        if (metaClass.getClassIndex() == ClassIndex.RANGE) {
-            this.setFrozen(true);
-        }
+        if (metaClass.getClassIndex() == ClassIndex.RANGE) this.setFrozen(true);
     }
 
     @JRubyMethod(required = 2, optional = 1, checkArity = false, visibility = PRIVATE)
@@ -816,25 +812,16 @@ public class RubyRange extends RubyObject {
     }
 
     private IRubyObject checkStepDomain(ThreadContext context, IRubyObject step, String method) {
-        if (!(step instanceof RubyNumeric)) {
-            step = step.convertToInteger("to_int");
-        }
-        if (((RubyNumeric) step).isNegative()) {
-            throw context.runtime.newArgumentError(method + " can't be negative");
-        }
-        if (((RubyNumeric) step).isZero()) {
-            throw context.runtime.newArgumentError(method + " can't be 0");
-        }
+        if (!(step instanceof RubyNumeric)) step = step.convertToInteger("to_int");
+        if (((RubyNumeric) step).isNegative()) throw argumentError(context, method + " can't be negative");
+        if (((RubyNumeric) step).isZero()) throw argumentError(context, method + " can't be 0");
+
         return step;
     }
 
     private IRubyObject stepEnumeratorize(ThreadContext context, IRubyObject step, String method) {
-        if (!step.isNil() && !(step instanceof RubyNumeric)) {
-            step = step.convertToInteger("to_int");
-        }
-        if ((step instanceof RubyNumeric) && ((RubyNumeric) step).isZero()) {
-            throw context.runtime.newArgumentError("step can't be 0");
-        }
+        if (!step.isNil() && !(step instanceof RubyNumeric)) step = step.convertToInteger("to_int");
+        if ((step instanceof RubyNumeric) && ((RubyNumeric) step).isZero()) throw argumentError(context, "step can't be 0");
 
         if ((begin instanceof RubyNumeric && (end.isNil() || end instanceof RubyNumeric)) ||
                 (end instanceof RubyNumeric && begin.isNil())) {
@@ -850,11 +837,9 @@ public class RubyRange extends RubyObject {
                     isExclusive ? context.tru : context.fals);
         }
 
-        if (!step.isNil()) {
-            return enumeratorizeWithSize(context, this, method, new IRubyObject[]{step}, RubyRange::stepSize);
-        }
-
-        return enumeratorizeWithSize(context, this, method, RubyRange::stepSize);
+        return !step.isNil() ?
+                enumeratorizeWithSize(context, this, method, new IRubyObject[]{step}, RubyRange::stepSize) :
+                enumeratorizeWithSize(context, this, method, RubyRange::stepSize);
     }
 
     @JRubyMethod(name = "%")
@@ -956,25 +941,20 @@ public class RubyRange extends RubyObject {
      * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
      */
     private static IRubyObject stepSize(ThreadContext context, RubyRange self, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
         IRubyObject begin = self.begin;
         IRubyObject end = self.end;
         IRubyObject step;
 
         if (args != null && args.length > 0) {
             step = args[0];
-            if (!(step instanceof RubyNumeric)) {
-                step.convertToInteger();
-            }
+            if (!(step instanceof RubyNumeric)) step = step.convertToInteger();
         } else {
-            step = RubyFixnum.one(runtime);
+            step = asFixnum(context, 1);
         }
 
-        if (step.callMethod(context, "<", RubyFixnum.zero(runtime)).isTrue()) {
-            throw runtime.newArgumentError("step can't be negative");
-        } else if (!step.callMethod(context, ">", RubyFixnum.zero(runtime)).isTrue()) {
-            throw runtime.newArgumentError("step can't be 0");
-        }
+        var zero = asFixnum(context, 0);
+        if (step.callMethod(context, "<", zero).isTrue()) throw argumentError(context, "step can't be negative");
+        if (!step.callMethod(context, ">", zero).isTrue()) throw argumentError(context, "step can't be 0");
 
         if (begin instanceof RubyNumeric && end instanceof RubyNumeric) {
             return intervalStepSize(context, begin, end, step, self.isExclusive);
@@ -1313,6 +1293,7 @@ public class RubyRange extends RubyObject {
 
         @Override
         public Object unmarshalFrom(Ruby runtime, RubyClass type, UnmarshalStream input) throws IOException {
+            var context = runtime.getCurrentContext();
             RubyRange range = (RubyRange) input.entry(type.allocate());
 
             input.ivar(null, range, null);
@@ -1325,11 +1306,9 @@ public class RubyRange extends RubyObject {
             if (begin == null) begin = (IRubyObject) range.removeInternalVariable("begini");
             if (end == null) end = (IRubyObject) range.removeInternalVariable("endi");
 
-            if (begin == null || end == null || excl == null) {
-                throw runtime.newArgumentError("bad value for range");
-            }
+            if (begin == null || end == null || excl == null) throw argumentError(context, "bad value for range");
 
-            range.init(runtime.getCurrentContext(), begin, end, excl.isTrue());
+            range.init(context, begin, end, excl.isTrue());
             return range;
         }
     };

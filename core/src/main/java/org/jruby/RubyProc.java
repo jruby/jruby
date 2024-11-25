@@ -38,7 +38,6 @@ package org.jruby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 
-import org.jruby.api.Convert;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -61,6 +60,7 @@ import org.jruby.runtime.marshal.DataType;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.util.RubyStringBuilder.types;
 
@@ -127,7 +127,7 @@ public class RubyProc extends RubyObject implements DataType {
         if (type == Block.Type.NORMAL) type = Block.Type.PROC;
 
         RubyProc proc = new RubyProc(runtime, runtime.getProc(), type);
-        proc.setup(block);
+        proc.setup(runtime, block);
 
         return proc;
     }
@@ -135,7 +135,7 @@ public class RubyProc extends RubyObject implements DataType {
     @Deprecated
     public static RubyProc newProc(Ruby runtime, Block block, Block.Type type, ISourcePosition sourcePosition) {
         RubyProc proc = new RubyProc(runtime, runtime.getProc(), type, sourcePosition);
-        proc.setup(block);
+        proc.setup(runtime, block);
 
         return proc;
     }
@@ -147,7 +147,7 @@ public class RubyProc extends RubyObject implements DataType {
 
     public static RubyProc newProc(Ruby runtime, RubyClass clazz, Block block, Block.Type type, String file, int line) {
         RubyProc proc = new RubyProc(runtime, clazz, type, file, line);
-        proc.setup(block);
+        proc.setup(runtime, block);
 
         return proc;
     }
@@ -160,7 +160,7 @@ public class RubyProc extends RubyObject implements DataType {
     @JRubyMethod(name = "new", rest = true, meta = true)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         // No passed in block, lets check next outer frame for one ('Proc.new')
-        if (!block.isGiven()) throw context.runtime.newArgumentError("tried to create Proc object without a block");
+        if (!block.isGiven()) throw argumentError(context, "tried to create Proc object without a block");
 
         // This metaclass == recv check seems gross, but MRI seems to do the same:
         // if (!proc && ruby_block->block_obj && CLASS_OF(ruby_block->block_obj) == klass) {
@@ -169,16 +169,14 @@ public class RubyProc extends RubyObject implements DataType {
         }
 
         RubyProc obj = new RubyProc(context.runtime, (RubyClass)recv, Block.Type.PROC);
-        obj.setup(block);
+        obj.setup(context.runtime, block);
 
         obj.callMethod(context, "initialize", args, block);
         return obj;
     }
 
-    private void setup(Block procBlock) {
-        if (!procBlock.isGiven()) {
-            throw getRuntime().newArgumentError("tried to create Proc object without a block");
-        }
+    private void setup(Ruby runtime, Block procBlock) {
+        if (!procBlock.isGiven()) throw argumentError(runtime.getCurrentContext(), "tried to create Proc object without a block");
 
         if (isLambda()) {
             // TODO: warn "tried to create Proc object without a block"
@@ -419,7 +417,7 @@ public class RubyProc extends RubyObject implements DataType {
             // block+binding may exist for a core method, which will have a null filename
             if (binding.getFile() != null) {
                 return newArray(context,
-                        Convert.asString(context, binding.getFile()),
+                        newString(context, binding.getFile()),
                         asFixnum(context, binding.getLine() + 1 /*zero-based*/));
             }
         }

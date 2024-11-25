@@ -9,6 +9,8 @@ import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
+import static org.jruby.api.Error.argumentError;
+
 public final class TypeResolver {
     private final FFI ffi;
     private volatile Map<RubySymbol, Type> symbolTypeCache = Collections.emptyMap();
@@ -22,30 +24,20 @@ public final class TypeResolver {
     }
 
     public final Type findType(Ruby runtime, IRubyObject name, IRubyObject typeMap) {
+        if (name instanceof Type type) return type;
+        if (name instanceof RubySymbol sym) {
+            Object obj = sym.getFFIHandle();
+            if (obj instanceof Type type) return type;
 
-        if (name instanceof Type) {
-            return (Type) name;
-
-        } else if (name instanceof RubySymbol) {
-            Object obj = ((RubySymbol)name).getFFIHandle();
-            if (obj instanceof Type) {
-                return ((Type) obj);
-            }
-
-            if (typeMap != null && typeMap instanceof RubyHash) {
-                Type type = (Type)((RubyHash)typeMap).get(name);
-                if (type != null && !type.isNil()) {
-                    return type;
-                }
+            if (typeMap != null && typeMap instanceof RubyHash hash) {
+                Type type = (Type) hash.get(name);
+                if (type != null && !type.isNil()) return type;
             }
 
             Type type = symbolTypeCache.get(name);
-            if (type != null) {
-                return type;
-            }
+            if (type != null) return type;
 
-            return lookupAndCacheType(runtime, (RubySymbol) name, typeMap);
-
+            return lookupAndCacheType(runtime, sym, typeMap);
         } else {
             return lookupType(runtime, name, typeMap);
         }
@@ -64,9 +56,7 @@ public final class TypeResolver {
 
     private Type lookupType(Ruby runtime, IRubyObject name, IRubyObject typeMap) {
         IRubyObject type = ffi.typedefs.fastARef(name);
-        if (type instanceof Type) {
-            return (Type) type;
-        }
+        if (type instanceof Type t) return t;
 
         // Unsure why this was there but there's no equivalent in the C code
 //        IRubyObject args[] = new IRubyObject[]{name, typeMap};
@@ -74,6 +64,6 @@ public final class TypeResolver {
 //            return (Type) type;
 //        }
 
-        throw runtime.newArgumentError("cannot resolve type " + name);
+        throw argumentError(runtime.getCurrentContext(), "cannot resolve type " + name);
     }
 }

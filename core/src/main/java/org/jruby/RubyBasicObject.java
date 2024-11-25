@@ -1824,7 +1824,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * filename and line of the string under evaluation.
      */
     public IRubyObject specificEval(ThreadContext context, RubyModule mod, Block block, EvalType evalType) {
-        if (!block.isGiven()) throw context.runtime.newArgumentError(0, 1, 3);
+        if (!block.isGiven()) throw argumentError(context, 0, 1, 3);
 
         return yieldUnder(context, mod, block, evalType);
     }
@@ -1840,18 +1840,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * filename and line of the string under evaluation.
      */
     public IRubyObject specificEval(ThreadContext context, RubyModule mod, IRubyObject arg, Block block, EvalType evalType) {
-        if (block.isGiven()) {
-            throw context.runtime.newArgumentError(1, 0);
-        }
+        if (block.isGiven()) throw argumentError(context, 1, 0);
 
         // We just want the TypeError if the argument doesn't convert to a String (JRUBY-386)
-        RubyString evalStr;
-        if (arg instanceof RubyString) {
-            evalStr = (RubyString)arg;
-        } else {
-            evalStr = arg.convertToString();
-        }
-
+        RubyString evalStr = arg instanceof RubyString str ? str : arg.convertToString();
         RubyStackTraceElement singleBacktrace = context.getSingleBacktrace();
         String file = "(eval at " + singleBacktrace.getFileName() + ":" +  + singleBacktrace.getLineNumber() + ")";
         int line = 0;
@@ -1870,18 +1862,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * filename and line of the string under evaluation.
      */
     public IRubyObject specificEval(ThreadContext context, RubyModule mod, IRubyObject arg0, IRubyObject arg1, Block block, EvalType evalType) {
-        if (block.isGiven()) {
-            throw context.runtime.newArgumentError(2, 0);
-        }
+        if (block.isGiven()) throw argumentError(context, 2, 0);
 
         // We just want the TypeError if the argument doesn't convert to a String (JRUBY-386)
-        RubyString evalStr;
-        if (arg0 instanceof RubyString) {
-            evalStr = (RubyString)arg0;
-        } else {
-            evalStr = arg0.convertToString();
-        }
-
+        RubyString evalStr = arg0 instanceof RubyString str ? str : arg0.convertToString();
         String file = arg1.convertToString().asJavaString();
         int line = 0;
 
@@ -1899,18 +1883,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * filename and line of the string under evaluation.
      */
     public IRubyObject specificEval(ThreadContext context, RubyModule mod, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block, EvalType evalType) {
-        if (block.isGiven()) {
-            throw context.runtime.newArgumentError(2, 0);
-        }
+        if (block.isGiven()) throw argumentError(context, 2, 0);
 
         // We just want the TypeError if the argument doesn't convert to a String (JRUBY-386)
-        RubyString evalStr;
-        if (arg0 instanceof RubyString) {
-            evalStr = (RubyString)arg0;
-        } else {
-            evalStr = arg0.convertToString();
-        }
-
+        RubyString evalStr = arg0 instanceof RubyString str ? str : arg0.convertToString();
         String file = arg1.convertToString().asJavaString();
         int line = (int)(arg2.convertToInteger().getLongValue() - 1);
 
@@ -2576,14 +2552,13 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
             writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject instance_eval(ThreadContext context, IRubyObject[] args, Block block) {
-        switch(args.length) {
-            case 0: return instance_eval(context, block);
-            case 1: return instance_eval(context, args[0], block);
-            case 2: return instance_eval(context, args[0], args[1], block);
-            case 3: return instance_eval(context, args[0], args[1], args[2], block);
-        }
-
-        throw context.runtime.newArgumentError(args.length, 1, 3);
+        return switch (args.length) {
+            case 0 -> instance_eval(context, block);
+            case 1 -> instance_eval(context, args[0], block);
+            case 2 -> instance_eval(context, args[0], args[1], block);
+            case 3 -> instance_eval(context, args[0], args[1], args[2], block);
+            default -> throw argumentError(context, args.length, 1, 3);
+        };
     }
 
     /** rb_obj_instance_exec

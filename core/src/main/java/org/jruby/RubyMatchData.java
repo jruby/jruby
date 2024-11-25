@@ -62,6 +62,7 @@ import org.jruby.util.StringSupport;
 
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.RubyStringBuilder.str;
 
@@ -854,14 +855,13 @@ public class RubyMatchData extends RubyObject {
     public RubyHash named_captures(ThreadContext context, IRubyObject[] args) {
         check();
 
-        Ruby runtime = context.runtime;
         int argc = Arity.checkArgumentCount(context, args.length, 0, 0, true);
-        RubyHash hash = RubyHash.newSmallHash(runtime);
+        RubyHash hash = RubyHash.newSmallHash(context.runtime);
         if (regexp == context.nil) return hash;
 
         final boolean symbolizeNames;
         if (argc == 1) {
-            if (!(args[0] instanceof RubyHash)) throw runtime.newArgumentError(1, 0);
+            if (!(args[0] instanceof RubyHash)) throw argumentError(context, 1, 0);
             IRubyObject value = ArgsUtil.extractKeywordArg(context, (RubyHash) args[0], "symbolize_names");
             symbolizeNames = value != null && value.isTrue();
         } else {
@@ -882,9 +882,7 @@ public class RubyMatchData extends RubyObject {
                 }
             }
 
-            if (!found) {
-                hash.op_aset(context, key, context.nil);
-            }
+            if (!found) hash.op_aset(context, key, context.nil);
         });
 
         return hash;

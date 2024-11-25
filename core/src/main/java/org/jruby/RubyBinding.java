@@ -36,7 +36,6 @@ package org.jruby;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.api.Convert;
 import org.jruby.ext.ripper.RubyLexer;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Binding;
@@ -46,11 +45,11 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.TypeConverter;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newString;
 import static org.jruby.util.RubyStringBuilder.str;
 
 /**
@@ -200,7 +199,7 @@ public class RubyBinding extends RubyObject {
 
     @JRubyMethod
     public IRubyObject source_location(ThreadContext context) {
-        IRubyObject filename = Convert.asString(context, binding.getFile()).freeze(context);
+        IRubyObject filename = newString(context, binding.getFile()).freeze(context);
         RubyFixnum line = asFixnum(context, binding.getLine() + 1); /* zero-based */
         return newArray(context, filename, line);
     }

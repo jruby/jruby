@@ -34,18 +34,17 @@ public final class StructByValue extends Type {
 
     @JRubyMethod(name = "new", meta = true)
     public static final IRubyObject newStructByValue(ThreadContext context, IRubyObject klass, IRubyObject structClass1) {
-        Ruby runtime = context.runtime;
         RubyClass structClass = castAsClass(context, structClass1);
 
-        if (!structClass.isKindOfModule(runtime.getFFI().structClass)) {
+        if (!structClass.isKindOfModule(context.runtime.getFFI().structClass)) {
             throw typeError(context, structClass, "subclass of FFI::Struct");
         }
 
-        return new StructByValue(runtime, (RubyClass) klass, structClass, Struct.getStructLayout(runtime, structClass));
+        return new StructByValue(context, (RubyClass) klass, structClass, Struct.getStructLayout(context, structClass));
     }
 
-    private StructByValue(Ruby runtime, RubyClass klass, RubyClass structClass, StructLayout structLayout) {
-        super(runtime, klass, NativeType.STRUCT, structLayout.size, structLayout.alignment);
+    private StructByValue(ThreadContext context, RubyClass klass, RubyClass structClass, StructLayout structLayout) {
+        super(context.runtime, klass, NativeType.STRUCT, structLayout.size, structLayout.alignment);
         this.structClass = structClass;
         this.structLayout = structLayout;
     }

@@ -42,7 +42,6 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import jnr.posix.FileStat;
 import jnr.posix.util.Platform;
-import org.jruby.api.Convert;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -53,6 +52,7 @@ import org.jruby.util.StringSupport;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -166,7 +166,7 @@ public class RubyFileStat extends RubyObject {
     public IRubyObject atime(ThreadContext context) {
         checkInitialized(context);
         if (stat instanceof NanosecondFileStat) {
-            return RubyTime.newTimeFromNanoseconds(context.runtime, stat.atime() * BILLION + ((NanosecondFileStat) stat).aTimeNanoSecs());
+            return RubyTime.newTimeFromNanoseconds(context, stat.atime() * BILLION + ((NanosecondFileStat) stat).aTimeNanoSecs());
         }
         return context.runtime.newTime(stat.atime() * 1000);
     }
@@ -362,7 +362,7 @@ public class RubyFileStat extends RubyObject {
     @JRubyMethod(name = "ftype")
     public RubyString ftype(ThreadContext context) {
         checkInitialized(context);
-        return Convert.asString(context, stat.ftype());
+        return newString(context, stat.ftype());
     }
 
     @Deprecated
@@ -454,7 +454,7 @@ public class RubyFileStat extends RubyObject {
         }
         buf.append('>');
         
-        return Convert.asString(context, buf.toString());
+        return newString(context, buf.toString());
     }
 
     @JRubyMethod(name = "uid")
@@ -484,7 +484,7 @@ public class RubyFileStat extends RubyObject {
     public IRubyObject mtime(ThreadContext context) {
         checkInitialized(context);
         return stat instanceof NanosecondFileStat ?
-                RubyTime.newTimeFromNanoseconds(context.runtime, stat.mtime() * BILLION + ((NanosecondFileStat) stat).mTimeNanoSecs()) :
+                RubyTime.newTimeFromNanoseconds(context, stat.mtime() * BILLION + ((NanosecondFileStat) stat).mTimeNanoSecs()) :
                 context.runtime.newTime(stat.mtime() * 1000);
     }
 

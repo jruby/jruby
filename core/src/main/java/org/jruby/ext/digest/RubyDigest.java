@@ -61,6 +61,7 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -379,14 +380,11 @@ public class RubyDigest {
 
         @Deprecated
         public static IRubyObject digest(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-            switch (args.length) {
-                case 0:
-                    return digest(context, self);
-                case 1:
-                    return digest(context, self, args[0]);
-                default:
-                    throw context.runtime.newArgumentError(args.length, 0, 1);
-            }
+            return switch (args.length) {
+                case 0 -> digest(context, self);
+                case 1 -> digest(context, self, args[0]);
+                default -> throw argumentError(context, args.length, 0, 1);
+            };
         }
 
         @Deprecated
@@ -396,17 +394,13 @@ public class RubyDigest {
 
         @Deprecated
         public static IRubyObject bubblebabble(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-            switch (args.length) {
-                case 1:
-                    return bubblebabble(context, recv, args[0]);
-                case 2:
-                    return bubblebabble(context, recv, args[0], args[1]);
-                default:
-                    throw context.runtime.newArgumentError(args.length, 1, 2);
-            }
+            return switch (args.length) {
+                case 1 -> bubblebabble(context, recv, args[0]);
+                case 2 -> bubblebabble(context, recv, args[0], args[1]);
+                default -> throw argumentError(context, args.length, 1, 2);
+            };
         }
     }
-
 
     @JRubyClass(name="Digest::Class")
     public static class DigestClass extends RubyObject {
@@ -435,7 +429,7 @@ public class RubyDigest {
 
         @JRubyMethod(name = "digest", checkArity = false, meta = true)
         public static IRubyObject s_digest(ThreadContext context, IRubyObject recv) {
-            throw context.runtime.newArgumentError("no data given");
+            throw argumentError(context, "no data given");
         }
 
         @JRubyMethod(name = "digest", checkArity = false, meta = true)

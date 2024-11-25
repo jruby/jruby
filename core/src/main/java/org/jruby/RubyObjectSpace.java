@@ -172,7 +172,7 @@ public class RubyObjectSpace {
         if (args.length == 0) {
             rubyClass = runtime.getObject();
         } else {
-            if (!(args[0] instanceof RubyModule)) throw runtime.newArgumentError("class or module required");
+            if (!(args[0] instanceof RubyModule)) throw argumentError(context, "class or module required");
             rubyClass = (RubyModule) args[0];
         }
         if (rubyClass == runtime.getClassClass() || rubyClass == runtime.getModule()) {
@@ -400,7 +400,7 @@ public class RubyObjectSpace {
         protected Map<IRubyObject, IRubyObject> getWeakMapFor(IRubyObject key) {
             // TODO: we don't have a supertype for these?
             if (key instanceof RubyInteger || key instanceof RubyFloat || key instanceof RubySymbol || key instanceof RubyNil || key instanceof RubyBoolean) {
-                throw getRuntime().newArgumentError("WeakKeyMap must be garbage collectable");
+                throw argumentError(getRuntime().getCurrentContext(), "WeakKeyMap must be garbage collectable");
             }
 
             return weakMap;

@@ -49,6 +49,7 @@ import org.jruby.util.func.TriFunction;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.util.RubyStringBuilder.str;
 
 /**
@@ -254,32 +255,29 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
     @JRubyMethod(name = "[]")
     public static IRubyObject op_aref(ThreadContext context, IRubyObject self, IRubyObject arg) {
-        Ruby runtime = context.runtime;
-        TypeConverter.checkType(context, arg, runtime.getSymbol());
+        TypeConverter.checkType(context, arg, context.runtime.getSymbol());
         String categoryId = ((RubySymbol) arg).idString();
         Category category = Category.fromId(categoryId);
 
-        if (category == null) throw runtime.newArgumentError(str(runtime, "unknown category: ", arg));
+        if (category == null) throw argumentError(context, str(context.runtime, "unknown category: ", arg));
 
-        return asBoolean(context, runtime.getWarningCategories().contains(category));
+        return asBoolean(context, context.runtime.getWarningCategories().contains(category));
     }
 
     @JRubyMethod(name = "[]=")
     public static IRubyObject op_aset(ThreadContext context, IRubyObject self, IRubyObject arg, IRubyObject flag) {
-        Ruby runtime = context.runtime;
-
-        TypeConverter.checkType(context, arg, runtime.getSymbol());
+        TypeConverter.checkType(context, arg, context.runtime.getSymbol());
         String categoryId = ((RubySymbol) arg).idString();
         Category category = Category.fromId(categoryId);
 
         if (category != null) {
             if (flag.isTrue()) {
-                runtime.getWarningCategories().add(category);
+                context.runtime.getWarningCategories().add(category);
             } else {
-                runtime.getWarningCategories().remove(category);
+                context.runtime.getWarningCategories().remove(category);
             }
         } else {
-            throw runtime.newArgumentError(str(runtime, "unknown category: ", arg));
+            throw argumentError(context, str(context.runtime, "unknown category: ", arg));
         }
 
         return flag;
@@ -295,11 +293,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
         IRubyObject opts = TypeConverter.checkHashType(context.runtime, arg1);
         IRubyObject ret = ArgsUtil.extractKeywordArg(context, (RubyHash) opts, "category");
-        if (ret.isNil()) {
-            return warn(context, recv, arg0);
-        } else {
-            return warnWithCategory(context, arg0, ret);
-        }
+        return ret.isNil() ? warn(context, recv, arg0) : warnWithCategory(context, arg0, ret);
     }
 
     public static IRubyObject warn(ThreadContext context, RubyString str) {
@@ -322,13 +316,12 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         }
 
         public static Category fromId(String id) {
-            switch (id) {
-                case "experimental": return EXPERIMENTAL;
-                case "deprecated": return DEPRECATED;
-                case "performance": return PERFORMANCE;
-            }
-
-            return null;
+            return switch (id) {
+                case "experimental" -> EXPERIMENTAL;
+                case "deprecated" -> DEPRECATED;
+                case "performance" -> PERFORMANCE;
+                default -> null;
+            };
         }
     }
 
@@ -346,13 +339,10 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
     @Deprecated
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        switch (args.length) {
-            case 1:
-                return warn(context, recv, args[0]);
-            case 2:
-                return warn(context, recv, args[0], args[1]);
-            default:
-                throw context.runtime.newArgumentError(args.length, 1, 2);
-        }
+        return switch (args.length) {
+            case 1 -> warn(context, recv, args[0]);
+            case 2 -> warn(context, recv, args[0], args[1]);
+            default -> throw argumentError(context, args.length, 1, 2);
+        };
     }
 }

@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
 
@@ -171,13 +172,13 @@ public class DataConverters {
 
         private synchronized IRubyObject lookupAndCacheValue(ThreadContext context, IRubyObject obj) {
             IRubyObject value = enums instanceof Enums ? ((Enums)enums).mapSymbol(context, obj) : ((RubyHash)enums).fastARef(obj);
-            if (value.isNil() || !(value instanceof RubyInteger)) {
-                throw obj.getRuntime().newArgumentError("invalid enum value, " + obj.inspect());
+            if (value.isNil() || !(value instanceof RubyInteger integer)) {
+                throw argumentError(context, "invalid enum value, " + obj.inspect());
             }
 
             IdentityHashMap<RubySymbol, RubyInteger> s2v = new IdentityHashMap<RubySymbol, RubyInteger>(symbolToValue);
-            s2v.put((RubySymbol) obj, (RubyInteger) value);
-            this.symbolToValue = new IdentityHashMap<RubySymbol, RubyInteger>(s2v);
+            s2v.put((RubySymbol) obj, integer);
+            this.symbolToValue = new IdentityHashMap<>(s2v);
 
             return value;
         }

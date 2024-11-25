@@ -34,8 +34,6 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
-import org.jruby.api.Convert;
-import org.jruby.api.Create;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.IRMethodArgs;
@@ -56,6 +54,7 @@ import org.jruby.runtime.callsite.CacheEntry;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newString;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
 
 /** 
@@ -279,7 +278,7 @@ public class RubyMethod extends AbstractRubyMethod {
     public IRubyObject source_location(ThreadContext context) {
         String filename = getFilename();
         return filename == null ? context.nil :
-                newArray(context, Convert.asString(context, filename), asFixnum(context, getLine()));
+                newArray(context, newString(context, filename), asFixnum(context, getLine()));
     }
 
     @JRubyMethod

@@ -55,6 +55,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.RubyModule.undefinedMethodMessage;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.CodegenUtils.getBoxType;
 import static org.jruby.util.CodegenUtils.prettyParams;
@@ -495,6 +496,6 @@ public class JavaMethod extends JavaCallable {
     }
 
     public static RaiseException newArgSizeMismatchError(Ruby runtime, Class ... argTypes) {
-        return runtime.newArgumentError("argument count mismatch for method signature " + prettyParams(argTypes));
+        return argumentError(runtime.getCurrentContext(), "argument count mismatch for method signature " + prettyParams(argTypes));
     }
 }

@@ -14,6 +14,7 @@ import org.jruby.util.cli.Options;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 @JRubyClass(name = "FFI::MemoryPointer", parent = "FFI::Pointer")
@@ -47,26 +48,22 @@ public class MemoryPointer extends Pointer {
     private final IRubyObject init(ThreadContext context, IRubyObject rbTypeSize, int count, int align, boolean clear, Block block) {
         typeSize = calculateTypeSize(context, rbTypeSize);
         size = typeSize * count;
-        if (size < 0) {
-            throw context.runtime.newArgumentError(String.format("Negative size (%d objects of %d size)", count, typeSize));
-        }
+        if (size < 0) throw argumentError(context, String.format("Negative size (%d objects of %d size)", count, typeSize));
+
         setMemoryIO(Factory.getInstance().allocateDirectMemory(context.runtime,
                 size > 0 ? (int) size : 1, align, clear));
         if (getMemoryIO() == null) {
-            Ruby runtime = context.runtime;
-            throw RaiseException.from(runtime, runtime.getNoMemoryError(),
+            throw RaiseException.from(context.runtime, context.runtime.getNoMemoryError(),
                     String.format("Failed to allocate %d objects of %d bytes", typeSize, count));
         }
         
-        if (block.isGiven()) {
-            try {
-                return block.yield(context, this);
-            } finally {
-                ((AllocatedDirectMemoryIO) getMemoryIO()).free();
-                setMemoryIO(new FreedMemoryIO(context.runtime));
-            }
-        } else {
-            return this;
+        if (!block.isGiven()) return this;
+
+        try {
+            return block.yield(context, this);
+        } finally {
+            ((AllocatedDirectMemoryIO) getMemoryIO()).free();
+            setMemoryIO(new FreedMemoryIO(context.runtime));
         }
     }
 

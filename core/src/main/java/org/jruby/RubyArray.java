@@ -1162,7 +1162,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     }
 
     public IRubyObject insert() {
-        throw metaClass.runtime.newArgumentError(0, 1);
+        throw argumentError(getRuntime().getCurrentContext(), 0, 1);
     }
 
     /**
@@ -1786,14 +1786,11 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     @Deprecated(since = "9.4-", forRemoval = false)
     public IRubyObject aset(IRubyObject[] args) {
-        switch (args.length) {
-        case 2:
-            return aset(args[0], args[1]);
-        case 3:
-            return aset(args[0], args[1], args[2]);
-        default:
-            throw getRuntime().newArgumentError("wrong number of arguments (" + args.length + " for 2)");
-        }
+        return switch (args.length) {
+            case 2 -> aset(args[0], args[1]);
+            case 3 -> aset(args[0], args[1], args[2]);
+            default -> throw argumentError(getRuntime().getCurrentContext(), "wrong number of arguments (" + args.length + " for 2)");
+        };
     }
 
     /**
@@ -2035,7 +2032,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      * Variable arity version for compatibility. Not bound to a Ruby method.
      * @deprecated Use the versions with zero, one, or two args.
      */
-    @Deprecated(since = "9.4-", forRemoval = false)
+    @Deprecated(since = "9.4-")
     public IRubyObject last(IRubyObject[] args) {
         switch (args.length) {
         case 0:
@@ -2057,25 +2054,30 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return eltOk(realLength - 1);
     }
 
-    /** rb_ary_last
-    *
-    */
-    @JRubyMethod(name = "last")
+    /**
+     * @param arg0
+     * @return ""
+     * @deprecated Use {@link RubyArray#last(ThreadContext, IRubyObject)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public IRubyObject last(IRubyObject arg0) {
-        ThreadContext context = getRuntime().getCurrentContext();
+        return last(getCurrentContext(), arg0);
+    }
+
+    /** rb_ary_last
+     *
+     */
+    @JRubyMethod(name = "last")
+    public IRubyObject last(ThreadContext context, IRubyObject arg0) {
         long n = numericToLong(context, arg0);
-        if (n > realLength) {
-            n = realLength;
-        } else if (n < 0) {
-            throw metaClass.runtime.newArgumentError("negative array size (or size too big)");
-        } else if (n == 1) {
-            return newArray(metaClass.runtime, eltOk(realLength - 1));
-        } else if (n == 2) {
-            return newArray(metaClass.runtime, eltOk(realLength - 2), eltOk(realLength - 1));
-        }
+        if (n > realLength) n = realLength;
+
+        if (n < 0) throw argumentError(context, "negative array size (or size too big)");
+        if (n == 1) return Create.newArray(context, eltOk(realLength - 1));
+        if (n == 2) return Create.newArray(context, eltOk(realLength - 2), eltOk(realLength - 1));
 
         unpack(context);
-        return makeShared(begin + realLength - (int) n, (int) n, metaClass.runtime.getArray());
+        return makeShared(begin + realLength - (int) n, (int) n, context.runtime.getArray());
     }
 
     /**
@@ -2523,8 +2525,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     @JRubyMethod
     public IRubyObject fill(ThreadContext context, Block block) {
-        if (block.isGiven()) return fillCommon(context, 0, realLength, block);
-        throw context.runtime.newArgumentError(0, 1);
+        if (!block.isGiven()) throw argumentError(context, 0, 1);
+        return fillCommon(context, 0, realLength, block);
     }
 
     @JRubyMethod
@@ -2558,7 +2560,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     @JRubyMethod
     public IRubyObject fill(ThreadContext context, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
-        if (block.isGiven()) throw context.runtime.newArgumentError(3, 2);
+        if (block.isGiven()) throw argumentError(context, 3, 2);
 
         int beg = fillBegin(arg2);
         return fillCommon(context, beg, fillLen(context, beg, arg3), arg1);
@@ -4697,21 +4699,11 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     @JRubyMethod(name = "shuffle!")
     public IRubyObject shuffle_bang(ThreadContext context, IRubyObject opts) {
-        Ruby runtime = context.runtime;
-
-        IRubyObject hash = TypeConverter.checkHashType(runtime, opts);
-
-        if (hash.isNil()) {
-            throw runtime.newArgumentError(1, 0, 0);
-        }
+        IRubyObject hash = TypeConverter.checkHashType(context.runtime, opts);
+        if (hash.isNil()) throw argumentError(context, 1, 0, 0);
 
         IRubyObject ret = ArgsUtil.extractKeywordArg(context, (RubyHash) hash, "random");
-
-        if (ret == null) {
-            return shuffle(context);
-        }
-
-        return shuffleBang(context, ret);
+        return ret == null ? shuffle(context) : shuffleBang(context, ret);
     }
 
     private IRubyObject shuffleBang(ThreadContext context, IRubyObject randgen) {
@@ -4775,17 +4767,11 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     @JRubyMethod(name = "sample")
     public IRubyObject sample(ThreadContext context, IRubyObject sample, IRubyObject opts) {
-        final Ruby runtime = context.runtime;
-
-        IRubyObject hash = TypeConverter.checkHashType(runtime, opts);
-
-        if (hash.isNil()) {
-            throw runtime.newArgumentError(2, 0, 1);
-        }
+        IRubyObject hash = TypeConverter.checkHashType(context.runtime, opts);
+        if (hash.isNil()) throw argumentError(context, 2, 0, 1);
 
         IRubyObject ret = ArgsUtil.extractKeywordArg(context, (RubyHash) hash, "random");
-
-        return sampleCommon(context, sample, ret != null ? ret : runtime.getRandomClass());
+        return sampleCommon(context, sample, ret != null ? ret : context.runtime.getRandomClass());
     }
 
     /**

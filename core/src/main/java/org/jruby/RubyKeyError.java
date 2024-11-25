@@ -34,6 +34,8 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Error.argumentError;
+
 /**
  * @author Miguel Landaeta
  */
@@ -113,19 +115,33 @@ public class RubyKeyError extends RubyIndexError {
         return context.nil;
     }
 
-    @JRubyMethod
+    /**
+     * @return ""
+     * @deprecated Use {@link RubyKeyError#receiver(ThreadContext)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public IRubyObject receiver() {
-        if (receiver == null) {
-            throw getRuntime().newArgumentError("no receiver is available");
-        }
-        return receiver;
+        return receiver(getCurrentContext());
     }
 
     @JRubyMethod
+    public IRubyObject receiver(ThreadContext context) {
+        if (receiver == null) throw argumentError(context, "no receiver is available");
+        return receiver;
+    }
+
+    /**
+     * @return ""
+     * @deprecated Use {@link RubyKeyError#key(ThreadContext)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public IRubyObject key() {
-        if (key == null) {
-            throw getRuntime().newArgumentError("no key is available");
-        }
+        return key(getCurrentContext());
+    }
+
+    @JRubyMethod
+    public IRubyObject key(ThreadContext context) {
+        if (key == null) throw argumentError(context, "no key is available");
         return key;
     }
 }

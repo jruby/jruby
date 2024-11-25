@@ -55,6 +55,7 @@ import org.jruby.util.TypeConverter;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ast.util.ArgsUtil.hasExceptionOption;
 import static org.jruby.runtime.Helpers.invokedynamic;
@@ -413,8 +414,7 @@ public class RubyRational extends RubyNumeric {
     @JRubyMethod(name = "convert", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject convert(ThreadContext context, IRubyObject recv, IRubyObject a1, IRubyObject a2, IRubyObject kwargs) {
         IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(context.runtime, kwargs, false);
-
-        if (maybeKwargs.isNil()) throw context.runtime.newArgumentError("convert", 3, 1, 2);
+        if (maybeKwargs.isNil()) throw argumentError(context, 3, 1, 2);
 
         IRubyObject exception = ArgsUtil.extractKeywordArg(context, "exception", (RubyHash) maybeKwargs);
         boolean raise = exception.isNil() ? true : exception.isTrue();
@@ -1556,13 +1556,10 @@ public class RubyRational extends RubyNumeric {
     
     private static IRubyObject str_to_r_strict(ThreadContext context, RubyString str, boolean raise) {
         IRubyObject[] ary = str_to_r_internal(context, str, raise);
-        IRubyObject nil = context.nil;
-        if (ary[0] == nil || ary[1].convertToString().getByteList().length() > 0) {
-            if (raise) {
-                throw context.runtime.newArgumentError("invalid value for convert(): " + str.inspect(context.runtime));
-            }
+        if (ary[0] == context.nil || ary[1].convertToString().getByteList().length() > 0) {
+            if (raise) throw argumentError(context, "invalid value for convert(): " + str.inspect(context.runtime));
 
-            return nil;
+            return context.nil;
         }
 
         return ary[0]; // (RubyRational)

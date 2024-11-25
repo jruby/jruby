@@ -587,24 +587,20 @@ public class RubyDir extends RubyObject implements Closeable {
     }
 
     private static Encoding getEncodingFromOpts(ThreadContext context, IRubyObject encOpts) {
-        Ruby runtime = context.runtime;
-
         Encoding encoding = null;
 
         if (!encOpts.isNil()) {
-            IRubyObject opts = ArgsUtil.getOptionsArg(runtime, encOpts);
+            IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, encOpts);
 
-            if (opts.isNil()) {
-                throw runtime.newArgumentError(2, 1, 1);
-            } else {
-                IRubyObject encodingArg = ArgsUtil.extractKeywordArg(context, (RubyHash) opts, "encoding");
-                if (encodingArg != null && !encodingArg.isNil()) {
-                    encoding = runtime.getEncodingService().getEncodingFromObject(encodingArg);
-                }
+            if (opts.isNil()) throw argumentError(context, 2, 1, 1);
+
+            IRubyObject encodingArg = ArgsUtil.extractKeywordArg(context, (RubyHash) opts, "encoding");
+            if (encodingArg != null && !encodingArg.isNil()) {
+                encoding = context.runtime.getEncodingService().getEncodingFromObject(encodingArg);
             }
         }
 
-        if (encoding == null) encoding = runtime.getDefaultEncoding();
+        if (encoding == null) encoding = context.runtime.getDefaultEncoding();
 
         return encoding;
     }
@@ -622,11 +618,9 @@ public class RubyDir extends RubyObject implements Closeable {
             return context.nil;
         }
 
-        if (encOpts == null) {
-            return enumeratorize(runtime, recv, "each_child", path);
-        }
-
-        return enumeratorize(runtime, recv, "each_child", path, encOpts);
+        return encOpts == null ?
+                enumeratorize(runtime, recv, "each_child", path) :
+                enumeratorize(runtime, recv, "each_child", path, encOpts);
     }
 
     private static IRubyObject foreachCommon(ThreadContext context, IRubyObject recv, RubyString path, IRubyObject encOpts, Block block) {
@@ -642,11 +636,9 @@ public class RubyDir extends RubyObject implements Closeable {
             return context.nil;
         }
 
-        if (encOpts == null) {
-            return enumeratorize(runtime, recv, "foreach", path);
-        }
-
-        return enumeratorize(runtime, recv, "foreach", path, encOpts);
+        return encOpts == null ?
+                enumeratorize(runtime, recv, "foreach", path) :
+                enumeratorize(runtime, recv, "foreach", path, encOpts);
     }
 
     /** Returns the current directory. */
@@ -833,11 +825,9 @@ public class RubyDir extends RubyObject implements Closeable {
 
     @JRubyMethod(name = "each_child")
     public IRubyObject rb_each_child(ThreadContext context, Block block) {
-        if (block.isGiven()) {
-            return each_child(context, block);
-        }
-
-        return enumeratorize(context.runtime, children(context), "each");
+        return block.isGiven() ?
+                each_child(context, block) :
+                enumeratorize(context.runtime, children(context), "each");
     }
 
     @Override
@@ -898,8 +888,7 @@ public class RubyDir extends RubyObject implements Closeable {
     }
 
     public String getPath() {
-        if (path == null) return null;
-        return path.asJavaString();
+        return path == null ? null : path.asJavaString();
     }
 
     /** Returns the next entry from this directory. */
@@ -963,34 +952,23 @@ public class RubyDir extends RubyObject implements Closeable {
      */ // split out - no longer used
     protected static FileResource getDir(final Ruby runtime, final String path, final boolean mustExist) {
         String dir = dirFromPath(path, runtime);
-
         FileResource result = JRubyFile.createResource(runtime, dir);
 
-        if (mustExist && (result == null || !result.exists())) {
-            throw runtime.newErrnoENOENTError(dir);
-        }
+        if (mustExist && (result == null || !result.exists())) throw runtime.newErrnoENOENTError(dir);
 
         boolean isDirectory = result.isDirectory();
 
-        if (mustExist && !isDirectory) {
-            throw runtime.newErrnoENOTDIRError(path);
-        }
-
-        if (!mustExist && isDirectory) {
-            throw runtime.newErrnoEEXISTError(dir);
-        }
+        if (mustExist && !isDirectory) throw runtime.newErrnoENOTDIRError(path);
+        if (!mustExist && isDirectory) throw runtime.newErrnoEEXISTError(dir);
 
         return result;
     }
 
     private static FileResource getExistingDir(final Ruby runtime, final String path) {
         FileResource result = JRubyFile.createResource(runtime, path);
-        if (result == null || !result.exists()) {
-            throw runtime.newErrnoENOENTError(path);
-        }
-        if (!result.isDirectory()) {
-            throw runtime.newErrnoENOTDIRError(path);
-        }
+        if (result == null || !result.exists()) throw runtime.newErrnoENOENTError(path);
+        if (!result.isDirectory()) throw runtime.newErrnoENOTDIRError(path);
+
         return result;
     }
 
@@ -1010,9 +988,7 @@ public class RubyDir extends RubyObject implements Closeable {
 
         // no permission
         File parentFile = directory.getParentFile();
-        if (parentFile.exists() && ! parentFile.canWrite()) {
-            throw runtime.newErrnoEACCESError(path);
-        }
+        if (parentFile.exists() && ! parentFile.canWrite()) throw runtime.newErrnoEACCESError(path);
 
         // Since we transcode we depend on posix to lookup stat stuff since
         // java.io.File does not seem to cut it.  A failed stat will throw ENOENT.
@@ -1051,16 +1027,8 @@ public class RubyDir extends RubyObject implements Closeable {
     protected static List<String> getContents(FileResource directory) {
         final String[] contents = directory.list();
 
-        final List<String> result;
-        // If an IO exception occurs (something odd, but possible)
-        // A directory may return null.
-        if (contents != null) {
-            result = Arrays.asList(contents);
-        }
-        else {
-             result = Collections.emptyList();
-        }
-        return result;
+        // If an IO exception occurs (something odd, but possible. A directory may return null.
+        return contents != null ? Arrays.asList(contents) : Collections.emptyList();
     }
 
     /**
@@ -1069,18 +1037,12 @@ public class RubyDir extends RubyObject implements Closeable {
     @Deprecated(since = "9.4-")
     protected static List<RubyString> getContents(FileResource directory, Ruby runtime) {
         final String[] contents = directory.list();
+        if (contents == null) return Collections.emptyList();
 
-        final List<RubyString> result;
-        if (contents != null) {
-            result = new ArrayList<>(contents.length);
-            for (int i = 0; i < contents.length; i++) {
-                result.add( runtime.newString(contents[i]) );
-            }
+        final List<RubyString> result = new ArrayList<>(contents.length);
+        for (int i = 0; i < contents.length; i++) {
+            result.add(runtime.newString(contents[i]));
         }
-        else {
-            result = Collections.emptyList();
-        }
-
         return result;
     }
 
@@ -1104,10 +1066,7 @@ public class RubyDir extends RubyObject implements Closeable {
             try {
                 // try to use POSIX for this first
                 Passwd passwd = runtime.getPosix().getpwnam(user);
-                if (passwd != null) {
-                    String home = passwd.getHome();
-                    return newFilesystemString(runtime, home);
-                }
+                if (passwd != null) return newFilesystemString(runtime, passwd.getHome());
             } catch (Exception e) {
             }
         }
@@ -1115,9 +1074,7 @@ public class RubyDir extends RubyObject implements Closeable {
         // fall back on other ways
 
         if (Platform.IS_WINDOWS) {
-            if (user.equals(posix.getlogin())) {
-                return getHomeDirectoryPath(context);
-            }
+            if (user.equals(posix.getlogin())) return getHomeDirectoryPath(context);
         } else {
             String passwd;
             try {
@@ -1161,11 +1118,8 @@ public class RubyDir extends RubyObject implements Closeable {
         final RubyString homeKey = RubyString.newStringShared(runtime, HOME);
         final RubyHash env = runtime.getENV();
 
-        if (!env.hasKey(homeKey)) {
-            return Optional.empty();
-        } else {
-            return Optional.of(env.op_aref(runtime.getCurrentContext(), homeKey).toString());
-        }
+        return !env.hasKey(homeKey) ?
+                Optional.empty() : Optional.of(env.op_aref(runtime.getCurrentContext(), homeKey).toString());
     }
 
     private static final ByteList user_home = new ByteList(new byte[] {'u','s','e','r','.','h','o','m','e'}, false);
@@ -1178,13 +1132,8 @@ public class RubyDir extends RubyObject implements Closeable {
             home = ENV_JAVA.callMethod(context, "[]", newString(context, user_home, UTF8));
         }
 
-        if (home == null || home == context.nil) {
-            home = env.op_aref(context, newString(context, "LOGDIR"));
-        }
-
-        if (home == null || home == context.nil) {
-            throw argumentError(context, "user.home/LOGDIR not set");
-        }
+        if (home == null || home == context.nil) home = env.op_aref(context, newString(context, "LOGDIR"));
+        if (home == null || home == context.nil) throw argumentError(context, "user.home/LOGDIR not set");
 
         return (RubyString) home.dup();
     }
@@ -1221,14 +1170,11 @@ public class RubyDir extends RubyObject implements Closeable {
 
     @Deprecated
     public static IRubyObject chdir(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        switch (args.length) {
-            case 0:
-                return chdir(context, recv, block);
-            case 1:
-                return chdir(context, recv, args[0], block);
-            default:
-                throw argumentError(context, args.length, 0, 1);
-        }
+        return switch (args.length) {
+            case 0 -> chdir(context, recv, block);
+            case 1 -> chdir(context, recv, args[0], block);
+            default -> throw argumentError(context, args.length, 0, 1);
+        };
     }
 
 }

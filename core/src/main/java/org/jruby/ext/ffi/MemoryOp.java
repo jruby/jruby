@@ -336,7 +336,7 @@ abstract class MemoryOp {
         @Override
         void put(ThreadContext context, AbstractMemory ptr, long offset, IRubyObject value) {
             if (value instanceof Struct s) {
-                byte[] tmp = new byte[Struct.getStructSize(context.runtime, s)];
+                byte[] tmp = new byte[Struct.getStructSize(context, s)];
                 s.getMemoryIO().get(0, tmp, 0, tmp.length);
                 ptr.getMemoryIO().put(offset, tmp, 0, tmp.length);
                 return;

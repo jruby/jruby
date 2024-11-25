@@ -69,6 +69,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.StringSupport;
 
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.marshal.MarshalCommon.*;
 import static org.jruby.util.RubyStringBuilder.inspectIdentifierByteList;
@@ -140,15 +141,15 @@ public class UnmarshalStream extends InputStream {
 
     public static RubyModule getModuleFromPath(Ruby runtime, String path) {
         final RubyModule value = runtime.getClassFromPath(path, runtime.getArgumentError(), false);
-        if (value == null) throw runtime.newArgumentError("undefined class/module " + path);
-        if ( ! value.isModule() ) throw runtime.newArgumentError(path + " does not refer module");
+        if (value == null) throw argumentError(runtime.getCurrentContext(), "undefined class/module " + path);
+        if ( ! value.isModule() ) throw argumentError(runtime.getCurrentContext(), path + " does not refer module");
         return value;
     }
 
     public static RubyClass getClassFromPath(Ruby runtime, String path) {
         final RubyModule value = runtime.getClassFromPath(path, runtime.getArgumentError(), false);
-        if (value == null) throw runtime.newArgumentError("undefined class/module " + path);
-        if ( ! value.isClass() ) throw runtime.newArgumentError(path + " does not refer class");
+        if (value == null) throw argumentError(runtime.getCurrentContext(), "undefined class/module " + path);
+        if ( ! value.isClass() ) throw argumentError(runtime.getCurrentContext(), path + " does not refer class");
         return (RubyClass) value;
     }
 
@@ -178,14 +179,14 @@ public class UnmarshalStream extends InputStream {
                 if (object instanceof EncodingCapable) {
                     ((EncodingCapable) object).setEncoding(encoding);
                 } else {
-                    throw runtime.newArgumentError(str(runtime, object, "is not enc_capable"));
+                    throw argumentError(runtime.getCurrentContext(), str(runtime, object, "is not enc_capable"));
                 }
                 if (hasEncoding != null) hasEncoding[0] = true;
             } else if (id.equals(RUBY2_KEYWORDS_FLAG)) {
                 if (object instanceof RubyHash) {
                     ((RubyHash) object).setRuby2KeywordHash(true);
                 } else {
-                    throw runtime.newArgumentError(str(runtime, "ruby2_keywords flag is given but ", object, " is not a Hash"));
+                    throw argumentError(runtime.getCurrentContext(), str(runtime, "ruby2_keywords flag is given but ", object, " is not a Hash"));
                 }
             } else {
                 clazz.getVariableAccessorForWrite(key.idString()).set(object, value);
@@ -223,7 +224,7 @@ public class UnmarshalStream extends InputStream {
     }
 
     private RubyModule mustBeModule(Ruby runtime, IRubyObject value, IRubyObject path) {
-        if (!value.isModule()) throw runtime.newArgumentError(str(runtime, path, " does not refer to module"));
+        if (!value.isModule()) throw argumentError(runtime.getCurrentContext(), str(runtime, path, " does not refer to module"));
 
         return (RubyModule) value;
     }
@@ -312,7 +313,7 @@ public class UnmarshalStream extends InputStream {
                 obj = objectForSymlink();
                 break;
             default :
-                throw getRuntime().newArgumentError("dump format error(" + (char)type + ")");
+                throw argumentError(runtime.getCurrentContext(), "dump format error(" + (char)type + ")");
         }
 
         return obj;
@@ -449,7 +450,7 @@ public class UnmarshalStream extends InputStream {
             // if allocators do not match, error
             // Note: MRI is a bit different here, and tests TYPE(type.allocate()) != TYPE(result)
             if (c.getAllocator() != obj.getMetaClass().getRealClass().getAllocator()) {
-                throw runtime.newArgumentError("dump format error (user class)");
+                throw argumentError(runtime.getCurrentContext(), "dump format error (user class)");
             }
         }
 
@@ -468,7 +469,7 @@ public class UnmarshalStream extends InputStream {
             obj = object0(null, true, null);
             RubyClass cls = obj.getMetaClass();
             if (cls != m || cls.isSingleton()) {
-                throw runtime.newArgumentError(str(runtime, "prepended class ", path, " differs from class ", cls));
+                throw argumentError(runtime.getCurrentContext(), str(runtime, "prepended class ", path, " differs from class ", cls));
             }
 
             cls = obj.getSingletonClass();
@@ -523,10 +524,10 @@ public class UnmarshalStream extends InputStream {
                     return symreal(state1);
                 }
                 case TYPE_SYMLINK:
-                    if (ivar) throw runtime.newArgumentError("dump format error (symlink with encoding)");
+                    if (ivar) throw argumentError(runtime.getCurrentContext(), "dump format error (symlink with encoding)");
                     return symlink();
                 default:
-                    throw runtime.newArgumentError("dump format error for symbol(0x" + Integer.toHexString(type) + ")");
+                    throw argumentError(runtime.getCurrentContext(), "dump format error for symbol(0x" + Integer.toHexString(type) + ")");
             }
         }
     }
@@ -560,7 +561,7 @@ public class UnmarshalStream extends InputStream {
                             sym.getBytes().setEncoding(encoding);
 
                             if (StringSupport.codeRangeScan(encoding, sym.getBytes()) == StringSupport.CR_BROKEN) {
-                                throw runtime.newArgumentError(str(runtime, "invalid byte sequence in " + encoding + ": ",
+                                throw argumentError(runtime.getCurrentContext(), str(runtime, "invalid byte sequence in " + encoding + ": ",
                                         inspectIdentifierByteList(runtime, sym.getBytes())));
                             }
                         }
@@ -682,10 +683,8 @@ public class UnmarshalStream extends InputStream {
         int readLength = 0;
         while (readLength < length) {
             int read = inputStream.read(buffer, readLength, length - readLength);
+            if (read == -1) throw argumentError(runtime.getCurrentContext(), "marshal data too short");
 
-            if (read == -1) {
-                throw getRuntime().newArgumentError("marshal data too short");
-            }
             readLength += read;
         }
 
@@ -729,7 +728,7 @@ public class UnmarshalStream extends InputStream {
             ByteList encodingName = new ByteList(ByteList.plain(encodingNameStr));
 
             Entry entry = runtime.getEncodingService().findEncodingOrAliasEntry(encodingName);
-            if (entry == null) throw runtime.newArgumentError(str(runtime, "encoding ", value, " is not registered"));
+            if (entry == null) throw argumentError(runtime.getCurrentContext(), str(runtime, "encoding ", value, " is not registered"));
 
             return entry.getEncoding();
         } else if (id.equals(SYMBOL_ENCODING_SPECIAL)) {

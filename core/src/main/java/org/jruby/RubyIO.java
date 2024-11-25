@@ -600,7 +600,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         switch (argc) {
             case 3:
                 opt = TypeConverter.checkHashType(runtime, args[2]);
-                if (opt == nil) throw getRuntime().newArgumentError(3, 2);
+                if (opt == nil) throw argumentError(context, 3, 2);
             case 2:
                 if (opt == nil) {
                     opt = TypeConverter.checkHashType(runtime, args[1]);
@@ -1041,9 +1041,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         // TODO: MRI has a method name in ArgumentError. 
         // e.g. `for_fd': wrong number of arguments (given 3, expected 1..2)
         if (modeValue != null && !modeValue.isNil() && !(modeValue instanceof RubyInteger) && !(modeValue instanceof RubyString)) {
-            throw context.runtime.newArgumentError(3, 1, 2);
+            throw argumentError(context, 3, 1, 2);
         }
-        if (!hasKeywords(callInfo)) throw context.runtime.newArgumentError(3, 1, 2);
+        if (!hasKeywords(callInfo)) throw argumentError(context, 3, 1, 2);
 
         return initializeCommon(context, fileno, modeValue, options);
     }
@@ -1058,7 +1058,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         try {
             return new IOOptions(runtime, modeString);
         } catch (InvalidValueException ive) {
-            throw runtime.newArgumentError("invalid access mode " + modeString);
+            throw argumentError(runtime.getCurrentContext(), "invalid access mode " + modeString);
         }
     }
 
@@ -3380,16 +3380,25 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return str;
     }
 
-    // io_read
+    /**
+     *
+     * @param args
+     * @return ""
+     * @deprecated Use {@link RubyIO#read(ThreadContext, IRubyObject[])} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public IRubyObject read(IRubyObject[] args) {
-        ThreadContext context = getRuntime().getCurrentContext();
+        return read(getCurrentContext(), args);
+    }
 
-        switch (args.length) {
-        case 0: return read(context);
-        case 1: return read(context, args[0]);
-        case 2: return read(context, args[0], args[1]);
-        default: throw getRuntime().newArgumentError(args.length, 2);
-        }
+    // io_read
+    public IRubyObject read(ThreadContext context, IRubyObject[] args) {
+        return switch (args.length) {
+            case 0 -> read(context);
+            case 1 -> read(context, args[0]);
+            case 2 -> read(context, args[0], args[1]);
+            default -> throw argumentError(context, args.length, 2);
+        };
     }
 
     /**
@@ -4298,33 +4307,32 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
         int argc = Arity.checkArgumentCount(context, args, 1, 4);
 
-        Ruby runtime = context.runtime;
         IRubyObject path = args[0];
         IRubyObject length, offset, options;
         length = offset = options = context.nil;
 
         { // rb_scan_args logic, basically
             if (argc > 3) {
-                if (!keywords) throw runtime.newArgumentError(args.length, 1, 4);
-                options = (RubyHash) args[3];
+                if (!keywords) throw argumentError(context, args.length, 1, 4);
+                options = args[3];
                 offset = args[2];
                 length = args[1];
             } else if (argc > 2) {
                 if (args[2] instanceof RubyHash) {
-                    options = (RubyHash) args[2];
+                    options = args[2];
                 } else {
                     offset = args[2];
                 }
                 length = args[1];
             } else if (argc > 1) {
                 if (args[1] instanceof RubyHash) {
-                    options = (RubyHash) args[1];
+                    options = args[1];
                 } else {
                     length = args[1];
                 }
             }
             if (options == null) {
-                options = RubyHash.newHash(runtime);
+                options = RubyHash.newHash(context.runtime);
             }
         }
 
@@ -4360,19 +4368,18 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     // MRI: io_s_write
     public static IRubyObject ioStaticWrite(ThreadContext context, IRubyObject recv, IRubyObject[] argv, boolean binary) {
         boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
-        final Ruby runtime = context.runtime;
         IRubyObject string, offset, opt;
         string = offset = opt = context.nil;
 
         switch (argv.length) {
             case 4:
-                if (!keywords) throw runtime.newArgumentError(argv.length, 2, 3);
+                if (!keywords) throw argumentError(context, argv.length, 2, 3);
                 opt = argv[3].convertToHash();
                 offset = argv[2];
                 string = argv[1];
                 break;
             case 3:
-                opt = TypeConverter.checkHashType(runtime, argv[2]);
+                opt = TypeConverter.checkHashType(context.runtime, argv[2]);
                 if (opt.isNil()) offset = argv[2];
                 string = argv[1];
                 break;
@@ -4384,9 +4391,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
 
         final RubyHash optHash;
-        optHash = opt == context.nil ? RubyHash.newHash(runtime) : ((RubyHash) opt).dupFast(context);
+        optHash = opt == context.nil ? RubyHash.newHash(context.runtime) : ((RubyHash) opt).dupFast(context);
 
-        final RubySymbol modeSym = runtime.newSymbol("mode");
+        final RubySymbol modeSym = asSymbol(context, "mode");
         if ( optHash.op_aref(context, modeSym) == context.nil ) {
             int mode = OpenFlags.O_WRONLY.intValue() | OpenFlags.O_CREAT.intValue();
             if ( OpenFlags.O_BINARY.defined() ) {
@@ -4506,7 +4513,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             int argc = args.length;
 
             if (argc > 0 && !(_env = TypeConverter.checkHashType(context.runtime, args[0])).isNil()) {
-                if (argc < 2) throw context.runtime.newArgumentError(1, 2);
+                if (argc < 2) throw argumentError(context, 1, 2);
                 firstArg++;
                 argc--;
             } else {
@@ -5432,7 +5439,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             return new ModeFlags(mode);
         } catch (InvalidValueException ive) {
             // This is used by File and StringIO, which seem to want an ArgumentError instead of EINVAL
-            throw runtime.newArgumentError("illegal access mode " + mode);
+            throw argumentError(runtime.getCurrentContext(), "illegal access mode " + mode);
         }
     }
 
@@ -5458,7 +5465,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             return new IOOptions(runtime, mode);
         } catch (InvalidValueException ive) {
             // This is used by File and StringIO, which seem to want an ArgumentError instead of EINVAL
-            throw runtime.newArgumentError("illegal access mode " + mode);
+            throw argumentError(runtime.getCurrentContext(),"illegal access mode " + mode);
         }
     }
 
@@ -5637,7 +5644,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         try {
             return ModeFlags.getOFlagsFromString(modesString);
         } catch (InvalidValueException ive) {
-            throw runtime.newArgumentError("illegal access mode");
+            throw argumentError(runtime.getCurrentContext(), "illegal access mode");
         }
     }
 

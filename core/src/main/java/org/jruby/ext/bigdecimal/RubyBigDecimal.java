@@ -43,7 +43,6 @@ import org.jruby.*;
 import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
 
-import org.jruby.api.Convert;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.RaiseException;
@@ -2110,10 +2109,7 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyMethod
     public RubyArray split(ThreadContext context) {
         return RubyArray.newArray(context.runtime,
-                signValue(context),
-                Convert.asString(context, splitDigits()),
-                asFixnum(context, 10),
-                exponent());
+                signValue(context), newString(context, splitDigits()), asFixnum(context, 10), exponent());
     }
 
     private String splitDigits() {

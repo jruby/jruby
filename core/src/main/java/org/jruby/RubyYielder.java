@@ -34,6 +34,8 @@ import org.jruby.runtime.CallBlock19;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -97,10 +99,6 @@ public class RubyYielder extends RubyObject {
 
     }
 
-    private void checkInit() {
-        if (block == null) throw getRuntime().newArgumentError("uninitialized yielder");
-    }
-
     @JRubyMethod(visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, Block block) {
         Ruby runtime = context.runtime;
@@ -111,7 +109,7 @@ public class RubyYielder extends RubyObject {
 
     @JRubyMethod(rest = true, keywords = true)
     public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
-        checkInit();
+        if (block == null) throw argumentError(context, "uninitialized yielder");
         return block.yieldValues(context, args);
     }
 

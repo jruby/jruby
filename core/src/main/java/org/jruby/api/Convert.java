@@ -388,16 +388,6 @@ public class Convert {
     }
 
     /**
-     * Create a Ruby String from a java String.
-     * @param context the current thread context
-     * @param value the String value
-     * @return the Ruby String
-     */
-    public static RubyString asString(ThreadContext context, String value) {
-        return newString(context, value);
-    }
-
-    /**
      * Safely convert a Ruby Integer into a java int value.  Raising if the value will not fit.
      * @param context the current thread context
      * @param value the RubyInteger to convert
@@ -455,5 +445,16 @@ public class Convert {
      */
     public static RubySymbol asSymbol(ThreadContext context, ByteList bytelist) {
         return context.runtime.newSymbol(bytelist);
+    }
+
+    /**
+     * Creates a new RubySymbol from the provided java String.
+     *
+     * @param context the current thread context
+     * @param string the contents to become a symbol
+     * @return the new RubyString
+     */
+    public static RubySymbol asSymbol(ThreadContext context, RubyString string) {
+        return context.runtime.newSymbol(string.getByteList());
     }
 }

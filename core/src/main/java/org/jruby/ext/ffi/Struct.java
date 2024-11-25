@@ -13,6 +13,7 @@ import org.jruby.util.cli.Options;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.castAsClass;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.*;
 
@@ -61,7 +62,7 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
      * @param klass the ruby class to use for the <code>StructLayout</code>
      */
     public Struct(Ruby runtime, RubyClass klass) {
-        this(runtime, klass, getStructLayout(runtime, klass), null);
+        this(runtime, klass, getStructLayout(runtime.getCurrentContext(), klass), null);
     }
 
     /**
@@ -81,15 +82,15 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
         this.memory = (AbstractMemory) memory;
     }
 
-    static final boolean isStruct(Ruby runtime, RubyClass klass) {
-        return klass.isKindOfModule(runtime.getFFI().structClass);
+    static final boolean isStruct(ThreadContext context, RubyClass klass) {
+        return klass.isKindOfModule(context.runtime.getFFI().structClass);
     }
 
-    static final int getStructSize(Ruby runtime, IRubyObject structClass) {
-        return getStructLayout(runtime, structClass).getSize();
+    static final int getStructSize(ThreadContext context, IRubyObject structClass) {
+        return getStructLayout(context, structClass).getSize();
     }
     
-    static final StructLayout getStructLayout(Ruby runtime, IRubyObject structClass) {
+    static final StructLayout getStructLayout(ThreadContext context, IRubyObject structClass) {
         try {
             Object layout = ((RubyClass) structClass).getFFIHandle();
             if (layout instanceof StructLayout) {
@@ -97,23 +98,21 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
             }
 
             RubyClass klass = (RubyClass) structClass;
-            while (klass != runtime.getObject() && !((layout = klass.getInstanceVariable("@layout")) instanceof StructLayout)) {
+            while (klass != context.runtime.getObject() && !((layout = klass.getInstanceVariable("@layout")) instanceof StructLayout)) {
                 klass = klass.getSuperClass();
             }
 
             if (!(layout instanceof StructLayout)) {
-                throw runtime.newRuntimeError("no valid struct layout for " + ((RubyClass) structClass).getName());
+                throw context.runtime.newRuntimeError("no valid struct layout for " + ((RubyClass) structClass).getName());
             }
 
             // Cache the layout on the Struct metaclass for faster retrieval next time
             ((RubyClass) structClass).setFFIHandle(layout);
             return (StructLayout) layout;
-
         } catch (ClassCastException ex) {
-            if (!(structClass instanceof RubyClass)) {
-                throw typeError(runtime.getCurrentContext(), structClass, "subclass of Struct");
-            }
-            throw runtime.newRuntimeError("invalid layout set for struct " + ((RubyClass) structClass).getName());
+            if (!(structClass instanceof RubyClass)) throw typeError(context, structClass, "subclass of Struct");
+
+            throw context.runtime.newRuntimeError("invalid layout set for struct " + ((RubyClass) structClass).getName());
         }
     }
 
@@ -134,8 +133,7 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
         }
 
         if (((AbstractMemory) ptr).getSize() < layout.getSize()) {
-            throw context.runtime.newArgumentError("memory object has insufficient space for "
-                    + getMetaClass().getName());
+            throw argumentError(context, "memory object has insufficient space for " + getMetaClass().getName());
         }
 
         memory = (AbstractMemory) ptr;
@@ -163,13 +161,9 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
 
     @JRubyMethod(name = "initialize_copy", visibility = PRIVATE)
     public IRubyObject initialize_copy(ThreadContext context, IRubyObject other) {
-        if (other == this) {
-            return this;
-        }
-        if (!(other instanceof Struct)) {
-            throw typeError(context, "not an instance of Struct");
-        }
-        Struct orig = (Struct) other;
+        if (other == this) return this;
+        if (!(other instanceof Struct orig)) throw typeError(context, "not an instance of Struct");
+
         memory = (AbstractMemory) orig.getMemory().slice(context.runtime, 0, layout.getSize()).dup();
         if (orig.referenceCache != null) {
             referenceCache = new Object[layout.getReferenceFieldCount()];
@@ -182,9 +176,8 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
 
 
     private static final Struct allocateStruct(ThreadContext context, IRubyObject klass, int flags) {
-        Ruby runtime = context.runtime;
-        StructLayout layout = getStructLayout(runtime, klass);
-        return new Struct(runtime, (RubyClass) klass, layout, new Buffer(runtime, layout.getSize(), flags));
+        StructLayout layout = getStructLayout(context, klass);
+        return new Struct(context.runtime, (RubyClass) klass, layout, new Buffer(context.runtime, layout.getSize(), flags));
     }
 
     @JRubyMethod(name = { "new_in", "alloc_in" }, meta = true)
@@ -233,7 +226,7 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
 
     @JRubyMethod(name = "alignment", meta = true)
     public static IRubyObject alignment(ThreadContext context, IRubyObject structClass) {
-        return getStructLayout(context.runtime, structClass).alignment(context);
+        return getStructLayout(context, structClass).alignment(context);
     }
 
     @JRubyMethod(name = { "layout=" }, meta = true)
@@ -252,17 +245,17 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
 
     @JRubyMethod(name = "members", meta = true)
     public static IRubyObject members(ThreadContext context, IRubyObject structClass) {
-        return getStructLayout(context.runtime, structClass).members(context);
+        return getStructLayout(context, structClass).members(context);
     }
 
     @JRubyMethod(name = "offsets", meta = true)
     public static IRubyObject offsets(ThreadContext context, IRubyObject structClass) {
-        return getStructLayout(context.runtime, structClass).offsets(context);
+        return getStructLayout(context, structClass).offsets(context);
     }
 
     @JRubyMethod(name = "offset_of", meta = true)
     public static IRubyObject offset_of(ThreadContext context, IRubyObject structClass, IRubyObject fieldName) {
-        return getStructLayout(context.runtime, structClass).offset_of(context, fieldName);
+        return getStructLayout(context, structClass).offset_of(context, fieldName);
     }
 
 

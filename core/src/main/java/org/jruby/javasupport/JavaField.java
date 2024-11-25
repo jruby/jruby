@@ -47,7 +47,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Convert.asBoolean;
-import static org.jruby.api.Convert.asString;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 
@@ -93,7 +92,7 @@ public class JavaField {
 
     @JRubyMethod
     public RubyString to_generic_string(ThreadContext context) {
-        return asString(context, field.toGenericString());
+        return newString(context, field.toGenericString());
     }
 
     @JRubyMethod(name = "type")

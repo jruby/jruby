@@ -47,6 +47,7 @@ import org.jruby.util.ClassProvider;
 import org.jruby.util.TypeConverter;
 
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 /**
@@ -256,16 +257,15 @@ public class JavaPackage extends RubyModule {
 
     @JRubyMethod(name = "method_missing", rest = true)
     public IRubyObject method_missing(ThreadContext context, final IRubyObject[] args) {
-        if (args.length > 1) {
-            throw packageMethodArgumentMismatch(context.runtime, this, args[0].toString(), args.length - 1);
-        }
+        if (args.length > 1) throw packageMethodArgumentMismatch(context, this, args[0].toString(), args.length - 1);
+
         return method_missing(context, args[0]);
     }
     
-    static RaiseException packageMethodArgumentMismatch(final Ruby runtime, final RubyModule pkg,
+    static RaiseException packageMethodArgumentMismatch(ThreadContext context, final RubyModule pkg,
         final String method, final int argsLength) {
         String packageName = ((JavaPackage) pkg).packageName;
-        return runtime.newArgumentError(
+        return argumentError(context,
                 "Java package '" + packageName + "' does not have a method '" +
                         method + "' with " + argsLength + (argsLength == 1 ? " argument" : " arguments")
         );

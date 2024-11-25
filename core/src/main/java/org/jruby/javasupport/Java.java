@@ -331,10 +331,10 @@ public class Java implements Library {
             if (obj instanceof String) { // java.lang.String proxy
                 return getJavaClass(runtime, (String) obj);
             }
-            throw runtime.newArgumentError("expected a Java class, got " + java_class.inspect());
+            throw argumentError(runtime.getCurrentContext(), "expected a Java class, got " + java_class.inspect());
         }
 
-        throw runtime.newArgumentError("expected a Java class (or String), got " + java_class.inspect());
+        throw argumentError(runtime.getCurrentContext(), "expected a Java class (or String), got " + java_class.inspect());
     }
 
     public static Class<?> unwrapClassProxy(final IRubyObject self) {
@@ -658,7 +658,7 @@ public class Java implements Library {
             int index = cache.indexOf(ctor);
             if (index < 0) {
                 // use our error otherwise
-                throw runtime.newArgumentError("index error finding superconstructor");
+                throw argumentError(runtime.getCurrentContext(), "index error finding superconstructor");
             }
             return index;
         }
@@ -877,7 +877,7 @@ public class Java implements Library {
         final IRubyObject packageModule = javaModule.getConstantAt(packageName);
 
         if ( packageModule == null ) {
-            return createPackageModule(runtime, javaModule, packageName, packageString);
+            return createPackageModule(runtime.getCurrentContext(), javaModule, packageName, packageString);
         }
         if ( packageModule instanceof RubyModule ) {
             return (RubyModule) packageModule;
@@ -885,10 +885,10 @@ public class Java implements Library {
         return null;
     }
 
-    private static RubyModule createPackageModule(final Ruby runtime,
+    private static RubyModule createPackageModule(ThreadContext context,
         final RubyModule parentModule, final String name, final String packageString) {
 
-        final RubyModule packageModule = JavaPackage.newPackage(runtime, packageString, parentModule);
+        final RubyModule packageModule = JavaPackage.newPackage(context.runtime, packageString, parentModule);
 
         synchronized (parentModule) { // guard initializing in multiple threads
             final IRubyObject packageAlreadySet = parentModule.fetchConstant(name);
@@ -904,8 +904,8 @@ public class Java implements Library {
 
     private static final Pattern CAMEL_CASE_PACKAGE_SPLITTER = Pattern.compile("([a-z0-9_]+)([A-Z])");
 
-    private static RubyModule getPackageModule(final Ruby runtime, final String name) {
-        final RubyModule javaModule = runtime.getJavaSupport().getJavaModule();
+    private static RubyModule getPackageModule(ThreadContext context, final String name) {
+        final RubyModule javaModule = context.runtime.getJavaSupport().getJavaModule();
         final IRubyObject packageModule = javaModule.getConstantAt(name);
         if ( packageModule instanceof RubyModule ) return (RubyModule) packageModule;
 
@@ -915,11 +915,11 @@ public class Java implements Library {
             Matcher match = CAMEL_CASE_PACKAGE_SPLITTER.matcher(name);
             packageName = match.replaceAll("$1.$2").toLowerCase();
         }
-        return createPackageModule(runtime, javaModule, name, packageName);
+        return createPackageModule(context, javaModule, name, packageName);
     }
 
     public static RubyModule get_package_module(final IRubyObject self, final IRubyObject name) {
-        return getPackageModule(self.getRuntime(), name.asJavaString());
+        return getPackageModule(self.getRuntime().getCurrentContext(), name.asJavaString());
     }
 
     public static IRubyObject get_package_module_dot_format(final IRubyObject self,
@@ -940,12 +940,12 @@ public class Java implements Library {
         final RubyModule result;
 
         if ( ! Character.isUpperCase( name.charAt(0) ) ) {
-            checkJavaReservedNames(runtime, name, false); // fails on primitives
+            checkJavaReservedNames(context, name, false); // fails on primitives
 
             // this covers the rare case of lower-case class names (and thus will
             // fail 99.999% of the time). fortunately, we'll only do this once per
             // package name. (and seriously, folks, look into best practices...)
-            RubyModule proxyClass = getProxyClassOrNull(runtime, fullName);
+            RubyModule proxyClass = getProxyClassOrNull(context, fullName);
             if ( proxyClass != null ) result = proxyClass; /* else not primitive or l-c class */
             else {
                 // Haven't found a class, continue on as though it were a package
@@ -957,7 +957,7 @@ public class Java implements Library {
         }
         else {
             try { // First char is upper case, so assume it's a class name
-                final RubyModule javaClass = getProxyClassOrNull(runtime, fullName);
+                final RubyModule javaClass = getProxyClassOrNull(context, fullName);
                 if ( javaClass != null ) result = javaClass;
                 else {
                     if ( allowUppercasePackageNames(runtime) ) {
@@ -990,11 +990,10 @@ public class Java implements Library {
         return runtime.getInstanceConfig().getAllowUppercasePackageNames();
     }
 
-    private static void checkJavaReservedNames(final Ruby runtime, final String name,
-        final boolean allowPrimitives) {
+    private static void checkJavaReservedNames(ThreadContext context, final String name, final boolean allowPrimitives) {
         // TODO: should check against all Java reserved names here, not just primitives
-        if ( ! allowPrimitives && isPrimitiveClassName(name) ) {
-            throw runtime.newArgumentError("illegal package name component: " + name);
+        if (!allowPrimitives && isPrimitiveClassName(name)) {
+            throw argumentError(context, "illegal package name component: " + name);
         }
     }
 
@@ -1063,14 +1062,14 @@ public class Java implements Library {
         ex.initCause(cause); return ex;
     }
 
-    private static RubyModule getProxyClassOrNull(final Ruby runtime, final String className) {
+    private static RubyModule getProxyClassOrNull(ThreadContext context, final String className) {
         final Class<?> clazz;
         try {
-            clazz = loadJavaClass(runtime, className);
+            clazz = loadJavaClass(context.runtime, className);
         } catch (ClassNotFoundException ex) { // used to catch NoClassDefFoundError for whatever reason
             return null;
         }
-        return getProxyClass(runtime, clazz);
+        return getProxyClass(context.runtime, clazz);
     }
 
     private static int mapMajorMinorClassVersionToJavaVersion(String msg, final int offset) {
@@ -1089,23 +1088,21 @@ public class Java implements Library {
         return result != null ? result : context.nil;
     }
 
-    private static RubyModule getTopLevelProxyOrPackage(final Ruby runtime,
+    private static RubyModule getTopLevelProxyOrPackage(ThreadContext context,
         final String name, final boolean cacheMethod) {
 
-        if ( name.length() == 0 ) {
-            throw runtime.newArgumentError("empty class or package name");
-        }
+        if (name.isEmpty()) throw argumentError(context,"empty class or package name");
 
         final RubyModule result;
 
         if ( Character.isLowerCase( name.charAt(0) ) ) {
             // this covers primitives and (unlikely) lower-case class names
-            RubyModule proxyClass = getProxyClassOrNull(runtime, name);
+            RubyModule proxyClass = getProxyClassOrNull(context, name);
             if ( proxyClass != null ) result = proxyClass; /* else not primitive or l-c class */
             else {
-                checkJavaReservedNames(runtime, name, true);
+                checkJavaReservedNames(context, name, true);
 
-                final RubyModule packageModule = getJavaPackageModule(runtime, name);
+                final RubyModule packageModule = getJavaPackageModule(context.runtime, name);
                 // TODO: decompose getJavaPackageModule so we don't parse fullName
                 if ( packageModule == null ) return null;
 
@@ -1113,25 +1110,25 @@ public class Java implements Library {
             }
         }
         else {
-            RubyModule javaClass = getProxyClassOrNull(runtime, name);
+            RubyModule javaClass = getProxyClassOrNull(context, name);
             if ( javaClass != null ) result = javaClass;
             else {
                 // upper-case package name
                 // TODO: top-level upper-case package was supported in the previous (Ruby-based)
                 // implementation, so leaving as is.  see note at #getProxyOrPackageUnderPackage
                 // re: future approach below the top-level.
-                result = getPackageModule(runtime, name);
+                result = getPackageModule(context, name);
             }
         }
 
-        if ( cacheMethod ) bindJavaPackageOrClassMethod(runtime, name, result);
+        if ( cacheMethod ) bindJavaPackageOrClassMethod(context, name, result);
 
         return result;
     }
 
-    private static boolean bindJavaPackageOrClassMethod(final Ruby runtime, final String name,
+    private static boolean bindJavaPackageOrClassMethod(ThreadContext context, final String name,
         final RubyModule packageOrClass) {
-        final RubyModule javaPackage = runtime.getJavaSupport().getJavaModule();
+        final RubyModule javaPackage = context.runtime.getJavaSupport().getJavaModule();
         return bindJavaPackageOrClassMethod(javaPackage, name, packageOrClass);
     }
 
@@ -1159,9 +1156,8 @@ public class Java implements Library {
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            if ( args.length != 0 ) {
-                throw JavaPackage.packageMethodArgumentMismatch(context.runtime, parentPackage, name, args.length);
-            }
+            if (args.length != 0) throw JavaPackage.packageMethodArgumentMismatch(context, parentPackage, name, args.length);
+
             return call(context, self, clazz, name);
         }
 
@@ -1189,12 +1185,14 @@ public class Java implements Library {
         @Override // method_missing impl :
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
             final IRubyObject[] newArgs;
-            switch( args.length ) {
-                case 1 :  newArgs = IRubyObject.NULL_ARRAY; break;
-                case 2 :  newArgs = new IRubyObject[] { args[1] }; break;
-                case 3 :  newArgs = new IRubyObject[] { args[1], args[2] }; break;
-                default : newArgs = new IRubyObject[ args.length - 1 ];
+            switch (args.length) {
+                case 1 -> newArgs = IRubyObject.NULL_ARRAY;
+                case 2 -> newArgs = new IRubyObject[]{args[1]};
+                case 3 -> newArgs = new IRubyObject[]{args[1], args[2]};
+                default -> {
+                    newArgs = new IRubyObject[args.length - 1];
                     System.arraycopy(args, 1, newArgs, 0, newArgs.length);
+                }
             }
             return callProc(context, self, newArgs);
         }
@@ -1248,7 +1246,6 @@ public class Java implements Library {
 
     private static RubyModule getProxyUnderClass(final ThreadContext context,
         final RubyModule enclosingClass, final String name) {
-
         if (name.isEmpty()) throw argumentError(context, "empty class name");
 
         Class<?> enclosing = JavaUtil.getJavaClass(enclosingClass, null);
@@ -1256,8 +1253,7 @@ public class Java implements Library {
         if (enclosing == null) return null;
 
         final String fullName = enclosing.getName() + '$' + name;
-
-        final RubyModule result = getProxyClassOrNull(context.runtime, fullName);
+        final RubyModule result = getProxyClassOrNull(context, fullName);
         //if ( result != null && cacheMethod ) bindJavaPackageOrClassMethod(enclosingClass, name, result);
         return result;
     }
@@ -1274,13 +1270,11 @@ public class Java implements Library {
     }
 
     @JRubyMethod(meta = true)
-    public static IRubyObject const_missing(final ThreadContext context,
-        final IRubyObject self, final IRubyObject name) {
-        final Ruby runtime = context.runtime;
+    public static IRubyObject const_missing(final ThreadContext context, final IRubyObject self, final IRubyObject name) {
         final String constName = name.asJavaString();
         // it's fine to not add the "cached" method here - when users sticking to
         // constant access won't pay the "penalty" for adding dynamic methods ...
-        final RubyModule packageOrClass = getTopLevelProxyOrPackage(runtime, constName, false);
+        final RubyModule packageOrClass = getTopLevelProxyOrPackage(context, constName, false);
         if ( packageOrClass == null ) return context.nil; // compatibility (with packages)
         return cacheConstant((RubyModule) self, constName, packageOrClass, false);
     }
@@ -1304,7 +1298,7 @@ public class Java implements Library {
     public static IRubyObject method_missing(ThreadContext context, final IRubyObject self,
         final IRubyObject name) { // JavaUtilities.get_top_level_proxy_or_package(name)
         // NOTE: getTopLevelProxyOrPackage will bind the (cached) method for us :
-        final RubyModule result = getTopLevelProxyOrPackage(context.runtime, name.asJavaString(), true);
+        final RubyModule result = getTopLevelProxyOrPackage(context, name.asJavaString(), true);
         if ( result != null ) return result;
         return context.nil;
     }
@@ -1322,7 +1316,7 @@ public class Java implements Library {
 
     public static IRubyObject get_top_level_proxy_or_package(final ThreadContext context,
         final IRubyObject self, final IRubyObject name) {
-        final RubyModule result = getTopLevelProxyOrPackage(context.runtime, name.asJavaString(), true);
+        final RubyModule result = getTopLevelProxyOrPackage(context, name.asJavaString(), true);
         return result != null ? result : context.nil;
     }
 

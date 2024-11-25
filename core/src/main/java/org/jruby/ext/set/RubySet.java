@@ -224,11 +224,11 @@ public class RubySet extends RubyObject implements Set {
     }
 
     protected IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
-        switch (args.length) {
-            case 0: return initialize(context, block);
-            case 1: return initialize(context, args[0], block);
-        }
-        throw context.runtime.newArgumentError(args.length, 1);
+        return switch (args.length) {
+            case 0 -> initialize(context, block);
+            case 1 -> initialize(context, args[0], block);
+            default -> throw argumentError(context, args.length, 1);
+        };
     }
 
     private IRubyObject initWithEnum(final ThreadContext context, final IRubyObject enume, final Block block) {

@@ -743,9 +743,7 @@ public final class StructLayout extends Type {
         @JRubyMethod
         public final IRubyObject get(ThreadContext context, IRubyObject pointer) {
             MemoryOp memoryOp = this.memoryOp;
-            if (memoryOp == null) {
-                throw context.runtime.newArgumentError("get not supported for " + type.nativeType.name());
-            }
+            if (memoryOp == null) throw argumentError(context, "get not supported for " + type.nativeType.name());
 
             return memoryOp.get(context, AbstractMemory.cast(context, pointer), offset);
         }
@@ -753,13 +751,9 @@ public final class StructLayout extends Type {
         @JRubyMethod
         public final IRubyObject put(ThreadContext context, IRubyObject pointer, IRubyObject value) {
             MemoryOp memoryOp = this.memoryOp;
-
-            if (memoryOp == null) {
-                throw context.runtime.newArgumentError("put not supported for " + type.nativeType.name());
-            }
+            if (memoryOp == null) throw argumentError(context, "put not supported for " + type.nativeType.name());
 
             memoryOp.put(context, AbstractMemory.cast(context, pointer), offset, value);
-
             return this;
         }
     }
@@ -1082,43 +1076,30 @@ public final class StructLayout extends Type {
                 ptr.getMemoryIO().putMemoryIO(m.offset, ((Pointer) value).getMemoryIO());
             } else if (value instanceof Struct) {
                 MemoryIO mem = ((Struct) value).getMemoryIO();
+                if (!mem.isDirect()) throw argumentError(context, "Struct memory not backed by a native pointer");
 
-                if (!mem.isDirect()) {
-                    throw context.runtime.newArgumentError("Struct memory not backed by a native pointer");
-                }
                 ptr.getMemoryIO().putMemoryIO(m.offset, mem);
-
             } else if (value instanceof RubyInteger) {
                 ptr.getMemoryIO().putAddress(m.offset, Util.int64Value(value));
-
             } else if (value.isNil()) {
                 ptr.getMemoryIO().putAddress(m.offset, 0L);
-
             } else if (!(conversionMethod = value.getMetaClass().searchMethod("to_ptr")).isUndefined()) {
                 IRubyObject addr = conversionMethod.call(context, value, value.getMetaClass(), "to_ptr");
-                if (addr instanceof Pointer) {
-                    ptr.getMemoryIO().putMemoryIO(m.offset, ((Pointer) addr).getMemoryIO());
-                } else {
-                    throw context.runtime.newArgumentError("Invalid pointer value");
-                }
+                if (!(addr instanceof Pointer pointer)) throw argumentError(context, "Invalid pointer value");
+                ptr.getMemoryIO().putMemoryIO(m.offset, pointer.getMemoryIO());
             } else {
-                throw context.runtime.newArgumentError("Invalid pointer value");
+                throw argumentError(context, "Invalid pointer value");
             }
             cache.putReference(m, value);
         }
 
         public IRubyObject get(ThreadContext context, StructLayout.Storage cache, Member m, AbstractMemory ptr) {
-            MemoryIO memory = ((AbstractMemory) ptr).getMemoryIO().getMemoryIO(m.getOffset(ptr));
+            MemoryIO memory = ptr.getMemoryIO().getMemoryIO(m.getOffset(ptr));
             IRubyObject old = cache.getCachedValue(m);
-            if (old instanceof Pointer) {
-                MemoryIO oldMemory = ((Pointer) old).getMemoryIO();
-                if (memory.equals(oldMemory)) {
-                    return old;
-                }
-            }
+            if (old instanceof Pointer oldPtr && memory.equals(oldPtr.getMemoryIO())) return old;
+
             Pointer retval = new Pointer(context.runtime, memory);
             cache.putCachedValue(m, retval);
-
             return retval;
         }
 
@@ -1136,11 +1117,8 @@ public final class StructLayout extends Type {
         
         public IRubyObject get(ThreadContext context, StructLayout.Storage cache, Member m, AbstractMemory ptr) {
             MemoryIO io = ptr.getMemoryIO().getMemoryIO(m.getOffset(ptr));
-            if (io == null || io.isNull()) {
-                return context.nil;
-            }
-
-            return RubyString.newStringNoCopy(context.runtime, io.getZeroTerminatedByteArray(0));
+            return io == null || io.isNull() ?
+                    context.nil : RubyString.newStringNoCopy(context.runtime, io.getZeroTerminatedByteArray(0));
         }
 
         public void put(ThreadContext context, StructLayout.Storage cache, Member m, AbstractMemory ptr, IRubyObject value) {

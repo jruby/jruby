@@ -1680,14 +1680,11 @@ public class RubyDate extends RubyObject {
 
     // @Deprecated
     public static IRubyObject _strptime(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        switch (args.length) {
-            case 1:
-                return _strptime(context, self, args[0]);
-            case 2:
-                return _strptime(context, self, args[0], args[1]);
-            default:
-                throw context.runtime.newArgumentError(args.length, 1);
-        }
+        return switch (args.length) {
+            case 1 -> _strptime(context, self, args[0]);
+            case 2 -> _strptime(context, self, args[0], args[1]);
+            default -> throw argumentError(context, args.length, 1);
+        };
     }
 
     @JRubyMethod(name = "zone_to_diff", meta = true, visibility = Visibility.PRIVATE)

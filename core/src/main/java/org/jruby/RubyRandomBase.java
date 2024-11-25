@@ -14,6 +14,7 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.TypeConverter.toFloat;
 
@@ -289,7 +290,7 @@ public class RubyRandomBase extends RubyObject {
     }
 
     static void invalidArgument(ThreadContext context, IRubyObject arg0) {
-        throw context.runtime.newArgumentError("invalid argument - " + arg0);
+        throw argumentError(context, "invalid argument - " + arg0);
     }
 
     // c: rand_random

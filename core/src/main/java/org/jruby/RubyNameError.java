@@ -45,6 +45,7 @@ import org.jruby.util.Sprintf;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
 
 /**
  * The Java representation of a Ruby NameError.
@@ -274,9 +275,8 @@ public class RubyNameError extends RubyStandardError {
 
     @JRubyMethod
     public IRubyObject receiver(ThreadContext context) {
-        if (receiver != null) return receiver;
-
-        throw context.runtime.newArgumentError("no receiver is available");
+        if (receiver == null) throw argumentError(context, "no receiver is available");
+        return receiver;
     }
 
     @JRubyMethod(name = "private_call?")

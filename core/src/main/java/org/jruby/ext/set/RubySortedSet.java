@@ -106,7 +106,7 @@ public class RubySortedSet extends RubySet implements SortedSet {
     protected void addImpl(ThreadContext context, final IRubyObject obj) {
         // NOTE: we're able to function without the check - comparator will raise ArgumentError
         //if ( ! obj.respondsTo("<=>") ) {
-        //    throw runtime.newArgumentError("value must respond to <=>");
+        //    throw argumentError(context, "value must respond to <=>");
         //}
         super.addImpl(context, obj); // @hash[obj] = true
         order.add(obj);

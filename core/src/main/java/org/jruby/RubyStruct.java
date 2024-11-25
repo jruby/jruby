@@ -425,10 +425,8 @@ public class RubyStruct extends RubyObject {
         return struct;
     }
 
-    private void checkSize(int length) {
-        if (length > values.length) {
-            throw getRuntime().newArgumentError("struct size differs (" + length +" for " + values.length + ")");
-        }
+    private void checkSize(ThreadContext context, int length) {
+        if (length > values.length) throw argumentError(context, "struct size differs (" + length +" for " + values.length + ")");
     }
 
     private void checkForKeywords(ThreadContext context, boolean keywordInit) {
@@ -443,10 +441,10 @@ public class RubyStruct extends RubyObject {
         checkForKeywords(context, !keywordInit.isNil());
         ThreadContext.resetCallInfo(context);
         modify();
-        checkSize(args.length);
+        checkSize(context, args.length);
 
         if (keywordInit.isTrue()) {
-            if (args.length != 1) throw context.runtime.newArgumentError(args.length, 0);
+            if (args.length != 1) throw argumentError(context, args.length, 0);
 
             return initialize(context, args[0]);
         } else {
@@ -458,8 +456,6 @@ public class RubyStruct extends RubyObject {
     }
 
     private IRubyObject setupStructValuesFromHash(ThreadContext context, RubyHash kwArgs) {
-        Ruby runtime = context.runtime;
-
         RubyArray __members__ = __member__();
         Set<Map.Entry<IRubyObject, IRubyObject>> entries = kwArgs.directEntrySet();
 
@@ -467,9 +463,9 @@ public class RubyStruct extends RubyObject {
                 entry -> {
                     IRubyObject key = entry.getKey();
                     if (!(key instanceof RubySymbol))
-                        key = runtime.newSymbol(key.convertToString().getByteList());
+                        key = asSymbol(context, key.convertToString().getByteList());
                     IRubyObject index = __members__.index(context, key);
-                    if (index.isNil()) throw runtime.newArgumentError(str(runtime, "unknown keywords: ", key));
+                    if (index.isNil()) throw argumentError(context, str(context.runtime, "unknown keywords: ", key));
                     values[index.convertToInteger().getIntValue()] = entry.getValue();
                 });
 
@@ -490,8 +486,8 @@ public class RubyStruct extends RubyObject {
         if (keywords) {
             return setupStructValuesFromHash(context, (RubyHash) arg0);
         } else if (RubyStruct.getInternalVariable(classOf(), KEYWORD_INIT_VAR).isTrue()) {
-            if (!(arg0 instanceof RubyHash)) throw context.runtime.newArgumentError(1, 0);
-            return setupStructValuesFromHash(context, (RubyHash) arg0);
+            if (!(arg0 instanceof RubyHash hash)) throw argumentError(context, 1, 0);
+            return setupStructValuesFromHash(context, hash);
         }
 
         return initializeInternal(context, 1, arg0, context.nil, context.nil);
@@ -500,26 +496,20 @@ public class RubyStruct extends RubyObject {
     @JRubyMethod(visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         IRubyObject keywordInit = RubyStruct.getInternalVariable(classOf(), KEYWORD_INIT_VAR);
-        if (keywordInit.isTrue()) {
-            throw context.runtime.newArgumentError(2, 0);
-        }
-
+        if (keywordInit.isTrue()) throw argumentError(context, 2, 0);
         return initializeInternal(context, 2, arg0, arg1, context.nil);
     }
 
     @JRubyMethod(visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         IRubyObject keywordInit = RubyStruct.getInternalVariable(classOf(), KEYWORD_INIT_VAR);
-        if (keywordInit.isTrue()) {
-            throw context.runtime.newArgumentError(3, 0);
-        }
-
+        if (keywordInit.isTrue()) throw argumentError(context, 3, 0);
         return initializeInternal(context, 3, arg0, arg1, arg2);
     }
 
     public IRubyObject initializeInternal(ThreadContext context, int provided, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         modify();
-        checkSize(provided);
+        checkSize(context, provided);
 
         switch (provided) {
         case 3:
@@ -529,9 +519,8 @@ public class RubyStruct extends RubyObject {
         case 1:
             values[0] = arg0;
         }
-        if (provided < values.length) {
-            Helpers.fillNil(values, provided, values.length, context.runtime);
-        }
+
+        if (provided < values.length) Helpers.fillNil(values, provided, values.length, context.runtime);
 
         return context.nil;
     }
@@ -730,9 +719,7 @@ public class RubyStruct extends RubyObject {
                 if (keyValue == context.nil) throw typeError(context, "wrong element type ", elt, " at " + i + " (expected array)");
                 RubyArray ary = (RubyArray)keyValue;
 
-                if (ary.getLength() != 2) {
-                    throw context.runtime.newArgumentError("element has wrong array length (expected 2, was " + ary.getLength() + ")");
-                }
+                if (ary.getLength() != 2) throw argumentError(context, "element has wrong array length (expected 2, was " + ary.getLength() + ")");
 
                 hash.op_aset(context, ary.eltInternal(0), ary.eltInternal(1));
             }

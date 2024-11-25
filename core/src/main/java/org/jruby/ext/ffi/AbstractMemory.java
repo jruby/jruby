@@ -84,8 +84,8 @@ abstract public class AbstractMemory extends MemoryObject {
         if (sizeArg instanceof Type type) return type.getNativeSize();
 
 
-        if (sizeArg instanceof RubyClass && Struct.isStruct(context.runtime, (RubyClass) sizeArg)) {
-            return Struct.getStructSize(context.runtime, sizeArg);
+        if (sizeArg instanceof RubyClass && Struct.isStruct(context, (RubyClass) sizeArg)) {
+            return Struct.getStructSize(context, sizeArg);
         }
 
         DynamicMethod sizeMethod = sizeArg.getMetaClass().searchMethod("size");
@@ -2014,7 +2014,7 @@ abstract public class AbstractMemory extends MemoryObject {
         } else if (ptr.isNull()) {
             getMemoryIO().putAddress(offset, 0L);
         } else {
-            throw context.runtime.newArgumentError("Cannot convert argument to pointer");
+            throw argumentError(context, "Cannot convert argument to pointer");
         }
     }
 
@@ -2078,11 +2078,10 @@ abstract public class AbstractMemory extends MemoryObject {
 
     @JRubyMethod(name = "put_callback")
     public IRubyObject put_callback(ThreadContext context, IRubyObject offset, IRubyObject proc, IRubyObject cbInfo) {
-        if (!(cbInfo instanceof CallbackInfo)) {
-            throw context.runtime.newArgumentError("invalid CallbackInfo");
-        }
+        if (!(cbInfo instanceof CallbackInfo)) throw argumentError(context, "invalid CallbackInfo");
+
         Pointer ptr = Factory.getInstance().getCallbackManager().getCallback(context.runtime, (CallbackInfo) cbInfo, proc);
-        getMemoryIO().putMemoryIO(getOffset(offset), ((AbstractMemory) ptr).getMemoryIO());
+        getMemoryIO().putMemoryIO(getOffset(offset), ptr.getMemoryIO());
         return this;
     }
     
@@ -2118,31 +2117,23 @@ abstract public class AbstractMemory extends MemoryObject {
 
     @JRubyMethod(name = "get")
     public final IRubyObject put(ThreadContext context, IRubyObject typeName, IRubyObject offset) {
-        Ruby runtime = context.runtime;
-
-        Type type = runtime.getFFI().getTypeResolver().findType(runtime, typeName);
+        Type type = context.runtime.getFFI().getTypeResolver().findType(context.runtime, typeName);
         MemoryOp op = MemoryOp.getMemoryOp(type);
+        if (op != null) return op.get(context, getMemoryIO(), numericToLong(context, offset));
 
-        if(op != null) {
-            return op.get(context, getMemoryIO(), numericToLong(context, offset));
-        }
-
-        throw runtime.newArgumentError("undefined type " + typeName);
+        throw argumentError(context, "undefined type " + typeName);
     }
 
     @JRubyMethod(name = "put")
     public final IRubyObject get(ThreadContext context, IRubyObject typeName, IRubyObject offset, IRubyObject value) {
-        Ruby runtime = context.runtime;
-
-        Type type = runtime.getFFI().getTypeResolver().findType(runtime, typeName);
+        Type type = context.runtime.getFFI().getTypeResolver().findType(context.runtime, typeName);
         MemoryOp op = MemoryOp.getMemoryOp(type);
-        if(op != null) {
+        if (op != null) {
             op.put(context, getMemoryIO(), numericToLong(context, offset), value);
-
             return context.nil;
         }
 
-        throw runtime.newArgumentError("undefined type " + typeName);
+        throw argumentError(context, "undefined type " + typeName);
     }
 
     abstract public AbstractMemory order(Ruby runtime, ByteOrder order);

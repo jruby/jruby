@@ -37,6 +37,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static com.headius.backport9.buffer.Buffers.positionBuffer;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -104,7 +105,7 @@ public final class Util {
         } else if (obj instanceof RubySymbol) {
             IRubyObject value = enums.fastARef(obj);
             if (value.isNil()) {
-                throw obj.getRuntime().newArgumentError("invalid enum value, " + obj.inspect());
+                throw argumentError(obj.getRuntime().getCurrentContext(), "invalid enum value, " + obj.inspect());
             }
             return (int) longValue(value);
         } else {
@@ -185,7 +186,7 @@ public final class Util {
         switch (byte_order.asJavaString()) {
             case "network": case "big": return ByteOrder.BIG_ENDIAN;
             case "little": return ByteOrder.LITTLE_ENDIAN;
-            default: throw runtime.newArgumentError("unknown byte order");
+            default: throw argumentError(runtime.getCurrentContext(), "unknown byte order");
         }
     }
 

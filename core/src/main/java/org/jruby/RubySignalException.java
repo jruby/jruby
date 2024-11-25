@@ -30,7 +30,6 @@ import static jnr.constants.platform.Signal.NSIG;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.api.Convert;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.SignalException;
 import org.jruby.runtime.Arity;
@@ -38,6 +37,8 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 import org.jruby.runtime.builtin.IRubyObject;
@@ -82,20 +83,16 @@ public class RubySignalException extends RubyException {
 
         if (argnum == 2) {
             _signo = asLong(context, (RubyInteger) sig);
-            if (_signo < 0 || _signo > NSIG.longValue()) throw context.runtime.newArgumentError("invalid signal number (" + _signo + ")");
+            if (_signo < 0 || _signo > NSIG.longValue()) throw argumentError(context, "invalid signal number (" + _signo + ")");
 
-            if (argc > 1) {
-                sig = args[1];
-            } else {
-                sig = Convert.asString(context, RubySignal.signmWithPrefix(RubySignal.signo2signm(_signo)));
-            }
+            sig = argc > 1 ? args[1] : newString(context, RubySignal.signmWithPrefix(RubySignal.signo2signm(_signo)));
         } else {
             String signm = sig.toString();
             _signo = RubySignal.signm2signo(RubySignal.signmWithoutPrefix(signm));
 
-            if (_signo == 0) throw context.runtime.newArgumentError("unsupported name " + sig);
+            if (_signo == 0) throw argumentError(context, "unsupported name " + sig);
 
-            sig = Convert.asString(context, RubySignal.signmWithPrefix(signm));
+            sig = newString(context, RubySignal.signmWithPrefix(signm));
         }
 
         super.initialize(new IRubyObject[]{sig}, block);
@@ -107,10 +104,7 @@ public class RubySignalException extends RubyException {
     @JRubyMethod
     public IRubyObject signo(ThreadContext context) {
         assert signo != null;
-
-        if (signo == RubyBasicObject.UNDEF) return context.nil;
-
-        return signo;
+        return signo == RubyBasicObject.UNDEF ? context.nil : signo;
     }
 
     @JRubyMethod(name = {"message","signm"})
