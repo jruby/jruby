@@ -82,8 +82,7 @@ import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newArray;
-import static org.jruby.api.Error.argumentError;
-import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Error.*;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.Inspector.*;
 
@@ -1026,9 +1025,7 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = "rehash")
     public RubyHash rehash(ThreadContext context) {
-        if (iteratorCount > 0) {
-            throw context.runtime.newRuntimeError("rehash during iteration");
-        }
+        if (iteratorCount > 0) throw runtimeError(context, "rehash during iteration");
 
         modify();
         final RubyHashEntry[] oldTable = table;

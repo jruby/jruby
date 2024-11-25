@@ -85,6 +85,7 @@ import static org.jruby.RubyInteger.singleCharByteList;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.runtimeError;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.StringSupport.*;
@@ -354,16 +355,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         int maxArgs = keywords ? 4 : 3;
         int argc = Arity.checkArgumentCount(context, args, 1, maxArgs);
 
-        if (openFile != null) throw context.runtime.newRuntimeError("reinitializing File");
+        if (openFile != null) throw runtimeError(context, "reinitializing File");
 
         if (argc > 0 && argc <= 3) {
             IRubyObject fd = TypeConverter.convertToTypeWithCheck(context, args[0], context.runtime.getFixnum(), sites(context).to_int_checked);
             if (!fd.isNil()) {
-                if (argc == 1) {
-                    return super.initialize(context, fd, block);
-                } else if (argc == 2) {
-                    return super.initialize(context, fd, args[1], block);
-                }
+                if (argc == 1) return super.initialize(context, fd, block);
+                if (argc == 2) return super.initialize(context, fd, args[1], block);
                 return super.initialize(context, fd, args[1], args[2], block);
             }
         }

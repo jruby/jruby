@@ -802,17 +802,9 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         // MRI: rb_fiber_s_schedule_kw and rb_fiber_s_schedule, kw passes on context
         @JRubyMethod(name = "schedule", meta = true, rest = true, keywords = true)
         public static IRubyObject schedule(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-            RubyThread thread = context.getThread();
-            IRubyObject scheduler = thread.getScheduler();
-            IRubyObject fiber = context.nil;
-
-            if (!scheduler.isNil()) {
-                fiber = scheduler.callMethod(context, "fiber", args, block);
-            } else {
-                throw context.runtime.newRuntimeError("No scheduler is available!");
-            }
-
-            return fiber;
+            IRubyObject scheduler = context.getThread().getScheduler();
+            if (scheduler.isNil()) throw runtimeError(context, "No scheduler is available!");
+            return scheduler.callMethod(context, "fiber", args, block);
         }
 
         // MRI: rb_fiber_s_scheduler

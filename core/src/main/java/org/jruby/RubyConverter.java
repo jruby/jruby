@@ -57,11 +57,11 @@ import org.jruby.util.io.EncodingUtils;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.jcodings.transcode.EConvResult.*;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
-import static org.jruby.api.Error.argumentError;
-import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Error.*;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 @JRubyClass(name="Converter")
@@ -357,22 +357,18 @@ public class RubyConverter extends RubyObject {
 
         IRubyObject ret = primitive_convert(context, newArgs);
 
-        if (ret instanceof RubySymbol) {
-            RubySymbol retSym = (RubySymbol)ret;
+        if (ret instanceof RubySymbol retSym) {
             String retStr = retSym.asJavaString(); // 7bit comparison
 
-            if (retStr.equals(EConvResult.InvalidByteSequence.symbolicName()) ||
-                    retStr.equals(EConvResult.UndefinedConversion.symbolicName()) ||
-                    retStr.equals(EConvResult.IncompleteInput.symbolicName())) {
+            if (retStr.equals(InvalidByteSequence.symbolicName()) ||
+                    retStr.equals(UndefinedConversion.symbolicName()) ||
+                    retStr.equals(IncompleteInput.symbolicName())) {
                 throw EncodingUtils.makeEconvException(context.runtime, ec);
             }
 
-            if (retStr.equals(EConvResult.Finished.symbolicName())) {
-                throw argumentError(context, "converter already finished");
-            }
-
-            if (!retStr.equals(EConvResult.SourceBufferEmpty.symbolicName())) {
-                throw context.runtime.newRuntimeError("bug: unexpected result of primitive_convert: " + retSym);
+            if (retStr.equals(Finished.symbolicName())) throw argumentError(context, "converter already finished");
+            if (!retStr.equals(SourceBufferEmpty.symbolicName())) {
+                throw runtimeError(context, "bug: unexpected result of primitive_convert: " + retSym);
             }
         }
 
@@ -397,14 +393,14 @@ public class RubyConverter extends RubyObject {
             RubySymbol retSym = (RubySymbol)ret;
             String retStr = retSym.asJavaString(); // 7 bit comparison
 
-            if (retStr.equals(EConvResult.InvalidByteSequence.symbolicName()) ||
-                    retStr.equals(EConvResult.UndefinedConversion.symbolicName()) ||
-                    retStr.equals(EConvResult.IncompleteInput.symbolicName())) {
+            if (retStr.equals(InvalidByteSequence.symbolicName()) ||
+                    retStr.equals(UndefinedConversion.symbolicName()) ||
+                    retStr.equals(IncompleteInput.symbolicName())) {
                 throw EncodingUtils.makeEconvException(context.runtime, ec);
             }
 
             if (!retStr.equals(EConvResult.Finished.symbolicName())) {
-                throw context.runtime.newRuntimeError("bug: unexpected result of primitive_convert");
+                throw runtimeError(context, "bug: unexpected result of primitive_convert");
             }
         }
 

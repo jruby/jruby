@@ -39,6 +39,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Error.runtimeError;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -104,7 +105,7 @@ public abstract class ClassJavaAddons {
                 field = javaClass.getDeclaredField(name);
             }
             catch (NoSuchFieldException e) {
-                throw context.runtime.newRuntimeError("no field: '" + name + "' in reified class for " + klass.getName());
+                throw runtimeError(context, "no field: '" + name + "' in reified class for " + klass.getName());
             }
             JavaProxy.installField(context, name, field, klass);
         }

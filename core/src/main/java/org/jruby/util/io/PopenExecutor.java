@@ -48,6 +48,7 @@ import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.runtimeError;
 
 /**
  * Port of MRI's popen+exec logic.
@@ -141,7 +142,7 @@ public class PopenExecutor {
         if (status == 0) return context.tru;
 
         if (eargp.exception) {
-            throw runtime.newRuntimeError(RubyProcess.RubyStatus.pst_message("Command failed with", pid, status));
+            throw runtimeError(context, RubyProcess.RubyStatus.pst_message("Command failed with", pid, status));
         }
 
         return context.fals;

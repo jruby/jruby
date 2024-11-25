@@ -60,9 +60,9 @@ import org.jruby.util.ByteList;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newString;
-import static org.jruby.api.Error.argumentError;
-import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Error.*;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -261,7 +261,7 @@ public class RubyDigest {
     public static class DigestInstance {
 
         private static IRubyObject throwUnimplError(ThreadContext context, IRubyObject self, String name) {
-            throw context.runtime.newRuntimeError(String.format("%s does not implement %s()", self.getMetaClass().getRealClass().getName(), name));
+            throw runtimeError(context, String.format("%s does not implement %s()", self.getMetaClass().getRealClass().getName(), name));
         }
 
         /* instance methods that should be overridden */
@@ -556,18 +556,33 @@ public class RubyDigest {
             return digest;
         }
 
-        @JRubyMethod()
+        /**
+         * @return ""
+         * @deprecated Use {@link DigestBase#digest_length(ThreadContext)} instead.
+         */
+        @Deprecated(since = "10.0", forRemoval = true)
         public IRubyObject digest_length() {
-            return RubyFixnum.newFixnum(getRuntime(), algo.getDigestLength());
+            return digest_length(getCurrentContext());
         }
 
         @JRubyMethod()
+        public IRubyObject digest_length(ThreadContext context) {
+            return asFixnum(context, algo.getDigestLength());
+        }
+
+        /**
+         * @return ""
+         * @deprecated Use {@link DigestBase#block_length(ThreadContext)} instead.
+         */
+        @Deprecated(since = "10.0", forRemoval = true)
         public IRubyObject block_length() {
-            if (blockLength == 0) {
-                throw getRuntime().newRuntimeError(
-                        this.getMetaClass() + " doesn't implement block_length()");
-            }
-            return RubyFixnum.newFixnum(getRuntime(), blockLength);
+            return block_length(getCurrentContext());
+        }
+
+            @JRubyMethod()
+        public IRubyObject block_length(ThreadContext context) {
+            if (blockLength == 0) throw runtimeError(context, getMetaClass() + " doesn't implement block_length()");
+            return asFixnum(context, blockLength);
         }
 
         @JRubyMethod()

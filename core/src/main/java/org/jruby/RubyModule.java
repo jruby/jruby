@@ -141,8 +141,7 @@ import static org.jruby.anno.FrameField.SELF;
 import static org.jruby.anno.FrameField.VISIBILITY;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
-import static org.jruby.api.Error.argumentError;
-import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Error.*;
 import static org.jruby.runtime.Visibility.MODULE_FUNCTION;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PROTECTED;
@@ -878,7 +877,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(required = 1)
     public IRubyObject set_temporary_name(ThreadContext context, IRubyObject arg) {
         if (baseName != null && IdUtil.isValidConstantName(baseName) && (parent == null || parent.baseName != null)) {
-            throw context.runtime.newRuntimeError("can't change permanent name");
+            throw runtimeError(context, "can't change permanent name");
         }
 
         if (arg.isNil()) {
@@ -1016,9 +1015,9 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "using", visibility = PRIVATE, reads = {SELF, SCOPE})
     public IRubyObject using(ThreadContext context, IRubyObject refinedModule) {
-        if (context.getFrameSelf() != this) throw context.runtime.newRuntimeError("Module#using is not called on self");
+        if (context.getFrameSelf() != this) throw runtimeError(context, "Module#using is not called on self");
         if (context.getCurrentStaticScope().isWithinMethod()) {
-            throw context.runtime.newRuntimeError("Module#using is not permitted in methods");
+            throw runtimeError(context, "Module#using is not permitted in methods");
         }
 
         // I pass the cref even though I don't need to so that the concept is simpler to read

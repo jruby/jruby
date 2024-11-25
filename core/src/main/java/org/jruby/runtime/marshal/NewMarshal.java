@@ -71,8 +71,7 @@ import java.util.function.BiConsumer;
 
 import static org.jruby.RubyBasicObject.getMetaClass;
 import static org.jruby.api.Convert.*;
-import static org.jruby.api.Error.argumentError;
-import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Error.*;
 import static org.jruby.runtime.marshal.MarshalCommon.TYPE_IVAR;
 import static org.jruby.runtime.marshal.MarshalCommon.TYPE_UCLASS;
 import static org.jruby.runtime.marshal.MarshalCommon.TYPE_USERDEF;
@@ -427,7 +426,7 @@ public class NewMarshal {
                 entry.method.call(context, value, entry.sourceModule, "marshal_dump") :
                 value.callMethod(context, "marshal_dump");
 
-        if (getMetaClass(marshaled) == klass) throw context.runtime.newRuntimeError("marshal_dump returned same class instance");
+        if (getMetaClass(marshaled) == klass) throw runtimeError(context, "marshal_dump returned same class instance");
 
         dumpObject(context, out, marshaled);
     }

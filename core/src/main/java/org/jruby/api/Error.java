@@ -66,6 +66,17 @@ public class Error {
     }
 
     /**
+     * Create a runtime error with a simple ASCII String.
+     *
+     * @param context the current thread context
+     * @param message to be displayed in the error
+     * @return the error
+     */
+    public static RaiseException runtimeError(ThreadContext context, String message) {
+        return context.runtime.newRaiseException(context.runtime.getRuntimeError(), message);
+    }
+
+    /**
      * Create a TypeError with the given message.
      *
      * @param context the current thread context

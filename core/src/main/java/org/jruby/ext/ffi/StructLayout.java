@@ -62,8 +62,7 @@ import org.jruby.util.ByteList;
 
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newArray;
-import static org.jruby.api.Error.argumentError;
-import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Error.*;
 import static org.jruby.runtime.Visibility.*;
 
 /**
@@ -315,9 +314,7 @@ public final class StructLayout extends Type {
             }
         }
 
-        if (t == null) {
-            throw context.runtime.newRuntimeError("cannot create libffi union representation for alignment " + alignment);
-        }
+        if (t == null) throw runtimeError(context, "cannot create libffi union representation for alignment " + alignment);
 
         // FIXME: wot
 //        count = layout.size / Type.getNativeSize(t);
@@ -1196,15 +1193,11 @@ public final class StructLayout extends Type {
         }
 
         public void put(ThreadContext context, StructLayout.Storage cache, Member m, AbstractMemory ptr, IRubyObject value) {
-            if (!(value instanceof Struct)) throw typeError(context, value, context.runtime.getFFI().structClass);
-            Struct s = (Struct) value;
-
+            if (!(value instanceof Struct s)) throw typeError(context, value, context.runtime.getFFI().structClass);
             if (!s.getLayout(context).equals(sbv.getStructLayout())) throw typeError(context, "incompatible struct layout");
 
             ByteBuffer src = s.getMemoryIO().asByteBuffer();
-            if (src.remaining() != sbv.size) {
-                throw context.runtime.newRuntimeError("bad size in " + value.getMetaClass().toString());
-            }
+            if (src.remaining() != sbv.size) throw runtimeError(context, "bad size in " + value.getMetaClass());
 
             ptr.getMemoryIO().slice(m.offset(), sbv.size).asByteBuffer().put(src);
         }

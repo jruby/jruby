@@ -110,8 +110,7 @@ import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.anno.FrameField.LASTLINE;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
-import static org.jruby.api.Error.argumentError;
-import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Error.*;
 import static org.jruby.runtime.ThreadContext.*;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -157,9 +156,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         super(runtime, runtime.getIO());
 
         // We only want IO objects with valid streams (better to error now).
-        if (outputStream == null) {
-            throw runtime.newRuntimeError("Opening null stream");
-        }
+        if (outputStream == null) throw runtime.newRuntimeError("Opening null stream");
 
         openFile = MakeOpenFile();
         openFile.setFD(new ChannelFD(writableChannel(outputStream), runtime.getPosix(), runtime.getFilenoUtil()));
@@ -170,9 +167,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     public RubyIO(Ruby runtime, InputStream inputStream) {
         super(runtime, runtime.getIO());
 
-        if (inputStream == null) {
-            throw runtime.newRuntimeError("Opening null stream");
-        }
+        if (inputStream == null) throw runtime.newRuntimeError("Opening null stream");
 
         openFile = MakeOpenFile();
         openFile.setFD(new ChannelFD(readableChannel(inputStream), runtime.getPosix(), runtime.getFilenoUtil()));
@@ -185,13 +180,11 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     public RubyIO(Ruby runtime, RubyClass klass, Channel channel) {
         super(runtime, klass);
+        var context = runtime.getCurrentContext();
 
         // We only want IO objects with valid streams (better to error now).
-        if (channel == null) {
-            throw runtime.newRuntimeError("Opening null channel");
-        }
+        if (channel == null) throw runtimeError(context, "Opening null channel");
 
-        ThreadContext context = runtime.getCurrentContext();
         var posix = runtime.getPosix();
         initializeCommon(context, new ChannelFD(channel, posix, runtime.getFilenoUtil()),
                 asFixnum(context, ModeFlags.oflagsFrom(posix, channel)), context.nil);
