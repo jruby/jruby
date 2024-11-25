@@ -67,6 +67,7 @@ import static java.lang.invoke.MethodHandles.lookup;
 import static java.lang.invoke.MethodType.methodType;
 import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.runtime.Helpers.constructObjectArrayHandle;
+import static org.jruby.runtime.Helpers.throwException;
 import static org.jruby.runtime.invokedynamic.JRubyCallSite.SITE_ID;
 
 /**
@@ -625,7 +626,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
         this.arity = arity;
 
-        this.fallback = prepareBinder(true).invokeVirtualQuiet(LOOKUP, "invoke");
+        this.fallback = prepareBinder(true).invokeVirtualQuiet(LOOKUP, functional ? "finvoke" : "invoke");
     }
 
     public static CallSite bootstrap(InvokeSite site, MethodHandles.Lookup lookup) {
@@ -635,6 +636,270 @@ public abstract class InvokeSite extends MutableCallSite {
     }
 
     public IRubyObject invoke(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) throws Throwable {
+        Call call = prepareCall(context, caller, self);
+
+        finishBinding(call.entry, call.handle, self, call.selfClass, call.switchPoint);
+
+        try {
+            return (IRubyObject) call.handle.invokeExact(context, caller, self, args, block);
+        } catch (Throwable t) {
+            throwException(t);
+            return null; // not reached
+        }
+    }
+
+    public IRubyObject invoke(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args) throws Throwable {
+        Call call = prepareCall(context, caller, self);
+
+        finishBinding(call.entry, call.handle, self, call.selfClass, call.switchPoint);
+
+        try {
+            return (IRubyObject) call.handle.invokeExact(context, caller, self, args);
+        } catch (Throwable t) {
+            throwException(t);
+            return null; // not reached
+        }
+    }
+
+    public IRubyObject finvoke(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) throws Throwable {
+        Call call = prepareCall(context, self);
+
+        finishBinding(call.entry, call.handle, self, call.selfClass, call.switchPoint);
+
+        try {
+            return (IRubyObject) call.handle.invokeExact(context, self, args, block);
+        } catch (Throwable t) {
+            throwException(t);
+            return null; // not reached
+        }
+    }
+
+    public IRubyObject finvoke(ThreadContext context, IRubyObject self, IRubyObject[] args) throws Throwable {
+        Call call = prepareCall(context, self);
+
+        finishBinding(call.entry, call.handle, self, call.selfClass, call.switchPoint);
+
+        try {
+            return (IRubyObject) call.handle.invokeExact(context, self, args);
+        } catch (Throwable t) {
+            throwException(t);
+            return null; // not reached
+        }
+    }
+
+    public IRubyObject invoke(ThreadContext context, IRubyObject caller, IRubyObject self, Block block) throws Throwable {
+        Call call = prepareCall(context, caller, self);
+
+        finishBinding(call.entry, call.handle, self, call.selfClass, call.switchPoint);
+
+        try {
+            return (IRubyObject) call.handle.invokeExact(context, caller, self, block);
+        } catch (Throwable t) {
+            throwException(t);
+            return null; // not reached
+        }
+    }
+
+    public IRubyObject invoke(ThreadContext context, IRubyObject caller, IRubyObject self) throws Throwable {
+        Call call = prepareCall(context, caller, self);
+
+        finishBinding(call.entry, call.handle, self, call.selfClass, call.switchPoint);
+
+        try {
+            return (IRubyObject) call.handle.invokeExact(context, caller, self);
+        } catch (Throwable t) {
+            throwException(t);
+            return null; // not reached
+        }
+    }
+
+    public IRubyObject finvoke(ThreadContext context, IRubyObject self, Block block) throws Throwable {
+        Call call = prepareCall(context, self);
+
+        finishBinding(call.entry, call.handle, self, call.selfClass, call.switchPoint);
+
+        try {
+            return (IRubyObject) call.handle.invokeExact(context, self, block);
+        } catch (Throwable t) {
+            throwException(t);
+            return null; // not reached
+        }
+    }
+
+    public IRubyObject finvoke(ThreadContext context, IRubyObject self) throws Throwable {
+        Call call = prepareCall(context, self);
+
+        finishBinding(call.entry, call.handle, self, call.selfClass, call.switchPoint);
+
+        try {
+            return (IRubyObject) call.handle.invokeExact(context, self);
+        } catch (Throwable t) {
+            throwException(t);
+            return null; // not reached
+        }
+    }
+
+    public IRubyObject invoke(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, Block block) throws Throwable {
+        Call call = prepareCall(context, caller, self);
+
+        finishBinding(call.entry, call.handle, self, call.selfClass, call.switchPoint);
+
+        try {
+            return (IRubyObject) call.handle.invokeExact(context, caller, self, arg0, block);
+        } catch (Throwable t) {
+            throwException(t);
+            return null; // not reached
+        }
+    }
+
+    public IRubyObject invoke(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0) throws Throwable {
+        Call call = prepareCall(context, caller, self);
+
+        finishBinding(call.entry, call.handle, self, call.selfClass, call.switchPoint);
+
+        try {
+            return (IRubyObject) call.handle.invokeExact(context, caller, self, arg0);
+        } catch (Throwable t) {
+            throwException(t);
+            return null; // not reached
+        }
+    }
+
+    public IRubyObject finvoke(ThreadContext context, IRubyObject self, IRubyObject arg0, Block block) throws Throwable {
+        Call call = prepareCall(context, self);
+
+        finishBinding(call.entry, call.handle, self, call.selfClass, call.switchPoint);
+
+        try {
+            return (IRubyObject) call.handle.invokeExact(context, self, arg0, block);
+        } catch (Throwable t) {
+            throwException(t);
+            return null; // not reached
+        }
+    }
+
+    public IRubyObject finvoke(ThreadContext context, IRubyObject self, IRubyObject arg0) throws Throwable {
+        Call call = prepareCall(context, self);
+
+        finishBinding(call.entry, call.handle, self, call.selfClass, call.switchPoint);
+
+        try {
+            return (IRubyObject) call.handle.invokeExact(context, self, arg0);
+        } catch (Throwable t) {
+            throwException(t);
+            return null; // not reached
+        }
+    }
+
+    public IRubyObject invoke(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) throws Throwable {
+        Call call = prepareCall(context, caller, self);
+
+        finishBinding(call.entry, call.handle, self, call.selfClass, call.switchPoint);
+
+        try {
+            return (IRubyObject) call.handle.invokeExact(context, caller, self, arg0, arg1, block);
+        } catch (Throwable t) {
+            throwException(t);
+            return null; // not reached
+        }
+    }
+
+    public IRubyObject invoke(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1) throws Throwable {
+        Call call = prepareCall(context, caller, self);
+
+        finishBinding(call.entry, call.handle, self, call.selfClass, call.switchPoint);
+
+        try {
+            return (IRubyObject) call.handle.invokeExact(context, caller, self, arg0, arg1);
+        } catch (Throwable t) {
+            throwException(t);
+            return null; // not reached
+        }
+    }
+
+    public IRubyObject finvoke(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) throws Throwable {
+        Call call = prepareCall(context, self);
+
+        finishBinding(call.entry, call.handle, self, call.selfClass, call.switchPoint);
+
+        try {
+            return (IRubyObject) call.handle.invokeExact(context, self, arg0, arg1, block);
+        } catch (Throwable t) {
+            throwException(t);
+            return null; // not reached
+        }
+    }
+
+    public IRubyObject finvoke(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1) throws Throwable {
+        Call call = prepareCall(context, self);
+
+        finishBinding(call.entry, call.handle, self, call.selfClass, call.switchPoint);
+
+        try {
+            return (IRubyObject) call.handle.invokeExact(context, self, arg0, arg1);
+        } catch (Throwable t) {
+            throwException(t);
+            return null; // not reached
+        }
+    }
+
+    public IRubyObject invoke(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) throws Throwable {
+        Call call = prepareCall(context, caller, self);
+
+        finishBinding(call.entry, call.handle, self, call.selfClass, call.switchPoint);
+
+        try {
+            return (IRubyObject) call.handle.invokeExact(context, caller, self, arg0, arg1, arg2, block);
+        } catch (Throwable t) {
+            throwException(t);
+            return null; // not reached
+        }
+    }
+
+    public IRubyObject invoke(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) throws Throwable {
+        Call call = prepareCall(context, caller, self);
+
+        finishBinding(call.entry, call.handle, self, call.selfClass, call.switchPoint);
+
+        try {
+            return (IRubyObject) call.handle.invokeExact(context, caller, self, arg0, arg1, arg2);
+        } catch (Throwable t) {
+            throwException(t);
+            return null; // not reached
+        }
+    }
+
+    public IRubyObject finvoke(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) throws Throwable {
+        Call call = prepareCall(context, self);
+
+        finishBinding(call.entry, call.handle, self, call.selfClass, call.switchPoint);
+
+        try {
+            return (IRubyObject) call.handle.invokeExact(context, self, arg0, arg1, arg2, block);
+        } catch (Throwable t) {
+            throwException(t);
+            return null; // not reached
+        }
+    }
+
+    public IRubyObject finvoke(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) throws Throwable {
+        Call call = prepareCall(context, self);
+
+        finishBinding(call.entry, call.handle, self, call.selfClass, call.switchPoint);
+
+        try {
+            return (IRubyObject) call.handle.invokeExact(context, self, arg0, arg1, arg2);
+        } catch (Throwable t) {
+            throwException(t);
+            return null; // not reached
+        }
+    }
+
+    private Call prepareCall(ThreadContext context, IRubyObject self) throws Throwable {
+        return prepareCall(context, RubyBasicObject.NEVER, self);
+    }
+
+    private Call prepareCall(ThreadContext context, IRubyObject caller, IRubyObject self) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
         SwitchPoint switchPoint = (SwitchPoint) selfClass.getInvalidator().getData();
         String methodName = this.methodName;
@@ -652,33 +917,10 @@ public abstract class InvokeSite extends MutableCallSite {
             mh = getHandle(self, entry);
         }
 
-        finishBinding(entry, mh, self, selfClass, switchPoint);
-
-        return performIndirectCall(context, self, args, block, methodName, passSymbol, entry);
+        return new Call(entry, selfClass, mh, switchPoint, passSymbol);
     }
 
-    public IRubyObject invoke(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) throws Throwable {
-        RubyClass selfClass = pollAndGetClass(context, self);
-        SwitchPoint switchPoint = (SwitchPoint) selfClass.getInvalidator().getData();
-        String methodName = this.methodName;
-        CacheEntry entry = selfClass.searchWithCache(methodName);
-        MethodHandle mh;
-        boolean passSymbol = false;
-
-        if (methodMissing(entry)) {
-            entry = methodMissingEntry(context, selfClass, methodName, entry);
-            // only pass symbol below if we be calling a user-defined method_missing (default ones do it for us)
-            passSymbol = !(entry.method instanceof RubyKernel.MethodMissingMethod ||
-                    entry.method instanceof Helpers.MethodMissingWrapper);
-            mh = buildGenericHandle(entry);
-        } else {
-            mh = getHandle(self, entry);
-        }
-
-        finishBinding(entry, mh, self, selfClass, switchPoint);
-
-        return performIndirectCall(context, self, args, block, methodName, passSymbol, entry);
-    }
+    private record Call(CacheEntry entry, RubyClass selfClass, MethodHandle handle, SwitchPoint switchPoint, boolean passSymbol) {}
 
     private CacheEntry methodMissingEntry(ThreadContext context, RubyClass selfClass, String methodName, CacheEntry entry) {
         // Test thresholds so we don't do this forever (#4596)
@@ -709,31 +951,6 @@ public abstract class InvokeSite extends MutableCallSite {
         mh = foldArguments(mh, callInfoWrapper.handle());
 
         updateInvocationTarget(mh, self, selfClass, entry.method, switchPoint);
-    }
-
-    private IRubyObject performIndirectCall(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, String methodName, boolean passSymbol, CacheEntry entry) {
-        RubyModule sourceModule = entry.sourceModule;
-        DynamicMethod method = entry.method;
-
-        IRRuntimeHelpers.setCallInfo(context, flags);
-
-        if (literalClosure) {
-            try {
-                if (passSymbol) {
-                    return method.call(context, self, sourceModule, "method_missing", Helpers.arrayOf(context.runtime.newSymbol(methodName), args), block);
-                } else {
-                    return method.call(context, self, sourceModule, methodName, args, block);
-                }
-            } finally {
-                block.escape();
-            }
-        }
-
-        if (passSymbol) {
-            return method.call(context, self, sourceModule, methodName, Helpers.arrayOf(context.runtime.newSymbol(methodName), args), block);
-        } else {
-            return method.call(context, self, sourceModule, methodName, args, block);
-        }
     }
 
     private static final MethodHandle ESCAPE_BLOCK = Binder.from(void.class, Block.class).invokeVirtualQuiet(LOOKUP, "escape");
@@ -977,19 +1194,12 @@ public abstract class InvokeSite extends MutableCallSite {
 
         if (varargs || arity > 3) {
             // we know we want to call varargs path always, so prepare args[] here
-            if (arity == -1) {
-                // do nothing, already have IRubyObject[] in args
-            } else if (arity == 0) {
-                binder = binder.insert(argOffset, "args", IRubyObject.NULL_ARRAY);
+            if (arity == -1 || arity == 0) {
+                // do nothing, already have IRubyObject[] or nothing in args
             } else {
                 binder = binder
                         .collect("args", "arg[0-9]+", Helpers.constructObjectArrayHandle(arity));
             }
-        }
-
-        // add block if needed
-        if (signature.lastArgType() != Block.class) {
-            binder = binder.append("block", Block.NULL_BLOCK);
         }
 
         // bind to site
@@ -1396,6 +1606,8 @@ public abstract class InvokeSite extends MutableCallSite {
     }
 
     public boolean methodMissing(CacheEntry entry, IRubyObject caller) {
+        if (caller == RubyBasicObject.NEVER) return methodMissing(entry);
+
         DynamicMethod method = entry.method;
 
         return method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(caller, callType));
