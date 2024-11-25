@@ -52,6 +52,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
@@ -171,9 +172,10 @@ public class Module {
     private static IncludedPackages getIncludedPackages(final ThreadContext context, final RubyModule target) {
         IncludedPackages includedPackages = (IncludedPackages) target.getInternalVariable("includedPackages");
         if (includedPackages == null) {
-            target.setInternalVariable("includedPackages", includedPackages = new IncludedPackages());
+            includedPackages = new IncludedPackages();
+            target.setInternalVariable("includedPackages", includedPackages);
             ConstMissingMethod method = new ConstMissingMethod(target, includedPackages); // def self.const_missing(constant) :
-            Helpers.addInstanceMethod(target.getSingletonClass(), context.runtime.newSymbol("const_missing"), method, PUBLIC, context, context.runtime);
+            Helpers.addInstanceMethod(target.getSingletonClass(), asSymbol(context, "const_missing"), method, PUBLIC, context);
         }
         return includedPackages;
     }
@@ -234,7 +236,7 @@ public class Module {
         }
 
         private String joinedPackageNames() {
-            return includedPackages.packages.stream().collect(Collectors.joining(", "));
+            return String.join(", ", includedPackages.packages);
         }
     }
 

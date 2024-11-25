@@ -478,12 +478,12 @@ public class RubyModule extends RubyObject {
         this.classProviders = cp;
     }
 
-    private void checkForCyclicInclude(RubyModule m) throws RaiseException {
-        if (isSameOrigin(m)) throw getRuntime().newArgumentError("cyclic include detected");
+    private void checkForCyclicInclude(ThreadContext context, RubyModule m) throws RaiseException {
+        if (isSameOrigin(m)) throw argumentError(context, "cyclic include detected");
     }
 
-    protected void checkForCyclicPrepend(RubyModule m) throws RaiseException {
-        if (isSameOrigin(m)) throw getRuntime().newArgumentError(getName() + " cyclic prepend detected " + m.getName());
+    protected void checkForCyclicPrepend(ThreadContext context, RubyModule m) throws RaiseException {
+        if (isSameOrigin(m)) throw argumentError(context, getName() + " cyclic prepend detected " + m.getName());
     }
 
     private RubyClass searchProvidersForClass(String name, RubyClass superClazz) {
@@ -886,15 +886,14 @@ public class RubyModule extends RubyObject {
         } else {
             RubyString name = arg.convertToString();
 
-            if (name.length() == 0) throw context.runtime.newArgumentError("empty class/module name");
-            if (isValidConstantPath(name))
-                throw context.runtime.newArgumentError("the temporary name must not be a constant path to avoid confusion");
+            if (name.length() == 0) throw argumentError(context, "empty class/module name");
+            if (isValidConstantPath(name)) throw argumentError(context, "the temporary name must not be a constant path to avoid confusion");
 
             setFlag(TEMPORARY_NAME, true);
 
             // We make sure we generate ISO_8859_1 String and also guarantee when we want to print this name
             // later it does not lose track of the orignal encoding.
-            RubySymbol symbol = context.runtime.newSymbol(name.getByteList());
+            RubySymbol symbol = asSymbol(context, name.getByteList());
             setBaseName(symbol.idString());
         }
 
@@ -907,10 +906,8 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "refine", reads = SCOPE)
     public IRubyObject refine(ThreadContext context, IRubyObject klass, Block block) {
-        if (!block.isGiven()) throw context.runtime.newArgumentError("no block given");
-
-        if (block.isEscaped()) throw context.runtime.newArgumentError("can't pass a Proc as a block to Module#refine");
-
+        if (!block.isGiven()) throw argumentError(context, "no block given");
+        if (block.isEscaped()) throw argumentError(context, "can't pass a Proc as a block to Module#refine");
         if (!(klass instanceof RubyModule)) throw typeError(context, klass, "Class or Module");
 
         if (refinements == Collections.EMPTY_MAP) refinements = newRefinementsMap();
@@ -1197,10 +1194,12 @@ public class RubyModule extends RubyObject {
     public void prependModule(RubyModule module) {
         testFrozen("module");
 
-        if (module.refinedClass != null) throw typeError(getRuntime().getCurrentContext(), "Cannot include refinement");
+        var context = getRuntime().getCurrentContext();
+
+        if (module.refinedClass != null) throw typeError(context, "Cannot include refinement");
 
         // Make sure the module we include does not already exist
-        checkForCyclicPrepend(module);
+        checkForCyclicPrepend(context, module);
 
         synchronized (this) {
             if (hasModuleInPrepends(module)) {
@@ -1208,7 +1207,7 @@ public class RubyModule extends RubyObject {
                 return;
             }
 
-            doPrependModule(module);
+            doPrependModule(context, module);
 
             if (this.isModule()) {
                 boolean doPrepend = true;
@@ -1223,7 +1222,7 @@ public class RubyModule extends RubyObject {
                         }
 
                         if (doPrepend) {
-                            includeClass.doPrependModule(module);
+                            includeClass.doPrependModule(context, module);
                         }
                     }
                 }
@@ -1251,16 +1250,18 @@ public class RubyModule extends RubyObject {
 
         testFrozen("module");
 
+        var context = getRuntime().getCurrentContext();
+
         // This cannot use castToModule because includeModule happens before first ThreadContext exists.
-        if (!(arg instanceof RubyModule)) typeError(getRuntime().getCurrentContext(), arg, "Module");
+        if (!(arg instanceof RubyModule)) typeError(context, arg, "Module");
         RubyModule module = (RubyModule) arg;
 
-        if (module.isRefinement()) throw typeError(getRuntime().getCurrentContext(), "Cannot include refinement");
+        if (module.isRefinement()) throw typeError(context, "Cannot include refinement");
 
         // Make sure the module we include does not already exist
-        checkForCyclicInclude(module);
+        checkForCyclicInclude(context, module);
 
-        doIncludeModule(module);
+        doIncludeModule(context, module);
 
         if (this.isModule()) {
             boolean doInclude = true;
@@ -1275,7 +1276,7 @@ public class RubyModule extends RubyObject {
                     }
 
                     if (doInclude) {
-                        includeClass.doIncludeModule(module);
+                        includeClass.doIncludeModule(context, module);
                     }
                 }
             }
@@ -2562,18 +2563,17 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject defineMethodFromBlock(ThreadContext context, IRubyObject arg0, Block block, Visibility visibility) {
-        final Ruby runtime = context.runtime;
         RubySymbol name = TypeConverter.checkID(arg0);
         DynamicMethod newMethod;
 
-        if (!block.isGiven()) throw runtime.newArgumentError("tried to create Proc object without a block");
+        if (!block.isGiven()) throw argumentError(context, "tried to create Proc object without a block");
 
         if ("initialize".equals(name.idString())) visibility = PRIVATE;
 
         // If we know it comes from IR we can convert this directly to a method and
         // avoid overhead of invoking it as a block
         if (block.getBody() instanceof IRBlockBody &&
-                runtime.getInstanceConfig().getCompileMode().shouldJIT()) { // FIXME: Once Interp and Mixed Methods are one class we can fix this to work in interp mode too.
+                context.runtime.getInstanceConfig().getCompileMode().shouldJIT()) { // FIXME: Once Interp and Mixed Methods are one class we can fix this to work in interp mode too.
             IRBlockBody body = (IRBlockBody) block.getBody();
             IRClosure closure = body.getScope();
 
@@ -2583,14 +2583,14 @@ public class RubyModule extends RubyObject {
                 IRMethod method = closure.convertToMethod(name.getBytes());
                 if (method != null) {
                     newMethod = new DefineMethodMethod(method, visibility, this, context.getFrameBlock());
-                    Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
+                    Helpers.addInstanceMethod(this, name, newMethod, visibility, context);
                     return name;
                 }
             }
         }
 
-        newMethod = createProcMethod(runtime, name.idString(), visibility, block);
-        Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
+        newMethod = createProcMethod(context.runtime, name.idString(), visibility, block);
+        Helpers.addInstanceMethod(this, name, newMethod, visibility, context);
 
         return name;
     }
@@ -2603,17 +2603,16 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject defineMethodFromCallable(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Visibility visibility) {
-        final Ruby runtime = context.runtime;
         RubySymbol name = TypeConverter.checkID(arg0);
         DynamicMethod newMethod;
 
         if ("initialize".equals(name.idString())) visibility = PRIVATE;
 
-        if (runtime.getProc().isInstance(arg1)) {
+        if (context.runtime.getProc().isInstance(arg1)) {
             // double-testing args.length here, but it avoids duplicating the proc-setup code in two places
             RubyProc proc = (RubyProc)arg1;
 
-            newMethod = createProcMethod(runtime, name.idString(), visibility, proc.getBlock());
+            newMethod = createProcMethod(context.runtime, name.idString(), visibility, proc.getBlock());
         } else if (arg1 instanceof AbstractRubyMethod) {
             AbstractRubyMethod method = (AbstractRubyMethod)arg1;
 
@@ -2626,21 +2625,18 @@ public class RubyModule extends RubyObject {
             throw typeError(context, arg1, "Proc/Method/UnboundMethod");
         }
 
-        Helpers.addInstanceMethod(this, name, newMethod, visibility, context, runtime);
+        Helpers.addInstanceMethod(this, name, newMethod, visibility, context);
 
         return name;
     }
 
     @Deprecated
     public IRubyObject define_method(ThreadContext context, IRubyObject[] args, Block block) {
-        switch (args.length) {
-        case 1:
-            return define_method(context, args[0], block);
-        case 2:
-            return define_method(context, args[0], args[1], block);
-        default:
-            throw context.runtime.newArgumentError("wrong number of arguments (" + args.length + " for 2)");
-        }
+        return switch (args.length) {
+            case 1 -> define_method(context, args[0], block);
+            case 2 -> define_method(context, args[0], args[1], block);
+            default -> throw argumentError(context, "wrong number of arguments (" + args.length + " for 2)");
+        };
     }
 
     private DynamicMethod createProcMethod(Ruby runtime, String name, Visibility visibility, Block block) {
@@ -3854,12 +3850,12 @@ public class RubyModule extends RubyObject {
      *
      * @param baseModule The module to include, along with any modules it itself includes
      */
-    void doIncludeModule(RubyModule baseModule) {
+    void doIncludeModule(ThreadContext context, RubyModule baseModule) {
         List<RubyModule> modulesToInclude = gatherModules(baseModule);
 
         RubyModule currentInclusionPoint = methodLocation;
         ModuleLoop: for (RubyModule nextModule : modulesToInclude) {
-            checkForCyclicInclude(nextModule);
+            checkForCyclicInclude(context, nextModule);
 
             boolean superclassSeen = false;
 
@@ -3909,12 +3905,12 @@ public class RubyModule extends RubyObject {
      *
      * @param baseModule The module to prepend, along with any modules it itself includes
      */
-    void doPrependModule(RubyModule baseModule) {
+    void doPrependModule(ThreadContext context, RubyModule baseModule) {
         List<RubyModule> modulesToInclude = gatherModules(baseModule);
         RubyModule startOrigin = methodLocation;
 
         if (!hasPrepends()) { // Set up a new holder class to hold all this types original methods.
-            RubyClass origin = new PrependedModule(getRuntime(), getSuperClass(), this);
+            RubyClass origin = new PrependedModule(context.runtime, getSuperClass(), this);
 
             // if the insertion point is a class, update subclass lists
             if (this instanceof RubyClass) {
@@ -3931,7 +3927,7 @@ public class RubyModule extends RubyObject {
 
         RubyModule inclusionPoint = this;
         ModuleLoop: for (RubyModule nextModule : modulesToInclude) {
-            checkForCyclicPrepend(nextModule);
+            checkForCyclicPrepend(context, nextModule);
 
             boolean startSeen = false;
             boolean superclassSeen = false;
@@ -5119,6 +5115,7 @@ public class RubyModule extends RubyObject {
      */
     private boolean constDefinedInner(String name, boolean exclude, boolean recurse, boolean visibility) {
         Ruby runtime = getRuntime();
+        var context = runtime.getCurrentContext();
 
         RubyClass object = runtime.getObject();
         boolean moduleRetry = false;
@@ -5136,7 +5133,7 @@ public class RubyModule extends RubyObject {
                     IRubyObject value = entry.value;
 
                     // autoload is not in progress and should not appear defined
-                    if (value == UNDEF && module.checkAutoloadRequired(runtime, name, null) == null &&
+                    if (value == UNDEF && module.checkAutoloadRequired(context, name, null) == null &&
                             !module.autoloadingValue(runtime, name)) {
                         return false;
                     }
@@ -5181,28 +5178,20 @@ public class RubyModule extends RubyObject {
     }
 
     // MRI: check_autoload_required
-    private RubyString checkAutoloadRequired(Ruby runtime, String name, String[] autoloadPath) {
+    private RubyString checkAutoloadRequired(ThreadContext context, String name, String[] autoloadPath) {
         final Autoload autoload = getAutoloadMap().get(name);
-
-        // autoload has been evacuated
-        if (autoload == null) return null;
+        if (autoload == null) return null;  // autoload has been evacuated
 
         RubyString file = autoload.getPath();
-
-        // autoload filename is empty
-        if (file.length() == 0) {
-            throw runtime.newArgumentError("empty file name");
-        }
+        if (file.length() == 0) throw argumentError(context, "empty file name");
 
         // autoload is in progress on anther thread
-        if (autoload.ctx != null && !autoload.isSelf(runtime.getCurrentContext())) {
-            return file;
-        }
+        if (autoload.ctx != null && !autoload.isSelf(context)) return file;
 
         String[] loading = {null};
 
         // feature has not been loaded yet
-        if (!runtime.getLoadService().featureAlreadyLoaded(file.asJavaString(), loading)) return file;
+        if (!context.runtime.getLoadService().featureAlreadyLoaded(file.asJavaString(), loading)) return file;
 
         // feature is currently loading
         if (autoloadPath != null && loading[0] != null) {

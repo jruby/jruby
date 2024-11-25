@@ -46,6 +46,7 @@ import org.jruby.util.io.EncodingUtils;
 
 import static org.jruby.api.Convert.numericToLong;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
 
@@ -143,7 +144,7 @@ public class Sprintf {
         }
 
         void raiseArgumentError(String message) {
-            throw runtime.newArgumentError(message);
+            throw argumentError(runtime.getCurrentContext(), message);
         }
 
         void raiseKeyError(String message, IRubyObject recv, IRubyObject key) {
@@ -561,7 +562,7 @@ public class Sprintf {
                     if (width < 0) {
                         flags |= FLAG_MINUS;
                         width = -width;
-                        if (width < 0) throw runtime.newArgumentError("width too big");
+                        if (width < 0) throw argumentError(runtime.getCurrentContext(), "width too big");
                     }
                     break;
 
@@ -625,7 +626,7 @@ public class Sprintf {
                         }
                     }
                     if (n < 0) {
-                        throw runtime.newArgumentError("invalid character");
+                        throw argumentError(runtime.getCurrentContext(), "invalid character");
                     }
                     if ((flags & FLAG_WIDTH) == 0) {
                         buf.ensure(buf.length() + n);

@@ -450,14 +450,14 @@ public class RubySocket extends RubyBasicSocket {
                         channel = SocketChannel.open();
                     }
                     else {
-                        throw runtime.newArgumentError("unsupported protocol family '" + soProtocolFamily + "'");
+                        throw argumentError(runtime.getCurrentContext(), "unsupported protocol family '" + soProtocolFamily + "'");
                     }
                     break;
                 case SOCK_DGRAM:
                     channel = DatagramChannel.open();
                     break;
                 default:
-                    throw runtime.newArgumentError("unsupported socket type '" + soType + "'");
+                    throw argumentError(runtime.getCurrentContext(), "unsupported socket type '" + soType + "'");
             }
 
             return newChannelFD(runtime, channel);

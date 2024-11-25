@@ -30,6 +30,8 @@ import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.cli.Options;
 import org.jruby.util.io.EncodingUtils;
 
+import static org.jruby.api.Error.argumentError;
+
 public final class EncodingService {
     private final CaseInsensitiveBytesHash<Entry> encodings;
     private final CaseInsensitiveBytesHash<Entry> aliases;
@@ -426,7 +428,7 @@ public final class EncodingService {
 
     private void checkAsciiEncodingName(ByteList name) {
         if (!name.getEncoding().isAsciiCompatible()) {
-            throw runtime.newArgumentError("invalid encoding name (non ASCII)");
+            throw argumentError(runtime.getCurrentContext(), "invalid encoding name (non ASCII)");
         }
     }
 
@@ -507,7 +509,7 @@ public final class EncodingService {
     private Entry findEntryWithError(ByteList name) {
         Entry e = findEncodingOrAliasEntry(name);
 
-        if (e == null) throw runtime.newArgumentError("unknown encoding name - " + name);
+        if (e == null) throw argumentError(runtime.getCurrentContext(), "unknown encoding name - " + name);
 
         return e;
     }

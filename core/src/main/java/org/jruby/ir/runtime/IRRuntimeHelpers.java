@@ -1873,23 +1873,18 @@ public class IRRuntimeHelpers {
     @Interp
     public static void defInterpretedInstanceMethod(ThreadContext context, IRScope method, DynamicScope currDynScope, IRubyObject self) {
         context.setLine(method.getLine());
-        Ruby runtime = context.runtime;
         RubySymbol methodName = method.getName();
         RubyModule rubyClass = findInstanceMethodContainer(context, currDynScope, self);
 
         Visibility currVisibility = context.getCurrentVisibility();
-        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, rubyClass, methodName, currVisibility);
+        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(context.runtime, rubyClass, methodName, currVisibility);
 
         if (method.maybeUsingRefinements()) method.getStaticScope().captureParentRefinements(context);
 
-        DynamicMethod newMethod;
-        if (runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.OFF) {
-            newMethod = new InterpretedIRMethod(method, newVisibility, rubyClass);
-        } else {
-            newMethod = new MixedModeIRMethod(method, newVisibility, rubyClass);
-        }
+        DynamicMethod newMethod = context.runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.OFF ?
+            new InterpretedIRMethod(method, newVisibility, rubyClass) : new MixedModeIRMethod(method, newVisibility, rubyClass);
 
-        Helpers.addInstanceMethod(rubyClass, methodName, newMethod, currVisibility, context, runtime);
+        Helpers.addInstanceMethod(rubyClass, methodName, newMethod, currVisibility, context);
     }
 
     @JIT
@@ -1898,12 +1893,11 @@ public class IRRuntimeHelpers {
                                                  DynamicScope currDynScope, IRubyObject self, boolean maybeRefined,
                                                  boolean receivesKeywordArgs, boolean needsToFindImplementer) {
         context.setLine(line);
-        Ruby runtime = context.runtime;
-        RubySymbol methodName = runtime.newSymbol(id);
+        RubySymbol methodName = asSymbol(context, id);
         RubyModule clazz = findInstanceMethodContainer(context, currDynScope, self);
 
         Visibility currVisibility = context.getCurrentVisibility();
-        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, clazz, methodName, currVisibility);
+        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(context.runtime, clazz, methodName, currVisibility);
 
         if (maybeRefined) scope.captureParentRefinements(context);
 
@@ -1911,7 +1905,7 @@ public class IRRuntimeHelpers {
                 newVisibility, clazz, encodedArgumentDescriptors, receivesKeywordArgs, needsToFindImplementer);
 
         // FIXME: needs checkID and proper encoding to force hard symbol
-        Helpers.addInstanceMethod(clazz, methodName, newMethod, currVisibility, context, runtime);
+        Helpers.addInstanceMethod(clazz, methodName, newMethod, currVisibility, context);
     }
 
     @JIT
@@ -1921,12 +1915,11 @@ public class IRRuntimeHelpers {
                                                  DynamicScope currDynScope, IRubyObject self, boolean maybeRefined,
                                                  boolean receivesKeywordArgs, boolean needsToFindImplementer) {
         context.setLine(line);
-        Ruby runtime = context.runtime;
-        RubySymbol methodName = runtime.newSymbol(id);
+        RubySymbol methodName = asSymbol(context, id);
         RubyModule clazz = findInstanceMethodContainer(context, currDynScope, self);
 
         Visibility currVisibility = context.getCurrentVisibility();
-        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, clazz, methodName, currVisibility);
+        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(context.runtime, clazz, methodName, currVisibility);
 
         if (maybeRefined) scope.captureParentRefinements(context);
 
@@ -1934,7 +1927,7 @@ public class IRRuntimeHelpers {
                 newVisibility, clazz, encodedArgumentDescriptors, receivesKeywordArgs, needsToFindImplementer);
 
         // FIXME: needs checkID and proper encoding to force hard symbol
-        Helpers.addInstanceMethod(clazz, methodName, newMethod, currVisibility, context, runtime);
+        Helpers.addInstanceMethod(clazz, methodName, newMethod, currVisibility, context);
     }
     
     @JIT

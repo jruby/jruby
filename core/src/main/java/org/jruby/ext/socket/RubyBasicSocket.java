@@ -214,7 +214,7 @@ public class RubyBasicSocket extends RubyIO {
                 str = null; flags = null;
                 break;
             default:
-                throw context.runtime.newArgumentError(args.length, 1, 3);
+                throw argumentError(context, args.length, 1, 3);
         }
 
         return recv(context, length, str, flags);
@@ -975,7 +975,7 @@ public class RubyBasicSocket extends RubyIO {
                 newString(context, "::") :
                 newString(context, hostAddress);
 
-        return RubyArray.newArray(context.runtime, ret0, ret1, ret2, ret3);
+        return newArray(context, ret0, ret1, ret2, ret3);
     }
 
     protected static String bindContextMessage(IRubyObject host, int port) {
@@ -1020,18 +1020,12 @@ public class RubyBasicSocket extends RubyIO {
     @Deprecated
     @Override
     public IRubyObject read_nonblock(ThreadContext context, IRubyObject[] args) {
-        int argc = args.length;
-
-        switch (argc) {
-            case 3:
-                return read_nonblock(context, args[0], args[1], args[2]);
-            case 2:
-                return read_nonblock(context, args[0], args[1]);
-            case 1:
-                return read_nonblock(context, args[0]);
-            default:
-                throw context.runtime.newArgumentError(argc, 1, 3);
-        }
+        return switch (args.length) {
+            case 3 -> read_nonblock(context, args[0], args[1], args[2]);
+            case 2 -> read_nonblock(context, args[0], args[1]);
+            case 1 -> read_nonblock(context, args[0]);
+            default -> throw argumentError(context, args.length, 1, 3);
+        };
     }
 
     private static final ByteList FORMAT_SMALL_I = new ByteList(new byte[] { 'i' }, false);

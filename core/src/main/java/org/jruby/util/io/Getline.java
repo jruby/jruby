@@ -120,34 +120,24 @@ public class Getline {
     @Deprecated
     public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
                                                                         Self self, Encoding enc_io, IRubyObject... args) {
-        switch (args.length) {
-            case 0:
-                return getlineCall(context, getline, self, enc_io, false);
-            case 1:
-                return getlineCall(context, getline, self, enc_io, false, args[0]);
-            case 2:
-                return getlineCall(context, getline, self, enc_io, false, args[0], args[1]);
-            case 3:
-                return getlineCall(context, getline, self, enc_io, false, args[0], args[1], args[2]);
-            default:
-                throw context.runtime.newArgumentError(args.length, 0, 3);
-        }
+        return switch (args.length) {
+            case 0 -> getlineCall(context, getline, self, enc_io, false);
+            case 1 -> getlineCall(context, getline, self, enc_io, false, args[0]);
+            case 2 -> getlineCall(context, getline, self, enc_io, false, args[0], args[1]);
+            case 3 -> getlineCall(context, getline, self, enc_io, false, args[0], args[1], args[2]);
+            default -> throw argumentError(context, args.length, 0, 3);
+        };
     }
 
     public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
                                                                         Self self, Encoding enc_io, boolean keywords, IRubyObject... args) {
-        switch (args.length) {
-            case 0:
-                return getlineCall(context, getline, self, enc_io, keywords);
-            case 1:
-                return getlineCall(context, getline, self, enc_io, args[0], keywords);
-            case 2:
-                return getlineCall(context, getline, self, enc_io, args[0], args[1], keywords);
-            case 3:
-                return getlineCall(context, getline, self, enc_io, args[0], args[1], args[2], keywords);
-            default:
-                throw context.runtime.newArgumentError(args.length, 0, 3);
-        }
+        return switch (args.length) {
+            case 0 -> getlineCall(context, getline, self, enc_io, keywords);
+            case 1 -> getlineCall(context, getline, self, enc_io, args[0], keywords);
+            case 2 -> getlineCall(context, getline, self, enc_io, args[0], args[1], keywords);
+            case 3 -> getlineCall(context, getline, self, enc_io, args[0], args[1], args[2], keywords);
+            default -> throw argumentError(context, args.length, 0, 3);
+        };
     }
 
     // Work around native extensions calling without marking keywords annotation AND not calling newer non-deprecated methods.

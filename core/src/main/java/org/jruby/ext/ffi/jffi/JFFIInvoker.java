@@ -15,6 +15,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
 public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
@@ -46,14 +47,12 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
         super(runtime, klass, parameterTypes.length, fptr);
 
         final com.kenai.jffi.Type jffiReturnType = FFIUtil.getFFIType(returnType);
-        if (jffiReturnType == null) {
-            throw runtime.newArgumentError("Invalid return type " + returnType);
-        }
+        if (jffiReturnType == null) throw argumentError(runtime.getCurrentContext(), "Invalid return type " + returnType);
         
         com.kenai.jffi.Type[] jffiParamTypes = new com.kenai.jffi.Type[parameterTypes.length];
         for (int i = 0; i < jffiParamTypes.length; ++i) {
             if ((jffiParamTypes[i] = FFIUtil.getFFIType(parameterTypes[i])) == null) {
-                throw runtime.newArgumentError("Invalid parameter type " + parameterTypes[i]);
+                throw argumentError(runtime.getCurrentContext(), "Invalid parameter type " + parameterTypes[i]);
             }
         }
         
@@ -100,10 +99,8 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
         Type[] parameterTypes = new Type[paramTypes.size()];
         for (int i = 0; i < parameterTypes.length; ++i) {
             IRubyObject type = paramTypes.entry(i);
-            if (!(type instanceof Type)) {
-                throw context.runtime.newArgumentError("Invalid parameter type");
-            }
-            parameterTypes[i] = (Type) paramTypes.entry(i);
+            if (!(type instanceof Type te)) throw argumentError(context, "Invalid parameter type");
+            parameterTypes[i] = te;
         }
         MemoryIO fptr = ptr.getMemoryIO();
         return new JFFIInvoker(context.runtime, (RubyClass) recv, fptr,

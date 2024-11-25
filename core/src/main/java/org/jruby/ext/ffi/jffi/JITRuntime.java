@@ -11,6 +11,7 @@ import org.jruby.runtime.callsite.CachingCallSite;
 import java.math.BigInteger;
 
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -20,7 +21,7 @@ public final class JITRuntime {
     private JITRuntime() {}
     
     public static RuntimeException newArityError(ThreadContext context, int got, int expected) {
-        return context.runtime.newArgumentError(got, expected);
+        return argumentError(context, got, expected);
     }
     
     public static long other2long(IRubyObject parameter) {
@@ -485,19 +486,14 @@ public final class JITRuntime {
         IRubyObject obj = parameter;
         ThreadContext context = parameter.getRuntime().getCurrentContext();
         for (int depth = 0; depth < 4; depth++) {
-            if (obj.respondsTo("to_ptr")) {
-                obj = obj.callMethod(context, "to_ptr");
-                MemoryIO memory = lookupPointerMemoryIO(obj);
-                if (memory != null) {
-                    return memory;
-                }
-            
-            } else {
-                throw parameter.getRuntime().newArgumentError("cannot convert parameter to native pointer");
-            }
+            if (!obj.respondsTo("to_ptr")) throw argumentError(context, "cannot convert parameter to native pointer");
+
+            obj = obj.callMethod(context, "to_ptr");
+            MemoryIO memory = lookupPointerMemoryIO(obj);
+            if (memory != null) return memory;
         }
 
-        throw parameter.getRuntime().newRuntimeError("to_ptr recursion limit reached for " + parameter.getMetaClass());
+        throw context.runtime.newRuntimeError("to_ptr recursion limit reached for " + parameter.getMetaClass());
     }
     
     private static MemoryIO convertToStringMemoryIO(IRubyObject parameter, ThreadContext context, CachingCallSite callSite,
@@ -534,41 +530,27 @@ public final class JITRuntime {
 
     public static PointerParameterStrategy pointerParameterStrategy(IRubyObject parameter) {
         PointerParameterStrategy strategy = lookupPointerParameterStrategy(parameter);
-        if (strategy != null) {
-            return strategy;
-        
-        } else if (parameter.respondsTo("to_ptr")) {
-            IRubyObject ptr = parameter.callMethod(parameter.getRuntime().getCurrentContext(), "to_ptr");
-
-            return new DelegatingPointerParameterStrategy(ptr, pointerParameterStrategy(ptr));
-
-        } else {
-            throw parameter.getRuntime().newArgumentError("cannot convert parameter to native pointer");
+        if (strategy != null) return strategy;
+        if (!parameter.respondsTo("to_ptr")) {
+            throw argumentError(parameter.getRuntime().getCurrentContext(), "cannot convert parameter to native pointer");
         }
+
+        IRubyObject ptr = parameter.callMethod(parameter.getRuntime().getCurrentContext(), "to_ptr");
+        return new DelegatingPointerParameterStrategy(ptr, pointerParameterStrategy(ptr));
     }
 
     public static PointerParameterStrategy stringParameterStrategy(IRubyObject parameter) {
-        if (parameter instanceof RubyString) {
-            return DIRECT_STRING_PARAMETER_STRATEGY;
+        if (parameter instanceof RubyString) return DIRECT_STRING_PARAMETER_STRATEGY;
+        if (parameter.isNil()) return NIL_POINTER_STRATEGY;
 
-        } else if (parameter.isNil()) {
-            return NIL_POINTER_STRATEGY;
-
-        } else {
-            return stringParameterStrategy(parameter.convertToString());
-        }
+        return stringParameterStrategy(parameter.convertToString());
     }
 
     public static PointerParameterStrategy transientStringParameterStrategy(IRubyObject parameter) {
-        if (parameter instanceof RubyString) {
-            return TRANSIENT_STRING_PARAMETER_STRATEGY;
+        if (parameter instanceof RubyString) return TRANSIENT_STRING_PARAMETER_STRATEGY;
+        if (parameter.isNil()) return NIL_POINTER_STRATEGY;
 
-        } else if (parameter.isNil()) {
-            return NIL_POINTER_STRATEGY;
-
-        } else {
-            return transientStringParameterStrategy(parameter.convertToString());
-        }
+        return transientStringParameterStrategy(parameter.convertToString());
     }
 
     public static MemoryIO convertToPointerMemoryIO(ThreadContext context, IRubyObject parameter, CachingCallSite callSite) {

@@ -35,6 +35,8 @@ import org.jruby.runtime.ThreadContext;
 
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -368,7 +370,7 @@ public class RubyRandom extends RubyRandomBase {
     @JRubyMethod()
     public IRubyObject marshal_load(ThreadContext context, IRubyObject arg) {
         RubyArray load = arg.convertToArray();
-        if (load.size() != 3) throw context.runtime.newArgumentError("wrong dump data");
+        if (load.size() != 3) throw argumentError(context, "wrong dump data");
 
         RubyBignum state = castAsBignum(context, load.eltInternal(0));
         int left = RubyNumeric.num2int(load.eltInternal(1));
@@ -377,9 +379,7 @@ public class RubyRandom extends RubyRandomBase {
         checkFrozen();
 
         random = new RandomType(seed, state, left);
-        if (load.hasVariables()) {
-            syncVariables((IRubyObject) load);
-        }
+        if (load.hasVariables()) syncVariables((IRubyObject) load);
 
         setFrozen(true);
 
@@ -399,17 +399,16 @@ public class RubyRandom extends RubyRandomBase {
 
     @JRubyMethod(name = "urandom", meta = true)
     public static IRubyObject urandom(ThreadContext context, IRubyObject recv, IRubyObject num) {
-        Ruby runtime = context.runtime;
         int n = num.convertToInteger().getIntValue();
 
-        if (n < 0) throw runtime.newArgumentError("negative string size (or size too big)");
+        if (n < 0) throw argumentError(context, "negative string size (or size too big)");
 
-        if (n == 0) return runtime.newString();
+        if (n == 0) return context.runtime.newString();
 
         byte[] seed = new byte[n];
-        runtime.random.nextBytes(seed);
+        context.runtime.random.nextBytes(seed);
 
-        return RubyString.newString(runtime, seed);
+        return RubyString.newString(context.runtime, seed);
     }
 
     public static class RandomFormatter {
@@ -453,14 +452,11 @@ public class RubyRandom extends RubyRandomBase {
 
     @Deprecated
     public static IRubyObject rand(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        switch (args.length) {
-            case 0:
-                return randDefault(context, recv);
-            case 1:
-                return randDefault(context, recv, args[0]);
-            default:
-                throw context.runtime.newArgumentError(args.length, 0, 1);
-        }
+        return switch (args.length) {
+            case 0 -> randDefault(context, recv);
+            case 1 -> randDefault(context, recv, args[0]);
+            default -> throw argumentError(context, args.length, 0, 1);
+        };
     }
 
     @Deprecated

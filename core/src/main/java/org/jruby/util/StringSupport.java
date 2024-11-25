@@ -823,7 +823,7 @@ public final class StringSupport {
         final int end = bl.length();
         for (int i = bl.begin(); i < end; ++i) {
             if (array[i] == (byte) 0) {
-                throw runtime.newArgumentError("string contains null byte");
+                throw argumentError(runtime.getCurrentContext(), "string contains null byte");
             }
         }
     }
@@ -839,7 +839,7 @@ public final class StringSupport {
         for (int p = bl.begin(); p < end; p += cl) {
             cl = preciseLength(enc, bytes, p, end);
             if (cl <= 0) return;
-            if (codePoint(enc, bytes, p, end) == 0) throw runtime.newArgumentError("string contains null byte");
+            if (codePoint(enc, bytes, p, end) == 0) throw argumentError(runtime.getCurrentContext(), "string contains null byte");
         }
     }
 
@@ -915,9 +915,9 @@ public final class StringSupport {
 
         if (checked[0] == null) {
             if ((boolean)checked[1]) {
-                throw runtime.newArgumentError("string contains null char");
+                throw argumentError(runtime.getCurrentContext(), "string contains null char");
             }
-            throw runtime.newArgumentError("string contains null byte");
+            throw argumentError(runtime.getCurrentContext(), "string contains null byte");
         }
 
         return (RubyString) checked[0];
@@ -1170,7 +1170,7 @@ public final class StringSupport {
         try {
             return strCount(str, table, tables, enc);
         } catch (IllegalArgumentException e) {
-            throw runtime.newArgumentError(e.getMessage());
+            throw argumentError(runtime.getCurrentContext(), e.getMessage());
         }
     }
 
@@ -1413,7 +1413,7 @@ public final class StringSupport {
         try {
             return trSetupTable(str, stable, tables, first, enc);
         } catch (IllegalArgumentException e) {
-            throw runtime.newArgumentError(e.getMessage());
+            throw argumentError(runtime.getCurrentContext(), e.getMessage());
         }
     }
 
@@ -1460,7 +1460,7 @@ public final class StringSupport {
         try {
             return trNext(tr, enc);
         } catch (IllegalArgumentException e) {
-            throw runtime.newArgumentError(e.getMessage());
+            throw argumentError(runtime.getCurrentContext(), e.getMessage());
         }
     }
 
@@ -1572,7 +1572,7 @@ public final class StringSupport {
         try {
             return succCommon(original);
         } catch (IllegalArgumentException e) {
-            throw runtime.newArgumentError(e.getMessage());
+            throw argumentError(runtime.getCurrentContext(), e.getMessage());
         }
     }
 
@@ -1632,7 +1632,7 @@ public final class StringSupport {
         try {
             return succChar(enc, bytes, p, len);
         } catch (IllegalArgumentException e) {
-            throw runtime.newArgumentError(e.getMessage());
+            throw argumentError(runtime.getCurrentContext(), e.getMessage());
         }
     }
 
@@ -1998,7 +1998,7 @@ public final class StringSupport {
         try {
             return strDeleteBang(rubyString, squeeze, tables, enc);
         } catch (IllegalArgumentException e) {
-            throw runtime.newArgumentError(e.getMessage());
+            throw argumentError(runtime.getCurrentContext(), e.getMessage());
         }
     }
 
@@ -2553,7 +2553,7 @@ public final class StringSupport {
         try {
             return trTransHelper(self, srcStr, replStr, sflag);
         } catch (IllegalArgumentException e) {
-            throw runtime.newArgumentError(e.getMessage());
+            throw argumentError(runtime.getCurrentContext(), e.getMessage());
         }
     }
 
@@ -2674,7 +2674,7 @@ public final class StringSupport {
         try {
             return multiByteSqueeze(value, squeeze, tables, enc, isArg);
         } catch (IllegalArgumentException e) {
-            throw runtime.newArgumentError(e.getMessage());
+            throw argumentError(runtime.getCurrentContext(), e.getMessage());
         }
     }
 
@@ -2799,17 +2799,17 @@ public final class StringSupport {
             if (arg1.equals(lithuanian)) {
                 flags |= Config.CASE_FOLD_LITHUANIAN;
             } else {
-                throw runtime.newArgumentError("invalid second option");
+                throw argumentError(runtime.getCurrentContext(), "invalid second option");
             }
         } else if (arg0.equals(lithuanian)) {
             flags |= Config.CASE_FOLD_LITHUANIAN;
             if (arg1.equals(turkic)) {
                 flags |= Config.CASE_FOLD_TURKISH_AZERI;
             } else {
-                throw runtime.newArgumentError("invalid second option");
+                throw argumentError(runtime.getCurrentContext(), "invalid second option");
             }
         } else {
-            throw runtime.newArgumentError("invalid option");
+            throw argumentError(runtime.getCurrentContext(), "invalid option");
         }
         return flags;
     }
@@ -2821,14 +2821,14 @@ public final class StringSupport {
             if ((flags & (Config.CASE_UPCASE | Config.CASE_DOWNCASE)) == Config.CASE_DOWNCASE) {
                 flags ^= Config.CASE_FOLD | Config.CASE_DOWNCASE;
             } else {
-                throw runtime.newArgumentError("option :fold only allowed for downcasing");
+                throw argumentError(runtime.getCurrentContext(), "option :fold only allowed for downcasing");
             }
         } else if (arg0.equals(runtime.newSymbol("turkic"))) {
             flags |= Config.CASE_FOLD_TURKISH_AZERI;
         } else if (arg0.equals(runtime.newSymbol("lithuanian"))) {
             flags |= Config.CASE_FOLD_LITHUANIAN;
         } else {
-            throw runtime.newArgumentError("invalid option");
+            throw argumentError(runtime.getCurrentContext(), "invalid option");
         }
         return flags;
     }
@@ -2863,7 +2863,7 @@ public final class StringSupport {
             buffer.next = new MappingBuffer((end - pp.value) * ++buffers + CASE_MAPPING_ADDITIONAL_LENGTH);
             buffer = buffer.next;
             int len = enc.caseMap(flags, bytes, pp, end, buffer.bytes, 0, buffer.bytes.length);
-            if (len < 0) throw runtime.newArgumentError("input string invalid");
+            if (len < 0) throw argumentError(runtime.getCurrentContext(), "input string invalid");
             buffer.used = len;
             tgtLen += len;
         }
@@ -2895,7 +2895,7 @@ public final class StringSupport {
         IntHolder pp = new IntHolder();
         pp.value = s;
         int len = ASCIIEncoding.INSTANCE.caseMap(flags, bytes, pp, end, bytes, s, end);
-        if (len < 0) throw runtime.newArgumentError("input string invalid");
+        if (len < 0) throw argumentError(runtime.getCurrentContext(), "input string invalid");
     }
 
     public static int encCoderangeClean(int cr) {

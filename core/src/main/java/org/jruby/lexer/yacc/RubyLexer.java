@@ -70,6 +70,7 @@ import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.parser.RubyParser.*;
 import static org.jruby.util.StringSupport.CR_7BIT;
 
@@ -579,8 +580,8 @@ public class RubyLexer extends LexingCommon {
         Ruby runtime = getRuntime();
         Encoding newEncoding = runtime.getEncodingService().loadEncoding(name);
 
-        if (newEncoding == null) throw runtime.newArgumentError("unknown encoding name: " + name.toString());
-        if (!newEncoding.isAsciiCompatible()) throw runtime.newArgumentError(name.toString() + " is not ASCII compatible");
+        if (newEncoding == null) throw argumentError(runtime.getCurrentContext(), "unknown encoding name: " + name.toString());
+        if (!newEncoding.isAsciiCompatible()) throw argumentError(runtime.getCurrentContext(), "" + name + " is not ASCII compatible");
 
         setEncoding(newEncoding);
     }

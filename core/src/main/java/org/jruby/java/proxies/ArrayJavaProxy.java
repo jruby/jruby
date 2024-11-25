@@ -20,6 +20,7 @@ import org.jruby.util.ConvertBytes;
 import org.jruby.util.RubyStringBuilder;
 
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.javasupport.ext.JavaLang.Character.inspectCharValue;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
@@ -58,9 +59,8 @@ public final class ArrayJavaProxy extends JavaProxy {
         final Object array;
         try {
             array = Array.newInstance(elementType, dimensions);
-        }
-        catch (IllegalArgumentException e) {
-            throw runtime.newArgumentError("can not create " + dimensions.length + " dimensional array");
+        } catch (IllegalArgumentException e) {
+            throw argumentError(runtime.getCurrentContext(), "can not create " + dimensions.length + " dimensional array");
         }
         return new ArrayJavaProxy(runtime, Java.getProxyClassForObject(runtime, array), array);
     }
@@ -791,13 +791,10 @@ public final class ArrayJavaProxy extends JavaProxy {
     }
 
     public IRubyObject getRange(ThreadContext context, IRubyObject[] args) {
-        if (args.length == 1) {
-            return getRange(context, args[0]);
-        }
-        if (args.length == 2) {
-            return getRange(context, args[0], args[1]);
-        }
-        throw context.runtime.newArgumentError(args.length, 1);
+        if (args.length == 1) return getRange(context, args[0]);
+        if (args.length == 2) return getRange(context, args[0], args[1]);
+
+        throw argumentError(context, args.length, 1);
     }
 
     public IRubyObject getRange(ThreadContext context, IRubyObject arg0) {

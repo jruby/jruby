@@ -53,6 +53,7 @@ import org.jruby.lexer.StrftimeLexer;
 import org.jruby.runtime.ThreadContext;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.util.CommonByteLists.*;
 import static org.jruby.util.RubyDateFormatter.FieldType.*;
 
@@ -292,7 +293,7 @@ public class RubyDateFormatter {
         compiledPatternLength = 0;
         patternEncoding = pattern.getEncoding();
         if (!patternEncoding.isAsciiCompatible()) {
-            throw runtime.newArgumentError("format should have ASCII compatible encoding");
+            throw argumentError(runtime.getCurrentContext(), "format should have ASCII compatible encoding");
         }
 
         lexer.reset(pattern);

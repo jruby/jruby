@@ -32,6 +32,18 @@ public class Error {
      * Return an instance of ArgumentError for the given argument list length, min, and max.
      *
      * @param context the current thread context
+     * @param got how many arguments we received
+     * @param expected how many arguments we expect
+     * @return the created exception
+     */
+    public static ArgumentError argumentError(ThreadContext context, int got, int expected) {
+        return argumentError(context, got, expected, expected);
+    }
+
+    /**
+     * Return an instance of ArgumentError for the given argument list length, min, and max.
+     *
+     * @param context the current thread context
      * @param length the length of the given argument array
      * @param min the minimum length required
      * @param max the maximum length required

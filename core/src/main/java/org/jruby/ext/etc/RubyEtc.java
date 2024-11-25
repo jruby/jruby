@@ -147,23 +147,23 @@ public class RubyEtc {
     }
 
     
-    private static IRubyObject setupGroup(Ruby runtime, Group group) {
+    private static IRubyObject setupGroup(ThreadContext context, Group group) {
         IRubyObject[] args = new IRubyObject[] {
-                runtime.newString(group.getName()),
-                runtime.newString(group.getPassword()),
-                runtime.newFixnum(group.getGID()),
-                intoStringArray(runtime, group.getMembers())
+                newString(context, group.getName()),
+                newString(context, group.getPassword()),
+                asFixnum(context, group.getGID()),
+                intoStringArray(context, group.getMembers())
         };
         
-        return RubyStruct.newStruct(runtime.getGroupStruct(), args, Block.NULL_BLOCK);
+        return RubyStruct.newStruct(context.runtime.getGroupStruct(), args, Block.NULL_BLOCK);
     }
 
-    private static IRubyObject intoStringArray(Ruby runtime, String[] members) {
+    private static IRubyObject intoStringArray(ThreadContext context, String[] members) {
         IRubyObject[] arr = new IRubyObject[members.length];
         for(int i = 0; i<arr.length; i++) {
-            arr[i] = runtime.newString(members[i]);
+            arr[i] = newString(context, members[i]);
         }
-        return RubyArray.newArrayMayCopy(runtime, arr);
+        return RubyArray.newArrayMayCopy(context.runtime, arr);
     }
     
     @JRubyMethod(module = true)
@@ -383,26 +383,34 @@ public class RubyEtc {
         }
     }
 
-    @JRubyMethod(module = true)
+    /**
+     * @param recv
+     * @param name
+     * @return ""
+     * @deprecated Use {@link RubyEtc#getgrnam(ThreadContext, IRubyObject, IRubyObject)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public static synchronized IRubyObject getgrnam(IRubyObject recv, IRubyObject name) {
-        Ruby runtime = recv.getRuntime();
+        return getgrnam(recv.getRuntime().getCurrentContext(), recv, name);
+    }
+
+    @JRubyMethod(module = true)
+    public static synchronized IRubyObject getgrnam(ThreadContext context, IRubyObject recv, IRubyObject name) {
         String nam = name.convertToString().toString();
         try {
-            Group grp = runtime.getPosix().getgrnam(nam);
+            Group grp = context.runtime.getPosix().getgrnam(nam);
             if (grp == null) {
-                if (Platform.IS_WINDOWS) {  // MRI behavior
-                    return runtime.getNil();
-                }
-                throw runtime.newArgumentError("can't find group for " + nam);
+                if (Platform.IS_WINDOWS) return context.nil;
+                throw argumentError(context, "can't find group for " + nam);
             }
-            return setupGroup(runtime, grp);
+            return setupGroup(context, grp);
         } catch (RaiseException e) {
             throw e;
         } catch (Exception e) {
-            if (runtime.getDebug().isTrue()) {
-                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.getgrnam is not supported by JRuby on this platform");
+            if (context.runtime.getDebug().isTrue()) {
+                context.runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.getgrnam is not supported by JRuby on this platform");
             }
-            return runtime.getNil();
+            return context.nil;
         }
     }
 
@@ -413,29 +421,24 @@ public class RubyEtc {
 
     @JRubyMethod(optional = 1, checkArity = false, module = true)
     public static synchronized IRubyObject getgrgid(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-
         int argc = Arity.checkArgumentCount(context, args, 0, 1);
-
-        POSIX posix = runtime.getPosix();
+        POSIX posix = context.runtime.getPosix();
 
         try {
             int gid = argc == 0 ? posix.getgid() : RubyNumeric.fix2int(args[0]);
             Group gr = posix.getgrgid(gid);
             if(gr == null) {
-                if (Platform.IS_WINDOWS) {  // MRI behavior
-                    return runtime.getNil();
-                }
-                throw runtime.newArgumentError("can't find group for " + gid);
+                if (Platform.IS_WINDOWS) return context.nil;
+                throw argumentError(context, "can't find group for " + gid);
             }
-            return setupGroup(runtime, gr);
+            return setupGroup(context, gr);
         } catch (RaiseException re) {
             throw re;
         } catch (Exception e) {
-            if (runtime.getDebug().isTrue()) {
-                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.getgrgid is not supported by JRuby on this platform");
+            if (context.runtime.getDebug().isTrue()) {
+                context.runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.getgrgid is not supported by JRuby on this platform");
             }
-            return runtime.getNil();
+            return context.nil;
         }
     }
 
@@ -465,34 +468,41 @@ public class RubyEtc {
         return runtime.getNil();
     }
 
-    @JRubyMethod(module = true)
+    /**
+     * @param recv
+     * @param block
+     * @return ""
+     * @deprecated Use {@link RubyEtc#group(ThreadContext, IRubyObject, Block)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public static synchronized IRubyObject group(IRubyObject recv, Block block) {
-        Ruby runtime = recv.getRuntime();
-        POSIX posix = runtime.getPosix();
+        return group(recv.getRuntime().getCurrentContext(), recv, block);
+    }
+
+    @JRubyMethod(module = true)
+    public static synchronized IRubyObject group(ThreadContext context, IRubyObject recv, Block block) {
+        POSIX posix = context.runtime.getPosix();
 
         try {
             // try to read grent to fail fast
             posix.getgrent();
         } catch (Exception e) {
-            if (runtime.getDebug().isTrue()) {
-                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.group is not supported by JRuby on this platform");
+            if (context.runtime.getDebug().isTrue()) {
+                context.runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.group is not supported by JRuby on this platform");
             }
         }
 
         if (block.isGiven()) {
             Boolean blocking = (Boolean)recv.getInternalVariables().getInternalVariable("group_blocking");
-            if (blocking != null && blocking) {
-                throw runtime.newRuntimeError("parallel group iteration");
-            }
+            if (blocking != null && blocking) throw context.runtime.newRuntimeError("parallel group iteration");
+
             try {
                 recv.getInternalVariables().setInternalVariable("group_blocking", true);
-
-                ThreadContext context = runtime.getCurrentContext();
 
                 posix.setgrent();
                 Group gr;
                 while((gr = posix.getgrent()) != null) {
-                    block.yield(context, setupGroup(runtime, gr));
+                    block.yield(context, setupGroup(context, gr));
                 }
             } finally {
                 posix.endgrent();
@@ -500,38 +510,40 @@ public class RubyEtc {
             }
         } else {
             Group gr = posix.getgrent();
-            if (gr != null) {
-                return setupGroup(runtime, gr);
-            } else {
-                return runtime.getNil();
-            }
+            if (gr != null) return setupGroup(context, gr);
+            return context.nil;
         }
 
-        return runtime.getNil();
+        return context.nil;
+    }
+
+    /**
+     * @param recv
+     * @return ""
+     * @deprecated Use {@link RubyEtc#getgrent(ThreadContext, IRubyObject)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
+    public static synchronized IRubyObject getgrent(IRubyObject recv) {
+        return getgrent(recv.getRuntime().getCurrentContext(), recv);
     }
 
     @JRubyMethod(module = true)
-    public static synchronized IRubyObject getgrent(IRubyObject recv) {
-        Ruby runtime = recv.getRuntime();
+    public static synchronized IRubyObject getgrent(ThreadContext context, IRubyObject recv) {
         try {
             Group gr;
 
             // We synchronize on this class so at least all JRuby instances in this classloader are safe.
             // See jruby/jruby#4057
             synchronized (RubyEtc.class) {
-                gr = runtime.getPosix().getgrent();
+                gr = context.runtime.getPosix().getgrent();
             }
 
-            if (gr != null) {
-                return setupGroup(recv.getRuntime(), gr);
-            } else {
-                return runtime.getNil();
-            }
+            return gr != null ? setupGroup(context, gr) : context.nil;
         } catch (Exception e) {
-            if (runtime.getDebug().isTrue()) {
-                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.getgrent is not supported by JRuby on this platform");
+            if (context.runtime.getDebug().isTrue()) {
+                context.runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.getgrent is not supported by JRuby on this platform");
             }
-            return runtime.getNil();
+            return context.nil;
         }
     }
     

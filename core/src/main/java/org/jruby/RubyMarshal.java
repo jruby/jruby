@@ -54,6 +54,7 @@ import org.jruby.util.io.TransparentByteArrayOutputStream;
 
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -130,8 +131,6 @@ public class RubyMarshal {
     @JRubyMethod(name = {"load", "restore"}, required = 1, optional = 2, checkArity = false, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject load(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         int argc = Arity.checkArgumentCount(context, args, 1, 3);
-
-        Ruby runtime = context.runtime;
         IRubyObject in = args[0];
         boolean freeze = false;
         IRubyObject proc = null;
@@ -160,13 +159,13 @@ public class RubyMarshal {
                 throw typeError(context, "instance of IO needed");
             }
 
-            return new UnmarshalStream(runtime, rawInput, freeze, proc).unmarshalObject();
+            return new UnmarshalStream(context.runtime, rawInput, freeze, proc).unmarshalObject();
         } catch (EOFException e) {
-            if (str != context.nil) throw runtime.newArgumentError("marshal data too short");
+            if (str != context.nil) throw argumentError(context, "marshal data too short");
 
-            throw runtime.newEOFError();
+            throw context.runtime.newEOFError();
         } catch (IOException ioe) {
-            throw runtime.newIOErrorFromException(ioe);
+            throw context.runtime.newIOErrorFromException(ioe);
         }
     }
 

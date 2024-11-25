@@ -53,6 +53,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ArraySupport;
 
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.javasupport.JavaCallable.inspectParameterTypes;
 
 @JRubyClass(name="Java::JavaProxyConstructor")
@@ -124,7 +125,8 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
      * For exportable objects, argsPlus1 is not plus one
      * 
      * @param argsPlus1
-     * @param handler
+     * @param runtime
+     * @param clazz
      * @return
      * @throws IllegalArgumentException
      * @throws InstantiationException
@@ -135,7 +137,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
             throws IllegalArgumentException, InstantiationException, IllegalAccessException, InvocationTargetException {
         if (!exportable) {
             argsPlus1[argsPlus1.length - 2] = runtime;
-            argsPlus1[argsPlus1.length - 1] = (RubyClass) clazz;
+            argsPlus1[argsPlus1.length - 1] = clazz;
         }
         return proxyConstructor.newInstance(argsPlus1);
     }
@@ -227,10 +229,10 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
     public static RaiseException mapInstantiationException(final Ruby runtime, final Throwable e) {
         Throwable cause = e;
         while ( cause.getCause() != null ) cause = cause.getCause();
-        final String MSG = "Constructor invocation failed: ";
         String msg = cause.getLocalizedMessage();
-        msg = msg == null ? ( MSG + e.getClass().getName() ) : ( MSG + msg );
-        RaiseException ex = runtime.newArgumentError(msg);
+
+        RaiseException ex = argumentError(runtime.getCurrentContext(),
+                "Constructor invocation failed: " + (msg == null ? e.getClass().getName() : msg));
         ex.initCause(e);
         ex.addSuppressed(e);
         throw ex;

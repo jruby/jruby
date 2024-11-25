@@ -77,10 +77,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static org.jruby.api.Convert.asBoolean;
-import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
@@ -579,91 +579,89 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     @JRubyMethod(name = { "to_sym", "intern" })
     public IRubyObject to_sym() { return this; }
 
-    private RubyString newShared(Ruby runtime) {
-        return RubyString.newStringShared(runtime, symbolBytes);
+    private RubyString newShared(ThreadContext context) {
+        return RubyString.newStringShared(context.runtime, symbolBytes);
     }
 
     @JRubyMethod(name = {"succ", "next"})
     public IRubyObject succ(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        return newSymbol(runtime, newShared(runtime).succ(context).asString().getByteList());
+        return asSymbol(context, newShared(context).succ(context).asString());
     }
 
     @JRubyMethod(name = "<=>")
     @Override
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
-        Ruby runtime = context.runtime;
-
-        return !(other instanceof RubySymbol) ? context.nil :
-                newShared(runtime).op_cmp(context, ((RubySymbol)other).newShared(runtime));
+        return other instanceof RubySymbol sym ? newShared(context).op_cmp(context, sym.newShared(context)) : context.nil;
     }
 
     @JRubyMethod
     public IRubyObject casecmp(ThreadContext context, IRubyObject other) {
-        Ruby runtime = context.runtime;
-
-        return !(other instanceof RubySymbol) ? context.nil :
-                newShared(runtime).casecmp(context, ((RubySymbol) other).newShared(runtime));
+        return other instanceof RubySymbol sym ? newShared(context).casecmp(context, sym.newShared(context)) : context.nil;
     }
 
     @JRubyMethod(name = "casecmp?")
     public IRubyObject casecmp_p(ThreadContext context, IRubyObject other) {
-        Ruby runtime = context.runtime;
-
-        return !(other instanceof RubySymbol) ? context.nil :
-            newShared(runtime).casecmp_p(context, ((RubySymbol) other).newShared(runtime));
+        return other instanceof RubySymbol sym ? newShared(context).casecmp_p(context, sym.newShared(context)) : context.nil;
     }
 
     @JRubyMethod(name = "=~")
     @Override
     public IRubyObject op_match(ThreadContext context, IRubyObject other) {
-        return newShared(context.runtime).op_match(context, other);
+        return newShared(context).op_match(context, other);
     }
 
     @JRubyMethod(name = "match")
     public IRubyObject match_m(ThreadContext context, IRubyObject other, Block block) {
-        return newShared(context.runtime).match(context, other, block);
+        return newShared(context).match(context, other, block);
     }
 
     @JRubyMethod(name = "match")
     public IRubyObject match_m(ThreadContext context, IRubyObject other, IRubyObject pos, Block block) {
-        return newShared(context.runtime).match(context, other, pos, block);
+        return newShared(context).match(context, other, pos, block);
     }
 
     @JRubyMethod(name = "match", required = 1, rest = true, checkArity = false)
     public IRubyObject match_m(ThreadContext context, IRubyObject[] args, Block block) {
-        return newShared(context.runtime).match(context, args, block);
+        return newShared(context).match(context, args, block);
     }
 
     @JRubyMethod(name = "match?")
     public IRubyObject match_p(ThreadContext context, IRubyObject other) {
-        return newShared(context.runtime).match_p(context, other);
+        return newShared(context).match_p(context, other);
     }
 
     @JRubyMethod(name = "match?")
     public IRubyObject match_p(ThreadContext context, IRubyObject other, IRubyObject pos) {
-        return newShared(context.runtime).match_p(context, other, pos);
+        return newShared(context).match_p(context, other, pos);
     }
 
     @JRubyMethod(name = {"[]", "slice"})
     public IRubyObject op_aref(ThreadContext context, IRubyObject arg) {
-        return newShared(context.runtime).op_aref(context, arg);
+        return newShared(context).op_aref(context, arg);
     }
 
     @JRubyMethod(name = {"[]", "slice"})
     public IRubyObject op_aref(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
-        return newShared(context.runtime).op_aref(context, arg1, arg2);
+        return newShared(context).op_aref(context, arg1, arg2);
+    }
+
+    /**
+     * @return ""
+     * @deprecated Use {@link RubySymbol#length(ThreadContext)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
+    public IRubyObject length() {
+        return length(getCurrentContext());
     }
 
     @JRubyMethod(name = {"length", "size"})
-    public IRubyObject length() {
-        final Ruby runtime = metaClass.runtime;
-        return RubyFixnum.newFixnum(runtime, newShared(runtime).strLength());
+    public IRubyObject length(ThreadContext context) {
+        return asFixnum(context, newShared(context).strLength());
     }
 
     @JRubyMethod(name = "empty?")
     public IRubyObject empty_p(ThreadContext context) {
-        return newShared(context.runtime).empty_p(context);
+        return newShared(context).empty_p(context);
     }
 
     @JRubyMethod(name = "start_with?")
@@ -708,74 +706,62 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @JRubyMethod
     public IRubyObject upcase(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        return newSymbol(runtime, newShared(runtime).upcase(context).getByteList());
+        return asSymbol(context, newShared(context).upcase(context));
     }
 
     @JRubyMethod
     public IRubyObject upcase(ThreadContext context, IRubyObject arg) {
-        Ruby runtime = context.runtime;
-        return newSymbol(runtime, newShared(runtime).upcase(context, arg).getByteList());
+        return asSymbol(context, newShared(context).upcase(context, arg));
     }
 
     @JRubyMethod
     public IRubyObject upcase(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        Ruby runtime = context.runtime;
-        return newSymbol(runtime, newShared(runtime).upcase(context, arg0, arg1).getByteList());
+        return asSymbol(context, newShared(context).upcase(context, arg0, arg1));
     }
 
     @JRubyMethod
     public IRubyObject downcase(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        return newSymbol(runtime, newShared(runtime).downcase(context).getByteList());
+        return asSymbol(context, newShared(context).downcase(context));
     }
 
     @JRubyMethod
     public IRubyObject downcase(ThreadContext context, IRubyObject arg) {
-        Ruby runtime = context.runtime;
-        return newSymbol(runtime, newShared(runtime).downcase(context, arg).getByteList());
+        return asSymbol(context, newShared(context).downcase(context, arg));
     }
 
     @JRubyMethod
     public IRubyObject downcase(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        Ruby runtime = context.runtime;
-        return newSymbol(runtime, newShared(runtime).downcase(context, arg0, arg1).getByteList());
+        return asSymbol(context, newShared(context).downcase(context, arg0, arg1));
     }
 
     @JRubyMethod
     public IRubyObject swapcase(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        return newSymbol(runtime, newShared(runtime).swapcase(context).getByteList());
+        return asSymbol(context, newShared(context).swapcase(context));
     }
 
     @JRubyMethod
     public IRubyObject swapcase(ThreadContext context, IRubyObject arg) {
-        Ruby runtime = context.runtime;
-        return newSymbol(runtime, newShared(runtime).swapcase(context, arg).getByteList());
+        return asSymbol(context, newShared(context).swapcase(context, arg));
     }
 
     @JRubyMethod
     public IRubyObject swapcase(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        Ruby runtime = context.runtime;
-        return newSymbol(runtime, newShared(runtime).swapcase(context, arg0, arg1).getByteList());
+        return asSymbol(context, newShared(context).swapcase(context, arg0, arg1));
     }
 
     @JRubyMethod
     public IRubyObject capitalize(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        return newSymbol(runtime, newShared(runtime).capitalize(context).getByteList());
+        return asSymbol(context, newShared(context).capitalize(context));
     }
 
     @JRubyMethod
     public IRubyObject capitalize(ThreadContext context, IRubyObject arg) {
-        Ruby runtime = context.runtime;
-        return newSymbol(runtime, newShared(runtime).capitalize(context, arg).getByteList());
+        return asSymbol(context, newShared(context).capitalize(context, arg));
     }
 
     @JRubyMethod
     public IRubyObject capitalize(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        Ruby runtime = context.runtime;
-        return newSymbol(runtime, newShared(runtime).capitalize(context, arg0, arg1).getByteList());
+        return asSymbol(context, newShared(context).capitalize(context, arg0, arg1));
     }
 
     @JRubyMethod
@@ -1071,9 +1057,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
                 }
             }
 
-            if (symbol == null) symbol = createSymbol(name, symbolBytesFromString(runtime, name), hash, hard);
-
-            return symbol;
+            return symbol != null ? symbol : createSymbol(name, symbolBytesFromString(runtime, name), hash, hard);
         }
 
         /**
@@ -1101,11 +1085,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
             if (symbol == null) {
                 bytes = bytes.dup();
-                symbol = createSymbol(
-                        RubyEncoding.decodeRaw(bytes),
-                        bytes,
-                        hash,
-                        hard);
+                symbol = createSymbol(RubyEncoding.decodeRaw(bytes), bytes, hash, hard);
             }
 
             return symbol;
@@ -1128,12 +1108,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
             if (symbol == null) {
                 bytes = bytes.dup();
-                return createSymbol(
-                        RubyEncoding.decodeRaw(bytes),
-                        bytes,
-                        handler,
-                        hash,
-                        hard);
+                return createSymbol(RubyEncoding.decodeRaw(bytes), bytes, handler, hash, hard);
             }
 
             handler.accept(symbol, false);
@@ -1211,11 +1186,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
                 }
             }
 
-            if (symbol == null) {
-                symbol = fastCreateSymbol(internedName, hard);
-            }
-
-            return symbol;
+            return symbol != null ? symbol : fastCreateSymbol(internedName, hard);
         }
 
         public RubySymbol getEncodingSymbolE() {
@@ -1558,12 +1529,9 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
      * @return the symbol string associated with the object's string representation
      */
     public static String objectToSymbolString(IRubyObject object) {
-        if (object instanceof RubySymbol) {
-            return ((RubySymbol) object).idString();
-        }
-        if (object instanceof RubyString) {
-            return ((RubyString) object).getByteList().toString();
-        }
+        if (object instanceof RubySymbol sym) return sym.idString();
+        if (object instanceof RubyString str) return str.getByteList().toString();
+
         return object.convertToString().getByteList().toString();
     }
 
@@ -1576,18 +1544,15 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     public static String idStringFromObject(ThreadContext context, IRubyObject object) {
         IRubyObject symOrStr = prepareID(object.getRuntime().getCurrentContext(), object);
 
-        if (symOrStr instanceof RubySymbol) return ((RubySymbol) symOrStr).idString();
-
-        return ((RubyString) symOrStr).getByteList().toString();
+        return symOrStr instanceof RubySymbol sym ?
+                sym.idString() : ((RubyString) symOrStr).getByteList().toString();
     }
 
     // MRI: rb_check_id
     public static RubySymbol idSymbolFromObject(ThreadContext context, IRubyObject object) {
         IRubyObject symOrStr = prepareID(context, object);
 
-        if (symOrStr instanceof RubySymbol) return (RubySymbol) symOrStr;
-
-        return newSymbol(context.runtime, ((RubyString) symOrStr).getByteList());
+        return symOrStr instanceof RubySymbol sym ? sym : asSymbol(context, ((RubyString) symOrStr));
     }
 
     /**
@@ -1600,11 +1565,8 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     public static IRubyObject prepareID(ThreadContext context, IRubyObject object) {
         if (object instanceof RubySymbol || object instanceof RubyString) return object;
 
-        Ruby runtime = context.runtime;
-
         IRubyObject tmp = TypeConverter.checkStringType(context, sites(context).to_str_checked, object);
-
-        if (tmp.isNil()) throw typeError(context, str(runtime, "", object, " is not a symbol nor a string"));
+        if (tmp.isNil()) throw typeError(context, str(context.runtime, "", object, " is not a symbol nor a string"));
 
         return tmp;
     }
@@ -1634,9 +1596,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         }
 
         private IRubyObject yieldInner(ThreadContext context, RubyArray array, Block blockArg) {
-            if (array.isEmpty()) {
-                throw context.runtime.newArgumentError("no receiver given");
-            }
+            if (array.isEmpty()) throw argumentError(context, "no receiver given");
 
             final IRubyObject self = array.shift(context);
             return site.call(context, symbol, self, array.toJavaArray(context), blockArg);
@@ -1659,10 +1619,9 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         @Override
         protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
-            if (args.length == 1) {
-                return yieldSpecific(context, Block.NULL_BLOCK, args[0]);
-            }
-            return yieldInner(context, RubyArray.newArrayMayCopy(context.runtime, args), Block.NULL_BLOCK);
+            return args.length == 1 ?
+                    yieldSpecific(context, Block.NULL_BLOCK, args[0]) :
+                    yieldInner(context, RubyArray.newArrayMayCopy(context.runtime, args), Block.NULL_BLOCK);
         }
 
         @Override

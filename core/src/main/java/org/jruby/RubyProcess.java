@@ -247,31 +247,19 @@ public class RubyProcess {
         public IRubyObject op_and(ThreadContext context, IRubyObject arg) {
             long mask = arg.convertToInteger().getLongValue();
 
-            if (mask < 0) {
-                throw context.runtime.newArgumentError("negative mask value: " + mask);
-            }
-
+            if (mask < 0) throw argumentError(context, "negative mask value: " + mask);
             if (mask > Integer.MAX_VALUE || mask < Integer.MIN_VALUE) {
                 throw context.runtime.newRangeError("mask value out of range: " + mask);
             }
 
-            switch ((int) mask) {
-                case 0x80:
-                    deprecateAndSuggest(context, "&", "Process::Status#coredump?");
-                    break;
-                case 0x7f:
-                    deprecateAndSuggest(context, "&", "Process::Status#signaled? or Process::Status#termsig");
-                    break;
-                case 0xff:
-                    deprecateAndSuggest(context, "&", "Process::Status#exited?, Process::Status#stopped? or Process::Status#coredump?");
-                    break;
-                case 0xff00:
-                    deprecateAndSuggest(context, "&", "Process::Status#exitstatus or Process::Status#stopsig");
-                    break;
-                default:
-                    deprecateAndSuggest(context, "&", "other Process::Status predicates");
-                    break;
-            }
+            String message = switch ((int) mask) {
+                case 0x80 -> "Process::Status#coredump?";
+                case 0x7f -> "Process::Status#signaled? or Process::Status#termsig";
+                case 0xff -> "Process::Status#exited?, Process::Status#stopped? or Process::Status#coredump?";
+                case 0xff00 -> "Process::Status#exitstatus or Process::Status#stopsig";
+                default -> "other Process::Status predicates";
+            };
+            deprecateAndSuggest(context, "&", message);
 
             return asFixnum(context, status & mask);
         }
@@ -537,7 +525,7 @@ public class RubyProcess {
         }
         @JRubyMethod(name = "eid=", module = true, visibility = PRIVATE)
         public static IRubyObject eid(ThreadContext context, IRubyObject self, IRubyObject arg) {
-            return eid(context, self, arg);
+            return euid_set(context, self, arg);
         }
         public static IRubyObject eid(Ruby runtime, IRubyObject arg) {
             return euid_set(runtime, arg);
@@ -628,7 +616,7 @@ public class RubyProcess {
             return eid(context.runtime, arg);
         }
         public static IRubyObject eid(Ruby runtime, IRubyObject arg) {
-            return RubyProcess.egid_set(runtime, arg);
+            return RubyProcess.egid_set(runtime.getCurrentContext(), arg);
         }
 
         @JRubyMethod(name = "grant_privilege", module = true, visibility = PRIVATE)
@@ -728,7 +716,7 @@ public class RubyProcess {
 
         @Deprecated
         public static IRubyObject setegid(IRubyObject recv, IRubyObject arg) {
-            return egid_set(recv.getRuntime(), arg);
+            return egid_set(recv.getRuntime().getCurrentContext(), arg);
         }
         @JRubyMethod(name = "setegid", module = true, visibility = PRIVATE)
         public static IRubyObject setegid(ThreadContext context, IRubyObject recv, IRubyObject arg) {
@@ -737,11 +725,11 @@ public class RubyProcess {
 
         @Deprecated
         public static IRubyObject seteuid(IRubyObject recv, IRubyObject arg) {
-            return euid_set(recv.getRuntime(), arg);
+            return euid_set(recv.getRuntime().getCurrentContext(), arg);
         }
         @JRubyMethod(name = "seteuid", module = true, visibility = PRIVATE)
         public static IRubyObject seteuid(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-            return euid_set(context.runtime, arg);
+            return euid_set(context, arg);
         }
 
         @Deprecated
@@ -799,31 +787,31 @@ public class RubyProcess {
 
     @JRubyMethod(name = "setrlimit", module = true, visibility = PRIVATE)
     public static IRubyObject setrlimit(ThreadContext context, IRubyObject recv, IRubyObject resource, IRubyObject rlimCur, IRubyObject rlimMax) {
-        Ruby runtime = context.runtime;
-
         if (Platform.IS_WINDOWS) {
-            throw runtime.newNotImplementedError("Process#setrlimit is not implemented on Windows");
+            throw context.runtime.newNotImplementedError("Process#setrlimit is not implemented on Windows");
         }
 
-        if (!runtime.getPosix().isNative()) {
-            runtime.getWarnings().warn("Process#setrlimit not supported on this platform");
+        var posix = context.runtime.getPosix();
+
+        if (!posix.isNative()) {
+            context.runtime.getWarnings().warn("Process#setrlimit not supported on this platform");
             return context.nil;
         }
 
-        RLimit rlim = runtime.getPosix().getrlimit(0);
+        RLimit rlim = posix.getrlimit(0);
 
         if (rlimMax == context.nil)
             rlimMax = rlimCur;
 
-        rlim.init(rlimitResourceValue(runtime, rlimCur), rlimitResourceValue(runtime, rlimMax));
+        rlim.init(rlimitResourceValue(context, rlimCur), rlimitResourceValue(context, rlimMax));
 
-        if (runtime.getPosix().setrlimit(rlimitResourceType(runtime, resource), rlim) < 0) {
-            throw runtime.newErrnoFromInt(runtime.getPosix().errno(), "setrlimit");
+        if (posix.setrlimit(rlimitResourceType(context, resource), rlim) < 0) {
+            throw context.runtime.newErrnoFromInt(posix.errno(), "setrlimit");
         }
         return context.nil;
     }
 
-    private static int rlimitResourceValue(Ruby runtime, IRubyObject rval) {
+    private static int rlimitResourceValue(ThreadContext context, IRubyObject rval) {
         String name;
         IRubyObject v;
 
@@ -837,7 +825,7 @@ public class RubyProcess {
                 break;
 
             default:
-                v = TypeConverter.checkStringType(runtime, rval);
+                v = TypeConverter.checkStringType(context.runtime, rval);
                 if (!v.isNil()) {
                     rval = v;
                     name = rval.convertToString().toString();
@@ -859,11 +847,11 @@ public class RubyProcess {
             if (name.equals("SAVED_CUR")) return RLIM.RLIM_SAVED_CUR.intValue();
         }
 
-        throw runtime.newArgumentError("invalid resource value: " + rval);
+        throw argumentError(context, "invalid resource value: " + rval);
     }
 
     // MRI: rlimit_resource_type
-    private static int rlimitResourceType(Ruby runtime, IRubyObject rtype) {
+    private static int rlimitResourceType(ThreadContext context, IRubyObject rtype) {
         String name;
         IRubyObject v;
         int r;
@@ -878,7 +866,7 @@ public class RubyProcess {
                 break;
 
             default:
-                v = TypeConverter.checkStringType(runtime, rtype);
+                v = TypeConverter.checkStringType(context.runtime, rtype);
                 if (!v.isNil()) {
                     rtype = v;
                     name = rtype.toString();
@@ -894,7 +882,7 @@ public class RubyProcess {
         if (r != -1)
             return r;
 
-        throw runtime.newArgumentError("invalid resource name: " + rtype);
+        throw argumentError(context, "invalid resource name: " + rtype);
     }
 
     // MRI: rlimit_resource_name2int
@@ -1294,25 +1282,35 @@ public class RubyProcess {
 
     @Deprecated
     public static IRubyObject egid_set(IRubyObject recv, IRubyObject arg) {
-        return egid_set(recv.getRuntime(), arg);
+        return egid_set(recv.getRuntime().getCurrentContext(), arg);
     }
     @JRubyMethod(name = "egid=", module = true, visibility = PRIVATE)
     public static IRubyObject egid_set(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        return egid_set(context.runtime, arg);
+        return egid_set(context, arg);
     }
+
+    /**
+     * @param runtime
+     * @param arg
+     * @return ""
+     * @deprecated Use {@link RubyProcess#egid_set(ThreadContext, IRubyObject)}
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public static IRubyObject egid_set(Ruby runtime, IRubyObject arg) {
+        return egid_set(runtime.getCurrentContext(), arg);
+    }
+
+    public static IRubyObject egid_set(ThreadContext context, IRubyObject arg) {
         int gid;
         if (arg instanceof RubyInteger || arg.checkStringType().isNil()) {
             gid = (int)arg.convertToInteger().getLongValue();
         } else {
-            Group group = runtime.getPosix().getgrnam(arg.asJavaString());
-            if (group == null) {
-                throw runtime.newArgumentError("can't find group for " + arg.inspect());
-            }
+            Group group = context.runtime.getPosix().getgrnam(arg.asJavaString());
+            if (group == null) throw argumentError(context, "can't find group for " + arg.inspect());
             gid = (int)group.getGID();
         }
-        checkErrno(runtime.getCurrentContext(), runtime.getPosix().setegid(gid));
-        return RubyFixnum.zero(runtime);
+        checkErrno(context, context.runtime.getPosix().setegid(gid));
+        return asFixnum(context, 0);
     }
 
     @Deprecated
@@ -1460,25 +1458,38 @@ public class RubyProcess {
 
     @Deprecated
     public static IRubyObject euid_set(IRubyObject recv, IRubyObject arg) {
-        return euid_set(recv.getRuntime(), arg);
+        return euid_set(recv.getRuntime().getCurrentContext(), arg);
     }
     @JRubyMethod(name = "euid=", module = true, visibility = PRIVATE)
     public static IRubyObject euid_set(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        return euid_set(context.runtime, arg);
+        return euid_set(context, arg);
     }
+
+    /**
+     * @param runtime
+     * @param arg
+     * @return ""
+     * @deprecated Use {@link RubyProcess#egid_set(ThreadContext, IRubyObject)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public static IRubyObject euid_set(Ruby runtime, IRubyObject arg) {
+        return euid_set(runtime.getCurrentContext(), arg);
+    }
+
+
+    public static IRubyObject euid_set(ThreadContext context, IRubyObject arg) {
         int uid;
         if (arg instanceof RubyInteger || arg.checkStringType().isNil()) {
             uid = arg.convertToInteger().getIntValue();
         } else {
-            Passwd password = runtime.getPosix().getpwnam(arg.asJavaString());
+            Passwd password = context.runtime.getPosix().getpwnam(arg.asJavaString());
             if (password == null) {
-                throw runtime.newArgumentError("can't find user for " + arg.inspect());
+                throw argumentError(context, "can't find user for " + arg.inspect());
             }
             uid = (int)password.getUID();
         }
-        checkErrno(runtime.getCurrentContext(), runtime.getPosix().seteuid(uid));
-        return RubyFixnum.zero(runtime);
+        checkErrno(context, context.runtime.getPosix().seteuid(uid));
+        return asFixnum(context, 0);
     }
 
     @Deprecated
@@ -1537,22 +1548,32 @@ public class RubyProcess {
     }
     @JRubyMethod(name = "getrlimit", module = true, visibility = PRIVATE)
     public static IRubyObject getrlimit(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        return getrlimit(context.runtime, arg);
+        return getrlimit(context, arg);
     }
-    public static IRubyObject getrlimit(Ruby runtime, IRubyObject arg) {
-        var context = runtime.getCurrentContext();
 
+    /**
+     * @param runtime
+     * @param arg
+     * @return ""
+     * @deprecated Use {@link RubyProcess#getrlimit(ThreadContext, IRubyObject)}
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
+    public static IRubyObject getrlimit(Ruby runtime, IRubyObject arg) {
+        return getrlimit(runtime.getCurrentContext(), arg);
+    }
+
+    public static IRubyObject getrlimit(ThreadContext context, IRubyObject arg) {
         if (Platform.IS_WINDOWS) {
-            throw runtime.newNotImplementedError("Process#getrlimit is not implemented on Windows");
+            throw context.runtime.newNotImplementedError("Process#getrlimit is not implemented on Windows");
         }
 
-        if (!runtime.getPosix().isNative()) {
-            runtime.getWarnings().warn("Process#getrlimit not supported on this platform");
+        if (!context.runtime.getPosix().isNative()) {
+            context.runtime.getWarnings().warn("Process#getrlimit not supported on this platform");
             RubyFixnum max = asFixnum(context, Long.MAX_VALUE);
             return newArray(context, max, max);
         }
 
-        RLimit rlimit = runtime.getPosix().getrlimit(rlimitResourceType(runtime, arg));
+        RLimit rlimit = context.runtime.getPosix().getrlimit(rlimitResourceType(context, arg));
 
         return newArray(context, asFixnum(context, rlimit.rlimCur()), asFixnum(context, rlimit.rlimMax()));
     }

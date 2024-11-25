@@ -84,6 +84,7 @@ import org.jcodings.unicode.UnicodeEncoding;
 import static org.jruby.RubyBasicObject.getMetaClass;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_EMPTY;
 import static org.jruby.runtime.Visibility.*;
@@ -489,7 +490,7 @@ public class Helpers {
      * Same as {@link #calculateBufferLength(int)} but raises a Ruby ArgumentError.
      */
     public static int calculateBufferLength(Ruby runtime, int length) {
-        if (length > MAX_ARRAY_SIZE) throw runtime.newArgumentError("argument too big");
+        if (length > MAX_ARRAY_SIZE) throw argumentError(runtime.getCurrentContext(), "argument too big");
 
         int newLength;
         try {
@@ -513,17 +514,13 @@ public class Helpers {
     public static int multiplyBufferLength(Ruby runtime, int base, int multiplier) {
         try {
             int newSize = Math.multiplyExact(base, multiplier);
-
-            if (newSize <= MAX_ARRAY_SIZE) {
-                return newSize;
-            }
-
+            if (newSize <= MAX_ARRAY_SIZE) return newSize;
             // fall through to error below
         } catch (ArithmeticException e) {
             // fall through to error below
         }
 
-        throw runtime.newArgumentError("argument too big");
+        throw argumentError(runtime.getCurrentContext(), "argument too big");
     }
 
     /**
@@ -540,21 +537,14 @@ public class Helpers {
         try {
             int newSize = Math.addExact(base, extra);
 
-            if (newSize <= MAX_ARRAY_SIZE) {
-                return newSize;
-            }
-
-            // can't accommodate all of extra buffer size, but do as much as we can
-            if (extra > 0) {
-                return MAX_ARRAY_SIZE;
-            }
-
+            if (newSize <= MAX_ARRAY_SIZE) return newSize;
+            if (extra > 0) return MAX_ARRAY_SIZE;  // can't accommodate all of extra buffer size, but do as much as we can
             // fall through to error below
         } catch (ArithmeticException e) {
             // fall through to error below
         }
 
-        throw runtime.newArgumentError("argument too big");
+        throw argumentError(runtime.getCurrentContext(), "argument too big");
     }
 
     /**
@@ -562,11 +552,9 @@ public class Helpers {
      * error.
      */
     public static int validateBufferLength(Ruby runtime, long length) {
-        if (length < 0) {
-            throw runtime.newArgumentError("negative argument");
-        } else if (length > MAX_ARRAY_SIZE) {
-            throw runtime.newArgumentError("argument too big");
-        }
+        if (length < 0) throw argumentError(runtime.getCurrentContext(), "negative argument");
+        if (length > MAX_ARRAY_SIZE) throw argumentError(runtime.getCurrentContext(), "argument too big");
+
         return (int) length;
     }
 
@@ -985,28 +973,19 @@ public class Helpers {
         if (opt == 0) {
             if (rest < 0) {
                 // no opt, no rest, exact match
-                if (given != required) {
-                    throw runtime.newArgumentError(given, required);
-                }
+                if (given != required) throw argumentError(context, given, required);
             } else {
                 // only rest, must be at least required
-                if (given < required) {
-                    throw runtime.newArgumentError(given, required);
-                }
+                if (given < required) throw argumentError(context, given, required);
             }
         } else {
             if (rest < 0) {
                 // opt but no rest, must be at least required and no more than required + opt
-                if (given < required) {
-                    throw runtime.newArgumentError(given, required);
-                } else if (given > (required + opt)) {
-                    throw runtime.newArgumentError(given, required + opt);
-                }
+                if (given < required) throw argumentError(context, given, required);
+                if (given > (required + opt)) throw argumentError(context, given, required + opt);
             } else {
                 // opt and rest, must be at least required
-                if (given < required) {
-                    throw runtime.newArgumentError(given, required);
-                }
+                if (given < required) throw argumentError(context, given, required);
             }
         }
     }
@@ -2068,7 +2047,12 @@ public class Helpers {
         return addInstanceMethod(containingClass, runtime.fastNewSymbol(name), method, visibility, context, runtime);
     }
 
+    @Deprecated
     public static RubySymbol addInstanceMethod(RubyModule containingClass, RubySymbol symbol, DynamicMethod method, Visibility visibility, ThreadContext context, Ruby runtime) {
+        return addInstanceMethod(containingClass, symbol, method, visibility, context);
+    }
+
+    public static RubySymbol addInstanceMethod(RubyModule containingClass, RubySymbol symbol, DynamicMethod method, Visibility visibility, ThreadContext context) {
         containingClass.addMethod(symbol.idString(), method);
 
         if (!containingClass.isRefinement()) callNormalMethodHook(containingClass, context, symbol);
@@ -2461,7 +2445,7 @@ public class Helpers {
         } else {
             return;
         }
-        throw context.runtime.newArgumentError(length, expected);
+        throw argumentError(context, length, expected);
     }
 
     public static boolean isModuleAndHasConstant(IRubyObject left, String name) {

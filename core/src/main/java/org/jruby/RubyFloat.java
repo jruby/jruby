@@ -1312,28 +1312,21 @@ public class RubyFloat extends RubyNumeric implements Appendable {
 
     @Deprecated
     public IRubyObject floor(ThreadContext context, IRubyObject[] args) {
-        switch (args.length) {
-            case 0:
-                return floor(context);
-            case 1:
-                return floor(context, args[0]);
-            default:
-                throw context.runtime.newArgumentError("floor", args.length, 1);
-        }
+        return switch (args.length) {
+            case 0 -> floor(context);
+            case 1 -> floor(context, args[0]);
+            default -> throw argumentError(context, args.length, 1);
+        };
     }
 
     @Deprecated
     public IRubyObject round(ThreadContext context, IRubyObject[] args) {
-        switch (args.length) {
-            case 0:
-                return round(context);
-            case 1:
-                return round(context, args[0]);
-            case 2:
-                return round(context, args[0], args[1]);
-            default:
-                throw context.runtime.newArgumentError("round", args.length, 2);
-        }
+        return switch (args.length) {
+            case 0 -> round(context);
+            case 1 -> round(context, args[0]);
+            case 2 -> round(context, args[0], args[1]);
+            default -> throw argumentError(context, args.length, 2);
+        };
     }
 
     private static FloatSites sites(ThreadContext context) {

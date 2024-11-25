@@ -69,6 +69,7 @@ import java.nio.channels.Channel;
 import static com.headius.backport9.buffer.Buffers.flipBuffer;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
 
@@ -312,7 +313,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
         int maxSize = 103; // Max size from Darwin, lowest common value we know of
         if (fpath.length() > 103) {
-            throw runtime.newArgumentError("too long unix socket path (max: " + maxSize + "bytes)");
+            throw argumentError(runtime.getCurrentContext(), "too long unix socket path (max: " + maxSize + "bytes)");
         }
 
         Closeable closeable = null;

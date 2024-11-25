@@ -193,11 +193,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return regex;
     }
 
-    private static Regex getPreprocessedRegexpFromCache(Ruby runtime, ByteList bytes, Encoding enc, RegexpOptions options, RegexpSupport.ErrorMode mode) {
+    private static Regex getPreprocessedRegexpFromCache(ThreadContext context, ByteList bytes, Encoding enc,
+                                                        RegexpOptions options, RegexpSupport.ErrorMode mode) {
         Regex regex = preprocessedPatternCache.get(bytes);
         if (regex != null && regex.getEncoding() == enc && regex.getOptions() == options.toJoniOptions()) return regex;
-        ByteList preprocessed = RegexpSupport.preprocess(runtime, bytes, enc, new Encoding[]{null}, RegexpSupport.ErrorMode.RAISE);
-        regex = makeRegexp(runtime, preprocessed, options, enc);
+        ByteList preprocessed = RegexpSupport.preprocess(context.runtime, bytes, enc, new Encoding[]{null}, RegexpSupport.ErrorMode.RAISE);
+        regex = makeRegexp(context.runtime, preprocessed, options, enc);
         regex.setUserObject(preprocessed);
         preprocessedPatternCache.put(bytes, regex);
         return regex;
@@ -400,12 +401,11 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 pattern.getEncoding() + " regexp with " + strEnc + " string)");
     }
 
-    private Encoding prepareEncoding(RubyString str, boolean warn) {
+    private Encoding prepareEncoding(ThreadContext context, RubyString str, boolean warn) {
         Encoding enc = str.getEncoding();
         int cr = str.scanForCodeRange();
-        if (cr == StringSupport.CR_BROKEN) {
-            throw getRuntime().newArgumentError("invalid byte sequence in " + enc);
-        }
+        if (cr == StringSupport.CR_BROKEN) throw argumentError(context, "invalid byte sequence in " + enc);
+
         check();
         Encoding patternEnc = pattern.getEncoding();
         if (patternEnc == enc) {
@@ -420,16 +420,26 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             enc = patternEnc;
         }
         if (warn && isEncodingNone() && enc != ASCIIEncoding.INSTANCE && cr != StringSupport.CR_7BIT) {
-            metaClass.runtime.getWarnings().warn(ID.REGEXP_MATCH_AGAINST_STRING, "historical binary regexp match /.../n against " + enc + " string");
+            context.runtime.getWarnings().warn(ID.REGEXP_MATCH_AGAINST_STRING, "historical binary regexp match /.../n against " + enc + " string");
         }
         return enc;
     }
 
+    /**
+     * @param str
+     * @return ""
+     * @deprecated Use {@link RubyRegexp#preparePattern(ThreadContext, RubyString)} instead
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public final Regex preparePattern(RubyString str) {
+        return preparePattern(getCurrentContext(), str);
+    }
+
+    public final Regex preparePattern(ThreadContext context, RubyString str) {
         // checkEncoding does `check();` no need to here
-        Encoding enc = prepareEncoding(str, true);
+        Encoding enc = prepareEncoding(context, str, true);
         if (enc == pattern.getEncoding()) return pattern;
-        return getPreprocessedRegexpFromCache(metaClass.runtime, this.str, enc, options, RegexpSupport.ErrorMode.PREPROCESS);
+        return getPreprocessedRegexpFromCache(context, this.str, enc, options, RegexpSupport.ErrorMode.PREPROCESS);
     }
 
 
@@ -942,18 +952,29 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return regexpInitializeString(arg0.convertToString(), regexpOptions, timeout);
     }
 
-    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, keywords = true)
+    /**
+     * @param arg0
+     * @param arg1
+     * @param arg2
+     * @return ""
+     * @deprecated Use {@link RubyRegexp#initialize_m(ThreadContext, IRubyObject, IRubyObject, IRubyObject)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public IRubyObject initialize_m(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        ThreadContext context = getRuntime().getCurrentContext();
+        return initialize_m(getCurrentContext(), arg0, arg1, arg2);
+    }
+
+    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, keywords = true)
+    public IRubyObject initialize_m(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         boolean keywords = (resetCallInfo(context) & ThreadContext.CALL_KEYWORD) != 0;
 
         if (arg0 instanceof RubyRegexp && Options.PARSER_WARN_FLAGS_IGNORED.load()) {
-            metaClass.runtime.getWarnings().warn(ID.REGEXP_IGNORED_FLAGS, "flags ignored");
+            context.runtime.getWarnings().warn(ID.REGEXP_IGNORED_FLAGS, "flags ignored");
             return initializeByRegexp((RubyRegexp)arg0, timeoutFromArg(context, arg2));
         }
 
         RegexpOptions newOptions = RegexpOptions.fromJoniOptions(objectAsJoniOptions(arg1));
-        if (!keywords) throw getRuntime().newArgumentError(3, 1, 2);
+        if (!keywords) throw argumentError(context, 3, 1, 2);
 
         return regexpInitializeString(arg0.convertToString(), newOptions, timeoutFromArg(context, arg2));
     }
@@ -1200,7 +1221,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             pos = str.rbStrOffset(pos);
         }
 
-        final Regex reg = preparePattern(str);
+        final Regex reg = preparePattern(context, str);
         final ByteList strBL = str.getByteList();
         final int beg = strBL.begin();
         final long timeout = getRegexpTimeout(context);
@@ -1229,9 +1250,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
         RubyFloat converted = timeout.convertToFloat();
 
-        if (converted.isInfinite() || converted.value > MAX_TIMEOUT_VALUE) converted = context.runtime.newFloat(MAX_TIMEOUT_VALUE);
-
-        if (converted.value <= 0) throw context.runtime.newArgumentError("invalid timeout: " + timeout);
+        if (converted.isInfinite() || converted.value > MAX_TIMEOUT_VALUE) converted = asFloat(context, MAX_TIMEOUT_VALUE);
+        if (converted.value <= 0) throw argumentError(context, "invalid timeout: " + timeout);
 
         return converted;
     }
@@ -1272,7 +1292,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     final boolean startsWith(ThreadContext context, RubyString str) {
         final ByteList strBL = str.getByteList();
         final int beg = strBL.begin();
-        final Regex reg = preparePattern(str);
+        final Regex reg = preparePattern(context, str);
 
         final Matcher matcher = reg.matcher(strBL.unsafeBytes(), beg, beg + strBL.realSize());
 
@@ -1328,7 +1348,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             return -1;
         }
 
-        final Regex reg = preparePattern(str);
+        final Regex reg = preparePattern(context, str);
 
         if (!reverse) range += str.size();
 

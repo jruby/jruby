@@ -14,6 +14,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -94,7 +95,7 @@ public class ArrayUtils {
         }
         catch (IndexOutOfBoundsException e) { throw mapIndexOutOfBoundsException(runtime, array, index); }
         catch (ArrayStoreException e) { throw mapArrayStoreException(runtime, array, value.getClass()); }
-        catch (IllegalArgumentException e) { throw mapIllegalArgumentException(runtime, array, value.getClass()); }
+        catch (IllegalArgumentException e) { throw mapIllegalArgumentException(runtime.getCurrentContext(), array, value.getClass()); }
         return value;
     }
 
@@ -104,7 +105,7 @@ public class ArrayUtils {
         }
         catch (IndexOutOfBoundsException e) { throw mapIndexOutOfBoundsException(runtime, array, index); }
         catch (ArrayStoreException e) { throw mapArrayStoreException(runtime, array, javaValue.getClass()); }
-        catch (IllegalArgumentException e) { throw mapIllegalArgumentException(runtime, array, javaValue.getClass()); }
+        catch (IllegalArgumentException e) { throw mapIllegalArgumentException(runtime.getCurrentContext(), array, javaValue.getClass()); }
     }
 
     private static RaiseException mapIndexOutOfBoundsException(final Ruby runtime, final Object array, int index) {
@@ -117,8 +118,8 @@ public class ArrayUtils {
                 " (array contains " + array.getClass().getComponentType().getName() + ')');
     }
 
-    private static RaiseException mapIllegalArgumentException(final Ruby runtime, final Object array, final Class<?> type) {
-        return runtime.newArgumentError("wrong element type " + type.getName() + " (array contains " +
+    private static RaiseException mapIllegalArgumentException(ThreadContext context, final Object array, final Class<?> type) {
+        return argumentError(context, "wrong element type " + type.getName() + " (array contains " +
                 array.getClass().getComponentType().getName() + ')');
     }
 

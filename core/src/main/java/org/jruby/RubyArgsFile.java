@@ -857,40 +857,38 @@ public class RubyArgsFile extends RubyObject {
         int argc = Arity.checkArgumentCount(context, args, 0, 2);
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
         IRubyObject tmp, str, length;
-            long len = 0;
+        long len = 0;
+        var nil = context.nil;
 
         if (argc > 0) {
             length = args[0];
-            str = argc > 1 ? args[1] : context.nil;
+            str = argc > 1 ? args[1] : nil;
         } else {
-            str = length = context.nil;
+            str = length = nil;
         }
 
-        if (length != context.nil) len = numericToLong(context, length);
+        if (length != nil) len = numericToLong(context, length);
 
-        if (str != context.nil) {
+        if (str != nil) {
             str = str.convertToString();
             ((RubyString) str).modify();
             ((RubyString) str).getByteList().length(0);
-            args[1] = context.nil;
+            args[1] = nil;
         }
 
         while (true) {
             if (!data.next_argv(context)) return str;
 
-            if (data.currentFile instanceof RubyIO) {
-                tmp = ((RubyIO) data.currentFile).read(args);
-            } else {
-                tmp = data.currentFile.callMethod(context, "read", args);
-            }
+            tmp = data.currentFile instanceof RubyIO file ?
+                    file.read(context, args) : data.currentFile.callMethod(context, "read", args);
 
-            if (str == context.nil) {
+            if (str == nil) {
                 str = tmp;
-            } else if (tmp != context.nil) {
+            } else if (tmp != nil) {
                 ((RubyString) str).append(tmp);
             }
 
-            if (tmp == context.nil || length == context.nil) {
+            if (tmp == nil || length == nil) {
                 if (data.next_p != Stream) {
                     argf_close(context, data.currentFile);
                     data.next_p = NextFile;

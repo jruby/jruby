@@ -142,16 +142,12 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
     @JRubyMethod(name = "initialize", required = 1, optional = 1, checkArity = false, visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 1, 2);
-
-        Ruby runtime = context.runtime;
         IRubyObject obj = initialize(context, args[0]);
         IRubyObject opt = context.nil;
         
         if (argc == 2) {
             opt = args[1];
-            if (TypeConverter.checkHashType(runtime, opt).isNil()) {
-                throw runtime.newArgumentError(2, 1);
-            }
+            if (TypeConverter.checkHashType(context.runtime, opt).isNil()) throw argumentError(context, 2, 1);
         }
         
         ecopts(context, opt);

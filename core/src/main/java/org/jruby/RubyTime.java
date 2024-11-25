@@ -1432,7 +1432,7 @@ public class RubyTime extends RubyObject {
 
             String zoneName = zone.getShortName(dt.getMillis());
             if (!TIME_OFFSET_PATTERN.matcher(zoneName).matches()) {
-                string.setInternalVariable("zone", Convert.asString(context, zoneName));
+                string.setInternalVariable("zone", newString(context, zoneName));
             }
         }
 

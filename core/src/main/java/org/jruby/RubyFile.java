@@ -1453,8 +1453,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     // mri: rb_open_file + rb_scan_open_args
     protected IRubyObject openFile(ThreadContext context, IRubyObject args[]) {
-        Ruby runtime = context.runtime;
-
         API.ModeAndPermission pm = new API.ModeAndPermission(null, null);
         IRubyObject options = context.nil;
 
@@ -1462,7 +1460,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             case 1:
                 break;
             case 2: {
-                IRubyObject test = TypeConverter.checkHashType(runtime, args[1]);
+                IRubyObject test = TypeConverter.checkHashType(context.runtime, args[1]);
                 if (test instanceof RubyHash) {
                     options = test;
                 } else {
@@ -1471,7 +1469,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 break;
             }
             case 3: {
-                IRubyObject test = TypeConverter.checkHashType(runtime, args[2]);
+                IRubyObject test = TypeConverter.checkHashType(context.runtime, args[2]);
                 if (test instanceof RubyHash) {
                     options = test;
                 } else {
@@ -1483,9 +1481,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             case 4:
                 if (!args[3].isNil()) {
                     options = TypeConverter.convertToTypeWithCheck(context, args[3], context.runtime.getHash(), sites(context).to_hash_checked);
-                    if (options.isNil()) {
-                        throw runtime.newArgumentError(4, 1, 3);
-                    }
+                    if (options.isNil()) throw argumentError(context, 4, 1, 3);
                 }
                 vperm(pm, args[2]);
                 vmode(pm, args[1]);
@@ -2327,10 +2323,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      * @param context
      */
     private static RubyString checkHome(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        IRubyObject home = runtime.getENV().fastARef(RubyString.newStringShared(runtime, RubyDir.HOME));
+        IRubyObject home = context.runtime.getENV().fastARef(RubyString.newStringShared(context.runtime, RubyDir.HOME));
         if (home == null || home == context.nil || ((RubyString) home).size() == 0) {
-            throw runtime.newArgumentError("couldn't find HOME environment -- expanding `~'");
+            throw argumentError(context, "couldn't find HOME environment -- expanding `~'");
         }
         return (RubyString) home;
     }
@@ -2351,20 +2346,16 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     private static RubyString doJoin(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         final Ruby runtime = context.runtime;
         final String separator = runtime.getFile().getConstant("SEPARATOR").toString();
-
         final RubyArray argsAry = RubyArray.newArrayMayCopy(runtime, args);
-
         final StringBuilder buffer = new StringBuilder(24);
-        boolean isTainted = joinImpl(buffer, separator, context, recv, argsAry);
 
-        RubyString fixedStr = new RubyString(runtime, runtime.getString(), buffer);
-        return fixedStr;
+        joinImpl(buffer, separator, context, recv, argsAry);
+
+        return new RubyString(runtime, runtime.getString(), buffer);
     }
 
     private static boolean joinImpl(final StringBuilder buffer, final String separator,
         ThreadContext context, IRubyObject recv, RubyArray args) {
-
-        boolean isTainted = false;
 
         for (int i = 0; i < args.size(); i++) {
             final IRubyObject arg = args.eltInternal(i);
@@ -2372,12 +2363,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             final String element;
             if (arg instanceof RubyString) {
                 element = arg.convertToString().toString();
-            } else if (arg instanceof RubyArray) {
-                if (context.runtime.isInspecting(arg)) {
-                    throw argumentError(context, "recursive array");
-                } else {
-                    element = joinImplInspecting(separator, context, recv, args, ((RubyArray) arg)).toString();
-                }
+            } else if (arg instanceof RubyArray ary) {
+                if (context.runtime.isInspecting(arg)) throw argumentError(context, "recursive array");
+
+                element = joinImplInspecting(separator, context, recv, args, ary).toString();
             } else {
                 RubyString path = StringSupport.checkEmbeddedNulls(context.runtime, get_path(context, arg));
                 element = path.toString();
@@ -2397,7 +2386,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             buffer.append(element);
         }
 
-        return isTainted;
+        return false; // used to be tainted value when tainting existed.
     }
 
     private static StringBuilder joinImplInspecting(final String separator,
@@ -2415,8 +2404,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             runtime.registerInspecting(parent);
             joinImpl(buffer, separator, context, recv, array);
             return buffer;
-        }
-        finally {
+        } finally {
             runtime.unregisterInspecting(parent);
         }
     }
@@ -2469,7 +2457,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         file.truncate(context, newLength);
         file.close();
 
-        return RubyFixnum.zero(runtime);
+        return asFixnum(context, 0);
     }
 
     private static FileSites sites(ThreadContext context) {
@@ -2550,9 +2538,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @Deprecated
     public static IRubyObject realpath(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         RubyString file = expandPathInternal(context, args, false, true);
-        if (!RubyFileTest.exist(context, file)) {
-            throw context.runtime.newErrnoENOENTError(file.toString());
-        }
+        if (!RubyFileTest.exist(context, file)) throw context.runtime.newErrnoENOENTError(file.toString());
         return file;
     }
 

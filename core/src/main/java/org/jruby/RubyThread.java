@@ -62,7 +62,6 @@ import org.jcodings.Encoding;
 import org.joni.Matcher;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.api.Convert;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
@@ -99,9 +98,9 @@ import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.*;
-import static org.jruby.util.RubyStringBuilder.ids;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
 
@@ -543,7 +542,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         @JRubyMethod
         public IRubyObject path(ThreadContext context) {
-            return Convert.asString(context, element.getFileName());
+            return newString(context, element.getFileName());
         }
 
         @JRubyMethod
@@ -594,18 +593,29 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     /**
+     * @param recv
+     * @param args
+     * @param block
+     * @return ""
+     * @deprecated Use {@link RubyThread#start(ThreadContext, IRubyObject, IRubyObject[], Block)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
+    public static RubyThread start(IRubyObject recv, IRubyObject[] args, Block block) {
+        return start(recv.getRuntime().getCurrentContext(), recv, args, block);
+    }
+
+    /**
      * Basically the same as Thread.new . However, if class Thread is
      * subclassed, then calling start in that subclass will not invoke the
      * subclass's initialize method.
      */
     @JRubyMethod(rest = true, name = "start", meta = true)
-    public static RubyThread start(IRubyObject recv, IRubyObject[] args, Block block) {
+    public static RubyThread start(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         // The error message may appear incongruous here, due to the difference
         // between JRuby's Thread model and MRI's.
         // We mimic MRI's message in the name of compatibility.
-        if (! block.isGiven()) {
-            throw recv.getRuntime().newArgumentError("tried to create Proc object without a block");
-        }
+        if (!block.isGiven()) throw argumentError(context, "tried to create Proc object without a block");
+
         return startThread(recv, args, false, block);
     }
 
@@ -809,18 +819,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(meta = true)
     public static IRubyObject handle_interrupt(ThreadContext context, IRubyObject self, IRubyObject _mask, Block block) {
-        if (!block.isGiven()) {
-            throw context.runtime.newArgumentError("block is needed");
-        }
+        if (!block.isGiven()) throw argumentError(context, "block is needed");
 
         final RubyHash mask = _mask.convertToHash().dupFast(context);
-
-        if (mask.isEmpty()) {
-            return block.yield(context, context.nil);
-        }
+        if (mask.isEmpty()) return block.yield(context, context.nil);
 
         mask.visitAll(context, HandleInterruptVisitor, null);
-
         mask.setFrozen(true);
 
         return context.getThread().handleInterrupt(context, mask, block);
@@ -868,14 +872,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     };
 
     private static int checkInterruptMask(final ThreadContext context, final IRubyObject sym) {
-        if (sym instanceof RubySymbol) {
-            switch (((RubySymbol) sym).idString()) {
+        if (sym instanceof RubySymbol name) {
+            switch (name.idString()) {
                 case "immediate": return INTERRUPT_IMMEDIATE;
                 case "on_blocking": return INTERRUPT_ON_BLOCKING;
                 case "never": return INTERRUPT_NEVER;
             }
         }
-        throw context.runtime.newArgumentError("unknown mask signature");
+        throw argumentError(context, "unknown mask signature");
     }
 
     @JRubyMethod(name = "pending_interrupt?", meta = true)
@@ -910,17 +914,24 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return false;
     }
 
-    @JRubyMethod(name = "name=")
+    /**
+     * @param name
+     * @return ""
+     * @deprecated Use {@link RubyThread#setName(ThreadContext, IRubyObject)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public IRubyObject setName(IRubyObject name) {
-        final Ruby runtime = getRuntime();
+        return setName(getCurrentContext(), name);
+    }
 
+    @JRubyMethod(name = "name=")
+    public IRubyObject setName(ThreadContext context, IRubyObject name) {
         if (!name.isNil()) {
-            RubyString nameStr = StringSupport.checkEmbeddedNulls(runtime, name);
+            RubyString nameStr = StringSupport.checkEmbeddedNulls(context.runtime, name);
             Encoding enc = nameStr.getEncoding();
-            if (!enc.isAsciiCompatible()) {
-                throw runtime.newArgumentError("ASCII incompatible encoding (" + enc + ")");
-            }
-            threadImpl.setRubyName(runtime.freezeAndDedupString(nameStr).asJavaString());
+            if (!enc.isAsciiCompatible()) throw argumentError(context, "ASCII incompatible encoding (" + enc + ")");
+
+            threadImpl.setRubyName(context.runtime.freezeAndDedupString(nameStr).asJavaString());
         } else {
             threadImpl.setRubyName(null);
         }
@@ -928,15 +939,19 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return name;
     }
 
-    @JRubyMethod(name = "name")
+    /**
+     * @return ""
+     * @deprecated Use {@link RubyThread#getName(ThreadContext)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public IRubyObject getName() {
-        Ruby runtime = getRuntime();
+        return getName(getCurrentContext());
+    }
 
+    @JRubyMethod(name = "name")
+    public IRubyObject getName(ThreadContext context) {
         CharSequence rubyName = threadImpl.getRubyName();
-
-        if (rubyName == null) return runtime.getNil();
-
-        return RubyString.newString(runtime, rubyName);
+        return rubyName == null ? context.nil : newString(context, rubyName.toString());
     }
 
     @JRubyMethod(meta = true)
@@ -989,16 +1004,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         } else {
             context.runtime.getDefaultThreadGroup().addDirectly(this);
         }
-    }
-
-    private RubySymbol getSymbolKey(IRubyObject originalKey) {
-        if (originalKey instanceof RubySymbol) return (RubySymbol) originalKey;
-
-        if (!(originalKey instanceof RubyString)) {
-            throw typeError(getRuntime().getCurrentContext(), "", originalKey, " is not a symbol nor a string");
-        }
-
-        return getRuntime().newSymbol(((RubyString) originalKey).getByteList());
     }
 
     private Map<IRubyObject, IRubyObject> getFiberLocals() {
@@ -1348,7 +1353,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             String id = threadImpl.getRubyName(); // thread.name
             if (notEmpty(id)) {
                 result.cat('@');
-                result.cat(Convert.asSymbol(context, id).getBytes());
+                result.cat(asSymbol(context, id).getBytes());
             }
             if (notEmpty(file) && line >= 0) {
                 result.cat(' ');
@@ -2592,11 +2597,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * @return return value of f.apply.
      */
     public static <StateType> IRubyObject uninterruptible(ThreadContext context, StateType state, BiFunction<ThreadContext, StateType, IRubyObject> f) {
-        Ruby runtime = context.runtime;
-
         return context.getThread().handleInterrupt(
                 context,
-                RubyHash.newHash(runtime, runtime.getObject(), runtime.newSymbol("never")),
+                RubyHash.newHash(context.runtime, context.runtime.getObject(), asSymbol(context, "never")),
                 state,
                 f);
     }
@@ -2651,14 +2654,11 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @Deprecated
     public IRubyObject pending_interrupt_p(ThreadContext context, IRubyObject[] args) {
-        switch (args.length) {
-            case 0:
-                return pending_interrupt_p(context);
-            case 1:
-                return pending_interrupt_p(context, args[0]);
-            default:
-                throw context.runtime.newArgumentError(args.length, 0, 1);
-        }
+        return switch (args.length) {
+            case 0 -> pending_interrupt_p(context);
+            case 1 -> pending_interrupt_p(context, args[0]);
+            default -> throw argumentError(context, args.length, 0, 1);
+        };
     }
 
     @Deprecated
@@ -2673,19 +2673,16 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @Deprecated
     public IRubyObject value() {
-        return value(getRuntime().getCurrentContext());
+        return value(getCurrentContext());
     }
 
     @Deprecated
     public IRubyObject join(ThreadContext context, IRubyObject[] args) {
-        switch (args.length) {
-            case 0:
-                return join(context);
-            case 1:
-                return join(context, args[0]);
-            default:
-                throw context.runtime.newArgumentError(args.length, 0, 1);
-        }
+        return switch (args.length) {
+            case 0 -> join(context);
+            case 1 -> join(context, args[0]);
+            default -> throw argumentError(context, args.length, 0, 1);
+        };
     }
 
     @Deprecated

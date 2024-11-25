@@ -37,6 +37,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PUBLIC;
@@ -97,12 +98,12 @@ public class RubyNoMatchingPatternKeyError extends RubyStandardError {
                 }
                 break;
             case 2:
-                if ((callInfo & ThreadContext.CALL_KEYWORD) == 0) throw getRuntime().newArgumentError(2, 0, 1);
+                if ((callInfo & ThreadContext.CALL_KEYWORD) == 0) throw argumentError(context, 2, 0, 1);
                 IRubyObject[] opts = ArgsUtil.extractKeywordArgs(context, ((RubyHash) args[1]), INITIALIZE_KEYWORDS);
                 setValues(context, args[0], opts[0], opts[1]);
                 break;
             default:
-                throw getRuntime().newArgumentError(args.length, 0, 1);
+                throw argumentError(context, args.length, 0, 1);
         }
 
         return context.nil;

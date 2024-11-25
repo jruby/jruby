@@ -1687,14 +1687,10 @@ public class RubyKernel {
             case '=':
             case '<':
             case '>':
-                if (arg2 == null) {
-                    throw context.runtime.newArgumentError(2, 3);
-                }
+                if (arg2 == null) throw argumentError(context, 2, 3);
                 break;
             default:
-                if (arg1 == null) {
-                    throw context.runtime.newArgumentError(1, 2);
-                }
+                if (arg1 == null) throw argumentError(context, 1, 2);
                 break;
         }
 
@@ -1969,20 +1965,17 @@ public class RubyKernel {
     }
 
     private static IRubyObject execCommon(ThreadContext context, IRubyObject env, IRubyObject prog, IRubyObject options, IRubyObject[] args) {
-        final Ruby runtime = context.runtime;
         // This is a fairly specific hack for empty string, but it does the job
         if (args.length == 1) {
             RubyString command = args[0].convertToString();
-            if (command.isEmpty()) {
-                throw runtime.newErrnoENOENTError(command.toString());
-            } else {
-                for(byte b : command.getBytes()) {
-                    if (b == 0x00) {
-                        throw runtime.newArgumentError("string contains null byte");
-                    }
-                }
+            if (command.isEmpty()) throw context.runtime.newErrnoENOENTError(command.toString());
+
+            for (byte b : command.getBytes()) {
+                if (b == 0x00) throw argumentError(context, "string contains null byte");
             }
         }
+
+        final Ruby runtime = context.runtime;
 
         if (env != null && env != context.nil) {
             RubyHash envMap = env.convertToHash();
@@ -2052,9 +2045,8 @@ public class RubyKernel {
 
         // if we get here, either native exec failed or we should try an in-process exec
         if (nativeFailed) {
-            if (jmxStopped && runtime.getBeanManager().tryRestartAgent()) {
-                runtime.registerMBeans();
-            }
+            if (jmxStopped && runtime.getBeanManager().tryRestartAgent()) runtime.registerMBeans();
+
             throw runtime.newErrnoFromLastPOSIXErrno();
         }
 
@@ -2063,9 +2055,7 @@ public class RubyKernel {
         int resultCode = ShellLauncher.execAndWait(runtime, args);
 
         exit(runtime, new IRubyObject[] {asFixnum(context, resultCode)}, true);
-
-        // not reached
-        return runtime.getNil();
+        return context.nil; // not reached
     }
 
     @JRubyMethod(name = "fork", module = true, visibility = PRIVATE, notImplemented = true)

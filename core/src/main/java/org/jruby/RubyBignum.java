@@ -369,14 +369,11 @@ public class RubyBignum extends RubyInteger {
      *
      */
     public IRubyObject to_s(IRubyObject[] args) {
-        switch (args.length) {
-        case 0:
-            return to_s();
-        case 1:
-            return to_s(args[0]);
-        default:
-            throw getRuntime().newArgumentError(args.length, 1);
-        }
+        return switch (args.length) {
+            case 0 -> to_s();
+            case 1 -> to_s(args[0]);
+            default -> throw argumentError(getRuntime().getCurrentContext(), args.length, 1);
+        };
     }
 
     @Override
@@ -387,9 +384,8 @@ public class RubyBignum extends RubyInteger {
     @Override
     public RubyString to_s(IRubyObject arg0) {
         int base = num2int(arg0);
-        if (base < 2 || base > 36) {
-            throw getRuntime().newArgumentError("illegal radix " + base);
-        }
+        if (base < 2 || base > 36) throw argumentError(getRuntime().getCurrentContext(), "illegal radix " + base);
+
         return RubyString.newUSASCIIString(getRuntime(), value.toString(base));
     }
 

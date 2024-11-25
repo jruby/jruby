@@ -127,18 +127,14 @@ public class RubyServerSocket extends RubySocket {
 
     @Override
     protected ChannelFD initChannelFD(Ruby runtime) {
-        Channel channel;
-
         try {
-            if (soType == Sock.SOCK_STREAM) {
-                channel = ServerSocketChannel.open();
-            } else {
-                throw runtime.newArgumentError("unsupported server socket type '" + soType + "'");
+            if (soType != Sock.SOCK_STREAM) {
+                throw argumentError(runtime.getCurrentContext(), "unsupported server socket type '" + soType + "'");
             }
 
-            return newChannelFD(runtime, channel);
+            return newChannelFD(runtime, ServerSocketChannel.open());
         } catch (IOException e) {
-            throw sockerr(runtime, "initialize: " + e.toString(), e);
+            throw sockerr(runtime, "initialize: " + e, e);
         }
     }
 

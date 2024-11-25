@@ -353,8 +353,6 @@ public final class Ruby implements Constantizable {
 
         // Initialize Kernel and include into Object
         RubyModule kernel = kernelModule = RubyKernel.createKernelModule(this);
-        objectClass.includeModule(kernelModule);
-
         // In 1.9 and later, Kernel.gsub is defined only when '-p' or '-n' is given on the command line
         initKernelGsub(kernel);
 
@@ -381,6 +379,9 @@ public final class Ruby implements Constantizable {
 
         // Get the main threadcontext (gets constructed for us)
         final ThreadContext context = getCurrentContext();
+
+        // includeModule uses TC.
+        objectClass.includeModule(kernelModule);
 
         // Construct the top-level execution frame and scope for the main thread
         context.prepareTopLevel(objectClass, topSelf);

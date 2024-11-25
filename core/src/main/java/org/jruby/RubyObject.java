@@ -57,6 +57,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
 
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.Helpers.throwException;
@@ -340,36 +341,25 @@ public class RubyObject extends RubyBasicObject {
     @Deprecated
     public IRubyObject specificEval(ThreadContext context, RubyModule mod, IRubyObject[] args, Block block, EvalType evalType) {
         if (block.isGiven()) {
-            if (args.length > 0) throw getRuntime().newArgumentError(args.length, 0);
+            if (args.length > 0) throw argumentError(context, args.length, 0);
 
             return yieldUnder(context, mod, block, evalType);
         }
 
-        if (args.length == 0) {
-            throw getRuntime().newArgumentError("block not supplied");
-        } else if (args.length > 3) {
+        if (args.length == 0) throw argumentError(context, "block not supplied");
+        if (args.length > 3) {
             String lastFuncName = context.getFrameName();
-            throw getRuntime().newArgumentError(
-                "wrong number of arguments: " + lastFuncName + "(src) or " + lastFuncName + "{..}");
+            throw argumentError(context, "wrong number of arguments: " + lastFuncName + "(src) or " + lastFuncName + "{..}");
         }
 
         // We just want the TypeError if the argument doesn't convert to a String (JRUBY-386)
-        RubyString evalStr;
-        if (args[0] instanceof RubyString) {
-            evalStr = (RubyString)args[0];
-        } else {
-            evalStr = args[0].convertToString();
-        }
+        RubyString evalStr = args[0] instanceof RubyString str ? str : args[0].convertToString();
 
         String file;
         int line;
         if (args.length > 1) {
             file = args[1].convertToString().asJavaString();
-            if (args.length > 2) {
-                line = (int)(args[2].convertToInteger().getLongValue() - 1);
-            } else {
-                line = 0;
-            }
+            line = args.length > 2 ? (int)(args[2].convertToInteger().getLongValue() - 1) : 0;
         } else {
             file = "(eval at " + context.getFileAndLine() + ")";
             line = 0;

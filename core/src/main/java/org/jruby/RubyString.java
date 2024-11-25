@@ -59,6 +59,7 @@ import org.joni.Regex;
 import org.joni.Region;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Create;
 import org.jruby.api.JRubyAPI;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
@@ -1773,7 +1774,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject arg0, IRubyObject opts) {
         IRubyObject tmp = ArgsUtil.getOptionsArg(context.runtime, opts);
-        if (tmp.isNil()) throw context.runtime.newArgumentError(2, 1);
+        if (tmp.isNil()) throw argumentError(context, 2, 1);
 
         return initialize(context, arg0, (RubyHash) tmp);
     }
@@ -2975,31 +2976,25 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "sub!", writes = BACKREF)
     public IRubyObject sub_bang(ThreadContext context, IRubyObject arg0, Block block) {
-        Ruby runtime = context.runtime;
         frozenCheck();
-
-        if (block.isGiven()) return subBangIter(context, arg0, null, block);
-        throw runtime.newArgumentError(1, 2);
+        if (!block.isGiven()) throw argumentError(context, 1, 2);
+        return subBangIter(context, arg0, null, block);
     }
 
     @JRubyMethod(name = "sub!", writes = BACKREF)
     public IRubyObject sub_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        Ruby runtime = context.runtime;
-        IRubyObject hash = TypeConverter.convertToTypeWithCheck(context, arg1, runtime.getHash(), sites(context).to_hash_checked);
+        IRubyObject hash = TypeConverter.convertToTypeWithCheck(context, arg1, context.runtime.getHash(), sites(context).to_hash_checked);
         frozenCheck();
 
-        if (hash == context.nil) {
-            return subBangNoIter(context, arg0, arg1.convertToString());
-        }
-        return subBangIter(context, arg0, (RubyHash) hash, block);
+        return hash == context.nil ?
+                subBangNoIter(context, arg0, arg1.convertToString()) :
+                subBangIter(context, arg0, (RubyHash) hash, block);
     }
 
     private IRubyObject subBangIter(ThreadContext context, IRubyObject arg0, RubyHash hash, Block block) {
-        if (arg0 instanceof RubyRegexp regexp) {
-            return subBangIter(context, regexp, hash, block);
-        } else {
-            return subBangIter(context, getStringForPattern(context, arg0),  hash, block);
-        }
+        return arg0 instanceof RubyRegexp regexp ?
+                subBangIter(context, regexp, hash, block) :
+                subBangIter(context, getStringForPattern(context, arg0),  hash, block);
     }
 
     private IRubyObject subBangIter(ThreadContext context, RubyString pattern, RubyHash hash, Block block) {
@@ -3038,7 +3033,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     private IRubyObject subBangIter(ThreadContext context, RubyRegexp regexp, RubyHash hash, Block block) {
         Regex pattern = regexp.getPattern();
-        Regex prepared = regexp.preparePattern(this);
+        Regex prepared = regexp.preparePattern(context, this);
 
         int begin = value.getBegin();
         int len = value.getRealSize();
@@ -3138,7 +3133,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     private RubyMatchData subBangMatch(ThreadContext context, RubyRegexp regexp, RubyString repl) {
         Regex pattern = regexp.getPattern();
-        Regex prepared = regexp.preparePattern(this);
+        Regex prepared = regexp.preparePattern(context, this);
 
         int begin = value.getBegin();
         int range = begin + value.getRealSize();
@@ -3374,9 +3369,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     private IRubyObject gsubCommon(ThreadContext context, Block block, RubyString repl,
             RubyHash hash, RubyRegexp regexp, final boolean bang, int tuFlags, boolean useBackref) {
-        final Ruby runtime = context.runtime;
+        //final Ruby runtime = context.runtime;
         Regex pattern = regexp.getPattern();
-        Regex prepared = regexp.preparePattern(this);
+        Regex prepared = regexp.preparePattern(context, this);
 
         final byte[] spBytes = value.getUnsafeBytes();
         final int spBeg = value.getBegin();
@@ -3389,11 +3384,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             // set backref for user
             if (useBackref) context.clearBackRef();
 
-            return bang ? context.nil : strDup(runtime, runtime.getString()); /* bang: true, no match, no substitution */
+            return bang ? context.nil : strDup(context.runtime, context.runtime.getString()); /* bang: true, no match, no substitution */
         }
 
         int offset = 0; int cp = spBeg; //int n = 0;
-        RubyString dest = newString(runtime, new ByteList(spLen + 30));
+        RubyString dest = Create.newString(context, new ByteList(spLen + 30));
         final Encoding str_enc = value.getEncoding();
         dest.setEncoding(str_enc);
         dest.setCodeRange(str_enc.isAsciiCompatible() ? CR_7BIT : CR_VALID);
@@ -3407,7 +3402,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             if (repl != null) {     // string given
                 val = RubyRegexp.regsub(context, repl, this, pattern, matcher);
             } else {
-                final RubyString substr = makeSharedString(runtime, begz, endz - begz);
+                final RubyString substr = makeSharedString(context.runtime, begz, endz - begz);
                 if (hash != null) { // hash given
                     val = objAsString(context, hash.op_aref(context, substr));
                 } else {            // block given
@@ -4508,15 +4503,23 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return stringToInum(10);
     }
 
+    /**
+     * @param arg0
+     * @return ""
+     * @deprecated Use {@link RubyString#to_i(ThreadContext, IRubyObject)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
+    public IRubyObject to_i(IRubyObject arg0) {
+        return to_i(getCurrentContext(), arg0);
+    }
+
     /** rb_str_to_i
      *
      */
     @JRubyMethod(name = "to_i")
-    public IRubyObject to_i(IRubyObject arg0) {
+    public IRubyObject to_i(ThreadContext context, IRubyObject arg0) {
         int base = (int) arg0.convertToInteger().getLongValue();
-        if (base < 0) {
-            throw getRuntime().newArgumentError("illegal radix " + base);
-        }
+        if (base < 0) throw argumentError(context, "illegal radix " + base);
         return stringToInum(base);
     }
 
@@ -5375,23 +5378,20 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     private static final ByteList SPACE_BYTELIST = RubyInteger.singleCharByteList((byte) ' ');
 
-    private IRubyObject justify(Ruby runtime, IRubyObject arg0, int jflag) {
-        RubyString result = justifyCommon(runtime, SPACE_BYTELIST,
-                1,
-                true, EncodingUtils.STR_ENC_GET(this), RubyFixnum.num2int(arg0), jflag);
+    private IRubyObject justify(ThreadContext context, IRubyObject arg0, int jflag) {
+        RubyString result = justifyCommon(context, SPACE_BYTELIST, 1, true, EncodingUtils.STR_ENC_GET(this), RubyFixnum.num2int(arg0), jflag);
         if (getCodeRange() != CR_BROKEN) result.setCodeRange(getCodeRange());
         return result;
     }
 
-    private IRubyObject justify(IRubyObject arg0, IRubyObject arg1, int jflag) {
-        Ruby runtime = getRuntime();
+    private IRubyObject justify(ThreadContext context, IRubyObject arg0, IRubyObject arg1, int jflag) {
         RubyString padStr = arg1.convertToString();
         ByteList pad = padStr.value;
         Encoding enc = checkEncoding(padStr);
         int padCharLen = StringSupport.strLengthFromRubyString(padStr, enc);
-        if (pad.getRealSize() == 0 || padCharLen == 0) throw runtime.newArgumentError("zero width padding");
+        if (pad.getRealSize() == 0 || padCharLen == 0) throw argumentError(context, "zero width padding");
         int width = RubyFixnum.num2int(arg0);
-        RubyString result = justifyCommon(runtime, pad,
+        RubyString result = justifyCommon(context, pad,
                                                    padCharLen,
                                                    padStr.singleByteOptimizable(),
                                                    enc, width, jflag);
@@ -5402,9 +5402,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return result;
     }
 
-    private RubyString justifyCommon(Ruby runtime, ByteList pad, int padCharLen, boolean padSinglebyte, Encoding enc, int width, int jflag) {
+    private RubyString justifyCommon(ThreadContext context, ByteList pad, int padCharLen, boolean padSinglebyte,
+                                     Encoding enc, int width, int jflag) {
         int len = StringSupport.strLengthFromRubyString(this, enc);
-        if (width < 0 || len >= width) return strDup(runtime);
+        if (width < 0 || len >= width) return strDup(context.runtime);
         int n = width - len;
 
         int llen = (jflag == 'l') ? 0 : ((jflag == 'r') ? n : n / 2);
@@ -5458,50 +5459,116 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         res.setRealSize(p);
 
-        RubyString result = newString(runtime, res);
+        RubyString result = Create.newString(context, res);
         if (result.strLength() > strLength()) {
         }
         result.associateEncoding(enc);
         return result;
     }
 
+    /**
+     * @param arg0
+     * @return ""
+     * @deprecated Use {@link RubyString#ljust(ThreadContext, IRubyObject)}
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
+    public IRubyObject ljust(IRubyObject arg0) {
+        return ljust(getCurrentContext(), arg0);
+    }
+
     /** rb_str_ljust
      *
      */
     @JRubyMethod(name = "ljust")
-    public IRubyObject ljust(IRubyObject arg0) {
-        return justify(getRuntime(), arg0, 'l');
+    public IRubyObject ljust(ThreadContext context, IRubyObject arg0) {
+        return justify(context, arg0, 'l');
+    }
+
+    /**
+     *
+     * @param arg0
+     * @param arg1
+     * @return ""
+     * @deprecated Use {@link RubyString#ljust(ThreadContext, IRubyObject, IRubyObject)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
+    public IRubyObject ljust(IRubyObject arg0, IRubyObject arg1) {
+        return ljust(getCurrentContext(), arg0, arg1);
     }
 
     @JRubyMethod(name = "ljust")
-    public IRubyObject ljust(IRubyObject arg0, IRubyObject arg1) {
-        return justify(arg0, arg1, 'l');
+    public IRubyObject ljust(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        return justify(context, arg0, arg1, 'l');
+    }
+
+    /**
+     * @param arg0
+     * @return ""
+     * @deprecated Use {@link RubyString#rjust(ThreadContext, IRubyObject)}
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
+    public IRubyObject rjust(IRubyObject arg0) {
+        return rjust(getCurrentContext(), arg0);
     }
 
     /** rb_str_rjust
      *
      */
     @JRubyMethod(name = "rjust")
-    public IRubyObject rjust(IRubyObject arg0) {
-        return justify(getRuntime(), arg0, 'r');
+    public IRubyObject rjust(ThreadContext context, IRubyObject arg0) {
+        return justify(context, arg0, 'r');
+    }
+
+    /**
+     *
+     * @param arg0
+     * @param arg1
+     * @return ""
+     * @deprecated Use {@link RubyString#rjust(ThreadContext, IRubyObject, IRubyObject)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
+    public IRubyObject rjust(IRubyObject arg0, IRubyObject arg1) {
+        return rjust(getCurrentContext(), arg0, arg1);
     }
 
     @JRubyMethod(name = "rjust")
-    public IRubyObject rjust(IRubyObject arg0, IRubyObject arg1) {
-        return justify(arg0, arg1, 'r');
+    public IRubyObject rjust(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        return justify(context, arg0, arg1, 'r');
+    }
+
+    /**
+     * @param arg0
+     * @return ""
+     * @deprecated Use {@link RubyString#center(ThreadContext, IRubyObject)}
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
+    public IRubyObject center(IRubyObject arg0) {
+        return center(getCurrentContext(), arg0);
     }
 
     /** rb_str_center
      *
      */
     @JRubyMethod(name = "center")
-    public IRubyObject center(IRubyObject arg0) {
-        return justify(getRuntime(), arg0, 'c');
+    public IRubyObject center(ThreadContext context, IRubyObject arg0) {
+        return justify(context, arg0, 'c');
+    }
+
+    /**
+     *
+     * @param arg0
+     * @param arg1
+     * @return ""
+     * @deprecated Use {@link RubyString#center(ThreadContext, IRubyObject, IRubyObject)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
+    public IRubyObject center(IRubyObject arg0, IRubyObject arg1) {
+        return center(getCurrentContext(), arg0, arg1);
     }
 
     @JRubyMethod(name = "center")
-    public IRubyObject center(IRubyObject arg0, IRubyObject arg1) {
-        return justify(arg0, arg1, 'c');
+    public IRubyObject center(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        return justify(context, arg0, arg1, 'c');
     }
 
     @JRubyMethod(reads = BACKREF, writes = BACKREF)
@@ -6624,9 +6691,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private static long unpackOffset(ThreadContext context, IRubyObject opt) {
-        if (!(opt instanceof RubyHash)) throw context.runtime.newArgumentError(2, 1);
+        if (!(opt instanceof RubyHash options)) throw argumentError(context, 2, 1);
 
-        RubyHash options = (RubyHash) opt;
         long offset = 0;
         if (options.size() == 1) {
             IRubyObject offsetArg = options.fastARef(asSymbol(context, "offset"));

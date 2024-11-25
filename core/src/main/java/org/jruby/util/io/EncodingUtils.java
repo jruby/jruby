@@ -2050,7 +2050,7 @@ public class EncodingUtils {
         }
 
         if (!flags.isNil()) {
-            if (!opt.isNil()) throw context.runtime.newArgumentError(args.length, 3);
+            if (!opt.isNil()) throw argumentError(context, args.length, 3);
 
             ecflags_p[0] = (int)flags.convertToInteger().getLongValue();
             ecopts_p[0] = context.nil;
@@ -2415,19 +2415,21 @@ public class EncodingUtils {
     public static Encoding strTranscode0(ThreadContext context, int argc, IRubyObject[] args, IRubyObject[] self_p, int ecflags, IRubyObject ecopts) {
         Encoding[] enc_p = {null};
         TranscodeResult result = (ctx, str, enc, newStr) -> {enc_p[0] = enc; self_p[0] = newStr; return newStr;};
-        switch (argc) {
-            case 0:
+        return switch (argc) {
+            case 0 -> {
                 strTranscode0(context, (RubyString) self_p[0], ecflags, ecopts, result);
-                return enc_p[0];
-            case 1:
+                yield enc_p[0];
+            }
+            case 1 -> {
                 strTranscode1(context, args[0], (RubyString) self_p[0], ecflags, ecopts, result);
-                return enc_p[0];
-            case 2:
+                yield enc_p[0];
+            }
+            case 2 -> {
                 strTranscode2(context, args[0], args[1], (RubyString) self_p[0], ecflags, ecopts, result);
-                return enc_p[0];
-            default:
-                throw context.runtime.newArgumentError(args.length, 2);
-        }
+                yield enc_p[0];
+            }
+            default -> throw argumentError(context, args.length, 2);
+        };
     }
 
     @Deprecated
@@ -2457,18 +2459,13 @@ public class EncodingUtils {
 
     @Deprecated
     public static IRubyObject strTranscode(ThreadContext context, IRubyObject[] args, RubyString str, TranscodeResult result) {
-        switch (args.length) {
-            case 0:
-                return strTranscode(context, str, result);
-            case 1:
-                return strTranscode(context, args[0], str, result);
-            case 2:
-                return strTranscode(context, args[0], args[1], str, result);
-            case 3:
-                return strTranscode(context, args[0], args[1], args[2], str, result);
-            default:
-                throw context.runtime.newArgumentError(args.length, 2);
-        }
+        return switch (args.length) {
+            case 0 -> strTranscode(context, str, result);
+            case 1 -> strTranscode(context, args[0], str, result);
+            case 2 -> strTranscode(context, args[0], args[1], str, result);
+            case 3 -> strTranscode(context, args[0], args[1], args[2], str, result);
+            default -> throw argumentError(context, args.length, 2);
+        };
     }
 
 }

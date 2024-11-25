@@ -195,8 +195,7 @@ public class SizedQueue extends Queue {
             }
 
             RubyThread.Task<IRubyObject, IRubyObject> task = timeoutNS != 0 ?
-                    new BlockingOfferTask(timeoutNS) :
-                    blockingPutTask;
+                    new BlockingOfferTask(timeoutNS) : blockingPutTask;
 
             return thread.executeTaskBlocking(context, arg0, task);
         } catch (InterruptedException ie) {
@@ -214,20 +213,15 @@ public class SizedQueue extends Queue {
         final ReentrantLock putLock = this.putLock;
         putLock.lock();
         try {
-            if (closed) {
-                raiseClosedError(context);
-            }
-            if (count.get() == capacity)
-                return false;
+            if (closed) raiseClosedError(context);
+            if (count.get() == capacity) return false;
             enqueue(node);
             c = count.getAndIncrement();
-            if (c + 1 < capacity)
-                notFull.signal();
+            if (c + 1 < capacity) notFull.signal();
         } finally {
             putLock.unlock();
         }
-        if (c == 0)
-            signalNotEmpty();
+        if (c == 0) signalNotEmpty();
         return true;
     }
 
@@ -271,8 +265,7 @@ public class SizedQueue extends Queue {
         } finally {
             putLock.unlock();
         }
-        if (c == 0)
-            signalNotEmpty();
+        if (c == 0) signalNotEmpty();
         return true;
     }
 
@@ -299,10 +292,7 @@ public class SizedQueue extends Queue {
         @Override
         public IRubyObject run(ThreadContext context, IRubyObject value) throws InterruptedException {
             boolean result = offerInternal(context, value, timeoutNS, TimeUnit.NANOSECONDS);
-            if (!result) {
-                return context.nil;
-            }
-            return SizedQueue.this;
+            return !result ? context.nil : SizedQueue.this;
         }
 
         @Override
@@ -313,13 +303,10 @@ public class SizedQueue extends Queue {
 
     @Deprecated
     public IRubyObject push(ThreadContext context, final IRubyObject[] argv) {
-        switch (argv.length) {
-            case 1:
-                return push(context, argv[0]);
-            case 2:
-                return push(context, argv[0], argv[1]);
-            default:
-                throw context.runtime.newArgumentError(argv.length, 1, 2);
-        }
+        return switch (argv.length) {
+            case 1 -> push(context, argv[0]);
+            case 2 -> push(context, argv[0], argv[1]);
+            default -> throw argumentError(context, argv.length, 1, 2);
+        };
     }
 }
