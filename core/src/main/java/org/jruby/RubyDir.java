@@ -72,6 +72,7 @@ import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.runtimeError;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.io.EncodingUtils.newExternalStringWithEncoding;
 
@@ -462,7 +463,7 @@ public class RubyDir extends RubyObject implements Closeable {
         adjustedPath = getExistingDir(runtime, adjustedPath).canonicalPath();
 
         if (runtime.getChdirThread() != null && context.getThread() != runtime.getChdirThread()) {
-            throw runtime.newRuntimeError("conflicting chdir during another chdir block");
+            throw runtimeError(context, "conflicting chdir during another chdir block");
         }
 
         if(!block.isGiven() && runtime.getChdirThread() != null) {

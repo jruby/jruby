@@ -30,8 +30,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import static org.jruby.api.Error.argumentError;
-import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Error.*;
 
 
 public final class DefaultMethodFactory extends MethodFactory {
@@ -701,19 +700,19 @@ public final class DefaultMethodFactory extends MethodFactory {
 
 
         public final void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
-            if (!(parameter instanceof Struct)) typeError(context, parameter, "instance of FFI::Struct");
+            if (!(parameter instanceof Struct struct)) throw typeError(context, parameter, "instance of FFI::Struct");
 
-            final AbstractMemory memory = ((Struct) parameter).getMemory();
+            final AbstractMemory memory = struct.getMemory();
             if (memory.getSize() < layout.getSize()) throw argumentError(context, "struct memory too small for parameter");
 
             final MemoryIO io = memory.getMemoryIO();
             if (io.isDirect()) {
-                if (io.isNull()) throw context.runtime.newRuntimeError("Cannot use a NULL pointer as a struct by value argument");
+                if (io.isNull()) throw runtimeError(context, "Cannot use a NULL pointer as a struct by value argument");
                 buffer.putStruct(io.address());
             } else if (io instanceof ArrayMemoryIO aio) {
                 buffer.putStruct(aio.array(), aio.arrayOffset());
             } else {
-                throw context.runtime.newRuntimeError("invalid struct memory");
+                throw runtimeError(context, "invalid struct memory");
             }
         }
     }

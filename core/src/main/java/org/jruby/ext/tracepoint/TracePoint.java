@@ -22,6 +22,7 @@ import org.jruby.util.TypeConverter;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.runtimeError;
 import static org.jruby.util.RubyStringBuilder.str;
 
 public class TracePoint extends RubyObject {
@@ -271,7 +272,7 @@ public class TracePoint extends RubyObject {
     }
 
     private void checkInside(ThreadContext context) throws RaiseException {
-        if (!inside) throw context.runtime.newRuntimeError("access from outside");
+        if (!inside) throw runtimeError(context, "access from outside");
     }
 
     private static JavaSites.TracePointSites sites(ThreadContext context) {

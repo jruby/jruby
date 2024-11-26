@@ -42,6 +42,7 @@ import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.numericToLong;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.runtimeError;
 
 @JRubyModule(name="Etc")
 public class RubyEtc {
@@ -277,20 +278,25 @@ public class RubyEtc {
         }
     }
 
-    @JRubyMethod(module = true)
+    /**
+     * @param recv
+     * @param block
+     * @return ""
+     * @deprecated Use {@link RubyEtc#passwd(ThreadContext, IRubyObject, Block)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public static synchronized IRubyObject passwd(IRubyObject recv, Block block) {
-        Ruby runtime = recv.getRuntime();
-        POSIX posix = runtime.getPosix();
+        return passwd(recv.getRuntime().getCurrentContext(), recv, block);
+    }
+
+    @JRubyMethod(module = true)
+    public static synchronized IRubyObject passwd(ThreadContext context, IRubyObject recv, Block block) {
+        var posix = context.runtime.getPosix();
         try {
-            // call getpwent to fail early if unsupported
-            posix.getpwent();
-            if(block.isGiven()) {
-                ThreadContext context = runtime.getCurrentContext();
-                
-                if (!iteratingPasswd.compareAndSet(false, true)) {
-                    throw runtime.newRuntimeError("parallel passwd iteration");
-                }
-                
+            posix.getpwent(); // call getpwent to fail early if unsupported
+            if (block.isGiven()) {
+                if (!iteratingPasswd.compareAndSet(false, true)) throw runtimeError(context, "parallel passwd iteration");
+
                 posix.setpwent();
                 try {
                     Passwd pw;
@@ -304,16 +310,12 @@ public class RubyEtc {
             }
 
             Passwd pw = posix.getpwent();
-            if (pw != null) {
-                return setupPasswd(runtime.getCurrentContext(), pw);
-            } else {
-                return runtime.getNil();
-            }
+            return pw != null ? setupPasswd(context, pw) : context.nil;
         } catch (Exception e) {
-            if (runtime.getDebug().isTrue()) {
-                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.passwd is not supported by JRuby on this platform");
+            if (context.runtime.getDebug().isTrue()) {
+                context.runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.passwd is not supported by JRuby on this platform");
             }
-            return runtime.getNil();
+            return context.nil;
         }
     }
 
@@ -494,7 +496,7 @@ public class RubyEtc {
 
         if (block.isGiven()) {
             Boolean blocking = (Boolean)recv.getInternalVariables().getInternalVariable("group_blocking");
-            if (blocking != null && blocking) throw context.runtime.newRuntimeError("parallel group iteration");
+            if (blocking != null && blocking) throw runtimeError(context, "parallel group iteration");
 
             try {
                 recv.getInternalVariables().setInternalVariable("group_blocking", true);
@@ -510,8 +512,7 @@ public class RubyEtc {
             }
         } else {
             Group gr = posix.getgrent();
-            if (gr != null) return setupGroup(context, gr);
-            return context.nil;
+            return gr != null ? setupGroup(context, gr) : context.nil;
         }
 
         return context.nil;

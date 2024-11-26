@@ -51,6 +51,7 @@ import org.jruby.util.cli.Options;
 
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.runtimeError;
 import static org.jruby.util.StringSupport.*;
 
 public class OpenFile implements Finalizable {
@@ -1692,12 +1693,10 @@ public class OpenFile implements Finalizable {
 
     // swallow
     public boolean swallow(ThreadContext context, int term) {
-        Ruby runtime = context.runtime;
-
         boolean locked = lock();
         try {
             if (needsReadConversion()) {
-                Encoding enc = readEncoding(runtime);
+                Encoding enc = readEncoding(context.runtime);
                 boolean needconv = enc.minLength() != 1;
                 SET_BINARY_MODE();
                 makeReadConversion(context);
@@ -1737,7 +1736,7 @@ public class OpenFile implements Finalizable {
                     i = cnt;
                     while (--i != 0 && (pBytes[++p] & 0xFF) == term) ;
                     if (readBufferedData(buf, 0, cnt - i) == 0) /* must not fail */
-                        throw context.runtime.newRuntimeError("failure copying buffered IO bytes");
+                        throw runtimeError(context, "failure copying buffered IO bytes");
                 }
                 READ_CHECK(context);
             } while (fillbuf(context) == 0);

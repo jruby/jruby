@@ -11,8 +11,7 @@ import org.jruby.runtime.callsite.CachingCallSite;
 import java.math.BigInteger;
 
 import static org.jruby.api.Convert.*;
-import static org.jruby.api.Error.argumentError;
-import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Error.*;
 
 /**
  *
@@ -483,8 +482,8 @@ public final class JITRuntime {
     }
 
     private static MemoryIO convertToPointerMemoryIO(IRubyObject parameter) {
+        var context = parameter.getRuntime().getCurrentContext();
         IRubyObject obj = parameter;
-        ThreadContext context = parameter.getRuntime().getCurrentContext();
         for (int depth = 0; depth < 4; depth++) {
             if (!obj.respondsTo("to_ptr")) throw argumentError(context, "cannot convert parameter to native pointer");
 
@@ -493,7 +492,7 @@ public final class JITRuntime {
             if (memory != null) return memory;
         }
 
-        throw context.runtime.newRuntimeError("to_ptr recursion limit reached for " + parameter.getMetaClass());
+        throw runtimeError(context, "to_ptr recursion limit reached for " + parameter.getMetaClass());
     }
     
     private static MemoryIO convertToStringMemoryIO(IRubyObject parameter, ThreadContext context, CachingCallSite callSite,

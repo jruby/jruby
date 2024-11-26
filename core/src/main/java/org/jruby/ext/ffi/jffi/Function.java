@@ -21,6 +21,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Error.runtimeError;
 import static org.jruby.api.Error.typeError;
 
 @JRubyClass(name="FFI::Function", parent="FFI::Pointer")
@@ -132,12 +133,8 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
 
     @JRubyMethod(name = "free")
     public final IRubyObject free(ThreadContext context) {
-        if (getMemoryIO() instanceof AllocatedDirectMemoryIO) {
-            ((AllocatedDirectMemoryIO) getMemoryIO()).free();
-        } else {
-            throw context.runtime.newRuntimeError("cannot free non-allocated function");
-        }
-        
+        if (!(getMemoryIO() instanceof AllocatedDirectMemoryIO mio)) throw runtimeError(context, "cannot free non-allocated function");
+        mio.free();
         // Replace memory object with one that throws an exception on any access
         setMemoryIO(new FreedMemoryIO(context.runtime));
         return context.nil;
@@ -145,8 +142,8 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
 
     @JRubyMethod(name = "autorelease=")
     public final IRubyObject autorelease(ThreadContext context, IRubyObject release) {
-        if (autorelease != release.isTrue() && getMemoryIO() instanceof AllocatedDirectMemoryIO) {
-            ((AllocatedDirectMemoryIO) getMemoryIO()).setAutoRelease(autorelease = release.isTrue());
+        if (autorelease != release.isTrue() && getMemoryIO() instanceof AllocatedDirectMemoryIO amio) {
+           amio.setAutoRelease(autorelease = release.isTrue());
         }
 
         return context.nil;

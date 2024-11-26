@@ -55,8 +55,7 @@ import org.jruby.util.TypeConverter;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
-import static org.jruby.api.Error.argumentError;
-import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Error.*;
 import static org.jruby.ast.util.ArgsUtil.hasExceptionOption;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
@@ -1171,43 +1170,30 @@ public class RubyRational extends RubyNumeric {
     }
 
     private IRubyObject doRound(ThreadContext context, RoundingMode mode) {
-        switch (mode) {
-            case HALF_UP:
-                return roundHalfUp(context);
-            case HALF_EVEN:
-                return roundHalfEven(context);
-            case HALF_DOWN:
-                return roundHalfDown(context);
-            case FLOOR:
-                return mriFloor(context);
-            case CEILING:
-                return mriCeil(context);
-            case UNNECESSARY:
-                return mriTruncate(context);
-            default:
-                throw context.runtime.newRuntimeError("BUG: invalid rounding mode: " + mode);
-        }
+        return switch (mode) {
+            case HALF_UP -> roundHalfUp(context);
+            case HALF_EVEN -> roundHalfEven(context);
+            case HALF_DOWN -> roundHalfDown(context);
+            case FLOOR -> mriFloor(context);
+            case CEILING -> mriCeil(context);
+            case UNNECESSARY -> mriTruncate(context);
+            default -> throw runtimeError(context, "BUG: invalid rounding mode: " + mode);
+        };
     }
 
     // MRI: nurat_round_half_down
     private RubyInteger roundHalfDown(ThreadContext context) {
-
         RubyInteger num = this.num, den = this.den;
-
         final boolean neg = num.isNegative();
 
-        if (neg) {
-            num = (RubyInteger) num.op_uminus(context);
-        }
+        if (neg) num = (RubyInteger) num.op_uminus(context);
 
         num = (RubyInteger) ((RubyInteger) num.op_mul(context, 2)).op_plus(context, den);
         num = (RubyInteger) num.op_minus(context, 1);
         den = (RubyInteger) den.op_mul(context, 2);
         num = (RubyInteger) num.idiv(context, den);
 
-        if (neg) {
-            num = (RubyInteger) num.op_uminus(context);
-        }
+        if (neg) num = (RubyInteger) num.op_uminus(context);
 
         return num;
     }
@@ -1233,22 +1219,17 @@ public class RubyRational extends RubyNumeric {
 
     // MRI: nurat_round_half_up
     private RubyInteger roundHalfUp(ThreadContext context) {
-
         RubyInteger num = this.num, den = this.den;
 
         final boolean neg = num.isNegative();
 
-        if (neg) {
-            num = (RubyInteger) num.op_uminus(context);
-        }
+        if (neg) num = (RubyInteger) num.op_uminus(context);
 
         num = (RubyInteger) ((RubyInteger) num.op_mul(context, 2)).op_plus(context, den);
         den = (RubyInteger) den.op_mul(context, 2);
         num = (RubyInteger) num.idiv(context, den);
 
-        if (neg) {
-            num = (RubyInteger) num.op_uminus(context);
-        }
+        if (neg) num = (RubyInteger) num.op_uminus(context);
 
         return num;
     }
@@ -1270,7 +1251,6 @@ public class RubyRational extends RubyNumeric {
     private static final long ML = (long)(Math.log(Double.MAX_VALUE) / Math.log(2.0) - 1);
 
     public double getDoubleValue(ThreadContext context) {
-
         if (f_zero_p(context, num)) return 0;
 
         RubyInteger myNum = this.num;

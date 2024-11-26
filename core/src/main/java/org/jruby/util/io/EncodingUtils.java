@@ -62,8 +62,7 @@ import static org.jruby.RubyString.newBinaryString;
 import static org.jruby.RubyString.newEmptyString;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
-import static org.jruby.api.Error.argumentError;
-import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Error.*;
 import static org.jruby.util.StringSupport.CR_UNKNOWN;
 import static org.jruby.util.StringSupport.searchNonAscii;
 
@@ -779,10 +778,10 @@ public class EncodingUtils {
         if (opthash == null || opthash.isNil()) {
             replacement = context.nil;
         } else {
-            if (!(opthash instanceof RubyHash) || !opthash.isFrozen()) {
-                throw context.runtime.newRuntimeError("bug: EncodingUtils.econvOpenOpts called with invalid opthash");
+            if (!(opthash instanceof RubyHash hash) || !opthash.isFrozen()) {
+                throw runtimeError(context, "bug: EncodingUtils.econvOpenOpts called with invalid opthash");
             }
-            replacement = ((RubyHash)opthash).op_aref(context, asSymbol(context, "replace"));
+            replacement = hash.op_aref(context, asSymbol(context, "replace"));
         }
 
         EConv ec = TranscoderDB.open(sourceEncoding, destinationEncoding, ecflags);

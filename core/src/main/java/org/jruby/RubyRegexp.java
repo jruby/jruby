@@ -81,8 +81,7 @@ import org.jruby.util.collections.WeakValuedMap;
 
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
-import static org.jruby.api.Error.argumentError;
-import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Error.*;
 import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.StringSupport.CR_7BIT;
@@ -1741,10 +1740,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     // rb_reg_regsub
     static RubyString regsub(ThreadContext context, RubyString str, RubyString src, Regex pattern, Region regs,
                              final int begin, final int end) {
-        Ruby runtime = context.runtime;
-
         RubyString val = null;
-        int p, s, e;
         int no = 0, clen[] = {0};
         Encoding strEnc = EncodingUtils.encGet(context, str);
         Encoding srcEnc = EncodingUtils.encGet(context, src);
@@ -1753,9 +1749,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         ByteList bs = str.getByteList();
         ByteList srcbs = src.getByteList();
         byte[] sBytes = bs.getUnsafeBytes();
-
-        p = s = bs.getBegin();
-        e = p + bs.getRealSize();
+        int s = bs.getBegin();
+        int p = s;
+        int e = p + bs.getRealSize();
 
         while (s < e) {
             int c = ASCGET(acompat, sBytes, s, e, clen, strEnc);
@@ -1769,16 +1765,14 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
             if (c != '\\' || s == e) continue;
 
-            if (val == null) {
-                val = newString(context, new ByteList(ss - p));
-            }
-            EncodingUtils.encStrBufCat(runtime, val, sBytes, p, ss - p, strEnc);
+            if (val == null) val = newString(context, new ByteList(ss - p));
+            EncodingUtils.encStrBufCat(context.runtime, val, sBytes, p, ss - p, strEnc);
 
             c = ASCGET(acompat, sBytes, s, e, clen, strEnc);
 
             if (c == -1) {
                 s += StringSupport.length(strEnc, sBytes, s, e);
-                EncodingUtils.encStrBufCat(runtime, val, sBytes, ss, s - ss, strEnc);
+                EncodingUtils.encStrBufCat(context.runtime, val, sBytes, ss, s - ss, strEnc);
                 p = s;
                 continue;
             }
@@ -1807,25 +1801,25 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                         try {
                             no = pattern.nameToBackrefNumber(sBytes, name, nameEnd, regs);
                         } catch (JOniException je) {
-                            throw runtime.newIndexError(je.getMessage());
+                            throw context.runtime.newIndexError(je.getMessage());
                         }
                         p = s = nameEnd + clen[0];
                         break;
                     } else {
-                        throw runtime.newRuntimeError("invalid group name reference format");
+                        throw runtimeError(context, "invalid group name reference format");
                     }
                 }
 
-                EncodingUtils.encStrBufCat(runtime, val, sBytes, ss, s - ss, strEnc);
+                EncodingUtils.encStrBufCat(context.runtime, val, sBytes, ss, s - ss, strEnc);
                 continue;
             case '0': case '&':
                 no = 0;
                 break;
             case '`':
-                EncodingUtils.encStrBufCat(runtime, val, srcbs.getUnsafeBytes(), srcbs.getBegin(), begin, srcEnc);
+                EncodingUtils.encStrBufCat(context.runtime, val, srcbs.getUnsafeBytes(), srcbs.getBegin(), begin, srcEnc);
                 continue;
             case '\'':
-                EncodingUtils.encStrBufCat(runtime, val, srcbs.getUnsafeBytes(), srcbs.getBegin() + end, srcbs.getRealSize() - end, srcEnc);
+                EncodingUtils.encStrBufCat(context.runtime, val, srcbs.getUnsafeBytes(), srcbs.getBegin() + end, srcbs.getRealSize() - end, srcEnc);
                 continue;
             case '+':
                 if (regs != null) {
@@ -1835,10 +1829,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 if (no == 0) continue;
                 break;
             case '\\':
-                EncodingUtils.encStrBufCat(runtime, val, sBytes, s - clen[0], clen[0], strEnc);
+                EncodingUtils.encStrBufCat(context.runtime, val, sBytes, s - clen[0], clen[0], strEnc);
                 continue;
             default:
-                EncodingUtils.encStrBufCat(runtime, val, sBytes, ss, s - ss, strEnc);
+                EncodingUtils.encStrBufCat(context.runtime, val, sBytes, ss, s - ss, strEnc);
                 continue;
             }
 
@@ -1846,16 +1840,16 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 if (no >= 0) {
                     if (no >= regs.getNumRegs()) continue;
                     if (regs.getBeg(no) == -1) continue;
-                    EncodingUtils.encStrBufCat(runtime, val, srcbs.getUnsafeBytes(), srcbs.getBegin() + regs.getBeg(no), regs.getEnd(no) - regs.getBeg(no), srcEnc);
+                    EncodingUtils.encStrBufCat(context.runtime, val, srcbs.getUnsafeBytes(), srcbs.getBegin() + regs.getBeg(no), regs.getEnd(no) - regs.getBeg(no), srcEnc);
                 }
             } else {
                 if (no != 0 || begin == -1) continue;
-                EncodingUtils.encStrBufCat(runtime, val, srcbs.getUnsafeBytes(), srcbs.getBegin() + begin, end - begin, srcEnc);
+                EncodingUtils.encStrBufCat(context.runtime, val, srcbs.getUnsafeBytes(), srcbs.getBegin() + begin, end - begin, srcEnc);
             }
         }
 
         if (val == null) return str;
-        if (p < e) EncodingUtils.encStrBufCat(runtime, val, sBytes, p, e - p, strEnc);
+        if (p < e) EncodingUtils.encStrBufCat(context.runtime, val, sBytes, p, e - p, strEnc);
         return val;
     }
 

@@ -42,6 +42,7 @@ import org.jruby.util.collections.IntList;
 
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Error.runtimeError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ext.coverage.CoverageData.CoverageDataState.*;
 import static org.jruby.ext.coverage.CoverageData.EVAL;
@@ -62,9 +63,7 @@ public class CoverageModule {
 
         CoverageData data = runtime.getCoverageData();
 
-        if (data.getCurrentState() != IDLE) {
-            throw runtime.newRuntimeError("coverage measurement is already setup");
-        }
+        if (data.getCurrentState() != IDLE) throw runtimeError(context, "coverage measurement is already setup");
 
         if (argc != 0) {
             boolean keyword = hasKeywords(ThreadContext.resetCallInfo(context));
@@ -87,9 +86,8 @@ public class CoverageModule {
                     mode |= CoverageData.METHODS;
                 }
                 if (ArgsUtil.extractKeywordArg(context, "oneshot_lines", keywords).isTrue()) {
-                    if ((mode & LINES) != 0) {
-                        throw runtime.newRuntimeError("cannot enable lines and oneshot_lines simultaneously");
-                    }
+                    if ((mode & LINES) != 0) throw runtimeError(context, "cannot enable lines and oneshot_lines simultaneously");
+
                     mode |= LINES;
                     mode |= CoverageData.ONESHOT_LINES;
                 }
@@ -106,7 +104,7 @@ public class CoverageModule {
 
             data.setCoverage(mode, currentMode, SUSPENDED);
         } else if (currentMode != data.getCurrentMode()) {
-            throw runtime.newRuntimeError("cannot change the measuring target during coverage measurement");
+            throw runtimeError(context, "cannot change the measuring target during coverage measurement");
         }
 
         return context.nil;
@@ -116,11 +114,8 @@ public class CoverageModule {
     public static IRubyObject resume(ThreadContext context, IRubyObject self) {
         CoverageData data = context.runtime.getCoverageData();
 
-        if (data.getCurrentState() == IDLE) {
-            throw context.runtime.newRuntimeError("coverage measurement is not set up yet");
-        } else if (data.getCurrentState() == RUNNING) {
-            throw context.runtime.newRuntimeError("coverage measurement is already running");
-        }
+        if (data.getCurrentState() == IDLE) throw runtimeError(context, "coverage measurement is not set up yet");
+        if (data.getCurrentState() == RUNNING) throw runtimeError(context, "coverage measurement is already running");
 
         data.resumeCoverage();
 
@@ -131,9 +126,7 @@ public class CoverageModule {
     public static IRubyObject suspend(ThreadContext context, IRubyObject self) {
         CoverageData data = context.runtime.getCoverageData();
 
-        if (data.getCurrentState() != RUNNING) {
-            throw context.runtime.newRuntimeError("coverage measurement is not running");
-        }
+        if (data.getCurrentState() != RUNNING) throw runtimeError(context, "coverage measurement is not running");
 
         data.suspendCoverage();
 
@@ -150,37 +143,28 @@ public class CoverageModule {
     @JRubyMethod(module = true, optional = 1, keywords = true, checkArity = false)
     public static IRubyObject result(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 0, 1);
+        CoverageData data = context.runtime.getCoverageData();
 
-        Ruby runtime = context.runtime;
-        CoverageData data = runtime.getCoverageData();
-
-        if (data.getCurrentState() == IDLE) {
-            throw runtime.newRuntimeError("coverage measurement is not enabled");
-        }
+        if (data.getCurrentState() == IDLE) throw runtimeError(context, "coverage measurement is not enabled");
 
         boolean stop = true;
         boolean clear = true;
 
         if (argc > 0 && hasKeywords(ThreadContext.resetCallInfo(context))) {
-            RubyHash keywords = (RubyHash) TypeConverter.convertToType(args[0], runtime.getHash(), "to_hash");
+            RubyHash keywords = (RubyHash) TypeConverter.convertToType(args[0], context.runtime.getHash(), "to_hash");
             stop = ArgsUtil.extractKeywordArg(context, "stop", keywords).isTrue();
             clear = ArgsUtil.extractKeywordArg(context, "clear", keywords).isTrue();
         }
 
         IRubyObject result = peek_result(context, self);
         if (stop && !clear) {
-            runtime.getWarnings().warn("stop implies clear");
+            context.runtime.getWarnings().warn("stop implies clear");
             clear = true;
         }
 
-        if (clear) {
-            data.clearCoverage();
-        }
-
+        if (clear) data.clearCoverage();
         if (stop) {
-            if (data.getCurrentState() == RUNNING) {
-                data.suspendCoverage();
-            }
+            if (data.getCurrentState() == RUNNING) data.suspendCoverage();
             data.resetCoverage();
             data.setCurrentState(IDLE);
         }
@@ -192,9 +176,7 @@ public class CoverageModule {
     public static IRubyObject peek_result(ThreadContext context, IRubyObject self) {
         CoverageData coverageData = context.runtime.getCoverageData();
 
-        if (!coverageData.isCoverageEnabled()) {
-            throw context.runtime.newRuntimeError("coverage measurement is not enabled");
-        }
+        if (!coverageData.isCoverageEnabled()) throw runtimeError(context, "coverage measurement is not enabled");
 
         return convertCoverageToRuby(context, coverageData.getCoverage(), coverageData.getCurrentMode());
     }

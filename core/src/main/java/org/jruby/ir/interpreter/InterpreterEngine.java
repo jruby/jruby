@@ -67,6 +67,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Error.runtimeError;
 
 /**
  * Base full interpreter.  Subclasses can use utility methods here and override what they want.  This method requires
@@ -219,7 +220,7 @@ public class InterpreterEngine {
         }
 
         // Control should never get here!
-        throw context.runtime.newRuntimeError("BUG: interpreter fell through to end unexpectedly");
+        throw runtimeError(context, "BUG: interpreter fell through to end unexpectedly");
     }
 
     protected static void interpretIntOp(AluInstr instr, Operation op, long[] fixnums, boolean[] booleans) {

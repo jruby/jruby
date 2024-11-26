@@ -52,8 +52,7 @@ import org.jruby.runtime.ThreadContext;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newArrayNoCopy;
-import static org.jruby.api.Error.argumentError;
-import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Error.*;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.Inspector.inspectPrefix;
 
@@ -210,8 +209,8 @@ public class RubyObjectSpace {
             }
             return asFixnum(context, count);
         }
-        if ( ! runtime.isObjectSpaceEnabled() ) {
-            throw runtime.newRuntimeError("ObjectSpace is disabled; each_object will only work with Class, pass -X+O to enable");
+        if (!runtime.isObjectSpaceEnabled()) {
+            throw runtimeError(context, "ObjectSpace is disabled; each_object will only work with Class, pass -X+O to enable");
         }
         final Iterator iter = runtime.getObjectSpace().iterator(rubyClass);
         IRubyObject obj; int count = 0;

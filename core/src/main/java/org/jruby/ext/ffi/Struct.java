@@ -12,8 +12,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 
 import static org.jruby.api.Convert.*;
-import static org.jruby.api.Error.argumentError;
-import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Error.*;
 import static org.jruby.runtime.Visibility.*;
 
 @JRubyClass(name="FFI::Struct", parent="Object")
@@ -92,26 +91,23 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
     static final StructLayout getStructLayout(ThreadContext context, IRubyObject structClass) {
         try {
             Object layout = ((RubyClass) structClass).getFFIHandle();
-            if (layout instanceof StructLayout) {
-                return (StructLayout) layout;
-            }
+            if (layout instanceof StructLayout sl) return sl;
 
             RubyClass klass = (RubyClass) structClass;
             while (klass != context.runtime.getObject() && !((layout = klass.getInstanceVariable("@layout")) instanceof StructLayout)) {
                 klass = klass.getSuperClass();
             }
 
-            if (!(layout instanceof StructLayout)) {
-                throw context.runtime.newRuntimeError("no valid struct layout for " + ((RubyClass) structClass).getName());
+            if (layout instanceof StructLayout sl) {
+                // Cache the layout on the Struct metaclass for faster retrieval next time
+                ((RubyClass) structClass).setFFIHandle(layout);
+                return sl;
             }
-
-            // Cache the layout on the Struct metaclass for faster retrieval next time
-            ((RubyClass) structClass).setFFIHandle(layout);
-            return (StructLayout) layout;
+            throw runtimeError(context, "no valid struct layout for " + klass.getName());
         } catch (ClassCastException ex) {
-            if (!(structClass instanceof RubyClass)) throw typeError(context, structClass, "subclass of Struct");
+            if (!(structClass instanceof RubyClass sc)) throw typeError(context, structClass, "subclass of Struct");
 
-            throw context.runtime.newRuntimeError("invalid layout set for struct " + ((RubyClass) structClass).getName());
+            throw runtimeError(context, "invalid layout set for struct " + sc.getName());
         }
     }
 

@@ -97,8 +97,7 @@ import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
-import static org.jruby.api.Error.argumentError;
-import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Error.*;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.StringSupport.CR_7BIT;
 import static org.jruby.util.StringSupport.CR_BROKEN;
@@ -2233,7 +2232,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "undump")
     public IRubyObject undump(ThreadContext context) {
-        Ruby runtime = context.runtime;
         RubyString str = this;
         ByteList strByteList = str.value;
         byte[] sBytes = strByteList.unsafeBytes();
@@ -2241,24 +2239,22 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         int sLen = strByteList.realSize();
         int s_end = s[0] + strByteList.realSize();
         Encoding enc[] = {str.getEncoding()};
-        RubyString undumped = newString(runtime, sBytes, s[0], 0, enc[0]);
+        RubyString undumped = newString(context.runtime, sBytes, s[0], 0, enc[0]);
         boolean[] utf8 = {false};
         boolean[] binary = {false};
 
         verifyAsciiCompatible();
         scanForCodeRange();
-        if (!isAsciiOnly()) throw runtime.newRuntimeError("non-ASCII character detected");
-        if (hasNul()) throw runtime.newRuntimeError("string contains null byte");
-        if (sLen < 2) return invalidFormat(runtime);
-        if (sBytes[s[0]] != '"') return invalidFormat(runtime);
+        if (!isAsciiOnly()) throw runtimeError(context, "non-ASCII character detected");
+        if (hasNul()) throw runtimeError(context, "string contains null byte");
+        if (sLen < 2) return invalidFormat(context);
+        if (sBytes[s[0]] != '"') return invalidFormat(context);
 
         /* strip '"' at the start */
         s[0]++;
 
         for (; ; ) {
-            if (s[0] >= s_end) {
-                throw runtime.newRuntimeError("unterminated dumped string");
-            }
+            if (s[0] >= s_end) throw runtimeError(context, "unterminated dumped string");
 
             if (sBytes[s[0]] == '"') {
                 /* epilogue */
@@ -2269,26 +2265,23 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 } else {
                     int size;
 
-                    if (utf8[0]) {
-                        throw runtime.newRuntimeError("dumped string contained Unicode escape but used force_encoding");
-                    }
+                    if (utf8[0]) throw runtimeError(context, "dumped string contained Unicode escape but used force_encoding");
 
                     size = FORCE_ENCODING_BYTES.length;
-                    if (s_end - s[0] <= size) return invalidFormat(runtime);
-                    if (ByteList.memcmp(sBytes, s[0], FORCE_ENCODING_BYTES, 0, size) != 0) return invalidFormat(runtime);
+                    if (s_end - s[0] <= size) return invalidFormat(context);
+                    if (ByteList.memcmp(sBytes, s[0], FORCE_ENCODING_BYTES, 0, size) != 0) return invalidFormat(context);
                     s[0] += size;
 
                     int encname = s[0];
                     s[0] = memchr(sBytes, s[0], '"', s_end - s[0]);
                     size = s[0] - encname;
-                    if (s[0] == -1) return invalidFormat(runtime);
-                    if (s_end - s[0] != 2) return invalidFormat(runtime);
-                    if (sBytes[s[0]] != '"' || sBytes[s[0] + 1] != ')') return invalidFormat(runtime);
+                    if (s[0] == -1) return invalidFormat(context);
+                    if (s_end - s[0] != 2) return invalidFormat(context);
+                    if (sBytes[s[0]] != '"' || sBytes[s[0] + 1] != ')') return invalidFormat(context);
 
-                    Encoding enc2 = runtime.getEncodingService().findEncodingNoError(new ByteList(sBytes, encname, size));
-                    if (enc2 == null) {
-                        throw runtime.newRuntimeError("dumped string has unknown encoding name");
-                    }
+                    Encoding enc2 = context.runtime.getEncodingService().findEncodingNoError(new ByteList(sBytes, encname, size));
+                    if (enc2 == null) throw runtimeError(context, "dumped string has unknown encoding name");
+
                     undumped.setEncoding(enc2);
                 }
                 break;
@@ -2296,12 +2289,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
             if (sBytes[s[0]] == '\\'){
                 s[0]++;
-                if (s[0] >= s_end) {
-                    throw runtime.newRuntimeError("invalid escape");
-                }
-                undumped.undumpAfterBackslash(runtime, sBytes, s, s_end, enc, utf8, binary);
-            }
-            else{
+                if (s[0] >= s_end) throw runtimeError(context, "invalid escape");
+                undumped.undumpAfterBackslash(context, sBytes, s, s_end, enc, utf8, binary);
+            } else {
                 undumped.cat(sBytes, s[0]++, 1);
             }
         }
@@ -2309,12 +2299,13 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return undumped;
     }
 
-    private static final IRubyObject invalidFormat(Ruby runtime) {
-        throw runtime.newRuntimeError("invalid dumped string; not wrapped with '\"' nor '\"...\".force_encoding(\"...\")' form");
+    private static IRubyObject invalidFormat(ThreadContext context) {
+        throw runtimeError(context, "invalid dumped string; not wrapped with '\"' nor '\"...\".force_encoding(\"...\")' form");
     }
 
     @SuppressWarnings("ReferenceEquality")
-    private void undumpAfterBackslash(Ruby runtime, byte[] ssBytes, int[] ss, int s_end, Encoding[] penc, boolean[] utf8, boolean[] binary) {
+    private void undumpAfterBackslash(ThreadContext context, byte[] ssBytes, int[] ss, int s_end, Encoding[] penc,
+                                      boolean[] utf8, boolean[] binary) {
         int s = ss[0];
         long c;
         int codelen;
@@ -2343,11 +2334,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 break;
             case 'u':
                 if (binary[0]) {
-                    throw runtime.newRuntimeError("hex escape and Unicode escape are mixed");
+                    throw runtimeError(context, "hex escape and Unicode escape are mixed");
                 }
                 utf8[0] = true;
                 if (++s >= s_end) {
-                    throw runtime.newRuntimeError("invalid Unicode escape");
+                    throw runtimeError(context, "invalid Unicode escape");
                 }
                 if (encUtf8 == null) encUtf8 = UTF8Encoding.INSTANCE;
                 if (penc[0] != encUtf8) {
@@ -2358,7 +2349,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                     s++;
                     for (;;) {
                         if (s >= s_end) {
-                            throw runtime.newRuntimeError("unterminated Unicode escape");
+                            throw runtimeError(context, "unterminated Unicode escape");
                         }
                         if (ssBytes[s] == '}') {
                             s++;
@@ -2370,13 +2361,13 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                         }
                         c = scanHex(ssBytes, s, s_end-s, hexlen);
                         if (hexlen[0] == 0 || hexlen[0] > 6) {
-                            throw runtime.newRuntimeError("invalid Unicode escape");
+                            throw runtimeError(context, "invalid Unicode escape");
                         }
                         if (c > 0x10ffff) {
-                            throw runtime.newRuntimeError("invalid Unicode codepoint (too large)");
+                            throw runtimeError(context, "invalid Unicode codepoint (too large)");
                         }
                         if (0xd800 <= c && c <= 0xdfff) {
-                            throw runtime.newRuntimeError("invalid Unicode codepoint");
+                            throw runtimeError(context, "invalid Unicode codepoint");
                         }
                         codelen = EncodingUtils.encMbcput((int) c, buf, 0, penc[0]);
                         cat(buf, 0, codelen);
@@ -2386,10 +2377,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 else { /* handle uXXXX form */
                     c = scanHex(ssBytes, s, 4, hexlen);
                     if (hexlen[0] != 4) {
-                        throw runtime.newRuntimeError("invalid Unicode escape");
+                        throw runtimeError(context, "invalid Unicode escape");
                     }
                     if (0xd800 <= c && c <= 0xdfff) {
-                        throw runtime.newRuntimeError("invalid Unicode codepoint");
+                        throw runtimeError(context, "invalid Unicode codepoint");
                     }
                     codelen = EncodingUtils.encMbcput((int) c, buf, 0, penc[0]);
                     cat(buf, 0, codelen);
@@ -2398,15 +2389,15 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 break;
             case 'x':
                 if (utf8[0]) {
-                    throw runtime.newRuntimeError("hex escape and Unicode escape are mixed");
+                    throw runtimeError(context, "hex escape and Unicode escape are mixed");
                 }
                 binary[0] = true;
                 if (++s >= s_end) {
-                    throw runtime.newRuntimeError("invalid hex escape");
+                    throw runtimeError(context, "invalid hex escape");
                 }
                 buf[0] = (byte) scanHex(ssBytes, s, 2, hexlen);
                 if (hexlen[0] != 2) {
-                    throw runtime.newRuntimeError("invalid hex escape");
+                    throw runtimeError(context, "invalid hex escape");
                 }
                 cat(buf, 0, 1);
                 s += hexlen[0];

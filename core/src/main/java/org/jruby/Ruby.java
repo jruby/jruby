@@ -4164,6 +4164,7 @@ public final class Ruby implements Constantizable {
         return newFrozenError(receiver, message);
     }
 
+    @Deprecated(since = "10.0")
     public RaiseException newFrozenError(IRubyObject receiver, String message) {
         ThreadContext context = getCurrentContext();
 

@@ -98,8 +98,7 @@ import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Convert.asSymbol;
-import static org.jruby.api.Error.argumentError;
-import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Error.*;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
@@ -1113,9 +1112,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "[]=")
     public IRubyObject op_aset(ThreadContext context, IRubyObject key, IRubyObject value) {
-        if (isFrozen()) {
-            throw getRuntime().newFrozenError(this, "can't modify frozen thread locals");
-        }
+        if (isFrozen()) throw frozenError(context, this, "can't modify frozen thread locals");
 
         key = RubySymbol.idSymbolFromObject(context, key);
         final Map<IRubyObject, IRubyObject> locals = getFiberLocals();
@@ -2369,10 +2366,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private volatile BlockingIO.Condition blockingIO = null;
     public boolean waitForIO(ThreadContext context, RubyIO io, int ops) {
         Channel channel = io.getChannel();
+        if (!(channel instanceof SelectableChannel)) return true;
 
-        if (!(channel instanceof SelectableChannel)) {
-            return true;
-        }
         try {
             io.addBlockingThread(this);
             blockingIO = BlockingIO.newCondition(channel, ops);
@@ -2382,10 +2377,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             blockingThreadPoll(context);
             return ready;
         } catch (IOException ioe) {
-            throw context.runtime.newRuntimeError("Error with selector: " + ioe);
+            throw runtimeError(context, "Error with selector: " + ioe);
         } catch (InterruptedException ex) {
-            // FIXME: not correct exception
-            throw context.runtime.newRuntimeError("Interrupted");
+            throw runtimeError(context, "Interrupted"); // FIXME: not correct exception
         } finally {
             blockingIO = null;
             io.removeBlockingThread(this);

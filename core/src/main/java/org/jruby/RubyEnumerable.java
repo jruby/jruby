@@ -71,8 +71,7 @@ import static org.jruby.RubyObject.equalInternal;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.numericToLong;
 import static org.jruby.api.Create.*;
-import static org.jruby.api.Error.argumentError;
-import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Error.*;
 import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.builtin.IRubyObject.NULL_ARRAY;
@@ -2192,7 +2191,7 @@ public class RubyEnumerable {
                         arg.prev_value = arg.prev_elts = ctx.nil;
                     }
                 } else if ( (v instanceof RubySymbol) && v.toString().charAt(0) == '_' ) {
-                    throw runtime.newRuntimeError("symbol begins with an underscore is reserved");
+                    throw runtimeError(context, "symbol begins with an underscore is reserved");
                 } else {
                     if ( arg.prev_value.isNil() ) {
                         arg.prev_value = v;
