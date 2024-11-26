@@ -1019,14 +1019,9 @@ public class RubyClass extends RubyModule {
 
     @JRubyMethod
     public IRubyObject subclasses(ThreadContext context) {
-        Map<RubyClass, Object> subclasses = this.subclasses;
-        int sizeEstimate = subclasses == null ? 0 : subclasses.size();
+        int subclassEstimate = this.subclassEstimate;
 
-        if (sizeEstimate == 0) {
-            return RubyArray.newEmptyArray(context.runtime);
-        }
-
-        RubyArray<RubyClass> subs = RubyArray.newArray(context.runtime, sizeEstimate);
+        RubyArray<RubyClass> subs = RubyArray.newArray(context.runtime, subclassEstimate == -1 ? 4 : subclassEstimate);
 
         concreteSubclasses(subs);
 
@@ -3093,6 +3088,7 @@ public class RubyClass extends RubyModule {
     private ObjectAllocator allocator; // the default allocator
     protected ObjectMarshal marshal;
     private volatile Map<RubyClass, Object> subclasses;
+    private int subclassEstimate = -1;
     public static final int CS_IDX_INITIALIZE = 0;
     public enum CS_NAMES {
         INITIALIZE("initialize");
