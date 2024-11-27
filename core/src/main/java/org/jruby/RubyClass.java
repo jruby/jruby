@@ -1009,15 +1009,6 @@ public class RubyClass extends RubyModule {
         return this;
     }
 
-    protected void setModuleSuperClass(RubyClass superClass) {
-        // remove us from old superclass's child classes
-        if (this.superClass != null) this.superClass.removeSubclass(this);
-        // add us to new superclass's child classes
-        superClass.addSubclass(this);
-        // update superclass reference
-        setSuperClass(superClass);
-    }
-
     @JRubyMethod
     public IRubyObject subclasses(ThreadContext context) {
         int subclassEstimate = this.subclassEstimate;
