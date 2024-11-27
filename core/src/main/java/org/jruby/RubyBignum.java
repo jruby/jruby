@@ -1367,21 +1367,16 @@ public class RubyBignum extends RubyInteger {
         return RubyFixnum.one(context.runtime);
     }
 
-    public RubyRational convertToRational() {
-        final Ruby runtime = getRuntime();
-        return RubyRational.newRationalRaw(runtime, this, RubyFixnum.one(runtime));
+    public RubyRational convertToRational(ThreadContext context) {
+        return RubyRational.newRationalRaw(context.runtime, this, asFixnum(context, 1));
     }
 
     // MRI: rb_int_s_isqrt, Fixnum portion
     @Override
     public IRubyObject sqrt(ThreadContext context) {
-        Ruby runtime = context.runtime;
+        if (isNegative()) throw context.runtime.newMathDomainError("Numerical argument is out of domain - isqrt");
 
-        if (isNegative()) {
-            throw runtime.newMathDomainError("Numerical argument is out of domain - isqrt");
-        }
-
-        return bignorm(runtime, floorSqrt(value));
+        return bignorm(context.runtime, floorSqrt(value));
     }
 
     private static JavaSites.BignumSites sites(ThreadContext context) {

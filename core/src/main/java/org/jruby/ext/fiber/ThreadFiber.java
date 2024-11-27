@@ -132,8 +132,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     public IRubyObject initialize(ThreadContext context, IRubyObject _opts, Block block) {
         if (!block.isGiven()) throw argumentError(context, "tried to create Proc object without block");
 
-        IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, _opts);
-
+        IRubyObject opts = ArgsUtil.getOptionsArg(context, _opts);
         boolean blocking = false;
 
         if (!opts.isNil()) {

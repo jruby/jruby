@@ -84,8 +84,7 @@ import java.util.regex.Pattern;
 import static org.jruby.RubyComparable.invcmp;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
-import static org.jruby.api.Error.argumentError;
-import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Error.*;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -1532,7 +1531,7 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(meta = true, keywords = true)
     public static IRubyObject at(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
-        IRubyObject maybeOpts = ArgsUtil.getOptionsArg(context.runtime, arg2);
+        IRubyObject maybeOpts = ArgsUtil.getOptionsArg(context, arg2);
 
         return maybeOpts.isNil() ?
                 atOpts(context, recv, arg1, arg2, asSymbol(context, "microsecond"), context.nil) :
@@ -1541,7 +1540,7 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(meta = true, keywords = true)
     public static IRubyObject at(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-        IRubyObject maybeOpts = ArgsUtil.getOptionsArg(context.runtime, arg3);
+        IRubyObject maybeOpts = ArgsUtil.getOptionsArg(context, arg3);
 
         return maybeOpts.isNil() ?
                 atOpts(context, recv, arg1, arg2, arg3, context.nil) :
@@ -1628,7 +1627,7 @@ public class RubyTime extends RubyObject {
                 time = new RubyTime(context.runtime, (RubyClass) recv, new DateTime(millisecs, getLocalTimeZone(context)));
             }
             catch (ArithmeticException| IllegalFieldValueException ex) {
-                throw context.runtime.newRangeError(ex.getMessage());
+                throw rangeError(context, ex.getMessage());
             }
 
             time.setNSec(nanosecs);

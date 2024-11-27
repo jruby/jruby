@@ -328,11 +328,8 @@ public class RubyBasicSocket extends RubyIO {
     public IRubyObject read_nonblock(ThreadContext context, IRubyObject arg0) {
         Channel channel = getChannel();
 
-        if (!(channel instanceof DatagramChannel)) {
-            return super.read_nonblock(context, arg0);
-        }
-
-        if (!ArgsUtil.getOptionsArg(context.runtime, arg0).isNil()) throw argumentError(context, 0, 1, 3);
+        if (!(channel instanceof DatagramChannel)) return super.read_nonblock(context, arg0);
+        if (!ArgsUtil.getOptionsArg(context, arg0).isNil()) throw argumentError(context, 0, 1, 3);
 
         return readNonblockCommon(context, (DatagramChannel) channel, arg0, context.nil, true);
     }
@@ -342,14 +339,11 @@ public class RubyBasicSocket extends RubyIO {
     public IRubyObject read_nonblock(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         Channel channel = getChannel();
 
-        if (!(channel instanceof DatagramChannel)) {
-            return super.read_nonblock(context, arg0, arg1);
-        }
+        if (!(channel instanceof DatagramChannel)) return super.read_nonblock(context, arg0, arg1);
 
         boolean exception = true;
         IRubyObject str = context.nil;
-
-        IRubyObject maybeHash = ArgsUtil.getOptionsArg(context.runtime, arg1);
+        IRubyObject maybeHash = ArgsUtil.getOptionsArg(context, arg1);
 
         if (maybeHash.isNil()) {
             str = arg1;
@@ -365,17 +359,11 @@ public class RubyBasicSocket extends RubyIO {
     public IRubyObject read_nonblock(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         Channel channel = getChannel();
 
-        if (!(channel instanceof DatagramChannel)) {
-            return super.read_nonblock(context, arg0, arg1, arg2);
-        }
+        if (!(channel instanceof DatagramChannel)) return super.read_nonblock(context, arg0, arg1, arg2);
 
-        boolean exception = true;
-
-        IRubyObject maybeHash = ArgsUtil.getOptionsArg(context.runtime, arg2);
-
-        if (!maybeHash.isNil()) {
-            exception = ArgsUtil.extractKeywordArg(context, "exception", maybeHash) != context.fals;
-        }
+        IRubyObject maybeHash = ArgsUtil.getOptionsArg(context, arg2);
+        boolean exception = !maybeHash.isNil() ?
+                ArgsUtil.extractKeywordArg(context, "exception", maybeHash) != context.fals : true;
 
         return readNonblockCommon(context, (DatagramChannel) channel, arg0, arg1, exception);
     }

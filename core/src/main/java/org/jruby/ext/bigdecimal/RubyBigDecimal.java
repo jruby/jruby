@@ -1962,11 +1962,9 @@ public class RubyBigDecimal extends RubyNumeric {
                 scale = num2int(args[0]);
                 break;
             case 1:
-                if (ArgsUtil.getOptionsArg(context.runtime, args[0]) == context.nil) {
+                if (ArgsUtil.getOptionsArg(context, args[0]) == context.nil) {
                     scale = num2int(args[0]);
-                    if (scale < 1) {
-                        roundToInt = true;
-                    }
+                    if (scale < 1) roundToInt = true;
                 } else {
                     mode = javaRoundingModeFromRubyRoundingMode(context, args[0]);
                 }
@@ -2020,72 +2018,42 @@ public class RubyBigDecimal extends RubyNumeric {
     //this relies on the Ruby rounding enumerations == Java ones, which they (currently) all are
     private static RoundingMode javaRoundingModeFromRubyRoundingMode(ThreadContext context, IRubyObject arg) {
         if (arg == context.nil) return getRoundingMode(context);
-        IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, arg);
+        IRubyObject opts = ArgsUtil.getOptionsArg(context, arg);
         if (opts != context.nil) {
             arg = ArgsUtil.extractKeywordArg(context, (RubyHash) opts, "half");
             if (arg == null || arg == context.nil) return getRoundingMode(context);
-            String roundingMode;
-            if (arg instanceof RubySymbol) {
-                roundingMode = arg.asJavaString();
-            } else {
-                roundingMode = arg.toString();
-            }
-            switch (roundingMode) {
-                case "up":
-                    return RoundingMode.HALF_UP;
-                case "down" :
-                    return RoundingMode.HALF_DOWN;
-                case "even" :
-                    return RoundingMode.HALF_EVEN;
-                default :
-                    throw argumentError(context, "invalid rounding mode (" + roundingMode + ")");
-            }
+            String roundingMode = arg instanceof RubySymbol ? arg.asJavaString() : arg.toString();
+
+            return switch (roundingMode) {
+                case "up" -> RoundingMode.HALF_UP;
+                case "down" -> RoundingMode.HALF_DOWN;
+                case "even" -> RoundingMode.HALF_EVEN;
+                default -> throw argumentError(context, "invalid rounding mode (" + roundingMode + ")");
+            };
         }
         if (arg instanceof RubySymbol) {
             String roundingMode = arg.asJavaString();
-            switch (roundingMode) {
-                case "up" :
-                    return RoundingMode.UP;
-                case "down" :
-                case "truncate" :
-                    return RoundingMode.DOWN;
-                case "half_up" :
-                case "default" :
-                    return RoundingMode.HALF_UP;
-                case "half_down" :
-                    return RoundingMode.HALF_DOWN;
-                case "half_even" :
-                case "even" :
-                case "banker" :
-                    return RoundingMode.HALF_EVEN;
-                case "ceiling" :
-                case "ceil" :
-                    return RoundingMode.CEILING;
-                case "floor" :
-                    return RoundingMode.FLOOR;
-                default :
-                    throw argumentError(context, "invalid rounding mode (" + roundingMode + ")");
-            }
+            return switch (roundingMode) {
+                case "up" -> RoundingMode.UP;
+                case "down", "truncate" -> RoundingMode.DOWN;
+                case "half_up", "default" -> RoundingMode.HALF_UP;
+                case "half_down" -> RoundingMode.HALF_DOWN;
+                case "half_even", "even", "banker" -> RoundingMode.HALF_EVEN;
+                case "ceiling", "ceil" -> RoundingMode.CEILING;
+                case "floor" -> RoundingMode.FLOOR;
+                default -> throw argumentError(context, "invalid rounding mode (" + roundingMode + ")");
+            };
         } else {
-            int ordinal = num2int(arg);
-            switch (ordinal) {
-                case ROUND_UP :
-                    return RoundingMode.UP;
-                case ROUND_DOWN :
-                    return RoundingMode.DOWN;
-                case ROUND_HALF_UP :
-                    return RoundingMode.HALF_UP;
-                case ROUND_HALF_DOWN :
-                    return RoundingMode.HALF_DOWN;
-                case ROUND_CEILING :
-                    return RoundingMode.CEILING;
-                case ROUND_FLOOR :
-                    return RoundingMode.FLOOR;
-                case ROUND_HALF_EVEN :
-                    return RoundingMode.HALF_EVEN;
-                default :
-                    throw argumentError(context, "invalid rounding mode");
-            }
+            return switch (num2int(arg)) {
+                case ROUND_UP -> RoundingMode.UP;
+                case ROUND_DOWN -> RoundingMode.DOWN;
+                case ROUND_HALF_UP -> RoundingMode.HALF_UP;
+                case ROUND_HALF_DOWN -> RoundingMode.HALF_DOWN;
+                case ROUND_CEILING -> RoundingMode.CEILING;
+                case ROUND_FLOOR -> RoundingMode.FLOOR;
+                case ROUND_HALF_EVEN -> RoundingMode.HALF_EVEN;
+                default -> throw argumentError(context, "invalid rounding mode");
+            };
         }
     }
 

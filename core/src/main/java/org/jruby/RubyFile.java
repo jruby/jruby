@@ -45,7 +45,6 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.API;
-import org.jruby.api.Create;
 import org.jruby.exceptions.NotImplementedError;
 import org.jruby.runtime.*;
 import org.jruby.runtime.JavaSites.FileSites;
@@ -234,7 +233,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             // readlink is not available on Windows. See below and jruby/jruby#3287.
             // TODO: MRI does not implement readlink on Windows, but perhaps we could?
             fileClass.searchMethod("readlink").setNotImplemented(true);
-
             fileClass.searchMethod("mkfifo").setNotImplemented(true);
         }
 
@@ -248,15 +246,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     private static String getNullDevice() {
-        // FIXME: MRI defines special null device for Amiga and VMS, but currently
-        // we lack ability to detect these platforms
-        String null_device;
-        if (Platform.IS_WINDOWS) {
-            null_device = "NUL";
-        } else {
-            null_device = "/dev/null";
-        }
-        return null_device;
+        // FIXME: MRI defines null devices for Amiga and VMS, but currently we lack ability to detect these platforms
+        return Platform.IS_WINDOWS ? "NUL" : "/dev/null";
     }
 
     public RubyFile(Ruby runtime, RubyClass type) {
@@ -301,23 +292,15 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     public IRubyObject flock(ThreadContext context, IRubyObject operation) {
 
         // Solaris uses a ruby-ffi version defined in jruby/kernel/file.rb, so re-dispatch
-        if (Platform.IS_SOLARIS) {
-            return callMethod(context, "flock", operation);
-        }
+        if (Platform.IS_SOLARIS) return callMethod(context, "flock", operation);
 
-        Ruby runtime = context.runtime;
-        OpenFile fptr;
 //        int[] op = {0,0};
-        int op1;
 //        struct timeval time;
-
 //        rb_secure(2);
-        op1 = RubyNumeric.num2int(operation);
-        fptr = getOpenFileChecked();
+        int op1 = RubyNumeric.num2int(operation);
+        OpenFile fptr = getOpenFileChecked();
 
-        if (fptr.isWritable()) {
-            flushRaw(context, false);
-        }
+        if (fptr.isWritable()) flushRaw(context, false);
 
         // MRI's logic differs here. For a nonblocking flock that produces EAGAIN, EACCES, or EWOULBLOCK, MRI
         // just returns false immediately. For the same errnos in blocking mode, MRI waits for 0.1s and then
@@ -327,7 +310,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 case EAGAIN:
                 case EACCES:
                 case EWOULDBLOCK:
-                    if ((op1 & LOCK_NB) != 0) return runtime.getFalse();
+                    if ((op1 & LOCK_NB) != 0) return context.fals;
 
                     try {
                         context.getThread().sleep(100);
@@ -336,15 +319,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                     }
                     fptr.checkClosed();
                     continue;
-
                 case EINTR:
                     break;
-
                 default:
-                    throw runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
+                    throw context.runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
             }
         }
-        return RubyFixnum.zero(context.runtime);
+        return asFixnum(context, 0);
     }
 
     // rb_file_initialize
@@ -373,11 +354,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     public IRubyObject chmod(ThreadContext context, IRubyObject arg) {
         checkClosed(context);
         int mode = (int) arg.convertToInteger().getLongValue();
-
         final String path = getPath();
-        if ( ! new File(path).exists() ) {
-            throw context.runtime.newErrnoENOENTError(path);
-        }
+        if (!new File(path).exists()) throw context.runtime.newErrnoENOENTError(path);
 
         return asFixnum(context, context.runtime.getPosix().chmod(path, mode));
     }
@@ -385,20 +363,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod
     public IRubyObject chown(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
         checkClosed(context);
-        int owner = -1;
-        if (!arg1.isNil()) {
-            owner = RubyNumeric.num2int(arg1);
-        }
-
-        int group = -1;
-        if (!arg2.isNil()) {
-            group = RubyNumeric.num2int(arg2);
-        }
+        int owner = !arg1.isNil() ? RubyNumeric.num2int(arg1) : -1;
+        int group = !arg2.isNil() ? RubyNumeric.num2int(arg2) : -1;
 
         final String path = getPath();
-        if ( ! new File(path).exists() ) {
-            throw context.runtime.newErrnoENOENTError(path);
-        }
+        if (!new File(path).exists()) throw context.runtime.newErrnoENOENTError(path);
 
         return asFixnum(context, context.runtime.getPosix().chown(path, owner, group));
     }
@@ -433,9 +402,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         Path path = Paths.get(pathString);
         PosixFileAttributeView view = Files.getFileAttributeView(path, PosixFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
         try {
-            if (view != null) {
-                return view.readAttributes().creationTime();
-            }
+            if (view != null) return view.readAttributes().creationTime();
         } catch (IOException ioe) {
             // ignore, just fall back on ctime
         }
@@ -466,32 +433,27 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @JRubyMethod
     public IRubyObject truncate(ThreadContext context, IRubyObject len) {
-        Ruby runtime = context.runtime;
-        OpenFile fptr;
-        long pos;
+        long pos = RubyNumeric.num2int(len);
+        OpenFile fptr = getOpenFileChecked();
+        if (!fptr.isWritable()) throw context.runtime.newIOError("not opened for writing");
 
-        pos = RubyNumeric.num2int(len);
-        fptr = getOpenFileChecked();
-        if (!fptr.isWritable()) {
-            throw runtime.newIOError("not opened for writing");
-        }
         flushRaw(context, false);
 
-        if (pos < 0) {
-            throw runtime.newErrnoEINVALError(openFile.getPath());
-        }
+        if (pos < 0) throw context.runtime.newErrnoEINVALError(openFile.getPath());
 
         if (fptr.posix.ftruncate(fptr.fd(), pos) < 0) {
-            throw runtime.newErrnoFromErrno(fptr.posix.getErrno(), fptr.getPath());
+            throw context.runtime.newErrnoFromErrno(fptr.posix.getErrno(), fptr.getPath());
         }
 
-        return RubyFixnum.zero(runtime);
+        return asFixnum(context, 0);
     }
 
     @Override
     public final IRubyObject inspect() {
         return inspect(metaClass.runtime.getCurrentContext());
     }
+
+    private static final byte[] CLOSED_MESSAGE = new byte[] {' ', '(', 'c', 'l', 'o', 's', 'e', 'd', ')'};
 
     @JRubyMethod
     public RubyString inspect(ThreadContext context) {
@@ -501,11 +463,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         str.append('#').append('<');
         str.append(getMetaClass().getRealClass().to_s().getByteList());
         str.append(':').append(path == null ? RubyNil.nilBytes : RubyEncoding.encodeUTF8(path));
-        if (!openFile.isOpen()) {
-            str.append(' ').append('(');
-            str.append('c').append('l').append('o').append('s').append('e').append('d');
-            str.append(')');
-        }
+        if (!openFile.isOpen()) str.append(CLOSED_MESSAGE);
         str.append('>');
         // MRI knows whether path is UTF-8 so it might return ASCII-8BIT (we do not check)
         str.setEncoding(UTF8Encoding.INSTANCE);
@@ -556,8 +514,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                     return newString(context, RubyString.encodeBytelist(name.substring(2), origEncoding));
                 default:
                     switch (name.charAt(2)) {
-                    case '/':
-                    case '\\':
+                    case '/', '\\':
                         break;
                     default:
                         // strip c: away from relative-pathed name
@@ -617,10 +574,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     private static int getAltSeparatorChar(final RubyClass File) {
         final IRubyObject sep = File.getConstant("ALT_SEPARATOR");
-        if (sep instanceof RubyString) { // != nil
-            return ((RubyString) sep).getByteList().get(0);
-        }
-        return NULL_CHAR;
+        return sep instanceof RubyString sepStr ? sepStr.getByteList().get(0) : NULL_CHAR;
     }
 
     @JRubyMethod(required = 2, rest = true, checkArity = false, meta = true)
@@ -648,12 +602,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     public static IRubyObject chown(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 2, -1);
         int count = 0;
-
-        int owner = -1;
-        if (!args[0].isNil()) owner = RubyNumeric.num2int(args[0]);
-
-        int group = -1;
-        if (!args[1].isNil()) group = RubyNumeric.num2int(args[1]);
+        int owner = !args[0].isNil() ? RubyNumeric.num2int(args[0]) : -1;
+        int group = !args[1].isNil() ? RubyNumeric.num2int(args[1]) : -1;
 
         for (int i = 2; i < argc; i++) {
             JRubyFile filename = file(args[i]);

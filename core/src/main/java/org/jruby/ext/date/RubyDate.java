@@ -994,7 +994,7 @@ public class RubyDate extends RubyObject {
             return (RubyNumeric) RubyRational.newRationalCanonicalize(context, ms + subMillisNum, DAY_MS);
         }
         RubyNumeric sum = RubyRational.newRational(context.runtime, ms, 1).op_plus(context, subMillis(context));
-        return sum.convertToRational().op_div(context, asFixnum(context, DAY_MS));
+        return sum.convertToRational(context).op_div(context, asFixnum(context, DAY_MS));
     }
 
     @JRubyMethod(name = "hour", visibility = Visibility.PRIVATE)
@@ -1019,7 +1019,7 @@ public class RubyDate extends RubyObject {
             return (RubyNumeric) RubyRational.newRationalCanonicalize(context, ms + subMillisNum, 1000);
         }
         RubyNumeric sum = RubyRational.newRational(context.runtime, ms, 1).op_plus(context, subMillis(context));
-        return sum.convertToRational().op_div(context, asFixnum(context, 1000));
+        return sum.convertToRational(context).op_div(context, asFixnum(context, 1000));
     }
 
     @JRubyMethod
@@ -1265,10 +1265,10 @@ public class RubyDate extends RubyObject {
     private RubyNumeric op_minus_date(ThreadContext context, final RubyDate that) {
         long diff = this.dt.getMillis() - that.dt.getMillis();
         RubyNumeric diffMillis = (RubyNumeric) RubyRational.newRationalCanonicalize(context, diff, DAY_MS);
-
         RubyNumeric subDiff = subMillisDiff(context, that);
-        if ( ! subDiff.isZero() ) { // diff += diff_sub;
-            subDiff = subDiff.convertToRational().op_div(context, asFixnum(context, DAY_MS));  // #5493
+
+        if (!subDiff.isZero()) { // diff += diff_sub;
+            subDiff = subDiff.convertToRational(context).op_div(context, asFixnum(context, DAY_MS));  // #5493
             return (RubyNumeric) diffMillis.op_plus(context, subDiff);
         }
         return diffMillis;
@@ -2343,7 +2343,7 @@ public class RubyDate extends RubyObject {
             int ep = skipDigits(y, s);
             if (ep != y.strLength()) {
                 oy = y; y = d;
-                d = (RubyString) oy.substrEnc(context.runtime, bp, ep - bp);
+                d = (RubyString) oy.substrEnc(context, bp, ep - bp);
             }
         }
 

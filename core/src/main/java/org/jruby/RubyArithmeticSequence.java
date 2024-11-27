@@ -55,6 +55,7 @@ import static org.jruby.RubyNumeric.num2dbl;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.rangeError;
 import static org.jruby.runtime.Helpers.hashEnd;
 import static org.jruby.runtime.Helpers.hashStart;
 import static org.jruby.runtime.Helpers.murmurCombine;
@@ -452,7 +453,7 @@ public class RubyArithmeticSequence extends RubyObject {
         IRubyObject b = begin, e = end, s = step, len_1, len;
         boolean last_is_adjusted;
 
-        if (e.isNil()) throw context.runtime.newRangeError("cannot get the last element of endless arithmetic sequence");
+        if (e.isNil()) throw rangeError(context, "cannot get the last element of endless arithmetic sequence");
 
         len_1 = ((RubyNumeric)((RubyNumeric)e).op_minus(context, b)).idiv(context, s);
         if (Numeric.f_negative_p(context, len_1)) return num == null ? context.nil : newEmptyArray(context);
@@ -464,19 +465,13 @@ public class RubyArithmeticSequence extends RubyObject {
 
         if (num == null) return last;
 
-        if (last_is_adjusted) {
-            len = len_1;
-        } else {
-            len = ((RubyNumeric)len_1).op_plus(context, asFixnum(context, 1));
-        }
+        len = last_is_adjusted ? len_1 : ((RubyNumeric)len_1).op_plus(context, asFixnum(context, 1));
 
         IRubyObject nv = num;
         if (!(nv instanceof RubyInteger)) nv = num.convertToInteger();
 
         CallSite op_gt = sites(context).op_gt;
-        if (RubyNumeric.numFuncall(context, nv, op_gt, len).isTrue()) {
-            nv = len;
-        }
+        if (RubyNumeric.numFuncall(context, nv, op_gt, len).isTrue()) nv = len;
 
         long n = numericToLong(context, nv);
         if (n < 0) throw argumentError(context, "negative array size");

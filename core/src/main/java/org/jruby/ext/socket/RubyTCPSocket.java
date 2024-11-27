@@ -135,11 +135,9 @@ public class RubyTCPSocket extends RubyIPSocket {
     public IRubyObject initialize(ThreadContext context, IRubyObject host, IRubyObject port, IRubyObject localOrOpts) {
         final String remoteHost = host.isNil() ? "localhost" : host.convertToString().toString();
         final int remotePort = SocketUtils.getPortFrom(context, port);
+        IRubyObject opts = ArgsUtil.getOptionsArg(context, localOrOpts);
 
-        IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, localOrOpts);
-        if (!opts.isNil()) {
-            return initialize(context, remoteHost, remotePort, host, null, 0, (RubyHash) opts);
-        }
+        if (!opts.isNil()) return initialize(context, remoteHost, remotePort, host, null, 0, (RubyHash) opts);
 
         String localHost = localOrOpts.isNil() ? null : localOrOpts.convertToString().toString();
 
@@ -157,10 +155,8 @@ public class RubyTCPSocket extends RubyIPSocket {
         RubyHash opts = null;
 
         switch (argc) {
-            case 2:
-                return initialize(context, args[0], args[1]);
-            case 3:
-                return initialize(context, args[0], args[1], args[2]);
+            case 2 -> { return initialize(context, args[0], args[1]); }
+            case 3 -> { return initialize(context, args[0], args[1], args[2]); }
         }
 
         // cut switch in half to evaluate early args first
@@ -174,7 +170,7 @@ public class RubyTCPSocket extends RubyIPSocket {
             case 4:
                 if (!args[2].isNil()) localHost = args[2].convertToString().toString();
 
-                maybeOpts = ArgsUtil.getOptionsArg(context.runtime, args[3]);
+                maybeOpts = ArgsUtil.getOptionsArg(context, args[3]);
                 if (!maybeOpts.isNil()) {
                     opts = (RubyHash) maybeOpts;
                 } else if (!args[3].isNil()) {

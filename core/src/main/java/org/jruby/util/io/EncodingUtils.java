@@ -2185,14 +2185,13 @@ public class EncodingUtils {
     // rb_enc_uint_chr
     public static RubyString encUintChr(ThreadContext context, int code, Encoding enc) {
         long i = code & 0xFFFFFFFFL;
+        int n = EncodingUtils.encCodelen(context, code, enc);
 
-        int n;
-        switch (n = EncodingUtils.encCodelen(context, code, enc)) {
+        switch (n) {
             case ErrorCodes.ERR_INVALID_CODE_POINT_VALUE:
-                throw context.runtime.newRangeError("invalid codepoint 0x" + Long.toHexString(i) + " in " + enc);
-            case ErrorCodes.ERR_TOO_BIG_WIDE_CHAR_VALUE:
-            case 0:
-                throw context.runtime.newRangeError(i + " out of char range");
+                throw rangeError(context, "invalid codepoint 0x" + Long.toHexString(i) + " in " + enc);
+            case ErrorCodes.ERR_TOO_BIG_WIDE_CHAR_VALUE, 0:
+                throw rangeError(context, i + " out of char range");
         }
 
         ByteList strBytes = new ByteList(n);
@@ -2204,7 +2203,7 @@ public class EncodingUtils {
 
         encMbcput(context, code, bytes, begin, enc);
         if (StringSupport.preciseLength(enc, bytes, begin, end) != n) {
-            throw context.runtime.newRangeError("invalid codepoint " + Long.toHexString(i) + " in " + enc);
+            throw rangeError(context, "invalid codepoint 0x" + Long.toHexString(i) + " in " + enc);
         }
 
         return newString(context, strBytes);
@@ -2233,9 +2232,9 @@ public class EncodingUtils {
         if (len < 0) {
             switch (len) {
                 case ErrorCodes.ERR_INVALID_CODE_POINT_VALUE:
-                    throw context.runtime.newRangeError("invalid codepoint " + Long.toHexString(c & 0xFFFFFFFFL) + " in " + enc);
+                    throw rangeError(context, "invalid codepoint 0x" + Long.toHexString(c & 0xFFFFFFFFL) + " in " + enc);
                 case ErrorCodes.ERR_TOO_BIG_WIDE_CHAR_VALUE:
-                    throw context.runtime.newRangeError("" + (c & 0xFFFFFFFFL) + " out of char range");
+                    throw rangeError(context, "" + (c & 0xFFFFFFFFL) + " out of char range");
             }
             throw context.runtime.newEncodingError(EncodingError.fromCode(len).getMessage());
         }

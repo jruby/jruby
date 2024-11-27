@@ -63,8 +63,7 @@ import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
-import static org.jruby.api.Error.argumentError;
-import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Error.*;
 import static org.jruby.util.Numeric.f_gcd;
 import static org.jruby.util.Numeric.f_lcm;
 import static org.jruby.util.Numeric.f_zero_p;
@@ -440,31 +439,25 @@ public abstract class RubyInteger extends RubyNumeric {
      */
     @JRubyMethod(name = "chr")
     public RubyString chr(ThreadContext context) {
-        Ruby runtime = context.runtime;
-
-        long uint = toUnsignedInteger(runtime);
+        long uint = toUnsignedInteger(context);
 
         if (uint > 0xff) {
-            Encoding enc = runtime.getDefaultInternalEncoding();
-            if (enc == null) {
-                throw runtime.newRangeError(uint + " out of char range");
-            }
+            Encoding enc = context.runtime.getDefaultInternalEncoding();
+            if (enc == null) throw rangeError(context, uint + " out of char range");
             return chrCommon(context, uint, enc);
         }
 
-        return RubyString.newStringShared(runtime, SINGLE_CHAR_BYTELISTS[(int) uint]);
+        return RubyString.newStringShared(context.runtime, SINGLE_CHAR_BYTELISTS[(int) uint]);
     }
 
-    private long toUnsignedInteger(Ruby runtime) {
+    private long toUnsignedInteger(ThreadContext context) {
         // rb_num_to_uint
         long uintResult = numToUint(this);
         long uint = uintResult >>> 32;
         int ret = (int) (uintResult & 0xFFFFFFFF);
-        if (ret == 0) {
-        } else if (this instanceof RubyFixnum) {
-            throw runtime.newRangeError(getLongValue() + " out of char range");
-        } else {
-            throw runtime.newRangeError("bignum out of char range");
+        if (ret != 0) {
+            throw rangeError(context, this instanceof RubyFixnum ?
+                    getLongValue() + " out of char range" : "bignum out of char range");
         }
         return uint;
     }
@@ -498,23 +491,17 @@ public abstract class RubyInteger extends RubyNumeric {
 
     @JRubyMethod(name = "chr")
     public RubyString chr(ThreadContext context, IRubyObject arg) {
-        Ruby runtime = context.runtime;
+        long uint = toUnsignedInteger(context);
 
-        long uint = toUnsignedInteger(runtime);
+        Encoding enc = arg instanceof RubyEncoding encArg ?
+                encArg.getEncoding() : arg.convertToString().toEncoding(context.runtime);
 
-        Encoding enc;
-        if (arg instanceof RubyEncoding) {
-            enc = ((RubyEncoding)arg).getEncoding();
-        } else {
-            enc =  arg.convertToString().toEncoding(runtime);
-        }
         return chrCommon(context, uint, enc);
     }
 
     private RubyString chrCommon(ThreadContext context, long value, Encoding enc) {
-        if (value > 0xFFFFFFFFL) {
-            throw context.runtime.newRangeError(this + " out of char range");
-        }
+        if (value > 0xFFFFFFFFL) throw rangeError(context, this + " out of char range");
+
         int c = (int) value;
         if (enc == null) enc = ASCIIEncoding.INSTANCE;
         return EncodingUtils.encUintChr(context, c, enc);
@@ -573,16 +560,10 @@ public abstract class RubyInteger extends RubyNumeric {
 
     @JRubyMethod(name = "round")
     public IRubyObject round(ThreadContext context, IRubyObject digits, IRubyObject _opts) {
-        Ruby runtime = context.runtime;
-
-        // options (only "half" right now)
-        IRubyObject opts = ArgsUtil.getOptionsArg(runtime, _opts);
+        IRubyObject opts = ArgsUtil.getOptionsArg(context, _opts); // options (only "half" supported right now)
         int ndigits = num2int(digits);
-
         RoundingMode roundingMode = getRoundingMode(context, opts);
-        if (ndigits >= 0) {
-            return this;
-        }
+        if (ndigits >= 0) return this;
 
         return roundShared(context, ndigits, roundingMode);
     }
@@ -871,12 +852,9 @@ public abstract class RubyInteger extends RubyNumeric {
     // MRI: rb_int_powm
     @JRubyMethod(name = "pow")
     public IRubyObject pow(ThreadContext context, IRubyObject b, IRubyObject m) {
-        // a == this
-        Ruby runtime = context.runtime;
-
         boolean negaFlg = false;
         RubyInteger base = castAsInteger(context, b, "Integer#pow() 2nd argument not allowed unless a 1st argument is integer");
-        if (base.isNegative()) throw runtime.newRangeError("Integer#pow() 1st argument cannot be negative when 2nd argument specified");
+        if (base.isNegative()) throw rangeError(context, "Integer#pow() 1st argument cannot be negative when 2nd argument specified");
 
         RubyInteger pow = castAsInteger(context, m, "Integer#pow() 2nd argument not allowed unless all arguments are integers");
 
@@ -885,21 +863,18 @@ public abstract class RubyInteger extends RubyNumeric {
             negaFlg = true;
         }
 
-        if (!pow.isPositive()) throw runtime.newZeroDivisionError();
+        if (!pow.isPositive()) throw context.runtime.newZeroDivisionError();
 
         if (pow instanceof RubyFixnum fixpow) {
             long mm = fixpow.value;
-            if (mm == 1) return RubyFixnum.zero(runtime);
+            if (mm == 1) return asFixnum(context, 0);
             RubyFixnum modulo = (RubyFixnum) modulo(context, fixpow);
-            if (mm <= HALF_LONG_MSB) {
-                return modulo.intPowTmp1(context, base, mm, negaFlg);
-            } else {
-                return modulo.intPowTmp2(context, base, mm, negaFlg);
-            }
+            return mm <= HALF_LONG_MSB ?
+                modulo.intPowTmp1(context, base, mm, negaFlg) : modulo.intPowTmp2(context, base, mm, negaFlg);
         }
         if (pow instanceof RubyBignum bigpow) {
-            if (((RubyBignum) m).value == BigInteger.ONE) return RubyFixnum.zero(runtime);
-            return ((RubyInteger) modulo(context, m)).intPowTmp3(context, base, bigpow, negaFlg);
+            return ((RubyBignum) m).value == BigInteger.ONE ?
+                    asFixnum(context, 0) : ((RubyInteger) modulo(context, m)).intPowTmp3(context, base, bigpow, negaFlg);
         }
         // not reached
         throw new AssertionError("BUG: unexpected type " + m.getType());

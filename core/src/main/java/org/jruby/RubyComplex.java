@@ -53,9 +53,9 @@ import java.util.Arrays;
 import java.util.function.BiFunction;
 
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newArray;
-import static org.jruby.api.Error.argumentError;
-import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Error.*;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import static org.jruby.util.Numeric.*;
@@ -1109,8 +1109,6 @@ public class RubyComplex extends RubyNumeric {
         @Override
         public Object unmarshalFrom(Ruby runtime, RubyClass type,
                                     UnmarshalStream unmarshalStream) throws IOException {
-            ThreadContext context = runtime.getCurrentContext();
-
             RubyComplex c = (RubyComplex)RubyClass.DEFAULT_OBJECT_MARSHAL.unmarshalFrom(runtime, type, unmarshalStream);
             c.real = c.removeInstanceVariable("@real");
             c.image = c.removeInstanceVariable("@image");
@@ -1133,9 +1131,7 @@ public class RubyComplex extends RubyNumeric {
      */
     @JRubyMethod(name = "to_i")
     public IRubyObject to_i(ThreadContext context) {
-        if (k_inexact_p(image) || !f_zero_p(context, image)) {
-            throw context.runtime.newRangeError("can't convert " + f_to_s(context, this).convertToString() + " into Integer");
-        }
+        checkValidRational(context, "Integer");
         return f_to_i(context, real);
     }
 
@@ -1144,9 +1140,7 @@ public class RubyComplex extends RubyNumeric {
      */
     @JRubyMethod(name = "to_f")
     public IRubyObject to_f(ThreadContext context) {
-        if (k_inexact_p(image) || !f_zero_p(context, image)) {
-            throw context.runtime.newRangeError("can't convert " + f_to_s(context, this).convertToString() + " into Float");
-        }
+        checkValidRational(context, "Float");
         return f_to_f(context, real);
     }
 
@@ -1155,9 +1149,7 @@ public class RubyComplex extends RubyNumeric {
      */
     @JRubyMethod(name = "to_r")
     public IRubyObject to_r(ThreadContext context) {
-        if (k_inexact_p(image) || !f_zero_p(context, image)) {
-            throw context.runtime.newRangeError("can't convert " + f_to_s(context, this).convertToString() + " into Rational");
-        }
+        checkValidRational(context, "Rational");
         return f_to_r(context, real);
     }
 
@@ -1166,53 +1158,41 @@ public class RubyComplex extends RubyNumeric {
      */
     @JRubyMethod(name = "rationalize", optional = 1, checkArity = false)
     public IRubyObject rationalize(ThreadContext context, IRubyObject[] args) {
-        if (k_inexact_p(image) || !f_zero_p(context, image)) {
-            throw context.runtime.newRangeError("can't convert " + f_to_s(context, this).convertToString() + " into Rational");
-        }
+        checkValidRational(context, "Rational");
         return real.callMethod(context, "rationalize", args);
+    }
+
+    private void checkValidRational(ThreadContext context, String type) {
+        if (k_inexact_p(image) || !f_zero_p(context, image)) {
+            throw rangeError(context, "can't convert " + f_to_s(context, this).convertToString() + " into " + type);
+        }
     }
 
     @JRubyMethod(name = "finite?")
     @Override
     public IRubyObject finite_p(ThreadContext context) {
-        if (checkFinite(context, real) && checkFinite(context, image)) {
-            return context.tru;
-        }
-        return context.fals;
+        return checkFinite(context, real) && checkFinite(context, image) ? context.tru : context.fals;
     }
 
     // MRI: f_finite_p
     public boolean checkFinite(ThreadContext context, IRubyObject value) {
-        if (value instanceof RubyInteger || value instanceof RubyRational) {
-            return true;
-        }
+        if (value instanceof RubyInteger || value instanceof RubyRational) return true;
 
-        if (value instanceof RubyFloat) {
-            return ((RubyFloat) value).finite_p().isTrue();
-        }
-
-        return sites(context).finite.call(context, value, value).isTrue();
+        return value instanceof RubyFloat flote ?
+                flote.finite_p().isTrue() : sites(context).finite.call(context, value, value).isTrue();
     }
 
     @JRubyMethod(name = "infinite?")
     @Override
     public IRubyObject infinite_p(ThreadContext context) {
-        if (checkInfinite(context, real).isNil() && checkInfinite(context, image).isNil()) {
-            return context.nil;
-        }
-        return RubyFixnum.newFixnum(getRuntime(), 1);
+        return checkInfinite(context, real).isNil() && checkInfinite(context, image).isNil() ?
+            context.nil : asFixnum(context, 1);
     }
 
     public IRubyObject checkInfinite(ThreadContext context, IRubyObject value) {
-        if (value instanceof RubyInteger || value instanceof RubyRational) {
-            return context.nil;
-        }
+        if (value instanceof RubyInteger || value instanceof RubyRational) return context.nil;
 
-        if (value instanceof RubyFloat) {
-            return ((RubyFloat) value).infinite_p();
-        }
-
-        return sites(context).infinite.call(context, value, value);
+        return value instanceof RubyFloat f ? f.infinite_p() : sites(context).infinite.call(context, value, value);
     }
 
     private static final ByteList SEP = RubyFile.SLASH;
@@ -1287,11 +1267,11 @@ public class RubyComplex extends RubyNumeric {
 
     private static RubyNumeric convertString(ThreadContext context, final IRubyObject s, RubyFixnum zero) {
         if (s == context.nil) return zero;
-        final Ruby runtime = context.runtime;
-        if (s.callMethod(context, "include?", RubyString.newStringShared(runtime, SEP)).isTrue()) {
+
+        if (s.callMethod(context, "include?", RubyString.newStringShared(context.runtime, SEP)).isTrue()) {
             return (RubyNumeric) f_to_r(context, s);
         }
-        if (f_gt_p(context, s.callMethod(context, "count", RubyString.newStringShared(runtime, _eE)), zero)) {
+        if (f_gt_p(context, s.callMethod(context, "count", RubyString.newStringShared(context.runtime, _eE)), zero)) {
             return (RubyNumeric) f_to_f(context, s);
         }
         return (RubyNumeric) ((RubyString) s).stringToInum(10, true);
@@ -1316,7 +1296,7 @@ public class RubyComplex extends RubyNumeric {
             return context.nil;
 
         }
-        return (RubyNumeric) ary[0]; // (RubyComplex)
+        return ary[0]; // (RubyComplex)
     }
 
     private static JavaSites.ComplexSites sites(ThreadContext context) {

@@ -110,8 +110,19 @@ public final class ArgsUtil {
         return runtime.getNil();
     }
 
+    /**
+     * @param runtime
+     * @param arg
+     * @return ""
+     * @deprecated Use {@link ArgsUtil#getOptionsArg(ThreadContext, IRubyObject)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public static IRubyObject getOptionsArg(Ruby runtime, IRubyObject arg) {
         return getOptionsArg(runtime, arg, true);
+    }
+
+    public static IRubyObject getOptionsArg(ThreadContext context, IRubyObject arg) {
+        return getOptionsArg(context.runtime, arg, true);
     }
 
     public static IRubyObject getOptionsArg(Ruby runtime, IRubyObject arg, boolean raise) {
@@ -172,18 +183,19 @@ public final class ArgsUtil {
     }
 
     // not used
+    @Deprecated
     public static IRubyObject[] extractKeywordArgs(ThreadContext context, IRubyObject[] args, String... validKeys) {
         return extractKeywordArgs(context, ArgsUtil.getOptionsArg(context.runtime, args), validKeys);
     }
 
     public static IRubyObject[] extractKeywordArgs(ThreadContext context, IRubyObject maybeKwargs, String... validKeys) {
-        IRubyObject options = ArgsUtil.getOptionsArg(context.runtime, maybeKwargs);
+        IRubyObject options = ArgsUtil.getOptionsArg(context, maybeKwargs);
 
         return options instanceof RubyHash hash ? extractKeywordArgs(context, hash, validKeys) : null;
     }
 
     public static IRubyObject extractKeywordArg(ThreadContext context, IRubyObject maybeKwargs, String validKey) {
-        IRubyObject options = ArgsUtil.getOptionsArg(context.runtime, maybeKwargs);
+        IRubyObject options = ArgsUtil.getOptionsArg(context, maybeKwargs);
 
         return options instanceof RubyHash hash ? extractKeywordArg(context, hash, validKey) : null;
     }
@@ -229,7 +241,7 @@ public final class ArgsUtil {
      * @return nil if key not within options (no way to distinguish a key: nil and missing key)
      */
     public static IRubyObject extractKeywordArg(ThreadContext context, String keyword, IRubyObject arg) {
-        IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, arg);
+        IRubyObject opts = ArgsUtil.getOptionsArg(context, arg);
 
         return opts == context.nil ? context.nil : extractKeywordArg(context, keyword, (RubyHash) opts);
     }
@@ -255,7 +267,7 @@ public final class ArgsUtil {
 
     public static IRubyObject getFreezeOpt(ThreadContext context, IRubyObject maybeOpts) {
         IRubyObject kwfreeze = null;
-        IRubyObject opts = getOptionsArg(context.runtime, maybeOpts);
+        IRubyObject opts = getOptionsArg(context, maybeOpts);
 
         if (!opts.isNil()) {
             IRubyObject freeze = extractKeywordArg(context, (RubyHash) opts, "freeze");
