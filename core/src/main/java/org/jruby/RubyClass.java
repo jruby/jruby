@@ -111,6 +111,7 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 public class RubyClass extends RubyModule {
 
     private static final Logger LOG = LoggerFactory.getLogger(RubyClass.class);
+    private static final double SUBCLASSES_CLEAN_FACTOR = 0.25;
 
     public static void createClassClass(Ruby runtime, RubyClass classClass) {
         classClass.setClassIndex(ClassIndex.CLASS);
@@ -1011,11 +1012,9 @@ public class RubyClass extends RubyModule {
 
     @JRubyMethod
     public IRubyObject subclasses(ThreadContext context) {
-        int subclassEstimate = this.subclassEstimate;
-
-        RubyArray<RubyClass> subs = RubyArray.newArray(context.runtime, subclassEstimate == -1 ? 4 : subclassEstimate);
-
-        concreteSubclasses(subs);
+        RubyArray<RubyClass> subs = newConcreteSubclassesArray(context);
+        int clearedCount = concreteSubclasses(subs);
+        finishConcreteSubclasses(subs, clearedCount);
 
         return subs;
     }
@@ -1052,79 +1051,98 @@ public class RubyClass extends RubyModule {
     }
 
     public Collection<RubyClass> subclasses(boolean includeDescendants) {
-        SubclassNode subclassNode = this.subclassNode;
-        if (subclassNode != null) {
-            Collection<RubyClass> mine = new ArrayList<>();
-            subclassesInner(mine, includeDescendants);
+        Collection<RubyClass> mine = newSubclassesList(includeDescendants);
+        int clearedCount = subclassesInner(mine, includeDescendants);
+        finishSubclasses(mine, clearedCount, includeDescendants);
 
-            return mine;
-        }
-        return Collections.EMPTY_LIST;
+        return mine;
     }
 
-    private void subclassesInner(Collection<RubyClass> mine, boolean includeDescendants) {
+    private RubyArray<RubyClass> newConcreteSubclassesArray(ThreadContext context) {
+        RubyArray<RubyClass> subs = RubyArray.newArray(context.runtime, this.concreteSubclassesEstimate);
+        return subs;
+    }
+
+    private Collection<RubyClass> newSubclassesList(boolean includeDescendants) {
+        Collection<RubyClass> mine = new ArrayList<>(includeDescendants ? allDescendantsEstimate : allSubclassesEstimate);
+        return mine;
+    }
+
+    private int subclassesInner(Collection<RubyClass> mine, boolean includeDescendants) {
         SubclassNode subclassNode = this.subclassNode;
-        if (subclassNode != null) {
-            int clearedCount = 0;
-            while (subclassNode != null) {
-                RubyClass klass = subclassNode.ref.get();
-                subclassNode = subclassNode.next;
+        int clearedCount = 0;
+        while (subclassNode != null) {
+            RubyClass klass = subclassNode.ref.get();
+            subclassNode = subclassNode.next;
 
-                if (klass == null) {
-                    clearedCount++;
-                    continue;
-                }
-
-                mine.add(klass);
-
-                if (includeDescendants) klass.subclassesInner(mine, includeDescendants);
+            if (klass == null) {
+                clearedCount++;
+                continue;
             }
-            int newSize = mine.size();
 
-            // tidy up if more than 25% cleared references
-            if ((double) clearedCount / newSize > 0.25) {
-                cleanSubclasses();
+            processSubclass(mine, includeDescendants, klass);
+        }
+        return clearedCount;
+    }
+
+    private static void processSubclass(Collection<RubyClass> mine, boolean includeDescendants, RubyClass klass) {
+        mine.add(klass);
+
+        if (includeDescendants) klass.subclassesInner(mine, includeDescendants);
+    }
+
+    private void finishSubclasses(Collection<RubyClass> mine, int clearedCount, boolean includeDescendants) {
+        int newSize = mine.size();
+        if (includeDescendants) {
+            allDescendantsEstimate = newSize;
+        } else {
+            allSubclassesEstimate = newSize;
+        }
+        cleanSubclasses(newSize, clearedCount);
+    }
+
+    private int concreteSubclasses(RubyArray<RubyClass> subs) {
+        SubclassNode subclassNode = this.subclassNode;
+        int clearedCount = 0;
+        while (subclassNode != null) {
+            RubyClass klass = subclassNode.ref.get();
+            subclassNode = subclassNode.next;
+
+            if (klass == null) {
+                clearedCount++;
+                continue;
+            }
+
+            processConcreteSubclass(subs, klass);
+        }
+        return clearedCount;
+    }
+
+    private static void processConcreteSubclass(RubyArray<RubyClass> subs, RubyClass klass) {
+        if (!klass.isSingleton()) {
+            if (klass.isIncluded() || klass.isPrepended()) {
+                klass.concreteSubclasses(subs);
+            } else {
+                subs.append(klass);
             }
         }
     }
 
-    private void concreteSubclasses(RubyArray<RubyClass> subs) {
-        SubclassNode subclassNode = this.subclassNode;
-        if (subclassNode != null) {
-            int clearedCount = 0;
-            while (subclassNode != null) {
-                RubyClass klass = subclassNode.ref.get();
-                subclassNode = subclassNode.next;
-
-                if (klass == null) {
-                    clearedCount++;
-                    continue;
-                }
-
-                if (!klass.isSingleton()) {
-                    if (klass.isIncluded() || klass.isPrepended()) {
-                        klass.concreteSubclasses(subs);
-                    } else {
-                        subs.append(klass);
-                    }
-                }
-            }
-            int newSize = subs.size();
-            subclassEstimate = newSize + 4;
-
-            // tidy up if more than 25% cleared references
-            if ((double) clearedCount / newSize > 0.25) {
-                cleanSubclasses();
-            }
-        }
+    private void finishConcreteSubclasses(RubyArray<RubyClass> subs, int clearedCount) {
+        int newSize = subs.size();
+        concreteSubclassesEstimate = newSize + 4;
+        cleanSubclasses(newSize, clearedCount);
     }
 
-    private void cleanSubclasses() {
-        SubclassNode subclassNode = this.subclassNode;
-        SubclassNode newTop = rebuildSubclasses(subclassNode);
-        while (!SUBCLASS_UPDATER.compareAndSet(this, subclassNode, newTop)) {
-            subclassNode = this.subclassNode;
-            newTop = rebuildSubclasses(subclassNode);
+    private void cleanSubclasses(int size, int vacated) {
+        // tidy up if more than 25% cleared references
+        if ((double) vacated / size > SUBCLASSES_CLEAN_FACTOR) {
+            SubclassNode subclassNode = this.subclassNode;
+            SubclassNode newTop = rebuildSubclasses(subclassNode);
+            while (!SUBCLASS_UPDATER.compareAndSet(this, subclassNode, newTop)) {
+                subclassNode = this.subclassNode;
+                newTop = rebuildSubclasses(subclassNode);
+            }
         }
     }
 
@@ -3158,7 +3176,9 @@ public class RubyClass extends RubyModule {
     protected ObjectMarshal marshal;
     private volatile SubclassNode subclassNode;
     private static final AtomicReferenceFieldUpdater SUBCLASS_UPDATER = AtomicReferenceFieldUpdater.newUpdater(RubyClass.class, SubclassNode.class, "subclassNode");
-    private int subclassEstimate = -1;
+    private int concreteSubclassesEstimate = 4;
+    private int allDescendantsEstimate = 4;
+    private int allSubclassesEstimate = 4;
     public static final int CS_IDX_INITIALIZE = 0;
     public enum CS_NAMES {
         INITIALIZE("initialize");
