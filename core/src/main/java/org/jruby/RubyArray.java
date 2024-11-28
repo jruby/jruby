@@ -993,6 +993,27 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         }
     }
 
+    @JRubyMethod(rest = true)
+    public IRubyObject fetch_values(ThreadContext context, IRubyObject[] args, Block block) {
+        int length = args.length;
+        if (length == 0) return Create.newEmptyArray(context);
+
+        int arraySize = size();
+        var result = Create.newArray(context, length);
+        for (int i = 0; i < length; i++) {
+            int index = args[i].convertToInteger().getIntValue();
+            // FIXME: lookup the bounds part of this in error message??
+            if (index >= arraySize) {
+                if (!block.isGiven()) throw context.runtime.newIndexError("index " + index + " outside of array bounds: 0...0");
+                result.append(block.yield(context, asFixnum(context, index)));
+            } else {
+                result.append(eltOk(index));
+            }
+        }
+
+        return result;
+    }
+
     /** rb_ary_fetch
      *
      */
