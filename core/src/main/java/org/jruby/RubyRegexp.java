@@ -449,20 +449,15 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
      * This version does not produce a new, unescaped version of the bytelist,
      * and simply does the string-walking portion of the logic.
      *
-     * @param runtime current runtime
+     * @param context the current context
      * @param str string to preprocess
      * @param enc string's encoding
      * @param fixedEnc new encoding after fixing
      * @param mode mode of errors
      */
-    private static void preprocessLight(Ruby runtime, ByteList str, Encoding enc, Encoding[]fixedEnc, RegexpSupport.ErrorMode mode) {
-        if (enc.isAsciiCompatible()) {
-            fixedEnc[0] = null;
-        } else {
-            fixedEnc[0] = enc;
-        }
-
-        boolean hasProperty = RegexpSupport.unescapeNonAscii(runtime, null, str.getUnsafeBytes(), str.getBegin(), str.getBegin() + str.getRealSize(), enc, fixedEnc, str, mode);
+    private static void preprocessLight(ThreadContext context, ByteList str, Encoding enc, Encoding[]fixedEnc, RegexpSupport.ErrorMode mode) {
+        fixedEnc[0] = enc.isAsciiCompatible() ? null : enc;
+        boolean hasProperty = RegexpSupport.unescapeNonAscii(context.runtime, null, str.getUnsafeBytes(), str.getBegin(), str.getBegin() + str.getRealSize(), enc, fixedEnc, str, mode);
         if (hasProperty && fixedEnc[0] == null) fixedEnc[0] = enc;
     }
 
@@ -487,7 +482,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
         for (IRubyObject arg : args) {
             RubyString str = arg.convertToString();
-            regexpEnc = processDRegexpElement(context.runtime, options, regexpEnc, context.encodingHolder(), str);
+            regexpEnc = processDRegexpElement(context, options, regexpEnc, context.encodingHolder(), str);
             string = string == null ? (RubyString) str.dup() : string.append(str);
         }
 
@@ -497,44 +492,49 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     public static RubyString preprocessDRegexp(ThreadContext context, RegexpOptions options, IRubyObject arg0) {
-        return processElementIntoResult(context.runtime, null, arg0, options, null, context.encodingHolder());
+        return processElementIntoResult(context, null, arg0, options, null, context.encodingHolder());
     }
 
     @Deprecated // not used
     public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject arg0, RegexpOptions options) {
-        return processElementIntoResult(runtime, null, arg0, options, null, runtime.getCurrentContext().encodingHolder());
+        var context = runtime.getCurrentContext();
+        return processElementIntoResult(context, null, arg0, options, null, context.encodingHolder());
     }
 
     public static RubyString preprocessDRegexp(ThreadContext context, RegexpOptions options, IRubyObject arg0, IRubyObject arg1) {
-        return processElementIntoResult(context.runtime, null, arg0, arg1, options, null, context.encodingHolder());
+        return processElementIntoResult(context, null, arg0, arg1, options, null, context.encodingHolder());
     }
 
     @Deprecated
     public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject arg0, IRubyObject arg1, RegexpOptions options) {
-        return processElementIntoResult(runtime, null, arg0, arg1, options, null, runtime.getCurrentContext().encodingHolder());
+        var context = runtime.getCurrentContext();
+        return processElementIntoResult(context, null, arg0, arg1, options, null, context.encodingHolder());
     }
 
     public static RubyString preprocessDRegexp(ThreadContext context, RegexpOptions options, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        return processElementIntoResult(context.runtime, null, arg0, arg1, arg2, options, null, context.encodingHolder());
+        return processElementIntoResult(context, null, arg0, arg1, arg2, options, null, context.encodingHolder());
     }
 
     @Deprecated
     public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, RegexpOptions options) {
-        return processElementIntoResult(runtime, null, arg0, arg1, arg2, options, null, runtime.getCurrentContext().encodingHolder());
+        var context = runtime.getCurrentContext();
+        return processElementIntoResult(context, null, arg0, arg1, arg2, options, null, context.encodingHolder());
     }
 
     @Deprecated
     public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, RegexpOptions options) {
-        return processElementIntoResult(runtime, null, arg0, arg1, arg2, arg3, options, null, runtime.getCurrentContext().encodingHolder());
+        var context = runtime.getCurrentContext();
+        return processElementIntoResult(context, null, arg0, arg1, arg2, arg3, options, null, context.encodingHolder());
     }
 
     @Deprecated
     public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, RegexpOptions options) {
-        return processElementIntoResult(runtime, null, arg0, arg1, arg2, arg3, arg4, options, null, runtime.getCurrentContext().encodingHolder());
+        var context = runtime.getCurrentContext();
+        return processElementIntoResult(context, null, arg0, arg1, arg2, arg3, arg4, options, null, context.encodingHolder());
     }
 
     private static RubyString processElementIntoResult(
-            Ruby runtime,
+            ThreadContext context,
             RubyString result,
             IRubyObject arg0,
             IRubyObject arg1,
@@ -545,12 +545,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             Encoding regexpEnc,
             Encoding[] fixedEnc) {
         RubyString str = arg0.convertToString();
-        regexpEnc = processDRegexpElement(runtime, options, regexpEnc, fixedEnc, str);
-        return processElementIntoResult(runtime, result == null ? str.strDup(runtime) : result.append(str), arg1, arg2, arg3, arg4, options, regexpEnc, fixedEnc);
+        regexpEnc = processDRegexpElement(context, options, regexpEnc, fixedEnc, str);
+        return processElementIntoResult(context, result == null ? dupString(context, str) : result.append(str), arg1, arg2, arg3, arg4, options, regexpEnc, fixedEnc);
     }
 
     private static RubyString processElementIntoResult(
-            Ruby runtime,
+            ThreadContext context,
             RubyString result,
             IRubyObject arg0,
             IRubyObject arg1,
@@ -560,12 +560,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             Encoding regexpEnc,
             Encoding[] fixedEnc) {
         RubyString str = arg0.convertToString();
-        regexpEnc = processDRegexpElement(runtime, options, regexpEnc, fixedEnc, str);
-        return processElementIntoResult(runtime, result == null ? str.strDup(runtime) : result.append(str), arg1, arg2, arg3, options, regexpEnc, fixedEnc);
+        regexpEnc = processDRegexpElement(context, options, regexpEnc, fixedEnc, str);
+        return processElementIntoResult(context, result == null ? dupString(context, str) : result.append(str), arg1, arg2, arg3, options, regexpEnc, fixedEnc);
     }
 
     private static RubyString processElementIntoResult(
-            Ruby runtime,
+            ThreadContext context,
             RubyString result,
             IRubyObject arg0,
             IRubyObject arg1,
@@ -574,12 +574,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             Encoding regexpEnc,
             Encoding[] fixedEnc) {
         RubyString str = arg0.convertToString();
-        regexpEnc = processDRegexpElement(runtime, options, regexpEnc, fixedEnc, str);
-        return processElementIntoResult(runtime, result == null ? str.strDup(runtime) : result.append(str), arg1, arg2, options, regexpEnc, fixedEnc);
+        regexpEnc = processDRegexpElement(context, options, regexpEnc, fixedEnc, str);
+        return processElementIntoResult(context, result == null ? dupString(context, str) : result.append(str), arg1, arg2, options, regexpEnc, fixedEnc);
     }
 
     private static RubyString processElementIntoResult(
-            Ruby runtime,
+            ThreadContext context,
             RubyString result,
             IRubyObject arg0,
             IRubyObject arg1,
@@ -587,30 +587,30 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             Encoding regexpEnc,
             Encoding[] fixedEnc) {
         RubyString str = arg0.convertToString();
-        regexpEnc = processDRegexpElement(runtime, options, regexpEnc, fixedEnc, str);
-        return processElementIntoResult(runtime, result == null ? str.strDup(runtime) : result.append(str), arg1, options, regexpEnc, fixedEnc);
+        regexpEnc = processDRegexpElement(context, options, regexpEnc, fixedEnc, str);
+        return processElementIntoResult(context, result == null ? dupString(context, str) : result.append(str), arg1, options, regexpEnc, fixedEnc);
     }
 
     private static RubyString processElementIntoResult(
-            Ruby runtime,
+            ThreadContext context,
             RubyString result,
             IRubyObject arg0,
             RegexpOptions options,
             Encoding regexpEnc,
             Encoding[] fixedEnc) {
         RubyString str = arg0.convertToString();
-        regexpEnc = processDRegexpElement(runtime, options, regexpEnc, fixedEnc, str);
-        result = result == null ? str.strDup(runtime) : result.append(str);
+        regexpEnc = processDRegexpElement(context, options, regexpEnc, fixedEnc, str);
+        result = result == null ? dupString(context, str) : result.append(str);
         if (regexpEnc != null) result.setEncoding(regexpEnc);
         return result;
     }
 
-    private static Encoding processDRegexpElement(Ruby runtime, RegexpOptions options, Encoding regexpEnc, Encoding[] fixedEnc, RubyString str) {
+    private static Encoding processDRegexpElement(ThreadContext context, RegexpOptions options, Encoding regexpEnc, Encoding[] fixedEnc, RubyString str) {
         Encoding strEnc = str.getEncoding();
 
         if (options.isEncodingNone() && strEnc != ASCIIEncoding.INSTANCE) {
             if (str.scanForCodeRange() != StringSupport.CR_7BIT) {
-                throw runtime.newRegexpError("/.../n has a non escaped non ASCII character in non ASCII-8BIT script");
+                throw context.runtime.newRegexpError("/.../n has a non escaped non ASCII character in non ASCII-8BIT script");
             }
             strEnc = ASCIIEncoding.INSTANCE;
         }
@@ -618,11 +618,11 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         // This used to call preprocess, but the resulting bytelist was not
         // used. Since the preprocessing error-checking can be done without
         // creating a new bytelist, I added a "light" path.
-        RubyRegexp.preprocessLight(runtime, str.getByteList(), strEnc, fixedEnc, RegexpSupport.ErrorMode.PREPROCESS);
+        RubyRegexp.preprocessLight(context, str.getByteList(), strEnc, fixedEnc, RegexpSupport.ErrorMode.PREPROCESS);
 
         if (fixedEnc[0] != null) {
             if (regexpEnc != null && regexpEnc != fixedEnc[0]) {
-                throw runtime.newRegexpError("encoding mismatch in dynamic regexp: " +
+                throw context.runtime.newRegexpError("encoding mismatch in dynamic regexp: " +
                         new String(regexpEnc.getName()) + " and " + new String(fixedEnc[0].getName())
                 );
             }
@@ -645,7 +645,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
      */
     @JRubyMethod(name = {"quote", "escape"}, meta = true)
     public static RubyString quote(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        final RubyString str = operandCheck(arg);
+        final RubyString str = operandCheck(context, arg);
         return RubyString.newStringShared(context.runtime, quote(str));
     }
 
@@ -839,7 +839,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                     } else {
                         hasAsciiOnly = true;
                     }
-                    re = regex.to_s().getByteList();
+                    re = regex.to_s(context).getByteList();
                 } else {
                     RubyString str = e.convertToString();
                     enc = str.getEncoding();
@@ -1098,7 +1098,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
      */
     @JRubyMethod(name = "===", writes = BACKREF)
     public IRubyObject eqq(ThreadContext context, IRubyObject arg) {
-        arg = operandNoCheck(arg);
+        arg = operandNoCheck(context, arg);
 
         if (!arg.isNil()) {
             int start = searchString(context, (RubyString) arg, 0, false);
@@ -1184,7 +1184,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             return -1;
         }
 
-        final RubyString str = operandCheck(arg);
+        final RubyString str = operandCheck(context, arg);
         if (strp != null) strp[0] = str;
         if (pos != 0) {
             if (pos < 0) {
@@ -1196,17 +1196,14 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
         int result = searchString(context, str, pos, false);
 
-        if (useBackref) {
-            // set backref for user
-            context.updateBackref();
-        }
+        if (useBackref) context.updateBackref();
 
         return result;
     }
 
     private RubyBoolean matchP(ThreadContext context, IRubyObject arg, int pos) {
         if (arg == context.nil) return context.fals;
-        RubyString str = arg instanceof RubySymbol ? ((RubySymbol) arg).to_s(context.runtime) : arg.convertToString();
+        RubyString str = arg instanceof RubySymbol sym ? (RubyString) sym.to_s(context) : arg.convertToString();
         return matchP(context, str, pos);
     }
 
@@ -1446,10 +1443,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     @Override
     @JRubyMethod
-    public RubyString to_s() {
+    public RubyString to_s(ThreadContext context) {
         check();
 
-        Ruby runtime = metaClass.runtime;
         RegexpOptions newOptions = options.clone();
         int p = str.getBegin();
         int len = str.getRealSize();
@@ -1525,10 +1521,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             }
             result.append((byte)':');
             Encoding enc = str.getEncoding();
-            RegexpSupport.appendRegexpString(runtime, result, bytes, p, len, enc, null);
+            RegexpSupport.appendRegexpString(context.runtime, result, bytes, p, len, enc, null);
 
             result.append((byte)')');
-            return RubyString.newString(runtime, result, getEncoding());
+            return newString(context, result, getEncoding());
         } while (true);
     }
 
@@ -1873,17 +1869,17 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return pos;
     }
 
-    private static IRubyObject operandNoCheck(IRubyObject str) {
-        return regOperand(str, false);
+    private static IRubyObject operandNoCheck(ThreadContext context, IRubyObject str) {
+        return regOperand(context, str, false);
     }
 
-    private static RubyString operandCheck(IRubyObject str) {
-        return (RubyString) regOperand(str, true);
+    private static RubyString operandCheck(ThreadContext context, IRubyObject str) {
+        return (RubyString) regOperand(context, str, true);
     }
 
     // MRI: reg_operand
-    private static IRubyObject regOperand(IRubyObject str, boolean check) {
-        if (str instanceof RubySymbol) return ((RubySymbol) str).to_s();
+    private static IRubyObject regOperand(ThreadContext context, IRubyObject str, boolean check) {
+        if (str instanceof RubySymbol sym) return sym.to_s(context);
         return check ? str.convertToString() : str.checkStringType();
     }
 

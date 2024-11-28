@@ -237,12 +237,11 @@ public class RubyProc extends RubyObject implements DataType {
 
     @Override
     @JRubyMethod(name = "to_s", alias = "inspect")
-    public IRubyObject to_s() {
-        Ruby runtime = getRuntime();
-        RubyString string = runtime.newString("#<");
+    public IRubyObject to_s(ThreadContext context) {
+        RubyString string = newString(context, "#<");
         string.setEncoding(RubyString.ASCII);
 
-        string.append(types(runtime, type()));
+        string.append(types(context.runtime, type()));
         string.catStringUnsafe(":0x" + Integer.toString(System.identityHashCode(block), 16));
 
         boolean isSymbolProc = block.getBody() instanceof RubySymbol.SymbolProcBody;

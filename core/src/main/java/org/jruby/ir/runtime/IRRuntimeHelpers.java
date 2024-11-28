@@ -91,8 +91,7 @@ import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.Type;
 
 import static org.jruby.api.Convert.*;
-import static org.jruby.api.Create.newEmptyArray;
-import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ir.operands.UndefinedValue.UNDEFINED;
@@ -2430,14 +2429,9 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static IRubyObject callOptimizedAref(ThreadContext context, IRubyObject caller, IRubyObject target, RubyString keyStr, CallSite site) {
-        if (target instanceof RubyHash &&
-                !((RubyHash) target).isComparedByIdentity() &&
-                ((CachingCallSite) site).isBuiltin(target)) {
-            // call directly with cached frozen string
-            return ((RubyHash) target).op_aref(context, keyStr);
-        }
-
-        return site.call(context, caller, target, keyStr.strDup(context.runtime));
+        return target instanceof RubyHash h && !h.isComparedByIdentity() && ((CachingCallSite) site).isBuiltin(target) ?
+                h.op_aref(context, keyStr) : // call directly with cached frozen string
+                site.call(context, caller, target, dupString(context, keyStr));
     }
 
     /**
@@ -2446,12 +2440,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static RubyString asString(ThreadContext context, IRubyObject caller, IRubyObject target, CallSite site) {
         IRubyObject str = site.call(context, caller, target);
-
-        if (!(str instanceof RubyString)) {
-            return (RubyString) target.anyToString();
-        }
-
-        return (RubyString) str;
+        return str instanceof RubyString string ? string : (RubyString) target.anyToString();
     }
 
     @JIT

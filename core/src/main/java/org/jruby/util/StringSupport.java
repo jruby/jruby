@@ -2964,7 +2964,20 @@ public final class StringSupport {
 
     private static final int CASE_MAPPING_ADDITIONAL_LENGTH = 20;
 
+    /**
+     * @param runtime
+     * @param src
+     * @param flags
+     * @param enc
+     * @return ""
+     * @deprecated Use {@link StringSupport#caseMap(ThreadContext, ByteList, IntHolder, Encoding)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public static ByteList caseMap(Ruby runtime, ByteList src, IntHolder flags, Encoding enc) {
+        return caseMap(runtime.getCurrentContext(), src, flags, enc);
+    }
+
+    public static ByteList caseMap(ThreadContext context, ByteList src, IntHolder flags, Encoding enc) {
         IntHolder pp = new IntHolder();
         pp.value = src.getBegin();
         int end = src.getRealSize() + pp.value;
@@ -2978,7 +2991,7 @@ public final class StringSupport {
             buffer.next = new MappingBuffer((end - pp.value) * ++buffers + CASE_MAPPING_ADDITIONAL_LENGTH);
             buffer = buffer.next;
             int len = enc.caseMap(flags, bytes, pp, end, buffer.bytes, 0, buffer.bytes.length);
-            if (len < 0) throw argumentError(runtime.getCurrentContext(), "input string invalid");
+            if (len < 0) throw argumentError(context, "input string invalid");
             buffer.used = len;
             tgtLen += len;
         }
@@ -3001,7 +3014,19 @@ public final class StringSupport {
         return tgt;
     }
 
+    /**
+     * @param runtime
+     * @param value
+     * @param flags
+     * @param enc
+     * @deprecated Use {@link StringSupport#asciiOnlyCaseMap(ThreadContext, ByteList, IntHolder)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public static void asciiOnlyCaseMap(Ruby runtime, ByteList value, IntHolder flags, Encoding enc) {
+        asciiOnlyCaseMap(runtime.getCurrentContext(), value, flags);
+    }
+
+    public static void asciiOnlyCaseMap(ThreadContext context, ByteList value, IntHolder flags) {
         if (value.getRealSize() == 0) return;
         int s = value.getBegin();
         int end = s + value.getRealSize();
@@ -3010,7 +3035,7 @@ public final class StringSupport {
         IntHolder pp = new IntHolder();
         pp.value = s;
         int len = ASCIIEncoding.INSTANCE.caseMap(flags, bytes, pp, end, bytes, s, end);
-        if (len < 0) throw argumentError(runtime.getCurrentContext(), "input string invalid");
+        if (len < 0) throw argumentError(context, "input string invalid");
     }
 
     public static int encCoderangeClean(int cr) {

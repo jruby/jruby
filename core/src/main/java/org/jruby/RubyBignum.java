@@ -369,16 +369,17 @@ public class RubyBignum extends RubyInteger {
      *
      */
     public IRubyObject to_s(IRubyObject[] args) {
+        var context = getRuntime().getCurrentContext();
         return switch (args.length) {
-            case 0 -> to_s();
+            case 0 -> to_s(context);
             case 1 -> to_s(args[0]);
-            default -> throw argumentError(getRuntime().getCurrentContext(), args.length, 1);
+            default -> throw argumentError(context, args.length, 1);
         };
     }
 
     @Override
-    public RubyString to_s() {
-        return RubyString.newUSASCIIString(getRuntime(), value.toString(10));
+    public RubyString to_s(ThreadContext context) {
+        return RubyString.newUSASCIIString(context.runtime, value.toString(10));
     }
 
     @Override

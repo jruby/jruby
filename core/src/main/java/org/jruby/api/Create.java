@@ -98,6 +98,7 @@ public class Create {
     /**
      * Create a new array which is intended to be empty for its entire lifetime.
      * It can still grow but the intention is you think it won't grow (or cannot).
+     * If you want a default-size array then use {@link Create#newArray(ThreadContext)}.
      *
      * @param context the current thread context
      * @return the new array
@@ -152,4 +153,14 @@ public class Create {
         return RubyString.newString(context.runtime, string);
     }
 
+    /**
+     * Duplicate the given string and return a String (original subclass of String is not preserved).
+     *
+     * @param context the current thread context
+     * @param string the string to be duplicated
+     * @return the new string
+     */
+    public static RubyString dupString(ThreadContext context, RubyString string) {
+        return string.strDup(context.runtime, context.runtime.getString());
+    }
 }

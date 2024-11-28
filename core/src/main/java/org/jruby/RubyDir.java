@@ -915,9 +915,8 @@ public class RubyDir extends RubyObject implements Closeable {
 
     @JRubyMethod(name = "empty?", meta = true)
     public static IRubyObject empty_p(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        Ruby runtime = context.runtime;
-        RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, arg));
-        RubyFileStat fileStat = runtime.newFileStat(path.asJavaString(), false);
+        RubyString path = StringSupport.checkEmbeddedNulls(context.runtime, RubyFile.get_path(context, arg));
+        RubyFileStat fileStat = context.runtime.newFileStat(path.asJavaString(), false);
         boolean isDirectory = fileStat.directory_p(context).isTrue();
         return asBoolean(context, isDirectory && entries(context, recv, arg).getLength() <= 2);
     }

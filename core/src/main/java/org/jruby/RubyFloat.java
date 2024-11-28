@@ -64,6 +64,7 @@ import org.jruby.util.Sprintf;
 
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.Numeric.f_abs;
@@ -258,14 +259,11 @@ public class RubyFloat extends RubyNumeric implements Appendable {
      */
     @JRubyMethod(name = {"to_s", "inspect"})
     @Override
-    public IRubyObject to_s() {
-        final Ruby runtime = metaClass.runtime;
+    public IRubyObject to_s(ThreadContext context) {
         if (Double.isInfinite(value)) {
-            return RubyString.newStringShared(runtime, value < 0 ? NEGATIVE_INFINITY_TO_S_BYTELIST : POSITIVE_INFINITY_TO_S_BYTELIST);
+            return RubyString.newStringShared(context.runtime, value < 0 ? NEGATIVE_INFINITY_TO_S_BYTELIST : POSITIVE_INFINITY_TO_S_BYTELIST);
         }
-        if (Double.isNaN(value)) {
-            return RubyString.newStringShared(runtime, NAN_TO_S_BYTELIST);
-        }
+        if (Double.isNaN(value)) return RubyString.newStringShared(context.runtime, NAN_TO_S_BYTELIST);
 
         ByteList buf = new ByteList();
         // Under 1.9, use full-precision float formatting (JRUBY-4846).
@@ -290,7 +288,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
 
         buf.setEncoding(USASCIIEncoding.INSTANCE);
 
-        return runtime.newString(buf);
+        return newString(context, buf);
     }
 
     public static final ByteList POSITIVE_INFINITY_TO_S_BYTELIST = new ByteList(ByteList.plain("Infinity"), USASCIIEncoding.INSTANCE, false);
@@ -1289,7 +1287,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
 
     @Override
     public void appendIntoString(RubyString target) {
-        target.catWithCodeRange((RubyString) to_s());
+        target.catWithCodeRange((RubyString) to_s(getRuntime().getCurrentContext()));
     }
 
     @Deprecated

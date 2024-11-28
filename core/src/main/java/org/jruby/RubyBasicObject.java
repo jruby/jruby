@@ -66,12 +66,14 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 
+import static org.jruby.RubySymbol.newSymbol;
 import static org.jruby.anno.FrameField.*;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
+import static org.jruby.ir.runtime.IRRuntimeHelpers.getClassVariable;
 import static org.jruby.runtime.Helpers.invokeChecked;
 import static org.jruby.runtime.ThreadContext.*;
 import static org.jruby.runtime.Visibility.*;
@@ -757,7 +759,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * properly encoded string from the symbol table.
      */
     public RubyString decode(String id) {
-        return (RubyString) getRuntime().newSymbol(id).to_s();
+        var context = getRuntime().getCurrentContext();
+        return (RubyString) asSymbol(context, id).to_s(context);
     }
 
     /** rb_check_string_type
@@ -1088,10 +1091,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public IRubyObject inspect() {
-        if (!isImmediate() && !(this instanceof RubyModule) && hasVariables()) {
-            return hashyInspect();
-        }
-        return to_s();
+        return !isImmediate() && !(this instanceof RubyModule) && hasVariables() ?
+                hashyInspect() : to_s(getRuntime().getCurrentContext());
     }
 
     public final IRubyObject hashyInspect() {
@@ -2460,6 +2461,15 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return getMetaClass().newMethod(this, symbol.idString(), refinedScope, true, null, true);
     }
 
+    /**
+     * @return ""
+     * @deprecated Use {@link RubyBasicObject#to_s(ThreadContext)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
+    public IRubyObject to_s() {
+        return to_s(getCurrentContext());
+    }
+
     /** rb_any_to_s
      *
      *  call-seq:
@@ -2470,7 +2480,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *  object id. As a special case, the top-level object that is the
      *  initial execution context of Ruby programs returns ``main.''
      */
-    public IRubyObject to_s() {
+    public IRubyObject to_s(ThreadContext context) {
     	return anyToString();
     }
 

@@ -110,8 +110,8 @@ public class JavaProxyReflectionObject extends RubyObject {
 
     @Override
     @JRubyMethod
-    public IRubyObject to_s() {
-        return getRuntime().newString(toString());
+    public IRubyObject to_s(ThreadContext context) {
+        return context.runtime.newString(toString());
     }
 
     @Override

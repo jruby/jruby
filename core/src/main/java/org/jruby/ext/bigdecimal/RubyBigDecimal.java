@@ -1834,7 +1834,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {
-        return toStringImpl(context.runtime, null);
+        return toStringImpl(context, null);
     }
 
     @JRubyMethod(name = "nan?")
@@ -2330,43 +2330,37 @@ public class RubyBigDecimal extends RubyNumeric {
         return build;
     }
 
-    @Override
-    public IRubyObject to_s() {
-        return toStringImpl(getRuntime(), null);
-    }
 
+    @Override
     @JRubyMethod
     public RubyString to_s(ThreadContext context) {
-        return toStringImpl(context.runtime, null);
+        return toStringImpl(context, null);
     }
 
     @JRubyMethod
     public RubyString to_s(ThreadContext context, IRubyObject arg) {
-        return toStringImpl(context.runtime, arg == context.nil ? null : arg.toString());
+        return toStringImpl(context, arg == context.nil ? null : arg.toString());
     }
 
-    private RubyString toStringImpl(final Ruby runtime, String arg) {
-        if ( isNaN() ) return RubyString.newUSASCIIString(runtime, "NaN");
+    private RubyString toStringImpl(ThreadContext context, String arg) {
+        if ( isNaN() ) return RubyString.newUSASCIIString(context.runtime, "NaN");
         if ( isInfinity() ) {
             if ( arg != null && infinitySign >= 0) {
-                if ( formatHasLeadingSpace(arg) ) return RubyString.newUSASCIIString(runtime, " Infinity");
-                if ( formatHasLeadingPlus(arg) ) return RubyString.newUSASCIIString(runtime, "+Infinity");
+                if ( formatHasLeadingSpace(arg) ) return RubyString.newUSASCIIString(context.runtime, " Infinity");
+                if ( formatHasLeadingPlus(arg) ) return RubyString.newUSASCIIString(context.runtime, "+Infinity");
             }
-            return RubyString.newUSASCIIString(runtime, infinityString(infinitySign));
+            return RubyString.newUSASCIIString(context.runtime, infinityString(infinitySign));
         }
-        if ( isZero() ) {
-            if ( zeroSign < 0 ) {
-                return RubyString.newUSASCIIString(runtime, "-0.0");
-            } else {
-                if ( arg != null && formatHasLeadingSpace(arg) ) return RubyString.newUSASCIIString(runtime, " 0.0");
-                if ( arg != null && formatHasLeadingPlus(arg) ) return RubyString.newUSASCIIString(runtime, "+0.0");
-                return RubyString.newUSASCIIString(runtime, "0.0");
-            }
+        if (isZero()) {
+            if (zeroSign < 0) return RubyString.newUSASCIIString(context.runtime, "-0.0");
+            if (arg != null && formatHasLeadingSpace(arg)) return RubyString.newUSASCIIString(context.runtime, " 0.0");
+            if (arg != null && formatHasLeadingPlus(arg)) return RubyString.newUSASCIIString(context.runtime, "+0.0");
+            return RubyString.newUSASCIIString(context.runtime, "0.0");
         }
 
         boolean asEngineering = arg == null || ! formatHasFloatingPointNotation(arg);
 
-        return RubyString.newUSASCIIString(runtime, ( asEngineering ? engineeringValue(arg) : floatingPointValue(arg) ).toString());
+        return RubyString.newUSASCIIString(context.runtime, ( asEngineering ? engineeringValue(arg) : floatingPointValue(arg) ).toString());
     }
 
     @Override
@@ -2380,7 +2374,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @Deprecated
     public IRubyObject to_s(IRubyObject[] args) {
-        return toStringImpl(getRuntime(), args.length == 0 ? null : (args[0].isNil() ? null : args[0].toString()));
+        return toStringImpl(getCurrentContext(), args.length == 0 ? null : (args[0].isNil() ? null : args[0].toString()));
     }
 
     // Note: #fix has only no-arg form, but truncate allows optional parameter.

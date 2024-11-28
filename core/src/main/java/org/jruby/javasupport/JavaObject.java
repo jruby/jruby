@@ -175,12 +175,19 @@ public class JavaObject extends RubyObject {
 
     @JRubyMethod
     @Override
-    public IRubyObject to_s() {
-        return to_s(getRuntime(), dataGetStruct());
+    public IRubyObject to_s(ThreadContext context) {
+        return JavaProxyMethods.to_s(context, dataGetStruct());
     }
 
+    /**
+     * @param runtime
+     * @param dataStruct
+     * @return ""
+     * @deprecated Use {@link
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public static IRubyObject to_s(Ruby runtime, Object dataStruct) {
-        return JavaProxyMethods.to_s(runtime, dataStruct);
+        return JavaProxyMethods.to_s(runtime.getCurrentContext(), dataStruct);
     }
 
     @JRubyMethod(name = {"==", "eql?"})
