@@ -65,8 +65,11 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.jruby.RubyString.scanForCodeRange;
+import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.indexError;
 
 public final class StringSupport {
     public static final int CR_7BIT_F    = ObjectFlags.CR_7BIT_F;
@@ -591,8 +594,19 @@ public final class StringSupport {
         }
     }
 
+    /**
+     * @param runtime
+     * @param value
+     * @return ""
+     * @deprecated Use {@link StringSupport#codePoint(ThreadContext, ByteList)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public static int codePoint(final Ruby runtime, final ByteList value) {
-        return codePoint(runtime, EncodingUtils.getEncoding(value),
+        return codePoint(runtime.getCurrentContext(), value);
+    }
+
+    public static int codePoint(ThreadContext context, final ByteList value) {
+        return codePoint(context, EncodingUtils.getEncoding(value),
                 value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize());
     }
 
@@ -1166,11 +1180,25 @@ public final class StringSupport {
         return count;
     }
 
+    /**
+     * @param str
+     * @param runtime
+     * @param table
+     * @param tables
+     * @param enc
+     * @return ""
+     * @deprecated Use {@link StringSupport#strCount(ThreadContext, ByteList, boolean[], TrTables, Encoding)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public static int strCount(ByteList str, Ruby runtime, boolean[] table, TrTables tables, Encoding enc) {
+        return strCount(runtime.getCurrentContext(), str, table, tables, enc);
+    }
+
+    public static int strCount(ThreadContext context, ByteList str, boolean[] table, TrTables tables, Encoding enc) {
         try {
             return strCount(str, table, tables, enc);
         } catch (IllegalArgumentException e) {
-            throw argumentError(runtime.getCurrentContext(), e.getMessage());
+            throw argumentError(context, e.getMessage());
         }
     }
 
@@ -1407,13 +1435,29 @@ public final class StringSupport {
         return tables;
     }
 
+    /**
+     * @param str
+     * @param runtime
+     * @param stable
+     * @param tables
+     * @param first
+     * @param enc
+     * @return ""
+     * @deprecated Use {@link StringSupport#trSetupTable(ThreadContext, ByteList, boolean[], TrTables, boolean, Encoding)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public static TrTables trSetupTable(final ByteList str, final Ruby runtime,
+                                        final boolean[] stable, TrTables tables, final boolean first, final Encoding enc) {
+        return trSetupTable(runtime.getCurrentContext(), str, stable, tables, first, enc);
+    }
+
+    public static TrTables trSetupTable(ThreadContext context, final ByteList str,
         final boolean[] stable, TrTables tables, final boolean first, final Encoding enc) {
 
         try {
             return trSetupTable(str, stable, tables, first, enc);
         } catch (IllegalArgumentException e) {
-            throw argumentError(runtime.getCurrentContext(), e.getMessage());
+            throw argumentError(context, e.getMessage());
         }
     }
 
@@ -1568,11 +1612,22 @@ public final class StringSupport {
         return valueCopy;
     }
 
+    /**
+     * @param runtime
+     * @param original
+     * @return ""
+     * @deprecated Use {@link StringSupport#succCommon(ThreadContext, ByteList)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public static ByteList succCommon(Ruby runtime, ByteList original) {
+        return succCommon(runtime.getCurrentContext(), original);
+    }
+
+    public static ByteList succCommon(ThreadContext context, ByteList original) {
         try {
             return succCommon(original);
         } catch (IllegalArgumentException e) {
-            throw argumentError(runtime.getCurrentContext(), e.getMessage());
+            throw argumentError(context, e.getMessage());
         }
     }
 
@@ -1885,14 +1940,14 @@ public final class StringSupport {
         return source.getByteList();
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4", forRemoval = true)
     public static void replaceInternal19(int beg, int len, CodeRangeable source, CodeRangeable repl) {
         strUpdate(beg, len, source, repl);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4", forRemoval = true)
     public static void replaceInternal19(Ruby runtime, int beg, int len, RubyString source, RubyString repl) {
-        strUpdate(runtime, beg, len, source, repl);
+        strUpdate(runtime.getCurrentContext(), beg, len, source, repl);
     }
 
     // MRI: rb_str_update, second half
@@ -1919,24 +1974,31 @@ public final class StringSupport {
         if (cr != source.getCodeRange()) source.setCodeRange(cr);
     }
 
-    // MRI: rb_str_update, first half
+    /**
+     * @param runtime
+     * @param beg
+     * @param len
+     * @param source
+     * @param repl
+     * @deprecated Use {@link StringSupport#strUpdate(ThreadContext, int, int, RubyString, RubyString)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public static void strUpdate(Ruby runtime, int beg, int len, RubyString source, RubyString repl) {
-        if (len < 0) throw runtime.newIndexError("negative length " + len);
+        strUpdate(runtime.getCurrentContext(), beg, len, source, repl);
+    }
+
+    // MRI: rb_str_update, first half
+    public static void strUpdate(ThreadContext context, int beg, int len, RubyString source, RubyString repl) {
+        if (len < 0) throw indexError(context, "negative length " + len);
 
         int slen = strLengthFromRubyString(source, source.checkEncoding(repl));
 
-        if (slen < beg) {
-            throw runtime.newIndexError("index " + beg + " out of string");
-        }
+        if (slen < beg) throw indexError(context, "index " + beg + " out of string");
         if (beg < 0) {
-            if (-beg > slen) {
-                throw runtime.newIndexError("index " + beg + " out of string");
-            }
+            if (-beg > slen) throw indexError(context, "index " + beg + " out of string");
             beg += slen;
         }
-        if (slen < len || slen < beg + len) {
-            len = slen - beg;
-        }
+        if (slen < len || slen < beg + len) len = slen - beg;
 
         strUpdate(beg, len, source, repl);
     }
@@ -1994,11 +2056,25 @@ public final class StringSupport {
         return modify ? rubyString : null;
     }
 
+    /**
+     * @param rubyString
+     * @param runtime
+     * @param squeeze
+     * @param tables
+     * @param enc
+     * @return ""
+     * @deprecated Use {@link StringSupport#strDeleteBang(ThreadContext, CodeRangeable, boolean[], TrTables, Encoding)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public static CodeRangeable strDeleteBang(CodeRangeable rubyString, Ruby runtime, boolean[] squeeze, TrTables tables, Encoding enc) {
+        return strDeleteBang(runtime.getCurrentContext(), rubyString, squeeze, tables, enc);
+    }
+
+    public static CodeRangeable strDeleteBang(ThreadContext context, CodeRangeable rubyString, boolean[] squeeze, TrTables tables, Encoding enc) {
         try {
             return strDeleteBang(rubyString, squeeze, tables, enc);
         } catch (IllegalArgumentException e) {
-            throw argumentError(runtime.getCurrentContext(), e.getMessage());
+            throw argumentError(context, e.getMessage());
         }
     }
 
@@ -2133,19 +2209,17 @@ public final class StringSupport {
     }
 
     public static IRubyObject rbStrEnumerateLines(RubyString str, ThreadContext context, String name, IRubyObject arg, Block block, boolean wantarray) {
-        IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, arg);
-        if (opts == context.nil) {
-            return rbStrEnumerateLines(str, context, name, arg, context.nil, block, wantarray);
-        }
-        return rbStrEnumerateLines(str, context, name, context.runtime.getGlobalVariables().get("$/"), opts, block, wantarray);
+        IRubyObject opts = ArgsUtil.getOptionsArg(context, arg);
+        return opts == context.nil ?
+                rbStrEnumerateLines(str, context, name, arg, context.nil, block, wantarray) :
+                rbStrEnumerateLines(str, context, name, context.runtime.getGlobalVariables().get("$/"), opts, block, wantarray);
     }
 
     private static final int NULL_POINTER = -1;
 
     public static IRubyObject rbStrEnumerateLines(RubyString str, ThreadContext context, String name, IRubyObject arg, IRubyObject opts, Block block, boolean wantarray) {
-        Ruby runtime = context.runtime;
-
-        Encoding enc; IRubyObject line, orig = str;
+        Encoding enc;
+        IRubyObject line, orig = str;
         int ptr, pend, subptr, subend, hit, adjusted;
 
         boolean rsnewline = false;
@@ -2160,15 +2234,15 @@ public final class StringSupport {
             if (wantarray) {
                 // this code should be live in 3.0
                 if (false) { // #if STRING_ENUMERATORS_WANTARRAY
-                    runtime.getWarnings().warn(ID.BLOCK_UNUSED, "given block not used");
+                    context.runtime.getWarnings().warn(ID.BLOCK_UNUSED, "given block not used");
                 } else {
-                    runtime.getWarnings().warning(ID.BLOCK_DEPRECATED, "passing a block to String#lines is deprecated");
+                    context.runtime.getWarnings().warning(ID.BLOCK_DEPRECATED, "passing a block to String#lines is deprecated");
                     wantarray = false;
                 }
             }
         }
         else if (!wantarray) {
-            return enumeratorize(runtime, str, name, Helpers.arrayOf(arg, opts));
+            return enumeratorize(context.runtime, str, name, Helpers.arrayOf(arg, opts));
         }
 
         if (arg == context.nil) { // rs
@@ -2180,7 +2254,7 @@ public final class StringSupport {
 
         final var ary = wantarray ? newArray(context) : null;
 
-        final IRubyObject defaultSep = runtime.getGlobalVariables().get("$/");
+        final IRubyObject defaultSep = context.runtime.getGlobalVariables().get("$/");
         RubyString rs = arg.convertToString();
 
         str = str.newFrozen();
@@ -2205,8 +2279,8 @@ public final class StringSupport {
         }
 
         if (rs == defaultSep && !enc.isAsciiCompatible()) {
-            rs = RubyString.newString(runtime, rsbytes, rsptr, rslen);
-            rs = (RubyString) EncodingUtils.rbStrEncode(context, rs, runtime.getEncodingService().convertEncodingToRubyEncoding(enc), 0, context.nil);
+            rs = RubyString.newString(context.runtime, rsbytes, rsptr, rslen);
+            rs = (RubyString) EncodingUtils.rbStrEncode(context, rs, context.runtime.getEncodingService().convertEncodingToRubyEncoding(enc), 0, context.nil);
             rsByteList = rs.getByteList();
             rsbytes = rsByteList.unsafeBytes();
             rsptr = rsByteList.begin();
@@ -2230,7 +2304,7 @@ public final class StringSupport {
                     subend -= rslen;
                 }
             }
-            line = str.substr(runtime, subptr - ptr, subend - subptr);
+            line = str.substr(context.runtime, subptr - ptr, subend - subptr);
             if (wantarray) ary.append(context, line);
             else {
                 block.yieldSpecific(context, line);
@@ -2248,7 +2322,7 @@ public final class StringSupport {
                     pend -= rslen;
                 }
             }
-            line = str.substr(runtime, subptr - ptr, pend - subptr);
+            line = str.substr(context.runtime, subptr - ptr, pend - subptr);
             if (wantarray) ary.append(context, line);
             else block.yieldSpecific(context, line);
         }
@@ -2549,6 +2623,7 @@ public final class StringSupport {
         return null;
     }
 
+    @Deprecated(since = "10.0", forRemoval = true)
     public static CodeRangeable trTransHelper(Ruby runtime, CodeRangeable self, CodeRangeable srcStr, CodeRangeable replStr, boolean sflag) {
         try {
             return trTransHelper(self, srcStr, replStr, sflag);
@@ -2670,11 +2745,26 @@ public final class StringSupport {
         return false;
     }
 
+    /**
+     * @param runtime
+     * @param value
+     * @param squeeze
+     * @param tables
+     * @param enc
+     * @param isArg
+     * @return ""
+     * @deprecated Use {@link StringSupport#multiByteSqueeze(ThreadContext, ByteList, boolean[], TrTables, Encoding, boolean)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public static boolean multiByteSqueeze(Ruby runtime, ByteList value, boolean squeeze[], TrTables tables, Encoding enc, boolean isArg) {
+        return multiByteSqueeze(runtime.getCurrentContext(), value, squeeze, tables, enc, isArg);
+    }
+
+    public static boolean multiByteSqueeze(ThreadContext context, ByteList value, boolean squeeze[], TrTables tables, Encoding enc, boolean isArg) {
         try {
             return multiByteSqueeze(value, squeeze, tables, enc, isArg);
         } catch (IllegalArgumentException e) {
-            throw argumentError(runtime.getCurrentContext(), e.getMessage());
+            throw argumentError(context, e.getMessage());
         }
     }
 
@@ -2790,45 +2880,70 @@ public final class StringSupport {
         return -1;
     }
 
+    /**
+     * @param runtime
+     * @param arg0
+     * @param arg1
+     * @param flags
+     * @return ""
+     * @deprecated Use {@link StringSupport#checkCaseMapOptions(ThreadContext, IRubyObject, IRubyObject, int)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public static int checkCaseMapOptions(Ruby runtime, IRubyObject arg0, IRubyObject arg1, int flags) {
-        RubySymbol turkic = runtime.newSymbol("turkic");
-        RubySymbol lithuanian = runtime.newSymbol("lithuanian");
+        return checkCaseMapOptions(runtime.getCurrentContext(), arg0, arg1, flags);
+    }
+
+    public static int checkCaseMapOptions(ThreadContext context, IRubyObject arg0, IRubyObject arg1, int flags) {
+        RubySymbol turkic = asSymbol(context, "turkic");
+        RubySymbol lithuanian = asSymbol(context, "lithuanian");
 
         if (arg0.equals(turkic)) {
             flags |= Config.CASE_FOLD_TURKISH_AZERI;
             if (arg1.equals(lithuanian)) {
                 flags |= Config.CASE_FOLD_LITHUANIAN;
             } else {
-                throw argumentError(runtime.getCurrentContext(), "invalid second option");
+                throw argumentError(context, "invalid second option");
             }
         } else if (arg0.equals(lithuanian)) {
             flags |= Config.CASE_FOLD_LITHUANIAN;
             if (arg1.equals(turkic)) {
                 flags |= Config.CASE_FOLD_TURKISH_AZERI;
             } else {
-                throw argumentError(runtime.getCurrentContext(), "invalid second option");
+                throw argumentError(context, "invalid second option");
             }
         } else {
-            throw argumentError(runtime.getCurrentContext(), "invalid option");
+            throw argumentError(context, "invalid option");
         }
         return flags;
     }
 
+    /**
+     * @param runtime
+     * @param arg0
+     * @param flags
+     * @return ""
+     * @deprecated Use {@link StringSupport#checkCaseMapOptions(ThreadContext, IRubyObject, IRubyObject, int)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public static int checkCaseMapOptions(Ruby runtime, IRubyObject arg0, int flags) {
-        if (arg0.equals(runtime.newSymbol("ascii"))) {
+        return checkCaseMapOptions(runtime.getCurrentContext(), arg0, arg0, flags);
+    }
+
+    public static int checkCaseMapOptions(ThreadContext context, IRubyObject arg0, int flags) {
+        if (arg0.equals(asSymbol(context, "ascii"))) {
             flags |= Config.CASE_ASCII_ONLY;
-        } else if (arg0.equals(runtime.newSymbol("fold"))) {
+        } else if (arg0.equals(asSymbol(context, "fold"))) {
             if ((flags & (Config.CASE_UPCASE | Config.CASE_DOWNCASE)) == Config.CASE_DOWNCASE) {
                 flags ^= Config.CASE_FOLD | Config.CASE_DOWNCASE;
             } else {
-                throw argumentError(runtime.getCurrentContext(), "option :fold only allowed for downcasing");
+                throw argumentError(context, "option :fold only allowed for downcasing");
             }
-        } else if (arg0.equals(runtime.newSymbol("turkic"))) {
+        } else if (arg0.equals(asSymbol(context, "turkic"))) {
             flags |= Config.CASE_FOLD_TURKISH_AZERI;
-        } else if (arg0.equals(runtime.newSymbol("lithuanian"))) {
+        } else if (arg0.equals(asSymbol(context, "lithuanian"))) {
             flags |= Config.CASE_FOLD_LITHUANIAN;
         } else {
-            throw argumentError(runtime.getCurrentContext(), "invalid option");
+            throw argumentError(context, "invalid option");
         }
         return flags;
     }

@@ -146,7 +146,7 @@ final class NativeClosureProxy implements Closure {
             }
         } else if (type instanceof CallbackInfo) {
             if (value instanceof RubyProc || value.respondsTo("call")) {
-                Pointer cb = Factory.getInstance().getCallbackManager().getCallback(context.runtime, (CallbackInfo) type, value);
+                Pointer cb = Factory.getInstance().getCallbackManager().getCallback(context, (CallbackInfo) type, value);
                 buffer.setAddressReturn(addressValue(cb));
             } else {
                 buffer.setAddressReturn(0L);

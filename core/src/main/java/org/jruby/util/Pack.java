@@ -55,8 +55,7 @@ import static com.headius.backport9.buffer.Buffers.positionBuffer;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asFloat;
 import static org.jruby.api.Create.*;
-import static org.jruby.api.Error.argumentError;
-import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Error.*;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.TypeConverter.toFloat;
 
@@ -961,12 +960,11 @@ public class Pack {
     }
 
     private static IRubyObject unpackInternal(ThreadContext context, RubyString encoded, ByteList formatString, int mode, long offset, Block block) {
-        final Ruby runtime = context.runtime;
         final var result = mode == UNPACK_BLOCK || mode == UNPACK_1 ? null : newArray(context);
         final ByteList encodedString = encoded.getByteList();
-
         int len = encodedString.realSize();
         int beg = encodedString.begin();
+
         if (offset < 0) throw argumentError(context, "offset can't be negative");
         if (offset > 0) {
             if (offset > len) throw argumentError(context, "offset outside of string");
@@ -1029,7 +1027,7 @@ public class Pack {
                     do {
                         occurrences = occurrences * 10 + Character.digit((char)(next & 0xFF), 10);
                         next = getDirective(context, "unpack", formatString, format);
-                        if (occurrences < 0) throw runtime.newRangeError("pack length too big");
+                        if (occurrences < 0) throw rangeError(context, "pack length too big");
                     } while (next != 0 && ASCII.isDigit(next));
                 } else {
                     occurrences = type == '@' ? 0 : 1;
@@ -2129,14 +2127,13 @@ public class Pack {
     }
 
     private static void pack_U(ThreadContext context, RubyArray list, ByteList result, PackInts packInts, int occurrences) {
-        Ruby runtime = context.runtime;
         while (occurrences-- > 0) {
             if (packInts.listSize-- <= 0) throw argumentError(context, sTooFew);
 
             IRubyObject from = list.eltInternal(packInts.idx++);
             int code = from == context.nil ? 0 : RubyNumeric.num2int(from);
 
-            if (code < 0) throw runtime.newRangeError("pack(U): value out of range");
+            if (code < 0) throw rangeError(context, "pack(U): value out of range");
 
             int len = result.getRealSize();
             result.ensure(len + 6);

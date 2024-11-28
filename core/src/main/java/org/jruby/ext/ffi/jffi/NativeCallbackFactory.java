@@ -38,9 +38,7 @@ public class NativeCallbackFactory {
     }
 
     public final Pointer getCallback(IRubyObject callable, CachingCallSite callSite) {
-        if (callable instanceof Pointer) {
-            return (Pointer) callable;
-        }
+        if (callable instanceof Pointer pointer) return pointer;
 
         Object ffiHandle = callable.getMetaClass().getRealClass().getVariableTableManager().getFFIHandleAccessorForRead().get(callable);
         NativeCallbackPointer cbptr;
@@ -53,9 +51,7 @@ public class NativeCallbackFactory {
 
     private synchronized Pointer getCallbackPointer(IRubyObject callable, CachingCallSite callSite) {
         NativeCallbackPointer cbptr = (NativeCallbackPointer) closures.get(callable);
-        if (cbptr != null) {
-            return cbptr;
-        }
+        if (cbptr != null) return cbptr;
 
         closures.put(callable, cbptr = newCallback(callable, callSite));
 

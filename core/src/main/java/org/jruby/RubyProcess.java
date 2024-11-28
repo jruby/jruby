@@ -57,6 +57,7 @@ import org.jruby.runtime.ThreadContext;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.rangeError;
 import static org.jruby.runtime.Helpers.throwException;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -249,7 +250,7 @@ public class RubyProcess {
 
             if (mask < 0) throw argumentError(context, "negative mask value: " + mask);
             if (mask > Integer.MAX_VALUE || mask < Integer.MIN_VALUE) {
-                throw context.runtime.newRangeError("mask value out of range: " + mask);
+                throw rangeError(context, "mask value out of range: " + mask);
             }
 
             String message = switch ((int) mask) {
@@ -342,19 +343,13 @@ public class RubyProcess {
             long places = other.convertToInteger().getLongValue();
 
             if (places < 0) throw argumentError(context, "negative shift value: " + places);
-            if (places > Integer.MAX_VALUE) throw context.runtime.newRangeError("shift value out of range: " + places);
+            if (places > Integer.MAX_VALUE) throw rangeError(context, "shift value out of range: " + places);
 
-            switch ((int) places) {
-                case 7:
-                    deprecateAndSuggest(context, ">>", "Process::Status#coredump?");
-                    break;
-                case 8:
-                    deprecateAndSuggest(context, ">>", "Process::Status#exitstatus or Process::Status#stopsig");
-                    break;
-                default:
-                    deprecateAndSuggest(context, ">>", "other Process::Status attributes");
-                    break;
-            }
+            deprecateAndSuggest(context, ">>", switch ((int) places) {
+                case 7 -> "Process::Status#coredump?";
+                case 8 -> "Process::Status#exitstatus or Process::Status#stopsig";
+                default -> "other Process::Status predicates";
+            });
 
             return asFixnum(context, status >> places);
         }
@@ -362,8 +357,7 @@ public class RubyProcess {
         @Override
         @JRubyMethod(name = "==")
         public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
-            if (this == other) return context.tru;
-            return invokedynamic(context, asFixnum(context, status), MethodNames.OP_EQUAL, other);
+            return this == other ? context.tru : invokedynamic(context, asFixnum(context, status), MethodNames.OP_EQUAL, other);
         }
 
         @JRubyMethod
@@ -383,9 +377,8 @@ public class RubyProcess {
 
         @JRubyMethod(name = "success?")
         public IRubyObject success_p(ThreadContext context) {
-            if (!PosixShim.WAIT_MACROS.WIFEXITED(status)) return context.nil;
-
-            return asBoolean(context, PosixShim.WAIT_MACROS.WEXITSTATUS(status) == EXIT_SUCCESS);
+            return !PosixShim.WAIT_MACROS.WIFEXITED(status) ?
+                    context.nil : asBoolean(context, PosixShim.WAIT_MACROS.WEXITSTATUS(status) == EXIT_SUCCESS);
         }
 
         @JRubyMethod(name = "coredump?")
@@ -424,59 +417,38 @@ public class RubyProcess {
         }
 
         public IRubyObject inspect(Ruby runtime) {
-            if (unitialized()) {
-                return runtime.newString("#<" + getMetaClass().getName() + ": uninitialized>");
-            } else {
-                return runtime.newString(pst_message("#<" + getMetaClass().getName() + ": ", pid, status) + ">");
-            }
+            return unitialized() ?
+                    runtime.newString("#<" + getMetaClass().getName() + ": uninitialized>") :
+                    runtime.newString(pst_message("#<" + getMetaClass().getName() + ": ", pid, status) + ">");
         }
 
         // MRI: pst_message
         public static String pst_message(String prefix, long pid, long status) {
             StringBuilder sb = new StringBuilder(prefix);
-            sb
-                    .append("pid ")
-                    .append(pid);
+            sb.append("pid ").append(pid);
             if (PosixShim.WAIT_MACROS.WIFSTOPPED(status)) {
                 long stopsig = PosixShim.WAIT_MACROS.WSTOPSIG(status);
                 String signame = RubySignal.signo2signm(stopsig);
                 if (signame != null) {
-                    sb
-                            .append(" stopped ")
-                            .append(signame)
-                            .append(" (signal ")
-                            .append(stopsig)
-                            .append(")");
+                    sb.append(" stopped ").append(signame).append(" (signal ").append(stopsig).append(")");
                 } else {
-                    sb
-                            .append(" stopped signal ")
-                            .append(stopsig);
+                    sb.append(" stopped signal ").append(stopsig);
                 }
             }
             if (PosixShim.WAIT_MACROS.WIFSIGNALED(status)) {
                 long termsig = PosixShim.WAIT_MACROS.WTERMSIG(status);
                 String signame = RubySignal.signo2signm(termsig);
                 if (signame != null) {
-                    sb
-                            .append(" ")
-                            .append(signame)
-                            .append(" (signal ")
-                            .append(termsig)
-                            .append(")");
+                    sb.append(" ").append(signame).append(" (signal ").append(termsig).append(")");
                 } else {
-                    sb
-                            .append(" signal ")
-                            .append(termsig);
+                    sb.append(" signal ").append(termsig);
                 }
             }
             if (PosixShim.WAIT_MACROS.WIFEXITED(status)) {
-                sb
-                        .append(" exit ")
-                        .append(PosixShim.WAIT_MACROS.WEXITSTATUS(status));
+                sb.append(" exit ").append(PosixShim.WAIT_MACROS.WEXITSTATUS(status));
             }
             if (PosixShim.WAIT_MACROS.WCOREDUMP(status)) {
-                sb
-                        .append(" (core dumped)");
+                sb.append(" (core dumped)");
             }
             return sb.toString();
         }

@@ -235,7 +235,7 @@ public class RubyDateTime extends RubyDate {
         long d = day.convertToInteger().getLongValue();
 
         if (!(day instanceof RubyInteger) && day instanceof RubyNumeric) { // Rational|Float
-            RubyRational rat = ((RubyNumeric) day).convertToRational();
+            RubyRational rat = ((RubyNumeric) day).convertToRational(context);
             if (rat.getNumerator() instanceof RubyBignum || rat.getDenominator() instanceof RubyBignum) {
                 calcBigIntDayRest(rat, d, rest);
             } else {
@@ -335,7 +335,7 @@ public class RubyDateTime extends RubyDate {
 
     private static void addRationalModToRest(ThreadContext context, IRubyObject val, long ival, final long[] rest) {
         if (!(val instanceof RubyInteger) && val instanceof RubyNumeric) { // Rational|Float
-            addRationalModToRest(context, ((RubyNumeric) val).convertToRational(), ival, rest);
+            addRationalModToRest(context, ((RubyNumeric) val).convertToRational(context), ival, rest);
         }
     }
 
@@ -350,14 +350,14 @@ public class RubyDateTime extends RubyDate {
 
     private static void addFraction(ThreadContext context, final long[] rest, RubyNumeric fr, boolean roundFloat) {
         RubyNumeric res = (RubyNumeric) RubyRational.newRational(context.runtime, rest[0], rest[1]).op_plus(context, fr);
-        if (res instanceof RubyRational) {
-            rest[0] = ((RubyRational) res).getNumerator().getLongValue();
-            rest[1] = ((RubyRational) res).getDenominator().getLongValue();
-        } else if (roundFloat && res instanceof RubyFloat) {
+        if (res instanceof RubyRational rat) {
+            rest[0] = rat.getNumerator().getLongValue();
+            rest[1] = rat.getDenominator().getLongValue();
+        } else if (roundFloat && res instanceof RubyFloat flote) {
             // currently only used for (sub) sec rounding - will need a revision for others
-            res = roundToPrecision(context, (RubyFloat) res, SUB_MS_PRECISION * 1000L).convertToRational();
-            rest[0] = ((RubyRational) res).getNumerator().getLongValue();
-            rest[1] = ((RubyRational) res).getDenominator().getLongValue();
+            var rat = roundToPrecision(context, flote, SUB_MS_PRECISION * 1000L).convertToRational(context);
+            rest[0] = rat.getNumerator().getLongValue();
+            rest[1] = rat.getDenominator().getLongValue();
         } else {
             rest[0] = res.convertToInteger().getLongValue();
             rest[1] = 1;

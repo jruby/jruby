@@ -3914,8 +3914,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 case 2:
                     Getline.getlineCall(context, GETLINE_YIELD, io, io.getReadEncoding(context), args[1], block, keywords);
                     break;
-                case 3:
-                case 4:
+                case 3, 4:
                     Getline.getlineCall(context, GETLINE_YIELD, io, io.getReadEncoding(context), args[1], args[2], block, keywords);
                     break;
             }
@@ -3994,7 +3993,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         fptr.checkReadable(context);
 
         long tv = prepareTimeout(context, argv);
-
         if (fptr.readPending() != 0) return context.tru;
 
         return doWait(context, fptr, tv, SelectionKey.OP_READ | SelectionKey.OP_ACCEPT);
@@ -4096,10 +4094,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     // MRI: rb_io_advise
     @JRubyMethod(required = 1, optional = 2, checkArity = false)
     public IRubyObject advise(ThreadContext context, IRubyObject[] argv) {
-        Ruby runtime = context.runtime;
         IRubyObject advice, offset, len;
         advice = offset = len = context.nil;
-        OpenFile fptr;
 
         switch (argv.length) {
             case 3:
@@ -4114,34 +4110,23 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
 
         PosixFadvise fadvise = adviceArgCheck(context, advice);
-
         int off = offset.isNil() ? 0 : offset.convertToInteger().getIntValue();
         int l = len.isNil() ? 0 : len.convertToInteger().getIntValue();
-
-        POSIX posix = runtime.getNativePosix();
-
+        POSIX posix = context.runtime.getNativePosix();
         RubyIO io = GetWriteIO();
+        OpenFile fptr = io.getOpenFileChecked();
 
-        fptr = io.getOpenFileChecked();
-
-        if (!(posix instanceof Linux)) {
-            return context.nil;
-        }
+        if (!(posix instanceof Linux)) return context.nil;
 
         int fd = fptr.fd().realFileno;
 
-        if (fd == -1) {
-            // TODO: may be able to manipulate some types of channels
-            return context.nil;
-        }
+        // TODO: may be able to manipulate some types of channels
+        if (fd == -1) return context.nil;
 
         boolean locked = fptr.lock();
         try {
             int res = ((Linux) posix).posix_fadvise(fd, off, l, fadvise);
-
-            if (res != 0) {
-                throw runtime.newErrnoFromInt(posix.errno(), "posix_fadvise");
-            }
+            if (res != 0) throw context.runtime.newErrnoFromInt(posix.errno(), "posix_fadvise");
         } finally {
             if (locked) fptr.unlock();
         }
@@ -4154,18 +4139,11 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         if (!(advice instanceof RubySymbol)) throw typeError(context, "advise must be a symbol");
 
         String adviceStr = advice.asJavaString();
-        switch (adviceStr) {
-            default:
-                throw context.runtime.newNotImplementedError(rbInspect(context, advice).toString());
-
-            case "normal":
-            case "sequential":
-            case "random":
-            case "willneed":
-            case "dontneed":
-            case "noreuse":
-                return PosixFadvise.valueOf("POSIX_FADV_" + adviceStr.toUpperCase());
-        }
+        return switch (adviceStr) {
+            default -> throw context.runtime.newNotImplementedError(rbInspect(context, advice).toString());
+            case "normal", "sequential", "random", "willneed", "dontneed", "noreuse" ->
+                    PosixFadvise.valueOf("POSIX_FADV_" + adviceStr.toUpperCase());
+        };
     }
 
     public static void failIfDirectory(Ruby runtime, RubyString pathStr) {
@@ -4232,9 +4210,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         final Ruby runtime = context.runtime;
         IRubyObject cmd;
 
-        if ((filename instanceof RubyString) && ((RubyString) filename).isEmpty()) {
-            throw runtime.newErrnoENOENTError();
-        }
+        if ((filename instanceof RubyString) && ((RubyString) filename).isEmpty()) throw runtime.newErrnoENOENTError();
 
         if ((recv == runtime.getIO()) && (cmd = PopenExecutor.checkPipeCommand(context, filename)) != context.nil) {
             runtime.getWarnings().warn("IO process creation with a leading '|' is deprecated and will be removed in Ruby 4.0; use IO.popen instead");

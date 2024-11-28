@@ -50,8 +50,7 @@ import org.jruby.util.ByteList;
 
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
-import static org.jruby.api.Error.argumentError;
-import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Error.*;
 
 /**
  * A abstract memory object that defines operations common to both pointers and
@@ -1931,13 +1930,8 @@ abstract public class AbstractMemory extends MemoryObject {
     }
 
     private IRubyObject putBytes(ThreadContext context, long off, ByteList bl, int idx, int len) {
-        if (idx < 0) {
-            throw context.runtime.newRangeError("index can not be less than zero");
-        }
-
-        if ((idx + len) > bl.length()) {
-            throw context.runtime.newRangeError("index+length is greater than size of string");
-        }
+        if (idx < 0) throw rangeError(context, "index can not be less than zero");
+        if ((idx + len) > bl.length()) throw rangeError(context, "index+length is greater than size of string");
 
         getMemoryIO().put(off, bl.getUnsafeBytes(), bl.begin() + idx, len);
 
@@ -2073,7 +2067,7 @@ abstract public class AbstractMemory extends MemoryObject {
     public IRubyObject put_callback(ThreadContext context, IRubyObject offset, IRubyObject proc, IRubyObject cbInfo) {
         if (!(cbInfo instanceof CallbackInfo info)) throw argumentError(context, "invalid CallbackInfo");
 
-        Pointer ptr = Factory.getInstance().getCallbackManager().getCallback(context.runtime, info, proc);
+        Pointer ptr = Factory.getInstance().getCallbackManager().getCallback(context, info, proc);
         getMemoryIO().putMemoryIO(getOffset(offset), ptr.getMemoryIO());
         return this;
     }

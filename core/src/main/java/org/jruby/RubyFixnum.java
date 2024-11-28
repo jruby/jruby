@@ -1458,9 +1458,8 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
     }
 
     @Override
-    public RubyRational convertToRational() {
-        final Ruby runtime = metaClass.runtime;
-        return RubyRational.newRationalRaw(runtime, this, one(runtime));
+    public RubyRational convertToRational(ThreadContext context) {
+        return RubyRational.newRationalRaw(context.runtime, this, asFixnum(context, 1));
     }
 
     @Override
@@ -1492,7 +1491,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
 
     @Deprecated
     public static IRubyObject induced_from(IRubyObject recv, IRubyObject other) {
-        return RubyNumeric.num2fix(other);
+        return RubyNumeric.num2fix(recv.getRuntime().getCurrentContext(), other);
     }
 
     @Deprecated

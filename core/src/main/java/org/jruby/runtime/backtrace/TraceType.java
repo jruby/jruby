@@ -346,10 +346,8 @@ public class TraceType {
     }
 
     public static IRubyObject printDetailedMessage(ThreadContext context, IRubyObject exception, IRubyObject opts) {
-        IRubyObject optArg = ArgsUtil.getOptionsArg(context.runtime, opts);
-
+        IRubyObject optArg = ArgsUtil.getOptionsArg(context, opts);
         IRubyObject highlightArg = checkHighlightKeyword(context, optArg, false);
-
         RubyString errorStream = RubyString.newEmptyString(context.runtime);
 
         printErrMessageToStream(exception, errorStream, highlightArg.isTrue());
@@ -358,7 +356,7 @@ public class TraceType {
     }
 
     public static RubyString printFullMessage(ThreadContext context, IRubyObject exception, IRubyObject opts) {
-        IRubyObject optArg = ArgsUtil.getOptionsArg(context.runtime, opts);
+        IRubyObject optArg = ArgsUtil.getOptionsArg(context, opts);
         IRubyObject highlightArg = checkHighlightKeyword(context, optArg, true);
         boolean reverse = checkOrderKeyword(context, optArg);
 

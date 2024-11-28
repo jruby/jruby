@@ -308,7 +308,7 @@ public class JRubyLibrary implements Library {
     @JRubyMethod(module = true)
     public static IRubyObject subclasses(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject opts) {
         boolean recurseAll = false;
-        opts = ArgsUtil.getOptionsArg(context.runtime, opts);
+        opts = ArgsUtil.getOptionsArg(context, opts);
         if (opts != context.nil) {
             IRubyObject all = ((RubyHash) opts).fastARef(asSymbol(context, "all"));
             if (all != null) recurseAll = all.isTrue();

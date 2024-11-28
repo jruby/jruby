@@ -1153,7 +1153,7 @@ public final class StructLayout extends Type {
                 ptr.getMemoryIO().putAddress(m.getOffset(ptr), 0L);
                 cache.putReference(m, value);
             } else {
-                Pointer cb = Factory.getInstance().getCallbackManager().getCallback(context.runtime, (CallbackInfo) m.type, value);
+                Pointer cb = Factory.getInstance().getCallbackManager().getCallback(context, (CallbackInfo) m.type, value);
                 ptr.getMemoryIO().putMemoryIO(m.getOffset(ptr), cb.getMemoryIO());
                 cache.putReference(m, cb);
             }

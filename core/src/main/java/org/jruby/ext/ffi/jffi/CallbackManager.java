@@ -12,6 +12,7 @@ import org.jruby.ext.ffi.AbstractInvoker;
 import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.Type;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -55,10 +56,10 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
         return cbClass;
     }
     
-    public final org.jruby.ext.ffi.Pointer getCallback(Ruby runtime, CallbackInfo cbInfo, Object proc) {
+    public final org.jruby.ext.ffi.Pointer getCallback(ThreadContext context, CallbackInfo cbInfo, Object proc) {
         return proc instanceof RubyObject
-                ? getCallbackFactory(runtime, cbInfo).getCallback((RubyObject) proc)
-                : getCallbackFactory(runtime, cbInfo).newCallback(proc);
+                ? getCallbackFactory(context.runtime, cbInfo).getCallback((RubyObject) proc)
+                : getCallbackFactory(context.runtime, cbInfo).newCallback(proc);
     }
 
     public final synchronized NativeCallbackFactory getCallbackFactory(Ruby runtime, CallbackInfo cbInfo) {

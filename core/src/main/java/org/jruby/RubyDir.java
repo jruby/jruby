@@ -591,8 +591,7 @@ public class RubyDir extends RubyObject implements Closeable {
         Encoding encoding = null;
 
         if (!encOpts.isNil()) {
-            IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, encOpts);
-
+            IRubyObject opts = ArgsUtil.getOptionsArg(context, encOpts);
             if (opts.isNil()) throw argumentError(context, 2, 1, 1);
 
             IRubyObject encodingArg = ArgsUtil.extractKeywordArg(context, (RubyHash) opts, "encoding");

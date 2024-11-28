@@ -958,18 +958,10 @@ public class RubyFloat extends RubyNumeric implements Appendable {
      */
     @JRubyMethod(name = "round")
     public IRubyObject round(ThreadContext context, IRubyObject arg0) {
-        Ruby runtime = context.runtime;
-        int digits = 0;
+        IRubyObject opts = ArgsUtil.getOptionsArg(context, arg0);  // options (only "half" supported right now)
+        int digits = opts.isNil() ? num2int(arg0) : 0;
 
-        // options (only "half" right now)
-        IRubyObject opts = ArgsUtil.getOptionsArg(runtime, arg0);
-        if (opts.isNil()) {
-            digits = num2int(arg0);
-        }
-
-        RoundingMode roundingMode = getRoundingMode(context, opts);
-
-        return roundShared(context, digits, roundingMode);
+        return roundShared(context, digits, getRoundingMode(context, opts));
     }
 
     /**
@@ -977,15 +969,10 @@ public class RubyFloat extends RubyNumeric implements Appendable {
      */
     @JRubyMethod(name = "round")
     public IRubyObject round(ThreadContext context, IRubyObject _digits, IRubyObject _opts) {
-        Ruby runtime = context.runtime;
-
-        // options (only "half" right now)
-        IRubyObject opts = ArgsUtil.getOptionsArg(runtime, _opts);
+        IRubyObject opts = ArgsUtil.getOptionsArg(context, _opts);  // options (only "half" supported right now)
         int digits = num2int(_digits);
 
-        RoundingMode roundingMode = getRoundingMode(context, opts);
-
-        return roundShared(context, digits, roundingMode);
+        return roundShared(context, digits, getRoundingMode(context, opts));
     }
 
     /*

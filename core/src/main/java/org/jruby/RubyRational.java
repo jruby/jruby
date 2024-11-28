@@ -131,12 +131,10 @@ public class RubyRational extends RubyNumeric {
     }
 
     public static IRubyObject newRationalCanonicalize(ThreadContext context, long x, long y) {
-        Ruby runtime = context.runtime;
-        return canonicalizeInternal(context, runtime.getRational(), x, y);
+        return canonicalizeInternal(context, context.runtime.getRational(), x, y);
     }
     public static IRubyObject newRationalCanonicalize(ThreadContext context, long x) {
-        Ruby runtime = context.runtime;
-        return canonicalizeInternal(context, runtime.getRational(), x, 1);
+        return canonicalizeInternal(context, context.runtime.getRational(), x, 1);
     }
 
     static RubyNumeric newRationalNoReduce(ThreadContext context, RubyInteger x, RubyInteger y) {
@@ -571,7 +569,7 @@ public class RubyRational extends RubyNumeric {
         return den;
     }
 
-    public RubyRational convertToRational() { return this; }
+    public RubyRational convertToRational(ThreadContext context) { return this; }
 
     @Override
     public IRubyObject zero_p(ThreadContext context) {
@@ -1121,52 +1119,35 @@ public class RubyRational extends RubyNumeric {
 
     @JRubyMethod(name = "round")
     public IRubyObject round(ThreadContext context, IRubyObject n) {
-
-        IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, n);
+        IRubyObject opts = ArgsUtil.getOptionsArg(context, n);
         if (opts != context.nil) n = null;
 
-        RoundingMode mode = RubyNumeric.getRoundingMode(context, opts);
-
-        return roundCommon(context, n, mode);
+        return roundCommon(context, n, RubyNumeric.getRoundingMode(context, opts));
     }
 
     @JRubyMethod(name = "round")
     public IRubyObject round(ThreadContext context, IRubyObject n, IRubyObject opts) {
-        Ruby runtime = context.runtime;
+        opts = ArgsUtil.getOptionsArg(context, opts);
 
-        opts = ArgsUtil.getOptionsArg(runtime, opts);
-
-        RoundingMode mode = RubyNumeric.getRoundingMode(context, opts);
-
-        return roundCommon(context, n, mode);
+        return roundCommon(context, n, RubyNumeric.getRoundingMode(context, opts));
     }
 
     // MRI: f_round_common
     public IRubyObject roundCommon(ThreadContext context, final IRubyObject n, RoundingMode mode) {
         // case : precision arg is not given
         if (n == null) return doRound(context, mode);
-        if (!(n instanceof RubyInteger)) throw typeError(context, "not an integer");
+        if (!(n instanceof RubyInteger nint)) throw typeError(context, "not an integer");
 
-        final int nsign = ((RubyInteger) n).signum();
-
-        RubyNumeric b = f_expt(context, asFixnum(context, 10), (RubyInteger) n);
-        IRubyObject s = nsign >= 0 ?
-                op_mul(context, (RubyInteger) b) :
-                op_mul(context, b); // (RubyRational) b
+        final int nsign = nint.signum();
+        RubyNumeric b = f_expt(context, asFixnum(context, 10), nint);
+        IRubyObject s = nsign >= 0 ? op_mul(context, (RubyInteger) b) : op_mul(context, b); // (RubyRational) b
 
         if (s instanceof RubyFloat) return nsign < 0 ? RubyFixnum.zero(context.runtime) : this;
 
-        if (!(s instanceof RubyRational)) s = newRationalBang(context, getMetaClass(), s);
+        var sr = s instanceof RubyRational rat ? rat : newRationalBang(context, getMetaClass(), s);
+        var si = newRationalBang(context, getMetaClass(), sr.doRound(context, mode)).op_div(context, b);
 
-        s = ((RubyRational) s).doRound(context, mode);
-        s = newRationalBang(context, getMetaClass(), (RubyInteger) s);
-        s = ((RubyRational) s).op_div(context, b);
-
-        if (s instanceof RubyRational && f_cmp(context, (RubyInteger) n, 1).value < 0) {
-            s = ((RubyRational) s).truncate(context);
-        }
-
-        return s;
+        return si instanceof RubyRational r && f_cmp(context, nint, 1).value < 0 ? r.truncate(context) : si;
     }
 
     private IRubyObject doRound(ThreadContext context, RoundingMode mode) {
@@ -1549,15 +1530,12 @@ public class RubyRational extends RubyNumeric {
      * numeric_quo
      */
     public static IRubyObject numericQuo(ThreadContext context, IRubyObject x, IRubyObject y) {
-        if (y instanceof RubyFloat) {
-            return ((RubyNumeric)x).fdiv(context, y);
-        }
+        if (y instanceof RubyFloat) return ((RubyNumeric)x).fdiv(context, y);
 
-        if (Numeric.CANON && canonicalization) {
-            x = newRationalRaw(context.runtime, x);
-        } else {
-            x = TypeConverter.convertToType(context, x, context.runtime.getRational(), sites(context).to_r_checked);
-        }
+        x = Numeric.CANON && canonicalization ?
+                newRationalRaw(context.runtime, x) :
+                TypeConverter.convertToType(context, x, context.runtime.getRational(), sites(context).to_r_checked);
+
         return sites(context).op_quo.call(context, x, x, y);
     }
 

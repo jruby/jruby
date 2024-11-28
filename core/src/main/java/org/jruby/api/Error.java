@@ -65,6 +65,29 @@ public class Error {
         return RubyFrozenError.newFrozenError(context, newString(context, message), object).toThrowable();
     }
 
+
+    /**
+     * Create an index error with a simple ASCII String.
+     *
+     * @param context the current thread context
+     * @param message to be displayed in the error
+     * @return the error
+     */
+    public static RaiseException indexError(ThreadContext context, String message) {
+        return context.runtime.newRaiseException(context.runtime.getIndexError(), message);
+    }
+
+    /**
+     * Create a runtime error with a simple ASCII String.
+     *
+     * @param context the current thread context
+     * @param message to be displayed in the error
+     * @return the error
+     */
+    public static RaiseException rangeError(ThreadContext context, String message) {
+        return context.runtime.newRaiseException(context.runtime.getRangeError(), message);
+    }
+
     /**
      * Create a runtime error with a simple ASCII String.
      *

@@ -177,8 +177,6 @@ public class Getline {
                 break;
         }
 
-        final Ruby runtime = context.runtime;
-
         if (optArg instanceof RubyHash && !keywords) {
             // We get args from multiple sources so we are form-fitting this as if we are processing it from
             // the original method.  We should not be doing this processing this deep into this IO processing.
@@ -186,7 +184,7 @@ public class Getline {
 
             throw typeError(context, "no implicit conversion of Hash into Integer");
         }
-        opt = ArgsUtil.getOptionsArg(runtime, optArg);
+        opt = ArgsUtil.getOptionsArg(context, optArg);
 
         if (opt == nil) {
             if (argc == 1) {
@@ -201,12 +199,12 @@ public class Getline {
             }
         }
 
-        IRubyObject rs = runtime.getRecordSeparatorVar().get();
+        IRubyObject rs = context.runtime.getRecordSeparatorVar().get();
         IRubyObject lim = nil;
 
         if (sepArg != null && limArg == null) { // argc == 1
             IRubyObject tmp = nil;
-            if (sepArg == nil || (tmp = TypeConverter.checkStringType(runtime, sepArg)) != nil) {
+            if (sepArg == nil || (tmp = TypeConverter.checkStringType(context.runtime, sepArg)) != nil) {
                 rs = tmp;
             } else {
                 lim = sepArg;
@@ -226,8 +224,8 @@ public class Getline {
             if (enc_io != enc_rs &&
                     (rs_s.scanForCodeRange() != StringSupport.CR_7BIT ||
                             (rs_s.size() > 0 && !enc_io.isAsciiCompatible()))) {
-                if (rs == runtime.getGlobalVariables().getDefaultSeparator()) {
-                    rs = RubyString.newStringLight(runtime, 2, enc_io).cat('\n', enc_io);
+                if (rs == context.runtime.getGlobalVariables().getDefaultSeparator()) {
+                    rs = RubyString.newStringLight(context.runtime, 2, enc_io).cat('\n', enc_io);
                 } else {
                     throw argumentError(context, "encoding mismatch: " + enc_io + " IO with " + enc_rs + " RS");
                 }

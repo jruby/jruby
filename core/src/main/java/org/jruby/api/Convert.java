@@ -23,6 +23,7 @@ import org.jruby.util.ByteList;
 import static org.jruby.RubyBignum.big2long;
 import static org.jruby.RubyNumeric.num2long;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.rangeError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.TypeConverter.convertToTypeWithCheck;
 import static org.jruby.util.TypeConverter.sites;
@@ -330,7 +331,7 @@ public class Convert {
      */
     public static int checkInt(ThreadContext context, long num) {
         if (((int) num) != num) {
-            throw context.runtime.newRangeError("integer " + num +
+            throw rangeError(context, "integer " + num +
                     (num < Integer.MIN_VALUE ? " too small to convert to `int'" : " too big to convert to `int'"));
         }
 

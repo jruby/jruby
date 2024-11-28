@@ -62,8 +62,7 @@ import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyNumeric.*;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
-import static org.jruby.api.Error.argumentError;
-import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Error.*;
 import static org.jruby.runtime.Helpers.hashEnd;
 import static org.jruby.runtime.Helpers.hashStart;
 import static org.jruby.runtime.Helpers.invokedynamic;
@@ -202,35 +201,24 @@ public class RubyRange extends RubyObject {
         if (beg < 0) {
             beg += len;
             if (beg < 0) {
-                if (err != 0) {
-                    throw getRuntime().newRangeError(beg + ".." + (isExclusive ? "." : "") + end + " out of range");
-                }
+                if (err != 0) throw rangeError(context, beg + ".." + (isExclusive ? "." : "") + end + " out of range");
                 return null;
             }
         }
 
         if (err == 0 || err == 2) {
             if (beg > len) {
-                if (err != 0) {
-                    throw getRuntime().newRangeError(beg + ".." + (isExclusive ? "." : "") + end + " out of range");
-                }
+                if (err != 0) throw rangeError(context, beg + ".." + (isExclusive ? "." : "") + end + " out of range");
                 return null;
             }
-            if (end > len) {
-                end = len;
-            }
+            if (end > len) end = len;
         }
 
-        if (end < 0) {
-            end += len;
-        }
-        if (!isExclusive || isEndless) {
-            end++;
-        }
+        if (end < 0) end += len;
+        if (!isExclusive || isEndless) end++;
+
         len = end - beg;
-        if (len < 0) {
-            len = 0;
-        }
+        if (len < 0) len = 0;
 
         return new long[]{beg, len};
     }
@@ -240,9 +228,7 @@ public class RubyRange extends RubyObject {
 
         if (beg < 0) {
             beg += len;
-            if (beg < 0) {
-                throw getRuntime().newRangeError((beg - len) + ".." + (isExclusive ? "." : "") + end + " out of range");
-            }
+            if (beg < 0) throw rangeError(context, (beg - len) + ".." + (isExclusive ? "." : "") + end + " out of range");
         }
 
         return beg;
@@ -251,40 +237,36 @@ public class RubyRange extends RubyObject {
     final long begLen1(ThreadContext context, long len, long beg) {
         long end = isEndless ? -1 : numericToLong(context, this.end);
 
-        if (end < 0) {
-            end += len;
-        }
-        if (!isExclusive || isEndless) {
-            end++;
-        }
+        if (end < 0) end += len;
+        if (!isExclusive || isEndless) end++;
+
         len = end - beg;
-        if (len < 0) {
-            len = 0;
-        }
+        if (len < 0) len = 0;
 
         return len;
     }
 
-    // MRI: rb_range_component_beg_len
+    @Deprecated(since = "10.0", forRemoval = true)
     final int[] begLenInt(int len, final int err) {
+        return begLenInt(getCurrentContext(), len, err);
+    }
+
+    // MRI: rb_range_component_beg_len
+    final int[] begLenInt(ThreadContext context, int len, final int err) {
         int beg = isBeginless ? 0 : RubyNumeric.num2int(this.begin);
         int end = isEndless ? -1 : RubyNumeric.num2int(this.end);
 
         if (beg < 0) {
             beg += len;
             if (beg < 0) {
-                if (err != 0) {
-                    throw getRuntime().newRangeError(this.begin + ".." + (isExclusive ? "." : "") + this.end + " out of range");
-                }
+                if (err != 0) throw rangeError(context, begin + ".." + (isExclusive ? "." : "") + this.end + " out of range");
                 return null;
             }
         }
 
         if (err == 0 || err == 2) {
             if (beg > len) {
-                if (err != 0) {
-                    throw getRuntime().newRangeError(this.begin + ".." + (isExclusive ? "." : "") + this.end + " out of range");
-                }
+                if (err != 0) throw rangeError(context, begin + ".." + (isExclusive ? "." : "") + this.end + " out of range");
                 return null;
             }
             if (end > len) {
@@ -292,16 +274,11 @@ public class RubyRange extends RubyObject {
             }
         }
 
-        if (end < 0) {
-            end += len;
-        }
-        if (!isExclusive || isEndless) {
-            end++;
-        }
+        if (end < 0) end += len;
+        if (!isExclusive || isEndless) end++;
+
         len = end - beg;
-        if (len < 0) {
-            len = 0;
-        }
+        if (len < 0) len = 0;
 
         return new int[]{beg, len};
     }
@@ -601,10 +578,7 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod
     public IRubyObject to_a(ThreadContext context, final Block block) {
-        final Ruby runtime = context.runtime;
-
-        if (isEndless) throw runtime.newRangeError("cannot convert endless range to an array");
-
+        if (isEndless) throw rangeError(context, "cannot convert endless range to an array");
         return RubyEnumerable.to_a(context, this);
     }
 
@@ -1053,37 +1027,26 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(frame = true)
     public IRubyObject min(ThreadContext context, IRubyObject arg, Block block) {
-        if (begin.isNil()) {
-            throw context.runtime.newRangeError("cannot get the minimum of beginless range");
-        }
+        if (begin.isNil()) throw rangeError(context, "cannot get the minimum of beginless range");
 
         if (block.isGiven()) {
-            if (end.isNil()) {
-                throw context.runtime.newRangeError("cannot get the minimum of endless range with custom comparison method");
-            }
+            if (end.isNil()) throw rangeError(context, "cannot get the minimum of endless range with custom comparison method");
 
             return arg != null ? Helpers.invokeSuper(context, this, arg, block) : Helpers.invokeSuper(context, this, block);
-        } else if (arg != null) {
-            return first(context, arg);
-        } else {
-            int cmp = isEndless ? -1 : RubyComparable.cmpint(context, invokedynamic(context, begin, MethodNames.OP_CMP, end), begin, end);
-            if (cmp > 0 || (cmp == 0 && isExclusive)) {
-                return context.nil;
-            }
-
-            return begin;
         }
+        if (arg != null) return first(context, arg);
+
+        int cmp = isEndless ? -1 : RubyComparable.cmpint(context, invokedynamic(context, begin, MethodNames.OP_CMP, end), begin, end);
+        return cmp > 0 || cmp == 0 && isExclusive ? context.nil : begin;
     }
 
     @JRubyMethod(frame = true)
     public IRubyObject max(ThreadContext context, Block block) {
-        boolean isNumeric = end instanceof RubyNumeric;
+        if (isEndless) throw rangeError(context, "cannot get the maximum of endless range");
 
-        if (isEndless) throw context.runtime.newRangeError("cannot get the maximum of endless range");
-
-        if (block.isGiven() || (isExclusive && !isNumeric)) {
+        if (block.isGiven() || isExclusive && !(end instanceof RubyNumeric)) {
             if (isBeginless) {
-                throw context.runtime.newRangeError("cannot get the maximum of beginless range with custom comparison method");
+                throw rangeError(context, "cannot get the maximum of beginless range with custom comparison method");
             }
             return Helpers.invokeSuper(context, this, block);
         }
@@ -1108,7 +1071,7 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(frame = true)
     public IRubyObject max(ThreadContext context, IRubyObject arg, Block block) {
-        if (isEndless) throw context.runtime.newRangeError("cannot get the maximum element of endless range");
+        if (isEndless) throw rangeError(context, "cannot get the maximum element of endless range");
         return Helpers.invokeSuper(context, this, arg, block);
     }
 
@@ -1124,7 +1087,7 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod
     public IRubyObject first(ThreadContext context, IRubyObject arg) {
-        if (isBeginless) throw context.runtime.newRangeError("cannot get the first element of beginless range");
+        if (isBeginless) throw rangeError(context, "cannot get the first element of beginless range");
 
         if (arg == null) return begin;
 
@@ -1143,9 +1106,8 @@ public class RubyRange extends RubyObject {
 
                 @Override
                 public IRubyObject call(ThreadContext ctx, IRubyObject larg, Block blk) {
-                    if (n-- <= 0) {
-                        throw JumpException.SPECIAL_JUMP;
-                    }
+                    if (n-- <= 0) throw JumpException.SPECIAL_JUMP;
+
                     result.append(context, larg);
                     return ctx.nil;
                 }
@@ -1176,7 +1138,7 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod
     public IRubyObject last(ThreadContext context) {
-        if (isEndless) throw context.runtime.newRangeError("cannot get the last element of endless range");
+        if (isEndless) throw rangeError(context, "cannot get the last element of endless range");
         return end;
     }
 
@@ -1187,14 +1149,14 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod
     public IRubyObject last(ThreadContext context, IRubyObject arg) {
-        if (isEndless) throw context.runtime.newRangeError("cannot get the last element of endless range");
+        if (isEndless) throw rangeError(context, "cannot get the last element of endless range");
 
         if (begin instanceof RubyInteger && end instanceof RubyInteger
             && getMetaClass().checkMethodBasicDefinition("each")) {
                 return intRangeLast(context, arg);
         }
 
-        return ((RubyArray) RubyKernel.new_array(context, this, this)).last(arg);
+        return ((RubyArray) RubyKernel.new_array(context, this, this)).last(context, arg);
     }
 
     // MRI rb_int_range_last
@@ -1404,7 +1366,7 @@ public class RubyRange extends RubyObject {
     }
 
     private static IRubyObject rangeBeginLengthError(ThreadContext context, int beg, int end, boolean excludeEnd, int err) {
-        if (err != 0) throw context.runtime.newRangeError(beg + ".." + (excludeEnd ? "." : "") + end + " out of range");
+        if (err != 0) throw rangeError(context, beg + ".." + (excludeEnd ? "." : "") + end + " out of range");
         return context.nil;
     }
 

@@ -1301,24 +1301,21 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     @JRubyMethod(name = "values_at", rest = true)
     public IRubyObject values_at(ThreadContext context, IRubyObject[] args) {
         final int length = realLength;
-
         RubyArray<?> result = Create.newArray(context, args.length);
 
         for (int i = 0; i < args.length; i++) {
             final IRubyObject arg = args[i];
-            if ( arg instanceof RubyFixnum ) {
-                result.append( entry(((RubyFixnum) arg).value) );
+            if (arg instanceof RubyFixnum fix) {
+                result.append(entry(fix.value));
                 continue;
             }
 
             final int[] begLen;
-            if ( ! ( arg instanceof RubyRange ) ) {
+            if (!(arg instanceof RubyRange)) {
                 // do result.append
-            }
-            else if ( ( begLen = ((RubyRange) arg).begLenInt(length, 1) ) == null ) {
+            } else if ((begLen = ((RubyRange) arg).begLenInt(context, length, 1)) == null) {
                 continue;
-            }
-            else {
+            } else {
                 final int beg = begLen[0];
                 final int len = begLen[1];
                 for (int j = 0; j < len; j++) {
@@ -1358,68 +1355,54 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         }
 
         if (step < -1 || step > 1) {
-            int [] ret = null;
+            int [] ret;
             try {
-                ret = RubyRange.newRange(context, aseqBeg, aseqEnd, aseqExcl).begLenInt((int)len, 1);
+                ret = RubyRange.newRange(context, aseqBeg, aseqEnd, aseqExcl).begLenInt(context, (int)len, 1);
             } catch(RaiseException ex){
                 if (ex.getException() instanceof RubyRangeError) {
                     // convert exception message using an ArithsemeticSequece arg.
                     // e.g.
                     // [1].slice((-101..-1)%2) shoud throw "((-101..-1).%(2)) out of range".
                     // The original exception message is "-1..-1 out of range".
-                    throw context.runtime.newRangeError(arg0.inspect(context) + " out of range");
+                    throw rangeError(context, arg0.inspect(context) + " out of range");
                 } else {
                     throw ex;
                 }
             }
-            if (ret != null && (ret[0] > len || ret[1] > len)) throw context.runtime.newRangeError(arg0.inspect(context) + " out of range");
+            if (ret != null && (ret[0] > len || ret[1] > len)) throw rangeError(context, arg0.inspect(context) + " out of range");
         }
 
-        if (aseqBeg.isNil()) {
-            beg = 0;
-        } else {
-            beg = aseqBeg.convertToFloat().getLongValue();
-        }
+        beg = aseqBeg.isNil() ? 0 : aseqBeg.convertToFloat().getLongValue();
+        end = aseqEnd.isNil() ? -1 : aseqEnd.convertToFloat().getLongValue();
 
-        if (aseqEnd.isNil()) {
-            end = -1;
-        } else {
-            end = aseqEnd.convertToFloat().getLongValue();
-        }
-        if (aseqEnd.isNil()) {  aseqExcl = false; }
+        if (aseqEnd.isNil()) aseqExcl = false;
 
         if (beg < 0) {
             beg += len;
-            if (beg < 0) throw context.runtime.newRangeError("integer " + beg + " out of range of fixnum");
+            if (beg < 0) throw rangeError(context, "integer " + beg + " out of range of fixnum");
         }
-        if (end < 0) {  end += len; }
 
-        if (!aseqExcl) {  end++; }
+        if (end < 0) end += len;
+        if (!aseqExcl) end++;
 
         len = end - beg;
 
-        if (len < 0) {  len = 0;  }
+        if (len < 0) len = 0;
 
         long alen = realLength;
         if (beg > alen)  return context.nil;
         if (beg < 0 || len < 0) return context.nil;
 
-        if (alen < len || alen < beg + len) {
-            len = alen - beg;
-        }
+        if (alen < len || alen < beg + len) len = alen - beg;
 
         if (len == 0) return Create.newArray(context, 0);
-        if (step == 0) throw context.runtime.newRangeError("slice step cannot be zero");
+        if (step == 0) throw rangeError(context, "slice step cannot be zero");
         if (step == 1) return subseq(beg, len);
 
         long orig_len = len;
-        if (step > 0 && step >= len) {
-            RubyArray result = Create.newArray(context, 1);
-            result.append(eltOk(beg));
-            return result;
-        } else if (step < 0 && (step < -len)) {
-            step = -len;
-        }
+        if (step > 0 && step >= len) return Create.newArray(context, eltOk(beg));
+
+        if (step < 0 && (step < -len)) step = -len;
 
         long ustep = (step < 0) ? -step : step;
         len = (len + ustep - 1) / ustep;
@@ -2530,16 +2513,14 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     @JRubyMethod
     public IRubyObject fill(ThreadContext context, IRubyObject arg, Block block) {
-        if (block.isGiven()) {
-            if (arg instanceof RubyRange) {
-                int[] beglen = ((RubyRange) arg).begLenInt(realLength, 1);
-                return fillCommon(context, beglen[0], beglen[1], block);
-            }
-            int beg;
-            return fillCommon(context, beg = fillBegin(arg), fillLen(context, beg, null),  block);
-        } else {
-            return fillCommon(context, 0, realLength, arg);
+        if (!block.isGiven()) return fillCommon(context, 0, realLength, arg);
+        if (arg instanceof RubyRange range) {
+            int[] beglen = range.begLenInt(context, realLength, 1);
+            return fillCommon(context, beglen[0], beglen[1], block);
         }
+
+        int beg = fillBegin(arg);
+        return fillCommon(context, beg, fillLen(context, beg, null),  block);
     }
 
     @JRubyMethod
@@ -2549,11 +2530,11 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             return fillCommon(context, beg = fillBegin(arg1), fillLen(context, beg, arg2), block);
         } else {
             if (arg2 instanceof RubyRange) {
-                int[] beglen = ((RubyRange) arg2).begLenInt(realLength, 1);
+                int[] beglen = ((RubyRange) arg2).begLenInt(context, realLength, 1);
                 return fillCommon(context, beglen[0], beglen[1], arg1);
             }
-            int beg;
-            return fillCommon(context, beg = fillBegin(arg2), fillLen(context, beg, null), arg1);
+            int beg = fillBegin(arg2);
+            return fillCommon(context, beg, fillLen(context, beg, null), arg1);
         }
     }
 
@@ -4363,8 +4344,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     @JRubyMethod(name = "product", rest = true)
     public IRubyObject product(ThreadContext context, IRubyObject[] args, Block block) {
-        Ruby runtime = context.runtime;
-
         boolean useBlock = block.isGiven();
 
         int n = args.length + 1;
@@ -4372,7 +4351,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         int counters[] = new int[n];
 
         arrays[0] = this;
-        RubyClass array = runtime.getArray();
+        RubyClass array = context.runtime.getArray();
         JavaSites.CheckedSites to_ary_checked = sites(context).to_ary_checked;
         for (int i = 1; i < n; i++) arrays[i] = (RubyArray) TypeConverter.convertToType(context, args[i - 1], array, to_ary_checked);
 
@@ -4380,17 +4359,17 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         for (int i = 0; i < n; i++) {
             int k = arrays[i].realLength;
             int l = resultLen;
-            if (k == 0) return useBlock ? this : newEmptyArray(runtime);
+            if (k == 0) return useBlock ? this : newEmptyArray(context.runtime);
             resultLen *= k;
             if (resultLen < k || resultLen < l || resultLen / k != l) {
-                if (!block.isGiven()) throw runtime.newRangeError("too big to product");
+                if (!block.isGiven()) throw rangeError(context, "too big to product");
             }
         }
 
-        RubyArray result = useBlock ? null : newBlankArrayInternal(runtime, resultLen);
+        RubyArray result = useBlock ? null : newBlankArrayInternal(context.runtime, resultLen);
 
         for (int i = 0; i < resultLen; i++) {
-            RubyArray sub = newBlankArrayInternal(runtime, n);
+            RubyArray sub = newBlankArrayInternal(context.runtime, n);
             for (int j = 0; j < n; j++) sub.eltInternalSet(j, arrays[j].entry(counters[j]));
             sub.realLength = n;
 
@@ -5499,8 +5478,7 @@ float_loop:
 
     @JRubyMethod(name = "pack")
     public RubyString pack(ThreadContext context, IRubyObject obj, IRubyObject maybeOpts) {
-        final Ruby runtime = context.runtime;
-        IRubyObject opts = ArgsUtil.getOptionsArg(runtime, maybeOpts);
+        IRubyObject opts = ArgsUtil.getOptionsArg(context, maybeOpts);
         IRubyObject buffer = null;
 
         if (opts != context.nil) {
@@ -5511,9 +5489,7 @@ float_loop:
             }
         }
 
-        if(buffer==null) {
-            buffer = context.runtime.newString();
-        }
+        if (buffer==null) buffer = context.runtime.newString();
 
         return Pack.pack(context, this, obj.convertToString(), (RubyString) buffer);
     }
