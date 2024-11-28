@@ -5798,7 +5798,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         int endp = end;
         int prev;
         while ((prev = enc.prevCharHead(bytes, start, endp, end)) != -1) {
-            int point = codePoint(context, enc, bytes, prev, end);
+            int point;
+            try {
+                point = codePoint(enc, bytes, prev, end);
+            } catch (IllegalArgumentException e) {
+                throw context.runtime.newEncodingCompatibilityError(e.getMessage());
+            }
             if (point != 0 && !ASCII.isSpace(point)) break;
             endp = prev;
         }
