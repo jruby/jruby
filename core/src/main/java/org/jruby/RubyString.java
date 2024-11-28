@@ -99,6 +99,7 @@ import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.*;
 import static org.jruby.runtime.Visibility.PRIVATE;
+import static org.jruby.util.RubyStringBuilder.*;
 import static org.jruby.util.StringSupport.*;
 
 /**
@@ -5522,6 +5523,31 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         final Encoding enc = getEncoding();
         return newArrayNoCopy(context, newEmptyString(context.runtime, enc),
                 newEmptyString(context.runtime, enc), this.strDup(context.runtime, context.runtime.getString()));
+    }
+
+    @JRubyMethod(rest = true)
+    public IRubyObject append_as_bytes(ThreadContext context, IRubyObject[] args) {
+        checkFrozen();
+
+        int length = args.length;
+        for (int i = 0; i < length; i++) {
+            var arg = args[i];
+
+            if (arg instanceof RubyFixnum fix) {
+                cat(fix.getIntValue() & 0xff);
+            } else if (arg instanceof RubyBignum big) {
+                cat(big.getIntValue() & 0xff);
+            } else if (arg instanceof RubyString str) {
+                value.append(str.getByteList());
+            } else {
+                throw typeError(context, str(context.runtime, "wrong argument type ", types(context.runtime, arg.getType()), " (expected String or Integer)"));
+            }
+        }
+
+        // FIXME: MRI tries and minimize pain by trying to figure out if it should change cr and this is a quick hammer.
+        clearCodeRange();
+
+        return this;
     }
 
     /** rb_str_chop / rb_str_chop_bang
