@@ -138,6 +138,7 @@ readonly cygwin
 
 use_exec=true
 java_opts_from_files=""
+jdb=false
 
 NO_BOOTCLASSPATH=false
 VERIFY_JRUBY=false
@@ -153,6 +154,7 @@ fi
 
 java_args=""
 ruby_args=""
+jdb_args=""
 
 # Force OpenJDK-based JVMs to use /dev/urandom for random number generation
 # See https://github.com/jruby/jruby/issues/4685 among others.
@@ -562,6 +564,7 @@ do
         --headless) append java_args -Djava.awt.headless=true ;;
         # Run under JDB
         --jdb)
+            jdb=true
             if [ -z "$JAVA_HOME" ]; then
                 JAVACMD='jdb'
             else
@@ -572,7 +575,7 @@ do
                 fi
             fi
             JDB_SOURCEPATH="${JRUBY_HOME}/core/src/main/java:${JRUBY_HOME}/lib/ruby/stdlib:."
-            append java_args -sourcepath "$JDB_SOURCEPATH"
+            append jdb_args -sourcepath "$JDB_SOURCEPATH"
             append ruby_args -X+C
             ;;
         --client|--server|--noclient)
@@ -691,6 +694,10 @@ prepend java_args $JAVA_OPTS "$JFFI_OPTS"
 
 # Include all options from files at the beginning of the Java command line
 preextend java_args java_opts_from_files
+
+if $jdb; then
+    preextend java_args jdb_args
+fi
 
 prepend java_args "$JAVACMD"
 
