@@ -791,7 +791,7 @@ public abstract class RubyInteger extends RubyNumeric {
 
     @Override
     @JRubyMethod(name = {"to_s", "inspect"})
-    public abstract RubyString to_s();
+    public abstract RubyString to_s(ThreadContext context);
 
     @JRubyMethod(name = "to_s")
     public abstract RubyString to_s(IRubyObject x);

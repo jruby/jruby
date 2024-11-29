@@ -901,8 +901,7 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = "eql?")
     @Override
     public IRubyObject eql_p(IRubyObject other) {
-        if (other instanceof RubyTime) {
-            RubyTime otherTime = (RubyTime)other;
+        if (other instanceof RubyTime otherTime) {
             return (nsec == otherTime.nsec && getTimeInMillis() == otherTime.getTimeInMillis()) ? getRuntime().getTrue() : getRuntime().getFalse();
         }
         return getRuntime().getFalse();
@@ -910,23 +909,17 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = {"asctime", "ctime"})
     public RubyString asctime() {
-        DateTimeFormatter simpleDateFormat;
+        DateTimeFormatter simpleDateFormat = dt.getDayOfMonth() < 10 ? ONE_DAY_CTIME_FORMATTER : TWO_DAY_CTIME_FORMATTER;
 
-        if (dt.getDayOfMonth() < 10) {
-            simpleDateFormat = ONE_DAY_CTIME_FORMATTER;
-        } else {
-            simpleDateFormat = TWO_DAY_CTIME_FORMATTER;
-        }
-        String result = simpleDateFormat.print(dt);
-        return RubyString.newString(getRuntime(), result, USASCIIEncoding.INSTANCE);
+        return RubyString.newString(getRuntime(), simpleDateFormat.print(dt), USASCIIEncoding.INSTANCE);
     }
 
     @Override
     @JRubyMethod
-    public IRubyObject to_s() {
+    public IRubyObject to_s(ThreadContext context) {
         DateTimeFormatter simpleDateFormat = isUTC() ? TO_S_UTC_FORMATTER : TO_S_FORMATTER;
 
-        return RubyString.newString(getRuntime(), simpleDateFormat.print(getInspectDateTime()), USASCIIEncoding.INSTANCE);
+        return newString(context, simpleDateFormat.print(getInspectDateTime()), USASCIIEncoding.INSTANCE);
     }
 
     @JRubyMethod
@@ -966,7 +959,7 @@ public class RubyTime extends RubyObject {
 
     @Override
     public String toString() {
-        return to_s().asJavaString();
+        return to_s(getRuntime().getCurrentContext()).asJavaString();
     }
 
     @JRubyMethod

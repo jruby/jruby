@@ -819,13 +819,9 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /** rb_ary_to_s
      *
      */
+    @Override
     public RubyString to_s(ThreadContext context) {
         return inspect(context);
-    }
-
-    @Override
-    public IRubyObject to_s() {
-        return to_s(metaClass.runtime.getCurrentContext());
     }
 
     public boolean includes(ThreadContext context, IRubyObject item) {

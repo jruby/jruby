@@ -108,7 +108,7 @@ public class JavaPackage extends RubyModule {
     }
 
     @Override
-    public RubyString to_s() { return package_name(); }
+    public RubyString to_s(ThreadContext context) { return package_name(); }
 
     @Override
     @JRubyMethod

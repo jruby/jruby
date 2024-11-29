@@ -987,7 +987,7 @@ public class Sprintf {
                             zero = precision;
                         }
 
-                        RubyString val = num.to_s();
+                        RubyString val = num.to_s(context);
                         int len = val.length() + zero;
                         if (precision >= len) len = precision + 1; // integer part 0
                         if (sign != 0 || (flags & FLAG_SPACE) != 0) ++len;

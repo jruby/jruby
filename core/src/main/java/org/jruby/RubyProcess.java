@@ -366,11 +366,6 @@ public class RubyProcess {
         }
 
         @JRubyMethod
-        public IRubyObject to_s(ThreadContext context) {
-            return to_s(context.runtime);
-        }
-
-        @JRubyMethod
         public IRubyObject inspect(ThreadContext context) {
             return inspect(context.runtime);
         }
@@ -403,13 +398,10 @@ public class RubyProcess {
             return runtime.newFixnum(status);
         }
 
-        public IRubyObject to_s(Ruby runtime) {
-            return runtime.newString(pst_message("", pid, status));
-        }
-
         @Override
-        public IRubyObject to_s() {
-            return to_s(getRuntime());
+        @JRubyMethod
+        public IRubyObject to_s(ThreadContext context) {
+            return newString(context, pst_message("", pid, status));
         }
 
         boolean unitialized() {

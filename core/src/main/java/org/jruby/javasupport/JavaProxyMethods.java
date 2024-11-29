@@ -99,24 +99,25 @@ public class JavaProxyMethods {
 
     @JRubyMethod
     public static IRubyObject to_s(ThreadContext context, IRubyObject recv) {
-        if (recv instanceof JavaProxy) {
-            return to_s(context.runtime, ((JavaProxy) recv).getObject());
-        }
-        // NOTE: only JavaProxy includes JavaProxyMethods
-        // these is only here for 'manual' JavaObject wrapping :
-        if (recv.dataGetStruct() instanceof IRubyObject) {
-            return ((RubyBasicObject) recv.dataGetStruct()).to_s();
-        }
-        return ((RubyBasicObject) recv).to_s();
+        if (recv instanceof JavaProxy) return to_s(context, ((JavaProxy) recv).getObject());
+
+        // NOTE: only JavaProxy includes JavaProxyMethods these is only here for 'manual' JavaObject wrapping :
+        var data = recv.dataGetStruct();
+        return data instanceof IRubyObject ?
+            ((RubyBasicObject) data).to_s(context) : ((RubyBasicObject) recv).to_s(context);
     }
 
-    static IRubyObject to_s(Ruby runtime, Object javaObject) {
+    static IRubyObject to_s(ThreadContext context, Object javaObject) {
         if (javaObject != null) {
             final String stringValue = javaObject.toString();
-            if ( stringValue == null ) return runtime.getNil();
-            return RubyString.newUnicodeString(runtime, stringValue);
+            return stringValue == null ? context.nil : RubyString.newUnicodeString(context.runtime, stringValue);
         }
-        return RubyString.newEmptyString(runtime);
+        return RubyString.newEmptyString(context.runtime);
+    }
+
+    @Deprecated(since = "10.0", forRemoval = true)
+    static IRubyObject to_s(Ruby runtime, Object javaObject) {
+        return to_s(runtime.getCurrentContext(), javaObject);
     }
 
     @JRubyMethod

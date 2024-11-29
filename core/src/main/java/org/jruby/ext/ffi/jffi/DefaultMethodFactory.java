@@ -30,6 +30,8 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.asFloat;
+import static org.jruby.api.Create.dupString;
 import static org.jruby.api.Error.*;
 
 
@@ -376,7 +378,7 @@ public final class DefaultMethodFactory extends MethodFactory {
     private static final class Float32Invoker extends BaseInvoker {
         public static final FunctionInvoker INSTANCE = new Float32Invoker();
         public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
-            return context.runtime.newFloat(invoker.invokeFloat(function, args));
+            return asFloat(context, invoker.invokeFloat(function, args));
         }
     }
 
@@ -387,7 +389,7 @@ public final class DefaultMethodFactory extends MethodFactory {
     private static final class Float64Invoker extends BaseInvoker {
         public static final FunctionInvoker INSTANCE = new Float64Invoker();
         public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
-            return context.runtime.newFloat(invoker.invokeDouble(function, args));
+            return asFloat(context, invoker.invokeDouble(function, args));
         }
     }
     
@@ -398,7 +400,7 @@ public final class DefaultMethodFactory extends MethodFactory {
     private static final class Float128Invoker extends BaseInvoker {
         public static final FunctionInvoker INSTANCE = new Float128Invoker();
         public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
-            return context.runtime.newFloat(0); // not implemented
+            return asFloat(context, 0); // not implemented
         }
     }
 
@@ -452,8 +454,7 @@ public final class DefaultMethodFactory extends MethodFactory {
             MemoryIO mem = buf.getMemoryIO();
             byte[] array;
             int arrayOffset;
-            if (mem instanceof ArrayMemoryIO) {
-                ArrayMemoryIO arrayMemoryIO = (ArrayMemoryIO) mem;
+            if (mem instanceof ArrayMemoryIO arrayMemoryIO) {
                 array = arrayMemoryIO.array();
                 arrayOffset = arrayMemoryIO.arrayOffset();
             } else {
@@ -463,9 +464,7 @@ public final class DefaultMethodFactory extends MethodFactory {
 
             invoker.invokeStruct(function, args, array, arrayOffset);
 
-            if (!(mem instanceof ArrayMemoryIO)) {
-                mem.put(0, array, 0, array.length);
-            }
+            if (!(mem instanceof ArrayMemoryIO)) mem.put(0, array, 0, array.length);
 
             return info.getStructClass().newInstance(context, buf, Block.NULL_BLOCK);
         }
@@ -640,20 +639,14 @@ public final class DefaultMethodFactory extends MethodFactory {
 
             } else {
                 if (ArrayFlags.isOut(flags)) {
-                    if (parameter instanceof RubyString) {
-                        RubyString parameterStr = (RubyString) parameter;
-
-                        if (parameterStr.isFrozen()) {
-                            parameterStr = parameterStr.strDup(context.runtime);
-                        }
-
-                        // ensure string is modifiable
-                        parameterStr.modify();
+                    if (parameter instanceof RubyString parmStr) {
+                        if (parmStr.isFrozen()) parmStr = dupString(context, parmStr);
+                        parmStr.modify(); // ensure string is modifiable
                     }
                 }
 
-                buffer.putArray(byte[].class.cast(strategy.object(parameter)), strategy.offset(parameter), strategy.length(parameter),
-                        flags);
+                buffer.putArray(byte[].class.cast(strategy.object(parameter)), strategy.offset(parameter),
+                        strategy.length(parameter), flags);
             }
         }
     }

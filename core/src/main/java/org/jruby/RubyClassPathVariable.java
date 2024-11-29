@@ -122,8 +122,7 @@ public class RubyClassPathVariable extends RubyObject {
 
     @Override
     @JRubyMethod
-    public IRubyObject to_s() {
-        final ThreadContext context = getRuntime().getCurrentContext();
+    public IRubyObject to_s(ThreadContext context) {
         return callMethod(context, "to_a").callMethod(context, "to_s");
     }
 

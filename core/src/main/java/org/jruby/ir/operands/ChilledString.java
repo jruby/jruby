@@ -8,6 +8,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
+import static org.jruby.api.Create.dupString;
+
 public class ChilledString extends MutableString implements Stringable, StringLiteral {
     /**
      * Used by persistence and by .freeze optimization
@@ -32,7 +34,7 @@ public class ChilledString extends MutableString implements Stringable, StringLi
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
-        return frozenString.retrieve(context, self, currScope, currDynScope, temp).strDup(context.runtime).chill();
+        return dupString(context, frozenString.retrieve(context, self, currScope, currDynScope, temp)).chill();
     }
 
     @Override

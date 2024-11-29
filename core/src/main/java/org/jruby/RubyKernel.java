@@ -1433,25 +1433,22 @@ public class RubyKernel {
     }
 
     static void warnStr(ThreadContext context, IRubyObject recv, RubyString message, IRubyObject category) {
-        final Ruby runtime = context.runtime;
+        if (!message.endsWithAsciiChar('\n')) message = dupString(context, message).cat('\n', USASCIIEncoding.INSTANCE);
 
-        if (!message.endsWithAsciiChar('\n')) {
-            message = message.strDup(runtime).cat('\n', USASCIIEncoding.INSTANCE);
-        }
-
-        if (recv == runtime.getWarning()) {
+        var warning = context.runtime.getWarning();
+        if (recv == warning) {
             RubyWarnings.warn(context, message);
             return;
         }
 
         // FIXME: This seems "fragile".  Not sure if other transitional Ruby methods need this sort of thing or not (e.g. perhaps we need a helper on callsite for this).
-        DynamicMethod method = ((CachingCallSite) sites(context).warn).retrieveCache(runtime.getWarning()).method;
+        DynamicMethod method = ((CachingCallSite) sites(context).warn).retrieveCache(warning).method;
         if (method.getSignature().isOneArgument()) {
-            sites(context).warn.call(context, recv, runtime.getWarning(), message);
+            sites(context).warn.call(context, recv, warning, message);
         } else {
-            RubyHash keywords = RubyHash.newHash(runtime, asSymbol(context, "category"), category);
+            RubyHash keywords = RubyHash.newHash(context.runtime, asSymbol(context, "category"), category);
             context.callInfo = ThreadContext.CALL_KEYWORD;
-            sites(context).warn.call(context, recv, runtime.getWarning(), message, keywords);
+            sites(context).warn.call(context, recv, warning, message, keywords);
         }
     }
 
@@ -2312,9 +2309,19 @@ public class RubyKernel {
         return ((RubyBasicObject)self).method(symbol, context.getCurrentStaticScope());
     }
 
-    @JRubyMethod(name = "to_s")
+    /**
+     * @param self
+     * @return ""
+     * @deprecated Use {@link RubyKernel#to_s(ThreadContext, IRubyObject)}
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public static IRubyObject to_s(IRubyObject self) {
-        return ((RubyBasicObject)self).to_s();
+        return to_s(self.getRuntime().getCurrentContext(), self);
+    }
+
+    @JRubyMethod(name = "to_s")
+    public static IRubyObject to_s(ThreadContext context, IRubyObject self) {
+        return ((RubyBasicObject) self).to_s(context);
     }
 
     @Deprecated

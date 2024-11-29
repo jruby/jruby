@@ -1576,7 +1576,7 @@ public class RubyDate extends RubyObject {
         long ns = (dt.getMillisOfSecond() * 1_000_000) + (subMillisNum * 1_000_000) / subMillisDen;
         ByteList str = new ByteList(54); // e.g. #<Date: 2018-01-15 ((2458134j,0s,0n),+0s,2299161j)>
         str.append('#').append('<');
-        str.append(((RubyString) getMetaClass().to_s()).getByteList());
+        str.append(((RubyString) getMetaClass().to_s(context)).getByteList());
         str.append(':').append(' ');
         str.append(to_s(context).getByteList()); // to_s
         str.append(' ').append('(').append('(');
@@ -1608,10 +1608,6 @@ public class RubyDate extends RubyObject {
     static { TO_S_FORMAT.setEncoding(USASCIIEncoding.INSTANCE); }
 
     @Override
-    public final IRubyObject to_s() {
-        return to_s(getRuntime().getCurrentContext());
-    }
-
     @JRubyMethod
     public RubyString to_s(ThreadContext context) { // format('%.4d-%02d-%02d', year, mon, mday)
         return format(context, TO_S_FORMAT, year(context), mon(context), mday(context));

@@ -54,6 +54,7 @@ import org.jruby.util.io.EncodingUtils;
 import java.io.IOException;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.dupString;
 import static org.jruby.api.Create.newString;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
@@ -227,25 +228,43 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return RubyNumeric.int2fix(getRuntime(), io.getTotalIn());
     }
 
-    @JRubyMethod(name = "orig_name=")
+    /**
+     * @param obj
+     * @return ""
+     * @deprecated Use {@link JZlibRubyGzipWriter#set_orig_name(ThreadContext, IRubyObject)} instead
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public IRubyObject set_orig_name(IRubyObject obj) {
-        nullFreeOrigName = obj.convertToString().strDup(getRuntime());
-        ensureNonNull(nullFreeOrigName);
-        
+        return set_orig_name(getCurrentContext(), obj);
+    }
+
+    @JRubyMethod(name = "orig_name=")
+    public IRubyObject set_orig_name(ThreadContext context, IRubyObject obj) {
+        nullFreeOrigName = ensureNonNull(dupString(context, obj.convertToString()));
+
         try {
             io.setName(nullFreeOrigName.toString());
         } catch (GZIPException e) {
-            throw RubyZlib.newGzipFileError(getRuntime(), "header is already written");
+            throw RubyZlib.newGzipFileError(context.runtime, "header is already written");
         }
         
         return obj;
     }
 
-    @JRubyMethod(name = "comment=")
+    /**
+     * @param obj
+     * @return ""
+     * @deprecated Use {@link JZlibRubyGzipWriter#set_comment(ThreadContext, IRubyObject)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public IRubyObject set_comment(IRubyObject obj) {
-        nullFreeComment = obj.convertToString().strDup(getRuntime());
-        ensureNonNull(nullFreeComment);
-        
+        return set_comment(getCurrentContext(), obj);
+    }
+
+    @JRubyMethod(name = "comment=")
+    public IRubyObject set_comment(ThreadContext context, IRubyObject obj) {
+        nullFreeComment = ensureNonNull(dupString(context, obj.convertToString()));
+
         try {
             io.setComment(nullFreeComment.toString());
         } catch (GZIPException e) {
@@ -255,13 +274,15 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return obj;
     }
 
-    private void ensureNonNull(RubyString obj) {
+    private RubyString ensureNonNull(RubyString obj) {
         String str = obj.toString();
         
         if (str.indexOf('\0') >= 0) {
             String trim = str.substring(0, str.indexOf('\0'));
             obj.setValue(new ByteList(trim.getBytes()));
         }
+
+        return obj;
     }
 
     @JRubyMethod(name = "putc")

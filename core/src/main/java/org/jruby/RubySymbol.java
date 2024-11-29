@@ -191,9 +191,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     @Override
     public final String toString() {
         String decoded = decodedString;
-        if (decoded == null) {
-            decodedString = decoded = RubyEncoding.decodeRaw(getBytes());
-        }
+        if (decoded == null) decodedString = decoded = RubyEncoding.decodeRaw(getBytes());
         return decoded;
     }
 
@@ -489,13 +487,9 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     }
 
     @Override
-    public IRubyObject to_s() {
-        return to_s(metaClass.runtime);
-    }
-
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s(ThreadContext context) {
-        return to_s(context.runtime);
+        return RubyString.newStringShared(context.runtime, getBytes());
     }
 
     final RubyString to_s(Ruby runtime) {
@@ -513,8 +507,9 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
       return rubyString;
     }
 
+    @Deprecated(since = "9.4-", forRemoval = true)
     public IRubyObject id2name() {
-        return to_s(metaClass.runtime);
+        return to_s(getCurrentContext());
     }
 
     @JRubyMethod
@@ -524,7 +519,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @Override
     public RubyString asString() {
-        return to_s(metaClass.runtime);
+        return (RubyString) to_s(metaClass.runtime.getCurrentContext());
     }
 
     @JRubyMethod(name = "===")
@@ -672,9 +667,9 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     @JRubyMethod(name = "start_with?")
     public IRubyObject start_with_p(ThreadContext context, IRubyObject arg) {
         if (arg instanceof RubyRegexp) {
-            return ((RubyRegexp) arg).startsWith(context, to_s(context.runtime)) ? context.tru : context.fals;
+            return ((RubyRegexp) arg).startsWith(context, (RubyString) to_s(context)) ? context.tru : context.fals;
         }
-        return to_s(context.runtime).startsWith(arg.convertToString()) ? context.tru : context.fals;
+        return ((RubyString) to_s(context)).startsWith(arg.convertToString()) ? context.tru : context.fals;
     }
 
     @JRubyMethod(name = "start_with?", rest = true)
@@ -692,12 +687,12 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @JRubyMethod(name = "end_with?")
     public IRubyObject end_with_p(ThreadContext context, IRubyObject arg) {
-        return to_s(context.runtime).endWith(arg) ? context.tru : context.fals;
+        return ((RubyString) to_s(context)).endWith(arg) ? context.tru : context.fals;
     }
 
     @JRubyMethod(name = "end_with?", rest = true)
     public IRubyObject end_with_p(ThreadContext context, IRubyObject[]args) {
-        RubyString str = to_s(context.runtime);
+        RubyString str = (RubyString) to_s(context);
         for (int i = 0; i < args.length; i++) {
             if (str.endWith(args[i])) return context.tru;
         }

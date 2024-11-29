@@ -621,14 +621,10 @@ public class RubyGlobal {
             return pair;
         }
 
+        @Override
         @JRubyMethod(name = "to_s")
         public RubyString to_s(ThreadContext context) {
             return RubyString.newStringShared(context.runtime, ENV);
-        }
-
-        @Override
-        public IRubyObject to_s() {
-            return RubyString.newStringShared(getRuntime(), ENV);
         }
 
         @Deprecated
@@ -794,18 +790,12 @@ public class RubyGlobal {
         // MRI: env_name_new
         // TODO: mri 3.1 does not use env_name_new
         protected static IRubyObject newName(ThreadContext context, IRubyObject key, IRubyObject valueArg) {
-            if (valueArg.isNil()) return context.nil;
-
-            RubyString value = (RubyString) valueArg;
-
-            return newString(context, value);
+            return valueArg.isNil() ? context.nil : newString(context, (RubyString) valueArg);
         }
 
         protected static IRubyObject newString(ThreadContext context, RubyString value, Encoding encoding) {
-            IRubyObject result = newExternalStringWithEncoding(context.runtime, value.strDup(context.runtime).getByteList().shallowDup(), encoding);
-
+            IRubyObject result = newExternalStringWithEncoding(context.runtime, value.getByteList().dup(), encoding);
             result.setFrozen(true);
-
             return result;
         }
 

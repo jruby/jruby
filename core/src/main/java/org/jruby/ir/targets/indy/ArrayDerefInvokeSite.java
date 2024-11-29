@@ -23,6 +23,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.SwitchPoint;
 
+import static org.jruby.api.Create.dupString;
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
 
@@ -73,7 +74,7 @@ public class ArrayDerefInvokeSite extends NormalInvokeSite {
             // slow path follows normal invoke logic with a strDup for the key
 
             // strdup for this call
-            args[0] = ((RubyString) args[0]).strDup(context.runtime);
+            args[0] = dupString(context, (RubyString) args[0]);
 
             if (methodMissing(entry, caller)) {
                 return callMethodMissing(entry, callType, context, self, selfClass, methodName, args, block);
@@ -120,7 +121,7 @@ public class ArrayDerefInvokeSite extends NormalInvokeSite {
         CacheEntry entry = cache;
 
         // strdup for all calls
-        arg0 = ((RubyString) arg0).strDup(context.runtime);
+        arg0 = dupString(context, (RubyString) arg0);
 
         if (entry.typeOk(selfClass)) {
             return entry.method.call(context, self, entry.sourceModule, name, arg0, block);

@@ -688,8 +688,8 @@ public class RubyModule extends RubyObject {
     public RubyString rubyBaseName() {
         String baseName = getBaseName();
 
-        final Ruby runtime = metaClass.runtime;
-        return baseName == null ? null : runtime.newSymbol(baseName).to_s(runtime);
+        var context = metaClass.runtime.getCurrentContext();
+        return baseName == null ? null : (RubyString) asSymbol(context, baseName).to_s(context);
     }
 
     private RubyString calculateAnonymousRubyName() {
@@ -2827,12 +2827,10 @@ public class RubyModule extends RubyObject {
      *
      */
     @JRubyMethod(name = "to_s", alias = "inspect")
-    @Override
-    public RubyString to_s() {
-        Ruby runtime = getRuntime();
+    public RubyString to_s(ThreadContext context) {
         if (isSingleton()) {
             IRubyObject attached = ((MetaClass) this).getAttached();
-            RubyString buffer = runtime.newString("#<Class:");
+            RubyString buffer = newString(context, "#<Class:");
 
             if (attached instanceof RubyModule) {
                 buffer.catWithCodeRange(attached.inspect().convertToString());
@@ -2845,9 +2843,8 @@ public class RubyModule extends RubyObject {
         }
 
         RubyModule refinedClass = this.refinedClass;
-
         if (refinedClass != null) {
-            RubyString buffer = runtime.newString("#<refinement:");
+            RubyString buffer = newString(context, "#<refinement:");
 
             buffer.catWithCodeRange(refinedClass.inspect().convertToString());
             buffer.cat('@', buffer.getEncoding());
@@ -2857,7 +2854,7 @@ public class RubyModule extends RubyObject {
             return buffer;
         }
 
-        return rubyName().strDup(runtime);
+        return dupString(context, rubyName());
     }
 
     /** rb_mod_eqq
@@ -2899,7 +2896,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "freeze")
     @Override
     public final IRubyObject freeze(ThreadContext context) {
-        to_s();
+        to_s(context);
         return super.freeze(context);
     }
 
