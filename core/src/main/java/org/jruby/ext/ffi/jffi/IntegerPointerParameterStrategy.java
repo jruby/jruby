@@ -1,10 +1,8 @@
 package org.jruby.ext.ffi.jffi;
 
-import org.jruby.RubyInteger;
+import org.jruby.RubyFixnum;
 import org.jruby.ext.ffi.MemoryIO;
-
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
@@ -15,10 +13,10 @@ final class IntegerPointerParameterStrategy extends PointerParameterStrategy {
     }
 
     public final MemoryIO getMemoryIO(Object parameter) {
-        return getMemoryIO((RubyInteger) parameter);
+        return getMemoryIO((IRubyObject) parameter);
     }
 
-    static MemoryIO getMemoryIO(RubyInteger i) {
-        return NativeMemoryIO.wrap(i.getRuntime(), i.getLongValue());
+    static MemoryIO getMemoryIO(IRubyObject parameter) {
+        return Factory.getInstance().wrapDirectMemory(parameter.getRuntime(), RubyFixnum.num2long(parameter));
     }
 }
