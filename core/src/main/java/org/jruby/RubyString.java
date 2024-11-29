@@ -3431,8 +3431,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             }
         }
 
-        ensureBytePosition(context, pos);
-
         return byteIndexCommon(context, arg0, pos);
     }
 
@@ -3457,10 +3455,16 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private IRubyObject byteIndexCommon(ThreadContext context, IRubyObject sub, int pos) {
-        if (pos == this.value.getRealSize()) return asFixnum(context, pos);
+        int len = value.realSize();
+        if (pos < 0 || pos > len) {
+            if (sub instanceof RubyRegexp) context.clearBackRef();
+            return context.nil;
+        }
+
+        ensureBytePosition(context, pos);
 
         if (sub instanceof RubyRegexp regexp) {
-            if (pos > value.realSize()) return context.nil;
+            if (pos > len) return context.nil;
             pos = regexp.search(context, this, pos, false);
             if (pos >= 0) pos = context.getLocalMatch().begin(0);
         } else {
