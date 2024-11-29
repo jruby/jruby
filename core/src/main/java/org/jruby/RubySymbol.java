@@ -1566,7 +1566,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         if (object instanceof RubySymbol || object instanceof RubyString) return object;
 
         IRubyObject tmp = TypeConverter.checkStringType(context, sites(context).to_str_checked, object);
-        if (tmp.isNil()) throw typeError(context, str(context.runtime, "", object, " is not a symbol nor a string"));
+        if (tmp.isNil()) throw typeError(context, object.inspect().toString() + " is not a symbol nor a string");
 
         return tmp;
     }
