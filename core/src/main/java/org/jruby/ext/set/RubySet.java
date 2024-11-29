@@ -723,25 +723,33 @@ public class RubySet extends RubyObject implements Set {
         return size == size() ? context.nil : this;
     }
 
+    public RubySet rb_merge(final ThreadContext context, IRubyObject enume) {
+        return rb_merge(context, new IRubyObject[] { enume});
+    }
+
     /**
      * Merges the elements of the given enumerable object to the set and returns self.
      */
-    @JRubyMethod(name = "merge")
-    public RubySet rb_merge(final ThreadContext context, IRubyObject enume) {
-        if ( enume instanceof RubySet set) {
-            modifyCheck(context);
-            addImplSet(context, set);
-        } else if (enume instanceof RubyArray ary) {
-            modifyCheck(context);
-            for ( int i = 0; i < ary.size(); i++ ) {
-                addImpl(context, ary.eltInternal(i));
-            }
-        } else { // do_with_enum(enum) { |o| add(o) }
-            doWithEnum(context, enume, new EachBody(context) {
-                IRubyObject yieldImpl(ThreadContext context, IRubyObject val) {
-                    addImpl(context, val); return context.nil;
+    @JRubyMethod(name = "merge", required=1, rest=true)
+    public RubySet rb_merge(final ThreadContext context, IRubyObject... args) {
+        var length = args.length;
+        for (int i = 0; i < length; i++) {
+            var arg = args[i];
+            if (arg instanceof RubySet set) {
+                modifyCheck(context);
+                addImplSet(context, set);
+            } else if (arg instanceof RubyArray ary) {
+                modifyCheck(context);
+                for ( int j = 0; j < ary.size(); j++ ) {
+                    addImpl(context, ary.eltInternal(j));
                 }
-            });
+            } else { // do_with_enum(enum) { |o| add(o) }
+                doWithEnum(context, arg, new EachBody(context) {
+                    IRubyObject yieldImpl(ThreadContext context, IRubyObject val) {
+                        addImpl(context, val); return context.nil;
+                    }
+                });
+            }
         }
 
         return this;
