@@ -3400,6 +3400,7 @@ public class RubyModule extends RubyObject {
     public RubyModule include(ThreadContext context, IRubyObject module) {
         if (isRefinement()) throw typeError(context, "Refinement#include has been removed");
         if (!module.isModule()) throw typeError(context, module, "Module");
+        if (((RubyModule) module).isRefinement()) throw typeError(context, "Cannot include refinement");
 
         module.callMethod(context, "append_features", this);
         module.callMethod(context, "included", this);
