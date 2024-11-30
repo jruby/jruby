@@ -43,6 +43,7 @@ import com.headius.backport9.buffer.Buffers;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ir.runtime.IRBreakJump;
@@ -83,6 +84,8 @@ import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Error.*;
+import static org.jruby.runtime.ThreadContext.hasKeywords;
+import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.Inspector.*;
 
@@ -815,6 +818,38 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod(visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject _default, final Block block) {
+        boolean keywords = hasKeywords(resetCallInfo(context));
+        modify();
+
+        if (keywords) {
+            IRubyObject[] opts = ArgsUtil.extractKeywordArgs(context, (RubyHash) _default, "capacity");
+            // This will allocFirst twice since it already happened before initialize was called.  I think this is ok?
+            if (opts[0] instanceof RubyFixnum fixnum && fixnum.getIntValue() > 0) allocFirst(fixnum.getIntValue());
+
+            if (block.isGiven()) {
+                ifNone = context.runtime.newProc(Block.Type.PROC, block);
+                flags |= PROCDEFAULT_HASH_F;
+            } else {
+                ifNone = UNDEF;
+            }
+        } else {
+            if (block.isGiven()) throw argumentError(context, 1, 0);
+
+            ifNone = _default;
+        }
+
+        return this;
+    }
+
+    @JRubyMethod(visibility = PRIVATE, keywords = true)
+    public IRubyObject initialize(ThreadContext context, IRubyObject _default, IRubyObject hash, final Block block) {
+        if (!hasKeywords(resetCallInfo(context))) throw argumentError(context, 2, 0, 1);
+
+        IRubyObject[] opts = ArgsUtil.extractKeywordArgs(context, (RubyHash) hash, "capacity");
+
+        // This will allocFirst twice since it already happened before initialize was called.  I think this is ok?
+        if (opts[0] instanceof RubyFixnum fixnum && fixnum.getIntValue() > 0) allocFirst(fixnum.getIntValue());
+
         modify();
 
         if (block.isGiven()) throw argumentError(context, 1, 0);
