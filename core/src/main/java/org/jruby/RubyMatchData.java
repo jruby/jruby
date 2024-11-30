@@ -374,9 +374,9 @@ public class RubyMatchData extends RubyObject {
         backrefNumberCheck(context, index);
 
         int start = regs.getBeg(index);
-        if (start < 0) return newArray(context, 2);
-
-        return newArray(context, asFixnum(context, start), asFixnum(context, regs.getEnd(index)));
+        return start < 0 ?
+                newArray(context, context.nil, context.nil) :
+                newArray(context, asFixnum(context, start), asFixnum(context, regs.getEnd(index)));
     }
 
     @JRubyMethod
@@ -695,7 +695,7 @@ public class RubyMatchData extends RubyObject {
             e = regs.getEnd(i);
         }
 
-        if (b < 0) return newArray(context, 2);
+        if (b < 0) return newArray(context, context.nil, context.nil);
 
         if ( ! str.singleByteOptimizable() ) {
             updateCharOffset();
