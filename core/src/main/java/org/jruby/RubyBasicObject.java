@@ -66,14 +66,12 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 
-import static org.jruby.RubySymbol.newSymbol;
 import static org.jruby.anno.FrameField.*;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
-import static org.jruby.ir.runtime.IRRuntimeHelpers.getClassVariable;
 import static org.jruby.runtime.Helpers.invokeChecked;
 import static org.jruby.runtime.ThreadContext.*;
 import static org.jruby.runtime.Visibility.*;
@@ -2636,7 +2634,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         // Make sure all arguments are modules before calling the callbacks
         for (int i = 0; i < args.length; i++) {
-            if (!args[i].isModule()) throw typeError(context, args[i], "Module");
+            var arg = args[i];
+            if (!arg.isModule()) throw typeError(context, arg, "Module");
+            if (((RubyModule) arg).isRefinement()) throw typeError(context, "Cannot extend object with refinement");
         }
 
         // MRI extends in order from last to first
