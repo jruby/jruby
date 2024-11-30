@@ -369,7 +369,7 @@ public class Sprintf {
         final byte[] format;
         final Encoding encoding;
 
-        int offset, length, mark;
+        int offset, length;
 
         if (charFormat instanceof ByteList) {
             ByteList list = (ByteList)charFormat;
@@ -406,19 +406,10 @@ public class Sprintf {
             for ( ; incomplete && offset < length ; ) {
                 switch (fchar = format[offset]) {
                 default:
-                    if (fchar == '\0' && flags == FLAG_NONE) {
-                        // MRI 1.8.6 behavior: null byte after '%'
-                        // leads to "%" string. Null byte in
-                        // other places, like "%5\0", leads to error.
-                        buf.append('%');
-                        buf.append(fchar);
-                        incomplete = false;
-                        offset++;
-                        break;
-                    } else if (isPrintable(fchar)) {
-                        raiseArgumentError(args,"malformed format string - %" + (char)fchar);
+                    if (isPrintable(fchar)) {
+                        raiseArgumentError(args, "malformed format string - %" + (char)fchar);
                     } else {
-                        raiseArgumentError(args,ERR_MALFORMED_FORMAT);
+                        raiseArgumentError(args, ERR_MALFORMED_FORMAT);
                     }
                     break;
 
@@ -591,9 +582,6 @@ public class Sprintf {
                     precision = number;
                     //
                     break;
-
-                case '\n':
-                    offset--;
                 case '%':
                     if (flags != FLAG_NONE) {
                         raiseArgumentError(args, ERR_ILLEGAL_FORMAT_CHAR);
