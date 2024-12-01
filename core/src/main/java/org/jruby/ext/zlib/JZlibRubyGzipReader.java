@@ -771,7 +771,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
                     obj.each(context, IRubyObject.NULL_ARRAY, block);
                 }
                 else {
-                    if (buf == null) buf = RubyString.newEmptyString(context.runtime);
+                    if (buf == null) buf = newEmptyString(context);
                     tmpbuf = obj.readAll();
                     buf.cat(tmpbuf);
                 }

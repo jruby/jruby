@@ -154,6 +154,30 @@ public class Create {
     }
 
     /**
+     * Create a new String which is intended to be empty for its entire lifetime.
+     * It can still grow but the intention is you think it won't grow (or cannot).
+     * If you want a default-size array then use {@link Create#newString(ThreadContext, String)}.
+     *
+     * @param context the current thread context
+     * @return the new string
+     */
+    public static RubyString newEmptyString(ThreadContext context) {
+        return RubyString.newEmptyString(context.runtime);
+    }
+
+    /**
+     * Create a new String which is intended to be empty for its entire lifetime with
+     * a specific encoding.  It can still grow but the intention is you think it won't grow
+     * (or cannot).  If you want a default-size array then use {@link Create#newString(ThreadContext, ByteList)}.
+     *
+     * @param context the current thread context
+     * @return the new string
+     */
+    public static RubyString newEmptyString(ThreadContext context, Encoding encoding) {
+        return RubyString.newEmptyString(context.runtime, encoding);
+    }
+
+    /**
      * Duplicate the given string and return a String (original subclass of String is not preserved).
      *
      * @param context the current thread context

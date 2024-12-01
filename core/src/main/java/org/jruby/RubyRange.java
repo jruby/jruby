@@ -363,8 +363,8 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(name = "inspect")
     public RubyString inspect(final ThreadContext context) {
-        RubyString i1 = isBeginless && !isEndless ? RubyString.newEmptyString(context.runtime) : dupString(context, inspectValue(context, begin));
-        RubyString i2 = isEndless && !isBeginless ? RubyString.newEmptyString(context.runtime) : inspectValue(context, end);
+        RubyString i1 = isBeginless && !isEndless ? newEmptyString(context) : dupString(context, inspectValue(context, begin));
+        RubyString i2 = isEndless && !isBeginless ? newEmptyString(context) : inspectValue(context, end);
         i1.cat(DOTDOTDOT, 0, isExclusive ? 3 : 2);
         i1.append(i2);
         return i1;

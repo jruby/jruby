@@ -108,18 +108,18 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
     @JRubyMethod
     public IRubyObject path(ThreadContext context) {
-        return RubyString.newEmptyString(context.runtime);
+        return newEmptyString(context);
     }
 
     @JRubyMethod
     public IRubyObject addr(ThreadContext context) {
-        return newArray(context, newString(context, "AF_UNIX"),  RubyString.newEmptyString(context.runtime) );
+        return newArray(context, newString(context, "AF_UNIX"), newEmptyString(context));
     }
 
     @JRubyMethod
     public IRubyObject peeraddr(ThreadContext context) {
         final String _path = getUnixRemoteSocket().path();
-        final RubyString path = _path == null ? RubyString.newEmptyString(context.runtime) : newString(context, _path);
+        final RubyString path = _path == null ? newEmptyString(context) : newString(context, _path);
         return newArray(context, newString(context, "AF_UNIX"), path);
     }
 
