@@ -67,6 +67,7 @@ import org.jruby.ast.util.ArgsUtil;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyFile.filePathConvert;
 import static org.jruby.RubyString.UTF8;
+import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newArray;
@@ -152,24 +153,21 @@ public class RubyDir extends RubyObject implements Closeable {
     }
 
     private RubyDir initializeCommon(ThreadContext context, IRubyObject pathArg, IRubyObject encOpts) {
-        Ruby runtime = context.runtime;
-
         Encoding encoding = null;
 
         if (!encOpts.isNil()) {
             RubyHash opts = encOpts.convertToHash();
             IRubyObject encodingArg = ArgsUtil.extractKeywordArg(context, opts, "encoding");
             if (encodingArg != null && !encodingArg.isNil()) {
-                encoding = runtime.getEncodingService().getEncodingFromObject(encodingArg);
+                encoding = context.runtime.getEncodingService().getEncodingFromObject(encodingArg);
             }
         }
 
-        if (encoding == null) encoding = runtime.getEncodingService().getFileSystemEncoding();
+        if (encoding == null) encoding = context.runtime.getEncodingService().getFileSystemEncoding();
 
-        RubyString newPath = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, pathArg));
+        RubyString newPath = checkEmbeddedNulls(context, RubyFile.get_path(context, pathArg));
         this.path = newPath;
         this.pos = 0;
-
         this.encoding = encoding;
 
         String adjustedPath = RubyFile.getAdjustedPath(context, newPath);
@@ -365,19 +363,14 @@ public class RubyDir extends RubyObject implements Closeable {
      */
     @JRubyMethod(name = "entries", meta = true)
     public static RubyArray entries(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        Ruby runtime = context.runtime;
+        RubyString path = checkEmbeddedNulls(context, RubyFile.get_path(context, arg));
 
-        RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, arg));
-
-        return entriesCommon(context, path, runtime.getDefaultFilesystemEncoding(), false);
+        return entriesCommon(context, path, context.runtime.getDefaultFilesystemEncoding(), false);
     }
 
     @JRubyMethod(name = "entries", meta = true)
     public static RubyArray entries(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject opts) {
-        Ruby runtime = context.runtime;
-
-        RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, arg));
-
+        RubyString path = checkEmbeddedNulls(context, RubyFile.get_path(context, arg));
         Encoding encoding = getEncodingFromOpts(context, opts);
 
         return entriesCommon(context, path, encoding, false);
@@ -434,10 +427,8 @@ public class RubyDir extends RubyObject implements Closeable {
 
     /** Changes the current directory to <code>path</code> */
     @JRubyMethod(meta = true)
-    public static IRubyObject chdir(ThreadContext context, IRubyObject recv, IRubyObject _path, Block block) {
-        RubyString path = StringSupport.checkEmbeddedNulls(context.runtime, RubyFile.get_path(context, _path));
-
-        return chdirCommon(context, block, path);
+    public static IRubyObject chdir(ThreadContext context, IRubyObject recv, IRubyObject path, Block block) {
+        return chdirCommon(context, block, checkEmbeddedNulls(context, RubyFile.get_path(context, path)));
     }
 
     /** Changes the current directory to <code>path</code> */
@@ -535,20 +526,18 @@ public class RubyDir extends RubyObject implements Closeable {
      */
     @JRubyMethod(name = {"rmdir", "unlink", "delete"}, meta = true)
     public static IRubyObject rmdir(ThreadContext context, IRubyObject recv, IRubyObject path) {
-        Ruby runtime = context.runtime;
-        RubyString cleanPath = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, path));
-        return rmdirCommon(runtime, cleanPath.asJavaString());
+        return rmdirCommon(context, checkEmbeddedNulls(context, RubyFile.get_path(context, path)).asJavaString());
     }
 
-    private static RubyFixnum rmdirCommon(Ruby runtime, String path) {
-        JRubyFile directory = getDirForRmdir(runtime, path);
+    private static RubyFixnum rmdirCommon(ThreadContext context, String path) {
+        JRubyFile directory = getDirForRmdir(context.runtime, path);
 
         // at this point, only thing preventing delete should be non-emptiness
-        if (runtime.getPosix().rmdir(directory.toString()) < 0) {
-            throw runtime.newErrnoENOTEMPTYError(path);
+        if (context.runtime.getPosix().rmdir(directory.toString()) < 0) {
+            throw context.runtime.newErrnoENOTEMPTYError(path);
         }
 
-        return runtime.newFixnum(0);
+        return asFixnum(context, 0);
     }
 
     /**
@@ -678,9 +667,7 @@ public class RubyDir extends RubyObject implements Closeable {
     @JRubyMethod(name = "mkdir", required = 1, optional = 1, checkArity = false, meta = true)
     public static IRubyObject mkdir(ThreadContext context, IRubyObject recv, IRubyObject... args) {
         Arity.checkArgumentCount(context, args, 1, 2);
-        Ruby runtime = context.runtime;
-        RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, args[0]));
-        return mkdirCommon(runtime, path.asJavaString(), args);
+        return mkdirCommon(context, RubyFile.get_path(context, args[0]).asJavaString(), args);
     }
 
     @Deprecated
@@ -688,12 +675,12 @@ public class RubyDir extends RubyObject implements Closeable {
         return mkdir(recv.getRuntime().getCurrentContext(), recv, args);
     }
 
-    private static IRubyObject mkdirCommon(Ruby runtime, String path, IRubyObject[] args) {
-        if (path.startsWith("uri:")) throw runtime.newErrnoEACCESError(path);
+    private static IRubyObject mkdirCommon(ThreadContext context, String path, IRubyObject[] args) {
+        if (path.startsWith("uri:")) throw context.runtime.newErrnoEACCESError(path);
 
-        path = dirFromPath(path, runtime);
-        FileResource res = JRubyFile.createResource(runtime, path);
-        if (res.exists()) throw runtime.newErrnoEEXISTError(path);
+        path = dirFromPath(path, context.runtime);
+        FileResource res = JRubyFile.createResource(context.runtime, path);
+        if (res.exists()) throw context.runtime.newErrnoEEXISTError(path);
 
         String name = path.replace('\\', '/');
         boolean startsWithDriveLetterOnWindows = RubyFile.startsWithDriveLetterOnWindows(name);
@@ -701,11 +688,11 @@ public class RubyDir extends RubyObject implements Closeable {
         // don't attempt to create a dir for drive letters
         if (startsWithDriveLetterOnWindows) {
             // path is just drive letter plus :
-            if (path.length() == 2) return RubyFixnum.zero(runtime);
+            if (path.length() == 2) return asFixnum(context, 0);
             // path is drive letter plus : plus leading or trailing /
-            if (path.length() == 3 && (path.charAt(0) == '/' || path.charAt(2) == '/')) return RubyFixnum.zero(runtime);
+            if (path.length() == 3 && (path.charAt(0) == '/' || path.charAt(2) == '/')) return asFixnum(context, 0);
             // path is drive letter plus : plus leading and trailing /
-            if (path.length() == 4 && (path.charAt(0) == '/' && path.charAt(3) == '/')) return RubyFixnum.zero(runtime);
+            if (path.length() == 4 && (path.charAt(0) == '/' && path.charAt(3) == '/')) return asFixnum(context, 0);
         }
 
         File newDir = res.unwrap(File.class);
@@ -713,12 +700,12 @@ public class RubyDir extends RubyObject implements Closeable {
 
         int mode = args.length == 2 ? ((int) args[1].convertToInteger().getLongValue()) : 0777;
 
-        if (runtime.getPosix().mkdir(newDir.getAbsolutePath(), mode) < 0) {
+        if (context.runtime.getPosix().mkdir(newDir.getAbsolutePath(), mode) < 0) {
             // FIXME: This is a system error based on errno
-            throw runtime.newSystemCallError("mkdir failed");
+            throw context.runtime.newSystemCallError("mkdir failed");
         }
 
-        return RubyFixnum.zero(runtime);
+        return asFixnum(context, 0);
     }
 
     /**
@@ -914,25 +901,23 @@ public class RubyDir extends RubyObject implements Closeable {
     }
 
     @JRubyMethod(name = "empty?", meta = true)
-    public static IRubyObject empty_p(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        RubyString path = StringSupport.checkEmbeddedNulls(context.runtime, RubyFile.get_path(context, arg));
-        RubyFileStat fileStat = context.runtime.newFileStat(path.asJavaString(), false);
+    public static IRubyObject empty_p(ThreadContext context, IRubyObject recv, IRubyObject path) {
+        RubyFileStat fileStat = context.runtime.newFileStat(RubyFile.get_path(context, path).asJavaString(), false);
         boolean isDirectory = fileStat.directory_p(context).isTrue();
-        return asBoolean(context, isDirectory && entries(context, recv, arg).getLength() <= 2);
+        return asBoolean(context, isDirectory && entries(context, recv, path).getLength() <= 2);
     }
 
     @JRubyMethod(name = "exist?", meta = true)
     public static IRubyObject exist(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        Ruby runtime = context.runtime;
         // Capture previous exception if any.
-        IRubyObject exception = runtime.getGlobalVariables().get("$!");
-        RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, arg));
+        IRubyObject exception = context.runtime.getGlobalVariables().get("$!");
+        RubyString path = RubyFile.get_path(context, arg);
 
         try {
-            return runtime.newFileStat(path.asJavaString(), false).directory_p(context);
+            return context.runtime.newFileStat(path.asJavaString(), false).directory_p(context);
         } catch (Exception e) {
             // Restore $!
-            runtime.getGlobalVariables().set("$!", exception);
+            context.runtime.getGlobalVariables().set("$!", exception);
             return context.fals;
         }
     }

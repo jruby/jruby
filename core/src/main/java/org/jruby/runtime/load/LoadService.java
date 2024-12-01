@@ -301,25 +301,17 @@ public class LoadService {
     public static class LoadPathMethods {
         @JRubyMethod
         public static IRubyObject resolve_feature_path(ThreadContext context, IRubyObject self, IRubyObject pathArg) {
-            RubyString path = StringSupport.checkEmbeddedNulls(context.runtime, RubyFile.get_path(context, pathArg));
-            String file = path.toString();
+            RubyString path = RubyFile.get_path(context, pathArg);
             LibrarySearcher.FoundLibrary[] libraryHolder = {null};
-            char extension = context.runtime.getLoadService().searchForRequire(file, libraryHolder);
+            char extension = context.runtime.getLoadService().searchForRequire(path.toString(), libraryHolder);
 
             if (extension == 0) return context.nil;
 
-            RubySymbol ext;
-            switch (extension) {
-                case 'r':
-                    ext = Convert.asSymbol(context, "rb");
-                    break;
-                case 's':
-                    ext = Convert.asSymbol(context, "so"); // FIXME: should this be so or jar?
-                    break;
-                default:
-                    ext = Convert.asSymbol(context, "unknown");
-                    break;
-            }
+            RubySymbol ext = switch (extension) {
+                case 'r' -> Convert.asSymbol(context, "rb");
+                case 's' -> Convert.asSymbol(context, "so"); // FIXME: should this be so or jar?
+                default -> Convert.asSymbol(context, "unknown");
+            };
 
             RubyString name;
             if (libraryHolder[0] == null) {

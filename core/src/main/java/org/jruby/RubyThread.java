@@ -86,7 +86,6 @@ import org.jruby.runtime.backtrace.FrameType;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 import org.jruby.util.io.BlockingIO;
 import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.OpenFile;
@@ -94,6 +93,7 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.jruby.common.IRubyWarnings.ID;
 
+import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newString;
@@ -926,7 +926,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     @JRubyMethod(name = "name=")
     public IRubyObject setName(ThreadContext context, IRubyObject name) {
         if (!name.isNil()) {
-            RubyString nameStr = StringSupport.checkEmbeddedNulls(context.runtime, name);
+            RubyString nameStr = checkEmbeddedNulls(context, name);
             Encoding enc = nameStr.getEncoding();
             if (!enc.isAsciiCompatible()) throw argumentError(context, "ASCII incompatible encoding (" + enc + ")");
 

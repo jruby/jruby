@@ -47,6 +47,7 @@ import static jnr.constants.platform.ProtocolFamily.PF_INET6;
 import static jnr.constants.platform.ProtocolFamily.PF_UNIX;
 import static jnr.constants.platform.ProtocolFamily.PF_UNSPEC;
 import static jnr.constants.platform.Sock.*;
+import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newArray;
@@ -383,7 +384,7 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod(meta = true)
     public static IRubyObject ip(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        String host = StringSupport.checkEmbeddedNulls(context.runtime, arg.convertToString()).toString();
+        String host = checkEmbeddedNulls(context, arg.convertToString()).toString();
         try {
             boolean specifiedV6 = host.indexOf(':') != -1;
             InetAddress addy = SocketUtils.getRubyInetAddress(host);

@@ -614,7 +614,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             }
         }
 
-        fname = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, fname));
+        fname = RubyFile.get_path(context, fname);
         // Not implemented
 //        fname.checkTaint();
         fptr = file.openFile;
@@ -1220,21 +1220,18 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         int argc = Arity.checkArgumentCount(context, argv, 1, 3);
 
         Ruby runtime = context.runtime;
-        IRubyObject fname, vmode, vperm;
-        fname = vmode = vperm = context.nil;
+        IRubyObject vmode, vperm;
+        vmode = vperm = context.nil;
         IRubyObject intmode;
         int oflags;
-        ChannelFD fd;
 
         switch (argc) {
             case 3:
                 vperm = argv[2];
             case 2:
                 vmode = argv[1];
-            case 1:
-                fname = argv[0];
         }
-        fname = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, fname));
+        IRubyObject fname = RubyFile.get_path(context, argv[0]);
 
         if (vmode.isNil())
             oflags = OpenFlags.O_RDONLY.intValue();
@@ -1248,7 +1245,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         StringSupport.checkStringSafety(context.runtime, fname);
         fname = ((RubyString)fname).dupFrozen();
-        fd = sysopen(runtime, fname.toString(), oflags, perm);
+        ChannelFD fd = sysopen(runtime, fname.toString(), oflags, perm);
         return asFixnum(context, fd.bestFileno(true));
     }
 
@@ -4158,11 +4155,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     // open_key_args
     private static RubyIO openKeyArgs(ThreadContext context, IRubyObject recv, IRubyObject[] argv, IRubyObject opt) {
-        final Ruby runtime = context.runtime;
         IRubyObject vmode = context.nil, vperm = context.nil, v;
 
-        RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, argv[0]));
-        failIfDirectory(runtime, path); // only in JRuby
+        RubyString path = RubyFile.get_path(context, argv[0]);
+        failIfDirectory(context.runtime, path); // only in JRuby
         // MRI increments args past 0 now, so remaining uses of args only see non-path args
 
         if (opt == context.nil) {
@@ -4174,7 +4170,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
             Arity.checkArgumentCount(context, n, 0, 3);
 
-            opt = ArgsUtil.getOptionsArg(runtime, vAry.toJavaArrayMaybeUnsafe());
+            opt = ArgsUtil.getOptionsArg(context.runtime, vAry.toJavaArrayMaybeUnsafe());
 
             if (opt != context.nil) n--;
             switch (n) {
@@ -4235,11 +4231,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     @JRubyMethod(meta = true, required = 1, optional = 2, checkArity = false)
     public static IRubyObject binread(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 1, 3);
-
-        Ruby runtime = context.runtime;
-        IRubyObject path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, args[0]));
-        IRubyObject length, offset;
-        length = offset = context.nil;
+        IRubyObject path = RubyFile.get_path(context, args[0]);
+        IRubyObject length = context.nil;
+        IRubyObject offset = context.nil;
         IOEncodable convconfig = new IOEncodable.ConvConfig();
 
         int fmode = OpenFile.READABLE | OpenFile.BINMODE;

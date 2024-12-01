@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.*;
@@ -375,12 +376,12 @@ public class PopenExecutor {
         for (Map.Entry<IRubyObject, IRubyObject> entry : (Set<Map.Entry<IRubyObject, IRubyObject>>)hash.directEntrySet()) {
             IRubyObject key = entry.getKey();
             IRubyObject val = entry.getValue();
-            RubyString keyString = StringSupport.checkEmbeddedNulls(context.runtime, key).export(context);
+            RubyString keyString = checkEmbeddedNulls(context, key).export(context);
             String k = keyString.toString();
 
             if (k.indexOf('=') != -1) throw argumentError(context, "environment name contains a equal : " + k);
 
-            if (!val.isNil()) val = StringSupport.checkEmbeddedNulls(context.runtime, val);
+            if (!val.isNil()) val = checkEmbeddedNulls(context, val);
             if (!val.isNil()) val = ((RubyString) val).export(context);
 
             if (k.equalsIgnoreCase("PATH")) pathArg.path_env = val;
@@ -557,8 +558,7 @@ public class PopenExecutor {
         int write_fd = -1;
         String cmd = null;
 
-        if (prog != null)
-            cmd = StringSupport.checkEmbeddedNulls(runtime, prog).toString();
+        if (prog != null) cmd = checkEmbeddedNulls(context, prog).toString();
 
         if (eargp.chdirGiven) {
             // we can'd do chdir with posix_spawn, so we should be set to use_shell and now
@@ -1175,7 +1175,7 @@ public class PopenExecutor {
             envtbl = runtime.getObject().getConstant("ENV");
             envtbl = TypeConverter.convertToType(envtbl, hashClass, "to_hash");
         }
-        buildEnvp(context, eargp, envtbl);
+        buildEnvp(context, eargp, (RubyHash) envtbl);
 //        RB_GC_GUARD(execarg_obj);
     }
 
@@ -1194,20 +1194,17 @@ public class PopenExecutor {
         if (fd > 2) runtime.getPosix().close(fd);
     }
 
-    private static void buildEnvp(ThreadContext context, ExecArg eargp, IRubyObject envtbl) {
-        String[] envp_str;
-        List<String> envp_buf;
-        envp_buf = new ArrayList();
-        for (Map.Entry<IRubyObject, IRubyObject> entry : (Set<Map.Entry<IRubyObject, IRubyObject>>)((RubyHash)envtbl).directEntrySet()) {
-            IRubyObject key = entry.getKey();
-            IRubyObject val = entry.getValue();
+    private static void buildEnvp(ThreadContext context, ExecArg eargp, RubyHash envTable) {
+        String[] envp_str = new String[envTable.size()];
+        List<String> envp_buf = new ArrayList<>(envTable.size());
 
-            envp_buf.add(StringSupport.checkEmbeddedNulls(context.runtime, key).toString()
-                    + "="
-                    + StringSupport.checkEmbeddedNulls(context.runtime, val));
+        int i = 0;
+        for (Map.Entry<IRubyObject, IRubyObject> entry : (Set<Map.Entry<IRubyObject, IRubyObject>>) envTable.directEntrySet()) {
+            envp_str[i] = "" + checkEmbeddedNulls(context, entry.getKey()) + "=" + checkEmbeddedNulls(context, entry.getValue());
+            envp_buf.add(envp_str[i]);
+            i++;
         }
-        envp_str = new String[envp_buf.size()];
-        envp_buf.toArray(envp_str);
+
         eargp.envp_str = envp_str;
         eargp.envp_buf = envp_buf;
     }
@@ -1695,7 +1692,7 @@ public class PopenExecutor {
 
             prog = arrayArg.eltOk(0).convertToString();
             argv[0] = arrayArg.eltOk(1);
-            StringSupport.checkEmbeddedNulls(context.runtime, prog);
+            checkEmbeddedNulls(context, prog);
             prog = dupString(context, prog);
             prog.setFrozen(true);
         }
@@ -1703,7 +1700,7 @@ public class PopenExecutor {
         // process all arguments
         for (int i = 0; i < argv.length; i++) {
             argv[i] = argv[i].convertToString().newFrozen();
-            StringSupport.checkEmbeddedNulls(context.runtime, argv[i]);
+            checkEmbeddedNulls(context, argv[i]);
         }
 
         // return program, or null if we did not yet determine it
@@ -1841,7 +1838,7 @@ public class PopenExecutor {
             String abspath;
             abspath = dlnFindExeR(context, eargp.command_name.toString(), eargp.path_env);
             if (abspath != null)
-                eargp.command_abspath = StringSupport.checkEmbeddedNulls(runtime, newString(context, abspath));
+                eargp.command_abspath = checkEmbeddedNulls(context, newString(context, abspath));
             else
                 eargp.command_abspath = null;
         }
@@ -1852,7 +1849,7 @@ public class PopenExecutor {
             ArrayList<byte[]> argv_buf = new ArrayList<>(argc);
             for (i = 0; i < argc; i++) {
                 IRubyObject arg = argv[i];
-                RubyString argStr = StringSupport.checkEmbeddedNulls(runtime, arg);
+                RubyString argStr = checkEmbeddedNulls(context, arg);
                 argStr = argStr.export(context);
                 argv_buf.add(argStr.getBytes());
             }
