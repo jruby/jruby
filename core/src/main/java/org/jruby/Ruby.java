@@ -554,6 +554,9 @@ public final class Ruby implements Constantizable {
                 getLoadService().require("subspawn/replace-builtin");
             }
         }
+
+        // FIXME: How should this be loaded as it is not really stdlib but depends on stdlib to be loaded.
+        getLoadService().require("time");
     }
 
     private void initProfiling() {
