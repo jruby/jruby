@@ -924,6 +924,7 @@ public final class StringSupport {
     }
 
     // MRI: StringValueCStr, rb_string_value_cstr without trailing null addition
+    @Deprecated(since = "10.0", forRemoval = true)
     public static RubyString checkEmbeddedNulls(Ruby runtime, IRubyObject ptr) {
         Object[] checked = strNullCheck(ptr);
 

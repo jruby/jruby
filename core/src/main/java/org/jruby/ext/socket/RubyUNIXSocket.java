@@ -67,6 +67,7 @@ import java.nio.ByteOrder;
 import java.nio.channels.Channel;
 
 import static com.headius.backport9.buffer.Buffers.flipBuffer;
+import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
@@ -100,7 +101,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject path) {
-        init_unixsock(context.runtime, path, false);
+        init_unixsock(context, path, false);
 
         return context.nil;
     }
@@ -306,15 +307,13 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         }
     }
 
-    protected void init_unixsock(Ruby runtime, IRubyObject _path, boolean server) {
-        RubyString strPath = unixsockPathValue(runtime, _path);
+    protected void init_unixsock(ThreadContext context, IRubyObject _path, boolean server) {
+        RubyString strPath = unixsockPathValue(context, _path);
         ByteList path = strPath.getByteList();
-        String fpath = Helpers.decodeByteList(runtime, path);
+        String fpath = Helpers.decodeByteList(context.runtime, path);
 
         int maxSize = 103; // Max size from Darwin, lowest common value we know of
-        if (fpath.length() > 103) {
-            throw argumentError(runtime.getCurrentContext(), "too long unix socket path (max: " + maxSize + "bytes)");
-        }
+        if (fpath.length() > 103) throw argumentError(context, "too long unix socket path (max: " + maxSize + "bytes)");
 
         Closeable closeable = null;
         try {
@@ -327,13 +326,13 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
                 socket.bind(new UnixSocketAddress(new File(fpath)));
 
-                init_sock(runtime, channel, fpath);
+                init_sock(context.runtime, channel, fpath);
 
             } else {
                 File fpathFile = new File(fpath);
 
                 if (!fpathFile.exists()) {
-                    throw runtime.newErrnoENOENTError("unix socket");
+                    throw context.runtime.newErrnoENOENTError("unix socket");
                 }
 
                 UnixSocketChannel channel = UnixSocketChannel.open();
@@ -341,7 +340,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
                 channel.connect(new UnixSocketAddress(fpathFile));
 
-                init_sock(runtime, channel);
+                init_sock(context.runtime, channel);
 
             }
 
@@ -349,7 +348,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
             closeable = null;
 
         } catch (IOException ioe) {
-            throw runtime.newIOErrorFromException(ioe);
+            throw context.runtime.newIOErrorFromException(ioe);
         } finally {
             if (closeable != null) {
                 try {closeable.close();} catch (IOException ioe2) {}
@@ -358,8 +357,8 @@ public class RubyUNIXSocket extends RubyBasicSocket {
     }
 
     // MRI: unixsock_path_value
-    private static RubyString unixsockPathValue(Ruby runtime, IRubyObject path) {
-        return StringSupport.checkEmbeddedNulls(runtime, path.convertToString());
+    private static RubyString unixsockPathValue(ThreadContext context, IRubyObject path) {
+        return checkEmbeddedNulls(context, path.convertToString());
     }
 
 

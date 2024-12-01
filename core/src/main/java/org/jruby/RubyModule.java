@@ -219,12 +219,10 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod
     public IRubyObject autoload(ThreadContext context, IRubyObject symbol, IRubyObject file) {
-        final RubyString fileString = StringSupport.checkEmbeddedNulls(context.runtime, RubyFile.get_path(context, file));
-
+        final RubyString fileString = RubyFile.get_path(context, file);
         if (fileString.isEmpty()) throw argumentError(context, "empty file name");
 
         final String symbolStr = symbol.asJavaString();
-
         if (!IdUtil.isValidConstantName(symbolStr)) {
             throw context.runtime.newNameError("autoload must be constant name", symbolStr);
         }

@@ -66,7 +66,7 @@ public class RubyUNIXServer extends RubyUNIXSocket {
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject path) {
-        init_unixsock(context.runtime, path, true);
+        init_unixsock(context, path, true);
 
         return this;
     }

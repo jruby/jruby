@@ -109,6 +109,7 @@ import static org.jruby.anno.FrameField.METHODNAME;
 import static org.jruby.anno.FrameField.SCOPE;
 import static org.jruby.anno.FrameField.SELF;
 import static org.jruby.anno.FrameField.VISIBILITY;
+import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
@@ -1161,7 +1162,7 @@ public class RubyKernel {
     }
 
     private static IRubyObject requireCommon(ThreadContext context, RubyString name, Block block) {
-        RubyString path = StringSupport.checkEmbeddedNulls(context.runtime, name);
+        RubyString path = checkEmbeddedNulls(context, name);
         return asBoolean(context, context.runtime.getLoadService().require(path.toString()));
     }
 
@@ -1189,16 +1190,12 @@ public class RubyKernel {
 
     @JRubyMethod(name = "load", module = true, visibility = PRIVATE)
     public static IRubyObject load(ThreadContext context, IRubyObject recv, IRubyObject path, Block block) {
-        Ruby runtime = context.runtime;
-        RubyString pathStr = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, path));
-        return loadCommon(runtime, pathStr, false);
+        return loadCommon(context, RubyFile.get_path(context, path), false);
     }
 
     @JRubyMethod(name = "load", module = true, visibility = PRIVATE)
     public static IRubyObject load(ThreadContext context, IRubyObject recv, IRubyObject path, IRubyObject wrap, Block block) {
-        Ruby runtime = context.runtime;
-        RubyString pathStr = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, path));
-        return loadCommon(runtime, pathStr, wrap);
+        return loadCommon(context, RubyFile.get_path(context, path), wrap);
     }
 
     public static IRubyObject load(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
@@ -1210,15 +1207,15 @@ public class RubyKernel {
         return null; // not reached
     }
 
-    private static IRubyObject loadCommon(Ruby runtime, RubyString path, boolean wrap) {
-        runtime.getLoadService().load(path.toString(), wrap);
+    private static IRubyObject loadCommon(ThreadContext context, RubyString path, boolean wrap) {
+        context.runtime.getLoadService().load(path.toString(), wrap);
 
-        return runtime.getTrue();
+        return context.tru;
     }
 
-    private static IRubyObject loadCommon(Ruby runtime, RubyString path, IRubyObject wrap) {
+    private static IRubyObject loadCommon(ThreadContext context, RubyString path, IRubyObject wrap) {
         String file = path.toString();
-        LoadService loadService = runtime.getLoadService();
+        LoadService loadService = context.runtime.getLoadService();
 
         if (wrap.isNil() || wrap instanceof RubyBoolean) {
             loadService.load(file, wrap.isTrue());
@@ -1226,7 +1223,7 @@ public class RubyKernel {
             loadService.load(file, wrap);
         }
 
-        return runtime.getTrue();
+        return context.tru;
     }
 
     @JRubyMethod(name = "eval", required = 1, optional = 3, checkArity = false, module = true, visibility = PRIVATE,

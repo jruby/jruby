@@ -152,23 +152,29 @@ public class RubyFileStat extends RubyObject {
         return initialize(fname, unusedBlock);
     }
 
-    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
+    /**
+     * @param fname
+     * @param unusedBlock
+     * @return ""
+     * @deprecated Use {@link RubyFileStat#initialize(ThreadContext, IRubyObject, Block)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
     public IRubyObject initialize(IRubyObject fname, Block unusedBlock) {
-        Ruby runtime = getRuntime();
-        ThreadContext context = runtime.getCurrentContext();
-        RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, fname));
-        setup(path.convertToString().toString(), false);
+        return initialize(getCurrentContext(), fname, unusedBlock);
+    }
 
-        return this;    
+    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject fname, Block unusedBlock) {
+        setup(RubyFile.get_path(context, fname).toString(), false);
+        return this;
     }
     
     @JRubyMethod(name = "atime")
     public IRubyObject atime(ThreadContext context) {
         checkInitialized(context);
-        if (stat instanceof NanosecondFileStat) {
-            return RubyTime.newTimeFromNanoseconds(context, stat.atime() * BILLION + ((NanosecondFileStat) stat).aTimeNanoSecs());
-        }
-        return context.runtime.newTime(stat.atime() * 1000);
+        return stat instanceof NanosecondFileStat nanoStat ?
+                RubyTime.newTimeFromNanoseconds(context, stat.atime() * BILLION + nanoStat.aTimeNanoSecs()) :
+                context.runtime.newTime(stat.atime() * 1000);
     }
 
     @Deprecated
