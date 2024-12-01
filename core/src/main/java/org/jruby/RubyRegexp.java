@@ -1571,19 +1571,18 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     @JRubyMethod
     public IRubyObject named_captures(ThreadContext context) {
         check();
-        final Ruby runtime = context.runtime;
-        RubyHash hash = RubyHash.newHash(runtime);
+        RubyHash hash = newHash(context);
         if (pattern.numberOfNames() == 0) return hash;
 
         for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
             NameEntry e = i.next();
             int[] backrefs = e.getBackRefs();
-            RubyArray ary = RubyArray.newBlankArrayInternal(runtime, backrefs.length);
+            RubyArray ary = RubyArray.newBlankArrayInternal(context.runtime, backrefs.length);
 
             for (int idx = 0; idx<backrefs.length; idx++) {
                 ary.storeInternal(context, idx, asFixnum(context, backrefs[idx]));
             }
-            RubyString name = RubyString.newStringShared(runtime, e.name, e.nameP, e.nameEnd - e.nameP);
+            RubyString name = RubyString.newStringShared(context.runtime, e.name, e.nameP, e.nameEnd - e.nameP);
             hash.fastASet(name.freeze(context), ary);
         }
         return hash;

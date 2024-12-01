@@ -31,6 +31,8 @@ package org.jruby.ext.pathname;
 
 import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Create.newSmallHash;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 
@@ -323,28 +325,25 @@ public class RubyPathname extends RubyObject {
     @JRubyMethod(required = 1, optional = 1, checkArity = false)
     public IRubyObject glob(ThreadContext context, IRubyObject[] _args, Block block) {
         int argc = Arity.checkArgumentCount(context, _args, 1, 2);
-
-        Ruby runtime = context.runtime;
-
         IRubyObject[] args = new IRubyObject[3];
         boolean blockGiven = block.isGiven();
 
         args[0] = _args[0];
         if (argc == 1) {
-            args[1] = RubyFixnum.zero(runtime);
+            args[1] = asFixnum(context, 0);
         } else {
             args[1] = _args[1];
         }
 
-        args[2] = RubyHash.newSmallHash(runtime);
-        ((RubyHash) args[2]).fastASetSmall(runtime.newSymbol("base"), getPath());
+        args[2] = newSmallHash(context);
+        ((RubyHash) args[2]).fastASetSmall(asSymbol(context, "base"), getPath());
 
         JavaSites.PathnameSites sites = sites(context);
         CallSite glob = sites.glob;
 
         RubyArray ary;
         long i;
-        ary = glob.call(context, this, runtime.getDir(), args).convertToArray();
+        ary = glob.call(context, this, context.runtime.getDir(), args).convertToArray();
         CallSite op_plus = sites.op_plus;
         for (i = 0; i < ary.size(); i++) {
             IRubyObject elt = ary.eltOk(i);
@@ -358,8 +357,7 @@ public class RubyPathname extends RubyObject {
 
     @JRubyMethod
     public IRubyObject opendir(ThreadContext context, Block block) {
-        return context.runtime.getDir().callMethod(context, "open", new IRubyObject[] { getPath()},
-                block);
+        return context.runtime.getDir().callMethod(context, "open", new IRubyObject[] { getPath()}, block);
     }
 
     @JRubyMethod

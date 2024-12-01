@@ -17,6 +17,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static org.jruby.api.Create.newHash;
+import static org.jruby.api.Create.newSmallHash;
+
 // Represents a hash { _ =>_, _ => _ .. } in ruby
 //
 // NOTE: This operand is only used in the initial stages of optimization.
@@ -122,7 +125,7 @@ public class Hash extends Operand {
             // Skip the first pair
             index++;
         } else {
-            hash = smallHash ? RubyHash.newSmallHash(runtime) : RubyHash.newHash(runtime);
+            hash = smallHash ? newSmallHash(context) : newHash(context);
         }
 
 
@@ -132,9 +135,9 @@ public class Hash extends Operand {
             IRubyObject value = (IRubyObject) pair.getValue().retrieve(context, self, currScope, currDynScope, temp);
 
             if (smallHash) {
-                hash.fastASetSmallCheckString(runtime, key, value);
+                hash.fastASetSmallCheckString(context.runtime, key, value);
             } else {
-                hash.fastASetCheckString(runtime, key, value);
+                hash.fastASetCheckString(context.runtime, key, value);
             }
         }
 

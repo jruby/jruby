@@ -95,6 +95,8 @@ import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyEnumerator.enumWithSize;
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Create.newHash;
+import static org.jruby.api.Create.newSmallHash;
 import static org.jruby.api.Error.*;
 import static org.jruby.runtime.Helpers.*;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -2338,11 +2340,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     @JRubyMethod(name = "to_h")
     public IRubyObject to_h(ThreadContext context, Block block) {
-        Ruby runtime = context.runtime;
-
         boolean useSmallHash = realLength <= 10;
-
-        RubyHash hash = useSmallHash ? RubyHash.newSmallHash(runtime) : RubyHash.newHash(runtime);
+        RubyHash hash = useSmallHash ? newSmallHash(context) : newHash(context);
 
         for (int i = 0; i < realLength; i++) {
             IRubyObject e = eltOk(i);
@@ -2357,9 +2356,9 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             }
 
             if (useSmallHash) {
-                hash.fastASetSmall(runtime, ary.eltOk(0), ary.eltOk(1), true);
+                hash.fastASetSmall(context.runtime, ary.eltOk(0), ary.eltOk(1), true);
             } else {
-                hash.fastASet(runtime, ary.eltOk(0), ary.eltOk(1), true);
+                hash.fastASet(context.runtime, ary.eltOk(0), ary.eltOk(1), true);
             }
         }
         return hash;

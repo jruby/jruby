@@ -59,8 +59,7 @@ import org.jruby.util.io.EncodingUtils;
 import static com.headius.backport9.buffer.Buffers.clearBuffer;
 import static com.headius.backport9.buffer.Buffers.flipBuffer;
 import static org.jruby.api.Convert.asBoolean;
-import static org.jruby.api.Create.newArray;
-import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.*;
 
 @JRubyClass(name="Encoding")
 public class RubyEncoding extends RubyObject implements Constantizable {
@@ -524,10 +523,9 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     public static IRubyObject aliases(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.runtime;
         EncodingService service = runtime.getEncodingService();
-
         IRubyObject list[] = service.getEncodingList();
         HashEntryIterator i = service.getAliases().entryIterator();
-        RubyHash result = RubyHash.newHash(runtime);
+        RubyHash result = newHash(context);
 
         while (i.hasNext()) {
             CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e =
@@ -538,10 +536,8 @@ public class RubyEncoding extends RubyObject implements Constantizable {
             result.fastASet(alias, name);
         }
 
-        result.fastASet(runtime.newString(EXTERNAL),
-                runtime.newString(new ByteList(runtime.getDefaultExternalEncoding().getName())));
-        result.fastASet(runtime.newString(LOCALE),
-                runtime.newString(new ByteList(service.getLocaleEncoding().getName())));
+        result.fastASet(newString(context, EXTERNAL), newString(context, new ByteList(runtime.getDefaultExternalEncoding().getName())));
+        result.fastASet(newString(context, LOCALE), newString(context, new ByteList(service.getLocaleEncoding().getName())));
 
         return result;
     }

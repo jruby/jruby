@@ -142,26 +142,20 @@ public class RubyStruct extends RubyObject {
     public IRubyObject deconstruct_keys(ThreadContext context, IRubyObject keysArg) {
         if (keysArg.isNil()) return to_h(context, Block.NULL_BLOCK);
 
-        if (!(keysArg instanceof RubyArray)) throw typeError(context, keysArg, "Array or nil");
+        if (!(keysArg instanceof RubyArray keys)) throw typeError(context, keysArg, "Array or nil");
 
-        RubyArray keys = (RubyArray) keysArg;
         int length = keys.size();
-        RubyHash hash = RubyHash.newSmallHash(context.runtime);
-        if (values.length < length) {
-            return hash;
-        }
+        RubyHash hash = newSmallHash(context);
+        if (values.length < length) return hash;
 
         for (int i = 0; i < length; i++) {
             IRubyObject key = keys.eltOk(i);
-            IRubyObject value;
-
             try {
-                value = this.aref(key);
+                var value = this.aref(key);
+                hash.op_aset(context, key, value);
             } catch (RaiseException e) {
-                return hash;
+                break;
             }
-
-            hash.op_aset(context, key, value);
         }
 
         return hash;
@@ -708,7 +702,7 @@ public class RubyStruct extends RubyObject {
 
     @JRubyMethod
     public RubyHash to_h(ThreadContext context, Block block) {
-        RubyHash hash = RubyHash.newHash(context.runtime);
+        RubyHash hash = newHash(context);
         RubyArray members = __member__();
 
         if (block.isGiven()) {

@@ -429,7 +429,7 @@ public class PopenExecutor {
                     }
                 }
 
-                if (nonopts == null) nonopts = RubyHash.newHash(context.runtime);
+                if (nonopts == null) nonopts = newHash(context);
                 nonopts.op_aset(context, key, val);
             }
         }
@@ -1121,18 +1121,12 @@ public class PopenExecutor {
     }
 
     static void execargParentStart1(ThreadContext context, ExecArg eargp) {
-        boolean unsetenv_others;
-        RubyArray envopts;
-        RubyArray<RubyArray> ary;
-        Ruby runtime = context.runtime;
-        RubyClass hashClass = runtime.getHash();
+        RubyClass hashClass = context.runtime.getHash();
 
         eargp.redirect_fds = checkExecFds(context, eargp);
 
-        ary = eargp.fd_open;
-        if (ary != null) {
-            run_exec_open(context, ary, eargp);
-        }
+        RubyArray<RubyArray> ary = eargp.fd_open;
+        if (ary != null) run_exec_open(context, ary, eargp);
 
         ary = eargp.fd_dup2;
         if (ary != null) {
@@ -1143,14 +1137,13 @@ public class PopenExecutor {
         }
 
         IRubyObject envtbl;
-        unsetenv_others = eargp.unsetenvOthersGiven && eargp.unsetenvOthersDo;
-        envopts = eargp.env_modification;
+        boolean unsetenv_others = eargp.unsetenvOthersGiven && eargp.unsetenvOthersDo;
+        RubyArray envopts = eargp.env_modification;
         if (unsetenv_others || envopts != null) {
             if (unsetenv_others) {
-                envtbl = RubyHash.newHash(runtime);
-            }
-            else {
-                envtbl = runtime.getObject().getConstant("ENV");
+                envtbl = newHash(context);
+            } else {
+                envtbl = context.runtime.getObject().getConstant("ENV");
                 envtbl = TypeConverter.convertToType(envtbl, hashClass, "to_hash").dup();
             }
             if (envopts != null) {
@@ -1172,7 +1165,7 @@ public class PopenExecutor {
         } else {
             // In MRI, they use the current env as the baseline because they fork+exec. We can't do that,
             // and posix_spawn needs a full env, so we pass even unmodified env through.
-            envtbl = runtime.getObject().getConstant("ENV");
+            envtbl = context.runtime.getObject().getConstant("ENV");
             envtbl = TypeConverter.convertToType(envtbl, hashClass, "to_hash");
         }
         buildEnvp(context, eargp, (RubyHash) envtbl);
@@ -1238,10 +1231,8 @@ public class PopenExecutor {
     }
 
     static IRubyObject checkExecFds(ThreadContext context, ExecArg eargp) {
-        RubyHash h = RubyHash.newHash(context.runtime);
+        RubyHash h = newHash(context);
         int maxhint = -1;
-        long i;
-
         maxhint = checkExecFds1(context, eargp, h, maxhint, eargp.fd_dup2);
         maxhint = checkExecFds1(context, eargp, h, maxhint, eargp.fd_close);
         maxhint = checkExecFds1(context, eargp, h, maxhint, eargp.fd_open);
@@ -1249,7 +1240,7 @@ public class PopenExecutor {
 
         if (eargp.fd_dup2_child != null) {
             RubyArray ary = eargp.fd_dup2_child;
-            for (i = 0; i < ary.size(); i++) {
+            for (int i = 0; i < ary.size(); i++) {
                 RubyArray elt = (RubyArray) ary.eltOk(i);
                 int newfd = RubyNumeric.fix2int(elt.eltOk(0));
                 int oldfd = RubyNumeric.fix2int(elt.eltOk(1));
@@ -1259,14 +1250,11 @@ public class PopenExecutor {
                 while (val instanceof RubyFixnum && 0 <= ((RubyFixnum)val).getIntValue()) {
                     lastfd = RubyNumeric.fix2int(val);
                     val = h.fastARef(val);
-                    if (ary.size() < depth) {
-                        throw argumentError(context, "cyclic child fd redirection from " + oldfd);
-                    }
+                    if (ary.size() < depth) throw argumentError(context, "cyclic child fd redirection from " + oldfd);
                     depth++;
                 }
-                if (val != context.tru) {
-                    throw argumentError(context, "child fd " + oldfd + " is not redirected");
-                }
+                if (val != context.tru) throw argumentError(context, "child fd " + oldfd + " is not redirected");
+
                 if (oldfd != lastfd) {
                     IRubyObject val2;
                     elt.store(1, asFixnum(context, lastfd));

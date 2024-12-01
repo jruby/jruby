@@ -1118,14 +1118,10 @@ public class IRRuntimeHelpers {
         //   This replacement logic is correct even if that was figured out but this should just be
         //   hash = checkHashType(...).dup().
         RubyHash hash;
-        if (!(restKwarg instanceof RubyHash)) {
+        if (!(restKwarg instanceof RubyHash hsh)) {
             hash = (RubyHash) TypeConverter.checkHashType(context.runtime, restKwarg);
         } else {
-            if (!((RubyHash) restKwarg).isEmpty()) {
-                hash = (RubyHash) restKwarg.dup();
-            } else {
-                hash = RubyHash.newHash(context.runtime);
-            }
+            hash = !hsh.isEmpty() ? (RubyHash) hsh.dup() : newHash(context);
         }
         hash.modify();
 
@@ -1333,7 +1329,7 @@ public class IRRuntimeHelpers {
 
     @JIT @Interp
     public static IRubyObject receiveKeywordRestArg(ThreadContext context, IRubyObject keywords) {
-        return keywords == UNDEFINED ? RubyHash.newSmallHash(context.runtime) : (RubyHash) keywords;
+        return keywords == UNDEFINED ? newSmallHash(context) : (RubyHash) keywords;
     }
 
     public static IRubyObject setCapturedVar(ThreadContext context, IRubyObject matchRes, String id) {
@@ -1625,19 +1621,18 @@ public class IRRuntimeHelpers {
         return context.runtime.getEncodingService().findEncodingOrAliasEntry(name.getBytes()).getEncoding();
     }
 
-    // FIXME: Pass context instead of runtime.
     @JIT
-    public static RubyHash constructHashFromArray(Ruby runtime, IRubyObject[] pairs) {
+    public static RubyHash constructHashFromArray(ThreadContext context, IRubyObject[] pairs) {
         int length = pairs.length / 2;
         boolean useSmallHash = length <= 10;
 
-        RubyHash hash = useSmallHash ? RubyHash.newSmallHash(runtime) : RubyHash.newHash(runtime);
+        RubyHash hash = useSmallHash ? newSmallHash(context) : newHash(context);
 
         for (int i = 0; i < pairs.length;) {
             if (useSmallHash) {
-                hash.fastASetSmall(runtime, pairs[i++], pairs[i++], true);
+                hash.fastASetSmall(context.runtime, pairs[i++], pairs[i++], true);
             } else {
-                hash.fastASet(runtime, pairs[i++], pairs[i++], true);
+                hash.fastASet(context.runtime, pairs[i++], pairs[i++], true);
             }
 
         }
@@ -2214,7 +2209,7 @@ public class IRRuntimeHelpers {
             IRubyObject[] newArgs = ArraySupport.newCopy(args, len);
             if (actual < len) {
                 // Not enough args and we need an empty {} for kwargs processing.
-                newArgs[len - 1] = RubyHash.newHash(context.runtime);
+                newArgs[len - 1] = newHash(context);
             } else {
                 // We have more args than we need and kwargs is always the last arg.
                 newArgs[len - 1] = args[args.length - 1];

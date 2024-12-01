@@ -39,6 +39,7 @@ import java.util.function.BiConsumer;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.castAsHash;
+import static org.jruby.api.Create.newHash;
 import static org.jruby.api.Error.*;
 
 public class ThreadFiber extends RubyObject implements ExecutionContext {
@@ -740,7 +741,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         if (storage == null) {
             if (nil) return context.nil;
 
-            current.storage = storage = RubyHash.newHash(context.runtime);
+            current.storage = storage = newHash(context);
         }
 
         if (nil) {

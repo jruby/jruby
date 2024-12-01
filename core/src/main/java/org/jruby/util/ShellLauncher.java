@@ -31,6 +31,7 @@ package org.jruby.util;
 import static com.headius.backport9.buffer.Buffers.clearBuffer;
 import static com.headius.backport9.buffer.Buffers.flipBuffer;
 import static java.lang.System.out;
+import static org.jruby.api.Create.newHash;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
@@ -250,12 +251,9 @@ public class ShellLauncher {
 
         try {
             // dup for JRUBY-6603 (avoid concurrent modification while we walk it)
-            RubyHash hash = null;
-            if (clearEnv) {
-                hash = RubyHash.newHash(context.runtime);
-            } else {
-                hash = (RubyHash) context.runtime.getObject().getConstant("ENV").dup();
-            }
+            RubyHash hash = clearEnv ?
+                    newHash(context) :
+                    (RubyHash) context.runtime.getObject().getConstant("ENV").dup();
 
             if (mergeEnv != null) {
                 if (mergeEnv instanceof Set) {

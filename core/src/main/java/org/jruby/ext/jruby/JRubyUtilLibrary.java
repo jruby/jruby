@@ -49,8 +49,7 @@ import org.jruby.runtime.load.BasicLibraryService;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.ClasspathLauncher;
 
-import static org.jruby.api.Convert.asBoolean;
-import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.util.URLUtil.getPath;
@@ -411,11 +410,10 @@ public class JRubyUtilLibrary implements Library {
      */
     @JRubyMethod(name = "cache_stats", module = true)
     public static IRubyObject cache_stats(ThreadContext context, IRubyObject self) {
-        RubyHash stat = RubyHash.newHash(context.runtime);
         var caches = context.runtime.getCaches();
-        stat.op_aset(context, Convert.asSymbol(context, "method_invalidation_count"), asFixnum(context, caches.getMethodInvalidationCount()));
-        stat.op_aset(context, Convert.asSymbol(context, "constant_invalidation_count"), asFixnum(context, caches.getConstantInvalidationCount()));
-
+        var stat = newHash(context);
+        stat.op_aset(context, asSymbol(context, "method_invalidation_count"), asFixnum(context, caches.getMethodInvalidationCount()));
+        stat.op_aset(context, asSymbol(context, "constant_invalidation_count"), asFixnum(context, caches.getConstantInvalidationCount()));
         return stat;
     }
 

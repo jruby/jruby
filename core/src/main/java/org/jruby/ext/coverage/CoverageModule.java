@@ -209,38 +209,37 @@ public class CoverageModule {
     }
 
     private static IRubyObject convertCoverageToRuby(ThreadContext context, Map<String, IntList> coverage, int mode) {
-        Ruby runtime = context.runtime;
-        // populate a Ruby Hash with coverage data
-        RubyHash covHash = RubyHash.newHash(runtime);
-        if (coverage != null) {
-            for (Map.Entry<String, IntList> entry : coverage.entrySet()) {
-                final IntList val = entry.getValue();
-                boolean oneshot = (mode & CoverageData.ONESHOT_LINES) != 0;
+        if (coverage == null) return newSmallHash(context);
 
-                var ary = newArray(context, val.size());
-                for (int i = 0; i < val.size(); i++) {
-                    int integer = val.get(i);
-                    if (oneshot) {
-                        ary.push(asFixnum(context, integer + 1));
-                    } else {
-                        ary.store(i, integer == -1 ? context.nil : asFixnum(context, integer));
-                    }
+        RubyHash covHash = newHash(context);         // populate a Ruby Hash with coverage data
+
+        for (Map.Entry<String, IntList> entry : coverage.entrySet()) {
+            final IntList val = entry.getValue();
+            boolean oneshot = (mode & CoverageData.ONESHOT_LINES) != 0;
+
+            var ary = newArray(context, val.size());
+            for (int i = 0; i < val.size(); i++) {
+                int integer = val.get(i);
+                if (oneshot) {
+                    ary.push(asFixnum(context, integer + 1));
+                } else {
+                    ary.store(i, integer == -1 ? context.nil : asFixnum(context, integer));
                 }
-
-                RubyString key = newString(context, entry.getKey());
-                IRubyObject value = ary;
-
-                if (mode != 0) {
-                    RubyHash oneshotHash = RubyHash.newSmallHash(runtime);
-                    RubySymbol linesKey = asSymbol(context, oneshot ? "oneshot_lines" : "lines");
-                    oneshotHash.fastASetSmall(linesKey, ary);
-                    value = oneshotHash;
-                }
-
-                covHash.fastASetCheckString(runtime, key, value);
             }
+
+            RubyString key = newString(context, entry.getKey());
+            IRubyObject value = ary;
+
+            if (mode != 0) {
+                RubyHash oneshotHash = newSmallHash(context);
+                RubySymbol linesKey = asSymbol(context, oneshot ? "oneshot_lines" : "lines");
+                oneshotHash.fastASetSmall(linesKey, ary);
+                value = oneshotHash;
+            }
+
+            covHash.fastASetCheckString(context.runtime, key, value);
         }
-        
+
         return covHash;
     }
     

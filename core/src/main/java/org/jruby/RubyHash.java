@@ -43,6 +43,7 @@ import com.headius.backport9.buffer.Buffers;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Create;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
@@ -1139,13 +1140,12 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod
     public RubyHash to_h(ThreadContext context, Block block) {
-        final Ruby runtime = context.runtime;
         if (block.isGiven()) return to_h_block(context, block);
-        return getType() == runtime.getHash() ? this : newHash(runtime).replace(context, this);
+        return getType() == context.runtime.getHash() ? this : Create.newHash(context).replace(context, this);
     }
 
     protected RubyHash to_h_block(ThreadContext context, Block block) {
-        RubyHash result = newHash(context.runtime);
+        RubyHash result = Create.newHash(context);
 
         visitAll(context, (ctxt, self, key, value, index) -> {
             IRubyObject elt = block.yieldArray(ctxt, newArray(ctxt, key, value), null);
@@ -1178,16 +1178,16 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     public final void fastASetCheckString(Ruby runtime, IRubyObject key, IRubyObject value) {
-      if (key instanceof RubyString && !isComparedByIdentity()) {
-          op_asetForString(runtime, (RubyString) key, value);
+      if (key instanceof RubyString strKey && !isComparedByIdentity()) {
+          op_asetForString(runtime, strKey, value);
       } else {
           internalPut(key, value);
       }
     }
 
     public final void fastASetSmallCheckString(Ruby runtime, IRubyObject key, IRubyObject value) {
-        if (key instanceof RubyString) {
-            op_asetSmallForString(runtime, (RubyString) key, value);
+        if (key instanceof RubyString strKey) {
+            op_asetSmallForString(runtime, strKey, value);
         } else {
             internalPutSmall(key, value);
         }
@@ -1702,7 +1702,7 @@ public class RubyHash extends RubyObject implements Map {
         IRubyObject transformHash = args.length > 0 ?
                 TypeConverter.convertToTypeWithCheck(args[0], context.runtime.getHash(), "to_hash") :
                 context.nil;
-        RubyHash result = newHash(context.runtime);
+        RubyHash result = Create.newHash(context);
 
         if (!isEmpty()) {
             if (!transformHash.isNil()) {
@@ -1747,7 +1747,7 @@ public class RubyHash extends RubyObject implements Map {
 
         if (!isEmpty()) {
             RubyArray pairs = (RubyArray) flatten(context);
-            RubyHash newKeys = newHash(context.runtime);
+            RubyHash newKeys = Create.newHash(context);
             int length = pairs.size();
             boolean aborted = false; // If break happens in blocks we stop transforming but still leave rest as-is.
             for (int i = 0; i < length; i += 2) {
@@ -1782,9 +1782,7 @@ public class RubyHash extends RubyObject implements Map {
                     }
                 }
 
-                if (!newKeys.hasKey(oldKey)) {
-                    fastDelete(oldKey);
-                }
+                if (!newKeys.hasKey(oldKey)) fastDelete(oldKey);
                 fastASet(newKey, pairs.eltOk(i + 1));
                 newKeys.fastASet(newKey, null);
             }
@@ -2009,12 +2007,12 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = "slice", rest = true)
     public RubyHash slice(final ThreadContext context, final IRubyObject[] args) {
-        RubyHash result = newHash(context.runtime);
+        RubyHash result = Create.newHash(context);
         result.setComparedByIdentity(isComparedByIdentity());
 
         for (int i = 0; i < args.length; i++) {
             IRubyObject key = args[i];
-            IRubyObject value = this.internalGet(key);
+            IRubyObject value = internalGet(key);
             if (value != null) result.op_aset(key, value);
         }
 
@@ -2099,7 +2097,7 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = "invert")
     public RubyHash invert(final ThreadContext context) {
-        final RubyHash result = newHash(metaClass.runtime);
+        final RubyHash result = Create.newHash(context);
 
         visitAll(context, InvertVisitor, result);
 

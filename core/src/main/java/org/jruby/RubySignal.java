@@ -41,6 +41,7 @@ import org.jruby.util.NoFunctionalitySignalFacade;
 import java.util.*;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newHash;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 
@@ -145,7 +146,7 @@ public class RubySignal {
         synchronized (recv) {
             names = (RubyHash) recv.getInternalVariables().getInternalVariable("signal_list");
             if (names == null) {
-                names = RubyHash.newHash(runtime);
+                names = newHash(context);
                 for (Map.Entry<String, Integer> sig : RubySignal.list().entrySet()) {
                     names.op_aset(context, runtime.newDeduplicatedString(sig.getKey()), asFixnum(context, sig.getValue()));
                 }

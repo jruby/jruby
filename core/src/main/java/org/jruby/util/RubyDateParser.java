@@ -66,7 +66,7 @@ public class RubyDateParser {
 
     static RubyHash convertFormatBagToHash(ThreadContext context, StrptimeParser.FormatBag bag,
                                            Encoding encoding) {
-        final RubyHash hash = RubyHash.newHash(context.runtime);
+        final RubyHash hash = newHash(context);
 
         if (has(bag.getMDay())) setHashValue(context, hash, "mday", asFixnum(context, bag.getMDay()));
         if (has(bag.getWDay())) setHashValue(context, hash, "wday", asFixnum(context, bag.getWDay()));

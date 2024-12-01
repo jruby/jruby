@@ -665,7 +665,7 @@ public class EncodingUtils {
                 throw argumentError(context, "replacement string is broken: " + v_str);
             }
             v = v_str.freeze(context);
-            newhash = RubyHash.newHash(context.runtime);
+            newhash = newHash(context);
             ((RubyHash)newhash).op_aset(context, Convert.asSymbol(context, "replace"), v);
         }
 
@@ -681,7 +681,7 @@ public class EncodingUtils {
             }
 
             if (condition) {
-                if (newhash.isNil()) newhash = RubyHash.newHash(context.runtime);
+                if (newhash.isNil()) newhash = newHash(context);
 
                 ((RubyHash)newhash).op_aset(context, Convert.asSymbol(context, "fallback"), v);
             }

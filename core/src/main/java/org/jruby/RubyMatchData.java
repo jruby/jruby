@@ -854,7 +854,7 @@ public class RubyMatchData extends RubyObject {
         check();
 
         int argc = Arity.checkArgumentCount(context, args.length, 0, 0, true);
-        RubyHash hash = RubyHash.newSmallHash(context.runtime);
+        RubyHash hash = newSmallHash(context);
         if (regexp == context.nil) return hash;
 
         final boolean symbolizeNames;
@@ -867,8 +867,7 @@ public class RubyMatchData extends RubyObject {
         }
 
         getNamedBackrefKeys(context).forEach(entry -> {
-            IRubyObject key = symbolizeNames ?
-                    symbolFromNameEntry(context, entry) : stringFromNameEntry(context, entry);
+            IRubyObject key = symbolizeNames ? symbolFromNameEntry(context, entry) : stringFromNameEntry(context, entry);
             boolean found = false;
 
             for (int b : entry.getBackRefs()) {
@@ -893,8 +892,7 @@ public class RubyMatchData extends RubyObject {
 
     @JRubyMethod
     public IRubyObject deconstruct_keys(ThreadContext context, IRubyObject what) {
-        Ruby runtime = context.runtime;
-        RubyHash hash = RubyHash.newSmallHash(runtime);
+        RubyHash hash = newSmallHash(context);
 
         if (what.isNil()) {
             getNamedBackrefKeys(context).forEach(entry -> {
@@ -911,7 +909,7 @@ public class RubyMatchData extends RubyObject {
             Iterable<IRubyObject> iterable = () -> arr.rubyStream().iterator();
             for (IRubyObject obj : iterable) {
                 if (!(obj instanceof RubySymbol requestedKey)) {
-                    throw typeError(context, str(runtime, "wrong argument type ", obj.getMetaClass(), " (expected Symbol)"));
+                    throw typeError(context, str(context.runtime, "wrong argument type ", obj.getMetaClass(), " (expected Symbol)"));
                 }
 
                 int index = nameToBackrefNumber(getPattern(), regs, requestedKey.getBytes());
@@ -923,7 +921,7 @@ public class RubyMatchData extends RubyObject {
                 hash.op_aset(context, requestedKey, value);
             }
         } else {
-            throw typeError(context, str(runtime, "wrong argument type ", what.getMetaClass(), " (expected Array)"));
+            throw typeError(context, str(context.runtime, "wrong argument type ", what.getMetaClass(), " (expected Array)"));
         }
         return hash;
     }

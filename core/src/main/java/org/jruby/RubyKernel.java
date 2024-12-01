@@ -569,11 +569,11 @@ public class RubyKernel {
 
     @JRubyMethod(name = "Hash", required = 1, module = true, visibility = PRIVATE)
     public static IRubyObject new_hash(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        if (arg == context.nil) return RubyHash.newHash(context.runtime);
+        if (arg == context.nil) return newHash(context);
 
         IRubyObject tmp = TypeConverter.checkHashType(context, sites(context).to_hash_checked, arg);
         if (tmp == context.nil) {
-            if (arg instanceof RubyArray && ((RubyArray) arg).isEmpty()) return RubyHash.newHash(context.runtime);
+            if (arg instanceof RubyArray && ((RubyArray) arg).isEmpty()) return newHash(context);
             throw typeError(context, "can't convert ", arg, " into Hash");
         }
         return tmp;
