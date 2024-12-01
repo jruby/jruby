@@ -47,6 +47,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.api.Check;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.runtime.Block;
@@ -926,16 +927,7 @@ public final class StringSupport {
     // MRI: StringValueCStr, rb_string_value_cstr without trailing null addition
     @Deprecated(since = "10.0", forRemoval = true)
     public static RubyString checkEmbeddedNulls(Ruby runtime, IRubyObject ptr) {
-        Object[] checked = strNullCheck(ptr);
-
-        if (checked[0] == null) {
-            if ((boolean)checked[1]) {
-                throw argumentError(runtime.getCurrentContext(), "string contains null char");
-            }
-            throw argumentError(runtime.getCurrentContext(), "string contains null byte");
-        }
-
-        return (RubyString) checked[0];
+        return Check.checkEmbeddedNulls(runtime.getCurrentContext(), ptr);
     }
 
     // MRI: str_null_check without trailing null check (JVM arrays do not null terminate)
