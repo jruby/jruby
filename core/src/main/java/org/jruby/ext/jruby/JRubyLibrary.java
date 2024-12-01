@@ -54,6 +54,7 @@ import java.io.ByteArrayInputStream;
 
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newEmptyString;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.parser.ParserType.INLINE;
 
@@ -277,7 +278,7 @@ public class JRubyLibrary implements Library {
 
         final RubyString content = args[0].convertToString();
         args[0] = content;
-        final RubyString filename = argc > 1 ? args[1].convertToString() : RubyString.newEmptyString(runtime);
+        final RubyString filename = argc > 1 ? args[1].convertToString() : newEmptyString(context);
 
         IRScriptBody scope = compileIR(context, args, block);
 
@@ -285,7 +286,7 @@ public class JRubyLibrary implements Library {
         JVMVisitorMethodContext methodContext = new JVMVisitorMethodContext();
         byte[] bytes = visitor.compileToBytecode(scope, methodContext);
 
-        scope.getStaticScope().setModule( runtime.getTopSelf().getMetaClass() );
+        scope.getStaticScope().setModule(runtime.getTopSelf().getMetaClass());
 
         RubyClass CompiledScript = (RubyClass) runtime.getModule("JRuby").getConstantAt("CompiledScript");
         // JRuby::CompiledScript#initialize(filename, class_name, content, bytes)

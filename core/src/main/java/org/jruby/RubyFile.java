@@ -781,45 +781,30 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod(meta = true)
     public static IRubyObject extname(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         String filename = basename(context, recv, arg).toString();
-
         int dotIndex = filename.indexOf('.');
 
-        if (dotIndex >= 0) {
-            int length = filename.length();
+        if (dotIndex < 0) return newEmptyString(context);
 
-            if (dotIndex == length - 1 && length != 1) {
-                return newString(context, filename.substring(dotIndex));
-            }
+        int length = filename.length();
+        if (dotIndex == length - 1 && length != 1) return newString(context, filename.substring(dotIndex));
 
-            int e = dotIndex;
-
-            // skip through whole sequence of '........'
-            for (e = e + 1; e < length; e++) {
-                if (filename.charAt(e) != '.') {
-                    e = e - 1;
-                    break;
-                }
-            }
-
-            if (e == length) { // all dots
-                return RubyString.newEmptyString(context.runtime);
-            }
-
-            for (int i = e; i < length; i++) {
-                char c = filename.charAt(i);
-                if (c == '.' || c == ' ') {
-                    e = i;
-                }
-            }
-
-            if (e == 0) {
-                return RubyString.newEmptyString(context.runtime);
-            } else {
-                return newString(context, filename.substring(e));
+        int e = dotIndex;
+        // skip through whole sequence of '........'
+        for (e = e + 1; e < length; e++) {
+            if (filename.charAt(e) != '.') {
+                e = e - 1;
+                break;
             }
         }
 
-        return RubyString.newEmptyString(context.runtime);
+        if (e == length) return newEmptyString(context);  // all dots
+
+        for (int i = e; i < length; i++) {
+            char c = filename.charAt(i);
+            if (c == '.' || c == ' ') e = i;
+        }
+
+        return e == 0 ? newEmptyString(context) : newString(context, filename.substring(e));
     }
 
     /**

@@ -60,7 +60,6 @@ import org.jruby.util.ByteListHolder;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.StringSupport;
 
-import static org.jruby.RubyString.newEmptyString;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.*;
@@ -791,7 +790,7 @@ public class RubyMatchData extends RubyObject {
     public IRubyObject to_s(ThreadContext context) {
         check();
         IRubyObject ss = RubyRegexp.last_match(this);
-        return ss.isNil() ? newEmptyString(context.runtime) : ss;
+        return ss.isNil() ? newEmptyString(context) : ss;
     }
 
     /** match_string

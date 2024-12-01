@@ -50,6 +50,7 @@ import org.jruby.util.ByteList;
 
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newEmptyString;
 import static org.jruby.api.Error.*;
 
 /**
@@ -1836,11 +1837,9 @@ abstract public class AbstractMemory extends MemoryObject {
         if (rbLength.isNil()) return MemoryUtil.getTaintedString(context.runtime, getMemoryIO(), 0);
 
         int len = Util.int32Value(rbLength);
-        if (len != 0) return MemoryUtil.getTaintedByteString(context.runtime, getMemoryIO(), 0, len);
-
-        RubyString rstr = RubyString.newEmptyString(context.runtime);
-        rstr.setEncoding(ASCIIEncoding.INSTANCE);
-        return rstr;
+        return len != 0 ?
+                MemoryUtil.getTaintedByteString(context.runtime, getMemoryIO(), 0, len) :
+                newEmptyString(context, ASCIIEncoding.INSTANCE);
     }
 
     @JRubyMethod(name = "get_string")

@@ -212,6 +212,7 @@ import static java.lang.invoke.MethodHandles.insertArguments;
 import static java.lang.invoke.MethodType.methodType;
 import static org.jruby.RubyBoolean.FALSE_BYTES;
 import static org.jruby.RubyBoolean.TRUE_BYTES;
+import static org.jruby.api.Create.newEmptyString;
 import static org.jruby.api.Error.*;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.GLOBAL;
 import static org.jruby.parser.ParserType.*;
@@ -393,7 +394,8 @@ public final class Ruby implements Constantizable {
 
         falseString = newString(FALSE_BYTES);
         falseString.setFrozen(true);
-        nilString = RubyString.newEmptyString(this);
+
+        nilString = newEmptyString(context);
         nilString.setFrozen(true);
         trueString = newString(TRUE_BYTES);
         trueString.setFrozen(true);

@@ -58,8 +58,7 @@ import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyModule.undefinedMethodMessage;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Create.newArray;
-import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.javasupport.JavaUtil.convertJavaToUsableRubyObject;
@@ -248,7 +247,7 @@ public abstract class JavaLang {
         public static IRubyObject message(final ThreadContext context, final IRubyObject self) {
             java.lang.Throwable throwable = unwrapIfJavaObject(self);
             final java.lang.String msg = throwable.getLocalizedMessage(); // does getMessage
-            return msg == null ? RubyString.newEmptyString(context.runtime) : newString(context, msg);
+            return msg == null ? newEmptyString(context) : newString(context, msg);
         }
 
         @JRubyMethod

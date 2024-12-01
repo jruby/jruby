@@ -26,6 +26,7 @@ import org.jruby.util.TypeConverter;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Create.newEmptyString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.util.RubyStringBuilder.str;
 
@@ -348,7 +349,7 @@ public class TraceType {
     public static IRubyObject printDetailedMessage(ThreadContext context, IRubyObject exception, IRubyObject opts) {
         IRubyObject optArg = ArgsUtil.getOptionsArg(context, opts);
         IRubyObject highlightArg = checkHighlightKeyword(context, optArg, false);
-        RubyString errorStream = RubyString.newEmptyString(context.runtime);
+        RubyString errorStream = newEmptyString(context);
 
         printErrMessageToStream(exception, errorStream, highlightArg.isTrue());
 
@@ -413,7 +414,7 @@ public class TraceType {
     }
 
     private static RubyString printBacktraceMRI(IRubyObject exception, IRubyObject opts, boolean highlight, boolean reverse) {
-        RubyString errorStream = RubyString.newEmptyString(exception.getRuntime());
+        RubyString errorStream = newEmptyString(exception.getRuntime().getCurrentContext());
 
         if (reverse) {
             if (highlight) errorStream.catString(BOLD);

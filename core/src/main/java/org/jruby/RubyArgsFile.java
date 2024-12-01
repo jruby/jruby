@@ -815,7 +815,7 @@ public class RubyArgsFile extends RubyObject {
 
         if (data.argv.isEmpty()) return RubyIO.nonblockEOF(runtime, noException);
 
-        return args.length > 1 && args[1] instanceof RubyString ? args[1] : RubyString.newEmptyString(runtime);
+        return args.length > 1 && args[1] instanceof RubyString ? args[1] : newEmptyString(context);
     }
 
     @JRubyMethod

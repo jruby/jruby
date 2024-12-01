@@ -44,6 +44,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Sprintf;
 
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Create.newEmptyString;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 
@@ -138,7 +139,7 @@ public class RubyNameError extends RubyStandardError {
                     description = object.anyToString().asString();
                 }
 
-                singleton = description.size() > 0 && description.getByteList().get(0) == '#';
+                singleton = !description.isEmpty() && description.getByteList().get(0) == '#';
             }
 
             RubyString separator;
@@ -148,7 +149,7 @@ public class RubyNameError extends RubyStandardError {
                 separator = RubyString.newString(runtime, (byte) ':');
                 className = newString(context, object.getMetaClass().getRealClass().getName());
             } else {
-                className = separator = RubyString.newEmptyString(runtime);
+                className = separator = newEmptyString(context);
             }
 
             // RubyString name = this.name.asString(); // Symbol -> String

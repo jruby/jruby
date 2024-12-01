@@ -1824,11 +1824,9 @@ public class PopenExecutor {
                             eargp.argv_buf = argv_buf;
                         }
                     }
-                    if (argv_buf.size() > 0) {
-                        eargp.command_name = RubyString.newStringNoCopy(runtime, argv_buf.get(0));
-                    } else {
-                        eargp.command_name = RubyString.newEmptyString(runtime); // empty command will get caught below shortly
-                    }
+                    eargp.command_name = argv_buf.size() > 0 ?
+                            RubyString.newStringNoCopy(context.runtime, argv_buf.get(0)) :
+                            newEmptyString(context); // empty command will get caught below shortly
                 }
             }
         }

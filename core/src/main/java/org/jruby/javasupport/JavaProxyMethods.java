@@ -39,6 +39,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newEmptyString;
 
 public class JavaProxyMethods {
 
@@ -108,11 +109,10 @@ public class JavaProxyMethods {
     }
 
     static IRubyObject to_s(ThreadContext context, Object javaObject) {
-        if (javaObject != null) {
-            final String stringValue = javaObject.toString();
-            return stringValue == null ? context.nil : RubyString.newUnicodeString(context.runtime, stringValue);
-        }
-        return RubyString.newEmptyString(context.runtime);
+        if (javaObject == null) return newEmptyString(context);
+
+        final String stringValue = javaObject.toString();
+        return stringValue == null ? context.nil : RubyString.newUnicodeString(context.runtime, stringValue);
     }
 
     @Deprecated(since = "10.0", forRemoval = true)
@@ -122,36 +122,29 @@ public class JavaProxyMethods {
 
     @JRubyMethod
     public static IRubyObject inspect(IRubyObject recv) {
-        if (recv instanceof RubyBasicObject) {
-            return ((RubyBasicObject) recv).hashyInspect();
-        }
-        return recv.inspect();
+        return recv instanceof RubyBasicObject basic ? basic.hashyInspect() : recv.inspect();
     }
     
     @JRubyMethod
     public static IRubyObject hash(ThreadContext context, IRubyObject recv) {
-        if (recv instanceof JavaProxy) return asFixnum(context, ((JavaProxy) recv).getObject().hashCode());
+        if (recv instanceof JavaProxy proxy) return asFixnum(context, proxy.getObject().hashCode());
 
         // NOTE: only JavaProxy includes JavaProxyMethods these are only here for 'manual' JavaObject wrapping
-        return recv.dataGetStruct() instanceof IRubyObject ?
-                ((RubyBasicObject) recv.dataGetStruct()).hash() : ((RubyBasicObject) recv).hash();
+        return recv.dataGetStruct() instanceof IRubyObject dataStruct ?
+                ((RubyBasicObject) dataStruct).hash() : ((RubyBasicObject) recv).hash();
     }
     
     @JRubyMethod(name = "synchronized")
     public static IRubyObject rbSynchronized(ThreadContext context, IRubyObject recv, Block block) {
         final Object lock;
         final IRubyObject value;
-        if (recv instanceof JavaProxy) {
-            lock = ((JavaProxy) recv).getObject();
+        if (recv instanceof JavaProxy proxy) {
+            lock = proxy.getObject();
             value = recv;
         } else {
             // NOTE: only JavaProxy includes JavaProxyMethods
             // these is only here for 'manual' JavaObject wrapping :
-            if (recv.dataGetStruct() instanceof IRubyObject) {
-                lock = value = (IRubyObject) recv.dataGetStruct();
-            } else {
-                lock = value = recv;
-            }
+            lock = value = recv.dataGetStruct() instanceof IRubyObject dataStruct ? dataStruct : recv;
         }
         synchronized (lock) { return block.yield(context, value); }
     }

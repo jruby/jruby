@@ -541,12 +541,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @SuppressWarnings("ReferenceEquality")
     public static RubyString newUnicodeString(Ruby runtime, String str) {
-        Encoding defaultInternal = runtime.getDefaultInternalEncoding();
-        if (defaultInternal == UTF16BEEncoding.INSTANCE) {
-            return newUTF16String(runtime, str);
-        } else {
-            return newUTF8String(runtime, str);
-        }
+        return runtime.getDefaultInternalEncoding() == UTF16BEEncoding.INSTANCE ?
+            newUTF16String(runtime, str) : newUTF8String(runtime, str);
     }
 
     public static RubyString newUTF8String(Ruby runtime, String str) {
@@ -559,12 +555,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @SuppressWarnings("ReferenceEquality")
     public static RubyString newUnicodeString(Ruby runtime, CharSequence str) {
-        Encoding defaultInternal = runtime.getDefaultInternalEncoding();
-        if (defaultInternal == UTF16BEEncoding.INSTANCE) {
-            return newUTF16String(runtime, str);
-        } else {
-            return newUTF8String(runtime, str);
-        }
+        return runtime.getDefaultInternalEncoding() == UTF16BEEncoding.INSTANCE ?
+            newUTF16String(runtime, str) : newUTF8String(runtime, str);
     }
 
     public static RubyString newUTF8String(Ruby runtime, CharSequence str) {
@@ -2458,7 +2450,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         int p = strBL.begin();
         int pend = p + strBL.realSize();
         int prev = p;
-        RubyString result = RubyString.newEmptyString(context.runtime);
+        RubyString result = Create.newEmptyString(context);
         boolean unicode_p = enc.isUnicode();
         boolean asciicompat = enc.isAsciiCompatible();
 
@@ -4159,7 +4151,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (result.isNil()) {
             modifyCheck(); // keep cr ?
         } else {
-            op_aset(context, arg0, RubyString.newEmptyString(context.runtime));
+            op_aset(context, arg0, Create.newEmptyString(context));
         }
         return result;
     }
@@ -4170,7 +4162,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (result.isNil()) {
             modifyCheck(); // keep cr ?
         } else {
-            op_aset(context, arg0, arg1, RubyString.newEmptyString(context.runtime));
+            op_aset(context, arg0, arg1, Create.newEmptyString(context));
         }
         return result;
     }
@@ -4179,7 +4171,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     public IRubyObject succ(ThreadContext context) {
         return value.getRealSize() > 0 ?
                 Create.newString(context, StringSupport.succCommon(context, value)) :
-                newEmptyString(context.runtime, context.runtime.getString(), value.getEncoding());
+                Create.newEmptyString(context, value.getEncoding());
     }
 
     /**

@@ -51,6 +51,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.SafePropertyAccessor;
 
+import static org.jruby.api.Create.newEmptyString;
 import static org.jruby.api.Create.newString;
 
 @JRubyModule(name="Config")
@@ -225,7 +226,7 @@ public class RbConfigLibrary implements Library {
 
         // Ruby installed directory.
         rbConfig.setConstant("TOPDIR", newString(context, normalizedHome));
-        RubyString destDir = RubyString.newEmptyString(runtime);
+        RubyString destDir = newEmptyString(context);
         // DESTDIR on make install.
         rbConfig.setConstant("DESTDIR", destDir);
 

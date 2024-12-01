@@ -59,6 +59,7 @@ import java.io.PrintStream;
 import java.util.List;
 
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Create.newEmptyString;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
@@ -503,7 +504,7 @@ public class RubyException extends RubyObject {
     public void printBacktrace(PrintStream errorStream, int skip) {
         ThreadContext context = getRuntime().getCurrentContext();
         IRubyObject trace = callMethod(context, "backtrace");
-        RubyString string = RubyString.newEmptyString(getRuntime());
+        RubyString string = newEmptyString(context);
         TraceType.printBacktraceToStream(context, trace, string, skip);
         errorStream.print(string);
     }

@@ -36,6 +36,9 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newEmptyString;
+
 /**
  * The Java representation of a Ruby UncaughtThrowError.
  *
@@ -97,13 +100,10 @@ public class RubyUncaughtThrowError extends RubyArgumentError {
 
     @Override
     public RubyString to_s(ThreadContext context) {
-        if ( message.isNil() ) {
-            return RubyString.newEmptyString(context.runtime);
-        }
-        if ( tag == null ) return message.asString();
+        if (message.isNil()) return newEmptyString(context);
+        if (tag == null) return message.asString();
 
-        final RubyString str = message.asString();
-        return str.op_format(context, RubyArray.newArray(context.runtime, tag));
+        return message.asString().op_format(context, newArray(context, tag));
     }
 
     @Override

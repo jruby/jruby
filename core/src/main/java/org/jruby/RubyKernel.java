@@ -1782,17 +1782,13 @@ public class RubyKernel {
         Ruby runtime = context.runtime;
 
         if (PopenExecutor.nativePopenAvailable(runtime)) {
-            IRubyObject port;
-            IRubyObject result;
-            OpenFile fptr;
-
             str = str.convertToString();
             context.setLastExitStatus(context.nil);
-            port = PopenExecutor.pipeOpen(context, str, "r", OpenFile.READABLE|OpenFile.TEXTMODE, null);
-            if (port.isNil()) return RubyString.newEmptyString(runtime);
+            IRubyObject port = PopenExecutor.pipeOpen(context, str, "r", OpenFile.READABLE|OpenFile.TEXTMODE, null);
+            if (port.isNil()) return newEmptyString(context);
 
-            fptr = ((RubyIO)port).getOpenFileChecked();
-            result = fptr.readAll(context, fptr.remainSize(), context.nil);
+            OpenFile fptr = ((RubyIO)port).getOpenFileChecked();
+            IRubyObject result = fptr.readAll(context, fptr.remainSize(), context.nil);
             ((RubyIO)port).rbIoClose(context);
 
             return result;
