@@ -582,7 +582,7 @@ public class RubyEtc {
 
     @JRubyMethod(module = true)
     public static synchronized IRubyObject uname(ThreadContext context, IRubyObject self) {
-        RubyHash uname = RubyHash.newHash(context.runtime);
+        RubyHash uname = newHash(context);
 
         uname.op_aset(context,
                 Convert.asSymbol(context, "sysname"),

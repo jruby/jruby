@@ -77,21 +77,41 @@ public class Create {
      *
      * @param context the current thread context
      * @param list the elements of the array
-     * @return the new array
+     * @return a new array
      */
     public static RubyArray<?> newArray(ThreadContext context, List<IRubyObject> list) {
         return RubyArray.newArray(context.runtime, list);
     }
 
     /**
-     * Create a new array with many elements but do not copy the incoming array of elements..
+     * Create a new array with many elements but do not copy the incoming array of elements.
      *
      * @param context the current thread context
      * @param elements the elements of the array
-     * @return the new array
+     * @return a new array
      */
     public static RubyArray<?> newArrayNoCopy(ThreadContext context, IRubyObject... elements) {
         return RubyArray.newArrayNoCopy(context.runtime, elements);
+    }
+
+    /**
+     * Create a new Hash instance.
+     * @param context the current thread context
+     * @return a new hash
+     */
+    // MRI: rb_hash_new
+    public static RubyHash newHash(ThreadContext context) {
+        return new RubyHash(context.runtime);
+    }
+
+    /**
+     * Create a new Hash instance.  Use this when you expect very few pairs.
+     * @param context the current thread context
+     * @return a new hash
+     */
+    // MRI: rb_hash_new
+    public static RubyHash newSmallHash(ThreadContext context) {
+        return new RubyHash(context.runtime, 1);
     }
 
 

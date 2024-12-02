@@ -4291,9 +4291,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                     length = args[1];
                 }
             }
-            if (options == null) {
-                options = RubyHash.newHash(context.runtime);
-            }
+            if (options == null) options = newHash(context);
         }
 
         RubyIO file = openKeyArgs(context, recv, new IRubyObject[]{path, length, offset}, options);
@@ -4351,7 +4349,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
 
         final RubyHash optHash;
-        optHash = opt == context.nil ? RubyHash.newHash(context.runtime) : ((RubyHash) opt).dupFast(context);
+        optHash = opt == context.nil ? newHash(context) : ((RubyHash) opt).dupFast(context);
 
         final RubySymbol modeSym = asSymbol(context, "mode");
         if ( optHash.op_aref(context, modeSym) == context.nil ) {

@@ -48,6 +48,7 @@ import org.jruby.util.ByteList;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newEmptyArray;
+import static org.jruby.api.Create.newSmallHash;
 
 /**
  *
@@ -155,7 +156,7 @@ public class RubyNil extends RubyObject implements Constantizable {
     
     @JRubyMethod
     public static RubyHash to_h(ThreadContext context, IRubyObject recv) {
-        return RubyHash.newSmallHash(context.runtime);
+        return newSmallHash(context);
     }
 
     /** nil_inspect

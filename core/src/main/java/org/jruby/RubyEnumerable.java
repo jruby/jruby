@@ -425,7 +425,7 @@ public class RubyEnumerable {
 
     @JRubyMethod
     public static IRubyObject tally(ThreadContext context, IRubyObject self) {
-        RubyHash result = RubyHash.newHash(context.runtime);
+        RubyHash result = newHash(context);
         callEach(context, eachSite(context), self, Signature.NO_ARGUMENTS, new TallyCallback(result));
         return result;
     }
@@ -463,8 +463,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "to_h", rest = true)
     public static IRubyObject to_h(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-        final Ruby runtime = context.runtime;
-        final RubyHash result = RubyHash.newHash(runtime);
+        final RubyHash result = newHash(context);
         Helpers.invoke(context, self, "each", args,
                 CallBlock.newCallClosure(context, self, Signature.OPTIONAL, new PutKeyValueCallback(result, block)));
         return result;

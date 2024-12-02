@@ -27,6 +27,7 @@ import org.jruby.util.TypeConverter;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.newEmptyString;
+import static org.jruby.api.Create.newHash;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.util.RubyStringBuilder.str;
 
@@ -361,7 +362,7 @@ public class TraceType {
         IRubyObject highlightArg = checkHighlightKeyword(context, optArg, true);
         boolean reverse = checkOrderKeyword(context, optArg);
 
-        if (optArg.isNil()) optArg = RubyHash.newHash(context.runtime);
+        if (optArg.isNil()) optArg = newHash(context);
 
         ((RubyHash) optArg).fastASet(asSymbol(context, "highlight"), highlightArg);
 

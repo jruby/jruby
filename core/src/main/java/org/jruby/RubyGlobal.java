@@ -44,6 +44,7 @@ import jnr.posix.POSIX;
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Create;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
@@ -697,7 +698,7 @@ public class RubyGlobal {
 
         @Override
         public RubyHash to_hash(ThreadContext context) {
-            RubyHash hash = RubyHash.newHash(context.runtime);
+            RubyHash hash = Create.newHash(context);
             hash.replace(context, this);
             return hash;
         }
@@ -706,9 +707,7 @@ public class RubyGlobal {
         protected IRubyObject internalGet(IRubyObject key) {
             if (size == 0) return null;
 
-            if (!isCaseSensitive()) {
-                key = getCorrectKey(key.convertToString());
-            }
+            if (!isCaseSensitive()) key = getCorrectKey(key.convertToString());
 
             return super.internalGet(key);
         }
