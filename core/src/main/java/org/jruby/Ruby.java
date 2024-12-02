@@ -46,6 +46,7 @@ import org.jruby.anno.TypePopulator;
 import org.jruby.api.Create;
 import org.jruby.compiler.Constantizable;
 import org.jruby.compiler.NotCompilableException;
+import org.jruby.exceptions.LoadError;
 import org.jruby.exceptions.LocalJumpError;
 import org.jruby.exceptions.SystemExit;
 import org.jruby.ext.jruby.JRubyUtilLibrary;
@@ -556,6 +557,11 @@ public final class Ruby implements Constantizable {
                 getLoadService().require("subspawn/replace-builtin");
             }
         }
+
+        // FIXME: How should this be loaded as it is not really stdlib but depends on stdlib to be loaded.
+        try {
+            getLoadService().require("time");
+        } catch (LoadError e) {} // work-around failed classpath only test (which must be omitting stdlib somehow)
     }
 
     private void initProfiling() {
