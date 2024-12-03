@@ -172,10 +172,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.io.Writer;
 import java.lang.invoke.MethodHandle;
 import java.lang.ref.WeakReference;
 import java.net.BindException;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -2848,6 +2853,25 @@ public final class Ruby implements Constantizable {
         return regexpWarnings;
     }
 
+    public IRubyObject getStderr() {
+        return getGlobalVariables().get("$stderr");
+    }
+
+    /**
+     * Return the original stderr with which this runtime was initialized.
+     *
+     * Used for fast-path comparisons when printing error info directly to stderr.
+     *
+     * @return the original stderr with which this runtime was initialized
+     */
+    public IRubyObject getOriginalStderr() {
+        return originalStderr;
+    }
+
+    void setOriginalStderr(IRubyObject stderr) {
+        this.originalStderr = stderr;
+    }
+
     public PrintStream getErrorStream() {
         // FIXME: We can't guarantee this will always be a RubyIO...so the old code here is not safe
         /*java.io.OutputStream os = ((RubyIO) getGlobalVariables().getService("$stderr")).getOutStream();
@@ -2916,7 +2940,8 @@ public final class Ruby implements Constantizable {
         return type instanceof JavaPackage || ClassUtils.isJavaClassProxyType(type);
     }
 
-    /** Prints an error with backtrace to the error stream.
+    /**
+     * Prints a Ruby exception with backtrace to the configured stderr stream.
      *
      * MRI: eval.c - error_print()
      *
@@ -2924,15 +2949,20 @@ public final class Ruby implements Constantizable {
     public void printError(final RubyException ex) {
         if (ex == null) return;
 
-        PrintStream errorStream = getErrorStream();
-        String backtrace = config.getTraceType().printBacktrace(ex, (errorStream == System.err) && getPosix().isatty(FileDescriptor.err));
-        try {
-            errorStream.print(backtrace);
-        } catch (Exception e) {
-            System.err.print(backtrace);
-        }
+        boolean formatted =
+                getStderr() == getOriginalStderr() &&
+                        getErr() == System.err &&
+                        getPosix().isatty(FileDescriptor.err);
+
+        String backtrace = config.getTraceType().printBacktrace(ex, formatted);
+        printErrorString(backtrace);
     }
 
+    /**
+     * Prints an exception to System.err.
+     *
+     * @param ex
+     */
     public void printError(final Throwable ex) {
         if (ex instanceof RaiseException) {
             printError(((RaiseException) ex).getException());
@@ -2940,12 +2970,11 @@ public final class Ruby implements Constantizable {
         }
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PrintStream errorStream = getErrorStream();
 
         ex.printStackTrace(new PrintStream(baos));
 
         try {
-            errorStream.write(baos.toByteArray());
+            printErrorString(baos.toByteArray());
         } catch (Exception e) {
             try {
                 System.err.write(baos.toByteArray());
@@ -2953,6 +2982,50 @@ public final class Ruby implements Constantizable {
                 ioe.initCause(e);
                 throw new RuntimeException("BUG: could not write exception trace", ioe);
             }
+        }
+    }
+
+    /**
+     * Prints a string directly to the stderr channel, if default, or via dynamic dispatch otherwise.
+     *
+     * @param msg the string to print
+     */
+    public void printErrorString(String msg) {
+        IRubyObject stderr = getStderr();
+
+        WritableByteChannel writeChannel;
+        if (stderr == getOriginalStderr() &&
+                (writeChannel = ((RubyIO) stderr).getOpenFile().fd().chWrite) != null) {
+            Writer writer = Channels.newWriter(writeChannel, "UTF-8");
+            try {
+                writer.write(msg);
+                writer.flush();
+            } catch (IOException ioe) {
+                // ignore as in CRuby
+            }
+        } else {
+            getErrorStream().print(msg);
+        }
+    }
+
+    /**
+     * Prints a string directly to the stderr channel, if default, or via dynamic dispatch otherwise.
+     *
+     * @param msg the string to print
+     */
+    public void printErrorString(byte[] msg) {
+        IRubyObject stderr = getGlobalVariables().get("$stderr");
+
+        try {
+            WritableByteChannel writeChannel;
+            if (stderr == getOriginalStderr() &&
+                    (writeChannel = ((RubyIO) stderr).getOpenFile().fd().chWrite) != null) {
+                    writeChannel.write(ByteBuffer.wrap(msg));
+            } else {
+                getErrorStream().write(msg);
+            }
+        } catch (IOException ioe) {
+            // ignore as in CRuby
         }
     }
 
@@ -5723,6 +5796,8 @@ public final class Ruby implements Constantizable {
 
     private final EnumMap<DefinedMessage, RubyString> definedMessages = new EnumMap<>(DefinedMessage.class);
     private final EnumMap<RubyThread.Status, RubyString> threadStatuses = new EnumMap<>(RubyThread.Status.class);
+
+    private IRubyObject originalStderr;
 
     public interface ObjectSpacer {
         void addToObjectSpace(Ruby runtime, boolean useObjectSpace, IRubyObject object);

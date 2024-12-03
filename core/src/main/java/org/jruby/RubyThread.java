@@ -34,13 +34,17 @@
 package org.jruby;
 
 import java.io.IOException;
+import java.io.Writer;
 import java.lang.management.ManagementFactory;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
+import java.nio.channels.Channels;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.nio.channels.WritableByteChannel;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.Queue;
@@ -275,7 +279,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                         ((RubyFixnum) err).getLongValue() == 2)) {
                     toKill();
                 } else {
-                    afterBlockingCall();
                     if (getStatus() == Status.SLEEP) {
                         exitSleep();
                     }
@@ -2071,7 +2074,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     protected void printReportExceptionWarning() {
         Ruby runtime = getRuntime();
         String name = threadImpl.getReportName();
-        runtime.getErrorStream().println("warning: thread \"" + name + "\" terminated with exception (report_on_exception is true):");
+        String warning = "warning: thread \"" + name + "\" terminated with exception (report_on_exception is true):";
+
+        runtime.printErrorString(warning);
     }
 
     /**
