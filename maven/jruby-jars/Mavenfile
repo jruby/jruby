@@ -55,7 +55,7 @@ jruby_plugin!( :gem,
                :gemspec => 'jruby-jars.gemspec',
                # tell maven to include the jar files into gem
                :includeDependencies => true,
-               :jrubyVersion => '9.4.9.0') do
+               :jrubyVersion => version) do
   execute_goals :id => 'default-push', :skip => true
 end
 
