@@ -197,7 +197,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      * @param len the length of the array buffer requested
      * @return an array with the given buffer size, entries initialized to null
      */
-    public static RubyArray newRawArray(final ThreadContext context, final int len) {
+    public static RubyArray<?> newRawArray(final ThreadContext context, final int len) {
         Ruby runtime = context.runtime;
         return new RubyArray(runtime, runtime.getArray(), IRubyObject.array(len), 0, 0, false);
     }
