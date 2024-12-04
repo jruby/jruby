@@ -178,18 +178,14 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     }
 
     public static final RubyArray<?> newArray(final Ruby runtime, final int len) {
-        if (len == 0) {
-            return newEmptyArray(runtime);
-        }
-
-        IRubyObject[] values = IRubyObject.array(validateBufferLength(runtime, len));
-        Helpers.fillNil(values, 0, len, runtime);
+        if (len == 0) return newEmptyArray(runtime);
+        IRubyObject[] values = Helpers.nilledArray(validateBufferLength(runtime, len), runtime);
         return new RubyArray<>(runtime, values, 0, 0);
     }
 
     public static final RubyArray<?> newArrayLight(final Ruby runtime, final int len) {
-        IRubyObject[] values = IRubyObject.array(validateBufferLength(runtime, len));
-        Helpers.fillNil(values, 0, len, runtime);
+        if (len == 0) return newEmptyArray(runtime);
+        IRubyObject[] values = Helpers.nilledArray(validateBufferLength(runtime, len), runtime);
         return new RubyArray<>(runtime, runtime.getArray(), values, 0, 0, false);
     }
 
