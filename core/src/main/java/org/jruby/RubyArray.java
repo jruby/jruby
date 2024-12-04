@@ -202,16 +202,15 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      * @param len the length of the array buffer requested
      * @return an array with the given buffer size, entries initialized to null
      */
-    public static RubyArray newArrayRaw(final ThreadContext context, final int len) {
+    public static RubyArray newRawArray(final ThreadContext context, final int len) {
         Ruby runtime = context.runtime;
         return new RubyArray(runtime, runtime.getArray(), IRubyObject.array(len), 0, 0, false);
     }
 
     /**
      * Fill the remaining array slots with the given value. Pair with newArrayRaw to reduce the cost of setting up a new array.
-     *
      */
-    public void fillRestWithNil(final ThreadContext context) {
+    public void finishRawArray(final ThreadContext context) {
         int realLength = this.realLength;
         IRubyObject[] values = this.values;
         if (realLength == values.length) return;
