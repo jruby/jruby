@@ -106,16 +106,13 @@ public class SelectExecutor {
         long i;
 
         RubyArray readAry = null;
-        IRubyObject read = this.read;
-        List<ChannelFD> pendingReadFDs = this.pendingReadFDs;
-        List<ChannelFD> unselectableReadFDs = this.unselectableReadFDs;
         if (!read.isNil()) {
             readAry = read.convertToArray();
             for (i = 0; i < readAry.size(); i++) {
                 fptr = TypeConverter.ioGetIO(runtime, readAry.eltOk(i)).getOpenFileChecked();
                 fdSetRead(context, fptr.fd(), readAry.size());
                 if (fptr.READ_DATA_PENDING() || fptr.READ_CHAR_PENDING()) { /* check for buffered data */
-                    if (pendingReadFDs == null) pendingReadFDs = this.pendingReadFDs = new ArrayList(1);
+                    if (pendingReadFDs == null) pendingReadFDs = new ArrayList(1);
                     pendingReadFDs.add(fptr.fd());
                 }
             }
@@ -125,8 +122,6 @@ public class SelectExecutor {
         }
 
         RubyArray writeAry = null;
-        IRubyObject write = this.write;
-        List<ChannelFD> unselectableWriteFDs = this.unselectableWriteFDs;
         if (!write.isNil()) {
             writeAry = write.convertToArray();
             for (i = 0; i < writeAry.size(); i++) {
@@ -140,7 +135,6 @@ public class SelectExecutor {
         }
 
         RubyArray exceptAry = null;
-        IRubyObject except = this.except;
         if (!except.isNil()) {
             // This does not actually register anything because we do not have a way to select for error on JDK.
             // We make the calls for their side effects.
@@ -160,7 +154,6 @@ public class SelectExecutor {
         if (n == 0 && pendingReadFDs == null && unselectableReadFDs == null && unselectableWriteFDs == null) return context.nil; /* returns nil on timeout */
 
         RubyArray<?> readReady;
-        List<SelectionKey> readKeyList = this.readKeyList;
         if (readKeyList == null && pendingReadFDs == null && unselectableReadFDs == null) {
             readReady = newEmptyArray(context);
         } else {
@@ -180,7 +173,6 @@ public class SelectExecutor {
         }
 
         RubyArray<?> writeReady;
-        List<SelectionKey> writeKeyList = this.writeKeyList;
         if (writeKeyList == null && unselectableWriteFDs == null) {
             writeReady = newEmptyArray(context);
         } else {
@@ -200,7 +192,6 @@ public class SelectExecutor {
         }
 
         RubyArray<?> error;
-        List<SelectionKey> errorKeyList = this.errorKeyList;
         if (errorKeyList == null) {
             error = newEmptyArray(context);
         } else {
