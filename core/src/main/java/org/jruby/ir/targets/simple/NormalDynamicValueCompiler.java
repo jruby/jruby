@@ -123,7 +123,7 @@ public class NormalDynamicValueCompiler implements DynamicValueCompiler {
             adapter2.aload(0);
             IRBytecodeAdapter.buildArrayFromLocals(adapter2, 1, length * 2);
 
-            adapter2.invokestatic(p(IRRuntimeHelpers.class), "constructHashFromArray", sig(RubyHash.class, Ruby.class, IRubyObject[].class));
+            adapter2.invokestatic(p(IRRuntimeHelpers.class), "constructHashFromArray", sig(RubyHash.class, ThreadContext.class, IRubyObject[].class));
             adapter2.areturn();
             adapter2.end();
 
