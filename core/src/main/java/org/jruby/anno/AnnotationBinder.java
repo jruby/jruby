@@ -133,9 +133,7 @@ public class AnnotationBinder extends AbstractProcessor {
             out.println("import org.jruby.runtime.MethodIndex;");
             out.println("import java.util.Arrays;");
             out.println("import java.util.List;");
-            out.println("import jakarta.annotation.Generated;");
             out.println("");
-            out.println("@Generated(\"org.jruby.anno.AnnotationBinder\")");
             out.println("@SuppressWarnings(\"deprecation\")");
             out.println("public class " + qualifiedName + POPULATOR_SUFFIX + " extends TypePopulator {");
             out.println("    public void populate(RubyModule cls, Class clazz) {");

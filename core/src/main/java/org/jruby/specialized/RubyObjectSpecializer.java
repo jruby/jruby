@@ -54,7 +54,7 @@ import static org.jruby.util.CodegenUtils.sig;
  */
 public class RubyObjectSpecializer {
 
-    public static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+    public static final MethodHandles.Lookup LOOKUP = MethodHandles.publicLookup();
     private static final String GENERATED_PACKAGE = "org/jruby/gen/";
 
     private final Ruby runtime;

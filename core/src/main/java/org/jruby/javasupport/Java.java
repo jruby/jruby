@@ -130,7 +130,7 @@ public class Java implements Library {
         RubyClass objectClass = (RubyClass) getProxyClass(runtime, java.lang.Object.class);
 
         // load Ruby parts of the 'java' library
-        runtime.getLoadService().load("jruby/java.rb", false);
+        runtime.getLoadService().load("org/jruby/kernel/java.rb", false);
 
         // rewire ArrayJavaProxy superclass to point at Object, so it inherits Object behaviors
         final RubyClass ArrayJavaProxy = runtime.getClass("ArrayJavaProxy");

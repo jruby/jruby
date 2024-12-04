@@ -1597,7 +1597,7 @@ public final class Ruby implements Constantizable {
     }
 
     private void loadBundler() {
-        loadService.loadFromClassLoader(getClassLoader(), "jruby/bundler/startup.rb", false);
+        loadService.loadFromClassLoader(getClassLoader(), "org/jruby/kernel/bundler/startup.rb", false);
     }
 
     @SuppressWarnings("ReturnValueIgnored")
@@ -1804,7 +1804,7 @@ public final class Ruby implements Constantizable {
 
     private void initRubyKernel() {
         // load Ruby parts of core
-        loadService.loadFromClassLoader(getClassLoader(), "jruby/kernel.rb", false);
+        loadService.loadFromClassLoader(getClassLoader(), "org/jruby/kernel/kernel.rb", false);
     }
 
     private void initRubyPreludes() {
@@ -1812,7 +1812,7 @@ public final class Ruby implements Constantizable {
         if (RubyInstanceConfig.DEBUG_PARSER) return;
 
         // load Ruby parts of core
-        loadService.loadFromClassLoader(getClassLoader(), "jruby/preludes.rb", false);
+        loadService.loadFromClassLoader(getClassLoader(), "org/jruby/kernel/preludes.rb", false);
     }
 
     public IRManager getIRManager() {

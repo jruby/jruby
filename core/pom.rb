@@ -61,7 +61,6 @@ project 'JRuby Base' do
   jar 'org.jruby:jzlib:1.1.5'
   jar 'junit:junit', :scope => 'test'
   jar 'org.awaitility:awaitility', :scope => 'test'
-  jar 'org.apache.ant:ant:${ant.version}', :scope => 'provided'
   jar 'org.osgi:org.osgi.core:5.0.0', :scope => 'provided'
 
   # joda timezone must be before joda-time to be packed correctly
@@ -72,11 +71,9 @@ project 'JRuby Base' do
   jar 'org.slf4j:slf4j-api:1.7.12', :scope => 'provided', :optional => true
   jar 'org.slf4j:slf4j-simple:1.7.12', :scope => 'test'
 
-  jar 'me.qmx.jitescript:jitescript:0.4.1', :exclusions => ['org.ow2.asm:asm-all']
+  jar 'me.qmx.jitescript:jitescript:0.4.3', :exclusions => ['org.ow2.asm:asm-all']
 
   jar 'com.headius:backport9:1.13'
-
-  jar 'jakarta.annotation:jakarta.annotation-api:2.0.0', scope: 'provided'
 
   jar 'org.crac:crac:1.5.0'
 
@@ -188,7 +185,12 @@ project 'JRuby Base' do
     'fork' => 'true',
     'annotationProcessors' => [ 'org.jruby.anno.AnnotationBinder' ],
     'generatedSourcesDirectory' =>  'target/generated-sources',
-    'compilerArgs' => fork_compiler_args
+    'compilerArgs' => fork_compiler_args,
+    annotationProcessorPaths: [
+      groupId: "org.jruby",
+      artifactId: "jruby-base",
+      version: "${project.version}"
+    ]
   }
 
   plugin( :compiler,
@@ -196,8 +198,7 @@ project 'JRuby Base' do
           'verbose' => 'false',
           'showWarnings' => 'true',
           'showDeprecation' => 'true',
-          'source' => [ '${base.java.version}', '17' ],
-          'target' => [ '${base.javac.version}', '17' ],
+          release: '21',
           'useIncrementalCompilation' =>  'false' ) do
     execute_goals( 'compile',
                    :id => 'anno',
@@ -208,7 +209,8 @@ project 'JRuby Base' do
                                    'org/jruby/anno/FrameField.java',
                                    'org/jruby/runtime/Visibility.java',
                                    'org/jruby/util/CodegenUtils.java',
-                                   'org/jruby/util/SafePropertyAccessor.java' ] )
+                                   'org/jruby/util/SafePropertyAccessor.java' ],
+                   release: '8')
     execute_goals( 'compile',
                    default_compile_configuration.merge(
                      :id => 'default-compile',
@@ -218,11 +220,13 @@ project 'JRuby Base' do
     execute_goals( 'compile',
                    :id => 'populators',
                    :phase => 'process-classes',
-                   'debug' => 'false',
-                   'fork' => 'true',
-                   'compilerArgs' => fork_compiler_args,
-                   'includes' => [ 'org/jruby/gen/**/*.java' ] )
-
+                   'debug' => 'true',
+                   'compilerArgs' => [ '-XDignore.symbol.file=true',
+                                       '-J-Duser.language=en',
+                                       '-J-Dfile.encoding=UTF-8',
+                                       '-J-Xmx${jruby.compile.memory}' ],
+                   'includes' => [ 'org/jruby/gen/**/*.java',
+                                   'module-info.java' ] )
     execute_goals( 'compile',
                    :id => 'eclipse-hack',
                    :phase => 'process-classes',
@@ -239,7 +243,9 @@ project 'JRuby Base' do
                                    { 'directory' =>  '${project.basedir}/..',
                                      'includes' => [ 'bin/jruby' ] },
                                    { 'directory' =>  '${project.basedir}/..',
-                                     'includes' => [ 'lib/jni/**' ] } ],
+                                     'includes' => [ 'lib/jni/**' ] },
+                                   { 'directory' =>  '${project.basedir}/..',
+                                     'includes' => [ 'lib/modules/**' ] } ],
                    'failOnError' =>  'false' )
   end
 
@@ -262,7 +268,7 @@ project 'JRuby Base' do
           'additionalClasspathElements' => [ '${basedir}/src/test/ruby' ] )
 
   plugin(:jar,
-         archive: {manifestEntries: {'Automatic-Module-Name' => 'org.jruby'}})
+         archive: {manifestEntries: {'Automatic-Module-Name' => 'org.jruby.base'}})
 
   build do
     default_goal 'package'
@@ -277,6 +283,21 @@ project 'JRuby Base' do
       includes 'META-INF/**/*'
     end
 
+    plugin(:dependency) do
+      execute_goals('copy-dependencies',
+                    id: 'copy dependencies to lib',
+                    prependGroupId: true,
+                    includeScope: "runtime",
+                    outputDirectory: "${basedir}/../lib/modules",
+                    excludeArtifactIds: 'joda-timezones')
+      execute_goals('copy',
+                    id: 'copy jruby jar to lib',
+                    phase: :package,
+                    prependGroupId: true,
+                    outputDirectory: "${basedir}/../lib/modules",
+                    artifactItems: [
+                        {groupId: "${project.groupId}", artifactId: "${project.artifactId}", version: "${project.version}"}])
+    end
   end
 
   plugin :resources do

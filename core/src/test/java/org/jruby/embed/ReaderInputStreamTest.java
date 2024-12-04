@@ -37,6 +37,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
@@ -45,7 +47,6 @@ import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import java.util.logging.StreamHandler;
 
-import org.apache.tools.ant.util.FileUtils;
 import org.jruby.embed.io.ReaderInputStream;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -203,7 +204,7 @@ public class ReaderInputStreamTest {
             }
         }
         instance.close();
-        String expected = FileUtils.readFully(new FileReader(filename2));
+        String expected = Files.readString(Paths.get(filename2));
         assertEquals(expected.trim(), sb.toString().trim());
     }
 
