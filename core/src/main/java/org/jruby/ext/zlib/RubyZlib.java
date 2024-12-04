@@ -37,6 +37,7 @@ import java.util.zip.CRC32;
 import java.util.zip.Adler32;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -264,9 +265,11 @@ public class RubyZlib {
     @JRubyMethod(name = "crc_table", module = true, visibility = PRIVATE)
     public static IRubyObject crc_table(ThreadContext context, IRubyObject recv) {
         int[] table = com.jcraft.jzlib.CRC32.getCRC32Table();
-        return Create.constructArray(context, table, table.length, (c, t, a) -> {
-            for (int j : t) a.append(c, asFixnum(c, j & 0xffffffffL));
-        });
+        return Create.constructArray(context, table, table.length, RubyZlib::crctablePopulator);
+    }
+
+    private static void crctablePopulator(ThreadContext c, int[] t, RubyArray<IRubyObject> a) {
+        for (int j : t) a.append(c, asFixnum(c, j & 0xffffffffL));
     }
 
     @Deprecated
