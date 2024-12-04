@@ -95,6 +95,7 @@ import static org.jruby.RubyNumeric.checkInt;
 import static org.jruby.runtime.Helpers.addBufferLength;
 import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.runtime.Helpers.calculateBufferLength;
+import static org.jruby.runtime.Helpers.fillNil;
 import static org.jruby.runtime.Helpers.hashEnd;
 import static org.jruby.runtime.Helpers.murmurCombine;
 import static org.jruby.runtime.Helpers.validateBufferLength;
@@ -191,6 +192,30 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         IRubyObject[] values = IRubyObject.array(validateBufferLength(runtime, len));
         Helpers.fillNil(values, 0, len, runtime);
         return new RubyArray(runtime, runtime.getArray(), values, 0, 0, false);
+    }
+
+    /**
+     * Construct an array with the specified backing storage length. The array must be filled with non-null values
+     * before entering Rubyspace.
+     *
+     * @param context the current context
+     * @param len the length of the array buffer requested
+     * @return an array with the given buffer size, entries initialized to null
+     */
+    public static RubyArray newArrayRaw(final ThreadContext context, final int len) {
+        Ruby runtime = context.runtime;
+        return new RubyArray(runtime, runtime.getArray(), IRubyObject.array(len), 0, 0, false);
+    }
+
+    /**
+     * Fill the remaining array slots with the given value. Pair with newArrayRaw to reduce the cost of setting up a new array.
+     *
+     */
+    public void fillRestWithNil(final ThreadContext context) {
+        int realLength = this.realLength;
+        IRubyObject[] values = this.values;
+        if (realLength == values.length) return;
+        fillNil(values, realLength, values.length, context.runtime);
     }
 
     /** rb_ary_new

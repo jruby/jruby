@@ -1014,7 +1014,7 @@ public class RubyClass extends RubyModule {
     public IRubyObject subclasses(ThreadContext context) {
         RubyArray<RubyClass> subs = newConcreteSubclassesArray(context);
         int clearedCount = concreteSubclasses(subs);
-        finishConcreteSubclasses(subs, clearedCount);
+        finishConcreteSubclasses(context, subs, clearedCount);
 
         return subs;
     }
@@ -1059,7 +1059,7 @@ public class RubyClass extends RubyModule {
     }
 
     private RubyArray<RubyClass> newConcreteSubclassesArray(ThreadContext context) {
-        RubyArray<RubyClass> subs = RubyArray.newArray(context.runtime, this.concreteSubclassesEstimate);
+        RubyArray<RubyClass> subs = RubyArray.newArrayRaw(context, this.concreteSubclassesEstimate);
         return subs;
     }
 
@@ -1103,6 +1103,10 @@ public class RubyClass extends RubyModule {
 
     private int concreteSubclasses(RubyArray<RubyClass> subs) {
         SubclassNode subclassNode = this.subclassNode;
+
+        // skip first entry if not concrete
+        if (!subclassNode.concrete) subclassNode = subclassNode.nextConcrete;
+
         int clearedCount = 0;
         while (subclassNode != null) {
             RubyClass klass = subclassNode.ref.get();
@@ -1110,32 +1114,33 @@ public class RubyClass extends RubyModule {
 
             if (klass == null) {
                 clearedCount++;
-                continue;
+            } else {
+                processConcreteSubclass(subs, klass);
             }
 
-            processConcreteSubclass(subs, klass);
         }
         return clearedCount;
     }
 
     private static void processConcreteSubclass(RubyArray<RubyClass> subs, RubyClass klass) {
-        if (!klass.isSingleton()) {
-            if (klass.isIncluded() || klass.isPrepended()) {
-                klass.concreteSubclasses(subs);
-            } else {
-                subs.append(klass);
-            }
+        assert !klass.isSingleton();
+
+        if (klass.isIncluded() || klass.isPrepended()) {
+            klass.concreteSubclasses(subs);
+        } else {
+            subs.append(klass);
         }
     }
 
-    private void finishConcreteSubclasses(RubyArray<RubyClass> subs, int clearedCount) {
+    private void finishConcreteSubclasses(ThreadContext context, RubyArray<RubyClass> subs, int clearedCount) {
+        subs.fillRestWithNil(context);
         int newSize = subs.size();
-        concreteSubclassesEstimate = newSize + 4;
+        concreteSubclassesEstimate = newSize;
         cleanSubclasses(newSize, clearedCount);
     }
 
     private void cleanSubclasses(int size, int vacated) {
-        // tidy up if more than 25% cleared references
+        // tidy up if more than threshold of cleared references
         if ((double) vacated / size > SUBCLASSES_CLEAN_FACTOR) {
             SubclassNode subclassNode = this.subclassNode;
             SubclassNode newTop = rebuildSubclasses(subclassNode);
