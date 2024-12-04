@@ -56,12 +56,12 @@ describe "Pointer" do
     expect(PointerTestLib.ptr_ret_int32_t(ptr, 0)).to eq(magic)
   end
 
-  it "Fixnum cannot be used as a Pointer argument" do
-    expect { PointerTestLib.ptr_ret_int32_t(0, 0) }.to raise_error(ArgumentError)
-  end
-
-  it "Bignum cannot be used as a Pointer argument" do
-    expect { PointerTestLib.ptr_ret_int32_t(0xfee1deadbeefcafebabe, 0) }.to raise_error(ArgumentError)
+  it "Integer can be used as a Pointer argument" do
+    memory = FFI::MemoryPointer.new :long_long
+    magic = 0x12345678
+    memory.put_int32(0, magic)
+    adr = memory.address
+    expect(PointerTestLib.ptr_ret_int32_t(adr, 0))
   end
 
   it "String can be used as a Pointer argument" do
