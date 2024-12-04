@@ -50,6 +50,7 @@ import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Convert;
+import org.jruby.api.Create;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -260,11 +261,12 @@ public final class StructLayout extends Type {
      */
     @JRubyMethod(name = "members")
     public IRubyObject members(ThreadContext context) {
-        var mbrs = newArray(context, fieldNames.size());
-        for (IRubyObject name : fieldNames) {
-            mbrs.append(context, name);
-        }
-        return mbrs;
+        return Create.constructArray(context, fieldNames, fieldNames.size(), (c, f, a) -> {
+            for (int i = 0; i < f.size(); i++) {
+                var name = f.get(i);
+                a.append(c, name);
+            }
+        });
     }
 
     /**
@@ -274,13 +276,13 @@ public final class StructLayout extends Type {
      */
     @JRubyMethod(name = "offsets")
     public IRubyObject offsets(ThreadContext context) {
-        var offsets = newArray(context, fieldNames.size());
-
-        for (IRubyObject name : fieldNames) { // Assemble a [ :name, offset ] array
-            offsets.append(context, newArray(context, name, asFixnum(context, getMember(context, name).offset)));
-        }
-
-        return offsets;
+        return Create.constructArray(context, this, fieldNames.size(), (c, s, a) -> {
+            var fieldNames = s.fieldNames;
+            for (int i = 0; i < fieldNames.size(); i++) { // Assemble a [ :name, offset ] array
+                var name = fieldNames.get(i);
+                a.append(c, newArray(c, name, asFixnum(c, s.getMember(c, name).offset)));
+            }
+        });
     }
 
     @JRubyMethod(name = "offset_of")

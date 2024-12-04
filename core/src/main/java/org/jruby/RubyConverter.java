@@ -202,7 +202,7 @@ public class RubyConverter extends RubyObject {
                         encodingService.convertEncodingToRubyEncoding(encodingService.findEncodingOrAliasEntry(tr.getSource()).getEncoding()),
                         encodingService.convertEncodingToRubyEncoding(encodingService.findEncodingOrAliasEntry(tr.getDestination()).getEncoding()));
             }
-            result.push(v);
+            result.push(context, v);
         }
 
         return result;

@@ -1125,7 +1125,7 @@ public class RubyModule extends RubyObject {
                 overlay.refinements.entrySet().stream().forEach(entry -> {
                     RubyModule mod = entry.getValue();
                     while (mod != null && mod.getOrigin().isRefinement()) {
-                        ary.push(mod.getOrigin().definedAt);
+                        ary.push(context, mod.getOrigin().definedAt);
                         mod = mod.getSuperClass();
                     }
                 });

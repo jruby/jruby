@@ -42,7 +42,6 @@ import java.util.stream.Stream;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
-import org.jruby.api.Convert;
 import org.jruby.exceptions.StopIteration;
 import org.jruby.javasupport.JavaPackage;
 import org.jruby.runtime.Arity;

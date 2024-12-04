@@ -20,7 +20,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.Sockaddr;
 
@@ -498,10 +497,7 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod
     public IRubyObject ip_unpack(ThreadContext context) {
-        var ary = newArray(context, 2);
-        ary.append(context, ip_address(context));
-        ary.append(context, ip_port(context));
-        return ary;
+        return newArray(context, ip_address(context), ip_port(context));
     }
 
     @JRubyMethod

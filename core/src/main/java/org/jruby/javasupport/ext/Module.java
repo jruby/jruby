@@ -50,7 +50,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.newArray;

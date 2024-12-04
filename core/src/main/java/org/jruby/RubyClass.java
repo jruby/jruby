@@ -32,7 +32,6 @@
 package org.jruby;
 
 import static org.jruby.api.Convert.asSymbol;
-import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Error.*;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PUBLIC;
@@ -60,6 +59,7 @@ import java.util.stream.Collectors;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Create;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -1031,7 +1031,7 @@ public class RubyClass extends RubyModule {
     }
 
     private RubyArray<?> newConcreteSubclassesArray(ThreadContext context) {
-        var subs = RubyArray.newRawArray(context, this.concreteSubclassesEstimate);
+        var subs = Create.newRawArray(context, this.concreteSubclassesEstimate);
         return subs;
     }
 
@@ -1075,6 +1075,8 @@ public class RubyClass extends RubyModule {
 
     private int concreteSubclasses(ThreadContext context, RubyArray<?> subs) {
         SubclassNode subclassNode = this.subclassNode;
+
+        if (subclassNode == null) return 0;
 
         // skip first entry if not concrete
         if (!subclassNode.concrete) subclassNode = subclassNode.nextConcrete;

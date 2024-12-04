@@ -54,7 +54,7 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
-import org.jruby.api.Error;
+import org.jruby.api.Create;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -70,7 +70,6 @@ import static org.jruby.RubyString.UTF8;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.runtimeError;
@@ -389,7 +388,7 @@ public class RubyDir extends RubyObject implements Closeable {
     }
 
     private static RubyArray newEntryArray(ThreadContext context, String[] files, Encoding encoding, boolean childrenOnly) {
-        var result = newArray(context, files.length);
+        var result = Create.newRawArray(context, files.length);
         for (String file : files) {
             if (childrenOnly) { // removeIf(f -> f.equals(".") || f.equals(".."));
                 final int len = file.length();
@@ -399,7 +398,7 @@ public class RubyDir extends RubyObject implements Closeable {
 
             result.append(context, newExternalStringWithEncoding(context.runtime, file, encoding));
         }
-        return result;
+        return result.finishRawArray(context);
     }
 
     private static final String[] NO_FILES = StringSupport.EMPTY_STRING_ARRAY;

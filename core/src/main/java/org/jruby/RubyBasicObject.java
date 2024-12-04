@@ -30,6 +30,7 @@ package org.jruby;
 
 import org.jcodings.Encoding;
 import org.jruby.api.Convert;
+import org.jruby.api.Create;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.java.proxies.JavaProxy;
@@ -2807,9 +2808,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     Fred.new.instance_variables   #=&gt; [:"{@literal @}iv"]
      */
     public RubyArray instance_variables(ThreadContext context) {
-        var array = newArray(context, getMetaClass().getVariableAccessorsForRead().size());
+        var array = newRawArray(context, getMetaClass().getVariableAccessorsForRead().size());
         forEachInstanceVariableName(name -> array.append(context, asSymbol(context, name)));
-        return array;
+        return array.finishRawArray(context);
     }
 
     /**

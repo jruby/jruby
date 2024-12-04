@@ -264,11 +264,9 @@ public class RubyZlib {
     @JRubyMethod(name = "crc_table", module = true, visibility = PRIVATE)
     public static IRubyObject crc_table(ThreadContext context, IRubyObject recv) {
         int[] table = com.jcraft.jzlib.CRC32.getCRC32Table();
-        var array = newArray(context, table.length);
-        for (int j : table) {
-            array.append(context, asFixnum(context, j & 0xffffffffL));
-        }
-        return array;
+        return Create.constructArray(context, table, table.length, (c, t, a) -> {
+            for (int j : t) a.append(c, asFixnum(c, j & 0xffffffffL));
+        });
     }
 
     @Deprecated

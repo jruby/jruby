@@ -38,6 +38,7 @@ import com.headius.invokebinder.Binder;
 import jnr.constants.platform.Errno;
 import org.jruby.*;
 import org.jruby.api.Convert;
+import org.jruby.api.Create;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.MultipleAsgnNode;
@@ -2716,13 +2717,12 @@ public class Helpers {
     public static RubyArray argumentDescriptorsToParameters(ThreadContext context, ArgumentDescriptor[] argsDesc, boolean isLambda) {
         if (argsDesc == null) Thread.dumpStack();
 
-        final var params = newArray(context, argsDesc.length);
-
+        var objArray = new IRubyObject[argsDesc.length];
         for (int i = 0; i < argsDesc.length; i++) {
-            params.store(i, argsDesc[i].toArrayForm(context, isLambda));
+            objArray[i] = argsDesc[i].toArrayForm(context, isLambda);
         }
 
-        return params;
+        return Create.newArrayNoCopy(context, objArray);
     }
 
     public static ArgumentDescriptor[] methodToArgumentDescriptors(DynamicMethod method) {

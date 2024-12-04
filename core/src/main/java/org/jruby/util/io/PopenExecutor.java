@@ -31,7 +31,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.ShellLauncher;
-import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
 
@@ -386,7 +385,7 @@ public class PopenExecutor {
 
             if (k.equalsIgnoreCase("PATH")) pathArg.path_env = val;
 
-            env.push(newArray(context, keyString, val));
+            env.push(context, newArray(context, keyString, val));
         }
 
         return env;
@@ -981,14 +980,14 @@ public class PopenExecutor {
                 newary = newArray(context);
                 sargp.fd_dup2 = newary;
             }
-            newary.push(newArray(context, asFixnum(context, fd), asFixnum(context, save_fd)));
+            newary.push(context, newArray(context, asFixnum(context, fd), asFixnum(context, save_fd)));
 
             newary = sargp.fd_close;
             if (newary == null) {
                 newary = newArray(context);
                 sargp.fd_close = newary;
             }
-            newary.push(newArray(context, asFixnum(context, save_fd), context.nil));
+            newary.push(context, newArray(context, asFixnum(context, save_fd), context.nil));
         }
 
         return 0;
@@ -1328,7 +1327,7 @@ public class PopenExecutor {
                         softlim = hardlim = val.convertToInteger();
                     }
                     tmp = newArray(context, asFixnum(context, rtype), softlim, hardlim);
-                    ((RubyArray)ary).push(tmp);
+                    ((RubyArray)ary).push(context, tmp);
                 }
                 else if (id.equals("unsetenv_others")) {
                     if (eargp.unsetenvOthersGiven) {
@@ -1581,11 +1580,11 @@ public class PopenExecutor {
         if (key instanceof RubyArray k) {
             for (int i = 0 ; i < k.size(); i++) {
                 IRubyObject fd = checkExecRedirectFd(context, k.eltOk(i), !param.isNil());
-                ary.push(newArray(context, fd, param));
+                ary.push(context, newArray(context, fd, param));
             }
         } else {
             IRubyObject fd = checkExecRedirectFd(context, key, !param.isNil());
-            ary.push(newArray(context, fd, param));
+            ary.push(context, newArray(context, fd, param));
         }
         return ary;
     }

@@ -319,14 +319,14 @@ public class RubyMatchData extends RubyObject {
         }
 
         int count = regs.getNumRegs() - start;
-        var arr = newArray(context, count);
+        var arr = newRawArray(context, count);
         for (int i=0; i < count; i++) {
             int beg = regs.getBeg(i+start);
             arr.storeInternal(context, i, beg == -1 ?
                     context.nil :
                     str.makeSharedString(context.runtime, beg, regs.getEnd(i+start) - beg));
         }
-        return arr;
+        return arr.finishRawArray(context);
     }
 
     public IRubyObject group(long n) {
@@ -443,7 +443,7 @@ public class RubyMatchData extends RubyObject {
     public IRubyObject values_at(ThreadContext context, IRubyObject[] args) {
         check();
 
-        var result = newArray(context, args.length);
+        var result = newRawArray(context, args.length);
 
         for (IRubyObject arg : args) {
             if (arg instanceof RubyFixnum) {
@@ -458,7 +458,7 @@ public class RubyMatchData extends RubyObject {
             }
         }
 
-        return result;
+        return result.finishRawArray(context);
     }
 
     public IRubyObject values_at(IRubyObject[] args) {
@@ -577,7 +577,7 @@ public class RubyMatchData extends RubyObject {
             // this should never happen here, but MRI allows any VALUE for result
             // if (result.isNil()) return nthMatch;
 
-            return result.push(nthMatch);
+            return result.push(context, nthMatch);
         }
 
         return matchArySubseq(context, begLen[0], begLen[1], result);
