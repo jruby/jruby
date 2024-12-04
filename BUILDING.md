@@ -117,14 +117,14 @@ For normal day-to-day testing, we recommend running the Ruby specs. We have set 
 "fast" grouping that takes only a couple minutes to run:
 
 ```
-jruby -S rake spec:ruby:fast
+bin/jruby -S rake spec:ruby:fast
 ```
 
 For a more intensive workout, you can also run the Ruby (MRI) tests
 via the following rake command:
 
 ```
-jruby -S rake test:mri
+bin/jruby -S rake test:mri
 ```
 
 This suite takes a while to complete, so if you want to run an individual file
@@ -135,7 +135,7 @@ from MRI's tests (under test/mri), use one of the following commands:
 The MRI suite (under `test/mri`) has a runner script in `test/mri/runner.rb` that sets up
 an appropriate test environment. Many of the MRI tests will need to be run via this script.
 ```
-jruby test/mri/runner.rb test/mri/<path to test>
+bin/jruby test/mri/runner.rb test/mri/<path to test>
 ```
 
 You can pass `-v` to the runner for verbose output or `-n test_method_name` to only run a single test method.
@@ -161,7 +161,7 @@ The notable exception is the "Ruby specs" under spec/ruby, which are run with ms
 rspec will be installed with `mvn package -Pbootstrap` or you can install it manually.
 
 ```
-jruby -S rspec spec/path/to/spec
+bin/jruby -S rspec spec/path/to/spec
 ```
 
 #### Run a single "Ruby spec" using mspec
@@ -171,7 +171,7 @@ The specs under spec/ruby are part of the "Ruby spec" suite of tests and use the
 Individual specs can be run with the mspec tool:
 
 ```
-jruby spec/mspec/bin/mspec ci spec/ruby/<path to spec>
+bin/jruby spec/mspec/bin/mspec ci spec/ruby/<path to spec>
 ```
 
 If `ci` is omitted or replaced with `run` you will see any specs known to fail. The `ci` command
