@@ -50,6 +50,7 @@ import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Convert;
+import org.jruby.api.Create;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -260,11 +261,13 @@ public final class StructLayout extends Type {
      */
     @JRubyMethod(name = "members")
     public IRubyObject members(ThreadContext context) {
-        var mbrs = newArray(context, fieldNames.size());
-        for (IRubyObject name : fieldNames) {
-            mbrs.append(context, name);
+        return Create.constructArray(context, fieldNames, fieldNames.size(), StructLayout::memberPopulator);
+    }
+
+    private static void memberPopulator(ThreadContext c, List<IRubyObject> f, RubyArray<IRubyObject> a) {
+        for (int i = 0; i < f.size(); i++) {
+            a.append(c, f.get(i));
         }
-        return mbrs;
     }
 
     /**
@@ -274,13 +277,15 @@ public final class StructLayout extends Type {
      */
     @JRubyMethod(name = "offsets")
     public IRubyObject offsets(ThreadContext context) {
-        var offsets = newArray(context, fieldNames.size());
+        return Create.constructArray(context, this, fieldNames.size(), StructLayout::offsetsPopulator);
+    }
 
-        for (IRubyObject name : fieldNames) { // Assemble a [ :name, offset ] array
-            offsets.append(context, newArray(context, name, asFixnum(context, getMember(context, name).offset)));
+    private static void offsetsPopulator(ThreadContext c, StructLayout s, RubyArray<IRubyObject> a) {
+        var fieldNames = s.fieldNames;
+        for (int i = 0; i < fieldNames.size(); i++) { // Assemble a [ :name, offset ] array
+            var name = fieldNames.get(i);
+            a.append(c, newArray(c, name, asFixnum(c, s.getMember(c, name).offset)));
         }
-
-        return offsets;
     }
 
     @JRubyMethod(name = "offset_of")

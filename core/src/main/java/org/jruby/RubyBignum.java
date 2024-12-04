@@ -39,6 +39,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Create;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
@@ -54,6 +55,7 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 import static org.jruby.RubyFixnum.zero;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
@@ -353,12 +355,18 @@ public class RubyBignum extends RubyInteger {
         if (self.signum() == 0) {
             return RubyArray.newArray(context.runtime, zero(context.runtime));
         } else {
-            RubyArray res = newArray(context, 0);
-
-            while (self.signum() > 0) {
-                BigInteger q = self.mod(bigBase);
-                res.append(context, RubyBignum.newBignum(context.runtime, q));
-                self = self.divide(bigBase);
+            RubyArray res;
+            if (self.signum() <= 0) {
+                res = newEmptyArray(context);
+            } else {
+                // Bignum only kicks in > 0xFFFFFFFFFFFFFFFF so pick 16 digits for highest typical base 16
+                res = Create.newRawArray(context, 16);
+                do {
+                    BigInteger q = self.mod(bigBase);
+                    res.append(context, RubyBignum.newBignum(context.runtime, q));
+                    self = self.divide(bigBase);
+                } while (self.signum() > 0);
+                res.finishRawArray(context);
             }
 
             return res;

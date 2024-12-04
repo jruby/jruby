@@ -8,7 +8,6 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.api.Create;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
@@ -1089,7 +1088,7 @@ public class RubyIOBuffer extends RubyObject {
         }
 
         int dataTypesSize = dataTypesArray.size();
-        var values = newArray(context, dataTypesSize);
+        var values = newRawArray(context, dataTypesSize);
 
         for (long i = 0; i < dataTypesSize; i++) {
             IRubyObject type = dataTypesArray.eltOk(i);
@@ -1098,10 +1097,10 @@ public class RubyIOBuffer extends RubyObject {
 
             offset += dataType.type.size();
 
-            values.push(value);
+            values.append(context, value);
         }
 
-        return values;
+        return values.finishRawArray(context);
     }
 
     @JRubyMethod(name = "each")
@@ -1176,15 +1175,15 @@ public class RubyIOBuffer extends RubyObject {
     }
 
     private RubyArray values(ThreadContext context, ByteBuffer buffer, DataType dataType, int offset, int count) {
-        var values = newArray(context, count);
+        var values = newRawArray(context, count);
 
         for (int i = 0 ; i < count; i++) {
             IRubyObject value = getValue(context, buffer, size, dataType, offset);
             offset += dataType.type.size();
-            values.push(value);
+            values.push(context, value);
         }
 
-        return values;
+        return values.finishRawArray(context);
     }
 
     @JRubyMethod(name = "each_byte")

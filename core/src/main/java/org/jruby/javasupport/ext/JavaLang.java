@@ -548,41 +548,65 @@ public abstract class JavaLang {
         @JRubyMethod
         public static IRubyObject java_instance_methods(final ThreadContext context, final IRubyObject self) {
             final java.lang.Class<?> klass = unwrapJavaObject(self);
-            final var methods = newArray(context);
-            for (java.lang.reflect.Method method : klass.getMethods()) {
-                if (!Modifier.isStatic(method.getModifiers())) methods.add(method);
+            Method[] publicMethods = klass.getMethods();
+
+            // quick count for accurate size
+            int size = 0;
+            for (java.lang.reflect.Method method : publicMethods) if (!Modifier.isStatic(method.getModifiers())) size++;
+            final var methods = newRawArray(context, size);
+
+            for (java.lang.reflect.Method method : publicMethods) {
+                if (!Modifier.isStatic(method.getModifiers())) methods.add(context, method);
             }
-            return methods;
+            return methods.finishRawArray(context);
         }
 
         @JRubyMethod
         public static IRubyObject declared_instance_methods(final ThreadContext context, final IRubyObject self) {
             final java.lang.Class<?> klass = unwrapJavaObject(self);
-            final var methods = newArray(context);
-            for (java.lang.reflect.Method method : klass.getDeclaredMethods()) {
-                if (!Modifier.isStatic(method.getModifiers())) methods.add(method);
+            Method[] declaredMethods = klass.getDeclaredMethods();
+
+            // quick count for accurate size
+            int size = 0;
+            for (java.lang.reflect.Method method : declaredMethods) if (!Modifier.isStatic(method.getModifiers())) size++;
+            final var methods = newRawArray(context, size);
+
+            for (java.lang.reflect.Method method : declaredMethods) {
+                if (!Modifier.isStatic(method.getModifiers())) methods.add(context, method);
             }
-            return methods;
+            return methods.finishRawArray(context);
         }
 
         @JRubyMethod
         public static IRubyObject java_class_methods(final ThreadContext context, final IRubyObject self) {
             final java.lang.Class<?> klass = unwrapJavaObject(self);
-            final var methods = newArray(context);
-            for ( java.lang.reflect.Method method : klass.getMethods() ) {
+            Method[] publicMethods = klass.getMethods();
+
+            // quick count for accurate size
+            int size = 0;
+            for (java.lang.reflect.Method method : publicMethods) if (Modifier.isStatic(method.getModifiers())) size++;
+            final var methods = newRawArray(context, size);
+
+            for ( java.lang.reflect.Method method : publicMethods) {
                 if (Modifier.isStatic(method.getModifiers())) methods.add(method);
             }
-            return methods;
+            return methods.finishRawArray(context);
         }
 
         @JRubyMethod
         public static IRubyObject declared_class_methods(final ThreadContext context, final IRubyObject self) {
             final java.lang.Class<?> klass = unwrapJavaObject(self);
-            final var methods = newArray(context);
-            for (java.lang.reflect.Method method : klass.getDeclaredMethods()) {
+            Method[] declaredMethods = klass.getDeclaredMethods();
+
+            // quick count for accurate size
+            int size = 0;
+            for (java.lang.reflect.Method method : declaredMethods) if (Modifier.isStatic(method.getModifiers())) size++;
+            final var methods = newRawArray(context, size);
+
+            for (java.lang.reflect.Method method : declaredMethods) {
                 if (Modifier.isStatic(method.getModifiers())) methods.add(method);
             }
-            return methods;
+            return methods.finishRawArray(context);
         }
 
         @JRubyMethod(name = "<=>") // Ruby Comparable

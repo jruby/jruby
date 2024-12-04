@@ -103,12 +103,13 @@ public class RubyGlobal {
     public static void initARGV(Ruby runtime) {
         var context = runtime.getCurrentContext();
         // define ARGV and $* for this runtime
-        var argvArray = newArray(context);
         String[] argv = runtime.getInstanceConfig().getArgv();
+        var argvArray = newRawArray(context, argv.length);
 
         for (String arg : argv) {
             argvArray.append(context, RubyString.newInternalFromJavaExternal(runtime, arg));
         }
+        argvArray.finishRawArray(context);
 
         if (runtime.getObject().getConstantNoConstMissing("ARGV") != null) {
             ((RubyArray<?>)runtime.getObject().getConstant("ARGV")).replace(context, argvArray);

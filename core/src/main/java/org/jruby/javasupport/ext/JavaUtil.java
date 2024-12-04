@@ -31,6 +31,7 @@ package org.jruby.javasupport.ext;
 import org.jruby.*;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.api.Create;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.Java;
@@ -165,11 +166,11 @@ public abstract class JavaUtil {
             int len = count.convertToInteger().getIntValue();
             int size = coll.size(); if ( len > size ) len = size;
             if ( len == 0 ) return RubyArray.newEmptyArray(context.runtime);
-            final var arr = newArray(context, len);
+            var objArray = new IRubyObject[len];
             int i = 0; for ( java.util.Iterator<?> it = coll.iterator(); i < len; i++ ) {
-                arr.append(context, convertJavaToUsableRubyObject(context.runtime, it.next()));
+                objArray[i] = convertJavaToUsableRubyObject(context.runtime, it.next());
             }
-            return arr;
+            return Create.newArrayNoCopy(context, objArray);
         }
 
         @JRubyMethod(name = { "<<" })

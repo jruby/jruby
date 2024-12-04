@@ -39,6 +39,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Error.runtimeError;
 import static org.jruby.util.RubyStringBuilder.ids;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -113,7 +114,7 @@ public class ExitableInterpreterEngine extends InterpreterEngine {
                         break;
                     case RET_OP:
                         processReturnOp(context, block, instr, operation, currDynScope, temp, self, currScope);
-                        return new ExitableReturn(newArray(context), Block.NULL_BLOCK);
+                        return new ExitableReturn(newEmptyArray(context), Block.NULL_BLOCK);
                     case BRANCH_OP:
                         switch (operation) {
                             case JUMP:

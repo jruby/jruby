@@ -69,6 +69,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
 
 import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Create.newString;
 import static org.jruby.parser.ParserType.*;
 
@@ -225,7 +226,7 @@ public class Parser {
         if (!(scriptLines instanceof RubyHash)) return null;
 
         var context = runtime.getCurrentContext();
-        var list = length == -1 ? newArray(context) : newArray(context, length);
+        var list = length == -1 ? newEmptyArray(context) : newArray(context, length);
         ((RubyHash) scriptLines).op_aset(context, newString(context, file), list);
         return list;
     }

@@ -495,7 +495,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     public static IRubyObject name_list(ThreadContext context, IRubyObject recv) {
         EncodingService service = context.runtime.getEncodingService();
 
-        var result = newArray(context, service.getEncodings().size() + service.getAliases().size());
+        var result = newRawArray(context, service.getEncodings().size() + service.getAliases().size());
         HashEntryIterator i;
         i = service.getEncodings().entryIterator();
         while (i.hasNext()) {
@@ -515,7 +515,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         result.append(context, newString(context, INTERNAL));
         result.append(context, newString(context, LOCALE));
 
-        return result;
+        return result.finishRawArray(context);
     }
 
     @SuppressWarnings("unchecked")
