@@ -138,6 +138,7 @@ readonly cygwin
 
 use_exec=true
 java_opts_from_files=""
+jdb=false
 
 NO_BOOTCLASSPATH=false
 VERIFY_JRUBY=false
@@ -153,6 +154,7 @@ fi
 
 java_args=""
 ruby_args=""
+jdb_args=""
 
 # Force OpenJDK-based JVMs to use /dev/urandom for random number generation
 # See https://github.com/jruby/jruby/issues/4685 among others.
@@ -174,24 +176,24 @@ add_log() {
 
 # Logic to process "arguments files" on both Java 8 and Java 9+
 process_java_opts() {
-    local java_opts_file="$1" java_opts=
+    local java_opts_file="$1"
     if [ -r "$java_opts_file" ]; then
         add_log
         add_log "Adding Java options from: $java_opts_file"
 
-        while read -r line; do
-            if [ "$line" ]; then
-                java_opts="${java_opts} ${line}"
-                add_log "  $line"
-            fi
-        done < "$java_opts_file"
-
         # On Java 9+, add an @argument for the given file.
         # On earlier versions the file contents will be read and expanded on the Java command line.
         if $use_modules; then
-            java_opts_from_files="$java_opts_from_files @$java_opts_file"
+            append java_opts_from_files "@$java_opts_file"
         else
-            java_opts_from_files="$java_opts_from_files $java_opts"
+            local line=
+            while read -r line; do
+                if [ "$line" ]; then
+                    # shellcheck disable=2086  # Split options on whitespace
+                    append java_opts_from_files $line
+                    add_log "  $line"
+                fi
+            done < "$java_opts_file"
         fi
     fi
 }
@@ -562,6 +564,7 @@ do
         --headless) append java_args -Djava.awt.headless=true ;;
         # Run under JDB
         --jdb)
+            jdb=true
             if [ -z "$JAVA_HOME" ]; then
                 JAVACMD='jdb'
             else
@@ -572,7 +575,7 @@ do
                 fi
             fi
             JDB_SOURCEPATH="${JRUBY_HOME}/core/src/main/java:${JRUBY_HOME}/lib/ruby/stdlib:."
-            append java_args -sourcepath "$JDB_SOURCEPATH"
+            append jdb_args -sourcepath "$JDB_SOURCEPATH"
             append ruby_args -X+C
             ;;
         --client|--server|--noclient)
@@ -685,12 +688,18 @@ fi
 
 # ----- Final prepration of the Java command line -----------------------------
 
-# Include all options from files at the beginning of the Java command line
-JAVA_OPTS="$java_opts_from_files $JAVA_OPTS"
-
 # Don't quote JAVA_OPTS; we want it to expand
 # shellcheck disable=2086
-prepend java_args "$JAVACMD" $JAVA_OPTS "$JFFI_OPTS"
+prepend java_args $JAVA_OPTS "$JFFI_OPTS"
+
+# Include all options from files at the beginning of the Java command line
+preextend java_args java_opts_from_files
+
+if $jdb; then
+    preextend java_args jdb_args
+fi
+
+prepend java_args "$JAVACMD"
 
 if $NO_BOOTCLASSPATH || $VERIFY_JRUBY; then
     if $use_modules; then

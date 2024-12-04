@@ -500,8 +500,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         klass.setMetaClass(superClass.getRealClass().metaClass);
 
-        superClass.addSubclass(klass);
-
         return klass;
     }
 

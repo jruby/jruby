@@ -1515,6 +1515,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     // Needs to remain in place until StringIO has migrated to the new methods
     // See https://github.com/ruby/stringio/issues/83
+    // jruby-rack also uses this and must be updated: https://github.com/jruby/jruby-rack/issues/267
     @Deprecated
     public final int cat19(ByteList other, int codeRange) {
         return catWithCodeRange(other, codeRange);

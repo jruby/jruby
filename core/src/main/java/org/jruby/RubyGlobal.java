@@ -321,6 +321,8 @@ public class RubyGlobal {
             runtime.defineGlobalConstant("STDIN", stdin);
             runtime.defineGlobalConstant("STDOUT", stdout);
             runtime.defineGlobalConstant("STDERR", stderr);
+
+            runtime.setOriginalStderr(stderr);
         } else {
             ((RubyIO) runtime.getObject().getConstant("STDIN")).getOpenFile().setFD(stdin.getOpenFile().fd());
             ((RubyIO) runtime.getObject().getConstant("STDOUT")).getOpenFile().setFD(stdout.getOpenFile().fd());
