@@ -1031,7 +1031,7 @@ public class RubyClass extends RubyModule {
     }
 
     private RubyArray<RubyClass> newConcreteSubclassesArray(ThreadContext context) {
-        RubyArray<RubyClass> subs = RubyArray.newArrayRaw(context, this.concreteSubclassesEstimate);
+        RubyArray<RubyClass> subs = RubyArray.newRawArray(context, this.concreteSubclassesEstimate);
         return subs;
     }
 
@@ -1105,7 +1105,7 @@ public class RubyClass extends RubyModule {
     }
 
     private void finishConcreteSubclasses(ThreadContext context, RubyArray<RubyClass> subs, int clearedCount) {
-        subs.fillRestWithNil(context);
+        subs.finishRawArray(context);
         int newSize = subs.size();
         concreteSubclassesEstimate = newSize;
         cleanSubclasses(newSize, clearedCount);
