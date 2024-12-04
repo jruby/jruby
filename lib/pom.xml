@@ -658,7 +658,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>reline</artifactId>
-      <version>0.4.2</version>
+      <version>0.5.12</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1140,7 +1140,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/racc-1.6.0*</include>
           <include>specifications/rake-ant-1.0.6*</include>
           <include>specifications/rdoc-6.4.1.1*</include>
-          <include>specifications/reline-0.4.2*</include>
+          <include>specifications/reline-0.5.12*</include>
           <include>specifications/resolv-replace-0.1.0*</include>
           <include>specifications/rinda-0.1.1*</include>
           <include>specifications/ruby2_keywords-0.0.5*</include>
@@ -1220,7 +1220,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/racc-1.6.0*/**/*</include>
           <include>gems/rake-ant-1.0.6*/**/*</include>
           <include>gems/rdoc-6.4.1.1*/**/*</include>
-          <include>gems/reline-0.4.2*/**/*</include>
+          <include>gems/reline-0.5.12*/**/*</include>
           <include>gems/resolv-replace-0.1.0*/**/*</include>
           <include>gems/rinda-0.1.1*/**/*</include>
           <include>gems/ruby2_keywords-0.0.5*/**/*</include>
@@ -1300,7 +1300,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/racc-1.6.0*</include>
           <include>cache/rake-ant-1.0.6*</include>
           <include>cache/rdoc-6.4.1.1*</include>
-          <include>cache/reline-0.4.2*</include>
+          <include>cache/reline-0.5.12*</include>
           <include>cache/resolv-replace-0.1.0*</include>
           <include>cache/rinda-0.1.1*</include>
           <include>cache/ruby2_keywords-0.0.5*</include>
