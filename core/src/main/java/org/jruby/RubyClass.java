@@ -1104,6 +1104,8 @@ public class RubyClass extends RubyModule {
     private int concreteSubclasses(RubyArray<RubyClass> subs) {
         SubclassNode subclassNode = this.subclassNode;
 
+        if (subclassNode == null) return 0;
+
         // skip first entry if not concrete
         if (!subclassNode.concrete) subclassNode = subclassNode.nextConcrete;
 
