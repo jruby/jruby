@@ -1106,7 +1106,7 @@ public class RubyClass extends RubyModule {
         int clearedCount = 0;
         while (subclassNode != null) {
             RubyClass klass = subclassNode.ref.get();
-            subclassNode = subclassNode.next;
+            subclassNode = subclassNode.nextConcrete;
 
             if (klass == null) {
                 clearedCount++;
@@ -1153,7 +1153,7 @@ public class RubyClass extends RubyModule {
             RubyClass klass = ref.get();
             subclassNode = subclassNode.next;
             if (klass == null) continue;
-            newTop = new SubclassNode(ref, newTop);
+            newTop = new SubclassNode(klass, ref, newTop);
         }
         return newTop;
     }
@@ -1161,14 +1161,17 @@ public class RubyClass extends RubyModule {
     // TODO: make into a Record
     static class SubclassNode {
         final SubclassNode next;
+        final SubclassNode nextConcrete;
+        final boolean concrete;
         final WeakReference<RubyClass> ref;
         SubclassNode(RubyClass klass, SubclassNode next) {
-            ref = new WeakReference<>(klass);
-            this.next = next;
+            this(klass, new WeakReference<>(klass), next);
         }
-        SubclassNode(WeakReference<RubyClass> ref, SubclassNode next) {
+        SubclassNode(RubyClass klass, WeakReference<RubyClass> ref, SubclassNode next) {
             this.ref = ref;
             this.next = next;
+            this.nextConcrete = next == null ? null : next.concrete ? next : next.nextConcrete;
+            this.concrete = !klass.isSingleton();
         }
     }
 
