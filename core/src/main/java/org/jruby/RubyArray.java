@@ -1035,9 +1035,9 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             // FIXME: lookup the bounds part of this in error message??
             if (index >= arraySize) {
                 if (!block.isGiven()) throw context.runtime.newIndexError("index " + index + " outside of array bounds: 0...0");
-                result.append(block.yield(context, asFixnum(context, index)));
+                result.append(context, block.yield(context, asFixnum(context, index)));
             } else {
-                result.append(eltOk(index));
+                result.append(context, eltOk(index));
             }
         }
 
@@ -1357,7 +1357,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         for (int i = 0; i < args.length; i++) {
             final IRubyObject arg = args[i];
             if (arg instanceof RubyFixnum fix) {
-                result.append(entry(fix.value));
+                result.append(context, entry(fix.value));
                 continue;
             }
 
@@ -1370,11 +1370,11 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                 final int beg = begLen[0];
                 final int len = begLen[1];
                 for (int j = 0; j < len; j++) {
-                    result.append( entry(j + beg) );
+                    result.append(context, entry(j + beg));
                 }
                 continue;
             }
-            result.append(entry(numericToLong(context, arg)));
+            result.append(context, entry(numericToLong(context, arg)));
         }
 
         return result.finishRawArray(context);
@@ -1463,7 +1463,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         RubyArray result = result1;
 
         for(long i = 0; i < len; ++i) {
-            result.append(eltOk(j));
+            result.append(context, eltOk(j));
             j = j + step;
         }
 
@@ -1596,7 +1596,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     public RubyArray push(ThreadContext context, IRubyObject[] items) {
         if (items.length == 0) modifyCheck(context);
         for (IRubyObject item : items) {
-            append(item);
+            append(context, item);
         }
         return this;
     }
@@ -2919,7 +2919,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
         for (int i = 0; i < realLength; i++) {
             // Do not coarsen the "safe" check, since it will misinterpret AIOOBE from the yield (see JRUBY-5434)
-            ary.append(block.yieldNonArray(context, eltOk(i), null)); // arr[i] = ...
+            // arr[i] = ...
+            ary.append(context, block.yieldNonArray(context, eltOk(i), null));
         }
 
         return ary.finishRawArray(context);
@@ -3020,7 +3021,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         for (int i = 0; i < realLength; i++) {
             // Do not coarsen the "safe" check, since it will misinterpret AIOOBE from the yield (see JRUBY-5434)
             IRubyObject value = eltOk(i);
-            if (block.yield(context, value).isTrue()) result.append(value);
+            if (block.yield(context, value).isTrue()) result.append(context, value);
         }
 
         return result.finishRawArray(context);
@@ -3551,12 +3552,12 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                 while (i < ary.realLength) {
                     IRubyObject elt = ary.eltOk(i++);
                     if (level >= 0 && stack.size() / 2 >= level) {
-                        result.append(elt);
+                        result.append(context, elt);
                         continue;
                     }
                     tmp = TypeConverter.checkArrayType(context, elt);
                     if (tmp.isNil()) {
-                        result.append(elt);
+                        result.append(context, elt);
                     } else { // nested array element
                         if (memo != null) {
                             if (memo.get(tmp) != null) throw argumentError(context, "tried to flatten recursive array");
@@ -3926,7 +3927,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                     if (arrays[j].includesByEql(context, elt)) break;
                 }
             }
-            if (j == args.length) diff.append(elt);
+            if (j == args.length) diff.append(context, elt);
         }
 
         return diff;
@@ -4094,7 +4095,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             for (int j = 0; j < args[i].realLength; j++) {
                 IRubyObject elt = args[i].elt(j);
                 if (includesByEql(context, elt)) continue;
-                append(elt);
+                append(context, elt);
             }
         }
     }
@@ -5824,7 +5825,11 @@ float_loop:
     }
 
     public boolean add(Object element) {
-        append(JavaUtil.convertJavaToUsableRubyObject(metaClass.runtime, element));
+        return add(getRuntime().getCurrentContext(), element);
+    }
+
+    public boolean add(ThreadContext context, Object element) {
+        append(context, JavaUtil.convertJavaToUsableRubyObject(metaClass.runtime, element));
         return true;
     }
 

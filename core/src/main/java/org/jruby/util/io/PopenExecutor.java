@@ -372,21 +372,21 @@ public class PopenExecutor {
     public static RubyArray checkExecEnv(ThreadContext context, RubyHash hash, ExecArg pathArg) {
         var env = newArray(context);
 
-        for (Map.Entry<IRubyObject, IRubyObject> entry : (Set<Map.Entry<IRubyObject, IRubyObject>>)hash.directEntrySet()) {
-            IRubyObject key = entry.getKey();
-            IRubyObject val = entry.getValue();
-            RubyString keyString = checkEmbeddedNulls(context, key).export(context);
-            String k = keyString.toString();
+        hash.visitAll(context, new RubyHash.VisitorWithState<RubyArray>() {
+            @Override
+            public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, RubyArray state) {
+                RubyString keyString = checkEmbeddedNulls(context, key).export(context);
+                String k = keyString.toString();
 
-            if (k.indexOf('=') != -1) throw argumentError(context, "environment name contains a equal : " + k);
+                if (k.indexOf('=') != -1) throw argumentError(context, "environment name contains a equal : " + k);
 
-            if (!val.isNil()) val = checkEmbeddedNulls(context, val);
-            if (!val.isNil()) val = ((RubyString) val).export(context);
+                if (!value.isNil()) value = checkEmbeddedNulls(context, value);
+                if (!value.isNil()) value = ((RubyString) value).export(context);
 
-            if (k.equalsIgnoreCase("PATH")) pathArg.path_env = val;
+                if (k.equalsIgnoreCase("PATH")) pathArg.path_env = value;
 
-            env.push(context, newArray(context, keyString, val));
-        }
+                state.push(context, newArray(context, keyString, value));
+        }}, env);
 
         return env;
     }

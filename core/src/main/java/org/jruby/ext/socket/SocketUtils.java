@@ -99,7 +99,7 @@ public class SocketUtils {
 
     public static IRubyObject gethostbyaddr(ThreadContext context, IRubyObject[] args) {
         var ret0 = newString(context, Sockaddr.addressFromString(context.runtime, args[0].convertToString().toString()).getCanonicalHostName());
-        var ret1 = newArray(context);
+        var ret1 = newEmptyArray(context);
         var ret2 = asFixnum(context, 2); // AF_INET
         var ret3 = args[0];
 
@@ -148,7 +148,7 @@ public class SocketUtils {
 
             return RubyArray.newArray(context.runtime,
                     newString(context, addr.getCanonicalHostName()),
-                    newArray(context),
+                    newEmptyArray(context),
                     asFixnum(context, AF_INET.longValue()),
                     newString(context, new ByteList(addr.getAddress())));
         } catch(UnknownHostException e) {

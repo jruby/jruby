@@ -51,6 +51,7 @@ import org.jruby.util.ByteList;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newEmptyString;
+import static org.jruby.api.Create.newRawArray;
 import static org.jruby.api.Error.*;
 
 /**
@@ -1861,7 +1862,7 @@ abstract public class AbstractMemory extends MemoryObject {
     @JRubyMethod(name = { "get_array_of_string" })
     public IRubyObject get_array_of_string(ThreadContext context, IRubyObject rbOffset) {
         final int POINTER_SIZE = (Platform.getPlatform().addressSize() / 8);
-        final var arr = newArray(context);
+        final var arr = newRawArray(context, (size - POINTER_SIZE) / POINTER_SIZE);
 
         for (long off = getOffset(rbOffset); off <= size - POINTER_SIZE; off += POINTER_SIZE) {
             final MemoryIO mem = getMemoryIO().getMemoryIO(off);
@@ -1870,7 +1871,7 @@ abstract public class AbstractMemory extends MemoryObject {
             arr.add(MemoryUtil.getTaintedString(context.runtime, mem, 0));
         }
 
-        return arr;
+        return arr.finishRawArray(context);
     }
 
     @JRubyMethod(name = { "get_array_of_string" })

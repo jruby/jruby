@@ -4567,11 +4567,11 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "refinements")
     public IRubyObject refinements(ThreadContext context) {
-        var refinementModules = newArray(context);
+        var refinementModules = newRawArray(context, refinements.size());
 
         refinements.forEach((key, value) -> refinementModules.append(context, value));
 
-        return refinementModules;
+        return refinementModules.finishRawArray(context);
     }
 
     @JRubyMethod(name = "target")

@@ -41,7 +41,9 @@ import org.jruby.RubyProc;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.IAccessor;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.func.TriConsumer;
 
 /**
  *
@@ -163,6 +165,10 @@ public class GlobalVariables {
         return globalVariables.keySet();
     }
 
+    public <State> void eachName(ThreadContext context, State state, TriConsumer<ThreadContext, State, String> consumer) {
+        globalVariables.forEach((s, g) -> consumer.accept(context, state, s));
+    }
+
     private GlobalVariable createIfNotDefined(String name) {
         return globalVariables.computeIfAbsent(name, (n) -> GlobalVariable.newUndefined(runtime, n));
     }
@@ -175,5 +181,9 @@ public class GlobalVariables {
 
     public void setDefaultSeparator(IRubyObject defaultSeparator) {
         this.defaultSeparator = defaultSeparator;
+    }
+
+    public int size() {
+        return globalVariables.size();
     }
 }
