@@ -1046,6 +1046,24 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         clearCodeRange();
     }
 
+    /**
+     * Ensure the backing store belongs to this string and has enough space to add extraLength bytes.
+     *
+     * MRI: str_ensure_available_capa
+     *
+     * @param context the current thread context
+     * @param extraLength the extra length needed
+     */
+    public void ensureAvailable(ThreadContext context, int extraLength) {
+        int realSize = value.getRealSize();
+
+        if (realSize > Integer.MAX_VALUE - extraLength) {
+            throw argumentError(context, "string sizes too big");
+        }
+
+        modifyExpand(realSize + extraLength);
+    }
+
     // io_set_read_length
     public void setReadLength(int length) {
         if (size() != length) {
@@ -5514,28 +5532,48 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(rest = true)
     public IRubyObject append_as_bytes(ThreadContext context, IRubyObject[] args) {
-        checkFrozen();
-        modify();
-
-        int length = args.length;
-        for (int i = 0; i < length; i++) {
-            var arg = args[i];
-
-            if (arg instanceof RubyFixnum fix) {
-                cat(fix.getIntValue() & 0xff);
-            } else if (arg instanceof RubyBignum big) {
-                cat(big.getIntValue() & 0xff);
-            } else if (arg instanceof RubyString str) {
-                value.append(str.getByteList());
-            } else {
-                throw typeError(context, str(context.runtime, "wrong argument type ", types(context.runtime, arg.getType()), " (expected String or Integer)"));
-            }
-        }
-
-        // FIXME: MRI tries and minimize pain by trying to figure out if it should change cr and this is a quick hammer.
-        clearCodeRange();
+        int neededCapacity = 0;
+        for (var arg : args) neededCapacity += byteCapacityFor(context, arg);
+        this.ensureAvailable(context, neededCapacity);
+        for (var arg : args) appendBytes(context, arg);
 
         return this;
+    }
+
+    @JRubyMethod
+    public IRubyObject append_as_bytes(ThreadContext context) {
+        this.ensureAvailable(context, 0);
+
+        return this;
+    }
+
+    @JRubyMethod
+    public IRubyObject append_as_bytes(ThreadContext context, IRubyObject arg0) {
+        ensureAvailable(context, byteCapacityFor(context, arg0));
+        appendBytes(context, arg0);
+
+        return this;
+    }
+
+    private static int byteCapacityFor(ThreadContext context, IRubyObject arg) {
+        return switch (arg) {
+            case RubyInteger ignored -> 1;
+            case RubyString str -> str.getByteList().realSize();
+            default ->
+                    throw typeError(context, str(context.runtime, "wrong argument type ", types(context.runtime, arg.getType()), " (expected String or Integer)"));
+        };
+    }
+
+    private void appendBytes(ThreadContext context, IRubyObject arg) {
+        if (arg instanceof RubyFixnum fix) {
+            cat(fix.getIntValue() & 0xff);
+        } else if (arg instanceof RubyBignum big) {
+            cat(big.getBigIntegerValue().intValue() & 0xff);
+        } else if (arg instanceof RubyString str) {
+            value.append(str.getByteList());
+        } else {
+            throw runtimeError(context, "BUG: append_as_bytes arguments should have been validated");
+        }
     }
 
     /** rb_str_chop / rb_str_chop_bang
