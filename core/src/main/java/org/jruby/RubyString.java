@@ -5515,6 +5515,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @JRubyMethod(rest = true)
     public IRubyObject append_as_bytes(ThreadContext context, IRubyObject[] args) {
         checkFrozen();
+        modify();
 
         int length = args.length;
         for (int i = 0; i < length; i++) {
