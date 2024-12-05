@@ -31,7 +31,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.ShellLauncher;
-import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
 
@@ -374,21 +373,21 @@ public class PopenExecutor {
     public static RubyArray checkExecEnv(ThreadContext context, RubyHash hash, ExecArg pathArg) {
         var env = newArray(context);
 
-        for (Map.Entry<IRubyObject, IRubyObject> entry : (Set<Map.Entry<IRubyObject, IRubyObject>>)hash.directEntrySet()) {
-            IRubyObject key = entry.getKey();
-            IRubyObject val = entry.getValue();
-            RubyString keyString = checkEmbeddedNulls(context, key).export(context);
-            String k = keyString.toString();
+        hash.visitAll(context, new RubyHash.VisitorWithState<RubyArray>() {
+            @Override
+            public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, RubyArray state) {
+                RubyString keyString = checkEmbeddedNulls(context, key).export(context);
+                String k = keyString.toString();
 
-            if (k.indexOf('=') != -1) throw argumentError(context, "environment name contains a equal : " + k);
+                if (k.indexOf('=') != -1) throw argumentError(context, "environment name contains a equal : " + k);
 
-            if (!val.isNil()) val = checkEmbeddedNulls(context, val);
-            if (!val.isNil()) val = ((RubyString) val).export(context);
+                if (!value.isNil()) value = checkEmbeddedNulls(context, value);
+                if (!value.isNil()) value = ((RubyString) value).export(context);
 
-            if (k.equalsIgnoreCase("PATH")) pathArg.path_env = val;
+                if (k.equalsIgnoreCase("PATH")) pathArg.path_env = value;
 
-            env.push(newArray(context, keyString, val));
-        }
+                state.push(context, newArray(context, keyString, value));
+        }}, env);
 
         return env;
     }
@@ -982,14 +981,14 @@ public class PopenExecutor {
                 newary = newArray(context);
                 sargp.fd_dup2 = newary;
             }
-            newary.push(newArray(context, asFixnum(context, fd), asFixnum(context, save_fd)));
+            newary.push(context, newArray(context, asFixnum(context, fd), asFixnum(context, save_fd)));
 
             newary = sargp.fd_close;
             if (newary == null) {
                 newary = newArray(context);
                 sargp.fd_close = newary;
             }
-            newary.push(newArray(context, asFixnum(context, save_fd), context.nil));
+            newary.push(context, newArray(context, asFixnum(context, save_fd), context.nil));
         }
 
         return 0;
@@ -1329,7 +1328,7 @@ public class PopenExecutor {
                         softlim = hardlim = val.convertToInteger();
                     }
                     tmp = newArray(context, asFixnum(context, rtype), softlim, hardlim);
-                    ((RubyArray)ary).push(tmp);
+                    ((RubyArray)ary).push(context, tmp);
                 }
                 else if (id.equals("unsetenv_others")) {
                     if (eargp.unsetenvOthersGiven) {
@@ -1582,11 +1581,11 @@ public class PopenExecutor {
         if (key instanceof RubyArray k) {
             for (int i = 0 ; i < k.size(); i++) {
                 IRubyObject fd = checkExecRedirectFd(context, k.eltOk(i), !param.isNil());
-                ary.push(newArray(context, fd, param));
+                ary.push(context, newArray(context, fd, param));
             }
         } else {
             IRubyObject fd = checkExecRedirectFd(context, key, !param.isNil());
-            ary.push(newArray(context, fd, param));
+            ary.push(context, newArray(context, fd, param));
         }
         return ary;
     }

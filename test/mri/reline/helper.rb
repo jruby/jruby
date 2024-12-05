@@ -92,7 +92,7 @@ class Reline::TestCase < Test::Unit::TestCase
       if Reline::Unicode::EscapedChars.include?(c.ord)
         c
       else
-        c.encode(@line_editor.instance_variable_get(:@encoding), Encoding::UTF_8, **options)
+        c.encode(@line_editor.encoding, Encoding::UTF_8, **options)
       end
     }.join
   rescue Encoding::UndefinedConversionError, Encoding::InvalidByteSequenceError
@@ -121,18 +121,23 @@ class Reline::TestCase < Test::Unit::TestCase
           @line_editor.input_key(Reline::Key.new(byte, byte, false))
         end
       else
-        c.bytes.each do |b|
-          @line_editor.input_key(Reline::Key.new(b, b, false))
-        end
+        @line_editor.input_key(Reline::Key.new(c.ord, c.ord, false))
       end
     end
   end
 
   def input_raw_keys(input, convert = true)
     input = convert_str(input) if convert
-    input.bytes.each do |b|
-      @line_editor.input_key(Reline::Key.new(b, b, false))
+    input.chars.each do |c|
+      @line_editor.input_key(Reline::Key.new(c.ord, c.ord, false))
     end
+  end
+
+  def set_line_around_cursor(before, after)
+    input_keys("\C-a\C-k")
+    input_keys(after)
+    input_keys("\C-a")
+    input_keys(before)
   end
 
   def assert_line_around_cursor(before, after)

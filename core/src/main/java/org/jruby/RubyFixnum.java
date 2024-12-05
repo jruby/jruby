@@ -62,6 +62,7 @@ import org.jruby.util.cli.Options;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.Numeric.f_odd_p;
@@ -383,10 +384,17 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
 
         if (value == 0) return RubyArray.newArray(context.runtime, zero(context.runtime));
 
-        var res = newArray(context, 0);
-        while (value > 0) {
-            res.append(context, newFixnum(context.runtime, value % longBase));
-            value /= longBase;
+        RubyArray<?> res;
+
+        if (value > 0) {
+            res = newArray(context, (int) (Math.log(value) / Math.log(longBase)) + 1);
+            do {
+                res.append(context, newFixnum(context.runtime, value % longBase));
+                value /= longBase;
+            } while (value > 0);
+            res.finishRawArray(context);
+        } else {
+            res = newEmptyArray(context);
         }
 
         return res;

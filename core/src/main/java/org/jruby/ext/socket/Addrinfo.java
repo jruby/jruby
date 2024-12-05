@@ -492,10 +492,7 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod
     public IRubyObject ip_unpack(ThreadContext context) {
-        var ary = newArray(context, 2);
-        ary.append(context, ip_address(context));
-        ary.append(context, ip_port(context));
-        return ary;
+        return newArray(context, ip_address(context), ip_port(context));
     }
 
     @JRubyMethod

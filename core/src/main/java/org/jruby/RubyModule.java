@@ -1141,7 +1141,7 @@ public class RubyModule extends RubyObject {
                 overlay.refinements.entrySet().stream().forEach(entry -> {
                     RubyModule mod = entry.getValue();
                     while (mod != null && mod.getOrigin().isRefinement()) {
-                        ary.push(mod.getOrigin().definedAt);
+                        ary.push(context, mod.getOrigin().definedAt);
                         mod = mod.getSuperClass();
                     }
                 });
@@ -4730,11 +4730,11 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "refinements")
     public IRubyObject refinements(ThreadContext context) {
-        var refinementModules = newArray(context);
+        var refinementModules = newRawArray(context, refinements.size());
 
         refinements.forEach((key, value) -> refinementModules.append(context, value));
 
-        return refinementModules;
+        return refinementModules.finishRawArray(context);
     }
 
     @JRubyMethod(name = "target")

@@ -42,6 +42,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Create;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.compiler.Constantizable;
 import org.jruby.parser.StaticScope;
@@ -77,7 +78,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.jruby.api.Convert.*;
-import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
@@ -1382,7 +1382,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         public RubyArray all_symbols(ThreadContext context) {
             SymbolEntry[] table = this.symbolTable;
-            var array = newArray(context, size);
+            var array = Create.newRawArray(context, size);
 
             for (int i = table.length; --i >= 0; ) {
                 for (SymbolEntry e = table[i]; e != null; e = e.next) {
@@ -1390,7 +1390,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
                     if (symbol != null) array.append(context, symbol);
                 }
             }
-            return array;
+            return array.finishRawArray(context);
         }
 
         public int size() {

@@ -37,6 +37,7 @@ import java.util.zip.CRC32;
 import java.util.zip.Adler32;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -47,6 +48,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 
+import org.jruby.api.Create;
 import org.jruby.exceptions.RaiseException;
 
 import org.jruby.runtime.Arity;
@@ -55,7 +57,6 @@ import org.jruby.runtime.ThreadContext;
 import static org.jruby.api.Access.*;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.numericToLong;
-import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineModule;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
@@ -265,11 +266,11 @@ public class RubyZlib {
     @JRubyMethod(name = "crc_table", module = true, visibility = PRIVATE)
     public static IRubyObject crc_table(ThreadContext context, IRubyObject recv) {
         int[] table = com.jcraft.jzlib.CRC32.getCRC32Table();
-        var array = newArray(context, table.length);
-        for (int j : table) {
-            array.append(context, asFixnum(context, j & 0xffffffffL));
-        }
-        return array;
+        return Create.constructArray(context, table, table.length, RubyZlib::crctablePopulator);
+    }
+
+    private static void crctablePopulator(ThreadContext c, int[] t, RubyArray<IRubyObject> a) {
+        for (int j : t) a.append(c, asFixnum(c, j & 0xffffffffL));
     }
 
     @Deprecated

@@ -225,8 +225,8 @@ public class StringArraySet extends RubyArray {
     }
 
     @Override
-    public synchronized RubyArray push(IRubyObject item) {
-        var result = super.push(item);
+    public synchronized RubyArray push(ThreadContext context, IRubyObject item) {
+        var result = super.push(context, item);
         add(item);
         return result;
     }

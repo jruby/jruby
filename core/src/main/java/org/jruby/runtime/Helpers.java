@@ -38,6 +38,7 @@ import com.headius.invokebinder.Binder;
 import jnr.constants.platform.Errno;
 import org.jruby.*;
 import org.jruby.api.Convert;
+import org.jruby.api.Create;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.MultipleAsgnNode;
@@ -2374,6 +2375,35 @@ public class Helpers {
         ArraySupport.copy(nils, arr, i, to - i);
     }
 
+    /**
+     * Return a nil-filled IRubyObject array of the specified length.
+     *
+     * @param length the length of the array requested
+     * @param runtime the current runtime
+     * @return a nil-filled IRubyObject array of the requested length
+     */
+    public static IRubyObject[] nilledArray(int length, Ruby runtime) {
+        if (length == 0) return IRubyObject.NULL_ARRAY;
+        IRubyObject[] nils = runtime.getNilPrefilledArray();
+        int i;
+
+        if (length < nils.length) {
+            return Arrays.copyOfRange(nils, 0, length);
+        }
+
+        IRubyObject[] arr = new IRubyObject[length];
+
+        // NOTE: seems that Arrays.fill(arr, runtime.getNil()) won't do better ... on Java 8
+        // Object[] array doesn't get the same optimizations as e.g. byte[] int[]
+
+        for (i = 0; i + Ruby.NIL_PREFILLED_ARRAY_SIZE < length; i += Ruby.NIL_PREFILLED_ARRAY_SIZE) {
+            System.arraycopy(nils, 0, arr, i, Ruby.NIL_PREFILLED_ARRAY_SIZE);
+        }
+        ArraySupport.copy(nils, arr, i, length - i);
+
+        return arr;
+    }
+
     public static void fillNil(IRubyObject[] arr, Ruby runtime) {
         fillNil(arr, 0, arr.length, runtime);
     }
@@ -2685,13 +2715,12 @@ public class Helpers {
     public static RubyArray argumentDescriptorsToParameters(ThreadContext context, ArgumentDescriptor[] argsDesc, boolean isLambda) {
         if (argsDesc == null) Thread.dumpStack();
 
-        final var params = newArray(context, argsDesc.length);
-
+        var objArray = new IRubyObject[argsDesc.length];
         for (int i = 0; i < argsDesc.length; i++) {
-            params.store(i, argsDesc[i].toArrayForm(context, isLambda));
+            objArray[i] = argsDesc[i].toArrayForm(context, isLambda);
         }
 
-        return params;
+        return Create.newArrayNoCopy(context, objArray);
     }
 
     public static ArgumentDescriptor[] methodToArgumentDescriptors(DynamicMethod method) {

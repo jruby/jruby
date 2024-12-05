@@ -227,7 +227,7 @@ public class RubyTCPSocket extends RubyIPSocket {
 
             return RubyArray.newArray(context.runtime,
                     newString(context, do_not_reverse_lookup(context, recv).isTrue() ? addr.getHostAddress() : addr.getCanonicalHostName()),
-                    newArray(context),
+                    newEmptyArray(context),
                     asFixnum(context, addr instanceof Inet4Address ? AF_INET.longValue() : AF_INET6.longValue()),
                     newString(context, addr.getHostAddress()));
         }

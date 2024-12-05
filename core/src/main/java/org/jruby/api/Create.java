@@ -5,10 +5,9 @@ import org.jruby.*;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.func.TriConsumer;
 
 import java.util.List;
-
-import static org.jruby.RubyArray.checkLength;
 
 public class Create {
     /**
@@ -22,19 +21,11 @@ public class Create {
         return RubyArray.newArray(context.runtime);
     }
 
-    /**
-     * Create a new array with the allocation size specified by the provided length filled with nil.
-     * This method will additionally make sure the long value will fit into an int size.
-     *
-     * @param context the current thread context
-     * @param length the size to allocate for the array
-     * @return the new array
-     */
     // mri: rb_ary_new2
-    public static RubyArray<?> newArray(ThreadContext context, long length) {
-        checkLength(context, length);
+
+    public static RubyArray<?> newArray(ThreadContext context, int length) {
         // FIXME: This should be newBlankArray but things go very wrong in a tough to figure out where sort of way.
-        return RubyArray.newArray(context.runtime, (int)length);
+        return RubyArray.newArray(context.runtime, length);
     }
 
     /**
@@ -73,6 +64,19 @@ public class Create {
     }
 
     /**
+     * Create a new array with three elements.
+     *
+     * @param context the current thread context
+     * @param elt1 the first element
+     * @param elt2 the second element
+     * @param elt3 the third element
+     * @return the new array
+     */
+    public static RubyArray<?> newArray(ThreadContext context, IRubyObject elt1, IRubyObject elt2, IRubyObject elt3) {
+        return RubyArray.newArray(context.runtime, elt1, elt2, elt3);
+    }
+
+    /**
      * Create a new array with many elements from a java.util.List.
      *
      * @param context the current thread context
@@ -92,6 +96,40 @@ public class Create {
      */
     public static RubyArray<?> newArrayNoCopy(ThreadContext context, IRubyObject... elements) {
         return RubyArray.newArrayNoCopy(context.runtime, elements);
+    }
+
+    /**
+     * Construct an array of the requested size by calling the given consumer, which should add elements to the
+     * array. After invoking the consumer, the remaining elements in the array will be filled with nil.
+     *
+     * @param context the current context
+     * @param state a state object for the consumer
+     * @param length the requested available size for the array
+     * @param populator the consumer that will populate the array
+     * @return the finished array
+     * @param <State> a state object for the consumer
+     * @param <T> the type of object the Array will hold
+     */
+    public static <State, T extends IRubyObject> RubyArray<?> constructArray(ThreadContext context, State state, int length, TriConsumer<ThreadContext, State, RubyArray<T>> populator) {
+        RubyArray rawArray = newRawArray(context, length);
+        populator.accept(context, state, rawArray);
+        return rawArray.finishRawArray(context);
+    }
+
+    /**
+     * Construct an array with the specified backing storage length. The array must be filled with non-null values
+     * before entering Rubyspace.
+     *
+     * @param context the current context
+     * @param len the length of the array buffer requested
+     * @return an array with the given buffer size, entries initialized to null
+     */
+    public static RubyArray<?> newRawArray(final ThreadContext context, final int len) {
+        return RubyArray.newRawArray(context, len);
+    }
+
+    public static RubyArray<?> newRawArray(final ThreadContext context, final long len) {
+        return RubyArray.newRawArray(context, len);
     }
 
     /**

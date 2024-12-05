@@ -1511,6 +1511,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     // Needs to remain in place until StringIO has migrated to the new methods
     // See https://github.com/ruby/stringio/issues/83
+    // jruby-rack also uses this and must be updated: https://github.com/jruby/jruby-rack/issues/267
     @Deprecated
     public final int cat19(ByteList other, int codeRange) {
         return catWithCodeRange(other, codeRange);
@@ -4964,11 +4965,13 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             while ((result = scanOnce(context, str, pat, startp)) != context.nil) {
                 last = prev;
                 prev = startp[0];
-                if (ary == null) ary = newArray(context, 4);
+                if (ary == null) {
+                    ary = newRawArray(context, 4);
+                }
                 ary.append(context, result);
             }
             if (last >= 0) patternSearch(context, pat, str, last);
-            return ary == null ? newEmptyArray(context) : ary;
+            return ary == null ? newEmptyArray(context) : ary.finishRawArray(context);
         }
 
         final byte[] pBytes = value.unsafeBytes();
@@ -6327,7 +6330,13 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         end = ptr + strByteList.getRealSize();
         enc = EncodingUtils.getEncoding(strByteList);
 
-        var ary = wantarray ? newArray(context, str.strLength(strByteList, enc)) : null;
+        RubyArray<?> ary;
+        if (wantarray) {
+            final int len = str.strLength(strByteList, enc);
+            ary = newRawArray(context, len);
+        } else {
+            ary = null;
+        }
 
         while (ptr < end) {
             int c = codePoint(context, enc, ptrBytes, ptr, end);
@@ -6337,7 +6346,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             ptr += n;
         }
 
-        return wantarray ? ary : this;
+        return wantarray ? ary.finishRawArray(context) : this;
     }
 
     private IRubyObject enumerateBytes(ThreadContext context, String name, Block block, boolean wantarray) {
@@ -6420,7 +6429,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         int end = ptr + strByteList.getRealSize();
         Matcher matcher = reg.matcher(ptrBytes, ptr, end);
 
-        RubyArray ary = wantarray ? newArray(context, end - ptr) : null;
+        RubyArray ary;
+        if (wantarray) {
+            ary = newRawArray(context, end - ptr);
+        } else {
+            ary = null;
+        }
 
         while (ptr < end) {
             int len = matcher.match(ptr, end, Option.DEFAULT);
@@ -6431,7 +6445,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             ptr += len;
         }
 
-        return wantarray ? ary : this;
+        return wantarray ? ary.finishRawArray(context) : this;
     }
 
     @JRubyMethod

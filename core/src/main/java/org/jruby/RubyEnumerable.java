@@ -398,7 +398,7 @@ public class RubyEnumerable {
         if (firstCount == 0) return newEmptyArray(context);
         if (firstCount < 0) throw argumentError(context, "attempt to take negative size");
 
-        final RubyArray<?> result = newArray(context, firstCount);
+        final RubyArray<?> result = newRawArray(context, firstCount);
 
         try {
             each(context, eachSite(context), self, new JavaInternalBlockBody(context.runtime, context, "Enumerable#first", Signature.OPTIONAL) {
@@ -416,7 +416,7 @@ public class RubyEnumerable {
             });
         } catch (JumpException.SpecialJump sj) {}
 
-        return result;
+        return result.finishRawArray(context);
     }
 
     @JRubyMethod
@@ -1219,21 +1219,27 @@ public class RubyEnumerable {
     }
 
     static IRubyObject each_sliceCommon(ThreadContext context, IRubyObject self, final int size, final Block block) {
-        final Ruby runtime = context.runtime;
         if (size <= 0) throw argumentError(context, "invalid slice size");
 
-        final SingleObject<RubyArray> result = new SingleObject<>(newArray(context, size));
+        final SingleObject<RubyArray> result = new SingleObject<>(null);
 
         callEach(context, eachSite(context), self, Signature.OPTIONAL, (ctx, largs, blk) -> {
-            result.object.append(context, packEnumValues(ctx, largs));
-            if (result.object.size() == size) {
-                block.yield(ctx, result.object);
-                result.object = newArray(ctx, size);
+            RubyArray object = result.object;
+            if (object == null) {
+                object = result.object = newRawArray(context, size);
             }
+
+            object.append(ctx, packEnumValues(ctx, largs));
+
+            if (object.size() == size) {
+                block.yield(ctx, object.finishRawArray(ctx));
+                result.object = newRawArray(ctx, size);
+            }
+
             return ctx.nil;
         });
 
-        if (result.object.size() > 0) block.yield(context, result.object);
+        if (result.object != null && result.object.size() > 0) block.yield(context, result.object.finishRawArray(context));
         return self;
     }
 
@@ -1263,12 +1269,12 @@ public class RubyEnumerable {
     }
 
     static IRubyObject each_consCommon(ThreadContext context, IRubyObject self, final int size, final Block block) {
-        final var result = newArray(context, size);
+        final var result = newRawArray(context, size);
 
         callEach(context, eachSite(context), self, Signature.OPTIONAL, (ctx, largs, blk) -> {
             if (result.size() == size) result.shift(ctx);
-            result.append(context, packEnumValues(ctx, largs));
-            if (result.size() == size) block.yield(ctx, result.aryDup());
+            result.append(ctx, packEnumValues(ctx, largs));
+            if (result.size() == size) block.yield(ctx, result.finishRawArray(context).aryDup());
             return ctx.nil;
         });
 
@@ -1479,7 +1485,7 @@ public class RubyEnumerable {
         }
 
         return result.object1 == null ?
-                newArray(context, 2) : newArray(context, result.object1, result.object2);
+                newArray(context, context.nil, context.nil) : newArray(context, result.object1, result.object2);
     }
 
     @JRubyMethod

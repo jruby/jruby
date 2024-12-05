@@ -123,7 +123,7 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
                 reifiedClass(RubyBoolean.class).
                 classIndex(ClassIndex.TRUE);
 
-        True.defineAnnotatedMethodsIndividually(False.class);
+        True.defineAnnotatedMethodsIndividually(True.class);
         True.defineAnnotatedMethodsIndividually(RubyBoolean.class);
         True.getMetaClass().undefMethods("new");
 

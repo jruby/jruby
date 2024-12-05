@@ -46,7 +46,7 @@ default_gems = [
     ['io-wait', '0.3.1'],
     ['ipaddr', '1.2.6'],
     ['irb', '1.14.1'],
-    ['jar-dependencies', '0.4.1'],
+    ['jar-dependencies', '0.5.0'],
     ['jruby-readline', '1.3.7'],
     ['jruby-openssl', '0.15.0'],
     ['json', '2.7.2'],
@@ -74,7 +74,7 @@ default_gems = [
     # ['readline', '0.0.4'],
     # Will be solved with readline
     # ['readline-ext', '0.1.4'],
-    ['reline', '0.5.10'],
+    ['reline', '0.5.12'],
     # https://github.com/ruby/resolv/issues/19
     # ['resolv', '0.2.1'],
     ['ruby2_keywords', '0.0.5'],

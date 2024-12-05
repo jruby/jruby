@@ -108,12 +108,13 @@ public class RubyGlobal {
         var context = runtime.getCurrentContext();
         var objectClass = objectClass(context);
         // define ARGV and $* for this runtime
-        var argvArray = newArray(context);
         String[] argv = runtime.getInstanceConfig().getArgv();
+        var argvArray = newRawArray(context, argv.length);
 
         for (String arg : argv) {
             argvArray.append(context, RubyString.newInternalFromJavaExternal(runtime, arg));
         }
+        argvArray.finishRawArray(context);
 
         if (objectClass.getConstantNoConstMissing("ARGV") != null) {
             ((RubyArray<?>) objectClass.getConstant("ARGV")).replace(context, argvArray);
@@ -317,6 +318,8 @@ public class RubyGlobal {
             runtime.defineGlobalConstant("STDIN", stdin);
             runtime.defineGlobalConstant("STDOUT", stdout);
             runtime.defineGlobalConstant("STDERR", stderr);
+
+            runtime.setOriginalStderr(stderr);
         } else {
             ((RubyIO) object.getConstant("STDIN")).getOpenFile().setFD(stdin.getOpenFile().fd());
             ((RubyIO) object.getConstant("STDOUT")).getOpenFile().setFD(stdout.getOpenFile().fd());

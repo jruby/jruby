@@ -29,10 +29,12 @@ package org.jruby.ext.coverage;
 import java.util.Map;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyHash;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Create;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
@@ -217,15 +219,11 @@ public class CoverageModule {
             final IntList val = entry.getValue();
             boolean oneshot = (mode & CoverageData.ONESHOT_LINES) != 0;
 
-            var ary = newArray(context, val.size());
-            for (int i = 0; i < val.size(); i++) {
-                int integer = val.get(i);
-                if (oneshot) {
-                    ary.push(asFixnum(context, integer + 1));
-                } else {
-                    ary.store(i, integer == -1 ? context.nil : asFixnum(context, integer));
-                }
-            }
+            var ary = Create.constructArray(context, val, val.size(),
+                    oneshot ?
+                            CoverageModule::convertCoverageOneshot :
+                            CoverageModule::convertCoverage
+            );
 
             RubyString key = newString(context, entry.getKey());
             IRubyObject value = ary;
@@ -242,5 +240,18 @@ public class CoverageModule {
 
         return covHash;
     }
-    
+
+    private static void convertCoverageOneshot(ThreadContext c, IntList v, RubyArray<IRubyObject> a) {
+        for (int i = 0; i < v.size(); i++) {
+            int integer = v.get(i);
+            a.push(c, asFixnum(c, integer + 1));
+        }
+    }
+
+    private static void convertCoverage(ThreadContext c, IntList v, RubyArray<IRubyObject> a) {
+        for (int i = 0; i < v.size(); i++) {
+            int integer = v.get(i);
+            a.store(i, integer == -1 ? c.nil : asFixnum(c, integer));
+        }
+    }
 }
