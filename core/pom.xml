@@ -518,9 +518,9 @@ DO NOT MODIFY - GENERATED CODE
           <showWarnings>true</showWarnings>
           <showDeprecation>true</showDeprecation>
           <source>${base.java.version}</source>
-          <source>17</source>
+          <source>21</source>
           <target>${base.javac.version}</target>
-          <target>17</target>
+          <target>21</target>
           <useIncrementalCompilation>false</useIncrementalCompilation>
         </configuration>
       </plugin>
