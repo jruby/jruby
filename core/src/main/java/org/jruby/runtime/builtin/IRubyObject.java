@@ -36,6 +36,7 @@
 package org.jruby.runtime.builtin;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -44,6 +45,7 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.RubyInteger;
 import org.jruby.RubyString;
+import org.jruby.api.JRubyAPI;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;

@@ -37,10 +37,10 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.runtime.Visibility.PRIVATE;
-import static org.jruby.runtime.Visibility.PUBLIC;
 
 /**
  * The Java representation of a Ruby ArgumentError.
@@ -60,12 +60,9 @@ public class RubyNoMatchingPatternKeyError extends RubyStandardError {
         super(runtime, exceptionClass, message);
     }
 
-    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass clazz = runtime.defineClass("NoMatchingPatternKeyError", exceptionClass, RubyNoMatchingPatternKeyError::new);
-
-        clazz.defineAnnotatedMethods(RubyNoMatchingPatternKeyError.class);
-
-        return clazz;
+    static RubyClass define(ThreadContext context, RubyClass StandardError) {
+        return defineClass(context, "NoMatchingPatternKeyError", StandardError, RubyNoMatchingPatternKeyError::new).
+                defineMethods(context, RubyNoMatchingPatternKeyError.class);
     }
 
     @Override

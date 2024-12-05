@@ -20,7 +20,6 @@ import java.util.function.Predicate;
 import org.jruby.AbstractRubyMethod;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.RubyMethod;
@@ -60,6 +59,7 @@ import org.jruby.util.JRubyObjectInputStream;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.castAsModule;
 import static org.jruby.api.Create.newEmptyArray;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.arrayOf;
 
@@ -76,15 +76,10 @@ public class JavaProxy extends RubyObject {
         this.object = object;
     }
 
-    public static RubyClass createJavaProxy(ThreadContext context) {
-        final Ruby runtime = context.runtime;
-
-        RubyClass JavaProxy = runtime.defineClass("JavaProxy", runtime.getObject(), JavaProxy::new);
-
-        JavaProxy.defineAnnotatedMethods(JavaProxy.class);
-        JavaProxy.includeModule(runtime.getModule("JavaProxyMethods"));
-
-        return JavaProxy;
+    public static RubyClass createJavaProxy(ThreadContext context, RubyClass Object, RubyModule JavaProxyMethods) {
+        return defineClass(context, "JavaProxy", Object, JavaProxy::new).
+                defineMethods(context, JavaProxy.class).
+                include(JavaProxyMethods);
     }
 
     @Deprecated // Java::JavaObject compatibility

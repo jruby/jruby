@@ -71,11 +71,10 @@ import static org.jruby.util.Numeric.f_odd_p;
  */
 public class RubyFixnum extends RubyInteger implements Constantizable, Appendable {
 
-    public static RubyClass createFixnumClass(Ruby runtime) {
-        RubyClass fixnum = runtime.getInteger();
-
-        for (int i = 0; i < runtime.fixnumCache.length; i++) {
-            runtime.fixnumCache[i] = new RubyFixnum(fixnum, i - CACHE_OFFSET);
+    public static RubyClass createFixnumClass(ThreadContext context, RubyClass fixnum) {
+        var cache = context.runtime.fixnumCache;
+        for (int i = 0; i < cache.length; i++) {
+            cache[i] = new RubyFixnum(fixnum, i - CACHE_OFFSET);
         }
 
         return fixnum;

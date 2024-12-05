@@ -65,6 +65,7 @@ import org.jruby.util.Sprintf;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.Numeric.f_abs;
@@ -97,38 +98,30 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     public static final double NAN = Double.NaN;
     public static final int FLOAT_DIG = DIG + 2;
 
-    public static RubyClass createFloatClass(Ruby runtime) {
-        var context = runtime.getCurrentContext();
-        RubyClass floatc = runtime.defineClass("Float", runtime.getNumeric(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+    public static RubyClass createFloatClass(ThreadContext context, RubyClass Numeric) {
+        RubyClass Float = defineClass(context, "Float", Numeric, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR).
+                reifiedClass(RubyFloat.class).
+                kindOf(new RubyModule.JavaClassKindOf(RubyFloat.class)).
+                classIndex(ClassIndex.FLOAT).
+                defineMethods(context, RubyFloat.class).
+                tap(c -> c.getSingletonClass().undefMethods("new")).
+                defineConstant(context, "ROUNDS", asFixnum(context, ROUNDS)).
+                defineConstant(context, "RADIX", asFixnum(context, RADIX)).
+                defineConstant(context, "MANT_DIG", asFixnum(context, MANT_DIG)).
+                defineConstant(context, "DIG", asFixnum(context, DIG)).
+                defineConstant(context, "MIN_EXP", asFixnum(context, MIN_EXP)).
+                defineConstant(context, "MAX_EXP", asFixnum(context, MAX_EXP)).
+                defineConstant(context, "MIN_10_EXP", asFixnum(context, MIN_10_EXP)).
+                defineConstant(context, "MAX_10_EXP", asFixnum(context, MAX_10_EXP));
 
-        floatc.setClassIndex(ClassIndex.FLOAT);
-        floatc.setReifiedClass(RubyFloat.class);
+        Float.defineConstant(context, "MIN", new RubyFloat(Float, Double.MIN_NORMAL)).
+                defineConstant(context, "MAX", new RubyFloat(Float, Double.MAX_VALUE)).
+                defineConstant(context, "EPSILON", new RubyFloat(Float, EPSILON)).
 
-        floatc.kindOf = new RubyModule.JavaClassKindOf(RubyFloat.class);
+                defineConstant(context, "INFINITY", new RubyFloat(Float, INFINITY)).
+                defineConstant(context, "NAN", new RubyFloat(Float, NAN));
 
-        floatc.getSingletonClass().undefineMethod("new");
-
-        // Java Doubles are 64 bit long:
-        floatc.defineConstant("ROUNDS", asFixnum(context, ROUNDS));
-        floatc.defineConstant("RADIX", RubyFixnum.newFixnum(runtime, RADIX));
-        floatc.defineConstant("MANT_DIG", asFixnum(context, MANT_DIG));
-        floatc.defineConstant("DIG", asFixnum(context, DIG));
-        // Double.MAX_EXPONENT since Java 1.6
-        floatc.defineConstant("MIN_EXP", asFixnum(context, MIN_EXP));
-        // Double.MAX_EXPONENT since Java 1.6
-        floatc.defineConstant("MAX_EXP", asFixnum(context, MAX_EXP));
-        floatc.defineConstant("MIN_10_EXP", asFixnum(context, MIN_10_EXP));
-        floatc.defineConstant("MAX_10_EXP", asFixnum(context, MAX_10_EXP));
-        floatc.defineConstant("MIN", new RubyFloat(floatc, Double.MIN_NORMAL));
-        floatc.defineConstant("MAX", new RubyFloat(floatc, Double.MAX_VALUE));
-        floatc.defineConstant("EPSILON", new RubyFloat(floatc, EPSILON));
-
-        floatc.defineConstant("INFINITY", new RubyFloat(floatc, INFINITY));
-        floatc.defineConstant("NAN", new RubyFloat(floatc, NAN));
-
-        floatc.defineAnnotatedMethods(RubyFloat.class);
-
-        return floatc;
+        return Float;
     }
 
     final double value;

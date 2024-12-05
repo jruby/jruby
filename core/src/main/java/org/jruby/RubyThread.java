@@ -78,7 +78,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.ExecutionContext;
@@ -93,12 +92,15 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.jruby.common.IRubyWarnings.ID;
 
+import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.*;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
@@ -450,37 +452,30 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         getRuntime().getThreadService().unregisterThread(this);
     }
 
-    public static RubyClass createThreadClass(Ruby runtime) {
+    public static RubyClass createThreadClass(ThreadContext context, RubyClass Object) {
         // FIXME: In order for Thread to play well with the standard 'new' behavior,
         // it must provide an allocator that can create empty object instances which
         // initialize then fills with appropriate data.
-        RubyClass threadClass = runtime.defineClass("Thread", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-
-        threadClass.setClassIndex(ClassIndex.THREAD);
-        threadClass.setReifiedClass(RubyThread.class);
-
-        threadClass.defineAnnotatedMethods(RubyThread.class);
+        RubyClass threadClass = defineClass(context, "Thread", Object, NOT_ALLOCATABLE_ALLOCATOR).
+                reifiedClass(RubyThread.class).
+                marshalWith(ObjectMarshal.NOT_MARSHALABLE_MARSHAL).
+                classIndex(ClassIndex.THREAD).
+                defineMethods(context, RubyThread.class);
 
         // main thread is considered adopted, since it is initiated by the JVM
-        RubyThread rubyThread = new RubyThread(runtime, threadClass, true);
+        RubyThread rubyThread = new RubyThread(context.runtime, threadClass, true);
 
         // TODO: need to isolate the "current" thread from class creation
         rubyThread.threadImpl = new AdoptedNativeThread(rubyThread, Thread.currentThread());
-        runtime.getThreadService().setMainThread(Thread.currentThread(), rubyThread);
-
-        // set to default thread group
-        runtime.getDefaultThreadGroup().addDirectly(rubyThread);
-
-        threadClass.setMarshal(ObjectMarshal.NOT_MARSHALABLE_MARSHAL);
+        context.runtime.getThreadService().setMainThread(Thread.currentThread(), rubyThread);
+        context.runtime.getDefaultThreadGroup().addDirectly(rubyThread);  // set to default thread group
 
         // set up Thread::Backtrace::Location class
-        RubyClass backtrace = threadClass.defineClassUnder("Backtrace", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        RubyClass location = backtrace.defineClassUnder("Location", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-
-        backtrace.defineAnnotatedMethods(Backtrace.class);
-        location.defineAnnotatedMethods(Location.class);
-
-        runtime.setLocation(location);
+        var backtrace = threadClass.defineClassUnder(context, "Backtrace", Object, NOT_ALLOCATABLE_ALLOCATOR).
+                defineMethods(context, Backtrace.class);
+        RubyClass location = backtrace.defineClassUnder(context, "Location", Object, NOT_ALLOCATABLE_ALLOCATOR).
+                defineMethods(context, Location.class);
+        context.runtime.setLocation(location);
 
         return threadClass;
     }
@@ -2593,7 +2588,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public static <StateType> IRubyObject uninterruptible(ThreadContext context, StateType state, BiFunction<ThreadContext, StateType, IRubyObject> f) {
         return context.getThread().handleInterrupt(
                 context,
-                RubyHash.newHash(context.runtime, context.runtime.getObject(), asSymbol(context, "never")),
+                RubyHash.newHash(context.runtime, objectClass(context), asSymbol(context, "never")),
                 state,
                 f);
     }
@@ -2608,13 +2603,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         Objects.requireNonNull(scheduler);
 
-        if (scheduler != null && !scheduler.isNil()) {
-            FiberScheduler.verifyInterface(context, scheduler);
-        }
-
-        if (!this.scheduler.isNil()) {
-            FiberScheduler.close(getContext(), this.scheduler);
-        }
+        if (scheduler != null && !scheduler.isNil()) FiberScheduler.verifyInterface(context, scheduler);
+        if (!this.scheduler.isNil()) FiberScheduler.close(getContext(), this.scheduler);
 
         this.scheduler = scheduler;
 

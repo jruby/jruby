@@ -37,13 +37,11 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
-import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -52,6 +50,7 @@ import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newEmptyString;
 import static org.jruby.api.Error.*;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
 /**
  * A abstract memory object that defines operations common to both pointers and
@@ -67,15 +66,10 @@ abstract public class AbstractMemory extends MemoryObject {
     /** The size of each element of this memory area - e.g. :char is 1, :int is 4 */
     protected int typeSize;
 
-    public static RubyClass createAbstractMemoryClass(Ruby runtime, RubyModule module) {
-        RubyClass result = module.defineClassUnder(ABSTRACT_MEMORY_RUBY_CLASS,
-                runtime.getObject(),
-                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        
-        result.defineAnnotatedMethods(AbstractMemory.class);
-        result.defineAnnotatedConstants(AbstractMemory.class);
-
-        return result;
+    public static RubyClass createAbstractMemoryClass(ThreadContext context, RubyModule FFI, RubyClass Object) {
+        return FFI.defineClassUnder(context, ABSTRACT_MEMORY_RUBY_CLASS, Object, NOT_ALLOCATABLE_ALLOCATOR).
+                defineMethods(context, AbstractMemory.class).
+                defineConstants(context, AbstractMemory.class);
     }
     
     protected static final int calculateTypeSize(ThreadContext context, IRubyObject sizeArg) {

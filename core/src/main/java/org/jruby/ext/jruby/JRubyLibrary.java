@@ -52,9 +52,11 @@ import org.jruby.util.ByteList;
 
 import java.io.ByteArrayInputStream;
 
+import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newEmptyString;
+import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.parser.ParserType.INLINE;
 
@@ -68,22 +70,23 @@ import static org.jruby.parser.ParserType.INLINE;
 @JRubyModule(name="JRuby")
 public class JRubyLibrary implements Library {
     public void load(Ruby runtime, boolean wrap) {
+        ThreadContext context = runtime.getCurrentContext();
+        var Object = objectClass(context);
+
         // load Ruby parts of the 'jruby' library
         runtime.getLoadService().loadFromClassLoader(runtime.getJRubyClassLoader(), "jruby/jruby.rb", false);
 
-        RubyModule JRuby = runtime.getOrCreateModule("JRuby");
+        var JRuby = defineModule(context, "JRuby").
+                defineMethods(context, JRubyLibrary.class).defineMethods(context, JRubyUtilLibrary.class);
 
-        JRuby.defineAnnotatedMethods(JRubyLibrary.class);
-        JRuby.defineAnnotatedMethods(JRubyUtilLibrary.class);
+        JRuby.defineClassUnder(context, "ThreadLocal", Object, JRubyThreadLocal::new)
+             .defineMethods(context, JRubyExecutionContextLocal.class);
 
-        JRuby.defineClassUnder("ThreadLocal", runtime.getObject(), JRubyThreadLocal::new)
-             .defineAnnotatedMethods(JRubyExecutionContextLocal.class);
+        JRuby.defineClassUnder(context, "FiberLocal", Object, JRubyFiberLocal::new)
+             .defineMethods(context, JRubyExecutionContextLocal.class);
 
-        JRuby.defineClassUnder("FiberLocal", runtime.getObject(), JRubyFiberLocal::new)
-             .defineAnnotatedMethods(JRubyExecutionContextLocal.class);
-
-        RubyModule CONFIG = JRuby.defineModuleUnder("CONFIG");
-        CONFIG.getSingletonClass().defineAnnotatedMethods(JRubyConfig.class);
+        JRuby.defineModuleUnder(context, "CONFIG").
+                tap(m -> m.getSingletonClass().defineMethods(context, JRubyConfig.class));
     }
 
     /**
@@ -297,7 +300,7 @@ public class JRubyLibrary implements Library {
 
     @Deprecated // @JRubyMethod(meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject load_string_ext(ThreadContext context, IRubyObject recv) {
-        CoreExt.loadStringExtensions(context.runtime);
+        CoreExt.loadStringExtensions(context);
         return context.nil;
     }
 

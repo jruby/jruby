@@ -60,6 +60,7 @@ import java.math.RoundingMode;
 import java.time.*;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Define.defineClass;
 
 /**
  * JRuby's <code>DateTime</code> implementation - 'native' parts.
@@ -75,11 +76,10 @@ import static org.jruby.api.Convert.asFixnum;
 @JRubyClass(name = "DateTime")
 public class RubyDateTime extends RubyDate {
 
-    static RubyClass createDateTimeClass(Ruby runtime, RubyClass Date) {
-        RubyClass DateTime = runtime.defineClass("DateTime", Date, RubyDateTime::new);
-        DateTime.setReifiedClass(RubyDateTime.class);
-        DateTime.defineAnnotatedMethods(RubyDateTime.class);
-        return DateTime;
+    static void createDateTimeClass(ThreadContext context, RubyClass Date) {
+        defineClass(context, "DateTime", Date, RubyDateTime::new).
+                reifiedClass(RubyDateTime.class).
+                defineMethods(context, RubyDateTime.class);
     }
 
     protected RubyDateTime(Ruby runtime, RubyClass klass) {

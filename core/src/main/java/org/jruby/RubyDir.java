@@ -54,7 +54,6 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
-import org.jruby.api.Error;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -67,11 +66,13 @@ import org.jruby.ast.util.ArgsUtil;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyFile.filePathConvert;
 import static org.jruby.RubyString.UTF8;
+import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.runtimeError;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -96,16 +97,12 @@ public class RubyDir extends RubyObject implements Closeable {
         super(runtime, type);
     }
 
-    public static RubyClass createDirClass(Ruby runtime) {
-        RubyClass dirClass = runtime.defineClass("Dir", runtime.getObject(), RubyDir::new);
-
-        dirClass.setClassIndex(ClassIndex.DIR);
-        dirClass.setReifiedClass(RubyDir.class);
-
-        dirClass.includeModule(runtime.getEnumerable());
-        dirClass.defineAnnotatedMethods(RubyDir.class);
-
-        return dirClass;
+    public static RubyClass createDirClass(ThreadContext context, RubyClass Object, RubyModule Enumerable) {
+        return defineClass(context, "Dir", Object, RubyDir::new).
+                reifiedClass(RubyDir.class).
+                classIndex(ClassIndex.DIR).
+                include(Enumerable).
+                defineMethods(context, RubyDir.class);
     }
 
     private void checkDir() {
@@ -1112,7 +1109,7 @@ public class RubyDir extends RubyObject implements Closeable {
         RubyHash env = context.runtime.getENV();
 
         if (home == null || home == context.nil) {
-            IRubyObject ENV_JAVA = context.runtime.getObject().getConstant("ENV_JAVA");
+            IRubyObject ENV_JAVA = objectClass(context).getConstant("ENV_JAVA");
             home = ENV_JAVA.callMethod(context, "[]", newString(context, user_home, UTF8));
         }
 

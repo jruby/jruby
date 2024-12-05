@@ -10,6 +10,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.opto.ConstantCache;
 import org.jruby.runtime.opto.Invalidator;
 
+import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Error.typeError;
 
 public class ConstantLookupSite {
@@ -24,8 +25,7 @@ public class ConstantLookupSite {
 
     private IRubyObject cacheSearchConst(ThreadContext context, StaticScope staticScope, boolean publicOnly) {
         // Lexical lookup
-        Ruby runtime = context.runtime;
-        RubyModule object = runtime.getObject();
+        RubyModule object = objectClass(context);
         String id = this.id;
         IRubyObject constant = (staticScope == null) ? object.getConstant(id) : staticScope.getConstantInner(id);
 
@@ -42,7 +42,7 @@ public class ConstantLookupSite {
             constant = module.callMethod(context, "const_missing", name);
         } else {
             // recache
-            Invalidator invalidator = runtime.getConstantInvalidator(id);
+            Invalidator invalidator = context.runtime.getConstantInvalidator(id);
             cache = new ConstantCache(constant, invalidator.getData(), invalidator);
         }
 

@@ -34,7 +34,10 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.javasupport.Java;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import static org.jruby.api.Define.defineClass;
 
 @Deprecated
 @JRubyClass(name = "NativeException", parent = "RuntimeError")
@@ -65,13 +68,13 @@ public class NativeException extends RubyException {
         this.messageAsJavaString = null;
     }
 
-    public static RubyClass createClass(Ruby runtime, RubyClass baseClass) {
-        RubyClass exceptionClass = runtime.defineClass(CLASS_NAME, baseClass, NativeException::new);
-        runtime.getObject().deprecateConstant(runtime, CLASS_NAME);
+    public static RubyClass createClass(ThreadContext context, RubyClass baseClass, RubyClass Object) {
+        RubyClass NativeException = defineClass(context, CLASS_NAME, baseClass, NativeException::new).
+                defineMethods(context, NativeException.class);
 
-        exceptionClass.defineAnnotatedMethods(NativeException.class);
+        Object.deprecateConstant(context.runtime, CLASS_NAME);
 
-        return exceptionClass;
+        return NativeException;
     }
 
     @JRubyMethod

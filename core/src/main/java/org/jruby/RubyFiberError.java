@@ -29,6 +29,9 @@ package org.jruby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.FiberError;
+import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Define.defineClass;
 
 /**
  * The Java representation of a Ruby FiberError.
@@ -41,8 +44,8 @@ public class RubyFiberError extends RubyStandardError {
         super(runtime, exceptionClass);
     }
 
-    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        return runtime.defineClass("FiberError", exceptionClass, RubyFiberError::new);
+    static RubyClass define(ThreadContext context, RubyClass StandardError) {
+        return defineClass(context, "FiberError", StandardError, RubyFiberError::new);
     }
 
     protected RaiseException constructThrowable(String message) {

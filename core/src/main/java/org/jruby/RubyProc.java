@@ -51,7 +51,6 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.MethodBlockBody;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -60,7 +59,9 @@ import org.jruby.runtime.marshal.DataType;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.util.RubyStringBuilder.types;
 
@@ -99,15 +100,11 @@ public class RubyProc extends RubyObject implements DataType {
         this.block = block;
     }
 
-    public static RubyClass createProcClass(Ruby runtime) {
-        RubyClass procClass = runtime.defineClass("Proc", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-
-        procClass.setClassIndex(ClassIndex.PROC);
-        procClass.setReifiedClass(RubyProc.class);
-
-        procClass.defineAnnotatedMethods(RubyProc.class);
-
-        return procClass;
+    public static RubyClass createProcClass(ThreadContext context, RubyClass Object) {
+        return defineClass(context, "Proc", Object, NOT_ALLOCATABLE_ALLOCATOR).
+                reifiedClass(RubyProc.class).
+                classIndex(ClassIndex.PROC).
+                defineMethods(context, RubyProc.class);
     }
 
     public Block getBlock() {

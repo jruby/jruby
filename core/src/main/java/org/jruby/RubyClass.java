@@ -31,6 +31,7 @@
 
 package org.jruby;
 
+import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Error.*;
@@ -58,6 +59,7 @@ import java.util.stream.Collectors;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.JRubyAPI;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -112,20 +114,14 @@ public class RubyClass extends RubyModule {
 
     private static final Logger LOG = LoggerFactory.getLogger(RubyClass.class);
 
-    public static void createClassClass(Ruby runtime, RubyClass classClass) {
-        classClass.setClassIndex(ClassIndex.CLASS);
-        classClass.setReifiedClass(RubyClass.class);
-        classClass.kindOf = new RubyModule.JavaClassKindOf(RubyClass.class);
+    public static void createClassClass(Ruby runtime, RubyClass Class) {
+        Class.reifiedClass(RubyClass.class).
+                kindOf(new RubyModule.JavaClassKindOf(RubyClass.class)).
+                classIndex(ClassIndex.CLASS).
+                undefMethods("module_function", "append_features", "prepend_features", "extend_object", "refine").
+                defineAnnotatedMethodsIndividually(RubyClass.class);
 
-        classClass.undefineMethod("module_function");
-        classClass.undefineMethod("append_features");
-        classClass.undefineMethod("prepend_features");
-        classClass.undefineMethod("extend_object");
-        classClass.undefineMethod("refine");
-
-        classClass.defineAnnotatedMethods(RubyClass.class);
-
-        runtime.setBaseNewMethod(classClass.searchMethod("new"));
+        runtime.setBaseNewMethod(Class.searchMethod("new"));
     }
 
     public static final ObjectAllocator CLASS_ALLOCATOR = (runtime, klass) -> {
@@ -138,8 +134,48 @@ public class RubyClass extends RubyModule {
         return allocator;
     }
 
+    /**
+     * @param allocator
+     * @deprecated Use {@link org.jruby.RubyClass#allocator(ObjectAllocator)} instead.
+     */
+    @Deprecated(since = "10.0")
     public void setAllocator(ObjectAllocator allocator) {
+        allocator(allocator);
+    }
+
+    /**
+     * Define an allocator for this class (usually this is part of
+     * {@link org.jruby.api.Define#defineClass(ThreadContext, String, RubyClass, ObjectAllocator)}).
+     *
+     * @param allocator to use
+     * @return itself for a composable API
+     */
+    @JRubyAPI
+    public RubyClass allocator(ObjectAllocator allocator) {
         this.allocator = allocator;
+        return this;
+    }
+
+    /**
+     * Set what marshaller we use or generally use this to specify the typw cannot Marshal data.
+     * @param marshal the marshaller
+     * @return itself for composable API
+     */
+    @JRubyAPI
+    public RubyClass marshalWith(ObjectMarshal marshal) {
+        this.marshal = marshal;
+        return this;
+    }
+
+    /**
+     * Sets reified class to use.
+     * @param reifiedClass the java type to use
+     * @return itself for composable API
+     */
+    @JRubyAPI
+    public <T extends RubyClass> T reifiedClass(Class<? extends IRubyObject> reifiedClass) {
+        this.reifiedClass = (Class<? extends Reified>) reifiedClass; // Not always true
+        return (T) this;
     }
 
     /**
@@ -354,16 +390,10 @@ public class RubyClass extends RubyModule {
      * @return a half-baked meta class for object
      */
     public static RubyClass createBootstrapClass(Ruby runtime, String name, RubyClass superClass, ObjectAllocator allocator) {
-        RubyClass obj;
-
-        if (superClass == null ) {  // boot the Object class
-            obj = new RubyClass(runtime);
-            obj.marshal = DEFAULT_OBJECT_MARSHAL;
-        } else {                    // boot the Module and Class classes
-            obj = new RubyClass(runtime, superClass);
-        }
-        obj.setAllocator(allocator);
-        obj.setBaseName(name);
+        RubyClass obj = superClass == null ?
+                new RubyClass(runtime).marshalWith(DEFAULT_OBJECT_MARSHAL) :
+                new RubyClass(runtime, superClass);
+        obj.allocator(allocator).setBaseName(name);
         return obj;
     }
 
@@ -401,7 +431,7 @@ public class RubyClass extends RubyModule {
         this.runtime = runtime;
         this.realClass = this;
         this.variableTableManager = new VariableTableManager(this);
-        setClassIndex(ClassIndex.CLASS);
+        classIndex(ClassIndex.CLASS);
     }
 
     /** rb_class_boot (for plain Classes)
@@ -461,7 +491,7 @@ public class RubyClass extends RubyModule {
     public static RubyClass newClass(Ruby runtime, RubyClass superClass, String name, ObjectAllocator allocator, RubyModule parent, boolean setParent) {
         RubyClass clazz = newClass(runtime, superClass);
         clazz.setBaseName(name);
-        clazz.setAllocator(allocator);
+        clazz.allocator(allocator);
         clazz.makeMetaClass(superClass.getMetaClass());
         if (setParent) clazz.setParent(parent);
         parent.setConstant(name, clazz);
@@ -473,7 +503,7 @@ public class RubyClass extends RubyModule {
                                      RubyModule parent, boolean setParent, String file, int line) {
         RubyClass clazz = newClass(runtime, superClass);
         clazz.setBaseName(name);
-        clazz.setAllocator(allocator);
+        clazz.allocator(allocator);
         clazz.makeMetaClass(superClass.getMetaClass());
         if (setParent) clazz.setParent(parent);
         parent.setConstant(name, clazz, file, line);
@@ -488,7 +518,7 @@ public class RubyClass extends RubyModule {
     public static RubyClass newClass(Ruby runtime, RubyClass superClass, String name, ObjectAllocator allocator, RubyModule parent, boolean setParent, CallSite[] extraCallSites) {
         RubyClass clazz = newClass(runtime, superClass, extraCallSites);
         clazz.setBaseName(name);
-        clazz.setAllocator(allocator);
+        clazz.allocator(allocator);
         clazz.makeMetaClass(superClass.getMetaClass());
         if (setParent) clazz.setParent(parent);
         parent.setConstant(name, clazz, BUILTIN_CONSTANT, -1);
@@ -954,7 +984,7 @@ public class RubyClass extends RubyModule {
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, Block block) {
         checkNotInitialized();
-        return initializeCommon(context, runtime.getObject(), block);
+        return initializeCommon(context, objectClass(context), block);
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
@@ -1252,8 +1282,13 @@ public class RubyClass extends RubyModule {
         return marshal;
     }
 
+    /**
+     * @param marshal
+     * @deprecated Use {@link org.jruby.RubyClass#marshalWith(ObjectMarshal)} instead.
+     */
+    @Deprecated(since = "10.0")
     public final void setMarshal(ObjectMarshal marshal) {
-        this.marshal = marshal;
+        marshalWith(marshal);
     }
 
     public final void marshal(Object obj, MarshalStream marshalStream) throws IOException {
@@ -2296,6 +2331,11 @@ public class RubyClass extends RubyModule {
         }
     }
 
+    /**
+     * @param reifiedClass
+     * @deprecated Use {@link org.jruby.RubyClass#reifiedClass(Class)} instead.
+     */
+    @Deprecated(since = "10.0")
     public void setReifiedClass(Class<? extends IRubyObject> reifiedClass) {
         this.reifiedClass = (Class<? extends Reified>) reifiedClass; // Not always true
     }

@@ -57,6 +57,7 @@ import org.jruby.util.TypeConverter;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.util.Inspector.*;
 
 /**
@@ -76,12 +77,9 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         super(runtime, klazz, map);
     }
 
-    public static RubyClass createMapJavaProxy(final Ruby runtime) {
-        RubyClass MapJavaProxy = runtime.defineClass(
-            "MapJavaProxy", runtime.getJavaSupport().getConcreteProxyClass(), MapJavaProxy::new
-        );
-        // this is done while proxy class is created.
-        // See org.jruby.javasuppoer.java.createProxyClass()
+    public static RubyClass createMapJavaProxy(ThreadContext context, RubyClass _ConcreteJavaProxy) {
+        var MapJavaProxy = defineClass(context, "MapJavaProxy", _ConcreteJavaProxy, MapJavaProxy::new);
+        // this is done while proxy class is created. See org.jruby.javasuppoer.java.createProxyClass()
         // MapJavaProxy.defineAnnotatedMethods(MapJavaProxy.class);
         ConcreteJavaProxy.initialize(MapJavaProxy);
         return MapJavaProxy;

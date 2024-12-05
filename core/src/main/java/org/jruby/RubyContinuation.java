@@ -36,6 +36,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineClass;
 
 /**
  * Minimal RubyContinuation class to support third-party users.
@@ -57,15 +58,11 @@ public class RubyContinuation extends RubyObject {
     private final Continuation continuation;
     private boolean disabled;
     
-    public static RubyClass createContinuation(Ruby runtime) {
-        RubyClass cContinuation = runtime.defineClass("Continuation",runtime.getObject(),runtime.getObject().getAllocator());
-
-        cContinuation.setClassIndex(ClassIndex.CONTINUATION);
-        cContinuation.setReifiedClass(RubyContinuation.class);
-
-        cContinuation.getSingletonClass().undefineMethod("new");
-
-        return cContinuation;
+    public static RubyClass createContinuation(ThreadContext context, RubyClass objectClass) {
+        return defineClass(context, "Continuation", objectClass, objectClass.getAllocator()).
+                reifiedClass(RubyContinuation.class).
+                classIndex(ClassIndex.CONTINUATION).
+                tap(c -> c.getSingletonClass().undefMethods("new"));
     }
 
     @Deprecated

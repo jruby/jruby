@@ -44,6 +44,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.anno.FrameField;
 import org.jruby.anno.TypePopulator;
 import org.jruby.api.Create;
+import org.jruby.api.Define;
 import org.jruby.compiler.Constantizable;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.exceptions.LocalJumpError;
@@ -212,6 +213,8 @@ import static java.lang.invoke.MethodHandles.insertArguments;
 import static java.lang.invoke.MethodType.methodType;
 import static org.jruby.RubyBoolean.FALSE_BYTES;
 import static org.jruby.RubyBoolean.TRUE_BYTES;
+import static org.jruby.RubyRandom.newRandom;
+import static org.jruby.RubyRandom.randomSeed;
 import static org.jruby.api.Create.newEmptyString;
 import static org.jruby.api.Error.*;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.GLOBAL;
@@ -336,10 +339,10 @@ public final class Ruby implements Constantizable {
         refinementClass.makeMetaClass(metaClass);
 
         RubyBasicObject.createBasicObjectClass(this, basicObjectClass);
-        RubyObject.createObjectClass(this, objectClass);
-        RubyModule.createModuleClass(this, moduleClass);
+        RubyObject.createObjectClass(objectClass);
+        RubyModule.createModuleClass(moduleClass);
         RubyClass.createClassClass(this, classClass);
-        RubyModule.createRefinementClass(this, refinementClass);
+        RubyModule.createRefinementClass(refinementClass);
 
         // set constants now that they're initialized
         basicObjectClass.setConstant("BasicObject", basicObjectClass);
@@ -353,17 +356,17 @@ public final class Ruby implements Constantizable {
         objectSpecializer = new RubyObjectSpecializer(this);
 
         // Initialize Kernel and include into Object
-        RubyModule kernel = kernelModule = RubyKernel.createKernelModule(this);
+        RubyModule kernel = kernelModule = RubyKernel.createKernelModule(this, objectClass, config);
         // In 1.9 and later, Kernel.gsub is defined only when '-p' or '-n' is given on the command line
         initKernelGsub(kernel);
 
         // Object is ready, create top self
-        topSelf = TopSelfFactory.createTopSelf(this, false);
+        topSelf = TopSelfFactory.createTopSelf(this,objectClass, false);
 
         // Pre-create all the core classes potentially referenced during startup
-        nilClass = RubyNil.createNilClass(this);
-        falseClass = RubyBoolean.createFalseClass(this);
-        trueClass = RubyBoolean.createTrueClass(this);
+        nilClass = RubyNil.createNilClass(this, objectClass);
+        falseClass = RubyBoolean.createFalseClass(this, objectClass);
+        trueClass = RubyBoolean.createTrueClass(this, objectClass);
 
         nilObject = new RubyNil(this);
         nilPrefilledArray = new IRubyObject[NIL_PREFILLED_ARRAY_SIZE];
@@ -388,11 +391,11 @@ public final class Ruby implements Constantizable {
         context.prepareTopLevel(objectClass, topSelf);
 
         // Initialize all the core classes
-        comparableModule = RubyComparable.createComparable(this);
-        enumerableModule = RubyEnumerable.createEnumerableModule(this);
-        stringClass = RubyString.createStringClass(this);
+        comparableModule = RubyComparable.createComparable(context);
+        enumerableModule = RubyEnumerable.createEnumerableModule(context);
+        stringClass = RubyString.createStringClass(context, objectClass, comparableModule);
 
-        falseString = newString(FALSE_BYTES);
+        falseString = Create.newString(context, FALSE_BYTES);
         falseString.setFrozen(true);
 
         nilString = newEmptyString(context);
@@ -402,78 +405,79 @@ public final class Ruby implements Constantizable {
 
         encodingService = new EncodingService(this);
 
-        symbolClass = RubySymbol.createSymbolClass(this);
+        symbolClass = RubySymbol.createSymbolClass(context, objectClass, comparableModule);
         symbolTable = new RubySymbol.SymbolTable(this);
 
-        threadGroupClass = profile.allowClass("ThreadGroup") ? RubyThreadGroup.createThreadGroupClass(this) : null;
-        threadClass = profile.allowClass("Thread") ? RubyThread.createThreadClass(this) : null;
-        exceptionClass = profile.allowClass("Exception") ? RubyException.createExceptionClass(this) : null;
+        threadGroupClass = profile.allowClass("ThreadGroup") ? RubyThreadGroup.createThreadGroupClass(context, objectClass) : null;
+        threadClass = profile.allowClass("Thread") ? RubyThread.createThreadClass(context, objectClass) : null;
+        exceptionClass = profile.allowClass("Exception") ? RubyException.createExceptionClass(context, objectClass) : null;
 
         // this is used in some kwargs conversions for numerics below
-        hashClass = profile.allowClass("Hash") ? RubyHash.createHashClass(this) : null;
+        hashClass = profile.allowClass("Hash") ? RubyHash.createHashClass(context, objectClass, enumerableModule) : null;
 
-        numericClass = profile.allowClass("Numeric") ? RubyNumeric.createNumericClass(this) : null;
-        integerClass = profile.allowClass("Integer") ? RubyInteger.createIntegerClass(this) : null;
-        fixnumClass = profile.allowClass("Fixnum") ? RubyFixnum.createFixnumClass(this) : null;
+        numericClass = profile.allowClass("Numeric") ? RubyNumeric.createNumericClass(context, objectClass, comparableModule) : null;
+        integerClass = profile.allowClass("Integer") ? RubyInteger.createIntegerClass(context, numericClass) : null;
+        fixnumClass = profile.allowClass("Fixnum") ? RubyFixnum.createFixnumClass(context, integerClass) : null;
 
-        encodingClass = RubyEncoding.createEncodingClass(this);
-        converterClass = RubyConverter.createConverterClass(this);
+        encodingClass = RubyEncoding.createEncodingClass(context, objectClass);
+        converterClass = RubyConverter.createConverterClass(context, objectClass, encodingClass);
 
         encodingService.defineEncodings();
         encodingService.defineAliases();
 
         initDefaultEncodings();
 
-        complexClass = profile.allowClass("Complex") ? RubyComplex.createComplexClass(this) : null;
-        rationalClass = profile.allowClass("Rational") ? RubyRational.createRationalClass(this) : null;
+        complexClass = profile.allowClass("Complex") ? RubyComplex.createComplexClass(context, numericClass) : null;
+        rationalClass = profile.allowClass("Rational") ? RubyRational.createRationalClass(context, numericClass) : null;
 
         if (profile.allowClass("Array")) {
-            arrayClass = RubyArray.createArrayClass(this);
-            emptyFrozenArray = Create.newEmptyArray(getCurrentContext());
+            arrayClass = RubyArray.createArrayClass(context, objectClass, enumerableModule);
+            emptyFrozenArray = Create.newEmptyArray(context);
             emptyFrozenArray.setFrozen(true);
         } else {
             arrayClass = null;
             emptyFrozenArray = null;
         }
-        floatClass = profile.allowClass("Float") ? RubyFloat.createFloatClass(this) : null;
-        randomClass = RubyRandom.createRandomClass(this);
-        ioClass = RubyIO.createIOClass(this);
-        if (Options.FIBER_SCHEDULER.load()) {
-            ioBufferClass = RubyIOBuffer.createIOBufferClass(this);
-        } else {
-            ioBufferClass = null;
-        }
-
-        structClass = profile.allowClass("Struct") ? RubyStruct.createStructClass(this) : null;
-        bindingClass = profile.allowClass("Binding") ? RubyBinding.createBindingClass(this) : null;
+        floatClass = profile.allowClass("Float") ? RubyFloat.createFloatClass(context, numericClass) : null;
+        randomClass = RubyRandom.createRandomClass(context, objectClass);
+        setDefaultRandom(newRandom(this, randomClass, randomSeed(this)));
+        ioClass = RubyIO.createIOClass(context, objectClass, enumerableModule);
+        ioBufferClass = Options.FIBER_SCHEDULER.load() ?
+            RubyIOBuffer.createIOBufferClass(context, objectClass, comparableModule, ioClass) : null;
+        structClass = profile.allowClass("Struct") ? RubyStruct.createStructClass(context, objectClass, enumerableModule) : null;
+        bindingClass = profile.allowClass("Binding") ? RubyBinding.createBindingClass(context, objectClass) : null;
         // Math depends on all numeric types
-        mathModule = profile.allowModule("Math") ? RubyMath.createMathModule(this) : null;
-        regexpClass = profile.allowClass("Regexp") ? RubyRegexp.createRegexpClass(this) : null;
-        rangeClass = profile.allowClass("Range") ? RubyRange.createRangeClass(this) : null;
-        objectSpaceModule = profile.allowModule("ObjectSpace") ? RubyObjectSpace.createObjectSpaceModule(this) : null;
-        gcModule = profile.allowModule("GC") ? RubyGC.createGCModule(this) : null;
-        procClass = profile.allowClass("Proc") ? RubyProc.createProcClass(this) : null;
-        methodClass = profile.allowClass("Method") ? RubyMethod.createMethodClass(this) : null;
-        matchDataClass = profile.allowClass("MatchData") ? RubyMatchData.createMatchDataClass(this) : null;
-        marshalModule = profile.allowModule("Marshal") ? RubyMarshal.createMarshalModule(this) : null;
-        dirClass = profile.allowClass("Dir") ? RubyDir.createDirClass(this) : null;
-        fileTestModule = profile.allowModule("FileTest") ? RubyFileTest.createFileTestModule(this) : null;
-        // depends on IO, FileTest
-        fileClass = profile.allowClass("File") ? RubyFile.createFileClass(this) : null;
-        fileStatClass = profile.allowClass("File::Stat") ? RubyFileStat.createFileStatClass(this) : null;
-        processModule = profile.allowModule("Process") ? RubyProcess.createProcessModule(this) : null;
-        timeClass = profile.allowClass("Time") ? RubyTime.createTimeClass(this) : null;
-        unboundMethodClass = profile.allowClass("UnboundMethod") ? RubyUnboundMethod.defineUnboundMethodClass(this) : null;
+        mathModule = profile.allowModule("Math") ? RubyMath.createMathModule(context) : null;
+        regexpClass = profile.allowClass("Regexp") ? RubyRegexp.createRegexpClass(context, objectClass) : null;
+        rangeClass = profile.allowClass("Range") ? RubyRange.createRangeClass(context, objectClass, enumerableModule) : null;
+        objectSpaceModule = profile.allowModule("ObjectSpace") ? RubyObjectSpace.createObjectSpaceModule(context, objectClass) : null;
+        gcModule = profile.allowModule("GC") ? RubyGC.createGCModule(context) : null;
+        procClass = profile.allowClass("Proc") ? RubyProc.createProcClass(context, objectClass) : null;
+        methodClass = profile.allowClass("Method") ? RubyMethod.createMethodClass(context, objectClass) : null;
+        if (profile.allowClass("MatchData")) {
+            matchDataClass = RubyMatchData.createMatchDataClass(context, objectClass);
+            defineGlobalConstant("MatchingData", matchDataClass);
+        } else {
+            matchDataClass = null;
+        }
+        marshalModule = profile.allowModule("Marshal") ? RubyMarshal.createMarshalModule(context) : null;
+        dirClass = profile.allowClass("Dir") ? RubyDir.createDirClass(context, objectClass, enumerableModule) : null;
+        fileTestModule = profile.allowModule("FileTest") ? RubyFileTest.createFileTestModule(context) : null;
+        fileClass = profile.allowClass("File") ? RubyFile.createFileClass(context, ioClass) : null;
+        fileStatClass = profile.allowClass("File::Stat") ? RubyFileStat.createFileStatClass(context, objectClass, fileClass, comparableModule) : null;
+        processModule = profile.allowModule("Process") ? RubyProcess.createProcessModule(context, objectClass, structClass) : null;
+        timeClass = profile.allowClass("Time") ? RubyTime.createTimeClass(context, objectClass, comparableModule) : null;
+        unboundMethodClass = profile.allowClass("UnboundMethod") ? RubyUnboundMethod.defineUnboundMethodClass(context, objectClass) : null;
 
-        if (profile.allowModule("Signal")) RubySignal.createSignal(this);
+        if (profile.allowModule("Signal")) RubySignal.createSignal(context);
 
         if (profile.allowClass("Enumerator")) {
-            enumeratorClass = RubyEnumerator.defineEnumerator(this, enumerableModule);
-            generatorClass = RubyGenerator.createGeneratorClass(this, enumeratorClass);
-            yielderClass = RubyYielder.createYielderClass(this);
-            chainClass = RubyChain.createChainClass(this, enumeratorClass);
-            aseqClass = RubyArithmeticSequence.createArithmeticSequenceClass(this, enumeratorClass);
-            producerClass = RubyProducer.createProducerClass(this, enumeratorClass);
+            enumeratorClass = RubyEnumerator.defineEnumerator(context, objectClass, enumerableModule);
+            generatorClass = RubyGenerator.createGeneratorClass(context, objectClass, enumeratorClass, enumerableModule);
+            yielderClass = RubyYielder.createYielderClass(context, objectClass, enumeratorClass);
+            chainClass = RubyChain.createChainClass(context, objectClass, enumeratorClass, enumerableModule);
+            aseqClass = RubyArithmeticSequence.createArithmeticSequenceClass(context, enumeratorClass, enumerableModule);
+            producerClass = RubyProducer.createProducerClass(context, objectClass, enumeratorClass, enumerableModule);
         } else {
             enumeratorClass = null;
             generatorClass = null;
@@ -483,33 +487,33 @@ public final class Ruby implements Constantizable {
             producerClass = null;
         }
 
-        continuationClass = initContinuation();
+        continuationClass = initContinuation(context);
 
-        TracePoint.createTracePointClass(this);
+        TracePoint.createTracePointClass(context, objectClass);
 
         warningCategories = config.getWarningCategories();
-        warningModule = RubyWarnings.createWarningModule(this);
+        warningModule = RubyWarnings.createWarningModule(context);
 
         // Initialize exceptions
-        initExceptions();
+        initExceptions(context);
 
         // Thread library utilities
-        mutexClass = Mutex.setup(threadClass, objectClass);
-        conditionVariableClass = ConditionVariable.setup(threadClass, objectClass);
-        queueClass = Queue.setup(threadClass, objectClass);
-        closedQueueError = Queue.setupError(queueClass, stopIteration, objectClass);
-        sizedQueueClass = SizedQueue.setup(threadClass, queueClass, objectClass);
+        mutexClass = Mutex.setup(context, threadClass, objectClass);
+        conditionVariableClass = ConditionVariable.setup(context, threadClass, objectClass);
+        queueClass = Queue.setup(context, threadClass, objectClass);
+        closedQueueError = Queue.setupError(context, queueClass, stopIteration, objectClass);
+        sizedQueueClass = SizedQueue.setup(context, threadClass, queueClass, objectClass);
 
-        fiberClass = new ThreadFiberLibrary().createFiberClass(this);
+        fiberClass = new ThreadFiberLibrary().createFiberClass(context, objectClass);
 
         // everything booted, so SizedQueue should be available; set up root fiber
         ThreadFiber.initRootFiber(context, context.getThread());
 
         // set up defined messages
-        initDefinedMessages();
+        initDefinedMessages(context);
 
         // set up thread statuses
-        initThreadStatuses();
+        initThreadStatuses(context);
 
         // FIXME: This registers itself into static scope as a side-effect.  Let's make this
         // relationship handled either more directly or through a descriptive method
@@ -522,7 +526,7 @@ public final class Ruby implements Constantizable {
         dummyClass.setFrozen(true);
 
         // Create global constants and variables
-        envObject = RubyGlobal.createGlobalsAndENV(this);
+        envObject = RubyGlobal.createGlobalsAndENV(context, globalVariables, config);
 
         // Prepare LoadService and load path
         getLoadService().init(this.config.getLoadPaths());
@@ -531,9 +535,7 @@ public final class Ruby implements Constantizable {
         coreIsBooted = true;
 
         // Don't load boot-time libraries when debugging IR
-        if (!RubyInstanceConfig.DEBUG_PARSER) {
-            initBootLibraries();
-        }
+        if (!RubyInstanceConfig.DEBUG_PARSER) initBootLibraries(context);
 
         SecurityHelper.checkCryptoRestrictions(this);
 
@@ -568,20 +570,16 @@ public final class Ruby implements Constantizable {
         RubyBasicObject.recacheBuiltinMethods(this);
     }
 
-    private void initBootLibraries() {
+    private void initBootLibraries(ThreadContext context) {
         // initialize Java support
-        initJavaSupport();
+        initJavaSupport(context);
 
         // init Ruby-based kernel
         initRubyKernel();
 
         // Define blank modules for feature detection in preludes
-        if (!this.config.isDisableGems()) {
-            defineModule("Gem");
-        }
-        if (!this.config.isDisableDidYouMean()) {
-            defineModule("DidYouMean");
-        }
+        if (!this.config.isDisableGems()) Define.defineModule(context, "Gem");
+        if (!this.config.isDisableDidYouMean()) Define.defineModule(context, "DidYouMean");
 
         // Provide some legacy libraries
         loadService.provide("enumerator.rb");
@@ -1401,7 +1399,10 @@ public final class Ruby implements Constantizable {
 
     /**
      * Define a new class under the Object namespace. Roughly equivalent to
-     * rb_define_class in MRI.
+     * rb_define_class in MRI.  This is an internal API.  Please use
+     * {@link org.jruby.api.Define#defineClass(ThreadContext, String, RubyClass, ObjectAllocator)} instead.
+     * For bootstrappin we still need a non-ThreadContext define for nil and boolean class definition
+     * as they are required before we can initialize our topmost ThreadContext.
      *
      * @param name The name for the new class
      * @param superClass The super class for the new class
@@ -1411,7 +1412,7 @@ public final class Ruby implements Constantizable {
      */
     @Extension
     public RubyClass defineClass(String name, RubyClass superClass, ObjectAllocator allocator) {
-        return defineClassUnder(name, superClass, allocator, objectClass);
+        return defineClassUnder(name, superClass, allocator, objectClass, null);
     }
 
     /**
@@ -1424,6 +1425,7 @@ public final class Ruby implements Constantizable {
      * instances of the new class.
      * @return The new class
      */
+    @Deprecated(since = "10.0")
     public RubyClass defineClass(String name, RubyClass superClass, ObjectAllocator allocator, CallSite[] callSites) {
         return defineClassUnder(name, superClass, allocator, objectClass, callSites);
     }
@@ -1444,13 +1446,16 @@ public final class Ruby implements Constantizable {
      * @return The new class
      */
     @Extension
+    @Deprecated(since = "10.0")
     public RubyClass defineClassUnder(String name, RubyClass superClass, ObjectAllocator allocator, RubyModule parent) {
         return defineClassUnder(name, superClass, allocator, parent, null);
     }
 
     /**
      * A variation of defineClassUnder that allows passing in an array of
-     * supplementary call sites to improve dynamic invocation.
+     * supplementary call sites to improve dynamic invocation.  This is an internal API.  Please
+     * use {@link org.jruby.api.Define#defineClassUnder(ThreadContext, String, RubyClass, ObjectAllocator, RubyModule)}
+     * or {@link org.jruby.RubyModule#defineClassUnder(ThreadContext, String, RubyClass, ObjectAllocator)} instead.
      *
      * @param id The name for the new class as an ISO-8859_1 String (id-value)
      * @param superClass The super class for the new class
@@ -1471,9 +1476,7 @@ public final class Ruby implements Constantizable {
             }
             // If we define a class in Ruby, but later want to allow it to be defined in Java,
             // the allocator needs to be updated
-            if (klazz.getAllocator() != allocator) {
-                klazz.setAllocator(allocator);
-            }
+            if (klazz.getAllocator() != allocator) klazz.allocator(allocator);
             return klazz;
         }
 
@@ -1497,6 +1500,7 @@ public final class Ruby implements Constantizable {
      * @param name The name of the new module
      * @return The new module
      */
+    @Deprecated(since = "10.0")
     @Extension
     public RubyModule defineModule(String name) {
         return defineModuleUnder(name, objectClass);
@@ -1505,6 +1509,8 @@ public final class Ruby implements Constantizable {
     /**
      * Define a new module with the given name under the given module or
      * class namespace. Roughly equivalent to rb_define_module_under in MRI.
+     * This is an internal API.  It is still used in early bootstrapping for
+     * setting up Kernel since Kernel needs to exist before the first ThreadContext is created.
      *
      * @param name The name of the new module
      * @param parent The class or module namespace under which to define the
@@ -1517,8 +1523,8 @@ public final class Ruby implements Constantizable {
 
         boolean parentIsObject = parent == objectClass;
 
-        if (moduleObj != null ) {
-            if (moduleObj.isModule()) return (RubyModule)moduleObj;
+        if (moduleObj != null) {
+            if (moduleObj.isModule()) return (RubyModule) moduleObj;
 
             RubyString typeName = parentIsObject ?
                     types(this, moduleObj.getMetaClass()) : types(this, parent, moduleObj.getMetaClass());
@@ -1535,13 +1541,17 @@ public final class Ruby implements Constantizable {
      *
      * @param id The name of the module
      * @return The existing or new module
+     * @deprecated Use {@link org.jruby.api.Define#defineModule(ThreadContext, String)} OR
+     * {@link org.jruby.RubyModule#defineModuleUnder(ThreadContext, String)}.
      */
+    @Deprecated(since = "10.0")
     public RubyModule getOrCreateModule(String id) {
+        var context = getCurrentContext();
         IRubyObject module = objectClass.getConstantAt(id);
         if (module == null) {
-            module = defineModule(id);
+            module = Define.defineModule(context, id);
         } else if (!module.isModule()) {
-            throw typeError(getCurrentContext(), str(this, ids(this, id), " is not a Module"));
+            throw typeError(context, str(this, ids(this, id), " is not a Module"));
         }
 
         return (RubyModule) module;
@@ -1599,29 +1609,26 @@ public final class Ruby implements Constantizable {
         }
     }
 
-    private void initDefinedMessages() {
+    private void initDefinedMessages(ThreadContext context) {
         for (DefinedMessage definedMessage : DefinedMessage.values()) {
-            RubyString str = freezeAndDedupString(
-                RubyString.newString(this, ByteList.create(definedMessage.getText())));
+            var str = freezeAndDedupString(Create.newString(context, ByteList.create(definedMessage.getText())));
             definedMessages.put(definedMessage, str);
         }
     }
 
-    private void initThreadStatuses() {
+    private void initThreadStatuses(ThreadContext context) {
         for (RubyThread.Status status : RubyThread.Status.values()) {
-            RubyString str = RubyString.newString(this, status.bytes);
-            str.setFrozen(true);
-            threadStatuses.put(status, str);
+            threadStatuses.put(status, freezeAndDedupString(Create.newString(context, status.bytes)));
         }
     }
 
     @SuppressWarnings("deprecation")
-    private RubyClass initContinuation() {
+    private RubyClass initContinuation(ThreadContext context) {
         // Bare-bones class for backward compatibility
         if (profile.allowClass("Continuation")) {
             // Some third-party code (racc's cparse ext, at least) uses RubyContinuation directly, so we need this.
             // Most functionality lives in continuation.rb now.
-            return RubyContinuation.createContinuation(this);
+            return RubyContinuation.createContinuation(context, objectClass);
         }
         return null;
     }
@@ -1633,85 +1640,77 @@ public final class Ruby implements Constantizable {
         return nilPrefilledArray;
     }
 
-    private void initExceptions() {
-        ifAllowed("StandardError",          (ruby) -> standardError = RubyStandardError.define(ruby, exceptionClass));
-        ifAllowed("RubyError",              (ruby) -> runtimeError = RubyRuntimeError.define(ruby, standardError));
-        ifAllowed("FrozenError",            (ruby) -> frozenError = RubyFrozenError.define(ruby, runtimeError));
-        ifAllowed("IOError",                (ruby) -> ioError = RubyIOError.define(ruby, standardError));
-        ifAllowed("ScriptError",            (ruby) -> scriptError = RubyScriptError.define(ruby, exceptionClass));
-        ifAllowed("RangeError",             (ruby) -> rangeError = RubyRangeError.define(ruby, standardError));
-        ifAllowed("SignalException",        (ruby) -> signalException = RubySignalException.define(ruby, exceptionClass));
+    private void initExceptions(ThreadContext context) {
+        ifAllowed("StandardError",          (ruby) -> standardError = RubyStandardError.define(context, exceptionClass));
+        ifAllowed("RubyError",              (ruby) -> runtimeError = RubyRuntimeError.define(context, standardError));
+        ifAllowed("FrozenError",            (ruby) -> frozenError = RubyFrozenError.define(context, runtimeError));
+        ifAllowed("IOError",                (ruby) -> ioError = RubyIOError.define(context, standardError));
+        ifAllowed("ScriptError",            (ruby) -> scriptError = RubyScriptError.define(context, exceptionClass));
+        ifAllowed("RangeError",             (ruby) -> rangeError = RubyRangeError.define(context, standardError));
+        ifAllowed("SignalException",        (ruby) -> signalException = RubySignalException.define(context, exceptionClass));
         ifAllowed("NameError",              (ruby) -> {
-            nameError = RubyNameError.define(ruby, standardError);
-            nameErrorMessage = RubyNameError.RubyNameErrorMessage.define(ruby, nameError);
+            nameError = RubyNameError.define(context, standardError);
+            nameErrorMessage = RubyNameError.RubyNameErrorMessage.define(context, objectClass, nameError);
         });
-        ifAllowed("NoMethodError",          (ruby) -> noMethodError = RubyNoMethodError.define(ruby, nameError));
-        ifAllowed("SystemExit",             (ruby) -> systemExit = RubySystemExit.define(ruby, exceptionClass));
-        ifAllowed("LocalJumpError",         (ruby) -> localJumpError = RubyLocalJumpError.define(ruby, standardError));
-        ifAllowed("SystemCallError",        (ruby) -> systemCallError = RubySystemCallError.define(ruby, standardError));
-        ifAllowed("Fatal",                  (ruby) -> fatal = RubyFatal.define(ruby, exceptionClass));
-        ifAllowed("Interrupt",              (ruby) -> interrupt = RubyInterrupt.define(ruby, signalException));
-        ifAllowed("TypeError",              (ruby) -> typeError = RubyTypeError.define(ruby, standardError));
-        ifAllowed("NoMatchingPatternError", (ruby) -> noMatchingPatternError = RubyNoMatchingPatternError.define(ruby, standardError));
-        ifAllowed("NoMatchingPatternKeyError", (ruby) -> noMatchingPatternKeyError = RubyNoMatchingPatternKeyError.define(ruby, standardError));
-        ifAllowed("ArgumentError",          (ruby) -> argumentError = RubyArgumentError.define(ruby, standardError));
-        ifAllowed("UncaughtThrowError",     (ruby) -> uncaughtThrowError = RubyUncaughtThrowError.define(ruby, argumentError));
-        ifAllowed("IndexError",             (ruby) -> indexError = RubyIndexError.define(ruby, standardError));
-        ifAllowed("StopIteration",          (ruby) -> stopIteration = RubyStopIteration.define(ruby, indexError));
-        ifAllowed("SyntaxError",            (ruby) -> syntaxError = RubySyntaxError.define(ruby, scriptError));
-        ifAllowed("LoadError",              (ruby) -> loadError = RubyLoadError.define(ruby, scriptError));
-        ifAllowed("NotImplementedError",    (ruby) -> notImplementedError = RubyNotImplementedError.define(ruby, scriptError));
-        ifAllowed("SecurityError",          (ruby) -> securityError = RubySecurityError.define(ruby, exceptionClass));
-        ifAllowed("NoMemoryError",          (ruby) -> noMemoryError = RubyNoMemoryError.define(ruby, exceptionClass));
-        ifAllowed("RegexpError",            (ruby) -> regexpError = RubyRegexpError.define(ruby, standardError));
+        ifAllowed("NoMethodError",          (ruby) -> noMethodError = RubyNoMethodError.define(context, nameError));
+        ifAllowed("SystemExit",             (ruby) -> systemExit = RubySystemExit.define(context, exceptionClass));
+        ifAllowed("LocalJumpError",         (ruby) -> localJumpError = RubyLocalJumpError.define(context, standardError));
+        ifAllowed("SystemCallError",        (ruby) -> systemCallError = RubySystemCallError.define(context, standardError));
+        ifAllowed("Fatal",                  (ruby) -> fatal = RubyFatal.define(context, exceptionClass, objectClass));
+        ifAllowed("Interrupt",              (ruby) -> interrupt = RubyInterrupt.define(context, signalException));
+        ifAllowed("TypeError",              (ruby) -> typeError = RubyTypeError.define(context, standardError));
+        ifAllowed("NoMatchingPatternError", (ruby) -> noMatchingPatternError = RubyNoMatchingPatternError.define(context, standardError));
+        ifAllowed("NoMatchingPatternKeyError", (ruby) -> noMatchingPatternKeyError = RubyNoMatchingPatternKeyError.define(context, standardError));
+        ifAllowed("ArgumentError",          (ruby) -> argumentError = RubyArgumentError.define(context, standardError));
+        ifAllowed("UncaughtThrowError",     (ruby) -> uncaughtThrowError = RubyUncaughtThrowError.define(context, argumentError));
+        ifAllowed("IndexError",             (ruby) -> indexError = RubyIndexError.define(context, standardError));
+        ifAllowed("StopIteration",          (ruby) -> stopIteration = RubyStopIteration.define(context, indexError));
+        ifAllowed("SyntaxError",            (ruby) -> syntaxError = RubySyntaxError.define(context, scriptError));
+        ifAllowed("LoadError",              (ruby) -> loadError = RubyLoadError.define(context, scriptError));
+        ifAllowed("NotImplementedError",    (ruby) -> notImplementedError = RubyNotImplementedError.define(context, scriptError));
+        ifAllowed("SecurityError",          (ruby) -> securityError = RubySecurityError.define(context, exceptionClass));
+        ifAllowed("NoMemoryError",          (ruby) -> noMemoryError = RubyNoMemoryError.define(context, exceptionClass));
+        ifAllowed("RegexpError",            (ruby) -> regexpError = RubyRegexpError.define(context, standardError));
         // Proposal to RubyCommons for interrupting Regexps
-        ifAllowed("InterruptedRegexpError", (ruby) -> interruptedRegexpError = RubyInterruptedRegexpError.define(ruby, regexpError));
-        ifAllowed("EOFError",               (ruby) -> eofError = RubyEOFError.define(ruby, ioError));
-        ifAllowed("ThreadError",            (ruby) -> threadError = RubyThreadError.define(ruby, standardError));
-        ifAllowed("ConcurrencyError",       (ruby) -> concurrencyError = RubyConcurrencyError.define(ruby, threadError));
-        ifAllowed("SystemStackError",       (ruby) -> systemStackError = RubySystemStackError.define(ruby, exceptionClass));
-        ifAllowed("ZeroDivisionError",      (ruby) -> zeroDivisionError = RubyZeroDivisionError.define(ruby, standardError));
-        ifAllowed("FloatDomainError",       (ruby) -> floatDomainError = RubyFloatDomainError.define(ruby, rangeError));
+        ifAllowed("InterruptedRegexpError", (ruby) -> interruptedRegexpError = RubyInterruptedRegexpError.define(context, regexpError));
+        ifAllowed("EOFError",               (ruby) -> eofError = RubyEOFError.define(context, ioError));
+        ifAllowed("ThreadError",            (ruby) -> threadError = RubyThreadError.define(context, standardError));
+        ifAllowed("ConcurrencyError",       (ruby) -> concurrencyError = RubyConcurrencyError.define(context, threadError));
+        ifAllowed("SystemStackError",       (ruby) -> systemStackError = RubySystemStackError.define(context, exceptionClass));
+        ifAllowed("ZeroDivisionError",      (ruby) -> zeroDivisionError = RubyZeroDivisionError.define(context, standardError));
+        ifAllowed("FloatDomainError",       (ruby) -> floatDomainError = RubyFloatDomainError.define(context, rangeError));
         ifAllowed("EncodingError",          (ruby) -> {
-            encodingError = RubyEncodingError.define(ruby, standardError);
-            encodingCompatibilityError = RubyEncodingError.RubyCompatibilityError.define(ruby, encodingError, encodingClass);
-            invalidByteSequenceError = RubyEncodingError.RubyInvalidByteSequenceError.define(ruby, encodingError, encodingClass);
-            undefinedConversionError = RubyEncodingError.RubyUndefinedConversionError.define(ruby, encodingError, encodingClass);
-            converterNotFoundError = RubyEncodingError.RubyConverterNotFoundError.define(ruby, encodingError, encodingClass);
+            encodingError = RubyEncodingError.define(context, standardError);
+            encodingCompatibilityError = RubyEncodingError.RubyCompatibilityError.define(context, encodingError, encodingClass);
+            invalidByteSequenceError = RubyEncodingError.RubyInvalidByteSequenceError.define(context, encodingError, encodingClass);
+            undefinedConversionError = RubyEncodingError.RubyUndefinedConversionError.define(context, encodingError, encodingClass);
+            converterNotFoundError = RubyEncodingError.RubyConverterNotFoundError.define(context, encodingError, encodingClass);
         });
-        ifAllowed("Fiber",                  (ruby) -> fiberError = RubyFiberError.define(ruby, standardError));
-        ifAllowed("ConcurrencyError",       (ruby) -> concurrencyError = RubyConcurrencyError.define(ruby, threadError));
-        ifAllowed("KeyError",               (ruby) -> keyError = RubyKeyError.define(ruby, indexError));
-        ifAllowed("DomainError",            (ruby) -> mathDomainError = RubyDomainError.define(ruby, argumentError, mathModule));
+        ifAllowed("Fiber",                  (ruby) -> fiberError = RubyFiberError.define(context, standardError));
+        ifAllowed("KeyError",               (ruby) -> keyError = RubyKeyError.define(context, indexError));
+        ifAllowed("DomainError",            (ruby) -> mathDomainError = RubyDomainError.define(context, argumentError, mathModule));
 
-        setRegexpTimeoutError(regexpClass.defineClassUnder("TimeoutError", getRegexpError(), RubyRegexpError::new));
+        setRegexpTimeoutError(regexpClass.defineClassUnder(context, "TimeoutError", getRegexpError(), RubyRegexpError::new));
 
         RubyClass runtimeError = this.runtimeError;
         ObjectAllocator runtimeErrorAllocator = runtimeError.getAllocator();
 
         if (Options.FIBER_SCHEDULER.load()) {
-            bufferLockedError = ioBufferClass.defineClassUnder("LockedError", runtimeError, runtimeErrorAllocator);
-            bufferAllocationError = ioBufferClass.defineClassUnder("AllocationError", runtimeError, runtimeErrorAllocator);
-            bufferAccessError = ioBufferClass.defineClassUnder("AccessError", runtimeError, runtimeErrorAllocator);
-            bufferInvalidatedError = ioBufferClass.defineClassUnder("InvalidatedError", runtimeError, runtimeErrorAllocator);
-            bufferMaskError = ioBufferClass.defineClassUnder("MaskError", runtimeError, runtimeErrorAllocator);
+            bufferLockedError = ioBufferClass.defineClassUnder(context, "LockedError", runtimeError, runtimeErrorAllocator);
+            bufferAllocationError = ioBufferClass.defineClassUnder(context, "AllocationError", runtimeError, runtimeErrorAllocator);
+            bufferAccessError = ioBufferClass.defineClassUnder(context, "AccessError", runtimeError, runtimeErrorAllocator);
+            bufferInvalidatedError = ioBufferClass.defineClassUnder(context, "InvalidatedError", runtimeError, runtimeErrorAllocator);
+            bufferMaskError = ioBufferClass.defineClassUnder(context, "MaskError", runtimeError, runtimeErrorAllocator);
         }
 
-        initErrno();
+        initErrno(context);
 
-        initNativeException();
+        if (profile.allowClass("NativeException")) nativeException = NativeException.createClass(context, runtimeError, objectClass);
     }
 
     private void ifAllowed(String name, Consumer<Ruby> callback) {
         if (profile.allowClass(name)) {
             callback.accept(this);
-        }
-    }
-
-    @SuppressWarnings("deprecation")
-    private void initNativeException() {
-        if (profile.allowClass("NativeException")) {
-            nativeException = NativeException.createClass(this, runtimeError);
         }
     }
 
@@ -1725,19 +1724,16 @@ public final class Ruby implements Constantizable {
      * Create module Errno's Variables.  We have this method since Errno does not have its
      * own java class.
      */
-    private void initErrno() {
+    private void initErrno(ThreadContext context) {
         if (profile.allowModule("Errno")) {
-            errnoModule = defineModule("Errno");
+            errnoModule = Define.defineModule(context, "Errno");
             try {
                 // define EAGAIN now, so that future EWOULDBLOCK will alias to it
                 // see MRI's error.c and its explicit ordering of Errno definitions.
-                createSysErr(Errno.EAGAIN.intValue(), Errno.EAGAIN.name());
+                createSysErr(context, Errno.EAGAIN.intValue(), Errno.EAGAIN.name());
 
                 for (Errno e : Errno.values()) {
-                    Constant c = (Constant) e;
-                    if (Character.isUpperCase(c.name().charAt(0))) {
-                        createSysErr(c.intValue(), c.name());
-                    }
+                    if (Character.isUpperCase(e.name().charAt(0))) createSysErr(context, e.intValue(), e.name());
                 }
 
                 // map ENOSYS to NotImplementedError
@@ -1757,10 +1753,10 @@ public final class Ruby implements Constantizable {
      * @param i the error code (will probably use a java exception instead)
      * @param name of the error to define.
      **/
-    private void createSysErr(int i, String name) {
+    private void createSysErr(ThreadContext context, int i, String name) {
         if (profile.allowClass(name)) {
             if (errnos.get(i) == null) {
-                RubyClass errno = getErrno().defineClassUnder(name, systemCallError, systemCallError.getAllocator());
+                RubyClass errno = getErrno().defineClassUnder(context, name, systemCallError, systemCallError.getAllocator());
                 errnos.put(i, errno);
                 errno.defineConstant("Errno", newFixnum(i));
             } else {
@@ -1777,14 +1773,14 @@ public final class Ruby implements Constantizable {
      * to load via normal `require` logic. Because of how this interacted (badly) with require-hooking tools like
      * bootsnap, we have moved to having all builtins as actual files rather than special virtual entries.
      */
-    private void initJavaSupport() {
+    private void initJavaSupport(ThreadContext context) {
         // load JRuby internals, which loads Java support
         // if we can't use reflection, 'jruby' and 'java' won't work; no load.
         boolean reflectionWorks = doesReflectionWork();
 
         if (reflectionWorks) {
-            new Java().load(this, false);
-            new JRubyUtilLibrary().load(this, false);
+            new Java().load(context.runtime, false);
+            new JRubyUtilLibrary().load(context.runtime, false);
 
             loadService.provide("java.rb");
             loadService.provide("jruby/util.rb");
@@ -3045,7 +3041,7 @@ public final class Ruby implements Constantizable {
      * @param wrap Whether to use a new "self" for toplevel
      */
     public void loadExtension(String extName, BasicLibraryService extension, boolean wrap) {
-        IRubyObject self = wrap ? TopSelfFactory.createTopSelf(this, true) : getTopSelf();
+        IRubyObject self = wrap ? TopSelfFactory.createTopSelf(this, objectClass, true) : getTopSelf();
         ThreadContext context = getCurrentContext();
 
         try {
@@ -4611,7 +4607,9 @@ public final class Ruby implements Constantizable {
      * @param module the module in which we want to define the constants
      * @param enumClass the enum class of the constants to define
      * @param <C> the enum type, which must implement {@link Constant}.
+     * @deprecated Use {@link org.jruby.RubyModule#defineConstantsFrom(ThreadContext, Class)} instead.
      */
+    @Deprecated
     public <C extends Enum<C> & Constant> void loadConstantSet(RubyModule module, Class<C> enumClass) {
         for (C constant : EnumSet.allOf(enumClass)) {
             String name = constant.name();

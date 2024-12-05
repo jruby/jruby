@@ -39,6 +39,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.util.ArraySupport;
 
@@ -51,10 +52,9 @@ import org.jruby.util.ArraySupport;
 public class RubyInterrupt extends RubySignalException {
     private static final ObjectAllocator INTERRUPT_ALLOCATOR = RubyInterrupt::new;
 
-    static RubyClass define(Ruby runtime, RubyClass signalExceptionClass) {
-        RubyClass interruptClass = runtime.defineClass("Interrupt", signalExceptionClass, INTERRUPT_ALLOCATOR);
-        interruptClass.defineAnnotatedMethods(RubyInterrupt.class);
-        return interruptClass;
+    static RubyClass define(ThreadContext context, RubyClass SignalException) {
+        return defineClass(context, "Interrupt", SignalException, INTERRUPT_ALLOCATOR).
+                defineMethods(context, RubyInterrupt.class);
     }
 
     protected RubyInterrupt(Ruby runtime, RubyClass exceptionClass) {

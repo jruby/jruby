@@ -6,14 +6,15 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.io.OpenFile;
 
+import static org.jruby.api.Access.ioClass;
 import static org.jruby.api.Convert.asBoolean;
 
 public class IONonBlock {
 
     public static void load(Ruby runtime) {
-        runtime.getIO().defineAnnotatedMethods(IONonBlock.class);
+        var context = runtime.getCurrentContext();
+        ioClass(context).defineMethods(context, IONonBlock.class);
     }
 
     @JRubyMethod(name = "nonblock?")

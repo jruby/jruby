@@ -35,7 +35,6 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallBlock;
 import org.jruby.runtime.JavaSites;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -46,9 +45,11 @@ import java.util.Spliterator;
 import java.util.stream.Stream;
 
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.arrayOf;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
@@ -83,16 +84,13 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
     private FeedValue feedValue;
 
-    public static RubyClass defineEnumerator(Ruby runtime, RubyModule Enumerable) {
-        final RubyClass Enumerator = runtime.defineClass("Enumerator", runtime.getObject(), RubyEnumerator::new);
+    public static RubyClass defineEnumerator(ThreadContext context, RubyClass Object, RubyModule Enumerable) {
+        RubyClass Enumerator = defineClass(context, "Enumerator", Object, RubyEnumerator::new).
+                include(Enumerable).
+                defineMethods(context, RubyEnumerator.class);
 
-        Enumerator.includeModule(Enumerable);
-        Enumerator.defineAnnotatedMethods(RubyEnumerator.class);
-
-        final RubyClass FeedValue;
-        FeedValue = runtime.defineClassUnder("FeedValue", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR, Enumerator);
-        FeedValue.defineAnnotatedMethods(FeedValue.class);
-        Enumerator.setConstantVisibility(runtime, "FeedValue", true);
+        Enumerator.defineClassUnder(context, "FeedValue", Object, NOT_ALLOCATABLE_ALLOCATOR).defineMethods(context, FeedValue.class);
+        Enumerator.setConstantVisibility(context.runtime, "FeedValue", true);
 
         return Enumerator;
     }

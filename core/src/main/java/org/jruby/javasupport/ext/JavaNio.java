@@ -53,18 +53,18 @@ import static org.jruby.util.Inspector.inspectPrefix;
  */
 public abstract class JavaNio {
 
-    public static void define(final Ruby runtime) {
-        JavaExtensions.put(runtime, java.nio.Buffer.class, (proxy) -> Buffer.define(runtime, (RubyClass) proxy));
+    public static void define(ThreadContext context) {
+        var runtime = context.runtime;
+        JavaExtensions.put(runtime, java.nio.Buffer.class, (proxy) -> Buffer.define(context, (RubyClass) proxy));
         // make sure it does not use CharSequence#inspect but rather a unified Buffer#inspect format:
         JavaExtensions.put(runtime, java.nio.CharBuffer.class, (proxy) -> proxy.addMethod("inspect", new InspectBuffer(proxy)));
     }
 
     @JRubyModule(name = "Java::JavaNio::Buffer")
     public static class Buffer {
-
-        static RubyModule define(final Ruby runtime, final RubyClass proxy) {
-            proxy.defineAnnotatedMethods(Buffer.class);
-            proxy.addMethod("inspect", new InspectBuffer(proxy));
+        static RubyModule define(ThreadContext context, final RubyClass proxy) {
+            proxy.defineMethods(context, Buffer.class).
+                    addMethod("inspect", new InspectBuffer(proxy));
             return proxy;
         }
 

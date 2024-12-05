@@ -35,6 +35,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
+import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
@@ -75,6 +76,7 @@ import java.nio.channels.UnsupportedAddressTypeException;
 
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.runtime.Helpers.extractExceptionOnlyArg;
 
 /**
@@ -85,14 +87,11 @@ public class RubyUDPSocket extends RubyIPSocket {
 
     public static final double RECV_BUFFER_COPY_SCALE = 1.5;
 
-    static void createUDPSocket(Ruby runtime) {
-        RubyClass rb_cUDPSocket = runtime.defineClass("UDPSocket", runtime.getClass("IPSocket"), RubyUDPSocket::new);
-
-        rb_cUDPSocket.includeModule(runtime.getClass("Socket").getConstant("Constants"));
-
-        rb_cUDPSocket.defineAnnotatedMethods(RubyUDPSocket.class);
-
-        runtime.getObject().setConstant("UDPsocket", rb_cUDPSocket);
+    static void createUDPSocket(ThreadContext context, RubyClass IPSocket, RubyClass Socket, RubyClass Object) {
+        Object.setConstant("UDPsocket",
+                defineClass(context, "UDPSocket", IPSocket, RubyUDPSocket::new).
+                        include((RubyModule) Socket.getConstant("Constants")).
+                        defineMethods(context, RubyUDPSocket.class));
     }
 
     public RubyUDPSocket(Ruby runtime, RubyClass type) {

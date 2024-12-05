@@ -5,9 +5,11 @@ import org.jruby.RubyClass;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import static org.jruby.api.Define.defineClass;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
 /**
  * A shim class created when constructing primitive arrays from proxied Java classes.
@@ -29,11 +31,9 @@ public class ArrayJavaProxyCreator extends RubyObject {
     final Class<?> elementType;
     int[] dimensions = EMPTY;
 
-    public static RubyClass createArrayJavaProxyCreator(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        RubyClass arrayJavaProxyCreator = runtime.defineClass("ArrayJavaProxyCreator", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        arrayJavaProxyCreator.defineAnnotatedMethods(ArrayJavaProxyCreator.class);
-        return arrayJavaProxyCreator;
+    public static RubyClass createArrayJavaProxyCreator(ThreadContext context, RubyClass Object) {
+        return defineClass(context, "ArrayJavaProxyCreator", Object, NOT_ALLOCATABLE_ALLOCATOR).
+                defineMethods(context, ArrayJavaProxyCreator.class);
     }
 
     ArrayJavaProxyCreator(final ThreadContext context, Class<?> elementType, final IRubyObject[] sizes) {

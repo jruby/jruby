@@ -65,26 +65,27 @@ import static org.jruby.util.Inspector.*;
  */
 public abstract class JavaUtil {
 
-    public static void define(final Ruby runtime) {
-        JavaExtensions.put(runtime, java.util.Enumeration.class, (proxyClass) -> Enumeration.define(runtime, proxyClass));
-        JavaExtensions.put(runtime, java.util.Iterator.class, (proxyClass) -> Iterator.define(runtime, proxyClass));
-        JavaExtensions.put(runtime, java.util.Collection.class, (proxyClass) -> Collection.define(runtime, proxyClass));
-        JavaExtensions.put(runtime, java.util.List.class, (proxyClass) -> List.define(runtime, proxyClass));
+    public static void define(ThreadContext context, RubyModule Enumerable) {
+        var runtime = context.runtime;
+
+        JavaExtensions.put(runtime, java.util.Enumeration.class, proxy -> Enumeration.define(context, proxy, Enumerable));
+        JavaExtensions.put(runtime, java.util.Iterator.class, proxy -> Iterator.define(context, proxy, Enumerable));
+        JavaExtensions.put(runtime, java.util.Collection.class, proxy -> Collection.define(context, proxy, Enumerable));
+        JavaExtensions.put(runtime, java.util.List.class, proxy -> proxy.defineMethods(context, List.class));
         JavaExtensions.put(runtime, java.util.Date.class, (dateClass) -> {
             dateClass.addMethod("inspect", new JavaLang.InspectValueWithTypePrefix(dateClass));
         });
-        JavaExtensions.put(runtime, java.util.TimeZone.class, (proxyClass) -> {
-            proxyClass.addMethod("inspect", new InspectTimeZone(proxyClass));
+        JavaExtensions.put(runtime, java.util.TimeZone.class, proxy -> {
+            proxy.addMethod("inspect", new InspectTimeZone(proxy));
         });
     }
 
     @JRubyModule(name = "Java::JavaUtil::Enumeration", include = "Enumerable")
     public static class Enumeration {
 
-        static RubyModule define(final Ruby runtime, final RubyModule proxy) {
-            proxy.includeModule( runtime.getEnumerable() ); // include Enumerable
-            proxy.defineAnnotatedMethods(Enumeration.class);
-            return proxy;
+        static RubyModule define(ThreadContext context, final RubyModule proxy, RubyModule Enumerable) {
+            return proxy.include(Enumerable).
+                    defineMethods(context, Enumeration.class);
         }
 
         @JRubyMethod
@@ -103,10 +104,8 @@ public abstract class JavaUtil {
     @JRubyModule(name = "Java::JavaUtil::Iterator", include = "Enumerable")
     public static class Iterator {
 
-        static RubyModule define(final Ruby runtime, final RubyModule proxy) {
-            proxy.includeModule( runtime.getEnumerable() ); // include Enumerable
-            proxy.defineAnnotatedMethods(Iterator.class);
-            return proxy;
+        static RubyModule define(ThreadContext context, final RubyModule proxy, RubyModule Enumerable) {
+            return proxy.include(Enumerable).defineMethods(context, Iterator.class);
         }
 
         @JRubyMethod
@@ -125,10 +124,8 @@ public abstract class JavaUtil {
     @JRubyModule(name = "Java::JavaUtil::Collection", include = "Enumerable")
     public static class Collection {
 
-        static RubyModule define(final Ruby runtime, final RubyModule proxy) {
-            proxy.includeModule( runtime.getEnumerable() ); // include Enumerable
-            proxy.defineAnnotatedMethods(Collection.class);
-            return proxy;
+        static RubyModule define(ThreadContext context, final RubyModule proxy, RubyModule Enumerable) {
+            return proxy.include(Enumerable).defineMethods(context, Collection.class);
         }
 
         @JRubyMethod(name = { "length", "size" })
@@ -304,12 +301,6 @@ public abstract class JavaUtil {
 
     @JRubyModule(name = "Java::JavaUtil::List")
     public static class List {
-
-        static RubyModule define(final Ruby runtime, final RubyModule proxy) {
-            proxy.defineAnnotatedMethods(List.class);
-            return proxy;
-        }
-
         @JRubyMethod(name = "[]") // act safe on indexes compared to get(idx) throwing IndexOutOfBoundsException
         public static IRubyObject aref(final ThreadContext context, final IRubyObject self, final IRubyObject idx) {
             final java.util.List list = unwrapIfJavaObject(self);

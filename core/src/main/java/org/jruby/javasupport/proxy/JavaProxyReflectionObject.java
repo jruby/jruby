@@ -49,8 +49,8 @@ public class JavaProxyReflectionObject extends RubyObject {
         super(runtime, metaClass, false);
     }
 
-    protected static void registerRubyMethods(Ruby runtime, RubyClass klass) {
-        klass.defineAnnotatedMethods(JavaProxyReflectionObject.class);
+    protected static void registerRubyMethods(ThreadContext context, RubyClass klass) {
+        klass.defineMethods(context, JavaProxyReflectionObject.class);
         klass.getMetaClass().defineAlias("__j_allocate", "allocate");
     }
 

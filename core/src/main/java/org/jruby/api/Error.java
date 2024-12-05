@@ -4,7 +4,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyFrozenError;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.ArgumentError;
-import org.jruby.exceptions.FrozenError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.ThreadContext;

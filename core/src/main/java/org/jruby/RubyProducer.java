@@ -43,13 +43,10 @@ public class RubyProducer extends RubyObject {
     private IRubyObject init;
     private Block producerBlock;
 
-    public static RubyClass createProducerClass(Ruby runtime, RubyClass enumeratorModule) {
-        RubyClass producerc = runtime.defineClassUnder("Producer", runtime.getObject(), RubyProducer::new, enumeratorModule);
-
-        producerc.includeModule(runtime.getEnumerable());
-        producerc.defineAnnotatedMethods(RubyProducer.class);
-
-        return producerc;
+    public static RubyClass createProducerClass(ThreadContext context, RubyClass Object, RubyClass Enumerator, RubyModule Enumerable) {
+        return Enumerator.defineClassUnder(context, "Producer", Object, RubyProducer::new).
+                include(Enumerable).
+                defineMethods(context, RubyProducer.class);
     }
 
     public RubyProducer(Ruby runtime, RubyClass klass) {

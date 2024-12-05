@@ -43,6 +43,7 @@ import java.net.InetSocketAddress;
 
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 
 /**
@@ -50,11 +51,10 @@ import static org.jruby.api.Error.argumentError;
  */
 @JRubyClass(name="IPSocket", parent="BasicSocket")
 public class RubyIPSocket extends RubyBasicSocket {
-    static void createIPSocket(Ruby runtime) {
-        RubyClass rb_cIPSocket = runtime.defineClass("IPSocket", runtime.getClass("BasicSocket"), RubyIPSocket::new);
-
-        rb_cIPSocket.defineAnnotatedMethods(RubyIPSocket.class);
-        rb_cIPSocket.undefineMethod("initialize");
+    static RubyClass createIPSocket(ThreadContext context, RubyClass BasicSocket) {
+        return defineClass(context, "IPSocket", BasicSocket, RubyIPSocket::new).
+                defineMethods(context, RubyIPSocket.class).
+                undefMethods("initialize");
     }
 
     public RubyIPSocket(Ruby runtime, RubyClass type) {

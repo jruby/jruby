@@ -59,8 +59,11 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 
 import static org.jruby.RubyRegexp.*;
+import static org.jruby.api.Access.*;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineClass;
+import static org.jruby.api.Define.defineClassUnder;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ext.date.DateUtils.*;
@@ -108,20 +111,20 @@ public class RubyDate extends RubyObject {
     long start = ITALY; // @sg
     long subMillisNum = 0, subMillisDen = 1; // @sub_millis
 
-    static RubyClass createDateClass(Ruby runtime) {
-        var context = runtime.getCurrentContext();
-        RubyClass Date = runtime.defineClass("Date", runtime.getObject(), RubyDate::new);
-        Date.setReifiedClass(RubyDate.class);
-        Date.includeModule(runtime.getComparable());
-        Date.defineAnnotatedMethods(RubyDate.class);
-        Date.setConstant("ITALY", asFixnum(context, ITALY));
-        Date.setConstant("ENGLAND", asFixnum(context, ENGLAND));
-        Date.setConstant("VERSION", newString(context, "3.2.2"));
+    static RubyClass createDateClass(ThreadContext context) {
+        var Date = defineClass(context, "Date", objectClass(context), RubyDate::new).
+                reifiedClass(RubyDate.class).
+                include(comparableModule(context)).
+                defineMethods(context, RubyDate.class).
+                defineConstant(context, "ITALY", asFixnum(context, ITALY)).
+                defineConstant(context, "ENGLAND", asFixnum(context, ENGLAND)).
+                defineConstant(context, "VERSION", newString(context, "3.2.2"));
 
-        RubyClass dateError = runtime.defineClassUnder("Error", runtime.getArgumentError(), runtime.getArgumentError().getAllocator(), Date);
-        runtime.setDateError(dateError);
+        var ArgumentError = argumentErrorClass(context);
+        RubyClass dateError = defineClassUnder(context, "Error", ArgumentError, ArgumentError.getAllocator(), Date);
+        context.runtime.setDateError(dateError);
 
-        return Date;
+        return (RubyClass) Date;
     }
 
     // Julian Day Number day 0 ... `def self.civil(y=-4712, m=1, d=1, sg=ITALY)`

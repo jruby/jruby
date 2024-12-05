@@ -15,6 +15,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectMarshal;
 
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.runtime.Visibility.*;
 
 import org.jruby.runtime.ThreadContext;
@@ -179,14 +180,10 @@ public class RubySystemCallError extends RubyStandardError {
         }
     };
 
-    public static RubyClass define(Ruby runtime, RubyClass standardError) {
-        RubyClass exceptionClass = runtime.defineClass("SystemCallError", standardError, RubySystemCallError::new);
-
-        exceptionClass.setMarshal(SYSTEM_CALL_ERROR_MARSHAL);
-        
-        exceptionClass.defineAnnotatedMethods(RubySystemCallError.class);
-
-        return exceptionClass;
+    public static RubyClass define(ThreadContext context, RubyClass StandardError) {
+        return defineClass(context, "SystemCallError", StandardError, RubySystemCallError::new).
+                marshalWith(SYSTEM_CALL_ERROR_MARSHAL).
+                defineMethods(context, RubySystemCallError.class);
     }
 
     @Deprecated

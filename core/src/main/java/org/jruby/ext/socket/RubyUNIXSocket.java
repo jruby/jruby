@@ -54,7 +54,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 import org.jruby.util.io.FilenoUtil;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.OpenFile;
@@ -70,17 +69,17 @@ import static com.headius.backport9.buffer.Buffers.flipBuffer;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
 
 @JRubyClass(name="UNIXSocket", parent="BasicSocket")
 public class RubyUNIXSocket extends RubyBasicSocket {
-    static void createUNIXSocket(Ruby runtime) {
-        RubyClass rb_cUNIXSocket = runtime.defineClass("UNIXSocket", runtime.getClass("BasicSocket"), RubyUNIXSocket::new);
-        runtime.getObject().setConstant("UNIXsocket", rb_cUNIXSocket);
-
-        rb_cUNIXSocket.defineAnnotatedMethods(RubyUNIXSocket.class);
+    static RubyClass createUNIXSocket(ThreadContext context, RubyClass BasicSocket, RubyClass Object) {
+        return (RubyClass) Object.setConstant("UNIXsocket",
+                defineClass(context, "UNIXSocket", BasicSocket, RubyUNIXSocket::new).
+                        defineMethods(context, RubyUNIXSocket.class));
     }
 
     public RubyUNIXSocket(Ruby runtime, RubyClass type) {

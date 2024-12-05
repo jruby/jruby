@@ -57,7 +57,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.function.Consumer;
 
+import jnr.constants.Constant;
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.AnnotationBinder;
@@ -68,6 +70,7 @@ import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.anno.TypePopulator;
+import org.jruby.api.JRubyAPI;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.embed.Extension;
 import org.jruby.exceptions.LoadError;
@@ -90,6 +93,8 @@ import org.jruby.internal.runtime.methods.SynchronizedDynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
+import org.jruby.ir.Interp;
+import org.jruby.ir.JIT;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.binding.MethodGatherer;
 import org.jruby.parser.StaticScope;
@@ -139,6 +144,7 @@ import static org.jruby.anno.FrameField.METHODNAME;
 import static org.jruby.anno.FrameField.SCOPE;
 import static org.jruby.anno.FrameField.SELF;
 import static org.jruby.anno.FrameField.VISIBILITY;
+import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.*;
@@ -176,15 +182,13 @@ public class RubyModule extends RubyObject {
 
     public static final ObjectAllocator MODULE_ALLOCATOR = RubyModule::new;
 
-    public static RubyClass createModuleClass(Ruby runtime, RubyClass moduleClass) {
-        moduleClass.setClassIndex(ClassIndex.MODULE);
-        moduleClass.setReifiedClass(RubyModule.class);
-        moduleClass.kindOf = new RubyModule.JavaClassKindOf(RubyModule.class);
+    public static void createModuleClass(RubyClass Module) {
+        Module.reifiedClass(RubyModule.class).
+                kindOf(new RubyModule.JavaClassKindOf(RubyModule.class)).
+                classIndex(ClassIndex.MODULE);
 
-        moduleClass.defineAnnotatedMethods(RubyModule.class);
-        moduleClass.defineAnnotatedMethods(ModuleKernelMethods.class);
-
-        return moduleClass;
+        Module.defineAnnotatedMethodsIndividually(RubyModule.class);
+        Module.defineAnnotatedMethodsIndividually(ModuleKernelMethods.class);
     }
 
     public void checkValidBindTargetFrom(ThreadContext context, RubyModule originModule, boolean fromBind) throws RaiseException {
@@ -207,14 +211,14 @@ public class RubyModule extends RubyObject {
     }
 
     /**
-     * Set the ClassIndex for this core class. Only used at boot time for core
-     * types.
+     * Set the ClassIndex for this core class. Only used at boot time for core types.
      *
      * @param classIndex the ClassIndex for this type
+     * @deprecated Use {@link org.jruby.RubyModule#classIndex(ClassIndex)} instead.
      */
+    @Deprecated(since = "10.0")
     void setClassIndex(ClassIndex classIndex) {
-        this.classIndex = classIndex;
-        this.index = classIndex.ordinal();
+        classIndex(classIndex);
     }
 
     @JRubyMethod
@@ -640,6 +644,18 @@ public class RubyModule extends RubyObject {
         baseName = name;
         cachedName = null;
         cachedRubyName = null;
+    }
+
+    /**
+     * Set the base name of the class. If null, the class effectively becomes
+     * anonymous (though constants elsewhere may reference it).
+     * @param name the new base name of the class
+     * @return itself for a composable API.
+     */
+    @JRubyAPI
+    public RubyModule baseName(String name) {
+        setBaseName(name);
+        return this;
     }
 
     /**
@@ -1298,48 +1314,60 @@ public class RubyModule extends RubyObject {
         }
     }
 
+    /**
+     * @param clazz
+     * @deprecated Use {@link RubyModule#defineConstants(ThreadContext, Class)} instead.
+     */
+    @Deprecated(since = "10.0")
     public final void defineAnnotatedConstants(Class clazz) {
-        for (Field field : clazz.getDeclaredFields()) {
-            if (Modifier.isStatic(field.getModifiers())) {
-                defineAnnotatedConstant(field);
-            }
-        }
+        defineConstants(getCurrentContext(), clazz);
     }
 
+    /**
+     * @param field
+     * @return ""
+     * @deprecated Use {@link RubyModule#defineAnnotatedConstant(ThreadContext, Field)} instead.
+     */
+    @Deprecated(since = "10.0")
     public final boolean defineAnnotatedConstant(Field field) {
+        return defineAnnotatedConstant(getCurrentContext(), field);
+    }
+
+    public final boolean defineAnnotatedConstant(ThreadContext context, Field field) {
         JRubyConstant jrubyConstant = field.getAnnotation(JRubyConstant.class);
-
         if (jrubyConstant == null) return false;
-
-        Ruby runtime = getRuntime();
 
         Class tp = field.getType();
         IRubyObject realVal;
 
         try {
             if(tp == Integer.class || tp == Integer.TYPE || tp == Short.class || tp == Short.TYPE || tp == Byte.class || tp == Byte.TYPE) {
-                realVal = RubyNumeric.int2fix(runtime, field.getInt(null));
+                realVal = RubyNumeric.int2fix(context.runtime, field.getInt(null));
             } else if(tp == Boolean.class || tp == Boolean.TYPE) {
-                realVal = field.getBoolean(null) ? runtime.getTrue() : runtime.getFalse();
+                realVal = field.getBoolean(null) ? context.tru : context.fals;
             } else {
-                realVal = runtime.getNil();
+                realVal = context.nil;
             }
         } catch(Exception e) {
-            realVal = runtime.getNil();
+            realVal = context.nil;
         }
 
         String[] names = jrubyConstant.value();
         if (names.length == 0) {
             setConstant(field.getName(), realVal);
-        }
-        else {
+        } else {
             for (String name : names) setConstant(name, realVal);
         }
 
         return true;
     }
 
+    /**
+     * @param clazz
+     * @deprecated Use {@link RubyModule#defineMethods(ThreadContext, Class[])} instead.
+     */
     @Extension
+    @Deprecated(since = "1.0")
     public void defineAnnotatedMethods(Class clazz) {
         defineAnnotatedMethodsIndividually(clazz);
     }
@@ -1434,6 +1462,12 @@ public class RubyModule extends RubyObject {
         return new TypePopulator.ReflectiveTypePopulator(type);
     }
 
+    /**
+     * An internal API only used before the first ThreadContext is defined.  For example,
+     * BasicObject, Boolean,  needs this when getting defined.
+     * Use {@link org.jruby.RubyModule#defineMethods(ThreadContext, Class[])} instead.
+     * @param clazz to generate JRuby methods from
+     */
     public final void defineAnnotatedMethodsIndividually(Class clazz) {
         getRuntime().POPULATORS.get(clazz).populate(this, clazz);
     }
@@ -1471,6 +1505,133 @@ public class RubyModule extends RubyObject {
         define(this, desc, name, dynamicMethod);
 
         return true;
+    }
+
+    /**
+     * Sets the ClassIndex for this type
+     * @param classIndex to be set
+     * @return itself for composable API
+     */
+    @JRubyAPI
+    public <T extends RubyModule> T classIndex(ClassIndex classIndex) {
+        this.classIndex = classIndex;
+        this.index = classIndex.ordinal();
+        return (T) this;
+    }
+
+    /**
+     * Define a Class under this Class/Module.
+     *
+     * @param context the current thread context
+     * @param name name of the new class
+     * @param superClass superclass of this new class
+     * @param allocator how to allocate an instance of this class
+     * @return the new class
+     */
+    // MRI: rb_define_class_under
+    @JRubyAPI
+    public <T extends RubyClass> T defineClassUnder(ThreadContext context, String name, RubyClass superClass,
+                                                    ObjectAllocator allocator) {
+        return (T) context.runtime.defineClassUnder(name, superClass, allocator, this, null);
+    }
+
+    /**
+     * Define constant for your module/class with the supplied Class which contains @JRubyMethod annotations.
+     *
+     * @param context
+     * @param constantSource class containing the method annotations
+     * @return itself for composable API
+     */
+    @JRubyAPI
+    public <T extends RubyModule> T defineConstants(ThreadContext context, Class constantSource) {
+        for (Field field : constantSource.getDeclaredFields()) {
+            if (Modifier.isStatic(field.getModifiers())) {
+                defineAnnotatedConstant(context, field);
+            }
+        }
+        return (T) this;
+    }
+
+    /**
+     * Define all constants from the given jnr-constants enum which are defined on the current platform.
+     *
+     * @param context the current thread context
+     * @param enumClass the enum class of the constants to define
+     * @param <C> the enum type, which must implement {@link Constant}.
+     * @return itself for composable API
+     */
+    @JRubyAPI
+    public <C extends Enum<C> &Constant, T extends RubyModule> T defineConstantsFrom(ThreadContext context, Class<C> enumClass) {
+        context.runtime.loadConstantSet(this, enumClass);
+        return (T) this;
+    }
+
+    /**
+     * Define a module under this module.
+     *
+     * @param context
+     * @param name
+     * @return itself for a composable API
+     */
+    // MRI: rb_define_module_under
+    @JRubyAPI
+    public RubyModule defineModuleUnder(ThreadContext context, String name) {
+        return context.runtime.defineModuleUnder(name, this);
+    }
+
+    /**
+     * Define methods for your module/class with the supplied Class which contains @JRubyMethod annotations.
+     *
+     * @param context
+     * @param methodSources class containing the method annotations
+     * @return itself for composable API
+     */
+    @JRubyAPI
+    public <T extends RubyModule> T defineMethods(ThreadContext context, Class... methodSources) {
+        var populators = context.runtime.POPULATORS;
+
+        for (var clazz : methodSources) {
+            populators.get(clazz).populate(this, clazz);
+        }
+        return (T) this;
+    }
+
+    /**
+     * In Defining this type include a module.  Note: This is for defining native extensions
+     * and differs from method of same name which is live include while executing Ruby code.
+     * @param module to be included
+     * @return itself for composable API
+     */
+    @JRubyAPI
+    public <T extends RubyModule> T include(RubyModule module) {
+        includeModule(module);
+        return (T) this;
+    }
+
+    /**
+     * Provide itself to a lambda then return itself.
+     *
+     * @param consumer to be given this
+     * @return this
+     * @param <T> A module or class
+     */
+    @JRubyAPI
+    public <T extends RubyModule> T tap(Consumer<T> consumer) {
+        consumer.accept((T) this);
+        return (T) this;
+    }
+
+    /**
+     * Undefine a method from this type.
+     * @param names the methods to undefine
+     * @return this type for composable API
+     */
+    @JRubyAPI
+    public <T extends RubyModule> T undefMethods(String... names) {
+        for (var name : names) {
+            undefineMethod(name);
+        }
+        return (T) this;
     }
 
     public void undefineMethod(String name) {
@@ -2295,38 +2456,43 @@ public class RubyModule extends RubyObject {
     /** this method should be used only by interpreter or compiler
      *
      */
+    @Deprecated(since = "10.0", forRemoval = true)
     public RubyModule defineOrGetModuleUnder(String name) {
-        return defineOrGetModuleUnder(name, null, -1);
+        return defineOrGetModuleUnder(getCurrentContext(), name, null, -1);
     }
 
-    public RubyModule defineOrGetModuleUnder(String name, String file, int line) {
+    @Interp
+    @JIT
+    public RubyModule defineOrGetModuleUnder(ThreadContext context, String name, String file, int line) {
         // This method is intended only for defining new modules in Ruby code
-        Ruby runtime = getRuntime();
         IRubyObject moduleObj = getConstantAtSpecial(name);
         RubyModule module;
         if (moduleObj != null) {
-            if (!moduleObj.isModule()) throw typeError(runtime.getCurrentContext(), "", moduleObj, " is not a module");
+            if (!moduleObj.isModule()) throw typeError(context, "", moduleObj, " is not a module");
             module = (RubyModule)moduleObj;
         } else if ((module = searchProvidersForModule(name)) != null) {
             // reopen a java module
         } else {
-            module = RubyModule.newModule(runtime, name, this, true, file, line);
+            module = RubyModule.newModule(context.runtime, name, this, true, file, line);
         }
         return module;
     }
 
-    /** rb_define_class_under
-     *  this method should be used only as an API to define/open nested classes
+    /**
+     * @param name
+     * @param superClass
+     * @param allocator
+     * @return ""
+     * @deprecated Use {@link RubyModule#defineClassUnder(ThreadContext, String, RubyClass, ObjectAllocator)} instead.
      */
+    @Deprecated(since = "10.0")
     public RubyClass defineClassUnder(String name, RubyClass superClass, ObjectAllocator allocator) {
-        return superClass.runtime.defineClassUnder(name, superClass, allocator, this);
+        return defineClassUnder(getCurrentContext(), name, superClass, allocator);
     }
 
-    /** rb_define_module_under
-     *  this method should be used only as an API to define/open nested module
-     */
+    @Deprecated
     public RubyModule defineModuleUnder(String name) {
-        return metaClass.runtime.defineModuleUnder(name, this);
+        return defineModuleUnder(getCurrentContext(), name);
     }
 
     private void addAccessor(ThreadContext context, RubySymbol identifier, Visibility visibility, boolean readable, boolean writeable) {
@@ -3030,7 +3196,7 @@ public class RubyModule extends RubyObject {
 
             DynamicMethod method = searchMethod(id);
             if (method.isUndefined() && isModule()) {
-                method = getRuntime().getObject().searchMethod(id);
+                method = objectClass(context).searchMethod(id);
             }
 
             if (method.isUndefined()) {
@@ -3355,12 +3521,22 @@ public class RubyModule extends RubyObject {
         return mod;
     }
 
+    /**
+     * @param obj
+     * @return ""
+     * @deprecated Use {@link RubyModule#extend_object(ThreadContext, IRubyObject)} instead.
+     */
+    @Deprecated(since = "10.0", forRemoval = true)
+    public IRubyObject extend_object(IRubyObject obj) {
+        return extend_object(getCurrentContext(), obj);
+    }
+
     /** rb_mod_extend_object
      *
      */
     @JRubyMethod(name = "extend_object", visibility = PRIVATE)
-    public IRubyObject extend_object(IRubyObject obj) {
-        if (!isModule()) throw typeError(getRuntime().getCurrentContext(), this, "Module");
+    public IRubyObject extend_object(ThreadContext context, IRubyObject obj) {
+        if (!isModule()) throw typeError(context, this, "Module");
 
         obj.getSingletonClass().includeModule(this);
         return obj;
@@ -3822,7 +3998,7 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "nesting", reads = SCOPE, meta = true)
     public static RubyArray nesting(ThreadContext context, IRubyObject recv, Block block) {
-        RubyModule object = context.runtime.getObject();
+        RubyModule object = objectClass(context);
         StaticScope scope = context.getCurrentStaticScope();
         var result = newArray(context);
 
@@ -4134,9 +4310,7 @@ public class RubyModule extends RubyObject {
 
     private boolean constDefined(ThreadContext context, IRubyObject name, boolean inherit) {
         Ruby runtime = context.runtime;
-        if (name instanceof RubySymbol) {
-            RubySymbol sym = (RubySymbol) name;
-
+        if (name instanceof RubySymbol sym) {
             if (!sym.validConstantName()) {
                 throw runtime.newNameError(str(runtime, "wrong constant name ", ids(runtime, sym)), sym);
             }
@@ -4148,9 +4322,7 @@ public class RubyModule extends RubyObject {
 
         RubyString fullName = name.convertToString();
         ByteList value = fullName.getByteList();
-
         ByteList pattern = COLON_COLON;
-
         Encoding enc = pattern.getEncoding();
         byte[] bytes = value.getUnsafeBytes();
         int begin = value.getBegin();
@@ -4162,7 +4334,7 @@ public class RubyModule extends RubyObject {
         RubyModule mod = this;
 
         if (value.startsWith(pattern)) {
-            mod = runtime.getObject();
+            mod = objectClass(context);
             currentOffset += 2;
         }
 
@@ -4179,19 +4351,13 @@ public class RubyModule extends RubyObject {
             IRubyObject obj;
 
             if (!inherit) {
-                if (!mod.constDefinedAt(id)) {
-                    return false;
-                }
+                if (!mod.constDefinedAt(id)) return false;
                 obj = mod.getConstantAt(id);
             } else if (index == 0 && segment.realSize() == 0) {
-                if (!mod.constDefined(id)) {
-                    return false;
-                }
+                if (!mod.constDefined(id)) return false;
                 obj = mod.getConstant(id);
             } else {
-                if (!mod.constDefinedFrom(id)) {
-                    return false;
-                }
+                if (!mod.constDefinedFrom(id)) return false;
                 obj = mod.getConstantFrom(id);
             }
 
@@ -4233,7 +4399,7 @@ public class RubyModule extends RubyObject {
         RubyModule mod = this;
 
         if (sep == 0) { // ::Foo::Bar
-            mod = context.runtime.getObject();
+            mod = objectClass(context);
             name = name.substring(2);
         }
 
@@ -4317,7 +4483,7 @@ public class RubyModule extends RubyObject {
         RubyModule mod = this;
 
         if (sep == 0) { // ::Foo::Bar
-            mod = context.runtime.getObject();
+            mod = objectClass(context);
             name = name.substring(2);
         }
 
@@ -4389,8 +4555,6 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "const_missing")
     public IRubyObject const_missing(ThreadContext context, IRubyObject rubyName, Block block) {
-        Ruby runtime = context.runtime;
-
         RubyModule privateConstReference = context.getPrivateConstantReference();
 
         if (privateConstReference != null) {
@@ -4398,12 +4562,11 @@ public class RubyModule extends RubyObject {
             throw getRuntime().newNameError("private constant " + privateConstReference + "::" + rubyName + " referenced", privateConstReference, rubyName);
         }
 
-        if (this != runtime.getObject()) {
-            throw runtime.newNameError("uninitialized constant %2$s::%1$s", this, rubyName);
+        if (this != objectClass(context)) {
+            throw context.runtime.newNameError("uninitialized constant %2$s::%1$s", this, rubyName);
         } else {
-            throw runtime.newNameError("uninitialized constant %1$s", this, rubyName);
+            throw context.runtime.newNameError("uninitialized constant %1$s", this, rubyName);
         }
-
     }
 
     @JRubyMethod(name = "constants")
@@ -5071,10 +5234,40 @@ public class RubyModule extends RubyObject {
         return setConstant(internedName, value);
     }
 
+    /**
+     * Define a constant when you are defining your Ruby class/module.
+     *
+     * @param context the current thread context
+     * @param name the name of the constant
+     * @param value the value for the constant
+     * @return itself for a composable API
+     */
+    @JRubyAPI
+    public <T extends RubyModule> T defineConstant(ThreadContext context, String name, IRubyObject value) {
+        return (T) defineConstant(context, name, value, false);
+    }
+
+    /**
+     * Define a constant when you are defining your Ruby class/module.
+     *
+     * @param context the current thread context
+     * @param name the name of the constant
+     * @param value the value for the constant
+     * @param hidden should this be a hidden constant
+     * @return itself for a composable API
+     */
+    @JRubyAPI
+    public <T extends RubyModule> T defineConstant(ThreadContext context, String name, IRubyObject value, boolean hidden) {
+        if (!IdUtil.isValidConstantName(name)) throw context.runtime.newNameError("bad constant name " + name, name);
+        setConstantCommon(name, value, hidden, true, null, -1);
+        return (T) this;
+    }
+
     /** rb_define_const
      *
      */
     @Extension
+    @Deprecated(since = "10.0")
     public void defineConstant(String name, IRubyObject value) {
         assert value != null;
 
@@ -5114,10 +5307,9 @@ public class RubyModule extends RubyObject {
      * rb_const_defined_0
      */
     private boolean constDefinedInner(String name, boolean exclude, boolean recurse, boolean visibility) {
-        Ruby runtime = getRuntime();
-        var context = runtime.getCurrentContext();
+        var context = getRuntime().getCurrentContext();
 
-        RubyClass object = runtime.getObject();
+        RubyClass object = objectClass(context);
         boolean moduleRetry = false;
 
         RubyModule module = this;
@@ -5134,7 +5326,7 @@ public class RubyModule extends RubyObject {
 
                     // autoload is not in progress and should not appear defined
                     if (value == UNDEF && module.checkAutoloadRequired(context, name, null) == null &&
-                            !module.autoloadingValue(runtime, name)) {
+                            !module.autoloadingValue(context.runtime, name)) {
                         return false;
                     }
 
@@ -5806,6 +5998,12 @@ public class RubyModule extends RubyObject {
 
     public KindOf kindOf = KindOf.DEFAULT_KIND_OF;
 
+    @JRubyAPI
+    public <T extends RubyModule> T kindOf(KindOf kindOf) {
+        this.kindOf = kindOf;
+        return (T) this;
+    }
+
     public final int id;
 
     /**
@@ -6079,16 +6277,11 @@ public class RubyModule extends RubyObject {
         this.refinements = refinements;
     }
 
-    public static RubyClass createRefinementClass(Ruby runtime, RubyClass refinementClass) {
-        refinementClass.setClassIndex(ClassIndex.REFINEMENT);
-        refinementClass.setReifiedClass(RubyModule.class);
-
-        refinementClass.defineAnnotatedMethods(RefinementMethods.class);
-        refinementClass.undefineMethod("append_features");
-        refinementClass.undefineMethod("prepend_features");
-        refinementClass.undefineMethod("extend_object");
-
-        return refinementClass;
+    public static void createRefinementClass(RubyClass Refinement) {
+        Refinement.reifiedClass(RubyModule.class).
+                classIndex(ClassIndex.REFINEMENT).
+                undefMethods("append_features", "prepend_features", "extend_object").
+                defineAnnotatedMethodsIndividually(RefinementMethods.class);
     }
 
     public static class RefinementMethods {

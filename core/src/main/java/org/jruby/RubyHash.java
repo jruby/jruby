@@ -84,6 +84,7 @@ import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.*;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.ThreadContext.resetCallInfo;
@@ -133,19 +134,13 @@ public class RubyHash extends RubyObject implements Map {
     public static final int COMPARE_BY_IDENTITY_F = ObjectFlags.COMPARE_BY_IDENTITY_F;
     public static final int RUBY2_KEYWORD_F = ObjectFlags.RUBY2_KEYWORD_F;
 
-    public static RubyClass createHashClass(Ruby runtime) {
-        RubyClass hashc = runtime.defineClass("Hash", runtime.getObject(), RubyHash::new);
-
-        hashc.setClassIndex(ClassIndex.HASH);
-        hashc.setReifiedClass(RubyHash.class);
-
-        hashc.kindOf = new RubyModule.JavaClassKindOf(RubyHash.class);
-
-        hashc.includeModule(runtime.getEnumerable());
-
-        hashc.defineAnnotatedMethods(RubyHash.class);
-
-        return hashc;
+    public static RubyClass createHashClass(ThreadContext context, RubyClass Object, RubyModule Enumerable) {
+        return defineClass(context, "Hash", Object, RubyHash::new).
+                reifiedClass(RubyHash.class).
+                kindOf(new RubyModule.JavaClassKindOf(RubyHash.class)).
+                classIndex(ClassIndex.HASH).
+                include(Enumerable).
+                defineMethods(context, RubyHash.class);
     }
 
     @Override

@@ -62,6 +62,7 @@ import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyNumeric.*;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.*;
 import static org.jruby.runtime.Helpers.hashEnd;
 import static org.jruby.runtime.Helpers.hashStart;
@@ -99,26 +100,20 @@ public class RubyRange extends RubyObject {
     private boolean isEndless;
     private boolean isInited = false;
 
-    public static RubyClass createRangeClass(Ruby runtime) {
-        RubyClass result = runtime.defineClass("Range", runtime.getObject(), RubyRange::new);
+    public static RubyClass createRangeClass(ThreadContext context, RubyClass Object, RubyModule Enumerable) {
+        RubyClass Range = defineClass(context, "Range", Object, RubyRange::new).
+                reifiedClass(RubyRange.class).
+                marshalWith(RANGE_MARSHAL).
+                kindOf(new RubyModule.JavaClassKindOf(RubyRange.class)).
+                classIndex(ClassIndex.RANGE).
+                include(Enumerable).
+                defineMethods(context, RubyRange.class);
 
-        result.setClassIndex(ClassIndex.RANGE);
-        result.setReifiedClass(RubyRange.class);
+        Range.defineClassUnder(context, "BSearch", Object, OBJECT_ALLOCATOR).defineMethods(context, BSearch.class);
 
-        result.kindOf = new RubyModule.JavaClassKindOf(RubyRange.class);
+        Range.setConstantVisibility(context.runtime, "BSearch", true);
 
-        result.setMarshal(RANGE_MARSHAL);
-        result.includeModule(runtime.getEnumerable());
-
-        result.defineAnnotatedMethods(RubyRange.class);
-
-        RubyClass bsearch = result.defineClassUnder("BSearch", runtime.getObject(), OBJECT_ALLOCATOR);
-
-        result.setConstantVisibility(runtime, "BSearch", true);
-
-        bsearch.defineAnnotatedMethods(BSearch.class);
-
-        return result;
+        return Range;
     }
 
     private RubyRange(Ruby runtime, RubyClass klass) {

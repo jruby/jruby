@@ -29,7 +29,6 @@ package org.jruby.javasupport;
 import org.jruby.Ruby;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyBoolean;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
@@ -40,15 +39,14 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newEmptyString;
+import static org.jruby.api.Define.defineModule;
 
 public class JavaProxyMethods {
 
     private JavaProxyMethods() { /* no instances */ }
 
     public static RubyModule createJavaProxyMethods(ThreadContext context) {
-        RubyModule JavaProxyMethods = context.runtime.defineModule("JavaProxyMethods");
-        JavaProxyMethods.defineAnnotatedMethods(JavaProxyMethods.class);
-        return JavaProxyMethods;
+        return defineModule(context, "JavaProxyMethods").defineMethods(context, JavaProxyMethods.class);
     }
     
     @JRubyMethod

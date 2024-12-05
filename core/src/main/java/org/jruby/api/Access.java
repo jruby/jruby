@@ -168,7 +168,7 @@ public class Access {
      * @param context the current thread context
      * @return the Class
      */
-    public static RubyModule moduleClass(ThreadContext context) {
+    public static RubyClass moduleClass(ThreadContext context) {
         return context.runtime.getModule();
     }
 

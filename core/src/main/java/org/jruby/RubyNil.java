@@ -37,6 +37,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.compiler.Constantizable;
+import org.jruby.ir.operands.Nil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -49,6 +50,7 @@ import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Create.newSmallHash;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
 /**
  *
@@ -75,20 +77,15 @@ public class RubyNil extends RubyObject implements Constantizable {
         constant = OptoFactory.newConstantWrapper(IRubyObject.class, this);
     }
     
-    public static RubyClass createNilClass(Ruby runtime) {
-        RubyClass nilClass = runtime.defineClass("NilClass", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+    public static RubyClass createNilClass(Ruby runtime, RubyClass Object) {
+        RubyClass NilClass = runtime.defineClass("NilClass", Object, NOT_ALLOCATABLE_ALLOCATOR).
+                reifiedClass(RubyNil.class).
+                classIndex(ClassIndex.NIL);
 
-        nilClass.setClassIndex(ClassIndex.NIL);
-        nilClass.setReifiedClass(RubyNil.class);
-        
-        nilClass.defineAnnotatedMethods(RubyNil.class);
-        
-        nilClass.getMetaClass().undefineMethod("new");
-        
-        // FIXME: This is causing a verification error for some reason
-        //nilClass.dispatcher = callbackFactory.createDispatcher(nilClass);
-        
-        return nilClass;
+        NilClass.defineAnnotatedMethodsIndividually(RubyNil.class);
+        NilClass.getMetaClass().undefMethods("new");
+
+        return NilClass;
     }
     
     @Override
@@ -285,5 +282,5 @@ public class RubyNil extends RubyObject implements Constantizable {
     }
 
     @Deprecated
-    public static final ObjectAllocator NIL_ALLOCATOR = ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
+    public static final ObjectAllocator NIL_ALLOCATOR = NOT_ALLOCATABLE_ALLOCATOR;
 }

@@ -89,7 +89,6 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.function.Function;
 
-import static org.jcodings.Config.CASE_FOLD;
 import static org.jruby.ObjectFlags.CHILLED_F;
 import static org.jruby.RubyComparable.invcmp;
 import static org.jruby.RubyEnumerator.SizeFn;
@@ -98,6 +97,7 @@ import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.*;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.RubyStringBuilder.*;
@@ -136,17 +136,13 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     private ByteList value;
 
-    public static RubyClass createStringClass(Ruby runtime) {
-        RubyClass stringClass = runtime.defineClass("String", runtime.getObject(), RubyString::newAllocatedString);
-
-        stringClass.setClassIndex(ClassIndex.STRING);
-        stringClass.setReifiedClass(RubyString.class);
-        stringClass.kindOf = new RubyModule.JavaClassKindOf(RubyString.class);
-
-        stringClass.includeModule(runtime.getComparable());
-        stringClass.defineAnnotatedMethods(RubyString.class);
-
-        return stringClass;
+    public static RubyClass createStringClass(ThreadContext context, RubyClass Object, RubyModule Comparable) {
+        return defineClass(context, "String", Object, RubyString::newAllocatedString).
+                reifiedClass(RubyString.class).
+                kindOf(new RubyModule.JavaClassKindOf(RubyString.class)).
+                classIndex(ClassIndex.STRING).
+                include(Comparable).
+                defineMethods(context, RubyString.class);
     }
 
     @Override

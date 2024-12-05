@@ -31,7 +31,7 @@ package org.jruby.ext.ffi;
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import org.jruby.Ruby;
+
 import org.jruby.RubyIO;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
@@ -49,9 +49,8 @@ import static org.jruby.api.Error.typeError;
  */
 public class IOModule {
 
-    public static void createIOModule(Ruby runtime, RubyModule ffi) {
-        RubyModule module = ffi.defineModuleUnder("IO");
-        module.defineAnnotatedMethods(IOModule.class);
+    public static void createIOModule(ThreadContext context, RubyModule FFI) {
+        FFI.defineModuleUnder(context, "IO").defineMethods(context, IOModule.class);
     }
 
     @JRubyMethod(name = "native_read", module = true)

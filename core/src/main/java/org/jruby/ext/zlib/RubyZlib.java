@@ -47,16 +47,18 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 
-import org.jruby.api.Create;
 import org.jruby.exceptions.RaiseException;
 
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 
+import static org.jruby.api.Access.*;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.numericToLong;
 import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineModule;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -75,95 +77,94 @@ public class RubyZlib {
     /** Create the Zlib module and add it to the Ruby runtime.
      *
      */
-    public static RubyModule createZlibModule(Ruby runtime) {
-        ThreadContext context = runtime.getCurrentContext();
-        RubyModule mZlib = runtime.defineModule("Zlib");
-        mZlib.defineAnnotatedMethods(RubyZlib.class);
+    public static RubyModule createZlibModule(ThreadContext context) {
+        var Object = objectClass(context);
+        var StandardError = standardErrorClass(context);
+        var Zlib = defineModule(context, "Zlib").
+                defineMethods(context, RubyZlib.class);
+        var ZlibError = Zlib.defineClassUnder(context, "Error", StandardError, StandardError.getAllocator());
+        var errorAllocator = ZlibError.getAllocator();
+        Zlib.defineClassUnder(context, "StreamEnd", ZlibError, errorAllocator);
+        Zlib.defineClassUnder(context, "StreamError", ZlibError, errorAllocator);
+        Zlib.defineClassUnder(context, "BufError", ZlibError, errorAllocator);
+        Zlib.defineClassUnder(context, "NeedDict", ZlibError, errorAllocator);
+        Zlib.defineClassUnder(context, "MemError", ZlibError, errorAllocator);
+        Zlib.defineClassUnder(context, "VersionError", ZlibError, errorAllocator);
+        Zlib.defineClassUnder(context, "DataError", ZlibError, errorAllocator);
 
-        RubyClass cStandardError = runtime.getStandardError();
-        RubyClass cZlibError = mZlib.defineOrGetClassUnder("Error", cStandardError, cStandardError.getAllocator());
-        mZlib.defineOrGetClassUnder("StreamEnd", cZlibError, cZlibError.getAllocator());
-        mZlib.defineOrGetClassUnder("StreamError", cZlibError, cZlibError.getAllocator());
-        mZlib.defineOrGetClassUnder("BufError", cZlibError, cZlibError.getAllocator());
-        mZlib.defineOrGetClassUnder("NeedDict", cZlibError, cZlibError.getAllocator());
-        mZlib.defineOrGetClassUnder("MemError", cZlibError, cZlibError.getAllocator());
-        mZlib.defineOrGetClassUnder("VersionError", cZlibError, cZlibError.getAllocator());
-        mZlib.defineOrGetClassUnder("DataError", cZlibError, cZlibError.getAllocator());
+        RubyClass GzipFile = Zlib.defineClassUnder(context, "GzipFile", Object, RubyGzipFile::new).
+                defineMethods(context, RubyGzipFile.class);
 
-        RubyClass cGzFile = mZlib.defineOrGetClassUnder("GzipFile", runtime.getObject(), RubyGzipFile::new);
-        cGzFile.defineAnnotatedMethods(RubyGzipFile.class);
+        GzipFile.defineClassUnder(context, "Error", ZlibError, errorAllocator);
+        var GZipFileError = GzipFile.defineClassUnder(context, "Error", ZlibError, errorAllocator);
+        var fileErrorAllocator = ZlibError.getAllocator();
+        GZipFileError.addReadAttribute(context, "input");
+        GzipFile.defineOrGetClassUnder("CRCError", GZipFileError, fileErrorAllocator);
+        GzipFile.defineOrGetClassUnder("NoFooter", GZipFileError, fileErrorAllocator);
+        GzipFile.defineOrGetClassUnder("LengthError", GZipFileError, fileErrorAllocator);
 
-        cGzFile.defineOrGetClassUnder("Error", cZlibError, cZlibError.getAllocator());
-        RubyClass cGzError = cGzFile.defineOrGetClassUnder("Error", cZlibError, cZlibError.getAllocator());
-        cGzError.addReadAttribute(runtime.getCurrentContext(), "input");
-        cGzFile.defineOrGetClassUnder("CRCError", cGzError, cGzError.getAllocator());
-        cGzFile.defineOrGetClassUnder("NoFooter", cGzError, cGzError.getAllocator());
-        cGzFile.defineOrGetClassUnder("LengthError", cGzError, cGzError.getAllocator());
+        Zlib.defineClassUnder(context, "GzipReader", GzipFile, JZlibRubyGzipReader::new).
+                include(enumerableModule(context)).
+                defineMethods(context, JZlibRubyGzipReader.class);
 
-        RubyClass cGzReader = mZlib.defineOrGetClassUnder("GzipReader", cGzFile, JZlibRubyGzipReader::new);
-        cGzReader.includeModule(runtime.getEnumerable());
-        cGzReader.defineAnnotatedMethods(JZlibRubyGzipReader.class);
+        Zlib.defineClassUnder(context, "GzipWriter", GzipFile, JZlibRubyGzipWriter::new).
+                defineMethods(context, JZlibRubyGzipWriter.class);
 
-        RubyClass cGzWriter = mZlib.defineOrGetClassUnder("GzipWriter", cGzFile, JZlibRubyGzipWriter::new);
-        cGzWriter.defineAnnotatedMethods(JZlibRubyGzipWriter.class);
+        Zlib.defineConstant(context, "ZLIB_VERSION", newString(context, ZLIB_VERSION)).
+                defineConstant(context, "VERSION", newString(context, VERSION)).
 
-        mZlib.defineConstant("ZLIB_VERSION", runtime.newString(ZLIB_VERSION));
-        mZlib.defineConstant("VERSION", runtime.newString(VERSION));
+                defineConstant(context, "BINARY", asFixnum(context, Z_BINARY)).
+                defineConstant(context, "ASCII", asFixnum(context, Z_ASCII)).
+                defineConstant(context, "UNKNOWN", asFixnum(context, Z_UNKNOWN)).
 
-        mZlib.defineConstant("BINARY", asFixnum(context, Z_BINARY));
-        mZlib.defineConstant("ASCII", asFixnum(context, Z_ASCII));
-        mZlib.defineConstant("UNKNOWN", asFixnum(context, Z_UNKNOWN));
+                defineConstant(context, "DEF_MEM_LEVEL", asFixnum(context, 8)).
+                defineConstant(context, "MAX_MEM_LEVEL", asFixnum(context, 9)).
 
-        mZlib.defineConstant("DEF_MEM_LEVEL", asFixnum(context, 8));
-        mZlib.defineConstant("MAX_MEM_LEVEL", asFixnum(context, 9));
+                defineConstant(context, "OS_UNIX", asFixnum(context, OS_UNIX)).
+                defineConstant(context, "OS_UNKNOWN", asFixnum(context, OS_UNKNOWN)).
+                defineConstant(context, "OS_CODE", asFixnum(context, OS_CODE)).
+                defineConstant(context, "OS_ZSYSTEM", asFixnum(context, OS_ZSYSTEM)).
+                defineConstant(context, "OS_VMCMS", asFixnum(context, OS_VMCMS)).
+                defineConstant(context, "OS_VMS", asFixnum(context, OS_VMS)).
+                defineConstant(context, "OS_RISCOS", asFixnum(context, OS_RISCOS)).
+                defineConstant(context, "OS_MACOS", asFixnum(context, OS_MACOS)).
+                defineConstant(context, "OS_OS2", asFixnum(context, OS_OS2)).
+                defineConstant(context, "OS_AMIGA", asFixnum(context, OS_AMIGA)).
+                defineConstant(context, "OS_QDOS", asFixnum(context, OS_QDOS)).
+                defineConstant(context, "OS_WIN32", asFixnum(context, OS_WIN32)).
+                defineConstant(context, "OS_ATARI", asFixnum(context, OS_ATARI)).
+                defineConstant(context, "OS_MSDOS", asFixnum(context, OS_MSDOS)).
+                defineConstant(context, "OS_CPM", asFixnum(context, OS_CPM)).
+                defineConstant(context, "OS_TOPS20", asFixnum(context, OS_TOPS20)).
 
-        mZlib.defineConstant("OS_UNIX", asFixnum(context, OS_UNIX));
-        mZlib.defineConstant("OS_UNKNOWN", asFixnum(context, OS_UNKNOWN));
-        mZlib.defineConstant("OS_CODE", asFixnum(context, OS_CODE));
-        mZlib.defineConstant("OS_ZSYSTEM", asFixnum(context, OS_ZSYSTEM));
-        mZlib.defineConstant("OS_VMCMS", asFixnum(context, OS_VMCMS));
-        mZlib.defineConstant("OS_VMS", asFixnum(context, OS_VMS));
-        mZlib.defineConstant("OS_RISCOS", asFixnum(context, OS_RISCOS));
-        mZlib.defineConstant("OS_MACOS", asFixnum(context, OS_MACOS));
-        mZlib.defineConstant("OS_OS2", asFixnum(context, OS_OS2));
-        mZlib.defineConstant("OS_AMIGA", asFixnum(context, OS_AMIGA));
-        mZlib.defineConstant("OS_QDOS", asFixnum(context, OS_QDOS));
-        mZlib.defineConstant("OS_WIN32", asFixnum(context, OS_WIN32));
-        mZlib.defineConstant("OS_ATARI", asFixnum(context, OS_ATARI));
-        mZlib.defineConstant("OS_MSDOS", asFixnum(context, OS_MSDOS));
-        mZlib.defineConstant("OS_CPM", asFixnum(context, OS_CPM));
-        mZlib.defineConstant("OS_TOPS20", asFixnum(context, OS_TOPS20));
+                defineConstant(context, "DEFAULT_STRATEGY", asFixnum(context, JZlib.Z_DEFAULT_STRATEGY)).
+                defineConstant(context, "FILTERED", asFixnum(context, JZlib.Z_FILTERED)).
+                defineConstant(context, "HUFFMAN_ONLY", asFixnum(context, JZlib.Z_HUFFMAN_ONLY)).
 
-        mZlib.defineConstant("DEFAULT_STRATEGY", asFixnum(context, JZlib.Z_DEFAULT_STRATEGY));
-        mZlib.defineConstant("FILTERED", asFixnum(context, JZlib.Z_FILTERED));
-        mZlib.defineConstant("HUFFMAN_ONLY", asFixnum(context, JZlib.Z_HUFFMAN_ONLY));
+                defineConstant(context, "NO_FLUSH", asFixnum(context, JZlib.Z_NO_FLUSH)).
+                defineConstant(context, "SYNC_FLUSH", asFixnum(context, JZlib.Z_SYNC_FLUSH)).
+                defineConstant(context, "FULL_FLUSH", asFixnum(context, JZlib.Z_FULL_FLUSH)).
+                defineConstant(context, "FINISH", asFixnum(context, JZlib.Z_FINISH)).
 
-        mZlib.defineConstant("NO_FLUSH", asFixnum(context, JZlib.Z_NO_FLUSH));
-        mZlib.defineConstant("SYNC_FLUSH", asFixnum(context, JZlib.Z_SYNC_FLUSH));
-        mZlib.defineConstant("FULL_FLUSH", asFixnum(context, JZlib.Z_FULL_FLUSH));
-        mZlib.defineConstant("FINISH", asFixnum(context, JZlib.Z_FINISH));
+                defineConstant(context, "NO_COMPRESSION", asFixnum(context, JZlib.Z_NO_COMPRESSION)).
+                defineConstant(context, "BEST_SPEED", asFixnum(context, JZlib.Z_BEST_SPEED)).
+                defineConstant(context, "DEFAULT_COMPRESSION", asFixnum(context, JZlib.Z_DEFAULT_COMPRESSION)).
+                defineConstant(context, "BEST_COMPRESSION", asFixnum(context, JZlib.Z_BEST_COMPRESSION)).
 
-        mZlib.defineConstant("NO_COMPRESSION", asFixnum(context, JZlib.Z_NO_COMPRESSION));
-        mZlib.defineConstant("BEST_SPEED", asFixnum(context, JZlib.Z_BEST_SPEED));
-        mZlib.defineConstant("DEFAULT_COMPRESSION", asFixnum(context, JZlib.Z_DEFAULT_COMPRESSION));
-        mZlib.defineConstant("BEST_COMPRESSION", asFixnum(context, JZlib.Z_BEST_COMPRESSION));
-
-        mZlib.defineConstant("MAX_WBITS", asFixnum(context, JZlib.MAX_WBITS));
+                defineConstant(context, "MAX_WBITS", asFixnum(context, JZlib.MAX_WBITS));
 
         // ZStream actually *isn't* allocatable
-        RubyClass cZStream = mZlib.defineOrGetClassUnder("ZStream", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        cZStream.defineAnnotatedMethods(ZStream.class);
-        cZStream.undefineMethod("new");
+        RubyClass ZStream = Zlib.defineClassUnder(context, "ZStream", Object, NOT_ALLOCATABLE_ALLOCATOR).
+                defineMethods(context, ZStream.class).
+                undefMethods("new");
+        Zlib.defineClassUnder(context, "Inflate", ZStream, JZlibInflate::new).
+                defineMethods(context, JZlibInflate.class);
+        Zlib.defineClassUnder(context, "Deflate", ZStream, JZlibDeflate::new).
+                defineMethods(context, JZlibDeflate.class);
 
-        RubyClass cInflate = mZlib.defineOrGetClassUnder("Inflate", cZStream, JZlibInflate::new);
-        cInflate.defineAnnotatedMethods(JZlibInflate.class);
+        kernelModule(context).callMethod(context, "require", newString(context, "stringio"));
 
-        RubyClass cDeflate = mZlib.defineOrGetClassUnder("Deflate", cZStream, JZlibDeflate::new);
-        cDeflate.defineAnnotatedMethods(JZlibDeflate.class);
-
-        runtime.getKernel().callMethod(runtime.getCurrentContext(), "require", runtime.newString("stringio"));
-
-        return mZlib;
+        return Zlib;
     }
 
     @JRubyClass(name="Zlib::Error", parent="StandardError")

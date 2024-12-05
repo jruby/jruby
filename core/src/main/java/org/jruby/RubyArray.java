@@ -97,6 +97,7 @@ import static org.jruby.RubyEnumerator.enumWithSize;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newHash;
 import static org.jruby.api.Create.newSmallHash;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.*;
 import static org.jruby.runtime.Helpers.*;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -116,18 +117,13 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     private static final boolean USE_PACKED_ARRAYS = Options.PACKED_ARRAYS.load();
 
-    public static RubyClass createArrayClass(Ruby runtime) {
-        RubyClass arrayc = runtime.defineClass("Array", runtime.getObject(), RubyArray::newEmptyArray);
-
-        arrayc.setClassIndex(ClassIndex.ARRAY);
-        arrayc.setReifiedClass(RubyArray.class);
-
-        arrayc.kindOf = new RubyModule.JavaClassKindOf(RubyArray.class);
-
-        arrayc.includeModule(runtime.getEnumerable());
-        arrayc.defineAnnotatedMethods(RubyArray.class);
-
-        return arrayc;
+    public static RubyClass createArrayClass(ThreadContext context, RubyClass Object, RubyModule Enumerable) {
+        return defineClass(context, "Array", Object, RubyArray::newEmptyArray).
+                reifiedClass(RubyArray.class).
+                kindOf(new RubyModule.JavaClassKindOf(RubyArray.class)).
+                classIndex(ClassIndex.ARRAY).
+                include(Enumerable).
+                defineMethods(context, RubyArray.class);
     }
 
     @Override

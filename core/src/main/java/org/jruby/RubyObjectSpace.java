@@ -42,16 +42,17 @@ import java.util.stream.Stream;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
-import org.jruby.api.Convert;
 import org.jruby.exceptions.StopIteration;
 import org.jruby.javasupport.JavaPackage;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 
+import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newArrayNoCopy;
+import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.*;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.Inspector.inspectPrefix;
@@ -69,15 +70,13 @@ public class RubyObjectSpace {
     /** Create the ObjectSpace module and add it to the Ruby runtime.
      *
      */
-    public static RubyModule createObjectSpaceModule(Ruby runtime) {
-        RubyModule objectSpaceModule = runtime.defineModule("ObjectSpace");
+    public static RubyModule createObjectSpaceModule(ThreadContext context, RubyClass Object) {
+        RubyModule ObjectSpace = defineModule(context, "ObjectSpace").defineMethods(context, RubyObjectSpace.class);
 
-        objectSpaceModule.defineAnnotatedMethods(RubyObjectSpace.class);
+        WeakMap.createWeakMap(context, Object, ObjectSpace);
+        WeakKeyMap.createWeakMap(context, Object, ObjectSpace);
 
-        WeakMap.createWeakMap(runtime, objectSpaceModule);
-        WeakKeyMap.createWeakMap(runtime, objectSpaceModule);
-
-        return objectSpaceModule;
+        return ObjectSpace;
     }
 
     @Deprecated
@@ -169,7 +168,7 @@ public class RubyObjectSpace {
         final Ruby runtime = context.runtime;
         final RubyModule rubyClass;
         if (args.length == 0) {
-            rubyClass = runtime.getObject();
+            rubyClass = objectClass(context);
         } else {
             if (!(args[0] instanceof RubyModule)) throw argumentError(context, "class or module required");
             rubyClass = (RubyModule) args[0];
@@ -331,10 +330,9 @@ public class RubyObjectSpace {
     }
 
     public static class WeakMap extends AbstractWeakMap {
-        static void createWeakMap(Ruby runtime, RubyModule objectspaceModule) {
-            RubyClass weakMap = objectspaceModule.defineClassUnder("WeakMap", runtime.getObject(), WeakMap::new);
-
-            weakMap.defineAnnotatedMethods(AbstractWeakMap.class);
+        static void createWeakMap(ThreadContext context, RubyClass Object, RubyModule ObjectSpace) {
+            ObjectSpace.defineClassUnder(context, "WeakMap", Object, WeakMap::new).
+                    defineMethods(context, AbstractWeakMap.class);
         }
 
         public WeakMap(Ruby runtime, RubyClass cls) {
@@ -385,11 +383,9 @@ public class RubyObjectSpace {
     }
 
     public static class WeakKeyMap extends AbstractWeakMap {
-        static void createWeakMap(Ruby runtime, RubyModule objectspaceModule) {
-            RubyClass weakMap = objectspaceModule.defineClassUnder("WeakKeyMap", runtime.getObject(), WeakKeyMap::new);
-
-            weakMap.defineAnnotatedMethods(AbstractWeakMap.class);
-            weakMap.defineAnnotatedMethods(WeakKeyMap.class);
+        static void createWeakMap(ThreadContext context, RubyClass Object, RubyModule ObjectSpace) {
+            ObjectSpace.defineClassUnder(context, "WeakKeyMap", Object, WeakKeyMap::new).
+                    defineMethods(context, AbstractWeakMap.class, WeakKeyMap.class);
         }
 
         public WeakKeyMap(Ruby runtime, RubyClass cls) {

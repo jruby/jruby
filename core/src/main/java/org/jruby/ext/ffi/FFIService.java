@@ -33,18 +33,20 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.runtime.load.Library;
 
+import static org.jruby.api.Access.instanceConfig;
+import static org.jruby.api.Define.defineModule;
+
 public class FFIService implements Library {
     public void load(final Ruby runtime, boolean wrap) throws IOException {
-        if (!runtime.getInstanceConfig().isNativeEnabled()) {
-            throw runtime.newLoadError("Native API access is disabled");
-        }
+        var context = runtime.getCurrentContext();
+
+        if (!instanceConfig(context).isNativeEnabled()) throw runtime.newLoadError("Native API access is disabled");
         if (!Platform.getPlatform().isSupported()) {
             throw runtime.newLoadError("Unsupported platform: " + Platform.getPlatform().getName());
         }
 
-        RubyModule ffi = runtime.defineModule("FFI");
         try {
-            Factory.getInstance().init(runtime, ffi);
+            Factory.getInstance().init(runtime, defineModule(context, "FFI"));
         } catch (Exception e) {
             throw runtime.newLoadError("Could not load FFI Provider: " + e.getLocalizedMessage()
                     + "\nSee https://github.com/jruby/jruby/wiki/Native-Libraries#could-not-load-ffi-provider");

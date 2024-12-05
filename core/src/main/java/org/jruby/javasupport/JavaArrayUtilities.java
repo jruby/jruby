@@ -41,6 +41,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 
 import static org.jruby.api.Convert.castAsString;
+import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -50,10 +51,8 @@ import static org.jruby.api.Error.typeError;
 @JRubyModule(name="JavaArrayUtilities")
 public class JavaArrayUtilities {
 
-    public static RubyModule createJavaArrayUtilitiesModule(Ruby runtime) {
-        RubyModule javaArrayUtils = runtime.defineModule("JavaArrayUtilities");
-        javaArrayUtils.defineAnnotatedMethods(JavaArrayUtilities.class);
-        return javaArrayUtils;
+    public static RubyModule createJavaArrayUtilitiesModule(ThreadContext context) {
+        return defineModule(context, "JavaArrayUtilities").defineMethods(context, JavaArrayUtilities.class);
     }
 
     @JRubyMethod(module = true, visibility = Visibility.PRIVATE)

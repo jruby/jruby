@@ -37,13 +37,14 @@ import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Define.defineClass;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.util.RubyStringBuilder.str;
 
 /**
@@ -77,19 +78,12 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
         return newMethod;
     }
 
-    public static RubyClass defineUnboundMethodClass(Ruby runtime) {
-        RubyClass newClass = 
-        	runtime.defineClass("UnboundMethod", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-
-        newClass.setClassIndex(ClassIndex.UNBOUNDMETHOD);
-        newClass.setReifiedClass(RubyUnboundMethod.class);
-
-        newClass.defineAnnotatedMethods(AbstractRubyMethod.class);
-        newClass.defineAnnotatedMethods(RubyUnboundMethod.class);
-
-        newClass.getSingletonClass().undefineMethod("new");
-
-        return newClass;
+    public static RubyClass defineUnboundMethodClass(ThreadContext context, RubyClass Object) {
+        return defineClass(context, "UnboundMethod", Object, NOT_ALLOCATABLE_ALLOCATOR).
+                reifiedClass(RubyUnboundMethod.class).
+                classIndex(ClassIndex.UNBOUNDMETHOD).
+                defineMethods(context, AbstractRubyMethod.class, RubyUnboundMethod.class).
+                tap(c -> c.getSingletonClass().undefMethods("new"));
     }
 
     @Override

@@ -38,7 +38,6 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.compiler.Constantizable;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
@@ -46,6 +45,7 @@ import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
 /**
  *
@@ -107,32 +107,27 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
         return constant;
     }
 
-    public static RubyClass createFalseClass(Ruby runtime) {
-        RubyClass falseClass = runtime.defineClass("FalseClass", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+    public static RubyClass createFalseClass(Ruby runtime, RubyClass Object) {
+        RubyClass False = runtime.defineClass("FalseClass", Object, NOT_ALLOCATABLE_ALLOCATOR).
+                reifiedClass(RubyBoolean.class).
+                classIndex(ClassIndex.FALSE);
+        False.defineAnnotatedMethodsIndividually(False.class);
+        False.defineAnnotatedMethodsIndividually(RubyBoolean.class);
+        False.getMetaClass().undefMethods("new");
 
-        falseClass.setClassIndex(ClassIndex.FALSE);
-        falseClass.setReifiedClass(RubyBoolean.class);
-        
-        falseClass.defineAnnotatedMethods(False.class);
-        falseClass.defineAnnotatedMethods(RubyBoolean.class);
-
-        falseClass.getMetaClass().undefineMethod("new");
-
-        return falseClass;
+        return False;
     }
     
-    public static RubyClass createTrueClass(Ruby runtime) {
-        RubyClass trueClass = runtime.defineClass("TrueClass", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+    public static RubyClass createTrueClass(Ruby runtime, RubyClass Object) {
+        RubyClass True = runtime.defineClass("TrueClass", Object, NOT_ALLOCATABLE_ALLOCATOR).
+                reifiedClass(RubyBoolean.class).
+                classIndex(ClassIndex.TRUE);
 
-        trueClass.setClassIndex(ClassIndex.TRUE);
-        trueClass.setReifiedClass(RubyBoolean.class);
-        
-        trueClass.defineAnnotatedMethods(True.class);
-        trueClass.defineAnnotatedMethods(RubyBoolean.class);
-        
-        trueClass.getMetaClass().undefineMethod("new");
+        True.defineAnnotatedMethodsIndividually(False.class);
+        True.defineAnnotatedMethodsIndividually(RubyBoolean.class);
+        True.getMetaClass().undefMethods("new");
 
-        return trueClass;
+        return True;
     }
 
     @Deprecated

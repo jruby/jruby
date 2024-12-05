@@ -29,6 +29,9 @@ package org.jruby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.StandardError;
+import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Define.defineClass;
 
 /**
  * The Java representation of a Ruby StandardError.
@@ -45,10 +48,8 @@ public class RubyStandardError extends RubyException {
         super(runtime, exceptionClass, message);
     }
 
-    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass standardErrorClass = runtime.defineClass("StandardError", exceptionClass, RubyStandardError::new);
-
-        return standardErrorClass;
+    static RubyClass define(ThreadContext context, RubyClass Exception) {
+        return defineClass(context, "StandardError", Exception, RubyStandardError::new);
     }
 
     @Override

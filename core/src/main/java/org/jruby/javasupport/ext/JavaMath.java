@@ -37,6 +37,7 @@ import org.jruby.ext.bigdecimal.RubyBigDecimal;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.javasupport.JavaUtil.unwrapIfJavaObject;
 
@@ -47,49 +48,43 @@ import static org.jruby.javasupport.JavaUtil.unwrapIfJavaObject;
  */
 public class JavaMath {
 
-    public static void define(final Ruby runtime) {
-        JavaExtensions.put(runtime, java.math.BigDecimal.class, (proxyClass) -> BigDecimal.define(runtime, proxyClass));
+    public static void define(ThreadContext context) {
+        JavaExtensions.put(context.runtime, java.math.BigDecimal.class,proxy -> proxy.defineMethods(context, BigDecimal.class));
     }
 
     @JRubyModule(name = "Java::JavaMath::BigDecimal")
     public static class BigDecimal {
-
-        static RubyModule define(final Ruby runtime, final RubyModule proxy) {
-            proxy.defineAnnotatedMethods(BigDecimal.class);
-            return proxy;
-        }
-
         @JRubyMethod(name = "to_d") // bigdecimal/util.rb
         public static IRubyObject to_d(ThreadContext context, IRubyObject self) {
-            return asRubyBigDecimal(context.runtime, unwrapIfJavaObject(self));
+            return asRubyBigDecimal(context, unwrapIfJavaObject(self));
         }
 
         @JRubyMethod(name = "to_f") // override from java.lang.Number
         public static IRubyObject to_f(ThreadContext context, IRubyObject self) {
-            return asRubyBigDecimal(context.runtime, unwrapIfJavaObject(self)).to_f(context);
+            return asRubyBigDecimal(context, unwrapIfJavaObject(self)).to_f(context);
         }
 
         @JRubyMethod(name = { "to_i", "to_int" }) // override from java.lang.Number
         public static IRubyObject to_i(ThreadContext context, IRubyObject self) {
-            return asRubyBigDecimal(context.runtime, unwrapIfJavaObject(self)).to_int(context);
+            return asRubyBigDecimal(context, unwrapIfJavaObject(self)).to_int(context);
         }
 
         @JRubyMethod(name = "coerce") // override from java.lang.Number
         public static IRubyObject coerce(final ThreadContext context, final IRubyObject self, final IRubyObject type) {
-            return newArray(context, type, asRubyBigDecimal(context.runtime, unwrapIfJavaObject(self)));
+            return newArray(context, type, asRubyBigDecimal(context, unwrapIfJavaObject(self)));
         }
 
         @JRubyMethod(name = "to_r")
         public static IRubyObject to_r(ThreadContext context, IRubyObject self) {
-            return asRubyBigDecimal(context.runtime, unwrapIfJavaObject(self)).to_r(context);
+            return asRubyBigDecimal(context, unwrapIfJavaObject(self)).to_r(context);
         }
 
-        private static RubyBigDecimal asRubyBigDecimal(final Ruby runtime, final java.math.BigDecimal value) {
-            final RubyClass klass = runtime.getClass("BigDecimal");
+        private static RubyBigDecimal asRubyBigDecimal(ThreadContext context, final java.math.BigDecimal value) {
+            final RubyClass klass = context.runtime.getClass("BigDecimal");
             if (klass == null) { // user should require 'bigdecimal'
-                throw runtime.newNameError("uninitialized constant BigDecimal", runtime.newSymbol("BigDecimal"));
+                throw context.runtime.newNameError("uninitialized constant BigDecimal", asSymbol(context, "BigDecimal"));
             }
-            return new RubyBigDecimal(runtime, klass, value);
+            return new RubyBigDecimal(context.runtime, klass, value);
         }
 
     }

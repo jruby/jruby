@@ -32,6 +32,7 @@ import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
+import static org.jruby.api.Access.objectClass;
 import static org.jruby.runtime.Helpers.arrayOf;
 
 public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
@@ -74,7 +75,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         if (currModule == null) {
             // SSS FIXME: Looks like this has to do with Kernel#load
             // and the wrap parameter. Figure it out and document it here.
-            currModule = context.getRuntime().getObject();
+            currModule = objectClass(context);
         }
 
         scope.setModule(currModule);

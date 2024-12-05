@@ -38,6 +38,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import java.util.*;
 
 import static org.jruby.RubyArray.DefaultComparator;
+import static org.jruby.api.Define.defineClass;
 
 /**
  * Native implementation of Ruby's SortedSet (set.rb replacement).
@@ -47,13 +48,10 @@ import static org.jruby.RubyArray.DefaultComparator;
 @org.jruby.anno.JRubyClass(name="SortedSet", parent = "Set")
 public class RubySortedSet extends RubySet implements SortedSet {
 
-    static RubyClass createSortedSetClass(final Ruby runtime) {
-        RubyClass SortedSet = runtime.defineClass("SortedSet", runtime.getClass("Set"), RubySortedSet::new);
-
-        SortedSet.setReifiedClass(RubySortedSet.class);
-        SortedSet.defineAnnotatedMethods(RubySortedSet.class);
-
-        return SortedSet;
+    static RubyClass createSortedSetClass(ThreadContext context, RubyClass Set) {
+        return defineClass(context, "SortedSet", Set, RubySortedSet::new).
+                reifiedClass(RubySortedSet.class).
+                defineMethods(context, RubySortedSet.class);
     }
 
     private static class OrderComparator extends DefaultComparator {

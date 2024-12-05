@@ -37,41 +37,38 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Define.defineModule;
+
 
 public class TestMethodFactories extends Base {
+    private ThreadContext context;
+
     public void setUp() {
         runtime = Ruby.newInstance();
+        context.runtime.getCurrentContext();
     }
     
     public void testInvocationMethodFactory() {
-        RubyModule mod = runtime.defineModule("Wombat" + hashCode());
-
-        mod.defineAnnotatedMethods(MyBoundClass.class);
-
+        var mod = defineModule(context, "Wombat" + hashCode()).defineMethods(context, MyBoundClass.class);
         confirmCheckArity(mod);
     }
 
     public void testReflectionMethodFactory() {
-        RubyModule mod = runtime.defineModule("Wombat" + hashCode());
-
-        mod.defineAnnotatedMethods(MyBoundClass.class);
+        RubyModule mod = defineModule(context, "Wombat" + hashCode()).defineMethods(context, MyBoundClass.class);
 
         confirmMethods(mod);
     }
 
     private void confirmMethods(RubyModule mod) {
-        ThreadContext context = runtime.getCurrentContext();
-        
         assertTrue("module should have method defined", !mod.searchMethod("void_returning_method").isUndefined());
-        IRubyObject nil = runtime.getNil();
+        IRubyObject nil = context.nil;
         assertTrue("four-arg method should be callable",
                 mod.searchMethod("four_arg_method").call(context, mod, mod.getMetaClass(), "four_arg_method", new IRubyObject[] {nil, nil, nil, nil}).isTrue());
     }
 
     // jruby/jruby#7851: Restore automatic arity checking with an opt-out
     private void confirmCheckArity(RubyModule mod) {
-        ThreadContext context = runtime.getCurrentContext();
-
         verifyCheckArityError(mod, context, "optWithCheckArityTrue", true);
         verifyCheckArityError(mod, context, "optWithCheckArityFalse", false);
         verifyCheckArityError(mod, context, "optWithCheckArityDefault", true);
@@ -98,8 +95,8 @@ public class TestMethodFactories extends Base {
         // methods with required = 4 or higher should bind and be callable using reflection
         // JRUBY-3649
         @JRubyMethod(required = 4)
-        public static IRubyObject four_arg_method(IRubyObject self, IRubyObject[] obj) {
-            return self.getRuntime().getTrue();
+        public static IRubyObject four_arg_method(ThreadContext context, IRubyObject self, IRubyObject[] obj) {
+            return context.tru;
         }
 
         // jruby/jruby#7851: Restore automatic arity checking with an opt-out
@@ -131,16 +128,14 @@ public class TestMethodFactories extends Base {
     // Module methods define a second copy on singleton with proper implClass
     // jruby/jruby#3463
     public void testModuleMethodOwner() {
-        RubyModule mod = runtime.defineModule("GH3463Module");
-
-        mod.defineAnnotatedMethods(GH3463Module.class);
+        RubyModule mod = defineModule(context, "GH3463Module").defineMethods(context, GH3463Module.class);
 
         DynamicMethod method = mod.getSingletonClass().searchMethod("a_module_method");
 
         assertEquals(mod.getSingletonClass(), method.getImplementationClass());
 
-        RubyMethod rubyMethod = (RubyMethod)mod.method(runtime.newSymbol("a_module_method"));
+        RubyMethod rubyMethod = (RubyMethod)mod.method(asSymbol(context, "a_module_method"));
 
-        assertEquals(mod.getSingletonClass(), rubyMethod.owner(runtime.getCurrentContext()));
+        assertEquals(mod.getSingletonClass(), rubyMethod.owner(context));
     }
 }

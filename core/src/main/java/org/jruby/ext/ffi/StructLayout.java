@@ -53,7 +53,6 @@ import org.jruby.api.Convert;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
@@ -63,6 +62,7 @@ import org.jruby.util.ByteList;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Error.*;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.runtime.Visibility.*;
 
 /**
@@ -97,59 +97,35 @@ public final class StructLayout extends Type {
 
     private final boolean isUnion;
 
-    /**
-     * Registers the StructLayout class in the JRuby runtime.
-     * @param runtime The JRuby runtime to register the new class in.
-     * @return The new class
-     */
-    public static RubyClass createStructLayoutClass(Ruby runtime, RubyModule module) {
-        RubyClass layoutClass = runtime.defineClassUnder(CLASS_NAME, module.getClass("Type"),
-                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR, module);
-        layoutClass.defineAnnotatedMethods(StructLayout.class);
-        layoutClass.defineAnnotatedConstants(StructLayout.class);
-        layoutClass.setReifiedClass(StructLayout.class);
+    public static RubyClass createStructLayoutClass(ThreadContext context, RubyModule FFI, RubyClass Object,
+                                                    RubyModule Enumerable, RubyClass Type, RubyClass Struct) {
+        RubyClass Layout = FFI.defineClassUnder(context, CLASS_NAME, Type, NOT_ALLOCATABLE_ALLOCATOR).
+                reifiedClass(StructLayout.class).
+                defineMethods(context, StructLayout.class).
+                defineConstants(context, StructLayout.class);
+        var InlineArray = Struct.defineClassUnder(context, "InlineArray", Object, NOT_ALLOCATABLE_ALLOCATOR);
+        RubyClass ArrayProxy = Layout.defineClassUnder(context, "ArrayProxy", InlineArray, NOT_ALLOCATABLE_ALLOCATOR).
+                include(Enumerable).
+                defineMethods(context, ArrayProxy.class);
 
-        RubyClass inlineArrayClass = module.getClass("Struct").defineClassUnder("InlineArray", 
-                runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        
-        RubyClass arrayClass = runtime.defineClassUnder("ArrayProxy", inlineArrayClass,
-                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR, layoutClass);
-        arrayClass.includeModule(runtime.getEnumerable());
-        arrayClass.defineAnnotatedMethods(ArrayProxy.class);
+        Layout.defineClassUnder(context, "CharArrayProxy", ArrayProxy, NOT_ALLOCATABLE_ALLOCATOR).
+                defineMethods(context, CharArrayProxy.class);
 
-        RubyClass charArrayClass = runtime.defineClassUnder("CharArrayProxy", arrayClass,
-                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR, layoutClass);
-        charArrayClass.defineAnnotatedMethods(CharArrayProxy.class);
+        RubyClass Field = Layout.defineClassUnder(context, "Field", Object, Field::new).
+                defineMethods(context, Field.class);
 
-        RubyClass fieldClass = runtime.defineClassUnder("Field", runtime.getObject(),
-                Field::new, layoutClass);
-        fieldClass.defineAnnotatedMethods(Field.class);
+        Layout.defineClassUnder(context, "Number", Field, NumberField::new);
+        Layout.defineClassUnder(context, "Enum", Field, EnumField::new);
+        Layout.defineClassUnder(context, "String", Field, StringField::new);
+        Layout.defineClassUnder(context, "Pointer", Field, PointerField::new);
+        Layout.defineClassUnder(context, "Function", Field, FunctionField::new).
+                defineMethods(context, FunctionField.class);
+        Layout.defineClassUnder(context, "InnerStruct", Field, InnerStructField::new).
+                defineMethods(context, InnerStructField.class);
+        Layout.defineClassUnder(context, "Array", Field, ArrayField::new).
+                defineMethods(context, ArrayField.class);
 
-        RubyClass numberFieldClass = runtime.defineClassUnder("Number", fieldClass,
-                NumberField::new, layoutClass);
-
-        RubyClass enumFieldClass = runtime.defineClassUnder("Enum", fieldClass,
-                EnumField::new, layoutClass);
-
-        RubyClass stringFieldClass = runtime.defineClassUnder("String", fieldClass,
-                StringField::new, layoutClass);
-
-        RubyClass pointerFieldClass = runtime.defineClassUnder("Pointer", fieldClass,
-                PointerField::new, layoutClass);
-
-        RubyClass functionFieldClass = runtime.defineClassUnder("Function", fieldClass,
-                FunctionField::new, layoutClass);
-        functionFieldClass.defineAnnotatedMethods(FunctionField.class);
-
-        RubyClass innerStructFieldClass = runtime.defineClassUnder("InnerStruct", fieldClass,
-                InnerStructField::new, layoutClass);
-        innerStructFieldClass.defineAnnotatedMethods(InnerStructField.class);
-
-        RubyClass arrayFieldClass = runtime.defineClassUnder("Array", fieldClass,
-                ArrayField::new, layoutClass);
-        arrayFieldClass.defineAnnotatedMethods(ArrayField.class);
-
-        return layoutClass;
+        return Layout;
     }
 
     

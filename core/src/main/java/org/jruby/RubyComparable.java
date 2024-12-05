@@ -42,6 +42,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.argumentError;
 
 /** Implementation of the Comparable module.
@@ -49,12 +50,8 @@ import static org.jruby.api.Error.argumentError;
  */
 @JRubyModule(name="Comparable")
 public class RubyComparable {
-    public static RubyModule createComparable(Ruby runtime) {
-        RubyModule comparableModule = runtime.defineModule("Comparable");
-
-        comparableModule.defineAnnotatedMethods(RubyComparable.class);
-
-        return comparableModule;
+    public static RubyModule createComparable(ThreadContext context) {
+        return defineModule(context, "Comparable").defineMethods(context, RubyComparable.class);
     }
 
     /*  ================

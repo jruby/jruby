@@ -38,14 +38,10 @@ public class VariadicInvoker extends RubyObject {
     private static final java.util.Locale LOCALE = java.util.Locale.ENGLISH;
 
 
-    public static RubyClass createVariadicInvokerClass(Ruby runtime, RubyModule module) {
-        RubyClass result = module.defineClassUnder("VariadicInvoker",
-                runtime.getObject(),
-                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        result.defineAnnotatedMethods(VariadicInvoker.class);
-        result.defineAnnotatedConstants(VariadicInvoker.class);
-
-        return result;
+    public static RubyClass createVariadicInvokerClass(ThreadContext context, RubyModule FFI, RubyClass Object) {
+        return FFI.defineClassUnder(context, "VariadicInvoker", Object, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR).
+                defineMethods(context, VariadicInvoker.class).
+                defineConstants(context, VariadicInvoker.class);
     }
 
     private VariadicInvoker(Ruby runtime, IRubyObject klazz, Pointer address,

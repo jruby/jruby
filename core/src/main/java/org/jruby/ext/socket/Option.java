@@ -27,13 +27,8 @@ import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.typeError;
 
 public class Option extends RubyObject {
-    public static void createOption(Ruby runtime) {
-        RubyClass addrinfo = runtime.getClass("Socket").defineClassUnder(
-                "Option",
-                runtime.getObject(),
-                Option::new);
-
-        addrinfo.defineAnnotatedMethods(Option.class);
+    public static void createOption(ThreadContext context, RubyClass Object, RubyClass Socket) {
+        Socket.defineClassUnder(context, "Option", Object, Option::new).defineMethods(context, Option.class);
     }
 
     public Option(Ruby runtime, RubyClass klass) {

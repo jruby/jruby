@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asSymbol;
@@ -1143,7 +1144,7 @@ public class PopenExecutor {
             if (unsetenv_others) {
                 envtbl = newHash(context);
             } else {
-                envtbl = context.runtime.getObject().getConstant("ENV");
+                envtbl = objectClass(context).getConstant("ENV");
                 envtbl = TypeConverter.convertToType(envtbl, hashClass, "to_hash").dup();
             }
             if (envopts != null) {
@@ -1165,7 +1166,7 @@ public class PopenExecutor {
         } else {
             // In MRI, they use the current env as the baseline because they fork+exec. We can't do that,
             // and posix_spawn needs a full env, so we pass even unmodified env through.
-            envtbl = context.runtime.getObject().getConstant("ENV");
+            envtbl = objectClass(context).getConstant("ENV");
             envtbl = TypeConverter.convertToType(envtbl, hashClass, "to_hash");
         }
         buildEnvp(context, eargp, (RubyHash) envtbl);

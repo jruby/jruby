@@ -43,8 +43,10 @@ import static org.jruby.RubyArgsFile.Next.NextFile;
 import static org.jruby.RubyArgsFile.Next.Stream;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.anno.FrameField.LASTLINE;
+import static org.jruby.api.Access.*;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
 import static org.jruby.runtime.ThreadContext.resetCallInfo;
@@ -53,6 +55,8 @@ import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariable;
+import org.jruby.internal.runtime.GlobalVariables;
+import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -71,18 +75,17 @@ public class RubyArgsFile extends RubyObject {
         super(runtime, metaClass);
     }
 
-    public static void initArgsFile(final Ruby runtime) {
-        RubyClass argfClass = runtime.defineClass("ARGFClass", runtime.getObject(), RubyArgsFile::new);
-        argfClass.includeModule(runtime.getEnumerable());
+    public static void initArgsFile(ThreadContext context, RubyModule Enumerable, GlobalVariables globals) {
+        RubyClass ARGF = defineClass(context, "ARGFClass", objectClass(context), RubyArgsFile::new).
+                include(Enumerable).
+                defineMethods(context, RubyArgsFile.class);
 
-        argfClass.defineAnnotatedMethods(RubyArgsFile.class);
+        IRubyObject argsFile = ARGF.newInstance(context, new IRubyObject[] { null }, null);
 
-        IRubyObject argsFile = argfClass.newInstance(runtime.getCurrentContext(), new IRubyObject[] { null }, null);
-
-        runtime.setArgsFile(argsFile);
-        runtime.getGlobalVariables().defineReadonly("$<", new ArgsFileAccessor(runtime), GlobalVariable.Scope.GLOBAL);
-        runtime.defineGlobalConstant("ARGF", argsFile);
-        runtime.defineReadonlyVariable("$FILENAME", runtime.newString("-"), GlobalVariable.Scope.GLOBAL);
+        context.runtime.setArgsFile(argsFile);
+        globals.defineReadonly("$<", new ArgsFileAccessor(context.runtime), GlobalVariable.Scope.GLOBAL);
+        context.runtime.defineGlobalConstant("ARGF", argsFile);
+        globals.defineReadonly("$FILENAME", new ValueAccessor(newString(context, "-")), GlobalVariable.Scope.GLOBAL);
     }
 
 
@@ -102,19 +105,19 @@ public class RubyArgsFile extends RubyObject {
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE, rest = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
-        var runtime = context.runtime;
         final var argv = args.length == 1 && args[0] == null ?
-                runtime.getObject().getConstant("ARGV").convertToArray() :
+                objectClass(context).getConstant("ARGV").convertToArray() :
                 newArray(context, args);
 
         // ARGF is intended to be a singleton from a Ruby perspective but it is still
         // possible for someone to ARGF.class.new.  We do still want a global view of
         // ARGF otherwise getline and rewind in IO would have to keep track of the n
         // instances in play.  So all instances will share
-        if (runtime.getArgsFile() == null) {
-            dataWrapStruct(new ArgsFileData(runtime, argv));
+        var argsFile = getRuntime().getArgsFile();
+        if (argsFile == null) {
+            dataWrapStruct(new ArgsFileData(context.runtime, argv));
         } else {
-            ArgsFileData data = (ArgsFileData) runtime.getArgsFile().dataGetStruct();
+            ArgsFileData data = (ArgsFileData) argsFile.dataGetStruct();
             dataWrapStruct(data);
             data.setArgs(argv);
         }
@@ -172,7 +175,7 @@ public class RubyArgsFile extends RubyObject {
 
             if (next_p == NextFile) {
                 if (argv.getLength() > 0) {
-                    RubyString filename = TypeConverter.convertToType(argv.shift(context), context.runtime.getString(), "to_path").convertToString();
+                    RubyString filename = TypeConverter.convertToType(argv.shift(context), stringClass(context), "to_path").convertToString();
                     StringSupport.checkStringSafety(runtime, filename);
                     if ( ! filename.op_equal(context, $FILENAME.getAccessor().getValue()).isTrue() ) {
                         $FILENAME.forceValue(filename);
@@ -304,7 +307,7 @@ public class RubyArgsFile extends RubyObject {
         } else if (!test.isTrue()) {
             data.inPlace = context.fals;
         } else {
-            test = TypeConverter.convertToType(test, context.runtime.getString(), "to_str", false);
+            test = TypeConverter.convertToType(test, stringClass(context), "to_str", false);
             if (test.isNil() || ((RubyString) test).isEmpty()) {
                 data.inPlace = context.nil;
             } else {
@@ -365,22 +368,18 @@ public class RubyArgsFile extends RubyObject {
     // MRI: argf_getline
     private static IRubyObject argf_getline(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         boolean keywords = (resetCallInfo(context) & CALL_KEYWORD) != 0;
-
-        Ruby runtime = context.runtime;
-
         IRubyObject line;
-
-        ArgsFileData data = ArgsFileData.getArgsFileData(runtime);
+        ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
 
         while (true) {
             if (!data.next_argv(context)) return context.nil;
 
             RubyIO currentFile = (RubyIO) data.currentFile;
 
-            if (isGenericInput(runtime, data)) {
+            if (isGenericInput(context, data)) {
                 line = data.currentFile.callMethod(context, "gets", args);
             } else {
-                if (args.length == 0 && runtime.getRecordSeparatorVar().get() == runtime.getGlobalVariables().getDefaultSeparator()) {
+                if (args.length == 0 && context.runtime.getRecordSeparatorVar().get() == globalVariables(context).getDefaultSeparator()) {
                     line = (currentFile).gets(context);
                 } else {
                     line = Getline.getlineCall(context, GETLINE, currentFile, currentFile.getReadEncoding(), keywords, args);
@@ -397,8 +396,8 @@ public class RubyArgsFile extends RubyObject {
         }
     }
 
-    private static boolean isGenericInput(Ruby runtime, ArgsFileData data) {
-        return data.currentFile == runtime.getGlobalVariables().get("$stdin") && !(data.currentFile instanceof RubyFile);
+    private static boolean isGenericInput(ThreadContext context, ArgsFileData data) {
+        return data.currentFile == globalVariables(context).get("$stdin") && !(data.currentFile instanceof RubyFile);
     }
 
     private static final Getline.Callback<RubyIO, IRubyObject> GETLINE =

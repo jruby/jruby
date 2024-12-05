@@ -10,8 +10,8 @@ import org.jruby.ext.ffi.*;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.platform.Platform;
-import org.jruby.util.WindowsFFI;
 
+import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.asFixnum;
 
 public class Factory extends org.jruby.ext.ffi.Factory {
@@ -23,34 +23,25 @@ public class Factory extends org.jruby.ext.ffi.Factory {
     }
 
     @Override
-    public void init(Ruby runtime, RubyModule ffi) {
-        super.init(runtime, ffi);
+    public void init(Ruby runtime, RubyModule FFI) {
+        super.init(runtime, FFI);
 
-        synchronized (ffi) {
-            if (ffi.getClass("DynamicLibrary") == null) {
-                DynamicLibrary.createDynamicLibraryClass(runtime, ffi);
-            }
-            if (ffi.getClass("Invoker") == null) {
-                JFFIInvoker.createInvokerClass(runtime, ffi);
-            }
-            if (ffi.getClass("VariadicInvoker") == null) {
-                VariadicInvoker.createVariadicInvokerClass(runtime, ffi);
-            }
-            if (ffi.getClass("Callback") == null) {
-                CallbackManager.createCallbackClass(runtime, ffi);
-            }
-            if (ffi.getClass("Function") == null) {
-                Function.createFunctionClass(runtime, ffi);
-            }
-            if (ffi.getClass("LastError") == null) {
-                ffi.defineModuleUnder("LastError").defineAnnotatedMethods(LastError.class);
-                if (Platform.IS_WINDOWS) {
-                  ffi.defineModuleUnder("LastError").defineAnnotatedMethods(WinapiLastError.class);
-                }
+        var context = runtime.getCurrentContext();
+        var Object = objectClass(context);
+
+        synchronized (FFI) {
+            if (FFI.getClass("DynamicLibrary") == null) DynamicLibrary.createDynamicLibraryClass(context, FFI, Object);
+            if (FFI.getClass("Invoker") == null) JFFIInvoker.createInvokerClass(context, FFI);
+            if (FFI.getClass("VariadicInvoker") == null) VariadicInvoker.createVariadicInvokerClass(context, FFI, Object);
+            if (FFI.getClass("Callback") == null) CallbackManager.createCallbackClass(context, FFI);
+            if (FFI.getClass("Function") == null) Function.createFunctionClass(context, FFI);
+            if (FFI.getClass("LastError") == null) {
+                var LastError = FFI.defineModuleUnder(context, "LastError").defineMethods(context, LastError.class);
+                if (Platform.IS_WINDOWS) LastError.defineMethods(context, WinapiLastError.class);
             }
         }
 
-        runtime.setFFI(new FFI(ffi));
+        runtime.setFFI(new FFI(FFI));
     }
 
     /**

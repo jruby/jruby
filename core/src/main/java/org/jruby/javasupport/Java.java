@@ -98,7 +98,9 @@ import org.jruby.util.*;
 import org.jruby.util.cli.Options;
 import org.jruby.util.collections.NonBlockingHashMapLong;
 
+import static org.jruby.api.Access.*;
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.*;
 import static org.jruby.runtime.Visibility.*;
 
@@ -109,22 +111,27 @@ public class Java implements Library {
 
     @Override
     public void load(Ruby runtime, boolean wrap) {
-        final RubyModule Java = createJavaModule(runtime);
+        var context = runtime.getCurrentContext();
+        var Module = moduleClass(context);
+        var Kernel = kernelModule(context);
+        var Enumerable = enumerableModule(context);
+        var Comparable = comparableModule(context);
+        final RubyModule Java = createJavaModule(context);
 
-        runtime.getJavaSupport().setJavaPackageClass(JavaPackage.createJavaPackageClass(runtime, Java));
+        runtime.getJavaSupport().setJavaPackageClass(JavaPackage.createJavaPackageClass(context, Java, Module, Kernel));
 
-        org.jruby.javasupport.ext.Kernel.define(runtime);
-        org.jruby.javasupport.ext.Module.define(runtime);
+        org.jruby.javasupport.ext.Kernel.define(context, Kernel);
+        org.jruby.javasupport.ext.Module.define(context, Module);
 
-        org.jruby.javasupport.ext.JavaLang.define(runtime);
-        org.jruby.javasupport.ext.JavaLangReflect.define(runtime);
-        org.jruby.javasupport.ext.JavaUtil.define(runtime);
-        org.jruby.javasupport.ext.JavaUtilRegex.define(runtime);
+        org.jruby.javasupport.ext.JavaLang.define(context, Enumerable, Comparable);
+        org.jruby.javasupport.ext.JavaLangReflect.define(context);
+        org.jruby.javasupport.ext.JavaUtil.define(context, Enumerable);
+        org.jruby.javasupport.ext.JavaUtilRegex.define(context);
         org.jruby.javasupport.ext.JavaIo.define(runtime);
-        org.jruby.javasupport.ext.JavaNio.define(runtime);
+        org.jruby.javasupport.ext.JavaNio.define(context);
         org.jruby.javasupport.ext.JavaNet.define(runtime);
-        org.jruby.javasupport.ext.JavaMath.define(runtime);
-        org.jruby.javasupport.ext.JavaTime.define(runtime);
+        org.jruby.javasupport.ext.JavaMath.define(context);
+        org.jruby.javasupport.ext.JavaTime.define(context);
 
         // initialize java.lang.Object proxy early
         RubyClass objectClass = (RubyClass) getProxyClass(runtime, java.lang.Object.class);
@@ -133,12 +140,10 @@ public class Java implements Library {
         runtime.getLoadService().load("jruby/java.rb", false);
 
         // rewire ArrayJavaProxy superclass to point at Object, so it inherits Object behaviors
-        final RubyClass ArrayJavaProxy = runtime.getClass("ArrayJavaProxy");
+        var ArrayJavaProxy = runtime.getClass("ArrayJavaProxy").include(Enumerable);
         ArrayJavaProxy.setSuperClass(objectClass);
-        ArrayJavaProxy.includeModule(runtime.getEnumerable());
 
-        RubyClassPathVariable.createClassPathVariable(runtime);
-
+        RubyClassPathVariable.createClassPathVariable(context, Enumerable);
 
         // (legacy) JavaClass compatibility:
         Java.setConstant("JavaClass", getProxyClass(runtime, java.lang.Class.class));
@@ -157,54 +162,54 @@ public class Java implements Library {
     }
 
     @SuppressWarnings("deprecation")
-    public static RubyModule createJavaModule(final Ruby runtime) {
-        final ThreadContext context = runtime.getCurrentContext();
+    public static RubyModule createJavaModule(ThreadContext context) {
+        var Object = objectClass(context);
+        var Enumerable = enumerableModule(context);
 
-        final RubyModule Java = runtime.defineModule("Java");
-
-        Java.defineAnnotatedMethods(Java.class);
+        var Java = defineModule(context, "Java").
+                defineMethods(context, Java.class);
 
         //final RubyClass _JavaObject = JavaObject.createJavaObjectClass(runtime, Java);
         //JavaArray.createJavaArrayClass(runtime, Java, _JavaObject);
 
         // set of utility methods for Java-based proxy objects
-        JavaProxyMethods.createJavaProxyMethods(context);
+        var _JavaProxyMethods = JavaProxyMethods.createJavaProxyMethods(context);
 
         // the proxy (wrapper) type hierarchy
-        JavaProxy.createJavaProxy(context);
-        ArrayJavaProxyCreator.createArrayJavaProxyCreator(context);
-        RubyClass _ConcreteJavaProxy = ConcreteJavaProxy.createConcreteJavaProxy(context);
-        InterfaceJavaProxy.createInterfaceJavaProxy(context);
-        RubyClass _ArrayJavaProxy = ArrayJavaProxy.createArrayJavaProxy(context);
+        RubyClass javaProxyClass = JavaProxy.createJavaProxy(context, Object, _JavaProxyMethods);
+        ArrayJavaProxyCreator.createArrayJavaProxyCreator(context, Object);
+        RubyClass _ConcreteJavaProxy = ConcreteJavaProxy.createConcreteJavaProxy(context, javaProxyClass);
+        InterfaceJavaProxy.createInterfaceJavaProxy(context, Object, javaProxyClass);
+        RubyClass _ArrayJavaProxy = ArrayJavaProxy.createArrayJavaProxy(context, javaProxyClass, Enumerable);
 
         // creates ruby's hash methods' proxy for Map interface
-        MapJavaProxy.createMapJavaProxy(runtime);
+        MapJavaProxy.createMapJavaProxy(context, _ConcreteJavaProxy);
 
         // also create the JavaProxy* classes
-        JavaProxyClass.createJavaProxyClasses(runtime, Java);
+        JavaProxyClass.createJavaProxyClasses(context, Java, Object);
 
         // The template for interface modules
         JavaInterfaceTemplate.createJavaInterfaceTemplateModule(context);
 
-        runtime.defineModule("JavaUtilities").defineAnnotatedMethods(JavaUtilities.class);
+        defineModule(context, "JavaUtilities").defineMethods(context, JavaUtilities.class);
 
-        JavaArrayUtilities.createJavaArrayUtilitiesModule(runtime);
+        JavaArrayUtilities.createJavaArrayUtilitiesModule(context);
 
         // Now attach Java-related extras to core classes
-        runtime.getArray().defineAnnotatedMethods(ArrayJavaAddons.class);
-        runtime.getKernel().defineAnnotatedMethods(KernelJavaAddons.class);
-        runtime.getString().defineAnnotatedMethods(StringJavaAddons.class);
-        runtime.getIO().defineAnnotatedMethods(IOJavaAddons.class);
-        runtime.getClassClass().defineAnnotatedMethods(ClassJavaAddons.class);
+        arrayClass(context).defineMethods(context, ArrayJavaAddons.class);
+        kernelModule(context).defineMethods(context, KernelJavaAddons.class);
+        stringClass(context).defineMethods(context, StringJavaAddons.class);
+        ioClass(context).defineMethods(context, IOJavaAddons.class);
+        classClass(context).defineMethods(context, ClassJavaAddons.class);
 
-        if ( runtime.getObject().isConstantDefined("StringIO") ) {
-            ((RubyClass) runtime.getObject().getConstant("StringIO")).defineAnnotatedMethods(IOJavaAddons.AnyIO.class);
+        if (Object.isConstantDefined("StringIO") ) {
+            ((RubyClass) Object.getConstant("StringIO")).defineMethods(context, IOJavaAddons.AnyIO.class);
         }
 
-        Java.defineConstant("JavaObject", _ConcreteJavaProxy); // obj.is_a?(Java::JavaObject) still works
-        Java.deprecateConstant(runtime, "JavaObject");
-        Java.defineConstant("JavaArray", _ArrayJavaProxy);
-        Java.deprecateConstant(runtime, "JavaArray"); // obj.is_a?(Java::JavaArray) still works
+        Java.defineConstant(context, "JavaObject", _ConcreteJavaProxy); // obj.is_a?(Java::JavaObject) still works
+        Java.deprecateConstant(context.runtime, "JavaObject");
+        Java.defineConstant(context, "JavaArray", _ArrayJavaProxy);
+        Java.deprecateConstant(context.runtime, "JavaArray"); // obj.is_a?(Java::JavaArray) still works
 
         return Java;
     }
@@ -440,6 +445,7 @@ public class Java implements Library {
     @SuppressWarnings("deprecation")
     // Only used by proxy ClassValue calculator in JavaSupport
     static RubyModule createProxyClassForClass(final Ruby runtime, final Class<?> clazz) {
+        var context = runtime.getCurrentContext();
         final JavaSupport javaSupport = runtime.getJavaSupport();
 
         RubyModule proxy;
@@ -467,7 +473,7 @@ public class Java implements Library {
             if (clazz.isInterface()) {
                 generateInterfaceProxy(runtime, clazz, proxy);
             } else {
-                generateClassProxy(runtime, clazz, (RubyClass) proxy, superClass);
+                generateClassProxy(context, clazz, (RubyClass) proxy, superClass);
             }
         } finally {
             javaSupport.endProxy(clazz);
@@ -489,33 +495,33 @@ public class Java implements Library {
         addToJavaPackageModule(proxy);
     }
 
-    private static void generateClassProxy(Ruby runtime, Class<?> clazz, RubyClass proxy, RubyClass superClass) {
+    private static void generateClassProxy(ThreadContext context, Class<?> clazz, RubyClass proxy, RubyClass superClass) {
         if ( clazz.isArray() ) {
-            createProxyClass(runtime, proxy, clazz, superClass, true);
+            createProxyClass(context, proxy, clazz, superClass, true);
 
             if ( clazz.getComponentType() == byte.class ) {
-                proxy.defineAnnotatedMethods( ByteArrayProxyMethods.class ); // to_s
+                proxy.defineMethods(context, ByteArrayProxyMethods.class ); // to_s
             }
         }
         else if ( clazz.isPrimitive() ) {
-            createProxyClass(runtime, proxy, clazz, superClass, true);
+            createProxyClass(context, proxy, clazz, superClass, true);
         }
         else if ( clazz == Object.class ) {
             // java.lang.Object is added at root of java proxy classes
-            createProxyClass(runtime, proxy, clazz, superClass, true);
+            createProxyClass(context, proxy, clazz, superClass, true);
             if (NEW_STYLE_EXTENSION) {
-                proxy.getMetaClass().defineAnnotatedMethods(NewStyleExtensionInherited.class);
+                proxy.getMetaClass().defineMethods(context, NewStyleExtensionInherited.class);
             } else {
-                proxy.getMetaClass().defineAnnotatedMethods(OldStyleExtensionInherited.class);
+                proxy.getMetaClass().defineMethods(context, OldStyleExtensionInherited.class);
             }
             addToJavaPackageModule(proxy);
         }
         else {
-            createProxyClass(runtime, proxy, clazz, superClass, false);
+            createProxyClass(context, proxy, clazz, superClass, false);
             // include interface modules into the proxy class
             final Class<?>[] interfaces = clazz.getInterfaces();
             for ( int i = interfaces.length; --i >= 0; ) {
-                proxy.includeModule(getInterfaceModule(runtime, interfaces[i]));
+                proxy.includeModule(getInterfaceModule(context.runtime, interfaces[i]));
             }
             if ( Modifier.isPublic(clazz.getModifiers()) ) {
                 addToJavaPackageModule(proxy);
@@ -535,25 +541,23 @@ public class Java implements Library {
         }
     }
 
-    private static RubyClass createProxyClass(final Ruby runtime,
-        final RubyClass proxyClass, final Class<?> javaClass,
-        final RubyClass superClass, boolean invokeInherited) {
+    private static RubyClass createProxyClass(ThreadContext context, final RubyClass proxyClass,
+                                              final Class<?> javaClass, final RubyClass superClass, boolean invokeInherited) {
 
         proxyClass.makeMetaClass( superClass.getMetaClass() );
 
         if ( Map.class.isAssignableFrom( javaClass ) ) {
-            proxyClass.setAllocator( runtime.getJavaSupport().getMapJavaProxyClass().getAllocator() );
-            proxyClass.defineAnnotatedMethods( MapJavaProxy.class );
-            proxyClass.includeModule( runtime.getEnumerable() );
+            proxyClass.allocator(context.runtime.getJavaSupport().getMapJavaProxyClass().getAllocator()).
+                    defineMethods(context, MapJavaProxy.class).
+                    include(context.runtime.getEnumerable());
+        } else {
+            proxyClass.allocator(superClass.getAllocator());
         }
-        else {
-            proxyClass.setAllocator( superClass.getAllocator() );
-        }
-        proxyClass.defineAnnotatedMethods( JavaProxy.ClassMethods.class );
+        proxyClass.defineMethods(context, JavaProxy.ClassMethods.class);
 
         if ( invokeInherited ) proxyClass.inherit(superClass);
 
-        Initializer.setupProxyClass(runtime, javaClass, proxyClass);
+        Initializer.setupProxyClass(context.runtime, javaClass, proxyClass);
 
         return proxyClass;
     }
@@ -1593,8 +1597,7 @@ public class Java implements Library {
                 clazz.addMethod("initialize", new DummyInitialize(clazz));
             }
         }
-        clazz.setReifiedClass(proxyImplClass);
-        clazz.setRubyClassAllocator(proxyImplClass);
+        clazz.reifiedClass(proxyImplClass).setRubyClassAllocator(proxyImplClass);
 
         return proxyImplClass;
     }

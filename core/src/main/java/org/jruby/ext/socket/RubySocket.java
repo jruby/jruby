@@ -85,6 +85,7 @@ import java.util.regex.Pattern;
 
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 
 /**
@@ -93,50 +94,45 @@ import static org.jruby.api.Error.argumentError;
 @JRubyClass(name="Socket", parent="BasicSocket", include="Socket::Constants")
 public class RubySocket extends RubyBasicSocket {
 
-    static void createSocket(Ruby runtime) {
-        RubyClass rb_cSocket = runtime.defineClass("Socket", runtime.getClass("BasicSocket"), RubySocket::new);
+    static RubyClass createSocket(ThreadContext context, RubyClass BasicSocket) {
+        RubyClass Socket = defineClass(context, "Socket", BasicSocket, RubySocket::new).
+                defineMethods(context, RubySocket.class);
 
-        RubyModule rb_mConstants = rb_cSocket.defineModuleUnder("Constants");
-        // we don't have to define any that we don't support; see socket.c
-
-        runtime.loadConstantSet(rb_mConstants, Sock.class);
-        runtime.loadConstantSet(rb_mConstants, SocketOption.class);
-        runtime.loadConstantSet(rb_mConstants, SocketLevel.class);
-        runtime.loadConstantSet(rb_mConstants, ProtocolFamily.class);
-        runtime.loadConstantSet(rb_mConstants, AddressFamily.class);
-        runtime.loadConstantSet(rb_mConstants, INAddr.class);
-        runtime.loadConstantSet(rb_mConstants, IPProto.class);
-        runtime.loadConstantSet(rb_mConstants, Shutdown.class);
-        runtime.loadConstantSet(rb_mConstants, TCP.class);
-        runtime.loadConstantSet(rb_mConstants, IP.class);
-        runtime.loadConstantSet(rb_mConstants, InterfaceInfo.class);
-        runtime.loadConstantSet(rb_mConstants, NameInfo.class);
-        runtime.loadConstantSet(rb_mConstants, SocketMessage.class);
+        RubyModule SocketConstants = Socket.defineModuleUnder(context, "Constants").
+                defineConstantsFrom(context, Sock.class).
+                defineConstantsFrom(context, SocketOption.class).
+                defineConstantsFrom(context, SocketLevel.class).
+                defineConstantsFrom(context, ProtocolFamily.class).
+                defineConstantsFrom(context, AddressFamily.class).
+                defineConstantsFrom(context, INAddr.class).
+                defineConstantsFrom(context, IPProto.class).
+                defineConstantsFrom(context, Shutdown.class).
+                defineConstantsFrom(context, TCP.class).
+                defineConstantsFrom(context, IP.class).
+                defineConstantsFrom(context, InterfaceInfo.class).
+                defineConstantsFrom(context, NameInfo.class).
+                defineConstantsFrom(context, SocketMessage.class);
 
         // this value seems to be hardcoded in MRI to 5 when not defined, but
         // it is 128 on OS X. We use 128 for now until we can get it added to
         // jnr-constants.
-        rb_mConstants.setConstant("SOMAXCONN", RubyFixnum.newFixnum(runtime, 128));
-        
-        // for all platforms
-        rb_mConstants.setConstant("IPPORT_RESERVED", RubyFixnum.newFixnum(runtime, 1024));
-        rb_mConstants.setConstant("IPPORT_USERRESERVED", RubyFixnum.newFixnum(runtime, 5000));
+        SocketConstants.defineConstant(context, "SOMAXCONN", asFixnum(context, 128)).
+                defineConstant(context, "IPPORT_RESERVED", asFixnum(context, 1024)).
+                defineConstant(context, "IPPORT_USERRESERVED", asFixnum(context, 5000)).
+                defineConstant(context, "AI_PASSIVE", asFixnum(context, AddressInfo.AI_PASSIVE.longValue())).
+                defineConstant(context, "AI_CANONNAME", asFixnum(context, AddressInfo.AI_CANONNAME.longValue())).
+                defineConstant(context, "AI_NUMERICHOST", asFixnum(context, AddressInfo.AI_NUMERICHOST.longValue())).
+                defineConstant(context, "AI_ALL", asFixnum(context, AddressInfo.AI_ALL.longValue())).
+                defineConstant(context, "AI_V4MAPPED_CFG", asFixnum(context, AddressInfo.AI_V4MAPPED_CFG.longValue())).
+                defineConstant(context, "AI_ADDRCONFIG", asFixnum(context, AddressInfo.AI_ADDRCONFIG.longValue())).
+                defineConstant(context, "AI_V4MAPPED", asFixnum(context, AddressInfo.AI_V4MAPPED.longValue())).
+                defineConstant(context, "AI_NUMERICSERV", asFixnum(context, AddressInfo.AI_NUMERICSERV.longValue())).
+                defineConstant(context, "AI_DEFAULT", asFixnum(context, AddressInfo.AI_DEFAULT.longValue())).
+                defineConstant(context, "AI_MASK", asFixnum(context, AddressInfo.AI_MASK.longValue()));
 
-        rb_mConstants.setConstant("AI_PASSIVE", runtime.newFixnum(AddressInfo.AI_PASSIVE));
-        rb_mConstants.setConstant("AI_CANONNAME", runtime.newFixnum(AddressInfo.AI_CANONNAME));
-        rb_mConstants.setConstant("AI_NUMERICHOST", runtime.newFixnum(AddressInfo.AI_NUMERICHOST));
-        rb_mConstants.setConstant("AI_ALL", runtime.newFixnum(AddressInfo.AI_ALL));
-        rb_mConstants.setConstant("AI_V4MAPPED_CFG", runtime.newFixnum(AddressInfo.AI_V4MAPPED_CFG));
-        rb_mConstants.setConstant("AI_ADDRCONFIG", runtime.newFixnum(AddressInfo.AI_ADDRCONFIG));
-        rb_mConstants.setConstant("AI_V4MAPPED", runtime.newFixnum(AddressInfo.AI_V4MAPPED));
-        rb_mConstants.setConstant("AI_NUMERICSERV", runtime.newFixnum(AddressInfo.AI_NUMERICSERV));
+        Socket.include(SocketConstants);
 
-        rb_mConstants.setConstant("AI_DEFAULT", runtime.newFixnum(AddressInfo.AI_DEFAULT));
-        rb_mConstants.setConstant("AI_MASK", runtime.newFixnum(AddressInfo.AI_MASK));
-
-        rb_cSocket.includeModule(rb_mConstants);
-
-        rb_cSocket.defineAnnotatedMethods(RubySocket.class);
+        return Socket;
     }
 
     public RubySocket(Ruby runtime, RubyClass type) {

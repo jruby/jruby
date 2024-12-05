@@ -82,6 +82,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.unicode.UnicodeEncoding;
 
 import static org.jruby.RubyBasicObject.getMetaClass;
+import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.*;
@@ -1174,7 +1175,7 @@ public class Helpers {
                 runtime.getException() == catchable ||
 
                 // rescue Object needs to catch Java exceptions
-                runtime.getObject() == catchable ||
+                objectClass(context) == catchable ||
 
                 // rescue StandardError needs to catch Java exceptions
                 runtime.getStandardError() == catchable) {
@@ -1854,10 +1855,7 @@ public class Helpers {
     }
 
     public static void preLoadCommon(ThreadContext context, StaticScope staticScope, boolean wrap) {
-        RubyModule objectClass = context.runtime.getObject();
-        if (wrap) {
-            objectClass = RubyModule.newModule(context.runtime);
-        }
+        RubyModule objectClass = wrap ? RubyModule.newModule(context.runtime) : objectClass(context);
 
         staticScope.setModule(objectClass);
 
