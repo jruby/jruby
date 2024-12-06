@@ -139,9 +139,9 @@ public class ConcreteJavaProxy extends JavaProxy {
             if (parent.getJavaProxy()) return newMethod;
 
             // overridden class: reify and re-lookup new as reification changes it
-            if (parent.getReifiedClass() == null) {
+            if (parent.reifiedClass() == null) {
                 parent.reifyWithAncestors();
-                if (parent.getReifiedClass() == null) {
+                if (parent.reifiedClass() == null) {
                     throw typeError(clazz.getRuntime().getCurrentContext(), "requested class " + parent.getName() + " was not reifiable");
                 }
             }

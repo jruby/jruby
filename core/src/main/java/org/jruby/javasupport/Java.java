@@ -1587,7 +1587,7 @@ public class Java implements Library {
         catch (ClassNotFoundException ex) {
             // try to use super's reified class; otherwise, RubyObject (for now)
         	//TODO: test java reified?
-            Class<?> superClass = clazz.getSuperClass().getRealClass().getReifiedClass();
+            Class<?> superClass = clazz.getSuperClass().getRealClass().reifiedClass();
             if ( superClass == null ) superClass = RubyObject.class;
             proxyImplClass = RealClassGenerator.createRealImplClass(superClass, interfaces, clazz, runtime, implClassName);
 

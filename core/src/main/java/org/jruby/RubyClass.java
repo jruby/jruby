@@ -1536,7 +1536,7 @@ public class RubyClass extends RubyModule {
         if (!isReifiable(java_box)) return;
         final boolean concreteExt = java_box[0];
 
-        final Class<?> parentReified = superClass.getRealClass().getReifiedClass();
+        final Class<?> parentReified = superClass.getRealClass().reifiedClass();
         if (parentReified == null) {
             throw typeError(getClassRuntime().getCurrentContext(), getName() + "'s parent class is not yet reified");
         }
@@ -2446,10 +2446,19 @@ public class RubyClass extends RubyModule {
     }
 
     /**
+     * @return
+     * @deprecated Use {@link RubyClass#reifiedClass()} instead.
+     */
+    @Deprecated(since = "10.0")
+    public Class<? extends Reified> getReifiedClass() {
+        return reifiedClass();
+    }
+
+    /**
      * Gets a reified Ruby or Java class.
      * To ensure a specific type, see {@link #getReifiedRubyClass()} or  {@link #getReifiedJavaClass()}
      */
-    public Class<? extends Reified> getReifiedClass() {
+    public Class<? extends Reified> reifiedClass() {
         return reifiedClass;
     }
 
@@ -2483,7 +2492,7 @@ public class RubyClass extends RubyModule {
     public static Class<?> nearestReifiedClass(final RubyClass klass) {
         RubyClass current = klass;
         do {
-            Class<?> reified = current.getReifiedClass();
+            Class<?> reified = current.reifiedClass();
             if ( reified != null ) return reified;
             current = current.getSuperClass();
         }
