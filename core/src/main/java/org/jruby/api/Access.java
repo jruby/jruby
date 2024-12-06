@@ -15,7 +15,7 @@ public class Access {
      * @return the Class
      */
     public static RubyClass arrayClass(ThreadContext context) {
-        return context.runtime.getClassClass();
+        return context.runtime.getArray();
     }
 
     /**
