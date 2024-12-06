@@ -794,6 +794,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     // CHECK_INTS
     public void pollThreadEvents(ThreadContext context) {
+        killIfAborting();
+
         if (anyInterrupted()) {
             executeInterrupts(context, false);
         }
@@ -801,6 +803,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     // RUBY_VM_CHECK_INTS_BLOCKING
     public void blockingThreadPoll(ThreadContext context) {
+        killIfAborting();
+
         if (pendingInterruptQueue.isEmpty() && !anyInterrupted()) {
             return;
         }
@@ -808,6 +812,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         pendingInterruptQueueChecked = false;
         setInterrupt();
         executeInterrupts(context, true);
+    }
+
+    private void killIfAborting() {
+        if (status == Status.ABORTING) {
+            // currently aborting, resume abort
+            throwThreadKill();
+        }
     }
 
     // RUBY_VM_INTERRUPTED_ANY
