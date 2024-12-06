@@ -76,9 +76,9 @@ public class RubyComplex extends RubyNumeric {
                 kindOf(new RubyModule.JavaClassKindOf(RubyComplex.class)).
                 classIndex(ClassIndex.COMPLEX).
                 defineMethods(context, RubyComplex.class).
-                undefMethods("<", "<=", ">", ">=", "between?", "clamp", "%", "div", "divmod", "floor", "ceil",
+                undefMethods(context, "<", "<=", ">", ">=", "between?", "clamp", "%", "div", "divmod", "floor", "ceil",
                         "modulo", "remainder", "round", "step", "truncate", "positive?", "negative?").
-                tap(c -> c.getSingletonClass().undefMethods("allocate", "new")).
+                tap(c -> c.getSingletonClass().undefMethods(context, "allocate", "new")).
                 tap(c -> c.defineConstant("I", RubyComplex.convert(context, c, asFixnum(context, 0), asFixnum(context, 1))));
     }
 

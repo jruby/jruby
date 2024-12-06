@@ -90,7 +90,7 @@ public class RubyUDPSocket extends RubyIPSocket {
     static void createUDPSocket(ThreadContext context, RubyClass IPSocket, RubyClass Socket, RubyClass Object) {
         Object.setConstant("UDPsocket",
                 defineClass(context, "UDPSocket", IPSocket, RubyUDPSocket::new).
-                        include((RubyModule) Socket.getConstant("Constants")).
+                        include(context, (RubyModule) Socket.getConstant("Constants")).
                         defineMethods(context, RubyUDPSocket.class));
     }
 

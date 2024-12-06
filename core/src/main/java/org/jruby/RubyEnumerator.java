@@ -86,7 +86,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
     public static RubyClass defineEnumerator(ThreadContext context, RubyClass Object, RubyModule Enumerable) {
         RubyClass Enumerator = defineClass(context, "Enumerator", Object, RubyEnumerator::new).
-                include(Enumerable).
+                include(context, Enumerable).
                 defineMethods(context, RubyEnumerator.class);
 
         Enumerator.defineClassUnder(context, "FeedValue", Object, NOT_ALLOCATABLE_ALLOCATOR).defineMethods(context, FeedValue.class);

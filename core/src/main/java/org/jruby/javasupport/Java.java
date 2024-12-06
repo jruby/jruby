@@ -140,7 +140,8 @@ public class Java implements Library {
         runtime.getLoadService().load("jruby/java.rb", false);
 
         // rewire ArrayJavaProxy superclass to point at Object, so it inherits Object behaviors
-        var ArrayJavaProxy = runtime.getClass("ArrayJavaProxy").include(Enumerable);
+        var ArrayJavaProxy = runtime.getClass("ArrayJavaProxy").
+                include(context, Enumerable);
         ArrayJavaProxy.setSuperClass(objectClass);
 
         RubyClassPathVariable.createClassPathVariable(context, Enumerable);
@@ -471,7 +472,7 @@ public class Java implements Library {
         javaSupport.beginProxy(clazz, proxy);
         try {
             if (clazz.isInterface()) {
-                generateInterfaceProxy(runtime, clazz, proxy);
+                generateInterfaceProxy(context, clazz, proxy);
             } else {
                 generateClassProxy(context, clazz, (RubyClass) proxy, superClass);
             }
@@ -482,16 +483,15 @@ public class Java implements Library {
         return proxy;
     }
 
-    private static void generateInterfaceProxy(final Ruby runtime, final Class javaClass, final RubyModule proxy) {
+    private static void generateInterfaceProxy(ThreadContext context, final Class javaClass, final RubyModule proxy) {
         assert javaClass.isInterface();
 
         // include any interfaces we extend
         final Class<?>[] extended = javaClass.getInterfaces();
         for (int i = extended.length; --i >= 0; ) {
-            RubyModule extModule = getInterfaceModule(runtime, extended[i]);
-            proxy.includeModule(extModule);
+            proxy.include(context, getInterfaceModule(context.runtime, extended[i]));
         }
-        Initializer.setupProxyModule(runtime, javaClass, proxy);
+        Initializer.setupProxyModule(context.runtime, javaClass, proxy);
         addToJavaPackageModule(proxy);
     }
 
@@ -521,7 +521,7 @@ public class Java implements Library {
             // include interface modules into the proxy class
             final Class<?>[] interfaces = clazz.getInterfaces();
             for ( int i = interfaces.length; --i >= 0; ) {
-                proxy.includeModule(getInterfaceModule(context.runtime, interfaces[i]));
+                proxy.include(context, getInterfaceModule(context.runtime, interfaces[i]));
             }
             if ( Modifier.isPublic(clazz.getModifiers()) ) {
                 addToJavaPackageModule(proxy);
@@ -549,7 +549,7 @@ public class Java implements Library {
         if ( Map.class.isAssignableFrom( javaClass ) ) {
             proxyClass.allocator(context.runtime.getJavaSupport().getMapJavaProxyClass().getAllocator()).
                     defineMethods(context, MapJavaProxy.class).
-                    include(context.runtime.getEnumerable());
+                    include(context, context.runtime.getEnumerable());
         } else {
             proxyClass.allocator(superClass.getAllocator());
         }

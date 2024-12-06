@@ -45,7 +45,7 @@ public class RubyProducer extends RubyObject {
 
     public static RubyClass createProducerClass(ThreadContext context, RubyClass Object, RubyClass Enumerator, RubyModule Enumerable) {
         return Enumerator.defineClassUnder(context, "Producer", Object, RubyProducer::new).
-                include(Enumerable).
+                include(context, Enumerable).
                 defineMethods(context, RubyProducer.class);
     }
 

@@ -6,6 +6,7 @@ import org.jruby.RubyModule;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.load.LoadService;
 
 public class Access {
     /**
@@ -161,6 +162,15 @@ public class Access {
      */
     public static RubyModule kernelModule(ThreadContext context) {
         return context.runtime.getKernel();
+    }
+
+    /**
+     * Retrieve LoadService instance
+     * @param context the current thread context
+     * @return the instance
+     */
+    public static LoadService loadService(ThreadContext context) {
+        return context.runtime.getLoadService();
     }
 
     /**

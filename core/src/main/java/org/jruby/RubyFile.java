@@ -173,7 +173,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 //        #endif
         if (OpenFlags.O_NOFOLLOW.defined()) {
             /* do not follow symlinks */
-            FileConstants.setConstant("NOFOLLOW", asFixnum(context, OpenFlags.O_NOFOLLOW.intValue()));     /* FreeBSD, Linux */
+            FileConstants.defineConstant(context, "NOFOLLOW", asFixnum(context, OpenFlags.O_NOFOLLOW.intValue()));     /* FreeBSD, Linux */
         }
         // O_NOATIME and O_DIRECT are not in OpenFlags
 //        #ifdef O_NOATIME
@@ -186,11 +186,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 //        #endif
         if (OpenFlags.O_TMPFILE.defined()) {
             /* Create an unnamed temporary file */
-            FileConstants.setConstant("TMPFILE", asFixnum(context, OpenFlags.O_TMPFILE.intValue()));
+            FileConstants.defineConstant(context, "TMPFILE", asFixnum(context, OpenFlags.O_TMPFILE.intValue()));
         }
 
         // File::Constants module is included in IO.
-        IO.includeModule(FileConstants);
+        IO.include(context, FileConstants);
 
         if (Platform.IS_WINDOWS) {
             // readlink is not available on Windows. See below and jruby/jruby#3287.

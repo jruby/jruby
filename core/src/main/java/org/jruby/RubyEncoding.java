@@ -79,7 +79,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
                 kindOf(new RubyModule.JavaClassKindOf(RubyEncoding.class)).
                 classIndex(ClassIndex.ENCODING).
                 defineMethods(context, RubyEncoding.class).
-                tap(c -> c.getSingletonClass().undefMethods("allocate"));
+                tap(c -> c.getSingletonClass().undefMethods(context, "allocate"));
     }
 
     private Encoding encoding;

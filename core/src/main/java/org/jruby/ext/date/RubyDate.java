@@ -114,7 +114,7 @@ public class RubyDate extends RubyObject {
     static RubyClass createDateClass(ThreadContext context) {
         var Date = defineClass(context, "Date", objectClass(context), RubyDate::new).
                 reifiedClass(RubyDate.class).
-                include(comparableModule(context)).
+                include(context, comparableModule(context)).
                 defineMethods(context, RubyDate.class).
                 defineConstant(context, "ITALY", asFixnum(context, ITALY)).
                 defineConstant(context, "ENGLAND", asFixnum(context, ENGLAND)).

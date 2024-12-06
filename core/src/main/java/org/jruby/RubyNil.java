@@ -37,7 +37,6 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.compiler.Constantizable;
-import org.jruby.ir.operands.Nil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -83,7 +82,7 @@ public class RubyNil extends RubyObject implements Constantizable {
                 classIndex(ClassIndex.NIL);
 
         NilClass.defineAnnotatedMethodsIndividually(RubyNil.class);
-        NilClass.getMetaClass().undefMethods("new");
+        NilClass.getMetaClass().undefineMethod("new");
 
         return NilClass;
     }

@@ -211,7 +211,7 @@ public class RubyRandom extends RubyRandomBase {
 
         var RandomFormatter = Random.defineModuleUnder(context, "Formatter").defineMethods(context, RandomFormatter.class);
 
-        RandomBase.includeModule(RandomFormatter);
+        RandomBase.include(context, RandomFormatter);
         RandomFormatter.extend_object(context, RandomBase);
 
         return Random;

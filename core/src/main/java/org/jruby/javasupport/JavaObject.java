@@ -132,7 +132,7 @@ public class JavaObject extends RubyObject {
     public static RubyClass createJavaObjectClass(Ruby runtime, RubyClass Object, RubyModule javaModule) {
         var context = runtime.getCurrentContext();
         RubyClass JavaObject = javaModule.defineClassUnder(context, "JavaObject", Object, JAVA_OBJECT_ALLOCATOR).
-                tap(c -> c.getMetaClass().undefMethods("new", "allocate"));
+                tap(c -> c.getMetaClass().undefMethods(context, "new", "allocate"));
 
         JavaObject.defineMethods(context, JavaObject.class);
 

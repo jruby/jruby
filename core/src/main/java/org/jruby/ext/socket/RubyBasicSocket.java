@@ -97,7 +97,7 @@ public class RubyBasicSocket extends RubyIO {
     static RubyClass createBasicSocket(ThreadContext context, RubyClass IO) {
         return defineClass(context, "BasicSocket", IO, RubyBasicSocket::new).
                 defineMethods(context, RubyBasicSocket.class).
-                undefMethods("initialize");
+                undefMethods(context, "initialize");
     }
 
     public RubyBasicSocket(Ruby runtime, RubyClass type) {

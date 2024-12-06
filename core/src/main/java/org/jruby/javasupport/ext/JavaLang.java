@@ -56,8 +56,6 @@ import java.lang.reflect.Modifier;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyModule.undefinedMethodMessage;
-import static org.jruby.api.Access.comparableModule;
-import static org.jruby.api.Access.enumerableModule;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
@@ -105,7 +103,9 @@ public abstract class JavaLang {
     public static class Iterable {
 
         static RubyModule define(ThreadContext context, final RubyModule proxy, RubyModule Enumerable) {
-            return proxy.include(Enumerable).defineMethods(context, Iterable.class);
+            return proxy.
+                    include(context, Enumerable).
+                    defineMethods(context, Iterable.class);
         }
 
         @JRubyMethod
@@ -195,7 +195,9 @@ public abstract class JavaLang {
     public static class Comparable {
 
         static RubyModule define(ThreadContext context, final RubyModule proxy, RubyModule Comparable) {
-            return proxy.include(Comparable).defineMethods(context, Comparable.class);
+            return proxy.
+                    include(context, Comparable).
+                    defineMethods(context, Comparable.class);
         }
 
         @JRubyMethod(name = "<=>")
@@ -458,7 +460,8 @@ public abstract class JavaLang {
     public static class Class {
 
         static RubyClass define(ThreadContext context, final RubyModule proxy, RubyModule Comparable) {
-            proxy.include(Comparable).defineMethods(context, Class.class);
+            proxy.include(context, Comparable).
+                    defineMethods(context, Class.class);
             // JavaClass facade (compatibility) :
             proxy.defineAlias("resource", "get_resource");
             proxy.defineAlias("declared_field", "get_declared_field");

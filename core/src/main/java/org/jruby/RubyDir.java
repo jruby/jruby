@@ -101,7 +101,7 @@ public class RubyDir extends RubyObject implements Closeable {
         return defineClass(context, "Dir", Object, RubyDir::new).
                 reifiedClass(RubyDir.class).
                 classIndex(ClassIndex.DIR).
-                include(Enumerable).
+                include(context, Enumerable).
                 defineMethods(context, RubyDir.class);
     }
 

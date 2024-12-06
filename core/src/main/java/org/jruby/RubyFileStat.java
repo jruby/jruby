@@ -75,7 +75,7 @@ public class RubyFileStat extends RubyObject {
 
     public static RubyClass createFileStatClass(ThreadContext context, RubyClass Object, RubyClass File, RubyModule Comparable) {
         return File.defineClassUnder(context, "Stat", Object, RubyFileStat::new).
-                include(Comparable).
+                include(context, Comparable).
                 defineMethods(context, RubyFileStat.class);
     }
 

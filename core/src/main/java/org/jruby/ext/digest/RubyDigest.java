@@ -104,11 +104,15 @@ public class RubyDigest {
             provider = (Provider) Class.forName(PROVIDER).getConstructor().newInstance();
         } catch (Throwable t) { /* provider is not available */ }
 
-        var Digest = defineModule(context, "Digest").defineMethods(context, RubyDigest.class);
-        var DigestInstance = Digest.defineModuleUnder(context, "Instance").defineMethods(context, DigestInstance.class);
+        var Digest = defineModule(context, "Digest").
+                defineMethods(context, RubyDigest.class);
+        var DigestInstance = Digest.defineModuleUnder(context, "Instance").
+                defineMethods(context, DigestInstance.class);
         RubyClass DigestClass = Digest.defineClassUnder(context, "Class", objectClass(context), DigestClass::new).
-                include(DigestInstance).defineMethods(context, DigestClass.class);
-        Digest.defineClassUnder(context, "Base", DigestClass, DigestBase::new).defineMethods(context, DigestBase.class);
+                include(context, DigestInstance).
+                defineMethods(context, DigestClass.class);
+        Digest.defineClassUnder(context, "Base", DigestClass, DigestBase::new).
+                defineMethods(context, DigestBase.class);
     }
 
     private static MessageDigest createMessageDigest(final String name) throws NoSuchAlgorithmException {

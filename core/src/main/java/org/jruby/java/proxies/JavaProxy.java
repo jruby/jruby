@@ -79,7 +79,7 @@ public class JavaProxy extends RubyObject {
     public static RubyClass createJavaProxy(ThreadContext context, RubyClass Object, RubyModule JavaProxyMethods) {
         return defineClass(context, "JavaProxy", Object, JavaProxy::new).
                 defineMethods(context, JavaProxy.class).
-                include(JavaProxyMethods);
+                include(context, JavaProxyMethods);
     }
 
     @Deprecated // Java::JavaObject compatibility

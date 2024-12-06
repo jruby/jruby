@@ -106,7 +106,7 @@ public class RubyRange extends RubyObject {
                 marshalWith(RANGE_MARSHAL).
                 kindOf(new RubyModule.JavaClassKindOf(RubyRange.class)).
                 classIndex(ClassIndex.RANGE).
-                include(Enumerable).
+                include(context, Enumerable).
                 defineMethods(context, RubyRange.class);
 
         Range.defineClassUnder(context, "BSearch", Object, OBJECT_ALLOCATOR).defineMethods(context, BSearch.class);

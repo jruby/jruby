@@ -54,7 +54,7 @@ public class RubyIPSocket extends RubyBasicSocket {
     static RubyClass createIPSocket(ThreadContext context, RubyClass BasicSocket) {
         return defineClass(context, "IPSocket", BasicSocket, RubyIPSocket::new).
                 defineMethods(context, RubyIPSocket.class).
-                undefMethods("initialize");
+                undefMethods(context, "initialize");
     }
 
     public RubyIPSocket(Ruby runtime, RubyClass type) {

@@ -152,8 +152,8 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
                 kindOf(new RubyModule.JavaClassKindOf(RubySymbol.class));
 
         Symbol.getMetaClass().
-                undefMethods("new").
-                include(Comparable);
+                undefMethods(context, "new").
+                include(context, Comparable);
 
         return Symbol;
     }

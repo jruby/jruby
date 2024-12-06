@@ -33,29 +33,9 @@ final class ClassInitializer extends Initializer {
         proxy.setParent(parent);
 
         // set the Java class name and package
-        if ( javaClass.isMemberClass() ) {
-            proxy.setBaseName( javaClass.getSimpleName() );
-        }
-        else { // javaClass.isAnonymousClass() || javaClass.isLocalClass()
-            String baseName = javaClass.getSimpleName(); // returns "" for anonymous
-            if ( enclosingClass != null ) {
-                // instead of an empty name anonymous classes will have a "conforming"
-                // although not valid (by Ruby semantics) RubyClass name e.g. :
-                // 'Java::JavaUtilConcurrent::TimeUnit::1' for $1 anonymous enum class
-                // NOTE: if this turns out suitable shall do the same for method etc.
-                final String className = javaClass.getName();
-                final int length = className.length();
-                final int offset = enclosingClass.getName().length();
-                if ( length > offset && className.charAt(offset) != '$' ) {
-                    baseName = className.substring( offset );
-                }
-                else if ( length > offset + 1 ) { // skip '$'
-                    baseName = className.substring( offset + 1 );
-                }
-            }
-            proxy.setBaseName( baseName );
-        }
-
+        proxy.baseName(javaClass.isMemberClass() ?
+                javaClass.getSimpleName() :
+                inferBaseNameFromJavaName(enclosingClass)); // Anonymous of Local class
         proxyClass.getName(); // trigger calculateName()
 
         final MethodGatherer state = new MethodGatherer(runtime, javaClass.getSuperclass());
@@ -63,6 +43,26 @@ final class ClassInitializer extends Initializer {
         state.initialize(javaClass, proxy);
 
         return proxyClass;
+    }
+
+    private String inferBaseNameFromJavaName(Class<?> enclosingClass) {
+        String baseName;
+        baseName = javaClass.getSimpleName(); // returns "" for anonymous
+        if ( enclosingClass != null ) {
+            // instead of an empty name anonymous classes will have a "conforming"
+            // although not valid (by Ruby semantics) RubyClass name e.g. :
+            // 'Java::JavaUtilConcurrent::TimeUnit::1' for $1 anonymous enum class
+            // NOTE: if this turns out suitable shall do the same for method etc.
+            final String className = javaClass.getName();
+            final int length = className.length();
+            final int offset = enclosingClass.getName().length();
+            if ( length > offset && className.charAt(offset) != '$' ) {
+                baseName = className.substring( offset );
+            } else if ( length > offset + 1 ) { // skip '$'
+                baseName = className.substring( offset + 1 );
+            }
+        }
+        return baseName;
     }
 
 }

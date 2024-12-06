@@ -77,7 +77,7 @@ public class RubyArgsFile extends RubyObject {
 
     public static void initArgsFile(ThreadContext context, RubyModule Enumerable, GlobalVariables globals) {
         RubyClass ARGF = defineClass(context, "ARGFClass", objectClass(context), RubyArgsFile::new).
-                include(Enumerable).
+                include(context, Enumerable).
                 defineMethods(context, RubyArgsFile.class);
 
         IRubyObject argsFile = ARGF.newInstance(context, new IRubyObject[] { null }, null);

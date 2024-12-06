@@ -105,7 +105,7 @@ public class RubyZlib {
         GzipFile.defineOrGetClassUnder("LengthError", GZipFileError, fileErrorAllocator);
 
         Zlib.defineClassUnder(context, "GzipReader", GzipFile, JZlibRubyGzipReader::new).
-                include(enumerableModule(context)).
+                include(context, enumerableModule(context)).
                 defineMethods(context, JZlibRubyGzipReader.class);
 
         Zlib.defineClassUnder(context, "GzipWriter", GzipFile, JZlibRubyGzipWriter::new).
@@ -157,7 +157,7 @@ public class RubyZlib {
         // ZStream actually *isn't* allocatable
         RubyClass ZStream = Zlib.defineClassUnder(context, "ZStream", Object, NOT_ALLOCATABLE_ALLOCATOR).
                 defineMethods(context, ZStream.class).
-                undefMethods("new");
+                undefMethods(context, "new");
         Zlib.defineClassUnder(context, "Inflate", ZStream, JZlibInflate::new).
                 defineMethods(context, JZlibInflate.class);
         Zlib.defineClassUnder(context, "Deflate", ZStream, JZlibDeflate::new).

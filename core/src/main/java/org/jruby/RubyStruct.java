@@ -103,7 +103,7 @@ public class RubyStruct extends RubyObject {
         return defineClass(context, "Struct", Object, NOT_ALLOCATABLE_ALLOCATOR).
                 reifiedClass(RubyStruct.class).
                 classIndex(ClassIndex.STRUCT).
-                include(Enumerable).
+                include(context, Enumerable).
                 defineMethods(context, RubyStruct.class);
     }
 

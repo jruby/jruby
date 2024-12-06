@@ -113,7 +113,7 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
                 classIndex(ClassIndex.FALSE);
         False.defineAnnotatedMethodsIndividually(False.class);
         False.defineAnnotatedMethodsIndividually(RubyBoolean.class);
-        False.getMetaClass().undefMethods("new");
+        False.getMetaClass().undefineMethod("new");
 
         return False;
     }
@@ -125,7 +125,7 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
 
         True.defineAnnotatedMethodsIndividually(True.class);
         True.defineAnnotatedMethodsIndividually(RubyBoolean.class);
-        True.getMetaClass().undefMethods("new");
+        True.getMetaClass().undefineMethod("new");
 
         return True;
     }

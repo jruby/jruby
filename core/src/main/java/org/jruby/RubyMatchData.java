@@ -87,7 +87,7 @@ public class RubyMatchData extends RubyObject {
                 kindOf(new RubyModule.JavaClassKindOf(RubyMatchData.class)).
                 classIndex(ClassIndex.MATCHDATA).
                 defineMethods(context, RubyMatchData.class).
-                tap(c -> c.getSingletonClass().undefMethods("new", "allocate"));
+                tap(c -> c.getSingletonClass().undefMethods(context, "new", "allocate"));
     }
 
     public RubyMatchData(Ruby runtime) {

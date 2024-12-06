@@ -57,6 +57,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Create;
+import org.jruby.api.JRubyAPI;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
@@ -122,7 +123,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                 reifiedClass(RubyArray.class).
                 kindOf(new RubyModule.JavaClassKindOf(RubyArray.class)).
                 classIndex(ClassIndex.ARRAY).
-                include(Enumerable).
+                include(context, Enumerable).
                 defineMethods(context, RubyArray.class);
     }
 
@@ -911,9 +912,15 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return store(metaClass.runtime.getCurrentContext(), index, value);
     }
 
-    /** rb_ary_store
-     *
+    /**
+     * Store an element at the specified index or throw if the index is invalid.
+     * @param context the current thread context
+     * @param index the offset to store the value
+     * @param value the value to be stored
+     * @return the value set
      */
+    // MRI: rb_ary_store
+    @JRubyAPI
     public IRubyObject store(ThreadContext context, long index, IRubyObject value) {
         if (index < 0 && (index += realLength) < 0) {
             throw context.runtime.newIndexError("index " + (index - realLength) + " out of array");

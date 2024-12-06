@@ -512,7 +512,7 @@ public class RubyTime extends RubyObject {
         return defineClass(context, "Time", Object, RubyTime::new).
                 reifiedClass(RubyTime.class).
                 classIndex(ClassIndex.TIME).
-                include(Comparable).
+                include(context, Comparable).
                 defineMethods(context, RubyTime.class);
     }
 

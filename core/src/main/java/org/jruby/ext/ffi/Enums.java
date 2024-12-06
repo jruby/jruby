@@ -44,7 +44,7 @@ import org.jruby.runtime.ThreadContext;
 @JRubyClass(name="FFI::Enums", parent="Object")
 public final class Enums extends RubyObject {
     public static RubyClass createEnumsClass(ThreadContext context, RubyModule FFI, RubyClass Object, RubyModule DataConverter) {
-        return FFI.defineClassUnder(context, "Enums", Object, Enums::new).include(DataConverter);
+        return FFI.defineClassUnder(context, "Enums", Object, Enums::new).include(context, DataConverter);
     }
 
     private Enums(Ruby runtime, RubyClass klass) {

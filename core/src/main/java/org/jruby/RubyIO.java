@@ -326,7 +326,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 reifiedClass(RubyIO.class).
                 kindOf(new RubyModule.JavaClassKindOf(RubyIO.class)).
                 classIndex(ClassIndex.IO).
-                include(Enumerable).
+                include(context, Enumerable).
                 defineMethods(context, RubyIO.class).
                 // Constants for seek
                 defineConstant(context, "SEEK_SET", asFixnum(context, PosixShim.SEEK_SET)).

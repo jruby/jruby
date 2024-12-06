@@ -65,7 +65,7 @@ public class ConditionVariable extends RubyObject {
                 Thread.defineClassUnder(context, "ConditionVariable", Object, ConditionVariable::new).
                         reifiedClass(ConditionVariable.class).
                         defineMethods(context, ConditionVariable.class).
-                        undefMethods("initialize_copy"));
+                        undefMethods(context, "initialize_copy"));
     }
 
     @JRubyMethod(name = "wait")

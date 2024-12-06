@@ -36,7 +36,7 @@ public class RubyIOBuffer extends RubyObject {
 
     public static RubyClass createIOBufferClass(ThreadContext context, RubyClass Object, RubyModule Comparable, RubyClass IO) {
         RubyClass IOBuffer = IO.defineClassUnder(context, "Buffer", Object, RubyIOBuffer::new).
-                include(Comparable).
+                include(context, Comparable).
                 defineMethods(context, RubyIOBuffer.class).
                 defineConstants(context, RubyIOBuffer.class);
 

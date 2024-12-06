@@ -258,7 +258,8 @@ public class Queue extends RubyObject implements DataType {
     public static RubyClass setup(ThreadContext context, RubyClass Thread, RubyClass Object) {
         return (RubyClass) Object.setConstant("Queue",
                 Thread.defineClassUnder(context, "Queue", Object, Queue::new).
-                        reifiedClass(Queue.class).defineMethods(context, Queue.class).undefMethods("initialize_copy"));
+                        reifiedClass(Queue.class).defineMethods(context, Queue.class).
+                        undefMethods(context, "initialize_copy"));
     }
 
     public static RubyClass setupError(ThreadContext context, RubyClass Queue, RubyClass StopIteration, RubyClass Object) {

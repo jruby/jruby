@@ -141,7 +141,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 reifiedClass(RubyString.class).
                 kindOf(new RubyModule.JavaClassKindOf(RubyString.class)).
                 classIndex(ClassIndex.STRING).
-                include(Comparable).
+                include(context, Comparable).
                 defineMethods(context, RubyString.class);
     }
 
@@ -6756,6 +6756,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return value.bytes();
     }
 
+    /**
+     * Get the ByteList which backs this Ruby String
+     * @return The byte list
+     */
+    @JRubyAPI
     public ByteList getByteList() {
         return value;
     }

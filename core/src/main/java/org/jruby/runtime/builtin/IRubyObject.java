@@ -132,12 +132,14 @@ public interface IRubyObject {
      * Retrieve <code>self.class</code>.
      * @return the Ruby (meta) class
      */
+    @JRubyAPI
     RubyClass getMetaClass();
     
     /**
      * Retrieve <code>self.singleton_class</code>.
      * @return the Ruby singleton class
      */
+    @JRubyAPI
     RubyClass getSingletonClass();
     
     /**

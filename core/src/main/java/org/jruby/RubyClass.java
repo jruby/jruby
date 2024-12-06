@@ -120,8 +120,12 @@ public class RubyClass extends RubyModule {
         Class.reifiedClass(RubyClass.class).
                 kindOf(new RubyModule.JavaClassKindOf(RubyClass.class)).
                 classIndex(ClassIndex.CLASS).
-                undefMethods("module_function", "append_features", "prepend_features", "extend_object", "refine").
                 defineAnnotatedMethodsIndividually(RubyClass.class);
+        Class.undefineMethod("module_function");
+        Class.undefineMethod("append_features");
+        Class.undefineMethod("prepend_features");
+        Class.undefineMethod("extend_object");
+        Class.undefineMethod("refine");
 
         runtime.setBaseNewMethod(Class.searchMethod("new"));
     }
@@ -153,9 +157,9 @@ public class RubyClass extends RubyModule {
      * @return itself for a composable API
      */
     @JRubyAPI
-    public RubyClass allocator(ObjectAllocator allocator) {
+    public <T extends RubyClass> T allocator(ObjectAllocator allocator) {
         this.allocator = allocator;
-        return this;
+        return (T) this;
     }
 
     /**
@@ -164,9 +168,9 @@ public class RubyClass extends RubyModule {
      * @return itself for composable API
      */
     @JRubyAPI
-    public RubyClass marshalWith(ObjectMarshal marshal) {
+    public <T extends RubyClass> T marshalWith(ObjectMarshal marshal) {
         this.marshal = marshal;
-        return this;
+        return (T) this;
     }
 
     /**
@@ -395,8 +399,7 @@ public class RubyClass extends RubyModule {
         RubyClass obj = superClass == null ?
                 new RubyClass(runtime).marshalWith(DEFAULT_OBJECT_MARSHAL) :
                 new RubyClass(runtime, superClass);
-        obj.allocator(allocator).setBaseName(name);
-        return obj;
+        return obj.allocator(allocator).baseName(name);
     }
 
     /** separate path for MetaClass and IncludedModuleWrapper construction
@@ -491,9 +494,10 @@ public class RubyClass extends RubyModule {
      * in MRI.
      */
     public static RubyClass newClass(Ruby runtime, RubyClass superClass, String name, ObjectAllocator allocator, RubyModule parent, boolean setParent) {
-        RubyClass clazz = newClass(runtime, superClass);
-        clazz.setBaseName(name);
-        clazz.allocator(allocator);
+        RubyClass clazz = newClass(runtime, superClass).
+                allocator(allocator).
+                baseName(name);
+
         clazz.makeMetaClass(superClass.getMetaClass());
         if (setParent) clazz.setParent(parent);
         parent.setConstant(name, clazz);
@@ -503,9 +507,9 @@ public class RubyClass extends RubyModule {
 
     public static RubyClass newClass(Ruby runtime, RubyClass superClass, String name, ObjectAllocator allocator,
                                      RubyModule parent, boolean setParent, String file, int line) {
-        RubyClass clazz = newClass(runtime, superClass);
-        clazz.setBaseName(name);
-        clazz.allocator(allocator);
+        RubyClass clazz = newClass(runtime, superClass).
+                allocator(allocator).
+                baseName(name);
         clazz.makeMetaClass(superClass.getMetaClass());
         if (setParent) clazz.setParent(parent);
         parent.setConstant(name, clazz, file, line);
@@ -518,9 +522,9 @@ public class RubyClass extends RubyModule {
      * call sites to improve dynamic invocation performance.
      */
     public static RubyClass newClass(Ruby runtime, RubyClass superClass, String name, ObjectAllocator allocator, RubyModule parent, boolean setParent, CallSite[] extraCallSites) {
-        RubyClass clazz = newClass(runtime, superClass, extraCallSites);
-        clazz.setBaseName(name);
-        clazz.allocator(allocator);
+        RubyClass clazz = newClass(runtime, superClass, extraCallSites).
+                allocator(allocator).
+                baseName(name);
         clazz.makeMetaClass(superClass.getMetaClass());
         if (setParent) clazz.setParent(parent);
         parent.setConstant(name, clazz, BUILTIN_CONSTANT, -1);

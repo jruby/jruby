@@ -85,7 +85,7 @@ public abstract class RubyInteger extends RubyNumeric {
                 kindOf(new RubyModule.JavaClassKindOf(RubyInteger.class)).
                 classIndex(ClassIndex.INTEGER).
                 defineMethods(context, RubyInteger.class).
-                tap(c-> c.getSingletonClass().undefMethods("new"));
+                tap(c-> c.getSingletonClass().undefMethods(context, "new"));
     }
 
     public RubyInteger(Ruby runtime, RubyClass rubyClass) {

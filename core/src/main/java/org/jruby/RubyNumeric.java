@@ -86,7 +86,7 @@ public class RubyNumeric extends RubyObject {
                 reifiedClass(RubyNumeric.class).
                 kindOf(new RubyModule.JavaClassKindOf(RubyNumeric.class)).
                 classIndex(ClassIndex.NUMERIC).
-                include(Comparable).
+                include(context, Comparable).
                 defineMethods(context, RubyNumeric.class);
     }
 

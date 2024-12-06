@@ -446,16 +446,14 @@ public class RubyModule extends RubyObject {
      *
      */
     public static RubyModule newModule(Ruby runtime, String name, RubyModule parent, boolean setParent, String file, int line) {
-        RubyModule module = newModule(runtime);
-        module.setBaseName(name);
+        RubyModule module = newModule(runtime).baseName(name);
         if (setParent) module.setParent(parent);
         parent.setConstant(name, module, file, line);
         return module;
     }
 
     public static RubyModule newModule(Ruby runtime, String name, RubyModule parent, boolean setParent) {
-        RubyModule module = newModule(runtime);
-        module.setBaseName(name);
+        RubyModule module = newModule(runtime).baseName(name);
         if (setParent) module.setParent(parent);
         parent.setConstant(name, module);
         return module;
@@ -639,23 +637,11 @@ public class RubyModule extends RubyObject {
      * Set the base name of the class. If null, the class effectively becomes
      * anonymous (though constants elsewhere may reference it).
      * @param name the new base name of the class
+     * @deprecated Use {@link org.jruby.RubyModule#baseName(String)} instead.
      */
+    @Deprecated(since = "10.0")
     public void setBaseName(String name) {
-        baseName = name;
-        cachedName = null;
-        cachedRubyName = null;
-    }
-
-    /**
-     * Set the base name of the class. If null, the class effectively becomes
-     * anonymous (though constants elsewhere may reference it).
-     * @param name the new base name of the class
-     * @return itself for a composable API.
-     */
-    @JRubyAPI
-    public RubyModule baseName(String name) {
-        setBaseName(name);
-        return this;
+        baseName(name);
     }
 
     /**
@@ -895,7 +881,7 @@ public class RubyModule extends RubyObject {
         }
 
         if (arg.isNil()) {
-            setBaseName(null);
+            baseName(null);
         } else {
             RubyString name = arg.convertToString();
 
@@ -906,8 +892,7 @@ public class RubyModule extends RubyObject {
 
             // We make sure we generate ISO_8859_1 String and also guarantee when we want to print this name
             // later it does not lose track of the orignal encoding.
-            RubySymbol symbol = asSymbol(context, name.getByteList());
-            setBaseName(symbol.idString());
+            baseName(asSymbol(context, name.getByteList()).idString());
         }
 
         return this;
@@ -1508,6 +1493,21 @@ public class RubyModule extends RubyObject {
     }
 
     /**
+     * Set the base name of the class. If null, the class effectively becomes
+     * anonymous (though constants elsewhere may reference it).
+     * @param name the new base name of the class
+     * @return itself for a composable API.
+     */
+    @JRubyAPI
+    public <T extends RubyModule> T baseName(String name) {
+        baseName = name;
+        cachedName = null;
+        cachedRubyName = null;
+
+        return (T) this;
+    }
+
+    /**
      * Sets the ClassIndex for this type
      * @param classIndex to be set
      * @return itself for composable API
@@ -1599,12 +1599,28 @@ public class RubyModule extends RubyObject {
     /**
      * In Defining this type include a module.  Note: This is for defining native extensions
      * and differs from method of same name which is live include while executing Ruby code.
-     * @param module to be included
+     *
+     * @param context
+     * @param module  to be included
      * @return itself for composable API
      */
     @JRubyAPI
-    public <T extends RubyModule> T include(RubyModule module) {
+    public <T extends RubyModule> T include(ThreadContext context, RubyModule module) {
+        // FIXME: context needs to feed down into includeModule so we are not getting runtime
         includeModule(module);
+        return (T) this;
+    }
+
+    /**
+     * Set the method for determining whether an Object is a kind of the supplied type.
+     *
+     * @param kindOf method to determine kind-of status
+     * @return itself for composblae API
+     * @param <T>  class or module types
+     */
+    @JRubyAPI
+    public <T extends RubyModule> T kindOf(KindOf kindOf) {
+        this.kindOf = kindOf;
         return (T) this;
     }
 
@@ -1623,17 +1639,25 @@ public class RubyModule extends RubyObject {
 
     /**
      * Undefine a method from this type.
-     * @param names the methods to undefine
+     *
+     * @param context
+     * @param names   the methods to undefine
      * @return this type for composable API
      */
     @JRubyAPI
-    public <T extends RubyModule> T undefMethods(String... names) {
-        for (var name : names) {
+    public <T extends RubyModule> T undefMethods(ThreadContext context, String... names) {
+        // FIXME: context needs to feed down into undefineMethod so we are not getting runtime
+        for (String name : names) {
             undefineMethod(name);
         }
         return (T) this;
     }
 
+    /**
+     * Udef a method.  This is an internal API only meant for bootstrapping
+     * before the first ThreadContext is created. Use
+     * {@link RubyModule#undefMethods(ThreadContext, String...)} instead.
+     */
     public void undefineMethod(String name) {
         methodLocation.addMethod(name, UndefinedMethod.getInstance());
     }
@@ -3505,7 +3529,7 @@ public class RubyModule extends RubyObject {
     public RubyModule append_features(IRubyObject include) {
         var context = getRuntime().getCurrentContext();
 
-        verifyNormalModule(context, include).includeModule(this);
+        verifyNormalModule(context, include).include(context, this);
 
         return this;
     }
@@ -3538,7 +3562,7 @@ public class RubyModule extends RubyObject {
     public IRubyObject extend_object(ThreadContext context, IRubyObject obj) {
         if (!isModule()) throw typeError(context, this, "Module");
 
-        obj.getSingletonClass().includeModule(this);
+        obj.getSingletonClass().include(context, this);
         return obj;
     }
 
@@ -5219,10 +5243,9 @@ public class RubyModule extends RubyObject {
 
     private void setParentForModule(final String name, final IRubyObject value) {
         // if adding a module under a constant name, set that module's basename to the constant name
-        if ( value instanceof RubyModule ) {
-            RubyModule module = (RubyModule) value;
+        if ( value instanceof RubyModule module) {
             if (module != this && (module.getBaseName() == null || module.usingTemporaryName())) {
-                module.setBaseName(name);
+                module.baseName(name);
                 module.setParent(this);
             }
             module.calculateName();
@@ -5998,12 +6021,6 @@ public class RubyModule extends RubyObject {
 
     public KindOf kindOf = KindOf.DEFAULT_KIND_OF;
 
-    @JRubyAPI
-    public <T extends RubyModule> T kindOf(KindOf kindOf) {
-        this.kindOf = kindOf;
-        return (T) this;
-    }
-
     public final int id;
 
     /**
@@ -6280,8 +6297,11 @@ public class RubyModule extends RubyObject {
     public static void createRefinementClass(RubyClass Refinement) {
         Refinement.reifiedClass(RubyModule.class).
                 classIndex(ClassIndex.REFINEMENT).
-                undefMethods("append_features", "prepend_features", "extend_object").
                 defineAnnotatedMethodsIndividually(RefinementMethods.class);
+
+        Refinement.undefineMethod("append_features");
+        Refinement.undefineMethod("prepend_features");
+        Refinement.undefineMethod("extend_object");
     }
 
     public static class RefinementMethods {

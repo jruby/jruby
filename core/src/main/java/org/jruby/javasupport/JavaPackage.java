@@ -64,14 +64,12 @@ public class JavaPackage extends RubyModule {
         RubyClass superClass = new BlankSlateWrapper(context.runtime, Module, Kernel);
         RubyClass JavaPackage = RubyClass.newClass(context.runtime, superClass);
         JavaPackage.setMetaClass(Module);
-        JavaPackage.allocator(ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        JavaPackage.allocator(ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR).
+                baseName("JavaPackage").
+                defineMethods(context, JavaPackage.class);
         ((MetaClass) JavaPackage.makeMetaClass(superClass)).setAttached(JavaPackage);
-
-        JavaPackage.setBaseName("JavaPackage");
         JavaPackage.setParent(Java);
-        // JavaPackage.setReifiedClass(JavaPackage.class);
-
-        return JavaPackage.defineMethods(context, JavaPackage.class);
+        return JavaPackage;
     }
 
     static RubyModule newPackage(Ruby runtime, CharSequence name, RubyModule parent) {

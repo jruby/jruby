@@ -139,7 +139,7 @@ public class RubyHash extends RubyObject implements Map {
                 reifiedClass(RubyHash.class).
                 kindOf(new RubyModule.JavaClassKindOf(RubyHash.class)).
                 classIndex(ClassIndex.HASH).
-                include(Enumerable).
+                include(context, Enumerable).
                 defineMethods(context, RubyHash.class);
     }
 
@@ -1204,9 +1204,15 @@ public class RubyHash extends RubyObject implements Map {
         }
     }
 
-    /** rb_hash_aset
+    /**
+     * Set a key/value pair into this hash.
      *
+     * @param context the current thread context
+     * @param key the key
+     * @param value the value
+     * @return the value set
      */
+    // MRI: rb_hash_aset
     @JRubyMethod(name = {"[]=", "store"})
     public IRubyObject op_aset(ThreadContext context, IRubyObject key, IRubyObject value) {
         modify();

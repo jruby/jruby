@@ -85,7 +85,8 @@ public abstract class JavaUtil {
     public static class Enumeration {
 
         static RubyModule define(ThreadContext context, final RubyModule proxy, RubyModule Enumerable) {
-            return proxy.include(Enumerable).
+            return proxy.
+                    include(context, Enumerable).
                     defineMethods(context, Enumeration.class);
         }
 
@@ -106,7 +107,9 @@ public abstract class JavaUtil {
     public static class Iterator {
 
         static RubyModule define(ThreadContext context, final RubyModule proxy, RubyModule Enumerable) {
-            return proxy.include(Enumerable).defineMethods(context, Iterator.class);
+            return proxy.
+                    include(context, Enumerable).
+                    defineMethods(context, Iterator.class);
         }
 
         @JRubyMethod
@@ -126,7 +129,9 @@ public abstract class JavaUtil {
     public static class Collection {
 
         static RubyModule define(ThreadContext context, final RubyModule proxy, RubyModule Enumerable) {
-            return proxy.include(Enumerable).defineMethods(context, Collection.class);
+            return proxy.
+                    include(context, Enumerable).
+                    defineMethods(context, Collection.class);
         }
 
         @JRubyMethod(name = { "length", "size" })

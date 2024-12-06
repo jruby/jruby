@@ -82,9 +82,9 @@ public class RubyArithmeticSequence extends RubyObject {
 
     public static RubyClass createArithmeticSequenceClass(ThreadContext context, RubyClass Enumerator, RubyModule Enumerable) {
         return Enumerator.defineClassUnder(context, "ArithmeticSequence", Enumerator, NOT_ALLOCATABLE_ALLOCATOR).
-                include(Enumerable).
+                include(context, Enumerable).
                 defineMethods(context, RubyArithmeticSequence.class).
-                tap(m -> m.getMetaClass().undefMethods("new"));
+                tap(m -> m.getMetaClass().undefMethods(context, "new"));
     }
 
     public RubyArithmeticSequence(Ruby runtime, RubyClass klass) {

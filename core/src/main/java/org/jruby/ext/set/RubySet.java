@@ -68,7 +68,7 @@ public class RubySet extends RubyObject implements Set {
     static RubyClass createSetClass(ThreadContext context, RubyClass Object, RubyModule Enumerable) {
         RubyClass Set = defineClass(context, "Set", Object, RubySet::new).
                 reifiedClass(RubySet.class).
-                include(Enumerable).
+                include(context, Enumerable).
                 defineMethods(context, RubySet.class).
                 tap(c -> c.marshalWith(new SetMarshal(c.getMarshal())));
 
@@ -1015,7 +1015,7 @@ public class RubySet extends RubyObject implements Set {
                     if (klass == null) {
                         var Hash = hashClass(context);
                         klass = Set.defineClassUnder(context, NAME, Hash, Hash.getAllocator()).
-                                include(getTSort(runtime)).
+                                include(context, getTSort(runtime)).
                                 defineMethods(context, DivideTSortHash.class);
                         Set.setConstantVisibility(runtime, NAME, true); // private
                     }

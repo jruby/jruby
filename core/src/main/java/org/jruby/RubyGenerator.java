@@ -46,7 +46,7 @@ import static org.jruby.api.Error.typeError;
 public class RubyGenerator extends RubyObject {
     public static RubyClass createGeneratorClass(ThreadContext context, RubyClass Object, RubyClass Enumerator, RubyModule Enumerable) {
         return Enumerator.defineClassUnder(context, "Generator", Object, RubyGenerator::new).
-                include(Enumerable).
+                include(context, Enumerable).
                 defineMethods(context, RubyGenerator.class);
     }
 

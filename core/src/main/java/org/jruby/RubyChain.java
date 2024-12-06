@@ -54,7 +54,7 @@ public class RubyChain extends RubyObject {
 
     public static RubyClass createChainClass(ThreadContext context, RubyClass Object, RubyClass Enumerator, RubyModule Enumerable) {
         return Enumerator.defineClassUnder(context, "Chain", Object, RubyChain::new).
-                include(Enumerable).
+                include(context, Enumerable).
                 defineMethods(context, RubyChain.class);
     }
 

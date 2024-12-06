@@ -106,7 +106,7 @@ public final class StructLayout extends Type {
                 defineConstants(context, StructLayout.class);
         var InlineArray = Struct.defineClassUnder(context, "InlineArray", Object, NOT_ALLOCATABLE_ALLOCATOR);
         RubyClass ArrayProxy = Layout.defineClassUnder(context, "ArrayProxy", InlineArray, NOT_ALLOCATABLE_ALLOCATOR).
-                include(Enumerable).
+                include(context, Enumerable).
                 defineMethods(context, ArrayProxy.class);
 
         Layout.defineClassUnder(context, "CharArrayProxy", ArrayProxy, NOT_ALLOCATABLE_ALLOCATOR).
