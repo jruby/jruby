@@ -46,7 +46,7 @@ public class TestMethodFactories extends Base {
 
     public void setUp() {
         runtime = Ruby.newInstance();
-        context.runtime.getCurrentContext();
+        context = runtime.getCurrentContext();
     }
     
     public void testInvocationMethodFactory() {
