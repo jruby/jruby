@@ -37,6 +37,15 @@ public class Access {
     }
 
     /**
+     * Retrieve the instance of the class BasicObject
+     * @param context the current thread context
+     * @return the Class
+     */
+    public static RubyClass basicObjectClass(ThreadContext context) {
+        return context.runtime.getBasicObject();
+    }
+
+    /**
      * Retrieve the instance of the class Class
      * @param context the current thread context
      * @return the Class

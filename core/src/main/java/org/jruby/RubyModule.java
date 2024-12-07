@@ -144,6 +144,7 @@ import static org.jruby.anno.FrameField.METHODNAME;
 import static org.jruby.anno.FrameField.SCOPE;
 import static org.jruby.anno.FrameField.SELF;
 import static org.jruby.anno.FrameField.VISIBILITY;
+import static org.jruby.api.Access.basicObjectClass;
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
@@ -515,13 +516,16 @@ public class RubyModule extends RubyObject {
      * @return Value of property superClass.
      */
     public RubyClass getSuperClass() {
-        return superClass;
+        return superClass();
     }
 
+    /**
+     * @param superClass
+     * @deprecated Use {@link RubyModule#superClass(RubyClass)} instead.
+     */
+    @Deprecated(since = "10.0")
     public void setSuperClass(RubyClass superClass) {
-        // update superclass reference
-        this.superClass = superClass;
-        if (superClass != null && superClass.isSynchronized()) becomeSynchronized();
+        superClass(superClass);
     }
 
     public RubyModule getParent() {
@@ -929,10 +933,8 @@ public class RubyModule extends RubyObject {
     private RubyModule createNewRefinedModule(ThreadContext context, RubyModule klass) {
         Ruby runtime = context.runtime;
 
-        RubyModule newRefinement = new RubyModule(runtime, runtime.getRefinement());
-
-        RubyClass superClass = refinementSuperclass(runtime, klass);
-        newRefinement.setSuperClass(superClass);
+        RubyModule newRefinement = new RubyModule(runtime, runtime.getRefinement()).
+                superClass(refinementSuperclass(context, klass));
         newRefinement.setFlag(REFINED_MODULE_F, true);
         newRefinement.setFlag(NEEDSIMPL_F, false); // Refinement modules should not do implementer check
         newRefinement.refinedClass = klass;
@@ -942,9 +944,9 @@ public class RubyModule extends RubyObject {
         return newRefinement;
     }
 
-    private static RubyClass refinementSuperclass(Ruby runtime, RubyModule superClass) {
+    private static RubyClass refinementSuperclass(ThreadContext context, RubyModule superClass) {
         if (superClass.isModule()) {
-            return new IncludedModuleWrapper(runtime, runtime.getBasicObject(), superClass);
+            return new IncludedModuleWrapper(context.runtime, basicObjectClass(context), superClass);
         } else {
             return (RubyClass) superClass;
         }
@@ -1005,7 +1007,7 @@ public class RubyModule extends RubyObject {
         c.refinedClass = moduleToRefine;
         for (refinement = refinement.getSuperClass(); refinement != null; refinement = refinement.getSuperClass()) {
             refinement.setFlag(IS_OVERLAID_F, true);
-            c.setSuperClass(new IncludedModuleWrapper(context.runtime, c.getSuperClass(), refinement));
+            c.superClass(new IncludedModuleWrapper(context.runtime, c.getSuperClass(), refinement));
             c = c.getSuperClass();
             c.refinedClass = moduleToRefine;
         }
@@ -1049,7 +1051,7 @@ public class RubyModule extends RubyObject {
         if (refinements == null) return; // No refinements registered for this module
 
         for (Map.Entry<RubyModule, RubyModule> entry: refinements.entrySet()) {
-            usingRefinement(context.runtime, cref, entry.getKey(), entry.getValue());
+            usingRefinement(context, cref, entry.getKey(), entry.getValue());
         }
     }
 
@@ -1061,7 +1063,7 @@ public class RubyModule extends RubyObject {
      *
      * MRI: rb_using_refinement
      */
-    private static void usingRefinement(Ruby runtime, RubyModule cref, RubyModule klass, RubyModule module) {
+    private static void usingRefinement(ThreadContext context, RubyModule cref, RubyModule klass, RubyModule module) {
         RubyModule iclass, c, superclass = klass;
 
         if (cref.refinements == Collections.EMPTY_MAP) {
@@ -1084,8 +1086,8 @@ public class RubyModule extends RubyObject {
         }
 
         module.setFlag(IS_OVERLAID_F, true);
-        superclass = refinementSuperclass(runtime, superclass);
-        c = iclass = new IncludedModuleWrapper(runtime, (RubyClass) superclass, module);
+        superclass = refinementSuperclass(context, superclass);
+        c = iclass = new IncludedModuleWrapper(context.runtime, (RubyClass) superclass, module);
         c.refinedClass = klass;
 
 //        RCLASS_M_TBL(OBJ_WB_UNPROTECT(c)) =
@@ -1094,7 +1096,7 @@ public class RubyModule extends RubyObject {
         module = module.getSuperClass();
         while (module != null && module != klass) {
             module.setFlag(IS_OVERLAID_F, true);
-            c.setSuperClass(new IncludedModuleWrapper(runtime, c.getSuperClass(), module));
+            c.superClass(new IncludedModuleWrapper(context.runtime, c.getSuperClass(), module));
             c = c.getSuperClass();
             c.refinedClass = klass;
             module = module.getSuperClass();
@@ -1621,6 +1623,29 @@ public class RubyModule extends RubyObject {
     @JRubyAPI
     public <T extends RubyModule> T kindOf(KindOf kindOf) {
         this.kindOf = kindOf;
+        return (T) this;
+    }
+
+    /**
+     * Get this module/class super class.
+     * @return the super class
+     */
+    @JRubyAPI
+    public RubyClass superClass() {
+        return superClass;
+    }
+
+    /**
+     * Set this module/class super class.
+     * @param superClass to be set
+     * @return itself for composable API
+     * @param <T> class or module type
+     */
+    @JRubyAPI
+    public <T extends RubyModule> T superClass(RubyClass superClass) {
+        // update superclass reference
+        this.superClass = superClass;
+        if (superClass != null && superClass.isSynchronized()) becomeSynchronized();
         return (T) this;
     }
 
@@ -2885,7 +2910,7 @@ public class RubyModule extends RubyObject {
         if (!getMetaClass().isSingleton()) {
             setMetaClass(originalModule.getSingletonClassCloneAndAttach(this));
         }
-        setSuperClass(originalModule.getSuperClass());
+        superClass(originalModule.superClass());
         if (originalModule.hasVariables()) syncVariables(originalModule);
         syncConstants(originalModule);
 
@@ -4113,7 +4138,7 @@ public class RubyModule extends RubyObject {
 
                 origin.addSubclass((RubyClass) this);
             }
-            setSuperClass(origin);
+            superClass(origin);
         }
 
         RubyModule inclusionPoint = this;
@@ -4206,7 +4231,7 @@ public class RubyModule extends RubyObject {
             wrapper.addSubclass(insertAboveClass);
         }
 
-        insertAbove.setSuperClass(wrapper);
+        insertAbove.superClass(wrapper);
         insertAbove = insertAbove.getSuperClass();
 
         if (isRefinement()) {

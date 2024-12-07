@@ -140,9 +140,9 @@ public class Java implements Library {
         runtime.getLoadService().load("jruby/java.rb", false);
 
         // rewire ArrayJavaProxy superclass to point at Object, so it inherits Object behaviors
-        var ArrayJavaProxy = runtime.getClass("ArrayJavaProxy").
+        runtime.getClass("ArrayJavaProxy").
+                superClass(objectClass).
                 include(context, Enumerable);
-        ArrayJavaProxy.setSuperClass(objectClass);
 
         RubyClassPathVariable.createClassPathVariable(context, Enumerable);
 

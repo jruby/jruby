@@ -425,7 +425,7 @@ public class RubyClass extends RubyModule {
             }
         }
 
-        setSuperClass(superClass); // this is the only case it might be null here (in MetaClass construction)
+        superClass(superClass); // this is the only case it might be null here (in MetaClass construction)
     }
 
     /** used by CLASS_ALLOCATOR (any Class' class will be a Class!)
@@ -444,7 +444,7 @@ public class RubyClass extends RubyModule {
      */
     protected RubyClass(Ruby runtime, RubyClass superClazz) {
         this(runtime);
-        setSuperClass(superClazz);
+        superClass(superClazz);
         marshal = superClazz.marshal; // use parent's marshal
         superClazz.addSubclass(this);
         allocator = superClazz.allocator;
@@ -456,7 +456,7 @@ public class RubyClass extends RubyModule {
      */
     protected RubyClass(Ruby runtime, RubyClass superClazz, CallSite[] extraCallSites) {
         this(runtime);
-        setSuperClass(superClazz);
+        superClass(superClazz);
         this.marshal = superClazz.marshal; // use parent's marshal
         superClazz.addSubclass(this);
 
@@ -1001,12 +1001,9 @@ public class RubyClass extends RubyModule {
     }
 
     private RubyClass initializeCommon(ThreadContext context, RubyClass superClazz, Block block) {
-        setSuperClass(superClazz);
+        superClass(superClazz);
         allocator = superClazz.allocator;
         makeMetaClass(superClazz.getMetaClass());
-
-        marshal = superClazz.marshal;
-
         superClazz.addSubclass(this);
 
         inherit(superClazz);
