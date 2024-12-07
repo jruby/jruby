@@ -77,10 +77,12 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         super(runtime, klazz, map);
     }
 
+    /**
+     * The binding of the JRuby methods in this class are done when the java Map's proxy is being constructed.
+     * @See {@link org.jruby.javasupport.Java#createProxyClass(ThreadContext, RubyClass, Class, RubyClass, boolean)}.
+     */
     public static RubyClass createMapJavaProxy(ThreadContext context, RubyClass _ConcreteJavaProxy) {
         var MapJavaProxy = defineClass(context, "MapJavaProxy", _ConcreteJavaProxy, MapJavaProxy::new);
-        // this is done while proxy class is created. See org.jruby.javasuppoer.java.createProxyClass()
-        // MapJavaProxy.defineAnnotatedMethods(MapJavaProxy.class);
         ConcreteJavaProxy.initialize(MapJavaProxy);
         return MapJavaProxy;
     }

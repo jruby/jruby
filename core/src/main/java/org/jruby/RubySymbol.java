@@ -145,17 +145,13 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     }
 
     public static RubyClass createSymbolClass(ThreadContext context, RubyClass Object, RubyModule Comparable) {
-        RubyClass Symbol = defineClass(context, "Symbol", Object, NOT_ALLOCATABLE_ALLOCATOR).
+        return defineClass(context, "Symbol", Object, NOT_ALLOCATABLE_ALLOCATOR).
                 reifiedClass(RubySymbol.class).
                 classIndex(ClassIndex.SYMBOL).
                 defineMethods(context, RubySymbol.class).
-                kindOf(new RubyModule.JavaClassKindOf(RubySymbol.class));
-
-        Symbol.getMetaClass().
-                undefMethods(context, "new").
-                include(context, Comparable);
-
-        return Symbol;
+                kindOf(new RubyModule.JavaClassKindOf(RubySymbol.class)).
+                include(context, Comparable).
+                tap(c -> c.getMetaClass().undefMethods(context, "new"));
     }
 
     @Override
