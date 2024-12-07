@@ -1006,6 +1006,8 @@ public class RubyClass extends RubyModule {
         makeMetaClass(superClazz.getMetaClass());
         superClazz.addSubclass(this);
 
+        marshal = superClazz.marshal;
+
         inherit(superClazz);
         super.initialize(context, block);
 
