@@ -539,6 +539,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
             if (args.length > 1 && args[args.length - 1] == Block.class) {
                 rubyArgCount--;
+                hasBlock = true;
             }
 
             if (rubyArgCount == 1) {
