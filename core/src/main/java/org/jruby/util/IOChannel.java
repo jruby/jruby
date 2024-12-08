@@ -95,21 +95,21 @@ public abstract class IOChannel implements Channel {
 
         CacheEntry readMethodEntry = read.retrieveCache(io);
         RubyFixnum remainingFixnum = asFixnum(context, remaining);
-        IRubyObject readValue;
+        IRubyObject readValue, retValue;
         if (readMethodEntry.method.getSignature().isTwoArguments()) {
             if (dst.hasArray()) {
                 readValue = RubyString.newStringNoCopy(runtime, dst.array(), dst.position(), remaining);
             } else {
                 readValue = RubyString.newStringLight(runtime, remaining);
             }
-            read.call(context, io, io, remainingFixnum, readValue);
+            retValue = read.call(context, io, io, remainingFixnum, readValue);
         } else {
-            readValue = read.call(context, io, io, remainingFixnum);
+            retValue = readValue = read.call(context, io, io, remainingFixnum);
         }
 
         int returnValue = -1;
         RubyString readString;
-        if (!readValue.isNil()
+        if (!retValue.isNil()
                 && (readString = readValue.convertToString()).size() > 0) {
             ByteList str = readString.getByteList();
             int realSize = str.getRealSize();
