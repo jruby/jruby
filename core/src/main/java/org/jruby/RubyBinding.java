@@ -116,11 +116,8 @@ public class RubyBinding extends RubyObject {
     }
 
     @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
-    @Override
-    public IRubyObject initialize_copy(IRubyObject other) {
-        RubyBinding otherBinding = (RubyBinding)other;
-        
-        binding = otherBinding.binding.clone();
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject other) {
+        binding = ((RubyBinding) other).binding.clone();
         
         return this;
     }

@@ -700,26 +700,31 @@ public class RubyNumeric extends RubyObject {
      */
     @Override
     @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
-    public IRubyObject initialize_copy(IRubyObject arg) {
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject arg) {
         if (arg == this) return arg; // It cannot init copy it will still work if it is itself...fun times.
 
         checkFrozen();
+        throw typeError(context, "can't copy ", this, "");
+    }
 
-        throw typeError(getRuntime().getCurrentContext(), "can't copy ", this, "");
+    /**
+     * @param other
+     * @return
+     * @deprecated Use {@link org.jruby.RubyNumeric#coerce(ThreadContext, IRubyObject)} instead.
+     */
+    @Deprecated(since = "10.0")
+    public IRubyObject coerce(IRubyObject other) {
+        return coerce(getCurrentContext(), other);
     }
 
     /** num_coerce
      *
      */
     @JRubyMethod(name = "coerce")
-    public IRubyObject coerce(IRubyObject other) {
-        var context = getRuntime().getCurrentContext();
-        if (metaClass == other.getMetaClass()) return newArray(context, other, this);
-
-        IRubyObject cdr = RubyKernel.new_float(context, this);
-        IRubyObject car = RubyKernel.new_float(context, other);
-
-        return newArray(context, car, cdr);
+    public IRubyObject coerce(ThreadContext context, IRubyObject other) {
+        return metaClass == other.getMetaClass() ?
+                newArray(context, other, this) :
+                newArray(context, RubyKernel.new_float(context, other), RubyKernel.new_float(context, this));
     }
 
     /** num_uplus
@@ -788,7 +793,7 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "div")
     public IRubyObject div(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyNumeric num && num.isZero()) throw context.runtime.newZeroDivisionError();
+        if (other instanceof RubyNumeric num && num.isZero(context)) throw context.runtime.newZeroDivisionError();
 
         IRubyObject quotient = numFuncall(context, this, sites(context).op_quo, other);
         return sites(context).floor.call(context, quotient, quotient);
@@ -853,8 +858,8 @@ public class RubyNumeric extends RubyObject {
         IRubyObject z = sites.op_mod.call(context, this, this, y);
 
         if ((!Helpers.rbEqual(context, z, asFixnum(context, 0), sites.op_equal).isTrue()) &&
-                ((x.isNegative() && RubyNumeric.positiveInt(context, y)) ||
-                        (x.isPositive() && RubyNumeric.negativeInt(context, y)))) {
+                ((x.isNegative(context) && RubyNumeric.positiveInt(context, y)) ||
+                        (x.isPositive(context) && RubyNumeric.negativeInt(context, y)))) {
             if (y instanceof RubyFloat && Double.isInfinite(((RubyFloat)y).value)) {
                 return x;
             }
@@ -865,12 +870,14 @@ public class RubyNumeric extends RubyObject {
 
     public static boolean positiveInt(ThreadContext context, IRubyObject num) {
         return num instanceof RubyNumeric numeric ?
-                numeric.isPositive() :compareWithZero(context, num, sites(context).op_gt_checked).isTrue();
+                numeric.isPositive(context) :
+                compareWithZero(context, num, sites(context).op_gt_checked).isTrue();
     }
 
     public static boolean negativeInt(ThreadContext context, IRubyObject num) {
         return num instanceof RubyNumeric numeric ?
-                numeric.isNegative() : compareWithZero(context, num, sites(context).op_lt_checked).isTrue();
+                numeric.isNegative(context) :
+                compareWithZero(context, num, sites(context).op_lt_checked).isTrue();
     }
 
     /** num_abs
@@ -929,8 +936,17 @@ public class RubyNumeric extends RubyObject {
         return equalInternal(context, this, asFixnum(context, 0)) ? context.tru : context.fals;
     }
 
+    /**
+     * @return
+     * @deprecated Use {@link org.jruby.RubyNumeric#isZero(ThreadContext)} instead.
+     */
+    @Deprecated(since = "10.0")
     public boolean isZero() {
-        return zero_p(metaClass.runtime.getCurrentContext()).isTrue();
+        return isZero(getCurrentContext());
+    }
+
+    public boolean isZero(ThreadContext context) {
+        return zero_p(context).isTrue();
     }
 
     /** num_nonzero_p
@@ -1075,7 +1091,7 @@ public class RubyNumeric extends RubyObject {
 
     // MRI: num_step_negative_p
     private static boolean numStepNegative(ThreadContext context, IRubyObject num) {
-        if (num instanceof RubyInteger in && context.sites.Integer.op_lt.isBuiltin(num)) return in.isNegative();
+        if (num instanceof RubyInteger in && context.sites.Integer.op_lt.isBuiltin(num)) return in.isNegative(context);
 
         RubyFixnum zero = asFixnum(context, 0);
         IRubyObject r = getMetaClass(num).finvokeChecked(context, num, sites(context).op_gt_checked, zero);
@@ -1493,7 +1509,7 @@ public class RubyNumeric extends RubyObject {
      *
      */
     @JRubyMethod(name = "negative?")
-    public IRubyObject isNegative(ThreadContext context) {
+    public IRubyObject negative_p(ThreadContext context) {
         return compareWithZero(context, this, sites(context).op_lt_checked);
     }
 
@@ -1501,16 +1517,34 @@ public class RubyNumeric extends RubyObject {
      *
      */
     @JRubyMethod(name = "positive?")
-    public IRubyObject isPositive(ThreadContext context) {
+    public IRubyObject positive_p(ThreadContext context) {
         return compareWithZero(context, this, sites(context).op_gt_checked);
     }
 
+    /**
+     * @return
+     * @deprecated Use {@link org.jruby.RubyNumeric#isNegative(ThreadContext)} instead.
+     */
+    @Deprecated(since = "10.0")
     public boolean isNegative() {
-        return isNegative(metaClass.runtime.getCurrentContext()).isTrue();
+        return isNegative(getCurrentContext());
     }
 
+    public boolean isNegative(ThreadContext context) {
+        return negative_p(context).isTrue();
+    }
+
+    /**
+     * @return
+     * @deprecated Use {@link org.jruby.RubyNumeric#isPositive(ThreadContext)} instead.
+     */
+    @Deprecated(since = "10.0")
     public boolean isPositive() {
-        return isPositive(metaClass.runtime.getCurrentContext()).isTrue();
+        return isPositive(getCurrentContext());
+    }
+
+    public boolean isPositive(ThreadContext context) {
+        return positive_p(context).isTrue();
     }
 
     protected static IRubyObject compareWithZero(ThreadContext context, IRubyObject num, JavaSites.CheckedSites site) {

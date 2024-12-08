@@ -2162,23 +2162,15 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return runtime.getFalse();
     }
 
-    // rb_io_init_copy
+    // MRI: rb_io_init_copy
     @JRubyMethod(visibility = Visibility.PRIVATE)
-    @Override
-    public IRubyObject initialize_copy(IRubyObject _io){
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject _io){
         RubyIO dest = this;
-        Ruby runtime = getRuntime();
-        ThreadContext context = runtime.getCurrentContext();
-
-        OpenFile fptr, orig;
-        ChannelFD fd;
-        RubyIO write_io;
-        long pos;
-
-        RubyIO io = TypeConverter.ioGetIO(runtime, _io);
+        RubyIO io = TypeConverter.ioGetIO(context.runtime, _io);
         if (!OBJ_INIT_COPY(dest, io)) return dest;
-        orig = io.getOpenFileChecked();
-        fptr = dest.MakeOpenFile();
+
+        OpenFile orig = io.getOpenFileChecked();
+        OpenFile fptr = dest.MakeOpenFile();
 
         // orig is the visible one here but we lock both anyway
         boolean locked1 = orig.lock();
@@ -2199,9 +2191,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             //            pipe_add_fptr(fptr);
             //        #endif
 
-            fd = orig.fd().dup();
+            ChannelFD fd = orig.fd().dup();
             fptr.setFD(fd);
-            pos = orig.tell(context);
+            long pos = orig.tell(context);
             if (pos == -1)
                 fptr.seek(context, pos, PosixShim.SEEK_SET);
         } finally {
@@ -2213,7 +2205,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             dest.setBinmode();
         }
 
-        write_io = io.GetWriteIO();
+        RubyIO write_io = io.GetWriteIO();
         if (io != write_io) {
             write_io = (RubyIO)write_io.dup();
             fptr.tiedIOForWriting = write_io;

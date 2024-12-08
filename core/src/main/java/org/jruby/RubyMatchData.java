@@ -797,18 +797,14 @@ public class RubyMatchData extends RubyObject {
     }
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
-    @Override
-    public IRubyObject initialize_copy(IRubyObject original) {
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject original) {
         if (this == original) return this;
 
         checkFrozen();
+        if (!(original instanceof RubyMatchData orig)) throw typeError(context, "wrong argument class");
 
-        if (original instanceof RubyMatchData orig) {
-            str = orig.str;
-            regs = orig.regs;
-        } else {
-            throw typeError(getRuntime().getCurrentContext(), "wrong argument class");
-        }
+        str = orig.str;
+        regs = orig.regs;
 
         return this;
     }
@@ -838,9 +834,8 @@ public class RubyMatchData extends RubyObject {
     }
 
     @JRubyMethod
-    @Override
-    public RubyFixnum hash() {
-        return asFixnum(getRuntime().getCurrentContext(), hashCode());
+    public RubyFixnum hash(ThreadContext context) {
+        return asFixnum(context, hashCode());
     }
 
     @JRubyMethod(keywords = true, optional = 1)

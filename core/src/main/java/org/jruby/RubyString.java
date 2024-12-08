@@ -1382,10 +1382,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     @JRubyMethod
-    @Override
-    public RubyFixnum hash() {
-        Ruby runtime = getRuntime();
-        return asFixnum(runtime.getCurrentContext(), strHashCode(runtime));
+    public RubyFixnum hash(ThreadContext context) {
+        return asFixnum(context, strHashCode(context.runtime));
     }
 
     @Override
@@ -1602,8 +1600,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
-    @Override
-    public RubyString initialize_copy(IRubyObject other) {
+    public RubyString initialize_copy(ThreadContext context, IRubyObject other) {
         return replace(other);
     }
 

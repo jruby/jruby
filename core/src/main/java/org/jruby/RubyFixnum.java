@@ -266,10 +266,8 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
         return -CACHE_OFFSET <= -1 ? runtime.fixnumCache[CACHE_OFFSET - 1] : new RubyFixnum(runtime, -1);
     }
 
-    @Override
-    public RubyFixnum hash() {
-        Ruby runtime = metaClass.runtime;
-        return newFixnum(runtime, fixHash(runtime, value));
+    public RubyFixnum hash(ThreadContext context) {
+        return asFixnum(context, fixHash(context.runtime, value));
     }
 
     @Override
@@ -1357,13 +1355,13 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
     }
 
     @Override
-    public final boolean isZero() {
+    public final boolean isZero(ThreadContext context) {
         return value == 0;
     }
 
     @Override
     public IRubyObject nonzero_p(ThreadContext context) {
-        return isZero() ? context.nil : this;
+        return isZero(context) ? context.nil : this;
     }
 
     @Override
@@ -1432,21 +1430,21 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
     }
 
     @Override
-    public IRubyObject isNegative(ThreadContext context) {
+    public IRubyObject negative_p(ThreadContext context) {
         CachingCallSite op_lt_site = sites(context).basic_op_lt;
         if (op_lt_site.isBuiltin(metaClass)) {
             return asBoolean(context, value < 0);
         }
-        return op_lt_site.call(context, this, this, RubyFixnum.zero(context.runtime));
+        return op_lt_site.call(context, this, this, asFixnum(context, 0));
     }
 
     @Override
-    public IRubyObject isPositive(ThreadContext context) {
+    public IRubyObject positive_p(ThreadContext context) {
         CachingCallSite op_gt_site = sites(context).basic_op_gt;
         if (op_gt_site.isBuiltin(metaClass)) {
             return asBoolean(context, value > 0);
         }
-        return op_gt_site.call(context, this, this, RubyFixnum.zero(context.runtime));
+        return op_gt_site.call(context, this, this, asFixnum(context, 0));
     }
 
     @Override
@@ -1478,7 +1476,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
     // MRI: rb_int_s_isqrt, Fixnum portion
     @Override
     public IRubyObject sqrt(ThreadContext context) {
-        if (isNegative()) throw context.runtime.newMathDomainError("Numerical argument is out of domain - isqrt");
+        if (isNegative(context)) throw context.runtime.newMathDomainError("Numerical argument is out of domain - isqrt");
 
         return asFixnum(context, floorSqrt(value));
     }

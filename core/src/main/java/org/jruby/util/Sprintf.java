@@ -961,7 +961,7 @@ public class Sprintf {
                     if (num != null) { // else -> goto float_value;
                         if ((flags & FLAG_PRECISION) == 0) precision = 6; // default_float_precision;
 
-                        if (num.isNegative()) {
+                        if (num.isNegative(context)) {
                             num = (RubyInteger) num.op_uminus(context);
                             sign = -1;
                         }

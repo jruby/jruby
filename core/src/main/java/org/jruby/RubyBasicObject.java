@@ -71,6 +71,7 @@ import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
+import static org.jruby.ir.runtime.IRRuntimeHelpers.getCurrentClassBase;
 import static org.jruby.runtime.Helpers.invokeChecked;
 import static org.jruby.runtime.ThreadContext.*;
 import static org.jruby.runtime.Visibility.*;
@@ -2022,7 +2023,17 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return context.nil;
     }
 
-    /** rb_obj_init_copy
+    /**
+     * @param original object
+     * @return
+     * @deprecated Use {@link org.jruby.RubyBasicObject#initialize_copy(ThreadContext, IRubyObject)} instead.
+     */
+    @Deprecated(since = "10.0")
+    public IRubyObject initialize_copy(IRubyObject original) {
+        return initialize_copy(getCurrentContext(), original);
+    }
+
+    /**
      *
      * Initializes this object as a copy of the original, that is the
      * parameter to this object. Will make sure that the argument
@@ -2030,14 +2041,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * be possible to initialize an object with something totally
      * different.
      */
-    public IRubyObject initialize_copy(IRubyObject original) {
-        if (this == original) {
-            return this;
-        }
+    // MRI: rb_obj_init_copy
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject original) {
+        if (this == original) return this;
+
         checkFrozen();
 
         if (getMetaClass().getRealClass() != original.getMetaClass().getRealClass()) {
-            throw typeError(getRuntime().getCurrentContext(), "initialize_copy should take same class object");
+            throw typeError(context, "initialize_copy should take same class object");
         }
 
         return this;
@@ -2089,15 +2100,30 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return context.runtime.newBoolean(result.isTrue());
     }
 
-    /** rb_obj_id
-     *
+    /**
      * Will return the hash code of this object. In comparison to MRI,
      * this method will use the Java identity hash code instead of
      * using rb_obj_id, since the usage of id in JRuby will incur the
      * cost of some. ObjectSpace maintenance.
+     * @deprecated Use {@link RubyBasicObject#hash(ThreadContext)} instead.
      */
+    @Deprecated(since = "10.0")
     public RubyFixnum hash() {
-        return getRuntime().newFixnum(super.hashCode());
+        return hash(getCurrentContext());
+    }
+
+    /**
+     * Will return the hash code of this object. In comparison to MRI,
+     * this method will use the Java identity hash code instead of
+     * using rb_obj_id, since the usage of id in JRuby will incur the
+     * cost of some. ObjectSpace maintenance.
+     *
+     * @param context the current thread context
+     * @return the hash value
+     */
+    // MRI: rb_obj_id
+    public RubyFixnum hash(ThreadContext context) {
+        return asFixnum(context, super.hashCode());
     }
 
     /** rb_obj_class

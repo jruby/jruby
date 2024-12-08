@@ -127,8 +127,9 @@ public class Timeout {
     }
 
     private static boolean nilOrZeroSeconds(final ThreadContext context, final IRubyObject seconds) {
-        if (seconds instanceof RubyNumeric) return ((RubyNumeric) seconds).isZero();
-        return seconds.isNil() || Helpers.invoke(context, seconds, "zero?").isTrue();
+        return seconds instanceof RubyNumeric secs ?
+                secs.isZero(context) :
+                seconds.isNil() || Helpers.invoke(context, seconds, "zero?").isTrue();
     }
 
     private static IRubyObject yieldWithTimeout(ScheduledThreadPoolExecutor executor, ThreadContext context,

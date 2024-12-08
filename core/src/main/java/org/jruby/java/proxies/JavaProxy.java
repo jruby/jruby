@@ -211,8 +211,8 @@ public class JavaProxy extends RubyObject {
     }
 
     @Override
-    public IRubyObject initialize_copy(IRubyObject original) {
-        super.initialize_copy(original);
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject original) {
+        super.initialize_copy(context, original);
         // because we lazily init JavaObject in the data-wrapped slot, explicitly copy over the object
         setObject( ((JavaProxy) original).cloneObject() );
         return this;

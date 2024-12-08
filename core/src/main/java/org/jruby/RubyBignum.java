@@ -398,13 +398,8 @@ public class RubyBignum extends RubyInteger {
         return RubyString.newUSASCIIString(getRuntime(), value.toString(base));
     }
 
-    /** rb_big_coerce
-     *
-     */
-    @Override
-    public IRubyObject coerce(IRubyObject other) {
-        var context = getRuntime().getCurrentContext();
-
+    // MRI: rb_big_coerce
+    public IRubyObject coerce(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum fix) return newArray(context, newBignum(context.runtime, fix.value), this);
         if (other instanceof RubyBignum big) return newArray(context, newBignum(context.runtime, big.value), this);
 
@@ -1149,13 +1144,9 @@ public class RubyBignum extends RubyInteger {
         return op_equal(metaClass.runtime.getCurrentContext(), other);
     }
 
-    /** rb_big_hash
-     *
-     */
-    @Override
-    public RubyFixnum hash() {
-        Ruby runtime = metaClass.runtime;
-        return RubyFixnum.newFixnum(runtime, bigHash(runtime, value));
+    // MRI: rb_big_hash
+    public RubyFixnum hash(ThreadContext context) {
+        return asFixnum(context, bigHash(context.runtime, value));
     }
 
     @Override
@@ -1203,17 +1194,17 @@ public class RubyBignum extends RubyInteger {
 
     @Override
     public IRubyObject zero_p(ThreadContext context) {
-        return asBoolean(context, isZero());
+        return asBoolean(context, isZero(context));
     }
 
     @Override
-    public final boolean isZero() {
+    public final boolean isZero(ThreadContext context) {
         return value.signum() == 0;
     }
 
     @Override
     public IRubyObject nonzero_p(ThreadContext context) {
-        return isZero() ? context.nil : this;
+        return isZero(context) ? context.nil : this;
     }
 
     public static void marshalTo(RubyBignum bignum, MarshalStream output) throws IOException {
@@ -1338,7 +1329,7 @@ public class RubyBignum extends RubyInteger {
     }
 
     @Override
-    public IRubyObject isNegative(ThreadContext context) {
+    public IRubyObject negative_p(ThreadContext context) {
         CachingCallSite op_lt_site = sites(context).basic_op_lt;
         if (op_lt_site.isBuiltin(metaClass)) {
             return asBoolean(context, value.signum() < 0);
@@ -1347,7 +1338,7 @@ public class RubyBignum extends RubyInteger {
     }
 
     @Override
-    public IRubyObject isPositive(ThreadContext context) {
+    public IRubyObject positive_p(ThreadContext context) {
         CachingCallSite op_gt_site = sites(context).basic_op_gt;
         if (op_gt_site.isBuiltin(metaClass)) {
             return asBoolean(context, value.signum() > 0);
@@ -1383,7 +1374,7 @@ public class RubyBignum extends RubyInteger {
     // MRI: rb_int_s_isqrt, Fixnum portion
     @Override
     public IRubyObject sqrt(ThreadContext context) {
-        if (isNegative()) throw context.runtime.newMathDomainError("Numerical argument is out of domain - isqrt");
+        if (isNegative(context)) throw context.runtime.newMathDomainError("Numerical argument is out of domain - isqrt");
 
         return bignorm(context.runtime, floorSqrt(value));
     }

@@ -541,7 +541,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
      */
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
-        return getOrCreateRubyHashMap(context.runtime).hash();
+        return getOrCreateRubyHashMap(context.runtime).hash(context);
     }
 
     /** rb_hash_fetch

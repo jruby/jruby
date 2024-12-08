@@ -961,12 +961,11 @@ public class RubyComplex extends RubyNumeric {
      * 
      */
     @JRubyMethod(name = "hash")
-    public IRubyObject hash(ThreadContext context) {
-        Ruby runtime = context.runtime;
+    public RubyFixnum hash(ThreadContext context) {
         long realHash = RubyNumeric.fix2long(invokedynamic(context, real, HASH));
         long imageHash = RubyNumeric.fix2long(invokedynamic(context, image, HASH));
         byte [] bytes = ByteBuffer.allocate(16).putLong(realHash).putLong(imageHash).array();
-        return RubyFixnum.newFixnum(runtime, Helpers.multAndMix(runtime.getHashSeedK0(), Arrays.hashCode(bytes)));
+        return asFixnum(context, Helpers.multAndMix(context.runtime.getHashSeedK0(), Arrays.hashCode(bytes)));
     }
 
     @Override

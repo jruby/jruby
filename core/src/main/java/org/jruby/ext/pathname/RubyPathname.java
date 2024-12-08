@@ -173,7 +173,7 @@ public class RubyPathname extends RubyObject {
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize_copy(ThreadContext context, IRubyObject pathname) {
-        super.initialize_copy(pathname);
+        super.initialize_copy(context, pathname);
         initialize(context, pathname);
         return this;
     }
@@ -236,7 +236,7 @@ public class RubyPathname extends RubyObject {
 
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
-        return getPath().hash();
+        return getPath().hash(context);
     }
 
     @Override

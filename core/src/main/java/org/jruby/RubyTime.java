@@ -617,10 +617,8 @@ public class RubyTime extends RubyObject {
     }
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
-    @Override
-    public IRubyObject initialize_copy(IRubyObject original) {
-        if (!(original instanceof RubyTime)) throw typeError(getRuntime().getCurrentContext(), original, "Time");
-        RubyTime originalTime = (RubyTime) original;
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject original) {
+        if (!(original instanceof RubyTime originalTime)) throw typeError(context, original, "Time");
 
         // We can just use dt, since it is immutable
         dt = originalTime.dt;
@@ -1217,7 +1215,7 @@ public class RubyTime extends RubyObject {
         long nanosec = dt.getMillisOfSecond() * 1_000_000 + this.nsec;
 
         RubyNumeric subsec = (RubyNumeric) RubyRational.newRationalCanonicalize(context, nanosec, TIME_SCALE);
-        return subsec.isZero() ? RubyFixnum.zero(context.runtime) : subsec;
+        return subsec.isZero(context) ? asFixnum(context, 0) : subsec;
     }
 
     @JRubyMethod(name = {"gmt_offset", "gmtoff", "utc_offset"})
@@ -1327,9 +1325,8 @@ public class RubyTime extends RubyObject {
     }
 
     @JRubyMethod
-    @Override
-    public RubyFixnum hash() {
-        return asFixnum(getRuntime().getCurrentContext(), hashCode());
+    public RubyFixnum hash(ThreadContext context) {
+        return asFixnum(context, hashCode());
     }
 
     @Override

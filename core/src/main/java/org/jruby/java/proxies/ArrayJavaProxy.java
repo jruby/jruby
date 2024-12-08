@@ -694,10 +694,9 @@ public final class ArrayJavaProxy extends JavaProxy {
         return Arrays.equals((Object[]) thisArray, (Object[]) thatArray);
     }
 
-    @Override
     @JRubyMethod
-    public RubyFixnum hash() {
-        return RubyFixnum.newFixnum(getRuntime(), hashCode());
+    public RubyFixnum hash(ThreadContext context) {
+        return asFixnum(context, hashCode());
     }
 
     @Override

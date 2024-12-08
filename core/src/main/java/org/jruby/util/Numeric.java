@@ -513,13 +513,13 @@ public class Numeric {
      *
      */
     public static boolean f_zero_p(ThreadContext context, IRubyObject x) {
-        if (x instanceof RubyInteger) return ((RubyInteger) x).isZero();
+        if (x instanceof RubyInteger) return ((RubyInteger) x).isZero(context);
         if (x instanceof RubyFloat) return ((RubyFloat) x).signum() == 0;
         return sites(context).op_equals.call(context, x, x, RubyFixnum.zero(context.runtime)).isTrue();
     }
 
     public static boolean f_zero_p(ThreadContext context, RubyInteger x) {
-        return x.isZero();
+        return x.isZero(context);
     }
 
     /** f_one_p

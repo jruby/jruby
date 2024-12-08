@@ -122,18 +122,10 @@ public class JZlibDeflate extends ZStream {
         collectedIdx = 0;
     }
 
-    @Override
     @JRubyMethod(visibility = PRIVATE)
-    public IRubyObject initialize_copy(IRubyObject _other) {
-        if (!(_other instanceof JZlibDeflate)) {
-            throw typeError(getRuntime().getCurrentContext(), "Expecting an instance of class JZlibDeflate");
-        }
-
-        if (this == _other) {
-            return this;
-        }
-
-        JZlibDeflate other = (JZlibDeflate) _other;
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject _other) {
+        if (!(_other instanceof JZlibDeflate other)) throw typeError(context, "Expecting an instance of class JZlibDeflate");
+        if (this == _other) return this;
 
         this.level = other.level;
         this.windowBits = other.windowBits;
@@ -145,9 +137,7 @@ public class JZlibDeflate extends ZStream {
         this.flush = other.flush;
         this.flater = new com.jcraft.jzlib.Deflater();
         int ret = this.flater.copy(other.flater);
-        if (ret != com.jcraft.jzlib.JZlib.Z_OK) {
-            throw RubyZlib.newStreamError(getRuntime(), "stream error");
-        }
+        if (ret != com.jcraft.jzlib.JZlib.Z_OK) throw RubyZlib.newStreamError(context.runtime, "stream error");
 
         return this;
     }

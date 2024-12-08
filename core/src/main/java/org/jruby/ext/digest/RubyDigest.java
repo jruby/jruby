@@ -528,8 +528,7 @@ public class RubyDigest {
         }
 
         @JRubyMethod(visibility = Visibility.PRIVATE)
-        @Override
-        public IRubyObject initialize_copy(IRubyObject obj) {
+        public IRubyObject initialize_copy(ThreadContext context, IRubyObject obj) {
             if (this == obj) return this;
 
             DigestBase from = (DigestBase) obj;
@@ -539,7 +538,7 @@ public class RubyDigest {
                 this.algo = (MessageDigest) from.algo.clone();
             } catch (CloneNotSupportedException e) {
                 String name = from.algo.getAlgorithm();
-                throw typeError(getRuntime().getCurrentContext(), "Could not initialize copy of digest (" + name + ")");
+                throw typeError(context, "Could not initialize copy of digest (" + name + ")");
             }
             return this;
         }

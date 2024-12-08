@@ -946,9 +946,8 @@ public class RubyStruct extends RubyObject {
         return (RubyClass) runtime.getClassFromPath(path);
     }
 
-    @Override
     @JRubyMethod(visibility = Visibility.PRIVATE)
-    public IRubyObject initialize_copy(IRubyObject arg) {
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject arg) {
         if (this == arg) return this;
         RubyStruct original = (RubyStruct) arg;
 

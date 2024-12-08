@@ -41,6 +41,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Error.typeError;
 
 public class JavaProxyReflectionObject extends RubyObject {
@@ -97,10 +98,9 @@ public class JavaProxyReflectionObject extends RubyObject {
         return this == other;
     }
 
-    @Override
     @JRubyMethod
-    public RubyFixnum hash() {
-        return RubyFixnum.newFixnum(getRuntime(), hashCode());
+    public RubyFixnum hash(ThreadContext context) {
+        return asFixnum(context, hashCode());
     }
 
     @Override

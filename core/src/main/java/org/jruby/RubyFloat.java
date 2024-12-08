@@ -205,23 +205,23 @@ public class RubyFloat extends RubyNumeric implements Appendable {
 
     @Override
     @JRubyMethod(name = "negative?")
-    public IRubyObject isNegative(ThreadContext context) {
-        return asBoolean(context, isNegative());
+    public IRubyObject negative_p(ThreadContext context) {
+        return asBoolean(context, isNegative(context));
     }
 
     @Override
     @JRubyMethod(name = "positive?")
-    public IRubyObject isPositive(ThreadContext context) {
-        return asBoolean(context, isPositive());
+    public IRubyObject positive_p(ThreadContext context) {
+        return asBoolean(context, isPositive(context));
     }
 
     @Override
-    public boolean isNegative() {
+    public boolean isNegative(ThreadContext context) {
         return signum() < 0;
     }
 
     @Override
-    public boolean isPositive() {
+    public boolean isPositive(ThreadContext context) {
         return signum() > 0;
     }
 
@@ -288,13 +288,9 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     public static final ByteList NEGATIVE_INFINITY_TO_S_BYTELIST = new ByteList(ByteList.plain("-Infinity"), USASCIIEncoding.INSTANCE, false);
     public static final ByteList NAN_TO_S_BYTELIST = new ByteList(ByteList.plain("NaN"), USASCIIEncoding.INSTANCE, false);
 
-    /** flo_coerce
-     *
-     */
+    // MRI: flo_coerce
     @JRubyMethod(name = "coerce")
-    @Override
-    public IRubyObject coerce(IRubyObject other) {
-        var context = metaClass.runtime.getCurrentContext();
+    public IRubyObject coerce(ThreadContext context, IRubyObject other) {
         return newArray(context, RubyKernel.new_float(context, other), this);
     }
 
@@ -658,15 +654,12 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return Double.doubleToLongBits(val1) == Double.doubleToLongBits(val2);
     }
 
-    /** flo_hash
-     *
-     */
+    // MRI: flo_hash
     @JRubyMethod(name = "hash")
-    @Override
-    public RubyFixnum hash() {
-        Ruby runtime = metaClass.runtime;
-        return RubyFixnum.newFixnum(runtime, floatHash(runtime, value));
+    public RubyFixnum hash(ThreadContext context) {
+        return asFixnum(context, floatHash(context.runtime, value));
     }
+
 
     @Override
     public final int hashCode() {
@@ -715,13 +708,13 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     }
 
     @Override
-    public final boolean isZero() {
+    public final boolean isZero(ThreadContext context) {
         return value == 0.0;
     }
 
     @Override
     public IRubyObject nonzero_p(ThreadContext context) {
-        return isZero() ? context.nil : this;
+        return isZero(context) ? context.nil : this;
     }
 
     /**
@@ -812,15 +805,15 @@ public class RubyFloat extends RubyNumeric implements Appendable {
             RubyInteger rf = RubyBignum.newBignorm(runtime, f);
             RubyFixnum rn = asFixnum(context, n);
 
-            if (rf.isZero() || fix2int(rn) >= 0) {
+            if (rf.isZero(context) || fix2int(rn) >= 0) {
                 return RubyRational.newRationalRaw(runtime, rf.op_lshift(context, rn));
             }
 
-            final RubyFixnum one = RubyFixnum.one(runtime);
+            final RubyFixnum one = asFixnum(context, 1);
             RubyInteger den;
 
             RubyInteger two_times_f = (RubyInteger) rf.op_mul(context, 2);
-            den = (RubyInteger) one.op_lshift(context, RubyFixnum.one(runtime).op_minus(context, n));
+            den = (RubyInteger) one.op_lshift(context, one.op_minus(context, n));
             
             a = RubyRational.newRationalRaw(runtime, two_times_f.op_minus(context, 1), den);
             b = RubyRational.newRationalRaw(runtime, two_times_f.op_plus(context, 1), den);

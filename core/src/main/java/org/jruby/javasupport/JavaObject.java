@@ -57,6 +57,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.JRubyObjectInputStream;
 
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.javasupport.JavaUtil.unwrapJava;
 
@@ -161,9 +162,8 @@ public class JavaObject extends RubyObject {
     }
 
     @JRubyMethod
-    @Override
-    public RubyFixnum hash() {
-        return RubyFixnum.newFixnum(getRuntime(), hashCode());
+    public RubyFixnum hash(ThreadContext context) {
+        return asFixnum(context, hashCode());
     }
 
     @JRubyMethod
