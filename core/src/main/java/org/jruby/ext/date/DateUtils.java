@@ -430,7 +430,7 @@ abstract class DateUtils {
         } else if (sg == Double.NEGATIVE_INFINITY) { // Double.isInfinite
             style = GREGORIAN;
         } else if (!(y instanceof RubyFixnum)) {
-            style = ((RubyNumeric) y).isPositive(context).isTrue() ? GREGORIAN : JULIAN;
+            style = ((RubyNumeric) y).isPositive(context) ? GREGORIAN : JULIAN;
         } else {
             long iy = y.convertToInteger().getLongValue();
 
