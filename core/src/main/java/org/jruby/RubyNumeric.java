@@ -865,7 +865,7 @@ public class RubyNumeric extends RubyObject {
 
         if ((!Helpers.rbEqual(context, z, asFixnum(context, 0), sites.op_equal).isTrue()) &&
                 ((x.isNegative() && RubyNumeric.positiveInt(context, y)) ||
-                        (x.isPositive() && RubyNumeric.negativeInt(context, y)))) {
+                        (x.isPositive(context) && RubyNumeric.negativeInt(context, y)))) {
             if (y instanceof RubyFloat && Double.isInfinite(((RubyFloat)y).value)) {
                 return x;
             }
@@ -876,12 +876,14 @@ public class RubyNumeric extends RubyObject {
 
     public static boolean positiveInt(ThreadContext context, IRubyObject num) {
         return num instanceof RubyNumeric numeric ?
-                numeric.isPositive() :compareWithZero(context, num, sites(context).op_gt_checked).isTrue();
+                numeric.isPositive(context) :
+                compareWithZero(context, num, sites(context).op_gt_checked).isTrue();
     }
 
     public static boolean negativeInt(ThreadContext context, IRubyObject num) {
         return num instanceof RubyNumeric numeric ?
-                numeric.isNegative() : compareWithZero(context, num, sites(context).op_lt_checked).isTrue();
+                numeric.isNegative() :
+                compareWithZero(context, num, sites(context).op_lt_checked).isTrue();
     }
 
     /** num_abs
@@ -1521,7 +1523,7 @@ public class RubyNumeric extends RubyObject {
      *
      */
     @JRubyMethod(name = "positive?")
-    public IRubyObject isPositive(ThreadContext context) {
+    public IRubyObject isPositiveMethod(ThreadContext context) {
         return compareWithZero(context, this, sites(context).op_gt_checked);
     }
 
@@ -1529,9 +1531,19 @@ public class RubyNumeric extends RubyObject {
         return isNegative(metaClass.runtime.getCurrentContext()).isTrue();
     }
 
+    /**
+     * @return
+     * @deprecated Use {@link org.jruby.RubyNumeric#isPositive(ThreadContext)} instead.
+     */
+    @Deprecated(since = "10.0")
     public boolean isPositive() {
-        return isPositive(metaClass.runtime.getCurrentContext()).isTrue();
+        return isPositive(getCurrentContext());
     }
+
+    public boolean isPositive(ThreadContext context) {
+        return isPositiveMethod(context).isTrue();
+    }
+
 
     protected static IRubyObject compareWithZero(ThreadContext context, IRubyObject num, JavaSites.CheckedSites site) {
         var zero = asFixnum(context, 0);

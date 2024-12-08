@@ -1338,7 +1338,7 @@ public class RubyBignum extends RubyInteger {
     }
 
     @Override
-    public IRubyObject isPositive(ThreadContext context) {
+    public IRubyObject isPositiveMethod(ThreadContext context) {
         CachingCallSite op_gt_site = sites(context).basic_op_gt;
         if (op_gt_site.isBuiltin(metaClass)) {
             return asBoolean(context, value.signum() > 0);

@@ -592,7 +592,7 @@ public class RubyRational extends RubyNumeric {
     }
 
     @Override
-    public IRubyObject isPositive(ThreadContext context) {
+    public IRubyObject isPositiveMethod(ThreadContext context) {
         return asBoolean(context, signum() > 0);
     }
 
@@ -602,7 +602,7 @@ public class RubyRational extends RubyNumeric {
     }
 
     @Override
-    public boolean isPositive() {
+    public boolean isPositive(ThreadContext context) {
         return signum() > 0;
     }
 
@@ -830,22 +830,20 @@ public class RubyRational extends RubyNumeric {
         }
 
         // General case
-        if (other instanceof RubyFixnum) {
-            RubyFixnum otherFixnum = (RubyFixnum) other;
-
+        if (other instanceof RubyFixnum otherFixnum) {
             IRubyObject num, den;
 
             IRubyObject selfNum = this.num;
             IRubyObject selfDen = this.den;
 
-            if (otherFixnum.isPositive()) {
+            if (otherFixnum.isPositive(context)) {
                 num = ((RubyInteger) selfNum).pow(context, other);
                 den = ((RubyInteger) selfDen).pow(context, other);
             } else if (otherFixnum.isNegative()) {
                 num = ((RubyInteger) selfDen).pow(context, otherFixnum.negate());
                 den = ((RubyInteger) selfNum).pow(context, otherFixnum.negate());
             } else {
-                num = den = RubyFixnum.one(context.runtime);
+                num = den = asFixnum(context, 1);
             }
             if (num instanceof RubyFloat) { /* infinity due to overflow */
                 if (den instanceof RubyFloat) {
@@ -854,8 +852,8 @@ public class RubyRational extends RubyNumeric {
                 return num;
             }
             if (den instanceof RubyFloat) { /* infinity due to overflow */
-                num = RubyFixnum.zero(context.runtime);
-                den = RubyFixnum.one(context.runtime);
+                num = asFixnum(context, 0);
+                den = asFixnum(context, 1);
             }
             return newInstance(context, getMetaClass(), num, den);
         } else if (other instanceof RubyBignum) {
