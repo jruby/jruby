@@ -777,7 +777,7 @@ public class RubyRange extends RubyObject {
 
     private IRubyObject checkStepDomain(ThreadContext context, IRubyObject step, String method) {
         if (!(step instanceof RubyNumeric)) step = step.convertToInteger("to_int");
-        if (((RubyNumeric) step).isNegative()) throw argumentError(context, method + " can't be negative");
+        if (((RubyNumeric) step).isNegative(context)) throw argumentError(context, method + " can't be negative");
         if (((RubyNumeric) step).isZero(context)) throw argumentError(context, method + " can't be 0");
 
         return step;

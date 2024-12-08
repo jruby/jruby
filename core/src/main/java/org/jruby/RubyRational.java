@@ -587,17 +587,17 @@ public class RubyRational extends RubyNumeric {
     }
 
     @Override
-    public IRubyObject isNegative(ThreadContext context) {
+    public IRubyObject negative_p(ThreadContext context) {
         return asBoolean(context, signum() < 0);
     }
 
     @Override
-    public IRubyObject isPositiveMethod(ThreadContext context) {
+    public IRubyObject positive_p(ThreadContext context) {
         return asBoolean(context, signum() > 0);
     }
 
     @Override
-    public boolean isNegative() {
+    public boolean isNegative(ThreadContext context) {
         return signum() < 0;
     }
 
@@ -839,7 +839,7 @@ public class RubyRational extends RubyNumeric {
             if (otherFixnum.isPositive(context)) {
                 num = ((RubyInteger) selfNum).pow(context, other);
                 den = ((RubyInteger) selfDen).pow(context, other);
-            } else if (otherFixnum.isNegative()) {
+            } else if (otherFixnum.isNegative(context)) {
                 num = ((RubyInteger) selfDen).pow(context, otherFixnum.negate());
                 den = ((RubyInteger) selfNum).pow(context, otherFixnum.negate());
             } else {
@@ -1099,7 +1099,7 @@ public class RubyRational extends RubyNumeric {
     }
 
     private RubyInteger mriTruncate(ThreadContext context) {
-        if (num.isNegative()) {
+        if (num.isNegative(context)) {
             return ((RubyInteger) num.negate().idiv(context, den)).negate();
         }
         return (RubyInteger) num.idiv(context, den);
@@ -1158,7 +1158,7 @@ public class RubyRational extends RubyNumeric {
     // MRI: nurat_round_half_down
     private RubyInteger roundHalfDown(ThreadContext context) {
         RubyInteger num = this.num, den = this.den;
-        final boolean neg = num.isNegative();
+        final boolean neg = num.isNegative(context);
 
         if (neg) num = (RubyInteger) num.op_uminus(context);
 
@@ -1176,7 +1176,7 @@ public class RubyRational extends RubyNumeric {
     private RubyInteger roundHalfEven(ThreadContext context) {
         var num = this.num;
         var den = this.den;
-        final boolean neg = num.isNegative();
+        final boolean neg = num.isNegative(context);
 
         if (neg) num = (RubyInteger) num.op_uminus(context);
 
@@ -1195,7 +1195,7 @@ public class RubyRational extends RubyNumeric {
     private RubyInteger roundHalfUp(ThreadContext context) {
         RubyInteger num = this.num, den = this.den;
 
-        final boolean neg = num.isNegative();
+        final boolean neg = num.isNegative(context);
 
         if (neg) num = (RubyInteger) num.op_uminus(context);
 

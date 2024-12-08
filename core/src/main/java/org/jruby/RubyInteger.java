@@ -129,17 +129,17 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     @Override
-    public IRubyObject isNegative(ThreadContext context) {
-        return asBoolean(context, isNegative());
+    public IRubyObject negative_p(ThreadContext context) {
+        return asBoolean(context, isNegative(context));
     }
 
     @Override
-    public IRubyObject isPositiveMethod(ThreadContext context) {
+    public IRubyObject positive_p(ThreadContext context) {
         return asBoolean(context, isPositive(context));
     }
 
     @Override
-    public boolean isNegative() {
+    public boolean isNegative(ThreadContext context) {
         return signum() < 0;
     }
 
@@ -467,13 +467,23 @@ public abstract class RubyInteger extends RubyNumeric {
     public static final int NUMERR_TOOLARGE = 3;
 
     /**
+     * @param val
+     * @return ""
+     * @deprecated Use {@link org.jruby.RubyInteger#numToUint(ThreadContext, IRubyObject)} instead.
+     */
+    @Deprecated
+    public static long numToUint(IRubyObject val) {
+        return numToUint(val.getRuntime().getCurrentContext(), val);
+    }
+
+    /**
      * Simulate CRuby's rb_num_to_uint by returning a single long; the top 4 bytes will be the uint and the bottom
      * four bytes will be the result code. See {@link #NUMERR_TYPE}, {@link #NUMERR_NEGATIVE}, and {@link #NUMERR_TOOLARGE}.
      *
      * @param val the object to convert to a uint
      * @return the value and result code, with the top four bytes being the result code (zero if no error)
      */
-    public static long numToUint(IRubyObject val) {
+    public static long numToUint(ThreadContext context, IRubyObject val) {
         if (val instanceof RubyFixnum) {
             long v = fix2long(val);
             if (v > 0xFFFFFFFFL) return NUMERR_TOOLARGE;
@@ -481,8 +491,8 @@ public abstract class RubyInteger extends RubyNumeric {
             return v << 32;
         }
 
-        if (val instanceof RubyBignum) {
-            if (((RubyBignum) val).isNegative()) return NUMERR_NEGATIVE;
+        if (val instanceof RubyBignum bignum) {
+            if (bignum.isNegative(context)) return NUMERR_NEGATIVE;
             /* long is 64bit */
             return NUMERR_TOOLARGE;
         }
@@ -654,7 +664,7 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     protected static boolean int_half_p_half_down(ThreadContext context, RubyInteger num, RubyNumeric n, IRubyObject f) {
-        return num.isNegative(context).isTrue();
+        return num.isNegative(context);
     }
 
     /** integer_to_r
@@ -855,11 +865,13 @@ public abstract class RubyInteger extends RubyNumeric {
     public IRubyObject pow(ThreadContext context, IRubyObject b, IRubyObject m) {
         boolean negaFlg = false;
         RubyInteger base = castAsInteger(context, b, "Integer#pow() 2nd argument not allowed unless a 1st argument is integer");
-        if (base.isNegative()) throw rangeError(context, "Integer#pow() 1st argument cannot be negative when 2nd argument specified");
+        if (base.isNegative(context)) {
+            throw rangeError(context, "Integer#pow() 1st argument cannot be negative when 2nd argument specified");
+        }
 
         RubyInteger pow = castAsInteger(context, m, "Integer#pow() 2nd argument not allowed unless all arguments are integers");
 
-        if (pow.isNegative()) {
+        if (pow.isNegative(context)) {
             pow = pow.negate();
             negaFlg = true;
         }
