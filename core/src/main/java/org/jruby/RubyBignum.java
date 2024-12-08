@@ -1329,7 +1329,7 @@ public class RubyBignum extends RubyInteger {
     }
 
     @Override
-    public IRubyObject isNegative(ThreadContext context) {
+    public IRubyObject negative_p(ThreadContext context) {
         CachingCallSite op_lt_site = sites(context).basic_op_lt;
         if (op_lt_site.isBuiltin(metaClass)) {
             return asBoolean(context, value.signum() < 0);
@@ -1338,7 +1338,7 @@ public class RubyBignum extends RubyInteger {
     }
 
     @Override
-    public IRubyObject isPositiveMethod(ThreadContext context) {
+    public IRubyObject positive_p(ThreadContext context) {
         CachingCallSite op_gt_site = sites(context).basic_op_gt;
         if (op_gt_site.isBuiltin(metaClass)) {
             return asBoolean(context, value.signum() > 0);
@@ -1374,7 +1374,7 @@ public class RubyBignum extends RubyInteger {
     // MRI: rb_int_s_isqrt, Fixnum portion
     @Override
     public IRubyObject sqrt(ThreadContext context) {
-        if (isNegative()) throw context.runtime.newMathDomainError("Numerical argument is out of domain - isqrt");
+        if (isNegative(context)) throw context.runtime.newMathDomainError("Numerical argument is out of domain - isqrt");
 
         return bignorm(context.runtime, floorSqrt(value));
     }

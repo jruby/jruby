@@ -212,18 +212,18 @@ public class RubyFloat extends RubyNumeric implements Appendable {
 
     @Override
     @JRubyMethod(name = "negative?")
-    public IRubyObject isNegative(ThreadContext context) {
-        return asBoolean(context, isNegative());
+    public IRubyObject negative_p(ThreadContext context) {
+        return asBoolean(context, isNegative(context));
     }
 
     @Override
     @JRubyMethod(name = "positive?")
-    public IRubyObject isPositiveMethod(ThreadContext context) {
+    public IRubyObject positive_p(ThreadContext context) {
         return asBoolean(context, isPositive(context));
     }
 
     @Override
-    public boolean isNegative() {
+    public boolean isNegative(ThreadContext context) {
         return signum() < 0;
     }
 
