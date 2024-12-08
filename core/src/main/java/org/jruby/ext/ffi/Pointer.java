@@ -44,8 +44,9 @@ public class Pointer extends AbstractMemory {
         // Add Pointer::NULL as a constant
         Pointer nullPointer = new Pointer(runtime, pointerClass, new NullMemoryIO(runtime));
         pointerClass.setConstant("NULL", nullPointer);
-        
-        runtime.getNilClass().addMethod("to_ptr", new NilToPointerMethod(runtime.getNilClass(), nullPointer, "to_ptr"));
+
+        RubyClass Nil = runtime.getNil().getMetaClass();
+        Nil.addMethod("to_ptr", new NilToPointerMethod(Nil, nullPointer, "to_ptr"));
 
         return pointerClass;
     }

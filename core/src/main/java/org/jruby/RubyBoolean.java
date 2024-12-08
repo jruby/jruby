@@ -58,10 +58,8 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
     private final transient Object constant;
     private final RubyString toS;
 
-    RubyBoolean(Ruby runtime, boolean value) {
-        super(runtime,
-                (value ? runtime.getTrueClass() : runtime.getFalseClass()),
-                false); // Don't put in object space
+    RubyBoolean(Ruby runtime, RubyClass metaClass, boolean value) {
+        super(runtime, metaClass, false);
 
         if (!value) flags = FALSE_F;
 
@@ -153,8 +151,8 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
     }
 
     public static class False extends RubyBoolean {
-        False(Ruby runtime) {
-            super(runtime, false);
+        False(Ruby runtime, RubyClass metaClass) {
+            super(runtime, metaClass, false);
 
             flags = FALSE_F | FROZEN_F;
         }
@@ -196,8 +194,8 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
     public static final ByteList TRUE_BYTES = new ByteList(new byte[] { 't','r','u','e' }, USASCIIEncoding.INSTANCE);
 
     public static class True extends RubyBoolean {
-        True(Ruby runtime) {
-            super(runtime, true);
+        True(Ruby runtime, RubyClass metaClass) {
+            super(runtime, metaClass, true);
 
             flags |= FROZEN_F;
         }
