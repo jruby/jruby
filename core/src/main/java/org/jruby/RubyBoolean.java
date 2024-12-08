@@ -46,6 +46,8 @@ import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.util.StringSupport.CR_7BIT;
+import static org.jruby.util.StringSupport.CR_UNKNOWN;
 
 /**
  *
@@ -56,7 +58,7 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
 
     private final int hashCode;
     private final transient Object constant;
-    private final RubyString toS;
+    private final ByteList toS;
 
     RubyBoolean(Ruby runtime, RubyClass metaClass, boolean value) {
         super(runtime, metaClass, false);
@@ -72,9 +74,7 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
         }
 
         constant = OptoFactory.newConstantWrapper(IRubyObject.class, this);
-
-        toS = RubyString.newString(runtime, value ? TRUE_BYTES : FALSE_BYTES);
-        toS.setFrozen(true);
+        toS = value ? TRUE_BYTES : FALSE_BYTES;
     }
     
     @Override
@@ -147,7 +147,7 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
 
     @Override
     public void appendIntoString(RubyString target) {
-        target.append(toS);
+        target.catWithCodeRange(toS, CR_7BIT);
     }
 
     public static class False extends RubyBoolean {
