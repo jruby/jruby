@@ -371,15 +371,13 @@ public final class Ruby implements Constantizable {
         falseClass = RubyBoolean.createFalseClass(this);
         trueClass = RubyBoolean.createTrueClass(this);
 
-        nilObject = new RubyNil(this);
+        nilObject = new RubyNil(this, nilClass);
         nilPrefilledArray = new IRubyObject[NIL_PREFILLED_ARRAY_SIZE];
         for (int i=0; i<NIL_PREFILLED_ARRAY_SIZE; i++) nilPrefilledArray[i] = nilObject;
         singleNilArray = new IRubyObject[] {nilObject};
 
         falseObject = new RubyBoolean.False(this);
-        falseObject.setFrozen(true);
         trueObject = new RubyBoolean.True(this);
-        trueObject.setFrozen(true);
 
         // Set up the main thread in thread service
         threadService.initMainThread();
