@@ -793,7 +793,7 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "div")
     public IRubyObject div(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyNumeric num && num.isZero()) throw context.runtime.newZeroDivisionError();
+        if (other instanceof RubyNumeric num && num.isZero(context)) throw context.runtime.newZeroDivisionError();
 
         IRubyObject quotient = numFuncall(context, this, sites(context).op_quo, other);
         return sites(context).floor.call(context, quotient, quotient);
@@ -934,8 +934,17 @@ public class RubyNumeric extends RubyObject {
         return equalInternal(context, this, asFixnum(context, 0)) ? context.tru : context.fals;
     }
 
+    /**
+     * @return
+     * @deprecated Use {@link org.jruby.RubyNumeric#isZero(ThreadContext)} instead.
+     */
+    @Deprecated(since = "10.0")
     public boolean isZero() {
-        return zero_p(metaClass.runtime.getCurrentContext()).isTrue();
+        return isZero(getCurrentContext());
+    }
+
+    public boolean isZero(ThreadContext context) {
+        return zero_p(context).isTrue();
     }
 
     /** num_nonzero_p

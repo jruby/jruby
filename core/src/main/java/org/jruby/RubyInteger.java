@@ -595,7 +595,7 @@ public abstract class RubyInteger extends RubyNumeric {
         RubyNumeric n = (RubyNumeric) this.op_minus(context, r);
         r = (RubyNumeric) r.op_cmp(context, h);
         if (r.isPositive(context).isTrue() ||
-                (r.isZero() && doRoundCheck(context, roundingMode, this, n, f))) {
+                (r.isZero(context) && doRoundCheck(context, roundingMode, this, n, f))) {
             n = (RubyNumeric) n.op_plus(context, f);
         }
         return n;
@@ -698,7 +698,7 @@ public abstract class RubyInteger extends RubyNumeric {
     @JRubyMethod(name = "anybits?")
     public IRubyObject anybits_p(ThreadContext context, IRubyObject other) {
         IRubyObject mask = checkToInteger(context, other);
-        return ((RubyInteger) op_and(context, mask)).zero_p(context).isTrue() ? context.fals : context.tru;
+        return ((RubyInteger) op_and(context, mask)).isZero(context) ? context.fals : context.tru;
     }
 
     @JRubyMethod(name = "nobits?")
@@ -938,7 +938,7 @@ public abstract class RubyInteger extends RubyNumeric {
                     if (!isExclusive) end = ((RubyInteger) end).op_plus(context, asFixnum(context, 1));
 
                     RubyInteger mask = generateMask(context, end);
-                    if (((RubyInteger) op_and(context, mask)).isZero()) return asFixnum(context, 0);
+                    if (((RubyInteger) op_and(context, mask)).isZero(context)) return asFixnum(context, 0);
 
                     throw argumentError(context, "The beginless range for Integer#[] results in infinity");
                 } else {

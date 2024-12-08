@@ -860,7 +860,7 @@ public class RubyDate extends RubyObject {
 
     private int cmpSubMillis(ThreadContext context, final RubyDate that) {
         RubyNumeric diff = subMillisDiff(context, that);
-        return diff.isZero() ? 0 : ( Numeric.f_negative_p(context, diff) ? -1 : +1 );
+        return diff.isZero(context) ? 0 : ( Numeric.f_negative_p(context, diff) ? -1 : +1 );
     }
 
     private IRubyObject fallback_cmp(ThreadContext context, IRubyObject other) {
@@ -1230,7 +1230,7 @@ public class RubyDate extends RubyObject {
 
         RubyNumeric sub_millis = subMillis(context);
 
-        if ( sub.isZero() ) ; // done - noop
+        if ( sub.isZero(context) ) ; // done - noop
         else if ( sub instanceof RubyFloat flote) {
             sub = roundToPrecision(context, flote, SUB_MS_PRECISION);
             sub_millis = (RubyNumeric) sub_millis.op_plus(context, sub);
@@ -1267,7 +1267,7 @@ public class RubyDate extends RubyObject {
         RubyNumeric diffMillis = (RubyNumeric) RubyRational.newRationalCanonicalize(context, diff, DAY_MS);
         RubyNumeric subDiff = subMillisDiff(context, that);
 
-        if (!subDiff.isZero()) { // diff += diff_sub;
+        if (!subDiff.isZero(context)) { // diff += diff_sub;
             subDiff = subDiff.convertToRational(context).op_div(context, asFixnum(context, DAY_MS));  // #5493
             return (RubyNumeric) diffMillis.op_plus(context, subDiff);
         }
@@ -1440,10 +1440,10 @@ public class RubyDate extends RubyObject {
 
     private IRubyObject marshal_load_6(ThreadContext context, IRubyObject jd, IRubyObject df, IRubyObject sf) {
         IRubyObject ajd = valMinusOneHalf(context, jd);
-        if ( ! ( (RubyNumeric) df ).isZero() ) {
+        if (!((RubyNumeric) df).isZero(context)) {
             ajd = newRationalConvert(context, df, DAY_IN_SECONDS).op_plus(context, ajd);
         }
-        if ( ! ( (RubyNumeric) sf ).isZero() ) {
+        if (!((RubyNumeric) sf).isZero(context)) {
             ajd = newRationalConvert(context, sf, DAY_IN_SECONDS * 1_000_000_000L).op_plus(context, ajd);
         }
         return ajd;
@@ -1484,7 +1484,7 @@ public class RubyDate extends RubyObject {
         RubyNumeric jd = (RubyNumeric) args[0];
         RubyNumeric fr = (RubyNumeric) args[1];
         int of_sec = 0;
-        if (argc > 2 && ! ((RubyNumeric) args[2]).isZero()) {
+        if (argc > 2 && ! ((RubyNumeric) args[2]).isZero(context)) {
             RubyNumeric of = (RubyNumeric) f_mul(context, args[2], asFixnum(context, DAY_IN_SECONDS));
             of_sec = of.getIntValue();
         }

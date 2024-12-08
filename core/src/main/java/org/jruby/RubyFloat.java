@@ -722,13 +722,13 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     }
 
     @Override
-    public final boolean isZero() {
+    public final boolean isZero(ThreadContext context) {
         return value == 0.0;
     }
 
     @Override
     public IRubyObject nonzero_p(ThreadContext context) {
-        return isZero() ? context.nil : this;
+        return isZero(context) ? context.nil : this;
     }
 
     /**
@@ -819,15 +819,15 @@ public class RubyFloat extends RubyNumeric implements Appendable {
             RubyInteger rf = RubyBignum.newBignorm(runtime, f);
             RubyFixnum rn = asFixnum(context, n);
 
-            if (rf.isZero() || fix2int(rn) >= 0) {
+            if (rf.isZero(context) || fix2int(rn) >= 0) {
                 return RubyRational.newRationalRaw(runtime, rf.op_lshift(context, rn));
             }
 
-            final RubyFixnum one = RubyFixnum.one(runtime);
+            final RubyFixnum one = asFixnum(context, 1);
             RubyInteger den;
 
             RubyInteger two_times_f = (RubyInteger) rf.op_mul(context, 2);
-            den = (RubyInteger) one.op_lshift(context, RubyFixnum.one(runtime).op_minus(context, n));
+            den = (RubyInteger) one.op_lshift(context, one.op_minus(context, n));
             
             a = RubyRational.newRationalRaw(runtime, two_times_f.op_minus(context, 1), den);
             b = RubyRational.newRationalRaw(runtime, two_times_f.op_plus(context, 1), den);

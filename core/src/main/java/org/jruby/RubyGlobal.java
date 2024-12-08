@@ -812,7 +812,7 @@ public class RubyGlobal {
         }
 
         private static boolean equalIgnoreCase(ThreadContext context, final RubyString str1, final RubyString str2) {
-            return ((RubyFixnum) str1.casecmp(context, str2)).isZero();
+            return ((RubyFixnum) str1.casecmp(context, str2)).isZero(context);
         }
 
     }
