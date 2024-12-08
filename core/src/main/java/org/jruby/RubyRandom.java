@@ -244,14 +244,12 @@ public class RubyRandom extends RubyRandomBase {
     }
 
     @JRubyMethod(name = "initialize_copy", visibility = PRIVATE)
-    @Override
-    public IRubyObject initialize_copy(IRubyObject orig) {
-        if (orig instanceof RubyRandom rand) {
-            checkFrozen();
-            random = new RandomType(rand.random);
-            return this;
-        }
-        throw typeError(getRuntime().getCurrentContext(), orig, "Random");
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject orig) {
+        if (!(orig instanceof RubyRandom rand)) throw typeError(context, orig, "Random");
+
+        checkFrozen();
+        random = new RandomType(rand.random);
+        return this;
     }
 
     // MRI: random_s_rand

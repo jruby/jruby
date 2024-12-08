@@ -705,12 +705,11 @@ public class RubyNumeric extends RubyObject {
      */
     @Override
     @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
-    public IRubyObject initialize_copy(IRubyObject arg) {
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject arg) {
         if (arg == this) return arg; // It cannot init copy it will still work if it is itself...fun times.
 
         checkFrozen();
-
-        throw typeError(getRuntime().getCurrentContext(), "can't copy ", this, "");
+        throw typeError(context, "can't copy ", this, "");
     }
 
     /**

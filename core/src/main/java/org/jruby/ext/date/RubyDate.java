@@ -281,8 +281,7 @@ public class RubyDate extends RubyObject {
         return v;
     }
 
-    @Override
-    public IRubyObject initialize_copy(IRubyObject original) {
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject original) {
         final RubyDate from = (RubyDate) original;
 
         this.dt = from.dt; this.off = from.off; this.start = from.start;

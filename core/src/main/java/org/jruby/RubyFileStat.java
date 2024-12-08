@@ -401,9 +401,8 @@ public class RubyFileStat extends RubyObject {
     }
     
     @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
-    @Override
-    public IRubyObject initialize_copy(IRubyObject original) {
-        if (!(original instanceof RubyFileStat)) throw typeError(getRuntime().getCurrentContext(), "wrong argument class");
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject original) {
+        if (!(original instanceof RubyFileStat)) throw typeError(context, "wrong argument class");
 
         checkFrozen();
         

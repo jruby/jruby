@@ -955,13 +955,13 @@ public class RubyClass extends RubyModule {
     @Override
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, Block block) {
-        checkNotInitialized();
+        checkNotInitialized(context);
         return initializeCommon(context, runtime.getObject(), block);
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject superObject, Block block) {
-        checkNotInitialized();
+        checkNotInitialized(context);
         checkInheritable(context, superObject);
         return initializeCommon(context, (RubyClass) superObject, block);
     }
@@ -985,12 +985,11 @@ public class RubyClass extends RubyModule {
      *
      */
     @JRubyMethod(name = "initialize_copy", visibility = PRIVATE)
-    @Override
-    public IRubyObject initialize_copy(IRubyObject original) {
-        checkNotInitialized();
-        if (original instanceof MetaClass) throw typeError(runtime.getCurrentContext(), "can't copy singleton class");
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject original) {
+        checkNotInitialized(context);
+        if (original instanceof MetaClass) throw typeError(context, "can't copy singleton class");
 
-        super.initialize_copy(original);
+        super.initialize_copy(context, original);
         RubyClass originalClazz = (RubyClass) original;
         allocator = originalClazz.allocator;
 
@@ -1325,12 +1324,12 @@ public class RubyClass extends RubyModule {
 
     @JRubyMethod
     public IRubyObject attached_object(ThreadContext context) {
-        throw typeError(runtime.getCurrentContext(), "'", this, "' is not a singleton class");
+        throw typeError(context, "'", this, "' is not a singleton class");
     }
 
-    private void checkNotInitialized() {
-        if (superClass != null || this == runtime.getBasicObject()) {
-            throw typeError(runtime.getCurrentContext(), "already initialized class");
+    private void checkNotInitialized(ThreadContext context) {
+        if (superClass != null || this == context.runtime.getBasicObject()) {
+            throw typeError(context, "already initialized class");
         }
     }
     /** rb_check_inheritable

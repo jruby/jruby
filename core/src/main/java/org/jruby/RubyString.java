@@ -1604,8 +1604,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
-    @Override
-    public RubyString initialize_copy(IRubyObject other) {
+    public RubyString initialize_copy(ThreadContext context, IRubyObject other) {
         return replace(other);
     }
 
