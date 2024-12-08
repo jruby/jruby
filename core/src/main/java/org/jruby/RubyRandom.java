@@ -272,19 +272,12 @@ public class RubyRandom extends RubyRandomBase {
 
     static IRubyObject randKernel(ThreadContext context, IRubyObject self, IRubyObject arg) {
         RandomType random = getDefaultRand(context);
-        if (arg == context.nil) {
-            return randFloat(context, random);
-        }
-
-        if (arg instanceof RubyRange) {
-            IRubyObject v = randRandom(context, self, random, arg);
-            return v;
-        }
+        if (arg == context.nil) return randFloat(context, random);
+        if (arg instanceof RubyRange) return randRandom(context, self, random, arg);
 
         RubyInteger max = arg.convertToInteger();
-        if (max.isZero()) {
-            return randFloat(context, random);
-        }
+        if (max.isZero(context)) return randFloat(context, random);
+
         IRubyObject r = randInt(context, self, random, max, false);
         return (r == context.nil) ? randFloat(context, random) : r;
     }
