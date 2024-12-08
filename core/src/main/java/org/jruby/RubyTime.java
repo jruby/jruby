@@ -1222,7 +1222,7 @@ public class RubyTime extends RubyObject {
         long nanosec = dt.getMillisOfSecond() * 1_000_000 + this.nsec;
 
         RubyNumeric subsec = (RubyNumeric) RubyRational.newRationalCanonicalize(context, nanosec, TIME_SCALE);
-        return subsec.isZero() ? RubyFixnum.zero(context.runtime) : subsec;
+        return subsec.isZero(context) ? asFixnum(context, 0) : subsec;
     }
 
     @JRubyMethod(name = {"gmt_offset", "gmtoff", "utc_offset"})

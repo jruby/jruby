@@ -573,17 +573,17 @@ public class RubyRational extends RubyNumeric {
 
     @Override
     public IRubyObject zero_p(ThreadContext context) {
-        return asBoolean(context, isZero());
+        return asBoolean(context, isZero(context));
     }
 
     @Override
-    public final boolean isZero() {
-        return num.isZero();
+    public final boolean isZero(ThreadContext context) {
+        return num.isZero(context);
     }
 
     @Override
     public IRubyObject nonzero_p(ThreadContext context) {
-        return isZero() ? context.nil : this;
+        return isZero(context) ? context.nil : this;
     }
 
     @Override
@@ -771,28 +771,23 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = {"/", "quo"})
     public IRubyObject op_div(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyInteger) {
-            return op_div(context, (RubyInteger) other);
-        }
+        if (other instanceof RubyInteger otherInteger) return op_div(context, otherInteger);
         if (other instanceof RubyFloat) {
             IRubyObject fval = r_to_f(context, this);
             return context.sites.Float.op_quo.call(context, fval, fval, other); // fval / other
         }
-        if (other instanceof RubyRational) {
-            if (((RubyRational) other).isZero()) {
-                throw context.runtime.newZeroDivisionError();
-            }
-            RubyRational otherRational = (RubyRational)other;
+        if (other instanceof RubyRational otherRational) {
+            if (otherRational.isZero(context)) throw context.runtime.newZeroDivisionError();
+
             return f_muldiv(context, getMetaClass(), num, den, otherRational.num, otherRational.den, false);
         }
         return coerceBin(context, sites(context).op_quo, other);
     }
 
     public final RubyNumeric op_div(ThreadContext context, RubyInteger other) {
-        if (other.isZero()) {
-            throw context.runtime.newZeroDivisionError();
-        }
-        return f_muldiv(context, getMetaClass(), num, den, other, RubyFixnum.one(context.runtime), false);
+        if (other.isZero(context)) throw context.runtime.newZeroDivisionError();
+
+        return f_muldiv(context, getMetaClass(), num, den, other, asFixnum(context, 1), false);
     }
 
     /** nurat_fdiv
@@ -954,13 +949,13 @@ public class RubyRational extends RubyNumeric {
     }
 
     public final IRubyObject op_equal(ThreadContext context, RubyInteger other) {
-        if (num.isZero()) return asBoolean(context, other.isZero());
+        if (num.isZero(context)) return asBoolean(context, other.isZero(context));
         if (!(den instanceof RubyFixnum) || den.getLongValue() != 1) return context.fals;
         return f_equal(context, num, other);
     }
 
     final RubyBoolean op_equal(ThreadContext context, RubyRational other) {
-        if (num.isZero()) return asBoolean(context, other.num.isZero());
+        if (num.isZero(context)) return asBoolean(context, other.num.isZero(context));
         return asBoolean(context,
                 f_equal(context, num, other.num).isTrue() && f_equal(context, den, other.den).isTrue());
     }
@@ -1192,7 +1187,7 @@ public class RubyRational extends RubyNumeric {
         var qr = (RubyArray<?>) num.divmod(context, den);
         num = (RubyInteger) qr.eltOk(0);
 
-        if (((RubyInteger) qr.eltOk(1)).isZero()) num = (RubyInteger) num.op_and(context, asFixnum(context, ~1L));
+        if (((RubyInteger) qr.eltOk(1)).isZero(context)) num = (RubyInteger) num.op_and(context, asFixnum(context, ~1L));
         if (neg) num = (RubyInteger) num.op_uminus(context);
 
         return num;

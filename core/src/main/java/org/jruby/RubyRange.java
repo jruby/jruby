@@ -441,7 +441,7 @@ public class RubyRange extends RubyObject {
                 iter = iter.callMethod(context, "-", one(context));
             }
             IRubyObject i = this.iter;
-            if ((i instanceof RubyInteger) && ((RubyInteger) i).isZero()) {
+            if ((i instanceof RubyInteger) && ((RubyInteger) i).isZero(context)) {
                 doYield(context, arg);
                 iter = step;
             }
@@ -473,8 +473,8 @@ public class RubyRange extends RubyObject {
         }
     }
 
-    private static boolean isZero(IRubyObject num) {
-        return num instanceof RubyFixnum && ((RubyNumeric) num).isZero();
+    private static boolean isZero(ThreadContext context, IRubyObject num) {
+        return num instanceof RubyFixnum fix && fix.isZero(context);
     }
 
     private static IRubyObject rangeLt(ThreadContext context, IRubyObject a, IRubyObject b) {
@@ -516,9 +516,8 @@ public class RubyRange extends RubyObject {
             IRubyObject c;
             while ((c = rangeLe(context, v, end)) != null && c.isTrue()) {
                 callback.doCall(context, v);
-                if (isZero(c)) {
-                    break;
-                }
+                if (isZero(context, c)) break;
+
                 v = v.callMethod(context, "succ");
                 context.pollThreadEvents();
             }
@@ -779,14 +778,14 @@ public class RubyRange extends RubyObject {
     private IRubyObject checkStepDomain(ThreadContext context, IRubyObject step, String method) {
         if (!(step instanceof RubyNumeric)) step = step.convertToInteger("to_int");
         if (((RubyNumeric) step).isNegative()) throw argumentError(context, method + " can't be negative");
-        if (((RubyNumeric) step).isZero()) throw argumentError(context, method + " can't be 0");
+        if (((RubyNumeric) step).isZero(context)) throw argumentError(context, method + " can't be 0");
 
         return step;
     }
 
     private IRubyObject stepEnumeratorize(ThreadContext context, IRubyObject step, String method) {
         if (!step.isNil() && !(step instanceof RubyNumeric)) step = step.convertToInteger("to_int");
-        if ((step instanceof RubyNumeric) && ((RubyNumeric) step).isZero()) throw argumentError(context, "step can't be 0");
+        if ((step instanceof RubyNumeric num) && num.isZero(context)) throw argumentError(context, "step can't be 0");
 
         if ((begin instanceof RubyNumeric && (end.isNil() || end instanceof RubyNumeric)) ||
                 (end instanceof RubyNumeric && begin.isNil())) {
@@ -1164,8 +1163,8 @@ public class RubyRange extends RubyObject {
             len = ((RubyInteger)len1).op_plus(context, one);
         }
 
-        if (((RubyInteger)len).isZero() || Numeric.f_negative_p(context, (RubyInteger)len)) {
-            return RubyArray.newEmptyArray(context.runtime);
+        if (((RubyInteger)len).isZero(context) || Numeric.f_negative_p(context, (RubyInteger)len)) {
+            return newEmptyArray(context);
         }
 
         long n = numericToLong(context, arg);
