@@ -9,9 +9,10 @@ import java.io.IOException;
 public class DateLibrary implements Library {
 
     public static void load(Ruby runtime) {
-        RubyClass Date = RubyDate.createDateClass(runtime);
-        RubyDateTime.createDateTimeClass(runtime, Date);
-        TimeExt.load(runtime);
+        var context = runtime.getCurrentContext();
+        RubyClass Date = RubyDate.createDateClass(context);
+        RubyDateTime.createDateTimeClass(context, Date);
+        TimeExt.load(context);
     }
 
     public void load(final Ruby runtime, boolean wrap) throws IOException {

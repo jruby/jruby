@@ -14,7 +14,6 @@ import org.jruby.RubyArray;
 import org.jruby.RubyHash;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
-import org.jruby.api.Convert;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import jnr.posix.Passwd;
@@ -38,9 +37,10 @@ import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.io.OpenFile;
 import java.nio.ByteBuffer;
 
-import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Convert.numericToLong;
+import static org.jruby.api.Access.*;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.runtimeError;
 
@@ -56,7 +56,7 @@ public class RubyEtc {
             long ret = posix.fpathconf(fptr.getFileno(), name);
             if (ret == -1) {
                 if (posix.errno() == 0) {
-                    return context.runtime.getNil();
+                    return context.nil;
                 } else if (posix.errno() == Errno.EOPNOTSUPP.intValue()) {
                     throw context.runtime.newNotImplementedError("pathconf() function is unimplemented on this machine");
                 } else {
@@ -67,66 +67,65 @@ public class RubyEtc {
         }
     }
     
-    public static RubyModule createEtcModule(Ruby runtime) {
-        var context = runtime.getCurrentContext();
-        RubyModule etcModule = runtime.defineModule("Etc");
+    public static RubyModule createEtcModule(ThreadContext context) {
+        RubyModule Etc = defineModule(context, "Etc").defineMethods(context, RubyEtc.class);
 
-        runtime.setEtc(etcModule);
-        
-        etcModule.defineAnnotatedMethods(RubyEtc.class);
-        runtime.getIO().defineAnnotatedMethods(IOExt.class);
+        context.runtime.setEtc(Etc);
+        ioClass(context).defineMethods(context, IOExt.class);
 
         if (!Platform.IS_WINDOWS) {
             for (Constant c : ConstantSet.getConstantSet("Sysconf")) {
                 String name = c.name().substring(1); // leading "_"
-                etcModule.setConstant(name, asFixnum(context, c.intValue()));
+                Etc.setConstant(name, asFixnum(context, c.intValue()));
             }
             for (Constant c : ConstantSet.getConstantSet("Confstr")) {
                 String name = c.name().substring(1); // leading "_"
-                etcModule.setConstant(name, asFixnum(context, c.intValue()));
+                Etc.setConstant(name, asFixnum(context, c.intValue()));
             }
             for (Constant c : ConstantSet.getConstantSet("Pathconf")) {
                 String name = c.name().substring(1); // leading "_"
-                etcModule.setConstant(name, asFixnum(context, c.intValue()));
+                Etc.setConstant(name, asFixnum(context, c.intValue()));
             }
         }
         
-        definePasswdStruct(runtime);
-        defineGroupStruct(runtime);
+        definePasswdStruct(context, Etc);
+        defineGroupStruct(context, Etc);
         
-        return etcModule;
+        return Etc;
     }
     
-    private static void definePasswdStruct(Ruby runtime) {
+    private static void definePasswdStruct(ThreadContext context, RubyModule Etc) {
         IRubyObject[] args = new IRubyObject[] {
-                runtime.getNil(),
-                runtime.newSymbol("name"),
-                runtime.newSymbol("passwd"),
-                runtime.newSymbol("uid"),
-                runtime.newSymbol("gid"),
-                runtime.newSymbol("gecos"),
-                runtime.newSymbol("dir"),
-                runtime.newSymbol("shell"),
-                runtime.newSymbol("change"),
-                runtime.newSymbol("uclass"),
-                runtime.newSymbol("expire")
+                context.nil,
+                asSymbol(context, "name"),
+                asSymbol(context, "passwd"),
+                asSymbol(context, "uid"),
+                asSymbol(context, "gid"),
+                asSymbol(context, "gecos"),
+                asSymbol(context, "dir"),
+                asSymbol(context, "shell"),
+                asSymbol(context, "change"),
+                asSymbol(context, "uclass"),
+                asSymbol(context, "expire")
         };
-        
-        runtime.setPasswdStruct(RubyStruct.newInstance(runtime.getCurrentContext(), runtime.getStructClass(), args, Block.NULL_BLOCK));
-        runtime.getEtc().defineConstant("Passwd", runtime.getPasswdStruct());
+
+        var PasswdStruct = RubyStruct.newInstance(context, structClass(context), args, Block.NULL_BLOCK);
+        context.runtime.setPasswdStruct(PasswdStruct);
+        Etc.defineConstant("Passwd", PasswdStruct);
     }
 
-    private static void defineGroupStruct(Ruby runtime) {
+    private static void defineGroupStruct(ThreadContext context, RubyModule Etc) {
         IRubyObject[] args = new IRubyObject[] {
-                runtime.getNil(),
-                runtime.newSymbol("name"),
-                runtime.newSymbol("passwd"),
-                runtime.newSymbol("gid"),
-                runtime.newSymbol("mem")
+                context.nil,
+                asSymbol(context, "name"),
+                asSymbol(context, "passwd"),
+                asSymbol(context, "gid"),
+                asSymbol(context, "mem")
         };
-        
-        runtime.setGroupStruct(RubyStruct.newInstance(runtime.getCurrentContext(), runtime.getStructClass(), args, Block.NULL_BLOCK));
-        runtime.getEtc().defineConstant("Group", runtime.getGroupStruct());
+
+        var GroupStruct = RubyStruct.newInstance(context, structClass(context), args, Block.NULL_BLOCK);
+        context.runtime.setGroupStruct(GroupStruct);
+        Etc.defineConstant("Group", GroupStruct);
     }
     
     private static IRubyObject setupPasswd(ThreadContext context, Passwd passwd) {
@@ -585,20 +584,20 @@ public class RubyEtc {
         RubyHash uname = newHash(context);
 
         uname.op_aset(context,
-                Convert.asSymbol(context, "sysname"),
+                asSymbol(context, "sysname"),
                 newString(context, SafePropertyAccessor.getProperty("os.name", "unknown")));
         try {
             uname.op_aset(context,
-                    Convert.asSymbol(context, "nodename"),
+                    asSymbol(context, "nodename"),
                     newString(context, InetAddress.getLocalHost().getHostName()));
         } catch (UnknownHostException uhe) {
             uname.op_aset(context,
-                    Convert.asSymbol(context, "nodename"),
+                    asSymbol(context, "nodename"),
                     newString(context, "unknown"));
         }
-        uname.put(Convert.asSymbol(context, "release"), newString(context, "unknown"));
-        uname.put(Convert.asSymbol(context, "version"), newString(context, SafePropertyAccessor.getProperty("os.version")));
-        uname.put(Convert.asSymbol(context, "machine"), newString(context, SafePropertyAccessor.getProperty("os.arch")));
+        uname.put(asSymbol(context, "release"), newString(context, "unknown"));
+        uname.put(asSymbol(context, "version"), newString(context, SafePropertyAccessor.getProperty("os.version")));
+        uname.put(asSymbol(context, "machine"), newString(context, SafePropertyAccessor.getProperty("os.arch")));
 
         return uname;
     }

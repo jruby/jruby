@@ -11,13 +11,13 @@ import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.ffi.*;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
 public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
     private final Function function;
@@ -26,15 +26,10 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
     private final CallingConvention convention;
     private final IRubyObject enums;
     
-    public static RubyClass createInvokerClass(Ruby runtime, RubyModule module) {
-        RubyClass result = module.defineClassUnder("Invoker",
-                module.getClass("AbstractInvoker"),
-                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        result.defineAnnotatedMethods(AbstractInvoker.class);
-        result.defineAnnotatedMethods(JFFIInvoker.class);
-        result.defineAnnotatedConstants(JFFIInvoker.class);
-
-        return result;
+    public static RubyClass createInvokerClass(ThreadContext context, RubyModule FFI) {
+        return FFI.defineClassUnder(context, "Invoker", FFI.getClass("AbstractInvoker"), NOT_ALLOCATABLE_ALLOCATOR).
+                defineMethods(context, AbstractInvoker.class, JFFIInvoker.class).
+                defineConstants(context, JFFIInvoker.class);
     }
 
     JFFIInvoker(Ruby runtime, long address, Type returnType, Type[] parameterTypes, CallingConvention convention) {

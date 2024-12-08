@@ -37,6 +37,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Access.stringClass;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.castAsString;
 
@@ -47,8 +48,13 @@ import static org.jruby.api.Convert.castAsString;
  */
 public abstract class CoreExt {
 
+    @Deprecated(since = "10.0", forRemoval = true)
     public static void loadStringExtensions(Ruby runtime) {
-        runtime.getString().defineAnnotatedMethods(String.class);
+        loadStringExtensions(runtime.getCurrentContext());
+    }
+
+    public static void loadStringExtensions(ThreadContext context) {
+        stringClass(context).defineMethods(context, String.class);
     }
 
     public static class String {

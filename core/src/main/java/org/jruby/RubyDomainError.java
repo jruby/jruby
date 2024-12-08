@@ -29,6 +29,7 @@ package org.jruby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.DomainError;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.ThreadContext;
 
 /**
  /**
@@ -44,8 +45,8 @@ public class RubyDomainError extends RubyArgumentError {
         super(runtime, exceptionClass);
     }
 
-    static RubyClass define(Ruby runtime, RubyClass superClass, RubyModule under) {
-        return under.defineClassUnder("DomainError", superClass, RubyDomainError::new);
+    static RubyClass define(ThreadContext context, RubyClass superClass, RubyModule under) {
+        return under.defineClassUnder(context, "DomainError", superClass, RubyDomainError::new);
     }
 
     @Override

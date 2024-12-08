@@ -53,27 +53,21 @@ import org.jruby.threading.DaemonThreadFactory;
 import org.jruby.util.ByteList;
 
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineModule;
 
 public class Timeout {
     public static final String EXECUTOR_VARIABLE = "__executor__";
 
     public static void load(Ruby runtime) {
-        define(runtime.getOrCreateModule("Timeout"));
-    }
+        var context = runtime.getCurrentContext();
+        var Timeout = defineModule(context, "Timeout").defineMethods(context, Timeout.class);
 
-    public static void define(RubyModule timeout) {
-        // Timeout module methods
-        timeout.defineAnnotatedMethods(Timeout.class);
-
-
-        ScheduledThreadPoolExecutor executor =
-                new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), new DaemonThreadFactory());
+        var executor = new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), new DaemonThreadFactory());
         executor.setRemoveOnCancelPolicy(true);
-        timeout.setInternalVariable(EXECUTOR_VARIABLE, executor);
+        Timeout.setInternalVariable(EXECUTOR_VARIABLE, executor);
 
-        timeout.getRuntime().pushPostExitFunction((context) -> { executor.shutdown(); return 0;});
+        context.runtime.pushPostExitFunction((ctxt) -> { executor.shutdown(); return 0;});
     }
-
 
     @JRubyMethod(module = true)
     public static IRubyObject timeout(final ThreadContext context, IRubyObject recv, IRubyObject seconds, Block block) {

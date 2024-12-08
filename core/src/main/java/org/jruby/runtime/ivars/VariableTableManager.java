@@ -183,7 +183,7 @@ public class VariableTableManager {
      */
     public synchronized void requestFieldStorage(String name, Class<?> fieldType,  Boolean unwrap, Class<?> toType) {
         DirectFieldConfiguration config = new JavaClassConfiguration.DirectFieldConfiguration(name, fieldType, unwrap, toType);
-        if (realClass.getReifiedClass() != null)
+        if (realClass.reifiedClass() != null)
             requestFieldStorage(config);
         else {
             if (realClass.getClassConfig().requestedStorageVariables == null)
@@ -198,7 +198,7 @@ public class VariableTableManager {
      */
     public void requestFieldStorage(DirectFieldConfiguration config) {
         try {
-            Class<? extends Reified> reifiedClass = realClass.getReifiedClass();
+            Class<? extends Reified> reifiedClass = realClass.reifiedClass();
             Class<?> fieldType = reifiedClass.getField(config.name).getType();
             if (fieldType != config.fieldType) {
                 throw typeError(realClass.getClassRuntime().getCurrentContext(), "java_field " + config.name + " has incorrectly specified types for @ivar mapping");

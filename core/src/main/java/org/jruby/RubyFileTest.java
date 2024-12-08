@@ -35,6 +35,7 @@ import static org.jruby.RubyFile.get_path;
 import static org.jruby.RubyFile.fileResource;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Define.defineModule;
 
 import java.io.File;
 import java.io.IOException;
@@ -54,13 +55,8 @@ import org.jruby.util.TypeConverter;
 
 @JRubyModule(name = "FileTest")
 public class RubyFileTest {
-
-    public static RubyModule createFileTestModule(Ruby runtime) {
-        RubyModule fileTestModule = runtime.defineModule("FileTest");
-
-        fileTestModule.defineAnnotatedMethods(RubyFileTest.class);
-
-        return fileTestModule;
+    public static RubyModule createFileTestModule(ThreadContext context) {
+        return defineModule(context, "FileTest").defineMethods(context, RubyFileTest.class);
     }
 
     @JRubyMethod(name = "blockdev?", module = true)

@@ -33,7 +33,6 @@ import org.jruby.runtime.CallSite;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.FiberSites;
 import org.jruby.runtime.JavaSites.NumericSites;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -59,6 +58,7 @@ import static org.jruby.runtime.Helpers.hashEnd;
 import static org.jruby.runtime.Helpers.hashStart;
 import static org.jruby.runtime.Helpers.murmurCombine;
 import static org.jruby.runtime.Helpers.safeHash;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
 /**
  * Implements Enumerator::ArithmeticSequence
@@ -80,20 +80,11 @@ public class RubyArithmeticSequence extends RubyObject {
     private String method;
     private IRubyObject [] args;
 
-    public static RubyClass createArithmeticSequenceClass(Ruby runtime, RubyClass enumeratorModule) {
-        RubyClass sequencec = runtime.defineClassUnder(
-                "ArithmeticSequence",
-                enumeratorModule,
-                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR,
-                enumeratorModule);
-
-        sequencec.includeModule(runtime.getEnumerable());
-        sequencec.defineAnnotatedMethods(RubyArithmeticSequence.class);
-
-        RubyClass seqMetaClass = sequencec.getMetaClass();
-        seqMetaClass.undefineMethod("new");
-
-        return sequencec;
+    public static RubyClass createArithmeticSequenceClass(ThreadContext context, RubyClass Enumerator, RubyModule Enumerable) {
+        return Enumerator.defineClassUnder(context, "ArithmeticSequence", Enumerator, NOT_ALLOCATABLE_ALLOCATOR).
+                include(context, Enumerable).
+                defineMethods(context, RubyArithmeticSequence.class).
+                tap(m -> m.getMetaClass().undefMethods(context, "new"));
     }
 
     public RubyArithmeticSequence(Ruby runtime, RubyClass klass) {

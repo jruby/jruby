@@ -38,6 +38,7 @@ import org.jruby.runtime.ThreadContext;
 
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
@@ -59,11 +60,9 @@ public class RubySignalException extends RubyException {
         return new SignalException(message, this);
     }
 
-    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass signalExceptionClass = runtime.defineClass("SignalException", exceptionClass, RubySignalException::new);
-        signalExceptionClass.defineAnnotatedMethods(RubySignalException.class);
-
-        return signalExceptionClass;
+    static RubyClass define(ThreadContext context, RubyClass Exception) {
+        return defineClass(context, "SignalException", Exception, RubySignalException::new).
+                defineMethods(context, RubySignalException.class);
     }
 
     @JRubyMethod(required = 1, optional = 2, checkArity = false, visibility = PRIVATE)

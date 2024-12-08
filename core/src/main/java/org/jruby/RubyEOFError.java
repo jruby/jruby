@@ -29,6 +29,9 @@ package org.jruby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.EOFError;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Define.defineClass;
 
 /**
  * The Java representation of a Ruby EOFError.
@@ -41,10 +44,8 @@ public class RubyEOFError extends RubyIOError {
         super(runtime, exceptionClass);
     }
 
-    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass eofErrorClass = runtime.defineClass("EOFError", exceptionClass, RubyEOFError::new);
-
-        return eofErrorClass;
+    static RubyClass define(ThreadContext context, RubyClass IOError) {
+        return defineClass(context, "EOFError", IOError, RubyEOFError::new);
     }
 
     protected RaiseException constructThrowable(String message) {

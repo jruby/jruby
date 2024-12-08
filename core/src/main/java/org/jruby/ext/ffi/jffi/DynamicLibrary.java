@@ -16,14 +16,12 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
-import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.ffi.InvalidMemoryIO;
 import org.jruby.ext.ffi.MemoryIO;
 import org.jruby.ext.ffi.Pointer;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.FileResource;
@@ -31,6 +29,7 @@ import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.JRubyFile;
 
 import static org.jruby.api.Create.newString;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
 @JRubyClass(name = "FFI::DynamicLibrary", parent = "Object")
 public class DynamicLibrary extends RubyObject {
@@ -42,18 +41,15 @@ public class DynamicLibrary extends RubyObject {
     
     private final Library library;
     private final String name;
-    public static RubyClass createDynamicLibraryClass(Ruby runtime, RubyModule module) {
-        RubyClass result = module.defineClassUnder("DynamicLibrary",
-                runtime.getObject(),
-                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+    public static RubyClass createDynamicLibraryClass(ThreadContext context, RubyModule FFI, RubyClass Object) {
+        RubyClass DynamicLibary = FFI.defineClassUnder(context, "DynamicLibrary", Object, NOT_ALLOCATABLE_ALLOCATOR).
+                defineMethods(context, DynamicLibrary.class).
+                defineConstants(context, DynamicLibrary.class);
 
-        RubyClass symClass = result.defineClassUnder("Symbol",
-                module.getClass("Pointer"), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        symClass.defineAnnotatedMethods(Symbol.class);
-        result.defineAnnotatedMethods(DynamicLibrary.class);
-        result.defineAnnotatedConstants(DynamicLibrary.class);
+        DynamicLibary.defineClassUnder(context, "Symbol", FFI.getClass("Pointer"), NOT_ALLOCATABLE_ALLOCATOR).
+                defineMethods(context, Symbol.class);
 
-        return result;
+        return DynamicLibary;
     }
     private static final int getNativeLibraryFlags(IRubyObject rbFlags) {
         int f = 0, flags = RubyNumeric.fix2int(rbFlags);

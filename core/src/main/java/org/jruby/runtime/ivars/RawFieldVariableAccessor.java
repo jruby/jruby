@@ -85,15 +85,15 @@ public class RawFieldVariableAccessor extends FieldVariableAccessor {
                 if (realClass.getIsReifiedExtendedJavaClass() == Boolean.TRUE)
                 {
                     MethodHandle cjpUnwrap = Binder
-                            .from(realClass.getReifiedClass(), ConcreteJavaProxy.class, Object.class)
+                            .from(realClass.reifiedClass(), ConcreteJavaProxy.class, Object.class)
                             .dropLast()
                             .cast(Object.class, ConcreteJavaProxy.class)
                             .invokeVirtual(RubyObjectSpecializer.LOOKUP, "unwrap");
                     MethodHandle wrapperSetter = 
                             Binder
-                            .from(Object.class, realClass.getReifiedClass(), ConcreteJavaProxy.class, Object.class)
+                            .from(Object.class, realClass.reifiedClass(), ConcreteJavaProxy.class, Object.class)
                             .permute(0,2)
-                            .cast(void.class, realClass.getReifiedClass(), basetype)
+                            .cast(void.class, realClass.reifiedClass(), basetype)
                             .invoke(setter);
                     MethodHandle temp = MethodHandles.foldArguments(wrapperSetter, cjpUnwrap);
                     return temp;
@@ -109,14 +109,14 @@ public class RawFieldVariableAccessor extends FieldVariableAccessor {
                 {
                     // we are given a ConcreteJavaProxy, must unwrap first
                     MethodHandle cjpUnwrap = Binder
-                            .from(realClass.getReifiedClass(), ConcreteJavaProxy.class, Object.class)
+                            .from(realClass.reifiedClass(), ConcreteJavaProxy.class, Object.class)
                             .dropLast()
                             .cast(Object.class, ConcreteJavaProxy.class)
                             .invokeVirtual(RubyObjectSpecializer.LOOKUP, "unwrap");
     
                     MethodHandle wrapperSetConvert = 
                             Binder
-                            .from(Object.class, realClass.getReifiedClass(), ConcreteJavaProxy.class, Object.class)
+                            .from(Object.class, realClass.reifiedClass(), ConcreteJavaProxy.class, Object.class)
                             .dropFirst(2)
                             .cast(Object.class, IRubyObject.class)
                             .insert(1, toJava)
@@ -124,9 +124,9 @@ public class RawFieldVariableAccessor extends FieldVariableAccessor {
                     
                     MethodHandle wrapperSetter = 
                             Binder
-                            .from(Object.class, Object.class, realClass.getReifiedClass(), ConcreteJavaProxy.class, Object.class)
+                            .from(Object.class, Object.class, realClass.reifiedClass(), ConcreteJavaProxy.class, Object.class)
                             .permute(1,0)
-                            .cast(void.class, realClass.getReifiedClass(), basetype)
+                            .cast(void.class, realClass.reifiedClass(), basetype)
                             .invoke(setter);
     
                     MethodHandle temp = MethodHandles.foldArguments(wrapperSetter, wrapperSetConvert);
@@ -138,7 +138,7 @@ public class RawFieldVariableAccessor extends FieldVariableAccessor {
     
                     MethodHandle wrapperSetConvert = 
                             Binder
-                            .from(Object.class, realClass.getReifiedClass(), Object.class)
+                            .from(Object.class, realClass.reifiedClass(), Object.class)
                             .dropFirst()
                             .cast(Object.class, IRubyObject.class)
                             .insert(1, toJava)
@@ -146,9 +146,9 @@ public class RawFieldVariableAccessor extends FieldVariableAccessor {
                     
                     MethodHandle wrapperSetter = 
                             Binder
-                            .from(Object.class, Object.class, realClass.getReifiedClass(), Object.class)
+                            .from(Object.class, Object.class, realClass.reifiedClass(), Object.class)
                             .permute(1,0)
-                            .cast(void.class, realClass.getReifiedClass(), basetype)
+                            .cast(void.class, realClass.reifiedClass(), basetype)
                             .invoke(setter);
     
                     MethodHandle temp = MethodHandles.foldArguments(wrapperSetter, wrapperSetConvert);
@@ -180,7 +180,7 @@ public class RawFieldVariableAccessor extends FieldVariableAccessor {
             {
                 // we are given a ConcreteJavaProxy, must unwrap first
                 MethodHandle cjpUnwrap = Binder
-                        .from(realClass.getReifiedClass(), Object.class)
+                        .from(realClass.reifiedClass(), Object.class)
                         .cast(Object.class, ConcreteJavaProxy.class)
                         .invokeVirtual(RubyObjectSpecializer.LOOKUP, "unwrap");
     

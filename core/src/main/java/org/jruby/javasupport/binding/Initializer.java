@@ -35,7 +35,7 @@ public abstract class Initializer {
     public static RubyModule setupProxyClass(Ruby runtime, final Class<?> javaClass, RubyClass proxy) {
         setJavaClassFor(javaClass, proxy);
 
-        proxy.setReifiedClass((Class) javaClass);
+        proxy.reifiedClass((Class) javaClass);
 
         if ( javaClass.isArray() ) {
             flagAsJavaProxy(proxy); return proxy;

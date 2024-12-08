@@ -35,9 +35,10 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
 /**
  * A native function invoker
@@ -51,14 +52,10 @@ public abstract class AbstractInvoker extends Pointer {
      */
     protected final Arity arity;
     
-    public static RubyClass createAbstractInvokerClass(Ruby runtime, RubyModule module) {
-        RubyClass result = module.defineClassUnder(CLASS_NAME,
-                module.getClass("Pointer"),
-                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        result.defineAnnotatedMethods(AbstractInvoker.class);
-        result.defineAnnotatedConstants(AbstractInvoker.class);
-
-        return result;
+    public static RubyClass createAbstractInvokerClass(ThreadContext context, RubyModule FFI, RubyClass Pointer) {
+        return FFI.defineClassUnder(context, CLASS_NAME, Pointer, NOT_ALLOCATABLE_ALLOCATOR).
+                defineMethods(context, AbstractInvoker.class).
+                defineConstants(context, AbstractInvoker.class);
     }
     
     /**

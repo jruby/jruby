@@ -29,6 +29,9 @@ package org.jruby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.FloatDomainError;
+import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Define.defineClass;
 
 /**
  * The Java representation of a Ruby FloatDomainError.
@@ -41,10 +44,8 @@ public class RubyFloatDomainError extends RubyRangeError {
         super(runtime, exceptionClass);
     }
 
-    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass floatDomainErrorClass = runtime.defineClass("FloatDomainError", exceptionClass, RubyFloatDomainError::new);
-
-        return floatDomainErrorClass;
+    static RubyClass define(ThreadContext context, RubyClass RangeError) {
+        return defineClass(context, "FloatDomainError", RangeError, RubyFloatDomainError::new);
     }
 
     protected RaiseException constructThrowable(String message) {

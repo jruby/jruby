@@ -45,7 +45,6 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.MethodBlockBody;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -54,7 +53,9 @@ import org.jruby.runtime.callsite.CacheEntry;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
 /** 
  * The RubyMethod class represents a RubyMethod object.
@@ -74,20 +75,11 @@ public class RubyMethod extends AbstractRubyMethod {
         super(runtime, rubyClass);
     }
 
-    /** Create the RubyMethod class and add it to the Ruby runtime.
-     * 
-     */
-    public static RubyClass createMethodClass(Ruby runtime) {
-        // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here. Confirm. JRUBY-415
-        RubyClass methodClass = runtime.defineClass("Method", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-
-        methodClass.setClassIndex(ClassIndex.METHOD);
-        methodClass.setReifiedClass(RubyMethod.class);
-
-        methodClass.defineAnnotatedMethods(AbstractRubyMethod.class);
-        methodClass.defineAnnotatedMethods(RubyMethod.class);
-        
-        return methodClass;
+    public static RubyClass createMethodClass(ThreadContext context, RubyClass Object) {
+        return defineClass(context, "Method", Object, NOT_ALLOCATABLE_ALLOCATOR).
+                reifiedClass(RubyMethod.class).
+                classIndex(ClassIndex.METHOD).
+                defineMethods(context, AbstractRubyMethod.class, RubyMethod.class);
     }
 
     public static RubyMethod newMethod(

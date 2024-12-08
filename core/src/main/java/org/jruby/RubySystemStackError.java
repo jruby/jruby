@@ -29,6 +29,9 @@ package org.jruby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.SystemStackError;
+import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Define.defineClass;
 
 /**
  * The Java representation of a Ruby SystemStackError.
@@ -41,10 +44,8 @@ public class RubySystemStackError extends RubyException {
         super(runtime, exceptionClass);
     }
 
-    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass systemStackErrorClass = runtime.defineClass("SystemStackError", exceptionClass, RubySystemStackError::new);
-
-        return systemStackErrorClass;
+    static RubyClass define(ThreadContext context, RubyClass Exception) {
+        return defineClass(context, "SystemStackError", Exception, RubySystemStackError::new);
     }
 
     protected RaiseException constructThrowable(String message) {

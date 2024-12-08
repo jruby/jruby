@@ -29,6 +29,9 @@ package org.jruby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ZeroDivisionError;
+import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Define.defineClass;
 
 /**
  * The Java representation of a Ruby ZeroDivisionError.
@@ -41,10 +44,8 @@ public class RubyZeroDivisionError extends RubyStandardError {
         super(runtime, exceptionClass);
     }
 
-    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass zeroDivisionErrorClass = runtime.defineClass("ZeroDivisionError", exceptionClass, RubyZeroDivisionError::new);
-
-        return zeroDivisionErrorClass;
+    static RubyClass define(ThreadContext context, RubyClass StandardError) {
+        return defineClass(context, "ZeroDivisionError", StandardError, RubyZeroDivisionError::new);
     }
 
     protected RaiseException constructThrowable(String message) {

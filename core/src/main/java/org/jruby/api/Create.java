@@ -8,6 +8,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.func.TriConsumer;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 public class Create {
     /**
@@ -26,6 +27,13 @@ public class Create {
     public static RubyArray<?> newArray(ThreadContext context, int length) {
         // FIXME: This should be newBlankArray but things go very wrong in a tough to figure out where sort of way.
         return RubyArray.newArray(context.runtime, length);
+    }
+
+    public static <T extends IRubyObject> RubyArray<?> newArray(ThreadContext context, int length,
+                                                                Consumer<RubyArray<T>> populator) {
+        RubyArray rawArray = newRawArray(context, length);
+        populator.accept(rawArray);
+        return rawArray.finishRawArray(context);
     }
 
     /**

@@ -51,6 +51,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 
+import static org.jruby.api.Access.moduleClass;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
@@ -65,9 +66,8 @@ import static org.jruby.runtime.Visibility.PUBLIC;
  */
 public class Module {
 
-    public static void define(final Ruby runtime) {
-        final RubyClass Module = runtime.getModule();
-        Module.defineAnnotatedMethods(Module.class);
+    public static void define(ThreadContext context, RubyClass _Module) {
+        _Module.defineMethods(context, Module.class);
     }
 
     @JRubyMethod(name = "import", visibility = PRIVATE)

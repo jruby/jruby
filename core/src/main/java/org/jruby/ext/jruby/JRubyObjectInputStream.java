@@ -7,20 +7,23 @@ import java.io.IOException;
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
 import org.jruby.RubyClass;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.javasupport.Java;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Visibility;
 
+import static org.jruby.api.Access.objectClass;
+import static org.jruby.api.Define.defineClass;
+
 public class JRubyObjectInputStream extends RubyObject {
 
     JRubyObjectInputStreamImpl impl;
 
-    public static RubyClass createJRubyObjectInputStream(Ruby runtime) {
-	    RubyClass result = runtime.defineClass("JRubyObjectInputStream",runtime.getObject(), JRubyObjectInputStream::new);
-	    result.defineAnnotatedMethods(JRubyObjectInputStream.class);
-	    return result;
+    public static RubyClass createJRubyObjectInputStream(ThreadContext context) {
+	    return defineClass(context, "JRubyObjectInputStream", objectClass(context), JRubyObjectInputStream::new).
+                defineMethods(context, JRubyObjectInputStream.class);
     }
 
     @JRubyMethod(name = "new", rest = true, meta = true)

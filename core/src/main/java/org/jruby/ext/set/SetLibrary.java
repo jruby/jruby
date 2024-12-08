@@ -31,6 +31,9 @@ package org.jruby.ext.set;
 import org.jruby.Ruby;
 import org.jruby.runtime.load.Library;
 
+import static org.jruby.api.Access.enumerableModule;
+import static org.jruby.api.Access.objectClass;
+
 public final class SetLibrary implements Library {
 
     public void load(Ruby runtime, boolean wrap) {
@@ -38,9 +41,10 @@ public final class SetLibrary implements Library {
     }
 
     public static void load(Ruby runtime) {
-        RubySet.createSetClass(runtime);
-        RubySortedSet.createSortedSetClass(runtime);
-        runtime.getModule("Enumerable").defineAnnotatedMethods(EnumerableExt.class);
+        var context = runtime.getCurrentContext();
+        var Object = objectClass(context);
+        var Enumerable = enumerableModule(context).defineMethods(context, EnumerableExt.class);
+        var Set = RubySet.createSetClass(context, Object, Enumerable);
+        RubySortedSet.createSortedSetClass(context, Set);
     }
-
 }

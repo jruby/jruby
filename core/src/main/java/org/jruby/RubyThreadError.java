@@ -29,6 +29,9 @@ package org.jruby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadError;
+import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Define.defineClass;
 
 /**
  * The Java representation of a Ruby ThreadError.
@@ -41,10 +44,8 @@ public class RubyThreadError extends RubyStandardError {
         super(runtime, exceptionClass);
     }
 
-    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass threadErrorClass = runtime.defineClass("ThreadError", exceptionClass, RubyThreadError::new);
-
-        return threadErrorClass;
+    static RubyClass define(ThreadContext context, RubyClass StandardError) {
+        return defineClass(context, "ThreadError", StandardError, RubyThreadError::new);
     }
 
     protected RaiseException constructThrowable(String message) {

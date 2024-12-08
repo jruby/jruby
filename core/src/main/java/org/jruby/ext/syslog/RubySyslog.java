@@ -32,16 +32,18 @@ import org.jruby.RubyModule;
 import org.jruby.RubyClass;
 import org.jruby.anno.JRubyModule;
 import jnr.constants.platform.Syslog;
+import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Define.defineModule;
 
 @JRubyModule(name="Syslog")
 public class RubySyslog extends RubyObject {
-    public static RubyModule createSyslog(final Ruby runtime) {
-        RubyModule syslogModule = runtime.defineModule("Syslog");
+    public static RubyModule createSyslog(ThreadContext context) {
+        RubyModule Syslog = defineModule(context, "Syslog");
 
-        RubyModule rb_mConstants = syslogModule.defineModuleUnder("Constants");
-        runtime.loadConstantSet(rb_mConstants, Syslog.class);
+        Syslog.defineModuleUnder(context, "Constants").defineConstantsFrom(context, Syslog.class);
 
-        return syslogModule;
+        return Syslog;
     }
 
     public RubySyslog(Ruby runtime, RubyClass type) {

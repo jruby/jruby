@@ -31,6 +31,7 @@ package org.jruby.util;
 import static com.headius.backport9.buffer.Buffers.clearBuffer;
 import static com.headius.backport9.buffer.Buffers.flipBuffer;
 import static java.lang.System.out;
+import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Create.newHash;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
@@ -251,9 +252,7 @@ public class ShellLauncher {
 
         try {
             // dup for JRUBY-6603 (avoid concurrent modification while we walk it)
-            RubyHash hash = clearEnv ?
-                    newHash(context) :
-                    (RubyHash) context.runtime.getObject().getConstant("ENV").dup();
+            RubyHash hash = clearEnv ? newHash(context) : (RubyHash) objectClass(context).getConstant("ENV").dup();
 
             if (mergeEnv != null) {
                 if (mergeEnv instanceof Set) {
@@ -426,7 +425,7 @@ public class ShellLauncher {
 
     public static File findPathExecutable(Ruby runtime, String fname) {
         ThreadContext context = runtime.getCurrentContext();
-        RubyHash env = (RubyHash) runtime.getObject().getConstant("ENV");
+        RubyHash env = (RubyHash) objectClass(context).getConstant("ENV");
         IRubyObject pathObject = env.op_aref(context, newString(context, PATH_ENV));
         return findPathExecutable(runtime, fname, pathObject);
     }
@@ -437,7 +436,7 @@ public class ShellLauncher {
 
         if (pathObject == null || pathObject.isNil()) {
             ThreadContext context = runtime.getCurrentContext();
-            RubyHash env = (RubyHash) runtime.getObject().getConstant("ENV");
+            RubyHash env = (RubyHash) objectClass(context).getConstant("ENV");
             pathObject = env.op_aref(context, newString(context, PATH_ENV));
         }
 

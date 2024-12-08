@@ -91,7 +91,7 @@ public abstract class ClassJavaAddons {
 
         klass.reifyWithAncestors(dumpDir, useChildLoader);
 
-        Class<?> reifiedClass = klass.getReifiedClass();
+        Class<?> reifiedClass = klass.reifiedClass();
         if (reifiedClass == null) throw typeError(context, "requested class ", klass, " is not reifiable");
 
         generateFieldAccessors(context, klass, reifiedClass);

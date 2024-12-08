@@ -51,8 +51,10 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.SafePropertyAccessor;
 
+import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Create.newEmptyString;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineModule;
 
 @JRubyModule(name="Config")
 public class RbConfigLibrary implements Library {
@@ -220,7 +222,7 @@ public class RbConfigLibrary implements Library {
     public void load(Ruby runtime, boolean wrap) {
         ThreadContext context = runtime.getCurrentContext();
 
-        final RubyModule rbConfig = runtime.defineModule("RbConfig");
+        final RubyModule rbConfig = defineModule(context, "RbConfig");
 
         normalizedHome = getNormalizedHome(runtime);
 
@@ -305,7 +307,6 @@ public class RbConfigLibrary implements Library {
         String includeDir = newFile(normalizedHome, "lib/ruby/include").getPath();
 
         String vendorDirGeneral = getVendorDirGeneral(runtime);
-        String siteDirGeneral = getSiteDirGeneral(runtime);
         String rubySharedLibDir = getRubySharedLibDir(runtime);
         String rubyLibDir = getRubyLibDir(runtime);
         String archDir = getArchDir(runtime);
@@ -416,8 +417,8 @@ public class RbConfigLibrary implements Library {
     private static final boolean IS_64_BIT = jnr.posix.util.Platform.IS_64_BIT;
 
     private static void setupMakefileConfig(ThreadContext context, final RubyHash mkmfHash) {
-
-        RubyHash envHash = (RubyHash) context.runtime.getObject().fetchConstant("ENV");
+        var object = objectClass(context);
+        RubyHash envHash = (RubyHash) object.fetchConstant("ENV");
         String cc = getRubyEnv(envHash, "CC", "cc");
         String cpp = getRubyEnv(envHash, "CPP", "cc -E");
         String cxx = getRubyEnv(envHash, "CXX", "c++");
@@ -506,7 +507,7 @@ public class RbConfigLibrary implements Library {
         setConfig(context, mkmfHash, "rubyhdrdir", hdr_dir);
         setConfig(context, mkmfHash, "archdir", hdr_dir);
 
-        context.runtime.getObject().defineConstant("CROSS_COMPILING", context.nil);
+        object.defineConstant("CROSS_COMPILING", context.nil);
     }
 
     private static void setConfig(ThreadContext context, RubyHash hash, String key, String value) {

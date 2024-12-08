@@ -63,15 +63,10 @@ public class SizedQueue extends Queue {
         initialize(context, asFixnum(context, max));
     }
 
-    public static RubyClass setup(RubyClass threadClass, RubyClass queueClass, RubyClass objectClass) {
-        RubyClass cSizedQueue = threadClass.defineClassUnder("SizedQueue", queueClass, SizedQueue::new);
-
-        cSizedQueue.setReifiedClass(SizedQueue.class);
-        cSizedQueue.defineAnnotatedMethods(SizedQueue.class);
-
-        objectClass.setConstant("SizedQueue", cSizedQueue);
-
-        return cSizedQueue;
+    public static RubyClass setup(ThreadContext context, RubyClass Thread, RubyClass Queue, RubyClass Object) {
+        return (RubyClass) Object.setConstant("SizedQueue",
+                Thread.defineClassUnder(context, "SizedQueue", Queue, SizedQueue::new).
+                        reifiedClass(SizedQueue.class).defineMethods(context, SizedQueue.class));
     }
 
     @JRubyMethod

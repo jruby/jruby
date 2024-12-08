@@ -26,6 +26,7 @@
 
 package org.jruby.java.proxies;
 
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PUBLIC;
 
@@ -68,10 +69,8 @@ public class ConcreteJavaProxy extends JavaProxy {
         super(runtime, klazz, object);
     }
 
-    public static RubyClass createConcreteJavaProxy(final ThreadContext context) {
-        final Ruby runtime = context.runtime;
-        final RubyClass JavaProxy = runtime.getJavaSupport().getJavaProxyClass();
-        RubyClass ConcreteJavaProxy = runtime.defineClass("ConcreteJavaProxy", JavaProxy, ConcreteJavaProxy::new);
+    public static RubyClass createConcreteJavaProxy(final ThreadContext context, RubyClass JavaProxy) {
+        var ConcreteJavaProxy = defineClass(context, "ConcreteJavaProxy", JavaProxy, ConcreteJavaProxy::new);
         initialize(ConcreteJavaProxy);
         return ConcreteJavaProxy;
     }
@@ -140,9 +139,9 @@ public class ConcreteJavaProxy extends JavaProxy {
             if (parent.getJavaProxy()) return newMethod;
 
             // overridden class: reify and re-lookup new as reification changes it
-            if (parent.getReifiedClass() == null) {
+            if (parent.reifiedClass() == null) {
                 parent.reifyWithAncestors();
-                if (parent.getReifiedClass() == null) {
+                if (parent.reifiedClass() == null) {
                     throw typeError(clazz.getRuntime().getCurrentContext(), "requested class " + parent.getName() + " was not reifiable");
                 }
             }

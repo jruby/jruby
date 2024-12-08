@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import org.jruby.Ruby;
 import org.jruby.RubyBinding;
-import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyObject;
 import org.jruby.RubySymbol;
@@ -21,15 +20,14 @@ import org.jruby.util.TypeConverter;
 
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.runtimeError;
 import static org.jruby.util.RubyStringBuilder.str;
 
 public class TracePoint extends RubyObject {
-    public static void createTracePointClass(Ruby runtime) {
-        RubyClass tracePoint = runtime.defineClass("TracePoint", runtime.getObject(), TracePoint::new);
-        
-        tracePoint.defineAnnotatedMethods(TracePoint.class);
+    public static void createTracePointClass(ThreadContext context, RubyClass Object) {
+        defineClass(context, "TracePoint", Object, TracePoint::new).defineMethods(context, TracePoint.class);
     }
     
     public TracePoint(Ruby runtime, RubyClass klass) {

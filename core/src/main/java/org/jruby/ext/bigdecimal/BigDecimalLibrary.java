@@ -41,7 +41,8 @@ import org.jruby.runtime.load.Library;
  */
 public class BigDecimalLibrary implements Library {
     public void load(Ruby runtime, boolean wrap) throws IOException {
-        RubyBigDecimal.createBigDecimal(runtime);
+        var context = runtime.getCurrentContext();
+        RubyBigDecimal.createBigDecimal(context);
 
         // using load since this file does not exist in MRI
         runtime.getLoadService().load("jruby/bigdecimal.rb", false);

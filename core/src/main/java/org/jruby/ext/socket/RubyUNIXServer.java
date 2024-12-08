@@ -47,17 +47,15 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Create.newArray;
-import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineClass;
 
 @JRubyClass(name="UNIXServer", parent="UNIXSocket")
 public class RubyUNIXServer extends RubyUNIXSocket {
-    static void createUNIXServer(Ruby runtime) {
-        RubyClass rb_cUNIXServer = runtime.defineClass("UNIXServer", runtime.getClass("UNIXSocket"), RubyUNIXServer::new);
-
-        runtime.getObject().setConstant("UNIXserver", rb_cUNIXServer);
-        
-        rb_cUNIXServer.defineAnnotatedMethods(RubyUNIXServer.class);
+    static void createUNIXServer(ThreadContext context, RubyClass UNIXSocket, RubyClass Object) {
+        Object.setConstant("UNIXserver",
+                defineClass(context, "UNIXServer", UNIXSocket, RubyUNIXServer::new).
+                        defineMethods(context, RubyUNIXServer.class));
     }
 
     public RubyUNIXServer(Ruby runtime, RubyClass type) {

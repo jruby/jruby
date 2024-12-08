@@ -90,6 +90,7 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.Type;
 
+import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
@@ -1654,8 +1655,8 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static IRubyObject searchConst(ThreadContext context, StaticScope staticScope, String constName, boolean noPrivateConsts) {
-        RubyModule object = context.runtime.getObject();
-        IRubyObject constant = (staticScope == null) ? object.getConstant(constName) : staticScope.getConstantInner(constName);
+        RubyModule object = objectClass(context);
+        IRubyObject constant = staticScope == null ? object.getConstant(constName) : staticScope.getConstantInner(constName);
 
         // Inheritance lookup
         RubyModule module = null;
@@ -1666,11 +1667,8 @@ public class IRRuntimeHelpers {
         }
 
         // Call const_missing or cache
-        if (constant == null) {
-            return module.callMethod(context, "const_missing", context.runtime.fastNewSymbol(constName));
-        }
-
-        return constant;
+        return constant != null ?
+                constant : module.callMethod(context, "const_missing", context.runtime.fastNewSymbol(constName));
     }
 
     @JIT
@@ -1746,7 +1744,7 @@ public class IRRuntimeHelpers {
                                                  Object rubyContainer, boolean maybeRefined) {
         if (!(rubyContainer instanceof RubyModule)) throw typeError(context, "no outer class/module");
 
-        RubyModule newRubyModule = ((RubyModule) rubyContainer).defineOrGetModuleUnder(id, scope.getFile(), context.getLine() + 1);
+        RubyModule newRubyModule = ((RubyModule) rubyContainer).defineOrGetModuleUnder(context, id, scope.getFile(), context.getLine() + 1);
         scope.setModule(newRubyModule);
 
         if (maybeRefined) scope.captureParentRefinements(context);

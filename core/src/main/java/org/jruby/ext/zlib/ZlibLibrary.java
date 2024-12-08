@@ -33,6 +33,7 @@ import org.jruby.runtime.load.Library;
 
 public class ZlibLibrary implements Library {
     public void load(final Ruby runtime, boolean wrap) {
-        RubyZlib.createZlibModule(runtime);
+        var context = runtime.getCurrentContext();
+        RubyZlib.createZlibModule(context);
     }
 }

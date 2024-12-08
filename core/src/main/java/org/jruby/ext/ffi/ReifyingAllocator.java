@@ -49,7 +49,7 @@ class ReifyingAllocator implements ObjectAllocator {
         if (realSuper.getReifiedRubyClass() == null) reifyWithAncestors(realSuper);
         synchronized (klazz) {
             klazz.reify();
-            klazz.setAllocator(new ReifyingAllocator(klazz.getReifiedRubyClass()));
+            klazz.allocator(new ReifyingAllocator(klazz.getReifiedRubyClass()));
         }
     }
 }

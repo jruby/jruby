@@ -60,18 +60,15 @@ import static org.jruby.runtime.Visibility.PRIVATE;
 @JRubyClass(name="Java::JavaPackage", parent="Module")
 public class JavaPackage extends RubyModule {
 
-    static RubyClass createJavaPackageClass(final Ruby runtime, final RubyModule Java) {
-        RubyClass superClass = new BlankSlateWrapper(runtime, runtime.getModule(), runtime.getKernel());
-        RubyClass JavaPackage = RubyClass.newClass(runtime, superClass);
-        JavaPackage.setMetaClass(runtime.getModule());
-        JavaPackage.setAllocator(ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+    static RubyClass createJavaPackageClass(ThreadContext context, final RubyModule Java, RubyClass Module, RubyModule Kernel) {
+        RubyClass superClass = new BlankSlateWrapper(context.runtime, Module, Kernel);
+        RubyClass JavaPackage = RubyClass.newClass(context.runtime, superClass);
+        JavaPackage.setMetaClass(Module);
+        JavaPackage.allocator(ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR).
+                baseName("JavaPackage").
+                defineMethods(context, JavaPackage.class);
         ((MetaClass) JavaPackage.makeMetaClass(superClass)).setAttached(JavaPackage);
-
-        JavaPackage.setBaseName("JavaPackage");
         JavaPackage.setParent(Java);
-        // JavaPackage.setReifiedClass(JavaPackage.class);
-
-        JavaPackage.defineAnnotatedMethods(JavaPackage.class);
         return JavaPackage;
     }
 

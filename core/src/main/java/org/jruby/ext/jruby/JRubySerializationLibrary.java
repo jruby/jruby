@@ -6,6 +6,7 @@ import java.io.IOException;
 
 public class JRubySerializationLibrary implements Library {
     public void load(Ruby runtime, boolean wrap) throws IOException {
-        JRubyObjectInputStream.createJRubyObjectInputStream(runtime);
+        var context = runtime.getCurrentContext();
+        JRubyObjectInputStream.createJRubyObjectInputStream(context);
     }
 }

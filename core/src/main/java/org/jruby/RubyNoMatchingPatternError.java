@@ -30,6 +30,9 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.NoMatchingPatternError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ArgumentError;
+import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Define.defineClass;
 
 /**
  * The Java representation of a Ruby ArgumentError.
@@ -46,8 +49,8 @@ public class RubyNoMatchingPatternError extends RubyStandardError {
         super(runtime, exceptionClass, message);
     }
 
-    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        return runtime.defineClass("NoMatchingPatternError", exceptionClass, RubyNoMatchingPatternError::new);
+    static RubyClass define(ThreadContext context, RubyClass StandardError) {
+        return defineClass(context, "NoMatchingPatternError", StandardError, RubyNoMatchingPatternError::new);
     }
 
     @Override

@@ -36,7 +36,6 @@ import java.util.List;
 
 import org.jruby.*;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.api.Convert;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.java.proxies.ConcreteJavaProxy;
@@ -51,6 +50,7 @@ import org.jruby.util.ClasspathLauncher;
 
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.util.URLUtil.getPath;
 
@@ -63,12 +63,13 @@ import static org.jruby.util.URLUtil.getPath;
 public class JRubyUtilLibrary implements Library {
 
     public void load(Ruby runtime, boolean wrap) {
-        RubyModule JRuby = runtime.getOrCreateModule("JRuby");
-        RubyModule JRubyUtil = JRuby.defineModuleUnder("Util");
-        JRubyUtil.defineAnnotatedMethods(JRubyUtilLibrary.class);
-        JRubyUtil.setConstant("SEPARATOR", runtime.newString(org.jruby.util.cli.ArgumentProcessor.SEPARATOR));
-        JRubyUtil.setConstant("ON_WINDOWS", runtime.newBoolean(org.jruby.platform.Platform.IS_WINDOWS));
-        JRubyUtil.setConstant("ON_SOLARIS", runtime.newBoolean(org.jruby.platform.Platform.IS_SOLARIS));
+        var context = runtime.getCurrentContext();
+        RubyModule JRuby = defineModule(context, "JRuby");
+        JRuby.defineModuleUnder(context, "Util").
+                defineMethods(context, JRubyUtilLibrary.class).
+                defineConstant(context, "SEPARATOR", newString(context, org.jruby.util.cli.ArgumentProcessor.SEPARATOR)).
+                defineConstant(context, "ON_WINDOWS", asBoolean(context, org.jruby.platform.Platform.IS_WINDOWS)).
+                defineConstant(context, "ON_SOLARIS", asBoolean(context, org.jruby.platform.Platform.IS_SOLARIS));
     }
 
     @JRubyMethod(module = true)
@@ -215,16 +216,17 @@ public class JRubyUtilLibrary implements Library {
         if (klass instanceof RubySymbol) {
             return switch (klass.asJavaString()) {
                 case "string" -> {
-                    CoreExt.loadStringExtensions(context.runtime);
+                    CoreExt.loadStringExtensions(context);
                     yield context.tru;
                 }
                 default -> throw argumentError(context, ':' + klass.asJavaString());
             };
         }
-        return loadExtension(context.runtime, klass.convertToString().toString()) ? context.tru : context.fals;
+        return loadExtension(context, klass.convertToString().toString()) ? context.tru : context.fals;
     }
 
-    private static boolean loadExtension(final Ruby runtime, final String className) {
+    private static boolean loadExtension(ThreadContext context, final String className) {
+        var runtime = context.runtime;
         Class<?> clazz = Java.getJavaClass(runtime, className);
         // 1. BasicLibraryService interface
         if (BasicLibraryService.class.isAssignableFrom(clazz)) {

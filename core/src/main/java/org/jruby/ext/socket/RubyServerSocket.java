@@ -52,6 +52,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
@@ -61,10 +62,9 @@ import static org.jruby.api.Error.typeError;
  */
 @JRubyClass(name="Socket", parent="BasicSocket", include="Socket::Constants")
 public class RubyServerSocket extends RubySocket {
-    static void createServerSocket(Ruby runtime) {
-        RubyClass rb_cSocket = runtime.defineClass("ServerSocket", runtime.getClass("Socket"), RubyServerSocket::new);
-
-        rb_cSocket.defineAnnotatedMethods(RubyServerSocket.class);
+    static void createServerSocket(ThreadContext context, RubyClass Socket) {
+        defineClass(context, "ServerSocket", Socket, RubyServerSocket::new).
+                defineMethods(context, RubyServerSocket.class);
     }
 
     public RubyServerSocket(Ruby runtime, RubyClass type) {

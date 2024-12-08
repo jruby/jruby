@@ -56,7 +56,7 @@ public class PrependedModule extends RubyClass implements DelegatedModule {
         origin = prependedClass;
         this.metaClass = origin.metaClass;
         if (superClass != null) {
-            setClassIndex(superClass.getClassIndex()); // use same ClassIndex as metaclass, since we're technically still of that type
+            classIndex(superClass.getClassIndex()); // use same ClassIndex as metaclass, since we're technically still of that type
         }
         this.methods = prependedClass.methods;
         prependedClass.methods = Collections.EMPTY_MAP;

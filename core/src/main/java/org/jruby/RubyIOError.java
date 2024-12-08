@@ -29,6 +29,9 @@ package org.jruby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.IOError;
+import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Define.defineClass;
 
 /**
  * The Java representation of a Ruby IOError.
@@ -41,10 +44,8 @@ public class RubyIOError extends RubyStandardError {
         super(runtime, exceptionClass);
     }
 
-    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass iOErrorClass = runtime.defineClass("IOError", exceptionClass, RubyIOError::new);
-
-        return iOErrorClass;
+    static RubyClass define(ThreadContext context, RubyClass StandardError) {
+        return defineClass(context, "IOError", StandardError, RubyIOError::new);
     }
 
     protected RaiseException constructThrowable(String message) {

@@ -30,7 +30,7 @@ package org.jruby.ext.ffi;
 
 import java.nio.ByteOrder;
 import java.util.regex.Pattern;
-import org.jruby.Ruby;
+
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ThreadContext;
@@ -293,21 +293,18 @@ public class Platform {
                 && CPU != CPU.UNKNOWN
                 && (addressSize == 32 || addressSize == 64);
     }
-    public static void createPlatformModule(Ruby runtime, RubyModule ffi) {
-        var context = runtime.getCurrentContext();
-        RubyModule module = ffi.defineModuleUnder("Platform");
+    public static void createPlatformModule(ThreadContext context, RubyModule FFI) {
         Platform platform = Platform.getPlatform();
+        var module = FFI.defineModuleUnder(context, "Platform").
+                defineMethods(context, Platform.class).
+                defineConstant(context, "ADDRESS_SIZE", asFixnum(context, platform.addressSize)).
+                defineConstant(context, "LONG_SIZE", asFixnum(context, platform.longSize)).
+                defineConstant(context, "LONG_DOUBLE_SIZE", asFixnum(context, 128)).
+                defineConstant(context, "BYTE_ORDER", asFixnum(context, BYTE_ORDER)).
+                defineConstant(context, "BIG_ENDIAN", asFixnum(context, BIG_ENDIAN)).
+                defineConstant(context, "LITTLE_ENDIAN", asFixnum(context, LITTLE_ENDIAN));
 
-        module.defineConstant("ADDRESS_SIZE", asFixnum(context, platform.addressSize));
-        module.defineConstant("LONG_SIZE", asFixnum(context, platform.longSize));
-        module.defineConstant("LONG_DOUBLE_SIZE", asFixnum(context, 128));
-        module.defineConstant("BYTE_ORDER", asFixnum(context, BYTE_ORDER));
-        module.defineConstant("BIG_ENDIAN", asFixnum(context, BIG_ENDIAN));
-        module.defineConstant("LITTLE_ENDIAN", asFixnum(context, LITTLE_ENDIAN));
-        if (OS == OS_TYPE.LINUX) {
-            module.defineConstant("GNU_LIBC", newString(context, LIBC));
-        }
-        module.defineAnnotatedMethods(Platform.class);
+        if (OS == OS_TYPE.LINUX) module.defineConstant(context, "GNU_LIBC", newString(context, LIBC));
     }
 
     @JRubyMethod(name = "windows?", module=true)

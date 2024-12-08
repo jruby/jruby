@@ -50,7 +50,6 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.JavaSites;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -59,10 +58,13 @@ import org.jruby.util.Numeric;
 import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
 
+import static org.jruby.api.Access.kernelModule;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -133,20 +135,19 @@ public class RubyBigDecimal extends RubyNumeric {
     private static final double SQRT_10 = 3.162277660168379332;
     private static final long NEGATIVE_ZERO_LONG_BITS = Double.doubleToLongBits(-0.0);
 
-    public static RubyClass createBigDecimal(Ruby runtime) {
-        var context = runtime.getCurrentContext();
-        RubyClass bigDecimal = runtime.defineClass("BigDecimal", runtime.getNumeric(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+    public static RubyClass createBigDecimal(ThreadContext context) {
+        var runtime = context.runtime;
+        RubyClass bigDecimal = defineClass(context, "BigDecimal", runtime.getNumeric(), NOT_ALLOCATABLE_ALLOCATOR).
+                reifiedClass(RubyBigDecimal.class).
+                defineMethods(context, RubyBigDecimal.class).
+                defineConstants(context, RubyBigDecimal.class).
+                defineConstant(context, "VERSION", RubyString.newStringShared(runtime, VERSION));
 
-        bigDecimal.setConstant("VERSION", RubyString.newStringShared(runtime, VERSION));
-
-        runtime.getKernel().defineAnnotatedMethods(BigDecimalKernelMethods.class);
+        kernelModule(context).defineMethods(context, BigDecimalKernelMethods.class);
 
         bigDecimal.setInternalModuleVariable("vpPrecLimit", asFixnum(context, 0));
         bigDecimal.setInternalModuleVariable("vpExceptionMode", asFixnum(context, 0));
         bigDecimal.setInternalModuleVariable("vpRoundingMode", asFixnum(context, ROUND_HALF_UP));
-
-        bigDecimal.defineAnnotatedMethods(RubyBigDecimal.class);
-        bigDecimal.defineAnnotatedConstants(RubyBigDecimal.class);
 
         //RubyModule bigMath = runtime.defineModule("BigMath");
         // NOTE: BigMath.exp and BigMath.pow should be implemented as native
@@ -158,17 +159,11 @@ public class RubyBigDecimal extends RubyNumeric {
         RubyBigDecimal POSITIVE_INFINITY = new RubyBigDecimal(runtime, BigDecimal.ZERO, 1, 0);
         RubyBigDecimal NEGATIVE_INFINITY = new RubyBigDecimal(runtime, BigDecimal.ZERO, -1, 0);
 
-        bigDecimal.defineConstant("POSITIVE_ZERO", POSITIVE_ZERO);
-        bigDecimal.setConstantVisibility(runtime, "POSITIVE_ZERO", true);
-        bigDecimal.defineConstant("NEGATIVE_ZERO", NEGATIVE_ZERO);
-        bigDecimal.setConstantVisibility(runtime, "NEGATIVE_ZERO", true);
-
-        bigDecimal.defineConstant("NAN", NAN);
-        bigDecimal.defineConstant("INFINITY", POSITIVE_INFINITY);
-        bigDecimal.defineConstant("NEGATIVE_INFINITY", NEGATIVE_INFINITY);
-        bigDecimal.setConstantVisibility(runtime, "NEGATIVE_INFINITY", true);
-        
-        bigDecimal.setReifiedClass(RubyBigDecimal.class);
+        bigDecimal.defineConstant(context, "POSITIVE_ZERO", POSITIVE_ZERO, true).
+                defineConstant(context, "NEGATIVE_ZERO", NEGATIVE_ZERO, true).
+                defineConstant(context, "NAN", NAN).
+                defineConstant(context, "INFINITY", POSITIVE_INFINITY).
+                defineConstant(context, "NEGATIVE_INFINITY", NEGATIVE_INFINITY, true);
 
         return bigDecimal;
     }

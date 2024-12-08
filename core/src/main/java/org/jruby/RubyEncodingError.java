@@ -29,6 +29,9 @@ package org.jruby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.EncodingError;
+import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Define.defineClass;
 
 /**
  * The Java representation of a Ruby EncodingError.
@@ -41,10 +44,8 @@ public class RubyEncodingError extends RubyStandardError {
         super(runtime, exceptionClass);
     }
 
-    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass encodingErrorClass = runtime.defineClass("EncodingError", exceptionClass, RubyEncodingError::new);
-
-        return encodingErrorClass;
+    static RubyClass define(ThreadContext context, RubyClass StandardError) {
+        return defineClass(context, "EncodingError", StandardError, RubyEncodingError::new);
     }
 
     protected RaiseException constructThrowable(String message) {
@@ -57,8 +58,8 @@ public class RubyEncodingError extends RubyStandardError {
             super(runtime, exceptionClass);
         }
 
-        static RubyClass define(Ruby runtime, RubyClass exceptionClass, RubyModule under) {
-            return under.defineClassUnder("CompatibilityError", exceptionClass, RubyCompatibilityError::new);
+        static RubyClass define(ThreadContext context, RubyClass EncodingError, RubyModule Encoding) {
+            return Encoding.defineClassUnder(context, "CompatibilityError", EncodingError, RubyCompatibilityError::new);
         }
 
         protected RaiseException constructThrowable(String message) {
@@ -72,13 +73,9 @@ public class RubyEncodingError extends RubyStandardError {
             super(runtime, exceptionClass);
         }
 
-        static RubyClass define(Ruby runtime, RubyClass exceptionClass, RubyModule under) {
-            RubyClass invalidByteSequenceErrorClass = under.defineClassUnder("InvalidByteSequenceError", exceptionClass, RubyInvalidByteSequenceError::new);
-
-            invalidByteSequenceErrorClass.defineAnnotatedMethods(RubyConverter.EncodingErrorMethods.class);
-            invalidByteSequenceErrorClass.defineAnnotatedMethods(RubyConverter.InvalidByteSequenceErrorMethods.class);
-
-            return invalidByteSequenceErrorClass;
+        static RubyClass define(ThreadContext context, RubyClass EncodingError, RubyModule Encoding) {
+            return Encoding.defineClassUnder(context, "InvalidByteSequenceError", EncodingError, RubyInvalidByteSequenceError::new).
+                    defineMethods(context, RubyConverter.EncodingErrorMethods.class, RubyConverter.InvalidByteSequenceErrorMethods.class);
         }
 
         protected RaiseException constructThrowable(String message) {
@@ -92,13 +89,9 @@ public class RubyEncodingError extends RubyStandardError {
             super(runtime, exceptionClass);
         }
 
-        static RubyClass define(Ruby runtime, RubyClass exceptionClass, RubyModule under) {
-            RubyClass undefinedConversionErrorClass = under.defineClassUnder("UndefinedConversionError", exceptionClass, RubyUndefinedConversionError::new);
-
-            undefinedConversionErrorClass.defineAnnotatedMethods(RubyConverter.EncodingErrorMethods.class);
-            undefinedConversionErrorClass.defineAnnotatedMethods(RubyConverter.UndefinedConversionErrorMethods.class);
-
-            return undefinedConversionErrorClass;
+        static RubyClass define(ThreadContext context, RubyClass EncodingError, RubyModule Encoding) {
+            return Encoding.defineClassUnder(context, "UndefinedConversionError", EncodingError, RubyUndefinedConversionError::new).
+                    defineMethods(context, RubyConverter.EncodingErrorMethods.class, RubyConverter.UndefinedConversionErrorMethods.class);
         }
 
         protected RaiseException constructThrowable(String message) {
@@ -112,10 +105,8 @@ public class RubyEncodingError extends RubyStandardError {
             super(runtime, exceptionClass);
         }
 
-        static RubyClass define(Ruby runtime, RubyClass exceptionClass, RubyModule under) {
-            RubyClass converterNotFoundErrorClass = under.defineClassUnder("ConverterNotFoundError", exceptionClass, RubyConverterNotFoundError::new);
-
-            return converterNotFoundErrorClass;
+        static RubyClass define(ThreadContext context, RubyClass EncodingError, RubyModule Encoding) {
+            return Encoding.defineClassUnder(context, "ConverterNotFoundError", EncodingError, RubyConverterNotFoundError::new);
         }
 
         protected RaiseException constructThrowable(String message) {

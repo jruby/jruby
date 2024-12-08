@@ -4,6 +4,7 @@ package org.jruby.ext.ffi;
 import java.nio.ByteOrder;
 
 import org.jruby.*;
+import org.jruby.RubyModule.KindOf;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -11,6 +12,8 @@ import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 
+import static org.jruby.api.Access.nilClass;
+import static org.jruby.api.Access.runtimeErrorClass;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newString;
 import static org.jruby.runtime.Visibility.*;
@@ -23,31 +26,30 @@ import static org.jruby.runtime.Visibility.*;
  */
 @JRubyClass(name="FFI::Pointer", parent=AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS)
 public class Pointer extends AbstractMemory {
-    public static RubyClass createPointerClass(Ruby runtime, RubyModule module) {
-        RubyClass pointerClass = module.defineClassUnder("Pointer",
-                module.getClass(AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS),
-                Options.REIFY_FFI.load() ? new ReifyingAllocator(Pointer.class) : Pointer::new);
+    public static RubyClass createPointerClass(ThreadContext context, RubyModule FFI, RubyClass AbstractMemory) {
+        ObjectAllocator allocator = Options.REIFY_FFI.load() ? new ReifyingAllocator(Pointer.class) : Pointer::new;
+        RubyClass _Pointer = FFI.defineClassUnder(context, "Pointer", AbstractMemory, allocator).
+                reifiedClass(Pointer.class).
+                kindOf(new KindOf() {
+                    @Override
+                    public boolean isKindOf(IRubyObject obj, RubyModule type) {
+                        return obj instanceof Pointer && super.isKindOf(obj, type);
+                    }
+                }).
+                defineMethods(context, Pointer.class).
+                defineConstants(context, Pointer.class);
 
-        pointerClass.defineAnnotatedMethods(Pointer.class);
-        pointerClass.defineAnnotatedConstants(Pointer.class);
-        pointerClass.setReifiedClass(Pointer.class);
-        pointerClass.kindOf = new RubyModule.KindOf() {
-            @Override
-            public boolean isKindOf(IRubyObject obj, RubyModule type) {
-                return obj instanceof Pointer && super.isKindOf(obj, type); 
-            }
-        };
-
-        module.defineClassUnder("NullPointerError", runtime.getRuntimeError(),
-                runtime.getRuntimeError().getAllocator());
+        var RuntimeError = runtimeErrorClass(context);
+        FFI.defineClassUnder(context, "NullPointerError", RuntimeError, RuntimeError.getAllocator());
 
         // Add Pointer::NULL as a constant
-        Pointer nullPointer = new Pointer(runtime, pointerClass, new NullMemoryIO(runtime));
-        pointerClass.setConstant("NULL", nullPointer);
-        
-        runtime.getNilClass().addMethod("to_ptr", new NilToPointerMethod(runtime.getNilClass(), nullPointer, "to_ptr"));
+        Pointer nullPointer = new Pointer(context.runtime, _Pointer, new NullMemoryIO(context.runtime));
+        _Pointer.setConstant("NULL", nullPointer);
 
-        return pointerClass;
+        var NilClass = nilClass(context);
+        NilClass.addMethod("to_ptr", new NilToPointerMethod(NilClass, nullPointer, "to_ptr"));
+
+        return _Pointer;
     }
 
     public static final Pointer getNull(Ruby runtime) {

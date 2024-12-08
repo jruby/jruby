@@ -61,6 +61,7 @@ import static org.jcodings.transcode.EConvResult.*;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineClassUnder;
 import static org.jruby.api.Error.*;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
@@ -119,17 +120,13 @@ public class RubyConverter extends RubyObject {
                 EncodingDB.getEncodings().get("stateless-ISO-2022-JP-KDDI".getBytes()).getEncoding());
     }
 
-    public static RubyClass createConverterClass(Ruby runtime) {
-        RubyClass converterc = runtime.defineClassUnder("Converter", runtime.getObject(), RubyConverter::new, runtime.getEncoding());
-
-        converterc.setClassIndex(ClassIndex.CONVERTER);
-        converterc.setReifiedClass(RubyConverter.class);
-        converterc.kindOf = new RubyModule.JavaClassKindOf(RubyConverter.class);
-
-        converterc.defineAnnotatedMethods(RubyConverter.class);
-        converterc.defineAnnotatedConstants(RubyConverter.class);
-
-        return converterc;
+    public static RubyClass createConverterClass(ThreadContext context, RubyClass Object, RubyClass Encoding) {
+        return defineClassUnder(context, "Converter", Object, RubyConverter::new, Encoding).
+                reifiedClass(RubyConverter.class).
+                kindOf(new RubyModule.JavaClassKindOf(RubyConverter.class)).
+                classIndex(ClassIndex.CONVERTER).
+                defineMethods(context, RubyConverter.class).
+                defineConstants(context, RubyConverter.class);
     }
 
     public RubyConverter(Ruby runtime, RubyClass klass) {

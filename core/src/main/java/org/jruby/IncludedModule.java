@@ -10,7 +10,7 @@ public class IncludedModule extends RubyClass implements DelegatedModule {
         this.origin = origin;
         this.metaClass = origin.metaClass;
         if (superClass != null) {
-            setClassIndex(superClass.getClassIndex()); // use same ClassIndex as metaclass, since we're technically still of that type
+            classIndex(superClass.getClassIndex()); // use same ClassIndex as metaclass, since we're technically still of that type
         }
     }
 

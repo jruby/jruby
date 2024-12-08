@@ -47,7 +47,7 @@ import org.jruby.java.proxies.JavaProxy;
 import org.jruby.java.util.ClassUtils;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JavaNameMangler;
 
@@ -67,6 +67,7 @@ import java.util.List;
 import static org.jruby.api.Convert.castAsClass;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.javasupport.JavaCallable.inspectParameterTypes;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
 /**
  * Generalized proxy for classes and interfaces.
@@ -186,12 +187,11 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
         private Object state;
 
-        public static RubyClass createJavaProxyMethodClass(Ruby runtime, RubyModule Java) {
-            RubyClass JavaProxyMethod = Java.defineClassUnder("JavaProxyMethod",
-                runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        public static RubyClass createJavaProxyMethodClass(ThreadContext context, RubyClass Object, RubyModule Java) {
+            var JavaProxyMethod = (RubyClass) Java.defineClassUnder(context, "JavaProxyMethod", Object, NOT_ALLOCATABLE_ALLOCATOR).
+                    defineMethods(context, ProxyMethodImpl.class);
+            JavaProxyReflectionObject.registerRubyMethods(context, JavaProxyMethod);
 
-            JavaProxyReflectionObject.registerRubyMethods(runtime, JavaProxyMethod);
-            JavaProxyMethod.defineAnnotatedMethods(ProxyMethodImpl.class);
             return JavaProxyMethod;
         }
 
@@ -481,18 +481,17 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     // Ruby-level methods
     //
 
-    public static void createJavaProxyClasses(final Ruby runtime, final RubyModule Java) {
-        JavaProxyClass.createJavaProxyClassClass(runtime, Java);
-        ProxyMethodImpl.createJavaProxyMethodClass(runtime, Java);
-        JavaProxyConstructor.createJavaProxyConstructorClass(runtime, Java);
+    public static void createJavaProxyClasses(ThreadContext context, final RubyModule Java, RubyClass Object) {
+        JavaProxyClass.createJavaProxyClassClass(context, Object, Java);
+        ProxyMethodImpl.createJavaProxyMethodClass(context, Object, Java);
+        JavaProxyConstructor.createJavaProxyConstructorClass(context, Object, Java);
     }
 
-    public static RubyClass createJavaProxyClassClass(final Ruby runtime, final RubyModule Java) {
-        RubyClass JavaProxyClass = Java.defineClassUnder("JavaProxyClass",
-            runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR
-        );
-        JavaProxyReflectionObject.registerRubyMethods(runtime, JavaProxyClass);
-        JavaProxyClass.defineAnnotatedMethods(JavaProxyClass.class);
+    public static RubyClass createJavaProxyClassClass(ThreadContext context, RubyClass Object, final RubyModule Java) {
+        RubyClass JavaProxyClass = Java.defineClassUnder(context, "JavaProxyClass", Object, NOT_ALLOCATABLE_ALLOCATOR).
+                defineMethods(context, JavaProxyClass.class);
+        JavaProxyReflectionObject.registerRubyMethods(context, JavaProxyClass);
+
         return JavaProxyClass;
     }
 //

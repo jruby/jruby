@@ -41,12 +41,8 @@ public class Ifaddr extends RubyObject {
     private String flagStatus;
     private Addrinfo addr;
 
-    public static void createIfaddr(Ruby runtime) {
-        RubyClass ifaddr = runtime.getClass("Socket").defineClassUnder(
-                "Ifaddr",
-                runtime.getObject(),
-                Ifaddr::new);
-        ifaddr.defineAnnotatedMethods(Ifaddr.class);
+    public static void createIfaddr(ThreadContext context, RubyClass Object, RubyClass Socket) {
+        Socket.defineClassUnder(context, "Ifaddr", Object, Ifaddr::new).defineMethods(context, Ifaddr.class);
     }
 
     public Ifaddr(Ruby runtime, RubyClass metaClass) {

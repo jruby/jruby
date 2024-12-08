@@ -55,6 +55,7 @@ import org.jruby.util.TypeConverter;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.*;
 import static org.jruby.ast.util.ArgsUtil.hasExceptionOption;
 import static org.jruby.runtime.Helpers.invokedynamic;
@@ -68,21 +69,14 @@ import static org.jruby.util.RubyStringBuilder.str;
 @JRubyClass(name = "Rational", parent = "Numeric")
 public class RubyRational extends RubyNumeric {
     
-    public static RubyClass createRationalClass(Ruby runtime) {
-        RubyClass rationalc = runtime.defineClass("Rational", runtime.getNumeric(), RubyRational::new);
-
-        rationalc.setClassIndex(ClassIndex.RATIONAL);
-        rationalc.setReifiedClass(RubyRational.class);
-        
-        rationalc.kindOf = new RubyModule.JavaClassKindOf(RubyRational.class);
-
-        rationalc.setMarshal(RATIONAL_MARSHAL);
-        rationalc.defineAnnotatedMethods(RubyRational.class);
-
-        rationalc.getSingletonClass().undefineMethod("allocate");
-        rationalc.getSingletonClass().undefineMethod("new");
-
-        return rationalc;
+    public static RubyClass createRationalClass(ThreadContext context, RubyClass Numeric) {
+        return defineClass(context, "Rational", Numeric, RubyRational::new).
+                reifiedClass(RubyRational.class).
+                marshalWith(RATIONAL_MARSHAL).
+                kindOf(new RubyModule.JavaClassKindOf(RubyRational.class)).
+                classIndex(ClassIndex.RATIONAL).
+                defineMethods(context, RubyRational.class).
+                tap(c -> c.getSingletonClass().undefMethods(context, "allocate", "new"));
     }
 
     private RubyRational(Ruby runtime, RubyClass clazz, RubyInteger num, RubyInteger den) {

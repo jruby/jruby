@@ -50,19 +50,14 @@ import static org.jruby.util.Inspector.*;
  */
 public abstract class JavaUtilRegex {
 
-    public static void define(final Ruby runtime) {
-        JavaExtensions.put(runtime, java.util.regex.Pattern.class, (proxyClass) -> Pattern.define(runtime, (RubyClass) proxyClass));
-        JavaExtensions.put(runtime, java.util.regex.Matcher.class, (proxyClass) -> Matcher.define(runtime, (RubyClass) proxyClass));
+    public static void define(ThreadContext context) {
+        var runtime = context.runtime;
+        JavaExtensions.put(runtime, java.util.regex.Pattern.class, proxy -> proxy.defineMethods(context, Pattern.class));
+        JavaExtensions.put(runtime, java.util.regex.Matcher.class, proxy -> proxy.defineMethods(context, Matcher.class));
     }
 
     @JRubyClass(name = "Java::JavaUtilRegex::Pattern")
     public static class Pattern {
-
-        static RubyClass define(final Ruby runtime, final RubyClass proxy) {
-            proxy.defineAnnotatedMethods(Pattern.class);
-            return proxy;
-        }
-
         @JRubyMethod(name = "=~")
         public static IRubyObject op_match(final ThreadContext context, final IRubyObject self, IRubyObject str) {
             final java.util.regex.Matcher matcher = matcher(self, str);
@@ -111,12 +106,6 @@ public abstract class JavaUtilRegex {
 
     @JRubyClass(name = "Java::JavaUtilRegex::Matcher")
     public static class Matcher {
-
-        static RubyClass define(final Ruby runtime, final RubyClass proxy) {
-            proxy.defineAnnotatedMethods(Matcher.class);
-            return (RubyClass) proxy;
-        }
-
         @JRubyMethod
         public static IRubyObject regexp(final ThreadContext context, final IRubyObject self) {
             final java.util.regex.Matcher matcher = unwrapJavaObject(self);

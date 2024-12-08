@@ -140,10 +140,8 @@ public class RubyObject extends RubyBasicObject {
      * argument because of the Object class' central part in runtime
      * initialization.
      */
-    public static RubyClass createObjectClass(Ruby runtime, RubyClass objectClass) {
-        objectClass.setClassIndex(ClassIndex.OBJECT);
-        objectClass.setReifiedClass(RubyObject.class);
-        return objectClass;
+    public static void createObjectClass(RubyClass Object) {
+        Object.reifiedClass(RubyObject.class).classIndex(ClassIndex.OBJECT);
     }
 
     /**

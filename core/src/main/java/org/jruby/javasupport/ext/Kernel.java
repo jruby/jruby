@@ -44,8 +44,7 @@ import static org.jruby.runtime.Visibility.PUBLIC;
  */
 public final class Kernel {
 
-    public static void define(final Ruby runtime) {
-        final RubyModule Kernel = runtime.getKernel();
+    public static void define(ThreadContext context, RubyModule Kernel) {
         Kernel.addMethodInternal("java", new JavaPackageMethod(Kernel, "java"));
         Kernel.addMethodInternal("javax", new JavaPackageMethod(Kernel, "javax"));
         Kernel.addMethodInternal("javafx", new JavaPackageMethod(Kernel, "javafx"));

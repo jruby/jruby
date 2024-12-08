@@ -36,6 +36,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineClass;
 
 /**
  /**
@@ -48,10 +49,9 @@ import static org.jruby.api.Create.newString;
 @JRubyClass(name="StopIteration", parent="IndexError")
 public class RubyStopIteration extends RubyIndexError {
 
-    static RubyClass define(Ruby runtime, RubyClass superClass) {
-        RubyClass StopIteration = runtime.defineClass("StopIteration", superClass, RubyStopIteration::new);
-        StopIteration.defineAnnotatedMethods(RubyStopIteration.class);
-        return StopIteration;
+    static RubyClass define(ThreadContext context, RubyClass IndexError) {
+        return defineClass(context, "StopIteration", IndexError, RubyStopIteration::new).
+                defineMethods(context, RubyStopIteration.class);
     }
 
     public static RubyStopIteration newInstance(ThreadContext context, IRubyObject result, String message) {

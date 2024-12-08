@@ -44,13 +44,10 @@ import static org.jruby.api.Error.typeError;
 
 @JRubyClass(name = "Enumerator::Generator")
 public class RubyGenerator extends RubyObject {
-    public static RubyClass createGeneratorClass(Ruby runtime, RubyClass enumeratorModule) {
-        RubyClass genc = runtime.defineClassUnder("Generator", runtime.getObject(), RubyGenerator::new, enumeratorModule);
-
-        genc.includeModule(runtime.getEnumerable());
-        genc.defineAnnotatedMethods(RubyGenerator.class);
-
-        return genc;
+    public static RubyClass createGeneratorClass(ThreadContext context, RubyClass Object, RubyClass Enumerator, RubyModule Enumerable) {
+        return Enumerator.defineClassUnder(context, "Generator", Object, RubyGenerator::new).
+                include(context, Enumerable).
+                defineMethods(context, RubyGenerator.class);
     }
 
     public RubyGenerator(Ruby runtime, RubyClass klass) {

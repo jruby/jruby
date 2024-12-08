@@ -43,6 +43,7 @@ import java.util.*;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newHash;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.argumentError;
 
 @JRubyModule(name="Signal")
@@ -58,7 +59,7 @@ public class RubySignal {
         }
     }
     
-    public static void createSignal(Ruby runtime) {
+    public static void createSignal(ThreadContext context) {
         // We force java.lang.Process et al to load so that JVM's CHLD handler can be
         // overwritten by users (jruby/jruby#3283)
         if (!Platform.IS_WINDOWS) {
@@ -70,9 +71,7 @@ public class RubySignal {
             }
         }
 
-        RubyModule mSignal = runtime.defineModule("Signal");
-        
-        mSignal.defineAnnotatedMethods(RubySignal.class);
+        defineModule(context, "Signal").defineMethods(context, RubySignal.class);
         //registerThreadDumpSignalHandler(runtime);
     }
 

@@ -62,6 +62,7 @@ import java.math.RoundingMode;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.*;
 import static org.jruby.util.Numeric.f_abs;
 import static org.jruby.util.Numeric.f_arg;
@@ -80,19 +81,13 @@ import static org.jruby.util.RubyStringBuilder.types;
 //   this seems so pathological I do not see the need to fix this now.
 @JRubyClass(name="Numeric", include="Comparable")
 public class RubyNumeric extends RubyObject {
-
-    public static RubyClass createNumericClass(Ruby runtime) {
-        RubyClass numeric = runtime.defineClass("Numeric", runtime.getObject(), RubyNumeric::new);
-
-        numeric.setClassIndex(ClassIndex.NUMERIC);
-        numeric.setReifiedClass(RubyNumeric.class);
-
-        numeric.kindOf = new RubyModule.JavaClassKindOf(RubyNumeric.class);
-
-        numeric.includeModule(runtime.getComparable());
-        numeric.defineAnnotatedMethods(RubyNumeric.class);
-
-        return numeric;
+    public static RubyClass createNumericClass(ThreadContext context, RubyClass Object, RubyModule Comparable) {
+        return defineClass(context, "Numeric", Object, RubyNumeric::new).
+                reifiedClass(RubyNumeric.class).
+                kindOf(new RubyModule.JavaClassKindOf(RubyNumeric.class)).
+                classIndex(ClassIndex.NUMERIC).
+                include(context, Comparable).
+                defineMethods(context, RubyNumeric.class);
     }
 
     public static final double DBL_EPSILON=2.2204460492503131e-16;

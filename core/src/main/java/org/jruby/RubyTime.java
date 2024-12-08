@@ -47,7 +47,6 @@ import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.tz.FixedDateTimeZone;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.api.Convert;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.TypeError;
@@ -84,6 +83,7 @@ import java.util.regex.Pattern;
 import static org.jruby.RubyComparable.invcmp;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.*;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
@@ -508,17 +508,12 @@ public class RubyTime extends RubyObject {
         setIsTzRelative(tzRelative);
     }
 
-    public static RubyClass createTimeClass(Ruby runtime) {
-        RubyClass timeClass = runtime.defineClass("Time", runtime.getObject(), RubyTime::new);
-
-        timeClass.setClassIndex(ClassIndex.TIME);
-        timeClass.setReifiedClass(RubyTime.class);
-
-        timeClass.includeModule(runtime.getComparable());
-
-        timeClass.defineAnnotatedMethods(RubyTime.class);
-
-        return timeClass;
+    public static RubyClass createTimeClass(ThreadContext context, RubyClass Object, RubyModule Comparable) {
+        return defineClass(context, "Time", Object, RubyTime::new).
+                reifiedClass(RubyTime.class).
+                classIndex(ClassIndex.TIME).
+                include(context, Comparable).
+                defineMethods(context, RubyTime.class);
     }
 
     /**

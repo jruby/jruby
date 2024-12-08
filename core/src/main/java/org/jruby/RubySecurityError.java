@@ -29,6 +29,9 @@ package org.jruby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.SecurityError;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Define.defineClass;
 
 /**
  * The Java representation of a Ruby SecurityError.
@@ -41,10 +44,8 @@ public class RubySecurityError extends RubyException {
         super(runtime, exceptionClass);
     }
 
-    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass SecurityErrorClass = runtime.defineClass("SecurityError", exceptionClass, RubySecurityError::new);
-
-        return SecurityErrorClass;
+    static RubyClass define(ThreadContext context, RubyClass Exception) {
+        return defineClass(context, "SecurityError", Exception, RubySecurityError::new);
     }
 
     @Override

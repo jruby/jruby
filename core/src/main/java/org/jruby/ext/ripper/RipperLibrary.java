@@ -38,7 +38,8 @@ public class RipperLibrary implements Library {
     
     @Override
     public void load(final Ruby runtime, boolean wrap) {
-        RubyRipper.initRipper(runtime);
+        var context = runtime.getCurrentContext();
+        RubyRipper.initRipper(context);
         
         runtime.getClass("Ripper").setConstant("Version", 
                 runtime.newString(RIPPER_VERSION));

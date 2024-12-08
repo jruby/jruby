@@ -7,7 +7,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
-import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.*;
@@ -27,14 +26,9 @@ public final class Buffer extends AbstractMemory {
     
     private int inout;
 
-    public static RubyClass createBufferClass(Ruby runtime, RubyModule module) {
-        RubyClass result = module.defineClassUnder("Buffer",
-                module.getClass(AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS),
-                Buffer::new);
-        result.defineAnnotatedMethods(Buffer.class);
-        result.defineAnnotatedConstants(Buffer.class);
-
-        return result;
+    public static RubyClass createBufferClass(ThreadContext context, RubyModule FFI, RubyClass AbstractMemory) {
+        return FFI.defineClassUnder(context, "Buffer", AbstractMemory, Buffer::new).
+                defineMethods(context, Buffer.class).defineConstants(context, Buffer.class);
     }
 
     public Buffer(Ruby runtime, RubyClass klass) {

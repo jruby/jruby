@@ -30,6 +30,9 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.RuntimeError;
 import org.jruby.exceptions.StandardError;
+import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Define.defineClass;
 
 /**
  * The Java representation of a Ruby RuntimeError.
@@ -42,10 +45,8 @@ public class RubyRuntimeError extends RubyStandardError {
         super(runtime, exceptionClass);
     }
 
-    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass runtimeErrorClass = runtime.defineClass("RuntimeError", exceptionClass, RubyRuntimeError::new);
-
-        return runtimeErrorClass;
+    static RubyClass define(ThreadContext context, RubyClass StandardError) {
+        return defineClass(context, "RuntimeError", StandardError, RubyRuntimeError::new);
     }
 
     protected RaiseException constructThrowable(String message) {

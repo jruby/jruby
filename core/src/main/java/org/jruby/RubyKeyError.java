@@ -34,6 +34,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 
 /**
@@ -55,11 +56,9 @@ public class RubyKeyError extends RubyIndexError {
         this.key = key;
     }
 
-    static RubyClass define(Ruby runtime, RubyClass superClass) {
-        RubyClass KeyError = runtime.defineClass("KeyError", superClass, RubyKeyError::new);
-        KeyError.defineAnnotatedMethods(RubyKeyError.class);
-        KeyError.setReifiedClass(RubyKeyError.class);
-        return KeyError;
+    static RubyClass define(ThreadContext context, RubyClass IndexError) {
+        return defineClass(context, "KeyError", IndexError, RubyKeyError::new).
+                reifiedClass(RubyKeyError.class).defineMethods(context, RubyKeyError.class);
     }
 
     @Override

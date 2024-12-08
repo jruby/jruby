@@ -36,6 +36,7 @@ import org.jruby.runtime.ThreadContext;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -198,24 +199,22 @@ public class RubyRandom extends RubyRandomBase {
     }
 
     @SuppressWarnings("deprecation")
-    public static RubyClass createRandomClass(Ruby runtime) {
-        RubyClass baseClass = RubyClass.newClass(runtime, runtime.getObject());
-        baseClass.setBaseName("Base");
-        baseClass.setAllocator(ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        baseClass.defineAnnotatedMethods(RubyRandomBase.class);
+    public static RubyClass createRandomClass(ThreadContext context, RubyClass Object) {
+        RubyClass RandomBase = RubyClass.newClass(context.runtime, Object).
+                allocator(ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR).
+                baseName("Base").
+                defineMethods(context, RubyRandomBase.class);
 
-        RubyClass randomClass = runtime.defineClass("Random", baseClass, RubyRandom::new);
-        randomClass.defineConstant("Base", baseClass);
-        randomClass.defineAnnotatedMethods(RubyRandom.class);
+        RubyClass Random = defineClass(context, "Random", RandomBase, RubyRandom::new).
+                defineConstant(context, "Base", RandomBase).
+                defineMethods(context, RubyRandom.class);
 
-        runtime.setDefaultRandom(newRandom(runtime, randomClass, randomSeed(runtime)));
+        var RandomFormatter = Random.defineModuleUnder(context, "Formatter").defineMethods(context, RandomFormatter.class);
 
-        RubyModule formatterModule = randomClass.defineModuleUnder("Formatter");
-        baseClass.includeModule(formatterModule);
-        formatterModule.extend_object(baseClass);
-        formatterModule.defineAnnotatedMethods(RandomFormatter.class);
+        RandomBase.include(context, RandomFormatter);
+        RandomFormatter.extend_object(context, RandomBase);
 
-        return randomClass;
+        return Random;
     }
 
     public static RubyRandom newRandom(Ruby runtime, RubyClass randomClass, IRubyObject seed) {

@@ -47,7 +47,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.JavaSites;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -63,7 +62,9 @@ import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.*;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.util.Numeric.f_gcd;
 import static org.jruby.util.Numeric.f_lcm;
 import static org.jruby.util.Numeric.f_zero_p;
@@ -78,20 +79,13 @@ public abstract class RubyInteger extends RubyNumeric {
     private static final int BIT_SIZE = 64;
     private static final long MAX = (1L << (BIT_SIZE - 1)) - 1;
 
-    public static RubyClass createIntegerClass(Ruby runtime) {
-        RubyClass integer = runtime.defineClass("Integer", runtime.getNumeric(),
-                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-
-        integer.setClassIndex(ClassIndex.INTEGER);
-        integer.setReifiedClass(RubyInteger.class);
-
-        integer.kindOf = new RubyModule.JavaClassKindOf(RubyInteger.class);
-
-        integer.getSingletonClass().undefineMethod("new");
-
-        integer.defineAnnotatedMethods(RubyInteger.class);
-
-        return integer;
+    public static RubyClass createIntegerClass(ThreadContext context, RubyClass Numeric) {
+        return defineClass(context, "Integer", Numeric, NOT_ALLOCATABLE_ALLOCATOR).
+                reifiedClass(RubyInteger.class).
+                kindOf(new RubyModule.JavaClassKindOf(RubyInteger.class)).
+                classIndex(ClassIndex.INTEGER).
+                defineMethods(context, RubyInteger.class).
+                tap(c-> c.getSingletonClass().undefMethods(context, "new"));
     }
 
     public RubyInteger(Ruby runtime, RubyClass rubyClass) {

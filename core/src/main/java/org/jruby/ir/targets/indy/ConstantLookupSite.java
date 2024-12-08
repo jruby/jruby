@@ -23,6 +23,7 @@ import java.lang.invoke.MutableCallSite;
 import java.lang.invoke.SwitchPoint;
 
 import static java.lang.invoke.MethodHandles.guardWithTest;
+import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.castAsModule;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.CodegenUtils.p;
@@ -79,11 +80,10 @@ public class ConstantLookupSite extends MutableCallSite {
 
     public IRubyObject searchConst(ThreadContext context, StaticScope staticScope) {
         // Lexical lookup
-        Ruby runtime = context.getRuntime();
-        RubyModule object = runtime.getObject();
+        RubyModule object = objectClass(context);
 
         // get switchpoint before value
-        SwitchPoint switchPoint = getSwitchPointForConstant(runtime);
+        SwitchPoint switchPoint = getSwitchPointForConstant(context.runtime);
         IRubyObject constant = (staticScope == null) ? object.getConstant(name) : staticScope.getConstantInner(name);
 
         // Inheritance lookup

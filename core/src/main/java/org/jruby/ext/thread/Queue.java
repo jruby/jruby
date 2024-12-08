@@ -255,24 +255,16 @@ public class Queue extends RubyObject implements DataType {
         last = head = new Node(null);
     }
 
-    public static RubyClass setup(RubyClass threadClass, RubyClass objectClass) {
-        RubyClass cQueue = threadClass.defineClassUnder("Queue", objectClass, Queue::new);
-
-        cQueue.undefineMethod("initialize_copy");
-        cQueue.setReifiedClass(Queue.class);
-        cQueue.defineAnnotatedMethods(Queue.class);
-
-        objectClass.setConstant("Queue", cQueue);
-
-        return cQueue;
+    public static RubyClass setup(ThreadContext context, RubyClass Thread, RubyClass Object) {
+        return (RubyClass) Object.setConstant("Queue",
+                Thread.defineClassUnder(context, "Queue", Object, Queue::new).
+                        reifiedClass(Queue.class).defineMethods(context, Queue.class).
+                        undefMethods(context, "initialize_copy"));
     }
 
-    public static RubyClass setupError(RubyClass cQueue, RubyClass stopIteration, RubyClass objectClass) {
-        RubyClass cClosedQueueError = cQueue.defineClassUnder("ClosedQueueError", stopIteration, stopIteration.getAllocator());
-
-        objectClass.setConstant("ClosedQueueError", cClosedQueueError);
-
-        return cClosedQueueError;
+    public static RubyClass setupError(ThreadContext context, RubyClass Queue, RubyClass StopIteration, RubyClass Object) {
+        return (RubyClass) Object.setConstant("ClosedQueueError",
+                Queue.defineClassUnder(context, "ClosedQueueError", StopIteration, StopIteration.getAllocator()));
     }
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
