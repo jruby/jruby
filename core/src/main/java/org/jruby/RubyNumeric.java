@@ -713,18 +713,24 @@ public class RubyNumeric extends RubyObject {
         throw typeError(getRuntime().getCurrentContext(), "can't copy ", this, "");
     }
 
+    /**
+     * @param other
+     * @return
+     * @deprecated Use {@link org.jruby.RubyNumeric#coerce(ThreadContext, IRubyObject)} instead.
+     */
+    @Deprecated(since = "10.0")
+    public IRubyObject coerce(IRubyObject other) {
+        return coerce(getCurrentContext(), other);
+    }
+
     /** num_coerce
      *
      */
     @JRubyMethod(name = "coerce")
-    public IRubyObject coerce(IRubyObject other) {
-        var context = getRuntime().getCurrentContext();
-        if (metaClass == other.getMetaClass()) return newArray(context, other, this);
-
-        IRubyObject cdr = RubyKernel.new_float(context, this);
-        IRubyObject car = RubyKernel.new_float(context, other);
-
-        return newArray(context, car, cdr);
+    public IRubyObject coerce(ThreadContext context, IRubyObject other) {
+        return metaClass == other.getMetaClass() ?
+                newArray(context, other, this) :
+                newArray(context, RubyKernel.new_float(context, this), RubyKernel.new_float(context, other));
     }
 
     /** num_uplus

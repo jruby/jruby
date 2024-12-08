@@ -295,13 +295,9 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     public static final ByteList NEGATIVE_INFINITY_TO_S_BYTELIST = new ByteList(ByteList.plain("-Infinity"), USASCIIEncoding.INSTANCE, false);
     public static final ByteList NAN_TO_S_BYTELIST = new ByteList(ByteList.plain("NaN"), USASCIIEncoding.INSTANCE, false);
 
-    /** flo_coerce
-     *
-     */
+    // MRI: flo_coerce
     @JRubyMethod(name = "coerce")
-    @Override
-    public IRubyObject coerce(IRubyObject other) {
-        var context = metaClass.runtime.getCurrentContext();
+    public IRubyObject coerce(ThreadContext context, IRubyObject other) {
         return newArray(context, RubyKernel.new_float(context, other), this);
     }
 
