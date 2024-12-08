@@ -730,7 +730,7 @@ public class RubyNumeric extends RubyObject {
     public IRubyObject coerce(ThreadContext context, IRubyObject other) {
         return metaClass == other.getMetaClass() ?
                 newArray(context, other, this) :
-                newArray(context, RubyKernel.new_float(context, this), RubyKernel.new_float(context, other));
+                newArray(context, RubyKernel.new_float(context, other), RubyKernel.new_float(context, this));
     }
 
     /** num_uplus
