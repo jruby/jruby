@@ -2683,12 +2683,10 @@ public class RubyModule extends RubyObject {
      *
      */
     @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
-    @Override
-    public IRubyObject initialize_copy(IRubyObject original) {
-        if (this instanceof RubyClass) {
-            checkSafeTypeToCopy((RubyClass) original);
-        }
-        super.initialize_copy(original);
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject original) {
+        if (this instanceof RubyClass klazz) checkSafeTypeToCopy(context, klazz);
+
+        super.initialize_copy(context, original);
 
         RubyModule originalModule = (RubyModule)original;
 
@@ -2707,12 +2705,11 @@ public class RubyModule extends RubyObject {
     }
 
     // mri: class_init_copy_check
-    private void checkSafeTypeToCopy(RubyClass original) {
-        Ruby runtime = getRuntime();
-
-        if (original == runtime.getBasicObject()) throw typeError(runtime.getCurrentContext(), "can't copy the root class");
-        if (getSuperClass() == runtime.getBasicObject()) throw typeError(runtime.getCurrentContext(), "already initialized class");
-        if (original.isSingleton()) throw typeError(runtime.getCurrentContext(), "can't copy singleton class");
+    private void checkSafeTypeToCopy(ThreadContext context, RubyClass original) {
+        var BasicObject = context.runtime.getBasicObject();
+        if (original == BasicObject) throw typeError(context, "can't copy the root class");
+        if (getSuperClass() == BasicObject) throw typeError(context, "already initialized class");
+        if (original.isSingleton()) throw typeError(context, "can't copy singleton class");
     }
 
     public void syncConstants(RubyModule other) {

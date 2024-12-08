@@ -174,7 +174,7 @@ public class RubyPathname extends RubyObject {
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize_copy(ThreadContext context, IRubyObject pathname) {
-        super.initialize_copy(pathname);
+        super.initialize_copy(context, pathname);
         initialize(context, pathname);
         return this;
     }

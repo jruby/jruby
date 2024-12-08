@@ -2030,7 +2030,17 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return context.nil;
     }
 
-    /** rb_obj_init_copy
+    /**
+     * @param original object
+     * @return
+     * @deprecated Use {@link org.jruby.RubyBasicObject#initialize_copy(ThreadContext, IRubyObject)} instead.
+     */
+    @Deprecated(since = "10.0")
+    public IRubyObject initialize_copy(IRubyObject original) {
+        return initialize_copy(getCurrentContext(), original);
+    }
+
+    /**
      *
      * Initializes this object as a copy of the original, that is the
      * parameter to this object. Will make sure that the argument
@@ -2038,14 +2048,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * be possible to initialize an object with something totally
      * different.
      */
-    public IRubyObject initialize_copy(IRubyObject original) {
-        if (this == original) {
-            return this;
-        }
+    // MRI: rb_obj_init_copy
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject original) {
+        if (this == original) return this;
+
         checkFrozen();
 
         if (getMetaClass().getRealClass() != original.getMetaClass().getRealClass()) {
-            throw typeError(getRuntime().getCurrentContext(), "initialize_copy should take same class object");
+            throw typeError(context, "initialize_copy should take same class object");
         }
 
         return this;

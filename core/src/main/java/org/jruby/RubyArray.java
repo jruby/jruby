@@ -782,9 +782,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      *
      */
     @JRubyMethod(name = {"initialize_copy"}, visibility=PRIVATE)
-    @Override
-    public IRubyObject initialize_copy(IRubyObject orig) {
-        return this.replace(orig);
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject orig) {
+        return replace(orig);
     }
 
     /**

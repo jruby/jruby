@@ -622,10 +622,8 @@ public class RubyTime extends RubyObject {
     }
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
-    @Override
-    public IRubyObject initialize_copy(IRubyObject original) {
-        if (!(original instanceof RubyTime)) throw typeError(getRuntime().getCurrentContext(), original, "Time");
-        RubyTime originalTime = (RubyTime) original;
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject original) {
+        if (!(original instanceof RubyTime originalTime)) throw typeError(context, original, "Time");
 
         // We can just use dt, since it is immutable
         dt = originalTime.dt;

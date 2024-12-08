@@ -2153,9 +2153,20 @@ public class RubyKernel {
         return ((RubyBasicObject) self).op_cmp(context, other);
     }
 
-    @JRubyMethod(name = "initialize_copy", required = 1, visibility = PRIVATE)
+    /**
+     * @param self
+     * @param original
+     * @return
+     * @deprecated Use {@link org.jruby.RubyKernel#initialize_copy(ThreadContext, IRubyObject, IRubyObject)} instead.
+     */
+    @Deprecated(since = "10.0")
     public static IRubyObject initialize_copy(IRubyObject self, IRubyObject original) {
-        return ((RubyBasicObject) self).initialize_copy(original);
+        return initialize_copy(self.getRuntime().getCurrentContext(), self, original);
+    }
+
+    @JRubyMethod(name = "initialize_copy", required = 1, visibility = PRIVATE)
+    public static IRubyObject initialize_copy(ThreadContext context, IRubyObject self, IRubyObject original) {
+        return ((RubyBasicObject) self).initialize_copy(context, original);
     }
 
     // Replaced in jruby/kernel/kernel.rb with Ruby for better caching

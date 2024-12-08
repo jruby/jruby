@@ -971,9 +971,8 @@ public class RubyBigDecimal extends RubyNumeric {
         return asFixnum(context, absStripTrailingZeros().hashCode() * value.signum());
     }
 
-    @Override
     @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
-    public IRubyObject initialize_copy(IRubyObject original) {
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject original) {
         if (this == original) return this;
 
         checkFrozen();

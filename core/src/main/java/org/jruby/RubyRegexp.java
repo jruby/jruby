@@ -889,13 +889,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     /** rb_reg_init_copy
      */
     @JRubyMethod(visibility = Visibility.PRIVATE)
-    @Override
-    public IRubyObject initialize_copy(IRubyObject re) {
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject re) {
         if (this == re) return this;
         checkFrozen();
 
         if (getMetaClass().getRealClass() != re.getMetaClass().getRealClass()) {
-            throw typeError(getRuntime().getCurrentContext(), "wrong argument type");
+            throw typeError(context, "wrong argument type");
         }
 
         RubyRegexp regexp = (RubyRegexp)re;
