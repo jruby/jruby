@@ -1149,13 +1149,9 @@ public class RubyBignum extends RubyInteger {
         return op_equal(metaClass.runtime.getCurrentContext(), other);
     }
 
-    /** rb_big_hash
-     *
-     */
-    @Override
-    public RubyFixnum hash() {
-        Ruby runtime = metaClass.runtime;
-        return RubyFixnum.newFixnum(runtime, bigHash(runtime, value));
+    // MRI: rb_big_hash
+    public RubyFixnum hash(ThreadContext context) {
+        return asFixnum(context, bigHash(context.runtime, value));
     }
 
     @Override

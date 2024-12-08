@@ -1386,10 +1386,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     @JRubyMethod
-    @Override
-    public RubyFixnum hash() {
-        Ruby runtime = getRuntime();
-        return asFixnum(runtime.getCurrentContext(), strHashCode(runtime));
+    public RubyFixnum hash(ThreadContext context) {
+        return asFixnum(context, strHashCode(context.runtime));
     }
 
     @Override

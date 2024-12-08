@@ -534,12 +534,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return asBoolean(context, this == other);
     }
 
-    @Deprecated
-    @Override
-    public RubyFixnum hash() {
-        return hash(getCurrentContext());
-    }
-
     @JRubyMethod
     public RubyFixnum hash(ThreadContext context) {
         return asFixnum(context, hashCode());

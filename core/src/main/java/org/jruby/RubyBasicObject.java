@@ -73,6 +73,7 @@ import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
+import static org.jruby.ir.runtime.IRRuntimeHelpers.getCurrentClassBase;
 import static org.jruby.runtime.Helpers.invokeChecked;
 import static org.jruby.runtime.ThreadContext.*;
 import static org.jruby.runtime.Visibility.*;
@@ -2096,15 +2097,30 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return context.runtime.newBoolean(result.isTrue());
     }
 
-    /** rb_obj_id
-     *
+    /**
      * Will return the hash code of this object. In comparison to MRI,
      * this method will use the Java identity hash code instead of
      * using rb_obj_id, since the usage of id in JRuby will incur the
      * cost of some. ObjectSpace maintenance.
+     * @deprecated Use {@link RubyBasicObject#hash(ThreadContext)} instead.
      */
+    @Deprecated(since = "10.0")
     public RubyFixnum hash() {
-        return getRuntime().newFixnum(super.hashCode());
+        return hash(getCurrentContext());
+    }
+
+    /**
+     * Will return the hash code of this object. In comparison to MRI,
+     * this method will use the Java identity hash code instead of
+     * using rb_obj_id, since the usage of id in JRuby will incur the
+     * cost of some. ObjectSpace maintenance.
+     *
+     * @param context the current thread context
+     * @return the hash value
+     */
+    // MRI: rb_obj_id
+    public RubyFixnum hash(ThreadContext context) {
+        return asFixnum(context, super.hashCode());
     }
 
     /** rb_obj_class

@@ -883,16 +883,7 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod
     public RubyFixnum hash(ThreadContext context) {
-        return hashImpl(context.runtime);
-    }
-
-    private RubyFixnum hashImpl(final Ruby runtime) {
-        return new RubyFixnum(runtime, this.dt.getMillis());
-    }
-
-    @Override
-    public RubyFixnum hash() {
-        return hashImpl(getRuntime());
+        return asFixnum(context, dt.getMillis());
     }
 
     @JRubyMethod // Get the date as a Julian Day Number.

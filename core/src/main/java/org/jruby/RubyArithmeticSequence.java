@@ -328,11 +328,6 @@ public class RubyArithmeticSequence extends RubyObject {
         return context.tru;
     }
 
-    @Override
-    public RubyFixnum hash() {
-        return hash(metaClass.runtime.getCurrentContext());
-    }
-
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
         IRubyObject v = safeHash(context, excludeEnd);

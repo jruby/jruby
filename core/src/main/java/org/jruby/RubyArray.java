@@ -878,11 +878,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return false;
     }
 
-    @Override
-    public RubyFixnum hash() {
-        return hash(metaClass.runtime.getCurrentContext());
-    }
-
     /** rb_ary_hash
      *
      */

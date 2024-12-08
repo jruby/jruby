@@ -2191,8 +2191,8 @@ public class RubyKernel {
     }
 
     @JRubyMethod
-    public static RubyFixnum hash(IRubyObject self) {
-        return ((RubyBasicObject)self).hash();
+    public static RubyFixnum hash(ThreadContext context, IRubyObject self) {
+        return ((RubyBasicObject) self).hash(context);
     }
 
     @JRubyMethod(name = "class")

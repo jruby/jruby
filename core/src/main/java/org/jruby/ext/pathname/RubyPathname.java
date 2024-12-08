@@ -237,7 +237,7 @@ public class RubyPathname extends RubyObject {
 
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
-        return getPath().hash();
+        return getPath().hash(context);
     }
 
     @Override

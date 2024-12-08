@@ -665,15 +665,12 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return Double.doubleToLongBits(val1) == Double.doubleToLongBits(val2);
     }
 
-    /** flo_hash
-     *
-     */
+    // MRI: flo_hash
     @JRubyMethod(name = "hash")
-    @Override
-    public RubyFixnum hash() {
-        Ruby runtime = metaClass.runtime;
-        return RubyFixnum.newFixnum(runtime, floatHash(runtime, value));
+    public RubyFixnum hash(ThreadContext context) {
+        return asFixnum(context, floatHash(context.runtime, value));
     }
+
 
     @Override
     public final int hashCode() {

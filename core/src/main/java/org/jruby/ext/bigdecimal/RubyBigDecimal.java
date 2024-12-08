@@ -966,10 +966,9 @@ public class RubyBigDecimal extends RubyNumeric {
         return absStripTrailingZeros;
     }
 
-    @Override
     @JRubyMethod
-    public RubyFixnum hash() {
-        return RubyFixnum.newFixnum(getRuntime(), absStripTrailingZeros().hashCode() * value.signum());
+    public RubyFixnum hash(ThreadContext context) {
+        return asFixnum(context, absStripTrailingZeros().hashCode() * value.signum());
     }
 
     @Override
