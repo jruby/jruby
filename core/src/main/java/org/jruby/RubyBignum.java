@@ -398,13 +398,8 @@ public class RubyBignum extends RubyInteger {
         return RubyString.newUSASCIIString(getRuntime(), value.toString(base));
     }
 
-    /** rb_big_coerce
-     *
-     */
-    @Override
-    public IRubyObject coerce(IRubyObject other) {
-        var context = getRuntime().getCurrentContext();
-
+    // MRI: rb_big_coerce
+    public IRubyObject coerce(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum fix) return newArray(context, newBignum(context.runtime, fix.value), this);
         if (other instanceof RubyBignum big) return newArray(context, newBignum(context.runtime, big.value), this);
 

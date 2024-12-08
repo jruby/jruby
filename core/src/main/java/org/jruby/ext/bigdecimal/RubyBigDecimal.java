@@ -1697,11 +1697,6 @@ public class RubyBigDecimal extends RubyNumeric {
         return RubyBignum.newBignum(context.runtime, ceil);
     }
 
-    @Override
-    public IRubyObject coerce(IRubyObject other) {
-        return coerce(getRuntime().getCurrentContext(), other);
-    }
-
     @JRubyMethod
     public RubyArray coerce(ThreadContext context, IRubyObject other) {
         return newArray(context, getVpValue(context, other, true), this);
