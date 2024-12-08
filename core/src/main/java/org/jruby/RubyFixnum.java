@@ -267,10 +267,8 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
         return -CACHE_OFFSET <= -1 ? runtime.fixnumCache[CACHE_OFFSET - 1] : new RubyFixnum(runtime, -1);
     }
 
-    @Override
-    public RubyFixnum hash() {
-        Ruby runtime = metaClass.runtime;
-        return newFixnum(runtime, fixHash(runtime, value));
+    public RubyFixnum hash(ThreadContext context) {
+        return asFixnum(context, fixHash(context.runtime, value));
     }
 
     @Override

@@ -1047,8 +1047,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     @JRubyMethod
-    @Override
-    public RubyFixnum hash() {
+    public RubyFixnum hash(ThreadContext context) {
         check();
         int hash = pattern.getOptions();
         int len = str.getRealSize();
@@ -1057,7 +1056,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         while (len-- > 0) {
             hash = hash * 33 + bytes[p++];
         }
-        return RubyFixnum.newFixnum(getRuntime(), hash + (hash >> 5));
+        return asFixnum(context, hash + (hash >> 5));
     }
 
     @JRubyMethod(name = {"==", "eql?"})

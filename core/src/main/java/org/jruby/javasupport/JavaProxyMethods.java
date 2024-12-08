@@ -131,7 +131,7 @@ public class JavaProxyMethods {
 
         // NOTE: only JavaProxy includes JavaProxyMethods these are only here for 'manual' JavaObject wrapping
         return recv.dataGetStruct() instanceof IRubyObject dataStruct ?
-                ((RubyBasicObject) dataStruct).hash() : ((RubyBasicObject) recv).hash();
+                ((RubyBasicObject) dataStruct).hash(context) : ((RubyBasicObject) recv).hash(context);
     }
     
     @JRubyMethod(name = "synchronized")

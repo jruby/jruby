@@ -888,17 +888,13 @@ public class RubySet extends RubyObject implements Set {
         return false;
     }
 
-    @Override
     @JRubyMethod
-    public RubyFixnum hash() { // @hash.hash
+    public RubyFixnum hash(ThreadContext context) { // @hash.hash
         RubyHash hash = this.hash;
 
-        if (hash == null) {
-            // Emulate set.rb for jruby/jruby#8393
-            return ((RubyBasicObject) getRuntime().getNil()).hash();
-        }
-
-        return hash.hash();
+        return hash == null ?
+                ((RubyBasicObject) context.nil).hash(context) :  // Emulate set.rb for jruby/jruby#8393
+                hash.hash(context);
     }
 
     @JRubyMethod(name = "classify")

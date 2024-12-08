@@ -3048,18 +3048,15 @@ public class Helpers {
 
     // MRI: rb_hash
     public static RubyFixnum safeHash(final ThreadContext context, IRubyObject obj) {
-        Ruby runtime = context.runtime;
-        IRubyObject hval = context.safeRecurse(sites(context).recursive_hash, runtime, obj, "hash", true);
+        var hval = context.safeRecurse(sites(context).recursive_hash, context.runtime, obj, "hash", true);
 
-        while (!(hval instanceof RubyFixnum)) {
-            if (hval instanceof RubyBignum) {
-                // This is different from MRI because we don't have rb_integer_pack
-                return ((RubyBignum) hval).hash();
-            }
+        while (!(hval instanceof RubyFixnum fixnum)) {
+            // This is different from MRI because we don't have rb_integer_pack
+            if (hval instanceof RubyBignum bignum) return bignum.hash(context);
             hval = hval.convertToInteger();
         }
 
-        return (RubyFixnum) hval;
+        return fixnum;
     }
 
     // MRI: mult_and_mix, roughly since we have no uint64 type

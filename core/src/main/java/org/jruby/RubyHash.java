@@ -1379,14 +1379,7 @@ public class RubyHash extends RubyObject implements Map {
         return otherHash.op_le(context, this);
     }
 
-    /** rb_hash_hash
-     *
-     */
-    @Override
-    public RubyFixnum hash() {
-        return hash(metaClass.runtime.getCurrentContext());
-    }
-
+    // MRI: rb_hash_hash
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
         final int size = size();

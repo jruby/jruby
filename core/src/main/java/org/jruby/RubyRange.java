@@ -323,11 +323,6 @@ public class RubyRange extends RubyObject {
         return context.nil;
     }
 
-    @Override
-    public RubyFixnum hash() {
-        return hash(metaClass.runtime.getCurrentContext());
-    }
-
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
         int exclusiveBit = isExclusive ? 1 : 0;

@@ -1316,8 +1316,10 @@ public class RubyRational extends RubyNumeric {
      * 
      */
     @JRubyMethod(name = "hash")
-    public IRubyObject hash(ThreadContext context) {
-        return f_xor(context, (RubyInteger) invokedynamic(context, num, HASH), (RubyInteger) invokedynamic(context, den, HASH));
+    public RubyFixnum hash(ThreadContext context) {
+        return (RubyFixnum) f_xor(context,
+                (RubyInteger) invokedynamic(context, num, HASH),
+                (RubyInteger) invokedynamic(context, den, HASH));
     }
 
     @Override
