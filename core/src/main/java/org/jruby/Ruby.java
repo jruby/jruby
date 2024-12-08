@@ -371,21 +371,19 @@ public final class Ruby implements Constantizable {
         falseClass = RubyBoolean.createFalseClass(this);
         trueClass = RubyBoolean.createTrueClass(this);
 
-        nilObject = new RubyNil(this);
-        nilPrefilledArray = new IRubyObject[NIL_PREFILLED_ARRAY_SIZE];
-        for (int i=0; i<NIL_PREFILLED_ARRAY_SIZE; i++) nilPrefilledArray[i] = nilObject;
-        singleNilArray = new IRubyObject[] {nilObject};
-
-        falseObject = new RubyBoolean.False(this);
-        falseObject.setFrozen(true);
-        trueObject = new RubyBoolean.True(this);
-        trueObject.setFrozen(true);
+        falseObject = new RubyBoolean.False(this, falseClass); // runtime only for objectspace
+        trueObject = new RubyBoolean.True(this, trueClass);  // runtime only for objectspace
+        nilObject = new RubyNil(this, nilClass);   // runtime only for objectspace
 
         // Set up the main thread in thread service
         threadService.initMainThread();
 
         // Get the main threadcontext (gets constructed for us)
-        final ThreadContext context = getCurrentContext();
+        final ThreadContext context = getCurrentContext();  // TC saves nil,false,true as fields so has to be after them
+
+        nilPrefilledArray = new IRubyObject[NIL_PREFILLED_ARRAY_SIZE];
+        for (int i=0; i<NIL_PREFILLED_ARRAY_SIZE; i++) nilPrefilledArray[i] = nilObject;
+        singleNilArray = new IRubyObject[] {nilObject};
 
         // includeModule uses TC.
         objectClass.includeModule(kernelModule);
@@ -2087,14 +2085,17 @@ public final class Ruby implements Constantizable {
         return singleNilArray;
     }
 
+    @Deprecated(since = "10.0")
     public RubyClass getNilClass() {
         return nilClass;
     }
 
+    @Deprecated(since = "10.0")
     public RubyClass getTrueClass() {
         return trueClass;
     }
 
+    @Deprecated(since = "10.0")
     public RubyClass getFalseClass() {
         return falseClass;
     }
