@@ -104,27 +104,20 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
         return constant;
     }
 
-    public static RubyClass createFalseClass(Ruby runtime, RubyClass Object) {
-        RubyClass False = runtime.defineClass("FalseClass", Object, NOT_ALLOCATABLE_ALLOCATOR).
-                reifiedClass(RubyBoolean.class).
-                classIndex(ClassIndex.FALSE);
-        False.defineAnnotatedMethodsIndividually(False.class);
-        False.defineAnnotatedMethodsIndividually(RubyBoolean.class);
-        False.getMetaClass().undefineMethod("new");
-
-        return False;
+    public static void createFalseClass(ThreadContext context, RubyClass False) {
+        False.reifiedClass(RubyBoolean.class).
+                classIndex(ClassIndex.FALSE).
+                defineMethods(context, False.class).
+                defineMethods(context, RubyBoolean.class).
+                tap(c -> c.getMetaClass().undefMethods(context, "new"));
     }
     
-    public static RubyClass createTrueClass(Ruby runtime, RubyClass Object) {
-        RubyClass True = runtime.defineClass("TrueClass", Object, NOT_ALLOCATABLE_ALLOCATOR).
-                reifiedClass(RubyBoolean.class).
-                classIndex(ClassIndex.TRUE);
-
-        True.defineAnnotatedMethodsIndividually(True.class);
-        True.defineAnnotatedMethodsIndividually(RubyBoolean.class);
-        True.getMetaClass().undefineMethod("new");
-
-        return True;
+    public static void createTrueClass(ThreadContext context, RubyClass True) {
+        True.reifiedClass(RubyBoolean.class).
+                classIndex(ClassIndex.TRUE).
+                defineMethods(context, True.class).
+                defineMethods(context, RubyBoolean.class).
+                tap(c -> c.getMetaClass().undefMethods(context, "new"));
     }
 
     @Deprecated

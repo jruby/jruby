@@ -358,8 +358,8 @@ public final class Ruby implements Constantizable {
 
         // nil,false,true, setup cannot be moved below thread context since they are stored as fields
         nilClass = defineClass("NilClass", objectClass, NOT_ALLOCATABLE_ALLOCATOR);
-        falseClass = RubyBoolean.createFalseClass(this, objectClass);
-        trueClass = RubyBoolean.createTrueClass(this, objectClass);
+        falseClass = defineClass("FalseClass", objectClass, NOT_ALLOCATABLE_ALLOCATOR);
+        trueClass = defineClass("TrueClass", objectClass, NOT_ALLOCATABLE_ALLOCATOR);
 
         falseObject = new RubyBoolean.False(this, falseClass); // runtime only for objectspace
         trueObject = new RubyBoolean.True(this, trueClass);  // runtime only for objectspace
@@ -379,7 +379,9 @@ public final class Ruby implements Constantizable {
         RubyClass.createClassClass(this, classClass);
         RubyBasicObject.createBasicObjectClass(this, basicObjectClass);
         RubyObject.createObjectClass(objectClass);
-        RubyNil.createNilClass(context, nilClass, objectClass); // bootstrap: needs metaclass to define "new" so it can be undefined.
+        RubyNil.createNilClass(context, nilClass); // bootstrap: needs metaclass to define "new" so it can be undefined.
+        RubyBoolean.createFalseClass(context, falseClass);
+        RubyBoolean.createTrueClass(context, trueClass);
         RubyModule.createModuleClass(moduleClass);
         kernelModule = RubyKernel.createKernelModule(this, objectClass, config);
 
