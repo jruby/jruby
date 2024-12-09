@@ -33,7 +33,6 @@ import org.jruby.runtime.Block;
 
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.FiberSites;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -53,13 +52,10 @@ public class RubyChain extends RubyObject {
     private IRubyObject[] enums;
     private int pos = -1;
 
-    public static RubyClass createChainClass(Ruby runtime, RubyClass enumeratorModule) {
-        RubyClass chainc = runtime.defineClassUnder("Chain", runtime.getObject(), RubyChain::new, enumeratorModule);
-
-        chainc.includeModule(runtime.getEnumerable());
-        chainc.defineAnnotatedMethods(RubyChain.class);
-
-        return chainc;
+    public static RubyClass createChainClass(ThreadContext context, RubyClass Object, RubyClass Enumerator, RubyModule Enumerable) {
+        return Enumerator.defineClassUnder(context, "Chain", Object, RubyChain::new).
+                include(context, Enumerable).
+                defineMethods(context, RubyChain.class);
     }
 
     public RubyChain(Ruby runtime, RubyClass klass) {

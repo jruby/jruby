@@ -50,8 +50,10 @@ import java.util.Iterator;
 import java.util.Set;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.api.Access.hashClass;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Error.argumentError;
 
@@ -63,17 +65,14 @@ import static org.jruby.api.Error.argumentError;
 @org.jruby.anno.JRubyClass(name="Set", include = { "Enumerable" })
 public class RubySet extends RubyObject implements Set {
 
-    static RubyClass createSetClass(final Ruby runtime) {
-        RubyClass Set = runtime.defineClass("Set", runtime.getObject(), RubySet::new);
+    static RubyClass createSetClass(ThreadContext context, RubyClass Object, RubyModule Enumerable) {
+        RubyClass Set = defineClass(context, "Set", Object, RubySet::new).
+                reifiedClass(RubySet.class).
+                include(context, Enumerable).
+                defineMethods(context, RubySet.class).
+                tap(c -> c.marshalWith(new SetMarshal(c.getMarshal())));
 
-        Set.setReifiedClass(RubySet.class);
-
-        Set.includeModule(runtime.getEnumerable());
-        Set.defineAnnotatedMethods(RubySet.class);
-
-        Set.setMarshal(new SetMarshal(Set.getMarshal()));
-
-        runtime.getLoadService().require("jruby/set.rb");
+        context.runtime.getLoadService().require("jruby/set.rb");
 
         return Set;
     }
@@ -1010,10 +1009,11 @@ public class RubySet extends RubyObject implements Set {
                 synchronized (DivideTSortHash.class) {
                     klass = (RubyClass) Set.getConstantAt(NAME, true);
                     if (klass == null) {
-                        klass = Set.defineClassUnder(NAME, runtime.getHash(), runtime.getHash().getAllocator());
+                        var Hash = hashClass(context);
+                        klass = Set.defineClassUnder(context, NAME, Hash, Hash.getAllocator()).
+                                include(context, getTSort(runtime)).
+                                defineMethods(context, DivideTSortHash.class);
                         Set.setConstantVisibility(runtime, NAME, true); // private
-                        klass.includeModule(getTSort(runtime));
-                        klass.defineAnnotatedMethods(DivideTSortHash.class);
                     }
                 }
             }

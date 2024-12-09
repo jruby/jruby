@@ -34,17 +34,11 @@ public class RubyIOBuffer extends RubyObject {
 
     public static final Runtime FFI_RUNTIME = Runtime.getSystemRuntime();
 
-    public static RubyClass createIOBufferClass(Ruby runtime) {
-        var context = runtime.getCurrentContext();
-
-        RubyClass IOBuffer = runtime.getIO().defineClassUnder("Buffer", runtime.getObject(), RubyIOBuffer::new);
-
-        IOBuffer.includeModule(runtime.getComparable());
-
-        IOBuffer.defineAnnotatedMethods(RubyIOBuffer.class);
-        IOBuffer.defineAnnotatedConstants(RubyIOBuffer.class);
-
-        RubyClass IO = runtime.getIO();
+    public static RubyClass createIOBufferClass(ThreadContext context, RubyClass Object, RubyModule Comparable, RubyClass IO) {
+        RubyClass IOBuffer = IO.defineClassUnder(context, "Buffer", Object, RubyIOBuffer::new).
+                include(context, Comparable).
+                defineMethods(context, RubyIOBuffer.class).
+                defineConstants(context, RubyIOBuffer.class);
 
         IO.setConstant("READABLE", asFixnum(context, OpenFile.READABLE));
         IO.setConstant("WRITABLE", asFixnum(context, OpenFile.WRITABLE));

@@ -52,7 +52,7 @@ public final class MetaClass extends RubyClass {
         super(runtime, superClass, false);
         this.attached = attached;
         // use same ClassIndex as metaclass, since we're technically still of that type
-        setClassIndex(superClass.getClassIndex());
+        classIndex(superClass.getClassIndex());
         superClass.addSubclass(this);
 
         if (LOG_SINGLETONS || LOG_SINGLETONS_VERBOSE) {

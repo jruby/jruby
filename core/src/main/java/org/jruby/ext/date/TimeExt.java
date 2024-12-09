@@ -35,6 +35,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Access.timeClass;
 import static org.jruby.ext.date.DateUtils.*;
 import static org.jruby.ext.date.RubyDate.*;
 
@@ -47,8 +48,8 @@ public abstract class TimeExt {
 
     private TimeExt() { /* no instances */ }
 
-    static void load(Ruby runtime) {
-        runtime.getTime().defineAnnotatedMethods(TimeExt.class);
+    static void load(ThreadContext context) {
+        timeClass(context).defineMethods(context, TimeExt.class);
     }
 
     @JRubyMethod

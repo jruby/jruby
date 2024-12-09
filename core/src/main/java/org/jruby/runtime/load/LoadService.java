@@ -72,11 +72,11 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
-import org.jruby.util.StringSupport;
 import org.jruby.util.collections.StringArraySet;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
+import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Create.*;
 import static org.jruby.util.URLUtil.getPath;
 
@@ -209,7 +209,7 @@ public class LoadService {
     public void init(List<String> prependDirectories) {
         var context = runtime.getCurrentContext();
         loadPath = newArray(context);
-        loadPath.getMetaClass().defineAnnotatedMethods(LoadPathMethods.class);
+        loadPath.getMetaClass().defineMethods(context, LoadPathMethods.class);
 
         String jrubyHome = runtime.getJRubyHome();
 
@@ -221,7 +221,7 @@ public class LoadService {
         addPaths(prependDirectories);
 
         // add $RUBYLIB paths
-        RubyHash env = (RubyHash) runtime.getObject().getConstant("ENV");
+        RubyHash env = (RubyHash) objectClass(context).getConstant("ENV");
         RubyString env_rubylib = newString(context, "RUBYLIB");
 
         if (env.has_key_p(context, env_rubylib).isTrue()) {

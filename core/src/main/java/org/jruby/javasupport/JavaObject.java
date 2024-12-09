@@ -130,21 +130,14 @@ public class JavaObject extends RubyObject {
         return dataGetStruct();
     }
 
-    public static RubyClass createJavaObjectClass(Ruby runtime, RubyModule javaModule) {
-        // FIXME: Ideally JavaObject instances should be marshallable, which means that
-        // the JavaObject metaclass should have an appropriate allocator. JRUBY-414
-        RubyClass JavaObject = javaModule.defineClassUnder("JavaObject", runtime.getObject(), JAVA_OBJECT_ALLOCATOR);
+    public static RubyClass createJavaObjectClass(Ruby runtime, RubyClass Object, RubyModule javaModule) {
+        var context = runtime.getCurrentContext();
+        RubyClass JavaObject = javaModule.defineClassUnder(context, "JavaObject", Object, JAVA_OBJECT_ALLOCATOR).
+                tap(c -> c.getMetaClass().undefMethods(context, "new", "allocate"));
 
-        registerRubyMethods(runtime, JavaObject);
-
-        JavaObject.getMetaClass().undefineMethod("new");
-        JavaObject.getMetaClass().undefineMethod("allocate");
+        JavaObject.defineMethods(context, JavaObject.class);
 
         return JavaObject;
-    }
-
-    protected static void registerRubyMethods(Ruby runtime, RubyClass JavaObject) {
-        JavaObject.defineAnnotatedMethods(JavaObject.class);
     }
 
     @Override

@@ -48,7 +48,6 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
-import org.jruby.util.StringSupport;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
@@ -74,14 +73,10 @@ public class RubyFileStat extends RubyObject {
         if (stat == null) throw typeError(context, "uninitialized File::Stat");
     }
 
-    public static RubyClass createFileStatClass(Ruby runtime) {
-        // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here. Confirm. JRUBY-415
-        final RubyClass fileStatClass = runtime.getFile().defineClassUnder("Stat",runtime.getObject(), RubyFileStat::new);
-
-        fileStatClass.includeModule(runtime.getModule("Comparable"));
-        fileStatClass.defineAnnotatedMethods(RubyFileStat.class);
-
-        return fileStatClass;
+    public static RubyClass createFileStatClass(ThreadContext context, RubyClass Object, RubyClass File, RubyModule Comparable) {
+        return File.defineClassUnder(context, "Stat", Object, RubyFileStat::new).
+                include(context, Comparable).
+                defineMethods(context, RubyFileStat.class);
     }
 
     protected RubyFileStat(Ruby runtime, RubyClass clazz) {

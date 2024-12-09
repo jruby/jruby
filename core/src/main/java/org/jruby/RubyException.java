@@ -58,9 +58,11 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.List;
 
+import static org.jruby.api.Access.*;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Create.newEmptyString;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -137,47 +139,34 @@ public class RubyException extends RubyObject {
 
     @JRubyMethod(name = "to_tty?", meta = true)
     public static IRubyObject to_tty_p(ThreadContext context, IRubyObject recv) {
-        Ruby runtime = context.runtime;
-        IRubyObject stderr = runtime.getGlobalVariables().get("$stderr");
-        IRubyObject STDERR = runtime.getObject().getConstant("STDERR");
-        if (equalInternal(context, stderr, STDERR)) {
-            return ((RubyIO) STDERR).tty_p(context);
-        }
-        return context.fals;
+        IRubyObject stderr = globalVariables(context).get("$stderr");
+        IRubyObject STDERR = objectClass(context).getConstant("STDERR");
+        return equalInternal(context, stderr, STDERR) ? ((RubyIO) STDERR).tty_p(context) : context.fals;
     }
 
     @JRubyMethod(name = "===", meta = true)
     public static IRubyObject op_eqq(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        Ruby runtime = context.runtime;
         // special case non-FlowControlException Java exceptions so they'll be caught by rescue Exception
-        if (other instanceof ConcreteJavaProxy &&
-                (recv == runtime.getException() || recv == runtime.getStandardError())) {
-
-            Object object = ((ConcreteJavaProxy)other).getObject();
+        if (other instanceof ConcreteJavaProxy proxy && (recv == exceptionClass(context) || recv == standardErrorClass(context))) {
+            Object object = proxy.getObject();
             if (object instanceof Throwable && !(object instanceof FlowControlException)) {
-                if (recv == runtime.getException() || object instanceof java.lang.Exception) {
-                    return context.tru;
-                }
+                if (recv == exceptionClass(context) || object instanceof java.lang.Exception) return context.tru;
             }
         }
         // fall back on default logic
-        return ((RubyClass)recv).op_eqq(context, other);
+        return ((RubyClass) recv).op_eqq(context, other);
     }
 
     protected RaiseException constructThrowable(String message) {
         return new Exception(message, this);
     }
 
-    public static RubyClass createExceptionClass(Ruby runtime) {
-        RubyClass exceptionClass = runtime.defineClass("Exception", runtime.getObject(), EXCEPTION_ALLOCATOR);
-
-        exceptionClass.setClassIndex(ClassIndex.EXCEPTION);
-        exceptionClass.setReifiedClass(RubyException.class);
-
-        exceptionClass.setMarshal(EXCEPTION_MARSHAL);
-        exceptionClass.defineAnnotatedMethods(RubyException.class);
-
-        return exceptionClass;
+    public static RubyClass createExceptionClass(ThreadContext context, RubyClass Object) {
+        return defineClass(context, "Exception", Object, EXCEPTION_ALLOCATOR).
+                reifiedClass(RubyException.class).
+                marshalWith(EXCEPTION_MARSHAL).
+                classIndex(ClassIndex.EXCEPTION).
+                defineMethods(context, RubyException.class);
     }
 
     public static final ObjectAllocator EXCEPTION_ALLOCATOR = RubyException::new;

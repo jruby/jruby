@@ -29,8 +29,6 @@
 package org.jruby;
 
 import org.jcodings.Encoding;
-import org.jruby.api.Convert;
-import org.jruby.api.Create;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.java.proxies.JavaProxy;
@@ -213,14 +211,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * argument because of the Object class' central part in runtime
      * initialization.
      */
-    public static RubyClass createBasicObjectClass(Ruby runtime, RubyClass objectClass) {
-        objectClass.setClassIndex(ClassIndex.OBJECT);
-
-        objectClass.defineAnnotatedMethods(RubyBasicObject.class);
-
+    public static void createBasicObjectClass(Ruby runtime, RubyClass Object) {
+        Object.classIndex(ClassIndex.OBJECT).defineAnnotatedMethodsIndividually(RubyBasicObject.class);
         recacheBuiltinMethods(runtime);
-
-        return objectClass;
     }
 
     static void recacheBuiltinMethods(Ruby runtime) {

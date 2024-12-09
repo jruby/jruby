@@ -49,6 +49,7 @@ import org.jruby.util.func.TriFunction;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.util.RubyStringBuilder.str;
 
@@ -66,13 +67,12 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         this.runtime = runtime;
     }
 
-    public static RubyModule createWarningModule(Ruby runtime) {
-        RubyModule warning = runtime.defineModule("Warning");
+    public static RubyModule createWarningModule(ThreadContext context) {
+        var Warning = defineModule(context, "Warning").defineMethods(context, RubyWarnings.class);
 
-        warning.defineAnnotatedMethods(RubyWarnings.class);
-        warning.extend_object(warning);
+        Warning.extend_object(context, Warning);
 
-        return warning;
+        return Warning;
     }
 
     @Override

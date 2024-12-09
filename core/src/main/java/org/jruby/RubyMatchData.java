@@ -63,6 +63,7 @@ import org.jruby.util.StringSupport;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -80,20 +81,13 @@ public class RubyMatchData extends RubyObject {
     private boolean charOffsetUpdated;
     private Region charOffsets;
 
-    public static RubyClass createMatchDataClass(Ruby runtime) {
-        RubyClass matchDataClass = runtime.defineClass("MatchData", runtime.getObject(), RubyMatchData::new);
-
-        matchDataClass.setClassIndex(ClassIndex.MATCHDATA);
-        matchDataClass.setReifiedClass(RubyMatchData.class);
-
-        runtime.defineGlobalConstant("MatchingData", matchDataClass);
-        matchDataClass.kindOf = new RubyModule.JavaClassKindOf(RubyMatchData.class);
-
-        matchDataClass.getMetaClass().undefineMethod("new");
-        matchDataClass.getMetaClass().undefineMethod("allocate");
-        matchDataClass.defineAnnotatedMethods(RubyMatchData.class);
-
-        return matchDataClass;
+    public static RubyClass createMatchDataClass(ThreadContext context, RubyClass Object) {
+        return defineClass(context, "MatchData", Object, RubyMatchData::new).
+                reifiedClass(RubyMatchData.class).
+                kindOf(new RubyModule.JavaClassKindOf(RubyMatchData.class)).
+                classIndex(ClassIndex.MATCHDATA).
+                defineMethods(context, RubyMatchData.class).
+                tap(c -> c.getSingletonClass().undefMethods(context, "new", "allocate"));
     }
 
     public RubyMatchData(Ruby runtime) {

@@ -15,6 +15,7 @@ import org.jruby.RubyInteger;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Define;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -49,8 +50,7 @@ import static jnr.constants.platform.Sock.*;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Create.newArray;
-import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.*;
 import static org.jruby.ext.socket.SocketUtils.IP_V4_MAPPED_ADDRESS_PREFIX;
 import static org.jruby.ext.socket.SocketUtils.sockerr;
 
@@ -62,13 +62,8 @@ public class Addrinfo extends RubyObject {
     final short AF_PACKET       =  17;  // packet socket (socket.h)
     final byte  PACKET_HOST     =   0;  // host packet type (if_packet.h)
 
-    public static void createAddrinfo(Ruby runtime) {
-        RubyClass addrinfo = runtime.defineClass(
-                "Addrinfo",
-                runtime.getObject(),
-                Addrinfo::new);
-
-        addrinfo.defineAnnotatedMethods(Addrinfo.class);
+    public static void createAddrinfo(ThreadContext context, RubyClass Object) {
+        Define.defineClass(context, "Addrinfo", Object, Addrinfo::new).defineMethods(context, Addrinfo.class);
     }
 
     public Addrinfo(Ruby runtime, RubyClass cls) {

@@ -15,6 +15,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Define.defineClass;
+
 /**
  *
  * @author headius
@@ -25,18 +27,11 @@ public class InterfaceJavaProxy extends JavaProxy {
         super(runtime, klazz);
     }
 
-    public static RubyClass createInterfaceJavaProxy(ThreadContext context) {
-        final Ruby runtime = context.runtime;
-        RubyClass InterfaceJavaProxy = runtime.defineClass(
-            "InterfaceJavaProxy", runtime.getJavaSupport().getJavaProxyClass(), InterfaceJavaProxy::new
-        );
+    public static RubyClass createInterfaceJavaProxy(ThreadContext context, RubyClass Object, RubyClass JavaProxy) {
+        defineClass(context, "JavaInterfaceExtender", Object, Object.getAllocator()).
+                defineMethods(context, JavaInterfaceExtender.class);
 
-        RubyClass JavaInterfaceExtended = runtime.defineClass(
-            "JavaInterfaceExtender", runtime.getObject(), runtime.getObject().getAllocator()
-        );
-        JavaInterfaceExtended.defineAnnotatedMethods(JavaInterfaceExtender.class);
-
-        return InterfaceJavaProxy;
+        return defineClass(context, "InterfaceJavaProxy", JavaProxy, InterfaceJavaProxy::new);
     }
 
     public static class JavaInterfaceExtender {

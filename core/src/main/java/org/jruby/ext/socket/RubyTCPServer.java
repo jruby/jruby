@@ -55,6 +55,7 @@ import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
@@ -63,13 +64,10 @@ import static org.jruby.api.Error.typeError;
  */
 @JRubyClass(name="TCPServer", parent="TCPSocket")
 public class RubyTCPServer extends RubyTCPSocket {
-    static void createTCPServer(Ruby runtime) {
-        RubyClass rb_cTCPServer = runtime.defineClass(
-                "TCPServer", runtime.getClass("TCPSocket"), RubyTCPServer::new);
-
-        rb_cTCPServer.defineAnnotatedMethods(RubyTCPServer.class);
-
-        runtime.getObject().setConstant("TCPserver",rb_cTCPServer);
+    static void createTCPServer(ThreadContext context, RubyClass TCPSocket, RubyClass Object) {
+        Object.setConstant("TCPServer",
+                defineClass(context, "TCPServer", TCPSocket, RubyTCPServer::new).
+                        defineMethods(context, RubyTCPServer.class));
     }
 
     public RubyTCPServer(Ruby runtime, RubyClass type) {

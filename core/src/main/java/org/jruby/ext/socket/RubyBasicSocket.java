@@ -41,7 +41,6 @@ import jnr.posix.Timeval;
 import jnr.posix.POSIX;
 import jnr.unixsocket.UnixSocketAddress;
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
@@ -53,7 +52,6 @@ import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Convert;
-import org.jruby.api.Create;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.platform.Platform;
@@ -85,6 +83,7 @@ import static jnr.constants.platform.TCP.TCP_KEEPINTVL;
 import static jnr.constants.platform.TCP.TCP_NODELAY;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.Helpers.extractExceptionOnlyArg;
 import static org.jruby.runtime.Helpers.throwErrorFromException;
@@ -95,11 +94,10 @@ import static com.headius.backport9.buffer.Buffers.flipBuffer;
  */
 @JRubyClass(name="BasicSocket", parent="IO")
 public class RubyBasicSocket extends RubyIO {
-    static void createBasicSocket(Ruby runtime) {
-        RubyClass rb_cBasicSocket = runtime.defineClass("BasicSocket", runtime.getIO(), RubyBasicSocket::new);
-
-        rb_cBasicSocket.defineAnnotatedMethods(RubyBasicSocket.class);
-        rb_cBasicSocket.undefineMethod("initialize");
+    static RubyClass createBasicSocket(ThreadContext context, RubyClass IO) {
+        return defineClass(context, "BasicSocket", IO, RubyBasicSocket::new).
+                defineMethods(context, RubyBasicSocket.class).
+                undefMethods(context, "initialize");
     }
 
     public RubyBasicSocket(Ruby runtime, RubyClass type) {

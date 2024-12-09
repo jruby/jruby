@@ -50,7 +50,6 @@ import org.jruby.runtime.*;
 import org.jruby.runtime.JavaSites.FileSites;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
-import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.*;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.IOEncodable;
@@ -84,6 +83,7 @@ import static org.jruby.RubyInteger.singleCharByteList;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.runtimeError;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
@@ -101,87 +101,66 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     static final ByteList SLASH = singleCharByteList((byte) '/');
     static final ByteList BACKSLASH = singleCharByteList((byte) '\\');
 
-    public static RubyClass createFileClass(Ruby runtime) {
-        ThreadContext context = runtime.getCurrentContext();
-
-        RubyClass fileClass = runtime.defineClass("File", runtime.getIO(), RubyFile::new);
-
-        fileClass.defineAnnotatedMethods(RubyFile.class);
-
-        fileClass.setClassIndex(ClassIndex.FILE);
-        fileClass.setReifiedClass(RubyFile.class);
-
-        fileClass.kindOf = new RubyModule.JavaClassKindOf(RubyFile.class);
-
+    public static RubyClass createFileClass(ThreadContext context, RubyClass IO) {
         // file separator constants
-        RubyString separator = newString(context, SLASH);
-        separator.freeze(context);
-        fileClass.defineConstant("SEPARATOR", separator);
-        fileClass.defineConstant("Separator", separator);
+        var separator = newString(context, SLASH).freeze(context);
+        var altSeparator = File.separatorChar == '\\' ? newString(context, BACKSLASH).freeze(context) : context.nil;
+        var pathSeparator = newString(context, singleCharByteList((byte) File.pathSeparatorChar)).freeze(context);
 
-        if (File.separatorChar == '\\') {
-            RubyString altSeparator = newString(context, BACKSLASH);
-            altSeparator.freeze(context);
-            fileClass.defineConstant("ALT_SEPARATOR", altSeparator);
-        } else {
-            fileClass.defineConstant("ALT_SEPARATOR", context.nil);
-        }
-
-        // path separator
-        RubyString pathSeparator = newString(context, singleCharByteList((byte) File.pathSeparatorChar));
-        pathSeparator.freeze(context);
-        fileClass.defineConstant("PATH_SEPARATOR", pathSeparator);
+        RubyClass File = defineClass(context, "File", IO, RubyFile::new).
+                reifiedClass(RubyFile.class).
+                kindOf(new RubyModule.JavaClassKindOf(RubyFile.class)).
+                classIndex(ClassIndex.FILE).
+                defineMethods(context, RubyFile.class).
+                defineConstant(context, "SEPARATOR", separator).
+                defineConstant(context, "Separator", separator).
+                defineConstant(context, "ALT_SEPARATOR", altSeparator).
+                defineConstant(context, "PATH_SEPARATOR", pathSeparator);
 
         // For JRUBY-5276, physically define FileTest methods on File's singleton
-        fileClass.getSingletonClass().defineAnnotatedMethods(RubyFileTest.FileTestFileMethods.class);
+        File.getSingletonClass().defineMethods(context, RubyFileTest.FileTestFileMethods.class);
 
-        // Create Constants class
-        RubyModule constants = fileClass.defineModuleUnder("Constants");
+        var FileConstants = File.defineModuleUnder(context, "Constants").
+                defineConstant(context, "RDONLY", asFixnum(context, OpenFlags.O_RDONLY.intValue())).
+                defineConstant(context, "WRONLY", asFixnum(context, OpenFlags.O_WRONLY.intValue())).
+                defineConstant(context, "RDWR", asFixnum(context, OpenFlags.O_RDWR.intValue())).
+                defineConstant(context, "APPEND", asFixnum(context, OpenFlags.O_APPEND.intValue())).
+                defineConstant(context, "CREAT", asFixnum(context, OpenFlags.O_CREAT.intValue())).
+                defineConstant(context, "EXCL", asFixnum(context, OpenFlags.O_EXCL.intValue())).
+                defineConstant(context, "NONBLOCK", asFixnum(context, OpenFlags.O_NONBLOCK.intValue())).
+                defineConstant(context, "TRUNC", asFixnum(context, OpenFlags.O_TRUNC.intValue())).
+                // FIXME: NOCTTY is showing up as undefined on Linux, but it should be defined.
+                defineConstant(context, "NOCTTY", asFixnum(context, OpenFlags.O_NOCTTY.intValue())).
+                defineConstant(context, "SHARE_DELETE", asFixnum(context, ModeFlags.SHARE_DELETE)).
+                defineConstant(context, "FNM_NOESCAPE", asFixnum(context, FNM_NOESCAPE)).
+                defineConstant(context, "FNM_CASEFOLD", asFixnum(context, FNM_CASEFOLD)).
+                defineConstant(context, "FNM_SYSCASE", asFixnum(context, FNM_SYSCASE)).
+                defineConstant(context, "FNM_DOTMATCH", asFixnum(context, FNM_DOTMATCH)).
+                defineConstant(context, "FNM_PATHNAME", asFixnum(context, FNM_PATHNAME)).
+                defineConstant(context, "FNM_EXTGLOB", asFixnum(context, FNM_EXTGLOB)).
+                defineConstant(context, "LOCK_SH", asFixnum(context, RubyFile.LOCK_SH)).
+                defineConstant(context, "LOCK_EX", asFixnum(context, RubyFile.LOCK_EX)).
+                defineConstant(context, "LOCK_NB", asFixnum(context, RubyFile.LOCK_NB)).
+                defineConstant(context, "LOCK_UN", asFixnum(context, RubyFile.LOCK_UN)).
+                defineConstant(context, "NULL", newString(context, getNullDevice()));
 
-        // open flags
-        /* open for reading only */
-        constants.setConstant("RDONLY", asFixnum(context, OpenFlags.O_RDONLY.intValue()));
-        /* open for writing only */
-        constants.setConstant("WRONLY", asFixnum(context, OpenFlags.O_WRONLY.intValue()));
-        /* open for reading and writing */
-        constants.setConstant("RDWR", asFixnum(context, OpenFlags.O_RDWR.intValue()));
-        /* append on each write */
-        constants.setConstant("APPEND", asFixnum(context, OpenFlags.O_APPEND.intValue()));
-        /* create file if it does not exist */
-        constants.setConstant("CREAT", asFixnum(context, OpenFlags.O_CREAT.intValue()));
-        /* error if CREAT and the file exists */
-        constants.setConstant("EXCL", asFixnum(context, OpenFlags.O_EXCL.intValue()));
-        if (    // O_NDELAY not defined in OpenFlags
-                //OpenFlags.O_NDELAY.defined() ||
-                OpenFlags.O_NONBLOCK.defined()) {
-            if (!OpenFlags.O_NONBLOCK.defined()) {
-//                #   define O_NONBLOCK O_NDELAY
-            }
-            /* do not block on open or for data to become available */
-            constants.setConstant("NONBLOCK", asFixnum(context, OpenFlags.O_NONBLOCK.intValue()));
+        // FIXME: Some comment about an O_DELAY not being defined in OpenFlags.  This might be missing constants.
+        // FIXME: Should NONBLOCK exist for Windows fcntl flags?
+        if (OpenFlags.O_NONBLOCK.defined()) {
+            FileConstants.defineConstant(context, "NONBLOCK", asFixnum(context, OpenFlags.O_NONBLOCK.intValue()));
         } else if (Platform.IS_WINDOWS) {
-            // FIXME: Should NONBLOCK exist for Windows fcntl flags?
-            constants.setConstant("NONBLOCK", asFixnum(context, 1));
+            FileConstants.defineConstant(context, "NONBLOCK", asFixnum(context, 1));
         }
-        /* truncate size to 0 */
-        constants.setConstant("TRUNC", asFixnum(context, OpenFlags.O_TRUNC.intValue()));
-        // FIXME: NOCTTY is showing up as undefined on Linux, but it should be defined.
-//        if (OpenFlags.O_NOCTTY.defined()) {
-            /* not to make opened IO the controlling terminal device */
-            constants.setConstant("NOCTTY", asFixnum(context, OpenFlags.O_NOCTTY.intValue()));
-//        }
+        
         if (!OpenFlags.O_BINARY.defined()) {
-            constants.setConstant("BINARY", asFixnum(context, 0));
+            FileConstants.defineConstant(context, "BINARY", asFixnum(context, 0));
         } else {
             /* disable line code conversion */
-            constants.setConstant("BINARY", asFixnum(context, OpenFlags.O_BINARY.intValue()));
+            FileConstants.defineConstant(context, "BINARY", asFixnum(context, OpenFlags.O_BINARY.intValue()));
         }
 
-        constants.setConstant("SHARE_DELETE", asFixnum(context, ModeFlags.SHARE_DELETE));
-
         if (OpenFlags.O_SYNC.defined()) {
-            /* any write operation perform synchronously */
-            constants.setConstant("SYNC", asFixnum(context, OpenFlags.O_SYNC.intValue()));
+            FileConstants.defineConstant(context, "SYNC", asFixnum(context, OpenFlags.O_SYNC.intValue()));
         }
         // O_DSYNC and O_RSYNC are not in OpenFlags
 //        #ifdef O_DSYNC
@@ -194,7 +173,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 //        #endif
         if (OpenFlags.O_NOFOLLOW.defined()) {
             /* do not follow symlinks */
-            constants.setConstant("NOFOLLOW", asFixnum(context, OpenFlags.O_NOFOLLOW.intValue()));     /* FreeBSD, Linux */
+            FileConstants.defineConstant(context, "NOFOLLOW", asFixnum(context, OpenFlags.O_NOFOLLOW.intValue()));     /* FreeBSD, Linux */
         }
         // O_NOATIME and O_DIRECT are not in OpenFlags
 //        #ifdef O_NOATIME
@@ -207,43 +186,26 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 //        #endif
         if (OpenFlags.O_TMPFILE.defined()) {
             /* Create an unnamed temporary file */
-            constants.setConstant("TMPFILE", asFixnum(context, OpenFlags.O_TMPFILE.intValue()));
+            FileConstants.defineConstant(context, "TMPFILE", asFixnum(context, OpenFlags.O_TMPFILE.intValue()));
         }
 
-        // case handling, escaping, path and dot matching
-        constants.setConstant("FNM_NOESCAPE", asFixnum(context, FNM_NOESCAPE));
-        constants.setConstant("FNM_CASEFOLD", asFixnum(context, FNM_CASEFOLD));
-        constants.setConstant("FNM_SYSCASE", asFixnum(context, FNM_SYSCASE));
-        constants.setConstant("FNM_DOTMATCH", asFixnum(context, FNM_DOTMATCH));
-        constants.setConstant("FNM_PATHNAME", asFixnum(context, FNM_PATHNAME));
-        constants.setConstant("FNM_EXTGLOB", asFixnum(context, FNM_EXTGLOB));
-
-        // flock operations
-        constants.setConstant("LOCK_SH", asFixnum(context, RubyFile.LOCK_SH));
-        constants.setConstant("LOCK_EX", asFixnum(context, RubyFile.LOCK_EX));
-        constants.setConstant("LOCK_NB", asFixnum(context, RubyFile.LOCK_NB));
-        constants.setConstant("LOCK_UN", asFixnum(context, RubyFile.LOCK_UN));
-
-        // NULL device
-        constants.setConstant("NULL", newString(context, getNullDevice()));
-
         // File::Constants module is included in IO.
-        runtime.getIO().includeModule(constants);
+        IO.include(context, FileConstants);
 
         if (Platform.IS_WINDOWS) {
             // readlink is not available on Windows. See below and jruby/jruby#3287.
             // TODO: MRI does not implement readlink on Windows, but perhaps we could?
-            fileClass.searchMethod("readlink").setNotImplemented(true);
-            fileClass.searchMethod("mkfifo").setNotImplemented(true);
+            File.searchMethod("readlink").setNotImplemented(true);
+            File.searchMethod("mkfifo").setNotImplemented(true);
         }
 
         if (!Platform.IS_BSD) {
             // lchmod appears to be mostly a BSD-ism, not supported on Linux.
             // See https://github.com/jruby/jruby/issues/5547
-            fileClass.getSingletonClass().searchMethod("lchmod").setNotImplemented(true);
+            File.getSingletonClass().searchMethod("lchmod").setNotImplemented(true);
         }
 
-        return fileClass;
+        return File;
     }
 
     private static String getNullDevice() {

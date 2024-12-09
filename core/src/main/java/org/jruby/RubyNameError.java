@@ -46,6 +46,7 @@ import org.jruby.util.Sprintf;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Create.newEmptyString;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 
 /**
@@ -94,11 +95,10 @@ public class RubyNameError extends RubyStandardError {
             return arg;
         }
 
-        static RubyClass define(Ruby runtime, RubyClass NameError) {
-            RubyClass Message = NameError.defineClassUnder("Message", runtime.getObject(), RubyNameErrorMessage::new);
-            NameError.setConstantVisibility(runtime, "Message", true);
-            Message.defineAnnotatedMethods(RubyNameErrorMessage.class);
-            return Message;
+        static RubyClass define(ThreadContext context, RubyClass Object, RubyClass NameError) {
+            return NameError.defineClassUnder(context, "Message", Object, RubyNameErrorMessage::new).
+                    defineMethods(context, RubyNameErrorMessage.class).
+                    tap(c -> c.parent.setConstantVisibility(context.runtime, "Message", true));
         }
 
         @JRubyMethod(name = "_dump")
@@ -163,11 +163,9 @@ public class RubyNameError extends RubyStandardError {
         }
     }
 
-    static RubyClass define(Ruby runtime, RubyClass StandardError) {
-        RubyClass NameError = runtime.defineClass("NameError", StandardError, RubyNameError::new);
-        NameError.defineAnnotatedMethods(RubyNameError.class);
-        NameError.setReifiedClass(RubyNameError.class);
-        return NameError;
+    static RubyClass define(ThreadContext context, RubyClass StandardError) {
+        return defineClass(context, "NameError", StandardError, RubyNameError::new).
+                reifiedClass(RubyNameError.class).defineMethods(context, RubyNameError.class);
     }
 
     protected RubyNameError(Ruby runtime, RubyClass exceptionClass) {

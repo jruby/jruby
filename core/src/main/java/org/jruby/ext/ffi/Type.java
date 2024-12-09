@@ -3,23 +3,20 @@ package org.jruby.ext.ffi;
 
 import java.util.Map;
 import org.jruby.Ruby;
-import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
-import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import static org.jruby.api.Convert.asBoolean;
-import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
 /**
  *
@@ -35,37 +32,35 @@ public abstract class Type extends RubyObject {
     /** Minimum alignment of this type in bytes */
     protected final int alignment;
 
-    public static RubyClass createTypeClass(Ruby runtime, RubyModule ffiModule) {
-        RubyClass typeClass = ffiModule.defineClassUnder("Type", runtime.getObject(),
-                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        typeClass.defineAnnotatedMethods(Type.class);
-        typeClass.defineAnnotatedConstants(Type.class);
-
-        RubyClass builtinClass = typeClass.defineClassUnder("Builtin", typeClass,
-                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        builtinClass.defineAnnotatedMethods(Builtin.class);
+    public static RubyClass createTypeClass(ThreadContext context, RubyModule FFI, RubyClass Object) {
+        RubyClass Type = FFI.defineClassUnder(context, "Type", Object, NOT_ALLOCATABLE_ALLOCATOR).
+                defineMethods(context, Type.class).
+                defineConstants(context, Type.class);
+        RubyClass Builtin = Type.defineClassUnder(context, "Builtin", Type, NOT_ALLOCATABLE_ALLOCATOR).
+                defineMethods(context, Builtin.class);
+        Type.defineClassUnder(context, "Array", Type, NOT_ALLOCATABLE_ALLOCATOR).
+                defineMethods(context, Type.Array.class);
         
-        RubyModule nativeType = ffiModule.defineModuleUnder("NativeType");
+        RubyModule nativeType = FFI.defineModuleUnder(context, "NativeType");
 
-        
-        defineBuiltinType(runtime, builtinClass, NativeType.CHAR, "char", "schar", "int8", "sint8");
-        defineBuiltinType(runtime, builtinClass, NativeType.UCHAR, "uchar", "uint8");
-        defineBuiltinType(runtime, builtinClass, NativeType.SHORT, "short", "sshort", "int16", "sint16");
-        defineBuiltinType(runtime, builtinClass, NativeType.USHORT, "ushort", "uint16");
-        defineBuiltinType(runtime, builtinClass, NativeType.INT, "int", "sint", "int32", "sint32");
-        defineBuiltinType(runtime, builtinClass, NativeType.UINT, "uint", "uint32");
-        defineBuiltinType(runtime, builtinClass, NativeType.LONG_LONG, "long_long", "slong_long", "int64", "sint64");
-        defineBuiltinType(runtime, builtinClass, NativeType.ULONG_LONG, "ulong_long", "uint64");
-        defineBuiltinType(runtime, builtinClass, NativeType.LONG, "long", "slong");
-        defineBuiltinType(runtime, builtinClass, NativeType.ULONG, "ulong");
-        defineBuiltinType(runtime, builtinClass, NativeType.FLOAT, "float", "float32");
-        defineBuiltinType(runtime, builtinClass, NativeType.DOUBLE, "double", "float64");
+        defineBuiltinType(context, Builtin, NativeType.CHAR, "char", "schar", "int8", "sint8");
+        defineBuiltinType(context, Builtin, NativeType.UCHAR, "uchar", "uint8");
+        defineBuiltinType(context, Builtin, NativeType.SHORT, "short", "sshort", "int16", "sint16");
+        defineBuiltinType(context, Builtin, NativeType.USHORT, "ushort", "uint16");
+        defineBuiltinType(context, Builtin, NativeType.INT, "int", "sint", "int32", "sint32");
+        defineBuiltinType(context, Builtin, NativeType.UINT, "uint", "uint32");
+        defineBuiltinType(context, Builtin, NativeType.LONG_LONG, "long_long", "slong_long", "int64", "sint64");
+        defineBuiltinType(context, Builtin, NativeType.ULONG_LONG, "ulong_long", "uint64");
+        defineBuiltinType(context, Builtin, NativeType.LONG, "long", "slong");
+        defineBuiltinType(context, Builtin, NativeType.ULONG, "ulong");
+        defineBuiltinType(context, Builtin, NativeType.FLOAT, "float", "float32");
+        defineBuiltinType(context, Builtin, NativeType.DOUBLE, "double", "float64");
         
         for (NativeType t : NativeType.values()) {
-            if (!builtinClass.hasConstant(t.name())) {
+            if (!Builtin.hasConstant(t.name())) {
                 try {
-                    Type b = new Builtin(runtime, builtinClass, t, t.name().toLowerCase(LOCALE));
-                    builtinClass.defineConstant(t.name().toUpperCase(LOCALE), b);
+                    Type b = new Builtin(context, Builtin, t, t.name().toLowerCase(LOCALE));
+                    Builtin.defineConstant(t.name().toUpperCase(LOCALE), b);
                 } catch (UnsupportedOperationException ex) {
                 }
 
@@ -75,31 +70,27 @@ public abstract class Type extends RubyObject {
         //
         // Add aliases in Type::*, NativeType::* and FFI::TYPE_*
         //
-        for (Map.Entry<String, RubyModule.ConstantEntry> c : builtinClass.getConstantMap().entrySet()) {
+        for (Map.Entry<String, RubyModule.ConstantEntry> c : Builtin.getConstantMap().entrySet()) {
             if (c.getValue().value instanceof Type.Builtin) {
-                typeClass.defineConstant(c.getKey(), c.getValue().value);
+                Type.defineConstant(c.getKey(), c.getValue().value);
                 nativeType.defineConstant(c.getKey(), c.getValue().value);
-                ffiModule.defineConstant("TYPE_" + c.getKey(), c.getValue().value);
+                FFI.defineConstant("TYPE_" + c.getKey(), c.getValue().value);
             }
         }
 
-        RubyClass arrayTypeClass = typeClass.defineClassUnder("Array", typeClass,
-                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        arrayTypeClass.defineAnnotatedMethods(Type.Array.class);
-
-        return typeClass;
+        return Type;
     }
 
-    private static final void defineBuiltinType(Ruby runtime, RubyClass builtinClass, NativeType nativeType, String... names) {
+    private static final void defineBuiltinType(ThreadContext context, RubyClass builtinClass, NativeType nativeType, String... names) {
         try {
             if (names.length > 0) {
                 for (String n : names) {
                     builtinClass.setConstant(n.toUpperCase(LOCALE),
-                            new Builtin(runtime, builtinClass, nativeType, n.toLowerCase(LOCALE)));
+                            new Builtin(context, builtinClass, nativeType, n.toLowerCase(LOCALE)));
                 }
             } else {
                 builtinClass.setConstant(nativeType.name(),
-                        new Builtin(runtime, builtinClass, nativeType, nativeType.name().toLowerCase(LOCALE)));
+                        new Builtin(context, builtinClass, nativeType, nativeType.name().toLowerCase(LOCALE)));
             }
         } catch (UnsupportedOperationException ex) {
         }
@@ -185,9 +176,9 @@ public abstract class Type extends RubyObject {
         /**
          * Initializes a new <code>BuiltinType</code> instance.
          */
-        private Builtin(Ruby runtime, RubyClass klass, NativeType nativeType, String symName) {
-            super(runtime, klass, nativeType, Type.getNativeSize(nativeType), Type.getNativeAlignment(nativeType));
-            this.sym = runtime.newSymbol(symName);
+        private Builtin(ThreadContext context, RubyClass klass, NativeType nativeType, String symName) {
+            super(context.runtime, klass, nativeType, Type.getNativeSize(nativeType), Type.getNativeAlignment(nativeType));
+            this.sym = asSymbol(context, symName);
         }
 
         @JRubyMethod(name = "inspect")

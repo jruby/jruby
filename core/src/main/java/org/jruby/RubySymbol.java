@@ -56,7 +56,6 @@ import org.jruby.runtime.ContextAwareBlockBody;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.MethodIndex;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -80,8 +79,10 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
 import static org.jruby.util.StringSupport.CR_7BIT;
@@ -143,20 +144,14 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         this(runtime, internedSymbol, symbolBytesFromString(runtime, internedSymbol));
     }
 
-    public static RubyClass createSymbolClass(Ruby runtime) {
-        RubyClass symbolClass = runtime.defineClass("Symbol", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-
-        RubyClass symbolMetaClass = symbolClass.getMetaClass();
-        symbolClass.setClassIndex(ClassIndex.SYMBOL);
-        symbolClass.setReifiedClass(RubySymbol.class);
-        symbolClass.kindOf = new RubyModule.JavaClassKindOf(RubySymbol.class);
-
-        symbolClass.defineAnnotatedMethods(RubySymbol.class);
-        symbolMetaClass.undefineMethod("new");
-
-        symbolClass.includeModule(runtime.getComparable());
-
-        return symbolClass;
+    public static RubyClass createSymbolClass(ThreadContext context, RubyClass Object, RubyModule Comparable) {
+        return defineClass(context, "Symbol", Object, NOT_ALLOCATABLE_ALLOCATOR).
+                reifiedClass(RubySymbol.class).
+                classIndex(ClassIndex.SYMBOL).
+                defineMethods(context, RubySymbol.class).
+                kindOf(new RubyModule.JavaClassKindOf(RubySymbol.class)).
+                include(context, Comparable).
+                tap(c -> c.getMetaClass().undefMethods(context, "new"));
     }
 
     @Override
@@ -420,7 +415,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
      * @return a new or existing symbol
      */
     public static RubySymbol newConstantSymbol(Ruby runtime, IRubyObject fqn, ByteList bytes) {
-        if (bytes.length() == 0) {
+        if (bytes.isEmpty()) {
             throw runtime.newNameError(str(runtime, "wrong constant name ", ids(runtime, fqn)), runtime.newSymbol(""));
         }
 

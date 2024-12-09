@@ -47,11 +47,12 @@ import static org.jruby.javasupport.JavaUtil.unwrapIfJavaObject;
  */
 public class JavaTime {
 
-    public static void define(final Ruby runtime) {
-        JavaExtensions.put(runtime, java.time.Instant.class, (proxyClass) -> Instant.define(runtime, proxyClass));
-        JavaExtensions.put(runtime, java.time.OffsetDateTime.class, (proxyClass) -> OffsetDateTime.define(runtime, proxyClass));
-        JavaExtensions.put(runtime, java.time.LocalDateTime.class, (proxyClass) -> LocalDateTime.define(runtime, proxyClass));
-        JavaExtensions.put(runtime, java.time.ZonedDateTime.class, (proxyClass) -> ZonedDateTime.define(runtime, proxyClass));
+    public static void define(ThreadContext context) {
+        var runtime = context.runtime;
+        JavaExtensions.put(runtime, java.time.Instant.class, proxy -> proxy.defineMethods(context, Instant.class));
+        JavaExtensions.put(runtime, java.time.OffsetDateTime.class, proxy -> proxy.defineMethods(context, OffsetDateTime.class));
+        JavaExtensions.put(runtime, java.time.LocalDateTime.class, proxy -> proxy.defineMethods(context, LocalDateTime.class));
+        JavaExtensions.put(runtime, java.time.ZonedDateTime.class, proxy -> proxy.defineMethods(context, ZonedDateTime.class));
         JavaExtensions.put(runtime, java.time.ZoneId.class, (klass) -> {
             klass.addMethod("inspect", new JavaLang.InspectRawValue(klass));
         });
@@ -62,12 +63,6 @@ public class JavaTime {
 
     @JRubyModule(name = "Java::JavaTime::Instant")
     public static class Instant {
-
-        static RubyModule define(final Ruby runtime, final RubyModule proxy) {
-            proxy.defineAnnotatedMethods(Instant.class);
-            return proxy;
-        }
-
         @JRubyMethod(name = "to_time")
         public static IRubyObject to_time(ThreadContext context, IRubyObject self) {
             final java.time.Instant val = unwrapIfJavaObject(self);
@@ -81,12 +76,6 @@ public class JavaTime {
 
     @JRubyModule(name = "Java::JavaTime::LocalDateTime")
     public static class LocalDateTime {
-
-        static RubyModule define(final Ruby runtime, final RubyModule proxy) {
-            proxy.defineAnnotatedMethods(LocalDateTime.class);
-            return proxy;
-        }
-
         @JRubyMethod(name = "to_time")
         public static IRubyObject to_time(ThreadContext context, IRubyObject self) {
             java.time.LocalDateTime val = unwrapIfJavaObject(self);
@@ -99,12 +88,6 @@ public class JavaTime {
 
     @JRubyModule(name = "Java::JavaTime::OffsetDateTime")
     public static class OffsetDateTime {
-
-        static RubyModule define(final Ruby runtime, final RubyModule proxy) {
-            proxy.defineAnnotatedMethods(OffsetDateTime.class);
-            return proxy;
-        }
-
         @JRubyMethod(name = "to_time")
         public static IRubyObject to_time(ThreadContext context, IRubyObject self) {
             java.time.OffsetDateTime val = unwrapIfJavaObject(self);
@@ -117,12 +100,6 @@ public class JavaTime {
 
     @JRubyModule(name = "Java::JavaTime::ZonedDateTime")
     public static class ZonedDateTime {
-
-        static RubyModule define(final Ruby runtime, final RubyModule proxy) {
-            proxy.defineAnnotatedMethods(ZonedDateTime.class);
-            return proxy;
-        }
-
         @JRubyMethod(name = "to_time")
         public static IRubyObject to_time(ThreadContext context, IRubyObject self) {
             java.time.ZonedDateTime val = unwrapIfJavaObject(self);

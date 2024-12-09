@@ -59,14 +59,13 @@ import static jnr.constants.platform.AddressFamily.AF_INET;
 import static jnr.constants.platform.AddressFamily.AF_INET6;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineClass;
 
 public class RubyTCPSocket extends RubyIPSocket {
-    static void createTCPSocket(Ruby runtime) {
-        RubyClass rb_cTCPSocket = runtime.defineClass("TCPSocket", runtime.getClass("IPSocket"), RubyTCPSocket::new);
-
-        rb_cTCPSocket.defineAnnotatedMethods(RubyTCPSocket.class);
-
-        runtime.getObject().setConstant("TCPsocket",rb_cTCPSocket);
+    static RubyClass createTCPSocket(ThreadContext context, RubyClass IPSocket, RubyClass Object) {
+        return (RubyClass) Object.setConstant("TCPsocket",
+                defineClass(context, "TCPSocket", IPSocket, RubyTCPSocket::new).
+                        defineMethods(context, RubyTCPSocket.class));
     }
 
     public RubyTCPSocket(Ruby runtime, RubyClass type) {

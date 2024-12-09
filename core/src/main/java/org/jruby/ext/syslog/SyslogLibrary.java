@@ -33,6 +33,7 @@ import org.jruby.runtime.load.Library;
 
 public class SyslogLibrary implements Library {
     public void load(Ruby runtime, boolean wrap) throws IOException {
-        RubySyslog.createSyslog(runtime);
+        var context = runtime.getCurrentContext();
+        RubySyslog.createSyslog(context);
     }
 }

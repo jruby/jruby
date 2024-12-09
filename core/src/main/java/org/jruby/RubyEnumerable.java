@@ -71,6 +71,7 @@ import static org.jruby.RubyObject.equalInternal;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.numericToLong;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.*;
 import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.runtime.Helpers.invokedynamic;
@@ -83,13 +84,8 @@ import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 
 @JRubyModule(name="Enumerable")
 public class RubyEnumerable {
-
-    public static RubyModule createEnumerableModule(Ruby runtime) {
-        RubyModule enumModule = runtime.defineModule("Enumerable");
-
-        enumModule.defineAnnotatedMethods(RubyEnumerable.class);
-
-        return enumModule;
+    public static RubyModule createEnumerableModule(ThreadContext context) {
+        return defineModule(context, "Enumerable").defineMethods(context, RubyEnumerable.class);
     }
 
     public static IRubyObject callEach(ThreadContext context, IRubyObject self, Signature signature, BlockCallback callback) {

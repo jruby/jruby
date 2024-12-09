@@ -29,6 +29,9 @@ package org.jruby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.RegexpError;
+import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Define.defineClass;
 
 /**
  * The Java representation of a Ruby RegexpError.
@@ -41,10 +44,8 @@ public class RubyRegexpError extends RubyStandardError {
         super(runtime, exceptionClass);
     }
 
-    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass regexpErrorClass = runtime.defineClass("RegexpError", exceptionClass, RubyRegexpError::new);
-
-        return regexpErrorClass;
+    static RubyClass define(ThreadContext context, RubyClass StandardError) {
+        return defineClass(context, "RegexpError", StandardError, RubyRegexpError::new);
     }
 
     protected RaiseException constructThrowable(String message) {

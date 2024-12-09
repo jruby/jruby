@@ -32,9 +32,10 @@ import org.jruby.exceptions.NoMethodError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.Visibility;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.Visibility;
+
+import static org.jruby.api.Define.defineClass;
 
 /**
  * The Java representation of a Ruby NoMethodError.
@@ -47,10 +48,9 @@ public class RubyNoMethodError extends RubyNameError {
 
     private static final ObjectAllocator ALLOCATOR = RubyNoMethodError::new;
 
-    static RubyClass define(Ruby runtime, RubyClass nameErrorClass) {
-        RubyClass noMethodErrorClass = runtime.defineClass("NoMethodError", nameErrorClass, ALLOCATOR);
-        noMethodErrorClass.defineAnnotatedMethods(RubyNoMethodError.class);
-        return noMethodErrorClass;
+    static RubyClass define(ThreadContext context, RubyClass NameError) {
+        return defineClass(context, "NoMethodError", NameError, ALLOCATOR).
+                defineMethods(context, RubyNoMethodError.class);
     }
 
     protected RubyNoMethodError(Ruby runtime, RubyClass exceptionClass) {

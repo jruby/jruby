@@ -29,6 +29,9 @@ package org.jruby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.LoadError;
+import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Define.defineClass;
 
 /**
  * The Java representation of a Ruby LoadError.
@@ -41,10 +44,9 @@ public class RubyLoadError extends RubyScriptError {
         super(runtime, exceptionClass);
     }
 
-    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass LoadErrorClass = runtime.defineClass("LoadError", exceptionClass, RubyLoadError::new);
-        LoadErrorClass.addReadAttribute(runtime.getCurrentContext(), "path");
-        return LoadErrorClass;
+    static RubyClass define(ThreadContext context, RubyClass ScriptError) {
+        return defineClass(context, "LoadError", ScriptError, RubyLoadError::new).
+                tap(c -> c.addReadAttribute(context, "path"));
     }
 
     @Override

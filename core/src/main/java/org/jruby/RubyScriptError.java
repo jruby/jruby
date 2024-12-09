@@ -29,6 +29,9 @@ package org.jruby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ScriptError;
+import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Define.defineClass;
 
 /**
  * The Java representation of a Ruby ScriptError.
@@ -41,10 +44,8 @@ public class RubyScriptError extends RubyException {
         super(runtime, exceptionClass);
     }
 
-    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass scriptErrorClass = runtime.defineClass("ScriptError", exceptionClass, RubyScriptError::new);
-
-        return scriptErrorClass;
+    static RubyClass define(ThreadContext context, RubyClass Exception) {
+        return defineClass(context, "ScriptError", Exception, RubyScriptError::new);
     }
 
     protected RaiseException constructThrowable(String message) {

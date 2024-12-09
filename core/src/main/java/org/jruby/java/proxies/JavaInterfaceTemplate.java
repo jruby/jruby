@@ -57,22 +57,19 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Convert.castAsModule;
+import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
 public class JavaInterfaceTemplate {
 
     public static RubyModule createJavaInterfaceTemplateModule(ThreadContext context) {
-        final Ruby runtime = context.runtime;
-        RubyModule JavaInterfaceTemplate = runtime.defineModule("JavaInterfaceTemplate");
-
-        RubyClass singleton = JavaInterfaceTemplate.getSingletonClass();
-        singleton.defineAnnotatedMethods(JavaInterfaceTemplate.class);
-        JavaInterfaceTemplate.defineAnnotatedMethods(JavaProxy.ClassMethods.class);
-
-        return JavaInterfaceTemplate;
+        return defineModule(context, "JavaInterfaceTemplate").
+                defineMethods(context, JavaProxy.ClassMethods.class).
+                tap(m -> m.getSingletonClass().defineMethods(context, JavaInterfaceTemplate.class));
     }
 
     @JRubyMethod
@@ -157,7 +154,7 @@ public class JavaInterfaceTemplate {
         // not allowed for original (non-generated) Java classes
         // note: not allowing for any previously created class right now;
         // this restriction might be loosened later for generated classes
-        if ( ( Java.NEW_STYLE_EXTENSION && clazz.getReifiedClass() != null )
+        if ( ( Java.NEW_STYLE_EXTENSION && clazz.reifiedClass() != null )
                 ||
                 ( clazz.hasInstanceVariable("@java_class")
                     && clazz.getInstanceVariable("@java_class").isTrue()
@@ -188,7 +185,7 @@ public class JavaInterfaceTemplate {
                 // The replacement "new" allocates and inits the Ruby object as before, but
                 // also instantiates our proxified Java object by calling __jcreate!
                 final ObjectAllocator proxyAllocator = clazz.getAllocator();
-                clazz.setAllocator((runtime, klazz) -> {
+                clazz.allocator((runtime, klazz) -> {
                     IRubyObject newObj = proxyAllocator.allocate(runtime, klazz);
                     Helpers.invoke(runtime.getCurrentContext(), newObj, "__jcreate!");
                     return newObj;
@@ -284,7 +281,7 @@ public class JavaInterfaceTemplate {
     }
 
     public static void addRealImplClassNew(final RubyClass clazz) {
-        clazz.setAllocator(new ObjectAllocator() {
+        clazz.allocator(new ObjectAllocator() {
             private Constructor<? extends IRubyObject> proxyConstructor;
 
             public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
@@ -385,7 +382,7 @@ public class JavaInterfaceTemplate {
             // RubySymbol implements a Java compareTo thus will always work
         }
 
-        RubyClass implClass = RubyClass.newClass(runtime, runtime.getObject()); // ImplClass = Class.new
+        RubyClass implClass = RubyClass.newClass(runtime, objectClass(context)); // ImplClass = Class.new
         implClass.include(context, self); // ImplClass.include Interface
 
         final BlockInterfaceImpl ifaceImpl = new BlockInterfaceImpl(implClass, implBlock, methodNames);

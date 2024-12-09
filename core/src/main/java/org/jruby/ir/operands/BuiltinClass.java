@@ -11,6 +11,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.List;
 
+import static org.jruby.api.Access.objectClass;
+
 /**
  * Reference to common builtin types we care about: Object, Array, Hash.  Tends to be used
  * for comparisons like ===.
@@ -90,7 +92,7 @@ public class BuiltinClass extends Operand {
             case HASH:
                 return context.getRuntime().getHash();
             case OBJECT:
-                return context.getRuntime().getObject();
+                return objectClass(context);
             case SYMBOL:
                 return context.getRuntime().getSymbol();
             default:

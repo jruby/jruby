@@ -43,15 +43,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class RubyYielder extends RubyObject {
     private Block block;
 
-    public static RubyClass createYielderClass(Ruby runtime) {
-        RubyClass yielderc = runtime.defineClassUnder("Yielder", runtime.getObject(), RubyYielder::new, runtime.getEnumerator());
-
-        yielderc.setClassIndex(ClassIndex.YIELDER);
-        yielderc.kindOf = new RubyModule.JavaClassKindOf(RubyYielder.class);
-
-        yielderc.defineAnnotatedMethods(RubyYielder.class);
-
-        return yielderc;
+    public static RubyClass createYielderClass(ThreadContext context, RubyClass Object, RubyClass Enumerator) {
+        return Enumerator.defineClassUnder(context, "Yielder", Object, RubyYielder::new).
+                kindOf(new RubyModule.JavaClassKindOf(RubyYielder.class)).
+                classIndex(ClassIndex.YIELDER).
+                defineMethods(context, RubyYielder.class);
     }
 
     public RubyYielder(Ruby runtime, RubyClass klass) {

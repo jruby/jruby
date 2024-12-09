@@ -40,28 +40,22 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Convert.asFloat;
 import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Define.defineModule;
 
 @JRubyModule(name="Math")
 public class RubyMath {
     /** Create the Math module and add it to the Ruby runtime.
      * 
      */
-    public static RubyModule createMathModule(Ruby runtime) {
-        var context = runtime.getCurrentContext();
-        RubyModule result = runtime.defineModule("Math");
-
-        result.defineConstant("E", asFloat(context, Math.E));
-        result.defineConstant("PI", asFloat(context, Math.PI));
-        
-        result.defineAnnotatedMethods(RubyMath.class);
-
-        return result;
+    public static RubyModule createMathModule(ThreadContext context) {
+        return defineModule(context, "Math").
+                defineConstant(context, "E", asFloat(context, Math.E)).
+                defineConstant(context, "PI", asFloat(context, Math.PI)).
+                defineMethods(context, RubyMath.class);
     }
 
-    private static void domainCheck(IRubyObject recv, double value, String msg) {
-        if (Double.isNaN(value)) {
-            throw recv.getRuntime().newMathDomainError(msg);
-        }
+    private static void domainCheck(ThreadContext context, double value, String msg) {
+        if (Double.isNaN(value)) throw context.runtime.newMathDomainError(msg);
     }
 
     public static double chebylevSerie(double x, double coef[]) {
@@ -637,7 +631,7 @@ public class RubyMath {
 
         if (Double.isNaN(value)) return asFloat(context, Double.NaN);
 
-        domainCheck(recv, result, "gamma");
+        domainCheck(context, result, "gamma");
         return asFloat(context, result);
 
     }

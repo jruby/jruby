@@ -46,11 +46,11 @@ import static org.jruby.api.Error.argumentError;
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
 public class RubyClassPathVariable extends RubyObject {
-    public static void createClassPathVariable(Ruby runtime) {
-        RubyClassPathVariable self = new RubyClassPathVariable(runtime);
-        runtime.getEnumerable().extend_object(self);
-        runtime.defineReadonlyVariable("$CLASSPATH", self, GlobalVariable.Scope.GLOBAL);
-        self.getMetaClass().defineAnnotatedMethods(RubyClassPathVariable.class);
+    public static void createClassPathVariable(ThreadContext context, RubyModule Enumerable) {
+        RubyClassPathVariable self = new RubyClassPathVariable(context.runtime);
+        Enumerable.extend_object(context, self);
+        context.runtime.defineReadonlyVariable("$CLASSPATH", self, GlobalVariable.Scope.GLOBAL);
+        self.getMetaClass().defineMethods(context, RubyClassPathVariable.class);
     }
 
     private RubyClassPathVariable(Ruby runtime) {

@@ -81,6 +81,7 @@ import org.jruby.util.collections.WeakValuedMap;
 
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.*;
 import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -203,28 +204,22 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return regex;
     }
 
-    public static RubyClass createRegexpClass(Ruby runtime) {
-        var context = runtime.getCurrentContext();
-        RubyClass regexpClass = runtime.defineClass("Regexp", runtime.getObject(), RubyRegexp::new);
+    public static RubyClass createRegexpClass(ThreadContext context, RubyClass Object) {
+        RubyClass Regexp = defineClass(context, "Regexp", Object, RubyRegexp::new).
+                reifiedClass(RubyRegexp.class).
+                kindOf(new RubyModule.JavaClassKindOf(RubyRegexp.class)).
+                classIndex(ClassIndex.REGEXP).
+                defineConstant(context, "IGNORECASE", asFixnum(context, RE_OPTION_IGNORECASE)).
+                defineConstant(context, "EXTENDED", asFixnum(context, RE_OPTION_EXTENDED)).
+                defineConstant(context, "MULTILINE", asFixnum(context, RE_OPTION_MULTILINE)).
+                defineConstant(context, "FIXEDENCODING", asFixnum(context, RE_FIXED)).
+                defineConstant(context, "NOENCODING", asFixnum(context, RE_NONE)).
+                defineMethods(context, RubyRegexp.class).
+                tap(c -> c.getSingletonClass().defineAlias("compile", "new"));
 
-        regexpClass.setClassIndex(ClassIndex.REGEXP);
-        regexpClass.setReifiedClass(RubyRegexp.class);
+        context.runtime.setRubyTimeout(context.nil);
 
-        regexpClass.kindOf = new RubyModule.JavaClassKindOf(RubyRegexp.class);
-
-        regexpClass.defineConstant("IGNORECASE", asFixnum(context, (RE_OPTION_IGNORECASE)));
-        regexpClass.defineConstant("EXTENDED", asFixnum(context, (RE_OPTION_EXTENDED)));
-        regexpClass.defineConstant("MULTILINE", asFixnum(context, (RE_OPTION_MULTILINE)));
-
-        regexpClass.defineConstant("FIXEDENCODING", asFixnum(context, (RE_FIXED)));
-        regexpClass.defineConstant("NOENCODING", asFixnum(context, (RE_NONE)));
-
-        regexpClass.defineAnnotatedMethods(RubyRegexp.class);
-        regexpClass.getSingletonClass().defineAlias("compile", "new");
-
-        runtime.setRubyTimeout(context.nil);
-
-        return regexpClass;
+        return Regexp;
     }
 
     public static int matcherSearch(ThreadContext context, Matcher matcher, int start, int range, int option) {

@@ -12,7 +12,6 @@ import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -20,10 +19,12 @@ import org.jruby.util.ConvertBytes;
 import org.jruby.util.RubyStringBuilder;
 
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.javasupport.ext.JavaLang.Character.inspectCharValue;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.util.Inspector.*;
 
 public final class ArrayJavaProxy extends JavaProxy {
@@ -39,20 +40,11 @@ public final class ArrayJavaProxy extends JavaProxy {
         this.converter = converter;
     }
 
-    public static RubyClass createArrayJavaProxy(ThreadContext context) {
-        Ruby runtime = context.runtime;
-
-        RubyClass arrayJavaProxy = runtime.defineClass("ArrayJavaProxy",
-                runtime.getJavaSupport().getJavaProxyClass(),
-                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-
-        RubyClass singleton = arrayJavaProxy.getSingletonClass();
-        singleton.addMethod("new", new ArrayNewMethod(singleton, Visibility.PUBLIC));
-
-        arrayJavaProxy.defineAnnotatedMethods(ArrayJavaProxy.class);
-        arrayJavaProxy.includeModule(runtime.getEnumerable());
-
-        return arrayJavaProxy;
+    public static RubyClass createArrayJavaProxy(ThreadContext context, RubyClass JavaProxy, RubyModule Enumerable) {
+        return defineClass(context, "ArrayJavaProxy", JavaProxy, NOT_ALLOCATABLE_ALLOCATOR).
+                defineMethods(context, ArrayJavaProxy.class).
+                include(context, Enumerable).
+                tap(c -> c.getSingletonClass().addMethod("new", new ArrayNewMethod(c.getSingletonClass(), Visibility.PUBLIC)));
     }
 
     public static ArrayJavaProxy newArray(final Ruby runtime, final Class<?> elementType, final int... dimensions) {

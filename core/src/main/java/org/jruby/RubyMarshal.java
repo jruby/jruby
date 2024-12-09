@@ -54,6 +54,7 @@ import org.jruby.util.io.TransparentByteArrayOutputStream;
 
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
@@ -65,15 +66,11 @@ import static org.jruby.api.Error.typeError;
 @JRubyModule(name="Marshal")
 public class RubyMarshal {
 
-    public static RubyModule createMarshalModule(Ruby runtime) {
-        var context = runtime.getCurrentContext();
-        RubyModule module = runtime.defineModule("Marshal");
-
-        module.defineAnnotatedMethods(RubyMarshal.class);
-        module.defineConstant("MAJOR_VERSION", asFixnum(context, Constants.MARSHAL_MAJOR));
-        module.defineConstant("MINOR_VERSION", asFixnum(context, Constants.MARSHAL_MINOR));
-
-        return module;
+    public static RubyModule createMarshalModule(ThreadContext context) {
+        return defineModule(context, "Marshal").
+                defineMethods(context, RubyMarshal.class).
+                defineConstant(context, "MAJOR_VERSION", asFixnum(context, Constants.MARSHAL_MAJOR)).
+                defineConstant(context, "MINOR_VERSION", asFixnum(context, Constants.MARSHAL_MINOR));
     }
 
     @JRubyMethod(module = true, visibility = Visibility.PRIVATE)

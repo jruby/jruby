@@ -46,20 +46,22 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.lexer.LexingCommon.*;
 
 public class RubyRipper extends RubyObject {
-    public static void initRipper(Ruby runtime) {
-        var context = runtime.getCurrentContext();
-        RubyClass ripper = runtime.defineClass("Ripper", runtime.getObject(), RubyRipper::new);
-        
-        ripper.defineConstant("SCANNER_EVENT_TABLE", createScannerEventTable(context));
-        ripper.defineConstant("PARSER_EVENT_TABLE", createParserEventTable(context));
-        defineLexStateConstants(context, ripper);
+    public static RubyClass initRipper(ThreadContext context) {
+        var Ripper = (RubyClass) defineClass(context, "Ripper", objectClass(context), RubyRipper::new).
+                defineMethods(context, RubyRipper.class).
+                defineConstant(context, "SCANNER_EVENT_TABLE", createScannerEventTable(context)).
+                defineConstant(context, "PARSER_EVENT_TABLE", createParserEventTable(context));
 
-        ripper.defineAnnotatedMethods(RubyRipper.class);
+        defineLexStateConstants(context, Ripper);
+
+        return Ripper;
     }
 
     private static void defineLexStateConstants(ThreadContext context, RubyClass ripper) {

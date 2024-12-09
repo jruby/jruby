@@ -38,6 +38,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newEmptyString;
+import static org.jruby.api.Define.defineClass;
 
 /**
  * The Java representation of a Ruby UncaughtThrowError.
@@ -50,10 +51,9 @@ public class RubyUncaughtThrowError extends RubyArgumentError {
 
     private IRubyObject tag, value;
 
-    static RubyClass define(Ruby runtime, RubyClass argumentError) {
-        RubyClass UncaughtThrowError = runtime.defineClass("UncaughtThrowError", argumentError, RubyUncaughtThrowError::new);
-        UncaughtThrowError.defineAnnotatedMethods(RubyUncaughtThrowError.class);
-        return UncaughtThrowError;
+    static RubyClass define(ThreadContext context, RubyClass ArgumentError) {
+        return defineClass(context, "UncaughtThrowError", ArgumentError, RubyUncaughtThrowError::new).
+                defineMethods(context, RubyUncaughtThrowError.class);
     }
 
     protected RubyUncaughtThrowError(Ruby runtime, RubyClass exceptionClass) {

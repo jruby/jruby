@@ -114,8 +114,7 @@ public class RubyObjectSpecializer {
             throw new RuntimeException(e);
         }
 
-        klass.setReifiedClass(cna.cls);
-        klass.setAllocator(cna.allocator);
+        klass.reifiedClass(cna.cls).allocator(cna.allocator);
 
         return cna.allocator;
     }

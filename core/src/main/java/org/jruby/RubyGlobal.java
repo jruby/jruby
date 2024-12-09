@@ -72,6 +72,10 @@ import org.jruby.util.io.FilenoUtil;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.STDIO;
 
+import static org.jruby.api.Access.globalVariables;
+import static org.jruby.api.Access.instanceConfig;
+import static org.jruby.api.Access.objectClass;
+import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
@@ -102,6 +106,7 @@ import java.util.Set;
 public class RubyGlobal {
     public static void initARGV(Ruby runtime) {
         var context = runtime.getCurrentContext();
+        var objectClass = objectClass(context);
         // define ARGV and $* for this runtime
         String[] argv = runtime.getInstanceConfig().getArgv();
         var argvArray = newRawArray(context, argv.length);
@@ -111,29 +116,28 @@ public class RubyGlobal {
         }
         argvArray.finishRawArray(context);
 
-        if (runtime.getObject().getConstantNoConstMissing("ARGV") != null) {
-            ((RubyArray<?>)runtime.getObject().getConstant("ARGV")).replace(context, argvArray);
+        if (objectClass.getConstantNoConstMissing("ARGV") != null) {
+            ((RubyArray<?>) objectClass.getConstant("ARGV")).replace(context, argvArray);
         } else {
-            runtime.getObject().setConstantQuiet("ARGV", argvArray);
-            runtime.getGlobalVariables().define("$*", new ValueAccessor(argvArray), GLOBAL);
+            objectClass.setConstantQuiet("ARGV", argvArray);
+            globalVariables(context).define("$*", new ValueAccessor(argvArray), GLOBAL);
         }
     }
 
     @Deprecated
     public static void createGlobals(Ruby runtime) {
-        createGlobalsAndENV(runtime);
+        createGlobalsAndENV(runtime.getCurrentContext(), runtime.getGlobalVariables(), runtime.getInstanceConfig());
     }
 
-    public static RubyHash createGlobalsAndENV(Ruby runtime) {
-        var context = runtime.getCurrentContext();
-        GlobalVariables globals = runtime.getGlobalVariables();
-
-        runtime.setTopLevelBinding(runtime.newBinding());
-        runtime.defineGlobalConstant("TOPLEVEL_BINDING", runtime.getTopLevelBinding());
+    public static RubyHash createGlobalsAndENV(ThreadContext context, GlobalVariables globals, RubyInstanceConfig instanceConfig) {
+        var runtime = context.runtime;
+        var topLevelBinding = runtime.newBinding();
+        runtime.setTopLevelBinding(topLevelBinding);
+        runtime.defineGlobalConstant("TOPLEVEL_BINDING", topLevelBinding);
 
         initARGV(runtime);
 
-        IAccessor d = new ValueAccessor(newString(context, runtime.getInstanceConfig().displayedFileName()));
+        IAccessor d = new ValueAccessor(newString(context, instanceConfig.displayedFileName()));
         globals.define("$PROGRAM_NAME", d, GLOBAL);
         globals.define("$0", d, GLOBAL);
 
@@ -166,10 +170,10 @@ public class RubyGlobal {
         runtime.defineGlobalConstant("RUBY_ENGINE", engine);
         runtime.defineGlobalConstant("RUBY_ENGINE_VERSION", jrubyVersion);
 
-        RubyInstanceConfig.Verbosity verbosity = runtime.getInstanceConfig().getVerbosity();
+        RubyInstanceConfig.Verbosity verbosity = instanceConfig.getVerbosity();
         runtime.defineVariable(new WarningGlobalVariable(context, "$-W", verbosity), GLOBAL);
 
-        IRubyObject defaultRS = RubyString.newFString(runtime, runtime.getInstanceConfig().getRecordSeparator());
+        IRubyObject defaultRS = RubyString.newFString(runtime, instanceConfig.getRecordSeparator());
         GlobalVariable rs = new StringGlobalVariable(runtime, "$/", defaultRS);
         runtime.defineVariable(rs, GLOBAL);
         runtime.setRecordSeparatorVar(rs);
@@ -184,13 +188,13 @@ public class RubyGlobal {
         runtime.defineVariable(new ErrorInfoGlobalVariable(runtime, "$!", runtime.getNil()), THREAD);
         runtime.defineVariable(new NonEffectiveGlobalVariable(runtime, "$=", runtime.getFalse()), GLOBAL);
 
-        if(runtime.getInstanceConfig().getInputFieldSeparator() == null) {
+        if(instanceConfig.getInputFieldSeparator() == null) {
             runtime.defineVariable(new DeprecatedStringOrRegexpGlobalVariable(runtime, "$;", runtime.getNil()), GLOBAL);
         } else {
-            runtime.defineVariable(new DeprecatedStringOrRegexpGlobalVariable(runtime, "$;", RubyRegexp.newRegexp(runtime, runtime.getInstanceConfig().getInputFieldSeparator(), new RegexpOptions())), GLOBAL);
+            runtime.defineVariable(new DeprecatedStringOrRegexpGlobalVariable(runtime, "$;", RubyRegexp.newRegexp(runtime, instanceConfig.getInputFieldSeparator(), new RegexpOptions())), GLOBAL);
         }
 
-        RubyInstanceConfig.Verbosity verbose = runtime.getInstanceConfig().getVerbosity();
+        RubyInstanceConfig.Verbosity verbose = instanceConfig.getVerbosity();
         IRubyObject verboseValue;
         if (verbose == RubyInstanceConfig.Verbosity.NIL) {
             verboseValue = context.nil;
@@ -204,7 +208,7 @@ public class RubyGlobal {
         runtime.defineVariable(new VerboseGlobalVariable(runtime, "$-v"), GLOBAL);
         runtime.defineVariable(new VerboseGlobalVariable(runtime, "$-w"), GLOBAL);
 
-        runtime.setDebug(runtime.newBoolean(runtime.getInstanceConfig().isDebug()));
+        runtime.setDebug(runtime.newBoolean(instanceConfig.isDebug()));
         runtime.defineVariable(new DebugGlobalVariable(runtime, "$DEBUG"), GLOBAL);
         runtime.defineVariable(new DebugGlobalVariable(runtime, "$-d"), GLOBAL);
 
@@ -231,32 +235,23 @@ public class RubyGlobal {
         globals.defineReadonly("$$", new PidAccessor(runtime), GLOBAL);
 
         // after defn of $stderr as the call may produce warnings
-        RubyHash env = defineGlobalEnvConstants(runtime);
+        RubyHash env = defineGlobalEnvConstants(context);
 
         // Fixme: Do we need the check or does Main.java not call this...they should consolidate
         if (globals.get("$*").isNil()) {
             globals.defineReadonly("$*", new ValueAccessor(newArray(context)), GLOBAL);
         }
 
-        globals.defineReadonly("$-p",
-                new ValueAccessor(runtime.newBoolean(runtime.getInstanceConfig().isAssumePrinting())),
-                GLOBAL);
-                globals.defineReadonly("$-a",
-                new ValueAccessor(runtime.newBoolean(runtime.getInstanceConfig().isSplit())),
-                GLOBAL);
-        globals.defineReadonly("$-l",
-                new ValueAccessor(runtime.newBoolean(runtime.getInstanceConfig().isProcessLineEnds())),
-                GLOBAL);
+        globals.defineReadonly("$-p", new ValueAccessor(asBoolean(context, instanceConfig.isAssumePrinting())), GLOBAL);
+        globals.defineReadonly("$-a", new ValueAccessor(asBoolean(context, instanceConfig.isSplit())), GLOBAL);
+        globals.defineReadonly("$-l", new ValueAccessor(asBoolean(context, instanceConfig.isProcessLineEnds())), GLOBAL);
 
         // ARGF, $< object
-        RubyArgsFile.initArgsFile(runtime);
+        RubyArgsFile.initArgsFile(context, runtime.getEnumerable(), globals);
 
-        String inplace = runtime.config.getInPlaceBackupExtension();
-        if (inplace != null) {
-            runtime.defineVariable(new ArgfGlobalVariable(runtime, "$-i", newString(context, inplace)), GLOBAL);
-        } else {
-            runtime.defineVariable(new ArgfGlobalVariable(runtime, "$-i", context.nil), GLOBAL);
-        }
+        String inplace = instanceConfig.getInPlaceBackupExtension();
+        runtime.defineVariable(new ArgfGlobalVariable(runtime, "$-i",
+                inplace != null ? newString(context, inplace) : context.nil), GLOBAL);
 
         globals.alias("$-0", "$/");
 
@@ -313,7 +308,8 @@ public class RubyGlobal {
                     runtime, runtime.getErr(), prepareStdioChannel(runtime, STDIO.ERR, runtime.getErr()), OpenFile.WRITABLE | OpenFile.SYNC, runtime.getIO(), "<STDERR>");
         }
 
-        if (runtime.getObject().getConstantFromNoConstMissing("STDIN") == null) {
+        var object = runtime.getObject();
+        if (object.getConstantFromNoConstMissing("STDIN") == null) {
             runtime.defineVariable(new InputGlobalVariable(runtime, "$stdin", stdin), GLOBAL);
             runtime.defineVariable(new OutputGlobalVariable(runtime, "$stdout", stdout), GLOBAL);
             globals.alias("$>", "$stdout");
@@ -325,9 +321,9 @@ public class RubyGlobal {
 
             runtime.setOriginalStderr(stderr);
         } else {
-            ((RubyIO) runtime.getObject().getConstant("STDIN")).getOpenFile().setFD(stdin.getOpenFile().fd());
-            ((RubyIO) runtime.getObject().getConstant("STDOUT")).getOpenFile().setFD(stdout.getOpenFile().fd());
-            ((RubyIO) runtime.getObject().getConstant("STDERR")).getOpenFile().setFD(stderr.getOpenFile().fd());
+            ((RubyIO) object.getConstant("STDIN")).getOpenFile().setFD(stdin.getOpenFile().fd());
+            ((RubyIO) object.getConstant("STDOUT")).getOpenFile().setFD(stdout.getOpenFile().fd());
+            ((RubyIO) object.getConstant("STDERR")).getOpenFile().setFD(stderr.getOpenFile().fd());
         }
     }
 
@@ -395,20 +391,20 @@ public class RubyGlobal {
 
 
     @SuppressWarnings("unchecked")
-    private static RubyHash defineGlobalEnvConstants(Ruby runtime) {
+    private static RubyHash defineGlobalEnvConstants(ThreadContext context) {
+        var runtime = context.runtime;
     	Map<RubyString, RubyString> environmentVariableMap = OSEnvironment.environmentVariableMap(runtime);
+        var instanceConfig = instanceConfig(context);
     	RubyHash env = new CaseInsensitiveStringOnlyRubyHash(
-            runtime, environmentVariableMap, runtime.getNil(),
-            runtime.getInstanceConfig().isNativeEnabled() && runtime.getInstanceConfig().isUpdateNativeENVEnabled()
+            runtime, environmentVariableMap, context.nil,
+            instanceConfig.isNativeEnabled() && instanceConfig.isUpdateNativeENVEnabled()
         );
-        env.getSingletonClass().defineAnnotatedMethods(CaseInsensitiveStringOnlyRubyHash.class);
+        env.getSingletonClass().defineMethods(context, CaseInsensitiveStringOnlyRubyHash.class);
         runtime.defineGlobalConstant("ENV", env);
 
         // Define System.getProperties() in ENV_JAVA
         Map<RubyString, RubyString> systemPropertiesMap = OSEnvironment.systemPropertiesMap(runtime);
-        RubyHash envJava = new ReadOnlySystemPropertiesHash(
-                runtime, systemPropertiesMap, runtime.getNil()
-        );
+        RubyHash envJava = new ReadOnlySystemPropertiesHash(runtime, systemPropertiesMap, context.nil);
         envJava.setFrozen(true);
         runtime.defineGlobalConstant("ENV_JAVA", envJava);
 

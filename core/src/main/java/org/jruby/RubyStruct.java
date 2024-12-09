@@ -48,7 +48,6 @@ import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.StructSites;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -61,9 +60,11 @@ import org.jruby.util.RecursiveComparator;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.invokedynamic;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
@@ -98,15 +99,12 @@ public class RubyStruct extends RubyObject {
         Helpers.fillNil(values, runtime);
     }
 
-    public static RubyClass createStructClass(Ruby runtime) {
-        RubyClass structClass = runtime.defineClass("Struct", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-
-        structClass.setClassIndex(ClassIndex.STRUCT);
-        structClass.includeModule(runtime.getEnumerable());
-        structClass.setReifiedClass(RubyStruct.class);
-        structClass.defineAnnotatedMethods(RubyStruct.class);
-
-        return structClass;
+    public static RubyClass createStructClass(ThreadContext context, RubyClass Object, RubyModule Enumerable) {
+        return defineClass(context, "Struct", Object, NOT_ALLOCATABLE_ALLOCATOR).
+                reifiedClass(RubyStruct.class).
+                classIndex(ClassIndex.STRUCT).
+                include(context, Enumerable).
+                defineMethods(context, RubyStruct.class);
     }
 
     @Override
@@ -283,8 +281,7 @@ public class RubyStruct extends RubyObject {
         RubyClass superClass = (RubyClass)recv;
 
         if (name == null || nilName) {
-            newStruct = RubyClass.newClass(context.runtime, superClass);
-            newStruct.setAllocator(RubyStruct::new);
+            newStruct = RubyClass.newClass(context.runtime, superClass).allocator(RubyStruct::new);
             newStruct.makeMetaClass(superClass.metaClass);
             newStruct.inherit(superClass);
         } else {
@@ -293,18 +290,15 @@ public class RubyStruct extends RubyObject {
                 context.runtime.getWarnings().warn(ID.STRUCT_CONSTANT_REDEFINED, context.getFile(), context.getLine(), "redefining constant " + type);
                 superClass.deleteConstant(name);
             }
-            newStruct = superClass.defineClassUnder(name, superClass, RubyStruct::new);
+            newStruct = superClass.defineClassUnder(context, name, superClass, RubyStruct::new);
         }
 
         // set reified class to RubyStruct, for Java subclasses to use
-        newStruct.setReifiedClass(RubyStruct.class);
-        newStruct.setClassIndex(ClassIndex.STRUCT);
-
+        newStruct.reifiedClass(RubyStruct.class).classIndex(ClassIndex.STRUCT);
         newStruct.setInternalVariable(SIZE_VAR, member.length(context));
         newStruct.setInternalVariable(MEMBER_VAR, member);
         newStruct.setInternalVariable(KEYWORD_INIT_VAR, keywordInitValue);
-
-        newStruct.getSingletonClass().defineAnnotatedMethods(StructMethods.class);
+        newStruct.getSingletonClass().defineMethods(context, StructMethods.class);
 
         // define access methods.
         for (int i = (name == null && !nilName) ? 0 : 1; i < argc; i++) {

@@ -87,7 +87,6 @@ import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.ShellLauncher;
-import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
 import org.jruby.util.func.ObjectIntIntFunction;
@@ -110,6 +109,7 @@ import static org.jruby.anno.FrameField.METHODNAME;
 import static org.jruby.anno.FrameField.SCOPE;
 import static org.jruby.anno.FrameField.SELF;
 import static org.jruby.anno.FrameField.VISIBILITY;
+import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
@@ -146,26 +146,23 @@ public class RubyKernel {
 
     }
 
-    public static RubyModule createKernelModule(Ruby runtime) {
-        RubyModule module = runtime.defineModule("Kernel");
+    public static RubyModule createKernelModule(Ruby runtime, RubyClass Object, RubyInstanceConfig config) {
+        var Kernel = runtime.defineModuleUnder("Kernel", Object);
 
-        module.defineAnnotatedMethods(RubyKernel.class);
+        Kernel.defineAnnotatedMethodsIndividually(RubyKernel.class);
+        Kernel.setFlag(RubyModule.NEEDSIMPL_F, false); //Kernel is the only normal Module that doesn't need an implementor
 
-        module.setFlag(RubyModule.NEEDSIMPL_F, false); //Kernel is the only normal Module that doesn't need an implementor
+        runtime.setPrivateMethodMissing(new MethodMissingMethod(Kernel, PRIVATE, CallType.NORMAL));
+        runtime.setProtectedMethodMissing(new MethodMissingMethod(Kernel, PROTECTED, CallType.NORMAL));
+        runtime.setVariableMethodMissing(new MethodMissingMethod(Kernel, PUBLIC, CallType.VARIABLE));
+        runtime.setSuperMethodMissing(new MethodMissingMethod(Kernel, PUBLIC, CallType.SUPER));
+        runtime.setNormalMethodMissing(new MethodMissingMethod(Kernel, PUBLIC, CallType.NORMAL));
 
-        runtime.setPrivateMethodMissing(new MethodMissingMethod(module, PRIVATE, CallType.NORMAL));
-        runtime.setProtectedMethodMissing(new MethodMissingMethod(module, PROTECTED, CallType.NORMAL));
-        runtime.setVariableMethodMissing(new MethodMissingMethod(module, PUBLIC, CallType.VARIABLE));
-        runtime.setSuperMethodMissing(new MethodMissingMethod(module, PUBLIC, CallType.SUPER));
-        runtime.setNormalMethodMissing(new MethodMissingMethod(module, PUBLIC, CallType.NORMAL));
+        if (config.isAssumeLoop()) Kernel.defineAnnotatedMethodsIndividually(LoopMethods.class);
 
-        if (runtime.getInstanceConfig().isAssumeLoop()) {
-            module.defineAnnotatedMethods(LoopMethods.class);
-        }
+        recacheBuiltinMethods(runtime, Kernel);
 
-        recacheBuiltinMethods(runtime, module);
-
-        return module;
+        return Kernel;
     }
 
     /**
@@ -1366,7 +1363,7 @@ public class RubyKernel {
 
     @JRubyMethod(name = "catch", module = true, visibility = PRIVATE)
     public static IRubyObject rbCatch(ThreadContext context, IRubyObject recv, Block block) {
-        return rbCatch(context, recv, new RubyObject(context.runtime.getObject()), block);
+        return rbCatch(context, recv, new RubyObject(objectClass(context)), block);
     }
 
     @JRubyMethod(name = "catch", module = true, visibility = PRIVATE)

@@ -110,6 +110,7 @@ import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.anno.FrameField.LASTLINE;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.*;
 import static org.jruby.runtime.ThreadContext.*;
 import static org.jruby.runtime.Visibility.*;
@@ -320,32 +321,26 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return ClassIndex.FILE;
     }
 
-    public static RubyClass createIOClass(Ruby runtime) {
-        RubyClass ioClass = runtime.defineClass("IO", runtime.getObject(), RubyIO::new);
+    public static RubyClass createIOClass(ThreadContext context, RubyClass Object, RubyModule Enumerable) {
+        RubyClass IO = defineClass(context, "IO", Object, RubyIO::new).
+                reifiedClass(RubyIO.class).
+                kindOf(new RubyModule.JavaClassKindOf(RubyIO.class)).
+                classIndex(ClassIndex.IO).
+                include(context, Enumerable).
+                defineMethods(context, RubyIO.class).
+                // Constants for seek
+                defineConstant(context, "SEEK_SET", asFixnum(context, PosixShim.SEEK_SET)).
+                defineConstant(context, "SEEK_CUR", asFixnum(context, PosixShim.SEEK_CUR)).
+                defineConstant(context, "SEEK_END", asFixnum(context, PosixShim.SEEK_END)).
 
-        ioClass.setClassIndex(ClassIndex.IO);
-        ioClass.setReifiedClass(RubyIO.class);
+                defineConstant(context, "READABLE", asFixnum(context, IOEvent.IO_READABLE.getValue())).
+                defineConstant(context, "WRITABLE", asFixnum(context, IOEvent.IO_WRITABLE.getValue())).
+                defineConstant(context, "PRIORITY", asFixnum(context, IOEvent.IO_PRIORITY.getValue()));
 
-        ioClass.kindOf = new RubyModule.JavaClassKindOf(RubyIO.class);
+        IO.defineModuleUnder(context, "WaitReadable");
+        IO.defineModuleUnder(context, "WaitWritable");
 
-        ioClass.includeModule(runtime.getEnumerable());
-
-        ioClass.defineAnnotatedMethods(RubyIO.class);
-
-        ThreadContext context = runtime.getCurrentContext();
-        // Constants for seek
-        ioClass.setConstant("SEEK_SET", asFixnum(context, PosixShim.SEEK_SET));
-        ioClass.setConstant("SEEK_CUR", asFixnum(context, PosixShim.SEEK_CUR));
-        ioClass.setConstant("SEEK_END", asFixnum(context, PosixShim.SEEK_END));
-
-        ioClass.setConstant("READABLE", asFixnum(context, IOEvent.IO_READABLE.getValue()));
-        ioClass.setConstant("WRITABLE", asFixnum(context, IOEvent.IO_WRITABLE.getValue()));
-        ioClass.setConstant("PRIORITY", asFixnum(context, IOEvent.IO_PRIORITY.getValue()));
-
-        ioClass.defineModuleUnder("WaitReadable");
-        ioClass.defineModuleUnder("WaitWritable");
-
-        return ioClass;
+        return IO;
     }
 
     public OutputStream getOutStream() {

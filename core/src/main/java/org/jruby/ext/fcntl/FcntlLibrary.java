@@ -33,6 +33,8 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.runtime.load.Library;
 
+import static org.jruby.api.Define.defineModule;
+
 /**
  * Populates all the constants for Fcntl from Constantine
  */
@@ -42,10 +44,11 @@ public class FcntlLibrary implements Library {
     public static final int FD_CLOEXEC = 1;
 
     public void load(final Ruby runtime, boolean wrap) throws IOException {
-        RubyModule mFcntl = runtime.defineModule("Fcntl");
+        var context = runtime.getCurrentContext();
+        var Fcntl = defineModule(context, "Fcntl").
+                defineConstant(context, "FD_CLOEXEC", RubyFixnum.newFixnum(runtime, FD_CLOEXEC));
 
-        runtime.loadConstantSet(mFcntl, "Fcntl");
-        runtime.loadConstantSet(mFcntl, "OpenFlags");
-        mFcntl.defineConstant("FD_CLOEXEC", RubyFixnum.newFixnum(runtime, FD_CLOEXEC));
+        runtime.loadConstantSet(Fcntl, "Fcntl");
+        runtime.loadConstantSet(Fcntl, "OpenFlags");
     }
 }

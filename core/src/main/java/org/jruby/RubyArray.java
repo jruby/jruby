@@ -57,6 +57,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Create;
+import org.jruby.api.JRubyAPI;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
@@ -97,6 +98,7 @@ import static org.jruby.RubyEnumerator.enumWithSize;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newHash;
 import static org.jruby.api.Create.newSmallHash;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.*;
 import static org.jruby.runtime.Helpers.*;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -116,18 +118,13 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     private static final boolean USE_PACKED_ARRAYS = Options.PACKED_ARRAYS.load();
 
-    public static RubyClass createArrayClass(Ruby runtime) {
-        RubyClass arrayc = runtime.defineClass("Array", runtime.getObject(), RubyArray::newEmptyArray);
-
-        arrayc.setClassIndex(ClassIndex.ARRAY);
-        arrayc.setReifiedClass(RubyArray.class);
-
-        arrayc.kindOf = new RubyModule.JavaClassKindOf(RubyArray.class);
-
-        arrayc.includeModule(runtime.getEnumerable());
-        arrayc.defineAnnotatedMethods(RubyArray.class);
-
-        return arrayc;
+    public static RubyClass createArrayClass(ThreadContext context, RubyClass Object, RubyModule Enumerable) {
+        return defineClass(context, "Array", Object, RubyArray::newEmptyArray).
+                reifiedClass(RubyArray.class).
+                kindOf(new RubyModule.JavaClassKindOf(RubyArray.class)).
+                classIndex(ClassIndex.ARRAY).
+                include(context, Enumerable).
+                defineMethods(context, RubyArray.class);
     }
 
     @Override
@@ -909,9 +906,15 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return store(metaClass.runtime.getCurrentContext(), index, value);
     }
 
-    /** rb_ary_store
-     *
+    /**
+     * Store an element at the specified index or throw if the index is invalid.
+     * @param context the current thread context
+     * @param index the offset to store the value
+     * @param value the value to be stored
+     * @return the value set
      */
+    // MRI: rb_ary_store
+    @JRubyAPI
     public IRubyObject store(ThreadContext context, long index, IRubyObject value) {
         if (index < 0 && (index += realLength) < 0) {
             throw context.runtime.newIndexError("index " + (index - realLength) + " out of array");

@@ -50,6 +50,7 @@ import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.util.RubyStringBuilder.str;
 
 /**
@@ -69,16 +70,12 @@ public class RubyBinding extends RubyObject {
         super(runtime, rubyClass);
     }
 
-    public static RubyClass createBindingClass(Ruby runtime) {
-        RubyClass bindingClass = runtime.defineClass("Binding", runtime.getObject(), RubyBinding::new);
-
-        bindingClass.setClassIndex(ClassIndex.BINDING);
-        bindingClass.setReifiedClass(RubyBinding.class);
-        
-        bindingClass.defineAnnotatedMethods(RubyBinding.class);
-        bindingClass.getSingletonClass().undefineMethod("new");
-        
-        return bindingClass;
+    public static RubyClass createBindingClass(ThreadContext context, RubyClass Object) {
+        return defineClass(context, "Binding", Object, RubyBinding::new).
+                reifiedClass(RubyBinding.class).
+                classIndex(ClassIndex.BINDING).
+                defineMethods(context, RubyBinding.class).
+                tap(c -> c.getSingletonClass().undefMethods(context, "new"));
     }
 
     public Binding getBinding() {

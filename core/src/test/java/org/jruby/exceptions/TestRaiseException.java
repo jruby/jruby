@@ -11,6 +11,7 @@ import org.jruby.RubyObject;
 import org.jruby.RubyRuntimeAdapter;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Define;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -21,6 +22,7 @@ import org.jruby.test.Base;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
+import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Create.*;
 
 public class TestRaiseException extends Base {
@@ -119,7 +121,7 @@ public class TestRaiseException extends Base {
     public void testFromExtGeneratedBacktrace() {
         final int count = runtime.getBacktraceCount();
         try {
-            Razer.define(runtime);
+            Razer.define(runtime.getCurrentContext());
             runtime.evalScriptlet("[1].each { Razer.new.raise_from }\n");
             fail("not raised");
         } catch (RaiseException re) {
@@ -138,7 +140,7 @@ public class TestRaiseException extends Base {
     public void testFromExtExplicitNilBacktrace() {
         final int count = runtime.getBacktraceCount();
         try {
-            Razer.define(runtime);
+            Razer.define(runtime.getCurrentContext());
             runtime.evalScriptlet("[1].each { Razer.new.raise_from_nil }\n");
             fail("not raised");
         } catch (StandardError re) {
@@ -431,10 +433,8 @@ public class TestRaiseException extends Base {
             super(runtime, klass);
         }
 
-        static RubyClass define(Ruby runtime) {
-            RubyClass klass = runtime.defineClass("Razer", runtime.getObject(), Razer::new);
-            klass.defineAnnotatedMethods(Razer.class);
-            return klass;
+        static RubyClass define(ThreadContext context) {
+            return Define.defineClass(context, "Razer", objectClass(context), Razer::new).defineMethods(context, Razer.class);
         }
 
         @JRubyMethod

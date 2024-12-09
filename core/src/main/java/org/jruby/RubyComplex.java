@@ -55,6 +55,7 @@ import java.util.function.BiFunction;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.*;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
@@ -68,33 +69,17 @@ import static org.jruby.util.RubyStringBuilder.types;
 @JRubyClass(name = "Complex", parent = "Numeric")
 public class RubyComplex extends RubyNumeric {
 
-    public static RubyClass createComplexClass(Ruby runtime) {
-        final String[] UNDEFINED = new String[]{
-                "<", "<=", ">", ">=", "between?", "clamp",
-                "%", "div", "divmod", "floor", "ceil", "modulo", "remainder",
-                "round", "step", "truncate", "positive?", "negative?"
-        };
-
-        RubyClass complexc = runtime.defineClass("Complex", runtime.getNumeric(), RubyComplex::new);
-
-        complexc.setClassIndex(ClassIndex.COMPLEX);
-        complexc.setReifiedClass(RubyComplex.class);
-        
-        complexc.kindOf = new RubyModule.JavaClassKindOf(RubyComplex.class);
-
-        complexc.setMarshal(COMPLEX_MARSHAL);
-        complexc.defineAnnotatedMethods(RubyComplex.class);
-
-        complexc.getSingletonClass().undefineMethod("allocate");
-        complexc.getSingletonClass().undefineMethod("new");
-
-        for (String undef : UNDEFINED) {
-            complexc.undefineMethod(undef);
-        }
-
-        complexc.defineConstant("I", RubyComplex.convert(runtime.getCurrentContext(), complexc, RubyFixnum.zero(runtime), RubyFixnum.one(runtime)));
-
-        return complexc;
+    public static RubyClass createComplexClass(ThreadContext context, RubyClass Numeric) {
+        return defineClass(context, "Complex", Numeric, RubyComplex::new).
+                reifiedClass(RubyComplex.class).
+                marshalWith(COMPLEX_MARSHAL).
+                kindOf(new RubyModule.JavaClassKindOf(RubyComplex.class)).
+                classIndex(ClassIndex.COMPLEX).
+                defineMethods(context, RubyComplex.class).
+                undefMethods(context, "<", "<=", ">", ">=", "between?", "clamp", "%", "div", "divmod", "floor", "ceil",
+                        "modulo", "remainder", "round", "step", "truncate", "positive?", "negative?").
+                tap(c -> c.getSingletonClass().undefMethods(context, "allocate", "new")).
+                tap(c -> c.defineConstant("I", RubyComplex.convert(context, c, asFixnum(context, 0), asFixnum(context, 1))));
     }
 
     private RubyComplex(Ruby runtime, RubyClass clazz, IRubyObject real, IRubyObject image) {

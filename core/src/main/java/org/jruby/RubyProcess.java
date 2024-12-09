@@ -56,6 +56,7 @@ import org.jruby.runtime.ThreadContext;
 
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.rangeError;
 import static org.jruby.runtime.Helpers.throwException;
@@ -94,54 +95,37 @@ import java.util.function.ToIntFunction;
 @JRubyModule(name="Process")
 public class RubyProcess {
 
-    public static RubyModule createProcessModule(Ruby runtime) {
-        var context = runtime.getCurrentContext();
-        RubyModule process = runtime.defineModule("Process");
+    public static RubyModule createProcessModule(ThreadContext context, RubyClass Object, RubyClass Struct) {
+        RubyModule Process = defineModule(context, "Process").
+                defineMethods(context, RubyProcess.class).
+                defineConstant(context, "WNOHANG", asFixnum(context, 1)).   // FIXME: should come from jnr-constants
+                defineConstant(context, "WUNTRACED", asFixnum(context, 2)). // FIXME: should come from jnr-constants
+                defineConstant(context, "CLOCK_REALTIME", asSymbol(context, CLOCK_REALTIME)).
+                defineConstant(context, "CLOCK_MONOTONIC", asSymbol(context, CLOCK_MONOTONIC)).
+                tap(c -> c.defineConstantsFrom(context, jnr.constants.platform.PRIO.class));
+                // TODO: other clock types
 
-        RubyClass process_status = process.defineClassUnder("Status", runtime.getObject(), RubyProcess::newAllocatedProcessStatus);
-        runtime.setProcStatus(process_status);
-        process_status.setMarshal(PROCESS_STATUS_MARSHAL);
-
-        RubyModule process_uid = process.defineModuleUnder("UID");
-        runtime.setProcUID(process_uid);
-
-        RubyModule process_gid = process.defineModuleUnder("GID");
-        runtime.setProcGID(process_gid);
-
-        RubyModule process_sys = process.defineModuleUnder("Sys");
-        runtime.setProcSys(process_sys);
-
-        process.defineAnnotatedMethods(RubyProcess.class);
-        process_status.defineAnnotatedMethods(RubyStatus.class);
-        process_uid.defineAnnotatedMethods(UserID.class);
-        process_gid.defineAnnotatedMethods(GroupID.class);
-        process_sys.defineAnnotatedMethods(Sys.class);
-
-        runtime.loadConstantSet(process, jnr.constants.platform.PRIO.class);
+        RubyClass ProcessStatus = Process.defineClassUnder(context, "Status", Object, RubyProcess::newAllocatedProcessStatus).
+                marshalWith(PROCESS_STATUS_MARSHAL).defineMethods(context, RubyStatus.class);
+        context.runtime.setProcStatus(ProcessStatus);
+        context.runtime.setProcUID(Process.defineModuleUnder(context, "UID").defineMethods(context, UserID.class));
+        context.runtime.setProcGID(Process.defineModuleUnder(context, "GID").defineMethods(context, GroupID.class));
+        context.runtime.setProcSys(Process.defineModuleUnder(context, "Sys").defineMethods(context, Sys.class));
 
         if (Platform.IS_WINDOWS) {
             // mark rlimit methods as not implemented and skip defining the constants (GH-6491)
-            process.getSingletonClass().retrieveMethod("getrlimit").setNotImplemented(true);
-            process.getSingletonClass().retrieveMethod("setrlimit").setNotImplemented(true);
+            Process.getSingletonClass().retrieveMethod("getrlimit").setNotImplemented(true);
+            Process.getSingletonClass().retrieveMethod("setrlimit").setNotImplemented(true);
         } else {
-            runtime.loadConstantSet(process, jnr.constants.platform.RLIM.class);
+            Process.defineConstantsFrom(context, jnr.constants.platform.RLIM.class);
             for (RLIMIT r : RLIMIT.values()) {
                 if (!r.defined()) continue;
-                process.defineConstant(r.name(), asFixnum(context, r.intValue()));
+                Process.defineConstant(r.name(), asFixnum(context, r.intValue()));
             }
         }
 
-        process.defineConstant("WNOHANG", asFixnum(context, 1));
-        process.defineConstant("WUNTRACED", asFixnum(context, 2));
-
-        // FIXME: These should come out of jnr-constants
-        // TODO: other clock types
-        process.defineConstant("CLOCK_REALTIME", Convert.asSymbol(context, CLOCK_REALTIME));
-        process.defineConstant("CLOCK_MONOTONIC", Convert.asSymbol(context, CLOCK_MONOTONIC));
-
-        RubyClass tmsStruct = RubyStruct.newInstance(context,
-                runtime.getStructClass(),
-                new IRubyObject[]{
+        RubyClass tmsStruct = RubyStruct.newInstance(context, Struct,
+                new IRubyObject[] {
                         newString(context, "Tms"),
                         Convert.asSymbol(context, "utime"),
                         Convert.asSymbol(context, "stime"),
@@ -149,10 +133,10 @@ public class RubyProcess {
                         Convert.asSymbol(context, "cstime")},
                 Block.NULL_BLOCK);
 
-        process.defineConstant("Tms", tmsStruct);
-        runtime.setTmsStruct(tmsStruct);
+        Process.defineConstant("Tms", tmsStruct);
+        context.runtime.setTmsStruct(tmsStruct);
 
-        return process;
+        return Process;
     }
 
     public static final String CLOCK_MONOTONIC = "CLOCK_MONOTONIC";
