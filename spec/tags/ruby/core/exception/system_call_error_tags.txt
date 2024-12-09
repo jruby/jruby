@@ -1,3 +1,5 @@
 fails:SystemCallError.new accepts an optional third argument specifying the location
+fails:SystemCallError.new adds a custom error message to an 'unknown error' message when an unknown error number and a custom message specified
 fails:SystemCallError.new coerces location if it is not a String
+fails:SystemCallError.new sets an 'unknown error' message when an unknown error number
 fails:SystemCallError#dup copies the errno
