@@ -225,6 +225,7 @@ import static org.jruby.api.Create.newEmptyString;
 import static org.jruby.api.Error.*;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.GLOBAL;
 import static org.jruby.parser.ParserType.*;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
 import static org.jruby.util.RubyStringBuilder.types;
@@ -338,20 +339,14 @@ public final class Ruby implements Constantizable {
         refinementClass.setMetaClass(classClass);
 
         RubyClass metaClass;
-        metaClass = basicObjectClass.makeMetaClass(classClass);
-        metaClass = objectClass.makeMetaClass(metaClass);
-        metaClass = moduleClass.makeMetaClass(metaClass);
-        classClass.makeMetaClass(metaClass);
+        metaClass = basicObjectClass.makeMetaClass(classClass); // runtime for 3 thing:
+        metaClass = objectClass.makeMetaClass(metaClass);       // 1. ObjectSpace
+        metaClass = moduleClass.makeMetaClass(metaClass);       // 2. Access Class for MetaClasses being passed to makeMetaClass
+        classClass.makeMetaClass(metaClass);                    // 3. some booting related ignore of log singletons
         refinementClass.makeMetaClass(metaClass);
 
-        RubyBasicObject.createBasicObjectClass(this, basicObjectClass);
-        RubyObject.createObjectClass(objectClass);
-        RubyModule.createModuleClass(moduleClass);
-        RubyClass.createClassClass(this, classClass);
-        RubyModule.createRefinementClass(refinementClass);
-
         // set constants now that they're initialized
-        basicObjectClass.setConstant("BasicObject", basicObjectClass);
+        basicObjectClass.setConstant("BasicObject", basicObjectClass); // FIXME: Should be raw we know what we are doing constset
         objectClass.setConstant("BasicObject", basicObjectClass);
         objectClass.setConstant("Object", objectClass);
         objectClass.setConstant("Class", classClass);
@@ -361,34 +356,41 @@ public final class Ruby implements Constantizable {
         // specializer for RubyObject subclasses
         objectSpecializer = new RubyObjectSpecializer(this);
 
-        // Initialize Kernel and include into Object
-        RubyModule kernel = kernelModule = RubyKernel.createKernelModule(this, objectClass, config);
-        // In 1.9 and later, Kernel.gsub is defined only when '-p' or '-n' is given on the command line
-        initKernelGsub(kernel);
-
-        // Object is ready, create top self
-        topSelf = TopSelfFactory.createTopSelf(this,objectClass, false);
-
-        // Pre-create all the core classes potentially referenced during startup
-        nilClass = RubyNil.createNilClass(this, objectClass);
+        // nil,false,true, setup cannot be moved below thread context since they are stored as fields
+        nilClass = defineClass("NilClass", objectClass, NOT_ALLOCATABLE_ALLOCATOR);
         falseClass = RubyBoolean.createFalseClass(this, objectClass);
         trueClass = RubyBoolean.createTrueClass(this, objectClass);
 
-        nilObject = new RubyNil(this);
-        nilPrefilledArray = new IRubyObject[NIL_PREFILLED_ARRAY_SIZE];
-        for (int i=0; i<NIL_PREFILLED_ARRAY_SIZE; i++) nilPrefilledArray[i] = nilObject;
-        singleNilArray = new IRubyObject[] {nilObject};
-
-        falseObject = new RubyBoolean.False(this);
-        falseObject.setFrozen(true);
-        trueObject = new RubyBoolean.True(this);
-        trueObject.setFrozen(true);
+        falseObject = new RubyBoolean.False(this, falseClass); // runtime only for objectspace
+        trueObject = new RubyBoolean.True(this, trueClass);  // runtime only for objectspace
+        nilObject = new RubyNil(this, nilClass);   // runtime only for objectspace
 
         // Set up the main thread in thread service
         threadService.initMainThread();
 
         // Get the main threadcontext (gets constructed for us)
-        final ThreadContext context = getCurrentContext();
+        final ThreadContext context = getCurrentContext();  // TC saves nil,false,true as fields so has to be after them
+
+        topSelf = new RubyObject(this, objectClass); // runtime only for objectspace
+
+        RubyModule.createRefinementClass(refinementClass);
+        // Bootstrap note: classIndex looks up the chain for existing classIndex so Kernel cannot be set up before
+        // Module before Object...
+        RubyClass.createClassClass(this, classClass);
+        RubyBasicObject.createBasicObjectClass(this, basicObjectClass);
+        RubyObject.createObjectClass(objectClass);
+        RubyNil.createNilClass(context, nilClass, objectClass); // bootstrap: needs metaclass to define "new" so it can be undefined.
+        RubyModule.createModuleClass(moduleClass);
+        kernelModule = RubyKernel.createKernelModule(this, objectClass, config);
+
+        // Kernel.gsub is defined only when '-p' or '-n' is given on the command line
+        initKernelGsub(kernelModule);
+
+        TopSelfFactory.createTopSelf(topSelf, objectClass, false);
+
+        nilPrefilledArray = new IRubyObject[NIL_PREFILLED_ARRAY_SIZE];
+        for (int i=0; i<NIL_PREFILLED_ARRAY_SIZE; i++) nilPrefilledArray[i] = nilObject;
+        singleNilArray = new IRubyObject[] {nilObject};
 
         // includeModule uses TC.
         objectClass.includeModule(kernelModule);
@@ -2083,14 +2085,17 @@ public final class Ruby implements Constantizable {
         return singleNilArray;
     }
 
+    @Deprecated(since = "10.0")
     public RubyClass getNilClass() {
         return nilClass;
     }
 
+    @Deprecated(since = "10.0")
     public RubyClass getTrueClass() {
         return trueClass;
     }
 
+    @Deprecated(since = "10.0")
     public RubyClass getFalseClass() {
         return falseClass;
     }
@@ -3120,7 +3125,8 @@ public final class Ruby implements Constantizable {
      * @param wrap Whether to use a new "self" for toplevel
      */
     public void loadExtension(String extName, BasicLibraryService extension, boolean wrap) {
-        IRubyObject self = wrap ? TopSelfFactory.createTopSelf(this, objectClass, true) : getTopSelf();
+        IRubyObject anotherTopSelf = new RubyObject(this, objectClass);
+        IRubyObject self = wrap ? TopSelfFactory.createTopSelf(anotherTopSelf, objectClass, true) : getTopSelf();
         ThreadContext context = getCurrentContext();
 
         try {

@@ -61,8 +61,8 @@ public class RubyNil extends RubyObject implements Constantizable {
     private final int hashCode;
     private final transient Object constant;
 
-    public RubyNil(Ruby runtime) {
-        super(runtime, runtime.getNilClass(), false);
+    public RubyNil(Ruby runtime, RubyClass Nil) {
+        super(runtime, Nil, false);
         flags |= NIL_F | FALSE_F | FROZEN_F;
 
         if (RubyInstanceConfig.CONSISTENT_HASHING_ENABLED) {
@@ -76,15 +76,11 @@ public class RubyNil extends RubyObject implements Constantizable {
         constant = OptoFactory.newConstantWrapper(IRubyObject.class, this);
     }
     
-    public static RubyClass createNilClass(Ruby runtime, RubyClass Object) {
-        RubyClass NilClass = runtime.defineClass("NilClass", Object, NOT_ALLOCATABLE_ALLOCATOR).
-                reifiedClass(RubyNil.class).
-                classIndex(ClassIndex.NIL);
-
-        NilClass.defineAnnotatedMethodsIndividually(RubyNil.class);
-        NilClass.getMetaClass().undefineMethod("new");
-
-        return NilClass;
+    public static void createNilClass(ThreadContext context, RubyClass NilClass, RubyClass Object) {
+        NilClass.reifiedClass(RubyNil.class).
+                classIndex(ClassIndex.NIL).
+                defineMethods(context, RubyNil.class).
+                tap(c -> c.getMetaClass().undefMethods(context, "new"));
     }
     
     @Override

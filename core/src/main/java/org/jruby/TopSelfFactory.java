@@ -52,15 +52,8 @@ public final class TopSelfFactory {
     private TopSelfFactory() {
         super();
     }
-
-    @Deprecated(since = "10.0", forRemoval = true)
-    public static IRubyObject createTopSelf(final Ruby runtime) {
-        return createTopSelf(runtime, runtime.getObject(), false);
-    }
     
-    public static IRubyObject createTopSelf(final Ruby runtime, RubyClass Object, final boolean wrapper) {
-        IRubyObject topSelf = new RubyObject(runtime, Object);
-
+    public static IRubyObject createTopSelf(IRubyObject topSelf, RubyClass Object, final boolean wrapper) {
         final RubyClass singletonClass = topSelf.getSingletonClass();
 
         singletonClass.addMethod("to_s", new JavaMethod.JavaMethodZero(singletonClass, Visibility.PUBLIC, "to_s") {
