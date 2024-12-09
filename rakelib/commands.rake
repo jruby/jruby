@@ -62,7 +62,7 @@ def mspec(mspec_options = {}, java_options = {}, &code)
   mspec_options[:objectspace_enabled] ||= true
   mspec_options[:thread_pooling] ||= false
   mspec_options[:reflection] ||= false
-  mspec_options[:format] ||= "m"
+  mspec_options[:format] ||= "d"
   mspec_options[:timeout] ||= 120
   ms = mspec_options
 
