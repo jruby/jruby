@@ -463,7 +463,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>pstore</artifactId>
-      <version>0.1.3</version>
+      <version>0.1.4</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1151,7 +1151,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/ostruct-0.6.1*</include>
           <include>specifications/pp-0.6.2*</include>
           <include>specifications/prettyprint-0.2.0*</include>
-          <include>specifications/pstore-0.1.3*</include>
+          <include>specifications/pstore-0.1.4*</include>
           <include>specifications/psych-5.2.0*</include>
           <include>specifications/rake-ant-1.0.6*</include>
           <include>specifications/rdoc-6.8.1*</include>
@@ -1233,7 +1233,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/ostruct-0.6.1*/**/*</include>
           <include>gems/pp-0.6.2*/**/*</include>
           <include>gems/prettyprint-0.2.0*/**/*</include>
-          <include>gems/pstore-0.1.3*/**/*</include>
+          <include>gems/pstore-0.1.4*/**/*</include>
           <include>gems/psych-5.2.0*/**/*</include>
           <include>gems/rake-ant-1.0.6*/**/*</include>
           <include>gems/rdoc-6.8.1*/**/*</include>
@@ -1315,7 +1315,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/ostruct-0.6.1*</include>
           <include>cache/pp-0.6.2*</include>
           <include>cache/prettyprint-0.2.0*</include>
-          <include>cache/pstore-0.1.3*</include>
+          <include>cache/pstore-0.1.4*</include>
           <include>cache/psych-5.2.0*</include>
           <include>cache/rake-ant-1.0.6*</include>
           <include>cache/rdoc-6.8.1*</include>

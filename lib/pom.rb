@@ -63,7 +63,7 @@ default_gems = [
     # ['pathname', '0.4.0'],
     ['pp', '0.6.2'],
     ['prettyprint', '0.2.0'],
-    ['pstore', '0.1.3'],
+    ['pstore', '0.1.4'],
     ['psych', '5.2.0'],
     ['rake-ant', '1.0.6'],
     ['rdoc', '6.8.1'],
