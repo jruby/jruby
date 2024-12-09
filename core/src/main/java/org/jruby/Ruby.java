@@ -334,21 +334,22 @@ public final class Ruby implements Constantizable {
         classClass.setMetaClass(classClass);
         refinementClass.setMetaClass(classClass);
 
+        // FIXME: On makeMetaClass.  It is used by defineClass and for JI+Struct.  This should have bootstrap version
+        // for this constructor and a live version which uses context.  The issue with achieving this is constructors
+        // for Ruby types accepts only Runtime.  To fix this we need bootstrap constructors for the few types created
+        // before TC then all the rest.  Ultimately to do this with no runtime we would always pass in RubyClass
+        // (for makeMetaClass usage inside) and ObjectSpace{r}.  It is possible there are other uses of runtime in
+        // class creation so I think TC being passed through may be the happy compromise.
+
         RubyClass metaClass;
-        metaClass = basicObjectClass.makeMetaClass(classClass);
-        metaClass = objectClass.makeMetaClass(metaClass);
-        metaClass = moduleClass.makeMetaClass(metaClass);
-        classClass.makeMetaClass(metaClass);
+        metaClass = basicObjectClass.makeMetaClass(classClass); // runtime for 3 thing:
+        metaClass = objectClass.makeMetaClass(metaClass);       // 1. ObjectSpace
+        metaClass = moduleClass.makeMetaClass(metaClass);       // 2. Access Class for MetaClasses being passed to makeMetaClass
+        classClass.makeMetaClass(metaClass);                    // 3. some booting related ignore of log singletons
         refinementClass.makeMetaClass(metaClass);
 
-        RubyBasicObject.createBasicObjectClass(this, basicObjectClass);
-        RubyObject.createObjectClass(this, objectClass);
-        RubyModule.createModuleClass(this, moduleClass);
-        RubyClass.createClassClass(this, classClass);
-        RubyModule.createRefinementClass(this, refinementClass);
-
         // set constants now that they're initialized
-        basicObjectClass.setConstant("BasicObject", basicObjectClass);
+        basicObjectClass.setConstant("BasicObject", basicObjectClass); // FIXME: Should be raw we know what we are doing constset
         objectClass.setConstant("BasicObject", basicObjectClass);
         objectClass.setConstant("Object", objectClass);
         objectClass.setConstant("Class", classClass);
@@ -358,15 +359,7 @@ public final class Ruby implements Constantizable {
         // specializer for RubyObject subclasses
         objectSpecializer = new RubyObjectSpecializer(this);
 
-        // Initialize Kernel and include into Object
-        RubyModule kernel = kernelModule = RubyKernel.createKernelModule(this);
-        // In 1.9 and later, Kernel.gsub is defined only when '-p' or '-n' is given on the command line
-        initKernelGsub(kernel);
-
-        // Object is ready, create top self
-        topSelf = TopSelfFactory.createTopSelf(this, false);
-
-        // Pre-create all the core classes potentially referenced during startup
+        // nil,false,true, setup cannot be moved below thread context since they are stored as fields
         nilClass = RubyNil.createNilClass(this);
         falseClass = RubyBoolean.createFalseClass(this);
         trueClass = RubyBoolean.createTrueClass(this);
@@ -380,6 +373,21 @@ public final class Ruby implements Constantizable {
 
         // Get the main threadcontext (gets constructed for us)
         final ThreadContext context = getCurrentContext();  // TC saves nil,false,true as fields so has to be after them
+
+        topSelf = new RubyObject(this, objectClass); // runtime only for objectspace
+
+        kernelModule = RubyKernel.createKernelModule(this);
+        RubyModule.createRefinementClass(this, refinementClass);
+        RubyClass.createClassClass(this, classClass);
+        RubyBasicObject.createBasicObjectClass(this, basicObjectClass);
+        RubyObject.createObjectClass(this, objectClass);
+        RubyModule.createModuleClass(this, moduleClass);
+
+
+        // Kernel.gsub is defined only when '-p' or '-n' is given on the command line
+        initKernelGsub(kernelModule);
+
+        TopSelfFactory.createTopSelf(this, topSelf, false);
 
         nilPrefilledArray = new IRubyObject[NIL_PREFILLED_ARRAY_SIZE];
         for (int i=0; i<NIL_PREFILLED_ARRAY_SIZE; i++) nilPrefilledArray[i] = nilObject;
@@ -3125,7 +3133,8 @@ public final class Ruby implements Constantizable {
      * @param wrap Whether to use a new "self" for toplevel
      */
     public void loadExtension(String extName, BasicLibraryService extension, boolean wrap) {
-        IRubyObject self = wrap ? TopSelfFactory.createTopSelf(this, true) : getTopSelf();
+        IRubyObject anotherTopSelf = new RubyObject(this, objectClass);
+        IRubyObject self = wrap ? TopSelfFactory.createTopSelf(this, anotherTopSelf, true) : getTopSelf();
         ThreadContext context = getCurrentContext();
 
         try {
