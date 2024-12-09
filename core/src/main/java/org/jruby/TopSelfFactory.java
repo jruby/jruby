@@ -51,13 +51,7 @@ public final class TopSelfFactory {
         super();
     }
 
-    public static IRubyObject createTopSelf(final Ruby runtime) {
-        return createTopSelf(runtime, false);
-    }
-    
-    public static IRubyObject createTopSelf(final Ruby runtime, final boolean wrapper) {
-        IRubyObject topSelf = new RubyObject(runtime, runtime.getObject());
-
+    public static IRubyObject createTopSelf(final Ruby runtime, IRubyObject topSelf, final boolean wrapper) {
         final RubyClass singletonClass = topSelf.getSingletonClass();
 
         singletonClass.addMethod("to_s", new JavaMethod.JavaMethodZero(singletonClass, Visibility.PUBLIC, "to_s") {
