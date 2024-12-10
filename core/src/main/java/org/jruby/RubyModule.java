@@ -2452,22 +2452,38 @@ public class RubyModule extends RubyObject {
         return defineOrGetClassUnder(name, superClazz, null);
     }
 
+    @Deprecated(since = "10.0")
     public RubyClass defineOrGetClassUnder(String name, RubyClass superClazz, String file, int line) {
         return defineOrGetClassUnder(name, superClazz, null, file, line);
     }
 
+    @Deprecated(since = "10.0")
     public RubyClass defineOrGetClassUnder(String name, RubyClass superClazz, ObjectAllocator allocator) {
         return defineOrGetClassUnder(name, superClazz, allocator, null, -1);
     }
 
+    @Deprecated(since = "10.0")
     public RubyClass defineOrGetClassUnder(String name, RubyClass superClazz, ObjectAllocator allocator,
                                            String file, int line) {
-        // This method is intended only for defining new classes in Ruby code,
-        // so it uses the allocator of the specified superclass or default to
-        // the Object allocator. It should NOT be used to define classes that require a native allocator.
+        return defineOrGetClassUnder(getCurrentContext(), name, superClazz, allocator, file, line);
+    }
 
-        Ruby runtime = getRuntime();
-        var context = runtime.getCurrentContext();
+    /**
+     * This method is intended only for defining new classes in Ruby code and is an internal API.
+     * It uses the allocator of the specified superclass or default to the Object allocator. It should NOT
+     * be used to define classes that require a native allocator.  For extension authors please use
+     * {@link org.jruby.RubyModule#defineClassUnder(ThreadContext, String, RubyClass, ObjectAllocator)}.
+     *
+     * @param context the thread context
+     * @param name name of new class
+     * @param superClazz super class of new class
+     * @param allocator how to allocate the class
+     * @param file where this class exists in source
+     * @param line where this class exists in source
+     * @return the new Class
+     */
+    public RubyClass defineOrGetClassUnder(ThreadContext context, String name, RubyClass superClazz,
+                                           ObjectAllocator allocator, String file, int line) {
         IRubyObject classObj = getConstantAtSpecial(name);
         RubyClass clazz;
 
@@ -2479,15 +2495,15 @@ public class RubyModule extends RubyObject {
                 RubyClass tmp = clazz.getSuperClass();
                 while (tmp != null && tmp.isIncluded()) tmp = tmp.getSuperClass(); // need to skip IncludedModuleWrappers
                 if (tmp != null) tmp = tmp.getRealClass();
-                if (tmp != superClazz) throw typeError(context, "superclass mismatch for class " + ids(runtime, name));
+                if (tmp != superClazz) throw typeError(context, "superclass mismatch for class " + ids(context.runtime, name));
             }
         } else if ((clazz = searchProvidersForClass(name, superClazz)) != null) {
             // reopen a java class
         } else {
-            if (superClazz == null) superClazz = runtime.getObject();
+            if (superClazz == null) superClazz = objectClass(context);
 
             if (allocator == null) {
-                if (isReifiable(runtime, superClazz)) {
+                if (isReifiable(context, superClazz)) {
                     if (Options.REIFY_CLASSES.load()) {
                         allocator = REIFYING_OBJECT_ALLOCATOR;
                     } else if (Options.REIFY_VARIABLES.load()) {
@@ -2500,7 +2516,7 @@ public class RubyModule extends RubyObject {
                 }
             }
 
-            clazz = RubyClass.newClass(runtime, superClazz, name, allocator, this, true, file, line);
+            clazz = RubyClass.newClass(context.runtime, superClazz, name, allocator, this, true, file, line);
         }
 
         return clazz;
@@ -2509,12 +2525,8 @@ public class RubyModule extends RubyObject {
     /**
      * Determine if a new child of the given class can have its variables reified.
      */
-    private boolean isReifiable(Ruby runtime, RubyClass superClass) {
-        if (superClass == runtime.getObject()) return true;
-
-        if (superClass.getAllocator() == IVAR_INSPECTING_OBJECT_ALLOCATOR) return true;
-
-        return false;
+    private boolean isReifiable(ThreadContext context, RubyClass superClass) {
+        return superClass == objectClass(context) || superClass.getAllocator() == IVAR_INSPECTING_OBJECT_ALLOCATOR;
     }
 
     /** this method should be used only by interpreter or compiler
