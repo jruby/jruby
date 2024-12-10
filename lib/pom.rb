@@ -17,93 +17,93 @@ end
 default_gems = [
     # treat RGs update special:
     # - we do not want bin/update_rubygems or bin/gem overrides
-    ['rubygems-update', '3.5.21', { bin: false, require_paths: ['lib'] }],
-    ['benchmark', '0.3.0'],
-    ['bundler', '2.5.21'],
+    ['rubygems-update', '3.5.23', { bin: false, require_paths: ['lib'] }],
+    ['benchmark', '0.4.0'],
+    ['bundler', '2.5.23'],
     ['cgi', '0.4.1'],
     # Currently using a stub gem for JRuby until we can incorporate our code.
     # https://github.com/ruby/date/issues/48
-    ['date', '3.3.4'],
-    ['delegate', '0.3.1'],
-    ['did_you_mean', '1.6.3'],
+    ['date', '3.4.1'],
+    ['delegate', '0.4.0'],
+    ['did_you_mean', '2.0.0'],
     ['digest', '3.1.1'],
     ['english', '0.8.0'],
     # Ongoing discussion about the -java gem, since it just omits the ext: https://github.com/ruby/erb/issues/52
     ['erb', '4.0.4'],
-    ['error_highlight', '0.6.0'],
+    ['error_highlight', '0.7.0'],
     # https://github.com/ruby/etc/issues/19
-    # ['etc', '1.3.0'],
+    # ['etc', '1.4.4'],
     # https://github.com/ruby/fcntl/issues/9
-    # ['fcntl', '1.0.1'],
-    ['ffi', '1.16.3'],
-    ['fiddle', '1.1.4'],
-    ['fileutils', '1.7.2'],
+    # ['fcntl', '1.2.0'],
+    ['ffi', '1.17.0'],
+    ['fiddle', '1.1.5'],
+    ['fileutils', '1.7.3'],
     ['find', '0.2.0'],
     ['forwardable', '1.3.3'],
-    ['io-console', '0.7.2'],
+    ['io-console', '0.8.0'],
     # https://github.com/ruby/io-nonblock/issues/4
-    # ['io-nonblock', '0.1.0'],
+    # ['io-nonblock', '0.3.1'],
     ['io-wait', '0.3.1'],
-    ['ipaddr', '1.2.6'],
+    ['ipaddr', '1.2.7'],
     ['irb', '1.14.1'],
     ['jar-dependencies', '0.5.0'],
     ['jruby-readline', '1.3.7'],
     ['jruby-openssl', '0.15.0'],
-    ['json', '2.7.2'],
-    ['logger', '1.6.1'],
-    ['net-http', '0.4.1'],
+    ['json', '2.9.0'],
+    ['logger', '1.6.2'],
+    ['net-http', '0.6.0'],
     ['net-protocol', '0.2.2'],
+    ['open-uri', '0.5.0'],
     ['open3', '0.2.1'],
     # https://github.com/ruby/openssl/issues/20#issuecomment-1022872855
-    # ['openssl', '3.0.0'],
-    ['open-uri', '0.4.1'],
+    # ['openssl', '3.2.0'],
     ['optparse', '0.5.0'],
-    ['ostruct', '0.6.0'],
+    ['ostruct', '0.6.1'],
     # https://github.com/ruby/pathname/issues/17
-    # ['pathname', '0.2.0'],
-    ['pp', '0.5.0'],
+    # ['pathname', '0.4.0'],
+    ['pp', '0.6.2'],
     ['prettyprint', '0.2.0'],
-    ['pstore', '0.1.3'],
-    ['psych', '5.2.0.beta1'],
+    ['pstore', '0.1.4'],
+    ['psych', '5.2.0'],
     ['rake-ant', '1.0.6'],
-    ['rdoc', '6.7.0'],
+    ['rdoc', '6.8.1'],
     # Ext removed from CRuby in 3.3, equivalent for us would be to remove jruby-readline but unknown implications.
     # The gem below just attempts to load the extension, and failing that loads reline. Our current readline.rb in
     # jruby-readline does largely the same, but it finds the extension and does not load reline.
     # https://github.com/ruby/readline/issues/5
     # ['readline', '0.0.4'],
     # Will be solved with readline
-    # ['readline-ext', '0.1.4'],
+    # ['readline-ext', '0.2.0'],
     ['reline', '0.5.12'],
     # https://github.com/ruby/resolv/issues/19
-    # ['resolv', '0.2.1'],
+    # ['resolv', '0.5.0'],
     ['ruby2_keywords', '0.0.5'],
-    ['securerandom', '0.3.1'],
+    ['securerandom', '0.4.0'],
     # https://github.com/ruby/set/issues/21
-    # ['set', '1.0.2'],
-    ['shellwords', '0.2.0'],
-    ['singleton', '0.2.0'],
+    # ['set', '1.1.1'],
+    ['shellwords', '0.2.1'],
+    ['singleton', '0.3.0'],
     ['stringio', '3.1.2'],
     ['strscan', '3.1.0'],
     ['subspawn', '0.1.1'], # has 3 transitive deps:
       ['subspawn-posix', '0.1.1'],
       ['ffi-binary-libfixposix', '0.5.1.1'],
       ['ffi-bindings-libfixposix', '0.5.1.0'],
-    ['syntax_suggest', '2.0.0'],
-    ['tempfile', '0.2.1'],
-    ['time', '0.4.0'],
-    ['timeout', '0.4.1'],
+    ['syntax_suggest', '2.0.2'],
+    ['tempfile', '0.3.1'],
+    ['time', '0.4.1'],
+    ['timeout', '0.4.2'],
     # https://github.com/ruby/tmpdir/issues/13
-    # ['tmpdir', '0.1.2'],
+    # ['tmpdir', '0.3.0'],
     ['tsort', '0.2.0'],
     ['un', '0.3.0'],
-    ['uri', '0.13.1'],
+    ['uri', '1.0.2'],
     ['weakref', '0.1.3'],
     # https://github.com/ruby/win32ole/issues/12
-    # ['win32ole', '1.8.8'],
-    ['yaml', '0.3.0'],
+    # ['win32ole', '1.9.0'],
+    ['yaml', '0.4.0'],
     # https://github.com/ruby/zlib/issues/38
-    # ['zlib', '2.1.1'],
+    # ['zlib', '3.2.0'],
 ]
 
 bundled_gems = [
@@ -113,7 +113,7 @@ bundled_gems = [
     ['bigdecimal', '3.1.8'],
     ['csv', '3.3.0'],
     # Newer versions require deep control over CRuby internals, needs work to support JRuby.
-    # ['debug', '1.9.1'],
+    # ['debug', '1.9.2'],
     ['debug', '0.2.1'],
     ['drb', '2.2.1'],
     ['getoptlong', '0.2.1'],
@@ -131,16 +131,16 @@ bundled_gems = [
     ['racc', '1.8.1'],
     ['rake', '${rake.version}'],
     # Depends on many CRuby internals
-    # ['rbs', '2.0.0'],
+    # ['rbs', '3.4.4'],
     ['resolv-replace', '0.1.1'],
     ['rexml', '3.3.9'],
     ['rinda', '0.2.0'],
     ['rss', '0.3.1'],
     # https://github.com/ruby/syslog/issues/1
-    # ['syslog', '0.1.0'],
+    # ['syslog', '0.1.2'],
     ['test-unit', '3.6.2'],
     # Depends on many CRuby internals
-    # ['typeprof', '0.21.1'],
+    # ['typeprof', '0.21.11'],
 ]
 
 project 'JRuby Lib Setup' do
