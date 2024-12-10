@@ -46,6 +46,7 @@ import org.jruby.util.ByteList;
 
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
+import static org.jruby.util.StringSupport.CR_7BIT;
 
 /**
  *
@@ -56,12 +57,10 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
 
     private final int hashCode;
     private final transient Object constant;
-    private final RubyString toS;
+    private final ByteList toS;
 
-    RubyBoolean(Ruby runtime, boolean value) {
-        super(runtime,
-                (value ? runtime.getTrueClass() : runtime.getFalseClass()),
-                false); // Don't put in object space
+    RubyBoolean(Ruby runtime, RubyClass metaClass, boolean value) {
+        super(runtime, metaClass, false);
 
         if (!value) flags = FALSE_F;
 
@@ -74,9 +73,7 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
         }
 
         constant = OptoFactory.newConstantWrapper(IRubyObject.class, this);
-
-        toS = RubyString.newString(runtime, value ? TRUE_BYTES : FALSE_BYTES);
-        toS.setFrozen(true);
+        toS = value ? TRUE_BYTES : FALSE_BYTES;
     }
     
     @Override
@@ -107,27 +104,20 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
         return constant;
     }
 
-    public static RubyClass createFalseClass(Ruby runtime, RubyClass Object) {
-        RubyClass False = runtime.defineClass("FalseClass", Object, NOT_ALLOCATABLE_ALLOCATOR).
-                reifiedClass(RubyBoolean.class).
-                classIndex(ClassIndex.FALSE);
-        False.defineAnnotatedMethodsIndividually(False.class);
-        False.defineAnnotatedMethodsIndividually(RubyBoolean.class);
-        False.getMetaClass().undefineMethod("new");
-
-        return False;
+    public static void createFalseClass(ThreadContext context, RubyClass False) {
+        False.reifiedClass(RubyBoolean.class).
+                classIndex(ClassIndex.FALSE).
+                defineMethods(context, False.class).
+                defineMethods(context, RubyBoolean.class).
+                tap(c -> c.getMetaClass().undefMethods(context, "new"));
     }
     
-    public static RubyClass createTrueClass(Ruby runtime, RubyClass Object) {
-        RubyClass True = runtime.defineClass("TrueClass", Object, NOT_ALLOCATABLE_ALLOCATOR).
-                reifiedClass(RubyBoolean.class).
-                classIndex(ClassIndex.TRUE);
-
-        True.defineAnnotatedMethodsIndividually(True.class);
-        True.defineAnnotatedMethodsIndividually(RubyBoolean.class);
-        True.getMetaClass().undefineMethod("new");
-
-        return True;
+    public static void createTrueClass(ThreadContext context, RubyClass True) {
+        True.reifiedClass(RubyBoolean.class).
+                classIndex(ClassIndex.TRUE).
+                defineMethods(context, True.class).
+                defineMethods(context, RubyBoolean.class).
+                tap(c -> c.getMetaClass().undefMethods(context, "new"));
     }
 
     @Deprecated
@@ -144,12 +134,12 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
 
     @Override
     public void appendIntoString(RubyString target) {
-        target.append(toS);
+        target.catWithCodeRange(toS, CR_7BIT);
     }
 
     public static class False extends RubyBoolean {
-        False(Ruby runtime) {
-            super(runtime, false);
+        False(Ruby runtime, RubyClass metaClass) {
+            super(runtime, metaClass, false);
 
             flags = FALSE_F | FROZEN_F;
         }
@@ -191,8 +181,8 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
     public static final ByteList TRUE_BYTES = new ByteList(new byte[] { 't','r','u','e' }, USASCIIEncoding.INSTANCE);
 
     public static class True extends RubyBoolean {
-        True(Ruby runtime) {
-            super(runtime, true);
+        True(Ruby runtime, RubyClass metaClass) {
+            super(runtime, metaClass, true);
 
             flags |= FROZEN_F;
         }
