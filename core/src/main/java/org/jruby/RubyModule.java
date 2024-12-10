@@ -1313,14 +1313,14 @@ public class RubyModule extends RubyObject {
     /**
      * @param field
      * @return ""
-     * @deprecated Use {@link RubyModule#defineAnnotatedConstant(ThreadContext, Field)} instead.
+     * @deprecated constants now must be individually set as values or specified in a Class using @JRubyConstant
      */
     @Deprecated(since = "10.0")
     public final boolean defineAnnotatedConstant(Field field) {
         return defineAnnotatedConstant(getCurrentContext(), field);
     }
 
-    public final boolean defineAnnotatedConstant(ThreadContext context, Field field) {
+    private boolean defineAnnotatedConstant(ThreadContext context, Field field) {
         JRubyConstant jrubyConstant = field.getAnnotation(JRubyConstant.class);
         if (jrubyConstant == null) return false;
 
@@ -1450,20 +1450,26 @@ public class RubyModule extends RubyObject {
     }
 
     /**
-     * An internal API only used before the first ThreadContext is defined.  For example,
-     * BasicObject, Boolean,  needs this when getting defined.
-     * Use {@link org.jruby.RubyModule#defineMethods(ThreadContext, Class[])} instead.
+     *
      * @param clazz to generate JRuby methods from
+     * @deprecated Use {@link org.jruby.RubyModule#defineMethods(ThreadContext, Class[])} instead.
      */
+    @Deprecated(since = "10.0")
     public final void defineAnnotatedMethodsIndividually(Class clazz) {
         getRuntime().POPULATORS.get(clazz).populate(this, clazz);
     }
 
+    /**
+     * Define methods provided by our internal type populator.  This is an internal API.
+     *
+     * @param name
+     * @param methods
+     * @param methodFactory
+     * @return
+     */
     public final boolean defineAnnotatedMethod(String name, List<JavaMethodDescriptor> methods, MethodFactory methodFactory) {
         JavaMethodDescriptor desc = methods.get(0);
-        if (methods.size() == 1) {
-            return defineAnnotatedMethod(name, desc, methodFactory);
-        }
+        if (methods.size() == 1) return defineSingleAnnotatedMethod(name, desc, methodFactory);
 
         DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, methods, name);
         define(this, desc, name, dynamicMethod);
@@ -1471,6 +1477,7 @@ public class RubyModule extends RubyObject {
         return true;
     }
 
+    @Deprecated(since = "10.0")
     public final boolean defineAnnotatedMethod(Method method, MethodFactory methodFactory) {
         JRubyMethod jrubyMethod = method.getAnnotation(JRubyMethod.class);
 
@@ -1483,7 +1490,14 @@ public class RubyModule extends RubyObject {
         return true;
     }
 
+    @Deprecated
     public final boolean defineAnnotatedMethod(String name, JavaMethodDescriptor desc, MethodFactory methodFactory) {
+        return defineSingleAnnotatedMethod(name, desc, methodFactory);
+    }
+
+
+    private boolean defineSingleAnnotatedMethod(String name, JavaMethodDescriptor desc,
+                                                      MethodFactory methodFactory) {
         JRubyMethod jrubyMethod = desc.anno;
 
         if (jrubyMethod == null) return false;
@@ -2433,6 +2447,7 @@ public class RubyModule extends RubyObject {
     /** this method should be used only by interpreter or compiler
      *
      */
+    @Deprecated(since = "10.0")
     public RubyClass defineOrGetClassUnder(String name, RubyClass superClazz) {
         return defineOrGetClassUnder(name, superClazz, null);
     }
