@@ -183,13 +183,12 @@ public class RubyModule extends RubyObject {
 
     public static final ObjectAllocator MODULE_ALLOCATOR = RubyModule::new;
 
-    public static void createModuleClass(RubyClass Module) {
+    public static void createModuleClass(ThreadContext context, RubyClass Module) {
         Module.reifiedClass(RubyModule.class).
                 kindOf(new RubyModule.JavaClassKindOf(RubyModule.class)).
-                classIndex(ClassIndex.MODULE);
-
-        Module.defineAnnotatedMethodsIndividually(RubyModule.class);
-        Module.defineAnnotatedMethodsIndividually(ModuleKernelMethods.class);
+                classIndex(ClassIndex.MODULE).
+                defineMethods(context, RubyModule.class).
+                defineMethods(context, ModuleKernelMethods.class);
     }
 
     public void checkValidBindTargetFrom(ThreadContext context, RubyModule originModule, boolean fromBind) throws RaiseException {
@@ -1287,6 +1286,7 @@ public class RubyModule extends RubyObject {
         invalidateConstantCacheForModuleInclusion(module);
     }
 
+    @Deprecated(since = "10.0")
     public void defineAnnotatedMethod(Class clazz, String name) {
         // FIXME: This is probably not very efficient, since it loads all methods for each call
         boolean foundMethod = false;
@@ -6315,14 +6315,11 @@ public class RubyModule extends RubyObject {
         this.refinements = refinements;
     }
 
-    public static void createRefinementClass(RubyClass Refinement) {
+    public static void createRefinementClass(ThreadContext context, RubyClass Refinement) {
         Refinement.reifiedClass(RubyModule.class).
                 classIndex(ClassIndex.REFINEMENT).
-                defineAnnotatedMethodsIndividually(RefinementMethods.class);
-
-        Refinement.undefineMethod("append_features");
-        Refinement.undefineMethod("prepend_features");
-        Refinement.undefineMethod("extend_object");
+                defineMethods(context, RefinementMethods.class).
+                undefMethods(context, "append_features", "prepend_features", "extend_object");
     }
 
     public static class RefinementMethods {

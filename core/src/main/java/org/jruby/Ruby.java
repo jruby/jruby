@@ -373,17 +373,18 @@ public final class Ruby implements Constantizable {
 
         topSelf = new RubyObject(this, objectClass); // runtime only for objectspace
 
-        RubyModule.createRefinementClass(refinementClass);
+        RubyModule.createRefinementClass(context, refinementClass);
         // Bootstrap note: classIndex looks up the chain for existing classIndex so Kernel cannot be set up before
         // Module before Object...
-        RubyClass.createClassClass(this, classClass);
-        RubyBasicObject.createBasicObjectClass(this, basicObjectClass);
+        RubyClass.createClassClass(context, classClass);
+        setBaseNewMethod(classClass.searchMethod("new"));
+        RubyBasicObject.createBasicObjectClass(context, basicObjectClass);
         RubyObject.createObjectClass(objectClass);
         RubyNil.createNilClass(context, nilClass); // bootstrap: needs metaclass to define "new" so it can be undefined.
         RubyBoolean.createFalseClass(context, falseClass);
         RubyBoolean.createTrueClass(context, trueClass);
-        RubyModule.createModuleClass(moduleClass);
-        kernelModule = RubyKernel.createKernelModule(this, objectClass, config);
+        RubyModule.createModuleClass(context, moduleClass);
+        kernelModule = RubyKernel.createKernelModule(context, objectClass, config);
 
         // Kernel.gsub is defined only when '-p' or '-n' is given on the command line
         initKernelGsub(kernelModule);
@@ -550,7 +551,7 @@ public final class Ruby implements Constantizable {
         SecurityHelper.checkCryptoRestrictions(this);
 
         if(this.config.isProfiling()) {
-            initProfiling();
+            initProfiling(context);
         }
 
         if (this.config.getLoadGemfile()) {
@@ -575,14 +576,14 @@ public final class Ruby implements Constantizable {
         } catch (LoadError e) {} // work-around failed classpath only test (which must be omitting stdlib somehow)
     }
 
-    private void initProfiling() {
+    private void initProfiling(ThreadContext context) {
         // additional twiddling for profiled mode
         getLoadService().require("jruby/profiler/shutdown_hook");
 
         // recache core methods, since they'll have profiling wrappers now
         kernelModule.invalidateCacheDescendants(); // to avoid already-cached methods
-        RubyKernel.recacheBuiltinMethods(this, kernelModule);
-        RubyBasicObject.recacheBuiltinMethods(this);
+        RubyKernel.recacheBuiltinMethods(context, kernelModule);
+        RubyBasicObject.recacheBuiltinMethods(context, basicObjectClass);
     }
 
     private void initBootLibraries(ThreadContext context) {
