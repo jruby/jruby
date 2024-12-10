@@ -24,6 +24,7 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.jruby.util.TypeConverter;
 
+import static org.jruby.api.Access.exceptionClass;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.newEmptyString;
@@ -391,15 +392,13 @@ public class TraceType {
             highlightArg = optHash.fastARef(highlightSym);
 
             if (highlightArg == null) highlightArg = context.nil;
-            if (!(highlightArg.isNil()
-                    || highlightArg == context.tru
-                    || highlightArg == context.fals)) {
+            if (!(highlightArg.isNil() || highlightArg == context.tru || highlightArg == context.fals)) {
                 throw argumentError(context, "expected true or false as highlight: " + highlightArg);
             }
         }
 
         if (highlightArg.isNil()) {
-            highlightArg = asBoolean(context, autoTTYDetect && RubyException.to_tty_p(context, context.runtime.getException()).isTrue());
+            highlightArg = asBoolean(context, autoTTYDetect && RubyException.to_tty_p(context, exceptionClass(context)).isTrue());
         }
 
         return highlightArg;

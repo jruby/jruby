@@ -145,6 +145,7 @@ import static org.jruby.anno.FrameField.SCOPE;
 import static org.jruby.anno.FrameField.SELF;
 import static org.jruby.anno.FrameField.VISIBILITY;
 import static org.jruby.api.Access.basicObjectClass;
+import static org.jruby.api.Access.globalVariables;
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
@@ -1691,27 +1692,25 @@ public class RubyModule extends RubyObject {
      *
      */
     public void undef(ThreadContext context, String name) {
-        Ruby runtime = context.runtime;
-
         testFrozen("module");
         if (name.equals("__send__") || name.equals("object_id") || name.equals("initialize")) {
-            runtime.getWarnings().warn(ID.UNDEFINING_BAD, "undefining '"+ name +"' may cause serious problems");
+            context.runtime.getWarnings().warn(ID.UNDEFINING_BAD, "undefining '"+ name +"' may cause serious problems");
         }
 
         if (name.equals("method_missing")) {
-            IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
+            IRubyObject oldExc = globalVariables(context).get("$!"); // Save $!
             try {
                 removeMethod(context, name);
             } catch (RaiseException t) {
                 if (!(t.getException() instanceof RubyNameError)) throw t;
 
-                runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
+                globalVariables(context).set("$!", oldExc); // Restore $!
             }
             return;
         }
 
         DynamicMethod method = searchMethod(name);
-        if (method.isUndefined()) raiseUndefinedNameError(name, runtime);
+        if (method.isUndefined()) raiseUndefinedNameError(name, context.runtime);
         methodLocation.addMethod(name, UndefinedMethod.getInstance());
 
         methodUndefined(context, asSymbol(context, name));
@@ -2921,7 +2920,7 @@ public class RubyModule extends RubyObject {
 
     // mri: class_init_copy_check
     private void checkSafeTypeToCopy(ThreadContext context, RubyClass original) {
-        var BasicObject = context.runtime.getBasicObject();
+        var BasicObject = basicObjectClass(context);
         if (original == BasicObject) throw typeError(context, "can't copy the root class");
         if (getSuperClass() == BasicObject) throw typeError(context, "already initialized class");
         if (original.isSingleton()) throw typeError(context, "can't copy singleton class");

@@ -66,6 +66,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.jruby.RubyString.scanForCodeRange;
+import static org.jruby.api.Access.globalVariables;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
@@ -2205,7 +2206,7 @@ public final class StringSupport {
         IRubyObject opts = ArgsUtil.getOptionsArg(context, arg);
         return opts == context.nil ?
                 rbStrEnumerateLines(str, context, name, arg, context.nil, block, wantarray) :
-                rbStrEnumerateLines(str, context, name, context.runtime.getGlobalVariables().get("$/"), opts, block, wantarray);
+                rbStrEnumerateLines(str, context, name, globalVariables(context).get("$/"), opts, block, wantarray);
     }
 
     private static final int NULL_POINTER = -1;
@@ -2247,7 +2248,7 @@ public final class StringSupport {
 
         final var ary = wantarray ? newArray(context) : null;
 
-        final IRubyObject defaultSep = context.runtime.getGlobalVariables().get("$/");
+        final IRubyObject defaultSep = globalVariables(context).get("$/");
         RubyString rs = arg.convertToString();
 
         str = str.newFrozen();

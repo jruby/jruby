@@ -221,6 +221,8 @@ import static org.jruby.RubyBoolean.FALSE_BYTES;
 import static org.jruby.RubyBoolean.TRUE_BYTES;
 import static org.jruby.RubyRandom.newRandom;
 import static org.jruby.RubyRandom.randomSeed;
+import static org.jruby.api.Access.errnoModule;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newEmptyString;
 import static org.jruby.api.Error.*;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.GLOBAL;
@@ -1767,12 +1769,10 @@ public final class Ruby implements Constantizable {
     private void createSysErr(ThreadContext context, int i, String name) {
         if (profile.allowClass(name)) {
             if (errnos.get(i) == null) {
-                RubyClass errno = getErrno().defineClassUnder(context, name, systemCallError, systemCallError.getAllocator());
-                errnos.put(i, errno);
-                errno.defineConstant("Errno", newFixnum(i));
-            } else {
-                // already defined a class for this errno, reuse it (JRUBY-4747)
-                getErrno().setConstant(name, errnos.get(i));
+                errnos.put(i, errnoModule(context).defineClassUnder(context, name, systemCallError, systemCallError.getAllocator()).
+                        defineConstant(context, "Errno", asFixnum(context, i)));
+            } else { // already defined a class for this errno, reuse it (JRUBY-4747)
+                errnoModule(context).defineConstant(context, name, errnos.get(i));
             }
         }
     }
@@ -1846,6 +1846,8 @@ public final class Ruby implements Constantizable {
         return argsFile;
     }
 
+    // Nothing uses this anymore
+    @Deprecated(since = "10.0")
     public RubyModule getEtc() {
         return etcModule;
     }

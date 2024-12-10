@@ -81,6 +81,8 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyEnumerator.SizeFn;
+import static org.jruby.api.Access.arrayClass;
+import static org.jruby.api.Access.hashClass;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newArray;
@@ -153,23 +155,19 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = "[]", rest = true, meta = true)
     public static IRubyObject create(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        final Ruby runtime = context.runtime;
-
         if (args.length == 1) {
-            IRubyObject tmp = TypeConverter.convertToTypeWithCheck(args[0], runtime.getHash(), "to_hash");
+            IRubyObject tmp = TypeConverter.convertToTypeWithCheck(args[0], hashClass(context), "to_hash");
+            if (!tmp.isNil()) return new RubyHash(context.runtime, (RubyClass) recv, (RubyHash) tmp);
 
-            if (!tmp.isNil()) {
-                return new RubyHash(runtime, (RubyClass) recv, (RubyHash) tmp);
-            }
-
+            var Array = arrayClass(context);
             final IRubyObject nil = context.nil;
-            tmp = TypeConverter.convertToTypeWithCheck(args[0], runtime.getArray(), "to_ary");
+            tmp = TypeConverter.convertToTypeWithCheck(args[0], Array, "to_ary");
             if (tmp != nil) {
                 RubyHash hash = (RubyHash) ((RubyClass) recv).allocate();
                 var arr = (RubyArray<?>) tmp;
                 for (int i = 0, j = arr.getLength(); i<j; i++) {
                     IRubyObject e = arr.entry(i);
-                    IRubyObject v = TypeConverter.convertToTypeWithCheck(e, runtime.getArray(), "to_ary");
+                    IRubyObject v = TypeConverter.convertToTypeWithCheck(e, Array, "to_ary");
                     IRubyObject key;
                     IRubyObject val = nil;
                     if (v == nil) {
@@ -182,7 +180,7 @@ public class RubyHash extends RubyObject implements Map {
                         val = ((RubyArray<?>) v).entry(1);
                     case 1:
                         key = ((RubyArray<?>) v).entry(0);
-                        hash.fastASetCheckString(runtime, key, val);
+                        hash.fastASetCheckString(context.runtime, key, val);
                     }
                 }
                 return hash;
@@ -192,7 +190,7 @@ public class RubyHash extends RubyObject implements Map {
         if ((args.length & 1) != 0) throw argumentError(context, "odd number of arguments for Hash");
 
         RubyHash hash = (RubyHash) ((RubyClass) recv).allocate();
-        for (int i=0; i < args.length; i+=2) hash.fastASetCheckString(runtime, args[i], args[i+1]);
+        for (int i=0; i < args.length; i+=2) hash.fastASetCheckString(context.runtime, args[i], args[i+1]);
 
         return hash;
     }

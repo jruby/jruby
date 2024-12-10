@@ -35,10 +35,13 @@ import junit.framework.TestCase;
 
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Access.objectClass;
+
 public class TestRubyObject extends TestCase {
-    private Ruby runtime;
+    private ThreadContext context;
     private IRubyObject rubyObject;
 
     public TestRubyObject(String name) {
@@ -46,12 +49,12 @@ public class TestRubyObject extends TestCase {
     }
 
     public void setUp() {
-        runtime = Ruby.newInstance();
-        rubyObject = new RubyObject(runtime, runtime.getObject());
+        context = Ruby.newInstance().getCurrentContext();
+        rubyObject = new RubyObject(context.runtime, objectClass(context));
     }
 
     public void testNil() {
-        assertTrue(!rubyObject.isNil());
+        assertFalse(rubyObject.isNil());
     }
 
     public void testTrue() {
@@ -59,15 +62,15 @@ public class TestRubyObject extends TestCase {
     }
 
     public void testEquals() {
-        assertTrue(rubyObject.equals(rubyObject));
+        assertEquals(rubyObject, rubyObject);
     }
 
     public void testClone() {
-        assertTrue(rubyObject.rbClone().getType() == rubyObject.getType());
+        assertSame(rubyObject.rbClone().getType(), rubyObject.getType());
     }
 
     public void testDup() {
-        assertTrue(rubyObject.dup().getType() == rubyObject.getType());
+        assertSame(rubyObject.dup().getType(), rubyObject.getType());
     }
 
     public void testType() {
@@ -75,7 +78,7 @@ public class TestRubyObject extends TestCase {
     }
 
     public void testFreeze() {
-        assertTrue(!rubyObject.isFrozen());
+        assertFalse(rubyObject.isFrozen());
         rubyObject.setFrozen(true);
         assertTrue(rubyObject.isFrozen());
     }
@@ -85,7 +88,6 @@ public class TestRubyObject extends TestCase {
     }
 
     public void test_kind_of() {
-        assertTrue(runtime.getObject().isInstance(rubyObject));
-        // assertTrue(rubyObject.kind_of(ruby.getClasses().getStringClass()).isFalse());
+        assertTrue(objectClass(context).isInstance(rubyObject));
     }
 }

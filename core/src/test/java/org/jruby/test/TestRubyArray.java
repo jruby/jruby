@@ -117,7 +117,7 @@ public class TestRubyArray extends Base {
      * This tests toArray-functionality
      */
     public void testToArray() throws Exception {
-        final RubyArray arr = (RubyArray)runtime.evalScriptlet("$h = ['foo','bar']");
+        final RubyArray arr = (RubyArray) context.runtime.evalScriptlet("$h = ['foo','bar']");
         final String val1 = "foo";
         final String val2 = "bar";
         final Object[] outp = arr.toArray();
@@ -138,39 +138,39 @@ public class TestRubyArray extends Base {
     }
 
     public void testSetsValuesToNullOnClearWhenNotShared() throws Exception {
-        final RubyArray arr = (RubyArray)runtime.evalScriptlet("$h = []; $h << 'foo'; $h << 'bar'");
-        assertNotSame("first element nil", runtime.getNil(), arr.eltInternal(0));
-        assertNotSame("second element nil", runtime.getNil(), arr.eltInternal(1));
-        arr.rb_clear();
-        assertSame("first element not nil", runtime.getNil(), arr.eltInternal(0));
-        assertSame("second element not nil", runtime.getNil(), arr.eltInternal(1));
+        final RubyArray arr = (RubyArray)context.runtime.evalScriptlet("$h = []; $h << 'foo'; $h << 'bar'");
+        assertNotSame("first element nil", context.nil, arr.eltInternal(0));
+        assertNotSame("second element nil", context.nil, arr.eltInternal(1));
+        arr.rb_clear(context);
+        assertSame("first element not nil", context.nil, arr.eltInternal(0));
+        assertSame("second element not nil", context.nil, arr.eltInternal(1));
     }
 
     public void testSetsLeftoverValuesToNullWhenRejectingElements() throws Exception {
-        final RubyArray arr = (RubyArray)runtime.evalScriptlet("$h = ['foo','bar']");
-        assertNotSame("first element nil", runtime.getNil(), arr.eltInternal(0));
-        assertNotSame("second element nil", runtime.getNil(), arr.eltInternal(1));
-        runtime.evalScriptlet("$h.reject! { |e| e == 'bar' }");
-        assertNotSame("first element nil", runtime.getNil(), arr.eltInternal(0));
-        assertSame("second element not nil", runtime.getNil(), arr.eltInternal(1));
+        final RubyArray arr = (RubyArray)context.runtime.evalScriptlet("$h = ['foo','bar']");
+        assertNotSame("first element nil", context.nil, arr.eltInternal(0));
+        assertNotSame("second element nil", context.nil, arr.eltInternal(1));
+        context.runtime.evalScriptlet("$h.reject! { |e| e == 'bar' }");
+        assertNotSame("first element nil", context.nil, arr.eltInternal(0));
+        assertSame("second element not nil", context.nil, arr.eltInternal(1));
     }
 
     public void testSetsLeftoverValuesToNullInDeleteAt() throws Exception {
-        final RubyArray arr = (RubyArray)runtime.evalScriptlet("$h = ['foo','bar']");
-        assertNotSame("first element nil", runtime.getNil(), arr.eltInternal(0));
-        assertNotSame("second element nil", runtime.getNil(), arr.eltInternal(1));
-        runtime.evalScriptlet("$h.delete_at(1)");
-        assertNotSame("first element nil", runtime.getNil(), arr.eltInternal(0));
-        assertSame("second element not nil", runtime.getNil(), arr.eltInternal(1));
+        final RubyArray arr = (RubyArray)context.runtime.evalScriptlet("$h = ['foo','bar']");
+        assertNotSame("first element nil", context.nil, arr.eltInternal(0));
+        assertNotSame("second element nil", context.nil, arr.eltInternal(1));
+        context.runtime.evalScriptlet("$h.delete_at(1)");
+        assertNotSame("first element nil", context.nil, arr.eltInternal(0));
+        assertSame("second element not nil", context.nil, arr.eltInternal(1));
     }
 
     public void testSetsLeftoverValuesToNullInDelete() throws Exception {
-        final RubyArray arr = (RubyArray)runtime.evalScriptlet("$h = ['foo','bar']");
-        assertNotSame("first element nil", runtime.getNil(), arr.eltInternal(0));
-        assertNotSame("second element nil", runtime.getNil(), arr.eltInternal(1));
-        runtime.evalScriptlet("$h.delete('foo')");
-        assertNotSame("first element nil", runtime.getNil(), arr.eltInternal(0));
-        assertSame("second element not nil", runtime.getNil(), arr.eltInternal(1));
+        final RubyArray arr = (RubyArray)context.runtime.evalScriptlet("$h = ['foo','bar']");
+        assertNotSame("first element nil", context.nil, arr.eltInternal(0));
+        assertNotSame("second element nil", context.nil, arr.eltInternal(1));
+        context.runtime.evalScriptlet("$h.delete('foo')");
+        assertNotSame("first element nil", context.nil, arr.eltInternal(0));
+        assertSame("second element not nil", context.nil, arr.eltInternal(1));
     }
 
     private void assertSublistContainsCorrectSubset(final List<?> list) {
@@ -186,7 +186,7 @@ public class TestRubyArray extends Base {
         assertSublistContainsCorrectSubset(javaArray);
 
         // Ruby should give the same results
-        final RubyArray rubyArray = (RubyArray)runtime.evalScriptlet("$h = ['foo', 'bar', 'baz', 'anything']");
+        final RubyArray rubyArray = (RubyArray)context.runtime.evalScriptlet("$h = ['foo', 'bar', 'baz', 'anything']");
         assertSublistContainsCorrectSubset(rubyArray);
     }
 

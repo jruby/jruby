@@ -108,6 +108,10 @@ import static com.headius.backport9.buffer.Buffers.flipBuffer;
 import static com.headius.backport9.buffer.Buffers.limitBuffer;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.anno.FrameField.LASTLINE;
+import static org.jruby.api.Access.argsFile;
+import static org.jruby.api.Access.fileClass;
+import static org.jruby.api.Access.globalVariables;
+import static org.jruby.api.Access.ioClass;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineClass;
@@ -727,8 +731,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             if (rs == context.nil && limit < 0) {
                 str = (RubyString) fptr.readAll(context, 0, context.nil);
                 if (str.size() == 0) return context.nil;
-                if (chomp) str.chomp_bang(context, runtime.getGlobalVariables().getDefaultSeparator());
-            } else if (rs == runtime.getGlobalVariables().getDefaultSeparator()
+                if (chomp) str.chomp_bang(context, globalVariables(context).getDefaultSeparator());
+            } else if (rs == globalVariables(context).getDefaultSeparator()
                     && limit < 0
                     && !fptr.needsReadConversion()
                     && (enc = fptr.readEncoding(runtime)).isAsciiCompatible()) {
@@ -1844,7 +1848,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         Ruby runtime = context.runtime;
         int i;
         int argc = args.length;
-        IRubyObject outputFS = runtime.getGlobalVariables().get("$,");
+        IRubyObject outputFS = globalVariables(context).get("$,");
 
         boolean fieldSeparatorNotNil = !outputFS.isNil();
         if (fieldSeparatorNotNil) {
@@ -1875,7 +1879,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     private static void writeRecordSeparator(ThreadContext context, IRubyObject out) {
-        IRubyObject outputRS = context.runtime.getGlobalVariables().get("$\\");
+        IRubyObject outputRS = globalVariables(context).get("$\\");
         if (!outputRS.isNil()) {
             write(context, out, outputRS);
         }
@@ -1884,7 +1888,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     public static IRubyObject print2(ThreadContext context, IRubyObject out, IRubyObject arg0, IRubyObject arg1) {
         Ruby runtime = context.runtime;
 
-        IRubyObject outputFS = runtime.getGlobalVariables().get("$,");
+        IRubyObject outputFS = globalVariables(context).get("$,");
         boolean fieldSeparatorNotNil = !outputFS.isNil();
         if (fieldSeparatorNotNil) runtime.getWarnings().warnDeprecated("$, is set to non-nil value");
 
@@ -1900,7 +1904,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     public static IRubyObject print3(ThreadContext context, IRubyObject out, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         Ruby runtime = context.runtime;
 
-        IRubyObject outputFS = runtime.getGlobalVariables().get("$,");
+        IRubyObject outputFS = globalVariables(context).get("$,");
         boolean fieldSeparatorNotNil = !outputFS.isNil();
         if (fieldSeparatorNotNil) runtime.getWarnings().warnDeprecated("$, is set to non-nil value");
 
@@ -2266,14 +2270,14 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         IOSites sites = sites(context);
         IRubyObject closed = io.checkCallMethod(context, sites.closed_checked);
         if (closed != null && closed.isTrue()) return io;
-        IRubyObject oldExc = context.runtime.getGlobalVariables().get("$!"); // Save $!
+        IRubyObject oldExc = globalVariables(context).get("$!"); // Save $!
         try {
             closed = io.checkCallMethod(context, sites.close_checked);
             return asBoolean(context, closed != null && closed.isTrue());
         } catch (RaiseException re) {
             if (re.getMessage().contains(CLOSED_STREAM_MSG)) {
                 // ignore
-                context.runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
+                globalVariables(context).set("$!", oldExc); // Restore $!
                 return context.nil;
             } else {
                 throw re;
@@ -2778,8 +2782,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     public static IRubyObject puts1(ThreadContext context, IRubyObject maybeIO, IRubyObject arg0) {
         Ruby runtime = context.runtime;
-        assert runtime.getGlobalVariables().getDefaultSeparator() instanceof RubyString;
-        RubyString separator = (RubyString) runtime.getGlobalVariables().getDefaultSeparator();
+        assert globalVariables(context).getDefaultSeparator() instanceof RubyString;
+        RubyString separator = (RubyString) globalVariables(context).getDefaultSeparator();
 
         putsSingle(context, runtime, maybeIO, arg0, separator);
 
@@ -2788,8 +2792,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     public static IRubyObject puts2(ThreadContext context, IRubyObject maybeIO, IRubyObject arg0, IRubyObject arg1) {
         Ruby runtime = context.runtime;
-        assert runtime.getGlobalVariables().getDefaultSeparator() instanceof RubyString;
-        RubyString separator = (RubyString) runtime.getGlobalVariables().getDefaultSeparator();
+        assert globalVariables(context).getDefaultSeparator() instanceof RubyString;
+        RubyString separator = (RubyString) globalVariables(context).getDefaultSeparator();
 
         putsSingle(context, runtime, maybeIO, arg0, separator);
         putsSingle(context, runtime, maybeIO, arg1, separator);
@@ -2799,8 +2803,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     public static IRubyObject puts3(ThreadContext context, IRubyObject maybeIO, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         Ruby runtime = context.runtime;
-        assert runtime.getGlobalVariables().getDefaultSeparator() instanceof RubyString;
-        RubyString separator = (RubyString) runtime.getGlobalVariables().getDefaultSeparator();
+        assert globalVariables(context).getDefaultSeparator() instanceof RubyString;
+        RubyString separator = (RubyString) globalVariables(context).getDefaultSeparator();
 
         putsSingle(context, runtime, maybeIO, arg0, separator);
         putsSingle(context, runtime, maybeIO, arg1, separator);
@@ -2819,8 +2823,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     private static IRubyObject writeSeparator(ThreadContext context, IRubyObject maybeIO) {
         Ruby runtime = context.runtime;
-        assert runtime.getGlobalVariables().getDefaultSeparator() instanceof RubyString;
-        RubyString separator = (RubyString) runtime.getGlobalVariables().getDefaultSeparator();
+        assert globalVariables(context).getDefaultSeparator() instanceof RubyString;
+        RubyString separator = (RubyString) globalVariables(context).getDefaultSeparator();
 
         write(context, maybeIO, separator);
         return context.nil;
@@ -2828,8 +2832,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     private static IRubyObject putsArray(ThreadContext context, IRubyObject maybeIO, IRubyObject[] args) {
         Ruby runtime = context.runtime;
-        assert runtime.getGlobalVariables().getDefaultSeparator() instanceof RubyString;
-        RubyString separator = (RubyString) runtime.getGlobalVariables().getDefaultSeparator();
+        assert globalVariables(context).getDefaultSeparator() instanceof RubyString;
+        RubyString separator = (RubyString) globalVariables(context).getDefaultSeparator();
 
         for (int i = 0; i < args.length; i++) {
             putsSingle(context, runtime, maybeIO, args[i], separator);
@@ -2904,7 +2908,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         // In MRI this is used for all multi-arg puts calls to write. Here, we just do it for two
         if (write.retrieveCache(maybeIO.getMetaClass()).method.getSignature().isOneArgument()) {
             Ruby runtime = context.runtime;
-            if (runtime.isVerbose() && maybeIO != runtime.getGlobalVariables().get("$stderr")) {
+            if (runtime.isVerbose() && maybeIO != globalVariables(context).get("$stderr")) {
                 warnWrite(runtime, maybeIO);
             }
             write.call(context, maybeIO, maybeIO, arg0);
@@ -4190,20 +4194,19 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     // MRI: rb_io_open_generic
     private static RubyIO ioOpenGeneric(ThreadContext context, IRubyObject recv, IRubyObject filename, int oflags, int fmode, IOEncodable convconfig, int perm) {
-        final Ruby runtime = context.runtime;
         IRubyObject cmd;
 
-        if ((filename instanceof RubyString) && ((RubyString) filename).isEmpty()) throw runtime.newErrnoENOENTError();
+        if ((filename instanceof RubyString name) && name.isEmpty()) throw context.runtime.newErrnoENOENTError();
 
-        if ((recv == runtime.getIO()) && (cmd = PopenExecutor.checkPipeCommand(context, filename)) != context.nil) {
-            runtime.getWarnings().warn("IO process creation with a leading '|' is deprecated and will be removed in Ruby 4.0; use IO.popen instead");
-            if (PopenExecutor.nativePopenAvailable(runtime)) {
+        if ((recv == ioClass(context)) && (cmd = PopenExecutor.checkPipeCommand(context, filename)) != context.nil) {
+            context.runtime.getWarnings().warn("IO process creation with a leading '|' is deprecated and will be removed in Ruby 4.0; use IO.popen instead");
+            if (PopenExecutor.nativePopenAvailable(context.runtime)) {
                 return (RubyIO) PopenExecutor.pipeOpen(context, cmd, OpenFile.ioOflagsModestr(context, oflags), fmode, convconfig);
             } else {
                 throw argumentError(context, "pipe open is not supported without native subprocess logic");
             }
         }
-        return (RubyIO) ((RubyFile) runtime.getFile().allocate()).fileOpenGeneric(context, filename, oflags, fmode, convconfig, perm);
+        return (RubyIO) ((RubyFile) fileClass(context).allocate()).fileOpenGeneric(context, filename, oflags, fmode, convconfig, perm);
     }
 
     /**
@@ -4747,7 +4750,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         boolean local2 = false;
 
         try {
-            if (arg1 == runtime.getArgsFile() || !(arg1 instanceof RubyFile || arg1 instanceof RubyString || arg1.respondsTo("to_path"))) {
+            var ArgsFile = argsFile(context);
+
+            if (arg1 == ArgsFile || !(arg1 instanceof RubyFile || arg1 instanceof RubyString || arg1.respondsTo("to_path"))) {
                 if (offset != null) {
                     throw argumentError(context, "cannot specify src_offset for non-IO");
                 }
@@ -4763,7 +4768,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                     arg1 = tmpIO;
                 } else if (!(arg1 instanceof RubyFile)) {
                     RubyString path = RubyFile.get_path(context, arg1);
-                    arg1 = RubyFile.open(context, runtime.getFile(), new IRubyObject[]{path, asFixnum(context, ModeFlags.RDONLY)}, Block.NULL_BLOCK);
+                    arg1 = RubyFile.open(context, fileClass(context), new IRubyObject[]{path, asFixnum(context, ModeFlags.RDONLY)}, Block.NULL_BLOCK);
                     local1 = true;
                 }
 
@@ -4777,7 +4782,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 channel1 = io1.getChannel();
             }
 
-            if (arg2 == runtime.getArgsFile() || !(arg2 instanceof RubyFile || arg2 instanceof RubyString || arg2.respondsTo("to_path"))) {
+            if (arg2 == ArgsFile || !(arg2 instanceof RubyFile || arg2 instanceof RubyString || arg2.respondsTo("to_path"))) {
                 if (sites.respond_to_write.respondsTo(context, arg2, arg2, true)) {
                     channel2 = new IOChannel.IOWritableByteChannel(arg2);
                 }
@@ -4787,7 +4792,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                     arg2 = tmpIO;
                 } else if (!(arg2 instanceof RubyFile)) {
                     RubyString path = RubyFile.get_path(context, arg2);
-                    arg2 = RubyFile.open(context, runtime.getFile(), new IRubyObject[]{path, asFixnum(context, ModeFlags.WRONLY | ModeFlags.CREAT | ModeFlags.TRUNC)}, Block.NULL_BLOCK);
+                    arg2 = RubyFile.open(context, fileClass(context),
+                            new IRubyObject[]{path, asFixnum(context, ModeFlags.WRONLY | ModeFlags.CREAT | ModeFlags.TRUNC)}, Block.NULL_BLOCK);
                     local2 = true;
                 }
 

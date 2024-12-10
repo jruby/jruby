@@ -55,6 +55,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
 import org.jruby.util.TypeConverter;
 
+import static org.jruby.api.Access.arrayClass;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Error.argumentError;
@@ -276,11 +277,10 @@ public class Queue extends RubyObject implements DataType {
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject items) {
         this.capacity = Integer.MAX_VALUE;
-        IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, items, context.runtime.getArray(),
-                context.sites.TypeConverter.to_a_checked);
+        IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, items, arrayClass(context), context.sites.TypeConverter.to_a_checked);
         if (tmp.isNil()) throw typeError(context, "can't convert ", items, " into Array");
 
-        RubyArray array = (RubyArray)tmp;
+        RubyArray array = (RubyArray) tmp;
         for (int i = 0; i < array.getLength(); i++) {
             push(context, array.eltOk(i));
         }

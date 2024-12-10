@@ -96,6 +96,8 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.jruby.common.IRubyWarnings.ID;
 
+import static org.jruby.api.Access.exceptionClass;
+import static org.jruby.api.Access.globalVariables;
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.asBoolean;
@@ -1258,10 +1260,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     private IRubyObject joinCommon(ThreadContext context, long timeoutMillis) {
-        Ruby runtime = context.runtime;
-        if (isCurrent()) {
-            throw runtime.newThreadError("Target thread must not be current thread");
-        }
+        if (isCurrent()) throw context.runtime.newThreadError("Target thread must not be current thread");
 
         RubyThread currentThread = context.getThread();
 
@@ -1276,12 +1275,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             while (true) {
                 currentThread.blockingThreadPoll(context);
                 threadImpl.join(timeToWait);
-                if (!threadImpl.isAlive()) {
-                    break;
-                }
-                if (System.currentTimeMillis() - start > timeoutMillis) {
-                    break;
-                }
+
+                if (!threadImpl.isAlive()) break;
+                if (System.currentTimeMillis() - start > timeoutMillis) break;
             }
         } catch (InterruptedException ie) {
             ie.printStackTrace();
@@ -1295,23 +1291,16 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         final Throwable exception = this.exitingException;
         if (exception != null) {
-            if (exception instanceof RaiseException) {
-                // Set $! in the current thread before exiting
-                runtime.getGlobalVariables().set("$!", ((RaiseException) exception).getException());
-            } else {
-                runtime.getGlobalVariables().set("$!", JavaUtil.convertJavaToUsableRubyObject(runtime, exception));
-            }
+            globalVariables(context).set("$!", exception instanceof RaiseException exc ?
+                    exc.getException() : // Set $! in the current thread before exiting
+                    JavaUtil.convertJavaToUsableRubyObject(context.runtime, exception));
             Helpers.throwException(exception);
         }
 
         // check events before leaving
         currentThread.pollThreadEvents(context);
 
-        if (threadImpl.isAlive()) {
-            return context.nil;
-        } else {
-            return this;
-        }
+        return threadImpl.isAlive() ? context.nil : this;
     }
 
     @JRubyMethod
@@ -1567,7 +1556,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             tmp = arg.callMethod(context, "exception", args[1]);
         }
 
-        if (!runtime.getException().isInstance(tmp)) throw typeError(context, "exception object expected");
+        if (!exceptionClass(context).isInstance(tmp)) throw typeError(context, "exception object expected");
 
         exception = (RubyException) tmp;
 

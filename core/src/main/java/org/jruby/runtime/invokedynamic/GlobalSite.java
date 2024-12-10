@@ -24,6 +24,7 @@ import static java.lang.invoke.MethodHandles.constant;
 import static java.lang.invoke.MethodHandles.dropArguments;
 import static java.lang.invoke.MethodHandles.lookup;
 import static java.lang.invoke.MethodType.methodType;
+import static org.jruby.api.Access.globalVariables;
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
 
@@ -88,8 +89,7 @@ public class GlobalSite extends MutableCallSite {
     }
 
     public IRubyObject getGlobalFallback(ThreadContext context) throws Throwable {
-        Ruby runtime = context.runtime;
-        GlobalVariable variable = runtime.getGlobalVariables().getVariable(name());
+        GlobalVariable variable = globalVariables(context).getVariable(name());
 
         if (failures() > Options.INVOKEDYNAMIC_GLOBAL_MAXFAIL.load() ||
                 variable.getScope() != GlobalVariable.Scope.GLOBAL ||

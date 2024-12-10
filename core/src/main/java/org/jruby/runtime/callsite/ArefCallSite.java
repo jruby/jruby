@@ -5,6 +5,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.RubyBasicObject.getMetaClass;
+import static org.jruby.api.Access.arrayClass;
 
 public class ArefCallSite extends MonomorphicCallSite {
     public ArefCallSite() {
@@ -13,7 +14,7 @@ public class ArefCallSite extends MonomorphicCallSite {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, long fixnum) {
-        if (getMetaClass(self) == context.runtime.getArray()) {
+        if (getMetaClass(self) == arrayClass(context)) {
             return ((RubyArray) self).entry(fixnum);
         }
         return super.call(context, caller, self, fixnum);
@@ -21,7 +22,7 @@ public class ArefCallSite extends MonomorphicCallSite {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg) {
-        if (getMetaClass(self) == context.runtime.getArray()) {
+        if (getMetaClass(self) == arrayClass(context)) {
             return ((RubyArray) self).aref(context, arg);
         }
         return super.call(context, caller, self, arg);

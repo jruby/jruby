@@ -91,15 +91,6 @@ public class Access {
     }
 
     /**
-     * Retrieve the instance of the module Etc.
-     * @param context the current thread context
-     * @return the Module
-     */
-    public static RubyModule etcModule(ThreadContext context) {
-        return context.runtime.getEtc();
-    }
-
-    /**
      * Retrieve the instance of the class Exception
      * @param context the current thread context
      * @return the Class

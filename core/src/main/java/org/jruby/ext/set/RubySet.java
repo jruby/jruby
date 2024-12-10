@@ -50,6 +50,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.api.Access.enumerableModule;
 import static org.jruby.api.Access.hashClass;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
@@ -361,17 +362,15 @@ public class RubySet extends RubyObject implements Set {
      */
     @JRubyMethod
     public RubySet replace(final ThreadContext context, IRubyObject enume) {
-        if (enume instanceof RubySet) {
+        if (enume instanceof RubySet enu) {
             modifyCheck(context);
             clearImpl();
-            addImplSet(context, (RubySet) enume);
+            addImplSet(context, enu);
         } else {
             // do_with_enum(enum)  # make sure enum is enumerable before calling clear :
-            if (!enume.getMetaClass().hasModuleInHierarchy(context.runtime.getEnumerable())) {
+            if (!enume.getMetaClass().hasModuleInHierarchy(enumerableModule(context))) {
                 // NOTE: likely no need to do this but due MRI compat (do_with_enum) :
-                if (!enume.respondsTo("each_entry")) {
-                    throw argumentError(context, "value must be enumerable");
-                }
+                if (!enume.respondsTo("each_entry")) throw argumentError(context, "value must be enumerable");
             }
             clearImpl();
             rb_merge(context, enume);

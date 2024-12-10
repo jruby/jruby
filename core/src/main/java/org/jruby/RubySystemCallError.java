@@ -14,6 +14,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectMarshal;
 
+import static org.jruby.api.Access.errnoModule;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.runtime.Visibility.*;
@@ -237,8 +238,7 @@ public class RubySystemCallError extends RubyStandardError {
                 isErrnoClass = true;
 
                 // set the metaclass to an Errno, if something other than SystemCallError or Errno wasn't provided
-                if (metaClass == runtime.getSystemCallError() ||
-                        metaClass == runtime.getErrno()) {
+                if (metaClass == runtime.getSystemCallError() || metaClass == errnoModule(context)) {
                     setMetaClass(runtime.getErrno(errnoVal));
                 }
                 

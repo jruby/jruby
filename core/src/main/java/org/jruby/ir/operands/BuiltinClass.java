@@ -11,6 +11,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.List;
 
+import static org.jruby.api.Access.arrayClass;
+import static org.jruby.api.Access.hashClass;
 import static org.jruby.api.Access.objectClass;
 
 /**
@@ -70,34 +72,24 @@ public class BuiltinClass extends Operand {
 
     public static BuiltinClass decode(IRReaderDecoder d) {
         Type type = Type.fromOrdinal(d.decodeInt());
-        switch (type) {
-            case ARRAY:
-                return d.getCurrentScope().getManager().getArrayClass();
-            case HASH:
-                return d.getCurrentScope().getManager().getHashClass();
-            case OBJECT:
-                return d.getCurrentScope().getManager().getObjectClass();
-            case SYMBOL:
-                return d.getCurrentScope().getManager().getSymbolClass();
-            default:
-                throw new RuntimeException("BuiltinClass has unknown type");
-        }
+        return switch (type) {
+            case ARRAY -> d.getCurrentScope().getManager().getArrayClass();
+            case HASH -> d.getCurrentScope().getManager().getHashClass();
+            case OBJECT -> d.getCurrentScope().getManager().getObjectClass();
+            case SYMBOL -> d.getCurrentScope().getManager().getSymbolClass();
+            default -> throw new RuntimeException("BuiltinClass has unknown type");
+        };
     }
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
-        switch (type) {
-            case ARRAY:
-                return context.getRuntime().getArray();
-            case HASH:
-                return context.getRuntime().getHash();
-            case OBJECT:
-                return objectClass(context);
-            case SYMBOL:
-                return context.getRuntime().getSymbol();
-            default:
-                throw new RuntimeException("BuiltinClass has unknown type");
-        }
+        return switch (type) {
+            case ARRAY -> arrayClass(context);
+            case HASH -> hashClass(context);
+            case OBJECT -> objectClass(context);
+            case SYMBOL -> context.runtime.getSymbol();
+            default -> throw new RuntimeException("BuiltinClass has unknown type");
+        };
     }
 
     @Override

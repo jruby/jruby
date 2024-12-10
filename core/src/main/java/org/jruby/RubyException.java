@@ -369,7 +369,7 @@ public class RubyException extends RubyObject {
     public RubyBoolean op_equal(ThreadContext context, IRubyObject other) {
         if (this == other) return context.tru;
 
-        return asBoolean(context, context.runtime.getException().isInstance(other) &&
+        return asBoolean(context, exceptionClass(context).isInstance(other) &&
                 getMetaClass().getRealClass() == other.getMetaClass().getRealClass() &&
                 callMethod(context, "message").equals(other.callMethod(context, "message")) &&
                 callMethod(context, "backtrace").equals(other.callMethod(context, "backtrace")));

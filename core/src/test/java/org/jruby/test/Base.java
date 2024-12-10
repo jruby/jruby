@@ -38,12 +38,15 @@ import java.io.PrintStream;
 
 import org.jruby.Ruby;
 import org.jruby.RubyIO;
+import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Access.globalVariables;
 
 /**
  * @author Benoit
  */
 public class Base extends junit.framework.TestCase {
-    protected Ruby runtime;
+    protected ThreadContext context;
     private PrintStream out;
 
     public Base() {
@@ -56,9 +59,7 @@ public class Base extends junit.framework.TestCase {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        if (runtime == null) {
-            runtime = Ruby.newInstance();
-        }
+        context = Ruby.newInstance().getCurrentContext();
     }
 
     /**
@@ -73,13 +74,14 @@ public class Base extends junit.framework.TestCase {
     protected final String eval(String script, String fileName) {
         ByteArrayOutputStream result = new ByteArrayOutputStream();
         out = new PrintStream(result);
-        RubyIO lStream = new RubyIO(runtime, out);
+        RubyIO lStream = new RubyIO(context.runtime, out);
         lStream.getOpenFileChecked().setSync(true);
-        runtime.getGlobalVariables().set("$stdout", lStream);
-        runtime.getGlobalVariables().set("$>", lStream);
-        runtime.getGlobalVariables().set("$stderr", lStream);
+        var globals = globalVariables(context);
+        globals.set("$stdout", lStream);
+        globals.set("$>", lStream);
+        globals.set("$stderr", lStream);
 
-        runtime.runFromMain(new ByteArrayInputStream(script.getBytes()), fileName);
+        context.runtime.runFromMain(new ByteArrayInputStream(script.getBytes()), fileName);
         StringBuffer sb = new StringBuffer(new String(result.toByteArray()));
         for (int idx = sb.indexOf("\n"); idx != -1; idx = sb.indexOf("\n")) {
             sb.deleteCharAt(idx);

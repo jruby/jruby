@@ -95,6 +95,7 @@ import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.anno.FrameField.BACKREF;
+import static org.jruby.api.Access.globalVariables;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineClass;
@@ -4618,7 +4619,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (!pat.isNil()) {
             pattern = getPatternQuoted(context, pat);
         } else {
-            IRubyObject splitPattern = context.runtime.getGlobalVariables().get("$;");
+            IRubyObject splitPattern = globalVariables(context).get("$;");
 
             if (splitPattern.isNil()) return context.nil;
 
@@ -5605,7 +5606,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         modifyCheck();
         if (value.isEmpty()) return context.nil;
 
-        var globalVariables = context.runtime.getGlobalVariables();
+        var globalVariables = globalVariables(context);
         IRubyObject rsObj = globalVariables.get("$/");
 
         return rsObj == globalVariables.getDefaultSeparator() ?
@@ -6131,7 +6132,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      */
     @JRubyMethod(name = "each_line")
     public IRubyObject each_line(ThreadContext context, Block block) {
-        return StringSupport.rbStrEnumerateLines(this, context, "each_line", context.runtime.getGlobalVariables().get("$/"), block, false);
+        return StringSupport.rbStrEnumerateLines(this, context, "each_line", globalVariables(context).get("$/"), block, false);
     }
 
     @JRubyMethod(name = "each_line")
@@ -6194,7 +6195,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "lines")
     public IRubyObject lines(ThreadContext context, Block block) {
-        return StringSupport.rbStrEnumerateLines(this, context, "lines", context.runtime.getGlobalVariables().get("$/"), block, true);
+        return StringSupport.rbStrEnumerateLines(this, context, "lines", globalVariables(context).get("$/"), block, true);
     }
 
     @JRubyMethod(name = "lines")

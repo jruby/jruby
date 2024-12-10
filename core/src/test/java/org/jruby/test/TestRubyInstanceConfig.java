@@ -31,6 +31,7 @@ package org.jruby.test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
 import org.jruby.exceptions.MainExitException;
@@ -55,7 +56,7 @@ public class TestRubyInstanceConfig extends Base {
         config = new RubyInstanceConfig();
     }
 
-    public void testRubyInstanceConfigDefaults() throws Exception {
+    public void testRubyInstanceConfigDefaults() {
         assertEquals(RubyInstanceConfig.LoadServiceCreator.DEFAULT, config.getLoadServiceCreator());
         assertFalse(config.isInlineScript());
         assertNull(config.getScriptFileName());
@@ -70,14 +71,12 @@ public class TestRubyInstanceConfig extends Base {
         }
     }
 
-    public void testRubyInstanceConfigOverriding() throws Exception {
+    public void testRubyInstanceConfigOverriding() {
         final boolean[] called = new boolean[1];
-        config.setLoadServiceCreator(new RubyInstanceConfig.LoadServiceCreator() {
-                public LoadService create(Ruby runtime) {
-                    called[0] = true;
-                    return new NullLoadService(runtime);
-                }
-            });
+        config.setLoadServiceCreator(runtime -> {
+            called[0] = true;
+            return new NullLoadService(runtime);
+        });
         Ruby ruby = Ruby.newInstance(config);
         assertTrue(called[0]);
         assertEquals(NullLoadService.class, ruby.getLoadService().getClass());
@@ -92,14 +91,14 @@ public class TestRubyInstanceConfig extends Base {
       assertTrue(scriptSource.startsWith("puts \"Hello World\""));
     }
 
-    public void testGetScriptSourceWithSTDIN() throws Exception {
+    public void testGetScriptSourceWithSTDIN() {
       config.setScriptFileName(getSTDINPath());
 
       // FIXME: "CON" is not working here but I am not sure if this should or not?
       if (!Platform.IS_WINDOWS) assertNotNull(config.getScriptSource());
     }
 
-    public void testGetScriptSourceWithDirectory() throws Exception {
+    public void testGetScriptSourceWithDirectory() {
       config.setCurrentDirectory("uri:classloader:/somedir");
       config.setScriptFileName("dir_with_listing");
 
@@ -107,11 +106,11 @@ public class TestRubyInstanceConfig extends Base {
         config.getScriptSource();
         fail("Should throw FileNotFoundException");
       } catch (MainExitException ex) {
-        assertTrue(ex.getMessage().indexOf("(Not a file)") > -1);
+        assertTrue(ex.getMessage().contains("(Not a file)"));
       }
     }
 
-    public void testGetScriptSourceWithNonexistentFile() throws Exception {
+    public void testGetScriptSourceWithNonexistentFile() {
       config.setCurrentDirectory("uri:classloader:/somedir");
       config.setScriptFileName("non_existing.rb");
 
@@ -119,7 +118,7 @@ public class TestRubyInstanceConfig extends Base {
         config.getScriptSource();
         fail("Should throw FileNotFoundException");
       } catch (MainExitException ex) {
-        assertTrue(ex.getMessage().indexOf("(No such file or directory)") > -1);
+        assertTrue(ex.getMessage().contains("(No such file or directory)"));
       }
     }
 
@@ -130,20 +129,15 @@ public class TestRubyInstanceConfig extends Base {
       while ((length = inputStream.read(buffer)) != -1) {
           result.write(buffer, 0, length);
       }
-      return result.toString("UTF-8");
+      return result.toString(StandardCharsets.UTF_8);
     }
 
     private String getSTDINPath() {
       String osName = System.getProperty("os.name").toLowerCase(Locale.US);
-      if (osName.indexOf("windows") > -1) {
-        return "CON";
-      }
-      if (osName.indexOf("openvms") > -1) {
-        return "/sys$input";
-      }
-      if (osName.indexOf("mac") > -1) {
-        return "/dev/fd/0";
-      }
+      if (osName.contains("windows")) return "CON";
+      if (osName.contains("openvms")) return "/sys$input";
+      if (osName.contains("mac")) return "/dev/fd/0";
+
       return "/dev/stdin";
     }
 }

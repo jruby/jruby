@@ -30,6 +30,7 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.api.Access;
 import org.jruby.api.Convert;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.JumpException;
@@ -68,7 +69,10 @@ import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyObject.equalInternal;
+import static org.jruby.api.Access.arrayClass;
+import static org.jruby.api.Access.enumerableModule;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Convert.numericToLong;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineModule;
@@ -797,9 +801,11 @@ public class RubyEnumerable {
 
         final var result = newArray(context);
 
-        eachSite(context).call(context, self, self, CallBlock19.newCallClosure(self, context.runtime.getEnumerable(), block.getSignature(), new BlockCallback() {
+        eachSite(context).call(context, self, self, CallBlock19.newCallClosure(self, enumerableModule(context),
+                block.getSignature(), new BlockCallback() {
             public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                final IRubyObject larg; boolean ary = false;
+                final IRubyObject larg;
+                boolean ary = false;
                 switch (largs.length) {
                     case 0:  larg = ctx.nil; break;
                     case 1:  larg = largs[0]; break;
@@ -828,7 +834,8 @@ public class RubyEnumerable {
 
         var result = newArray(context);
 
-        eachSite(context).call(context, self, self, CallBlock19.newCallClosure(self, context.runtime.getEnumerable(), block.getSignature(), new BlockCallback() {
+        eachSite(context).call(context, self, self, CallBlock19.newCallClosure(self, enumerableModule(context),
+                block.getSignature(), new BlockCallback() {
             public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                 final IRubyObject larg; boolean ary = false;
                 switch (largs.length) {
@@ -1833,34 +1840,17 @@ public class RubyEnumerable {
     }
 
     public static IRubyObject zipCommon(ThreadContext context, IRubyObject self, IRubyObject arg0, final Block block) {
-        final Ruby runtime = context.runtime;
-        final RubyClass Array = runtime.getArray();
+        IRubyObject newArg = TypeConverter.convertToType(arg0, arrayClass(context), "to_ary", false);
+        if (!newArg.isNil()) return zipCommonAry(context, self, newArg, block);
 
-        IRubyObject newArg;
+        if (!arg0.respondsTo("each")) throw typeError(context, "wrong argument type ", arg0, " (must respond to :each)");
+        newArg = sites(context).to_enum.call(context, arg0, arg0, asSymbol(context, "each")); // args[i].to_enum(:each)
 
-        boolean hasUncoercible = false;
-        newArg = TypeConverter.convertToType(arg0, Array, "to_ary", false);
-        if (newArg.isNil()) {
-            hasUncoercible = true;
-        }
-
-        // Handle uncoercibles by trying to_enum conversion
-        if (hasUncoercible) {
-            final RubySymbol each = runtime.newSymbol("each");
-            if (!arg0.respondsTo("each")) throw typeError(context, "wrong argument type ", arg0, " (must respond to :each)");
-
-            newArg = sites(context).to_enum.call(context, arg0, arg0, each); // args[i].to_enum(:each)
-
-            return zipCommonEnum(context, self, newArg, block);
-        }
-
-        return zipCommonAry(context, self, newArg, block);
+        return zipCommonEnum(context, self, newArg, block);
     }
 
     public static IRubyObject zipCommon(ThreadContext context, IRubyObject self, IRubyObject[] args, final Block block) {
-        final Ruby runtime = context.runtime;
-        final RubyClass Array = runtime.getArray();
-
+        var Array = arrayClass(context);
         final IRubyObject[] newArgs = new IRubyObject[args.length];
 
         boolean hasUncoercible = false;
@@ -1873,18 +1863,16 @@ public class RubyEnumerable {
         }
 
         // Handle uncoercibles by trying to_enum conversion
-        if (hasUncoercible) {
-            final RubySymbol each = runtime.newSymbol("each");
-            for (int i = 0; i < args.length; i++) {
-                if (!args[i].respondsTo("each")) throw typeError(context, "wrong argument type ", args[i], " (must respond to :each)");
+        if (!hasUncoercible) return zipCommonAry(context, self, newArgs, block);
 
-                newArgs[i] = sites(context).to_enum.call(context, args[i], args[i], each); // args[i].to_enum(:each)
-            }
+        var each = asSymbol(context, "each");
+        for (int i = 0; i < args.length; i++) {
+            if (!args[i].respondsTo("each")) throw typeError(context, "wrong argument type ", args[i], " (must respond to :each)");
 
-            return zipCommonEnum(context, self, newArgs, block);
+            newArgs[i] = sites(context).to_enum.call(context, args[i], args[i], each); // args[i].to_enum(:each)
         }
 
-        return zipCommonAry(context, self, newArgs, block);
+        return zipCommonEnum(context, self, newArgs, block);
     }
 
     // See enum_zip + zip_ary in Ruby source
@@ -2007,13 +1995,13 @@ public class RubyEnumerable {
     public static IRubyObject zipEnumNext(ThreadContext context, IRubyObject arg) {
         if (arg.isNil()) return context.nil;
 
-        final Ruby runtime = context.runtime;
-        IRubyObject oldExc = runtime.getGlobalVariables().get("$!");
+        var globalVariables = Access.globalVariables(context);
+        IRubyObject oldExc = globalVariables.get("$!");
         try {
             return sites(context).zip_next.call(context, arg, arg);
         } catch (RaiseException re) {
-            if (re.getException().getMetaClass() == runtime.getStopIteration()) {
-                runtime.getGlobalVariables().set("$!", oldExc);
+            if (re.getException().getMetaClass() == context.runtime.getStopIteration()) {
+                globalVariables.set("$!", oldExc);
                 return context.nil;
             }
             throw re;
@@ -2166,8 +2154,8 @@ public class RubyEnumerable {
             final IRubyObject yielder = packEnumValues(context, args);
             final ChunkArg arg = new ChunkArg(context);
 
-            final RubySymbol alone = Convert.asSymbol(context, "_alone");
-            final RubySymbol separator = Convert.asSymbol(context, "_separator");
+            final RubySymbol alone = asSymbol(context, "_alone");
+            final RubySymbol separator = asSymbol(context, "_separator");
             final EnumerableSites sites = sites(context);
             final CallSite chunk_call = sites.chunk_call;
             final CallSite chunk_op_lshift = sites.chunk_op_lshift;

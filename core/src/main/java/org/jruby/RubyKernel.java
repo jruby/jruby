@@ -109,6 +109,10 @@ import static org.jruby.anno.FrameField.METHODNAME;
 import static org.jruby.anno.FrameField.SCOPE;
 import static org.jruby.anno.FrameField.SELF;
 import static org.jruby.anno.FrameField.VISIBILITY;
+import static org.jruby.api.Access.argsFile;
+import static org.jruby.api.Access.fileClass;
+import static org.jruby.api.Access.globalVariables;
+import static org.jruby.api.Access.kernelModule;
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.*;
@@ -295,26 +299,24 @@ public class RubyKernel {
 
         // We had to save callInfo from original call because kwargs needs to still pass through to IO#open
         context.callInfo = callInfo;
-        return RubyIO.open(context, context.runtime.getFile(), args, block);
+        return RubyIO.open(context, fileClass(context), args, block);
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject getc(ThreadContext context, IRubyObject recv) {
         context.runtime.getWarnings().warn(ID.DEPRECATED_METHOD, "getc is obsolete; use STDIN.getc instead");
-        IRubyObject defin = context.runtime.getGlobalVariables().get("$stdin");
+        IRubyObject defin = globalVariables(context).get("$stdin");
         return sites(context).getc.call(context, defin, defin);
     }
 
     // MRI: rb_f_gets
     @JRubyMethod(optional = 1, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject gets(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-        IRubyObject argsFile = runtime.getArgsFile();
+        var ArgsFile = argsFile(context);
 
-        if (recv == argsFile) {
-            return RubyArgsFile.gets(context, argsFile, args);
-        }
-        return sites(context).gets.call(context, argsFile, argsFile, args);
+        return recv == ArgsFile ?
+                RubyArgsFile.gets(context, ArgsFile, args) :
+                sites(context).gets.call(context, ArgsFile, ArgsFile, args);
     }
 
     @JRubyMethod(optional = 1, checkArity = false, module = true, visibility = PRIVATE)
@@ -326,7 +328,7 @@ public class RubyKernel {
         RubyString message = null;
         if(argc == 1) {
             message = args[0].convertToString();
-            IRubyObject stderr = runtime.getGlobalVariables().get("$stderr");
+            IRubyObject stderr = globalVariables(context).get("$stderr");
             sites(context).puts.call(context, stderr, stderr, message);
         }
 
@@ -637,8 +639,8 @@ public class RubyKernel {
         int argc = args.length;
         int i;
         IRubyObject ret = context.nil;
-        IRubyObject defout = runtime.getGlobalVariables().get("$>");
-        IRubyObject defaultRS = context.runtime.getGlobalVariables().getDefaultSeparator();
+        IRubyObject defout = globalVariables(context).get("$>");
+        IRubyObject defaultRS = globalVariables(context).getDefaultSeparator();
         boolean defoutWriteBuiltin = defout instanceof RubyIO &&
                 defout.getMetaClass().isMethodBuiltin("write");
 
@@ -678,7 +680,7 @@ public class RubyKernel {
      */
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject putc(ThreadContext context, IRubyObject recv, IRubyObject ch) {
-        IRubyObject defout = context.runtime.getGlobalVariables().get("$>");
+        IRubyObject defout = globalVariables(context).get("$>");
         if (recv == defout) {
             return RubyIO.putc(context, recv, ch);
         }
@@ -687,7 +689,7 @@ public class RubyKernel {
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject puts(ThreadContext context, IRubyObject recv) {
-        IRubyObject defout = context.runtime.getGlobalVariables().get("$>");
+        IRubyObject defout = globalVariables(context).get("$>");
 
         if (recv == defout) {
             return RubyIO.puts0(context, recv);
@@ -698,7 +700,7 @@ public class RubyKernel {
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject puts(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
-        IRubyObject defout = context.runtime.getGlobalVariables().get("$>");
+        IRubyObject defout = globalVariables(context).get("$>");
 
         if (recv == defout) {
             return RubyIO.puts1(context, recv, arg0);
@@ -709,7 +711,7 @@ public class RubyKernel {
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject puts(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
-        IRubyObject defout = context.runtime.getGlobalVariables().get("$>");
+        IRubyObject defout = globalVariables(context).get("$>");
 
         if (recv == defout) {
             return RubyIO.puts2(context, recv, arg0, arg1);
@@ -720,7 +722,7 @@ public class RubyKernel {
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject puts(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        IRubyObject defout = context.runtime.getGlobalVariables().get("$>");
+        IRubyObject defout = globalVariables(context).get("$>");
 
         if (recv == defout) {
             return RubyIO.puts3(context, recv, arg0, arg1, arg2);
@@ -731,7 +733,7 @@ public class RubyKernel {
 
     @JRubyMethod(rest = true, module = true, visibility = PRIVATE)
     public static IRubyObject puts(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        IRubyObject defout = context.runtime.getGlobalVariables().get("$>");
+        IRubyObject defout = globalVariables(context).get("$>");
 
         if (recv == defout) {
             return RubyIO.puts(context, recv, args);
@@ -743,27 +745,27 @@ public class RubyKernel {
     // rb_f_print
     @JRubyMethod(module = true, visibility = PRIVATE, reads = LASTLINE)
     public static IRubyObject print(ThreadContext context, IRubyObject recv) {
-        return RubyIO.print0(context, context.runtime.getGlobalVariables().get("$>"));
+        return RubyIO.print0(context, globalVariables(context).get("$>"));
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject print(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
-        return RubyIO.print1(context, context.runtime.getGlobalVariables().get("$>"), arg0);
+        return RubyIO.print1(context, globalVariables(context).get("$>"), arg0);
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject print(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
-        return RubyIO.print2(context, context.runtime.getGlobalVariables().get("$>"), arg0, arg1);
+        return RubyIO.print2(context, globalVariables(context).get("$>"), arg0, arg1);
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject print(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        return RubyIO.print3(context, context.runtime.getGlobalVariables().get("$>"), arg0, arg1, arg2);
+        return RubyIO.print3(context, globalVariables(context).get("$>"), arg0, arg1, arg2);
     }
 
     @JRubyMethod(rest = true, module = true, visibility = PRIVATE, reads = LASTLINE)
     public static IRubyObject print(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return RubyIO.print(context, context.runtime.getGlobalVariables().get("$>"), args);
+        return RubyIO.print(context, globalVariables(context).get("$>"), args);
     }
 
     // rb_f_printf
@@ -773,7 +775,7 @@ public class RubyKernel {
 
         final IRubyObject out;
         if (args[0] instanceof RubyString) {
-            out = context.runtime.getGlobalVariables().get("$>");
+            out = globalVariables(context).get("$>");
         }
         else {
             out = args[0];
@@ -797,7 +799,7 @@ public class RubyKernel {
 
     @JRubyMethod(optional = 1, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject readlines(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return RubyArgsFile.readlines(context, context.runtime.getArgsFile(), args);
+        return RubyArgsFile.readlines(context, argsFile(context), args);
     }
 
     @JRubyMethod(name = "respond_to_missing?", visibility = PRIVATE)
@@ -946,7 +948,7 @@ public class RubyKernel {
      */
     @JRubyMethod(name = "global_variables", module = true, visibility = PRIVATE)
     public static RubyArray global_variables(ThreadContext context, IRubyObject recv) {
-        GlobalVariables globals = context.runtime.getGlobalVariables();
+        GlobalVariables globals = globalVariables(context);
         var globalVariables = newRawArray(context, globals.size());
 
         globals.eachName(context, globalVariables, (c, g, s) -> g.append(c, asSymbol(c, s)));
@@ -1058,7 +1060,7 @@ public class RubyKernel {
         RaiseException raise;
         switch (argc) {
             case 0:
-                IRubyObject lastException = runtime.getGlobalVariables().get("$!");
+                IRubyObject lastException = globalVariables(context).get("$!");
                 if (lastException.isNil()) {
                     raise = RaiseException.from(runtime, runtime.getRuntimeError(), "");
                 } else {
@@ -1095,7 +1097,7 @@ public class RubyKernel {
         IRubyObject maybeException = null;
         switch (argc) {
             case 0:
-                maybeException = context.runtime.getGlobalVariables().get("$!");
+                maybeException = globalVariables(context).get("$!");
                 break;
             case 1:
                 if (args.length == 1) maybeException = args[0];
@@ -1165,24 +1167,21 @@ public class RubyKernel {
 
     @JRubyMethod(name = "require_relative", module = true, visibility = PRIVATE, reads = SCOPE)
     public static IRubyObject require_relative(ThreadContext context, IRubyObject recv, IRubyObject name){
-        Ruby runtime = context.runtime;
-
         RubyString relativePath = RubyFile.get_path(context, name);
-
         String file = context.getCurrentStaticScope().getFile();
 
         if (file == null || file.equals("-") || file.equals("-e") || file.matches("\\A\\((.*)\\)")) {
-            throw runtime.newLoadError("cannot infer basepath");
+            throw context.runtime.newLoadError("cannot infer basepath");
         }
 
-        file = runtime.getLoadService().getPathForLocation(file);
+        file = context.runtime.getLoadService().getPathForLocation(file);
 
-        RubyClass fileClass = runtime.getFile();
+        RubyClass fileClass = fileClass(context);
         IRubyObject realpath = RubyFile.realpath(context, fileClass, newString(context, file));
         IRubyObject dirname = RubyFile.dirname(context, fileClass, realpath);
         IRubyObject absoluteFeature = RubyFile.expand_path(context, fileClass, relativePath, dirname);
 
-        return RubyKernel.require(context, runtime.getKernel(), absoluteFeature, Block.NULL_BLOCK);
+        return RubyKernel.require(context, kernelModule(context), absoluteFeature, Block.NULL_BLOCK);
     }
 
     @JRubyMethod(name = "load", module = true, visibility = PRIVATE)
@@ -1385,7 +1384,7 @@ public class RubyKernel {
 
     private static IRubyObject rbThrowInternal(ThreadContext context, IRubyObject tag, IRubyObject arg) {
         final Ruby runtime = context.runtime;
-        runtime.getGlobalVariables().set("$!", context.nil);
+        globalVariables(context).set("$!", context.nil);
 
         CatchThrow continuation = context.getActiveCatch(tag);
 
@@ -1555,7 +1554,7 @@ public class RubyKernel {
             }
         }
 
-        context.runtime.getGlobalVariables().setTraceVar(var, proc);
+        globalVariables(context).setTraceVar(var, proc);
 
         return context.nil;
     }
@@ -1563,24 +1562,19 @@ public class RubyKernel {
     @JRubyMethod(required = 1, optional = 1, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject untrace_var(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         int argc = Arity.checkArgumentCount(context, args, 1, 2);
-
         String var = args[0].toString();
 
         // ignore if it's not a global var
-        if (var.charAt(0) != '$') {
-            return context.nil;
-        }
+        if (var.charAt(0) != '$') return context.nil;
 
         if (argc > 1) {
             ArrayList<IRubyObject> success = new ArrayList<>(argc);
             for (int i = 1; i < argc; i++) {
-                if (context.runtime.getGlobalVariables().untraceVar(var, args[i])) {
-                    success.add(args[i]);
-                }
+                if (globalVariables(context).untraceVar(var, args[i])) success.add(args[i]);
             }
             return RubyArray.newArray(context.runtime, success);
         } else {
-            context.runtime.getGlobalVariables().untraceVar(var);
+            globalVariables(context).untraceVar(var);
         }
 
         return context.nil;
@@ -1632,7 +1626,7 @@ public class RubyKernel {
             return enumeratorizeWithSize(context, recv, "loop", RubyKernel::loopSize);
         }
         final Ruby runtime = context.runtime;
-        IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
+        IRubyObject oldExc = globalVariables(context).get("$!"); // Save $!
         try {
             while (true) {
                 block.yieldSpecific(context);
@@ -1643,7 +1637,7 @@ public class RubyKernel {
         catch (RaiseException ex) {
             final RubyClass StopIteration = runtime.getStopIteration();
             if ( StopIteration.isInstance(ex.getException()) ) {
-                runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
+                globalVariables(context).set("$!", oldExc); // Restore $!
                 return ex.getException().callMethod("result");
             }
             else {
@@ -1977,7 +1971,7 @@ public class RubyKernel {
         System.setProperty("user.dir", runtime.getCurrentDirectory());
 
         if (nativeExec) {
-            IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
+            IRubyObject oldExc = globalVariables(context).get("$!"); // Save $!
             try {
                 ShellLauncher.LaunchConfig cfg = new ShellLauncher.LaunchConfig(runtime, args, true);
 
@@ -2024,7 +2018,7 @@ public class RubyKernel {
                 // Only here because native exec could not exec (always -1)
                 nativeFailed = true;
             } catch (RaiseException e) {
-                runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
+                globalVariables(context).set("$!", oldExc); // Restore $!
             } catch (Exception e) {
                 throw runtime.newErrnoENOENTError("cannot execute: " + e.getLocalizedMessage());
             }
