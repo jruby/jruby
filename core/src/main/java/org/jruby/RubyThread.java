@@ -66,6 +66,7 @@ import org.jcodings.Encoding;
 import org.joni.Matcher;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Create;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
@@ -196,6 +197,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private final static AtomicReferenceFieldUpdater<RubyThread, Status> STATUS =
             AtomicReferenceFieldUpdater.newUpdater(RubyThread.class, Status.class, "status");
 
+    private volatile boolean killed = false;
+
     /** Mail slot for cross-thread events */
     private final Queue<IRubyObject> pendingInterruptQueue = new ConcurrentLinkedQueue<>();
 
@@ -278,9 +281,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
                 if (err == UNDEF) {
                     // no error
-                } else if (err instanceof RubyFixnum && (((RubyFixnum) err).getLongValue() == 0 ||
-                        ((RubyFixnum) err).getLongValue() == 1 ||
-                        ((RubyFixnum) err).getLongValue() == 2)) {
+                } else if (err instanceof RubyFixnum fixErr && (fixErr.getLongValue() == 0 ||
+                        fixErr.getLongValue() == 1 ||
+                        fixErr.getLongValue() == 2)) {
                     toKill();
                 } else {
                     if (getStatus() == Status.SLEEP) {
@@ -318,7 +321,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     private void toKill() {
         pendingInterruptClear();
-        STATUS.set(this, Status.ABORTING);
+        killed = true;
+        STATUS.set(this, Status.RUN);
         throwThreadKill();
     }
 
@@ -794,8 +798,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     // CHECK_INTS
     public void pollThreadEvents(ThreadContext context) {
-        killIfAborting();
-
         if (anyInterrupted()) {
             executeInterrupts(context, false);
         }
@@ -803,8 +805,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     // RUBY_VM_CHECK_INTS_BLOCKING
     public void blockingThreadPoll(ThreadContext context) {
-        killIfAborting();
-
         if (pendingInterruptQueue.isEmpty() && !anyInterrupted()) {
             return;
         }
@@ -814,19 +814,16 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         executeInterrupts(context, true);
     }
 
-    private void killIfAborting() {
-        if (status == Status.ABORTING) {
-            // currently aborting, resume abort
-            throwThreadKill();
-        }
-    }
-
     // RUBY_VM_INTERRUPTED_ANY
     private boolean anyInterrupted() {
         return Thread.interrupted() || (interruptFlag & ~interruptMask) != 0;
     }
 
-    private static void throwThreadKill() {
+    /**
+     * MRI: rb_threadptr_to_kill
+     */
+    private void throwThreadKill() {
+        killed = true;
         throw new ThreadKill();
     }
 
@@ -1373,7 +1370,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 result.catString(Integer.toString(line + 1));
             }
             result.cat(' ');
-            result.catString(getStatus().toString().toLowerCase());
+            result.catString(getStatusName(context));
             result.cat('>');
             return result;
         }
@@ -1647,12 +1644,26 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod
     public IRubyObject status(ThreadContext context) {
-        final Status status = getStatus();
-        if (threadImpl.isAlive() && status != Status.DEAD) { // isAlive()
-            return context.runtime.getThreadStatus(status);
+        if (status == Status.DEAD) {
+            return exitingException != null ? context.nil : context.fals;
         }
 
-        return exitingException != null ? context.nil : context.fals;
+        return Create.newString(context, getStatusName(context));
+    }
+
+    private String getStatusName(ThreadContext context) {
+        Ruby runtime = context.runtime;
+        final Status status = getStatus();
+
+        switch (status) {
+            case RUN:
+                if (killed) {
+                    return "aborting";
+                }
+                // fall through
+            default:
+                return status.name().toLowerCase();
+        }
     }
 
     @JRubyMethod(meta = true, omit = true)
@@ -1952,14 +1963,17 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     @JRubyMethod(name = {"kill", "exit", "terminate"})
     public IRubyObject kill() {
         Ruby runtime = getRuntime();
-        // need to reexamine this
-        RubyThread currentThread = runtime.getCurrentContext().getThread();
 
-        if (currentThread == runtime.getThreadService().getMainThread()) {
-            // rb_exit to hard exit process...not quite right for us
+        if (killed == true || status == Status.DEAD) {
+            return this;
         }
 
-        STATUS.set(this, Status.ABORTING);
+        ThreadContext context = runtime.getCurrentContext();
+        RubyThread currentThread = context.getThread();
+
+        if (this == runtime.getThreadService().getMainThread()) {
+            RubyKernel.exit(context, runtime.getKernel(), Helpers.arrayOf(RubyFixnum.zero(runtime)));
+        }
 
         return genericKill(runtime, currentThread);
     }
