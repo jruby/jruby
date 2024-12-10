@@ -87,6 +87,7 @@ default_gems = [
     # ['readline-ext', '0.1.4'],
     ['reline', '0.5.12'],
     # https://github.com/ruby/resolv/issues/19
+    # https://github.com/ruby/resolv/pull/75
     # ['resolv', '0.2.1'],
     ['resolv-replace', '0.1.0'],
     ['rinda', '0.1.1'],
