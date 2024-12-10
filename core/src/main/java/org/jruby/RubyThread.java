@@ -183,7 +183,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     /** Thread statuses */
     public enum Status {
-        RUN, SLEEP, ABORTING, DEAD, NATIVE;
+        RUN, SLEEP, DEAD, NATIVE;
 
         public final ByteList bytes;
 
@@ -1932,9 +1932,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     public void exitSleep() {
-        if (getStatus() != Status.ABORTING) {
-            STATUS.set(this, Status.RUN);
-        }
+        STATUS.set(this, Status.RUN);
     }
 
     private Status getStatus() {
