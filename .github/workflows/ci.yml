@@ -31,7 +31,7 @@ jobs:
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
       - name: bootstrap
-        run: mvn -Pbootstrap clean package
+        run: mvn --no-transfer-progress -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake ${{ matrix.target }}
@@ -57,7 +57,7 @@ jobs:
           java-version: '8'
           cache: 'maven'
       - name: bootstrap
-        run: mvn -Pbootstrap clean package
+        run: mvn --no-transfer-progress -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake ${{ matrix.target }}
@@ -82,7 +82,7 @@ jobs:
           java-version: 8
           cache: 'maven'
       - name: bootstrap
-        run: mvn -Pbootstrap clean package
+        run: mvn --no-transfer-progress -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake test:jruby
@@ -112,7 +112,7 @@ jobs:
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
       - name: bootstrap
-        run: mvn -Pbootstrap clean package
+        run: mvn --no-transfer-progress -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake ${{ matrix.target }}
@@ -139,7 +139,7 @@ jobs:
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
       - name: bootstrap
-        run: mvn -Pbootstrap clean package
+        run: mvn --no-transfer-progress -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: mvn package ${{ matrix.package-flags }}
@@ -169,7 +169,7 @@ jobs:
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
       - name: bootstrap
-        run: mvn -Pbootstrap clean package
+        run: mvn --no-transfer-progress -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: mvn package ${{ matrix.package-flags }}
@@ -196,7 +196,7 @@ jobs:
           java-version: 8
           cache: 'maven'
       - name: bootstrap
-        run: mvn -Pbootstrap clean package
+        run: mvn --no-transfer-progress -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake spec:regression
@@ -224,7 +224,7 @@ jobs:
           java-version: 11
           cache: 'maven'
       - name: bootstrap
-        run: mvn -Pbootstrap clean package
+        run: mvn --no-transfer-progress -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake test:jruby
@@ -305,7 +305,7 @@ jobs:
           java-version: 11
           cache: 'maven'
       - name: bootstrap
-        run: mvn -Pbootstrap clean package
+        run: mvn --no-transfer-progress -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: sequel
@@ -327,7 +327,7 @@ jobs:
           java-version: 8
           cache: 'maven'
       - name: bootstrap
-        run: mvn -Pbootstrap clean package
+        run: mvn --no-transfer-progress -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: concurrent-ruby
@@ -401,7 +401,7 @@ jobs:
           java-version: '17'
           cache: 'maven'
       - name: bootstrap
-        run: mvn -Pbootstrap clean package
+        run: mvn --no-transfer-progress -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby -S bundle install
       - name: test profile
@@ -429,7 +429,7 @@ jobs:
           java-version: '8'
           cache: 'maven'
       - name: bootstrap
-        run: mvn -Pbootstrap clean package
+        run: mvn --no-transfer-progress -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake ${{ matrix.target }}
