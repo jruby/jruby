@@ -521,7 +521,8 @@ public class Java implements Library {
             for ( int i = interfaces.length; --i >= 0; ) {
                 proxy.includeModule(getInterfaceModule(runtime, interfaces[i]));
             }
-            if ( Modifier.isPublic(clazz.getModifiers()) ) {
+            // we don't want to expose JRuby internal generated classes such as org.jruby.gen.InterfaceImpl
+            if (Modifier.isPublic(clazz.getModifiers()) && !clazz.isSynthetic() && !Proxy.isProxyClass(clazz)) {
                 addToJavaPackageModule(proxy);
             }
         }
