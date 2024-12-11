@@ -117,7 +117,7 @@ DO NOT MODIFY - GENERATED CODE
     <joda.time.version>2.12.7</joda.time.version>
     <jruby-launcher.version>1.1.6</jruby-launcher.version>
     <jruby.basedir>${project.basedir}</jruby.basedir>
-    <jruby.plugins.version>3.0.2</jruby.plugins.version>
+    <jruby.plugins.version>3.0.4</jruby.plugins.version>
     <main.basedir>${project.basedir}</main.basedir>
     <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
     <polyglot.dump.readonly>true</polyglot.dump.readonly>
