@@ -20,7 +20,7 @@ DO NOT MODIFY - GENERATED CODE
     <gem.home>${basedir}/ruby/gems/shared</gem.home>
     <jruby.complete.gems>${jruby.complete.home}/lib/ruby/gems/shared</jruby.complete.gems>
     <jruby.complete.home>${project.build.outputDirectory}/META-INF/jruby.home</jruby.complete.home>
-    <jruby.plugins.version>3.0.4</jruby.plugins.version>
+    <jruby.plugins.version>3.0.5</jruby.plugins.version>
     <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
     <polyglot.dump.readonly>true</polyglot.dump.readonly>
   </properties>

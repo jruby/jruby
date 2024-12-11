@@ -2,7 +2,7 @@
 packaging 'war'
 
 # default versions will be overwritten by pom.rb from root directory
-properties( 'jruby.plugins.version' => '3.0.4',
+properties( 'jruby.plugins.version' => '3.0.5',
             'wildfly.version' => '9.0.2.Final',
             'project.build.sourceEncoding' => 'utf-8' )
 
