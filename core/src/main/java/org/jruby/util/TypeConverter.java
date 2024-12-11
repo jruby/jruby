@@ -52,6 +52,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Access.arrayClass;
+import static org.jruby.api.Access.hashClass;
+import static org.jruby.api.Access.stringClass;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Error.argumentError;
@@ -335,7 +337,7 @@ public class TypeConverter {
     // rb_check_hash_type
     public static IRubyObject checkHashType(ThreadContext context, JavaSites.CheckedSites sites, IRubyObject obj) {
         if (obj instanceof RubyHash) return obj;
-        return TypeConverter.convertToTypeWithCheck(context, obj, context.runtime.getHash(), sites);
+        return TypeConverter.convertToTypeWithCheck(context, obj, hashClass(context), sites);
     }
 
     // rb_check_string_type
@@ -347,7 +349,7 @@ public class TypeConverter {
     // rb_check_string_type
     public static IRubyObject checkStringType(ThreadContext context, JavaSites.CheckedSites sites, IRubyObject obj) {
         if (obj instanceof RubyString) return obj;
-        return TypeConverter.convertToTypeWithCheck(context, obj, context.runtime.getString(), sites);
+        return TypeConverter.convertToTypeWithCheck(context, obj, stringClass(context), sites);
     }
 
     // rb_check_string_type

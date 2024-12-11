@@ -97,6 +97,7 @@ import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyEnumerator.enumWithSize;
 import static org.jruby.api.Access.arrayClass;
 import static org.jruby.api.Access.globalVariables;
+import static org.jruby.api.Access.stringClass;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newHash;
 import static org.jruby.api.Create.newSmallHash;
@@ -4141,7 +4142,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             this.context = context;
             if ( honorOverride && context != null ) {
                 this.fixnumBypass = !honorOverride || context.runtime.getFixnum().isMethodBuiltin("<=>");
-                this.stringBypass = !honorOverride || context.runtime.getString().isMethodBuiltin("<=>");
+                this.stringBypass = !honorOverride || stringClass(context).isMethodBuiltin("<=>");
             }
             else { // no-opt
                 this.fixnumBypass = false;

@@ -111,7 +111,7 @@ public class RubyGlobal {
         var context = runtime.getCurrentContext();
         var objectClass = objectClass(context);
         // define ARGV and $* for this runtime
-        String[] argv = runtime.getInstanceConfig().getArgv();
+        String[] argv = instanceConfig(context).getArgv();
         var argvArray = newRawArray(context, argv.length);
 
         for (String arg : argv) {
@@ -1005,9 +1005,8 @@ public class RubyGlobal {
         public IRubyObject set(IRubyObject value) {
             var context = runtime.getCurrentContext();
             RubyArgsFile.inplace_mode_set(context, argsFile(context), value);
-            if (value.isNil() || !value.isTrue()) {
-                runtime.getInstanceConfig().setInPlaceBackupExtension(null);
-            }
+            if (value.isNil() || !value.isTrue()) instanceConfig(context).setInPlaceBackupExtension(null);
+
             return super.set(value);
         }
     }

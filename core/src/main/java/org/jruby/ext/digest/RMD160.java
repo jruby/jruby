@@ -31,11 +31,13 @@ package org.jruby.ext.digest;
 
 import java.io.IOException;
 import org.jruby.Ruby;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.load.Library;
 
 public class RMD160 implements Library {
 
     public void load(final Ruby runtime, boolean wrap) throws IOException {
-        org.jruby.ext.digest.RubyDigest.createDigestRMD160(runtime);
+        var context = runtime.getCurrentContext();
+        org.jruby.ext.digest.RubyDigest.createDigestRMD160(context);
     }
 }

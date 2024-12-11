@@ -112,8 +112,13 @@ import static org.jruby.anno.FrameField.VISIBILITY;
 import static org.jruby.api.Access.argsFile;
 import static org.jruby.api.Access.fileClass;
 import static org.jruby.api.Access.globalVariables;
+import static org.jruby.api.Access.ioClass;
 import static org.jruby.api.Access.kernelModule;
+import static org.jruby.api.Access.loadService;
 import static org.jruby.api.Access.objectClass;
+import static org.jruby.api.Access.runtimeErrorClass;
+import static org.jruby.api.Access.stringClass;
+import static org.jruby.api.Access.symbolClass;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
@@ -274,7 +279,7 @@ public class RubyKernel {
                     if (cmd != context.nil) {
                         if (PopenExecutor.nativePopenAvailable(context.runtime)) {
                             args[0] = cmd;
-                            return PopenExecutor.popen(context, args, context.runtime.getIO(), block);
+                            return PopenExecutor.popen(context, args, ioClass(context), block);
                         }
 
                         throw argumentError(context, "pipe open is not supported without native subprocess logic");
@@ -618,12 +623,11 @@ public class RubyKernel {
 
     @JRubyMethod(name = "String", required = 1, module = true, visibility = PRIVATE)
     public static IRubyObject new_string(ThreadContext context, IRubyObject recv, IRubyObject object) {
-        Ruby runtime = context.runtime;
         KernelSites sites = sites(context);
 
-        IRubyObject tmp = TypeConverter.checkStringType(context, sites.to_str_checked, object, runtime.getString());
+        IRubyObject tmp = TypeConverter.checkStringType(context, sites.to_str_checked, object, stringClass(context));
         if (tmp == context.nil) {
-            tmp = TypeConverter.convertToType(context, object, runtime.getString(), sites(context).to_s_checked);
+            tmp = TypeConverter.convertToType(context, object, stringClass(context), sites(context).to_s_checked);
         }
         return tmp;
     }
@@ -1030,8 +1034,6 @@ public class RubyKernel {
     @JRubyMethod(name = {"raise", "fail"}, optional = 3, checkArity = false, module = true, visibility = PRIVATE, omit = true)
     public static IRubyObject raise(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         int argc = Arity.checkArgumentCount(context, args, 0, 3);
-
-        final Ruby runtime = context.runtime;
         boolean forceCause = false;
 
         // semi extract_raise_opts :
@@ -1062,7 +1064,7 @@ public class RubyKernel {
             case 0:
                 IRubyObject lastException = globalVariables(context).get("$!");
                 if (lastException.isNil()) {
-                    raise = RaiseException.from(runtime, runtime.getRuntimeError(), "");
+                    raise = RaiseException.from(context.runtime, runtimeErrorClass(context), "");
                 } else {
                     // non RubyException value is allowed to be assigned as $!.
                     raise = ((RubyException) lastException).toThrowable();
@@ -1070,7 +1072,7 @@ public class RubyKernel {
                 break;
             case 1:
                 if (args[0] instanceof RubyString) {
-                    raise = ((RubyException) runtime.getRuntimeError().newInstance(context, args, block)).toThrowable();
+                    raise = ((RubyException) runtimeErrorClass(context).newInstance(context, args, block)).toThrowable();
                 } else {
                     raise = convertToException(context, args[0], null).toThrowable();
                 }
@@ -1086,7 +1088,7 @@ public class RubyKernel {
         }
 
         var exception = raise.getException();
-        if (runtime.isDebug()) printExceptionSummary(context, exception);
+        if (context.runtime.isDebug()) printExceptionSummary(context, exception);
         if (forceCause || argc > 0 && exception.getCause() == null && cause != exception) exception.setCause(cause);
 
         throw raise;
@@ -1140,7 +1142,7 @@ public class RubyKernel {
         String msg = String.format("Exception '%s' at %s:%s - %s\n",
                 rEx.getMetaClass(),
                 firstElement.getFileName(), firstElement.getLineNumber(),
-                TypeConverter.convertToType(rEx, context.runtime.getString(), "to_s"));
+                TypeConverter.convertToType(rEx, stringClass(context), "to_s"));
 
         context.runtime.getErrorStream().print(msg);
     }
@@ -1161,8 +1163,8 @@ public class RubyKernel {
     }
 
     private static IRubyObject requireCommon(ThreadContext context, RubyString name, Block block) {
-        RubyString path = checkEmbeddedNulls(context, name);
-        return asBoolean(context, context.runtime.getLoadService().require(path.toString()));
+        String path = checkEmbeddedNulls(context, name).toString();
+        return asBoolean(context, loadService(context).require(path));
     }
 
     @JRubyMethod(name = "require_relative", module = true, visibility = PRIVATE, reads = SCOPE)
@@ -1174,7 +1176,7 @@ public class RubyKernel {
             throw context.runtime.newLoadError("cannot infer basepath");
         }
 
-        file = context.runtime.getLoadService().getPathForLocation(file);
+        file = loadService(context).getPathForLocation(file);
 
         RubyClass fileClass = fileClass(context);
         IRubyObject realpath = RubyFile.realpath(context, fileClass, newString(context, file));
@@ -1204,19 +1206,18 @@ public class RubyKernel {
     }
 
     private static IRubyObject loadCommon(ThreadContext context, RubyString path, boolean wrap) {
-        context.runtime.getLoadService().load(path.toString(), wrap);
+        loadService(context).load(path.toString(), wrap);
 
         return context.tru;
     }
 
     private static IRubyObject loadCommon(ThreadContext context, RubyString path, IRubyObject wrap) {
         String file = path.toString();
-        LoadService loadService = context.runtime.getLoadService();
 
         if (wrap.isNil() || wrap instanceof RubyBoolean) {
-            loadService.load(file, wrap.isTrue());
+            loadService(context).load(file, wrap.isTrue());
         } else {
-            loadService.load(file, wrap);
+            loadService(context).load(file, wrap);
         }
 
         return context.tru;
@@ -1466,7 +1467,7 @@ public class RubyKernel {
 
                 if (ret[1] != null) {
                     category = ret[1].isNil() ?
-                            context.nil : TypeConverter.convertToType(ret[1], context.runtime.getSymbol(), "to_sym");
+                            context.nil : TypeConverter.convertToType(ret[1], symbolClass(context), "to_sym");
                 }
             }
         }
@@ -2088,7 +2089,7 @@ public class RubyKernel {
         // NOTE: not using __FILE__ = context.getFile() since it won't work with JIT
         String __FILE__ = context.getSingleBacktrace().getFileName();
 
-        __FILE__ = context.runtime.getLoadService().getPathForLocation(__FILE__);
+        __FILE__ = loadService(context).getPathForLocation(__FILE__);
 
         RubyString path = RubyFile.expandPathInternal(context, newString(context, __FILE__), null, false, true);
         return newString(context, RubyFile.dirname(context, path.asJavaString()));

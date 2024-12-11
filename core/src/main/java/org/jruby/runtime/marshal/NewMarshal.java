@@ -70,6 +70,7 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 
 import static org.jruby.RubyBasicObject.getMetaClass;
+import static org.jruby.api.Access.stringClass;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Error.*;
 import static org.jruby.runtime.marshal.MarshalCommon.TYPE_IVAR;
@@ -542,16 +543,16 @@ public class NewMarshal {
     }
 
     public void writeEncoding(ThreadContext context, RubyOutputStream out, Encoding encoding) {
-        Ruby runtime = context.runtime;
+        var symbolTable = context.runtime.getSymbolTable();
         if (encoding == null || encoding == USASCIIEncoding.INSTANCE) {
-            writeAndRegisterSymbol(out, runtime.getSymbolTable().getEncodingSymbolE());
-            writeObjectData(context, out, runtime.getFalse());
+            writeAndRegisterSymbol(out, symbolTable.getEncodingSymbolE());
+            writeObjectData(context, out, context.fals);
         } else if (encoding == UTF8Encoding.INSTANCE) {
-            writeAndRegisterSymbol(out, runtime.getSymbolTable().getEncodingSymbolE());
-            writeObjectData(context, out, runtime.getTrue());
+            writeAndRegisterSymbol(out, symbolTable.getEncodingSymbolE());
+            writeObjectData(context, out, context.tru);
         } else {
-            writeAndRegisterSymbol(out, runtime.getSymbolTable().getEncodingSymbol());
-            RubyString encodingString = new RubyString(runtime, runtime.getString(), encoding.getName());
+            writeAndRegisterSymbol(out, symbolTable.getEncodingSymbol());
+            RubyString encodingString = new RubyString(context.runtime, stringClass(context), encoding.getName());
             writeObjectData(context, out, encodingString);
         }
     }

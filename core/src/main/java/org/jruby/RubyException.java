@@ -447,7 +447,7 @@ public class RubyException extends RubyObject {
     }
 
     public void captureBacktrace(ThreadContext context) {
-        backtrace.backtraceData = context.runtime.getInstanceConfig().getTraceType().getBacktrace(context);
+        backtrace.backtraceData = instanceConfig(context).getTraceType().getBacktrace(context);
     }
 
     public IRubyObject getBacktrace() {
@@ -557,7 +557,7 @@ public class RubyException extends RubyObject {
     public void prepareIntegratedBacktrace(ThreadContext context, StackTraceElement[] javaTrace) {
         // if it's null, build a backtrace
         if (backtrace.backtraceData == null) {
-            backtrace.backtraceData = context.runtime.getInstanceConfig().getTraceType().getIntegratedBacktrace(context, javaTrace);
+            backtrace.backtraceData = instanceConfig(context).getTraceType().getIntegratedBacktrace(context, javaTrace);
         }
     }
 

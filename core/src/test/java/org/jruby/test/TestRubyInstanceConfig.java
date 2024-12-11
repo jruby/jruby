@@ -40,6 +40,8 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.load.LoadService;
 
+import static org.jruby.api.Access.loadService;
+
 /**
  * This should be filled up with more tests for RubyInstanceConfig later
  */
@@ -78,8 +80,9 @@ public class TestRubyInstanceConfig extends Base {
             return new NullLoadService(runtime);
         });
         Ruby ruby = Ruby.newInstance(config);
+        var context = ruby.getCurrentContext();
         assertTrue(called[0]);
-        assertEquals(NullLoadService.class, ruby.getLoadService().getClass());
+        assertEquals(NullLoadService.class, loadService(context).getClass());
     }
 
     public void testGetScriptSource() throws Exception {

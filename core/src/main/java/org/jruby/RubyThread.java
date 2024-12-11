@@ -98,7 +98,10 @@ import org.jruby.common.IRubyWarnings.ID;
 
 import static org.jruby.api.Access.exceptionClass;
 import static org.jruby.api.Access.globalVariables;
+import static org.jruby.api.Access.instanceConfig;
+import static org.jruby.api.Access.loadService;
 import static org.jruby.api.Access.objectClass;
+import static org.jruby.api.Access.runtimeErrorClass;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
@@ -492,7 +495,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         @JRubyMethod(module = true)
         public static IRubyObject limit(ThreadContext context, IRubyObject self) {
-            return asFixnum(context, context.runtime.getInstanceConfig().getBacktraceLimit());
+            return asFixnum(context, instanceConfig(context).getBacktraceLimit());
         }
     }
 
@@ -509,7 +512,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         @JRubyMethod
         public IRubyObject absolute_path(ThreadContext context) {
-            return newString(context, context.runtime.getLoadService().getPathForLocation(element.getFileName()));
+            return newString(context, loadService(context).getPathForLocation(element.getFileName()));
         }
 
         @JRubyMethod
@@ -1527,13 +1530,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     public static IRubyObject prepareRaiseException(ThreadContext context, IRubyObject[] args) {
-        final Ruby runtime = context.runtime;
         IRubyObject errorInfo = context.getErrorInfo();
 
         if (args.length == 0) {
             if (errorInfo.isNil()) {
                 // We force RaiseException here to populate backtrace
-                return RaiseException.from(runtime, runtime.getRuntimeError(), "").getException();
+                return RaiseException.from(context.runtime, runtimeErrorClass(context), "").getException();
             }
             return errorInfo;
         }
@@ -1544,7 +1546,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         final RubyException exception;
         if (args.length == 1) {
             if (arg instanceof RubyString) {
-                tmp = runtime.getRuntimeError().newInstance(context, args, Block.NULL_BLOCK);
+                tmp = runtimeErrorClass(context).newInstance(context, args, Block.NULL_BLOCK);
             } else if (arg instanceof ConcreteJavaProxy ) {
                 return arg;
             } else {

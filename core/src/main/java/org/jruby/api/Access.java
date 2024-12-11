@@ -237,6 +237,15 @@ public class Access {
     }
 
     /**
+     * Retrieve the instance of the class Symbol
+     * @param context the current thread context
+     * @return the Class
+     */
+    public static RubyClass symbolClass(ThreadContext context) {
+        return context.runtime.getSymbol();
+    }
+
+    /**
      * Retrieve the instance of the class Time
      * @param context the current thread context
      * @return the Class

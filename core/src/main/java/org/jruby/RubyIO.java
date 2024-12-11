@@ -4436,7 +4436,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
             // if also readable, attach as tied IO; otherwise, primary IO
             if (openFile.isReadable()) {
-                RubyIO writeIO = new RubyIO(context.runtime, context.runtime.getIO());
+                RubyIO writeIO = new RubyIO(context.runtime, ioClass(context));
                 writeIO.initializeCommon(context, pipe, asFixnum(context, OpenFlags.O_WRONLY.longValue()), context.nil);
 
                 openFile.tiedIOForWriting = writeIO;
@@ -5789,7 +5789,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @Deprecated
     public static IRubyObject select_static(ThreadContext context, Ruby runtime, IRubyObject[] args) {
-        return select(context, runtime.getIO(), args);
+        return select(context, ioClass(context), args);
     }
 
     @Deprecated
@@ -5799,7 +5799,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @Deprecated
     public static IRubyObject ioOpen(ThreadContext context, IRubyObject filename, IRubyObject vmode, IRubyObject vperm, IRubyObject opt) {
-        return ioOpen(context, context.runtime.getIO(), filename, vmode, vperm, opt);
+        return ioOpen(context, ioClass(context), filename, vmode, vperm, opt);
     }
 
     @Deprecated

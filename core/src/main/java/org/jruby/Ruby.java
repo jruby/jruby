@@ -222,6 +222,7 @@ import static org.jruby.RubyBoolean.TRUE_BYTES;
 import static org.jruby.RubyRandom.newRandom;
 import static org.jruby.RubyRandom.randomSeed;
 import static org.jruby.api.Access.errnoModule;
+import static org.jruby.api.Access.loadService;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newEmptyString;
 import static org.jruby.api.Error.*;
@@ -376,7 +377,7 @@ public final class Ruby implements Constantizable {
         falseClass = RubyBoolean.createFalseClass(this, objectClass);
         trueClass = RubyBoolean.createTrueClass(this, objectClass);
 
-        nilObject = new RubyNil(this);
+        nilObject = new RubyNil(this, nilClass);
         nilPrefilledArray = new IRubyObject[NIL_PREFILLED_ARRAY_SIZE];
         for (int i=0; i<NIL_PREFILLED_ARRAY_SIZE; i++) nilPrefilledArray[i] = nilObject;
         singleNilArray = new IRubyObject[] {nilObject};
@@ -537,7 +538,7 @@ public final class Ruby implements Constantizable {
         envObject = RubyGlobal.createGlobalsAndENV(context, globalVariables, config);
 
         // Prepare LoadService and load path
-        getLoadService().init(this.config.getLoadPaths());
+        loadService(context).init(this.config.getLoadPaths());
 
         // out of base boot mode
         coreIsBooted = true;
@@ -547,9 +548,7 @@ public final class Ruby implements Constantizable {
 
         SecurityHelper.checkCryptoRestrictions(this);
 
-        if(this.config.isProfiling()) {
-            initProfiling();
-        }
+        if (this.config.isProfiling()) initProfiling(context);
 
         if (this.config.getLoadGemfile()) {
             loadBundler();
@@ -563,19 +562,19 @@ public final class Ruby implements Constantizable {
             if (Platform.IS_WINDOWS) {
                 LOG.warn("env USE_SUBSPAWN=true is unsupported on Windows at this time");
             } else {
-                getLoadService().require("subspawn/replace-builtin");
+                loadService(context).require("subspawn/replace-builtin");
             }
         }
 
         // FIXME: How should this be loaded as it is not really stdlib but depends on stdlib to be loaded.
         try {
-            getLoadService().require("time");
+            loadService(context).require("time");
         } catch (LoadError e) {} // work-around failed classpath only test (which must be omitting stdlib somehow)
     }
 
-    private void initProfiling() {
+    private void initProfiling(ThreadContext context) {
         // additional twiddling for profiled mode
-        getLoadService().require("jruby/profiler/shutdown_hook");
+        loadService(context).require("jruby/profiler/shutdown_hook");
 
         // recache core methods, since they'll have profiling wrappers now
         kernelModule.invalidateCacheDescendants(); // to avoid already-cached methods

@@ -42,6 +42,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.collections.IntList;
 
+import static org.jruby.api.Access.hashClass;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.runtimeError;
@@ -59,11 +60,8 @@ public class CoverageModule {
     @JRubyMethod(module = true, optional = 1, keywords = true, checkArity = false)
     public static IRubyObject setup(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 0, 1);
-
-        Ruby runtime = context.runtime;
         int mode = 0;
-
-        CoverageData data = runtime.getCoverageData();
+        CoverageData data = context.runtime.getCoverageData();
 
         if (data.getCurrentState() != IDLE) throw runtimeError(context, "coverage measurement is already setup");
 
@@ -71,7 +69,7 @@ public class CoverageModule {
             boolean keyword = hasKeywords(ThreadContext.resetCallInfo(context));
 
             if (keyword) {
-                RubyHash keywords = (RubyHash) TypeConverter.convertToType(args[0], runtime.getHash(), "to_hash");
+                RubyHash keywords = (RubyHash) TypeConverter.convertToType(args[0], hashClass(context), "to_hash");
 
                 if (ArgsUtil.extractKeywordArg(context, "lines", keywords).isTrue()) {
                     mode |= LINES;
@@ -80,11 +78,11 @@ public class CoverageModule {
                     mode |= EVAL;
                 }
                 if (ArgsUtil.extractKeywordArg(context, "branches", keywords).isTrue()) {
-                    runtime.getWarnings().warn("branch coverage is not supported");
+                    context.runtime.getWarnings().warn("branch coverage is not supported");
                     mode |= CoverageData.BRANCHES;
                 }
                 if (ArgsUtil.extractKeywordArg(context, "methods", keywords).isTrue()) {
-                    runtime.getWarnings().warn("method coverage is not supported");
+                    context.runtime.getWarnings().warn("method coverage is not supported");
                     mode |= CoverageData.METHODS;
                 }
                 if (ArgsUtil.extractKeywordArg(context, "oneshot_lines", keywords).isTrue()) {
@@ -96,7 +94,7 @@ public class CoverageModule {
             } else if (args[0] instanceof RubySymbol && args[0] == asSymbol(context, "all")) {
                 mode |= CoverageData.ALL;
             } else {
-                throw typeError(context, str(runtime, "no implicit conversion of ", args[0].getMetaClass(), " into Hash"));
+                throw typeError(context, str(context.runtime, "no implicit conversion of ", args[0].getMetaClass(), " into Hash"));
             }
         }
 
@@ -153,7 +151,7 @@ public class CoverageModule {
         boolean clear = true;
 
         if (argc > 0 && hasKeywords(ThreadContext.resetCallInfo(context))) {
-            RubyHash keywords = (RubyHash) TypeConverter.convertToType(args[0], context.runtime.getHash(), "to_hash");
+            RubyHash keywords = (RubyHash) TypeConverter.convertToType(args[0], hashClass(context), "to_hash");
             stop = ArgsUtil.extractKeywordArg(context, "stop", keywords).isTrue();
             clear = ArgsUtil.extractKeywordArg(context, "clear", keywords).isTrue();
         }

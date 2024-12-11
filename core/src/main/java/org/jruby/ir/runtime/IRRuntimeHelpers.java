@@ -92,7 +92,11 @@ import org.objectweb.asm.Type;
 
 import static org.jruby.api.Access.arrayClass;
 import static org.jruby.api.Access.globalVariables;
+import static org.jruby.api.Access.hashClass;
+import static org.jruby.api.Access.instanceConfig;
 import static org.jruby.api.Access.objectClass;
+import static org.jruby.api.Access.stringClass;
+import static org.jruby.api.Access.symbolClass;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
@@ -1325,7 +1329,7 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static IRubyObject keywordRestOnHash(ThreadContext context, IRubyObject rest) {
-        TypeConverter.checkType(context, rest, context.runtime.getHash());
+        TypeConverter.checkType(context, rest, hashClass(context));
         return ((RubyHash) rest).dupFast(context);
     }
 
@@ -1794,7 +1798,7 @@ public class IRRuntimeHelpers {
         if (method.maybeUsingRefinements()) method.getStaticScope().captureParentRefinements(context);
 
         DynamicMethod newMethod;
-        if (context.runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.OFF) {
+        if (instanceConfig(context).getCompileMode() == RubyInstanceConfig.CompileMode.OFF) {
             newMethod = new InterpretedIRMethod(method, Visibility.PUBLIC, rubyClass);
         } else {
             newMethod = new MixedModeIRMethod(method, Visibility.PUBLIC, rubyClass);
@@ -1864,7 +1868,7 @@ public class IRRuntimeHelpers {
 
         if (method.maybeUsingRefinements()) method.getStaticScope().captureParentRefinements(context);
 
-        DynamicMethod newMethod = context.runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.OFF ?
+        DynamicMethod newMethod = instanceConfig(context).getCompileMode() == RubyInstanceConfig.CompileMode.OFF ?
             new InterpretedIRMethod(method, newVisibility, rubyClass) : new MixedModeIRMethod(method, newVisibility, rubyClass);
 
         Helpers.addInstanceMethod(rubyClass, methodName, newMethod, currVisibility, context);
@@ -2389,8 +2393,8 @@ public class IRRuntimeHelpers {
     public static RubyString newFrozenString(ThreadContext context, ByteList bytelist, int coderange, String file, int line) {
         Ruby runtime = context.runtime;
 
-        if (runtime.getInstanceConfig().isDebuggingFrozenStringLiteral()) {
-            return RubyString.newDebugFrozenString(runtime, runtime.getString(), bytelist, coderange, file, line + 1);
+        if (instanceConfig(context).isDebuggingFrozenStringLiteral()) {
+            return RubyString.newDebugFrozenString(runtime, stringClass(context), bytelist, coderange, file, line + 1);
         }
 
         return runtime.freezeAndDedupString(RubyString.newString(runtime, bytelist, coderange));
@@ -2574,7 +2578,7 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static RubyClass getHash(ThreadContext context) {
-        return context.runtime.getHash();
+        return hashClass(context);
     }
 
     @JIT
@@ -2584,7 +2588,7 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static RubyClass getSymbol(ThreadContext context) {
-        return context.runtime.getSymbol();
+        return symbolClass(context);
     }
 
     @JIT @Interp

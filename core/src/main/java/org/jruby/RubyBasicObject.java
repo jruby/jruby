@@ -69,6 +69,7 @@ import static org.jruby.anno.FrameField.*;
 import static org.jruby.api.Access.arrayClass;
 import static org.jruby.api.Access.globalVariables;
 import static org.jruby.api.Access.hashClass;
+import static org.jruby.api.Access.stringClass;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
@@ -718,7 +719,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         Ruby runtime = metaClass.runtime;
         ThreadContext context = runtime.getCurrentContext();
         BasicObjectSites sites = sites(context);
-        return (RubyString) TypeConverter.convertToType(context, this, runtime.getString(), sites.to_str_checked);
+        return (RubyString) TypeConverter.convertToType(context, this, stringClass(context), sites.to_str_checked);
     }
 
     /**

@@ -71,6 +71,7 @@ import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyObject.equalInternal;
 import static org.jruby.api.Access.arrayClass;
 import static org.jruby.api.Access.enumerableModule;
+import static org.jruby.api.Access.hashClass;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Convert.numericToLong;
@@ -432,7 +433,7 @@ public class RubyEnumerable {
 
     @JRubyMethod
     public static IRubyObject tally(ThreadContext context, IRubyObject self, IRubyObject hashArg) {
-        RubyHash result = (RubyHash) TypeConverter.convertToType(hashArg, context.runtime.getHash(), "to_hash");
+        RubyHash result = (RubyHash) TypeConverter.convertToType(hashArg, hashClass(context), "to_hash");
         result.checkFrozen();
         callEach(context, eachSite(context), self, Signature.NO_ARGUMENTS, new TallyCallback(result));
         return result;

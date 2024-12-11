@@ -59,6 +59,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
+import static org.jruby.api.Access.loadService;
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Define.defineModule;
@@ -200,47 +201,43 @@ public class RubyDigest {
     @JRubyClass(name="Digest::SHA512", parent="Digest::Base")
     public static class SHA512 {}
 
-    public static void createDigestMD5(Ruby runtime) {
-        var context = runtime.getCurrentContext();
-        runtime.getLoadService().require("digest");
-        RubyModule Digest = runtime.getModule("Digest");
+    public static void createDigestMD5(ThreadContext context) {
+        loadService(context).require("digest");
+        RubyModule Digest = context.runtime.getModule("Digest");
         RubyClass Base = Digest.getClass("Base");
         RubyClass MD5 = Digest.defineClassUnder(context, "MD5", Base, Base.getAllocator());
         MD5.setInternalVariable("metadata", new Metadata("MD5", 64));
     }
 
-    public static void createDigestRMD160(Ruby runtime) {
-        var context = runtime.getCurrentContext();
-        runtime.getLoadService().require("digest");
+    public static void createDigestRMD160(ThreadContext context) {
+        loadService(context).require("digest");
         if(provider == null) {
-            throw runtime.newLoadError("RMD160 not supported without BouncyCastle");
+            throw context.runtime.newLoadError("RMD160 not supported without BouncyCastle");
         }
-        RubyModule Digest = runtime.getModule("Digest");
+        RubyModule Digest = context.runtime.getModule("Digest");
         RubyClass Base = Digest.getClass("Base");
         RubyClass RMD160 = Digest.defineClassUnder(context, "RMD160", Base, Base.getAllocator());
         RMD160.setInternalVariable("metadata", new Metadata("RIPEMD160", 64));
     }
 
-    public static void createDigestSHA1(Ruby runtime) {
-        var context = runtime.getCurrentContext();
-        runtime.getLoadService().require("digest");
-        RubyModule Digest = runtime.getModule("Digest");
+    public static void createDigestSHA1(ThreadContext context) {
+        loadService(context).require("digest");
+        RubyModule Digest = context.runtime.getModule("Digest");
         RubyClass Base = Digest.getClass("Base");
         RubyClass SHA1 = Digest.defineClassUnder(context, "SHA1", Base, Base.getAllocator());
         SHA1.setInternalVariable("metadata", new Metadata("SHA1", 64));
     }
 
-    public static void createDigestSHA2(Ruby runtime) {
-        var context = runtime.getCurrentContext();
-        runtime.getLoadService().require("digest");
+    public static void createDigestSHA2(ThreadContext context) {
+        loadService(context).require("digest");
         try {
             createMessageDigest("SHA-256");
         } catch (NoSuchAlgorithmException e) {
-            RaiseException ex = runtime.newLoadError("SHA2 not supported");
+            RaiseException ex = context.runtime.newLoadError("SHA2 not supported");
             ex.initCause(e);
             throw ex;
         }
-        final RubyModule Digest = runtime.getModule("Digest");
+        final RubyModule Digest = context.runtime.getModule("Digest");
         final RubyClass Base = Digest.getClass("Base");
         RubyClass SHA256 = Digest.defineClassUnder(context, "SHA256", Base, Base.getAllocator());
         SHA256.setInternalVariable("metadata", new Metadata("SHA-256", 64));
@@ -250,10 +247,9 @@ public class RubyDigest {
         SHA512.setInternalVariable("metadata", new Metadata("SHA-512", 128));
     }
 
-    public static void createDigestBubbleBabble(Ruby runtime) {
-        var context = runtime.getCurrentContext();
-        runtime.getLoadService().require("digest");
-        RubyModule Digest = runtime.getModule("Digest");
+    public static void createDigestBubbleBabble(ThreadContext context) {
+        loadService(context).require("digest");
+        RubyModule Digest = context.runtime.getModule("Digest");
         RubyClass Base = Digest.getClass("Base");
         RubyClass MD5 = Digest.defineClassUnder(context, "BubbleBabble", Base, Base.getAllocator());
         MD5.setInternalVariable("metadata", new Metadata("BubbleBabble", 64));

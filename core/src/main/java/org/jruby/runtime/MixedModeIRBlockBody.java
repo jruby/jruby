@@ -17,6 +17,8 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
+import static org.jruby.api.Access.instanceConfig;
+
 public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<CompiledIRBlockBody> {
     private static final Logger LOG = LoggerFactory.getLogger(MixedModeIRBlockBody.class);
 
@@ -144,12 +146,11 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
     }
 
     private void promoteToFullBuild(ThreadContext context) {
-        final Ruby runtime = context.runtime;
-        if (runtime.isBooting() && !Options.JIT_KERNEL.load()) return; // don't JIT during runtime boot
+        if (context.runtime.isBooting() && !Options.JIT_KERNEL.load()) return; // don't JIT during runtime boot
 
         if (this.callCount < 0) return;
         // we don't synchronize callCount++ it does not matter if count isn't accurate
-        if (this.callCount++ >= runtime.getInstanceConfig().getJitThreshold()) {
+        if (this.callCount++ >= instanceConfig(context).getJitThreshold()) {
             synchronized (this) { // disable same jit tasks from entering queue twice
                 if (this.callCount >= 0) {
                     this.callCount = Integer.MIN_VALUE; // so that callCount++ stays < 0
@@ -167,7 +168,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
                         return; // do not JIT if we don't have an explicit protocol
                     }
 
-                    runtime.getJITCompiler().buildThresholdReached(context, this);
+                    context.runtime.getJITCompiler().buildThresholdReached(context, this);
                 }
             }
         }

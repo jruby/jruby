@@ -197,7 +197,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod(name = "try_convert", meta = true)
     public static IRubyObject try_convert(ThreadContext context, IRubyObject recv, IRubyObject args) {
-        return TypeConverter.convertToTypeWithCheck(args, context.runtime.getHash(), "to_hash");
+        return TypeConverter.convertToTypeWithCheck(args, hashClass(context), "to_hash");
     }
 
     /** rb_hash_new
@@ -1134,7 +1134,7 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod
     public RubyHash to_h(ThreadContext context, Block block) {
         if (block.isGiven()) return to_h_block(context, block);
-        return getType() == context.runtime.getHash() ? this : Create.newHash(context).replace(context, this);
+        return getType() == hashClass(context) ? this : Create.newHash(context).replace(context, this);
     }
 
     protected RubyHash to_h_block(ThreadContext context, Block block) {
@@ -1692,7 +1692,7 @@ public class RubyHash extends RubyObject implements Map {
         }
 
         IRubyObject transformHash = args.length > 0 ?
-                TypeConverter.convertToTypeWithCheck(args[0], context.runtime.getHash(), "to_hash") :
+                TypeConverter.convertToTypeWithCheck(args[0], hashClass(context), "to_hash") :
                 context.nil;
         RubyHash result = Create.newHash(context);
 
@@ -1712,9 +1712,7 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     private RubyHash hashCopyWithIdentity(ThreadContext context) {
-        Ruby runtime = context.runtime;
-
-        RubyHash copy = new RubyHash(runtime, runtime.getHash());
+        RubyHash copy = new RubyHash(context.runtime, hashClass(context));
 
         copy.replaceWith(context, this);
 
@@ -1733,7 +1731,7 @@ public class RubyHash extends RubyObject implements Map {
         }
 
         IRubyObject transformHash = args.length > 0 ?
-                TypeConverter.convertToTypeWithCheck(args[0], context.runtime.getHash(), "to_hash") :
+                TypeConverter.convertToTypeWithCheck(args[0], hashClass(context), "to_hash") :
                 context.nil;
         modify();
 
@@ -2473,7 +2471,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod(meta = true)
     public static IRubyObject ruby2_keywords_hash(ThreadContext context, IRubyObject _self, IRubyObject arg) {
-        TypeConverter.checkType(context, arg, context.runtime.getHash());
+        TypeConverter.checkType(context, arg, hashClass(context));
 
         RubyHash hash = (RubyHash) arg.dup();
         hash.setRuby2KeywordHash(true);
@@ -2483,7 +2481,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod(meta = true, name = "ruby2_keywords_hash?")
     public static IRubyObject ruby2_keywords_hash_p(ThreadContext context, IRubyObject _self, IRubyObject arg) {
-        TypeConverter.checkType(context, arg, context.runtime.getHash());
+        TypeConverter.checkType(context, arg, hashClass(context));
 
         return asBoolean(context, ((RubyHash) arg).isRuby2KeywordHash());
     }

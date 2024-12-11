@@ -14,6 +14,7 @@ import java.util.List;
 import static org.jruby.api.Access.arrayClass;
 import static org.jruby.api.Access.hashClass;
 import static org.jruby.api.Access.objectClass;
+import static org.jruby.api.Access.symbolClass;
 
 /**
  * Reference to common builtin types we care about: Object, Array, Hash.  Tends to be used
@@ -87,7 +88,7 @@ public class BuiltinClass extends Operand {
             case ARRAY -> arrayClass(context);
             case HASH -> hashClass(context);
             case OBJECT -> objectClass(context);
-            case SYMBOL -> context.runtime.getSymbol();
+            case SYMBOL -> symbolClass(context);
             default -> throw new RuntimeException("BuiltinClass has unknown type");
         };
     }

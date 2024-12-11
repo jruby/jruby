@@ -81,6 +81,8 @@ import java.util.zip.ZipFile;
 
 import static org.jruby.RubyInteger.singleCharByteList;
 import static org.jruby.api.Access.fileClass;
+import static org.jruby.api.Access.hashClass;
+import static org.jruby.api.Access.timeClass;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
@@ -1310,7 +1312,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             }
             case 4:
                 if (!args[3].isNil()) {
-                    options = TypeConverter.convertToTypeWithCheck(context, args[3], context.runtime.getHash(), sites(context).to_hash_checked);
+                    options = TypeConverter.convertToTypeWithCheck(context, args[3], hashClass(context), sites(context).to_hash_checked);
                     if (options.isNil()) throw argumentError(context, 4, 1, 3);
                 }
                 vperm(pm, args[2]);
@@ -1588,12 +1590,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             timespec[0] = Platform.IS_32_BIT ? RubyNumeric.num2int(value) : numericToLong(context, value);
             timespec[1] = 0;
         } else {
-            RubyTime time;
-            if (value instanceof RubyTime) {
-                time = ((RubyTime) value);
-            } else {
-                time = (RubyTime) TypeConverter.convertToType(context, value, context.runtime.getTime(), sites(context).to_time_checked, true);
-            }
+            RubyTime time = value instanceof RubyTime t ?
+                    t : (RubyTime) TypeConverter.convertToType(context, value, timeClass(context), sites(context).to_time_checked, true);
+
             timespec[0] = Platform.IS_32_BIT ? asInt(context, time.to_i(context)) : numericToLong(context, time.to_i(context));
             timespec[1] = Platform.IS_32_BIT ? asInt(context, time.nsec(context)) : numericToLong(context, time.nsec(context));
         }

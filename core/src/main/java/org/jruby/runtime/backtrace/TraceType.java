@@ -25,6 +25,7 @@ import org.jruby.util.log.LoggerFactory;
 import org.jruby.util.TypeConverter;
 
 import static org.jruby.api.Access.exceptionClass;
+import static org.jruby.api.Access.instanceConfig;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.newEmptyString;
@@ -234,7 +235,7 @@ public class TraceType {
                         context.getBacktrace(),
                         false,
                         false,
-                        context.runtime.getInstanceConfig().getBacktraceMask(),
+                        instanceConfig(context).getBacktraceMask(),
                         false,
                         false);
             }
@@ -746,12 +747,12 @@ public class TraceType {
     }
 
     public static void printBacktraceToStream(ThreadContext context, IRubyObject backtrace, RubyString errorStream, boolean reverse, int skip) {
-        if ( backtrace.isNil() ) return;
-        if ( backtrace instanceof RubyArray ) {
-            IRubyObject[] elements = ((RubyArray) backtrace).toJavaArrayMaybeUnsafe();
-            int optionBacktraceLimit = context.runtime.getInstanceConfig().getBacktraceLimit();
+        if (backtrace.isNil()) return;
+        if (backtrace instanceof RubyArray bt) {
+            IRubyObject[] elements = bt.toJavaArrayMaybeUnsafe();
+            int optionBacktraceLimit = instanceConfig(context).getBacktraceLimit();
             int limitPlusSkip = optionBacktraceLimit + skip;
-            int maxBacktraceLines =  (optionBacktraceLimit == -1 || limitPlusSkip > elements.length) ? elements.length : limitPlusSkip;
+            int maxBacktraceLines = optionBacktraceLimit == -1 || limitPlusSkip > elements.length ? elements.length : limitPlusSkip;
 
             int i, len = maxBacktraceLines;
             final int threshold = 1000000000;

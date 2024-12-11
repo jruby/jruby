@@ -85,6 +85,9 @@ import org.jcodings.unicode.UnicodeEncoding;
 import static org.jruby.RubyBasicObject.getMetaClass;
 import static org.jruby.api.Access.arrayClass;
 import static org.jruby.api.Access.exceptionClass;
+import static org.jruby.api.Access.instanceConfig;
+import static org.jruby.api.Access.kernelModule;
+import static org.jruby.api.Access.moduleClass;
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asSymbol;
@@ -1153,7 +1156,7 @@ public class Helpers {
     }
 
     public static IRubyObject isExceptionHandled(IRubyObject currentException, IRubyObject exception, ThreadContext context) {
-        if (!context.runtime.getModule().isInstance(exception)) throw typeError(context, "class or module required for rescue clause");
+        if (!moduleClass(context).isInstance(exception)) throw typeError(context, "class or module required for rescue clause");
 
         IRubyObject result = invoke(context, exception, "===", currentException);
         return result.isTrue() ? result : context.fals;
@@ -2008,7 +2011,7 @@ public class Helpers {
         return value.isNil() ? newArray(context, value) : arrayValue(context, value);
     }
 
-    @Deprecated // no longer used
+    @Deprecated(since = "9.4-") // no longer used
     public static IRubyObject[] splatToArguments(IRubyObject value) {
         if (value.isNil()) {
             return value.getRuntime().getSingleNilArray();
@@ -2022,6 +2025,7 @@ public class Helpers {
         return ((RubyArray)tmp).toJavaArrayMaybeUnsafe();
     }
 
+    @Deprecated(since = "9.4-")
     private static IRubyObject[] convertSplatToJavaArray(ThreadContext context, IRubyObject value) {
         // Object#to_a is obsolete.  We match Ruby's hack until to_a goes away.  Then we can
         // remove this hack too.
@@ -2029,19 +2033,17 @@ public class Helpers {
         RubyClass metaClass = value.getMetaClass();
         CacheEntry entry = metaClass.searchWithCache("to_a");
         DynamicMethod method = entry.method;
-        if (method.isUndefined() || method.isImplementedBy(context.runtime.getKernel())) {
+        if (method.isUndefined() || method.isImplementedBy(kernelModule(context))) {
             return new IRubyObject[] {value};
         }
 
         IRubyObject avalue = method.call(context, value, entry.sourceModule, "to_a");
-        if (!(avalue instanceof RubyArray)) {
-            if (avalue.isNil()) {
-                return new IRubyObject[] {value};
-            } else {
-                throw typeError(context, "`to_a' did not return Array");
-            }
+        if (!(avalue instanceof RubyArray ary)) {
+            if (avalue.isNil()) return new IRubyObject[] {value};
+
+            throw typeError(context, "`to_a' did not return Array");
         }
-        return ((RubyArray)avalue).toJavaArray(context);
+        return ary.toJavaArray(context);
     }
 
     @SuppressWarnings("deprecation") @Deprecated // no longer used
@@ -2977,8 +2979,8 @@ public class Helpers {
         Ruby runtime = context.runtime;
 
         StackTraceElement[] javaTrace = t.getStackTrace();
-        BacktraceData backtraceData = runtime.getInstanceConfig().getTraceType().getIntegratedBacktrace(context, javaTrace);
-        t.setStackTrace(RaiseException.javaTraceFromRubyTrace(backtraceData.getBacktrace(runtime)));
+        BacktraceData backtraceData = instanceConfig(context).getTraceType().getIntegratedBacktrace(context, javaTrace);
+        t.setStackTrace(RaiseException.javaTraceFromRubyTrace(backtraceData.getBacktrace(context.runtime)));
         throwException(t);
         return null; // not reached
     }
