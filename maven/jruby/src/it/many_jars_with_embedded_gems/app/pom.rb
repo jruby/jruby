@@ -1,5 +1,5 @@
 # two jars with embedded gems
-jar 'org.jruby.maven:maven-tools', '3.0.4'
+jar 'org.jruby.maven:maven-tools', '3.0.5'
 jar 'org.rubygems:zip', '2.0.2'
 
 # jruby scripting container
