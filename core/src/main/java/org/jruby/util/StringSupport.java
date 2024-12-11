@@ -56,8 +56,10 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.collections.IntHashMap;
 import org.jruby.util.io.EncodingUtils;
-import sun.misc.Unsafe;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
+import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
@@ -90,11 +92,7 @@ public final class StringSupport {
     public static final int CR_BROKEN    = CR_7BIT | CR_VALID;
     public static final int CR_MASK      = CR_7BIT | CR_VALID;
 
-    static final int ARRAY_BYTE_BASE_OFFSET;
-    static {
-        final Unsafe unsafe = org.jruby.util.unsafe.UnsafeHolder.U;
-        ARRAY_BYTE_BASE_OFFSET = unsafe != null ? unsafe.arrayBaseOffset(byte[].class) : 0;
-    }
+    private static final VarHandle BYTES_AS_LONGS = MethodHandles.byteArrayViewVarHandle(long[].class, ByteOrder.nativeOrder());
 
     public static final int TRANS_SIZE = 256;
 
@@ -429,21 +427,17 @@ public final class StringSupport {
 
     private static final int LONG_SIZE = 8;
     private static final int LOWBITS = LONG_SIZE - 1;
-    @SuppressWarnings("deprecation")
     public static int utf8Length(byte[] bytes, int p, int end) {
         int len = 0;
-        if (ARRAY_BYTE_BASE_OFFSET > 0) { // Unsafe
-            if (end - p > LONG_SIZE * 2) {
-                int ep = ~LOWBITS & (p + LOWBITS);
-                while (p < ep) {
-                    if ((bytes[p++] & 0xc0 /*utf8 lead byte*/) != 0x80) len++;
-                }
-                final Unsafe unsafe = org.jruby.util.unsafe.UnsafeHolder.U;
-                int eend = ~LOWBITS & end;
-                while (p < eend) {
-                    len += countUtf8LeadBytes(unsafe.getLong(bytes, (long) (ARRAY_BYTE_BASE_OFFSET + p)));
-                    p += LONG_SIZE;
-                }
+        if (end - p > LONG_SIZE * 2) {
+            int ep = ~LOWBITS & (p + LOWBITS);
+            while (p < ep) {
+                if ((bytes[p++] & 0xc0 /*utf8 lead byte*/) != 0x80) len++;
+            }
+            int eend = ~LOWBITS & end;
+            while (p < eend) {
+                len += countUtf8LeadBytes((long) BYTES_AS_LONGS.get(bytes, p));
+                p += LONG_SIZE;
             }
         }
         while (p < end) {

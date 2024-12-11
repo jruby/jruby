@@ -30,7 +30,8 @@ package org.jruby.runtime.ivars;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.util.ArraySupport;
-import org.jruby.util.unsafe.UnsafeHolder;
+
+import java.lang.invoke.VarHandle;
 
 /**
  * A variable accessor that uses a stamped volatile int and Unsafe methods to
@@ -92,13 +93,13 @@ public class StampedVariableAccessor extends VariableAccessor {
             // spin-wait if odd
             if((currentStamp & 0x01) != 0)
                continue;
-            
-            Object[] currentTable = (Object[]) UnsafeHolder.U.getObjectVolatile(self, RubyBasicObject.VAR_TABLE_OFFSET);
+
+            Object[] currentTable = (Object[]) VAR_TABLE_HANDLE.getVolatile(self);
             
             if (currentTable == null || index >= currentTable.length) {
-                if (!createTableUnsafe(self, currentStamp, realClass, currentTable, index, value)) continue;
+                if (!createTable(self, currentStamp, realClass, currentTable, index, value)) continue;
             } else {
-                if (!updateTableUnsafe(self, currentStamp, currentTable, index, value)) continue;
+                if (!updateTable(self, currentStamp, currentTable, index, value)) continue;
             }
             
             break;
@@ -106,8 +107,7 @@ public class StampedVariableAccessor extends VariableAccessor {
     }
 
     /**
-     * Create or exapand a table for the given object, using Unsafe CAS and
-     * ordering operations to ensure visibility.
+     * Create or expand a table for the given object, using VarHandle ordering operations to ensure visibility.
      * 
      * @param self the object into which to set the variable
      * @param currentStamp the current variable table stamp
@@ -117,9 +117,9 @@ public class StampedVariableAccessor extends VariableAccessor {
      * @param value the variable's value
      * @return whether the update was successful, for CAS retrying
      */
-    private static boolean createTableUnsafe(RubyBasicObject self, int currentStamp, RubyClass realClass, Object[] currentTable, int index, Object value) {
+    private static boolean createTable(RubyBasicObject self, int currentStamp, RubyClass realClass, Object[] currentTable, int index, Object value) {
         // try to acquire exclusive access to the varTable field
-        if (!UnsafeHolder.U.compareAndSwapInt(self, RubyBasicObject.STAMP_OFFSET, currentStamp, ++currentStamp)) {
+        if (!STAMP_HANDLE.compareAndSet(self, currentStamp, ++currentStamp)) {
             return false;
         }
         
@@ -130,8 +130,8 @@ public class StampedVariableAccessor extends VariableAccessor {
         }
         
         newTable[index] = value;
-        
-        UnsafeHolder.U.putOrderedObject(self, RubyBasicObject.VAR_TABLE_OFFSET, newTable);
+
+        VAR_TABLE_HANDLE.setRelease(self, newTable);
         
         // release exclusive access
         self.varTableStamp = currentStamp + 1;
@@ -140,8 +140,7 @@ public class StampedVariableAccessor extends VariableAccessor {
     }
 
     /**
-     * Update the given table table for the given object, using Unsafe fence or
-     * volatile operations to ensure visibility.
+     * Update the given table for the given object, using VarHandle.fullFence to ensure visibility.
      * 
      * @param self the object into which to set the variable
      * @param currentStamp the current variable table stamp
@@ -150,10 +149,10 @@ public class StampedVariableAccessor extends VariableAccessor {
      * @param value the variable's value
      * @return whether the update was successful, for CAS retrying
      */
-    private static boolean updateTableUnsafe(RubyBasicObject self, int currentStamp, Object[] currentTable, int index, Object value) {
+    private static boolean updateTable(RubyBasicObject self, int currentStamp, Object[] currentTable, int index, Object value) {
         // shared access to varTable field.
         currentTable[index] = value;
-        UnsafeHolder.U.fullFence();
+        VarHandle.fullFence();
 
         // validate stamp. redo on concurrent modification
         return self.varTableStamp == currentStamp;

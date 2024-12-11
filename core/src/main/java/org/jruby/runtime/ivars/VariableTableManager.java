@@ -47,8 +47,6 @@ import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.specialized.RubyObjectSpecializer;
 import org.jruby.util.ArraySupport;
-import org.jruby.util.cli.Options;
-import org.jruby.util.unsafe.UnsafeHolder;
 
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
@@ -154,11 +152,7 @@ public class VariableTableManager {
      * @param value the value
      */
     public void setVariableInternal(RubyBasicObject self, int index, Object value) {
-        if(UnsafeHolder.U == null) {
-            SynchronizedVariableAccessor.setVariable(self,realClass,index,value);
-        } else {
-            StampedVariableAccessor.setVariable(self,realClass,index,value);
-        }
+        StampedVariableAccessor.setVariable(self,realClass,index,value);
     }
 
     /**
@@ -170,11 +164,7 @@ public class VariableTableManager {
      * @param value the value of the variable
      */
     public static void setVariableInternal(RubyClass realClass, RubyBasicObject self, int index, Object value) {
-        if(UnsafeHolder.U == null) {
-            SynchronizedVariableAccessor.setVariable(self,realClass,index,value);
-        } else {
-            StampedVariableAccessor.setVariable(self,realClass,index,value);
-        }
+        StampedVariableAccessor.setVariable(self,realClass,index,value);
     }
 
     /**
@@ -424,32 +414,23 @@ public class VariableTableManager {
 
             Object[] otherVars = ((RubyBasicObject) other).varTable;
 
-            if(UnsafeHolder.U == null)
-            {
-                synchronized (self) {
-                    self.varTable = makeSyncedTable(self.varTable, otherVars, idIndex);
-                }
-            } else {
-                for(;;) {
-                    int oldStamp = self.varTableStamp;
-                    // wait for read mode
-                    if((oldStamp & 0x01) == 1)
-                        continue;
-                    // acquire exclusive write mode
-                    if(!UnsafeHolder.U.compareAndSwapInt(self, RubyBasicObject.STAMP_OFFSET, oldStamp, ++oldStamp))
-                        continue;
+            for(;;) {
+                int oldStamp = self.varTableStamp;
+                // wait for read mode
+                if((oldStamp & 0x01) == 1)
+                    continue;
+                // acquire exclusive write mode
+                if(!VariableAccessor.STAMP_HANDLE.compareAndSet(self, oldStamp, ++oldStamp))
+                    continue;
 
-                    Object[] currentTable = (Object[]) UnsafeHolder.U.getObjectVolatile(self, RubyBasicObject.VAR_TABLE_OFFSET);
-                    Object[] newTable = makeSyncedTable(currentTable,otherVars, idIndex);
+                Object[] currentTable = (Object[]) VariableAccessor.VAR_TABLE_HANDLE.getVolatile(self);
+                Object[] newTable = makeSyncedTable(currentTable,otherVars, idIndex);
 
-                    UnsafeHolder.U.putOrderedObject(self, RubyBasicObject.VAR_TABLE_OFFSET, newTable);
+                VariableAccessor.VAR_TABLE_HANDLE.setRelease(self, newTable);
 
-                    // release write mode
-                    self.varTableStamp = oldStamp+1;
-                    break;
-                }
-
-
+                // release write mode
+                self.varTableStamp = oldStamp+1;
+                break;
             }
 
         } else {
@@ -621,20 +602,7 @@ public class VariableTableManager {
      * Makes a standard table accessor builder. Pass this into getVariableAccessorWithBuilder
      */
     final Function<Integer, VariableAccessor> makeTableVariableAccessorBuilder(String name) {
-        if (Options.VOLATILE_VARIABLES.load()) {
-            if (UnsafeHolder.U == null) {
-                return (newIndex) -> new SynchronizedVariableAccessor(realClass, name, newIndex, realClass.id);
-            } else {
-                return (newIndex) -> new StampedVariableAccessor(realClass, name, newIndex, realClass.id);
-            }
-        } else {
-            if (UnsafeHolder.U == null) {
-                return (newIndex) -> new NonvolatileVariableAccessor(realClass, name, newIndex, realClass.id);
-            } else {
-                // We still need safe updating of the vartable, so we fall back on sync here too.
-                return (newIndex) -> new StampedVariableAccessor(realClass, name, newIndex, realClass.id);
-            }
-        }
+        return (newIndex) -> new StampedVariableAccessor(realClass, name, newIndex, realClass.id);
     }
 
     /**

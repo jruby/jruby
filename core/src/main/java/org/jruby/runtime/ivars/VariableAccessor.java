@@ -34,6 +34,9 @@ import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
+
 /**
  * Abstraction of an accessor for instance or internal variables on Ruby
  * objects. Subclasses specialize this implementation appropriate to the
@@ -48,6 +51,26 @@ public abstract class VariableAccessor {
     protected final int classId;
     /** the "real" class associated with this variable */
     protected final RubyClass realClass;
+
+    static final VarHandle VAR_TABLE_HANDLE;
+    static final VarHandle STAMP_HANDLE;
+    static {
+        VarHandle vth;
+        try {
+            vth = MethodHandles.lookup().findVarHandle(RubyBasicObject.class, "varTable", Object[].class);
+        } catch (Throwable throwable) {
+            throw new ExceptionInInitializerError(throwable);
+        }
+        VAR_TABLE_HANDLE = vth;
+
+        VarHandle sh;
+        try {
+            sh = MethodHandles.lookup().findVarHandle(RubyBasicObject.class, "varTableStamp", int.class);
+        } catch (Throwable throwable) {
+            throw new ExceptionInInitializerError(throwable);
+        }
+        STAMP_HANDLE = sh;
+    }
 
     /**
      * Construct a new VariableAccessor for the given "real" class, name,

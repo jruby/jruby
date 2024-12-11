@@ -90,7 +90,6 @@ import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
 import org.jruby.util.TypeConverter;
-import org.jruby.util.unsafe.UnsafeHolder;
 
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
@@ -150,12 +149,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     /** locking stamp for Unsafe ops updating the vartable */
     public transient volatile int varTableStamp;
-
-    /** offset of the varTable field in RubyBasicObject */
-    public static final long VAR_TABLE_OFFSET = UnsafeHolder.fieldOffset(RubyBasicObject.class, "varTable");
-
-    /** offset of the varTableTamp field in RubyBasicObject */
-    public static final long STAMP_OFFSET = UnsafeHolder.fieldOffset(RubyBasicObject.class, "varTableStamp");
 
     /**
      * The error message used when some one tries to modify an
@@ -3186,4 +3179,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public static final int COMPARE_BY_IDENTITY_F = USER8_F;
     @Deprecated
     public static final int TAINTED_F = 0;
+    @Deprecated
+    public static final long VAR_TABLE_OFFSET = -1;
+    @Deprecated
+    public static final long STAMP_OFFSET = -1;
 }
