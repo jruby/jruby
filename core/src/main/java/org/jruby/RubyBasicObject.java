@@ -147,12 +147,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /** locking stamp for Unsafe ops updating the vartable */
     public transient volatile int varTableStamp;
 
-    /** offset of the varTable field in RubyBasicObject */
-    public static final long VAR_TABLE_OFFSET = UnsafeHolder.fieldOffset(RubyBasicObject.class, "varTable");
-
-    /** offset of the varTableTamp field in RubyBasicObject */
-    public static final long STAMP_OFFSET = UnsafeHolder.fieldOffset(RubyBasicObject.class, "varTableStamp");
-
     /**
      * The error message used when some one tries to modify an
      * instance variable in a high security setting.
@@ -3186,4 +3180,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public static final int COMPARE_BY_IDENTITY_F = USER8_F;
     @Deprecated
     public static final int TAINTED_F = 0;
+    @Deprecated
+    public static final long VAR_TABLE_OFFSET = -1;
+    @Deprecated
+    public static final long STAMP_OFFSET = -1;
 }
