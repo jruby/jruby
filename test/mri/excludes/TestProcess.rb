@@ -1,6 +1,6 @@
 exclude :test_argv0, "needs investigation"
 exclude :test_argv0_keep_alive, "undefined method argv0?"
-exclude :test_argv0_noarg, "wrong return value"
+exclude :test_argv0_noarg, "hangs"
 exclude :test_aspawn_too_long_path, "unsupported option rlimit_nproc"
 exclude :test_clock_getres_CLOCK_BASED_CLOCK_PROCESS_CPUTIME_ID, "missing process timing functionality"
 exclude :test_clock_getres_TIME_BASED_CLOCK_REALTIME, "missing process timing functionality"
