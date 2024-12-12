@@ -1741,14 +1741,12 @@ public class RubyProcess {
      * Get the time in nanoseconds corresponding to the requested clock.
      */
     private static long getTimeForClock(ThreadContext context, IRubyObject _clock_id) throws RaiseException {
-        long nanos;
-
-        if (_clock_id instanceof RubySymbol) {
-            RubySymbol clock_id = (RubySymbol) _clock_id;
+        if (_clock_id instanceof RubySymbol clock_id) {
             if (clock_id.idString().equals(CLOCK_MONOTONIC)) {
-                nanos = System.nanoTime();
+                return System.nanoTime();
             } else if (clock_id.idString().equals(CLOCK_REALTIME)) {
                 POSIX posix = context.runtime.getPosix();
+                long nanos;
                 if (posix.isNative()) {
                     Timeval tv = posix.allocateTimeval();
                     posix.gettimeofday(tv);
@@ -1756,36 +1754,31 @@ public class RubyProcess {
                 } else {
                     nanos = System.currentTimeMillis() * 1000000;
                 }
-            } else {
-                throw context.runtime.newErrnoEINVALError("clock_gettime");
+                return nanos;
             }
-        } else {
-            // TODO: probably need real clock_id values to do this right.
-            throw context.runtime.newErrnoEINVALError("clock_gettime");
         }
-        return nanos;
+
+        throw clockError(context, "gettime", _clock_id);
     }
 
     /**
      * Get the time resolution in nanoseconds corresponding to the requested clock.
      */
     private static long getResolutionForClock(ThreadContext context, IRubyObject _clock_id) throws RaiseException {
-        long nanos;
-
         if (_clock_id instanceof RubySymbol) {
             RubySymbol clock_id = (RubySymbol) _clock_id;
             if (clock_id.idString().equals(CLOCK_MONOTONIC)) {
-                nanos = 1;
+                return 1;
             } else if (clock_id.idString().equals(CLOCK_REALTIME)) {
-                nanos = 1000000;
-            } else {
-                throw context.runtime.newErrnoEINVALError("clock_gettime");
+                return 1000000;
             }
-        } else {
-            // TODO: probably need real clock_id values to do this right.
-            throw context.runtime.newErrnoEINVALError("clock_gettime");
         }
-        return nanos;
+
+        throw clockError(context, "getres", _clock_id);
+    }
+
+    private static RaiseException clockError(ThreadContext context, String clockMethod, IRubyObject _clock_id) {
+        return context.runtime.newErrnoEINVALError("Process.clock_" + clockMethod + "(" + _clock_id.inspect().toString() + ")");
     }
 
     private static IRubyObject makeClockResult(ThreadContext context, long nanos, String unit) {
