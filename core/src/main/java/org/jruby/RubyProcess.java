@@ -1722,8 +1722,6 @@ public class RubyProcess {
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject clock_gettime(ThreadContext context, IRubyObject self, IRubyObject _clock_id) {
-        Ruby runtime = context.runtime;
-
         return makeClockResult(context, getTimeForClock(context, _clock_id), CLOCK_UNIT_FLOAT_SECOND);
     }
 
