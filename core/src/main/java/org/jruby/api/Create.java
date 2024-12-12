@@ -220,6 +220,20 @@ public class Create {
     }
 
     /**
+     * Creates a new frozen RubyString from the provided java String.
+     *
+     * @param context the current thread context
+     * @param string the contents to become a string
+     * @return the new RubyString
+     */
+    public static RubyString newFrozenString(ThreadContext context, String string) {
+        // replace with custom subclass that is born frozen
+        RubyString rubyString = RubyString.newString(context.runtime, string);
+        rubyString.setFrozen(true);
+        return rubyString;
+    }
+
+    /**
      * Create a new String which is intended to be empty for its entire lifetime.
      * It can still grow but the intention is you think it won't grow (or cannot).
      * If you want a default-size array then use {@link Create#newString(ThreadContext, String)}.

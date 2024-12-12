@@ -222,6 +222,7 @@ import static org.jruby.RubyBoolean.TRUE_BYTES;
 import static org.jruby.RubyRandom.newRandom;
 import static org.jruby.RubyRandom.randomSeed;
 import static org.jruby.api.Create.newEmptyString;
+import static org.jruby.api.Create.newFrozenString;
 import static org.jruby.api.Error.*;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.GLOBAL;
 import static org.jruby.parser.ParserType.*;
@@ -932,9 +933,10 @@ public final class Ruby implements Constantizable {
      * and $0 ruby global variables.
      */
     public void runFromMain(InputStream inputStream, String filename) {
-        IAccessor d = new ValueAccessor(newString(filename));
-        getGlobalVariables().define("$PROGRAM_NAME", d, GLOBAL);
-        getGlobalVariables().define("$0", d, GLOBAL);
+        ThreadContext context = getCurrentContext();
+
+        // this overwrites the default defined in RubyGlobal
+        globalVariables.set("$0", newFrozenString(context, filename));
 
         // set main script and canonical path for require_relative use
         loadService.setMainScript(filename, getCurrentDirectory());
@@ -975,8 +977,6 @@ public final class Ruby implements Constantizable {
         if (fetchGlobalConstant("DATA") == null) {
             try {inputStream.close();} catch (IOException ioe) {}
         }
-
-        ThreadContext context = getCurrentContext();
 
         String oldFile = context.getFile();
         int oldLine = context.getLine();

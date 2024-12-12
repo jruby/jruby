@@ -137,9 +137,8 @@ public class RubyGlobal {
 
         initARGV(runtime);
 
-        IAccessor d = new ValueAccessor(newString(context, instanceConfig.displayedFileName()));
-        globals.define("$PROGRAM_NAME", d, GLOBAL);
-        globals.define("$0", d, GLOBAL);
+        // initially set to config's script name, if any
+        defineArgv0Global(context, globals, instanceConfig.displayedFileName());
 
         // Version information:
         IRubyObject release = RubyString.newFString(runtime, Constants.COMPILE_DATE);
@@ -283,6 +282,29 @@ public class RubyGlobal {
         globals.alias("$LAST_PAREN_MATCH", "$+");
 
         return env;
+    }
+
+    static void defineArgv0Global(ThreadContext context, GlobalVariables globals, String scriptName) {
+        IAccessor d = new IAccessor() {
+            RubyString value = newFrozenString(context, scriptName);
+
+            @Override
+            public IRubyObject getValue() {
+                return value;
+            }
+
+            @Override
+            public IRubyObject setValue(IRubyObject newValue) {
+                RubyString stringValue = newValue.convertToString();
+                if (!stringValue.isFrozen()) {
+                    stringValue = stringValue.newFrozen();
+                }
+                value = stringValue;
+                return stringValue;
+            }
+        };
+        globals.define("$PROGRAM_NAME", d, GLOBAL);
+        globals.define("$0", d, GLOBAL);
     }
 
     public static void initSTDIO(Ruby runtime, GlobalVariables globals) {
