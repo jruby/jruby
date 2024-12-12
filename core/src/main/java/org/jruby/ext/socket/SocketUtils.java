@@ -666,16 +666,16 @@ public class SocketUtils {
     public static int portToInt(IRubyObject port) {
         if (port.isNil()) return 0;
 
-        Ruby runtime = port.getRuntime();
+        var context = port.getRuntime().getCurrentContext();
 
-        IRubyObject maybeStr = TypeConverter.checkStringType(runtime, port);
+        IRubyObject maybeStr = TypeConverter.checkStringType(context.runtime, port);
         if (!maybeStr.isNil()) {
             RubyString portStr = maybeStr.convertToString();
             Service serv = Service.getServiceByName(portStr.toString(), null);
 
             if (serv != null) return serv.getPort();
 
-            return RubyNumeric.fix2int(portStr.to_i());
+            return RubyNumeric.fix2int(portStr.to_i(context));
         }
         return RubyNumeric.fix2int(port);
     }

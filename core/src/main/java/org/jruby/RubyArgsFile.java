@@ -812,7 +812,7 @@ public class RubyArgsFile extends RubyObject {
         final ArgsFileData data = ArgsFileData.getArgsFileData(runtime);
 
         if (!data.next_argv(context)) {
-            if (str != null) str.clear();
+            if (str != null) str.clear(context);
             
             return RubyIO.nonblockEOF(runtime, noException);
         }
