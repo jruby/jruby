@@ -727,11 +727,16 @@ public class RubyNumeric extends RubyObject {
                 newArray(context, RubyKernel.new_float(context, other), RubyKernel.new_float(context, this));
     }
 
+    @Deprecated(since = "10.0")
+    public IRubyObject op_uplus() {
+        return op_uplus(getCurrentContext());
+    }
+
     /** num_uplus
      *
      */
     @JRubyMethod(name = "+@")
-    public IRubyObject op_uplus() {
+    public IRubyObject op_uplus(ThreadContext context) {
         return this;
     }
 
@@ -917,15 +922,20 @@ public class RubyNumeric extends RubyObject {
 
     @Deprecated
     public IRubyObject scalar_p() {
-        return asBoolean(getRuntime().getCurrentContext(), isReal());
+        return asBoolean(getCurrentContext(), isReal());
+    }
+
+    @Deprecated(since = "10.0")
+    public IRubyObject integer_p() {
+        return integer_p(getCurrentContext());
     }
 
     /** num_int_p
      *
      */
     @JRubyMethod(name = "integer?")
-    public IRubyObject integer_p() {
-        return metaClass.runtime.getFalse();
+    public IRubyObject integer_p(ThreadContext context) {
+        return context.fals;
     }
 
     /** num_zero_p

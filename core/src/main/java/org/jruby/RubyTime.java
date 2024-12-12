@@ -893,11 +893,11 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = "eql?")
     @Override
-    public IRubyObject eql_p(IRubyObject other) {
-        if (other instanceof RubyTime otherTime) {
-            return (nsec == otherTime.nsec && getTimeInMillis() == otherTime.getTimeInMillis()) ? getRuntime().getTrue() : getRuntime().getFalse();
+    public IRubyObject eql_p(ThreadContext context, IRubyObject otherArg) {
+        if (otherArg instanceof RubyTime other) {
+            return nsec == other.nsec && getTimeInMillis() == other.getTimeInMillis() ? context.tru : context.fals;
         }
-        return getRuntime().getFalse();
+        return context.fals;
     }
 
     @JRubyMethod(name = {"asctime", "ctime"})

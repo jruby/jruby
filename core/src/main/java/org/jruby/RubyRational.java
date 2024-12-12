@@ -182,13 +182,13 @@ public class RubyRational extends RubyNumeric {
      */
     private static RubyInteger intCheck(ThreadContext context, IRubyObject num) {
         if (num instanceof RubyInteger) return (RubyInteger) num;
-        if (!(num instanceof RubyNumeric) || !integer_p(context).call(context, num, num).isTrue()) { // num.integer?
+        if (!(num instanceof RubyNumeric) || !integer_p_site(context).call(context, num, num).isTrue()) { // num.integer?
             throw typeError(context, "not an integer");
         }
         return num.convertToInteger();
     }
 
-    private static CallSite integer_p(ThreadContext context) {
+    private static CallSite integer_p_site(ThreadContext context) {
         return context.sites.Numeric.integer;
     }
 

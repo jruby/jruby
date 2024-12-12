@@ -2124,6 +2124,11 @@ public class RubyKernel {
         return method.call(context, recv, entry.sourceModule, name, args, block);
     }
 
+    @Deprecated(since = "10.0")
+    public static IRubyObject eql_p(IRubyObject self, IRubyObject obj) {
+        return eql_p(self.getRuntime().getCurrentContext(), self, obj);
+    }
+
     /*
      * Moved binding of these methods here, since Kernel can be included into
      * BasicObject subclasses, and these methods must still work.
@@ -2131,8 +2136,8 @@ public class RubyKernel {
      * BEGIN delegated bindings:
      */
     @JRubyMethod(name = "eql?")
-    public static IRubyObject eql_p(IRubyObject self, IRubyObject obj) {
-        return ((RubyBasicObject)self).eql_p(obj);
+    public static IRubyObject eql_p(ThreadContext context, IRubyObject self, IRubyObject obj) {
+        return ((RubyBasicObject)self).eql_p(context, obj);
     }
 
     @JRubyMethod(name = "===")

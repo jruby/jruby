@@ -204,8 +204,8 @@ public abstract class RubyInteger extends RubyNumeric {
      */
     @Override
     @JRubyMethod(name = "integer?")
-    public IRubyObject integer_p() {
-        return metaClass.runtime.getTrue();
+    public IRubyObject integer_p(ThreadContext context) {
+        return context.tru;
     }
 
     /** int_upto
@@ -519,11 +519,15 @@ public abstract class RubyInteger extends RubyNumeric {
         return this;
     }
 
-    /** int_to_i
-     *
-     */
-    @JRubyMethod(name = {"to_i", "to_int"})
+
+    @Deprecated(since = "10.0")
     public IRubyObject to_i() {
+        return to_i(getCurrentContext());
+    }
+
+    // MRI: int_to_i
+    @JRubyMethod(name = {"to_i", "to_int"})
+    public IRubyObject to_i(ThreadContext context) {
         return this;
     }
 
@@ -767,7 +771,7 @@ public abstract class RubyInteger extends RubyNumeric {
 
     static RubyInteger toInteger(ThreadContext context, IRubyObject num) {
         if (num instanceof RubyInteger) return (RubyInteger) num;
-        if (num instanceof RubyNumeric && !integer_p(context).call(context, num, num).isTrue()) { // num.integer?
+        if (num instanceof RubyNumeric && !integer_p_site(context).call(context, num, num).isTrue()) { // num.integer?
             return null;
         }
         if (num instanceof RubyString) return null; // do not want String#to_i
@@ -798,8 +802,16 @@ public abstract class RubyInteger extends RubyNumeric {
     @JRubyMethod(name = {"to_s", "inspect"})
     public abstract RubyString to_s(ThreadContext context);
 
+
+    @Deprecated(since = "10.0")
+    public RubyString to_s(IRubyObject x) {
+        return to_s(getCurrentContext(), x);
+    }
+
     @JRubyMethod(name = "to_s")
-    public abstract RubyString to_s(IRubyObject x);
+    public RubyString to_s(ThreadContext context, IRubyObject x) {
+        throw context.runtime.newRuntimeError("integer type missing native to_s(ThreadContext, IRubyObject) impl");
+    }
 
     @JRubyMethod(name = "-@")
     public abstract IRubyObject op_uminus(ThreadContext context);
@@ -1087,7 +1099,7 @@ public abstract class RubyInteger extends RubyNumeric {
         return size(getRuntime().getCurrentContext());
     }
 
-    private static CallSite integer_p(ThreadContext context) {
+    private static CallSite integer_p_site(ThreadContext context) {
         return context.sites.Numeric.integer;
     }
 

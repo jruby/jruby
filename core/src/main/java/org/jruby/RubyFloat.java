@@ -625,13 +625,11 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return asBoolean(context, !Double.isNaN(other) && value <= other);
 	}
 
-    /** flo_eql
-     *
-     */
+    // MRI: flo_eql
     @JRubyMethod(name = "eql?")
     @Override
-    public IRubyObject eql_p(IRubyObject other) {
-        return metaClass.runtime.newBoolean( equals(other) );
+    public IRubyObject eql_p(ThreadContext context, IRubyObject other) {
+        return equals(other) ? context.tru : context.fals;
     }
 
     /**
@@ -672,11 +670,14 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return Helpers.multAndMix(runtime.getHashSeedK0(), hashLong);
     }
 
-    /** flo_fo
-     *
-     */
-    @JRubyMethod(name = "to_f")
+    @Deprecated(since = "10.0")
     public IRubyObject to_f() {
+        return to_f(getCurrentContext());
+    }
+
+    // MRI: flo_fo
+    @JRubyMethod(name = "to_f")
+    public IRubyObject to_f(ThreadContext context) {
         return this;
     }
 
@@ -1108,38 +1109,39 @@ public class RubyFloat extends RubyNumeric implements Appendable {
 
     @Deprecated
     public IRubyObject nan_p() {
-        return nan_p(getRuntime().getCurrentContext());
+        return nan_p(getCurrentContext());
     }
 
     public boolean isNaN() {
         return Double.isNaN(value);
     }
 
-    /** flo_is_infinite_p
-     *
-     */
-    @JRubyMethod(name = "infinite?")
+    @Deprecated(since = "10.0")
     public IRubyObject infinite_p() {
-        if (Double.isInfinite(value)) {
-            return RubyFixnum.newFixnum(metaClass.runtime, value < 0 ? -1 : 1);
-        }
-        return metaClass.runtime.getNil();
+        return infinite_p(getCurrentContext());
+    }
+
+    // MRI: flo_is_infinite_p
+    @JRubyMethod(name = "infinite?")
+    public IRubyObject infinite_p(ThreadContext context) {
+        return Double.isInfinite(value) ?
+                asFixnum(context, value < 0 ? -1 : 1) :
+                context.nil;
     }
 
     public boolean isInfinite() {
         return Double.isInfinite(value);
     }
 
-    /** flo_is_finite_p
-     *
-     */
-    @JRubyMethod(name = "finite?")
+    @Deprecated(since = "10.0")
     public IRubyObject finite_p() {
-        Ruby runtime = metaClass.runtime;
-        if (Double.isInfinite(value) || Double.isNaN(value)) {
-            return runtime.getFalse();
-        }
-        return runtime.getTrue();
+        return finite_p(getCurrentContext());
+    }
+
+    // MRI: flo_is_finite_p
+    @JRubyMethod(name = "finite?")
+    public IRubyObject finite_p(ThreadContext context) {
+        return Double.isInfinite(value) || Double.isNaN(value) ? context.fals : context.tru;
     }
 
     private ByteList marshalDump() {
@@ -1180,14 +1182,24 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     private static final ByteList NEGATIVE_INFINITY_BYTELIST = new ByteList("-inf".getBytes());
     private static final ByteList INFINITY_BYTELIST = new ByteList("inf".getBytes());
 
-    @JRubyMethod(name = "next_float")
+    @Deprecated(since = "10.0")
     public IRubyObject next_float() {
-        return RubyFloat.newFloat(metaClass.runtime, Math.nextAfter(value, Double.POSITIVE_INFINITY));
+        return next_float(getCurrentContext());
+    }
+
+    @JRubyMethod(name = "next_float")
+    public IRubyObject next_float(ThreadContext context) {
+        return asFloat(context, Math.nextAfter(value, Double.POSITIVE_INFINITY));
+    }
+
+    @Deprecated(since = "10.0")
+    public IRubyObject prev_float() {
+        return prev_float(getCurrentContext());
     }
 
     @JRubyMethod(name = "prev_float")
-    public IRubyObject prev_float() {
-        return RubyFloat.newFloat(metaClass.runtime, Math.nextAfter(value, Double.NEGATIVE_INFINITY));
+    public IRubyObject prev_float(ThreadContext context) {
+        return asFloat(context, Math.nextAfter(value, Double.NEGATIVE_INFINITY));
     }
 
     /**
