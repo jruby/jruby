@@ -173,7 +173,7 @@ public class DataConverters {
         private synchronized IRubyObject lookupAndCacheValue(ThreadContext context, IRubyObject obj) {
             IRubyObject value = enums instanceof Enums ? ((Enums)enums).mapSymbol(context, obj) : ((RubyHash)enums).fastARef(obj);
             if (value.isNil() || !(value instanceof RubyInteger integer)) {
-                throw argumentError(context, "invalid enum value, " + obj.inspect());
+                throw argumentError(context, "invalid enum value, " + obj.inspect(context));
             }
 
             IdentityHashMap<RubySymbol, RubyInteger> s2v = new IdentityHashMap<RubySymbol, RubyInteger>(symbolToValue);

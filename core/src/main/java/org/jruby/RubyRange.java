@@ -346,11 +346,6 @@ public class RubyRange extends RubyObject {
 
     private static final byte[] DOTDOTDOT = new byte[]{'.', '.', '.'};
 
-    @Override
-    public IRubyObject inspect() {
-        return inspect(getRuntime().getCurrentContext());
-    }
-
     @JRubyMethod(name = "inspect")
     public RubyString inspect(final ThreadContext context) {
         RubyString i1 = isBeginless && !isEndless ? newEmptyString(context) : dupString(context, inspectValue(context, begin));

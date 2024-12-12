@@ -53,6 +53,7 @@ import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Error.typeError;
 
 public class RaiseException extends JumpException {
@@ -161,14 +162,15 @@ public class RaiseException extends JumpException {
     }
 
     private static RubyClass findExceptionClass(ThreadContext context, String exceptionPath) {
-        IRubyObject exceptionClass = context.runtime.getObject().getConstant(exceptionPath);
+        IRubyObject exceptionClass = objectClass(context).getConstant(exceptionPath);
 
         if (exceptionClass == null) throw context.runtime.newNameError("exception class not found", exceptionPath);
 
-        if (!(exceptionClass instanceof RubyClass)) {
-            throw typeError(context, "expected to find exception class for " + exceptionPath + " but got " + exceptionClass.inspect());
+        if (!(exceptionClass instanceof RubyClass exception)) {
+            throw typeError(context, "expected to find exception class for " + exceptionPath +
+                    " but got " + exceptionClass.inspect(context));
         }
-        return (RubyClass) exceptionClass;
+        return exception;
     }
 
     @Override

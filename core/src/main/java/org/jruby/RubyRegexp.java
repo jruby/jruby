@@ -1425,11 +1425,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
      */
     @Override
     @JRubyMethod(name = "inspect")
-    public IRubyObject inspect() {
-        if (pattern == null) return anyToString();
-        Ruby runtime = metaClass.runtime;
-        Encoding enc = str.getEncoding();
-        return RubyString.newString(runtime, RegexpSupport.regexpDescription(runtime, str, options, enc));
+    public IRubyObject inspect(ThreadContext context) {
+        return pattern == null ?
+                anyToString() :
+                newString(context, RegexpSupport.regexpDescription(context.runtime, str, options, str.getEncoding()));
     }
 
     private final static int EMBEDDABLE = RE_OPTION_MULTILINE|RE_OPTION_IGNORECASE|RE_OPTION_EXTENDED;

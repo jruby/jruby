@@ -429,11 +429,6 @@ public class RubyProcess {
             return sb.toString();
         }
 
-        @Override
-        public IRubyObject inspect() {
-            return inspect(getRuntime());
-        }
-
         @Deprecated
         public IRubyObject to_i() {
             return to_i(getRuntime());
@@ -1254,7 +1249,7 @@ public class RubyProcess {
             gid = (int)arg.convertToInteger().getLongValue();
         } else {
             Group group = context.runtime.getPosix().getgrnam(arg.asJavaString());
-            if (group == null) throw argumentError(context, "can't find group for " + arg.inspect());
+            if (group == null) throw argumentError(context, "can't find group for " + arg.inspect(context));
             gid = (int)group.getGID();
         }
         checkErrno(context, context.runtime.getPosix().setegid(gid));
@@ -1432,7 +1427,7 @@ public class RubyProcess {
         } else {
             Passwd password = context.runtime.getPosix().getpwnam(arg.asJavaString());
             if (password == null) {
-                throw argumentError(context, "can't find user for " + arg.inspect());
+                throw argumentError(context, "can't find user for " + arg.inspect(context));
             }
             uid = (int)password.getUID();
         }

@@ -3042,7 +3042,7 @@ public class RubyModule extends RubyObject {
             RubyString buffer = newString(context, "#<Class:");
 
             if (attached instanceof RubyModule) {
-                buffer.catWithCodeRange(attached.inspect().convertToString());
+                buffer.catWithCodeRange(attached.inspect(context).convertToString());
             } else if (attached != null) {
                 buffer.catWithCodeRange((RubyString) attached.anyToString());
             }
@@ -3055,9 +3055,9 @@ public class RubyModule extends RubyObject {
         if (refinedClass != null) {
             RubyString buffer = newString(context, "#<refinement:");
 
-            buffer.catWithCodeRange(refinedClass.inspect().convertToString());
+            buffer.catWithCodeRange(refinedClass.inspect(context).convertToString());
             buffer.cat('@', buffer.getEncoding());
-            buffer.catWithCodeRange((definedAt.inspect().convertToString()));
+            buffer.catWithCodeRange((definedAt.inspect(context).convertToString()));
             buffer.cat('>', buffer.getEncoding());
 
             return buffer;

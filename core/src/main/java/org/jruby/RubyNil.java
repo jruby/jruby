@@ -159,8 +159,7 @@ public class RubyNil extends RubyObject implements Constantizable {
      *
      */
     @Override
-    @JRubyMethod
-    public IRubyObject inspect() {
+    public IRubyObject inspect(ThreadContext context) {
         return RubyNil.inspect(metaClass.runtime);
     }
 

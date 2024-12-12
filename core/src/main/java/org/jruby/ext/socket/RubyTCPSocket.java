@@ -119,7 +119,7 @@ public class RubyTCPSocket extends RubyIPSocket {
         }
 
         // did not complete and only path out is n repeated ConnectExceptions
-        throw context.runtime.newErrnoECONNREFUSEDError("connect(2) for " + host.inspect() + " port " + remotePort);
+        throw context.runtime.newErrnoECONNREFUSEDError("connect(2) for " + host.inspect(context) + " port " + remotePort);
     }
 
     @JRubyMethod(visibility = Visibility.PRIVATE)

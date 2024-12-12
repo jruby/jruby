@@ -118,9 +118,19 @@ public class JavaProxyMethods {
         return to_s(runtime.getCurrentContext(), javaObject);
     }
 
-    @JRubyMethod
+    /**
+     * @param recv
+     * @return
+     * @deprecated Use {@link JavaProxyMethods#inspect(ThreadContext, IRubyObject)} instead
+     */
+    @Deprecated(since = "10.0")
     public static IRubyObject inspect(IRubyObject recv) {
-        return recv instanceof RubyBasicObject basic ? basic.hashyInspect() : recv.inspect();
+        return inspect(recv.getRuntime().getCurrentContext(), recv);
+    }
+
+    @JRubyMethod
+    public static IRubyObject inspect(ThreadContext context, IRubyObject recv) {
+        return recv instanceof RubyBasicObject basic ? basic.hashyInspect() : recv.inspect(context);
     }
     
     @JRubyMethod

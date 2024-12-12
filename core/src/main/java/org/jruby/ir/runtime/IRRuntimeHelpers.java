@@ -950,7 +950,7 @@ public class IRRuntimeHelpers {
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, StaticScope scope) {
             if (!isValidKeyword(scope, key)) {
                 if (invalidKwargs == null) invalidKwargs = newArray(context);
-                invalidKwargs.add(key.inspect());
+                invalidKwargs.add(key.inspect(context));
             }
         }
 
@@ -1158,7 +1158,7 @@ public class IRRuntimeHelpers {
         }
 
         private static String duplicationWarning(ThreadContext c, IRubyObject k, RubyStackTraceElement trace) {
-            return str(c.runtime, "key ", k.inspect(), " is duplicated and overwritten on line " + (trace.getLineNumber()));
+            return str(c.runtime, "key ", k.inspect(c), " is duplicated and overwritten on line " + (trace.getLineNumber()));
         }
     }
 
@@ -2527,7 +2527,7 @@ public class IRRuntimeHelpers {
     }
 
     private static void putConst(ThreadContext context, IRubyObject self, IRubyObject module, String id, IRubyObject value, String filename, int line) {
-        if (!(module instanceof RubyModule)) throw typeError(context, module.inspect() + " is not a class/module");
+        if (!(module instanceof RubyModule)) throw typeError(context, module.inspect(context) + " is not a class/module");
 
         warnSetConstInRefinement(context, self);
 

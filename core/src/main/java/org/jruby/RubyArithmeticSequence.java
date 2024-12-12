@@ -337,11 +337,6 @@ public class RubyArithmeticSequence extends RubyObject {
         return asFixnum(context, hash);
     }
 
-    @Override
-    public final IRubyObject inspect() {
-        return inspect(getRuntime().getCurrentContext());
-    }
-
     @JRubyMethod
     public RubyString inspect(ThreadContext context) {
         ByteList str = new ByteList();

@@ -970,11 +970,6 @@ public class RubyHash extends RubyObject implements Map {
         }
     };
 
-    @Override
-    public IRubyObject inspect() {
-        return inspect(metaClass.runtime.getCurrentContext());
-    }
-
     /** rb_hash_inspect
      *
      */
@@ -1441,17 +1436,12 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod
     public IRubyObject fetch(ThreadContext context, IRubyObject key, Block block) {
-        Ruby runtime = context.runtime;
-
         IRubyObject value = internalGet(key);
 
-        if (value == null) {
-            if (block.isGiven()) return block.yield(context, key);
+        if (value != null) return value;
+        if (block.isGiven()) return block.yield(context, key);
 
-            throw runtime.newKeyError("key not found: " + key.inspect(), this, key);
-        }
-
-        return value;
+        throw context.runtime.newKeyError("key not found: " + key.inspect(context), this, key);
     }
 
     @JRubyMethod

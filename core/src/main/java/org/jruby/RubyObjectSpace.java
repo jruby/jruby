@@ -356,21 +356,14 @@ public class RubyObjectSpace {
         }
 
         public IRubyObject inspect(ThreadContext context) {
-            Ruby runtime = context.runtime;
-
-            RubyString part = inspectPrefix(runtime.getCurrentContext(), metaClass.getRealClass(), inspectHashCode());
+            RubyString part = inspectPrefix(context, metaClass.getRealClass(), inspectHashCode());
             int base = part.length();
 
             getEntryStream().forEach(entry -> {
-                if (part.length() == base) {
-                    part.cat(Inspector.COLON_SPACE);
-                } else {
-                    part.cat(Inspector.COMMA_SPACE);
-                }
-
-                part.cat(entry.getKey().inspect().convertToString());
+                part.cat(part.length() == base ? Inspector.COLON_SPACE : Inspector.COMMA_SPACE);
+                part.cat(entry.getKey().inspect(context).convertToString());
                 part.cat(Inspector.SPACE_HASHROCKET_SPACE);
-                part.cat(entry.getValue().inspect().convertToString());
+                part.cat(entry.getValue().inspect(context).convertToString());
             });
 
             part.cat(Inspector.GT);

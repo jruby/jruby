@@ -268,7 +268,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
    protected final void testFrozen() {
        if (isFrozen()) {
-           throw getRuntime().newFrozenError((isClass() ? "Class: " : (isModule() ? "Module: " : "object: ")) + inspect(), this);
+           var context = getRuntime().getCurrentContext();
+           throw context.runtime.newFrozenError((isClass() ? "Class: " : (isModule() ? "Module: " : "object: ")) + inspect(context), this);
        }
    }
 
@@ -1061,11 +1062,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return metaClass.getRealClass().getVariableTableManager().getObjectId(this);
     }
 
-    /** rb_obj_inspect
-     *
-     *  call-seq:
-     *     obj.inspect   =&gt; string
-     *
+    @Deprecated(since = "10.0")
+    public IRubyObject inspect() {
+        return inspect(getCurrentContext());
+    }
+
+    /**
      *  Returns a string containing a human-readable representation of
      *  <i>obj</i>. If not overridden, uses the <code>to_s</code> method to
      *  generate the string.
@@ -1073,10 +1075,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     [ 1, 2, 3..4, 'five' ].inspect   #=&gt; "[1, 2, 3..4, \"five\"]"
      *     Time.new.inspect                 #=&gt; "Wed Apr 09 08:54:39 CDT 2003"
      */
-    @Override
-    public IRubyObject inspect() {
+    // MRI: rb_obj_inspect
+    public IRubyObject inspect(ThreadContext context) {
         return !isImmediate() && !(this instanceof RubyModule) && hasVariables() ?
-                hashyInspect() : to_s(getRuntime().getCurrentContext());
+                hashyInspect() : to_s(context);
     }
 
     public final IRubyObject hashyInspect() {
@@ -2422,7 +2424,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
                 return newMethod;
             }
         }
-        throw getRuntime().newNameError(str(getRuntime(), "undefined method '", symbol,  "' for '", inspect(), "'"), symbol);
+        var context = getRuntime().getCurrentContext();
+        throw context.runtime.newNameError(str(context.runtime, "undefined method '", symbol,  "' for '", inspect(context), "'"), symbol);
     }
 
     /** rb_obj_method

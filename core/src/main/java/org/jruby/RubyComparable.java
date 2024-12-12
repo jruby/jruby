@@ -100,7 +100,7 @@ public class RubyComparable {
      */
     public static IRubyObject cmperr(ThreadContext context, IRubyObject recv, IRubyObject other) {
         IRubyObject target = other.isImmediate() || !(other.isNil() || other.isTrue() || other == context.fals) ?
-                other.inspect() : other.getType();
+                other.inspect(context) : other.getType();
 
         throw argumentError(context, "comparison of " + recv.getType() + " with " + target + " failed");
     }

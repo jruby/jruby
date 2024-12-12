@@ -529,7 +529,7 @@ public class RubyKernel {
             ByteList bytes = str.getByteList();
             if (bytes.isEmpty()) { // rb_cstr_to_dbl case
                 if (!exception) return context.nil;
-                throw argumentError(context, "invalid value for Float(): " + object.inspect());
+                throw argumentError(context, "invalid value for Float(): " + object.inspect(context));
             }
 
             if (bytes.startsWith(ZEROx)) { // startsWith("0x")
@@ -2240,9 +2240,14 @@ public class RubyKernel {
         return ((RubyBasicObject)self).frozen_p(context);
     }
 
-    @JRubyMethod(name = "inspect")
+    @Deprecated(since = "10.0")
     public static IRubyObject inspect(IRubyObject self) {
-        return ((RubyBasicObject)self).inspect();
+        return inspect(self.getRuntime().getCurrentContext(), self);
+    }
+
+    @JRubyMethod(name = "inspect")
+    public static IRubyObject inspect(ThreadContext context, IRubyObject self) {
+        return self.inspect(context);
     }
 
     @JRubyMethod(name = "instance_of?")

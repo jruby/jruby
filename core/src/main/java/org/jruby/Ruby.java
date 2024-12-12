@@ -47,7 +47,6 @@ import org.jruby.api.Create;
 import org.jruby.api.Define;
 import org.jruby.compiler.Constantizable;
 import org.jruby.compiler.NotCompilableException;
-import org.jruby.exceptions.LoadError;
 import org.jruby.exceptions.LocalJumpError;
 import org.jruby.exceptions.SystemExit;
 import org.jruby.ext.jruby.JRubyUtilLibrary;
@@ -184,7 +183,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -4250,8 +4248,8 @@ public final class Ruby implements Constantizable {
         return newFrozenError(receiver.getType().toString(), receiver);
     }
 
-    private static IRubyObject inspectFrozenObject(ThreadContext ctx, Ruby runtime, IRubyObject obj, boolean recur) {
-        return recur ? runtime.newString(" ...") : obj.inspect();
+    private static IRubyObject inspectFrozenObject(ThreadContext context, Ruby runtime, IRubyObject obj, boolean recur) {
+        return recur ? Create.newString(context, " ...") : obj.inspect(context);
     }
 
     public RaiseException newSystemStackError(String message) {
