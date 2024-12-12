@@ -91,6 +91,9 @@ public class JRubyUtilLibrary implements Library {
     @JRubyMethod(name = { "objectspace=", "object_space=" }, module = true)
     public static IRubyObject setObjectSpaceEnabled(IRubyObject recv, IRubyObject arg) {
         final Ruby runtime = recv.getRuntime();
+
+        runtime.getWarnings().warnDeprecated("JRuby::Util.object_space= is deprecated and will be removed in a future version of JRuby. See https://github.com/jruby/jruby/wiki/PerformanceTuning#dont-enable-objectspace");
+
         boolean enabled = arg.isTrue();
         if (enabled) {
             runtime.getWarnings().warn("ObjectSpace impacts performance. See https://github.com/jruby/jruby/wiki/PerformanceTuning#dont-enable-objectspace");

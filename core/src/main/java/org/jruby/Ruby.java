@@ -5837,23 +5837,21 @@ public final class Ruby implements Constantizable {
         void addToObjectSpace(Ruby runtime, boolean useObjectSpace, IRubyObject object);
     }
 
-    private static final ObjectSpacer DISABLED_OBJECTSPACE = new ObjectSpacer() {
-        @Override
-        public void addToObjectSpace(Ruby runtime, boolean useObjectSpace, IRubyObject object) {
-        }
+    private static final ObjectSpacer DISABLED_OBJECTSPACE = (runtime, useObjectSpace, object) -> {
     };
 
-    private static final ObjectSpacer ENABLED_OBJECTSPACE = new ObjectSpacer() {
-        @Override
-        public void addToObjectSpace(Ruby runtime, boolean useObjectSpace, IRubyObject object) {
-            if (useObjectSpace) runtime.objectSpace.add(object);
-        }
+    private static final ObjectSpacer ENABLED_OBJECTSPACE = (runtime, useObjectSpace, object) -> {
+        if (useObjectSpace) runtime.objectSpace.add(object);
     };
 
     private final ObjectSpacer objectSpacer;
 
     public void addToObjectSpace(boolean useObjectSpace, IRubyObject object) {
         objectSpacer.addToObjectSpace(this, useObjectSpace, object);
+    }
+
+    public static void addToObjectSpace(Ruby runtime, boolean useObjectSpace, IRubyObject object) {
+        runtime.objectSpacer.addToObjectSpace(runtime, useObjectSpace, object);
     }
 
     public interface ExitFunction extends ToIntFunction<ThreadContext> {
