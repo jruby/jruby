@@ -723,7 +723,7 @@ public class TraceType {
                     .append(element.getFileName())
                     .append(':')
                     .append(element.getLineNumber())
-                    .append(":in `")
+                    .append(":in '")
                     .append(element.getMethodName())
                     .append("'\n");
         }

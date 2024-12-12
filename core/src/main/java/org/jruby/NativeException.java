@@ -119,14 +119,14 @@ public class NativeException extends RubyException {
             final String className = element.getClassName();
             line.setLength(0);
             if (element.getFileName() == null) {
-                line.append(className).append(':').append(element.getLineNumber()).append(":in `").append(element.getMethodName()).append('\'');
+                line.append(className).append(':').append(element.getLineNumber()).append(":in '").append(element.getMethodName()).append('\'');
             } else {
                 final int index = className.lastIndexOf('.');
                 if ( index > - 1 ) {
                     line.append(className.substring(0, index).replace('.', '/'));
                     line.append('/');
                 }
-                line.append(element.getFileName()).append(':').append(element.getLineNumber()).append(":in `").append(element.getMethodName()).append('\'');
+                line.append(element.getFileName()).append(':').append(element.getLineNumber()).append(":in '").append(element.getMethodName()).append('\'');
             }
             trace[i] = RubyString.newString(runtime, line.toString());
         }
