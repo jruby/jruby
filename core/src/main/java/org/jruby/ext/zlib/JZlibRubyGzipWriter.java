@@ -53,6 +53,8 @@ import org.jruby.util.io.EncodingUtils;
 
 import java.io.IOException;
 
+import static org.jruby.api.Access.fileClass;
+import static org.jruby.api.Access.globalVariables;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.dupString;
 import static org.jruby.api.Create.newString;
@@ -82,7 +84,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
     @JRubyMethod(name = "open", required = 1, optional = 3, checkArity = false, meta = true)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Arity.checkArgumentCount(context, args, 1, 4);
-        args[0] = Helpers.invoke(context, context.runtime.getFile(), "open", args[0], newString(context, "wb"));
+        args[0] = Helpers.invoke(context, fileClass(context), "open", args[0], newString(context, "wb"));
         
         JZlibRubyGzipWriter gzio = newInstance(recv, args);
         
@@ -206,21 +208,31 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
     public IRubyObject printf(ThreadContext context, IRubyObject[] args) {
         write(RubyKernel.sprintf(context, this, args));
         
-        return context.getRuntime().getNil();
+        return context.nil;
+    }
+
+    /**
+     * @param args
+     * @return
+     * @deprecated Use {@link JZlibRubyGzipWriter#print(ThreadContext, IRubyObject[])} instead.
+     */
+    @Deprecated(since = "10.0")
+    public IRubyObject print(IRubyObject[] args) {
+        return print(getCurrentContext(), args);
     }
 
     @JRubyMethod(name = "print", rest = true)
-    public IRubyObject print(IRubyObject[] args) {
+    public IRubyObject print(ThreadContext context, IRubyObject[] args) {
         if (args.length != 0) {
             for (int i = 0, j = args.length; i < j; i++) {
                 write(args[i]);
             }
         }
 
-        IRubyObject sep = getRuntime().getGlobalVariables().get("$\\");
+        IRubyObject sep = globalVariables(context).get("$\\");
         if (!sep.isNil()) write(sep);
 
-        return getRuntime().getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = {"pos", "tell"})

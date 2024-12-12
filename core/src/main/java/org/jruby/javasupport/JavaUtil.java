@@ -49,6 +49,7 @@ import static java.lang.Character.isUpperCase;
 import static java.lang.Character.isDigit;
 import static java.lang.Character.toLowerCase;
 import static java.lang.Character.toUpperCase;
+import static org.jruby.api.Access.stringClass;
 import static org.jruby.api.Create.newArrayNoCopy;
 import static org.jruby.api.Error.typeError;
 
@@ -1158,7 +1159,7 @@ public class JavaUtil {
         }
 
         if (javaClass.isPrimitive()) {
-            String s = ((RubyString) TypeConverter.convertToType(rubyObject, runtime.getString(), "to_s", true)).getUnicodeValue();
+            String s = ((RubyString) TypeConverter.convertToType(rubyObject, stringClass(context), "to_s", true)).getUnicodeValue();
             if ( s.length() > 0 ) return s.charAt(0);
             return '\0';
         }

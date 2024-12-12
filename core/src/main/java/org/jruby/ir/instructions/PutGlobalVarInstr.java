@@ -17,6 +17,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.EnumSet;
 
+import static org.jruby.api.Access.globalVariables;
+
 public class PutGlobalVarInstr extends TwoOperandInstr implements FixedArityInstr {
     public PutGlobalVarInstr(RubySymbol varName, Operand value) {
         this(new GlobalVariable(varName), value);
@@ -70,7 +72,7 @@ public class PutGlobalVarInstr extends TwoOperandInstr implements FixedArityInst
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         GlobalVariable target = getTarget();
         IRubyObject    value  = (IRubyObject) getValue().retrieve(context, self, currScope, currDynScope, temp);
-        context.runtime.getGlobalVariables().set(target.getId(), value);
+        globalVariables(context).set(target.getId(), value);
         return null;
     }
 

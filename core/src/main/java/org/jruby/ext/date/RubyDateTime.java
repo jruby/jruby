@@ -59,6 +59,7 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.time.*;
 
+import static org.jruby.api.Access.timeClass;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Define.defineClass;
 
@@ -509,7 +510,7 @@ public class RubyDateTime extends RubyDate {
                 dt.getMillisOfSecond(), RubyTime.getTimeZone(context, this.off)
         );
 
-        RubyTime time = new RubyTime(context.runtime, context.runtime.getTime(), dt, true);
+        RubyTime time = new RubyTime(context.runtime, timeClass(context), dt, true);
         if (subMillisNum != 0) {
             RubyNumeric usec = (RubyNumeric) subMillis(context).op_mul(context, asFixnum(context, 1_000_000));
             time.setNSec(usec.getLongValue());

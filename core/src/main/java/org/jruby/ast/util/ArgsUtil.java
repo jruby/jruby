@@ -77,7 +77,7 @@ public final class ArgsUtil {
     }
     
     public static RubyArray convertToRubyArrayWithCoerce(Ruby runtime, IRubyObject value) {
-        if (value instanceof RubyArray) return (RubyArray) value;
+        if (value instanceof RubyArray ary) return ary;
         
         IRubyObject newValue = TypeConverter.convertToType(value, runtime.getArray(), "to_ary", false);
 

@@ -48,6 +48,8 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 
+import static org.jruby.api.Access.classClass;
+import static org.jruby.api.Access.moduleClass;
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
@@ -173,7 +175,7 @@ public class RubyObjectSpace {
             if (!(args[0] instanceof RubyModule)) throw argumentError(context, "class or module required");
             rubyClass = (RubyModule) args[0];
         }
-        if (rubyClass == runtime.getClassClass() || rubyClass == runtime.getModule()) {
+        if (rubyClass == classClass(context) || rubyClass == moduleClass(context)) {
 
             final ArrayList<IRubyObject> modules = new ArrayList<>(96);
             runtime.eachModule((module) -> {

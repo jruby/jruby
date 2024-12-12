@@ -26,7 +26,7 @@ public class SocketLibrary implements Library {
         var Socket = RubySocket.createSocket(context, BasicSocket);
         RubyServerSocket.createServerSocket(context, Socket);
 
-        if (runtime.getInstanceConfig().isNativeEnabled() && !Platform.IS_WINDOWS) {
+        if (instanceConfig(context).isNativeEnabled() && !Platform.IS_WINDOWS) {
             var UNIXSocket = RubyUNIXSocket.createUNIXSocket(context, BasicSocket, Object);
             RubyUNIXServer.createUNIXServer(context, UNIXSocket, Object);
         }

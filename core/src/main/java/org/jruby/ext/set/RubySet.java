@@ -50,7 +50,10 @@ import java.util.Iterator;
 import java.util.Set;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.api.Access.enumerableModule;
 import static org.jruby.api.Access.hashClass;
+import static org.jruby.api.Access.loadService;
+import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Define.defineClass;
@@ -72,7 +75,7 @@ public class RubySet extends RubyObject implements Set {
                 defineMethods(context, RubySet.class).
                 tap(c -> c.marshalWith(new SetMarshal(c.getMarshal())));
 
-        context.runtime.getLoadService().require("jruby/set.rb");
+        loadService(context).require("jruby/set.rb");
 
         return Set;
     }
@@ -361,17 +364,15 @@ public class RubySet extends RubyObject implements Set {
      */
     @JRubyMethod
     public RubySet replace(final ThreadContext context, IRubyObject enume) {
-        if (enume instanceof RubySet) {
+        if (enume instanceof RubySet enu) {
             modifyCheck(context);
             clearImpl();
-            addImplSet(context, (RubySet) enume);
+            addImplSet(context, enu);
         } else {
             // do_with_enum(enum)  # make sure enum is enumerable before calling clear :
-            if (!enume.getMetaClass().hasModuleInHierarchy(context.runtime.getEnumerable())) {
+            if (!enume.getMetaClass().hasModuleInHierarchy(enumerableModule(context))) {
                 // NOTE: likely no need to do this but due MRI compat (do_with_enum) :
-                if (!enume.respondsTo("each_entry")) {
-                    throw argumentError(context, "value must be enumerable");
-                }
+                if (!enume.respondsTo("each_entry")) throw argumentError(context, "value must be enumerable");
             }
             clearImpl();
             rb_merge(context, enume);
@@ -1001,9 +1002,7 @@ public class RubySet extends RubyObject implements Set {
         private static final String NAME = "DivideTSortHash"; // private constant under Set::
 
         static DivideTSortHash newInstance(final ThreadContext context) {
-            final Ruby runtime = context.runtime;
-
-            RubyClass Set = runtime.getClass("Set");
+            RubyClass Set = context.runtime.getClass("Set");
             RubyClass klass = (RubyClass) Set.getConstantAt(NAME, true);
             if (klass == null) { // initialize on-demand when Set#divide is first called
                 synchronized (DivideTSortHash.class) {
@@ -1011,13 +1010,13 @@ public class RubySet extends RubyObject implements Set {
                     if (klass == null) {
                         var Hash = hashClass(context);
                         klass = Set.defineClassUnder(context, NAME, Hash, Hash.getAllocator()).
-                                include(context, getTSort(runtime)).
+                                include(context, getTSort(context)).
                                 defineMethods(context, DivideTSortHash.class);
-                        Set.setConstantVisibility(runtime, NAME, true); // private
+                        Set.setConstantVisibility(context.runtime, NAME, true); // private
                     }
                 }
             }
-            return new DivideTSortHash(runtime, klass);
+            return new DivideTSortHash(context.runtime, klass);
         }
 
         DivideTSortHash(final Ruby runtime, final RubyClass metaClass) {
@@ -1103,11 +1102,11 @@ public class RubySet extends RubyObject implements Set {
         return join(context, context.nil);
     }
 
-    static RubyModule getTSort(final Ruby runtime) {
-        if ( ! runtime.getObject().hasConstant("TSort") ) {
-            runtime.getLoadService().require("tsort");
+    static RubyModule getTSort(ThreadContext context) {
+        if (!objectClass(context).hasConstant("TSort")) {
+            loadService(context).require("tsort");
         }
-        return runtime.getModule("TSort");
+        return context.runtime.getModule("TSort");
     }
 
     @Override

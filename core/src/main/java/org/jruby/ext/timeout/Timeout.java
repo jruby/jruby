@@ -52,6 +52,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.threading.DaemonThreadFactory;
 import org.jruby.util.ByteList;
 
+import static org.jruby.api.Access.kernelModule;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineModule;
 
@@ -226,7 +227,7 @@ public class Timeout {
 
             return RubyKernel.raise( // throws
                     context,
-                    context.runtime.getKernel(),
+                    kernelModule(context),
                     new IRubyObject[] {
                         getTimeoutError(timeout), // Timeout::Error
                         rubyException.callMethod(context, "message"),

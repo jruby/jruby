@@ -33,6 +33,7 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.collections.StringArraySet;
 import org.jruby.util.func.TriFunction;
 
+import static org.jruby.api.Access.fileClass;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
 
@@ -384,7 +385,8 @@ public class LibrarySearcher {
 
         if (feature.charAt(0) == '.' &&
                 (feature.charAt(1) == '/' || feature.regionMatches(1, "./", 0, 2))) {
-            feature = RubyFile.expand_path(runtime.getCurrentContext(), runtime.getFile(), runtime.newString(feature)).asJavaString();
+            var context = runtime.getCurrentContext();
+            feature = RubyFile.expand_path(context, fileClass(context), newString(context, feature)).asJavaString();
         }
         if (ext != -1 && feature.indexOf('/', ext) == -1) {
             if (LibrarySearcher.isSourceExt(feature)) {

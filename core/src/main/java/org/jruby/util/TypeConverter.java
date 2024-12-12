@@ -51,6 +51,9 @@ import org.jruby.runtime.JavaSites.TypeConverterSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Access.arrayClass;
+import static org.jruby.api.Access.hashClass;
+import static org.jruby.api.Access.stringClass;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Error.argumentError;
@@ -334,7 +337,7 @@ public class TypeConverter {
     // rb_check_hash_type
     public static IRubyObject checkHashType(ThreadContext context, JavaSites.CheckedSites sites, IRubyObject obj) {
         if (obj instanceof RubyHash) return obj;
-        return TypeConverter.convertToTypeWithCheck(context, obj, context.runtime.getHash(), sites);
+        return TypeConverter.convertToTypeWithCheck(context, obj, hashClass(context), sites);
     }
 
     // rb_check_string_type
@@ -346,7 +349,7 @@ public class TypeConverter {
     // rb_check_string_type
     public static IRubyObject checkStringType(ThreadContext context, JavaSites.CheckedSites sites, IRubyObject obj) {
         if (obj instanceof RubyString) return obj;
-        return TypeConverter.convertToTypeWithCheck(context, obj, context.runtime.getString(), sites);
+        return TypeConverter.convertToTypeWithCheck(context, obj, stringClass(context), sites);
     }
 
     // rb_check_string_type
@@ -364,7 +367,7 @@ public class TypeConverter {
     // rb_check_array_type
     public static IRubyObject checkArrayType(ThreadContext context, JavaSites.CheckedSites sites, IRubyObject obj) {
         if (obj instanceof RubyArray) return obj;
-        return TypeConverter.convertToTypeWithCheck(context, obj, context.runtime.getArray(), sites);
+        return TypeConverter.convertToTypeWithCheck(context, obj, arrayClass(context), sites);
     }
 
     // rb_io_check_io
@@ -380,7 +383,7 @@ public class TypeConverter {
 
     // MRI: rb_check_array_type
     public static IRubyObject checkArrayType(ThreadContext context, IRubyObject obj) {
-        return TypeConverter.convertToTypeWithCheck(context, obj, context.runtime.getArray(), sites(context).to_ary_checked);
+        return TypeConverter.convertToTypeWithCheck(context, obj, arrayClass(context), sites(context).to_ary_checked);
     }
 
     @Deprecated // no longer used
@@ -480,7 +483,7 @@ public class TypeConverter {
 
         if (tmp == context.nil) {
             TypeConverterSites sites = sites(context);
-            tmp = convertToTypeWithCheck(context, val, context.runtime.getArray(), sites.to_a_checked);
+            tmp = convertToTypeWithCheck(context, val, arrayClass(context), sites.to_a_checked);
             if (tmp == context.nil) return newArray(context, val);
         }
         return (RubyArray) tmp;
@@ -488,7 +491,7 @@ public class TypeConverter {
 
     // MRI: to_ary
     public static RubyArray to_ary(ThreadContext context, IRubyObject ary) {
-        return (RubyArray) convertToType(context, ary, context.runtime.getArray(), sites(context).to_ary_checked);
+        return (RubyArray) convertToType(context, ary, arrayClass(context), sites(context).to_ary_checked);
     }
 
     private static IRubyObject raiseIntegerBaseError(ThreadContext context, boolean exception) {

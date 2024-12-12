@@ -10,6 +10,8 @@ import org.jruby.util.func.TriConsumer;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static org.jruby.api.Access.stringClass;
+
 public class Create {
     /**
      * Create a new array with the default allocation size
@@ -265,6 +267,6 @@ public class Create {
      * @return the new string
      */
     public static RubyString dupString(ThreadContext context, RubyString string) {
-        return string.strDup(context.runtime, context.runtime.getString());
+        return string.strDup(context.runtime, stringClass(context));
     }
 }

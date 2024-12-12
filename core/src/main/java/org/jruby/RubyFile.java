@@ -80,6 +80,9 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import static org.jruby.RubyInteger.singleCharByteList;
+import static org.jruby.api.Access.fileClass;
+import static org.jruby.api.Access.hashClass;
+import static org.jruby.api.Access.timeClass;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
@@ -606,7 +609,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     public static String dirname(ThreadContext context, final String filename, int level) {
         if (level < 0) throw argumentError(context, "negative level: " + level);
 
-        final RubyClass File = context.runtime.getFile();
+        final RubyClass File = fileClass(context);
         IRubyObject sep = File.getConstant("SEPARATOR");
         final String separator; final char separatorChar;
         if (sep instanceof RubyString && ((RubyString) sep).size() == 1) {
@@ -1221,7 +1224,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     public static IRubyObject unlink(ThreadContext context, IRubyObject... args) {
-        return unlink(context, context.runtime.getFile(), args);
+        return unlink(context, fileClass(context), args);
     }
 
     // rb_file_size but not using stat
@@ -1309,7 +1312,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             }
             case 4:
                 if (!args[3].isNil()) {
-                    options = TypeConverter.convertToTypeWithCheck(context, args[3], context.runtime.getHash(), sites(context).to_hash_checked);
+                    options = TypeConverter.convertToTypeWithCheck(context, args[3], hashClass(context), sites(context).to_hash_checked);
                     if (options.isNil()) throw argumentError(context, 4, 1, 3);
                 }
                 vperm(pm, args[2]);
@@ -1587,12 +1590,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             timespec[0] = Platform.IS_32_BIT ? RubyNumeric.num2int(value) : numericToLong(context, value);
             timespec[1] = 0;
         } else {
-            RubyTime time;
-            if (value instanceof RubyTime) {
-                time = ((RubyTime) value);
-            } else {
-                time = (RubyTime) TypeConverter.convertToType(context, value, context.runtime.getTime(), sites(context).to_time_checked, true);
-            }
+            RubyTime time = value instanceof RubyTime t ?
+                    t : (RubyTime) TypeConverter.convertToType(context, value, timeClass(context), sites(context).to_time_checked, true);
+
             timespec[0] = Platform.IS_32_BIT ? asInt(context, time.to_i(context)) : numericToLong(context, time.to_i(context));
             timespec[1] = Platform.IS_32_BIT ? asInt(context, time.nsec(context)) : numericToLong(context, time.nsec(context));
         }
@@ -2172,14 +2172,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     private static RubyString doJoin(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        final Ruby runtime = context.runtime;
-        final String separator = runtime.getFile().getConstant("SEPARATOR").toString();
-        final RubyArray argsAry = RubyArray.newArrayMayCopy(runtime, args);
+        final String separator = fileClass(context).getConstant("SEPARATOR").toString();
+        final RubyArray argsAry = RubyArray.newArrayMayCopy(context.runtime, args);
         final StringBuilder buffer = new StringBuilder(24);
 
         joinImpl(buffer, separator, context, recv, argsAry);
 
-        return new RubyString(runtime, runtime.getString(), buffer);
+        return newString(context, buffer.toString());
     }
 
     private static boolean joinImpl(final StringBuilder buffer, final String separator,

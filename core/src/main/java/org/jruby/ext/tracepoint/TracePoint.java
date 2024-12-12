@@ -18,6 +18,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
 
+import static org.jruby.api.Access.symbolClass;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineClass;
@@ -46,7 +47,7 @@ public class TracePoint extends RubyObject {
     public IRubyObject initialize(ThreadContext context, IRubyObject[] _events, final Block block) {
         ArrayList<RubyEvent> events = new ArrayList<RubyEvent>(_events.length);
         for (int i = 0; i < _events.length; i++) {
-            RubySymbol _event = (RubySymbol) TypeConverter.convertToType(context, _events[i], context.runtime.getSymbol(), sites(context).to_sym);
+            RubySymbol _event = (RubySymbol) TypeConverter.convertToType(context, _events[i], symbolClass(context), sites(context).to_sym);
 
             String eventName = _event.asJavaString().toUpperCase();
             RubyEvent event = null;

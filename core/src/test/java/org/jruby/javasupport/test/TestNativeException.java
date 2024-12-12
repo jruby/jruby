@@ -31,7 +31,6 @@
 
 package org.jruby.javasupport.test;
  
-import org.jruby.Ruby;
 import org.jruby.test.Base;
  
 public class TestNativeException extends Base {
@@ -40,13 +39,7 @@ public class TestNativeException extends Base {
         super(name);
     }
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
-        runtime = Ruby.newInstance();
-    }
-
-    public void testCauseIsProxied() throws Exception {
+    public void testCauseIsProxied() {
         String result = eval("$-w = nil; require 'java'\n" +
                 "java_import('java.io.File') { 'JFile' }\n" +
                 "begin\n" +

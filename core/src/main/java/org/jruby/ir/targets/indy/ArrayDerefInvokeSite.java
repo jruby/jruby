@@ -23,6 +23,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.SwitchPoint;
 
+import static org.jruby.api.Access.hashClass;
 import static org.jruby.api.Create.dupString;
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
@@ -58,7 +59,7 @@ public class ArrayDerefInvokeSite extends NormalInvokeSite {
         DynamicMethod method = entry.method;
 
         if (method.isBuiltin() &&
-                testOptimizedHash(context.runtime.getHash(), self) &&
+                testOptimizedHash(hashClass(context), self) &&
                 !((RubyHash) self).isComparedByIdentity()) {
             // fast path since we know we're working with a normal hash and have a pre-frozen string
             mh = SmartBinder.from(signature)
@@ -80,7 +81,7 @@ public class ArrayDerefInvokeSite extends NormalInvokeSite {
                 return callMethodMissing(entry, callType, context, self, selfClass, methodName, args, block);
             }
 
-            mh = getHandle(self, entry);
+            mh = getHandle(context, self, entry);
             // strdup for future calls
             mh = MethodHandles.filterArguments(mh, 3, STRDUP_FILTER);
 

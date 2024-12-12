@@ -51,6 +51,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.SafePropertyAccessor;
 
+import static org.jruby.api.Access.loadService;
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Create.newEmptyString;
 import static org.jruby.api.Create.newString;
@@ -411,7 +412,7 @@ public class RbConfigLibrary implements Library {
 
         rbConfig.defineConstant("MAKEFILE_CONFIG", mkmfHash);
 
-        runtime.getLoadService().load("jruby/kernel/rbconfig.rb", false);
+        loadService(context).load("jruby/kernel/rbconfig.rb", false);
     }
 
     private static final boolean IS_64_BIT = jnr.posix.util.Platform.IS_64_BIT;

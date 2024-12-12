@@ -28,7 +28,6 @@
 package org.jruby.test;
 
 
-import org.jruby.Ruby;
 import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
@@ -42,13 +41,6 @@ import static org.jruby.api.Define.defineModule;
 
 
 public class TestMethodFactories extends Base {
-    private ThreadContext context;
-
-    public void setUp() {
-        runtime = Ruby.newInstance();
-        context = runtime.getCurrentContext();
-    }
-    
     public void testInvocationMethodFactory() {
         var mod = defineModule(context, "Wombat" + hashCode()).defineMethods(context, MyBoundClass.class);
         confirmCheckArity(mod);

@@ -61,6 +61,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.jruby.RubyIO.PARAGRAPH_SEPARATOR;
+import static org.jruby.api.Access.fileClass;
+import static org.jruby.api.Access.globalVariables;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.castAsString;
 import static org.jruby.api.Create.*;
@@ -96,7 +98,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
     public static IRubyObject open(final ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Arity.checkArgumentCount(context, args, 1, 2);
 
-        args[0] = Helpers.invoke(context, context.runtime.getFile(), "open", args[0], newString(context, "rb"));
+        args[0] = Helpers.invoke(context, fileClass(context), "open", args[0], newString(context, "rb"));
 
         JZlibRubyGzipReader gzio = newInstance(recv, args);
 
@@ -199,8 +201,8 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         return dst;
     }
 
-    private IRubyObject internalGets(IRubyObject[] args) throws IOException {
-        ByteList sep = ((RubyString) getRuntime().getGlobalVariables().get("$/")).getByteList();
+    private IRubyObject internalGets(ThreadContext context, IRubyObject[] args) throws IOException {
+        ByteList sep = ((RubyString) globalVariables(context).get("$/")).getByteList();
         int limit = -1;
 
         switch (args.length) {
@@ -301,7 +303,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
     @JRubyMethod(name = "gets", optional = 2, checkArity = false, writes = FrameField.LASTLINE)
     public IRubyObject gets(ThreadContext context, IRubyObject[] args) {
         try {
-            IRubyObject result = internalGets(args);
+            IRubyObject result = internalGets(context, args);
 
             if (!result.isNil()) context.setLastLine(result);
             
@@ -635,7 +637,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
         if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, this, "each", args);
 
-        ByteList sep = ((RubyString) context.runtime.getGlobalVariables().get("$/")).getByteList();
+        ByteList sep = ((RubyString) globalVariables(context).get("$/")).getByteList();
 
         if (argc > 0 && !args[0].isNil()) {
             sep = args[0].convertToString().getByteList();
@@ -702,7 +704,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         if (argc != 0 && args[0].isNil()) {
             array.add(read(context, IRubyObject.NULL_ARRAY));
         } else {
-            ByteList sep = ((RubyString) context.runtime.getGlobalVariables().get("$/")).getByteList();
+            ByteList sep = ((RubyString) globalVariables(context).get("$/")).getByteList();
 
             if (argc > 0) sep = args[0].convertToString().getByteList();
 

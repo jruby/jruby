@@ -79,6 +79,7 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.collections.WeakValuedMap;
 
+import static org.jruby.api.Access.instanceConfig;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineClass;
@@ -223,7 +224,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     public static int matcherSearch(ThreadContext context, Matcher matcher, int start, int range, int option) {
-        if (!context.runtime.getInstanceConfig().isInterruptibleRegexps()) return matcher.search(start, range, option);
+        if (!instanceConfig(context).isInterruptibleRegexps()) return matcher.search(start, range, option);
 
         try {
             return context.getThread().executeRegexp(context, matcher, start, range, option, Matcher::searchInterruptible);
@@ -235,7 +236,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     public static int matcherMatch(ThreadContext context, Matcher matcher, int start, int range, int option) {
-        if (!context.runtime.getInstanceConfig().isInterruptibleRegexps()) return matcher.match(start, range, option);
+        if (!instanceConfig(context).isInterruptibleRegexps()) return matcher.match(start, range, option);
 
         try {
             return context.getThread().executeRegexp(context, matcher, start, range, option, Matcher::matchInterruptible);

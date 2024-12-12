@@ -52,6 +52,8 @@ import org.jruby.util.ByteList;
 
 import java.io.ByteArrayInputStream;
 
+import static org.jruby.api.Access.instanceConfig;
+import static org.jruby.api.Access.loadService;
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
@@ -74,7 +76,7 @@ public class JRubyLibrary implements Library {
         var Object = objectClass(context);
 
         // load Ruby parts of the 'jruby' library
-        runtime.getLoadService().loadFromClassLoader(runtime.getJRubyClassLoader(), "jruby/jruby.rb", false);
+        loadService(context).loadFromClassLoader(runtime.getJRubyClassLoader(), "jruby/jruby.rb", false);
 
         var JRuby = defineModule(context, "JRuby").
                 defineMethods(context, JRubyLibrary.class).defineMethods(context, JRubyUtilLibrary.class);
@@ -95,12 +97,12 @@ public class JRubyLibrary implements Library {
     public static class JRubyConfig {
         @JRubyMethod(name = "rubygems_disabled?")
         public static IRubyObject rubygems_disabled_p(ThreadContext context, IRubyObject self) {
-            return asBoolean(context, context.runtime.getInstanceConfig().isDisableGems());
+            return asBoolean(context, instanceConfig(context).isDisableGems());
         }
 
         @JRubyMethod(name = "did_you_mean_disabled?")
         public static IRubyObject did_you_mean_disabled_p(ThreadContext context, IRubyObject self) {
-            return asBoolean(context, context.runtime.getInstanceConfig().isDisableDidYouMean());
+            return asBoolean(context, instanceConfig(context).isDisableDidYouMean());
         }
     }
 
@@ -263,7 +265,7 @@ public class JRubyLibrary implements Library {
 
     private static IRScriptBody compileIR(ThreadContext context, IRubyObject[] args, Block block) {
         ParseResult result = parseImpl(context, args, block);
-        IRManager manager = new IRManager(context.runtime, context.runtime.getInstanceConfig());
+        IRManager manager = new IRManager(context.runtime, instanceConfig(context));
         manager.setBuilderFactory(context.runtime.getIRManager().getBuilderFactory());
         IRScriptBody scope = (IRScriptBody) IRBuilder.buildRoot(manager, result).getScope();
         scope.setScriptDynamicScope(result.getDynamicScope());

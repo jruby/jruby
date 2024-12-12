@@ -47,6 +47,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.func.TriFunction;
 
+import static org.jruby.api.Access.globalVariables;
+import static org.jruby.api.Access.kernelModule;
+import static org.jruby.api.Access.stringClass;
+import static org.jruby.api.Access.symbolClass;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineModule;
@@ -144,20 +148,15 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
     // MR: rb_write_error_str
     private static IRubyObject writeWarningToError(ThreadContext context, RubyString errorString) {
-        Ruby runtime = context.runtime;
+        IRubyObject errorStream = globalVariables(context).get("$stderr");
 
-        IRubyObject errorStream = runtime.getGlobalVariables().get("$stderr");
-        RubyModule warning = runtime.getWarning();
-
-        return sites(context).write.call(context, warning, errorStream, errorString);
+        return sites(context).write.call(context, context.runtime.getWarning(), errorStream, errorString);
     }
 
     public static IRubyObject warnWithCategory(ThreadContext context, IRubyObject errorString, IRubyObject category) {
-        Ruby runtime = context.runtime;
+        RubySymbol cat = (RubySymbol) TypeConverter.convertToType(category, symbolClass(context), "to_sym");
 
-        RubySymbol cat = (RubySymbol) TypeConverter.convertToType(category, runtime.getSymbol(), "to_sym");
-
-        if (runtime.getWarningCategories().contains(Category.fromId(cat.idString()))) warn(context, context.runtime.getKernel(), errorString);
+        if (context.runtime.getWarningCategories().contains(Category.fromId(cat.idString()))) warn(context, kernelModule(context), errorString);
 
         return context.nil;
     }
@@ -259,7 +258,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
     @JRubyMethod(name = "[]")
     public static IRubyObject op_aref(ThreadContext context, IRubyObject self, IRubyObject arg) {
-        TypeConverter.checkType(context, arg, context.runtime.getSymbol());
+        TypeConverter.checkType(context, arg, symbolClass(context));
         String categoryId = ((RubySymbol) arg).idString();
         Category category = Category.fromId(categoryId);
 
@@ -270,7 +269,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
     @JRubyMethod(name = "[]=")
     public static IRubyObject op_aset(ThreadContext context, IRubyObject self, IRubyObject arg, IRubyObject flag) {
-        TypeConverter.checkType(context, arg, context.runtime.getSymbol());
+        TypeConverter.checkType(context, arg, symbolClass(context));
         String categoryId = ((RubySymbol) arg).idString();
         Category category = Category.fromId(categoryId);
 
@@ -289,7 +288,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
     @JRubyMethod
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        TypeConverter.checkType(context, arg, context.runtime.getString());
+        TypeConverter.checkType(context, arg, stringClass(context));
         return warn(context, (RubyString) arg);
     }
 

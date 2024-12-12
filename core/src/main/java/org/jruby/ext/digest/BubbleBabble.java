@@ -30,6 +30,7 @@
 package org.jruby.ext.digest;
 
 import org.jruby.Ruby;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.ByteList;
 
@@ -38,7 +39,8 @@ import java.io.IOException;
 public class BubbleBabble implements Library {
 
     public void load(final Ruby runtime, boolean wrap) throws IOException {
-        RubyDigest.createDigestBubbleBabble(runtime);
+        ThreadContext context = runtime.getCurrentContext();
+        RubyDigest.createDigestBubbleBabble(context);
     }
 
     /**

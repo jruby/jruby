@@ -33,25 +33,8 @@
 
 package org.jruby;
 
-import java.io.File;
-import java.io.IOException;
-
 import jnr.posix.FileStat;
 import jnr.posix.util.Platform;
-
-import static org.jruby.RubyArgsFile.Next.NextFile;
-import static org.jruby.RubyArgsFile.Next.Stream;
-import static org.jruby.RubyEnumerator.enumeratorize;
-import static org.jruby.anno.FrameField.LASTLINE;
-import static org.jruby.api.Access.*;
-import static org.jruby.api.Convert.*;
-import static org.jruby.api.Create.*;
-import static org.jruby.api.Define.defineClass;
-import static org.jruby.api.Error.argumentError;
-import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
-import static org.jruby.runtime.ThreadContext.resetCallInfo;
-import static org.jruby.runtime.Visibility.PRIVATE;
-
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariable;
@@ -68,6 +51,33 @@ import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.Getline;
+
+import java.io.File;
+import java.io.IOException;
+
+import static org.jruby.RubyArgsFile.Next.NextFile;
+import static org.jruby.RubyArgsFile.Next.Stream;
+import static org.jruby.RubyEnumerator.enumeratorize;
+import static org.jruby.anno.FrameField.LASTLINE;
+import static org.jruby.api.Access.argsFile;
+import static org.jruby.api.Access.fileClass;
+import static org.jruby.api.Access.globalVariables;
+import static org.jruby.api.Access.instanceConfig;
+import static org.jruby.api.Access.objectClass;
+import static org.jruby.api.Access.stringClass;
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Convert.numericToLong;
+import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newEmptyArray;
+import static org.jruby.api.Create.newEmptyString;
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineClass;
+import static org.jruby.api.Error.argumentError;
+import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
+import static org.jruby.runtime.ThreadContext.resetCallInfo;
+import static org.jruby.runtime.Visibility.PRIVATE;
 
 public class RubyArgsFile extends RubyObject {
 
@@ -113,7 +123,7 @@ public class RubyArgsFile extends RubyObject {
         // possible for someone to ARGF.class.new.  We do still want a global view of
         // ARGF otherwise getline and rewind in IO would have to keep track of the n
         // instances in play.  So all instances will share
-        var argsFile = getRuntime().getArgsFile();
+        var argsFile = argsFile(context);
         if (argsFile == null) {
             dataWrapStruct(new ArgsFileData(context.runtime, argv));
         } else {
@@ -171,7 +181,8 @@ public class RubyArgsFile extends RubyObject {
                 }
             }
 
-            GlobalVariable $FILENAME = runtime.getGlobalVariables().getVariable("$FILENAME");
+            var globalVariables = globalVariables(context);
+            GlobalVariable $FILENAME = globalVariables.getVariable("$FILENAME");
 
             if (next_p == NextFile) {
                 if (argv.getLength() > 0) {
@@ -182,12 +193,12 @@ public class RubyArgsFile extends RubyObject {
                     }
 
                     if (filenameEqlDash(filename)) {
-                        currentFile = runtime.getGlobalVariables().get("$stdin");
+                        currentFile = globalVariables.get("$stdin");
                     } else {
-                        currentFile = RubyFile.open(context, runtime.getFile(), new IRubyObject[]{ filename }, Block.NULL_BLOCK);
+                        currentFile = RubyFile.open(context, fileClass(context), new IRubyObject[]{ filename }, Block.NULL_BLOCK);
                         String extension = null;
                         if (inPlace.isTrue()) extension = inPlace.asJavaString();
-                        if (extension == null) extension = runtime.getInstanceConfig().getInPlaceBackupExtension();
+                        if (extension == null) extension = instanceConfig(context).getInPlaceBackupExtension();
                         if (extension != null) {
                             if (Platform.IS_WINDOWS) {
                                 inplaceEditWindows(context, filename.asJavaString(), extension);
@@ -203,7 +214,7 @@ public class RubyArgsFile extends RubyObject {
                     return false;
                 }
             } else if (next_p == Stream) {
-                currentFile = runtime.getGlobalVariables().get("$stdin");
+                currentFile = globalVariables.get("$stdin");
                 if (!filenameEqlDash((RubyString) $FILENAME.getAccessor().getValue())) {
                     $FILENAME.forceValue(newString(context, "-"));
                 }
@@ -244,7 +255,7 @@ public class RubyArgsFile extends RubyObject {
                 ((RubyIO) currentFile).close(); // we can't rename a file while it's open in windows
                 backupFile.delete();
                 file.renameTo(backupFile);
-                currentFile = RubyFile.open(context, runtime.getFile(), //reopen
+                currentFile = RubyFile.open(context, fileClass(context), //reopen
                         new IRubyObject[]{newString(context, backup)}, Block.NULL_BLOCK);
             } else {
                 throw runtime.newIOError("Windows doesn't support inplace editing without a backup");
@@ -252,13 +263,14 @@ public class RubyArgsFile extends RubyObject {
 
             createNewFile(file);
 
-            runtime.getGlobalVariables().set("$stdout", RubyFile.open(context, runtime.getFile(),
+            globalVariables(context).set("$stdout", RubyFile.open(context, fileClass(context),
                     new IRubyObject[]{newString(context, filename), newString(context, "w")}, Block.NULL_BLOCK));
         }
 
         private void inplaceEdit(ThreadContext context, String filename, String extension) throws RaiseException {
             File file = new File(filename);
-            FileStat stat = runtime.getPosix().stat(filename);
+            var posix = context.runtime.getPosix();
+            FileStat stat = posix.stat(filename);
 
             if (!extension.isEmpty()) {
                 file.renameTo(new File(filename + extension));
@@ -268,9 +280,9 @@ public class RubyArgsFile extends RubyObject {
 
             createNewFile(file);
 
-            runtime.getPosix().chmod(filename, stat.mode());
-            runtime.getPosix().chown(filename, stat.uid(), stat.gid());
-            runtime.getGlobalVariables().set("$stdout", (RubyIO) RubyFile.open(context, runtime.getFile(),
+            posix.chmod(filename, stat.mode());
+            posix.chown(filename, stat.uid(), stat.gid());
+            globalVariables(context).set("$stdout", (RubyIO) RubyFile.open(context, fileClass(context),
                     new IRubyObject[]{newString(context, filename), newString(context, "w")}, Block.NULL_BLOCK));
         }
 
@@ -629,7 +641,7 @@ public class RubyArgsFile extends RubyObject {
 
         data.next_argv(context);
 
-        if (data.currentFile == context.runtime.getGlobalVariables().get("$stdin")) return recv;
+        if (data.currentFile == globalVariables(context).get("$stdin")) return recv;
 
         argf_close(context, data.currentFile);
 
@@ -904,7 +916,7 @@ public class RubyArgsFile extends RubyObject {
     public static IRubyObject filename(ThreadContext context, IRubyObject recv) {
         ArgsFileData.getArgsFileData(context.runtime).next_argv(context);
 
-        return context.runtime.getGlobalVariables().get("$FILENAME");
+        return globalVariables(context).get("$FILENAME");
     }
 
     @JRubyMethod(name = "to_s", alias = "inspect")

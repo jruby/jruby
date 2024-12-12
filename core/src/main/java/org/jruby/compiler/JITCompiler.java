@@ -67,6 +67,8 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import static org.jruby.api.Access.instanceConfig;
+
 public class JITCompiler implements JITCompilerMBean {
     private static final Logger LOG = LoggerFactory.getLogger(JITCompiler.class);
 
@@ -203,7 +205,7 @@ public class JITCompiler implements JITCompilerMBean {
     }
 
     public void buildThresholdReached(ThreadContext context, final Compilable method) {
-        final RubyInstanceConfig config = context.runtime.getInstanceConfig();
+        final RubyInstanceConfig config = instanceConfig(context);
 
         final Runnable task = getTaskFor(context, method);
 

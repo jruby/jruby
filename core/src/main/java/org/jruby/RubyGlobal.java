@@ -72,6 +72,9 @@ import org.jruby.util.io.FilenoUtil;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.STDIO;
 
+import static org.jruby.api.Access.argsFile;
+import static org.jruby.api.Access.enumerableModule;
+import static org.jruby.api.Access.exceptionClass;
 import static org.jruby.api.Access.globalVariables;
 import static org.jruby.api.Access.instanceConfig;
 import static org.jruby.api.Access.objectClass;
@@ -108,7 +111,7 @@ public class RubyGlobal {
         var context = runtime.getCurrentContext();
         var objectClass = objectClass(context);
         // define ARGV and $* for this runtime
-        String[] argv = runtime.getInstanceConfig().getArgv();
+        String[] argv = instanceConfig(context).getArgv();
         var argvArray = newRawArray(context, argv.length);
 
         for (String arg : argv) {
@@ -126,7 +129,8 @@ public class RubyGlobal {
 
     @Deprecated
     public static void createGlobals(Ruby runtime) {
-        createGlobalsAndENV(runtime.getCurrentContext(), runtime.getGlobalVariables(), runtime.getInstanceConfig());
+        var context = runtime.getCurrentContext();
+        createGlobalsAndENV(context, globalVariables(context), instanceConfig(context));
     }
 
     public static RubyHash createGlobalsAndENV(ThreadContext context, GlobalVariables globals, RubyInstanceConfig instanceConfig) {
@@ -246,7 +250,7 @@ public class RubyGlobal {
         globals.defineReadonly("$-l", new ValueAccessor(asBoolean(context, instanceConfig.isProcessLineEnds())), GLOBAL);
 
         // ARGF, $< object
-        RubyArgsFile.initArgsFile(context, runtime.getEnumerable(), globals);
+        RubyArgsFile.initArgsFile(context, enumerableModule(context), globals);
 
         String inplace = instanceConfig.getInPlaceBackupExtension();
         runtime.defineVariable(new ArgfGlobalVariable(runtime, "$-i",
@@ -982,13 +986,14 @@ public class RubyGlobal {
 
         @Override
         public IRubyObject set(IRubyObject value) {
+            var context = runtime.getCurrentContext();
             if (!value.isNil() &&
-                    !runtime.getException().isInstance(value) &&
+                    !exceptionClass(context).isInstance(value) &&
                     !(JavaUtil.isJavaObject(value) && JavaUtil.unwrapJavaObject(value) instanceof Throwable)) {
-                throw typeError(value.getRuntime().getCurrentContext(), "assigning non-exception to $!");
+                throw typeError(context, "assigning non-exception to $!");
             }
 
-            return runtime.getCurrentContext().setErrorInfo(value);
+            return context.setErrorInfo(value);
         }
 
         @Override
@@ -1020,10 +1025,10 @@ public class RubyGlobal {
 
         @Override
         public IRubyObject set(IRubyObject value) {
-            RubyArgsFile.inplace_mode_set(runtime.getCurrentContext(), runtime.getArgsFile(), value);
-            if (value.isNil() || !value.isTrue()) {
-                runtime.getInstanceConfig().setInPlaceBackupExtension(null);
-            }
+            var context = runtime.getCurrentContext();
+            RubyArgsFile.inplace_mode_set(context, argsFile(context), value);
+            if (value.isNil() || !value.isTrue()) instanceConfig(context).setInPlaceBackupExtension(null);
+
             return super.set(value);
         }
     }
@@ -1144,21 +1149,20 @@ public class RubyGlobal {
 
         @Override
         public IRubyObject get() {
-            IRubyObject errorInfo = runtime.getGlobalVariables().get("$!");
-            IRubyObject backtrace = errorInfo.isNil() ? runtime.getNil() : errorInfo.callMethod(errorInfo.getRuntime().getCurrentContext(), "backtrace");
+            var context = runtime.getCurrentContext();
+            IRubyObject errorInfo = globalVariables(context).get("$!");
+            IRubyObject backtrace = errorInfo.isNil() ? context.nil : errorInfo.callMethod(context, "backtrace");
+
             //$@ returns nil if $!.backtrace is not an array
-            if (!(backtrace instanceof RubyArray)) {
-                backtrace = runtime.getNil();
-            }
-            return backtrace;
+            return backtrace instanceof RubyArray ? backtrace : context.nil;
         }
 
         @Override
         public IRubyObject set(IRubyObject value) {
             var context = runtime.getCurrentContext();
-            if (runtime.getGlobalVariables().get("$!").isNil()) throw argumentError(context, "$! not set");
+            if (globalVariables(context).get("$!").isNil()) throw argumentError(context, "$! not set");
 
-            runtime.getGlobalVariables().get("$!").callMethod(context, "set_backtrace", value);
+            globalVariables(context).get("$!").callMethod(context, "set_backtrace", value);
             return value;
         }
     }

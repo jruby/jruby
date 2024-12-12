@@ -41,6 +41,7 @@ import org.jruby.util.io.Sockaddr;
 
 import java.net.InetSocketAddress;
 
+import static org.jruby.api.Access.symbolClass;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineClass;
@@ -175,20 +176,16 @@ public class RubyIPSocket extends RubyBasicSocket {
     }
 
     public static Boolean doReverseLookup(ThreadContext context, IRubyObject noreverse) {
-        if (noreverse == context.tru) {
-            return false;
-        } else if (noreverse == context.fals) {
-            return true;
-        } else if (noreverse == context.nil) {
-            return null;
-        } else {
-            TypeConverter.checkType(context, noreverse, context.runtime.getSymbol());
-            return switch (noreverse.toString()) {
-                case "numeric" -> true;
-                case "hostname" -> false;
-                default -> throw argumentError(context, "invalid reverse_lookup flag: " + noreverse);
-            };
-        }
+        if (noreverse == context.tru) return false;
+        if (noreverse == context.fals) return true;
+        if (noreverse == context.nil) return null;
+
+        TypeConverter.checkType(context, noreverse, symbolClass(context));
+        return switch (noreverse.toString()) {
+            case "numeric" -> true;
+            case "hostname" -> false;
+            default -> throw argumentError(context, "invalid reverse_lookup flag: " + noreverse);
+        };
     }
 
     @Deprecated

@@ -95,6 +95,9 @@ import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.anno.FrameField.BACKREF;
+import static org.jruby.api.Access.globalVariables;
+import static org.jruby.api.Access.hashClass;
+import static org.jruby.api.Access.stringClass;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineClass;
@@ -1274,7 +1277,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @JRubyMethod(name = {"to_s", "to_str"})
     @Override
     public IRubyObject to_s(ThreadContext context) {
-        return metaClass.getRealClass() != context.runtime.getString() ? dupString(context, this) : this;
+        return metaClass.getRealClass() != stringClass(context) ? dupString(context, this) : this;
     }
 
     @Override
@@ -2919,7 +2922,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "sub!", writes = BACKREF)
     public IRubyObject sub_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        IRubyObject hash = TypeConverter.convertToTypeWithCheck(context, arg1, context.runtime.getHash(), sites(context).to_hash_checked);
+        IRubyObject hash = TypeConverter.convertToTypeWithCheck(context, arg1, hashClass(context), sites(context).to_hash_checked);
         frozenCheck();
 
         return hash == context.nil ?
@@ -3168,7 +3171,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private IRubyObject gsubImpl(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block, final boolean bang) {
-        IRubyObject tryHash = TypeConverter.convertToTypeWithCheck(context, arg1, context.runtime.getHash(), sites(context).to_hash_checked);
+        IRubyObject tryHash = TypeConverter.convertToTypeWithCheck(context, arg1, hashClass(context), sites(context).to_hash_checked);
 
         final RubyHash hash;
         final RubyString str;
@@ -4636,7 +4639,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (!pat.isNil()) {
             pattern = getPatternQuoted(context, pat);
         } else {
-            IRubyObject splitPattern = context.runtime.getGlobalVariables().get("$;");
+            IRubyObject splitPattern = globalVariables(context).get("$;");
 
             if (splitPattern.isNil()) return context.nil;
 
@@ -5577,7 +5580,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @JRubyMethod(name = "chop")
     public IRubyObject chop(ThreadContext context) {
         return value.isEmpty() ?
-                newEmptyString(context.runtime, context.runtime.getString(), value.getEncoding()) :
+                newEmptyString(context.runtime, stringClass(context), value.getEncoding()) :
                 makeSharedString(context.runtime, 0, StringSupport.choppedLength(this));
     }
 
@@ -5644,7 +5647,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         modifyCheck();
         if (value.isEmpty()) return context.nil;
 
-        var globalVariables = context.runtime.getGlobalVariables();
+        var globalVariables = globalVariables(context);
         IRubyObject rsObj = globalVariables.get("$/");
 
         return rsObj == globalVariables.getDefaultSeparator() ?
@@ -6170,7 +6173,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      */
     @JRubyMethod(name = "each_line")
     public IRubyObject each_line(ThreadContext context, Block block) {
-        return StringSupport.rbStrEnumerateLines(this, context, "each_line", context.runtime.getGlobalVariables().get("$/"), block, false);
+        return StringSupport.rbStrEnumerateLines(this, context, "each_line", globalVariables(context).get("$/"), block, false);
     }
 
     @JRubyMethod(name = "each_line")
@@ -6233,7 +6236,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "lines")
     public IRubyObject lines(ThreadContext context, Block block) {
-        return StringSupport.rbStrEnumerateLines(this, context, "lines", context.runtime.getGlobalVariables().get("$/"), block, true);
+        return StringSupport.rbStrEnumerateLines(this, context, "lines", globalVariables(context).get("$/"), block, true);
     }
 
     @JRubyMethod(name = "lines")
@@ -7224,7 +7227,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      * Is this a "bare" string, i.e. has no instance vars, and class == String.
      */
     public boolean isBare(ThreadContext context) {
-        return !hasInstanceVariables() && metaClass == context.runtime.getString();
+        return !hasInstanceVariables() && metaClass == stringClass(context);
     }
 
     private static StringSites sites(ThreadContext context) {

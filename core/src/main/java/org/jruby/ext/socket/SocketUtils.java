@@ -72,6 +72,7 @@ import static jnr.constants.platform.ProtocolFamily.PF_INET;
 import static jnr.constants.platform.ProtocolFamily.PF_INET6;
 import static jnr.constants.platform.Sock.SOCK_DGRAM;
 import static jnr.constants.platform.Sock.SOCK_STREAM;
+import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
@@ -504,8 +505,7 @@ public class SocketUtils {
             port = RubyNumeric.fix2int(portInteger);
 
             if (port <= 0) {
-                port = RubyNumeric.fix2int(RubySocket.getservbyname(
-                        context, context.runtime.getObject(), new IRubyObject[]{portString}));
+                port = RubyNumeric.fix2int(RubySocket.getservbyname(context, objectClass(context), new IRubyObject[]{portString}));
             }
         }
 

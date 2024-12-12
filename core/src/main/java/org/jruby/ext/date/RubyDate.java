@@ -1625,7 +1625,7 @@ public class RubyDate extends RubyObject {
 
         dt = new DateTime(adjustJodaYear(dt.getYear()), dt.getMonthOfYear(), dt.getDayOfMonth(),
                 0, 0, 0, RubyTime.getLocalTimeZone(context));
-        return new RubyTime(context.runtime, context.runtime.getTime(), dt);
+        return new RubyTime(context.runtime, timeClass(context), dt);
     }
 
     // date/format.rb

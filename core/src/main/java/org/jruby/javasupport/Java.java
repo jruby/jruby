@@ -116,6 +116,7 @@ public class Java implements Library {
         var Kernel = kernelModule(context);
         var Enumerable = enumerableModule(context);
         var Comparable = comparableModule(context);
+        var Object = objectClass(context);
         final RubyModule Java = createJavaModule(context);
 
         runtime.getJavaSupport().setJavaPackageClass(JavaPackage.createJavaPackageClass(context, Java, Module, Kernel));
@@ -137,14 +138,14 @@ public class Java implements Library {
         RubyClass objectClass = (RubyClass) getProxyClass(runtime, java.lang.Object.class);
 
         // load Ruby parts of the 'java' library
-        runtime.getLoadService().load("jruby/java.rb", false);
+        loadService(context).load("jruby/java.rb", false);
 
         // rewire ArrayJavaProxy superclass to point at Object, so it inherits Object behaviors
         runtime.getClass("ArrayJavaProxy").
                 superClass(objectClass).
                 include(context, Enumerable);
 
-        RubyClassPathVariable.createClassPathVariable(context, Enumerable);
+        RubyClassPathVariable.createClassPathVariable(context, Enumerable, Object);
 
         // (legacy) JavaClass compatibility:
         Java.setConstant("JavaClass", getProxyClass(runtime, java.lang.Class.class));
@@ -159,7 +160,7 @@ public class Java implements Library {
         // modify ENV_JAVA to be a read/write version
         final Map systemProperties = new SystemPropertiesMap();
         RubyClass proxyClass = (RubyClass) getProxyClass(runtime, SystemPropertiesMap.class);
-        runtime.getObject().setConstantQuiet("ENV_JAVA", new MapJavaProxy(runtime, proxyClass, systemProperties));
+        Object.setConstantQuiet("ENV_JAVA", new MapJavaProxy(runtime, proxyClass, systemProperties));
     }
 
     @SuppressWarnings("deprecation")
@@ -549,7 +550,7 @@ public class Java implements Library {
         if ( Map.class.isAssignableFrom( javaClass ) ) {
             proxyClass.allocator(context.runtime.getJavaSupport().getMapJavaProxyClass().getAllocator()).
                     defineMethods(context, MapJavaProxy.class).
-                    include(context, context.runtime.getEnumerable());
+                    include(context, enumerableModule(context));
         } else {
             proxyClass.allocator(superClass.getAllocator());
         }

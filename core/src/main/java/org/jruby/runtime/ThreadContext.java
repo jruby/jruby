@@ -81,6 +81,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.jruby.RubyBasicObject.NEVER;
+import static org.jruby.api.Access.instanceConfig;
 import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Error.typeError;
 
@@ -238,9 +239,7 @@ public final class ThreadContext {
         this.fals = runtime.getFalse();
         this.savedExcInLambda = null;
 
-        if (runtime.getInstanceConfig().isProfilingEntireRun()) {
-            startProfiling();
-        }
+        if (instanceConfig(this).isProfilingEntireRun()) startProfiling();
 
         this.runtimeCache = runtime.getRuntimeCache();
         this.sites = runtime.sites;
@@ -860,7 +859,7 @@ public final class ThreadContext {
      * @param sb the StringBuilder to which to render the backtrace
      */
     public void renderCurrentBacktrace(StringBuilder sb) {
-        TraceType traceType = runtime.getInstanceConfig().getTraceType();
+        TraceType traceType = instanceConfig(this).getTraceType();
         BacktraceData backtraceData = traceType.getBacktrace(this);
         traceType.getFormat().renderBacktrace(backtraceData.getBacktrace(runtime), sb, false);
     }

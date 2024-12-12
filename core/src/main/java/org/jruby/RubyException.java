@@ -369,7 +369,7 @@ public class RubyException extends RubyObject {
     public RubyBoolean op_equal(ThreadContext context, IRubyObject other) {
         if (this == other) return context.tru;
 
-        return asBoolean(context, context.runtime.getException().isInstance(other) &&
+        return asBoolean(context, exceptionClass(context).isInstance(other) &&
                 getMetaClass().getRealClass() == other.getMetaClass().getRealClass() &&
                 callMethod(context, "message").equals(other.callMethod(context, "message")) &&
                 callMethod(context, "backtrace").equals(other.callMethod(context, "backtrace")));
@@ -447,7 +447,7 @@ public class RubyException extends RubyObject {
     }
 
     public void captureBacktrace(ThreadContext context) {
-        backtrace.backtraceData = context.runtime.getInstanceConfig().getTraceType().getBacktrace(context);
+        backtrace.backtraceData = instanceConfig(context).getTraceType().getBacktrace(context);
     }
 
     public IRubyObject getBacktrace() {
@@ -557,7 +557,7 @@ public class RubyException extends RubyObject {
     public void prepareIntegratedBacktrace(ThreadContext context, StackTraceElement[] javaTrace) {
         // if it's null, build a backtrace
         if (backtrace.backtraceData == null) {
-            backtrace.backtraceData = context.runtime.getInstanceConfig().getTraceType().getIntegratedBacktrace(context, javaTrace);
+            backtrace.backtraceData = instanceConfig(context).getTraceType().getIntegratedBacktrace(context, javaTrace);
         }
     }
 

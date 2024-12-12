@@ -66,6 +66,7 @@ import java.nio.ByteOrder;
 import java.nio.channels.Channel;
 
 import static com.headius.backport9.buffer.Buffers.flipBuffer;
+import static org.jruby.api.Access.ioClass;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
@@ -134,14 +135,13 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
     @JRubyMethod
     public IRubyObject send_io(ThreadContext context, IRubyObject arg) {
-        final Ruby runtime = context.runtime;
-        final POSIX posix = runtime.getPosix();
+        final POSIX posix = context.runtime.getPosix();
         OpenFile fptr = getOpenFileChecked();
         int fd;
 
-        if (arg.callMethod(context, "kind_of?", runtime.getIO()).isTrue()) {
+        if (arg.callMethod(context, "kind_of?", ioClass(context)).isTrue()) {
           fd = ((RubyIO) arg).getOpenFileChecked().getFileno();
-        } else if (arg.callMethod(context, "kind_of?", runtime.getFixnum()).isTrue()) {
+        } else if (arg.callMethod(context, "kind_of?", context.runtime.getFixnum()).isTrue()) {
           fd = ((RubyFixnum) arg).getIntValue();
         } else {
           throw typeError(context, "neither IO nor file descriptor");
@@ -174,36 +174,27 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         try {
             while (posix.sendmsg(fptr.getFileno(), outMessage, 0) == -1) {
                 if (!fptr.waitWritable(context)) {
-                    throw runtime.newErrnoFromInt(posix.errno(), "sendmsg(2)");
+                    throw context.runtime.newErrnoFromInt(posix.errno(), "sendmsg(2)");
                 }
             }
         } finally {
             if (locked) fptr.unlock();
         }
 
-        return runtime.getNil();
+        return context.nil;
     }
 
     @JRubyMethod(optional = 2, checkArity = false)
     public IRubyObject recv_io(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 0, 2);
-
-        final Ruby runtime = context.runtime;
-        final POSIX posix = runtime.getPosix();
+        final POSIX posix = context.runtime.getPosix();
         OpenFile fptr = getOpenFileChecked();
-
-        IRubyObject klass = runtime.getIO();
-        IRubyObject mode = runtime.getNil();
-        if (argc > 0) {
-            klass = args[0];
-        }
-        if (argc > 1) {
-            mode = args[1];
-        }
-
+        IRubyObject klass = argc > 0 ? args[0] : ioClass(context);
+        IRubyObject mode = argc > 1 ? args[1] : context.nil;
         MsgHdr inMessage = posix.allocateMsgHdr();
         ByteBuffer[] inIov = new ByteBuffer[1];
         inIov[0] = ByteBuffer.allocateDirect(1);
+
         inMessage.setIov(inIov);
 
         CmsgHdr inControl = inMessage.allocateControl(4);
@@ -219,7 +210,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         try {
             while (posix.recvmsg(fptr.getFileno(), inMessage, 0) == -1) {
                 if (!fptr.waitReadable(context)) {
-                    throw runtime.newErrnoFromInt(posix.errno(), "recvmsg(2)");
+                    throw context.runtime.newErrnoFromInt(posix.errno(), "recvmsg(2)");
                 }
             }
         } finally {
