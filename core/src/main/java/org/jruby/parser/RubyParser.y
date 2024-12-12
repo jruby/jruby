@@ -186,55 +186,55 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
 
 // patch_parser.rb will look for token lines with {{ and }} within it to put
 // in reasonable strings we expect during a parsing error.
-%token <@@keyword_type@@> keyword_class        /* {{`class''}} */
-%token <@@keyword_type@@> keyword_module       /* {{`module'}} */
-%token <@@keyword_type@@> keyword_def          /* {{`def'}} */
-%token <@@keyword_type@@> keyword_undef        /* {{`undef'}} */
-%token <@@keyword_type@@> keyword_begin        /* {{`begin'}} */
-%token <@@keyword_type@@> keyword_rescue       /* {{`rescue'}} */
-%token <@@keyword_type@@> keyword_ensure       /* {{`ensure'}} */
-%token <@@keyword_type@@> keyword_end          /* {{`end'}} */
-%token <@@keyword_type@@> keyword_if           /* {{`if'}} */
-%token <@@keyword_type@@> keyword_unless       /* {{`unless'}} */
-%token <@@keyword_type@@> keyword_then         /* {{`then'}} */
-%token <@@keyword_type@@> keyword_elsif        /* {{`elsif'}} */
-%token <@@keyword_type@@> keyword_else         /* {{`else'}} */
-%token <@@keyword_type@@> keyword_case         /* {{`case'}} */
-%token <@@keyword_type@@> keyword_when         /* {{`when'}} */
-%token <@@keyword_type@@> keyword_while        /* {{`while'}} */
-%token <@@keyword_type@@> keyword_until        /* {{`until'}} */
-%token <@@keyword_type@@> keyword_for          /* {{`for'}} */
-%token <@@keyword_type@@> keyword_break        /* {{`break'}} */
-%token <@@keyword_type@@> keyword_next         /* {{`next'}} */
-%token <@@keyword_type@@> keyword_redo         /* {{`redo'}} */
-%token <@@keyword_type@@> keyword_retry        /* {{`retry'}} */
-%token <Object> keyword_in                     /* {{`in'}} */
-%token <@@keyword_type@@> keyword_do           /* {{`do'}} */
-%token <@@keyword_type@@> keyword_do_cond      /* {{`do' for condition}} */
-%token <@@keyword_type@@> keyword_do_block     /* {{`do' for block}} */
-%token <@@keyword_type@@> keyword_do_LAMBDA    /* {{`do' for lambda}} */
-%token <@@keyword_type@@> keyword_return       /* {{`return'}} */
-%token <@@keyword_type@@> keyword_yield        /* {{`yield'}} */
-%token <@@keyword_type@@> keyword_super        /* {{`super'}} */
-%token <@@keyword_type@@> keyword_self         /* {{`self'}} */
-%token <@@keyword_type@@> keyword_nil          /* {{`nil'}} */
-%token <@@keyword_type@@> keyword_true         /* {{`true'}} */
-%token <@@keyword_type@@> keyword_false        /* {{`false'}} */
-%token <@@keyword_type@@> keyword_and          /* {{`and'}} */
-%token <@@keyword_type@@> keyword_or           /* {{`or'}} */
-%token <@@keyword_type@@> keyword_not          /* {{`not'}} */
-%token <@@keyword_type@@> modifier_if          /* {{`if' modifier}} */
-%token <@@keyword_type@@> modifier_unless      /* {{`unless' modifier}} */
-%token <@@keyword_type@@> modifier_while       /* {{`while' modifier}} */
-%token <@@keyword_type@@> modifier_until       /* {{`until' modifier}} */
-%token <@@keyword_type@@> modifier_rescue      /* {{`rescue' modifier}} */
-%token <@@keyword_type@@> keyword_alias        /* {{`alias'}} */
-%token <@@keyword_type@@> keyword_defined      /* {{`defined'}} */
-%token <@@keyword_type@@> keyword_BEGIN        /* {{`BEGIN'}} */
-%token <@@keyword_type@@> keyword_END          /* {{`END'}} */
-%token <@@keyword_type@@> keyword__LINE__      /* {{`__LINE__'}} */
-%token <@@keyword_type@@> keyword__FILE__      /* {{`__FILE__'}} */
-%token <@@keyword_type@@> keyword__ENCODING__  /* {{`__ENCODING__'}} */
+%token <@@keyword_type@@> keyword_class        /* {{'class''}} */
+%token <@@keyword_type@@> keyword_module       /* {{'module'}} */
+%token <@@keyword_type@@> keyword_def          /* {{'def'}} */
+%token <@@keyword_type@@> keyword_undef        /* {{'undef'}} */
+%token <@@keyword_type@@> keyword_begin        /* {{'begin'}} */
+%token <@@keyword_type@@> keyword_rescue       /* {{'rescue'}} */
+%token <@@keyword_type@@> keyword_ensure       /* {{'ensure'}} */
+%token <@@keyword_type@@> keyword_end          /* {{'end'}} */
+%token <@@keyword_type@@> keyword_if           /* {{'if'}} */
+%token <@@keyword_type@@> keyword_unless       /* {{'unless'}} */
+%token <@@keyword_type@@> keyword_then         /* {{'then'}} */
+%token <@@keyword_type@@> keyword_elsif        /* {{'elsif'}} */
+%token <@@keyword_type@@> keyword_else         /* {{'else'}} */
+%token <@@keyword_type@@> keyword_case         /* {{'case'}} */
+%token <@@keyword_type@@> keyword_when         /* {{'when'}} */
+%token <@@keyword_type@@> keyword_while        /* {{'while'}} */
+%token <@@keyword_type@@> keyword_until        /* {{'until'}} */
+%token <@@keyword_type@@> keyword_for          /* {{'for'}} */
+%token <@@keyword_type@@> keyword_break        /* {{'break'}} */
+%token <@@keyword_type@@> keyword_next         /* {{'next'}} */
+%token <@@keyword_type@@> keyword_redo         /* {{'redo'}} */
+%token <@@keyword_type@@> keyword_retry        /* {{'retry'}} */
+%token <Object> keyword_in                     /* {{'in'}} */
+%token <@@keyword_type@@> keyword_do           /* {{'do'}} */
+%token <@@keyword_type@@> keyword_do_cond      /* {{'do' for condition}} */
+%token <@@keyword_type@@> keyword_do_block     /* {{'do' for block}} */
+%token <@@keyword_type@@> keyword_do_LAMBDA    /* {{'do' for lambda}} */
+%token <@@keyword_type@@> keyword_return       /* {{'return'}} */
+%token <@@keyword_type@@> keyword_yield        /* {{'yield'}} */
+%token <@@keyword_type@@> keyword_super        /* {{'super'}} */
+%token <@@keyword_type@@> keyword_self         /* {{'self'}} */
+%token <@@keyword_type@@> keyword_nil          /* {{'nil'}} */
+%token <@@keyword_type@@> keyword_true         /* {{'true'}} */
+%token <@@keyword_type@@> keyword_false        /* {{'false'}} */
+%token <@@keyword_type@@> keyword_and          /* {{'and'}} */
+%token <@@keyword_type@@> keyword_or           /* {{'or'}} */
+%token <@@keyword_type@@> keyword_not          /* {{'not'}} */
+%token <@@keyword_type@@> modifier_if          /* {{'if' modifier}} */
+%token <@@keyword_type@@> modifier_unless      /* {{'unless' modifier}} */
+%token <@@keyword_type@@> modifier_while       /* {{'while' modifier}} */
+%token <@@keyword_type@@> modifier_until       /* {{'until' modifier}} */
+%token <@@keyword_type@@> modifier_rescue      /* {{'rescue' modifier}} */
+%token <@@keyword_type@@> keyword_alias        /* {{'alias'}} */
+%token <@@keyword_type@@> keyword_defined      /* {{'defined'}} */
+%token <@@keyword_type@@> keyword_BEGIN        /* {{'BEGIN'}} */
+%token <@@keyword_type@@> keyword_END          /* {{'END'}} */
+%token <@@keyword_type@@> keyword__LINE__      /* {{'__LINE__'}} */
+%token <@@keyword_type@@> keyword__FILE__      /* {{'__FILE__'}} */
+%token <@@keyword_type@@> keyword__ENCODING__  /* {{'__ENCODING__'}} */
 %token <@@token_type@@> tIDENTIFIER          /* {{local variable or method}} */
 %token <@@token_type@@> tFID                 /* {{method}} */
 %token <@@token_type@@> tGVAR                /* {{global variable}} */

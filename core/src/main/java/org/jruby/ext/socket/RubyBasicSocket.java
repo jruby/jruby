@@ -649,7 +649,7 @@ public class RubyBasicSocket extends RubyIO {
                 } else if (howString.equals("RDWR") || howString.equals("SHUT_RDWR")) {
                     how = 2;
                 } else {
-                    throw SocketUtils.sockerr(context.runtime, "`how' should be either :SHUT_RD, :SHUT_WR, :SHUT_RDWR");
+                    throw SocketUtils.sockerr(context.runtime, "'how' should be either :SHUT_RD, :SHUT_WR, :SHUT_RDWR");
                 }
             } else {
                 how = RubyNumeric.fix2int(args[0]);
@@ -872,7 +872,7 @@ public class RubyBasicSocket extends RubyIO {
 
             return RubyFixnum.zero(context.runtime);
         default:
-            throw argumentError(context, "`how' should be either :SHUT_RD, :SHUT_WR, :SHUT_RDWR");
+            throw argumentError(context, "'how' should be either :SHUT_RD, :SHUT_WR, :SHUT_RDWR");
         }
     }
 

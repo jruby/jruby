@@ -1933,7 +1933,7 @@ public class Helpers {
                 if (avalue instanceof RubyArray ary) return ary;
                 if (avalue.isNil()) return newArray(context, value);
 
-                throw typeError(context, "`to_a' did not return Array");
+                throw typeError(context, "'to_a' did not return Array");
             } else {
                 CacheEntry entry = value.getMetaClass().searchWithCache("method_missing");
                 DynamicMethod methodMissing = entry.method;
@@ -1946,7 +1946,7 @@ public class Helpers {
                         if (avalue.isNil()) {
                             return newArray(context, value);
                         } else {
-                            throw typeError(context, "`to_a' did not return Array");
+                            throw typeError(context, "'to_a' did not return Array");
                         }
                     }
                     return (RubyArray<?>)avalue;
@@ -2041,7 +2041,7 @@ public class Helpers {
         if (!(avalue instanceof RubyArray ary)) {
             if (avalue.isNil()) return new IRubyObject[] {value};
 
-            throw typeError(context, "`to_a' did not return Array");
+            throw typeError(context, "'to_a' did not return Array");
         }
         return ary.toJavaArray(context);
     }

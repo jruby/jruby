@@ -1094,7 +1094,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     public static RubyString newDebugFrozenString(Ruby runtime, RubyClass rubyClass, ByteList value, int cr, String file, int line) {
-        return new DebugFrozenString(runtime, runtime.getString(), value, cr, file, line);
+        return new DebugFrozenString(runtime, rubyClass, value, cr, file, line);
     }
 
     static class DebugFrozenString extends RubyString {
