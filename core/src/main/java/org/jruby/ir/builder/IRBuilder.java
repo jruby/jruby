@@ -2524,7 +2524,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
             buildAssignment(reference, exception);  // Prism does not desugar
         }
-        
+
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             // Explicit line number here because we need a line number for trace before we process any nodes
             addInstr(getManager().newLineNumber(scope.getLine() + 1));
