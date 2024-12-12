@@ -1315,7 +1315,7 @@ public class RubyLexer extends LexingCommon {
         pushback(c);
 
         if (IS_SPCARG(c, spaceSeen)) {
-            if (isVerbose()) warning("`&' interpreted as argument prefix");
+            if (isVerbose()) warning("'&' interpreted as argument prefix");
             c = tAMPER;
         } else if (IS_BEG()) {
             c = warn_balanced(c, spaceSeen, tAMPER, "&", "argument prefix");
@@ -1343,9 +1343,9 @@ public class RubyLexer extends LexingCommon {
 
         if (c == EOF || !isIdentifierChar(c)) {
             if (result == tIVAR) {
-                compile_error("`@' without identifiers is not allowed as an instance variable name");
+                compile_error("'@' without identifiers is not allowed as an instance variable name");
             } else {
-                compile_error("`@@' without identifiers is not allowed as a class variable name");
+                compile_error("'@@' without identifiers is not allowed as a class variable name");
             }
             set_yylval_noname();
             setState(EXPR_END);
@@ -1353,9 +1353,9 @@ public class RubyLexer extends LexingCommon {
         } else if (Character.isDigit(c)) {
             pushback(c);
             if (result == tIVAR) {
-                compile_error("`@" + ((char) c) + "' is not allowed as an instance variable name");
+                compile_error("'@" + ((char) c) + "' is not allowed as an instance variable name");
             } else {
-                compile_error("`@@" + ((char) c) + "' is not allowed as a class variable name");
+                compile_error("'@@" + ((char) c) + "' is not allowed as a class variable name");
             }
             set_yylval_noname();
             setState(EXPR_END);
@@ -1582,10 +1582,10 @@ public class RubyLexer extends LexingCommon {
         default:
             if (!isIdentifierChar(c)) {
                 if (c == EOF || isSpace(c)) {
-                    compile_error("`$' without identifiers is not allowed as a global variable name");
+                    compile_error("'$' without identifiers is not allowed as a global variable name");
                 } else {
                     pushback(c);
-                    compile_error("`$" + ((char) c) + "' is not allowed as a global variable name");
+                    compile_error("'$" + ((char) c) + "' is not allowed as a global variable name");
                 }
                 return EOF;
             }
@@ -2212,7 +2212,7 @@ public class RubyLexer extends LexingCommon {
             yaccValue = STAR_STAR;
 
             if (IS_SPCARG(c, spaceSeen)) {
-                if (isVerbose() && Options.PARSER_WARN_ARGUMENT_PREFIX.load()) warning("`**' interpreted as argument prefix");
+                if (isVerbose() && Options.PARSER_WARN_ARGUMENT_PREFIX.load()) warning("'**' interpreted as argument prefix");
                 c = tDSTAR;
             } else if (IS_BEG()) {
                 c = tDSTAR;
@@ -2228,7 +2228,7 @@ public class RubyLexer extends LexingCommon {
         default:
             pushback(c);
             if (IS_SPCARG(c, spaceSeen)) {
-                if (isVerbose() && Options.PARSER_WARN_ARGUMENT_PREFIX.load()) warning("`*' interpreted as argument prefix");
+                if (isVerbose() && Options.PARSER_WARN_ARGUMENT_PREFIX.load()) warning("'*' interpreted as argument prefix");
                 c = tSTAR;
             } else if (IS_BEG()) {
                 c = tSTAR;

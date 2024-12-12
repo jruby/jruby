@@ -73,6 +73,7 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import jnr.posix.util.Platform;
+import org.jruby.api.Access;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.javasupport.Java;
 import org.jruby.runtime.Helpers;
@@ -1668,12 +1669,12 @@ public class ShellLauncher {
                 // can't make use of it, discard the argv[0] entry
                 args = new String[] { getPathEntry((RubyArray) rawArgs[0]) };
             } else {
-                synchronized (runtime.getLoadService()) {
-                    runtime.getLoadService().require("jruby/path_helper");
+                var loadService = Access.loadService(context);
+                synchronized (loadService) {
+                    loadService.require("jruby/path_helper");
                 }
                 RubyModule pathHelper = runtime.getClassFromPath("JRuby::PathHelper");
-                RubyArray parts = (RubyArray) Helpers.invoke(
-                        context, pathHelper, "smart_split_command", rawArgs);
+                RubyArray parts = (RubyArray) Helpers.invoke(context, pathHelper, "smart_split_command", rawArgs);
                 args = new String[parts.getLength()];
                 for (int i = 0; i < parts.getLength(); i++) {
                     args[i] = parts.entry(i).toString();

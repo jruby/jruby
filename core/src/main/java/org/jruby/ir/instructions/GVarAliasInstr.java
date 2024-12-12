@@ -11,6 +11,8 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Access.globalVariables;
+
 public class GVarAliasInstr extends TwoOperandInstr implements FixedArityInstr {
     public GVarAliasInstr(Operand newName, Operand oldName) {
         super(Operation.GVAR_ALIAS, newName, oldName);
@@ -45,7 +47,7 @@ public class GVarAliasInstr extends TwoOperandInstr implements FixedArityInstr {
         String newNameString = getNewName().retrieve(context, self, currScope, currDynScope, temp).toString();
         String oldNameString = getOldName().retrieve(context, self, currScope, currDynScope, temp).toString();
 
-        context.runtime.getGlobalVariables().alias(newNameString, oldNameString);
+        globalVariables(context).alias(newNameString, oldNameString);
         return null;
     }
 

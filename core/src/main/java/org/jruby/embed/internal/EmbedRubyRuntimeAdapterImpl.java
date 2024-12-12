@@ -220,7 +220,6 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
     }
 
     static DynamicScope createLocalVarScope(Ruby runtime, final String[] varNames) {
-        ManyVarsDynamicScope scope;
         StaticScopeFactory scopeFactory = runtime.getStaticScopeFactory();
 
         // root our parsing scope with a dummy scope
@@ -229,7 +228,7 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
 
         DynamicScope currentScope = new ManyVarsDynamicScope(topStaticScope, null);
         StaticScope evalScope = scopeFactory.newEvalScope(currentScope.getStaticScope(), varNames);
-        scope = new ManyVarsDynamicScope(evalScope, currentScope);
+        ManyVarsDynamicScope scope = new ManyVarsDynamicScope(evalScope, currentScope);
 
         // JRUBY-5501: ensure we've set up a cref for the scope too
         scope.getStaticScope().determineModule();

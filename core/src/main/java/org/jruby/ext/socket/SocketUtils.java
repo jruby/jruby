@@ -72,6 +72,7 @@ import static jnr.constants.platform.ProtocolFamily.PF_INET;
 import static jnr.constants.platform.ProtocolFamily.PF_INET6;
 import static jnr.constants.platform.Sock.SOCK_DGRAM;
 import static jnr.constants.platform.Sock.SOCK_STREAM;
+import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
@@ -504,8 +505,7 @@ public class SocketUtils {
             port = RubyNumeric.fix2int(portInteger);
 
             if (port <= 0) {
-                port = RubyNumeric.fix2int(RubySocket.getservbyname(
-                        context, context.runtime.getObject(), new IRubyObject[]{portString}));
+                port = RubyNumeric.fix2int(RubySocket.getservbyname(context, objectClass(context), new IRubyObject[]{portString}));
             }
         }
 
@@ -666,16 +666,16 @@ public class SocketUtils {
     public static int portToInt(IRubyObject port) {
         if (port.isNil()) return 0;
 
-        Ruby runtime = port.getRuntime();
+        var context = port.getRuntime().getCurrentContext();
 
-        IRubyObject maybeStr = TypeConverter.checkStringType(runtime, port);
+        IRubyObject maybeStr = TypeConverter.checkStringType(context.runtime, port);
         if (!maybeStr.isNil()) {
             RubyString portStr = maybeStr.convertToString();
             Service serv = Service.getServiceByName(portStr.toString(), null);
 
             if (serv != null) return serv.getPort();
 
-            return RubyNumeric.fix2int(portStr.to_i());
+            return RubyNumeric.fix2int(portStr.to_i(context));
         }
         return RubyNumeric.fix2int(port);
     }

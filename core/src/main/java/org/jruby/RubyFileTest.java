@@ -33,6 +33,8 @@ package org.jruby;
 
 import static org.jruby.RubyFile.get_path;
 import static org.jruby.RubyFile.fileResource;
+import static org.jruby.api.Access.instanceConfig;
+import static org.jruby.api.Access.ioClass;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Define.defineModule;
@@ -100,7 +102,7 @@ public class RubyFileTest {
 
     public static IRubyObject directory_p(ThreadContext context, IRubyObject filename) {
         if (!(filename instanceof RubyIO) && filename.respondsTo("to_io")) {
-            filename = TypeConverter.convertToType(filename, context.runtime.getIO(), "to_io");
+            filename = TypeConverter.convertToType(filename, ioClass(context), "to_io");
         }
 
         return asBoolean(context, fileResource(context, filename).isDirectory());
@@ -286,7 +288,7 @@ public class RubyFileTest {
     @JRubyMethod(name = "size", module = true)
     public static IRubyObject size(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         if (!(filename instanceof RubyFile) && filename.respondsTo("to_io")) {
-             filename = TypeConverter.convertToType(filename, context.runtime.getIO(), "to_io");
+             filename = TypeConverter.convertToType(filename, ioClass(context), "to_io");
         }
 
         FileStat stat = fileResource(context, filename).stat();
@@ -304,7 +306,7 @@ public class RubyFileTest {
     @JRubyMethod(name = "size?", module = true)
     public static IRubyObject size_p(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         if (!(filename instanceof RubyFile) && filename.respondsTo("to_io")) {
-            filename = TypeConverter.convertToType(filename, context.runtime.getIO(), "to_io");
+            filename = TypeConverter.convertToType(filename, ioClass(context), "to_io");
         }
 
         FileStat stat = fileResource(context, filename).stat();
@@ -617,7 +619,7 @@ public class RubyFileTest {
             ClassLoader classLoader = context.runtime.getJRubyClassLoader();
             // handle security-sensitive case
             if (classLoader == null && Ruby.isSecurityRestricted()) {
-                classLoader = context.runtime.getInstanceConfig().getLoader();
+                classLoader = instanceConfig(context).getLoader();
             }
 
             InputStream is = classLoader.getResourceAsStream(path);

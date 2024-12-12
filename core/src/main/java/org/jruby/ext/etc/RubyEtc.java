@@ -230,7 +230,8 @@ public class RubyEtc {
         Arity.checkArgumentCount(context, args, 0, 1);
 
         POSIX posix = runtime.getPosix();
-        IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
+        var globalVariables = globalVariables(context);
+        IRubyObject oldExc = globalVariables.get("$!"); // Save $!
         try {
             int uid = args.length == 0 ? posix.getuid() : RubyNumeric.fix2int(args[0]);
             Passwd pwd = posix.getpwuid(uid);
@@ -242,8 +243,8 @@ public class RubyEtc {
             return setupPasswd(context, pwd);
         } catch (RaiseException re) {
             if (runtime.getNotImplementedError().isInstance(re.getException())) {
-                runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
-                return runtime.getNil();
+                globalVariables.set("$!", oldExc); // Restore $!
+                return context.nil;
             }
             throw re;
         } catch (Exception e) {

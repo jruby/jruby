@@ -61,8 +61,8 @@ public class RubyNil extends RubyObject implements Constantizable {
     private final int hashCode;
     private final transient Object constant;
 
-    public RubyNil(Ruby runtime) {
-        super(runtime, runtime.getNilClass(), false);
+    public RubyNil(Ruby runtime, RubyClass Nil) {
+        super(runtime, Nil, false);
         flags |= NIL_F | FALSE_F | FROZEN_F;
 
         if (RubyInstanceConfig.CONSISTENT_HASHING_ENABLED) {

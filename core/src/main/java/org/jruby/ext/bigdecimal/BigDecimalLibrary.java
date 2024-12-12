@@ -35,6 +35,8 @@ import java.io.IOException;
 import org.jruby.Ruby;
 import org.jruby.runtime.load.Library;
 
+import static org.jruby.api.Access.loadService;
+
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  * @version $Revision: 1.2 $
@@ -45,6 +47,6 @@ public class BigDecimalLibrary implements Library {
         RubyBigDecimal.createBigDecimal(context);
 
         // using load since this file does not exist in MRI
-        runtime.getLoadService().load("jruby/bigdecimal.rb", false);
+        loadService(context).load("jruby/bigdecimal.rb", false);
     }
 }// BigDecimalLibrary

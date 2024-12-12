@@ -90,17 +90,16 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
     
     static final StructLayout getStructLayout(ThreadContext context, IRubyObject structClass) {
         try {
-            Object layout = ((RubyClass) structClass).getFFIHandle();
+            RubyClass klass = (RubyClass) structClass;
+            Object layout = klass.getFFIHandle();
             if (layout instanceof StructLayout sl) return sl;
 
-            RubyClass klass = (RubyClass) structClass;
-            while (klass != context.runtime.getObject() && !((layout = klass.getInstanceVariable("@layout")) instanceof StructLayout)) {
+            while (klass != objectClass(context) && !((layout = klass.getInstanceVariable("@layout")) instanceof StructLayout)) {
                 klass = klass.getSuperClass();
             }
 
             if (layout instanceof StructLayout sl) {
-                // Cache the layout on the Struct metaclass for faster retrieval next time
-                ((RubyClass) structClass).setFFIHandle(layout);
+                klass.setFFIHandle(layout); // Cache the layout for faster retrieval next time
                 return sl;
             }
             throw runtimeError(context, "no valid struct layout for " + klass.getName());

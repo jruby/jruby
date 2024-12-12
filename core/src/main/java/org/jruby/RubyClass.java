@@ -31,6 +31,8 @@
 
 package org.jruby;
 
+import static org.jruby.api.Access.basicObjectClass;
+import static org.jruby.api.Access.classClass;
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Error.*;
@@ -1344,8 +1346,8 @@ public class RubyClass extends RubyModule {
         RubyClass superClazz = superClass;
 
         if (superClazz == null) {
-            if (metaClass == runtime.getBasicObject().metaClass) return context.nil;
-            throw typeError(runtime.getCurrentContext(), "uninitialized class");
+            if (metaClass == basicObjectClass(context).metaClass) return context.nil;
+            throw typeError(context, "uninitialized class");
         }
 
         while (superClazz != null && (superClazz.isIncluded() || superClazz.isPrepended())) {
@@ -1361,9 +1363,7 @@ public class RubyClass extends RubyModule {
     }
 
     private void checkNotInitialized(ThreadContext context) {
-        if (superClass != null || this == context.runtime.getBasicObject()) {
-            throw typeError(context, "already initialized class");
-        }
+        if (superClass != null || this == basicObjectClass(context)) throw typeError(context, "already initialized class");
     }
     /** rb_check_inheritable
      *
@@ -1378,7 +1378,7 @@ public class RubyClass extends RubyModule {
             throw typeError(context, "superclass must be a Class (" + superClass.getMetaClass() + " given)");
         }
         if (((RubyClass) superClass).isSingleton()) throw typeError(context, "can't make subclass of virtual class");
-        if (superClass == context.runtime.getClassClass()) throw typeError(context, "can't make subclass of Class");
+        if (superClass == classClass(context)) throw typeError(context, "can't make subclass of Class");
     }
 
     public final ObjectMarshal getMarshal() {

@@ -33,26 +33,19 @@
 
 package org.jruby.test;
 
-import org.jruby.Ruby;
 import org.jruby.RubyException;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyObject;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import static org.jruby.api.Convert.asFixnum;
 
 /**
  * Unit test for the kernel class.
  **/
 public class TestKernel extends Base {
-
     public TestKernel(String name) {
         super(name);
-    }
-
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
-        runtime = Ruby.newInstance();
     }
 
     public void testLoad() throws Exception {
@@ -76,11 +69,13 @@ public class TestKernel extends Base {
     }
 
     public void testExit() throws Exception {
-        verifyExit(RubyFixnum.zero(runtime),   "true");
-        verifyExit(RubyFixnum.one(runtime),    "false");
-        verifyExit(RubyFixnum.zero(runtime),    "");
-        verifyExit(RubyFixnum.zero(runtime),    "0.1");
-        verifyExit(new RubyFixnum(runtime, 7), "7");
+        var zero = asFixnum(context, 0);
+        var one = asFixnum(context, 1);
+        verifyExit(zero, "true");
+        verifyExit(one, "false");
+        verifyExit(zero, "");
+        verifyExit(zero, "0.1");
+        verifyExit(asFixnum(context, 7), "7");
     }
         
     private void verifyExit(RubyObject expectedStatus, String argument) throws Exception {
@@ -89,8 +84,8 @@ public class TestKernel extends Base {
             fail("Expected a SystemExit to be thrown by calling exit.");
         } catch (RaiseException re) {
         	RubyException raisedException = re.getException();
-        	if (runtime.getClass("SystemExit").isInstance(raisedException)) {
-	            IRubyObject status = raisedException.callMethod(runtime.getCurrentContext(), "status");
+        	if (context.runtime.getClass("SystemExit").isInstance(raisedException)) {
+	            IRubyObject status = raisedException.callMethod(context, "status");
 	            assertEquals(expectedStatus, status);
         	} else {
         		throw re;

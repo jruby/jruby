@@ -66,6 +66,10 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 
 import static org.jruby.anno.FrameField.*;
+import static org.jruby.api.Access.arrayClass;
+import static org.jruby.api.Access.globalVariables;
+import static org.jruby.api.Access.hashClass;
+import static org.jruby.api.Access.stringClass;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
@@ -630,10 +634,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public RubyArray convertToArray() {
-        Ruby runtime = metaClass.runtime;
-        ThreadContext context = runtime.getCurrentContext();
-        BasicObjectSites sites = sites(context);
-        return (RubyArray) TypeConverter.convertToType(context, this, runtime.getArray(), sites.to_ary_checked);
+        var context = getRuntime().getCurrentContext();
+        return (RubyArray) TypeConverter.convertToType(context, this, arrayClass(context), sites(context).to_ary_checked);
     }
 
     /**
@@ -642,10 +644,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public RubyHash convertToHash() {
-        Ruby runtime = metaClass.runtime;
-        ThreadContext context = runtime.getCurrentContext();
-        BasicObjectSites sites = sites(context);
-        return (RubyHash) TypeConverter.convertToType(context, this, runtime.getHash(), sites.to_hash_checked);
+        ThreadContext context = getRuntime().getCurrentContext();
+        return (RubyHash) TypeConverter.convertToType(context, this, hashClass(context), sites(context).to_hash_checked);
     }
 
     /**
@@ -713,7 +713,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         Ruby runtime = metaClass.runtime;
         ThreadContext context = runtime.getCurrentContext();
         BasicObjectSites sites = sites(context);
-        return (RubyString) TypeConverter.convertToType(context, this, runtime.getString(), sites.to_str_checked);
+        return (RubyString) TypeConverter.convertToType(context, this, stringClass(context), sites.to_str_checked);
     }
 
     /**
@@ -2166,7 +2166,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      */
     public IRubyObject display(ThreadContext context, IRubyObject[] args) {
-        IRubyObject port = args.length == 0 ? context.runtime.getGlobalVariables().get("$>") : args[0];
+        IRubyObject port = args.length == 0 ? globalVariables(context).get("$>") : args[0];
 
         port.callMethod(context, "write", this);
 

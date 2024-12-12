@@ -67,6 +67,8 @@ import org.jruby.ast.util.ArgsUtil;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyFile.filePathConvert;
 import static org.jruby.RubyString.UTF8;
+import static org.jruby.api.Access.dirClass;
+import static org.jruby.api.Access.globalVariables;
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.asBoolean;
@@ -592,12 +594,10 @@ public class RubyDir extends RubyObject implements Closeable {
     }
 
     private static IRubyObject eachChildCommon(ThreadContext context, IRubyObject recv, RubyString path, IRubyObject encOpts, Block block) {
-        final Ruby runtime = context.runtime;
-
         if (block.isGiven()) {
-            Encoding encoding = encOpts == null ? runtime.getDefaultEncoding() : getEncodingFromOpts(context, encOpts);
+            Encoding encoding = encOpts == null ? context.runtime.getDefaultEncoding() : getEncodingFromOpts(context, encOpts);
 
-            RubyDir dir = (RubyDir) runtime.getDir().newInstance(context, path, Block.NULL_BLOCK);
+            RubyDir dir = (RubyDir) dirClass(context).newInstance(context, path, Block.NULL_BLOCK);
 
             dir.each_child(context, encoding, block);
 
@@ -605,17 +605,15 @@ public class RubyDir extends RubyObject implements Closeable {
         }
 
         return encOpts == null ?
-                enumeratorize(runtime, recv, "each_child", path) :
-                enumeratorize(runtime, recv, "each_child", path, encOpts);
+                enumeratorize(context.runtime, recv, "each_child", path) :
+                enumeratorize(context.runtime, recv, "each_child", path, encOpts);
     }
 
     private static IRubyObject foreachCommon(ThreadContext context, IRubyObject recv, RubyString path, IRubyObject encOpts, Block block) {
-        final Ruby runtime = context.runtime;
-
         if (block.isGiven()) {
-            Encoding encoding = encOpts == null ? runtime.getDefaultEncoding() : getEncodingFromOpts(context, encOpts);
+            Encoding encoding = encOpts == null ? context.runtime.getDefaultEncoding() : getEncodingFromOpts(context, encOpts);
 
-            RubyDir dir = (RubyDir) runtime.getDir().newInstance(context, path, Block.NULL_BLOCK);
+            RubyDir dir = (RubyDir) dirClass(context).newInstance(context, path, Block.NULL_BLOCK);
 
             dir.each(context, encoding, block);
 
@@ -623,8 +621,8 @@ public class RubyDir extends RubyObject implements Closeable {
         }
 
         return encOpts == null ?
-                enumeratorize(runtime, recv, "foreach", path) :
-                enumeratorize(runtime, recv, "foreach", path, encOpts);
+                enumeratorize(context.runtime, recv, "foreach", path) :
+                enumeratorize(context.runtime, recv, "foreach", path, encOpts);
     }
 
     /** Returns the current directory. */
@@ -712,8 +710,7 @@ public class RubyDir extends RubyObject implements Closeable {
      */
     @JRubyMethod(name = "open", meta = true)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject path, Block block) {
-        RubyDir directory = (RubyDir) context.runtime.getDir().newInstance(context, path, Block.NULL_BLOCK);
-
+        RubyDir directory = (RubyDir) dirClass(context).newInstance(context, path, Block.NULL_BLOCK);
         if (!block.isGiven()) return directory;
 
         try {
@@ -725,8 +722,7 @@ public class RubyDir extends RubyObject implements Closeable {
 
     @JRubyMethod(name = "open", meta = true)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject path, IRubyObject encOpts, Block block) {
-        RubyDir directory = (RubyDir) context.runtime.getDir().newInstance(context, path, encOpts, Block.NULL_BLOCK);
-
+        RubyDir directory = (RubyDir) dirClass(context).newInstance(context, path, encOpts, Block.NULL_BLOCK);
         if (!block.isGiven()) return directory;
 
         try {
@@ -905,14 +901,15 @@ public class RubyDir extends RubyObject implements Closeable {
     @JRubyMethod(name = "exist?", meta = true)
     public static IRubyObject exist(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         // Capture previous exception if any.
-        IRubyObject exception = context.runtime.getGlobalVariables().get("$!");
+        var globals = globalVariables(context);
+        IRubyObject exception = globals.get("$!");
         RubyString path = RubyFile.get_path(context, arg);
 
         try {
             return context.runtime.newFileStat(path.asJavaString(), false).directory_p(context);
         } catch (Exception e) {
             // Restore $!
-            context.runtime.getGlobalVariables().set("$!", exception);
+            globals.set("$!", exception);
             return context.fals;
         }
     }

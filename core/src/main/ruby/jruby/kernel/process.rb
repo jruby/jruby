@@ -1,4 +1,10 @@
 module Process
+  class << self
+    def argv0
+      $0
+    end
+  end
+
   class WaitThread < Thread
     # only created from Java and used for popen3 right now
     class << self

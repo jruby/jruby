@@ -50,6 +50,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.MethodData;
 import org.jruby.util.cli.Options;
 
+import static org.jruby.api.Access.instanceConfig;
+
 public abstract class AbstractIRMethod extends DynamicMethod implements IRMethodArgs, PositionAware, Cloneable {
 
     protected final Signature signature;
@@ -85,17 +87,16 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
     }
 
     public static <T extends AbstractIRMethod & Compilable> void tryJit(ThreadContext context, T self) {
-        final Ruby runtime = context.runtime;
-        if (runtime.isBooting() && !Options.JIT_KERNEL.load()) return; // don't JIT during runtime boot
+        if (context.runtime.isBooting() && !Options.JIT_KERNEL.load()) return; // don't JIT during runtime boot
 
         if (self.callCount < 0) return;
         // we don't synchronize callCount++ it does not matter if count isn't accurate
-        if (self.callCount++ >= runtime.getInstanceConfig().getJitThreshold()) {
+        if (self.callCount++ >= instanceConfig(context).getJitThreshold()) {
             synchronized (self) { // disable same jit tasks from entering queue twice
                 if (self.callCount >= 0) {
                     self.callCount = Integer.MIN_VALUE; // so that callCount++ stays < 0
 
-                    runtime.getJITCompiler().buildThresholdReached(context, self);
+                    context.runtime.getJITCompiler().buildThresholdReached(context, self);
                 }
             }
         }

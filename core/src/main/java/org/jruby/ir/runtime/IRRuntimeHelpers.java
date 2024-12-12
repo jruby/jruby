@@ -90,7 +90,13 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.Type;
 
+import static org.jruby.api.Access.arrayClass;
+import static org.jruby.api.Access.globalVariables;
+import static org.jruby.api.Access.hashClass;
+import static org.jruby.api.Access.instanceConfig;
 import static org.jruby.api.Access.objectClass;
+import static org.jruby.api.Access.stringClass;
+import static org.jruby.api.Access.symbolClass;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
@@ -380,7 +386,7 @@ public class IRRuntimeHelpers {
                         exception = Helpers.wrapJavaException(runtime, ex);
                     }
 
-                    runtime.getGlobalVariables().set("$!", exception);
+                    globalVariables(context).set("$!", exception);
                     return true;
                 }
             }
@@ -388,7 +394,7 @@ public class IRRuntimeHelpers {
         else {
             IRubyObject exception = wrapJavaException(context, excType, ex);
             if (Helpers.checkJavaException(exception, ex, excType, context)) {
-                runtime.getGlobalVariables().set("$!", exception);
+                globalVariables(context).set("$!", exception);
                 return true;
             }
         }
@@ -418,7 +424,7 @@ public class IRRuntimeHelpers {
             for (int i = 0, n = testTypes.getLength(); i < n; i++) {
                 IRubyObject testType = testTypes.eltInternal(i);
                 if (IRRuntimeHelpers.isRubyExceptionHandled(context, testType, excObj)) {
-                    context.runtime.getGlobalVariables().set("$!", (IRubyObject)excObj);
+                    globalVariables(context).set("$!", (IRubyObject)excObj);
                     return true;
                 }
             }
@@ -428,7 +434,7 @@ public class IRRuntimeHelpers {
             }
 
             if (excType.callMethod(context, "===", (IRubyObject)excObj).isTrue()) {
-                context.runtime.getGlobalVariables().set("$!", (IRubyObject)excObj);
+                globalVariables(context).set("$!", (IRubyObject)excObj);
                 return true;
             }
         }
@@ -986,8 +992,7 @@ public class IRRuntimeHelpers {
 
     @JIT @Interp
     public static IRubyObject isDefinedGlobal(ThreadContext context, String name, IRubyObject definedMessage) {
-        return context.runtime.getGlobalVariables().isDefined(name) ?
-                definedMessage : context.nil;
+        return globalVariables(context).isDefined(name) ? definedMessage : context.nil;
     }
 
     // FIXME: This checks for match data differently than isDefinedBackref.  Seems like they should use same mechanism?
@@ -1324,7 +1329,7 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static IRubyObject keywordRestOnHash(ThreadContext context, IRubyObject rest) {
-        TypeConverter.checkType(context, rest, context.runtime.getHash());
+        TypeConverter.checkType(context, rest, hashClass(context));
         return ((RubyHash) rest).dupFast(context);
     }
 
@@ -1793,7 +1798,7 @@ public class IRRuntimeHelpers {
         if (method.maybeUsingRefinements()) method.getStaticScope().captureParentRefinements(context);
 
         DynamicMethod newMethod;
-        if (context.runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.OFF) {
+        if (instanceConfig(context).getCompileMode() == RubyInstanceConfig.CompileMode.OFF) {
             newMethod = new InterpretedIRMethod(method, Visibility.PUBLIC, rubyClass);
         } else {
             newMethod = new MixedModeIRMethod(method, Visibility.PUBLIC, rubyClass);
@@ -1859,11 +1864,11 @@ public class IRRuntimeHelpers {
         RubyModule rubyClass = findInstanceMethodContainer(context, currDynScope, self);
 
         Visibility currVisibility = context.getCurrentVisibility();
-        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(context.runtime, rubyClass, methodName, currVisibility);
+        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(context, rubyClass, methodName, currVisibility);
 
         if (method.maybeUsingRefinements()) method.getStaticScope().captureParentRefinements(context);
 
-        DynamicMethod newMethod = context.runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.OFF ?
+        DynamicMethod newMethod = instanceConfig(context).getCompileMode() == RubyInstanceConfig.CompileMode.OFF ?
             new InterpretedIRMethod(method, newVisibility, rubyClass) : new MixedModeIRMethod(method, newVisibility, rubyClass);
 
         Helpers.addInstanceMethod(rubyClass, methodName, newMethod, currVisibility, context);
@@ -1879,7 +1884,7 @@ public class IRRuntimeHelpers {
         RubyModule clazz = findInstanceMethodContainer(context, currDynScope, self);
 
         Visibility currVisibility = context.getCurrentVisibility();
-        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(context.runtime, clazz, methodName, currVisibility);
+        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(context, clazz, methodName, currVisibility);
 
         if (maybeRefined) scope.captureParentRefinements(context);
 
@@ -1901,7 +1906,7 @@ public class IRRuntimeHelpers {
         RubyModule clazz = findInstanceMethodContainer(context, currDynScope, self);
 
         Visibility currVisibility = context.getCurrentVisibility();
-        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(context.runtime, clazz, methodName, currVisibility);
+        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(context, clazz, methodName, currVisibility);
 
         if (maybeRefined) scope.captureParentRefinements(context);
 
@@ -1993,7 +1998,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static RubyArray irSplat(ThreadContext context, IRubyObject ary) {
         int callInfo = ThreadContext.resetCallInfo(context);
-        IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, ary, context.runtime.getArray(), sites(context).to_a_checked);
+        IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, ary, arrayClass(context), sites(context).to_a_checked);
         RubyArray<?> result;
         if (tmp.isNil()) {
             result = newArray(context, ary);
@@ -2002,7 +2007,7 @@ public class IRRuntimeHelpers {
             result = (RubyArray<?>) ((RubyArray)tmp).aryDup();
 
             // We have concat'd an empty keyword rest.   This comes from MERGE_KEYWORDS noticing it is empty.
-            if (result.last() == UNDEFINED) {
+            if (result.last(context) == UNDEFINED) {
                 result.pop(context);
                 context.callInfo |= callInfo | CALL_KEYWORD_EMPTY;
             }
@@ -2017,7 +2022,7 @@ public class IRRuntimeHelpers {
      */
     @JIT @Interp
     public static RubyArray splatArray(ThreadContext context, IRubyObject ary, boolean dupArray) {
-        IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, ary, context.runtime.getArray(), sites(context).to_a_checked);
+        IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, ary, arrayClass(context), sites(context).to_a_checked);
 
         if (tmp.isNil()) return newArray(context, ary);
         if (dupArray) return ((RubyArray<?>) tmp).aryDup();
@@ -2032,7 +2037,7 @@ public class IRRuntimeHelpers {
      */
     @JIT @Interp
     public static RubyArray splatArray(ThreadContext context, IRubyObject ary) {
-        IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, ary, context.runtime.getArray(), sites(context).to_a_checked);
+        IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, ary, arrayClass(context), sites(context).to_a_checked);
 
         if (tmp.isNil()) return newArray(context, ary);
 
@@ -2046,7 +2051,7 @@ public class IRRuntimeHelpers {
      */
     @JIT @Interp
     public static RubyArray splatArrayDup(ThreadContext context, IRubyObject ary) {
-        IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, ary, context.runtime.getArray(), sites(context).to_a_checked);
+        IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, ary, arrayClass(context), sites(context).to_a_checked);
 
         return tmp.isNil() ? newArray(context, ary) : ((RubyArray<?>) tmp).aryDup();
     }
@@ -2388,8 +2393,8 @@ public class IRRuntimeHelpers {
     public static RubyString newFrozenString(ThreadContext context, ByteList bytelist, int coderange, String file, int line) {
         Ruby runtime = context.runtime;
 
-        if (runtime.getInstanceConfig().isDebuggingFrozenStringLiteral()) {
-            return RubyString.newDebugFrozenString(runtime, runtime.getString(), bytelist, coderange, file, line + 1);
+        if (instanceConfig(context).isDebuggingFrozenStringLiteral()) {
+            return RubyString.newDebugFrozenString(runtime, stringClass(context), bytelist, coderange, file, line + 1);
         }
 
         return runtime.freezeAndDedupString(RubyString.newString(runtime, bytelist, coderange));
@@ -2568,22 +2573,22 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static RubyClass getArray(ThreadContext context) {
-        return context.runtime.getArray();
+        return arrayClass(context);
     }
 
     @JIT
     public static RubyClass getHash(ThreadContext context) {
-        return context.runtime.getHash();
+        return hashClass(context);
     }
 
     @JIT
     public static RubyClass getObject(ThreadContext context) {
-        return context.runtime.getObject();
+        return objectClass(context);
     }
 
     @JIT
     public static RubyClass getSymbol(ThreadContext context) {
-        return context.runtime.getSymbol();
+        return symbolClass(context);
     }
 
     @JIT @Interp

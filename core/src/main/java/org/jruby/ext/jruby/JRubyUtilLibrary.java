@@ -48,6 +48,7 @@ import org.jruby.runtime.load.BasicLibraryService;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.ClasspathLauncher;
 
+import static org.jruby.api.Access.instanceConfig;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineModule;
@@ -163,18 +164,21 @@ public class JRubyUtilLibrary implements Library {
 
     @JRubyMethod(meta = true) // for RubyGems' JRuby defaults
     public static IRubyObject classpath_launcher(ThreadContext context, IRubyObject recv) {
-        String launcher = context.runtime.getInstanceConfig().getEnvironment().get("RUBY");
-        if ( launcher == null ) launcher = ClasspathLauncher.jrubyCommand(context.runtime);
+        String launcher = instanceConfig(context).getEnvironment().get("RUBY");
+        if (launcher == null) launcher = ClasspathLauncher.jrubyCommand(context.runtime);
+
         return newString(context, launcher);
     }
 
     @JRubyMethod(name = "extra_gem_paths", meta = true) // used from RGs' JRuby defaults
     public static IRubyObject extra_gem_paths(ThreadContext context, IRubyObject recv) {
-        final List<String> extraGemPaths = context.runtime.getInstanceConfig().getExtraGemPaths();
+        final List<String> extraGemPaths = instanceConfig(context).getExtraGemPaths();
         IRubyObject[] extra_gem_paths = new IRubyObject[extraGemPaths.size()];
+
         int i = 0; for (String gemPath : extraGemPaths) {
             extra_gem_paths[i++] = newString(context, gemPath);
         }
+
         return RubyArray.newArrayNoCopy(context.runtime, extra_gem_paths);
     }
 

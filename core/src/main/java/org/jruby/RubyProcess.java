@@ -174,7 +174,7 @@ public class RubyProcess {
 
             marshalStream.registerLinkTarget(status);
 
-            marshalStream.dumpVariables(context, out, status, 3, (marshal, c, o, v, receiver) -> {
+            marshalStream.dumpVariables(context, out, status, 2, (marshal, c, o, v, receiver) -> {
                 // TODO: marshal these values directly
                 receiver.receive(marshal, c, o, "status", asFixnum(c, v.status));
                 receiver.receive(marshal, c, o, "pid", asFixnum(c, v.pid));
@@ -244,13 +244,13 @@ public class RubyProcess {
                 case 0xff00 -> "Process::Status#exitstatus or Process::Status#stopsig";
                 default -> "other Process::Status predicates";
             };
-            deprecateAndSuggest(context, "&", message);
+            deprecateAndSuggest(context, "Process::Status#&", "3.5", message);
 
             return asFixnum(context, status & mask);
         }
 
-        private static void deprecateAndSuggest(ThreadContext context, String method, String suggest) {
-            context.runtime.getWarnings().warnDeprecatedForRemoval("Use " + suggest + " instead of Process::Status#" + method, "3.4");
+        private static void deprecateAndSuggest(ThreadContext context, String method, String version, String suggest) {
+            context.runtime.getWarnings().warnDeprecatedForRemovalAlternate(method, version, suggest);
         }
 
         @JRubyMethod(name = "stopped?")
@@ -329,11 +329,12 @@ public class RubyProcess {
             if (places < 0) throw argumentError(context, "negative shift value: " + places);
             if (places > Integer.MAX_VALUE) throw rangeError(context, "shift value out of range: " + places);
 
-            deprecateAndSuggest(context, ">>", switch ((int) places) {
+            String message = switch ((int) places) {
                 case 7 -> "Process::Status#coredump?";
                 case 8 -> "Process::Status#exitstatus or Process::Status#stopsig";
                 default -> "other Process::Status predicates";
-            });
+            };
+            deprecateAndSuggest(context, "Process::Status#>>", "3.5", message);
 
             return asFixnum(context, status >> places);
         }
@@ -1717,8 +1718,6 @@ public class RubyProcess {
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject clock_gettime(ThreadContext context, IRubyObject self, IRubyObject _clock_id) {
-        Ruby runtime = context.runtime;
-
         return makeClockResult(context, getTimeForClock(context, _clock_id), CLOCK_UNIT_FLOAT_SECOND);
     }
 
@@ -1738,14 +1737,12 @@ public class RubyProcess {
      * Get the time in nanoseconds corresponding to the requested clock.
      */
     private static long getTimeForClock(ThreadContext context, IRubyObject _clock_id) throws RaiseException {
-        long nanos;
-
-        if (_clock_id instanceof RubySymbol) {
-            RubySymbol clock_id = (RubySymbol) _clock_id;
+        if (_clock_id instanceof RubySymbol clock_id) {
             if (clock_id.idString().equals(CLOCK_MONOTONIC)) {
-                nanos = System.nanoTime();
+                return System.nanoTime();
             } else if (clock_id.idString().equals(CLOCK_REALTIME)) {
                 POSIX posix = context.runtime.getPosix();
+                long nanos;
                 if (posix.isNative()) {
                     Timeval tv = posix.allocateTimeval();
                     posix.gettimeofday(tv);
@@ -1753,36 +1750,31 @@ public class RubyProcess {
                 } else {
                     nanos = System.currentTimeMillis() * 1000000;
                 }
-            } else {
-                throw context.runtime.newErrnoEINVALError("clock_gettime");
+                return nanos;
             }
-        } else {
-            // TODO: probably need real clock_id values to do this right.
-            throw context.runtime.newErrnoEINVALError("clock_gettime");
         }
-        return nanos;
+
+        throw clockError(context, "gettime", _clock_id);
     }
 
     /**
      * Get the time resolution in nanoseconds corresponding to the requested clock.
      */
     private static long getResolutionForClock(ThreadContext context, IRubyObject _clock_id) throws RaiseException {
-        long nanos;
-
         if (_clock_id instanceof RubySymbol) {
             RubySymbol clock_id = (RubySymbol) _clock_id;
             if (clock_id.idString().equals(CLOCK_MONOTONIC)) {
-                nanos = 1;
+                return 1;
             } else if (clock_id.idString().equals(CLOCK_REALTIME)) {
-                nanos = 1000000;
-            } else {
-                throw context.runtime.newErrnoEINVALError("clock_gettime");
+                return 1000000;
             }
-        } else {
-            // TODO: probably need real clock_id values to do this right.
-            throw context.runtime.newErrnoEINVALError("clock_gettime");
         }
-        return nanos;
+
+        throw clockError(context, "getres", _clock_id);
+    }
+
+    private static RaiseException clockError(ThreadContext context, String clockMethod, IRubyObject _clock_id) {
+        return context.runtime.newErrnoEINVALError("Process.clock_" + clockMethod + "(" + _clock_id.inspect().toString() + ")");
     }
 
     private static IRubyObject makeClockResult(ThreadContext context, long nanos, String unit) {

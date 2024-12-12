@@ -91,15 +91,6 @@ public class Access {
     }
 
     /**
-     * Retrieve the instance of the module Etc.
-     * @param context the current thread context
-     * @return the Module
-     */
-    public static RubyModule etcModule(ThreadContext context) {
-        return context.runtime.getEtc();
-    }
-
-    /**
      * Retrieve the instance of the class Exception
      * @param context the current thread context
      * @return the Class
@@ -253,6 +244,15 @@ public class Access {
      */
     public static RubyClass structClass(ThreadContext context) {
         return context.runtime.getStructClass();
+    }
+
+    /**
+     * Retrieve the instance of the class Symbol
+     * @param context the current thread context
+     * @return the Class
+     */
+    public static RubyClass symbolClass(ThreadContext context) {
+        return context.runtime.getSymbol();
     }
 
     /**

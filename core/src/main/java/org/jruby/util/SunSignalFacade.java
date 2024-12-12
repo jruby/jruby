@@ -49,6 +49,7 @@ import sun.misc.SignalHandler;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.jruby.api.Access.globalVariables;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newArray;
 
@@ -96,7 +97,8 @@ public class SunSignalFacade implements SignalFacade {
             Signal.handle(new Signal(this.signal), this);
 
             ThreadContext context = runtime.getCurrentContext();
-            IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
+            var globalVariables = globalVariables(context);
+            IRubyObject oldExc = globalVariables.get("$!"); // Save $!
             try {
                 RubyFixnum signum = asFixnum(context, signal.getNumber());
                 if (block != null) {
@@ -109,7 +111,7 @@ public class SunSignalFacade implements SignalFacade {
                     runtime.getThread().callMethod(context, "main")
                         .callMethod(context, "raise", e.getException());
                 } catch(Exception ignored) {}
-                runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
+                globalVariables.set("$!", oldExc); // Restore $!
             } catch (MainExitException mee) {
                 runtime.getThreadService().getMainThread().kill();
             }

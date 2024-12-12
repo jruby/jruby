@@ -15,6 +15,8 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Access.kernelModule;
+
 public class ThrowExceptionInstr extends OneOperandInstr implements FixedArityInstr {
     public ThrowExceptionInstr(Operand exception) {
         super(Operation.THROW, exception);
@@ -41,16 +43,14 @@ public class ThrowExceptionInstr extends OneOperandInstr implements FixedArityIn
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        if (getException() instanceof IRException) {
-            throw ((IRException) getException()).getException(context.runtime);
-        }
+        if (getException() instanceof IRException exc) throw exc.getException(context.runtime);
 
         Object excObj = getException().retrieve(context, self, currScope, currDynScope, temp);
 
-        if (excObj instanceof IRubyObject) {
-            RubyKernel.raise(context, context.runtime.getKernel(), new IRubyObject[] {(IRubyObject)excObj}, Block.NULL_BLOCK);
-        } else if (excObj instanceof Throwable) { // java exception -- avoid having to add 'throws' clause everywhere!
-            Helpers.throwException((Throwable)excObj);
+        if (excObj instanceof IRubyObject exc) {
+            RubyKernel.raise(context, kernelModule(context), new IRubyObject[] {exc}, Block.NULL_BLOCK);
+        } else if (excObj instanceof Throwable exc) { // java exception -- avoid having to add 'throws' clause everywhere!
+            Helpers.throwException(exc);
         }
 
         // should never get here

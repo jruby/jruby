@@ -9,6 +9,7 @@ import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Access.argumentErrorClass;
 import static org.jruby.api.Create.newString;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
@@ -24,7 +25,7 @@ public class Error {
      * @return the created exception
      */
     public static ArgumentError argumentError(ThreadContext context, String message) {
-        return (ArgumentError) context.runtime.newRaiseException(context.runtime.getArgumentError(), message);
+        return (ArgumentError) context.runtime.newRaiseException(argumentErrorClass(context), message);
     }
 
     /**

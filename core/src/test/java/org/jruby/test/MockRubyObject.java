@@ -6,11 +6,13 @@ import org.jruby.RubyObject;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Access.objectClass;
+
 public class MockRubyObject extends RubyObject {
 
 	private static class TestMeta extends RubyClass {
 		protected TestMeta(Ruby runtime) {
-			super(runtime, runtime.getObject(), runtime.isObjectSpaceEnabled());
+			super(runtime, objectClass(runtime.getCurrentContext()), runtime.isObjectSpaceEnabled());
 		}
 	}
 	

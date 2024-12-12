@@ -22,6 +22,7 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.api.API;
 
+import org.jruby.api.Access;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.platform.Platform;
@@ -43,6 +44,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.jruby.api.Access.hashClass;
+import static org.jruby.api.Access.ioClass;
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.asFixnum;
@@ -659,7 +662,8 @@ public class PopenExecutor {
             fd = pair[1];
         }
 
-        port = (RubyIO) runtime.getIO().allocate();
+        var IO = ioClass(context);
+        port = (RubyIO) IO.allocate();
         fptr = port.MakeOpenFile();
         fptr.setChannel(new NativeDeviceChannel(fd));
         fptr.setMode(fmode | (OpenFile.SYNC|OpenFile.DUPLEX));
@@ -686,7 +690,7 @@ public class PopenExecutor {
         fptr.setProcess(new POSIXProcess(runtime, finalPid));
 
         if (write_fd != -1) {
-            write_port = runtime.getIO().allocate();
+            write_port = IO.allocate();
             write_fptr = ((RubyIO)write_port).MakeOpenFile();
             write_fptr.setChannel(new NativeDeviceChannel(write_fd));
             write_fptr.setMode((fmode & ~OpenFile.READABLE)| OpenFile.SYNC|OpenFile.DUPLEX);
@@ -1121,8 +1125,6 @@ public class PopenExecutor {
     }
 
     static void execargParentStart1(ThreadContext context, ExecArg eargp) {
-        RubyClass hashClass = context.runtime.getHash();
-
         eargp.redirect_fds = checkExecFds(context, eargp);
 
         RubyArray<RubyArray> ary = eargp.fd_open;
@@ -1144,7 +1146,7 @@ public class PopenExecutor {
                 envtbl = newHash(context);
             } else {
                 envtbl = objectClass(context).getConstant("ENV");
-                envtbl = TypeConverter.convertToType(envtbl, hashClass, "to_hash").dup();
+                envtbl = TypeConverter.convertToType(envtbl, hashClass(context), "to_hash").dup();
             }
             if (envopts != null) {
                 RubyHash stenv = (RubyHash)envtbl;
@@ -1166,7 +1168,7 @@ public class PopenExecutor {
             // In MRI, they use the current env as the baseline because they fork+exec. We can't do that,
             // and posix_spawn needs a full env, so we pass even unmodified env through.
             envtbl = objectClass(context).getConstant("ENV");
-            envtbl = TypeConverter.convertToType(envtbl, hashClass, "to_hash");
+            envtbl = TypeConverter.convertToType(envtbl, hashClass(context), "to_hash");
         }
         buildEnvp(context, eargp, (RubyHash) envtbl);
 //        RB_GC_GUARD(execarg_obj);
@@ -1560,7 +1562,7 @@ public class PopenExecutor {
                 case "err" -> 2;
                 default -> throw argumentError(context, "wrong exec redirect");
             };
-        } else if (!(tmp = TypeConverter.convertToTypeWithCheck(v, context.runtime.getIO(), "to_io")).isNil()) {
+        } else if (!(tmp = TypeConverter.convertToTypeWithCheck(v, ioClass(context), "to_io")).isNil()) {
             OpenFile fptr = ((RubyIO) tmp).getOpenFileChecked();
             if (fptr.tiedIOForWriting != null) throw argumentError(context, "duplex IO redirection");
             fd = fptr.fd().bestFileno();

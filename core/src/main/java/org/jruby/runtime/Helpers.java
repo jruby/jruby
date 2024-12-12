@@ -83,6 +83,11 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.unicode.UnicodeEncoding;
 
 import static org.jruby.RubyBasicObject.getMetaClass;
+import static org.jruby.api.Access.arrayClass;
+import static org.jruby.api.Access.exceptionClass;
+import static org.jruby.api.Access.instanceConfig;
+import static org.jruby.api.Access.kernelModule;
+import static org.jruby.api.Access.moduleClass;
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asSymbol;
@@ -432,7 +437,7 @@ public class Helpers {
         int n = rubyArray.getLength();
         return preArgsCount + postArgsCount >= n ?
                 newEmptyArray(context) :
-                (RubyArray<?>) rubyArray.subseq(context.runtime.getArray(), preArgsCount, n - preArgsCount - postArgsCount, true);
+                (RubyArray<?>) rubyArray.subseq(arrayClass(context), preArgsCount, n - preArgsCount - postArgsCount, true);
     }
 
     public static Class[] getStaticMethodParams(Class target, int args) {
@@ -1151,7 +1156,7 @@ public class Helpers {
     }
 
     public static IRubyObject isExceptionHandled(IRubyObject currentException, IRubyObject exception, ThreadContext context) {
-        if (!context.runtime.getModule().isInstance(exception)) throw typeError(context, "class or module required for rescue clause");
+        if (!moduleClass(context).isInstance(exception)) throw typeError(context, "class or module required for rescue clause");
 
         IRubyObject result = invoke(context, exception, "===", currentException);
         return result.isTrue() ? result : context.fals;
@@ -1170,36 +1175,35 @@ public class Helpers {
     }
 
     public static boolean checkJavaException(final IRubyObject wrappedEx, final Throwable ex, IRubyObject catchable, ThreadContext context) {
-        final Ruby runtime = context.runtime;
         if (
                 // rescue exception needs to catch Java exceptions
-                runtime.getException() == catchable ||
+                exceptionClass(context) == catchable ||
 
                 // rescue Object needs to catch Java exceptions
                 objectClass(context) == catchable ||
 
                 // rescue StandardError needs to catch Java exceptions
-                runtime.getStandardError() == catchable) {
+                context.runtime.getStandardError() == catchable) {
 
-            if (ex instanceof RaiseException) {
-                return isExceptionHandled(((RaiseException) ex).getException(), catchable, context).isTrue();
+            if (ex instanceof RaiseException raise) {
+                return isExceptionHandled(raise.getException(), catchable, context).isTrue();
             }
 
             // let Ruby exceptions decide if they handle it
             return isExceptionHandled(wrappedEx, catchable, context).isTrue();
         }
 
-        if (runtime.getNativeException() == catchable) {
+        if (context.runtime.getNativeException() == catchable) {
             // NativeException catches Java exceptions, lazily creating the wrapper
             return true;
         }
 
-        if (catchable instanceof RubyClass && Java.isProxyType((RubyClass) catchable)) {
+        if (catchable instanceof RubyClass cat && Java.isProxyType(cat)) {
             if ( ex instanceof ReifiedJavaProxy ) { // Ruby sub-class of a Java exception type
                 final IRubyObject target = ((ReifiedJavaProxy) ex).___jruby$rubyObject();
-                if ( target != null ) return ((RubyClass) catchable).isInstance(target);
+                if ( target != null ) return cat.isInstance(target);
             }
-            return ((RubyClass) catchable).isInstance(wrappedEx);
+            return cat.isInstance(wrappedEx);
         }
 
         if (catchable instanceof RubyModule) {
@@ -1929,7 +1933,7 @@ public class Helpers {
                 if (avalue instanceof RubyArray ary) return ary;
                 if (avalue.isNil()) return newArray(context, value);
 
-                throw typeError(context, "`to_a' did not return Array");
+                throw typeError(context, "'to_a' did not return Array");
             } else {
                 CacheEntry entry = value.getMetaClass().searchWithCache("method_missing");
                 DynamicMethod methodMissing = entry.method;
@@ -1942,7 +1946,7 @@ public class Helpers {
                         if (avalue.isNil()) {
                             return newArray(context, value);
                         } else {
-                            throw typeError(context, "`to_a' did not return Array");
+                            throw typeError(context, "'to_a' did not return Array");
                         }
                     }
                     return (RubyArray<?>)avalue;
@@ -1968,7 +1972,7 @@ public class Helpers {
         if (value instanceof RubyArray) return value;
 
         return respondsTo_to_ary(value) ?
-                TypeConverter.convertToTypeUnchecked(context, value, context.runtime.getArray(), "to_ary", false) :
+                TypeConverter.convertToTypeUnchecked(context, value, arrayClass(context), "to_ary", false) :
                 newArray(context, value);
     }
 
@@ -1986,19 +1990,18 @@ public class Helpers {
         if (value instanceof RubyArray) return value;
 
         return respondsTo_to_ary(value) ?
-                TypeConverter.convertToTypeUnchecked(context, value, context.runtime.getArray(), "to_ary", false) :
+                TypeConverter.convertToTypeUnchecked(context, value, arrayClass(context), "to_ary", false) :
                 context.nil;
     }
 
     @Deprecated // not used
     public static IRubyObject aValueSplat(IRubyObject value) {
-        if (!(value instanceof RubyArray) || ((RubyArray) value).length().getLongValue() == 0) {
-            return value.getRuntime().getNil();
+        var context = value.getRuntime().getCurrentContext();
+        if (!(value instanceof RubyArray array) || array.length().getLongValue() == 0) {
+            return context.nil;
         }
 
-        RubyArray array = (RubyArray) value;
-
-        return array.getLength() == 1 ? array.first() : array;
+        return array.getLength() == 1 ? array.first(context) : array;
     }
 
     @Deprecated(since = "9.4-") // not used
@@ -2007,7 +2010,7 @@ public class Helpers {
         return value.isNil() ? newArray(context, value) : arrayValue(context, value);
     }
 
-    @Deprecated // no longer used
+    @Deprecated(since = "9.4-") // no longer used
     public static IRubyObject[] splatToArguments(IRubyObject value) {
         if (value.isNil()) {
             return value.getRuntime().getSingleNilArray();
@@ -2021,6 +2024,7 @@ public class Helpers {
         return ((RubyArray)tmp).toJavaArrayMaybeUnsafe();
     }
 
+    @Deprecated(since = "9.4-")
     private static IRubyObject[] convertSplatToJavaArray(ThreadContext context, IRubyObject value) {
         // Object#to_a is obsolete.  We match Ruby's hack until to_a goes away.  Then we can
         // remove this hack too.
@@ -2028,19 +2032,17 @@ public class Helpers {
         RubyClass metaClass = value.getMetaClass();
         CacheEntry entry = metaClass.searchWithCache("to_a");
         DynamicMethod method = entry.method;
-        if (method.isUndefined() || method.isImplementedBy(context.runtime.getKernel())) {
+        if (method.isUndefined() || method.isImplementedBy(kernelModule(context))) {
             return new IRubyObject[] {value};
         }
 
         IRubyObject avalue = method.call(context, value, entry.sourceModule, "to_a");
-        if (!(avalue instanceof RubyArray)) {
-            if (avalue.isNil()) {
-                return new IRubyObject[] {value};
-            } else {
-                throw typeError(context, "`to_a' did not return Array");
-            }
+        if (!(avalue instanceof RubyArray ary)) {
+            if (avalue.isNil()) return new IRubyObject[] {value};
+
+            throw typeError(context, "'to_a' did not return Array");
         }
-        return ((RubyArray)avalue).toJavaArray(context);
+        return ary.toJavaArray(context);
     }
 
     @SuppressWarnings("deprecation") @Deprecated // no longer used
@@ -2191,18 +2193,24 @@ public class Helpers {
         return scope;
     }
 
+    @Deprecated(since = "10.0")
     public static Visibility performNormalMethodChecksAndDetermineVisibility(Ruby runtime, RubyModule clazz,
                                                                              RubySymbol symbol, Visibility visibility) throws RaiseException {
-        if (clazz == runtime.getDummy()) throw typeError(runtime.getCurrentContext(), "no class/module to add method");
+        return performNormalMethodChecksAndDetermineVisibility(runtime.getCurrentContext(), clazz, symbol, visibility);
+    }
+
+    public static Visibility performNormalMethodChecksAndDetermineVisibility(ThreadContext context, RubyModule clazz,
+                                                                             RubySymbol symbol, Visibility visibility) throws RaiseException {
+        if (clazz == context.runtime.getDummy()) throw typeError(context, "no class/module to add method");
 
         switch(symbol.idString()) {
             case "__id__":
             case "__send__":
-                runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, str(runtime, "redefining '", ids(runtime, symbol), "' may cause serious problem"));
+                context.runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, str(context.runtime, "redefining '", ids(context.runtime, symbol), "' may cause serious problem"));
                 break;
             case "initialize":
-                if (clazz == runtime.getObject()) {
-                    runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, "redefining Object#initialize may cause infinite loop");
+                if (clazz == objectClass(context)) {
+                    context.runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, "redefining Object#initialize may cause infinite loop");
                 }
             case "initialize_copy":
             case "initialize_dup":
@@ -2501,10 +2509,11 @@ public class Helpers {
         return null;
     }
 
+    @Deprecated(since = "10.0")
     public static RubyModule getSuperClassForDefined(Ruby runtime, RubyModule klazz) {
         RubyModule superklazz = klazz.getSuperClass();
 
-        if (superklazz == null && klazz.isModule()) superklazz = runtime.getObject();
+        if (superklazz == null && klazz.isModule()) superklazz = objectClass(runtime.getCurrentContext());
 
         return superklazz;
     }
@@ -2969,8 +2978,8 @@ public class Helpers {
         Ruby runtime = context.runtime;
 
         StackTraceElement[] javaTrace = t.getStackTrace();
-        BacktraceData backtraceData = runtime.getInstanceConfig().getTraceType().getIntegratedBacktrace(context, javaTrace);
-        t.setStackTrace(RaiseException.javaTraceFromRubyTrace(backtraceData.getBacktrace(runtime)));
+        BacktraceData backtraceData = instanceConfig(context).getTraceType().getIntegratedBacktrace(context, javaTrace);
+        t.setStackTrace(RaiseException.javaTraceFromRubyTrace(backtraceData.getBacktrace(context.runtime)));
         throwException(t);
         return null; // not reached
     }

@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static org.jruby.api.Access.hashClass;
 import static org.jruby.api.Create.newHash;
 import static org.jruby.api.Create.newSmallHash;
 
@@ -120,7 +121,7 @@ public class Hash extends Operand {
         if (isKeywordRest()) {
             // Dup the rest args hash and use that as the basis for inserting the non-rest args
             IRubyObject rest = (IRubyObject) pairs[0].getValue().retrieve(context, self, currScope, currDynScope, temp);
-            TypeConverter.checkType(context, rest, context.runtime.getHash());
+            TypeConverter.checkType(context, rest, hashClass(context));
             hash = ((RubyHash) rest).dupFast(context);
             // Skip the first pair
             index++;

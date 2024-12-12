@@ -439,7 +439,7 @@ public abstract class RealClassGenerator {
 
         int cacheSize = 0;
 
-        final HashSet<String> implementedNames = new HashSet<String>();
+        final HashSet<String> implementedNames = new HashSet<>();
 
         // for each simple method name, implement the complex methods, calling the simple version
         for (Map.Entry<String, List<Method>> entry : simpleToAll.entrySet()) {

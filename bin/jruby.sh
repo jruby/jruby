@@ -1,7 +1,7 @@
 #!/bin/sh
 # shellcheck disable=1007
 # -----------------------------------------------------------------------------
-# jruby.bash - Start Script for the JRuby interpreter
+# jruby.sh - Start Script for the JRuby interpreter
 # -----------------------------------------------------------------------------
 
 # ----- Guarantee local variables are available -------------------------------

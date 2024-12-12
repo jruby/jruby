@@ -1268,7 +1268,7 @@ public class OpenFile implements Finalizable {
                     rbuf.len += putbackable;
                 }
 
-                exc = EncodingUtils.makeEconvException(context.runtime, readconv);
+                exc = EncodingUtils.makeEconvException(context, readconv);
                 if (exc != null)
                     return exc;
 
@@ -2619,7 +2619,7 @@ public class OpenFile implements Finalizable {
                     if (res == EConvResult.InvalidByteSequence ||
                             res == EConvResult.IncompleteInput ||
                             res == EConvResult.UndefinedConversion) {
-                        return noalloc ? context.tru : EncodingUtils.makeEconvException(runtime, writeconv).getException();
+                        return noalloc ? context.tru : EncodingUtils.makeEconvException(context, writeconv).getException();
                     }
                 }
 
@@ -2641,7 +2641,7 @@ public class OpenFile implements Finalizable {
                 if (res == EConvResult.InvalidByteSequence ||
                         res == EConvResult.IncompleteInput ||
                         res == EConvResult.UndefinedConversion) {
-                    return noalloc ? context.tru : EncodingUtils.makeEconvException(runtime, writeconv).getException();
+                    return noalloc ? context.tru : EncodingUtils.makeEconvException(context, writeconv).getException();
                 }
             }
         } finally {

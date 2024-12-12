@@ -38,6 +38,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Create.newString;
 
 /**
@@ -55,7 +56,7 @@ public final class TopSelfFactory {
 
     @Deprecated(since = "10.0", forRemoval = true)
     public static IRubyObject createTopSelf(final Ruby runtime) {
-        return createTopSelf(runtime, runtime.getObject(), false);
+        return createTopSelf(runtime, objectClass(runtime.getCurrentContext()), false);
     }
     
     public static IRubyObject createTopSelf(final Ruby runtime, RubyClass Object, final boolean wrapper) {

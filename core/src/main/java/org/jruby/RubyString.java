@@ -95,6 +95,9 @@ import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.anno.FrameField.BACKREF;
+import static org.jruby.api.Access.globalVariables;
+import static org.jruby.api.Access.hashClass;
+import static org.jruby.api.Access.stringClass;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineClass;
@@ -180,6 +183,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         setCodeRange(cr);
     }
 
+    @Deprecated(since = "10.0")
     public final Encoding toEncoding(Ruby runtime) {
         return runtime.getEncodingService().findEncoding(this);
     }
@@ -997,7 +1001,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         value.invalidate();
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4")
     public final void modify19() {
         modifyAndClearCodeRange();
     }
@@ -1091,7 +1095,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     public static RubyString newDebugFrozenString(Ruby runtime, RubyClass rubyClass, ByteList value, int cr, String file, int line) {
-        return new DebugFrozenString(runtime, runtime.getString(), value, cr, file, line);
+        return new DebugFrozenString(runtime, rubyClass, value, cr, file, line);
     }
 
     static class DebugFrozenString extends RubyString {
@@ -1163,29 +1167,23 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         }
 
         @Override
-        public IRubyObject to_i() {
+        public IRubyObject to_i(ThreadContext context) {
             IRubyObject integer = this.converted;
 
-            if (integer == null) {
-                return this.converted = super.to_i();
-            }
+            if (integer == null) return this.converted = super.to_i(context);
 
-            if (integer instanceof RubyInteger) return integer;
-
-            return super.to_i();
+            return integer instanceof RubyInteger ?
+                    integer : super.to_i(context);
         }
 
         @Override
-        public IRubyObject to_f() {
+        public IRubyObject to_f(ThreadContext context) {
             IRubyObject flote = this.converted;
 
-            if (flote == null) {
-                return this.converted = super.to_f();
-            }
+            if (flote == null) return this.converted = super.to_f(context);
 
-            if (flote instanceof RubyFloat) return flote;
-
-            return super.to_f();
+            return flote instanceof RubyFloat ?
+                    flote : super.to_f(context);
         }
     }
 
@@ -1274,7 +1272,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @JRubyMethod(name = {"to_s", "to_str"})
     @Override
     public IRubyObject to_s(ThreadContext context) {
-        return metaClass.getRealClass() != context.runtime.getString() ? dupString(context, this) : this;
+        return metaClass.getRealClass() != stringClass(context) ? dupString(context, this) : this;
     }
 
     @Override
@@ -1321,8 +1319,13 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return context.runtime.freezeAndDedupString(this);
     }
 
-    @JRubyMethod(name = "+@") // +'foo' returns modifiable string
+    @Deprecated(since = "10.0")
     public final IRubyObject plus_at() {
+        return plus_at(getCurrentContext());
+    }
+
+    @JRubyMethod(name = "+@") // +'foo' returns modifiable string
+    public final IRubyObject plus_at(ThreadContext context) {
         return isFrozen() | isChilled() ? this.dup() : this;
     }
 
@@ -1614,19 +1617,24 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @Deprecated
     public IRubyObject replace19(IRubyObject other) {
-        return replace(other);
+        return replace(getCurrentContext(), other);
     }
 
     @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
     public RubyString initialize_copy(ThreadContext context, IRubyObject other) {
-        return replace(other);
+        return replace(context, other);
+    }
+
+    @Deprecated(since = "10.0")
+    public RubyString replace(IRubyObject other) {
+        return replace(getCurrentContext(), other);
     }
 
     /** rb_str_replace_m
      *
      */
     @JRubyMethod(name = "replace")
-    public RubyString replace(IRubyObject other) {
+    public RubyString replace(ThreadContext context, IRubyObject other) {
         modifyCheck();
         if (this == other) return this;
         setCodeRange(replaceCommon(other).getCodeRange()); // encoding doesn't have to be copied.
@@ -1641,8 +1649,13 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return otherStr;
     }
 
-    @JRubyMethod
+    @Deprecated(since = "10.0")
     public RubyString clear() {
+        return clear(getCurrentContext());
+    }
+
+    @JRubyMethod
+    public RubyString clear(ThreadContext context) {
         modifyCheck();
         Encoding enc = value.getEncoding();
 
@@ -1750,7 +1763,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private IRubyObject initialize(ThreadContext context, IRubyObject arg0, RubyHash opts) {
-        if (arg0 != null) replace(arg0);
+        if (arg0 != null) replace(context, arg0);
 
         if (opts != null) {
             IRubyObject encoding = opts.fastARef(asSymbol(context, "encoding"));
@@ -2168,15 +2181,19 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return context.nil;
     }
 
+    @Deprecated(since = "10.0")
+    public IRubyObject dump() {
+        return dump(getCurrentContext());
+    }
+
     /** rb_str_dump
      *
      */
     @JRubyMethod(name = "dump")
-    public IRubyObject dump() {
-        Ruby runtime = this.metaClass.runtime;
-        ByteList outBytes = StringSupport.dumpCommon(runtime, value);
+    public IRubyObject dump(ThreadContext context) {
+        ByteList outBytes = StringSupport.dumpCommon(context.runtime, value);
 
-        final RubyString result = newString(runtime, outBytes);
+        final RubyString result = Create.newString(context, outBytes);
         Encoding enc = value.getEncoding();
 
         if (!enc.isAsciiCompatible()) {
@@ -2673,7 +2690,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
      */
     private static IRubyObject byteSize(ThreadContext context, RubyString recv, IRubyObject[] args) {
-        return recv.bytesize();
+        return recv.bytesize(context);
     }
 
     /** rb_str_empty
@@ -2828,7 +2845,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @JRubyMethod
     public IRubyObject prepend(ThreadContext context, IRubyObject other) {
         RubyString rubyString = other.convertToString();
-        return replace(rubyString.op_plus(context, this));
+        return replace(context, rubyString.op_plus(context, this));
     }
 
     /**
@@ -2925,7 +2942,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "sub!", writes = BACKREF)
     public IRubyObject sub_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        IRubyObject hash = TypeConverter.convertToTypeWithCheck(context, arg1, context.runtime.getHash(), sites(context).to_hash_checked);
+        IRubyObject hash = TypeConverter.convertToTypeWithCheck(context, arg1, hashClass(context), sites(context).to_hash_checked);
         frozenCheck();
 
         return hash == context.nil ?
@@ -3174,7 +3191,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private IRubyObject gsubImpl(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block, final boolean bang) {
-        IRubyObject tryHash = TypeConverter.convertToTypeWithCheck(context, arg1, context.runtime.getHash(), sites(context).to_hash_checked);
+        IRubyObject tryHash = TypeConverter.convertToTypeWithCheck(context, arg1, hashClass(context), sites(context).to_hash_checked);
 
         final RubyHash hash;
         final RubyString str;
@@ -4407,11 +4424,14 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return val;
     }
 
-    /** rb_str_to_i
-     *
-     */
-    @JRubyMethod(name = "to_i")
+    @Deprecated(since = "10.0")
     public IRubyObject to_i() {
+        return to_i(getCurrentContext());
+    }
+
+    // MRI: rb_str_to_i
+    @JRubyMethod(name = "to_i")
+    public IRubyObject to_i(ThreadContext context) {
         return stringToInum(10);
     }
 
@@ -4467,12 +4487,15 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return stringToInum(16, false);
     }
 
-    /** rb_str_to_f
-     *
-     */
-    @JRubyMethod(name = "to_f")
+    @Deprecated(since = "10.0")
     public IRubyObject to_f() {
-        return RubyNumeric.str2fnum(getRuntime(), this, false);
+        return to_f(getCurrentContext());
+    }
+
+    // MRI: rb_str_to_f
+    @JRubyMethod(name = "to_f")
+    public IRubyObject to_f(ThreadContext context) {
+        return RubyNumeric.str2fnum(context.runtime, this, false);
     }
 
     private void populateCapturesForSplit(ThreadContext context, RubyArray result, RubyMatchData match) {
@@ -4642,7 +4665,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (!pat.isNil()) {
             pattern = getPatternQuoted(context, pat);
         } else {
-            IRubyObject splitPattern = context.runtime.getGlobalVariables().get("$;");
+            IRubyObject splitPattern = globalVariables(context).get("$;");
 
             if (splitPattern.isNil()) return context.nil;
 
@@ -5583,7 +5606,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @JRubyMethod(name = "chop")
     public IRubyObject chop(ThreadContext context) {
         return value.isEmpty() ?
-                newEmptyString(context.runtime, context.runtime.getString(), value.getEncoding()) :
+                newEmptyString(context.runtime, stringClass(context), value.getEncoding()) :
                 makeSharedString(context.runtime, 0, StringSupport.choppedLength(this));
     }
 
@@ -5650,7 +5673,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         modifyCheck();
         if (value.isEmpty()) return context.nil;
 
-        var globalVariables = context.runtime.getGlobalVariables();
+        var globalVariables = globalVariables(context);
         IRubyObject rsObj = globalVariables.get("$/");
 
         return rsObj == globalVariables.getDefaultSeparator() ?
@@ -6176,7 +6199,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      */
     @JRubyMethod(name = "each_line")
     public IRubyObject each_line(ThreadContext context, Block block) {
-        return StringSupport.rbStrEnumerateLines(this, context, "each_line", context.runtime.getGlobalVariables().get("$/"), block, false);
+        return StringSupport.rbStrEnumerateLines(this, context, "each_line", globalVariables(context).get("$/"), block, false);
     }
 
     @JRubyMethod(name = "each_line")
@@ -6239,7 +6262,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = "lines")
     public IRubyObject lines(ThreadContext context, Block block) {
-        return StringSupport.rbStrEnumerateLines(this, context, "lines", context.runtime.getGlobalVariables().get("$/"), block, true);
+        return StringSupport.rbStrEnumerateLines(this, context, "lines", globalVariables(context).get("$/"), block, true);
     }
 
     @JRubyMethod(name = "lines")
@@ -6625,7 +6648,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         long offset = 0;
         if (options.size() == 1) {
             IRubyObject offsetArg = options.fastARef(asSymbol(context, "offset"));
-            if (offsetArg == null) throw argumentError(context, "unknown keyword: " + options.keys().first().inspect(context));
+            if (offsetArg == null) throw argumentError(context, "unknown keyword: " + options.keys().first(context).inspect(context));
             offset = offsetArg.convertToInteger().getLongValue();
         }
         // FIXME: keyword arg processing incomplete.  We need a better system.
@@ -6677,7 +6700,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             self.setEncoding(encindex);
             return self;
         }
-        self.replace(newstr);
+        self.replace(context, newstr);
         self.setEncoding(encindex);
         return self;
     }
@@ -6759,7 +6782,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @JRubyMethod(name="scrub!")
     public IRubyObject scrub_bang(ThreadContext context, IRubyObject repl, Block block) {
         IRubyObject newStr = strScrub(context, repl, block);
-        if (!newStr.isNil()) return replace(newStr);
+        if (!newStr.isNil()) return replace(context, newStr);
         return this;
     }
 
@@ -6782,7 +6805,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      * @param value The new java.lang.String this RubyString should encapsulate
      * @deprecated
      */
-    @Deprecated
+    @Deprecated(since = "10.0")
     public void setValue(CharSequence value) {
         view(ByteList.plain(value), false);
     }
@@ -7231,7 +7254,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      * Is this a "bare" string, i.e. has no instance vars, and class == String.
      */
     public boolean isBare(ThreadContext context) {
-        return !hasInstanceVariables() && metaClass == context.runtime.getString();
+        return !hasInstanceVariables() && metaClass == stringClass(context);
     }
 
     private static StringSites sites(ThreadContext context) {

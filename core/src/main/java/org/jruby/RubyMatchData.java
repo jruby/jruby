@@ -591,7 +591,8 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod(name = "[]")
     public IRubyObject op_aref(ThreadContext context, IRubyObject idx, IRubyObject rest) {
         IRubyObject result;
-        return !rest.isNil() || (result = op_arefCommon(context, idx)) == null ? to_a(context).aref(idx, rest) : result;
+        return !rest.isNil() || (result = op_arefCommon(context, idx)) == null ?
+                to_a(context).aref(context, idx, rest) : result;
     }
 
     private IRubyObject op_arefCommon(ThreadContext context, IRubyObject idx) {
