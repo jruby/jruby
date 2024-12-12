@@ -117,11 +117,6 @@ public class RubyChain extends RubyObject {
         return this;
     }
 
-    @Override
-    public final IRubyObject inspect() {
-        return inspect(getRuntime().getCurrentContext());
-    }
-
     @JRubyMethod
     public RubyString inspect(ThreadContext context) {
 

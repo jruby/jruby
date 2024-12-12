@@ -69,7 +69,7 @@ public class IOJavaAddons {
                 if (self.respondsTo("write") || self.respondsTo("<<")) {
                     channel = new IOChannel.IOWritableByteChannel(self);
                 } else {
-                    throw typeError(context, self.inspect() + " does not respond to any of read, write, or <<");
+                    throw typeError(context, self.inspect(context) + " does not respond to any of read, write, or <<");
                 }
             }
             return JavaUtil.convertJavaToUsableRubyObject(context.runtime, channel);

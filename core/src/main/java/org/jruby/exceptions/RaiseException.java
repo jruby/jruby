@@ -167,7 +167,8 @@ public class RaiseException extends JumpException {
         if (exceptionClass == null) throw context.runtime.newNameError("exception class not found", exceptionPath);
 
         if (!(exceptionClass instanceof RubyClass exception)) {
-            throw typeError(context, "expected to find exception class for " + exceptionPath + " but got " + exceptionClass.inspect());
+            throw typeError(context, "expected to find exception class for " + exceptionPath +
+                    " but got " + exceptionClass.inspect(context));
         }
         return exception;
     }

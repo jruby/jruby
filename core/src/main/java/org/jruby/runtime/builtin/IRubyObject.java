@@ -275,6 +275,13 @@ public interface IRubyObject {
      * @return String
      */
     IRubyObject inspect();
+
+    default IRubyObject inspect(ThreadContext context) {
+        // This should only occur from newer code calling something which implements IRubyObject
+        // implemented object which is NOT a RubyBasicObject.  This should never happen but if it
+        // does the implementer should have an implementation of the old inspect().
+        return inspect();
+    }
     
     /**
      * RubyMethod clone.

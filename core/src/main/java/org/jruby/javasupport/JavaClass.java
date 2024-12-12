@@ -54,6 +54,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.function.Supplier;
 
+import static org.jruby.api.Create.newString;
+
 /**
  * Java::JavaClass wrapping is no longer used with JRuby.
  * The (automatic) Java proxy wrapping works with Java classes, use the <code>java.lang.Class</code> with JRuby's
@@ -206,8 +208,8 @@ public class JavaClass extends JavaObject {
     }
 
     @Override
-    public RubyString inspect() {
-        return getRuntime().newString("class " + javaClass().getName());
+    public RubyString inspect(ThreadContext context) {
+        return newString(context, "class " + javaClass().getName());
     }
 
     public static String getSimpleName(Class<?> clazz) {

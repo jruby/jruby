@@ -560,7 +560,7 @@ public class RubyNumeric extends RubyObject {
      */
     protected final void coerceFailed(ThreadContext context, IRubyObject arg) {
         IRubyObject other = arg.isSpecialConst() || arg instanceof RubyFloat ?
-                arg.inspect() :
+                arg.inspect(context) :
                 arg.getMetaClass().name(context);
 
         throw typeError(context, str(context.runtime, other, " can't be coerced into ", getMetaClass()));

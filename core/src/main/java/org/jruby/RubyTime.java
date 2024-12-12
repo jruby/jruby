@@ -916,14 +916,14 @@ public class RubyTime extends RubyObject {
     }
 
     @JRubyMethod
-    public IRubyObject inspect() {
+    public IRubyObject inspect(ThreadContext context) {
         DateTime dtz = getInspectDateTime();
         StringBuilder builder = new StringBuilder(INSPECT_FORMATTER.print(dtz));
         long nanos = getNanos();
 
         if (nanos != 0) {
             ByteList buf = new ByteList(9);
-            Sprintf.sprintf(buf, ".%09d", asFixnum(getRuntime().getCurrentContext(), nanos));
+            Sprintf.sprintf(buf, ".%09d", asFixnum(context, nanos));
 
             // Remove trailing zeroes
             int len = buf.realSize();
@@ -936,7 +936,7 @@ public class RubyTime extends RubyObject {
 
         builder.append(isUTC() ? " UTC" : TZ_FORMATTER.print(dtz));
 
-        return RubyString.newString(getRuntime(), builder.toString(), USASCIIEncoding.INSTANCE);
+        return newString(context, builder.toString(), USASCIIEncoding.INSTANCE);
     }
 
     private DateTime getInspectDateTime() {

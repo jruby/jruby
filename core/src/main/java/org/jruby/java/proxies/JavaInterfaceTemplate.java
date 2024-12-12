@@ -237,7 +237,7 @@ public class JavaInterfaceTemplate {
                     final RubyArray ifaces = getJavaInterfaces(self);
                     if ( ifaces == null ) return context.nil;
                     for ( int i = 0; i < ifaces.size(); i++ ) {
-                        final RubyModule iface = Java.get_interface_module(context.runtime, ifaces.eltInternal(i));
+                        final RubyModule iface = Java.get_interface_module(context, ifaces.eltInternal(i));
                         Helpers.invoke(context, iface, "implement", self);
                     }
                     return ifaces;

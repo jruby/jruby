@@ -527,7 +527,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         @JRubyMethod
         public IRubyObject inspect(ThreadContext context) {
-            return to_s(context).inspect();
+            return to_s(context).inspect(context);
         }
 
         @JRubyMethod
@@ -1087,7 +1087,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (value.isNil()) {
             if (block.isGiven()) return block.yield(context, key);
 
-            throw context.runtime.newKeyError("key not found: " + key.inspect(), this, key);
+            throw context.runtime.newKeyError("key not found: " + key.inspect(context), this, key);
         }
 
         return value;
@@ -1330,11 +1330,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     void setThreadGroup(RubyThreadGroup rubyThreadGroup) {
         threadGroup = rubyThreadGroup;
-    }
-
-    @Override
-    public IRubyObject inspect() {
-        return inspect(metaClass.runtime.getCurrentContext());
     }
 
     @JRubyMethod(name = { "inspect", "to_s"})

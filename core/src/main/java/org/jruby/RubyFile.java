@@ -414,11 +414,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return asFixnum(context, 0);
     }
 
-    @Override
-    public final IRubyObject inspect() {
-        return inspect(metaClass.runtime.getCurrentContext());
-    }
-
     private static final byte[] CLOSED_MESSAGE = new byte[] {' ', '(', 'c', 'l', 'o', 's', 'e', 'd', ')'};
 
     @JRubyMethod
@@ -1265,12 +1260,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             throw runtime.newErrnoFromInt(runtime.getPosix().errno(), decodedPath);
         }
         return RubyFixnum.zero(runtime);
-    }
-
-    // Moved to IO in 3.2
-    @Override
-    public String getPath() {
-        return super.getPath();
     }
 
     @Override

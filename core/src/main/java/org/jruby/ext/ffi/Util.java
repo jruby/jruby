@@ -98,6 +98,7 @@ public final class Util {
         return RubyNumeric.num2long(parameter);
     }
 
+    @Deprecated(since = "10.0")
     public static int intValue(IRubyObject obj, RubyHash enums) {
         if (obj instanceof RubyInteger) {
                 return (int) ((RubyInteger) obj).getLongValue();
@@ -105,7 +106,8 @@ public final class Util {
         } else if (obj instanceof RubySymbol) {
             IRubyObject value = enums.fastARef(obj);
             if (value.isNil()) {
-                throw argumentError(obj.getRuntime().getCurrentContext(), "invalid enum value, " + obj.inspect());
+                var context = obj.getRuntime().getCurrentContext();
+                throw argumentError(context, "invalid enum value, " + obj.inspect(context));
             }
             return (int) longValue(value);
         } else {

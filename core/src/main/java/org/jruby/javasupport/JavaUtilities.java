@@ -21,9 +21,14 @@ public class JavaUtilities {
         return java_object;
     }
 
-    @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
+    @Deprecated(since = "10.0")
     public static IRubyObject get_interface_module(IRubyObject recv, IRubyObject arg0) {
-        return Java.get_interface_module(recv.getRuntime(), arg0);
+        return get_interface_module(recv.getRuntime().getCurrentContext(), recv, arg0);
+    }
+
+    @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject get_interface_module(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
+        return Java.get_interface_module(context, arg0);
     }
 
     @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
@@ -36,12 +41,17 @@ public class JavaUtilities {
         return Java.get_package_module_dot_format(recv, arg0);
     }
 
-    @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
+    @Deprecated(since = "10.0")
     public static IRubyObject get_proxy_class(IRubyObject recv, IRubyObject arg0) {
-        return Java.get_proxy_class(recv, arg0);
+        return get_proxy_class(recv.getRuntime().getCurrentContext(), recv, arg0);
     }
 
-    @Deprecated // no longer used
+    @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject get_proxy_class(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
+        return Java.get_proxy_class(context, recv, arg0);
+    }
+
+    @Deprecated(since = "9.4-") // no longer used
     @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject create_proxy_class(IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         return Java.create_proxy_class(recv, arg0, arg1, arg2);
@@ -86,7 +96,7 @@ public class JavaUtilities {
             reads = { LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE },
             writes = { LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE })
     public static IRubyObject extend_proxy(ThreadContext context, IRubyObject recv, IRubyObject name, Block block) {
-        return Java.get_proxy_class(recv, name).module_eval(context, block);
+        return Java.get_proxy_class(context, recv, name).module_eval(context, block);
     }
 
 }

@@ -169,14 +169,14 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
             return oth.isTrue() ? context.tru : fals;
         }
 
-        @JRubyMethod(name = "to_s", alias = "inspect")
+        @Deprecated
         public static RubyString false_to_s(ThreadContext context, IRubyObject fals) {
             return context.runtime.getFalseString();
         }
 
-        @Override
-        public RubyString inspect() {
-            return getRuntime().getFalseString();
+        @JRubyMethod(name = "to_s", alias = "inspect")
+        public RubyString inspect(ThreadContext context) {
+            return context.runtime.getFalseString();
         }
 
         @Override
@@ -212,14 +212,14 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
             return oth.isTrue() ? context.fals : tru;
         }
 
-        @JRubyMethod(name = "to_s", alias = "inspect")
+        @Deprecated(since = "10.0")
         public static RubyString true_to_s(ThreadContext context, IRubyObject tru) {
             return context.runtime.getTrueString();
         }
 
-        @Override
-        public RubyString inspect() {
-            return getRuntime().getTrueString();
+        @JRubyMethod(name = "to_s", alias = "inspect")
+        public RubyString inspect(ThreadContext context) {
+            return context.runtime.getTrueString();
         }
 
         @Override

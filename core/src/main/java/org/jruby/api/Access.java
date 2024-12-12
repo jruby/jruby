@@ -200,6 +200,16 @@ public class Access {
         return context.runtime.getObject();
     }
 
+
+    /**
+     * Retrieve the instance of the class Proc
+     * @param context the current thread context
+     * @return the Class
+     */
+    public static RubyClass procClass(ThreadContext context) {
+        return context.runtime.getProc();
+    }
+
     /**
      * Retrieve the instance of the class RuntimeError
      * @param context the current thread context

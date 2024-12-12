@@ -176,8 +176,8 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
 
     @JRubyMethod(name = {"inspect", "to_s"})
     @Override
-    public IRubyObject inspect() {
-        return inspect(null);
+    public IRubyObject inspect(ThreadContext context) {
+        return inspect((IRubyObject) null);
     }
 
     @JRubyMethod

@@ -830,7 +830,7 @@ public class RubyBigDecimal extends RubyNumeric {
         if (maybeString.isNil()) {
             if (!strict) return getZero(context, 1);
             if (!exception) return context.nil;
-            throw typeError(context, "no implicit conversion of " + arg.inspect() + "into to String");
+            throw typeError(context, "no implicit conversion of " + arg.inspect(context) + "into to String");
         }
         return newInstance(context, (RubyClass) recv, maybeString.convertToString(), MathContext.UNLIMITED, strict, exception);
     }
@@ -842,7 +842,7 @@ public class RubyBigDecimal extends RubyNumeric {
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject mathArg, boolean strict, boolean exception) {
         if (arg.isNil() || arg instanceof RubyBoolean) {
             if (!exception) return context.nil;
-            throw typeError(context, "can't convert " + arg.inspect() + " into BigDecimal");
+            throw typeError(context, "can't convert " + arg.inspect(context) + " into BigDecimal");
         }
 
         int digits = (int) mathArg.convertToInteger().getLongValue();

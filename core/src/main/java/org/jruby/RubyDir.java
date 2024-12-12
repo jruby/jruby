@@ -810,17 +810,15 @@ public class RubyDir extends RubyObject implements Closeable {
                 enumeratorize(context.runtime, children(context), "each");
     }
 
-    @Override
     @JRubyMethod
-    public IRubyObject inspect() {
-        Ruby runtime = getRuntime();
+    public IRubyObject inspect(ThreadContext context) {
         StringBuilder part = new StringBuilder();
         String cname = getMetaClass().getRealClass().getName();
         part.append("#<").append(cname).append(':');
         if (path != null) { part.append(path.asJavaString()); }
         part.append('>');
 
-        return runtime.newString(part.toString());
+        return newString(context, part.toString());
     }
 
     /**

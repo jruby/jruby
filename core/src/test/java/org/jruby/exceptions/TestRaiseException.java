@@ -422,11 +422,11 @@ public class TestRaiseException extends Base {
     }
 
     private void assertNil(IRubyObject val) {
-        assertTrue("expected: " + val.inspect() + " to be nil", val.isNil());
+        assertTrue("expected: " + val.inspect(val.getRuntime().getCurrentContext()) + " to be nil", val.isNil());
     }
 
     private void assertNotNil(IRubyObject val) {
-        assertFalse("expected: " + val.inspect() + " to not be nil", val.isNil());
+        assertFalse("expected: " + val.inspect(val.getRuntime().getCurrentContext()) + " to not be nil", val.isNil());
     }
 
     public static class Razer extends RubyObject {

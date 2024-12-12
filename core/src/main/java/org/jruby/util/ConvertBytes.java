@@ -888,7 +888,7 @@ public class ConvertBytes {
      *
      */
     private void invalidString(String type) {
-        IRubyObject s = RubyString.newString(runtime, str).inspect();
+        IRubyObject s = RubyString.newString(runtime, str).inspect(runtime.getCurrentContext());
         throw runtime.newArgumentError("invalid value for " + type + "(): " + s);
     }
 }

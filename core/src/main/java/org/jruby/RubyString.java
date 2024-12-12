@@ -2458,17 +2458,23 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         throw indexError(context, "index " + index + " out of string");
     }
 
+    @Deprecated(since = "10.0")
+    public RubyString inspect() {
+        // The return type confuses existing extensions who expect this method on RubyString.
+        return (RubyString) super.inspect();
+    }
+
     /** rb_str_inspect
      *
      */
     @Override
     @JRubyMethod(name = "inspect")
-    public RubyString inspect() {
-        return inspect(getRuntime());
+    public IRubyObject inspect(ThreadContext context) {
+        return inspect(context.runtime);
     }
 
     final RubyString inspect(final Ruby runtime) {
-        return (RubyString) inspect(runtime, value);
+        return inspect(runtime, value);
     }
 
     // MRI: rb_str_escape
@@ -6517,18 +6523,19 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return enumerateGraphemeClusters(context, "each_grapheme_cluster", block, false);
     }
 
-    /** rb_str_intern
-     *
-     */
-    @JRubyMethod(name = {"to_sym", "intern"})
+    @Deprecated(since = "10.0")
     public RubySymbol intern() {
-        final Ruby runtime = getRuntime();
+        return intern(getCurrentContext());
+    }
 
+    // MRI: rb_str_intern
+    @JRubyMethod(name = {"to_sym", "intern"})
+    public RubySymbol intern(ThreadContext context) {
         if (scanForCodeRange() == CR_BROKEN) {
-            throw runtime.newEncodingError("invalid symbol in encoding " + getEncoding() + " :" + inspect());
+            throw context.runtime.newEncodingError("invalid symbol in encoding " + getEncoding() + " :" + inspect(context));
         }
 
-        RubySymbol symbol = runtime.getSymbolTable().getSymbol(value);
+        RubySymbol symbol = context.runtime.getSymbolTable().getSymbol(value);
         if (symbol.getBytes() == value) shareLevel = SHARE_LEVEL_BYTELIST;
         return symbol;
     }
@@ -6641,7 +6648,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         long offset = 0;
         if (options.size() == 1) {
             IRubyObject offsetArg = options.fastARef(asSymbol(context, "offset"));
-            if (offsetArg == null) throw argumentError(context, "unknown keyword: " + options.keys().first(context).inspect());
+            if (offsetArg == null) throw argumentError(context, "unknown keyword: " + options.keys().first(context).inspect(context));
             offset = offsetArg.convertToInteger().getLongValue();
         }
         // FIXME: keyword arg processing incomplete.  We need a better system.

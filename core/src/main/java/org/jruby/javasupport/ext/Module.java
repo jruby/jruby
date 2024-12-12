@@ -118,10 +118,10 @@ public class Module {
         } else if (klass instanceof RubyModule) {
             javaClass = JavaUtil.getJavaClass((RubyModule) klass, null);
             if (javaClass == null) {
-                throw argumentError(context, "not a Java class or interface: " + klass.inspect());
+                throw argumentError(context, "not a Java class or interface: " + klass.inspect(context));
             }
         } else {
-            throw argumentError(context, "invalid Java class or interface: " + klass.inspect() + " (of type " + klass.getType() + ")");
+            throw argumentError(context, "invalid Java class or interface: " + klass.inspect(context) + " (of type " + klass.getType() + ")");
         }
 
         String constant;
