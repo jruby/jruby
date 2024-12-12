@@ -402,11 +402,12 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
     /** fix_to_s
      *
      */
+    @Deprecated(since = "10.0")
     public RubyString to_s(IRubyObject[] args) {
-        var context = getRuntime().getCurrentContext();
+        var context = getCurrentContext();
         return switch (args.length) {
             case 0 -> to_s(context);
-            case 1 -> to_s(args[0]);
+            case 1 -> to_s(context, args[0]);
             default -> throw argumentError(context, args.length, 1);
         };
     }
@@ -417,9 +418,9 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
     }
 
     @Override
-    public RubyString to_s(IRubyObject arg0) {
+    public RubyString to_s(ThreadContext context, IRubyObject arg0) {
         int base = num2int(arg0);
-        if (base < 2 || base > 36) throw argumentError(getRuntime().getCurrentContext(), "illegal radix " + base);
+        if (base < 2 || base > 36) throw argumentError(context, "illegal radix " + base);
 
         return longToString(value, base);
     }

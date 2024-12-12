@@ -790,8 +790,8 @@ public class RubyDate extends RubyObject {
 
     @Override
     @JRubyMethod(name = "eql?")
-    public IRubyObject eql_p(IRubyObject other) {
-        return getRuntime().newBoolean(equals(other));
+    public IRubyObject eql_p(ThreadContext context, IRubyObject other) {
+        return equals(other) ? context.tru : context.fals;
     }
 
     /**

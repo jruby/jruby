@@ -376,11 +376,12 @@ public class RubyBignum extends RubyInteger {
     /** rb_big_to_s
      *
      */
+    @Deprecated(since = "10.0")
     public IRubyObject to_s(IRubyObject[] args) {
         var context = getRuntime().getCurrentContext();
         return switch (args.length) {
             case 0 -> to_s(context);
-            case 1 -> to_s(args[0]);
+            case 1 -> to_s(context, args[0]);
             default -> throw argumentError(context, args.length, 1);
         };
     }
@@ -391,11 +392,11 @@ public class RubyBignum extends RubyInteger {
     }
 
     @Override
-    public RubyString to_s(IRubyObject arg0) {
+    public RubyString to_s(ThreadContext context, IRubyObject arg0) {
         int base = num2int(arg0);
-        if (base < 2 || base > 36) throw argumentError(getRuntime().getCurrentContext(), "illegal radix " + base);
+        if (base < 2 || base > 36) throw argumentError(context, "illegal radix " + base);
 
-        return RubyString.newUSASCIIString(getRuntime(), value.toString(base));
+        return RubyString.newUSASCIIString(context.runtime, value.toString(base));
     }
 
     // MRI: rb_big_coerce
@@ -1139,9 +1140,8 @@ public class RubyBignum extends RubyInteger {
      *
      */
     @Override
-    public IRubyObject eql_p(IRubyObject other) {
-        // '==' and '===' are the same, but they differ from 'eql?'.
-        return op_equal(metaClass.runtime.getCurrentContext(), other);
+    public IRubyObject eql_p(ThreadContext context, IRubyObject other) {
+        return op_equal(context, other);  // '==' and '===' are the same, but they differ from 'eql?'.
     }
 
     // MRI: rb_big_hash

@@ -821,9 +821,8 @@ public class RubyMatchData extends RubyObject {
     }
 
     @JRubyMethod(name = {"eql?", "=="})
-    @Override
-    public IRubyObject eql_p(IRubyObject obj) {
-        return metaClass.runtime.newBoolean( equals(obj) );
+    public IRubyObject eql_p(ThreadContext context, IRubyObject obj) {
+        return equals(obj) ? context.tru : context.fals;
     }
 
     @Override

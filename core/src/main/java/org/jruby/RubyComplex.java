@@ -555,19 +555,27 @@ public class RubyComplex extends RubyNumeric {
         return context.nil;
     }
 
-    /** nucomp_real
-     * 
-     */
-    @JRubyMethod(name = "real")
+    @Deprecated(since = "10.0")
     public IRubyObject real() {
+        return real(getCurrentContext());
+    }
+
+    // MRI: nucomp_real
+    @JRubyMethod(name = "real")
+    public IRubyObject real(ThreadContext context) {
         return real;
+    }
+
+    @Deprecated(since = "10.0")
+    public IRubyObject image() {
+        return image(getCurrentContext());
     }
 
     /** nucomp_image
      * 
      */
     @JRubyMethod(name = {"imaginary", "imag"})
-    public IRubyObject image() {
+    public IRubyObject image(ThreadContext context) {
         return image;
     }
 
@@ -1188,7 +1196,7 @@ public class RubyComplex extends RubyNumeric {
 
         ByteList bytes = str.getByteList();
 
-        if (bytes.getRealSize() == 0) return new IRubyObject[] { context.nil, str };
+        if (bytes.getRealSize() == 0) return new IRubyObject[] { nil, str };
 
         IRubyObject sr, si, re;
         sr = si = re = nil;

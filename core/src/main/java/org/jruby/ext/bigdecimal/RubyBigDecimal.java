@@ -820,7 +820,7 @@ public class RubyBigDecimal extends RubyNumeric {
                 return arg;
             case COMPLEX:
                 RubyComplex c = (RubyComplex) arg;
-                if (!((RubyNumeric)c.image()).isZero(context)) {
+                if (!((RubyNumeric)c.image(context)).isZero(context)) {
                     throw argumentError(context, "Unable to make a BigDecimal from non-zero imaginary number");
                 }
         }
@@ -881,10 +881,10 @@ public class RubyBigDecimal extends RubyNumeric {
                 return newInstance(context.runtime, recv, (RubyBigDecimal) arg);
             case COMPLEX:
                 RubyComplex c = (RubyComplex) arg;
-                if (!((RubyNumeric)c.image()).isZero(context)) {
+                if (!((RubyNumeric)c.image(context)).isZero(context)) {
                     throw argumentError(context, "Unable to make a BigDecimal from non-zero imaginary number");
                 }
-                return newInstance(context, recv, c.real(), mathArg, strict, exception);
+                return newInstance(context, recv, c.real(context), mathArg, strict, exception);
         }
 
         IRubyObject maybeString = arg.checkStringType();

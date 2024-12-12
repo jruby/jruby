@@ -2003,12 +2003,17 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return asBoolean(context, this == other);
     }
 
-    /** rb_obj_equal
-     *
+    @Deprecated(since = "10.0")
+    public IRubyObject eql_p(IRubyObject obj) {
+        return eql_p(getCurrentContext(), obj);
+    }
+
+    /**
      * Just like "==" and "equal?", "eql?" will use identity equality for Object.
      */
-    public IRubyObject eql_p(IRubyObject obj) {
-        return this == obj ? getRuntime().getTrue() : getRuntime().getFalse();
+    // MRI: rb_obj_equal
+    public IRubyObject eql_p(ThreadContext context, IRubyObject obj) {
+        return this == obj ? context.tru : context.fals;
     }
 
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
