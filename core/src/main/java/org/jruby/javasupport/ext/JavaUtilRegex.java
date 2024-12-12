@@ -216,7 +216,7 @@ public abstract class JavaUtilRegex {
         @JRubyMethod(name = "[]")
         public static IRubyObject aref(final ThreadContext context, final IRubyObject self,
             final IRubyObject arg0, final IRubyObject arg1) {
-            return to_a(context, self).aref(arg0, arg1);
+            return to_a(context, self).aref(context, arg0, arg1);
         }
 
         @JRubyMethod(rest = true)

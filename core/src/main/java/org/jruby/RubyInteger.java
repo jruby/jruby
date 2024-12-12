@@ -498,7 +498,7 @@ public abstract class RubyInteger extends RubyNumeric {
         long uint = toUnsignedInteger(context);
 
         Encoding enc = arg instanceof RubyEncoding encArg ?
-                encArg.getEncoding() : arg.convertToString().toEncoding(context.runtime);
+                encArg.getEncoding() : context.runtime.getEncodingService().findEncoding(arg.convertToString());
 
         return chrCommon(context, uint, enc);
     }

@@ -2007,7 +2007,7 @@ public class IRRuntimeHelpers {
             result = (RubyArray<?>) ((RubyArray)tmp).aryDup();
 
             // We have concat'd an empty keyword rest.   This comes from MERGE_KEYWORDS noticing it is empty.
-            if (result.last() == UNDEFINED) {
+            if (result.last(context) == UNDEFINED) {
                 result.pop(context);
                 context.callInfo |= callInfo | CALL_KEYWORD_EMPTY;
             }
