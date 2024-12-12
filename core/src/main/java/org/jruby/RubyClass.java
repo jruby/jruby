@@ -116,18 +116,12 @@ public class RubyClass extends RubyModule {
     private static final Logger LOG = LoggerFactory.getLogger(RubyClass.class);
     private static final double SUBCLASSES_CLEAN_FACTOR = 0.25;
 
-    public static void createClassClass(Ruby runtime, RubyClass Class) {
+    public static void createClassClass(ThreadContext context, RubyClass Class) {
         Class.reifiedClass(RubyClass.class).
                 kindOf(new RubyModule.JavaClassKindOf(RubyClass.class)).
                 classIndex(ClassIndex.CLASS).
-                defineAnnotatedMethodsIndividually(RubyClass.class);
-        Class.undefineMethod("module_function");
-        Class.undefineMethod("append_features");
-        Class.undefineMethod("prepend_features");
-        Class.undefineMethod("extend_object");
-        Class.undefineMethod("refine");
-
-        runtime.setBaseNewMethod(Class.searchMethod("new"));
+                defineMethods(context, RubyClass.class).
+                undefMethods(context, "module_function", "append_features", "prepend_features", "extend_object", "refine");
     }
 
     public static final ObjectAllocator CLASS_ALLOCATOR = (runtime, klass) -> {

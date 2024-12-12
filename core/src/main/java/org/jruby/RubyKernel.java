@@ -146,21 +146,20 @@ public class RubyKernel {
 
     }
 
-    public static RubyModule createKernelModule(Ruby runtime, RubyClass Object, RubyInstanceConfig config) {
-        var Kernel = runtime.defineModuleUnder("Kernel", Object);
-
-        Kernel.defineAnnotatedMethodsIndividually(RubyKernel.class);
+    public static RubyModule createKernelModule(ThreadContext context, RubyClass Object, RubyInstanceConfig config) {
+        var Kernel = Object.defineModuleUnder(context, "Kernel").
+                defineMethods(context, RubyKernel.class);
         Kernel.setFlag(RubyModule.NEEDSIMPL_F, false); //Kernel is the only normal Module that doesn't need an implementor
 
-        runtime.setPrivateMethodMissing(new MethodMissingMethod(Kernel, PRIVATE, CallType.NORMAL));
-        runtime.setProtectedMethodMissing(new MethodMissingMethod(Kernel, PROTECTED, CallType.NORMAL));
-        runtime.setVariableMethodMissing(new MethodMissingMethod(Kernel, PUBLIC, CallType.VARIABLE));
-        runtime.setSuperMethodMissing(new MethodMissingMethod(Kernel, PUBLIC, CallType.SUPER));
-        runtime.setNormalMethodMissing(new MethodMissingMethod(Kernel, PUBLIC, CallType.NORMAL));
+        context.runtime.setPrivateMethodMissing(new MethodMissingMethod(Kernel, PRIVATE, CallType.NORMAL));
+        context.runtime.setProtectedMethodMissing(new MethodMissingMethod(Kernel, PROTECTED, CallType.NORMAL));
+        context.runtime.setVariableMethodMissing(new MethodMissingMethod(Kernel, PUBLIC, CallType.VARIABLE));
+        context.runtime.setSuperMethodMissing(new MethodMissingMethod(Kernel, PUBLIC, CallType.SUPER));
+        context.runtime.setNormalMethodMissing(new MethodMissingMethod(Kernel, PUBLIC, CallType.NORMAL));
 
-        if (config.isAssumeLoop()) Kernel.defineAnnotatedMethodsIndividually(LoopMethods.class);
+        if (config.isAssumeLoop()) Kernel.defineMethods(context, LoopMethods.class);
 
-        recacheBuiltinMethods(runtime, Kernel);
+        recacheBuiltinMethods(context, Kernel);
 
         return Kernel;
     }
@@ -169,11 +168,11 @@ public class RubyKernel {
      * Cache built-in versions of several core methods, to improve performance by using identity comparison (==) rather
      * than going ahead with dynamic dispatch.
      *
-     * @param runtime
+     * @param context
      */
-    static void recacheBuiltinMethods(Ruby runtime, RubyModule kernelModule) {
-        runtime.setRespondToMethod(kernelModule.searchMethod("respond_to?"));
-        runtime.setRespondToMissingMethod(kernelModule.searchMethod("respond_to_missing?"));
+    static void recacheBuiltinMethods(ThreadContext context, RubyModule Kernel) {
+        context.runtime.setRespondToMethod(Kernel.searchMethod("respond_to?"));
+        context.runtime.setRespondToMissingMethod(Kernel.searchMethod("respond_to_missing?"));
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)

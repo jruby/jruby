@@ -1763,8 +1763,8 @@ public class IRRuntimeHelpers {
 
     @Interp
     public static RubyModule newRubyClassFromIR(ThreadContext context, String id, StaticScope scope, Object superClass,
-                                                Object container, boolean maybeRefined) {
-        if (!(container instanceof RubyModule)) throw typeError(context, "no outer class/module");
+                                                Object containerArg, boolean maybeRefined) {
+        if (!(containerArg instanceof RubyModule container)) throw typeError(context, "no outer class/module");
 
         RubyClass sc;
         if (superClass == UNDEFINED) {
@@ -1775,7 +1775,7 @@ public class IRRuntimeHelpers {
             sc = (RubyClass) superClass;
         }
 
-        RubyModule newRubyClass = ((RubyModule)container).defineOrGetClassUnder(id, sc, scope.getFile(), context.getLine() + 1);
+        var newRubyClass = container.defineOrGetClassUnder(context, id, sc, null, scope.getFile(), context.getLine() + 1);
 
         scope.setModule(newRubyClass);
 

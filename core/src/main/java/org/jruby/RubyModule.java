@@ -183,13 +183,12 @@ public class RubyModule extends RubyObject {
 
     public static final ObjectAllocator MODULE_ALLOCATOR = RubyModule::new;
 
-    public static void createModuleClass(RubyClass Module) {
+    public static void createModuleClass(ThreadContext context, RubyClass Module) {
         Module.reifiedClass(RubyModule.class).
                 kindOf(new RubyModule.JavaClassKindOf(RubyModule.class)).
-                classIndex(ClassIndex.MODULE);
-
-        Module.defineAnnotatedMethodsIndividually(RubyModule.class);
-        Module.defineAnnotatedMethodsIndividually(ModuleKernelMethods.class);
+                classIndex(ClassIndex.MODULE).
+                defineMethods(context, RubyModule.class).
+                defineMethods(context, ModuleKernelMethods.class);
     }
 
     public void checkValidBindTargetFrom(ThreadContext context, RubyModule originModule, boolean fromBind) throws RaiseException {
@@ -1287,6 +1286,7 @@ public class RubyModule extends RubyObject {
         invalidateConstantCacheForModuleInclusion(module);
     }
 
+    @Deprecated(since = "10.0")
     public void defineAnnotatedMethod(Class clazz, String name) {
         // FIXME: This is probably not very efficient, since it loads all methods for each call
         boolean foundMethod = false;
@@ -1313,14 +1313,14 @@ public class RubyModule extends RubyObject {
     /**
      * @param field
      * @return ""
-     * @deprecated Use {@link RubyModule#defineAnnotatedConstant(ThreadContext, Field)} instead.
+     * @deprecated constants now must be individually set as values or specified in a Class using @JRubyConstant
      */
     @Deprecated(since = "10.0")
     public final boolean defineAnnotatedConstant(Field field) {
         return defineAnnotatedConstant(getCurrentContext(), field);
     }
 
-    public final boolean defineAnnotatedConstant(ThreadContext context, Field field) {
+    private boolean defineAnnotatedConstant(ThreadContext context, Field field) {
         JRubyConstant jrubyConstant = field.getAnnotation(JRubyConstant.class);
         if (jrubyConstant == null) return false;
 
@@ -1450,20 +1450,26 @@ public class RubyModule extends RubyObject {
     }
 
     /**
-     * An internal API only used before the first ThreadContext is defined.  For example,
-     * BasicObject, Boolean,  needs this when getting defined.
-     * Use {@link org.jruby.RubyModule#defineMethods(ThreadContext, Class[])} instead.
+     *
      * @param clazz to generate JRuby methods from
+     * @deprecated Use {@link org.jruby.RubyModule#defineMethods(ThreadContext, Class[])} instead.
      */
+    @Deprecated(since = "10.0")
     public final void defineAnnotatedMethodsIndividually(Class clazz) {
         getRuntime().POPULATORS.get(clazz).populate(this, clazz);
     }
 
+    /**
+     * Define methods provided by our internal type populator.  This is an internal API.
+     *
+     * @param name
+     * @param methods
+     * @param methodFactory
+     * @return
+     */
     public final boolean defineAnnotatedMethod(String name, List<JavaMethodDescriptor> methods, MethodFactory methodFactory) {
         JavaMethodDescriptor desc = methods.get(0);
-        if (methods.size() == 1) {
-            return defineAnnotatedMethod(name, desc, methodFactory);
-        }
+        if (methods.size() == 1) return defineSingleAnnotatedMethod(name, desc, methodFactory);
 
         DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, methods, name);
         define(this, desc, name, dynamicMethod);
@@ -1471,6 +1477,7 @@ public class RubyModule extends RubyObject {
         return true;
     }
 
+    @Deprecated(since = "10.0")
     public final boolean defineAnnotatedMethod(Method method, MethodFactory methodFactory) {
         JRubyMethod jrubyMethod = method.getAnnotation(JRubyMethod.class);
 
@@ -1483,7 +1490,14 @@ public class RubyModule extends RubyObject {
         return true;
     }
 
+    @Deprecated
     public final boolean defineAnnotatedMethod(String name, JavaMethodDescriptor desc, MethodFactory methodFactory) {
+        return defineSingleAnnotatedMethod(name, desc, methodFactory);
+    }
+
+
+    private boolean defineSingleAnnotatedMethod(String name, JavaMethodDescriptor desc,
+                                                      MethodFactory methodFactory) {
         JRubyMethod jrubyMethod = desc.anno;
 
         if (jrubyMethod == null) return false;
@@ -2433,26 +2447,43 @@ public class RubyModule extends RubyObject {
     /** this method should be used only by interpreter or compiler
      *
      */
+    @Deprecated(since = "10.0")
     public RubyClass defineOrGetClassUnder(String name, RubyClass superClazz) {
         return defineOrGetClassUnder(name, superClazz, null);
     }
 
+    @Deprecated(since = "10.0")
     public RubyClass defineOrGetClassUnder(String name, RubyClass superClazz, String file, int line) {
         return defineOrGetClassUnder(name, superClazz, null, file, line);
     }
 
+    @Deprecated(since = "10.0")
     public RubyClass defineOrGetClassUnder(String name, RubyClass superClazz, ObjectAllocator allocator) {
         return defineOrGetClassUnder(name, superClazz, allocator, null, -1);
     }
 
+    @Deprecated(since = "10.0")
     public RubyClass defineOrGetClassUnder(String name, RubyClass superClazz, ObjectAllocator allocator,
                                            String file, int line) {
-        // This method is intended only for defining new classes in Ruby code,
-        // so it uses the allocator of the specified superclass or default to
-        // the Object allocator. It should NOT be used to define classes that require a native allocator.
+        return defineOrGetClassUnder(getCurrentContext(), name, superClazz, allocator, file, line);
+    }
 
-        Ruby runtime = getRuntime();
-        var context = runtime.getCurrentContext();
+    /**
+     * This method is intended only for defining new classes in Ruby code and is an internal API.
+     * It uses the allocator of the specified superclass or default to the Object allocator. It should NOT
+     * be used to define classes that require a native allocator.  For extension authors please use
+     * {@link org.jruby.RubyModule#defineClassUnder(ThreadContext, String, RubyClass, ObjectAllocator)}.
+     *
+     * @param context the thread context
+     * @param name name of new class
+     * @param superClazz super class of new class
+     * @param allocator how to allocate the class
+     * @param file where this class exists in source
+     * @param line where this class exists in source
+     * @return the new Class
+     */
+    public RubyClass defineOrGetClassUnder(ThreadContext context, String name, RubyClass superClazz,
+                                           ObjectAllocator allocator, String file, int line) {
         IRubyObject classObj = getConstantAtSpecial(name);
         RubyClass clazz;
 
@@ -2464,15 +2495,15 @@ public class RubyModule extends RubyObject {
                 RubyClass tmp = clazz.getSuperClass();
                 while (tmp != null && tmp.isIncluded()) tmp = tmp.getSuperClass(); // need to skip IncludedModuleWrappers
                 if (tmp != null) tmp = tmp.getRealClass();
-                if (tmp != superClazz) throw typeError(context, "superclass mismatch for class " + ids(runtime, name));
+                if (tmp != superClazz) throw typeError(context, "superclass mismatch for class " + ids(context.runtime, name));
             }
         } else if ((clazz = searchProvidersForClass(name, superClazz)) != null) {
             // reopen a java class
         } else {
-            if (superClazz == null) superClazz = runtime.getObject();
+            if (superClazz == null) superClazz = objectClass(context);
 
             if (allocator == null) {
-                if (isReifiable(runtime, superClazz)) {
+                if (isReifiable(context, superClazz)) {
                     if (Options.REIFY_CLASSES.load()) {
                         allocator = REIFYING_OBJECT_ALLOCATOR;
                     } else if (Options.REIFY_VARIABLES.load()) {
@@ -2485,7 +2516,7 @@ public class RubyModule extends RubyObject {
                 }
             }
 
-            clazz = RubyClass.newClass(runtime, superClazz, name, allocator, this, true, file, line);
+            clazz = RubyClass.newClass(context.runtime, superClazz, name, allocator, this, true, file, line);
         }
 
         return clazz;
@@ -2494,12 +2525,8 @@ public class RubyModule extends RubyObject {
     /**
      * Determine if a new child of the given class can have its variables reified.
      */
-    private boolean isReifiable(Ruby runtime, RubyClass superClass) {
-        if (superClass == runtime.getObject()) return true;
-
-        if (superClass.getAllocator() == IVAR_INSPECTING_OBJECT_ALLOCATOR) return true;
-
-        return false;
+    private boolean isReifiable(ThreadContext context, RubyClass superClass) {
+        return superClass == objectClass(context) || superClass.getAllocator() == IVAR_INSPECTING_OBJECT_ALLOCATOR;
     }
 
     /** this method should be used only by interpreter or compiler
@@ -6315,14 +6342,11 @@ public class RubyModule extends RubyObject {
         this.refinements = refinements;
     }
 
-    public static void createRefinementClass(RubyClass Refinement) {
+    public static void createRefinementClass(ThreadContext context, RubyClass Refinement) {
         Refinement.reifiedClass(RubyModule.class).
                 classIndex(ClassIndex.REFINEMENT).
-                defineAnnotatedMethodsIndividually(RefinementMethods.class);
-
-        Refinement.undefineMethod("append_features");
-        Refinement.undefineMethod("prepend_features");
-        Refinement.undefineMethod("extend_object");
+                defineMethods(context, RefinementMethods.class).
+                undefMethods(context, "append_features", "prepend_features", "extend_object");
     }
 
     public static class RefinementMethods {
