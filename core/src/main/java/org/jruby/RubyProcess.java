@@ -174,7 +174,7 @@ public class RubyProcess {
 
             marshalStream.registerLinkTarget(status);
 
-            marshalStream.dumpVariables(context, out, status, 3, (marshal, c, o, v, receiver) -> {
+            marshalStream.dumpVariables(context, out, status, 2, (marshal, c, o, v, receiver) -> {
                 // TODO: marshal these values directly
                 receiver.receive(marshal, c, o, "status", asFixnum(c, v.status));
                 receiver.receive(marshal, c, o, "pid", asFixnum(c, v.pid));
