@@ -636,7 +636,7 @@ public class EncodingUtils {
 
     // rb_econv_check_error
     public static void econvCheckError(ThreadContext context, EConv ec) {
-        RaiseException re = makeEconvException(context.runtime, ec);
+        RaiseException re = makeEconvException(context, ec);
         if (re != null) throw re;
     }
 
@@ -1508,7 +1508,7 @@ public class EncodingUtils {
         boolean success = transcodeLoop(ec, fallbackFunc, context, fallback, inBytes, inPos, outBytes, outPos, inStop, _outStop, destination, resizeFunction);
 
         if (!success) {
-            RaiseException re = makeEconvException(context.runtime, ec);
+            RaiseException re = makeEconvException(context, ec);
             ec.close();
             throw re;
         }
@@ -1604,7 +1604,7 @@ public class EncodingUtils {
                     ret == EConvResult.IncompleteInput ||
                     ret == EConvResult.UndefinedConversion) {
 
-                RaiseException exc = makeEconvException(context.runtime, ec);
+                RaiseException exc = makeEconvException(context, ec);
 
                 ec.close();
 
@@ -1627,8 +1627,13 @@ public class EncodingUtils {
         }
     }
 
-    // make_econv_exception
+    @Deprecated(since = "10.0")
     public static RaiseException makeEconvException(Ruby runtime, EConv ec) {
+        return makeEconvException(runtime.getCurrentContext(), ec);
+    }
+
+    // make_econv_exception
+    public static RaiseException makeEconvException(ThreadContext context, EConv ec) {
         final StringBuilder mesg; RaiseException exc;
 
         final EConvResult result = ec.lastError.getResult();
@@ -1636,28 +1641,27 @@ public class EncodingUtils {
             byte[] errBytes = ec.lastError.getErrorBytes();
             int errBytesP = ec.lastError.getErrorBytesP();
             int errorLen = ec.lastError.getErrorBytesLength();
-            ByteList _bytes = new ByteList(errBytes, errBytesP, errorLen - errBytesP);
-            RubyString bytes = RubyString.newString(runtime, _bytes);
-            RubyString dumped = (RubyString)bytes.dump();
+            RubyString bytes = newString(context, new ByteList(errBytes, errBytesP, errorLen - errBytesP));
+            RubyString dumped = (RubyString)bytes.dump(context);
             int readagainLen = ec.lastError.getReadAgainLength();
-            IRubyObject bytes2 = runtime.getNil();
+            IRubyObject bytes2 = context.nil;
             mesg = new StringBuilder();
             if (result == EConvResult.IncompleteInput) {
                 mesg.append("incomplete ").append(dumped).append(" on ").append(new String(ec.lastError.getSource()));
             } else if (readagainLen != 0) {
-                bytes2 = RubyString.newString(runtime, new ByteList(errBytes, errorLen + errBytesP, ec.lastError.getReadAgainLength()));
-                IRubyObject dumped2 = ((RubyString) bytes2).dump();
+                bytes2 = newString(context, new ByteList(errBytes, errorLen + errBytesP, ec.lastError.getReadAgainLength()));
+                IRubyObject dumped2 = ((RubyString) bytes2).dump(context);
                 mesg.append(dumped).append(" followed by ").append(dumped2).append(" on ").append( new String(ec.lastError.getSource()) );
             } else {
                 mesg.append(dumped).append(" on ").append( new String(ec.lastError.getSource()) );
             }
 
-            exc = runtime.newInvalidByteSequenceError(mesg.toString());
+            exc = context.runtime.newInvalidByteSequenceError(mesg.toString());
             exc.getException().setInternalVariable("error_bytes", bytes);
             exc.getException().setInternalVariable("readagain_bytes", bytes2);
-            exc.getException().setInternalVariable("incomplete_input", result == EConvResult.IncompleteInput ? runtime.getTrue() : runtime.getFalse());
+            exc.getException().setInternalVariable("incomplete_input", result == EConvResult.IncompleteInput ? context.tru : context.fals);
 
-            return makeEConvExceptionSetEncs(exc, runtime, ec);
+            return makeEConvExceptionSetEncs(exc, context.runtime, ec);
         }
         else if (result == EConvResult.UndefinedConversion) {
             byte[] errBytes = ec.lastError.getErrorBytes();
@@ -1668,8 +1672,8 @@ public class EncodingUtils {
                 // prepare dumped form
             }
 
-            RubyString bytes = RubyString.newString(runtime, new ByteList(errBytes, errBytesP, errorLen - errBytesP));
-            RubyString dumped = (RubyString) bytes.dump();
+            RubyString bytes = newString(context, new ByteList(errBytes, errBytesP, errorLen - errBytesP));
+            RubyString dumped = (RubyString) bytes.dump(context);
 
             mesg = new StringBuilder();
             if (Arrays.equals(errSource, ec.source) &&  Arrays.equals(ec.lastError.getDestination(), ec.destination)) {
@@ -1681,15 +1685,15 @@ public class EncodingUtils {
                 }
             }
 
-            exc = runtime.newUndefinedConversionError(mesg.toString());
+            exc = context.runtime.newUndefinedConversionError(mesg.toString());
 
-            EncodingDB.Entry entry = runtime.getEncodingService().findEncodingOrAliasEntry(errSource);
+            EncodingDB.Entry entry = context.runtime.getEncodingService().findEncodingOrAliasEntry(errSource);
             if (entry != null) {
                 bytes.setEncoding(entry.getEncoding());
                 exc.getException().setInternalVariable("error_char", bytes);
             }
 
-            return makeEConvExceptionSetEncs(exc, runtime, ec);
+            return makeEConvExceptionSetEncs(exc, context.runtime, ec);
         }
         return null;
     }

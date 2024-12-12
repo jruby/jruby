@@ -360,7 +360,7 @@ public class RubyConverter extends RubyObject {
             if (retStr.equals(InvalidByteSequence.symbolicName()) ||
                     retStr.equals(UndefinedConversion.symbolicName()) ||
                     retStr.equals(IncompleteInput.symbolicName())) {
-                throw EncodingUtils.makeEconvException(context.runtime, ec);
+                throw EncodingUtils.makeEconvException(context, ec);
             }
 
             if (retStr.equals(Finished.symbolicName())) throw argumentError(context, "converter already finished");
@@ -374,26 +374,17 @@ public class RubyConverter extends RubyObject {
     
     @JRubyMethod
     public IRubyObject finish(ThreadContext context) {
-        IRubyObject dest;
+        IRubyObject dest = context.runtime.newString();
+        IRubyObject ret = primitive_convert(context,
+                new IRubyObject[] { context.nil, dest, context.nil, context.nil, asFixnum(context, 0) });
 
-        IRubyObject[] newArgs = {
-                context.nil,
-                dest = context.runtime.newString(),
-                context.nil,
-                context.nil,
-                asFixnum(context, 0)
-        };
-
-        IRubyObject ret = primitive_convert(context, newArgs);
-
-        if (ret instanceof RubySymbol) {
-            RubySymbol retSym = (RubySymbol)ret;
+        if (ret instanceof RubySymbol retSym) {
             String retStr = retSym.asJavaString(); // 7 bit comparison
 
             if (retStr.equals(InvalidByteSequence.symbolicName()) ||
                     retStr.equals(UndefinedConversion.symbolicName()) ||
                     retStr.equals(IncompleteInput.symbolicName())) {
-                throw EncodingUtils.makeEconvException(context.runtime, ec);
+                throw EncodingUtils.makeEconvException(context, ec);
             }
 
             if (!retStr.equals(EConvResult.Finished.symbolicName())) {
@@ -460,11 +451,9 @@ public class RubyConverter extends RubyObject {
     
     @JRubyMethod
     public IRubyObject last_error(ThreadContext context) {
-        RaiseException re = EncodingUtils.makeEconvException(context.runtime, ec);
+        RaiseException re = EncodingUtils.makeEconvException(context, ec);
 
-        if (re != null) return re.getException();
-        
-        return context.nil;
+        return re == null ? context.nil : re.getException();
     }
     
     @JRubyMethod
@@ -472,7 +461,7 @@ public class RubyConverter extends RubyObject {
         Ruby runtime = context.runtime;
 
         IRubyObject[] values = {
-                runtime.newSymbol(ec.lastError.getResult().symbolicName()),
+                asSymbol(context, ec.lastError.getResult().symbolicName()),
                 context.nil,
                 context.nil,
                 context.nil,

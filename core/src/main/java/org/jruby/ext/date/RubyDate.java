@@ -1777,15 +1777,15 @@ public class RubyDate extends RubyObject {
                 match = (RubyMatchData) sub;
                 RubyInteger hour;
                 RubyString m = (RubyString) match.at(1);
-                hash.fastASet(asSymbol(context, "hour"), hour = (RubyInteger) m.to_i());
+                hash.fastASet(asSymbol(context, "hour"), hour = (RubyInteger) m.to_i(context));
                 m = matchOrNull(context, match, 2);
-                if (m != null) hash.fastASet(asSymbol(context, "min"), m.to_i());
+                if (m != null) hash.fastASet(asSymbol(context, "min"), m.to_i(context));
                 m = matchOrNull(context, match, 3);
-                if (m != null) hash.fastASet(asSymbol(context, "sec"), m.to_i());
+                if (m != null) hash.fastASet(asSymbol(context, "sec"), m.to_i(context));
                 m = matchOrNull(context, match, 4);
                 if (m != null) {
                     RubyInteger den = (RubyInteger) asFixnum(context, 10).op_pow(context, m.length());
-                    hash.fastASet(asSymbol(context, "sec_fraction"), RubyRational.newInstance(context, (RubyInteger) m.to_i(), den));
+                    hash.fastASet(asSymbol(context, "sec_fraction"), RubyRational.newInstance(context, (RubyInteger) m.to_i(context), den));
                 }
                 m = matchOrNull(context, match, 5);
                 if (m != null) {
@@ -1873,7 +1873,7 @@ public class RubyDate extends RubyObject {
         IRubyObject sub = subSpace(context, str, re);
         if (sub == context.nil) return context.nil;
 
-        hash.fastASet(asSymbol(context, "year"), ((RubyString) ((RubyMatchData) sub).at(1)).to_i());
+        hash.fastASet(asSymbol(context, "year"), ((RubyString) ((RubyMatchData) sub).at(1)).to_i(context));
         return context.tru;
     }
 
@@ -1888,7 +1888,7 @@ public class RubyDate extends RubyObject {
         IRubyObject sub = subSpace(context, str, re);
         if (sub == context.nil) return context.nil;
 
-        hash.fastASet(asSymbol(context, "mday"), ((RubyString) ((RubyMatchData) sub).at(1)).to_i());
+        hash.fastASet(asSymbol(context, "mday"), ((RubyString) ((RubyMatchData) sub).at(1)).to_i(context));
         return context.tru;
     }
 
@@ -2066,7 +2066,7 @@ public class RubyDate extends RubyObject {
             RubyRegexp re = newRegexpFromCache(context, _parse_frag, RE_OPTION_IGNORECASE);
             sub = subSpace(context, (RubyString) str, re);
             if (sub != context.nil) {
-                RubyInteger v = (RubyInteger) ((RubyString) ((RubyMatchData) sub).at(1)).to_i();
+                RubyInteger v = (RubyInteger) ((RubyString) ((RubyMatchData) sub).at(1)).to_i(context);
                 long vi = v.getLongValue();
                 if (1 <= vi && vi <= 31) hash.fastASet(asSymbol(context, "mday"), v);
             }
@@ -2078,7 +2078,7 @@ public class RubyDate extends RubyObject {
                 sub = subSpace(context, str, re);
             }
             if (sub != context.nil) {
-                RubyInteger v = (RubyInteger) ((RubyString) ((RubyMatchData) sub).at(1)).to_i();
+                RubyInteger v = (RubyInteger) ((RubyString) ((RubyMatchData) sub).at(1)).to_i(context);
                 long vi = v.getLongValue();
                 if (0 <= vi && vi <= 24) hash.fastASet(asSymbol(context, "hour"), v);
             }

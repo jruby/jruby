@@ -3255,7 +3255,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             fptr.checkByteReadable(context);
 
             if ( len == 0 ) {
-                ((RubyString) str).clear();
+                ((RubyString) str).clear(context);
                 return str;
             }
 
