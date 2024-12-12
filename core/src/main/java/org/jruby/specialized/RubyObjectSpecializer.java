@@ -32,6 +32,7 @@ import me.qmx.jitescript.JiteClass;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyObject;
+import org.jruby.RubyObjectShaped;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -192,7 +193,7 @@ public class RubyObjectSpecializer {
 
     private static JiteClass generateJiteClass(String clsPath, int size) {
         // ensure only one thread will attempt to generate and define the new class
-        final String baseName = p(RubyObject.class);
+        final String baseName = p(RubyObjectShaped.class);
 
         final JiteClass jiteClass = new JiteClass(clsPath, baseName, new String[0]) {{
             for (int i = 0; i < size; i++) {

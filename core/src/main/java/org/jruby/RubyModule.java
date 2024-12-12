@@ -52,9 +52,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.function.Consumer;
@@ -6265,15 +6267,28 @@ public class RubyModule extends RubyObject {
     }
 
     public Set<String> discoverInstanceVariables() {
-        HashSet<String> set = new HashSet();
-        RubyModule cls = this;
-        while (cls != null) {
-            Map<String, DynamicMethod> methods = cls.getOrigin().getMethodLocation().getMethods();
+        // preserve insertion order, so parent variables always precede child variables
+        return discoverInstanceVariablesInner(new LinkedHashSet<>());
+    }
 
-            methods.forEach((name, method) -> set.addAll(method.getInstanceVariableNames()));
-
-            cls = cls.getSuperClass();
+    protected Set<String> discoverInstanceVariablesInner(Set<String> set) {
+        // recurse to superclasses so they get first go at the table layout
+        RubyClass superClass = getSuperClass();
+        if (superClass != null) {
+            superClass.discoverInstanceVariablesInner(set);
         }
+
+        Map<String, DynamicMethod> methods = getOrigin().getMethodLocation().getMethods();
+
+        // gather vars for this class and sort alphabetically
+        TreeSet<String> sorted = new TreeSet<>();
+        for (Map.Entry<String, DynamicMethod> entry : methods.entrySet()) {
+            sorted.addAll(entry.getValue().getInstanceVariableNames());
+        }
+
+        // add all new vars from this class to the set
+        set.addAll(sorted);
+
         return set;
     }
 
