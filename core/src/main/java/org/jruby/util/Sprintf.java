@@ -109,7 +109,7 @@ public class Sprintf {
             if (rubyObject instanceof RubyArray) {
                 this.rubyArray = (RubyArray)rubyObject;
 
-                if (rubyArray.last() instanceof RubyHash) {
+                if (rubyArray.last(rubyArray.getRuntime().getCurrentContext()) instanceof RubyHash) {
                     this.rubyHash = (RubyHash) rubyArray.pop(rubyArray.getRuntime().getCurrentContext());
                 } else {
                     this.rubyHash = null;

@@ -485,7 +485,7 @@ public class TraceType {
         } else if (((RubyArray) backtrace).getLength() == 0) {
             printErrorPos(context, errorStream);
         } else {
-            IRubyObject mesg = ((RubyArray) backtrace).first();
+            IRubyObject mesg = ((RubyArray) backtrace).first(context);
 
             if (mesg.isNil()) {
                 printErrorPos(context, errorStream);

@@ -1355,9 +1355,10 @@ public class RubyEnumerable {
     @JRubyMethod
     public static IRubyObject max(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
         // TODO: Replace with an implementation (quickselect, etc) which requires O(k) memory rather than O(n) memory
-        RubyArray sorted = (RubyArray)sort(context, self, block);
-        if (arg.isNil()) return sorted.last();
-        return ((RubyArray) sorted.last(arg)).reverse();
+        RubyArray sorted = (RubyArray) sort(context, self, block);
+        return arg.isNil() ?
+                sorted.last(context) :
+                ((RubyArray) sorted.last(context, arg)).reverse(context);
     }
 
     @JRubyMethod
@@ -1368,9 +1369,9 @@ public class RubyEnumerable {
     @JRubyMethod
     public static IRubyObject min(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
         // TODO: Replace with an implementation (quickselect, etc) which requires O(k) memory rather than O(n) memory
-        RubyArray sorted = (RubyArray)sort(context, self, block);
-        if (arg.isNil()) return sorted.first();
-        return sorted.first(arg);
+        RubyArray sorted = (RubyArray) sort(context, self, block);
+
+        return arg.isNil() ? sorted.first(context) : sorted.first(context, arg);
     }
 
     @JRubyMethod
@@ -1385,8 +1386,7 @@ public class RubyEnumerable {
         if (!block.isGiven()) return enumeratorizeWithSize(context, self, "max_by", RubyEnumerable::size);
 
         // TODO: Replace with an implementation (quickselect, etc) which requires O(k) memory rather than O(n) memory
-        RubyArray sorted = (RubyArray)sort_by(context, self, block);
-        return ((RubyArray) sorted.last(arg)).reverse();
+        return ((RubyArray) ((RubyArray) sort_by(context, self, block)).last(context, arg)).reverse(context);
     }
 
     @JRubyMethod
@@ -1401,8 +1401,7 @@ public class RubyEnumerable {
         if (!block.isGiven()) return enumeratorizeWithSize(context, self, "min_by", RubyEnumerable::size);
 
         // TODO: Replace with an implementation (quickselect, etc) which requires O(k) memory rather than O(n) memory
-        RubyArray sorted = (RubyArray)sort_by(context, self, block);
-        return sorted.first(arg);
+        return ((RubyArray) sort_by(context, self, block)).first(context, arg);
     }
 
     private static final int SORT_MAX =  1;

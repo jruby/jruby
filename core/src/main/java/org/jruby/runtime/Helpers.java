@@ -1996,13 +1996,12 @@ public class Helpers {
 
     @Deprecated // not used
     public static IRubyObject aValueSplat(IRubyObject value) {
-        if (!(value instanceof RubyArray) || ((RubyArray) value).length().getLongValue() == 0) {
-            return value.getRuntime().getNil();
+        var context = value.getRuntime().getCurrentContext();
+        if (!(value instanceof RubyArray array) || array.length().getLongValue() == 0) {
+            return context.nil;
         }
 
-        RubyArray array = (RubyArray) value;
-
-        return array.getLength() == 1 ? array.first() : array;
+        return array.getLength() == 1 ? array.first(context) : array;
     }
 
     @Deprecated(since = "9.4-") // not used

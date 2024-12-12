@@ -183,6 +183,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         setCodeRange(cr);
     }
 
+    @Deprecated(since = "10.0")
     public final Encoding toEncoding(Ruby runtime) {
         return runtime.getEncodingService().findEncoding(this);
     }
@@ -6640,7 +6641,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         long offset = 0;
         if (options.size() == 1) {
             IRubyObject offsetArg = options.fastARef(asSymbol(context, "offset"));
-            if (offsetArg == null) throw argumentError(context, "unknown keyword: " + options.keys().first().inspect());
+            if (offsetArg == null) throw argumentError(context, "unknown keyword: " + options.keys().first(context).inspect());
             offset = offsetArg.convertToInteger().getLongValue();
         }
         // FIXME: keyword arg processing incomplete.  We need a better system.
