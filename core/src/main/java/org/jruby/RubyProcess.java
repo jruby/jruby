@@ -244,13 +244,13 @@ public class RubyProcess {
                 case 0xff00 -> "Process::Status#exitstatus or Process::Status#stopsig";
                 default -> "other Process::Status predicates";
             };
-            deprecateAndSuggest(context, "&", message);
+            deprecateAndSuggest(context, "Process::Status#&", "3.5", message);
 
             return asFixnum(context, status & mask);
         }
 
-        private static void deprecateAndSuggest(ThreadContext context, String method, String suggest) {
-            context.runtime.getWarnings().warnDeprecatedForRemoval("Use " + suggest + " instead of Process::Status#" + method, "3.4");
+        private static void deprecateAndSuggest(ThreadContext context, String method, String version, String suggest) {
+            context.runtime.getWarnings().warnDeprecatedForRemovalAlternate(method, version, suggest);
         }
 
         @JRubyMethod(name = "stopped?")
@@ -329,11 +329,12 @@ public class RubyProcess {
             if (places < 0) throw argumentError(context, "negative shift value: " + places);
             if (places > Integer.MAX_VALUE) throw rangeError(context, "shift value out of range: " + places);
 
-            deprecateAndSuggest(context, ">>", switch ((int) places) {
+            String message = switch ((int) places) {
                 case 7 -> "Process::Status#coredump?";
                 case 8 -> "Process::Status#exitstatus or Process::Status#stopsig";
                 default -> "other Process::Status predicates";
-            });
+            };
+            deprecateAndSuggest(context, "Process::Status#>>", "3.5", message);
 
             return asFixnum(context, status >> places);
         }
