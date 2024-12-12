@@ -447,7 +447,7 @@ public class RubyComplex extends RubyNumeric {
             return a1 instanceof RubyComplex ? a1 : convertCommon(context, recv, a1, null, exception.isTrue());
         }
 
-        throw argumentError(context, "`Complex': expected true or false as exception: " + exception);
+        throw argumentError(context, "'Complex': expected true or false as exception: " + exception);
     }
 
     /** nucomp_s_convert
@@ -468,7 +468,7 @@ public class RubyComplex extends RubyNumeric {
             return convertCommon(context, recv, a1, a2, exception.isTrue());
         }
 
-        throw argumentError(context, "`Complex': expected true or false as exception: " + exception);
+        throw argumentError(context, "'Complex': expected true or false as exception: " + exception);
     }
 
     // MRI: nucomp_s_convert
