@@ -65,6 +65,8 @@ import java.util.HashSet;
 import java.util.List;
 
 import static org.jruby.api.Convert.castAsClass;
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.javasupport.JavaCallable.inspectParameterTypes;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
@@ -323,29 +325,35 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
         @Override
         @JRubyMethod
-        public RubyString inspect() {
-            StringBuilder str = new StringBuilder();
-            str.append("#<");
-            str.append( getDeclaringClass().nameOnInspection() ).append('/').append( getName() );
-            inspectParameterTypes(str, this);
-            str.append('>');
-            return RubyString.newString(getRuntime(), str);
+        public RubyString inspect(ThreadContext context) {
+            StringBuilder buf = new StringBuilder();
+            buf.append("#<");
+            buf.append( getDeclaringClass().nameOnInspection() ).append('/').append( getName() );
+            inspectParameterTypes(buf, this);
+            buf.append('>');
+            return newString(context, buf.toString());
         }
 
-        @JRubyMethod(name = "invoke", rest = true)
+        /**
+         * @param args
+         * @return
+         * @deprecated Use {@link ProxyMethodImpl#do_invoke(ThreadContext, IRubyObject[])} instead.
+         */
+        @Deprecated(since = "10.0")
         public IRubyObject do_invoke(final IRubyObject[] args) {
-            final Ruby runtime=  getRuntime();
-            if ( args.length != 1 + getArity() ) {
-                throw runtime.newArgumentError(args.length, 1 + getArity());
+            return do_invoke(getCurrentContext(), args);
+        }
+
+
+        @JRubyMethod(name = "invoke", rest = true)
+        public IRubyObject do_invoke(ThreadContext context, final IRubyObject[] args) {
+            if (args.length != 1 + getArity()) throw argumentError(context, args.length, 1 + getArity());
+
+            if (!(args[0] instanceof JavaProxy invokee)) {
+                throw typeError(context, "not a java proxy: " + (args[0] == null ? null : args[0].getClass()));
             }
 
-            final IRubyObject invokee = args[0];
-            if (!(invokee instanceof JavaProxy)) {
-                throw typeError(runtime.getCurrentContext(), "not a java proxy: " + (invokee == null ? null : invokee.getClass()));
-            }
-
-            Object receiver_value = ((JavaProxy) invokee).getObject();
-
+            Object receiver_value = invokee.getObject();
             final Object[] arguments = new Object[ args.length - 1 ];
 
             final Class[] parameterTypes = getParameterTypes();
@@ -355,20 +363,16 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
             try {
                 Object javaResult = superMethod.invoke(receiver_value, arguments);
-                return JavaUtil.convertJavaToRuby(runtime, javaResult, getReturnType());
-            }
-            catch (IllegalArgumentException ex) {
-                throw typeError(runtime.getCurrentContext(), "expected " + argument_types().inspect());
-            }
-            catch (IllegalAccessException ex) {
-                throw typeError(runtime.getCurrentContext(), "illegal access on '" + superMethod.getName() + "': " +
-                        ex.getMessage());
-            }
-            catch (InvocationTargetException ex) {
-                if ( runtime.getDebug().isTrue() ) ex.getTargetException().printStackTrace();
+                return JavaUtil.convertJavaToRuby(context.runtime, javaResult, getReturnType());
+            } catch (IllegalArgumentException ex) {
+                throw typeError(context, "expected " + argument_types().inspect(context));
+            } catch (IllegalAccessException ex) {
+                throw typeError(context, "illegal access on '" + superMethod.getName() + "': " + ex.getMessage());
+            } catch (InvocationTargetException ex) {
+                if (context.runtime.getDebug().isTrue()) ex.getTargetException().printStackTrace();
 
-                runtime.getJavaSupport().handleNativeException(ex.getTargetException(), superMethod);
-                return runtime.getNil(); // only reached if there was an exception handler installed
+                context.runtime.getJavaSupport().handleNativeException(ex.getTargetException(), superMethod);
+                return context.nil; // only reached if there was an exception handler installed
             }
         }
 

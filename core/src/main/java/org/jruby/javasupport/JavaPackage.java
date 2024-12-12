@@ -47,6 +47,7 @@ import org.jruby.util.ClassProvider;
 import org.jruby.util.TypeConverter;
 
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
@@ -107,10 +108,9 @@ public class JavaPackage extends RubyModule {
     @Override
     public RubyString to_s(ThreadContext context) { return package_name(); }
 
-    @Override
     @JRubyMethod
-    public IRubyObject inspect() {
-        return getRuntime().newString(getName()); // super.to_s()
+    public IRubyObject inspect(ThreadContext context) {
+        return newString(context, getName()); // super.to_s()
     }
 
     @Override
@@ -320,7 +320,7 @@ public class JavaPackage extends RubyModule {
 
             final Ruby runtime = pkg.getRuntime();
             Class<?> javaClass = Java.getJavaClass(runtime, subPackageName);
-            return Java.getInterfaceModule(runtime, javaClass);
+            return Java.getInterfaceModule(runtime.getCurrentContext(), javaClass);
         }
 
     }

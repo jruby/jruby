@@ -1110,11 +1110,6 @@ public class RubySet extends RubyObject implements Set {
         return runtime.getModule("TSort");
     }
 
-    @Override
-    public final IRubyObject inspect() {
-        return inspect(getRuntime().getCurrentContext());
-    }
-
     private static final byte[] RECURSIVE_BYTES = new byte[] { '.','.','.' };
 
     // Returns a string containing a human-readable representation of the set.

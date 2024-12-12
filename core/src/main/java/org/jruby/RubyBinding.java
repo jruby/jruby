@@ -152,7 +152,7 @@ public class RubyBinding extends RubyObject {
         DynamicScope evalScope = binding.getEvalScope(context.runtime);
         int slot = evalScope.getStaticScope().isDefined(id);
 
-        if (slot == -1) throw context.runtime.newNameError(str(context.runtime, "local variable '", symbol, "' not defined for " + inspect()), symbol);
+        if (slot == -1) throw context.runtime.newNameError(str(context.runtime, "local variable '", symbol, "' not defined for " + inspect(context)), symbol);
 
         return evalScope.getValueOrNil(slot & 0xffff, slot >> 16, context.nil);
     }

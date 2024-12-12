@@ -255,8 +255,7 @@ public class RubyMethod extends AbstractRubyMethod {
     }
     
     @JRubyMethod(name = {"inspect", "to_s"})
-    @Override
-    public IRubyObject inspect() {
+    public IRubyObject inspect(ThreadContext context) {
         return inspect(receiver);
     }
 

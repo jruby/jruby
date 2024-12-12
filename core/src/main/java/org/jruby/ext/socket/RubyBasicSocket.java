@@ -965,7 +965,7 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     protected static String bindContextMessage(IRubyObject host, int port) {
-        return "bind(2) for " + host.inspect() + " port " + port;
+        return "bind(2) for " + host.inspect(host.getRuntime().getCurrentContext()) + " port " + port;
     }
 
     @Deprecated

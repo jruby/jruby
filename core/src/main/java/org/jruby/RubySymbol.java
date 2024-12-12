@@ -450,11 +450,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
                 constant;
     }
 
-    @Override
-    public IRubyObject inspect() {
-        return inspect(metaClass.runtime);
-    }
-
     @Deprecated
     final RubyString inspect(final Ruby runtime) {
         return (RubyString) inspect(runtime.getCurrentContext());
@@ -470,7 +465,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         if (!(isPrintable(context) && (resenc.equals(getBytes().getEncoding()) || str.isAsciiOnly()) &&
                 isSymbolName(symbol))) {
-            str = str.inspect(context.runtime);
+            str = (RubyString) str.inspect(context);
         }
 
         ByteList result = new ByteList(str.getByteList().getRealSize() + 1);
@@ -1550,7 +1545,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         if (object instanceof RubySymbol || object instanceof RubyString) return object;
 
         IRubyObject tmp = TypeConverter.checkStringType(context, sites(context).to_str_checked, object);
-        if (tmp.isNil()) throw typeError(context, object.inspect().toString() + " is not a symbol nor a string");
+        if (tmp.isNil()) throw typeError(context, object.inspect(context).toString() + " is not a symbol nor a string");
 
         return tmp;
     }

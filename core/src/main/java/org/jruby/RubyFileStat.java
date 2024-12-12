@@ -421,9 +421,7 @@ public class RubyFileStat extends RubyObject {
     }
 
     @JRubyMethod(name = "inspect")
-    @Override
-    public IRubyObject inspect() {
-        ThreadContext context = metaClass.runtime.getCurrentContext();
+    public IRubyObject inspect(ThreadContext context) {
         StringBuilder buf = new StringBuilder("#<");
         buf.append(getMetaClass().getRealClass().getName());
         if (stat == null) {
@@ -442,12 +440,12 @@ public class RubyFileStat extends RubyObject {
             try { buf.append("rdev=0x").append(Long.toHexString(stat.rdev())); } catch (Exception e) {} finally { buf.append(", "); }
             buf.append("size=").append(sizeInternal(context)).append(", ");
             try {
-                buf.append("blksize=").append(blockSize(context).inspect().toString()); } catch (Exception e) {} finally { buf.append(", "); }
-            try { buf.append("blocks=").append(blocks().inspect().toString()); } catch (Exception e) {} finally { buf.append(", "); }
+                buf.append("blksize=").append(blockSize(context).inspect(context).toString()); } catch (Exception e) {} finally { buf.append(", "); }
+            try { buf.append("blocks=").append(blocks().inspect(context).toString()); } catch (Exception e) {} finally { buf.append(", "); }
 
-            buf.append("atime=").append(atime().inspect()).append(", ");
-            buf.append("mtime=").append(mtime().inspect()).append(", ");
-            buf.append("ctime=").append(ctime().inspect());
+            buf.append("atime=").append(atime().inspect(context)).append(", ");
+            buf.append("mtime=").append(mtime().inspect(context)).append(", ");
+            buf.append("ctime=").append(ctime().inspect(context));
             if (Platform.IS_BSD || Platform.IS_MAC) {
                 buf.append(", ").append("birthtime=").append(birthtime());
             }

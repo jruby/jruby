@@ -240,16 +240,16 @@ public class Java implements Library {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4")
     public static IRubyObject create_proxy_class(
             IRubyObject self,
             IRubyObject name,
             IRubyObject javaClass,
             IRubyObject mod) {
-        final Ruby runtime = self.getRuntime();
-        RubyModule module = castAsModule(runtime.getCurrentContext(), mod);
+        var context = self.getRuntime().getCurrentContext();
+        RubyModule module = castAsModule(context, mod);
 
-        return setProxyClass(runtime, module, name.asJavaString(), resolveJavaClassArgument(runtime, javaClass));
+        return setProxyClass(context.runtime, module, name.asJavaString(), resolveJavaClassArgument(context, javaClass));
     }
 
     public static RubyModule setProxyClass(final Ruby runtime, final RubyModule target, final String constName, final Class<?> javaClass) throws NameError {
@@ -308,39 +308,53 @@ public class Java implements Library {
         return runtime.getNil();
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4-")
     public static RubyModule getInterfaceModule(final Ruby runtime, final JavaClass javaClass) {
-        return getInterfaceModule(runtime, javaClass.javaClass());
+        return getInterfaceModule(runtime.getCurrentContext(), javaClass.javaClass());
     }
 
+    @Deprecated(since = "10.0")
     public static RubyModule getInterfaceModule(final Ruby runtime, final Class javaClass) {
-        return Java.getProxyClass(runtime, javaClass);
+        return getInterfaceModule(runtime.getCurrentContext(), javaClass);
     }
 
+    public static RubyModule getInterfaceModule(ThreadContext context, final Class javaClass) {
+        return Java.getProxyClass(context.runtime, javaClass);
+    }
+
+    @Deprecated(since = "10.0")
     public static RubyModule get_interface_module(final Ruby runtime, final IRubyObject java_class) {
-        return getInterfaceModule(runtime, resolveJavaClassArgument(runtime, java_class));
+        return get_interface_module(runtime.getCurrentContext(), java_class);
     }
 
+    public static RubyModule get_interface_module(ThreadContext context, final IRubyObject java_class) {
+        return getInterfaceModule(context, resolveJavaClassArgument(context, java_class));
+    }
+
+    @Deprecated(since = "10.0")
     public static RubyModule get_proxy_class(final IRubyObject self, final IRubyObject java_class) {
-        final Ruby runtime = self.getRuntime();
-        return getProxyClass(runtime, resolveJavaClassArgument(runtime, java_class));
+        return get_proxy_class(self.getRuntime().getCurrentContext(), self, java_class);
+    }
+
+    public static RubyModule get_proxy_class(ThreadContext context, IRubyObject self, final IRubyObject java_class) {
+        return getProxyClass(context.runtime, resolveJavaClassArgument(context, java_class));
     }
 
     @SuppressWarnings("deprecation")
-    private static Class<?> resolveJavaClassArgument(final Ruby runtime, final IRubyObject java_class) {
+    private static Class<?> resolveJavaClassArgument(ThreadContext context, final IRubyObject java_class) {
         if (java_class instanceof RubyString) {
-            return getJavaClass(runtime, java_class.asJavaString());
+            return getJavaClass(context.runtime, java_class.asJavaString());
         }
-        if (java_class instanceof JavaProxy) {
-            Object obj = ((JavaProxy) java_class).getObject();
-            if (obj instanceof Class) return (Class<?>) obj;
-            if (obj instanceof String) { // java.lang.String proxy
-                return getJavaClass(runtime, (String) obj);
+        if (java_class instanceof JavaProxy proxy) {
+            Object obj = proxy.getObject();
+            if (obj instanceof Class cls) return cls;
+            if (obj instanceof String str) { // java.lang.String proxy
+                return getJavaClass(context.runtime, str);
             }
-            throw argumentError(runtime.getCurrentContext(), "expected a Java class, got " + java_class.inspect());
+            throw argumentError(context, "expected a Java class, got " + java_class.inspect(context));
         }
 
-        throw argumentError(runtime.getCurrentContext(), "expected a Java class (or String), got " + java_class.inspect());
+        throw argumentError(context, "expected a Java class (or String), got " + java_class.inspect(context));
     }
 
     public static Class<?> unwrapClassProxy(final IRubyObject self) {
@@ -489,7 +503,7 @@ public class Java implements Library {
         // include any interfaces we extend
         final Class<?>[] extended = javaClass.getInterfaces();
         for (int i = extended.length; --i >= 0; ) {
-            proxy.include(context, getInterfaceModule(context.runtime, extended[i]));
+            proxy.include(context, getInterfaceModule(context, extended[i]));
         }
         Initializer.setupProxyModule(context.runtime, javaClass, proxy);
         addToJavaPackageModule(proxy);
@@ -521,7 +535,7 @@ public class Java implements Library {
             // include interface modules into the proxy class
             final Class<?>[] interfaces = clazz.getInterfaces();
             for ( int i = interfaces.length; --i >= 0; ) {
-                proxy.include(context, getInterfaceModule(context.runtime, interfaces[i]));
+                proxy.include(context, getInterfaceModule(context, interfaces[i]));
             }
             if ( Modifier.isPublic(clazz.getModifiers()) ) {
                 addToJavaPackageModule(proxy);

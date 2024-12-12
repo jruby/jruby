@@ -1333,9 +1333,18 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return context.nil;
     }
 
-    // MRI: rb_io_binmode_m
-    @JRubyMethod(name = "binmode")
+    /**
+     * @return
+     * @deprecated Use {@link RubyIO#binmode(ThreadContext)} instead.
+     */
+    @Deprecated(since = "10.0")
     public IRubyObject binmode() {
+        return binmode(getCurrentContext());
+    }
+
+        // MRI: rb_io_binmode_m
+    @JRubyMethod(name = "binmode")
+    public IRubyObject binmode(ThreadContext context) {
         setAscii8bitBinmode();
 
         RubyIO write_io = GetWriteIO();
@@ -2085,6 +2094,16 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return RubyFixnum.zero(runtime);
     }
 
+    /**
+     * @param sync
+     * @return
+     * @deprecated Use {@link RubyIO#sync_set(ThreadContext, IRubyObject)} instead.
+     */
+    @Deprecated(since = "10.0")
+    public IRubyObject sync_set(IRubyObject sync) {
+        return sync_set(getCurrentContext(), sync);
+    }
+
     /** Sets the current sync mode.
      *
      * MRI: rb_io_set_sync
@@ -2092,7 +2111,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
      * @param sync The new sync mode.
      */
     @JRubyMethod(name = "sync=")
-    public IRubyObject sync_set(IRubyObject sync) {
+    public IRubyObject sync_set(ThreadContext context, IRubyObject sync) {
         setSync(sync.isTrue());
 
         return sync;
@@ -2927,10 +2946,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     @JRubyMethod
-    @Override
-    public IRubyObject inspect() {
+    public IRubyObject inspect(ThreadContext context) {
         final OpenFile openFile = this.openFile;
-        if (openFile == null) return super.inspect();
+        if (openFile == null) return super.inspect(context);
 
         String className = getMetaClass().getRealClass().getName();
         String path = openFile.getPath();
@@ -2947,7 +2965,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             status = " (closed)";
         }
 
-        return getRuntime().newString("#<" + className + ':' + path + status + '>');
+        return newString(context, "#<" + className + ':' + path + status + '>');
     }
 
     /** Read a line.
@@ -3871,7 +3889,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @Override
     public String toString() {
-        return inspect().toString();
+        return inspect(getRuntime().getCurrentContext()).toString();
     }
 
     /* class methods for IO */

@@ -374,13 +374,11 @@ public class RubyMatchData extends RubyObject {
 
     @JRubyMethod
     @Override
-    public RubyString inspect() {
+    public RubyString inspect(ThreadContext context) {
         if (str == null) return (RubyString) anyToString();
 
-        Ruby runtime = metaClass.runtime;
-        RubyString result = runtime.newString();
-        result.cat((byte)'#').cat((byte)'<');
-        result.append(getMetaClass().getRealClass().to_s(runtime.getCurrentContext()));
+        RubyString result = newString(context, "#<");
+        result.append(getMetaClass().getRealClass().to_s(context));
 
         NameEntry[] names = new NameEntry[regs == null ? 1 : regs.getNumRegs()];
 
@@ -405,7 +403,7 @@ public class RubyMatchData extends RubyObject {
             if (v.isNil()) {
                 result.cat(RubyNil.nilBytes); // "nil"
             } else {
-                result.append(((RubyString)v).inspect(runtime));
+                result.append(v.inspect(context));
             }
         }
 

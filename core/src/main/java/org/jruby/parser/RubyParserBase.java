@@ -1604,7 +1604,7 @@ public abstract class RubyParserBase {
             if (encounteredKeys.containsKey(key)) {
                 Ruby runtime = getRuntime();
                 IRubyObject value = ((LiteralValue) key).literalValue(runtime);
-                warning(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), hash.getLine(), str(runtime, "key ", value.inspect(),
+                warning(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), hash.getLine(), str(runtime, "key ", value.inspect(runtime.getCurrentContext()),
                         " is duplicated and overwritten on line " + (key.getLine() + 1)));
             }
             // even if the key was previously seen, we replace the value to properly remove multiple duplicates

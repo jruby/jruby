@@ -128,8 +128,7 @@ public class RubyClassPathVariable extends RubyObject {
 
     @Override
     @JRubyMethod(name = "inspect")
-    public IRubyObject inspect() {
-        final ThreadContext context = getRuntime().getCurrentContext();
+    public IRubyObject inspect(ThreadContext context) {
         return callMethod(context, "to_a").callMethod(context, "inspect");
     }
 }// RubyClassPathVariable

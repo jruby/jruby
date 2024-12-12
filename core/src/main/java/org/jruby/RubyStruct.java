@@ -213,7 +213,7 @@ public class RubyStruct extends RubyObject {
 
         if (ret == null || options.size() > 1) { // other (unknown) keys in options
             options.visitAll(context, (ctxt, self, key, value, index) -> {
-                if (!key.equals(testKey)) throw typeError(ctxt, "unknown keyword: " + key.inspect());
+                if (!key.equals(testKey)) throw typeError(ctxt, "unknown keyword: " + key.inspect(ctxt));
             });
         }
 
@@ -354,11 +354,17 @@ public class RubyStruct extends RubyObject {
             return RubyStruct.members(recv, block);
         }
 
-        @JRubyMethod
+        @Deprecated(since = "10.0")
         public static IRubyObject inspect(IRubyObject recv) {
-            IRubyObject keywordInit = RubyStruct.getInternalVariable((RubyClass)recv, KEYWORD_INIT_VAR);
-            if (!keywordInit.isTrue()) return recv.inspect();
-            return recv.inspect().convertToString().catString("(keyword_init: true)");
+            return inspect(recv.getRuntime().getCurrentContext(), recv);
+        }
+
+        @JRubyMethod
+        public static IRubyObject inspect(ThreadContext context, IRubyObject recv) {
+            IRubyObject keywordInit = RubyStruct.getInternalVariable((RubyClass) recv, KEYWORD_INIT_VAR);
+            var inspected = recv.inspect(context);
+            if (!keywordInit.isTrue()) return inspected;
+            return inspected.convertToString().catString("(keyword_init: true)");
         }
 
         @JRubyMethod(name = "keyword_init?")

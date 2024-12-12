@@ -51,6 +51,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ArraySupport;
 
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.javasupport.JavaCallable.inspectParameterTypes;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
@@ -161,18 +162,18 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
 
     @Override
     @JRubyMethod
-    public RubyString inspect() {
-        StringBuilder str = new StringBuilder();
-        str.append("#<");
-        str.append( getDeclaringClass().nameOnInspection() );
-        inspectParameterTypes(str, this);
-        str.append('>');
-        return RubyString.newString(getRuntime(), str);
+    public RubyString inspect(ThreadContext context) {
+        StringBuilder buf = new StringBuilder();
+        buf.append("#<");
+        buf.append( getDeclaringClass().nameOnInspection() );
+        inspectParameterTypes(buf, this);
+        buf.append('>');
+        return newString(context, buf.toString());
     }
 
     @Override
     public String toString() {
-        return inspect().toString();
+        return inspect(getRuntime().getCurrentContext()).toString();
     }
 
     @JRubyMethod

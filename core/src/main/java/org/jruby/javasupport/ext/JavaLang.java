@@ -848,7 +848,7 @@ public abstract class JavaLang {
 
             RubyString buf = inspectPrefix(context, self.getMetaClass());
             RubyStringBuilder.cat(context.runtime, buf, SPACE);
-            buf.catWithCodeRange(RubyString.newString(context.runtime, str).inspect());
+            buf.catWithCodeRange((RubyString) RubyString.newString(context.runtime, str).inspect(context));
             RubyStringBuilder.cat(context.runtime, buf, GT); // >
 
             return buf;
@@ -865,7 +865,7 @@ public abstract class JavaLang {
 
         @JRubyMethod(name = "inspect")
         public static IRubyObject inspect(final ThreadContext context, final IRubyObject self) {
-            return newString(context, self.toJava(java.lang.String.class)).inspect();
+            return newString(context, self.toJava(java.lang.String.class)).inspect(context);
         }
 
     }

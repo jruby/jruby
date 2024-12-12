@@ -156,11 +156,11 @@ public class RubyUDPSocket extends RubyIPSocket {
                 multicastStateManager.rebindToPort(port);
             }
 
-            return RubyFixnum.zero(runtime);
+            return asFixnum(context, 0);
         } catch (UnsupportedAddressTypeException e) {
             // This may not be the appropriate message for all such exceptions
             ProtocolFamily family = this.family == null ? StandardProtocolFamily.INET : this.family;
-            throw SocketUtils.sockerr(runtime, "bind: unsupported address " + host.inspect() + " for protocol family " + family);
+            throw SocketUtils.sockerr(runtime, "bind: unsupported address " + host.inspect(context) + " for protocol family " + family);
         } catch (UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "bind: name or service not known");
         } catch (BindException e) {
@@ -490,7 +490,7 @@ public class RubyUDPSocket extends RubyIPSocket {
     @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {
         final OpenFile openFile = this.openFile;
-        if (openFile == null) return super.inspect();
+        if (openFile == null) return super.inspect(context);
 
         String className = getMetaClass().getRealClass().getName();
         String path = openFile.getPath();

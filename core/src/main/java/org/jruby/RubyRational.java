@@ -1324,25 +1324,16 @@ public class RubyRational extends RubyNumeric {
         return str.append(num.to_s(context)).cat((byte)'/').append(den.to_s(context));
     }
 
-    @Override
-    public IRubyObject inspect() {
-        return inspectImpl(getRuntime());
-    }
-
     /** nurat_inspect
      * 
      */
     @JRubyMethod(name = "inspect")
     public RubyString inspect(ThreadContext context) {
-        return inspectImpl(context.runtime);
-    }
-
-    private RubyString inspectImpl(Ruby runtime) {
-        RubyString str = RubyString.newString(runtime, new ByteList(12), USASCIIEncoding.INSTANCE);
+        RubyString str = newString(context, new ByteList(12), USASCIIEncoding.INSTANCE);
         str.cat((byte)'(');
-        str.append((RubyString) num.inspect());
+        str.append((RubyString) num.inspect(context));
         str.cat((byte)'/');
-        str.append((RubyString) den.inspect());
+        str.append((RubyString) den.inspect(context));
         str.cat((byte)')');
         return str;
     }
