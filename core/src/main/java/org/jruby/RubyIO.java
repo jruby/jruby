@@ -3591,13 +3591,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return block.isGiven() ? each_byteInternal(context, block) : enumeratorize(context.runtime, this, "each_byte");
     }
 
-    // rb_io_bytes
-    @JRubyMethod(name = "bytes")
-    public IRubyObject bytes(ThreadContext context, Block block) {
-        warn(context, "IO#bytes is deprecated; use #each_byte instead");
-        return each_byte(context, block);
-    }
-
     // rb_io_each_char
     public IRubyObject each_charInternal(ThreadContext context, Block block) {
         Ruby runtime = context.runtime;
