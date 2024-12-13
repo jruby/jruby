@@ -584,7 +584,7 @@ public class RubyArgsFile extends RubyObject {
 
         return recv;
     }
-    
+
     @JRubyMethod(name = "each", optional = 1, checkArity = false)
     public static IRubyObject each(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
         return block.isGiven() ? each_line(context, recv, args, block) : enumeratorize(context.runtime, recv, "each", args);

@@ -1855,19 +1855,14 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 return print3(context, out, args[0], args[1], args[2]);
         }
 
-        Ruby runtime = context.runtime;
-        int i;
         int argc = args.length;
         IRubyObject outputFS = globalVariables(context).get("$,");
 
         boolean fieldSeparatorNotNil = !outputFS.isNil();
-        if (fieldSeparatorNotNil) {
-            runtime.getWarnings().warnDeprecated("$, is set to non-nil value");
-        }
-        for (i=0; i<argc; i++) {
-            if (fieldSeparatorNotNil && i>0) {
-                write(context, out, outputFS);
-            }
+        if (fieldSeparatorNotNil) warningDeprecated(context, "$, is set to non-nil value");
+
+        for (int i=0; i<argc; i++) {
+            if (fieldSeparatorNotNil && i > 0) write(context, out, outputFS);
             write(context, out, args[i]);
         }
 
@@ -1896,11 +1891,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     public static IRubyObject print2(ThreadContext context, IRubyObject out, IRubyObject arg0, IRubyObject arg1) {
-        Ruby runtime = context.runtime;
-
         IRubyObject outputFS = globalVariables(context).get("$,");
         boolean fieldSeparatorNotNil = !outputFS.isNil();
-        if (fieldSeparatorNotNil) runtime.getWarnings().warnDeprecated("$, is set to non-nil value");
+        if (fieldSeparatorNotNil) warningDeprecated(context, "$, is set to non-nil value");
 
         write(context, out, arg0);
         if (fieldSeparatorNotNil) write(context, out, outputFS);
@@ -1912,11 +1905,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     public static IRubyObject print3(ThreadContext context, IRubyObject out, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        Ruby runtime = context.runtime;
-
         IRubyObject outputFS = globalVariables(context).get("$,");
         boolean fieldSeparatorNotNil = !outputFS.isNil();
-        if (fieldSeparatorNotNil) runtime.getWarnings().warnDeprecated("$, is set to non-nil value");
+        if (fieldSeparatorNotNil) warningDeprecated(context, "$, is set to non-nil value");
 
         write(context, out, arg0);
         if (fieldSeparatorNotNil) write(context, out, outputFS);

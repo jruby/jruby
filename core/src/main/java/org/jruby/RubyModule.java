@@ -153,6 +153,7 @@ import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.*;
 import static org.jruby.api.Warn.warn;
+import static org.jruby.api.Warn.warningDeprecated;
 import static org.jruby.runtime.Visibility.MODULE_FUNCTION;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PROTECTED;
@@ -3277,7 +3278,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "attr", rest = true, reads = VISIBILITY)
     public IRubyObject attr(ThreadContext context, IRubyObject[] args) {
         if (args.length == 2 && (args[1] == context.tru || args[1] == context.fals)) {
-            context.runtime.getWarnings().warnDeprecated(ID.OBSOLETE_ARGUMENT, "optional boolean argument is obsoleted");
+            warningDeprecated(context, "optional boolean argument is obsoleted");
             boolean writeable = args[1].isTrue();
             RubySymbol sym = TypeConverter.checkID(args[0]);
             addAccessor(context, sym, getCurrentVisibilityForDefineMethod(context), args[0].isTrue(), writeable);
@@ -5693,9 +5694,8 @@ public class RubyModule extends RubyObject {
             return null;
         }
         if (entry.deprecated) {
-            final Ruby runtime = getRuntime();
             String parent = "Object".equals(getName()) ? "" : getName();
-            runtime.getWarnings().warnDeprecated(ID.CONSTANT_DEPRECATED, "constant " + parent + "::" + name + " is deprecated");
+            warningDeprecated(getRuntime().getCurrentContext(), "constant " + parent + "::" + name + " is deprecated");
         }
 
         return entry;

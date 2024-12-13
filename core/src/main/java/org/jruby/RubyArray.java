@@ -103,6 +103,7 @@ import static org.jruby.api.Create.newHash;
 import static org.jruby.api.Create.newSmallHash;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.*;
+import static org.jruby.api.Warn.warningDeprecated;
 import static org.jruby.runtime.Helpers.*;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.Inspector.*;
@@ -2352,7 +2353,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     private IRubyObject getDefaultSeparator(ThreadContext context) {
         IRubyObject sep = globalVariables(context).get("$,");
 
-        if (!sep.isNil()) context.runtime.getWarnings().warnDeprecated("$, is set to non-nil value");
+        if (!sep.isNil()) warningDeprecated(context, "$, is set to non-nil value");
 
         return sep;
     }

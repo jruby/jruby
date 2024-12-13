@@ -854,13 +854,13 @@ public class RubyGlobal {
 
         @Override
         public IRubyObject set(IRubyObject value) {
-            runtime.getWarnings().warnDeprecated(ID.INEFFECTIVE_GLOBAL, "warning: variable " + name + " is no longer effective; ignored");
+            warningDeprecated(runtime.getCurrentContext(), "warning: variable " + name + " is no longer effective; ignored");
             return value;
         }
 
         @Override
         public IRubyObject get() {
-            runtime.getWarnings().warnDeprecated(ID.INEFFECTIVE_GLOBAL, "warning: variable " + name + " is no longer effective");
+            warningDeprecated(runtime.getCurrentContext(), "warning: variable " + name + " is no longer effective");
             return value;
         }
     }

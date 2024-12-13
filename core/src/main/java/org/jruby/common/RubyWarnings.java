@@ -188,18 +188,22 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         if (runtime.getWarningCategories().contains(Category.EXPERIMENTAL)) warn(ID.MISCELLANEOUS, filename, line, message);
     }
 
+    @Deprecated(since = "10.0")
     public void warnDeprecated(ID id, String message) {
         if (runtime.getWarningCategories().contains(Category.DEPRECATED)) warn(id, message);
     }
 
+    @Deprecated(since = "10.0")
     public void warnDeprecated(String message) {
         if (runtime.getWarningCategories().contains(Category.DEPRECATED)) warn(message);
     }
 
+    @Deprecated(since = "10.0")
     public void warnDeprecatedAlternate(String name, String alternate) {
         if (runtime.getWarningCategories().contains(Category.DEPRECATED)) warn(ID.DEPRECATED_METHOD, name + " is deprecated; use " + alternate + " instead");
     }
 
+    @Deprecated(since = "10.0")
     public void warnDeprecatedForRemoval(String name, String version) {
         if (runtime.getWarningCategories().contains(Category.DEPRECATED)) warn(ID.MISCELLANEOUS, name + " is deprecated and will be removed in Ruby " + version);
     }
@@ -237,7 +241,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     public void warningDeprecated(ID id, String message) {
         if (!isVerbose()) return;
 
-        warnDeprecated(id, message);
+        if (runtime.getWarningCategories().contains(Category.DEPRECATED)) warn(id, message);
     }
 
     /**
