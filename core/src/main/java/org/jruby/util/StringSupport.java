@@ -2224,7 +2224,6 @@ public final class StringSupport {
                 if (false) { // #if STRING_ENUMERATORS_WANTARRAY
                     context.runtime.getWarnings().warn(ID.BLOCK_UNUSED, "given block not used");
                 } else {
-                    context.runtime.getWarnings().warning(ID.BLOCK_DEPRECATED, "passing a block to String#lines is deprecated");
                     wantarray = false;
                 }
             }

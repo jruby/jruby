@@ -6330,7 +6330,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         if (block.isGiven()) {
             if (wantarray) {
-                context.runtime.getWarnings().warning(ID.BLOCK_DEPRECATED, "passing a block to String#" + name + " is deprecated");
                 wantarray = false;
             }
         } else if (!wantarray) {
@@ -6381,7 +6380,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         if (block.isGiven()) {
             if (wantarray) {
-                context.runtime.getWarnings().warning(ID.BLOCK_DEPRECATED, "passing a block to String#" + name + " is deprecated");
                 wantarray = false;
             }
         } else if (!wantarray) {
@@ -6417,7 +6415,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     private IRubyObject enumerateBytes(ThreadContext context, String name, Block block, boolean wantarray) {
         if (block.isGiven()) {
             if (wantarray) {
-                context.runtime.getWarnings().warning(ID.BLOCK_DEPRECATED, "passing a block to String#" + name + " is deprecated");
                 wantarray = false;
             }
         } else if (!wantarray) {
@@ -6478,7 +6475,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         if (block.isGiven()) {
             if (wantarray) {
-                context.runtime.getWarnings().warning(ID.BLOCK_DEPRECATED, "passing a block to String#" + name + " is deprecated");
                 wantarray = false;
             }
         } else if (!wantarray) {
