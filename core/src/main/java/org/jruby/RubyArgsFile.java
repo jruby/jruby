@@ -584,14 +584,7 @@ public class RubyArgsFile extends RubyObject {
 
         return recv;
     }
-
-    @Deprecated // TODO "warning: ARGF#lines is deprecated; use #each_line instead"
-    @JRubyMethod(optional = 1, checkArity = false)
-    public static IRubyObject lines(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, recv, "each_line");
-        return each_line(context, recv, args, block);
-    }
-
+    
     @JRubyMethod(name = "each", optional = 1, checkArity = false)
     public static IRubyObject each(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
         return block.isGiven() ? each_line(context, recv, args, block) : enumeratorize(context.runtime, recv, "each", args);
