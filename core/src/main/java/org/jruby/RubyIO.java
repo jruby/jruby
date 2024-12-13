@@ -3819,12 +3819,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    @JRubyMethod(name = "lines")
-    public IRubyObject lines(final ThreadContext context, Block block) {
-        warn(context, "IO#lines is deprecated; use #each_line instead");
-        return each_line(context, block);
-    }
-
     @JRubyMethod(name = "readlines")
     public RubyArray readlines(ThreadContext context) {
         return Getline.getlineCall(context, GETLINE_ARY, this, getReadEncoding(context));
