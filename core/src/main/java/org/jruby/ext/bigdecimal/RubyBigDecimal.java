@@ -769,27 +769,6 @@ public class RubyBigDecimal extends RubyNumeric {
         return false;
     }
 
-    @Deprecated // no to be used in user-lang
-    @JRubyMethod(name = "new", meta = true)
-    public static IRubyObject new_(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        context.runtime.getWarnings().warn(IRubyWarnings.ID.DEPRECATED_METHOD, "BigDecimal.new is deprecated; use BigDecimal() method instead.");
-        return BigDecimalKernelMethods.newBigDecimal(context, recv, arg);
-    }
-
-    @Deprecated // no to be used in user-lang
-    @JRubyMethod(name = "new", meta = true)
-    public static IRubyObject new_(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject mathArg) {
-        context.runtime.getWarnings().warn(IRubyWarnings.ID.DEPRECATED_METHOD, "BigDecimal.new is deprecated; use BigDecimal() method instead.");
-        return BigDecimalKernelMethods.newBigDecimal(context, recv, arg, mathArg);
-    }
-
-    @Deprecated // no to be used in user-lang
-    @JRubyMethod(name = "new", meta = true)
-    public static IRubyObject new_(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject mathArg, IRubyObject opts) {
-        context.runtime.getWarnings().warn(IRubyWarnings.ID.DEPRECATED_METHOD, "BigDecimal.new is deprecated; use BigDecimal() method instead.");
-        return BigDecimalKernelMethods.newBigDecimal(context, recv, arg, mathArg, opts);
-    }
-
     private static IRubyObject handleMissingPrecision(ThreadContext context, String name, boolean strict, boolean exception) {
         if (!strict) return getZero(context, 1);
         if (!exception) return context.nil;
