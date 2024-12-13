@@ -40,7 +40,6 @@ package org.jruby;
 import java.math.BigInteger;
 
 import org.jcodings.specific.USASCIIEncoding;
-import org.jruby.RubyEnumerator.SizeFn;
 import org.jruby.compiler.Constantizable;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -603,11 +602,21 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     @Override
     public IRubyObject op_mul(ThreadContext context, long other) {
         Ruby runtime = context.runtime;
-        try {
-            return newFixnum(runtime, Math.multiplyExact(value, other));
-        } catch (ArithmeticException ae) {
-            return RubyBignum.newBignum(runtime, value).op_mul(context, other);
+
+        long value = this.value;
+        long result = value * other;
+
+        if (other == 0 // result is zero
+                || ((Math.abs(value) | Math.abs(other)) >>> 31 == 0) // factors are both int32 range
+                || (result / other == value && (value != Long.MIN_VALUE || other != -1)) // division produces value
+        ) {
+            return newFixnum(runtime, result);
         }
+
+        // overflow, use Bignum
+        BigInteger valueBig = BigInteger.valueOf(value);
+        BigInteger otherBig = BigInteger.valueOf(other);
+        return RubyBignum.newBignum(runtime, valueBig.multiply(otherBig));
     }
 
     public IRubyObject op_mul(ThreadContext context, double other) {
