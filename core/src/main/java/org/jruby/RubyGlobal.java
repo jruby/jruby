@@ -83,6 +83,7 @@ import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Warn.warningDeprecated;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.*;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.io.EncodingUtils.newExternalStringWithEncoding;
@@ -437,8 +438,8 @@ public class RubyGlobal {
         return env;
     }
 
-    private static void warnDeprecatedGlobal(final Ruby runtime, final String name) {
-        runtime.getWarnings().warnDeprecated(ID.MISCELLANEOUS, "'" + name + "' is deprecated");
+    private static void warnDeprecatedGlobal(ThreadContext context, final String name) {
+        warningDeprecated(context, "'" + name + "' is deprecated");
     }
 
     /**
@@ -556,13 +557,6 @@ public class RubyGlobal {
             EnvStringValidation.ensureValidEnvString(context, expected, "value");
             
             return super.has_value_p(context, expected.convertToString());
-        }
-
-        @JRubyMethod(name = "index")
-        public IRubyObject index(ThreadContext context, IRubyObject expected) {
-            context.runtime.getWarnings().warn(ID.DEPRECATED_METHOD, "ENV#index is deprecated; use ENV#key");
-
-            return key(context, expected);
         }
 
         @JRubyMethod(name = "keys")
@@ -1042,7 +1036,7 @@ public class RubyGlobal {
         public IRubyObject set(IRubyObject value) {
             IRubyObject result = super.set(value);
 
-            if (!value.isNil()) warnDeprecatedGlobal(runtime, name);
+            if (!value.isNil()) warnDeprecatedGlobal(runtime.getCurrentContext(), name);
 
             return result;
         }
@@ -1057,7 +1051,7 @@ public class RubyGlobal {
         public IRubyObject set(IRubyObject value) {
             IRubyObject result = super.set(value);
 
-            if (!result.isNil()) warnDeprecatedGlobal(runtime, name);
+            if (!result.isNil()) warnDeprecatedGlobal(runtime.getCurrentContext(), name);
 
             return result;
         }
