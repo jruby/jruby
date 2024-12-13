@@ -981,7 +981,7 @@ public class RubyBigDecimal extends RubyNumeric {
             return this;
         }
 
-        throw typeError(getRuntime().getCurrentContext(), "wrong argument class");
+        throw typeError(context, "wrong argument class");
     }
 
     @JRubyMethod(name = {"%", "modulo"})
@@ -1781,7 +1781,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @Deprecated
     public IRubyObject finite_p() {
-        return finite_p(getRuntime().getCurrentContext());
+        return finite_p(getCurrentContext());
     }
 
     private RubyBigDecimal floorNaNInfinityCheck(ThreadContext context) {
@@ -2165,7 +2165,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @Deprecated(since = "10.0", forRemoval = true)
     public final IRubyObject to_int() {
-        return to_int(getRuntime().getCurrentContext());
+        return to_int(getCurrentContext());
     }
 
     @Override
@@ -2415,7 +2415,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @Deprecated
     public IRubyObject zero_p() {
-        return zero_p(getRuntime().getCurrentContext());
+        return zero_p(getCurrentContext());
     }
 
     @Override
@@ -2534,12 +2534,6 @@ public class RubyBigDecimal extends RubyNumeric {
             return ((RubyBignum) x).getBigIntegerValue().testBit(0) == false; // 0-th bit -> 0
         }
         return false;
-    }
-
-    @Deprecated
-    public static IRubyObject ver(ThreadContext context, IRubyObject recv) {
-        context.runtime.getWarnings().warn(IRubyWarnings.ID.DEPRECATED_METHOD, "BigDecimal.ver is deprecated; use BigDecimal::VERSION instead");
-        return RubyString.newStringShared(context.runtime, VERSION);
     }
 
     @Deprecated // no longer used
