@@ -117,6 +117,7 @@ import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.*;
 import static org.jruby.api.Warn.warn;
+import static org.jruby.api.Warn.warningDeprecated;
 import static org.jruby.runtime.ThreadContext.*;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -885,8 +886,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         if (block.isGiven()) {
             IRubyObject className = types(context.runtime, klass);
 
-            context.runtime.getWarnings().warn(ID.BLOCK_NOT_ACCEPTED,
-                    str(context.runtime, className, "::new() does not take block; use ", className, "::open() instead"));
+            warn(context, str(context.runtime, className, "::new() does not take block; use ", className, "::open() instead"));
         }
 
         return klass.newInstance(context, args, block);
@@ -4193,7 +4193,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         if ((filename instanceof RubyString name) && name.isEmpty()) throw context.runtime.newErrnoENOENTError();
 
         if ((recv == ioClass(context)) && (cmd = PopenExecutor.checkPipeCommand(context, filename)) != context.nil) {
-            warn(context, "IO process creation with a leading '|' is deprecated and will be removed in Ruby 4.0; use IO.popen instead");
+            warningDeprecated(context, "IO process creation with a leading '|' is deprecated and will be removed in Ruby 4.0; use IO.popen instead");
             if (PopenExecutor.nativePopenAvailable(context.runtime)) {
                 return (RubyIO) PopenExecutor.pipeOpen(context, cmd, OpenFile.ioOflagsModestr(context, oflags), fmode, convconfig);
             } else {
