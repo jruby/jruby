@@ -3623,12 +3623,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     @JRubyMethod
-    public IRubyObject codepoints(ThreadContext context, Block block) {
-        warn(context, "IO#codepoints is deprecated; use #each_codepoint instead");
-        return eachCodePointCommon(context, block, "each_codepoint");
-    }
-
-    @JRubyMethod
     public IRubyObject each_codepoint(ThreadContext context, Block block) {
         return eachCodePointCommon(context, block, "each_codepoint");
     }
