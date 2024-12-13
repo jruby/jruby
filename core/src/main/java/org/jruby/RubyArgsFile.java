@@ -557,15 +557,6 @@ public class RubyArgsFile extends RubyObject {
         return recv;
     }
 
-    @JRubyMethod
-    public static IRubyObject codepoints(ThreadContext context, IRubyObject recv, Block block) {
-        warn(context, "ARGF#codepoints is deprecated; use #each_codepoint instead");
-
-        if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, recv, "each_line");
-
-        return each_codepoint(context, recv, block);
-    }
-
     /** Invoke a block for each line.
      *
      */
