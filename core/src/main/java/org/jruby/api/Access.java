@@ -6,6 +6,7 @@ import org.jruby.RubyModule;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.runtime.load.LoadService;
 
 public class Access {
@@ -70,6 +71,15 @@ public class Access {
      */
     public static RubyClass dirClass(ThreadContext context) {
         return context.runtime.getDir();
+    }
+
+    /**
+     * Retrieve the encoding service object
+     * @param context the current thread context
+     * @return the object
+     */
+    public static EncodingService encodingService(ThreadContext context) {
+        return context.runtime.getEncodingService();
     }
 
     /**

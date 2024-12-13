@@ -58,6 +58,7 @@ import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Warn.warn;
 
 /**
  *
@@ -731,14 +732,14 @@ public class RubyBignum extends RubyInteger {
         if (other < 0) {
             IRubyObject x = op_pow(context, -other);
             if (x instanceof RubyInteger) {
-                return RubyRational.newRationalRaw(runtime, RubyFixnum.one(runtime), x);
+                return RubyRational.newRationalRaw(runtime, asFixnum(context, 1), x);
             } else {
                 return dbl2num(runtime, 1.0 / num2dbl(context,x));
             }
         }
         final int xbits = value.bitLength();
         if ((xbits > BIGLEN_LIMIT) || (xbits * other > BIGLEN_LIMIT)) {
-            runtime.getWarnings().warn("in a**b, b may be too big");
+            warn(context, "in a**b, b may be too big");
             return pow(runtime, (double) other);
         }
         else {

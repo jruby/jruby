@@ -75,6 +75,7 @@ import static org.jruby.api.Create.newEmptyString;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
 import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -558,7 +559,7 @@ public class RubyArgsFile extends RubyObject {
 
     @JRubyMethod
     public static IRubyObject codepoints(ThreadContext context, IRubyObject recv, Block block) {
-        context.runtime.getWarnings().warn("ARGF#codepoints is deprecated; use #each_codepoint instead");
+        warn(context, "ARGF#codepoints is deprecated; use #each_codepoint instead");
 
         if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, recv, "each_line");
 

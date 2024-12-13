@@ -84,6 +84,7 @@ import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.*;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.StringSupport.CR_7BIT;
@@ -1610,7 +1611,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         RubyString string;
         int opts = 0;
         if (args[0] instanceof RubyRegexp) {
-            if (length > 1) context.runtime.getWarnings().warn("flags ignored");
+            if (length > 1) warn(context, "flags ignored");
             string = null;
         } else {
             if (length > 1) opts = objectAsJoniOptions(args[1]);

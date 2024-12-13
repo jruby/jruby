@@ -77,6 +77,7 @@ import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.runtimeError;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.io.EncodingUtils.newExternalStringWithEncoding;
 
@@ -457,7 +458,7 @@ public class RubyDir extends RubyObject implements Closeable {
         }
 
         if(!block.isGiven() && runtime.getChdirThread() != null) {
-            context.runtime.getWarnings().warn("conflicting chdir during another chdir block");
+            warn(context, "conflicting chdir during another chdir block");
         }
 
         IRubyObject result;

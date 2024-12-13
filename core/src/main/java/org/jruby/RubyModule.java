@@ -152,6 +152,7 @@ import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.*;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.runtime.Visibility.MODULE_FUNCTION;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PROTECTED;
@@ -6333,7 +6334,7 @@ public class RubyModule extends RubyObject {
                 RubyModule module = castAsModule(context, _module);
 
                 if (module.getSuperClass() != null) {
-                    context.runtime.getWarnings().warn(module.getName() + " has ancestors, but Refinement#import_methods doesn't import their methods");
+                    warn(context, module.getName() + " has ancestors, but Refinement#import_methods doesn't import their methods");
                 }
             }
 

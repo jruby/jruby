@@ -25,6 +25,9 @@ import org.jruby.javasupport.ParameterTypes;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 import org.jruby.util.collections.IntHashMap;
+
+import static org.jruby.api.Error.runtimeError;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.util.CodegenUtils.getBoxType;
 import static org.jruby.util.CodegenUtils.prettyParams;
 import static org.jruby.javasupport.Java.getFunctionalInterfaceMethod;
@@ -281,14 +284,16 @@ public class CallableSelector {
                 method = mostSpecific;
 
                 if ( ambiguous ) {
+                    var context = runtime.getCurrentContext();
+
                     if (Options.JI_AMBIGUOUS_CALLS_DEBUG.load()) {
-                        runtime.newRuntimeError(
+                        runtimeError(context,
                                 "multiple Java methods found, dumping backtrace and choosing "
                                         + ((Member) ((JavaCallable) method).accessibleObject()).getName()
                                         + prettyParams(msTypes)
                         ).printStackTrace(runtime.getErr());
                     } else {
-                        runtime.getWarnings().warn(
+                        warn(context,
                                 "multiple Java methods found, use -X" + Options.JI_AMBIGUOUS_CALLS_DEBUG.propertyName() + " for backtrace. Choosing "
                                         + ((Member) ((JavaCallable) method).accessibleObject()).getName()
                                         + prettyParams(msTypes));

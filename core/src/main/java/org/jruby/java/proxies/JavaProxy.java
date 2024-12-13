@@ -61,6 +61,7 @@ import static org.jruby.api.Convert.castAsModule;
 import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.runtime.Helpers.arrayOf;
 
 public class JavaProxy extends RubyObject {
@@ -560,13 +561,13 @@ public class JavaProxy extends RubyObject {
 
     @Override
     public Object getVariable(int index) {
-        confirmCachedProxy(NONPERSISTENT_IVAR_MESSAGE);
+        confirmCachedProxy(getRuntime().getCurrentContext(), NONPERSISTENT_IVAR_MESSAGE);
         return super.getVariable(index);
     }
 
     @Override
     public void setVariable(int index, Object value) {
-        confirmCachedProxy(NONPERSISTENT_IVAR_MESSAGE);
+        confirmCachedProxy(getRuntime().getCurrentContext(), NONPERSISTENT_IVAR_MESSAGE);
         super.setVariable(index, value);
     }
 
@@ -580,18 +581,18 @@ public class JavaProxy extends RubyObject {
      */
     @Override
     public RubyClass getSingletonClass() {
-        confirmCachedProxy(NONPERSISTENT_SINGLETON_MESSAGE);
+        confirmCachedProxy(getRuntime().getCurrentContext(), NONPERSISTENT_SINGLETON_MESSAGE);
         return super.getSingletonClass();
     }
 
-    private void confirmCachedProxy(String message) {
+    private void confirmCachedProxy(ThreadContext context, String message) {
         final RubyClass realClass = metaClass.getRealClass();
         if ( ! realClass.getCacheProxy() ) {
             final Ruby runtime = getRuntime();
             if (Java.OBJECT_PROXY_CACHE) {
                 runtime.getWarnings().warnOnce(IRubyWarnings.ID.NON_PERSISTENT_JAVA_PROXY, MessageFormat.format(message, realClass));
             } else {
-                runtime.getWarnings().warn(MessageFormat.format(message, realClass));
+                warn(context, MessageFormat.format(message, realClass));
                 realClass.setCacheProxy(true);
                 runtime.getJavaSupport().getObjectProxyCache().put(getObject(), this);
             }

@@ -101,6 +101,7 @@ import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.ir.operands.UndefinedValue.UNDEFINED;
 import static org.jruby.runtime.Block.Type.LAMBDA;
 import static org.jruby.runtime.ThreadContext.*;
@@ -2517,7 +2518,7 @@ public class IRRuntimeHelpers {
 
     public static void warnSetConstInRefinement(ThreadContext context, IRubyObject self) {
         if (self instanceof RubyModule && ((RubyModule) self).isRefinement()) {
-            context.runtime.getWarnings().warn("not defined at the refinement, but at the outer class/module");
+            warn(context, "not defined at the refinement, but at the outer class/module");
         }
     }
 

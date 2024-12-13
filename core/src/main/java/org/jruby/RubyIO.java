@@ -116,6 +116,7 @@ import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.*;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.runtime.ThreadContext.*;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -1381,7 +1382,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
             str = str.convertToString().newFrozen();
 
-            if (fptr.wbuf.len != 0) context.runtime.getWarnings().warn("syswrite for buffered IO");
+            if (fptr.wbuf.len != 0) warn(context, "syswrite for buffered IO");
 
             ByteList strByteList = ((RubyString) str).getByteList();
             n = OpenFile.writeInternal(context, fptr, strByteList.unsafeBytes(), strByteList.begin(), strByteList.getRealSize());
@@ -2021,7 +2022,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 throw context.runtime.newIOError("sysseek for buffered IO");
             }
             if (fptr.isWritable() && fptr.wbuf.len != 0) {
-                context.runtime.getWarnings().warn("sysseek for buffered IO");
+                warn(context, "sysseek for buffered IO");
             }
             fptr.errno(null);
             pos = fptr.posix.lseek(fptr.fd(), pos, whence);
@@ -3593,7 +3594,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     // rb_io_bytes
     @JRubyMethod(name = "bytes")
     public IRubyObject bytes(ThreadContext context, Block block) {
-        context.runtime.getWarnings().warn("IO#bytes is deprecated; use #each_byte instead");
+        warn(context, "IO#bytes is deprecated; use #each_byte instead");
         return each_byte(context, block);
     }
 
@@ -3630,13 +3631,13 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @JRubyMethod(name = "chars")
     public IRubyObject chars(ThreadContext context, Block block) {
-        context.runtime.getWarnings().warn("IO#chars is deprecated; use #each_char instead");
+        warn(context, "IO#chars is deprecated; use #each_char instead");
         return each_charInternal(context, block);
     }
 
     @JRubyMethod
     public IRubyObject codepoints(ThreadContext context, Block block) {
-        context.runtime.getWarnings().warn("IO#codepoints is deprecated; use #each_codepoint instead");
+        warn(context, "IO#codepoints is deprecated; use #each_codepoint instead");
         return eachCodePointCommon(context, block, "each_codepoint");
     }
 
@@ -3839,7 +3840,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @JRubyMethod(name = "lines")
     public IRubyObject lines(final ThreadContext context, Block block) {
-        context.runtime.getWarnings().warn("IO#lines is deprecated; use #each_line instead");
+        warn(context, "IO#lines is deprecated; use #each_line instead");
         return each_line(context, block);
     }
 
@@ -4217,7 +4218,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         if ((filename instanceof RubyString name) && name.isEmpty()) throw context.runtime.newErrnoENOENTError();
 
         if ((recv == ioClass(context)) && (cmd = PopenExecutor.checkPipeCommand(context, filename)) != context.nil) {
-            context.runtime.getWarnings().warn("IO process creation with a leading '|' is deprecated and will be removed in Ruby 4.0; use IO.popen instead");
+            warn(context, "IO process creation with a leading '|' is deprecated and will be removed in Ruby 4.0; use IO.popen instead");
             if (PopenExecutor.nativePopenAvailable(context.runtime)) {
                 return (RubyIO) PopenExecutor.pipeOpen(context, cmd, OpenFile.ioOflagsModestr(context, oflags), fmode, convconfig);
             } else {
@@ -5327,9 +5328,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     static void checkUnsupportedOptions(ThreadContext context, RubyHash opts, String[] unsupported, String error) {
         for (String key : unsupported) {
-            if (opts.fastARef(asSymbol(context, key)) != null) {
-                context.runtime.getWarnings().warn(error + ": " + key);
-            }
+            if (opts.fastARef(asSymbol(context, key)) != null) warn(context, error + ": " + key);
         }
     }
 

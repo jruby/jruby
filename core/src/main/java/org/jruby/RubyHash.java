@@ -88,6 +88,7 @@ import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.*;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -2331,14 +2332,9 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     @JRubyMethod(name = "any?")
-    public IRubyObject any_p(ThreadContext context, IRubyObject arg0, Block block) {
-        IRubyObject pattern = arg0;
-
+    public IRubyObject any_p(ThreadContext context, IRubyObject pattern, Block block) {
         if (isEmpty()) return context.fals;
-
-        if (block.isGiven()) {
-            context.runtime.getWarnings().warn("given block not used");
-        }
+        if (block.isGiven()) warn(context, "given block not used");
 
         return any_p_p(context, pattern);
     }

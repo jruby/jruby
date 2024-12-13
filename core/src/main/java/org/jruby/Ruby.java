@@ -433,7 +433,7 @@ public final class Ruby implements Constantizable {
         encodingService.defineEncodings();
         encodingService.defineAliases();
 
-        initDefaultEncodings();
+        initDefaultEncodings(context);
 
         complexClass = profile.allowClass("Complex") ? RubyComplex.createComplexClass(context, numericClass) : null;
         rationalClass = profile.allowClass("Rational") ? RubyRational.createRationalClass(context, numericClass) : null;
@@ -643,7 +643,7 @@ public final class Ruby implements Constantizable {
         return jrubyClassLoader;
     }
 
-    private void initDefaultEncodings() {
+    private void initDefaultEncodings(ThreadContext context) {
         // External should always have a value, but Encoding.external_encoding{,=} will lazily setup
         String encoding = this.config.getExternalEncoding();
         if (encoding != null && !encoding.isEmpty()) {
@@ -658,7 +658,7 @@ public final class Ruby implements Constantizable {
 
         // Filesystem should always have a value
         if (Platform.IS_WINDOWS) {
-            setDefaultFilesystemEncoding(encodingService.getWindowsFilesystemEncoding(this));
+            setDefaultFilesystemEncoding(encodingService.getWindowsFilesystemEncoding(context));
         } else {
             setDefaultFilesystemEncoding(getDefaultExternalEncoding());
         }
@@ -6008,7 +6008,7 @@ public final class Ruby implements Constantizable {
 
     @Deprecated
     public synchronized void addEventHook(EventHook hook) {
-        traceEvents.addEventHook(hook);
+        traceEvents.addEventHook(getCurrentContext(), hook);
     }
 
     @Deprecated

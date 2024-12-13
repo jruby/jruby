@@ -57,6 +57,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.RubyModule.undefinedMethodMessage;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.util.CodegenUtils.getBoxType;
 import static org.jruby.util.CodegenUtils.prettyParams;
 import static org.jruby.util.RubyStringBuilder.ids;
@@ -94,7 +95,7 @@ public class JavaMethod extends JavaCallable {
             } catch (SecurityException se) {
                 // we shouldn't get here if JavaClass.CAN_SET_ACCESSIBLE is doing
                 // what it should, so we warn.
-               runtime.getWarnings().warn("failed to setAccessible: " + method + ", exception follows: " + se.getMessage());
+               warn(runtime.getCurrentContext(), "failed to setAccessible: " + method + ", exception follows: " + se.getMessage());
             }
         }
 

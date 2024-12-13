@@ -59,6 +59,7 @@ import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.rangeError;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.runtime.Helpers.throwException;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -738,7 +739,7 @@ public class RubyProcess {
         var posix = context.runtime.getPosix();
 
         if (!posix.isNative()) {
-            context.runtime.getWarnings().warn("Process#setrlimit not supported on this platform");
+            warn(context, "Process#setrlimit not supported on this platform");
             return context.nil;
         }
 
@@ -1512,7 +1513,7 @@ public class RubyProcess {
         }
 
         if (!context.runtime.getPosix().isNative()) {
-            context.runtime.getWarnings().warn("Process#getrlimit not supported on this platform");
+            warn(context, "Process#getrlimit not supported on this platform");
             RubyFixnum max = asFixnum(context, Long.MAX_VALUE);
             return newArray(context, max, max);
         }

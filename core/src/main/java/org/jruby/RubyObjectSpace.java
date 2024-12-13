@@ -56,6 +56,7 @@ import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newArrayNoCopy;
 import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.*;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.Inspector.inspectPrefix;
 
@@ -88,7 +89,6 @@ public class RubyObjectSpace {
 
     @JRubyMethod(required = 1, optional = 1, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject define_finalizer(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        var runtime = context.runtime;
         int argc = Arity.checkArgumentCount(context, args, 1, 2);
 
         IRubyObject finalizer;
@@ -99,21 +99,21 @@ public class RubyObjectSpace {
                 throw argumentError(context, "wrong type argument " + finalizer.getType() + " (should be callable)");
             }
             if (finalizer instanceof RubyMethod) {
-                if (((RubyMethod) finalizer).getReceiver() == obj) referenceWarning(runtime);
+                if (((RubyMethod) finalizer).getReceiver() == obj) referenceWarning(context);
             }
             if (finalizer instanceof RubyProc) {
-                if (((RubyProc) finalizer).getBlock().getBinding().getSelf() == obj) referenceWarning(runtime);
+                if (((RubyProc) finalizer).getBlock().getBinding().getSelf() == obj) referenceWarning(context);
             }
         } else {
-            if (blockReferencesObject(obj, block)) referenceWarning(runtime);
-            finalizer = runtime.newProc(Block.Type.PROC, block);
+            if (blockReferencesObject(obj, block)) referenceWarning(context);
+            finalizer = context.runtime.newProc(Block.Type.PROC, block);
         }
-        finalizer = runtime.getObjectSpace().addFinalizer(context, obj, finalizer);
-        return newArray(context, RubyFixnum.zero(runtime), finalizer);
+        finalizer = context.runtime.getObjectSpace().addFinalizer(context, obj, finalizer);
+        return newArray(context, asFixnum(context, 0), finalizer);
     }
 
-    private static void referenceWarning(Ruby runtime) {
-        runtime.getWarnings().warn("finalizer references object to be finalized");
+    private static void referenceWarning(ThreadContext context) {
+        warn(context, "finalizer references object to be finalized");
     }
 
     private static boolean blockReferencesObject(IRubyObject object, Block block) {
@@ -126,10 +126,13 @@ public class RubyObjectSpace {
         return recv;
     }
 
-    @JRubyMethod(name = "_id2ref", module = true, visibility = PRIVATE)
+    @Deprecated(since = "10.0")
     public static IRubyObject id2ref(IRubyObject recv, IRubyObject id) {
-        final Ruby runtime = id.getRuntime();
-        ThreadContext context = runtime.getCurrentContext();
+        return id2ref(recv.getRuntime().getCurrentContext(), recv, id);
+    }
+
+    @JRubyMethod(name = "_id2ref", module = true, visibility = PRIVATE)
+    public static IRubyObject id2ref(ThreadContext context, IRubyObject recv, IRubyObject id) {
         long longId = castAsFixnum(context, id).getLongValue();
         if (longId == 0) {
             return context.fals;
@@ -151,17 +154,17 @@ public class RubyObjectSpace {
                 long longBits = Numeric.rotr((2 - b63) | (longId & ~0x03), 3);
                 d = Double.longBitsToDouble(longBits);
             }
-            return runtime.newFloat(d);
+            return asFloat(context, d);
         } else {
-            if (runtime.isObjectSpaceEnabled()) {
-                IRubyObject object = runtime.getObjectSpace().id2ref(longId);
+            if (context.runtime.isObjectSpaceEnabled()) {
+                IRubyObject object = context.runtime.getObjectSpace().id2ref(longId);
                 if (object == null) {
                     return context.nil;
                 }
                 return object;
             } else {
-                runtime.getWarnings().warn("ObjectSpace is disabled; _id2ref only supports immediates, pass -X+O to enable");
-                throw runtime.newRangeError(String.format("0x%016x is not id value", longId));
+                warn(context, "ObjectSpace is disabled; _id2ref only supports immediates, pass -X+O to enable");
+                throw rangeError(context, String.format("0x%016x is not id value", longId));
             }
         }
     }

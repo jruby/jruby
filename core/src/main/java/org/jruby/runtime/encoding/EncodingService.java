@@ -13,6 +13,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
 import org.jruby.javasupport.Java;
 import org.jruby.platform.Platform;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
@@ -31,6 +32,7 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.io.EncodingUtils;
 
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Warn.warn;
 
 public final class EncodingService {
     private final CaseInsensitiveBytesHash<Entry> encodings;
@@ -432,7 +434,12 @@ public final class EncodingService {
         }
     }
 
-    public Encoding getWindowsFilesystemEncoding(Ruby ruby) {
+    @Deprecated(since = "10.0")
+    public Encoding getWindowsFilesystemEncoding(Ruby runtime) {
+        return getWindowsFilesystemEncoding(runtime.getCurrentContext());
+    }
+
+    public Encoding getWindowsFilesystemEncoding(ThreadContext context) {
         String encoding = Options.WINDOWS_FILESYSTEM_ENCODING.load();
         Encoding filesystemEncoding = loadEncoding(ByteList.create(encoding));
 
@@ -440,15 +447,12 @@ public final class EncodingService {
         if (filesystemEncoding == null) {
             // if the encoding name matches /^MS[0-9]+/ we can assume it's a Windows code page and use CP### to look it up.
             Matcher match = MS_CP_PATTERN.matcher(encoding);
-            if (match.find()) {
-                String cpEncoding = "CP" + match.group(1);
-                filesystemEncoding = loadEncoding(ByteList.create(cpEncoding));
-            }
+            if (match.find()) filesystemEncoding = loadEncoding(ByteList.create("CP" + match.group(1)));
         }
 
         if (filesystemEncoding == null) {
-            ruby.getWarnings().warn("unrecognized system encoding \"" + encoding + "\", using default external");
-            filesystemEncoding = ruby.getDefaultExternalEncoding();
+            warn(context, "unrecognized system encoding \"" + encoding + "\", using default external");
+            filesystemEncoding = context.runtime.getDefaultExternalEncoding();
         }
 
         return filesystemEncoding;
