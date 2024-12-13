@@ -2826,33 +2826,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return context.nil;
     }
 
-    @Deprecated
-    public IRubyObject indexes(IRubyObject[] args) {
-        return indexes(getRuntime().getCurrentContext(), args);
-    }
-
-    /** rb_ary_indexes
-     *
-     */
-    @JRubyMethod(name = {"indexes", "indices"}, required = 1, rest = true, checkArity = false)
-    public IRubyObject indexes(ThreadContext context, IRubyObject[] args) {
-        int argc = Arity.checkArgumentCount(context, args, 1, -1);
-
-        Ruby runtime = context.runtime;
-        runtime.getWarnings().warn(ID.DEPRECATED_METHOD, "Array#indexes is deprecated; use Array#values_at");
-
-        if (argc == 1) return newArray(runtime, args[0]);
-
-        RubyArray ary = newBlankArrayInternal(runtime, argc);
-
-        for (int i = 0; i < argc; i++) {
-            ary.storeInternal(context, i, aref(context, args[i]));
-        }
-        ary.realLength = argc;
-
-        return ary;
-    }
-
     /**
      * @return ""
      * @deprecated Use {@link RubyArray#reverse_bang(ThreadContext)} instead.
