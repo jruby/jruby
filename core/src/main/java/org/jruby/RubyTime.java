@@ -2247,7 +2247,7 @@ public class RubyTime extends RubyObject {
         if (time instanceof RubyTime) {
             return ((RubyTime) time).getDateTime().withZoneRetainFields(DateTimeZone.UTC).getMillis();
         } else if (time instanceof RubyStruct) {
-            t = ((RubyStruct) time).aref(asSymbol(context, "to_i")).convertToInteger().getLongValue();
+            t = ((RubyStruct) time).aref(context, asSymbol(context, "to_i")).convertToInteger().getLongValue();
         } else {
             t =  time.callMethod(context, "to_i").convertToInteger().getLongValue();
         }
