@@ -3622,12 +3622,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return each_charInternal(context, block);
     }
 
-    @JRubyMethod(name = "chars")
-    public IRubyObject chars(ThreadContext context, Block block) {
-        warn(context, "IO#chars is deprecated; use #each_char instead");
-        return each_charInternal(context, block);
-    }
-
     @JRubyMethod
     public IRubyObject codepoints(ThreadContext context, Block block) {
         warn(context, "IO#codepoints is deprecated; use #each_codepoint instead");
