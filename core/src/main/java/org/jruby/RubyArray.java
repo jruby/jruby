@@ -2347,7 +2347,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     @JRubyMethod(name = "join")
     public IRubyObject join(ThreadContext context) {
-        return join(context, getDefaultSeparator(context));
+        return join(context, context.nil);
     }
 
     private IRubyObject getDefaultSeparator(ThreadContext context) {
