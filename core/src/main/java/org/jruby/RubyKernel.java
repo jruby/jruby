@@ -307,13 +307,6 @@ public class RubyKernel {
         return RubyIO.open(context, fileClass(context), args, block);
     }
 
-    @JRubyMethod(module = true, visibility = PRIVATE)
-    public static IRubyObject getc(ThreadContext context, IRubyObject recv) {
-        context.runtime.getWarnings().warn(ID.DEPRECATED_METHOD, "getc is obsolete; use STDIN.getc instead");
-        IRubyObject defin = globalVariables(context).get("$stdin");
-        return sites(context).getc.call(context, defin, defin);
-    }
-
     // MRI: rb_f_gets
     @JRubyMethod(optional = 1, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject gets(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
