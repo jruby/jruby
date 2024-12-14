@@ -40,13 +40,11 @@ package org.jruby;
 
 import jnr.enxio.channels.NativeDeviceChannel;
 import jnr.posix.POSIX;
-
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Create;
 import org.jruby.ast.util.ArgsUtil;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ValueAccessor;
@@ -72,22 +70,6 @@ import org.jruby.util.io.FilenoUtil;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.STDIO;
 
-import static org.jruby.api.Access.argsFile;
-import static org.jruby.api.Access.enumerableModule;
-import static org.jruby.api.Access.exceptionClass;
-import static org.jruby.api.Access.globalVariables;
-import static org.jruby.api.Access.instanceConfig;
-import static org.jruby.api.Access.objectClass;
-import static org.jruby.api.Convert.asBoolean;
-import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Create.*;
-import static org.jruby.api.Error.argumentError;
-import static org.jruby.api.Error.typeError;
-import static org.jruby.api.Warn.warningDeprecated;
-import static org.jruby.internal.runtime.GlobalVariable.Scope.*;
-import static org.jruby.util.RubyStringBuilder.str;
-import static org.jruby.util.io.EncodingUtils.newExternalStringWithEncoding;
-
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -102,6 +84,28 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.jruby.api.Access.argsFile;
+import static org.jruby.api.Access.enumerableModule;
+import static org.jruby.api.Access.exceptionClass;
+import static org.jruby.api.Access.globalVariables;
+import static org.jruby.api.Access.instanceConfig;
+import static org.jruby.api.Access.objectClass;
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newFrozenString;
+import static org.jruby.api.Create.newRawArray;
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Warn.warnDeprecated;
+import static org.jruby.api.Warn.warningDeprecated;
+import static org.jruby.internal.runtime.GlobalVariable.Scope.FRAME;
+import static org.jruby.internal.runtime.GlobalVariable.Scope.GLOBAL;
+import static org.jruby.internal.runtime.GlobalVariable.Scope.THREAD;
+import static org.jruby.util.RubyStringBuilder.str;
+import static org.jruby.util.io.EncodingUtils.newExternalStringWithEncoding;
 
 /** This class initializes global variables and constants.
  *
@@ -439,7 +443,7 @@ public class RubyGlobal {
     }
 
     private static void warnDeprecatedGlobal(ThreadContext context, final String name) {
-        warningDeprecated(context, "'" + name + "' is deprecated");
+        warnDeprecated(context, "'" + name + "' is deprecated");
     }
 
     /**
@@ -854,13 +858,13 @@ public class RubyGlobal {
 
         @Override
         public IRubyObject set(IRubyObject value) {
-            warningDeprecated(runtime.getCurrentContext(), "warning: variable " + name + " is no longer effective; ignored");
+            warnDeprecated(runtime.getCurrentContext(), "warning: variable " + name + " is no longer effective; ignored");
             return value;
         }
 
         @Override
         public IRubyObject get() {
-            warningDeprecated(runtime.getCurrentContext(), "warning: variable " + name + " is no longer effective");
+            warnDeprecated(runtime.getCurrentContext(), "warning: variable " + name + " is no longer effective");
             return value;
         }
     }

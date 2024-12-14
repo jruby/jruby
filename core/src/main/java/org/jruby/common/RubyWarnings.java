@@ -184,6 +184,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         doWarn(ID.MISCELLANEOUS, filename, LINE_NUMBER_NON_WARNING, message);
     }
 
+    @Deprecated
     public void warnExperimental(String filename, int line, String message) {
         if (runtime.getWarningCategories().contains(Category.EXPERIMENTAL)) warn(ID.MISCELLANEOUS, filename, line, message);
     }
@@ -193,9 +194,12 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         if (runtime.getWarningCategories().contains(Category.DEPRECATED)) warn(id, message);
     }
 
-    @Deprecated(since = "10.0")
     public void warnDeprecated(String message) {
         if (runtime.getWarningCategories().contains(Category.DEPRECATED)) warn(message);
+    }
+
+    public void warnExperimental(String message) {
+        if (runtime.getWarningCategories().contains(Category.EXPERIMENTAL)) warn(message);
     }
 
     @Deprecated(since = "10.0")

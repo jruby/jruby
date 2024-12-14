@@ -1445,17 +1445,12 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod
     public IRubyObject fetch(ThreadContext context, IRubyObject key, IRubyObject _default, Block block) {
-        Ruby runtime = context.runtime;
-        boolean blockGiven = block.isGiven();
-
-        if (blockGiven) {
-            runtime.getWarnings().warn(ID.BLOCK_BEATS_DEFAULT_VALUE, "block supersedes default value argument");
-        }
+        if (block.isGiven()) warn(context, "block supersedes default value argument");
 
         IRubyObject value = internalGet(key);
 
         if (value == null) {
-            if (blockGiven) return block.yield(context, key);
+            if (block.isGiven()) return block.yield(context, key);
 
             return _default;
         }

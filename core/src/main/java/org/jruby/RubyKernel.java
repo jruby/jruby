@@ -57,6 +57,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.api.Warn;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.common.RubyWarnings;
@@ -1888,7 +1889,7 @@ public class RubyKernel {
         long[] tuple;
 
         try {
-            args = dropLastArgIfOptions(runtime, args);
+            args = dropLastArgIfOptions(context, args);
             if (! Platform.IS_WINDOWS && args[args.length -1].asJavaString().matches(".*[^&]&\\s*")) {
                 // looks like we need to send process to the background
                 ShellLauncher.runWithoutWait(runtime, args);
@@ -1904,12 +1905,11 @@ public class RubyKernel {
         return (int) tuple[0];
     }
 
-    private static IRubyObject[] dropLastArgIfOptions(final Ruby runtime, final IRubyObject[] args) {
+    private static IRubyObject[] dropLastArgIfOptions(ThreadContext context, final IRubyObject[] args) {
         IRubyObject lastArg = args[args.length - 1];
-        if (lastArg instanceof RubyHash) {
-            if (!((RubyHash) lastArg).isEmpty()) {
-                runtime.getWarnings().warn(ID.UNSUPPORTED_SUBPROCESS_OPTION, "system does not support options in JRuby yet: " + lastArg);
-            }
+        if (lastArg instanceof RubyHash hash) {
+            if (!hash.isEmpty()) Warn.warn(context, "system does not support options in JRuby yet: " + lastArg);
+
             return Arrays.copyOf(args, args.length - 1);
         }
         return args;
@@ -2499,9 +2499,8 @@ public class RubyKernel {
 
     @Deprecated
     public static IRubyObject op_match(ThreadContext context, IRubyObject self, IRubyObject arg) {
-        context.runtime.getWarnings().warn(ID.DEPRECATED_METHOD,
-                "deprecated Object#=~ is called on " + ((RubyBasicObject) self).type() +
-                        "; it always returns nil");
+        Warn.warn(context, "deprecated Object#=~ is called on " + ((RubyBasicObject) self).type() +
+                "; it always returns nil");
         return ((RubyBasicObject) self).op_match(context, arg);
     }
 

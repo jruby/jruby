@@ -225,6 +225,7 @@ import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newEmptyString;
 import static org.jruby.api.Create.newFrozenString;
 import static org.jruby.api.Error.*;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.GLOBAL;
 import static org.jruby.parser.ParserType.*;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -1490,7 +1491,7 @@ public final class Ruby implements Constantizable {
         if (superClass == null) {
             IRubyObject className = parentIsObject ? ids(this, id) :
                     parent.toRubyString(getCurrentContext()).append(newString("::")).append(ids(this, id));
-            warnings.warn(ID.NO_SUPER_CLASS, str(this, "no super class for '", className, "', Object assumed"));
+            warn(getCurrentContext(), str(this, "no super class for '", className, "', Object assumed"));
 
             superClass = objectClass;
         }

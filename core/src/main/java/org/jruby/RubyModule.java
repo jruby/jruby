@@ -153,6 +153,7 @@ import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.*;
 import static org.jruby.api.Warn.warn;
+import static org.jruby.api.Warn.warnDeprecated;
 import static org.jruby.api.Warn.warningDeprecated;
 import static org.jruby.runtime.Visibility.MODULE_FUNCTION;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -1698,7 +1699,7 @@ public class RubyModule extends RubyObject {
     public void undef(ThreadContext context, String name) {
         testFrozen("module");
         if (name.equals("__send__") || name.equals("object_id") || name.equals("initialize")) {
-            context.runtime.getWarnings().warn(ID.UNDEFINING_BAD, "undefining '"+ name +"' may cause serious problems");
+            warn(context, "undefining '"+ name +"' may cause serious problems");
         }
 
         if (name.equals("method_missing")) {
@@ -1845,8 +1846,7 @@ public class RubyModule extends RubyObject {
     }
 
     private static void warnMethodRemoval(final ThreadContext context, final String id) {
-        context.runtime.getWarnings().warn(ID.UNDEFINING_BAD,
-                str(context.runtime, "removing '", ids(context.runtime, id), "' may cause serious problems"));
+        warn(context, str(context.runtime, "removing '", ids(context.runtime, id), "' may cause serious problems"));
     }
 
     /**
@@ -2550,15 +2550,13 @@ public class RubyModule extends RubyObject {
     private void addAccessor(ThreadContext context, RubySymbol identifier, Visibility visibility, boolean readable, boolean writeable) {
         String internedIdentifier = identifier.idString();
 
-        final Ruby runtime = context.runtime;
-
         if (visibility == MODULE_FUNCTION) {
-            runtime.getWarnings().warn(ID.ACCESSOR_MODULE_FUNCTION, "attribute accessor as module_function");
+            warn(context, "attribute accessor as module_function");
             visibility = PRIVATE;
         }
 
         if (!identifier.validLocalVariableName() && !identifier.validConstantName()) {
-            throw runtime.newNameError("invalid attribute name", identifier);
+            throw context.runtime.newNameError("invalid attribute name", identifier);
         }
 
         final String variableName = identifier.asInstanceVariable().idString();
@@ -3256,17 +3254,17 @@ public class RubyModule extends RubyObject {
                 if (!method.isNative()) {
                     Signature signature = method.getSignature();
                     if (!signature.hasRest()) {
-                        context.runtime.getWarnings().warn(ID.MISCELLANEOUS, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (method accepts keywords or method does not accept argument splat)"));
+                        warn(context, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (method accepts keywords or method does not accept argument splat)"));
                     } else if (!signature.hasKwargs()) {
                         method.setRuby2Keywords();
                     } else if (method instanceof AbstractIRMethod && ((AbstractIRMethod) method).getStaticScope().exists("...") == -1) {
-                        context.runtime.getWarnings().warn(ID.MISCELLANEOUS, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (method accepts keywords or method does not accept argument splat)"));
+                        warn(context, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (method accepts keywords or method does not accept argument splat)"));
                     }
                 } else {
-                    context.runtime.getWarnings().warn(ID.MISCELLANEOUS, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (method not defined in Ruby)"));
+                    warn(context, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (method not defined in Ruby)"));
                 }
             } else {
-                context.runtime.getWarnings().warn(ID.MISCELLANEOUS, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (can only set in method defining module)"));
+                warn(context, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (can only set in method defining module)"));
             }
         }
         return context.nil;
@@ -5248,11 +5246,9 @@ public class RubyModule extends RubyObject {
             boolean notAutoload = oldEntry.value != UNDEF;
             if (notAutoload || !setAutoloadConstant(name, value, file, line)) {
                 if (warn && notAutoload) {
-                    if (this.equals(getRuntime().getObject())) {
-                        getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name);
-                    } else {
-                        getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + this + "::" + name);
-                    }
+                    var context = getRuntime().getCurrentContext();
+                    warn(context, "already initialized constant " +
+                            this.equals(objectClass(context)) ? name : (this + "::" + name));
                 }
 
                 storeConstant(name, value, hidden, file, line);
@@ -5695,7 +5691,7 @@ public class RubyModule extends RubyObject {
         }
         if (entry.deprecated) {
             String parent = "Object".equals(getName()) ? "" : getName();
-            warningDeprecated(getRuntime().getCurrentContext(), "constant " + parent + "::" + name + " is deprecated");
+            warnDeprecated(getRuntime().getCurrentContext(), "constant " + parent + "::" + name + " is deprecated");
         }
 
         return entry;

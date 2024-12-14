@@ -41,6 +41,7 @@ import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.castAsHash;
 import static org.jruby.api.Create.newHash;
 import static org.jruby.api.Error.*;
+import static org.jruby.api.Warn.warnExperimental;
 
 public class ThreadFiber extends RubyObject implements ExecutionContext {
 
@@ -774,6 +775,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "storage=")
     public IRubyObject storage_set(ThreadContext context, IRubyObject hash) {
+        warnExperimental(context, "Fiber#storage= is experimental and may be removed in the future!");
         checkSameFiber(context);
 
         setStorage(context, hash);

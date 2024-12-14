@@ -41,6 +41,7 @@ import org.jruby.util.ArraySupport;
 
 import static org.jruby.api.Convert.castAsProc;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Warn.warn;
 
 @JRubyClass(name = "Enumerator::Generator")
 public class RubyGenerator extends RubyObject {
@@ -62,7 +63,7 @@ public class RubyGenerator extends RubyObject {
         } else {
             proc = Convert.castAsProc(context, args[0]);
 
-            if (block.isGiven()) context.runtime.getWarnings().warn(IRubyWarnings.ID.BLOCK_UNUSED, "given block not used");
+            if (block.isGiven()) warn(context, "given block not used");
         }
 
         return this;

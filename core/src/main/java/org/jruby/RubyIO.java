@@ -117,6 +117,7 @@ import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.*;
 import static org.jruby.api.Warn.warn;
+import static org.jruby.api.Warn.warnDeprecated;
 import static org.jruby.api.Warn.warningDeprecated;
 import static org.jruby.runtime.ThreadContext.*;
 import static org.jruby.runtime.Visibility.*;
@@ -1859,7 +1860,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         IRubyObject outputFS = globalVariables(context).get("$,");
 
         boolean fieldSeparatorNotNil = !outputFS.isNil();
-        if (fieldSeparatorNotNil) warningDeprecated(context, "$, is set to non-nil value");
+        if (fieldSeparatorNotNil) warnDeprecated(context, "$, is set to non-nil value");
 
         for (int i=0; i<argc; i++) {
             if (fieldSeparatorNotNil && i > 0) write(context, out, outputFS);
@@ -1893,7 +1894,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     public static IRubyObject print2(ThreadContext context, IRubyObject out, IRubyObject arg0, IRubyObject arg1) {
         IRubyObject outputFS = globalVariables(context).get("$,");
         boolean fieldSeparatorNotNil = !outputFS.isNil();
-        if (fieldSeparatorNotNil) warningDeprecated(context, "$, is set to non-nil value");
+        if (fieldSeparatorNotNil) warnDeprecated(context, "$, is set to non-nil value");
 
         write(context, out, arg0);
         if (fieldSeparatorNotNil) write(context, out, outputFS);
@@ -1907,7 +1908,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     public static IRubyObject print3(ThreadContext context, IRubyObject out, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         IRubyObject outputFS = globalVariables(context).get("$,");
         boolean fieldSeparatorNotNil = !outputFS.isNil();
-        if (fieldSeparatorNotNil) warningDeprecated(context, "$, is set to non-nil value");
+        if (fieldSeparatorNotNil) warnDeprecated(context, "$, is set to non-nil value");
 
         write(context, out, arg0);
         if (fieldSeparatorNotNil) write(context, out, outputFS);
@@ -2920,7 +2921,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         if (write.retrieveCache(maybeIO.getMetaClass()).method.getSignature().isOneArgument()) {
             Ruby runtime = context.runtime;
             if (runtime.isVerbose() && maybeIO != globalVariables(context).get("$stderr")) {
-                warnWrite(runtime, maybeIO);
+                warnWrite(context, maybeIO);
             }
             write.call(context, maybeIO, maybeIO, arg0);
             write.call(context, maybeIO, maybeIO, arg1);
@@ -2929,7 +2930,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return write.call(context, maybeIO, maybeIO, arg0, arg1);
     }
 
-    private static void warnWrite(final Ruby runtime, IRubyObject maybeIO) {
+    private static void warnWrite(ThreadContext context, IRubyObject maybeIO) {
         IRubyObject klass = maybeIO.getMetaClass();
         char sep;
         if (((RubyClass) klass).isSingleton()) {
@@ -2938,7 +2939,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         } else {
             sep = '#';
         }
-        runtime.getWarnings().warningDeprecated(klass.toString() + sep + "write is outdated interface which accepts just one argument");
+        warningDeprecated(context, klass.toString() + sep + "write is outdated interface which accepts just one argument");
     }
 
     @JRubyMethod

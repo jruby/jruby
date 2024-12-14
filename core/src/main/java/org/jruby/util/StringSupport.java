@@ -74,6 +74,7 @@ import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.indexError;
+import static org.jruby.api.Warn.warn;
 
 public final class StringSupport {
     public static final int CR_7BIT_F    = ObjectFlags.CR_7BIT_F;
@@ -2222,7 +2223,7 @@ public final class StringSupport {
             if (wantarray) {
                 // this code should be live in 3.0
                 if (false) { // #if STRING_ENUMERATORS_WANTARRAY
-                    context.runtime.getWarnings().warn(ID.BLOCK_UNUSED, "given block not used");
+                    warn(context, "given block not used");
                 } else {
                     wantarray = false;
                 }

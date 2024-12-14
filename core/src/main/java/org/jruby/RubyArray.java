@@ -103,7 +103,9 @@ import static org.jruby.api.Create.newHash;
 import static org.jruby.api.Create.newSmallHash;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.*;
-import static org.jruby.api.Warn.warningDeprecated;
+import static org.jruby.api.Warn.warn;
+import static org.jruby.api.Warn.warnDeprecated;
+import static org.jruby.api.Warn.warning;
 import static org.jruby.runtime.Helpers.*;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.Inspector.*;
@@ -707,9 +709,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         modifyCheck(context);
         unpack(context);
         realLength = 0;
-        if (block.isGiven() && context.runtime.isVerbose()) {
-            context.runtime.getWarnings().warn(ID.BLOCK_UNUSED, "given block not used");
-        }
+        if (block.isGiven()) warning(context, "given block not used");
+
         return this;
     }
 
@@ -752,9 +753,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         }
 
         if (block.isGiven()) {
-            if (arg1 != null) {
-                context.runtime.getWarnings().warn(ID.BLOCK_BEATS_DEFAULT_VALUE, "block supersedes default value argument");
-            }
+            if (arg1 != null) warn(context, "block supersedes default value argument");
 
             if (block.getSignature() == Signature.NO_ARGUMENTS) {
                 IRubyObject nil = context.nil;
@@ -1071,9 +1070,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     */
    @JRubyMethod
    public IRubyObject fetch(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-       if (block.isGiven()) {
-           context.runtime.getWarnings().warn(ID.BLOCK_BEATS_DEFAULT_VALUE, "block supersedes default value argument");
-       }
+       if (block.isGiven()) warn(context, "block supersedes default value argument");
 
        long index = numericToLong(context, arg0);
 
@@ -2353,7 +2350,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     private IRubyObject getDefaultSeparator(ThreadContext context) {
         IRubyObject sep = globalVariables(context).get("$,");
 
-        if (!sep.isNil()) warningDeprecated(context, "$, is set to non-nil value");
+        if (!sep.isNil()) warnDeprecated(context, "$, is set to non-nil value");
 
         return sep;
     }
@@ -2701,7 +2698,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     @JRubyMethod(name = {"index", "find_index"})
     public IRubyObject index(ThreadContext context, IRubyObject obj, Block unused) {
-        if (unused.isGiven()) context.runtime.getWarnings().warn(ID.BLOCK_UNUSED, "given block not used");
+        if (unused.isGiven()) warn(context, "given block not used");
         return index(context, obj);
     }
 
@@ -2806,7 +2803,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     @JRubyMethod
     public IRubyObject rindex(ThreadContext context, IRubyObject obj, Block unused) {
-        if (unused.isGiven()) context.runtime.getWarnings().warn(ID.BLOCK_UNUSED, "given block not used");
+        if (unused.isGiven()) warn(context, "given block not used");
         return rindex(context, obj);
     }
 
@@ -3632,7 +3629,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     @JRubyMethod(name = "count")
     public IRubyObject count(ThreadContext context, IRubyObject obj, Block block) {
-        if (block.isGiven()) context.runtime.getWarnings().warn(ID.BLOCK_UNUSED, "given block not used");
+        if (block.isGiven()) warn(context, "given block not used");
 
         int n = 0;
         for (int i = 0; i < realLength; i++) {
@@ -4985,10 +4982,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (!self_each.isBuiltin(this)) return RubyEnumerable.all_pCommon(context, self_each, this, arg, block);
         boolean patternGiven = arg != null;
 
-        if (block.isGiven() && patternGiven) {
-            context.runtime.getWarnings().warn(ID.BLOCK_UNUSED, "given block not used");
-        }
-
+        if (block.isGiven() && patternGiven) warn(context, "given block not used");
         if (!block.isGiven() || patternGiven) return all_pBlockless(context, arg);
 
         for (int i = 0; i < realLength; i++) {
@@ -5028,9 +5022,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (!self_each.isBuiltin(this)) return RubyEnumerable.any_pCommon(context, self_each, this, arg, block);
         boolean patternGiven = arg != null;
 
-        if (block.isGiven() && patternGiven) {
-            context.runtime.getWarnings().warn(ID.BLOCK_UNUSED, "given block not used");
-        }
+        if (block.isGiven() && patternGiven) warn(context, "given block not used");
 
         if (!block.isGiven() || patternGiven) return any_pBlockless(context, arg);
 
@@ -5070,10 +5062,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (!self_each.isBuiltin(this)) return RubyEnumerable.none_pCommon(context, self_each, this, arg, block);
         boolean patternGiven = arg != null;
 
-        if (block.isGiven() && patternGiven) {
-            context.runtime.getWarnings().warn(ID.BLOCK_UNUSED, "given block not used");
-        }
-
+        if (block.isGiven() && patternGiven) warn(context, "given block not used");
         if (!block.isGiven() || patternGiven) return none_pBlockless(context, arg);
 
         for (int i = 0; i < realLength; i++) {
@@ -5112,10 +5101,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (!self_each.isBuiltin(this)) return RubyEnumerable.one_pCommon(context, self_each, this, arg, block);
         boolean patternGiven = arg != null;
 
-        if (block.isGiven() && patternGiven) {
-            context.runtime.getWarnings().warn(ID.BLOCK_UNUSED, "given block not used");
-        }
-
+        if (block.isGiven() && patternGiven) warn(context, "given block not used");
         if (!block.isGiven() || patternGiven) return one_pBlockless(context, arg);
 
         boolean found = false;

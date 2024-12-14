@@ -74,6 +74,7 @@ import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.getCurrentClassBase;
 import static org.jruby.runtime.Helpers.invokeChecked;
@@ -2507,7 +2508,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *  The default to_a method is deprecated.
      */
     public RubyArray to_a(ThreadContext context) {
-        context.runtime.getWarnings().warn(ID.DEPRECATED_METHOD, "default 'to_a' will be obsolete");
+        warn(context, "default 'to_a' will be obsolete");
         return newArray(context,this);
     }
 
