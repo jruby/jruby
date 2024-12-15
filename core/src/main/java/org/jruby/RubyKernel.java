@@ -159,17 +159,17 @@ public class RubyKernel {
     }
 
     public static RubyModule finishKernelModule(ThreadContext context, RubyModule Kernel, RubyInstanceConfig config) {
-        var runtime = context.runtime;
-        Kernel.defineAnnotatedMethodsIndividually(RubyKernel.class);
+        Kernel.defineMethods(context, RubyKernel.class);
         Kernel.setFlag(RubyModule.NEEDSIMPL_F, false); //Kernel is the only normal Module that doesn't need an implementor
 
+        var runtime = context.runtime;
         runtime.setPrivateMethodMissing(new MethodMissingMethod(Kernel, PRIVATE, CallType.NORMAL));
         runtime.setProtectedMethodMissing(new MethodMissingMethod(Kernel, PROTECTED, CallType.NORMAL));
         runtime.setVariableMethodMissing(new MethodMissingMethod(Kernel, PUBLIC, CallType.VARIABLE));
         runtime.setSuperMethodMissing(new MethodMissingMethod(Kernel, PUBLIC, CallType.SUPER));
         runtime.setNormalMethodMissing(new MethodMissingMethod(Kernel, PUBLIC, CallType.NORMAL));
 
-        if (config.isAssumeLoop()) Kernel.defineAnnotatedMethodsIndividually(LoopMethods.class);
+        if (config.isAssumeLoop()) Kernel.defineMethods(context, LoopMethods.class);
 
         if (config.getKernelGsubDefined()) {
             MethodIndex.addMethodReadFields("gsub", FrameField.LASTLINE, FrameField.BACKREF);
@@ -187,7 +187,6 @@ public class RubyKernel {
         }
 
         recacheBuiltinMethods(runtime, Kernel);
-
 
         return Kernel;
     }

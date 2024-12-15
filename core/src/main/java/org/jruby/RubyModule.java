@@ -1296,6 +1296,7 @@ public class RubyModule extends RubyObject {
         invalidateConstantCacheForModuleInclusion(module);
     }
 
+    @Deprecated(since = "10.0")
     public void defineAnnotatedMethod(Class clazz, String name) {
         // FIXME: This is probably not very efficient, since it loads all methods for each call
         boolean foundMethod = false;
