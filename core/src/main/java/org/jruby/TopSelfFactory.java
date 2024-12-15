@@ -58,10 +58,10 @@ public final class TopSelfFactory {
     public static IRubyObject createTopSelf(final Ruby runtime) {
         var Object = objectClass(runtime.getCurrentContext());
         var topSelf = new RubyObject(runtime, Object);
-        return createTopSelf(runtime.getCurrentContext(), topSelf, Object, false);
+        return finishTopSelf(runtime.getCurrentContext(), topSelf, Object, false);
     }
     
-    public static IRubyObject createTopSelf(ThreadContext context, IRubyObject topSelf, RubyClass Object, final boolean wrapper) {
+    public static IRubyObject finishTopSelf(ThreadContext context, IRubyObject topSelf, RubyClass Object, final boolean wrapper) {
         final RubyClass singletonClass = topSelf.getSingletonClass();
 
         singletonClass.addMethod("to_s", new JavaMethod.JavaMethodZero(singletonClass, Visibility.PUBLIC, "to_s") {

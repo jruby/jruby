@@ -194,9 +194,11 @@ public class RubyModule extends RubyObject {
         Module.reifiedClass(RubyModule.class).
                 kindOf(new RubyModule.JavaClassKindOf(RubyModule.class)).
                 classIndex(ClassIndex.MODULE);
+    }
 
-        Module.defineAnnotatedMethodsIndividually(RubyModule.class);
-        Module.defineAnnotatedMethodsIndividually(ModuleKernelMethods.class);
+    public static void finishCreateModuleClass(ThreadContext context, RubyClass Module) {
+        Module.defineMethods(context, RubyModule.class);
+        Module.defineMethods(context, ModuleKernelMethods.class);
     }
 
     public void checkValidBindTargetFrom(ThreadContext context, RubyModule originModule, boolean fromBind) throws RaiseException {
@@ -6327,7 +6329,7 @@ public class RubyModule extends RubyObject {
         this.refinements = refinements;
     }
 
-    public static void createRefinementClass(ThreadContext context, RubyClass Refinement) {
+    public static void finishRefinementClass(ThreadContext context, RubyClass Refinement) {
         Refinement.reifiedClass(RubyModule.class).
                 classIndex(ClassIndex.REFINEMENT).
                 defineMethods(context, RefinementMethods.class).

@@ -54,7 +54,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import org.jruby.anno.JRubyMethod;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Helpers;
@@ -76,7 +75,6 @@ import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.api.Warn.warn;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
-import static org.jruby.ir.runtime.IRRuntimeHelpers.getCurrentClassBase;
 import static org.jruby.runtime.Helpers.invokeChecked;
 import static org.jruby.runtime.ThreadContext.*;
 import static org.jruby.runtime.Visibility.*;
@@ -207,8 +205,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * Will create the Ruby class BasicObject in the runtime specified. This method needs to take the
      * actual class as an argument because of the Object class' central part in runtime initialization.
      */
-    public static void createBasicObjectClass(ThreadContext context, RubyClass BasicObject) {
-        BasicObject.classIndex(ClassIndex.OBJECT).defineMethods(context, RubyBasicObject.class);
+    public static void finishBasicObjectClass(ThreadContext context, RubyClass BasicObject) {
+        BasicObject.classIndex(ClassIndex.OBJECT).
+                defineMethods(context, RubyBasicObject.class);
         recacheBuiltinMethods(context, BasicObject);
     }
 

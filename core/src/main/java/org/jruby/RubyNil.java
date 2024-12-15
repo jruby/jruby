@@ -76,7 +76,7 @@ public class RubyNil extends RubyObject implements Constantizable {
         constant = OptoFactory.newConstantWrapper(IRubyObject.class, this);
     }
     
-    public static void createNilClass(ThreadContext context, RubyClass Nil) {
+    public static void finishNilClass(ThreadContext context, RubyClass Nil) {
         Nil.reifiedClass(RubyNil.class).
                 classIndex(ClassIndex.NIL).
                 defineMethods(context, RubyNil.class).

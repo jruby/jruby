@@ -123,15 +123,14 @@ public class RubyClass extends RubyModule {
     public static void createClassClass(Ruby runtime, RubyClass Class) {
         Class.reifiedClass(RubyClass.class).
                 kindOf(new RubyModule.JavaClassKindOf(RubyClass.class)).
-                classIndex(ClassIndex.CLASS).
-                defineAnnotatedMethodsIndividually(RubyClass.class);
-        Class.undefineMethod("module_function");
-        Class.undefineMethod("append_features");
-        Class.undefineMethod("prepend_features");
-        Class.undefineMethod("extend_object");
-        Class.undefineMethod("refine");
+                classIndex(ClassIndex.CLASS);
+    }
 
-        runtime.setBaseNewMethod(Class.searchMethod("new"));
+    public static void finishCreateClassClass(ThreadContext context, RubyClass Class) {
+        Class.defineMethods(context, RubyClass.class).
+                undefMethods(context, "module_function", "append_features", "prepend_features", "extend_object", "refine");
+
+        context.runtime.setBaseNewMethod(Class.searchMethod("new"));
     }
 
     public static final ObjectAllocator CLASS_ALLOCATOR = (runtime, klass) -> {

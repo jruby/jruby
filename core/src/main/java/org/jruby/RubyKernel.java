@@ -66,6 +66,7 @@ import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -77,6 +78,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.KernelSites;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
@@ -156,9 +158,8 @@ public class RubyKernel {
 
     }
 
-    public static RubyModule createKernelModule(Ruby runtime, RubyClass Object, RubyInstanceConfig config) {
-        var Kernel = runtime.defineModuleUnder("Kernel", Object);
-
+    public static RubyModule finishKernelModule(ThreadContext context, RubyModule Kernel, RubyInstanceConfig config) {
+        var runtime = context.runtime;
         Kernel.defineAnnotatedMethodsIndividually(RubyKernel.class);
         Kernel.setFlag(RubyModule.NEEDSIMPL_F, false); //Kernel is the only normal Module that doesn't need an implementor
 
@@ -170,7 +171,23 @@ public class RubyKernel {
 
         if (config.isAssumeLoop()) Kernel.defineAnnotatedMethodsIndividually(LoopMethods.class);
 
+        if (config.getKernelGsubDefined()) {
+            MethodIndex.addMethodReadFields("gsub", FrameField.LASTLINE, FrameField.BACKREF);
+            Kernel.addMethod("gsub", new JavaMethod(Kernel, Visibility.PRIVATE, "gsub") {
+
+                @Override
+                public IRubyObject call(ThreadContext context1, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+                    return switch (args.length) {
+                        case 1 -> RubyKernel.gsub(context1, self, args[0], block);
+                        case 2 -> RubyKernel.gsub(context1, self, args[0], args[1], block);
+                        default -> throw argumentError(context1, String.format("wrong number of arguments %d for 1..2", args.length));
+                    };
+                }
+            });
+        }
+
         recacheBuiltinMethods(runtime, Kernel);
+
 
         return Kernel;
     }
