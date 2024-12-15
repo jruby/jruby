@@ -1330,7 +1330,7 @@ public class RubyModule extends RubyObject {
         return defineAnnotatedConstant(getCurrentContext(), field);
     }
 
-    public final boolean defineAnnotatedConstant(ThreadContext context, Field field) {
+    private boolean defineAnnotatedConstant(ThreadContext context, Field field) {
         JRubyConstant jrubyConstant = field.getAnnotation(JRubyConstant.class);
         if (jrubyConstant == null) return false;
 
@@ -1364,7 +1364,7 @@ public class RubyModule extends RubyObject {
      * @deprecated Use {@link RubyModule#defineMethods(ThreadContext, Class[])} instead.
      */
     @Extension
-    @Deprecated(since = "1.0")
+    @Deprecated(since = "10.0")
     public void defineAnnotatedMethods(Class clazz) {
         defineAnnotatedMethodsIndividually(clazz);
     }
@@ -1459,12 +1459,7 @@ public class RubyModule extends RubyObject {
         return new TypePopulator.ReflectiveTypePopulator(type);
     }
 
-    /**
-     * An internal API only used before the first ThreadContext is defined.  For example,
-     * BasicObject, Boolean,  needs this when getting defined.
-     * Use {@link org.jruby.RubyModule#defineMethods(ThreadContext, Class[])} instead.
-     * @param clazz to generate JRuby methods from
-     */
+    @Deprecated(since = "10.0")
     public final void defineAnnotatedMethodsIndividually(Class clazz) {
         getRuntime().POPULATORS.get(clazz).populate(this, clazz);
     }

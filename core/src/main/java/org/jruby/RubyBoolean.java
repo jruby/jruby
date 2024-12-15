@@ -109,16 +109,14 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
     public static void finishFalseClass(ThreadContext context, RubyClass False) {
         False.reifiedClass(RubyBoolean.class).
                 classIndex(ClassIndex.FALSE).
-                defineMethods(context, False.class).
-                defineMethods(context, RubyBoolean.class).
+                defineMethods(context, False.class, RubyBoolean.class).
                 tap(c -> c.getMetaClass().undefMethods(context, "new"));
     }
     
     public static void finishTrueClass(ThreadContext context, RubyClass True) {
         True.reifiedClass(RubyBoolean.class).
                 classIndex(ClassIndex.TRUE).
-                defineMethods(context, True.class).
-                defineMethods(context, RubyBoolean.class).
+                defineMethods(context, True.class, RubyBoolean.class).
                 tap(c -> c.getMetaClass().undefMethods(context, "new"));
     }
 
