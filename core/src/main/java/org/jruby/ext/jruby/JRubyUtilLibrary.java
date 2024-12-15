@@ -53,6 +53,8 @@ import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Warn.warn;
+import static org.jruby.api.Warn.warningDeprecated;
 import static org.jruby.util.URLUtil.getPath;
 
 /**
@@ -84,20 +86,24 @@ public class JRubyUtilLibrary implements Library {
         return asBoolean(context, context.runtime.isObjectSpaceEnabled());
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4-")
     public static IRubyObject getObjectSpaceEnabled(IRubyObject recv) {
         return getObjectSpaceEnabled(recv.getRuntime().getCurrentContext(), recv);
     }
 
-    @JRubyMethod(name = { "objectspace=", "object_space=" }, module = true)
+    @Deprecated(since = "10.0")
     public static IRubyObject setObjectSpaceEnabled(IRubyObject recv, IRubyObject arg) {
-        final Ruby runtime = recv.getRuntime();
+        return setObjectSpaceEnabled(recv.getRuntime().getCurrentContext(), recv, arg);
+    }
+
+    @JRubyMethod(name = { "objectspace=", "object_space=" }, module = true)
+    public static IRubyObject setObjectSpaceEnabled(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         boolean enabled = arg.isTrue();
         if (enabled) {
-            runtime.getWarnings().warn("ObjectSpace impacts performance. See https://github.com/jruby/jruby/wiki/PerformanceTuning#dont-enable-objectspace");
+            warn(context, "ObjectSpace impacts performance. See https://github.com/jruby/jruby/wiki/PerformanceTuning#dont-enable-objectspace");
         }
-        runtime.setObjectSpaceEnabled(enabled);
-        return runtime.newBoolean(enabled);
+        context.runtime.setObjectSpaceEnabled(enabled);
+        return enabled ? context.tru : context.fals;
     }
 
     @JRubyMethod(meta = true, name = "native_posix?")
@@ -432,7 +438,7 @@ public class JRubyUtilLibrary implements Library {
     @JRubyMethod(module = true)
     @Deprecated(since = "9.4-", forRemoval = true)
     public static RubyArray internal_libraries(ThreadContext context, IRubyObject self) {
-        context.runtime.getWarnings().warn("JRuby::Util.internal_libraries is deprecated");
+        warningDeprecated(context, "JRuby::Util.internal_libraries is deprecated");
         return newEmptyArray(context);
     }
 }

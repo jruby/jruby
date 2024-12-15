@@ -58,6 +58,7 @@ import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Warn.warn;
 
 /**
  *
@@ -227,7 +228,7 @@ public class RubyBignum extends RubyInteger {
         BigInteger big = val.value;
         double dbl = convertToDouble(big);
         if (dbl == Double.NEGATIVE_INFINITY || dbl == Double.POSITIVE_INFINITY) {
-            val.getRuntime().getWarnings().warn(ID.BIGNUM_FROM_FLOAT_RANGE, "Bignum out of Float range");
+            warn(val.getRuntime().getCurrentContext(), "Bignum out of Float range");
     }
         return dbl;
     }
@@ -696,60 +697,49 @@ public class RubyBignum extends RubyInteger {
     @Override
     @JRubyMethod(name = {"**", "power"})
     public IRubyObject op_pow(ThreadContext context, IRubyObject other) {
-        Ruby runtime = context.runtime;
-        if (other == zero(runtime)) return RubyFixnum.one(runtime);
+        if (other == asFixnum(context, 0)) return asFixnum(context, 1);
         final double d;
-        if (other instanceof RubyFloat) {
-            d = ((RubyFloat) other).value;
-            if (compareTo(zero(runtime)) == -1 && d != Math.round(d)) {
+        if (other instanceof RubyFloat flote) {
+            d = flote.value;
+            if (compareTo(asFixnum(context, 0)) == -1 && d != Math.round(d)) {
                 RubyComplex complex = RubyComplex.newComplexRaw(context.runtime, this);
                 return sites(context).op_exp.call(context, complex, complex, other);
             }
-        } else if (other instanceof RubyBignum) {
-            d = ((RubyBignum) other).getDoubleValue();
-            context.runtime.getWarnings().warn(ID.MAY_BE_TOO_BIG, "in a**b, b may be too big");
-        } else if (other instanceof RubyFixnum) {
-            return op_pow(context, ((RubyFixnum) other).value);
+        } else if (other instanceof RubyBignum bignum) {
+            d = bignum.getDoubleValue();
+            warn(context, "in a**b, b may be too big");
+        } else if (other instanceof RubyFixnum fixnum) {
+            return op_pow(context, fixnum.value);
         } else {
             return coerceBin(context, sites(context).op_exp, other);
         }
-        return pow(runtime, d);
+        return pow(context, d);
     }
 
-    private RubyNumeric pow(final Ruby runtime, final double d) {
+    private RubyNumeric pow(ThreadContext context, final double d) {
         double pow = Math.pow(big2dbl(this), d);
-        if (Double.isInfinite(pow)) {
-            return RubyFloat.newFloat(runtime, pow);
-        }
-        return RubyNumeric.dbl2ival(runtime, pow);
+        return Double.isInfinite(pow) ?
+                asFloat(context, pow) :
+                RubyNumeric.dbl2ival(context.runtime, pow);
     }
 
     private static final int BIGLEN_LIMIT = 32 * 1024 * 1024;
 
     public final IRubyObject op_pow(final ThreadContext context, final long other) {
-        Ruby runtime = context.runtime;
         if (other < 0) {
             IRubyObject x = op_pow(context, -other);
             if (x instanceof RubyInteger) {
-                return RubyRational.newRationalRaw(runtime, RubyFixnum.one(runtime), x);
+                return RubyRational.newRationalRaw(context.runtime, asFixnum(context, 1), x);
             } else {
-                return dbl2num(runtime, 1.0 / num2dbl(context,x));
+                return dbl2num(context.runtime, 1.0 / num2dbl(context,x));
             }
         }
         final int xbits = value.bitLength();
         if ((xbits > BIGLEN_LIMIT) || (xbits * other > BIGLEN_LIMIT)) {
-            runtime.getWarnings().warn("in a**b, b may be too big");
-            return pow(runtime, (double) other);
-        }
-        else {
-            return newBignum(runtime, value.pow((int) other));
-        }
-    }
-
-    private void warnIfPowExponentTooBig(final ThreadContext context, final long other) {
-        // MRI issuses warning here on (RBIGNUM(x)->len * SIZEOF_BDIGITS * yy > 1024*1024)
-        if ( ((value.bitLength() + 7) / 8) * 4 * Math.abs((double) other) > 1024 * 1024 ) {
-            context.runtime.getWarnings().warn(ID.MAY_BE_TOO_BIG, "in a**b, b may be too big");
+            warn(context, "in a**b, b may be too big");
+            return pow(context, (double) other);
+        } else {
+            return newBignum(context.runtime, value.pow((int) other));
         }
     }
 

@@ -57,6 +57,7 @@ import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.*;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import static org.jruby.util.Numeric.*;
@@ -710,27 +711,19 @@ public class RubyComplex extends RubyNumeric {
      */
     @JRubyMethod(name = "**")
     public IRubyObject op_expt(ThreadContext context, IRubyObject other) {
-        Ruby runtime = context.runtime;
-
         if (k_exact_p(other) && f_zero_p(context, other)) {
-            return newComplexBang(context, getMetaClass(), RubyFixnum.one(runtime));
+            return newComplexBang(context, getMetaClass(), asFixnum(context, 0));
         }
 
         if (other instanceof RubyRational && f_one_p(context, f_denominator(context, other))) {
             other = f_numerator(context, other); 
         }
 
-        if (other instanceof RubyComplex) {
-            RubyComplex otherComplex = (RubyComplex) other;
-            if (f_zero_p(context, otherComplex.image)) {
-                other = otherComplex.real;
-            }
+        if (other instanceof RubyComplex otherComplex && f_zero_p(context, otherComplex.image)) {
+            other = otherComplex.real;
         }
 
-        if (other instanceof RubyComplex) {
-            RubyComplex otherComplex = (RubyComplex)other;
-
-
+        if (other instanceof RubyComplex otherComplex) {
             IRubyObject otherReal = otherComplex.real;
             IRubyObject otherImage = otherComplex.image;
 
@@ -744,15 +737,14 @@ public class RubyComplex extends RubyNumeric {
             IRubyObject ntheta = f_add(context, f_mul(context, theta, otherReal),
                     f_mul(context, otherImage, RubyMath.log(context, r)));
             return f_complex_polar(context, getMetaClass(), nr, ntheta);
-        } else if (other instanceof RubyFixnum) {
-            long n = ((RubyFixnum) other).getLongValue();
-            if (n == 0) {
-                return newInstance(context, getMetaClass(), RubyFixnum.one(runtime), RubyFixnum.zero(runtime));
-            }
+        } else if (other instanceof RubyFixnum otherFixnum) {
+            long n = otherFixnum.getLongValue();
+            if (n == 0) return newInstance(context, getMetaClass(), asFixnum(context, 1), asFixnum(context, 0));
+
             RubyComplex self = this;
             if (n < 0) {
                 self = (RubyComplex) f_reciprocal(context, self);
-                other = ((RubyFixnum) other).op_uminus();
+                other = otherFixnum.op_uminus();
                 n = -n;
             }
             {
@@ -780,7 +772,7 @@ public class RubyComplex extends RubyNumeric {
                         r = n % 2;
                         for (; r == 0; n = q) {
                             IRubyObject tmp = f_sub(context, f_mul(context, xr, xr), f_mul(context, xi, xi));
-                            xi = f_mul(context, f_mul(context, RubyFixnum.two(runtime), xr), xi);
+                            xi = f_mul(context, f_mul(context, asFixnum(context, 2), xr), xi);
                             xr = tmp;
                             q = n / 2;
                             r = n % 2;
@@ -803,9 +795,7 @@ public class RubyComplex extends RubyNumeric {
         } else if (other instanceof RubyNumeric && f_real_p(context, other)) {
             IRubyObject r, theta;
 
-            if (other instanceof RubyBignum) {
-                runtime.getWarnings().warn("in a**b, b may be too big");
-            }
+            if (other instanceof RubyBignum) warn(context, "in a**b, b may be too big");
 
             r = f_abs(context, this);
             theta = f_arg(context, this);

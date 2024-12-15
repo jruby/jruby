@@ -65,6 +65,7 @@ import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.indexError;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
@@ -460,7 +461,7 @@ public class RubyStruct extends RubyObject {
 
     private void checkForKeywords(ThreadContext context, boolean keywordInit) {
         if (hasKeywords(ThreadContext.resetCallInfo(context)) && !keywordInit) {
-            context.runtime.getWarnings().warn("Passing only keyword arguments to Struct#initialize will behave differently from Ruby 3.2. Please use a Hash literal like .new({k: v}) instead of .new(k: v).");
+            warn(context, "Passing only keyword arguments to Struct#initialize will behave differently from Ruby 3.2. Please use a Hash literal like .new({k: v}) instead of .new(k: v).");
         }
     }
 

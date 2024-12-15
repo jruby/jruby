@@ -29,6 +29,7 @@ import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Warn.warnExperimental;
 
 public class RubyIOBuffer extends RubyObject {
 
@@ -345,8 +346,7 @@ public class RubyIOBuffer extends RubyObject {
 
         warned = true;
 
-        RubyStackTraceElement trace = context.getSingleBacktrace(1);
-        context.runtime.getWarnings().warnExperimental(trace.getFileName(), trace.getLineNumber(), "IO::Buffer is experimental and both the Ruby and native interface may change in the future!");
+        warnExperimental(context, "IO::Buffer is experimental and both the Ruby and native interface may change in the future!");
     }
 
     private static ByteBuffer newBufferBase(Ruby runtime, int size, int flags) {

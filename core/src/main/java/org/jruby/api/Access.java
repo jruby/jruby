@@ -6,6 +6,7 @@ import org.jruby.RubyModule;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.runtime.load.LoadService;
 
 public class Access {
@@ -73,6 +74,15 @@ public class Access {
     }
 
     /**
+     * Retrieve the encoding service object
+     * @param context the current thread context
+     * @return the object
+     */
+    public static EncodingService encodingService(ThreadContext context) {
+        return context.runtime.getEncodingService();
+    }
+
+    /**
      * Retrieve the instance of the module Enumerable.
      * @param context the current thread context
      * @return the Module
@@ -133,6 +143,16 @@ public class Access {
      */
     public static RubyClass hashClass(ThreadContext context) {
         return context.runtime.getHash();
+    }
+
+
+    /**
+     * Retrieve the instance of the class Integer
+     * @param context the current thread context
+     * @return the Class
+     */
+    public static RubyClass integerClass(ThreadContext context) {
+        return context.runtime.getInteger();
     }
 
     /**

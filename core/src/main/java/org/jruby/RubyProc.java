@@ -61,6 +61,7 @@ import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.util.RubyStringBuilder.types;
@@ -259,7 +260,7 @@ public class RubyProc extends RubyObject implements DataType {
         checkFrozen();
 
         if (fromMethod) {
-            context.runtime.getWarnings().warn(IRubyWarnings.ID.MISCELLANEOUS, "Skipping set of ruby2_keywords flag for proc (proc created from method)");
+            warn(context, "Skipping set of ruby2_keywords flag for proc (proc created from method)");
             return this;
         }
 
@@ -269,11 +270,11 @@ public class RubyProc extends RubyObject implements DataType {
             if (signature.hasRest() && !signature.hasKwargs()) {
                 ((IRBlockBody) body).getScope().setRuby2Keywords();
             } else {
-                context.runtime.getWarnings().warn(IRubyWarnings.ID.MISCELLANEOUS, "Skipping set of ruby2_keywords flag for proc (proc accepts keywords or proc does not accept argument splat)");
+                warn(context, "Skipping set of ruby2_keywords flag for proc (proc accepts keywords or proc does not accept argument splat)");
             }
 
         } else {
-            context.runtime.getWarnings().warn(IRubyWarnings.ID.MISCELLANEOUS, "Skipping set of ruby2_keywords flag for proc (proc not defined in Ruby)");
+            warn(context, "Skipping set of ruby2_keywords flag for proc (proc not defined in Ruby)");
         }
         return this;
     }

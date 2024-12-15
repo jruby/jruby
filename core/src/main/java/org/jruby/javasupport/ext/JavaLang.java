@@ -94,8 +94,8 @@ public abstract class JavaLang {
         });
         JavaExtensions.put(runtime, java.lang.CharSequence.class, proxy -> proxy.defineMethods(context, CharSequence.class));
         JavaExtensions.put(runtime, java.lang.String.class, proxy -> proxy.defineMethods(context, String.class));
-        JavaExtensions.put(runtime, java.lang.Enum.class, proxy -> proxy.defineAlias("inspect", "to_s"));
-        JavaExtensions.put(runtime, java.lang.Boolean.class, proxy -> proxy.defineAlias("inspect", "to_s"));
+        JavaExtensions.put(runtime, java.lang.Enum.class, proxy -> proxy.defineAlias(context, "inspect", "to_s"));
+        JavaExtensions.put(runtime, java.lang.Boolean.class, proxy -> proxy.defineAlias(context, "inspect", "to_s"));
         JavaExtensions.put(runtime, java.lang.Thread.class, proxy -> proxy.addMethod("inspect", new InspectThread(proxy)));
     }
 
@@ -460,14 +460,11 @@ public abstract class JavaLang {
     public static class Class {
 
         static RubyClass define(ThreadContext context, final RubyModule proxy, RubyModule Comparable) {
-            proxy.include(context, Comparable).
-                    defineMethods(context, Class.class);
-            // JavaClass facade (compatibility) :
-            proxy.defineAlias("resource", "get_resource");
-            proxy.defineAlias("declared_field", "get_declared_field");
-            proxy.defineAlias("field", "get_field");
-
-            return (RubyClass) proxy;
+            return proxy.include(context, Comparable).
+                    defineMethods(context, Class.class).
+                    defineAlias(context, "resource", "get_resource").
+                    defineAlias(context, "declared_field", "get_declared_field").
+                    defineAlias(context, "field", "get_field");
         }
 
         @JRubyMethod(name = "ruby_class")

@@ -36,6 +36,7 @@ import static org.jruby.api.Create.newHash;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Warn.warn;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -867,8 +868,8 @@ public class ShellLauncher {
     }
 
     private static Process popenShared(Ruby runtime, IRubyObject[] strings, Map env, boolean addShell) throws IOException {
+        var context = runtime.getCurrentContext();
         String shell = getShell(runtime);
-        Process childProcess;
         File pwd = new File(runtime.getCurrentDirectory());
 
         try {
@@ -881,13 +882,11 @@ public class ShellLauncher {
 
             // Peel off options hash and warn that we don't support them
             if (strings.length > 1 && !(envHash = TypeConverter.checkHashType(runtime, strings[strings.length - 1])).isNil()) {
-                if (!((RubyHash)envHash).isEmpty()) {
-                    runtime.getWarnings().warn("popen3 does not support spawn options in JRuby 1.7");
-                }
+                if (!((RubyHash)envHash).isEmpty()) warn(context, "popen3 does not support spawn options in JRuby 1.7");
                 strings = Arrays.copyOfRange(strings, 0, strings.length - 1);
             }
 
-            String[] args = parseCommandLine(runtime.getCurrentContext(), runtime, strings);
+            String[] args = parseCommandLine(context, runtime, strings);
             LaunchConfig cfg = new LaunchConfig(runtime, strings, true);
             boolean useShell = Platform.IS_WINDOWS ? cfg.shouldRunInShell() : false;
             if (addShell) for (String arg : args) useShell |= shouldUseShell(arg);
@@ -898,12 +897,10 @@ public class ShellLauncher {
                 cfg.verifyExecutableForDirect();
             }
 
-            childProcess = buildProcess(runtime, cfg.execArgs, getCurrentEnv(runtime, env), pwd);
+            return buildProcess(runtime, cfg.execArgs, getCurrentEnv(runtime, env), pwd);
         } catch (SecurityException se) {
             throw runtime.newSecurityError(se.getLocalizedMessage());
         }
-
-        return childProcess;
     }
 
     public static class POpenProcess extends Process {

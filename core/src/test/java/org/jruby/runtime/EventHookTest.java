@@ -22,7 +22,7 @@ public final class EventHookTest extends TestCase {
         config.processArguments(new String[]{"--debug"});
         Ruby rt = JavaEmbedUtils.initialize(Collections.<String>emptyList(), config);
         NativeTracer tracer = new NativeTracer();
-        rt.getTraceEvents().addEventHook(tracer);
+        rt.getTraceEvents().addEventHook(rt.getCurrentContext(), tracer);
         RubyRuntimeAdapter evaler = JavaEmbedUtils.newRuntimeAdapter();
         evaler.eval(rt, "sleep 0.01\nsleep 0.01\nsleep 0.01");
         assertEquals("expected tracing", Arrays.asList(1,1,1,2,2,2,3,3,3), tracer.lines);

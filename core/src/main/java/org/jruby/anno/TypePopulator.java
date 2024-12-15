@@ -111,19 +111,20 @@ public abstract class TypePopulator {
             AnnotationHelper.populateMethodIndex(clumper.writeGroups, MethodIndex::addMethodWriteFieldsPacked);
 
             final Ruby runtime = target.getRuntime();
+            var context = runtime.getCurrentContext();
             final MethodFactory methodFactory = MethodFactory.createFactory(runtime.getJRubyClassLoader());
 
             for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getStaticAnnotatedMethods().entrySet()) {
                 final String name = entry.getKey();
                 final List<JavaMethodDescriptor> methods = entry.getValue();
-                target.defineAnnotatedMethod(name, methods, methodFactory);
+                target.defineAnnotatedMethod(context, name, methods, methodFactory);
                 addBoundMethodsUnlessOmitted(runtime, name, methods);
             }
 
             for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getAnnotatedMethods().entrySet()) {
                 final String name = entry.getKey();
                 final List<JavaMethodDescriptor> methods = entry.getValue();
-                target.defineAnnotatedMethod(name, methods, methodFactory);
+                target.defineAnnotatedMethod(context, name, methods, methodFactory);
                 addBoundMethodsUnlessOmitted(runtime, name, methods);
             }
         }

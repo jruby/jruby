@@ -47,6 +47,7 @@ import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.runtimeError;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.ext.coverage.CoverageData.CoverageDataState.*;
 import static org.jruby.ext.coverage.CoverageData.EVAL;
 import static org.jruby.ext.coverage.CoverageData.LINES;
@@ -78,11 +79,11 @@ public class CoverageModule {
                     mode |= EVAL;
                 }
                 if (ArgsUtil.extractKeywordArg(context, "branches", keywords).isTrue()) {
-                    context.runtime.getWarnings().warn("branch coverage is not supported");
+                    warn(context, "branch coverage is not supported");
                     mode |= CoverageData.BRANCHES;
                 }
                 if (ArgsUtil.extractKeywordArg(context, "methods", keywords).isTrue()) {
-                    context.runtime.getWarnings().warn("method coverage is not supported");
+                    warn(context, "method coverage is not supported");
                     mode |= CoverageData.METHODS;
                 }
                 if (ArgsUtil.extractKeywordArg(context, "oneshot_lines", keywords).isTrue()) {
@@ -158,7 +159,7 @@ public class CoverageModule {
 
         IRubyObject result = peek_result(context, self);
         if (stop && !clear) {
-            context.runtime.getWarnings().warn("stop implies clear");
+            warn(context, "stop implies clear");
             clear = true;
         }
 

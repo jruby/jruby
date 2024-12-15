@@ -40,6 +40,7 @@ import org.jruby.runtime.ThreadContext;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -211,7 +212,7 @@ public abstract class ZStream extends RubyObject {
         }
         if ((wbits & 0xf) != 0xf) {
             // windowBits < 15 for reducing memory is meaningless on Java platform. 
-            context.runtime.getWarnings().warn("windowBits < 15 is ignored on this platform");
+            warn(context, "windowBits < 15 is ignored on this platform");
             // continue
         }
         if (forInflate && wbits > JZlib.MAX_WBITS + 32) {

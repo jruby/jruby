@@ -116,6 +116,9 @@ import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.*;
+import static org.jruby.api.Warn.warn;
+import static org.jruby.api.Warn.warnDeprecated;
+import static org.jruby.api.Warn.warningDeprecated;
 import static org.jruby.runtime.ThreadContext.*;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -884,8 +887,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         if (block.isGiven()) {
             IRubyObject className = types(context.runtime, klass);
 
-            context.runtime.getWarnings().warn(ID.BLOCK_NOT_ACCEPTED,
-                    str(context.runtime, className, "::new() does not take block; use ", className, "::open() instead"));
+            warn(context, str(context.runtime, className, "::new() does not take block; use ", className, "::open() instead"));
         }
 
         return klass.newInstance(context, args, block);
@@ -1381,7 +1383,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
             str = str.convertToString().newFrozen();
 
-            if (fptr.wbuf.len != 0) context.runtime.getWarnings().warn("syswrite for buffered IO");
+            if (fptr.wbuf.len != 0) warn(context, "syswrite for buffered IO");
 
             ByteList strByteList = ((RubyString) str).getByteList();
             n = OpenFile.writeInternal(context, fptr, strByteList.unsafeBytes(), strByteList.begin(), strByteList.getRealSize());
@@ -1854,19 +1856,14 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 return print3(context, out, args[0], args[1], args[2]);
         }
 
-        Ruby runtime = context.runtime;
-        int i;
         int argc = args.length;
         IRubyObject outputFS = globalVariables(context).get("$,");
 
         boolean fieldSeparatorNotNil = !outputFS.isNil();
-        if (fieldSeparatorNotNil) {
-            runtime.getWarnings().warnDeprecated("$, is set to non-nil value");
-        }
-        for (i=0; i<argc; i++) {
-            if (fieldSeparatorNotNil && i>0) {
-                write(context, out, outputFS);
-            }
+        if (fieldSeparatorNotNil) warnDeprecated(context, "$, is set to non-nil value");
+
+        for (int i=0; i<argc; i++) {
+            if (fieldSeparatorNotNil && i > 0) write(context, out, outputFS);
             write(context, out, args[i]);
         }
 
@@ -1895,11 +1892,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     public static IRubyObject print2(ThreadContext context, IRubyObject out, IRubyObject arg0, IRubyObject arg1) {
-        Ruby runtime = context.runtime;
-
         IRubyObject outputFS = globalVariables(context).get("$,");
         boolean fieldSeparatorNotNil = !outputFS.isNil();
-        if (fieldSeparatorNotNil) runtime.getWarnings().warnDeprecated("$, is set to non-nil value");
+        if (fieldSeparatorNotNil) warnDeprecated(context, "$, is set to non-nil value");
 
         write(context, out, arg0);
         if (fieldSeparatorNotNil) write(context, out, outputFS);
@@ -1911,11 +1906,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     public static IRubyObject print3(ThreadContext context, IRubyObject out, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        Ruby runtime = context.runtime;
-
         IRubyObject outputFS = globalVariables(context).get("$,");
         boolean fieldSeparatorNotNil = !outputFS.isNil();
-        if (fieldSeparatorNotNil) runtime.getWarnings().warnDeprecated("$, is set to non-nil value");
+        if (fieldSeparatorNotNil) warnDeprecated(context, "$, is set to non-nil value");
 
         write(context, out, arg0);
         if (fieldSeparatorNotNil) write(context, out, outputFS);
@@ -2021,7 +2014,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 throw context.runtime.newIOError("sysseek for buffered IO");
             }
             if (fptr.isWritable() && fptr.wbuf.len != 0) {
-                context.runtime.getWarnings().warn("sysseek for buffered IO");
+                warn(context, "sysseek for buffered IO");
             }
             fptr.errno(null);
             pos = fptr.posix.lseek(fptr.fd(), pos, whence);
@@ -2928,7 +2921,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         if (write.retrieveCache(maybeIO.getMetaClass()).method.getSignature().isOneArgument()) {
             Ruby runtime = context.runtime;
             if (runtime.isVerbose() && maybeIO != globalVariables(context).get("$stderr")) {
-                warnWrite(runtime, maybeIO);
+                warnWrite(context, maybeIO);
             }
             write.call(context, maybeIO, maybeIO, arg0);
             write.call(context, maybeIO, maybeIO, arg1);
@@ -2937,7 +2930,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return write.call(context, maybeIO, maybeIO, arg0, arg1);
     }
 
-    private static void warnWrite(final Ruby runtime, IRubyObject maybeIO) {
+    private static void warnWrite(ThreadContext context, IRubyObject maybeIO) {
         IRubyObject klass = maybeIO.getMetaClass();
         char sep;
         if (((RubyClass) klass).isSingleton()) {
@@ -2946,7 +2939,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         } else {
             sep = '#';
         }
-        runtime.getWarnings().warningDeprecated(klass.toString() + sep + "write is outdated interface which accepts just one argument");
+        warningDeprecated(context, klass.toString() + sep + "write is outdated interface which accepts just one argument");
     }
 
     @JRubyMethod
@@ -3590,13 +3583,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return block.isGiven() ? each_byteInternal(context, block) : enumeratorize(context.runtime, this, "each_byte");
     }
 
-    // rb_io_bytes
-    @JRubyMethod(name = "bytes")
-    public IRubyObject bytes(ThreadContext context, Block block) {
-        context.runtime.getWarnings().warn("IO#bytes is deprecated; use #each_byte instead");
-        return each_byte(context, block);
-    }
-
     // rb_io_each_char
     public IRubyObject each_charInternal(ThreadContext context, Block block) {
         Ruby runtime = context.runtime;
@@ -3626,18 +3612,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     @JRubyMethod(name = "each_char")
     public IRubyObject each_char(ThreadContext context, Block block) {
         return each_charInternal(context, block);
-    }
-
-    @JRubyMethod(name = "chars")
-    public IRubyObject chars(ThreadContext context, Block block) {
-        context.runtime.getWarnings().warn("IO#chars is deprecated; use #each_char instead");
-        return each_charInternal(context, block);
-    }
-
-    @JRubyMethod
-    public IRubyObject codepoints(ThreadContext context, Block block) {
-        context.runtime.getWarnings().warn("IO#codepoints is deprecated; use #each_codepoint instead");
-        return eachCodePointCommon(context, block, "each_codepoint");
     }
 
     @JRubyMethod
@@ -3835,12 +3809,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 Arity.raiseArgumentError(context, args.length, 0, 3);
                 throw new AssertionError("BUG");
         }
-    }
-
-    @JRubyMethod(name = "lines")
-    public IRubyObject lines(final ThreadContext context, Block block) {
-        context.runtime.getWarnings().warn("IO#lines is deprecated; use #each_line instead");
-        return each_line(context, block);
     }
 
     @JRubyMethod(name = "readlines")
@@ -4217,7 +4185,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         if ((filename instanceof RubyString name) && name.isEmpty()) throw context.runtime.newErrnoENOENTError();
 
         if ((recv == ioClass(context)) && (cmd = PopenExecutor.checkPipeCommand(context, filename)) != context.nil) {
-            context.runtime.getWarnings().warn("IO process creation with a leading '|' is deprecated and will be removed in Ruby 4.0; use IO.popen instead");
+            warningDeprecated(context, "IO process creation with a leading '|' is deprecated and will be removed in Ruby 4.0; use IO.popen instead");
             if (PopenExecutor.nativePopenAvailable(context.runtime)) {
                 return (RubyIO) PopenExecutor.pipeOpen(context, cmd, OpenFile.ioOflagsModestr(context, oflags), fmode, convconfig);
             } else {
@@ -5327,9 +5295,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     static void checkUnsupportedOptions(ThreadContext context, RubyHash opts, String[] unsupported, String error) {
         for (String key : unsupported) {
-            if (opts.fastARef(asSymbol(context, key)) != null) {
-                context.runtime.getWarnings().warn(error + ": " + key);
-            }
+            if (opts.fastARef(asSymbol(context, key)) != null) warn(context, error + ": " + key);
         }
     }
 

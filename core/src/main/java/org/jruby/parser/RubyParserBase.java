@@ -2058,10 +2058,6 @@ public abstract class RubyParserBase {
         return new HashPatternNode(line, restArg, keywordArgs == null ? new HashNode(line) : keywordArgs);
     }
 
-    public void warn_experimental(int line, String message) {
-        ((RubyWarnings) getWarnings()).warnExperimental(lexer.getFile(), line, message);
-    }
-
     public Node rescued_expr(int line, Node arg, Node rescue) {
         return new RescueNode(line, arg,
                 new RescueBodyNode(line, null, remove_begin(rescue), null), null);

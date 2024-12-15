@@ -101,6 +101,7 @@ import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.ir.operands.UndefinedValue.UNDEFINED;
 import static org.jruby.runtime.Block.Type.LAMBDA;
 import static org.jruby.runtime.ThreadContext.*;
@@ -1097,15 +1098,14 @@ public class IRRuntimeHelpers {
     }
 
     public static RubyModule getModuleFromScope(ThreadContext context, StaticScope scope, IRubyObject arg) {
-        Ruby runtime = context.runtime;
         RubyModule rubyClass = scope.getModule();
 
         // SSS FIXME: Copied from ASTInterpreter.getClassVariableBase and adapted
-        while (scope != null && (rubyClass.isSingleton() || rubyClass == runtime.getDummy())) {
+        while (scope != null && (rubyClass.isSingleton() || rubyClass == context.runtime.getDummy())) {
             scope = scope.getPreviousCRefScope();
             rubyClass = scope.getModule();
             if (scope.getPreviousCRefScope() == null) {
-                runtime.getWarnings().warn(IRubyWarnings.ID.CVAR_FROM_TOPLEVEL_SINGLETON_METHOD, "class variable access from toplevel singleton method");
+                warn(context, "class variable access from toplevel singleton method");
             }
         }
 
@@ -2517,7 +2517,7 @@ public class IRRuntimeHelpers {
 
     public static void warnSetConstInRefinement(ThreadContext context, IRubyObject self) {
         if (self instanceof RubyModule && ((RubyModule) self).isRefinement()) {
-            context.runtime.getWarnings().warn("not defined at the refinement, but at the outer class/module");
+            warn(context, "not defined at the refinement, but at the outer class/module");
         }
     }
 

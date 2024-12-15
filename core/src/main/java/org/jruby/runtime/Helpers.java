@@ -94,6 +94,7 @@ import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_EMPTY;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
@@ -2206,11 +2207,11 @@ public class Helpers {
         switch(symbol.idString()) {
             case "__id__":
             case "__send__":
-                context.runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, str(context.runtime, "redefining '", ids(context.runtime, symbol), "' may cause serious problem"));
+                warn(context, str(context.runtime, "redefining '", ids(context.runtime, symbol), "' may cause serious problem"));
                 break;
             case "initialize":
                 if (clazz == objectClass(context)) {
-                    context.runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, "redefining Object#initialize may cause infinite loop");
+                    warn(context, "redefining Object#initialize may cause infinite loop");
                 }
             case "initialize_copy":
             case "initialize_dup":

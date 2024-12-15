@@ -57,6 +57,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.api.Warn;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.common.RubyWarnings;
@@ -65,6 +66,7 @@ import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -76,6 +78,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.KernelSites;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
@@ -155,19 +158,33 @@ public class RubyKernel {
 
     }
 
-    public static RubyModule createKernelModule(Ruby runtime, RubyClass Object, RubyInstanceConfig config) {
-        var Kernel = runtime.defineModuleUnder("Kernel", Object);
-
-        Kernel.defineAnnotatedMethodsIndividually(RubyKernel.class);
+    public static RubyModule finishKernelModule(ThreadContext context, RubyModule Kernel, RubyInstanceConfig config) {
+        Kernel.defineMethods(context, RubyKernel.class);
         Kernel.setFlag(RubyModule.NEEDSIMPL_F, false); //Kernel is the only normal Module that doesn't need an implementor
 
+        var runtime = context.runtime;
         runtime.setPrivateMethodMissing(new MethodMissingMethod(Kernel, PRIVATE, CallType.NORMAL));
         runtime.setProtectedMethodMissing(new MethodMissingMethod(Kernel, PROTECTED, CallType.NORMAL));
         runtime.setVariableMethodMissing(new MethodMissingMethod(Kernel, PUBLIC, CallType.VARIABLE));
         runtime.setSuperMethodMissing(new MethodMissingMethod(Kernel, PUBLIC, CallType.SUPER));
         runtime.setNormalMethodMissing(new MethodMissingMethod(Kernel, PUBLIC, CallType.NORMAL));
 
-        if (config.isAssumeLoop()) Kernel.defineAnnotatedMethodsIndividually(LoopMethods.class);
+        if (config.isAssumeLoop()) Kernel.defineMethods(context, LoopMethods.class);
+
+        if (config.getKernelGsubDefined()) {
+            MethodIndex.addMethodReadFields("gsub", FrameField.LASTLINE, FrameField.BACKREF);
+            Kernel.addMethod("gsub", new JavaMethod(Kernel, Visibility.PRIVATE, "gsub") {
+
+                @Override
+                public IRubyObject call(ThreadContext context1, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+                    return switch (args.length) {
+                        case 1 -> RubyKernel.gsub(context1, self, args[0], block);
+                        case 2 -> RubyKernel.gsub(context1, self, args[0], args[1], block);
+                        default -> throw argumentError(context1, String.format("wrong number of arguments %d for 1..2", args.length));
+                    };
+                }
+            });
+        }
 
         recacheBuiltinMethods(runtime, Kernel);
 
@@ -305,13 +322,6 @@ public class RubyKernel {
         // We had to save callInfo from original call because kwargs needs to still pass through to IO#open
         context.callInfo = callInfo;
         return RubyIO.open(context, fileClass(context), args, block);
-    }
-
-    @JRubyMethod(module = true, visibility = PRIVATE)
-    public static IRubyObject getc(ThreadContext context, IRubyObject recv) {
-        context.runtime.getWarnings().warn(ID.DEPRECATED_METHOD, "getc is obsolete; use STDIN.getc instead");
-        IRubyObject defin = globalVariables(context).get("$stdin");
-        return sites(context).getc.call(context, defin, defin);
     }
 
     // MRI: rb_f_gets
@@ -1895,7 +1905,7 @@ public class RubyKernel {
         long[] tuple;
 
         try {
-            args = dropLastArgIfOptions(runtime, args);
+            args = dropLastArgIfOptions(context, args);
             if (! Platform.IS_WINDOWS && args[args.length -1].asJavaString().matches(".*[^&]&\\s*")) {
                 // looks like we need to send process to the background
                 ShellLauncher.runWithoutWait(runtime, args);
@@ -1911,12 +1921,11 @@ public class RubyKernel {
         return (int) tuple[0];
     }
 
-    private static IRubyObject[] dropLastArgIfOptions(final Ruby runtime, final IRubyObject[] args) {
+    private static IRubyObject[] dropLastArgIfOptions(ThreadContext context, final IRubyObject[] args) {
         IRubyObject lastArg = args[args.length - 1];
-        if (lastArg instanceof RubyHash) {
-            if (!((RubyHash) lastArg).isEmpty()) {
-                runtime.getWarnings().warn(ID.UNSUPPORTED_SUBPROCESS_OPTION, "system does not support options in JRuby yet: " + lastArg);
-            }
+        if (lastArg instanceof RubyHash hash) {
+            if (!hash.isEmpty()) Warn.warn(context, "system does not support options in JRuby yet: " + lastArg);
+
             return Arrays.copyOf(args, args.length - 1);
         }
         return args;
@@ -2506,9 +2515,8 @@ public class RubyKernel {
 
     @Deprecated
     public static IRubyObject op_match(ThreadContext context, IRubyObject self, IRubyObject arg) {
-        context.runtime.getWarnings().warn(ID.DEPRECATED_METHOD,
-                "deprecated Object#=~ is called on " + ((RubyBasicObject) self).type() +
-                        "; it always returns nil");
+        Warn.warn(context, "deprecated Object#=~ is called on " + ((RubyBasicObject) self).type() +
+                "; it always returns nil");
         return ((RubyBasicObject) self).op_match(context, arg);
     }
 

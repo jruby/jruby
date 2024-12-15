@@ -33,9 +33,11 @@ package org.jruby;
 
 import static org.jruby.api.Access.basicObjectClass;
 import static org.jruby.api.Access.classClass;
+import static org.jruby.api.Access.instanceConfig;
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Error.*;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PUBLIC;
 import static org.jruby.util.CodegenUtils.ci;
@@ -121,15 +123,14 @@ public class RubyClass extends RubyModule {
     public static void createClassClass(Ruby runtime, RubyClass Class) {
         Class.reifiedClass(RubyClass.class).
                 kindOf(new RubyModule.JavaClassKindOf(RubyClass.class)).
-                classIndex(ClassIndex.CLASS).
-                defineAnnotatedMethodsIndividually(RubyClass.class);
-        Class.undefineMethod("module_function");
-        Class.undefineMethod("append_features");
-        Class.undefineMethod("prepend_features");
-        Class.undefineMethod("extend_object");
-        Class.undefineMethod("refine");
+                classIndex(ClassIndex.CLASS);
+    }
 
-        runtime.setBaseNewMethod(Class.searchMethod("new"));
+    public static void finishCreateClassClass(ThreadContext context, RubyClass Class) {
+        Class.defineMethods(context, RubyClass.class).
+                undefMethods(context, "module_function", "append_features", "prepend_features", "extend_object", "refine");
+
+        context.runtime.setBaseNewMethod(Class.searchMethod("new"));
     }
 
     public static final ObjectAllocator CLASS_ALLOCATOR = (runtime, klass) -> {
@@ -881,7 +882,7 @@ public class RubyClass extends RubyModule {
         return method != null && method.isBuiltin();
     }
 
-    private void dumpReifiedClass(String dumpDir, String javaPath, byte[] classBytes) {
+    private void dumpReifiedClass(ThreadContext context, String dumpDir, String javaPath, byte[] classBytes) {
         if (dumpDir != null) {
             if (dumpDir.length() == 0) dumpDir = ".";
 
@@ -893,9 +894,8 @@ public class RubyClass extends RubyModule {
                 classStream.write(classBytes);
             }
             catch (IOException io) {
-                runtime.getWarnings().warn("unable to dump class file: " + io.getMessage());
-            }
-            finally {
+                warn(context, "unable to dump class file: " + io.getMessage());
+            } finally {
                 if (classStream != null) {
                     try { classStream.close(); }
                     catch (IOException ignored) { /* no-op */ }
@@ -1529,15 +1529,15 @@ public class RubyClass extends RubyModule {
      * @param classDumpDir Directory to save reified java class
      */
     public synchronized void reify(String classDumpDir, boolean useChildLoader) {
+        var context = runtime.getCurrentContext();
         boolean[] java_box = { false };
         // re-check reifiable in case another reify call has jumped in ahead of us
         if (!isReifiable(java_box)) return;
         final boolean concreteExt = java_box[0];
 
         final Class<?> parentReified = superClass.getRealClass().reifiedClass();
-        if (parentReified == null) {
-            throw typeError(getClassRuntime().getCurrentContext(), getName() + "'s parent class is not yet reified");
-        }
+        if (parentReified == null) throw typeError(context, getName() + "'s parent class is not yet reified");
+
 
         ClassDefiningClassLoader classLoader; // usually parent's class-loader
         if (parentReified.getClassLoader() instanceof OneShotClassLoader) {
@@ -1545,12 +1545,12 @@ public class RubyClass extends RubyModule {
         } else {
             if (useChildLoader) {
                 MultiClassLoader parentLoader = new MultiClassLoader(runtime.getJRubyClassLoader());
-                for(Loader cLoader : runtime.getInstanceConfig().getExtraLoaders()) {
+                for(Loader cLoader : instanceConfig(context).getExtraLoaders()) {
                     parentLoader.addClassLoader(cLoader.getClassLoader());
                 }
                 classLoader = new OneShotClassLoader(parentLoader);
             } else {
-                classLoader = runtime.getJRubyClassLoader();
+                classLoader = context.runtime.getJRubyClassLoader();
             }
         }
 
@@ -1582,7 +1582,7 @@ public class RubyClass extends RubyModule {
         // Attempt to load the name we plan to use; skip reification if it exists already (see #1229).
         try {
             Class result = classLoader.defineClass(javaName, classBytes);
-            dumpReifiedClass(classDumpDir, javaPath, classBytes);
+            dumpReifiedClass(context, classDumpDir, javaPath, classBytes);
 
             //Trigger initilization
             @SuppressWarnings("unchecked")

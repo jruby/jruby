@@ -110,6 +110,7 @@ import static org.jruby.api.Create.newString;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.*;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -1095,16 +1096,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod
     public IRubyObject fetch(ThreadContext context, IRubyObject key, IRubyObject _default, Block block) {
-        final boolean blockGiven = block.isGiven();
-
-        if (blockGiven) {
-            context.runtime.getWarnings().warn(ID.BLOCK_BEATS_DEFAULT_VALUE, "block supersedes default value argument");
-        }
+        if (block.isGiven()) warn(context, "block supersedes default value argument");
 
         IRubyObject value = op_aref(context, key);
 
         if (value == context.nil) {
-            if (blockGiven) return block.yield(context, key);
+            if (block.isGiven()) return block.yield(context, key);
             return _default;
         }
 
@@ -2529,7 +2526,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 lock.unlock();
             } catch (IllegalMonitorStateException imse) {
                 // don't allow a bad lock to prevent others from unlocking
-                getRuntime().getWarnings().warn("BUG: attempted to unlock a non-acquired lock " + lock + " in thread " + toString());
+                warn(getRuntime().getCurrentContext(), "BUG: attempted to unlock a non-acquired lock " + lock + " in thread " + toString());
             }
         }
     }

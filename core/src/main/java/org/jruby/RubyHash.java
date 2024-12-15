@@ -88,6 +88,7 @@ import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.*;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -1444,17 +1445,12 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod
     public IRubyObject fetch(ThreadContext context, IRubyObject key, IRubyObject _default, Block block) {
-        Ruby runtime = context.runtime;
-        boolean blockGiven = block.isGiven();
-
-        if (blockGiven) {
-            runtime.getWarnings().warn(ID.BLOCK_BEATS_DEFAULT_VALUE, "block supersedes default value argument");
-        }
+        if (block.isGiven()) warn(context, "block supersedes default value argument");
 
         IRubyObject value = internalGet(key);
 
         if (value == null) {
-            if (blockGiven) return block.yield(context, key);
+            if (block.isGiven()) return block.yield(context, key);
 
             return _default;
         }
@@ -2331,14 +2327,9 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     @JRubyMethod(name = "any?")
-    public IRubyObject any_p(ThreadContext context, IRubyObject arg0, Block block) {
-        IRubyObject pattern = arg0;
-
+    public IRubyObject any_p(ThreadContext context, IRubyObject pattern, Block block) {
         if (isEmpty()) return context.fals;
-
-        if (block.isGiven()) {
-            context.runtime.getWarnings().warn("given block not used");
-        }
+        if (block.isGiven()) warn(context, "given block not used");
 
         return any_p_p(context, pattern);
     }

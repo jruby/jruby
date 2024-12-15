@@ -60,9 +60,11 @@ import java.util.List;
 import static org.jruby.RubyString.encodeBytelist;
 import static org.jruby.RubyString.newBinaryString;
 import static org.jruby.RubyString.newEmptyString;
+import static org.jruby.api.Access.encodingService;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.*;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.util.StringSupport.CR_UNKNOWN;
 import static org.jruby.util.StringSupport.searchNonAscii;
 
@@ -374,7 +376,7 @@ public class EncodingUtils {
         }
 
         if ((extenc != null || intenc != null) && !encoding.isNil()) {
-            context.runtime.getWarnings().warn("Ignoring encoding parameter '" + encoding + "': " +
+            warn(context, "Ignoring encoding parameter '" + encoding + "': " +
                     (extenc == null ? "internal" : "external") + "_encoding is used");
             encoding = context.nil;
         }
@@ -516,8 +518,7 @@ public class EncodingUtils {
 
     // mri: parse_mode_enc
     public static void parseModeEncoding(ThreadContext context, IOEncodable ioEncodable, String option, int[] fmode_p) {
-        final Ruby runtime = context.runtime;
-        EncodingService service = runtime.getEncodingService();
+        EncodingService service = encodingService(context);
         Encoding intEnc, extEnc;
         if (fmode_p == null) fmode_p = new int[]{0};
 
@@ -531,7 +532,7 @@ public class EncodingUtils {
                 fmode_p[0] |= OpenFile.SETENC_BY_BOM;
                 ioEncodable.setBOM(true);
             } else {
-                runtime.getWarnings().warn("BOM with non-UTF encoding " + estr + " is nonsense");
+                warn(context, "BOM with non-UTF encoding " + estr + " is nonsense");
                 fmode_p[0] &= ~OpenFile.SETENC_BY_BOM;
             }
         }
@@ -539,7 +540,7 @@ public class EncodingUtils {
         Encoding idx = service.findEncodingNoError(new ByteList(estr.getBytes(), false));
 
         if (idx == null) {
-            runtime.getWarnings().warn("Unsupported encoding " + estr + " ignored");
+            warn(context, "Unsupported encoding " + estr + " ignored");
             extEnc = null;
         } else {
             extEnc = idx;
@@ -553,7 +554,7 @@ public class EncodingUtils {
             } else {
                 idx = service.getEncodingFromString(istr);
                 if (idx == null) {
-                    runtime.getWarnings().warn("ignoring internal encoding " + idx + ": it is identical to external encoding " + idx);
+                    warn(context, "ignoring internal encoding " + idx + ": it is identical to external encoding " + idx);
                     intEnc = null;
                 } else {
                     intEnc = idx;

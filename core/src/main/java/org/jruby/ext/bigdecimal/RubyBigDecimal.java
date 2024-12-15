@@ -64,6 +64,7 @@ import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Warn.warningDeprecated;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
 /**
@@ -769,27 +770,6 @@ public class RubyBigDecimal extends RubyNumeric {
         return false;
     }
 
-    @Deprecated // no to be used in user-lang
-    @JRubyMethod(name = "new", meta = true)
-    public static IRubyObject new_(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        context.runtime.getWarnings().warn(IRubyWarnings.ID.DEPRECATED_METHOD, "BigDecimal.new is deprecated; use BigDecimal() method instead.");
-        return BigDecimalKernelMethods.newBigDecimal(context, recv, arg);
-    }
-
-    @Deprecated // no to be used in user-lang
-    @JRubyMethod(name = "new", meta = true)
-    public static IRubyObject new_(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject mathArg) {
-        context.runtime.getWarnings().warn(IRubyWarnings.ID.DEPRECATED_METHOD, "BigDecimal.new is deprecated; use BigDecimal() method instead.");
-        return BigDecimalKernelMethods.newBigDecimal(context, recv, arg, mathArg);
-    }
-
-    @Deprecated // no to be used in user-lang
-    @JRubyMethod(name = "new", meta = true)
-    public static IRubyObject new_(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject mathArg, IRubyObject opts) {
-        context.runtime.getWarnings().warn(IRubyWarnings.ID.DEPRECATED_METHOD, "BigDecimal.new is deprecated; use BigDecimal() method instead.");
-        return BigDecimalKernelMethods.newBigDecimal(context, recv, arg, mathArg, opts);
-    }
-
     private static IRubyObject handleMissingPrecision(ThreadContext context, String name, boolean strict, boolean exception) {
         if (!strict) return getZero(context, 1);
         if (!exception) return context.nil;
@@ -981,7 +961,7 @@ public class RubyBigDecimal extends RubyNumeric {
             return this;
         }
 
-        throw typeError(getRuntime().getCurrentContext(), "wrong argument class");
+        throw typeError(context, "wrong argument class");
     }
 
     @JRubyMethod(name = {"%", "modulo"})
@@ -1781,7 +1761,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @Deprecated
     public IRubyObject finite_p() {
-        return finite_p(getRuntime().getCurrentContext());
+        return finite_p(getCurrentContext());
     }
 
     private RubyBigDecimal floorNaNInfinityCheck(ThreadContext context) {
@@ -1914,7 +1894,7 @@ public class RubyBigDecimal extends RubyNumeric {
     @Deprecated
     @JRubyMethod
     public IRubyObject precs(ThreadContext context) {
-        context.runtime.getWarnings().warn(IRubyWarnings.ID.DEPRECATED_METHOD, "BigDecimal#precs is deprecated and will be removed in the future; use BigDecimal#precision instead.");
+        warningDeprecated(context, "BigDecimal#precs is deprecated and will be removed in the future; use BigDecimal#precision instead.");
         return newArray(context,
                 asFixnum(context, getSignificantDigits().length()),
                 asFixnum(context, ((getAllDigits().length() / 4) + 1) * 4));
@@ -2165,7 +2145,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @Deprecated(since = "10.0", forRemoval = true)
     public final IRubyObject to_int() {
-        return to_int(getRuntime().getCurrentContext());
+        return to_int(getCurrentContext());
     }
 
     @Override
@@ -2415,7 +2395,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @Deprecated
     public IRubyObject zero_p() {
-        return zero_p(getRuntime().getCurrentContext());
+        return zero_p(getCurrentContext());
     }
 
     @Override
@@ -2534,12 +2514,6 @@ public class RubyBigDecimal extends RubyNumeric {
             return ((RubyBignum) x).getBigIntegerValue().testBit(0) == false; // 0-th bit -> 0
         }
         return false;
-    }
-
-    @Deprecated
-    public static IRubyObject ver(ThreadContext context, IRubyObject recv) {
-        context.runtime.getWarnings().warn(IRubyWarnings.ID.DEPRECATED_METHOD, "BigDecimal.ver is deprecated; use BigDecimal::VERSION instead");
-        return RubyString.newStringShared(context.runtime, VERSION);
     }
 
     @Deprecated // no longer used

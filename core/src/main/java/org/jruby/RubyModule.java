@@ -152,6 +152,10 @@ import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.*;
+import static org.jruby.api.Warn.warn;
+import static org.jruby.api.Warn.warnDeprecated;
+import static org.jruby.api.Warn.warning;
+import static org.jruby.api.Warn.warningDeprecated;
 import static org.jruby.runtime.Visibility.MODULE_FUNCTION;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PROTECTED;
@@ -190,9 +194,11 @@ public class RubyModule extends RubyObject {
         Module.reifiedClass(RubyModule.class).
                 kindOf(new RubyModule.JavaClassKindOf(RubyModule.class)).
                 classIndex(ClassIndex.MODULE);
+    }
 
-        Module.defineAnnotatedMethodsIndividually(RubyModule.class);
-        Module.defineAnnotatedMethodsIndividually(ModuleKernelMethods.class);
+    public static void finishCreateModuleClass(ThreadContext context, RubyClass Module) {
+        Module.defineMethods(context, RubyModule.class);
+        Module.defineMethods(context, ModuleKernelMethods.class);
     }
 
     public void checkValidBindTargetFrom(ThreadContext context, RubyModule originModule, boolean fromBind) throws RaiseException {
@@ -1290,6 +1296,14 @@ public class RubyModule extends RubyObject {
         invalidateConstantCacheForModuleInclusion(module);
     }
 
+    /**
+     * @param clazz
+     * @param name
+     * @deprecated Use {@link RubyModule#defineMethods(ThreadContext, Class[])} and organize your method
+     * definitions where you only specify the .class and not needing to add a name as a discriminator.  This
+     * method is fairly inefficient since it is rescanning the class for all methods to find a single version.
+     */
+    @Deprecated(since = "10.0")
     public void defineAnnotatedMethod(Class clazz, String name) {
         // FIXME: This is probably not very efficient, since it loads all methods for each call
         boolean foundMethod = false;
@@ -1323,7 +1337,7 @@ public class RubyModule extends RubyObject {
         return defineAnnotatedConstant(getCurrentContext(), field);
     }
 
-    public final boolean defineAnnotatedConstant(ThreadContext context, Field field) {
+    private boolean defineAnnotatedConstant(ThreadContext context, Field field) {
         JRubyConstant jrubyConstant = field.getAnnotation(JRubyConstant.class);
         if (jrubyConstant == null) return false;
 
@@ -1357,7 +1371,7 @@ public class RubyModule extends RubyObject {
      * @deprecated Use {@link RubyModule#defineMethods(ThreadContext, Class[])} instead.
      */
     @Extension
-    @Deprecated(since = "1.0")
+    @Deprecated(since = "10.0")
     public void defineAnnotatedMethods(Class clazz) {
         defineAnnotatedMethodsIndividually(clazz);
     }
@@ -1452,47 +1466,59 @@ public class RubyModule extends RubyObject {
         return new TypePopulator.ReflectiveTypePopulator(type);
     }
 
-    /**
-     * An internal API only used before the first ThreadContext is defined.  For example,
-     * BasicObject, Boolean,  needs this when getting defined.
-     * Use {@link org.jruby.RubyModule#defineMethods(ThreadContext, Class[])} instead.
-     * @param clazz to generate JRuby methods from
-     */
+    @Deprecated(since = "10.0")
     public final void defineAnnotatedMethodsIndividually(Class clazz) {
         getRuntime().POPULATORS.get(clazz).populate(this, clazz);
     }
 
+    /**
+     * Note: it is your responsibility to only pass methods which are annotated with @JRubyMethod. It will
+     * perform this check when only a single method is passed in but has never checked when more than one.
+     * @deprecated Use {@link RubyModule#defineMethods(ThreadContext, Class[])} instead and organize your
+     * code around all JRubyMethod annotations in that .class being defined.
+     */
+    @Deprecated(since = "10.0")
     public final boolean defineAnnotatedMethod(String name, List<JavaMethodDescriptor> methods, MethodFactory methodFactory) {
-        JavaMethodDescriptor desc = methods.get(0);
-        if (methods.size() == 1) {
-            return defineAnnotatedMethod(name, desc, methodFactory);
-        }
-
-        DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, methods, name);
-        define(this, desc, name, dynamicMethod);
-
+        if (methods.size() == 1 && methods.get(0).anno == null) return false;
+        defineAnnotatedMethod(getCurrentContext(), name, methods, methodFactory);
         return true;
     }
 
-    public final boolean defineAnnotatedMethod(Method method, MethodFactory methodFactory) {
-        JRubyMethod jrubyMethod = method.getAnnotation(JRubyMethod.class);
+    /**
+     * This is an internal API used by the type populator.  This method takes a list of overloads
+     * for a static or non-static method and generates the
+     * @param context the current method context
+     * @param name
+     * @param methods
+     * @param methodFactory
+     */
+    public final void defineAnnotatedMethod(ThreadContext context, String name, List<JavaMethodDescriptor> methods, MethodFactory methodFactory) {
+        JavaMethodDescriptor desc = methods.get(0);
 
-        if (jrubyMethod == null) return false;
+        var dynamicMethod = methods.size() == 1 ?
+                methodFactory.getAnnotatedMethod(this, desc, name) :
+                methodFactory.getAnnotatedMethod(this, methods, name);
+
+        define(context, this, desc, dynamicMethod);
+    }
+
+    @Deprecated(since = "10.0")
+    public final boolean defineAnnotatedMethod(Method method, MethodFactory methodFactory) {
+        if (method.getAnnotation(JRubyMethod.class) == null) return false;
 
         JavaMethodDescriptor desc = new JavaMethodDescriptor(method);
         DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, desc, method.getName());
-        define(this, desc, method.getName(), dynamicMethod);
+        define(getCurrentContext(), this, desc, dynamicMethod);
 
         return true;
     }
 
+    @Deprecated(since = "10.0")
     public final boolean defineAnnotatedMethod(String name, JavaMethodDescriptor desc, MethodFactory methodFactory) {
-        JRubyMethod jrubyMethod = desc.anno;
-
-        if (jrubyMethod == null) return false;
+        if (desc.anno == null) return false;
 
         DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, desc, name);
-        define(this, desc, name, dynamicMethod);
+        define(getCurrentContext(), this, desc, dynamicMethod);
 
         return true;
     }
@@ -1696,7 +1722,7 @@ public class RubyModule extends RubyObject {
     public void undef(ThreadContext context, String name) {
         testFrozen("module");
         if (name.equals("__send__") || name.equals("object_id") || name.equals("initialize")) {
-            context.runtime.getWarnings().warn(ID.UNDEFINING_BAD, "undefining '"+ name +"' may cause serious problems");
+            warn(context, "undefining '"+ name +"' may cause serious problems");
         }
 
         if (name.equals("method_missing")) {
@@ -1843,8 +1869,7 @@ public class RubyModule extends RubyObject {
     }
 
     private static void warnMethodRemoval(final ThreadContext context, final String id) {
-        context.runtime.getWarnings().warn(ID.UNDEFINING_BAD,
-                str(context.runtime, "removing '", ids(context.runtime, id), "' may cause serious problems"));
+        warn(context, str(context.runtime, "removing '", ids(context.runtime, id), "' may cause serious problems"));
     }
 
     /**
@@ -2312,32 +2337,14 @@ public class RubyModule extends RubyObject {
         getSingletonClass().addMethod(name, method);
     }
 
-    /** rb_alias
-     *
+    /**
+     * @param name
+     * @param oldName
+     * @deprecated Use {@link RubyModule#aliasMethod(ThreadContext, IRubyObject, IRubyObject)} instead
      */
+    @Deprecated(since = "10.0")
     public synchronized void defineAlias(String name, String oldName) {
-        testFrozen("module");
-
-        Ruby runtime = getRuntime();
-
-        CacheEntry entry = searchForAliasMethod(runtime, oldName);
-
-        DynamicMethod method = getMethods().get(name);
-        if (method != null && entry.method.getRealMethod() != method.getRealMethod() && !method.isUndefined()) {
-            // warn if overwriting an existing method on this module
-            if (method.getRealMethod().getAliasCount() == 0) runtime.getWarnings().warning(ID.REDEFINING_METHOD, "method redefined; discarding old " + name);
-
-            if (method instanceof PositionAware) {
-                PositionAware posAware = (PositionAware) method;
-                runtime.getWarnings().warning(ID.REDEFINING_METHOD, posAware.getFile(), posAware.getLine() + 1, "previous definition of " + name + " was here");
-            }
-        }
-
-        checkAliasFrameAccesses(runtime, oldName, name, entry.method);
-        putAlias(name, entry, oldName);
-
-        methodLocation.invalidateCoreClasses();
-        methodLocation.invalidateCacheDescendants();
+        defineAlias(getCurrentContext(), name, oldName);
     }
 
     /**
@@ -2379,7 +2386,7 @@ public class RubyModule extends RubyObject {
         return deepMethodSearch(id, runtime);
     }
 
-    private void checkAliasFrameAccesses(Ruby runtime, String id, String newName, DynamicMethod method) {
+    private void checkAliasFrameAccesses(ThreadContext context, String id, String newName, DynamicMethod method) {
         if (method instanceof NativeCallMethod) {
             // JRUBY-2435: Aliasing eval and other "special" methods should display a warning
             // We warn because we treat certain method names as "special" for purposes of
@@ -2412,7 +2419,7 @@ public class RubyModule extends RubyObject {
                 MethodIndex.addMethodReadFields(newName, sourceReads);
                 MethodIndex.addMethodWriteFields(newName, sourceWrites);
 
-                if (runtime.isVerbose()) {
+                if (context.runtime.isVerbose()) {
                     String baseName = getBaseName();
                     char refChar = '#';
                     String simpleName = getSimpleName();
@@ -2425,7 +2432,7 @@ public class RubyModule extends RubyObject {
                         }
                     }
 
-                    runtime.getWarnings().warning(simpleName + refChar + id + " accesses caller method's state and should not be aliased");
+                    warning(context, simpleName + refChar + id + " accesses caller method's state and should not be aliased");
                 }
             }
         }
@@ -2548,15 +2555,13 @@ public class RubyModule extends RubyObject {
     private void addAccessor(ThreadContext context, RubySymbol identifier, Visibility visibility, boolean readable, boolean writeable) {
         String internedIdentifier = identifier.idString();
 
-        final Ruby runtime = context.runtime;
-
         if (visibility == MODULE_FUNCTION) {
-            runtime.getWarnings().warn(ID.ACCESSOR_MODULE_FUNCTION, "attribute accessor as module_function");
+            warn(context, "attribute accessor as module_function");
             visibility = PRIVATE;
         }
 
         if (!identifier.validLocalVariableName() && !identifier.validConstantName()) {
-            throw runtime.newNameError("invalid attribute name", identifier);
+            throw context.runtime.newNameError("invalid attribute name", identifier);
         }
 
         final String variableName = identifier.asInstanceVariable().idString();
@@ -3254,17 +3259,17 @@ public class RubyModule extends RubyObject {
                 if (!method.isNative()) {
                     Signature signature = method.getSignature();
                     if (!signature.hasRest()) {
-                        context.runtime.getWarnings().warn(ID.MISCELLANEOUS, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (method accepts keywords or method does not accept argument splat)"));
+                        warn(context, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (method accepts keywords or method does not accept argument splat)"));
                     } else if (!signature.hasKwargs()) {
                         method.setRuby2Keywords();
                     } else if (method instanceof AbstractIRMethod && ((AbstractIRMethod) method).getStaticScope().exists("...") == -1) {
-                        context.runtime.getWarnings().warn(ID.MISCELLANEOUS, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (method accepts keywords or method does not accept argument splat)"));
+                        warn(context, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (method accepts keywords or method does not accept argument splat)"));
                     }
                 } else {
-                    context.runtime.getWarnings().warn(ID.MISCELLANEOUS, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (method not defined in Ruby)"));
+                    warn(context, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (method not defined in Ruby)"));
                 }
             } else {
-                context.runtime.getWarnings().warn(ID.MISCELLANEOUS, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (can only set in method defining module)"));
+                warn(context, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (can only set in method defining module)"));
             }
         }
         return context.nil;
@@ -3276,7 +3281,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "attr", rest = true, reads = VISIBILITY)
     public IRubyObject attr(ThreadContext context, IRubyObject[] args) {
         if (args.length == 2 && (args[1] == context.tru || args[1] == context.fals)) {
-            context.runtime.getWarnings().warnDeprecated(ID.OBSOLETE_ARGUMENT, "optional boolean argument is obsoleted");
+            warningDeprecated(context, "optional boolean argument is obsoleted");
             boolean writeable = args[1].isTrue();
             RubySymbol sym = TypeConverter.checkID(args[0]);
             addAccessor(context, sym, getCurrentVisibilityForDefineMethod(context), args[0].isTrue(), writeable);
@@ -3912,7 +3917,7 @@ public class RubyModule extends RubyObject {
         RubySymbol newSym = TypeConverter.checkID(newId);
         RubySymbol oldSym = TypeConverter.checkID(oldId); //  MRI uses rb_to_id but we return existing symbol
 
-        defineAlias(newSym.idString(), oldSym.idString());
+        defineAlias(context, newSym.idString(), oldSym.idString());
 
         methodAdded(context, newSym);
 
@@ -5246,11 +5251,9 @@ public class RubyModule extends RubyObject {
             boolean notAutoload = oldEntry.value != UNDEF;
             if (notAutoload || !setAutoloadConstant(name, value, file, line)) {
                 if (warn && notAutoload) {
-                    if (this.equals(getRuntime().getObject())) {
-                        getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + name);
-                    } else {
-                        getRuntime().getWarnings().warn(ID.CONSTANT_ALREADY_INITIALIZED, "already initialized constant " + this + "::" + name);
-                    }
+                    var context = getRuntime().getCurrentContext();
+                    warn(context, "already initialized constant " +
+                            (this.equals(objectClass(context)) ? name : (this + "::" + name)));
                 }
 
                 storeConstant(name, value, hidden, file, line);
@@ -5278,6 +5281,40 @@ public class RubyModule extends RubyObject {
     public IRubyObject fastSetConstant(String internedName, IRubyObject value) {
         return setConstant(internedName, value);
     }
+
+    /**
+     * Define an alias on this module/class.
+     *
+     * @param context the current thread context
+     * @param name the new alias name
+     * @param oldName the existing method name
+     * @return itself for composable API
+     */
+    // MRI: rb_alias
+    public synchronized <T extends RubyModule> T defineAlias(ThreadContext context, String name, String oldName) {
+        testFrozen("module");
+
+        CacheEntry entry = searchForAliasMethod(context.runtime, oldName);
+
+        DynamicMethod method = getMethods().get(name);
+        if (method != null && entry.method.getRealMethod() != method.getRealMethod() && !method.isUndefined()) {
+            if (method.getRealMethod().getAliasCount() == 0) warning(context, "method redefined; discarding old " + name);
+
+            if (method instanceof PositionAware posAware) {
+                context.runtime.getWarnings().warning(ID.REDEFINING_METHOD, posAware.getFile(), posAware.getLine() + 1, "previous definition of " + name + " was here");
+            }
+        }
+
+        checkAliasFrameAccesses(context, oldName, name, entry.method);
+        putAlias(name, entry, oldName);
+
+        methodLocation.invalidateCoreClasses();
+        methodLocation.invalidateCacheDescendants();
+
+        return (T) this;
+    }
+
+
 
     /**
      * Define a constant when you are defining your Ruby class/module.
@@ -5692,9 +5729,8 @@ public class RubyModule extends RubyObject {
             return null;
         }
         if (entry.deprecated) {
-            final Ruby runtime = getRuntime();
             String parent = "Object".equals(getName()) ? "" : getName();
-            runtime.getWarnings().warnDeprecated(ID.CONSTANT_DEPRECATED, "constant " + parent + "::" + name + " is deprecated");
+            warnDeprecated(getRuntime().getCurrentContext(), "constant " + parent + "::" + name + " is deprecated");
         }
 
         return entry;
@@ -5977,7 +6013,7 @@ public class RubyModule extends RubyObject {
         return autoload == null ? null : autoload.getPath();
     }
 
-    private static void define(RubyModule module, JavaMethodDescriptor desc, final String simpleName, DynamicMethod dynamicMethod) {
+    private static void define(ThreadContext context, RubyModule module, JavaMethodDescriptor desc, DynamicMethod dynamicMethod) {
         JRubyMethod jrubyMethod = desc.anno;
         final String[] names = jrubyMethod.name();
         final String[] aliases = jrubyMethod.alias();
@@ -5998,7 +6034,7 @@ public class RubyModule extends RubyObject {
             }
 
             if (aliases.length > 0) {
-                for (String alias : aliases) singletonClass.defineAlias(alias, baseName);
+                for (String alias : aliases) singletonClass.defineAlias(context, alias, baseName);
             }
         } else {
             String baseName;
@@ -6011,7 +6047,7 @@ public class RubyModule extends RubyObject {
             }
 
             if (aliases.length > 0) {
-                for (String alias : aliases) module.defineAlias(alias, baseName);
+                for (String alias : aliases) module.defineAlias(context, alias, baseName);
             }
 
             if (jrubyMethod.module()) {
@@ -6030,7 +6066,7 @@ public class RubyModule extends RubyObject {
                 }
 
                 if (aliases.length > 0) {
-                    for (String alias : aliases) singletonClass.defineAlias(alias, baseName);
+                    for (String alias : aliases) singletonClass.defineAlias(context, alias, baseName);
                 }
             }
         }
@@ -6312,14 +6348,11 @@ public class RubyModule extends RubyObject {
         this.refinements = refinements;
     }
 
-    public static void createRefinementClass(RubyClass Refinement) {
+    public static void finishRefinementClass(ThreadContext context, RubyClass Refinement) {
         Refinement.reifiedClass(RubyModule.class).
                 classIndex(ClassIndex.REFINEMENT).
-                defineAnnotatedMethodsIndividually(RefinementMethods.class);
-
-        Refinement.undefineMethod("append_features");
-        Refinement.undefineMethod("prepend_features");
-        Refinement.undefineMethod("extend_object");
+                defineMethods(context, RefinementMethods.class).
+                undefMethods(context, "append_features", "prepend_features", "extend_object");
     }
 
     public static class RefinementMethods {
@@ -6333,7 +6366,7 @@ public class RubyModule extends RubyObject {
                 RubyModule module = castAsModule(context, _module);
 
                 if (module.getSuperClass() != null) {
-                    context.runtime.getWarnings().warn(module.getName() + " has ancestors, but Refinement#import_methods doesn't import their methods");
+                    warn(context, module.getName() + " has ancestors, but Refinement#import_methods doesn't import their methods");
                 }
             }
 
@@ -6440,7 +6473,7 @@ public class RubyModule extends RubyObject {
         DynamicMethod method = entry.method;
 
         for (String name: aliases) {
-            checkAliasFrameAccesses(runtime, oldId, name, method);
+            checkAliasFrameAccesses(getCurrentContext(), oldId, name, method);
             putAlias(name, entry, oldId);
         }
 

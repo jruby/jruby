@@ -56,12 +56,12 @@ public final class TopSelfFactory {
 
     @Deprecated(since = "10.0", forRemoval = true)
     public static IRubyObject createTopSelf(final Ruby runtime) {
-        return createTopSelf(runtime, objectClass(runtime.getCurrentContext()), false);
+        var Object = objectClass(runtime.getCurrentContext());
+        var topSelf = new RubyObject(runtime, Object);
+        return finishTopSelf(runtime.getCurrentContext(), topSelf, Object, false);
     }
     
-    public static IRubyObject createTopSelf(final Ruby runtime, RubyClass Object, final boolean wrapper) {
-        IRubyObject topSelf = new RubyObject(runtime, Object);
-
+    public static IRubyObject finishTopSelf(ThreadContext context, IRubyObject topSelf, RubyClass Object, final boolean wrapper) {
         final RubyClass singletonClass = topSelf.getSingletonClass();
 
         singletonClass.addMethod("to_s", new JavaMethod.JavaMethodZero(singletonClass, Visibility.PUBLIC, "to_s") {
@@ -70,7 +70,7 @@ public final class TopSelfFactory {
                 return newString(context, "main");
             }
         });
-        singletonClass.defineAlias("inspect", "to_s");
+        singletonClass.defineAlias(context, "inspect", "to_s");
         
         // The following three methods must be defined fast, since they expect to modify the current frame
         // (i.e. they expect no frame will be allocated for them). JRUBY-1185.

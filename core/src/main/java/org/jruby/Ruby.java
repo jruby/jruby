@@ -41,7 +41,6 @@
 package org.jruby;
 
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.anno.FrameField;
 import org.jruby.anno.TypePopulator;
 import org.jruby.api.Create;
 import org.jruby.api.Define;
@@ -68,7 +67,6 @@ import org.jruby.management.InlineStats;
 import org.jruby.parser.ParserManager;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.JavaSites;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.TraceEventManager;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.specialized.RubyObjectSpecializer;
@@ -96,7 +94,6 @@ import org.jruby.ast.RootNode;
 import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.ast.executable.Script;
 import org.jruby.ast.executable.ScriptAndCode;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.common.RubyWarnings;
 import org.jruby.compiler.JITCompiler;
 import org.jruby.embed.Extension;
@@ -112,7 +109,6 @@ import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ThreadService;
 import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.ir.Compiler;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.interpreter.Interpreter;
@@ -135,7 +131,6 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.runtime.invokedynamic.MethodNames;
@@ -225,8 +220,9 @@ import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newEmptyString;
 import static org.jruby.api.Create.newFrozenString;
 import static org.jruby.api.Error.*;
-import static org.jruby.internal.runtime.GlobalVariable.Scope.GLOBAL;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.parser.ParserType.*;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
 import static org.jruby.util.RubyStringBuilder.types;
@@ -346,11 +342,9 @@ public final class Ruby implements Constantizable {
         classClass.makeMetaClass(metaClass);
         refinementClass.makeMetaClass(metaClass);
 
-        RubyBasicObject.createBasicObjectClass(this, basicObjectClass);
         RubyObject.createObjectClass(objectClass);
         RubyModule.createModuleClass(moduleClass);
         RubyClass.createClassClass(this, classClass);
-        RubyModule.createRefinementClass(refinementClass);
 
         // set constants now that they're initialized
         basicObjectClass.setConstant("BasicObject", basicObjectClass);
@@ -363,18 +357,13 @@ public final class Ruby implements Constantizable {
         // specializer for RubyObject subclasses
         objectSpecializer = new RubyObjectSpecializer(this);
 
-        // Initialize Kernel and include into Object
-        RubyModule kernel = kernelModule = RubyKernel.createKernelModule(this, objectClass, config);
-        // In 1.9 and later, Kernel.gsub is defined only when '-p' or '-n' is given on the command line
-        initKernelGsub(kernel);
-
-        // Object is ready, create top self
-        topSelf = TopSelfFactory.createTopSelf(this,objectClass, false);
+        kernelModule = defineModuleUnder("Kernel", objectClass);   // Initialize Kernel and include into Object
+        topSelf = new RubyObject(this, objectClass);  // Object is ready, create top self
 
         // Pre-create all the core classes potentially referenced during startup
-        nilClass = RubyNil.createNilClass(this, objectClass);
-        falseClass = RubyBoolean.createFalseClass(this, objectClass);
-        trueClass = RubyBoolean.createTrueClass(this, objectClass);
+        nilClass = defineClass("NilClass", objectClass, NOT_ALLOCATABLE_ALLOCATOR);
+        falseClass = defineClass("FalseClass", objectClass, NOT_ALLOCATABLE_ALLOCATOR);
+        trueClass = defineClass("TrueClass", objectClass, NOT_ALLOCATABLE_ALLOCATOR);
 
         nilObject = new RubyNil(this, nilClass);
         nilPrefilledArray = new IRubyObject[NIL_PREFILLED_ARRAY_SIZE];
@@ -391,6 +380,16 @@ public final class Ruby implements Constantizable {
 
         // Get the main threadcontext (gets constructed for us)
         final ThreadContext context = getCurrentContext();
+
+        RubyModule.finishCreateModuleClass(context, moduleClass);
+        RubyClass.finishCreateClassClass(context, classClass);
+        RubyKernel.finishKernelModule(context, kernelModule, config);
+        RubyNil.finishNilClass(context, nilClass);
+        RubyBoolean.finishFalseClass(context, falseClass);
+        RubyBoolean.finishTrueClass(context, trueClass);
+        RubyModule.finishRefinementClass(context, refinementClass);
+        RubyBasicObject.finishBasicObjectClass(context, basicObjectClass);
+        TopSelfFactory.finishTopSelf(context, topSelf, objectClass, false);
 
         // includeModule uses TC.
         objectClass.includeModule(kernelModule);
@@ -433,7 +432,7 @@ public final class Ruby implements Constantizable {
         encodingService.defineEncodings();
         encodingService.defineAliases();
 
-        initDefaultEncodings();
+        initDefaultEncodings(context);
 
         complexClass = profile.allowClass("Complex") ? RubyComplex.createComplexClass(context, numericClass) : null;
         rationalClass = profile.allowClass("Rational") ? RubyRational.createRationalClass(context, numericClass) : null;
@@ -573,7 +572,7 @@ public final class Ruby implements Constantizable {
         // recache core methods, since they'll have profiling wrappers now
         kernelModule.invalidateCacheDescendants(); // to avoid already-cached methods
         RubyKernel.recacheBuiltinMethods(this, kernelModule);
-        RubyBasicObject.recacheBuiltinMethods(this);
+        RubyBasicObject.recacheBuiltinMethods(context, basicObjectClass);
     }
 
     private void initBootLibraries(ThreadContext context) {
@@ -600,20 +599,7 @@ public final class Ruby implements Constantizable {
     }
 
     private void initKernelGsub(RubyModule kernel) {
-        if (this.config.getKernelGsubDefined()) {
-            MethodIndex.addMethodReadFields("gsub", FrameField.LASTLINE, FrameField.BACKREF);
-            kernel.addMethod("gsub", new JavaMethod(kernel, Visibility.PRIVATE, "gsub") {
 
-                @Override
-                public IRubyObject call(ThreadContext context1, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                    return switch (args.length) {
-                        case 1 -> RubyKernel.gsub(context1, self, args[0], block);
-                        case 2 -> RubyKernel.gsub(context1, self, args[0], args[1], block);
-                        default -> throw argumentError(context1, String.format("wrong number of arguments %d for 1..2", args.length));
-                    };
-                }
-            });
-        }
     }
 
     private ObjectSpacer initObjectSpacer(RubyInstanceConfig config) {
@@ -643,7 +629,7 @@ public final class Ruby implements Constantizable {
         return jrubyClassLoader;
     }
 
-    private void initDefaultEncodings() {
+    private void initDefaultEncodings(ThreadContext context) {
         // External should always have a value, but Encoding.external_encoding{,=} will lazily setup
         String encoding = this.config.getExternalEncoding();
         if (encoding != null && !encoding.isEmpty()) {
@@ -658,7 +644,7 @@ public final class Ruby implements Constantizable {
 
         // Filesystem should always have a value
         if (Platform.IS_WINDOWS) {
-            setDefaultFilesystemEncoding(encodingService.getWindowsFilesystemEncoding(this));
+            setDefaultFilesystemEncoding(encodingService.getWindowsFilesystemEncoding(context));
         } else {
             setDefaultFilesystemEncoding(getDefaultExternalEncoding());
         }
@@ -1490,7 +1476,7 @@ public final class Ruby implements Constantizable {
         if (superClass == null) {
             IRubyObject className = parentIsObject ? ids(this, id) :
                     parent.toRubyString(getCurrentContext()).append(newString("::")).append(ids(this, id));
-            warnings.warn(ID.NO_SUPER_CLASS, str(this, "no super class for '", className, "', Object assumed"));
+            warn(getCurrentContext(), str(this, "no super class for '", className, "', Object assumed"));
 
             superClass = objectClass;
         }
@@ -3114,8 +3100,9 @@ public final class Ruby implements Constantizable {
      * @param wrap Whether to use a new "self" for toplevel
      */
     public void loadExtension(String extName, BasicLibraryService extension, boolean wrap) {
-        IRubyObject self = wrap ? TopSelfFactory.createTopSelf(this, objectClass, true) : getTopSelf();
         ThreadContext context = getCurrentContext();
+        var topSelf = new RubyObject(this, objectClass);
+        IRubyObject self = wrap ? TopSelfFactory.finishTopSelf(context, topSelf, objectClass, true) : getTopSelf();
 
         try {
             context.preExtensionLoad(self);
@@ -6008,7 +5995,7 @@ public final class Ruby implements Constantizable {
 
     @Deprecated
     public synchronized void addEventHook(EventHook hook) {
-        traceEvents.addEventHook(hook);
+        traceEvents.addEventHook(getCurrentContext(), hook);
     }
 
     @Deprecated

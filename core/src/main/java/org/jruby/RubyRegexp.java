@@ -84,6 +84,8 @@ import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.*;
+import static org.jruby.api.Warn.warn;
+import static org.jruby.api.Warn.warning;
 import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.StringSupport.CR_7BIT;
@@ -216,7 +218,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 defineConstant(context, "FIXEDENCODING", asFixnum(context, RE_FIXED)).
                 defineConstant(context, "NOENCODING", asFixnum(context, RE_NONE)).
                 defineMethods(context, RubyRegexp.class).
-                tap(c -> c.getSingletonClass().defineAlias("compile", "new"));
+                tap(c -> c.getSingletonClass().defineAlias(context, "compile", "new"));
 
         context.runtime.setRubyTimeout(context.nil);
 
@@ -368,8 +370,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     // MRI: rb_reg_new_str
     public static RubyRegexp newRegexpFromStr(Ruby runtime, RubyString s, int options) {
+        var context = runtime.getCurrentContext();
         RubyRegexp re = (RubyRegexp)runtime.getRegexp().allocate();
-        re.regexpInitializeString(s, RegexpOptions.fromJoniOptions(options), null);
+        re.regexpInitializeString(context, s, RegexpOptions.fromJoniOptions(options), null);
         return re;
     }
 
@@ -415,7 +418,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             enc = patternEnc;
         }
         if (warn && isEncodingNone() && enc != ASCIIEncoding.INSTANCE && cr != StringSupport.CR_7BIT) {
-            context.runtime.getWarnings().warn(ID.REGEXP_MATCH_AGAINST_STRING, "historical binary regexp match /.../n against " + enc + " string");
+            warn(context, "historical binary regexp match /.../n against " + enc + " string");
         }
         return enc;
     }
@@ -899,7 +902,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return regexpInitialize(regexp.str, regexp.str.getEncoding(), regexp.getOptions(), regexp.timeout);
     }
 
-    private static int objectAsJoniOptions(IRubyObject arg) {
+    private static int objectAsJoniOptions(ThreadContext context, IRubyObject arg) {
         Ruby runtime = arg.getRuntime();
         if (arg instanceof RubyFixnum) return fix2int(arg);
         if (arg instanceof RubyString) return RegexpOptions.fromByteList(runtime, ((RubyString) arg).getByteList()).toJoniOptions();
@@ -910,40 +913,48 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
         if (arg.isNil()) return 0;
 
-        runtime.getWarnings().warning(str(runtime, "expected true or false as ignorecase: ", arg));
+        warning(context, str(runtime, "expected true or false as ignorecase: ", arg));
 
         return RE_OPTION_IGNORECASE;
     }
 
-    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
+    @Deprecated(since = "10.0")
     public IRubyObject initialize_m(IRubyObject arg) {
+        return initialize_m(getCurrentContext(), arg);
+    }
+
+    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
+    public IRubyObject initialize_m(ThreadContext context, IRubyObject arg) {
         return arg instanceof RubyRegexp regexp ?
                 initializeByRegexp(regexp, null) :
-                regexpInitializeString(arg.convertToString(), new RegexpOptions(), null);
+                regexpInitializeString(context, arg.convertToString(), new RegexpOptions(), null);
+    }
+
+    @Deprecated(since = "10.0")
+    public IRubyObject initialize_m(IRubyObject arg0, IRubyObject arg1) {
+        return initialize_m(getCurrentContext(), arg0, arg1);
     }
 
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, keywords = true)
-    public IRubyObject initialize_m(IRubyObject arg0, IRubyObject arg1) {
-        ThreadContext context = getRuntime().getCurrentContext();
+    public IRubyObject initialize_m(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         boolean keywords = (resetCallInfo(context) & ThreadContext.CALL_KEYWORD) != 0;
-
 
         IRubyObject timeout;
         RegexpOptions regexpOptions;
         if (keywords) {
             regexpOptions = new RegexpOptions();
             timeout = timeoutFromArg(context, arg1);
-            if (arg0 instanceof RubyRegexp) return initializeByRegexp((RubyRegexp) arg0, timeout);
+            if (arg0 instanceof RubyRegexp regexp) return initializeByRegexp(regexp, timeout);
         } else {
             if (arg0 instanceof RubyRegexp && Options.PARSER_WARN_FLAGS_IGNORED.load()) {
-                metaClass.runtime.getWarnings().warn(ID.REGEXP_IGNORED_FLAGS, "flags ignored");
+                warn(context, "flags ignored");
                 return initializeByRegexp((RubyRegexp)arg0, null);
             }
-            regexpOptions = RegexpOptions.fromJoniOptions(objectAsJoniOptions(arg1));
+            regexpOptions = RegexpOptions.fromJoniOptions(objectAsJoniOptions(context, arg1));
             timeout = null;
         }
 
-        return regexpInitializeString(arg0.convertToString(), regexpOptions, timeout);
+        return regexpInitializeString(context, arg0.convertToString(), regexpOptions, timeout);
     }
 
     /**
@@ -963,14 +974,14 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         boolean keywords = (resetCallInfo(context) & ThreadContext.CALL_KEYWORD) != 0;
 
         if (arg0 instanceof RubyRegexp && Options.PARSER_WARN_FLAGS_IGNORED.load()) {
-            context.runtime.getWarnings().warn(ID.REGEXP_IGNORED_FLAGS, "flags ignored");
+            warn(context, "flags ignored");
             return initializeByRegexp((RubyRegexp)arg0, timeoutFromArg(context, arg2));
         }
 
-        RegexpOptions newOptions = RegexpOptions.fromJoniOptions(objectAsJoniOptions(arg1));
+        RegexpOptions newOptions = RegexpOptions.fromJoniOptions(objectAsJoniOptions(context, arg1));
         if (!keywords) throw argumentError(context, 3, 1, 2);
 
-        return regexpInitializeString(arg0.convertToString(), newOptions, timeoutFromArg(context, arg2));
+        return regexpInitializeString(context, arg0.convertToString(), newOptions, timeoutFromArg(context, arg2));
     }
 
     private IRubyObject timeoutFromArg(ThreadContext context, IRubyObject arg) {
@@ -986,7 +997,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     // rb_reg_initialize_str
-    private RubyRegexp regexpInitializeString(RubyString str, RegexpOptions options, IRubyObject timeout) {
+    private RubyRegexp regexpInitializeString(ThreadContext context, RubyString str, RegexpOptions options, IRubyObject timeout) {
         if (isLiteral()) throw metaClass.runtime.newFrozenError(this);
         ByteList bytes = str.getByteList();
         Encoding enc = bytes.getEncoding();
@@ -1610,10 +1621,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         RubyString string;
         int opts = 0;
         if (args[0] instanceof RubyRegexp) {
-            if (length > 1) context.runtime.getWarnings().warn("flags ignored");
+            if (length > 1) warn(context, "flags ignored");
             string = null;
         } else {
-            if (length > 1) opts = objectAsJoniOptions(args[1]);
+            if (length > 1) opts = objectAsJoniOptions(context, args[1]);
             string = args[0].convertToString();
         }
 

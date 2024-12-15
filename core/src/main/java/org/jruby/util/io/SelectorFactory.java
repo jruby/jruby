@@ -36,6 +36,8 @@ import java.net.BindException;
 
 import org.jruby.Ruby;
 
+import static org.jruby.api.Warn.warn;
+
 /**
  * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>
  */
@@ -54,9 +56,7 @@ public class SelectorFactory {
                    e.getCause() instanceof BindException &&
                    retryCount < RETRY_MAX) {
                     retryCount++;
-                    if(runtime != null) {
-                        runtime.getWarnings().warn("try number " + retryCount + " to get a selector");
-                    }
+                    if (runtime != null) warn(runtime.getCurrentContext(), "try number " + retryCount + " to get a selector");
                 } else {
                     throw e;
                 }

@@ -63,6 +63,7 @@ import static org.jruby.api.Convert.castAsModule;
 import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Warn.warn;
 
 public class JavaInterfaceTemplate {
 
@@ -365,24 +366,22 @@ public class JavaInterfaceTemplate {
 
     @JRubyMethod(name = "impl", rest = true) // impl(methods = true)
     public static IRubyObject impl(ThreadContext context, IRubyObject self, IRubyObject[] args, final Block implBlock) {
-        final Ruby runtime = context.runtime;
-
         if (!implBlock.isGiven()) throw argumentError(context, "block required to call #impl on a Java interface");
 
         boolean allMethods = true;
         final IRubyObject[] methodNames;
-        if ( args.length == 0 ) methodNames = null;
-        else if ( args.length == 1 && args[0] instanceof RubyBoolean ) {
+        if ( args.length == 0 ) {
+            methodNames = null;
+        } else if ( args.length == 1 && args[0] instanceof RubyBoolean ) {
             allMethods = args[0].isTrue(); // impl(false) ... allMethods = false
             methodNames = null;
-        }
-        else {
+        } else {
             methodNames = args.clone();
             Arrays.sort(methodNames); // binarySearch needs a sorted array
             // RubySymbol implements a Java compareTo thus will always work
         }
 
-        RubyClass implClass = RubyClass.newClass(runtime, objectClass(context)); // ImplClass = Class.new
+        RubyClass implClass = RubyClass.newClass(context.runtime, objectClass(context)); // ImplClass = Class.new
         implClass.include(context, self); // ImplClass.include Interface
 
         final BlockInterfaceImpl ifaceImpl = new BlockInterfaceImpl(implClass, implBlock, methodNames);
@@ -415,7 +414,7 @@ public class JavaInterfaceTemplate {
                     }
                 }
                 // did not continue (main) loop - passed method name not found in interface
-                runtime.getWarnings().warn("'" + name + "' is not a declared method in interface " + ifaceClass.getName());
+                warn(context, "'" + name + "' is not a declared method in interface " + ifaceClass.getName());
             }
         }
 

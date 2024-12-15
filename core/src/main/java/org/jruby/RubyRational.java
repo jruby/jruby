@@ -57,6 +57,7 @@ import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.*;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.ast.util.ArgsUtil.hasExceptionOption;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
@@ -851,7 +852,7 @@ public class RubyRational extends RubyNumeric {
             }
             return newInstance(context, getMetaClass(), num, den);
         } else if (other instanceof RubyBignum) {
-            context.runtime.getWarnings().warn("in a**b, b may be too big");
+            warn(context, "in a**b, b may be too big");
             return ((RubyFloat) to_f(context)).op_pow(context, other);
         } else if (other instanceof RubyFloat || other instanceof RubyRational) {
             return f_expt(context, r_to_f(context, this), other);
@@ -1248,7 +1249,7 @@ public class RubyRational extends RubyNumeric {
         long e = ne - de;
 
         if (e > 1023 || e < -1022) {
-            context.runtime.getWarnings().warn(IRubyWarnings.ID.FLOAT_OUT_OF_RANGE, "out of Float range");
+            warn(context, "out of Float range");
             return e > 0 ? Double.MAX_VALUE : 0;
         }
 
@@ -1258,9 +1259,7 @@ public class RubyRational extends RubyNumeric {
 
         f = ldexp(f, e);
 
-        if (Double.isInfinite(f) || Double.isNaN(f)) {
-            context.runtime.getWarnings().warn(IRubyWarnings.ID.FLOAT_OUT_OF_RANGE, "out of Float range");
-        }
+        if (Double.isInfinite(f) || Double.isNaN(f)) warn(context, "out of Float range");
 
         return f;
     }

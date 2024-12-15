@@ -52,7 +52,7 @@ public class JavaProxyReflectionObject extends RubyObject {
 
     protected static void registerRubyMethods(ThreadContext context, RubyClass klass) {
         klass.defineMethods(context, JavaProxyReflectionObject.class);
-        klass.getMetaClass().defineAlias("__j_allocate", "allocate");
+        klass.getMetaClass().defineAlias(context, "__j_allocate", "allocate");
     }
 
     @Deprecated

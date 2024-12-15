@@ -80,6 +80,7 @@ import static org.jruby.api.Access.loadService;
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.util.URLUtil.getPath;
 
 /**
@@ -525,10 +526,11 @@ public class LoadService {
     }
 
     protected void warnCircularRequire(String requireName) {
+        var context = runtime.getCurrentContext();
         StringBuilder sb = new StringBuilder("loading in progress, circular require considered harmful - " + requireName);
 
-        runtime.getCurrentContext().renderCurrentBacktrace(sb);
-        runtime.getWarnings().warn(sb.toString());
+        context.renderCurrentBacktrace(sb);
+        warn(context, sb.toString());
     }
 
     private RequireState smartLoadInternal(String file, boolean circularRequireWarning) {

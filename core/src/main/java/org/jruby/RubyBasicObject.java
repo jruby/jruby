@@ -54,7 +54,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import org.jruby.anno.JRubyMethod;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Helpers;
@@ -74,8 +73,8 @@ import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
-import static org.jruby.ir.runtime.IRRuntimeHelpers.getCurrentClassBase;
 import static org.jruby.runtime.Helpers.invokeChecked;
 import static org.jruby.runtime.ThreadContext.*;
 import static org.jruby.runtime.Visibility.*;
@@ -203,22 +202,19 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public static final ObjectAllocator BASICOBJECT_ALLOCATOR = RubyBasicObject::new;
 
     /**
-     * Will create the Ruby class Object in the runtime
-     * specified. This method needs to take the actual class as an
-     * argument because of the Object class' central part in runtime
-     * initialization.
+     * Will create the Ruby class BasicObject in the runtime specified. This method needs to take the
+     * actual class as an argument because of the Object class' central part in runtime initialization.
      */
-    public static void createBasicObjectClass(Ruby runtime, RubyClass Object) {
-        Object.classIndex(ClassIndex.OBJECT).defineAnnotatedMethodsIndividually(RubyBasicObject.class);
-        recacheBuiltinMethods(runtime);
+    public static void finishBasicObjectClass(ThreadContext context, RubyClass BasicObject) {
+        BasicObject.classIndex(ClassIndex.OBJECT).
+                defineMethods(context, RubyBasicObject.class);
+        recacheBuiltinMethods(context, BasicObject);
     }
 
-    static void recacheBuiltinMethods(Ruby runtime) {
-        RubyModule objectClass = runtime.getBasicObject();
-
+    static void recacheBuiltinMethods(ThreadContext context, RubyClass BasicObject) {
         // Since method_missing is marked module we actually define two builtin versions
-        runtime.setDefaultMethodMissing(objectClass.searchMethod("method_missing"),
-                objectClass.metaClass.searchMethod("method_missing"));
+        context.runtime.setDefaultMethodMissing(BasicObject.searchMethod("method_missing"),
+                BasicObject.metaClass.searchMethod("method_missing"));
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
@@ -2135,17 +2131,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return getMetaClass().getRealClass();
     }
 
-    /** rb_obj_type
-     *
-     * The deprecated version of type, that emits a deprecation
-     * warning.
-     */
-    @Deprecated
-    public RubyClass type_deprecated() {
-        getRuntime().getWarnings().warn(ID.DEPRECATED_METHOD, "Object#type is deprecated; use Object#class");
-        return type();
-    }
-
     /** rb_obj_display
      *
      *  call-seq:
@@ -2518,7 +2503,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *  The default to_a method is deprecated.
      */
     public RubyArray to_a(ThreadContext context) {
-        context.runtime.getWarnings().warn(ID.DEPRECATED_METHOD, "default 'to_a' will be obsolete");
+        warn(context, "default 'to_a' will be obsolete");
         return newArray(context,this);
     }
 
