@@ -228,6 +228,7 @@ import static org.jruby.api.Error.*;
 import static org.jruby.api.Warn.warn;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.GLOBAL;
 import static org.jruby.parser.ParserType.*;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
 import static org.jruby.util.RubyStringBuilder.types;
@@ -347,7 +348,6 @@ public final class Ruby implements Constantizable {
         classClass.makeMetaClass(metaClass);
         refinementClass.makeMetaClass(metaClass);
 
-        RubyBasicObject.createBasicObjectClass(this, basicObjectClass);
         RubyObject.createObjectClass(objectClass);
         RubyModule.createModuleClass(moduleClass);
         RubyClass.createClassClass(this, classClass);
@@ -373,7 +373,7 @@ public final class Ruby implements Constantizable {
         topSelf = new RubyObject(this, objectClass);
 
         // Pre-create all the core classes potentially referenced during startup
-        nilClass = RubyNil.createNilClass(this, objectClass);
+        nilClass = defineClass("NilClass", objectClass, NOT_ALLOCATABLE_ALLOCATOR);
         falseClass = RubyBoolean.createFalseClass(this, objectClass);
         trueClass = RubyBoolean.createTrueClass(this, objectClass);
 
@@ -393,6 +393,9 @@ public final class Ruby implements Constantizable {
         // Get the main threadcontext (gets constructed for us)
         final ThreadContext context = getCurrentContext();
 
+        RubyNil.createNilClass(context, nilClass);
+
+        RubyBasicObject.createBasicObjectClass(context, basicObjectClass);
         TopSelfFactory.createTopSelf(context, topSelf, objectClass, false);
 
         // includeModule uses TC.
@@ -576,7 +579,7 @@ public final class Ruby implements Constantizable {
         // recache core methods, since they'll have profiling wrappers now
         kernelModule.invalidateCacheDescendants(); // to avoid already-cached methods
         RubyKernel.recacheBuiltinMethods(this, kernelModule);
-        RubyBasicObject.recacheBuiltinMethods(this);
+        RubyBasicObject.recacheBuiltinMethods(context, basicObjectClass);
     }
 
     private void initBootLibraries(ThreadContext context) {

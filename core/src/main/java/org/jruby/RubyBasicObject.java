@@ -204,22 +204,18 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public static final ObjectAllocator BASICOBJECT_ALLOCATOR = RubyBasicObject::new;
 
     /**
-     * Will create the Ruby class Object in the runtime
-     * specified. This method needs to take the actual class as an
-     * argument because of the Object class' central part in runtime
-     * initialization.
+     * Will create the Ruby class BasicObject in the runtime specified. This method needs to take the
+     * actual class as an argument because of the Object class' central part in runtime initialization.
      */
-    public static void createBasicObjectClass(Ruby runtime, RubyClass Object) {
-        Object.classIndex(ClassIndex.OBJECT).defineAnnotatedMethodsIndividually(RubyBasicObject.class);
-        recacheBuiltinMethods(runtime);
+    public static void createBasicObjectClass(ThreadContext context, RubyClass BasicObject) {
+        BasicObject.classIndex(ClassIndex.OBJECT).defineMethods(context, RubyBasicObject.class);
+        recacheBuiltinMethods(context, BasicObject);
     }
 
-    static void recacheBuiltinMethods(Ruby runtime) {
-        RubyModule objectClass = runtime.getBasicObject();
-
+    static void recacheBuiltinMethods(ThreadContext context, RubyClass BasicObject) {
         // Since method_missing is marked module we actually define two builtin versions
-        runtime.setDefaultMethodMissing(objectClass.searchMethod("method_missing"),
-                objectClass.metaClass.searchMethod("method_missing"));
+        context.runtime.setDefaultMethodMissing(BasicObject.searchMethod("method_missing"),
+                BasicObject.metaClass.searchMethod("method_missing"));
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
