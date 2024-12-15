@@ -6327,14 +6327,11 @@ public class RubyModule extends RubyObject {
         this.refinements = refinements;
     }
 
-    public static void createRefinementClass(RubyClass Refinement) {
+    public static void createRefinementClass(ThreadContext context, RubyClass Refinement) {
         Refinement.reifiedClass(RubyModule.class).
                 classIndex(ClassIndex.REFINEMENT).
-                defineAnnotatedMethodsIndividually(RefinementMethods.class);
-
-        Refinement.undefineMethod("append_features");
-        Refinement.undefineMethod("prepend_features");
-        Refinement.undefineMethod("extend_object");
+                defineMethods(context, RefinementMethods.class).
+                undefMethods(context, "append_features", "prepend_features", "extend_object");
     }
 
     public static class RefinementMethods {

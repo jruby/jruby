@@ -351,7 +351,6 @@ public final class Ruby implements Constantizable {
         RubyObject.createObjectClass(objectClass);
         RubyModule.createModuleClass(moduleClass);
         RubyClass.createClassClass(this, classClass);
-        RubyModule.createRefinementClass(refinementClass);
 
         // set constants now that they're initialized
         basicObjectClass.setConstant("BasicObject", basicObjectClass);
@@ -394,6 +393,8 @@ public final class Ruby implements Constantizable {
         final ThreadContext context = getCurrentContext();
 
         RubyNil.createNilClass(context, nilClass);
+
+        RubyModule.createRefinementClass(context, refinementClass);
 
         RubyBasicObject.createBasicObjectClass(context, basicObjectClass);
         TopSelfFactory.createTopSelf(context, topSelf, objectClass, false);
