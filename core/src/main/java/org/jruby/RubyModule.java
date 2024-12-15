@@ -1471,9 +1471,17 @@ public class RubyModule extends RubyObject {
         getRuntime().POPULATORS.get(clazz).populate(this, clazz);
     }
 
+    /**
+     * Note: it is your responsibility to only pass methods which are annotated with @JRubyMethod. It will
+     * perform this check when only a single method is passed in but has never checked when more than one.
+     * @deprecated Use {@link RubyModule#defineMethods(ThreadContext, Class[])} instead and organize your
+     * code around all JRubyMethod annotations in that .class being defined.
+     */
     @Deprecated(since = "10.0")
     public final boolean defineAnnotatedMethod(String name, List<JavaMethodDescriptor> methods, MethodFactory methodFactory) {
-        return defineAnnotatedMethod(getCurrentContext(), name, methods, methodFactory);
+        if (methods.size() == 1 && methods.get(0).anno == null) return false;
+        defineAnnotatedMethod(getCurrentContext(), name, methods, methodFactory);
+        return true;
     }
 
     /**
@@ -1483,16 +1491,15 @@ public class RubyModule extends RubyObject {
      * @param name
      * @param methods
      * @param methodFactory
-     * @return
      */
-    public final boolean defineAnnotatedMethod(ThreadContext context, String name, List<JavaMethodDescriptor> methods, MethodFactory methodFactory) {
+    public final void defineAnnotatedMethod(ThreadContext context, String name, List<JavaMethodDescriptor> methods, MethodFactory methodFactory) {
         JavaMethodDescriptor desc = methods.get(0);
-        if (methods.size() == 1) return defineSingleJavaAnnotatedMethod(context, name, desc, methodFactory);
 
-        DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, methods, name);
-        define(this, desc, name, dynamicMethod);
+        var dynamicMethod = methods.size() == 1 ?
+                methodFactory.getAnnotatedMethod(this, desc, name) :
+                methodFactory.getAnnotatedMethod(this, methods, name);
 
-        return true;
+        define(context, this, desc, dynamicMethod);
     }
 
     @Deprecated(since = "10.0")
@@ -1501,23 +1508,17 @@ public class RubyModule extends RubyObject {
 
         JavaMethodDescriptor desc = new JavaMethodDescriptor(method);
         DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, desc, method.getName());
-        define(this, desc, method.getName(), dynamicMethod);
+        define(getCurrentContext(), this, desc, dynamicMethod);
 
         return true;
     }
 
     @Deprecated(since = "10.0")
     public final boolean defineAnnotatedMethod(String name, JavaMethodDescriptor desc, MethodFactory methodFactory) {
-        return defineSingleJavaAnnotatedMethod(getCurrentContext(), name, desc, methodFactory);
-    }
-
-    private final boolean defineSingleJavaAnnotatedMethod(ThreadContext context, String name, JavaMethodDescriptor desc, MethodFactory methodFactory) {
-        JRubyMethod jrubyMethod = desc.anno;
-
-        if (jrubyMethod == null) return false;
+        if (desc.anno == null) return false;
 
         DynamicMethod dynamicMethod = methodFactory.getAnnotatedMethod(this, desc, name);
-        define(this, desc, name, dynamicMethod);
+        define(getCurrentContext(), this, desc, dynamicMethod);
 
         return true;
     }
@@ -6012,8 +6013,7 @@ public class RubyModule extends RubyObject {
         return autoload == null ? null : autoload.getPath();
     }
 
-    private static void define(RubyModule module, JavaMethodDescriptor desc, final String simpleName, DynamicMethod dynamicMethod) {
-        var context = module.getRuntime().getCurrentContext();
+    private static void define(ThreadContext context, RubyModule module, JavaMethodDescriptor desc, DynamicMethod dynamicMethod) {
         JRubyMethod jrubyMethod = desc.anno;
         final String[] names = jrubyMethod.name();
         final String[] aliases = jrubyMethod.alias();
