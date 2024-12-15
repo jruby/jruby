@@ -1677,7 +1677,7 @@ public class RubyEnumerable {
     public static IRubyObject all_pCommon(ThreadContext localContext, CallSite each, IRubyObject self, IRubyObject pattern, final Block block) {
         final boolean patternGiven = pattern != null;
 
-        if (block.isGiven() && patternGiven) warn(context, "given block not used");
+        if (block.isGiven() && patternGiven) warn(localContext, "given block not used");
 
         try {
             if (block.isGiven() && !patternGiven) {

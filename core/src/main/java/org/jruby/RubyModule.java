@@ -5248,7 +5248,7 @@ public class RubyModule extends RubyObject {
                 if (warn && notAutoload) {
                     var context = getRuntime().getCurrentContext();
                     warn(context, "already initialized constant " +
-                            this.equals(objectClass(context)) ? name : (this + "::" + name));
+                            (this.equals(objectClass(context)) ? name : (this + "::" + name)));
                 }
 
                 storeConstant(name, value, hidden, file, line);
