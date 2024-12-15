@@ -370,7 +370,7 @@ public final class Ruby implements Constantizable {
         initKernelGsub(kernel);
 
         // Object is ready, create top self
-        topSelf = TopSelfFactory.createTopSelf(this,objectClass, false);
+        topSelf = new RubyObject(this, objectClass);
 
         // Pre-create all the core classes potentially referenced during startup
         nilClass = RubyNil.createNilClass(this, objectClass);
@@ -392,6 +392,8 @@ public final class Ruby implements Constantizable {
 
         // Get the main threadcontext (gets constructed for us)
         final ThreadContext context = getCurrentContext();
+
+        TopSelfFactory.createTopSelf(context, topSelf, objectClass, false);
 
         // includeModule uses TC.
         objectClass.includeModule(kernelModule);
@@ -3115,8 +3117,9 @@ public final class Ruby implements Constantizable {
      * @param wrap Whether to use a new "self" for toplevel
      */
     public void loadExtension(String extName, BasicLibraryService extension, boolean wrap) {
-        IRubyObject self = wrap ? TopSelfFactory.createTopSelf(this, objectClass, true) : getTopSelf();
         ThreadContext context = getCurrentContext();
+        var topSelf = new RubyObject(this, objectClass);
+        IRubyObject self = wrap ? TopSelfFactory.createTopSelf(context, topSelf, objectClass, true) : getTopSelf();
 
         try {
             context.preExtensionLoad(self);

@@ -145,6 +145,16 @@ public class Access {
         return context.runtime.getHash();
     }
 
+
+    /**
+     * Retrieve the instance of the class Integer
+     * @param context the current thread context
+     * @return the Class
+     */
+    public static RubyClass integerClass(ThreadContext context) {
+        return context.runtime.getInteger();
+    }
+
     /**
      * Retrieve our runtimes instance config which holds many configurable options
      * which are set up from command-line properties or Java system properties.

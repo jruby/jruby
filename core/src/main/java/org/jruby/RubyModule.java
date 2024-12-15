@@ -154,6 +154,7 @@ import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.*;
 import static org.jruby.api.Warn.warn;
 import static org.jruby.api.Warn.warnDeprecated;
+import static org.jruby.api.Warn.warning;
 import static org.jruby.api.Warn.warningDeprecated;
 import static org.jruby.runtime.Visibility.MODULE_FUNCTION;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -2314,32 +2315,14 @@ public class RubyModule extends RubyObject {
         getSingletonClass().addMethod(name, method);
     }
 
-    /** rb_alias
-     *
+    /**
+     * @param name
+     * @param oldName
+     * @deprecated Use {@link RubyModule#aliasMethod(ThreadContext, IRubyObject, IRubyObject)} instead
      */
+    @Deprecated(since = "10.0")
     public synchronized void defineAlias(String name, String oldName) {
-        testFrozen("module");
-
-        Ruby runtime = getRuntime();
-
-        CacheEntry entry = searchForAliasMethod(runtime, oldName);
-
-        DynamicMethod method = getMethods().get(name);
-        if (method != null && entry.method.getRealMethod() != method.getRealMethod() && !method.isUndefined()) {
-            // warn if overwriting an existing method on this module
-            if (method.getRealMethod().getAliasCount() == 0) runtime.getWarnings().warning(ID.REDEFINING_METHOD, "method redefined; discarding old " + name);
-
-            if (method instanceof PositionAware) {
-                PositionAware posAware = (PositionAware) method;
-                runtime.getWarnings().warning(ID.REDEFINING_METHOD, posAware.getFile(), posAware.getLine() + 1, "previous definition of " + name + " was here");
-            }
-        }
-
-        checkAliasFrameAccesses(runtime, oldName, name, entry.method);
-        putAlias(name, entry, oldName);
-
-        methodLocation.invalidateCoreClasses();
-        methodLocation.invalidateCacheDescendants();
+        defineAlias(getCurrentContext(), name, oldName);
     }
 
     /**
@@ -2381,7 +2364,7 @@ public class RubyModule extends RubyObject {
         return deepMethodSearch(id, runtime);
     }
 
-    private void checkAliasFrameAccesses(Ruby runtime, String id, String newName, DynamicMethod method) {
+    private void checkAliasFrameAccesses(ThreadContext context, String id, String newName, DynamicMethod method) {
         if (method instanceof NativeCallMethod) {
             // JRUBY-2435: Aliasing eval and other "special" methods should display a warning
             // We warn because we treat certain method names as "special" for purposes of
@@ -2414,7 +2397,7 @@ public class RubyModule extends RubyObject {
                 MethodIndex.addMethodReadFields(newName, sourceReads);
                 MethodIndex.addMethodWriteFields(newName, sourceWrites);
 
-                if (runtime.isVerbose()) {
+                if (context.runtime.isVerbose()) {
                     String baseName = getBaseName();
                     char refChar = '#';
                     String simpleName = getSimpleName();
@@ -2427,7 +2410,7 @@ public class RubyModule extends RubyObject {
                         }
                     }
 
-                    runtime.getWarnings().warning(simpleName + refChar + id + " accesses caller method's state and should not be aliased");
+                    warning(context, simpleName + refChar + id + " accesses caller method's state and should not be aliased");
                 }
             }
         }
@@ -3912,7 +3895,7 @@ public class RubyModule extends RubyObject {
         RubySymbol newSym = TypeConverter.checkID(newId);
         RubySymbol oldSym = TypeConverter.checkID(oldId); //  MRI uses rb_to_id but we return existing symbol
 
-        defineAlias(newSym.idString(), oldSym.idString());
+        defineAlias(context, newSym.idString(), oldSym.idString());
 
         methodAdded(context, newSym);
 
@@ -5278,6 +5261,40 @@ public class RubyModule extends RubyObject {
     }
 
     /**
+     * Define an alias on this module/class.
+     *
+     * @param context the current thread context
+     * @param name the new alias name
+     * @param oldName the existing method name
+     * @return itself for composable API
+     */
+    // MRI: rb_alias
+    public synchronized <T extends RubyModule> T defineAlias(ThreadContext context, String name, String oldName) {
+        testFrozen("module");
+
+        CacheEntry entry = searchForAliasMethod(context.runtime, oldName);
+
+        DynamicMethod method = getMethods().get(name);
+        if (method != null && entry.method.getRealMethod() != method.getRealMethod() && !method.isUndefined()) {
+            if (method.getRealMethod().getAliasCount() == 0) warning(context, "method redefined; discarding old " + name);
+
+            if (method instanceof PositionAware posAware) {
+                context.runtime.getWarnings().warning(ID.REDEFINING_METHOD, posAware.getFile(), posAware.getLine() + 1, "previous definition of " + name + " was here");
+            }
+        }
+
+        checkAliasFrameAccesses(context, oldName, name, entry.method);
+        putAlias(name, entry, oldName);
+
+        methodLocation.invalidateCoreClasses();
+        methodLocation.invalidateCacheDescendants();
+
+        return (T) this;
+    }
+
+
+
+    /**
      * Define a constant when you are defining your Ruby class/module.
      *
      * @param context the current thread context
@@ -5975,6 +5992,7 @@ public class RubyModule extends RubyObject {
     }
 
     private static void define(RubyModule module, JavaMethodDescriptor desc, final String simpleName, DynamicMethod dynamicMethod) {
+        var context = module.getRuntime().getCurrentContext();
         JRubyMethod jrubyMethod = desc.anno;
         final String[] names = jrubyMethod.name();
         final String[] aliases = jrubyMethod.alias();
@@ -5995,7 +6013,7 @@ public class RubyModule extends RubyObject {
             }
 
             if (aliases.length > 0) {
-                for (String alias : aliases) singletonClass.defineAlias(alias, baseName);
+                for (String alias : aliases) singletonClass.defineAlias(context, alias, baseName);
             }
         } else {
             String baseName;
@@ -6008,7 +6026,7 @@ public class RubyModule extends RubyObject {
             }
 
             if (aliases.length > 0) {
-                for (String alias : aliases) module.defineAlias(alias, baseName);
+                for (String alias : aliases) module.defineAlias(context, alias, baseName);
             }
 
             if (jrubyMethod.module()) {
@@ -6027,7 +6045,7 @@ public class RubyModule extends RubyObject {
                 }
 
                 if (aliases.length > 0) {
-                    for (String alias : aliases) singletonClass.defineAlias(alias, baseName);
+                    for (String alias : aliases) singletonClass.defineAlias(context, alias, baseName);
                 }
             }
         }
@@ -6437,7 +6455,7 @@ public class RubyModule extends RubyObject {
         DynamicMethod method = entry.method;
 
         for (String name: aliases) {
-            checkAliasFrameAccesses(runtime, oldId, name, method);
+            checkAliasFrameAccesses(getCurrentContext(), oldId, name, method);
             putAlias(name, entry, oldId);
         }
 

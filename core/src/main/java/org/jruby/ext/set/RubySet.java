@@ -59,6 +59,7 @@ import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Warn.warning;
 
 /**
  * Native implementation of Ruby's Set (set.rb replacement).
@@ -203,9 +204,8 @@ public class RubySet extends RubyObject implements Set {
      */
     @JRubyMethod(visibility = Visibility.PRIVATE) // def initialize(enum = nil, &block)
     public IRubyObject initialize(ThreadContext context, Block block) {
-        if ( block.isGiven() && context.runtime.isVerbose() ) {
-            context.runtime.getWarnings().warning(IRubyWarnings.ID.BLOCK_UNUSED, "given block not used");
-        }
+        if (block.isGiven() && context.runtime.isVerbose()) warning(context, "given block not used");
+
         allocHash(context);
         return this;
     }
