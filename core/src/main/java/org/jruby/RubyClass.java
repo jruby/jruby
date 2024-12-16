@@ -2216,8 +2216,8 @@ public class RubyClass extends RubyModule {
 
             // now create proxy class
             m.getstatic(javaPath, RUBY_FIELD, ci(Ruby.class));
-            m.getstatic(javaPath, RUBY_CLASS_FIELD, ci(RubyClass.class));
             m.invokevirtual("org/jruby/Ruby", "getCurrentContext", "()Lorg/jruby/runtime/ThreadContext;");
+            m.getstatic(javaPath, RUBY_CLASS_FIELD, ci(RubyClass.class));
             m.ldc(org.objectweb.asm.Type.getType("L" + javaPath + ";"));
             // if (simpleAlloc) // if simple, don't init, if complex, do init
             // m.iconst_0(); // false (as int)
