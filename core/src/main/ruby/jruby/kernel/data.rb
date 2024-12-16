@@ -65,9 +65,17 @@ class Data
         end
       end
 
-      define_method(:to_h) do
+      define_method(:to_h) do |&blk|
         hash = Hash.new.compare_by_identity
-        members.each {|member| hash[member] = instance_variable_get(:"@#{member}")}
+
+        if blk
+          members.each do |member|
+            key, value = blk.call member, instance_variable_get(:"@#{member}")
+            hash[key] = value
+          end
+        else
+          members.each {|member| hash[member] = instance_variable_get(:"@#{member}")}
+        end
         hash
       end
 
