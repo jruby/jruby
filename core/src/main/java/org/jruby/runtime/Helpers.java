@@ -119,11 +119,13 @@ public class Helpers {
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
+    @Deprecated(since = "10.0")
     public static RubyClass getSingletonClass(Ruby runtime, IRubyObject receiver) {
+        // This is not all cases 
         if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
             throw typeError(runtime.getCurrentContext(), "can't define singleton");
         } else {
-            return receiver.getSingletonClass();
+            return receiver.singletonClass(runtime.getCurrentContext());
         }
     }
 
@@ -2079,9 +2081,10 @@ public class Helpers {
 
     private static void addModuleMethod(RubyModule containingClass, DynamicMethod method, ThreadContext context, RubySymbol sym) {
         DynamicMethod singletonMethod = method.dup();
-        singletonMethod.setImplementationClass(containingClass.getSingletonClass());
+        var singletonClass = containingClass.singletonClass(context);
+        singletonMethod.setImplementationClass(singletonClass);
         singletonMethod.setVisibility(Visibility.PUBLIC);
-        containingClass.getSingletonClass().addMethod(sym.idString(), singletonMethod);
+        singletonClass.addMethod(sym.idString(), singletonMethod);
         containingClass.callMethod(context, "singleton_method_added", sym);
     }
 
@@ -2226,16 +2229,6 @@ public class Helpers {
         }
 
         return visibility;
-    }
-
-    public static RubyClass performSingletonMethodChecks(Ruby runtime, IRubyObject receiver, String name) throws RaiseException {
-        if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
-            throw typeError(runtime.getCurrentContext(), str(runtime, "can't define singleton method \"", ids(runtime, name), "\" for ", types(runtime, receiver.getMetaClass())));
-        }
-
-        if (receiver.isFrozen()) throw runtime.newFrozenError("object", receiver);
-
-        return receiver.getSingletonClass();
     }
 
     @Deprecated // not used

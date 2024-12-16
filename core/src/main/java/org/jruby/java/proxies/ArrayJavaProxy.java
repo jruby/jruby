@@ -44,7 +44,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         return defineClass(context, "ArrayJavaProxy", JavaProxy, NOT_ALLOCATABLE_ALLOCATOR).
                 defineMethods(context, ArrayJavaProxy.class).
                 include(context, Enumerable).
-                tap(c -> c.singletonClass(context).addMethod("new", new ArrayNewMethod(c.getSingletonClass(), Visibility.PUBLIC)));
+                tap(c -> c.singletonClass(context).addMethod("new", new ArrayNewMethod(c.singletonClass(context), Visibility.PUBLIC)));
     }
 
     public static ArrayJavaProxy newArray(final Ruby runtime, final Class<?> elementType, final int... dimensions) {

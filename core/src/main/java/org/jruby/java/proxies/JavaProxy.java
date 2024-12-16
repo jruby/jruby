@@ -576,10 +576,6 @@ public class JavaProxy extends RubyObject {
         super.setVariable(index, value);
     }
 
-    public RubyClass getSingletonClass() {
-        return singletonClass(getRuntime().getCurrentContext());
-    }
-
     /** rb_singleton_class
      *
      * Note: this method is specialized for RubyFixnum, RubySymbol,

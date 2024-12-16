@@ -60,6 +60,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Convert.castAsModule;
+import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
@@ -129,13 +130,12 @@ public class JavaInterfaceTemplate {
     }
 
     private static void appendFeaturesToClass(ThreadContext context, final IRubyObject self, final RubyClass clazz) {
-        final Ruby runtime = context.runtime;
-        checkAlreadyReified(clazz, runtime);
+        checkAlreadyReified(context, clazz);
 
         final IRubyObject javaClass = JavaProxy.getJavaClass((RubyModule) self);
         RubyArray javaInterfaces;
         if ( ! clazz.hasInstanceVariable("@java_interfaces") ) {
-            javaInterfaces = RubyArray.newArray(runtime, javaClass);
+            javaInterfaces = newArray(context, javaClass);
             clazz.setInstanceVariable("@java_interfaces", javaInterfaces);
 
             initInterfaceImplMethods(context, clazz);
@@ -151,7 +151,7 @@ public class JavaInterfaceTemplate {
         }
     }
 
-    private static void checkAlreadyReified(final RubyClass clazz, Ruby runtime) throws RaiseException {
+    private static void checkAlreadyReified(ThreadContext context, final RubyClass clazz) throws RaiseException {
         // not allowed for original (non-generated) Java classes
         // note: not allowing for any previously created class right now;
         // this restriction might be loosened later for generated classes
@@ -159,11 +159,11 @@ public class JavaInterfaceTemplate {
                 ||
                 ( clazz.hasInstanceVariable("@java_class")
                     && clazz.getInstanceVariable("@java_class").isTrue()
-                    && !clazz.getSingletonClass().isMethodBound("java_proxy_class", false) )
+                    && !clazz.singletonClass(context).isMethodBound("java_proxy_class", false) )
                 ||
                 ( clazz.hasInstanceVariable("@java_proxy_class")
                     && clazz.getInstanceVariable("@java_proxy_class").isTrue() ) ) {
-            throw runtime.newArgumentError("can not add Java interface to existing Java class");
+            throw argumentError(context, "can not add Java interface to existing Java class");
         }
     }
 

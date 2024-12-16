@@ -536,7 +536,7 @@ public class RubyClass extends RubyModule {
     }
 
     /**
-     * @see #getSingletonClass()
+     * @see #singletonClass(ThreadContext)
      */
     RubyClass toSingletonClass(RubyBasicObject target) {
         // replaced after makeMetaClass with MetaClass's toSingletonClass
@@ -2217,6 +2217,7 @@ public class RubyClass extends RubyModule {
             // now create proxy class
             m.getstatic(javaPath, RUBY_FIELD, ci(Ruby.class));
             m.getstatic(javaPath, RUBY_CLASS_FIELD, ci(RubyClass.class));
+            m.invokevirtual("org/jruby/Ruby", "getCurrentContext", "()Lorg/jruby/runtime/ThreadContext;");
             m.ldc(org.objectweb.asm.Type.getType("L" + javaPath + ";"));
             // if (simpleAlloc) // if simple, don't init, if complex, do init
             // m.iconst_0(); // false (as int)
@@ -2224,7 +2225,7 @@ public class RubyClass extends RubyModule {
             m.iconst_1(); // true (as int)
 
             m.invokestatic(p(JavaProxyClass.class), "setProxyClassReified",
-                    sig(JavaProxyClass.class, Ruby.class, RubyClass.class, Class.class, boolean.class));
+                    sig(JavaProxyClass.class, ThreadContext.class, RubyClass.class, Class.class, boolean.class));
             m.dup();
             m.putstatic(javaPath, RUBY_PROXY_CLASS_FIELD, ci(JavaProxyClass.class));
 

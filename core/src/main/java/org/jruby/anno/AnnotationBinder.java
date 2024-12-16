@@ -131,6 +131,7 @@ public class AnnotationBinder extends AbstractProcessor {
             out.println("import org.jruby.runtime.Arity;");
             out.println("import org.jruby.runtime.Visibility;");
             out.println("import org.jruby.runtime.MethodIndex;");
+            out.println("import org.jruby.runtime.ThreadContext;");
             out.println("import java.util.Arrays;");
             out.println("import java.util.List;");
             out.println("import jakarta.annotation.Generated;");
@@ -161,8 +162,11 @@ public class AnnotationBinder extends AbstractProcessor {
 
             out.println("        JavaMethod javaMethod;");
             out.println("        DynamicMethod moduleMethod, aliasedMethod;");
-            if (hasMeta || hasModule) out.println("        RubyClass singletonClass = cls.getSingletonClass();");
-            out.println("        Ruby runtime = cls.getRuntime();");
+            out.println("        ThreadContext context = cls.getRuntime().getCurrentContext();");
+            out.println("        Ruby runtime = context.runtime;");
+            if (hasMeta || hasModule) {
+                out.println("        RubyClass singletonClass = cls.singletonClass(context);");
+            }
             out.println("        boolean core = runtime.isBootingCore();");
 
             Map<CharSequence, List<ExecutableElement>> annotatedMethods = new LinkedHashMap<>();
@@ -501,7 +505,7 @@ public class AnnotationBinder extends AbstractProcessor {
         } else {
             defineMethodOnClass("javaMethod", "cls", names, aliases, md);
             if (module) {
-                out.println("        moduleMethod = populateModuleMethod(cls, javaMethod);");
+                out.println("        moduleMethod = populateModuleMethod(cls, singletonClass, javaMethod);");
                 defineMethodOnClass("moduleMethod", "singletonClass", names, aliases, md);
             }
         }

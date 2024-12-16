@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.jruby.Ruby;
+import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
@@ -66,10 +67,16 @@ public abstract class TypePopulator {
         javaMethod.setNotImplemented(notImplemented);
         javaMethod.setNativeCall(nativeTarget, nativeName, nativeReturn, nativeArguments, isStatic, false);
     }
-    
+
+    // Still needed for older generated populators.
+    @Deprecated(since = "10.0")
     public static DynamicMethod populateModuleMethod(RubyModule cls, DynamicMethod javaMethod) {
+        return populateModuleMethod(cls, cls.singletonClass(cls.getRuntime().getCurrentContext()), javaMethod);
+    }
+
+    public static DynamicMethod populateModuleMethod(RubyModule cls, RubyClass singletonClass, DynamicMethod javaMethod) {
         DynamicMethod moduleMethod = javaMethod.dup();
-        moduleMethod.setImplementationClass(cls.getSingletonClass());
+        moduleMethod.setImplementationClass(singletonClass);
         moduleMethod.setVisibility(Visibility.PUBLIC);
         return moduleMethod;
     }

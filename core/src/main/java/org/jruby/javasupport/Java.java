@@ -1000,7 +1000,7 @@ public class Java implements Library {
         }
 
         // saves class in singletonized parent, so we don't come back here :
-        if ( cacheMethod ) bindJavaPackageOrClassMethod(parentPackage, name, result);
+        if ( cacheMethod )  bindJavaPackageOrClassMethod(context, parentPackage, name, result);
 
         return result;
     }
@@ -1148,17 +1148,17 @@ public class Java implements Library {
     private static boolean bindJavaPackageOrClassMethod(ThreadContext context, final String name,
         final RubyModule packageOrClass) {
         final RubyModule javaPackage = context.runtime.getJavaSupport().getJavaModule();
-        return bindJavaPackageOrClassMethod(javaPackage, name, packageOrClass);
+        return bindJavaPackageOrClassMethod(context, javaPackage, name, packageOrClass);
     }
 
-    private static boolean bindJavaPackageOrClassMethod(final RubyModule parentPackage,
+    private static boolean bindJavaPackageOrClassMethod(ThreadContext context, final RubyModule parentPackage,
         final String name, final RubyModule packageOrClass) {
 
         if ( parentPackage.getMetaClass().isMethodBound(name, false) ) {
             return false;
         }
 
-        final RubyClass singleton = parentPackage.getSingletonClass();
+        final RubyClass singleton = parentPackage.singletonClass(context);
         singleton.addMethod(name.intern(), new JavaAccessor(singleton, packageOrClass, parentPackage, name));
         return true;
     }
