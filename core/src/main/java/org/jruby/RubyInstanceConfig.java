@@ -1218,6 +1218,20 @@ public class RubyInstanceConfig {
     }
 
     /**
+     * @see Options#CLI_ERROR_HIGHLIGHT_ENABLE
+     */
+    public boolean isDisableErrorHighlight() {
+        return disableErrorHighlight;
+    }
+
+    /**
+     * @see Options#CLI_SYNTAX_SUGGEST_ENABLE
+     */
+    public boolean isDisableSyntaxSuggest() {
+        return disableSyntaxSuggest;
+    }
+
+    /**
      * @see Options#CLI_RUBYOPT_ENABLE
      */
     public void setDisableRUBYOPT(boolean dr) {
@@ -1236,6 +1250,20 @@ public class RubyInstanceConfig {
      */
     public void setDisableDidYouMean(boolean ddym) {
         this.disableDidYouMean = ddym;
+    }
+
+    /**
+     * @see Options#CLI_ERROR_HIGHLIGHT_ENABLE
+     */
+    public void setDisableErrorHighlight(boolean eh) {
+        this.disableErrorHighlight = eh;
+    }
+
+    /**
+     * @see Options#CLI_SYNTAX_SUGGEST_ENABLE
+     */
+    public void setDisableSyntaxSuggest(boolean ss) {
+        this.disableSyntaxSuggest = ss;
     }
 
     /**
@@ -1566,6 +1594,8 @@ public class RubyInstanceConfig {
     private boolean hardExit = false;
     private boolean disableGems = !Options.CLI_RUBYGEMS_ENABLE.load();
     private boolean disableDidYouMean = !Options.CLI_DID_YOU_MEAN_ENABLE.load();
+    private boolean disableErrorHighlight = !Options.CLI_ERROR_HIGHLIGHT_ENABLE.load();
+    private boolean disableSyntaxSuggest = !Options.CLI_SYNTAX_SUGGEST_ENABLE.load();
     private boolean disableRUBYOPT = !Options.CLI_RUBYOPT_ENABLE.load();
     private boolean updateNativeENVEnabled = true;
     private boolean kernelGsubDefined;

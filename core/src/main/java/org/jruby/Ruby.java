@@ -585,7 +585,9 @@ public final class Ruby implements Constantizable {
 
         // Define blank modules for feature detection in preludes
         if (!this.config.isDisableGems()) Define.defineModule(context, "Gem");
+        if (!this.config.isDisableErrorHighlight()) Define.defineModule(context, "ErrorHighligh");
         if (!this.config.isDisableDidYouMean()) Define.defineModule(context, "DidYouMean");
+        if (!this.config.isDisableSyntaxSuggest()) Define.defineModule(context, "SyntaxSuggest");
 
         // Provide some legacy libraries
         loadService.provide("enumerator.rb");

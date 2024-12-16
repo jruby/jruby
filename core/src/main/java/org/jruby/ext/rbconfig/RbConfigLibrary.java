@@ -187,6 +187,10 @@ public class RbConfigLibrary implements Library {
         return getRubyLibDir(runtime);
     }
 
+    public static String getRubyArchDir(Ruby runtime) {
+        return getRubyLibDir(runtime) + '/' + getArchitecture();
+    }
+
     public static String getVendorDir(Ruby runtime) {
         return newFile(getRubyLibDir(runtime), "vendor_ruby").getPath();
     }
@@ -311,6 +315,7 @@ public class RbConfigLibrary implements Library {
         String rubySharedLibDir = getRubySharedLibDir(runtime);
         String rubyLibDir = getRubyLibDir(runtime);
         String archDir = getArchDir(runtime);
+        String rubyArchDir = getRubyArchDir(runtime);
         String vendorDir = getVendorDir(runtime);
         String vendorLibDir = getVendorLibDir(runtime);
         String vendorArchDir = getVendorArchDir(runtime);
@@ -333,6 +338,7 @@ public class RbConfigLibrary implements Library {
         setConfig(context, CONFIG, "sitearchdir",    siteArchDir);
         setConfig(context, CONFIG, "sitearch", "java");
         setConfig(context, CONFIG, "archdir",   archDir);
+        setConfig(context, CONFIG, "rubyarchdir",   rubyArchDir);
         setConfig(context, CONFIG, "topdir",   archDir);
         setConfig(context, CONFIG, "includedir",   includeDir);
         setConfig(context, CONFIG, "rubyhdrdir",   includeDir);
