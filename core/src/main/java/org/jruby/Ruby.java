@@ -336,10 +336,10 @@ public final class Ruby implements Constantizable {
         refinementClass.setMetaClass(classClass);
 
         RubyClass metaClass;
-        metaClass = basicObjectClass.makeMetaClass(classClass);
-        metaClass = objectClass.makeMetaClass(metaClass);
-        metaClass = moduleClass.makeMetaClass(metaClass);
-        classClass.makeMetaClass(metaClass);
+        metaClass = basicObjectClass.makeMetaClass(classClass); // runtime needed for 3 things:
+        metaClass = objectClass.makeMetaClass(metaClass);       // 1. ObjectSpace
+        metaClass = moduleClass.makeMetaClass(metaClass);       // 2. Access 'Class' for makeMetaClass
+        classClass.makeMetaClass(metaClass);                    // 3. booting check to ignore logging singletons
         refinementClass.makeMetaClass(metaClass);
 
         RubyObject.createObjectClass(objectClass);
@@ -347,9 +347,9 @@ public final class Ruby implements Constantizable {
         RubyClass.createClassClass(this, classClass);
 
         // set constants now that they're initialized
-        basicObjectClass.setConstant("BasicObject", basicObjectClass);
-        objectClass.setConstant("BasicObject", basicObjectClass);
-        objectClass.setConstant("Object", objectClass);
+        basicObjectClass.setConstant("BasicObject", basicObjectClass);  // FIXME: We know these sets will work so make something primal
+        objectClass.setConstant("BasicObject", basicObjectClass);       // just for these (to remove all checks which would require
+        objectClass.setConstant("Object", objectClass);                 // runtime.
         objectClass.setConstant("Class", classClass);
         objectClass.setConstant("Module", moduleClass);
         objectClass.setConstant("Refinement", refinementClass);
@@ -360,7 +360,8 @@ public final class Ruby implements Constantizable {
         kernelModule = defineModuleUnder("Kernel", objectClass);   // Initialize Kernel and include into Object
         topSelf = new RubyObject(this, objectClass);  // Object is ready, create top self
 
-        // Pre-create all the core classes potentially referenced during startup
+        // nil, true, and false all are set in TC so they need to be created above (both class and instances).
+        // their methods are added afterwards since no dispatch happens until after first TC is defined.
         nilClass = defineClass("NilClass", objectClass, NOT_ALLOCATABLE_ALLOCATOR);
         falseClass = defineClass("FalseClass", objectClass, NOT_ALLOCATABLE_ALLOCATOR);
         trueClass = defineClass("TrueClass", objectClass, NOT_ALLOCATABLE_ALLOCATOR);
