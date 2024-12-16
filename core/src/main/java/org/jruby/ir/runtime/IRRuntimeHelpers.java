@@ -29,7 +29,6 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.api.Create;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.coverage.CoverageData;
@@ -1780,7 +1779,7 @@ public class IRRuntimeHelpers {
             sc = (RubyClass) superClass;
         }
 
-        RubyModule newRubyClass = ((RubyModule)container).defineOrGetClassUnder(id, sc, scope.getFile(), context.getLine() + 1);
+        RubyModule newRubyClass = ((RubyModule)container).defineClassUnder(context, id, sc, null, scope.getFile(), context.getLine() + 1);
 
         scope.setModule(newRubyClass);
 
