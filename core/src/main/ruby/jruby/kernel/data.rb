@@ -15,6 +15,8 @@ class Data
     data_class = Class.new {
       self.define_singleton_method(:members) { members }
 
+      define_method(:members) { self.class.members }
+
       define_method(:initialize) do |*values, **kwargs|
         local_members = members
         if kwargs && !kwargs.empty?
