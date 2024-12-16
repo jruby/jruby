@@ -4973,11 +4973,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return pat; // String
     }
 
-    @Override
-    public RubyClass getSingletonClass() {
-        return singletonClass(getRuntime().getCurrentContext());
-    }
-
     public RubyClass singletonClass(ThreadContext context) {
         if (isChilled()) {
             mutateChilledString();

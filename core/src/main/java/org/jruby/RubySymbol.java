@@ -305,11 +305,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     	return true;
     }
 
-    @Override
-    public RubyClass getSingletonClass() {
-        return singletonClass(getRuntime().getCurrentContext());
-    }
-
     public RubyClass singletonClass(ThreadContext context) {
         throw typeError(context, "can't define singleton");
     }

@@ -29,6 +29,7 @@
 package org.jruby;
 
 import org.jcodings.Encoding;
+import org.jruby.api.JRubyAPI;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.java.proxies.JavaProxy;
@@ -461,23 +462,21 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return ((RubyBasicObject) arg).metaClass;
     }
 
-    /** rb_singleton_class
-     *
-     * Note: this method is specialized for RubyFixnum, RubySymbol,
-     * RubyNil and RubyBoolean
-     *
-     * Will either return the existing singleton class for this
-     * object, or create a new one and return that.
-     */
     @Override
     public RubyClass getSingletonClass() {
-        RubyClass klass = metaClass.toSingletonClass(this);
-
-        if (isFrozen()) klass.setFrozen(true);
-
-        return klass;
+        return singletonClass(getCurrentContext());
     }
 
+    /**
+     * Will either return the existing singleton class for this object, or create a new one and return that.
+     * For a few types a singleton class is not possible so it will throw an error.
+     *
+     * @param context the current thread context
+     * @return the singleton of this type
+     */
+
+    // MRI: rb_singleton_class
+    @JRubyAPI
     public RubyClass singletonClass(ThreadContext context) {
         RubyClass klass = metaClass.toSingletonClass(this);
 

@@ -147,11 +147,6 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         this.flags |= FROZEN_F;
     }
 
-    @Override
-    public RubyClass getSingletonClass() {
-        return singletonClass(getRuntime().getCurrentContext());
-    }
-
     public RubyClass singletonClass(ThreadContext context) {
         throw typeError(context, "can't define singleton");
     }

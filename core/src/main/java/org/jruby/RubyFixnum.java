@@ -180,10 +180,6 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
     	return true;
     }
 
-    public RubyClass getSingletonClass() {
-        return singletonClass(getRuntime().getCurrentContext());
-    }
-
     public RubyClass singletonClass(ThreadContext context) {
         throw typeError(context, "can't define singleton");
     }

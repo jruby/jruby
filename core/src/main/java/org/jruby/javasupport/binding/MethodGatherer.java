@@ -30,7 +30,9 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Warn.warning;
 import static org.jruby.runtime.Visibility.PUBLIC;
 
 public class MethodGatherer {
@@ -359,8 +361,7 @@ public class MethodGatherer {
     protected void installInnerClasses(final Class<?> javaClass, final RubyModule proxy) {
         // setup constants for public inner classes
         Class<?>[] classes = ClassUtils.getDeclaredClasses(javaClass);
-
-        final Ruby runtime = proxy.getRuntime();
+        var context = proxy.getRuntime().getCurrentContext();
 
         for ( int i = classes.length; --i >= 0; ) {
             final Class<?> clazz = classes[i];
@@ -378,21 +379,22 @@ public class MethodGatherer {
                  Typically this is used for singleton patterns where the field is an instance of the inner class, and
                  in languages like Kotlin the class itself is not what users intend to access. See GH-6196.
                  */
-                runtime.getWarnings().warning("inner class \"" + javaClass.getName() + "::" + simpleName + "\" conflicts with field of same name");
+                warning(context, "inner class \"" + javaClass.getName() + "::" + simpleName + "\" conflicts with field of same name");
                 continue;
             }
 
-            final RubyModule innerProxy = Java.getProxyClass(runtime, clazz);
+            final RubyModule innerProxy = Java.getProxyClass(context.runtime, clazz);
 
             if ( IdUtil.isConstant(simpleName) ) {
                 if (proxy.getConstantAt(simpleName) == null) {
-                    proxy.const_set(runtime.newString(simpleName), innerProxy);
+                    proxy.const_set(newString(context, simpleName), innerProxy);
                 }
             }
             else { // lower-case name
                 if ( ! proxy.respondsTo(simpleName) ) {
+                    var singleton = proxy.singletonClass(context);
                     // define a class method
-                    proxy.getSingletonClass().addMethod(simpleName, new JavaMethod.JavaMethodZero(proxy.getSingletonClass(), PUBLIC, simpleName) {
+                    singleton.addMethod(simpleName, new JavaMethod.JavaMethodZero(singleton, PUBLIC, simpleName) {
                         @Override
                         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
                             return innerProxy;
@@ -476,7 +478,8 @@ public class MethodGatherer {
     }
 
     protected void installClassMethods(final RubyModule proxy) {
-        getStaticInstallers().forEach(($, value) -> value.install(proxy));
+        var context = proxy.getRuntime().getCurrentContext();
+        getStaticInstallers().forEach(($, value) -> value.install(context, proxy));
     }
 
     void installConstructors(Class<?> javaClass, final RubyModule proxy) {
@@ -690,7 +693,8 @@ public class MethodGatherer {
     }
 
     void installInstanceMethods(final RubyModule proxy) {
-        getInstanceInstallers().forEach(($, value) -> value.install(proxy));
+        var context = proxy.getRuntime().getCurrentContext();
+        getInstanceInstallers().forEach(($, value) -> value.install(context, proxy));
     }
 
     private static class PartitionedMethods {

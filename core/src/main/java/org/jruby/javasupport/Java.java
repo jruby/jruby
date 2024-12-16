@@ -506,7 +506,7 @@ public class Java implements Library {
         for (int i = extended.length; --i >= 0; ) {
             proxy.include(context, getInterfaceModule(context, extended[i]));
         }
-        Initializer.setupProxyModule(context.runtime, javaClass, proxy);
+        Initializer.setupProxyModule(context, javaClass, proxy);
         addToJavaPackageModule(proxy);
     }
 
@@ -572,7 +572,7 @@ public class Java implements Library {
 
         if ( invokeInherited ) proxyClass.inherit(superClass);
 
-        Initializer.setupProxyClass(context.runtime, javaClass, proxyClass);
+        Initializer.setupProxyClass(context, javaClass, proxyClass);
 
         return proxyClass;
     }

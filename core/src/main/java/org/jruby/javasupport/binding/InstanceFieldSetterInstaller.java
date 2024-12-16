@@ -2,6 +2,7 @@ package org.jruby.javasupport.binding;
 
 import org.jruby.RubyModule;
 import org.jruby.java.invokers.InstanceFieldSetter;
+import org.jruby.runtime.ThreadContext;
 
 import java.lang.reflect.Field;
 
@@ -14,7 +15,7 @@ public class InstanceFieldSetterInstaller extends FieldInstaller {
         super(name, INSTANCE_FIELD, field);
     }
 
-    @Override void install(final RubyModule proxy) {
+    @Override void install(ThreadContext context, final RubyModule proxy) {
         if (isAccessible()) {
             proxy.addMethod(name, new InstanceFieldSetter(name, proxy, field));
         }

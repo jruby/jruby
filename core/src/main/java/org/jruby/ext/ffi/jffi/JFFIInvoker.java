@@ -57,8 +57,9 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
         this.returnType = returnType;
         this.convention = convention;
         this.enums = enums;
+        var singleton = singletonClass(getRuntime().getCurrentContext());
         // Wire up Function#call(*args) to use the super-fast native invokers
-        getSingletonClass().addMethod("call", createDynamicMethod(getSingletonClass()));
+        singleton.addMethod("call", createDynamicMethod(singleton));
     }
     
     @JRubyMethod(name = { "new" }, meta = true, required = 4)
