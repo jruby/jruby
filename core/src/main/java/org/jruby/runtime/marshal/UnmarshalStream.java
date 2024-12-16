@@ -428,7 +428,7 @@ public class UnmarshalStream extends InputStream {
                 throw argumentError(context, str(runtime, "prepended class ", path, " differs from class ", cls));
             }
 
-            cls = obj.getSingletonClass();
+            cls = obj.singletonClass(context);
 
             for (RubyModule mod: extendedModules) {
                 cls.prependModule(mod);

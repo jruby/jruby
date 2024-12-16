@@ -114,9 +114,10 @@ public class RubyProcess {
         context.runtime.setProcSys(Process.defineModuleUnder(context, "Sys").defineMethods(context, Sys.class));
 
         if (Platform.IS_WINDOWS) {
+            var singleton = ProcessStatus.singletonClass(context);
             // mark rlimit methods as not implemented and skip defining the constants (GH-6491)
-            Process.getSingletonClass().retrieveMethod("getrlimit").setNotImplemented(true);
-            Process.getSingletonClass().retrieveMethod("setrlimit").setNotImplemented(true);
+            singleton.retrieveMethod("getrlimit").setNotImplemented(true);
+            singleton.retrieveMethod("setrlimit").setNotImplemented(true);
         } else {
             Process.defineConstantsFrom(context, jnr.constants.platform.RLIM.class);
             for (RLIMIT r : RLIMIT.values()) {

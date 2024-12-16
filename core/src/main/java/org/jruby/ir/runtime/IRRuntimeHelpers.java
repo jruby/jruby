@@ -1206,7 +1206,7 @@ public class IRRuntimeHelpers {
                 //   end
                 // -------------
                 case MODULE_EVAL  : return self instanceof RubyModule ? (RubyModule) self : self.getMetaClass();
-                case INSTANCE_EVAL: return self.getSingletonClass();
+                case INSTANCE_EVAL: return self.singletonClass(context);
                 case BINDING_EVAL : ds = ds.getParentScope(); break;
                 case NONE:
                     if (scopeType == null || scopeType.isClosureType()) {
@@ -1854,7 +1854,7 @@ public class IRRuntimeHelpers {
 
         // if (obj.isFrozen()) throw context.runtime.newFrozenError("object");
 
-        return obj.getSingletonClass();
+        return obj.singletonClass(context);
     }
 
     @Interp

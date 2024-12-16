@@ -93,6 +93,10 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
         return metaClass;
     }
 
+    public RubyClass singletonClass(ThreadContext context) {
+        return metaClass;
+    }
+
     @Override
     public Class<?> getJavaClass() {
         return boolean.class;

@@ -83,7 +83,7 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
                 reifiedClass(RubyUnboundMethod.class).
                 classIndex(ClassIndex.UNBOUNDMETHOD).
                 defineMethods(context, AbstractRubyMethod.class, RubyUnboundMethod.class).
-                tap(c -> c.getSingletonClass().undefMethods(context, "new"));
+                tap(c -> c.singletonClass(context).undefMethods(context, "new"));
     }
 
     @Override

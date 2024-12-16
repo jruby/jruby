@@ -2893,31 +2893,27 @@ public class RubyClass extends RubyModule {
      */
     public IRubyObject smartLoadOldUser(IRubyObject data) {
         ThreadContext context = runtime.getCurrentContext();
-        CacheEntry cache;
-        if ((cache = getSingletonClass().cachedLoad).token == getSingletonClass().generation) {
-            return cache.method.call(context, this, cache.sourceModule, "_load", data);
-        } else {
-            cache = getSingletonClass().searchWithCache("respond_to?");
-            DynamicMethod method = cache.method;
-            if (!method.equals(runtime.getRespondToMethod()) && !method.isUndefined()) {
+        var singleton = singletonClass(context);
+        CacheEntry cache = singleton.cachedLoad;
+        if (cache.token == singleton.generation) return cache.method.call(context, this, cache.sourceModule, "_load", data);
 
-                // custom respond_to?, cache nothing and use slow path
-                if (method.call(context, this, cache.sourceModule, "respond_to?", asSymbol(context, "_load")).isTrue()) {
-                    return callMethod(context, "_load", data);
-                } else {
-                    throw typeError(context, "class ", this, " needs to have method `_load'");
-                }
-
-            } else if (!(cache = getSingletonClass().searchWithCache("_load")).method.isUndefined()) {
-
-                // real _load defined, cache and call it
-                getSingletonClass().cachedLoad = cache;
-                return cache.method.call(context, this, cache.sourceModule, "_load", data);
-
+        cache = singleton.searchWithCache("respond_to?");
+        DynamicMethod method = cache.method;
+        if (!method.equals(runtime.getRespondToMethod()) && !method.isUndefined()) {
+            // custom respond_to?, cache nothing and use slow path
+            if (method.call(context, this, cache.sourceModule, "respond_to?", asSymbol(context, "_load")).isTrue()) {
+                return callMethod(context, "_load", data);
             } else {
-                // provide an error, since it doesn't exist
                 throw typeError(context, "class ", this, " needs to have method `_load'");
             }
+        } else if (!(cache = singleton.searchWithCache("_load")).method.isUndefined()) {
+            // real _load defined, cache and call it
+            singleton.cachedLoad = cache;
+            return cache.method.call(context, this, cache.sourceModule, "_load", data);
+
+        } else {
+            // provide an error, since it doesn't exist
+            throw typeError(context, "class ", this, " needs to have method `_load'");
         }
     }
 

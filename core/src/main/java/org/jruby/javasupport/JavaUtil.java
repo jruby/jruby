@@ -243,7 +243,7 @@ public class JavaUtil {
         if ( rubyObject instanceof RubyProc ) {
             // Proc implementing an interface, pull in the catch-all code that lets the proc get invoked
             // no matter what method is called on the interface
-            final RubyClass singletonClass = rubyObject.getSingletonClass();
+            final RubyClass singletonClass = rubyObject.singletonClass(context);
 
             if (procClass == procClass(context)) {
                 // We reattach the singleton class to the Proc class object to prevent the method cache in the interface

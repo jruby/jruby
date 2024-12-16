@@ -70,7 +70,7 @@ public class JavaInterfaceTemplate {
     public static RubyModule createJavaInterfaceTemplateModule(ThreadContext context) {
         return defineModule(context, "JavaInterfaceTemplate").
                 defineMethods(context, JavaProxy.ClassMethods.class).
-                tap(m -> m.getSingletonClass().defineMethods(context, JavaInterfaceTemplate.class));
+                tap(m -> m.singletonClass(context).defineMethods(context, JavaInterfaceTemplate.class));
     }
 
     @JRubyMethod
@@ -174,7 +174,7 @@ public class JavaInterfaceTemplate {
             // First we make modifications to the class, to adapt it to being
             // both a Ruby class and a proxy for a Java type
 
-            RubyClass singleton = clazz.getSingletonClass();
+            RubyClass singleton = clazz.singletonClass(context);
 
             // list of interfaces we implement
             singleton.addReadAttribute(context, "java_interfaces");
@@ -214,7 +214,7 @@ public class JavaInterfaceTemplate {
 
         // Now we add an "implement" and "implement_all" methods to the class
         if ( ! clazz.isMethodBound("implement", false) ) {
-            final RubyClass singleton = clazz.getSingletonClass();
+            final RubyClass singleton = clazz.singletonClass(context);
 
             // implement is called to force this class to create stubs for all methods in the given interface,
             // so they'll show up in the list of methods and be invocable without passing through method_missing
@@ -325,7 +325,7 @@ public class JavaInterfaceTemplate {
         // well
         synchronized (module) {
             if ( initInterfaceModules(self, module) ) { // true - initialized
-                final RubyClass singleton = module.getSingletonClass();
+                final RubyClass singleton = module.singletonClass(context);
                 singleton.addMethod("append_features", new AppendFeatures(singleton));
             }
             else {
@@ -354,7 +354,7 @@ public class JavaInterfaceTemplate {
 
     @JRubyMethod
     public static IRubyObject extended(ThreadContext context, IRubyObject self, IRubyObject object) {
-        RubyClass singleton = object.getSingletonClass();
+        RubyClass singleton = object.singletonClass(context);
         singleton.include(context, self);
         return singleton;
     }

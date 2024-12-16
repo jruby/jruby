@@ -2332,9 +2332,10 @@ public class RubyModule extends RubyObject {
         return null;
     }
 
+    @Deprecated(since = "10.0")
     public void addModuleFunction(String name, DynamicMethod method) {
         addMethod(name, method);
-        getSingletonClass().addMethod(name, method);
+        singletonClass(getCurrentContext()).addMethod(name, method);
     }
 
     /**
@@ -3589,7 +3590,7 @@ public class RubyModule extends RubyObject {
     public IRubyObject extend_object(ThreadContext context, IRubyObject obj) {
         if (!isModule()) throw typeError(context, this, "Module");
 
-        obj.getSingletonClass().include(context, this);
+        obj.singletonClass(context).include(context, this);
         return obj;
     }
 
@@ -3771,8 +3772,6 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "module_function", rest = true, visibility = PRIVATE, writes = VISIBILITY)
     public IRubyObject _module_function(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-
         if (!isModule()) throw typeError(context, "module_function must be called for modules");
 
         if (args.length == 0) {
@@ -3780,13 +3779,14 @@ public class RubyModule extends RubyObject {
         } else {
             setMethodVisibility(args, PRIVATE);
 
+            var singleton = singletonClass(context);
             for (int i = 0; i < args.length; i++) {
                 RubySymbol name = TypeConverter.checkID(args[i]);
-                DynamicMethod newMethod = deepMethodSearch(name.idString(), runtime).method.dup();
-                newMethod.setImplementationClass(getSingletonClass());
+                DynamicMethod newMethod = deepMethodSearch(name.idString(), context.runtime).method.dup();
+                newMethod.setImplementationClass(singleton);
                 newMethod.setVisibility(PUBLIC);
-                getSingletonClass().addMethod(name.idString(), newMethod);
-                getSingletonClass().methodAdded(context, name);
+                singleton.addMethod(name.idString(), newMethod);
+                singleton.methodAdded(context, name);
             }
         }
 
@@ -3890,17 +3890,27 @@ public class RubyModule extends RubyObject {
         return method.getVisibility();
     }
 
-    @JRubyMethod(name = "public_class_method", rest = true)
+    @Deprecated(since = "10.0")
     public RubyModule public_class_method(IRubyObject[] args) {
+        return public_class_method(getCurrentContext(), args);
+    }
+
+    @JRubyMethod(name = "public_class_method", rest = true)
+    public RubyModule public_class_method(ThreadContext context, IRubyObject[] args) {
         checkFrozen();
-        getSingletonClass().setMethodVisibility(args, PUBLIC);
+        singletonClass(context).setMethodVisibility(args, PUBLIC);
         return this;
     }
 
-    @JRubyMethod(name = "private_class_method", rest = true)
+    @Deprecated(since = "10.0")
     public RubyModule private_class_method(IRubyObject[] args) {
+        return private_class_method(getCurrentContext(), args);
+    }
+
+    @JRubyMethod(name = "private_class_method", rest = true)
+    public RubyModule private_class_method(ThreadContext context, IRubyObject[] args) {
         checkFrozen();
-        getSingletonClass().setMethodVisibility(args, PRIVATE);
+        singletonClass(context).setMethodVisibility(args, PRIVATE);
         return this;
     }
 
@@ -6021,7 +6031,7 @@ public class RubyModule extends RubyObject {
         RubyModule singletonClass;
 
         if (jrubyMethod.meta()) {
-            singletonClass = module.getSingletonClass();
+            singletonClass = module.singletonClass(context);
             dynamicMethod.setImplementationClass(singletonClass);
 
             final String baseName;
@@ -6051,7 +6061,7 @@ public class RubyModule extends RubyObject {
             }
 
             if (jrubyMethod.module()) {
-                singletonClass = module.getSingletonClass();
+                singletonClass = module.singletonClass(context);
                 // module/singleton methods are all defined public
                 DynamicMethod moduleMethod = dynamicMethod.dup();
                 moduleMethod.setImplementationClass(singletonClass);

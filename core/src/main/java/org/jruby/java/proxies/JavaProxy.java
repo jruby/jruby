@@ -178,9 +178,14 @@ public class JavaProxy extends RubyObject {
         return Helpers.invokeSuper(context, recv, subclass, Block.NULL_BLOCK);
     }
 
-    @JRubyMethod(meta = true)
+    @Deprecated(since = "10.0")
     public static RubyClass singleton_class(final IRubyObject self) {
-        return ((RubyClass) self).getSingletonClass();
+        return singleton_class(self.getRuntime().getCurrentContext(), self);
+    }
+
+    @JRubyMethod(meta = true)
+    public static RubyClass singleton_class(ThreadContext context, final IRubyObject self) {
+        return self.singletonClass(context);
     }
 
     @JRubyMethod(name = "[]", meta = true, rest = true)
@@ -285,7 +290,7 @@ public class JavaProxy extends RubyObject {
 
         if ( Modifier.isStatic(field.getModifiers()) ) {
             if ( asReader ) {
-                target.getSingletonClass().addMethod(asName, new StaticFieldGetter(fieldName, target, field));
+                target.singletonClass(context).addMethod(asName, new StaticFieldGetter(fieldName, target, field));
             }
             if ( asWriter == null || asWriter ) {
                 if ( Modifier.isFinal(field.getModifiers()) ) {
@@ -293,7 +298,7 @@ public class JavaProxy extends RubyObject {
                     // e.g. Cannot change final field 'private final char[] java.lang.String.value'
                     throw context.runtime.newSecurityError("Cannot change final field '" + field + "'");
                 }
-                target.getSingletonClass().addMethod(asName + '=', new StaticFieldSetter(fieldName, target, field));
+                target.singletonClass(context).addMethod(asName + '=', new StaticFieldSetter(fieldName, target, field));
             }
         } else {
             if ( asReader ) {
@@ -527,7 +532,7 @@ public class JavaProxy extends RubyObject {
         RubyClass sourceModule;
 
         if (Modifier.isStatic(jmethod.getModifiers())) {
-            sourceModule = metaClass.getSingletonClass();
+            sourceModule = metaClass.singletonClass(context);
             return RubyMethod.newMethod(
                     sourceModule,
                     CodegenUtils.prettyParams(argTypes).toString(),
@@ -571,6 +576,10 @@ public class JavaProxy extends RubyObject {
         super.setVariable(index, value);
     }
 
+    public RubyClass getSingletonClass() {
+        return singletonClass(getRuntime().getCurrentContext());
+    }
+
     /** rb_singleton_class
      *
      * Note: this method is specialized for RubyFixnum, RubySymbol,
@@ -580,9 +589,9 @@ public class JavaProxy extends RubyObject {
      * object, or create a new one and return that.
      */
     @Override
-    public RubyClass getSingletonClass() {
-        confirmCachedProxy(getRuntime().getCurrentContext(), NONPERSISTENT_SINGLETON_MESSAGE);
-        return super.getSingletonClass();
+    public RubyClass singletonClass(ThreadContext context) {
+        confirmCachedProxy(context, NONPERSISTENT_SINGLETON_MESSAGE);
+        return super.singletonClass(context);
     }
 
     private void confirmCachedProxy(ThreadContext context, String message) {
@@ -717,7 +726,7 @@ public class JavaProxy extends RubyObject {
                     final Method method = getMethodFromClass(context, clazz, name, argTypesClasses);
                     if ( Modifier.isStatic( method.getModifiers() ) ) {
                         invoker = new StaticMethodInvoker(proxyClass.getMetaClass(), () -> arrayOf(method), newNameStr);
-                        proxyClass.getSingletonClass().addMethod(newNameStr, invoker); // add alias to meta
+                        proxyClass.singletonClass(context).addMethod(newNameStr, invoker); // add alias to meta
                     }
                     else {
                         invoker = new InstanceMethodInvoker(proxyClass, () -> arrayOf(method), newNameStr);

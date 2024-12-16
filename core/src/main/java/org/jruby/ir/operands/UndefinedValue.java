@@ -114,6 +114,8 @@ public class UndefinedValue extends Operand implements IRubyObject {
     @Override
     public RubyClass getSingletonClass() { throw undefinedOperation(); }
 
+    public RubyClass singletonClass(ThreadContext context) { throw undefinedOperation(); }
+
     @Override
     public RubyClass getType() { throw undefinedOperation(); }
 

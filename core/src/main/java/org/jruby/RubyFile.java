@@ -121,7 +121,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 defineConstant(context, "PATH_SEPARATOR", pathSeparator);
 
         // For JRUBY-5276, physically define FileTest methods on File's singleton
-        File.getSingletonClass().defineMethods(context, RubyFileTest.FileTestFileMethods.class);
+        File.singletonClass(context).defineMethods(context, RubyFileTest.FileTestFileMethods.class);
 
         var FileConstants = File.defineModuleUnder(context, "Constants").
                 defineConstant(context, "RDONLY", asFixnum(context, OpenFlags.O_RDONLY.intValue())).
@@ -205,7 +205,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         if (!Platform.IS_BSD) {
             // lchmod appears to be mostly a BSD-ism, not supported on Linux.
             // See https://github.com/jruby/jruby/issues/5547
-            File.getSingletonClass().searchMethod("lchmod").setNotImplemented(true);
+            File.singletonClass(context).searchMethod("lchmod").setNotImplemented(true);
         }
 
         return File;

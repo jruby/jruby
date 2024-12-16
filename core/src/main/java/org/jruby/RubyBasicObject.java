@@ -477,6 +477,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return klass;
     }
 
+    public RubyClass singletonClass(ThreadContext context) {
+        RubyClass klass = metaClass.toSingletonClass(this);
+
+        if (isFrozen()) klass.setFrozen(true);
+
+        return klass;
+    }
+
     /** rb_make_metaclass
      *
      * Will create a new meta class, insert this in the chain of
@@ -2597,13 +2605,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             throw context.runtime.newLocalJumpErrorNoBlock();
         }
 
-        RubyModule klazz;
-        if (isImmediate()) {
-            // Ruby uses Qnil here, we use "dummy" because we need a class
-            klazz = context.runtime.getDummy();
-        } else {
-            klazz = getSingletonClass();
-        }
+        RubyModule klazz = isImmediate() ?  // MRI uses Qnil here, we use "dummy" because we need a class
+                context.runtime.getDummy() : singletonClass(context);
 
         return yieldUnder(context, klazz, args, block, EvalType.INSTANCE_EVAL);
     }

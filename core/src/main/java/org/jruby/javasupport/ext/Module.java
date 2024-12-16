@@ -174,7 +174,7 @@ public class Module {
             includedPackages = new IncludedPackages();
             target.setInternalVariable("includedPackages", includedPackages);
             ConstMissingMethod method = new ConstMissingMethod(target, includedPackages); // def self.const_missing(constant) :
-            Helpers.addInstanceMethod(target.getSingletonClass(), asSymbol(context, "const_missing"), method, PUBLIC, context);
+            Helpers.addInstanceMethod(target.singletonClass(context), asSymbol(context, "const_missing"), method, PUBLIC, context);
         }
         return includedPackages;
     }

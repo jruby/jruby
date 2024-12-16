@@ -614,7 +614,7 @@ public class Java implements Library {
         // Subclasses of Java classes can safely use ivars, so we set this to silence warnings
         subclass.setCacheProxy(true);
 
-        final RubyClass subclassSingleton = subclass.getSingletonClass();
+        final RubyClass subclassSingleton = subclass.singletonClass(context);
         subclassSingleton.addReadAttribute(context, "java_proxy_class");
         subclassSingleton.addMethod("java_interfaces", new JavaMethodZero(subclassSingleton, PUBLIC, "java_interfaces") {
             @Override

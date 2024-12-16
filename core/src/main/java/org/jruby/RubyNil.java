@@ -97,7 +97,11 @@ public class RubyNil extends RubyObject implements Constantizable {
     public RubyClass getSingletonClass() {
         return metaClass;
     }
-    
+
+    public RubyClass singletonClass(ThreadContext context) {
+        return metaClass;
+    }
+
     @Override
     public Class<?> getJavaClass() {
         return void.class;
@@ -154,7 +158,7 @@ public class RubyNil extends RubyObject implements Constantizable {
     /** nil_inspect
      *
      */
-    @Override
+    @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {
         return RubyNil.inspect(metaClass.runtime);
     }

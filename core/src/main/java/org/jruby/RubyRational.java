@@ -77,7 +77,7 @@ public class RubyRational extends RubyNumeric {
                 kindOf(new RubyModule.JavaClassKindOf(RubyRational.class)).
                 classIndex(ClassIndex.RATIONAL).
                 defineMethods(context, RubyRational.class).
-                tap(c -> c.getSingletonClass().undefMethods(context, "allocate", "new"));
+                tap(c -> c.singletonClass(context).undefMethods(context, "allocate", "new"));
     }
 
     private RubyRational(Ruby runtime, RubyClass clazz, RubyInteger num, RubyInteger den) {
