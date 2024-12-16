@@ -70,8 +70,11 @@ class Data
 
         if blk
           members.each do |member|
-            key, value = blk.call member, instance_variable_get(:"@#{member}")
-            hash[key] = value
+            result = blk.call member, instance_variable_get(:"@#{member}")
+            ary = Array.try_convert result
+            raise TypeError.new("wrong element type #{result.class}") unless ary
+            raise ArgumentError.new("element has wrong array length (expected 2, was #{ary.size})") if ary.size != 2
+            hash.[]=(*ary)
           end
         else
           members.each {|member| hash[member] = instance_variable_get(:"@#{member}")}
