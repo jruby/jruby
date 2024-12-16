@@ -55,6 +55,16 @@ class Data
         nil
       end
 
+      alias _original_inspect_ inspect
+      define_method(:inspect) do
+        # We implement this using Ruby and our inspect output shows the @ for the member fields.
+        # Without exposing some very internal methods using JRuby.reference we cannot generate this
+        # naturally so we will post-process the output.
+        _original_inspect_.tap do |original_inspect|
+          original_inspect.gsub! /@([^=]+=)/, '\1'
+        end
+      end
+
       define_method(:to_h) do
         hash = Hash.new.compare_by_identity
         members.each {|member| hash[member] = instance_variable_get(:"@#{member}")}
