@@ -15,6 +15,8 @@ class Data
     data_class = Class.new {
       self.define_singleton_method(:members) { members }
 
+      define_method(:members) { self.class.members }
+
       define_method(:initialize) do |*values, **kwargs|
         local_members = members
         if kwargs && !kwargs.empty?
@@ -53,9 +55,30 @@ class Data
         nil
       end
 
-      define_method(:to_h) do
+      alias _original_inspect_ inspect
+      define_method(:inspect) do
+        # We implement this using Ruby and our inspect output shows the @ for the member fields.
+        # Without exposing some very internal methods using JRuby.reference we cannot generate this
+        # naturally so we will post-process the output.
+        _original_inspect_.tap do |original_inspect|
+          original_inspect.gsub! /@([^=]+=)/, '\1'
+        end
+      end
+
+      define_method(:to_h) do |&blk|
         hash = Hash.new.compare_by_identity
-        members.each {|member| hash[member] = instance_variable_get(:"@#{member}")}
+
+        if blk
+          members.each do |member|
+            result = blk.call member, instance_variable_get(:"@#{member}")
+            ary = Array.try_convert result
+            raise TypeError.new("wrong element type #{result.class}") unless ary
+            raise ArgumentError.new("element has wrong array length (expected 2, was #{ary.size})") if ary.size != 2
+            hash.[]=(*ary)
+          end
+        else
+          members.each {|member| hash[member] = instance_variable_get(:"@#{member}")}
+        end
         hash
       end
 
