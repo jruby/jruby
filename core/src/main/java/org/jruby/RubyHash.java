@@ -960,14 +960,24 @@ public class RubyHash extends RubyObject implements Map {
             boolean keyIsSymbol = key instanceof RubySymbol;
 
             str.catWithCodeRange(keyIsSymbol ? (RubyString) keyStr.substr(context.runtime, 1, keyStr.length() - 1) : keyStr);
-            if (keyIsSymbol) {
-                bytes.append(':').append(' ');
-            } else {
-                bytes.append(' ').append('=').append('>').append(' ');
-            }
+            self.appendAssociation(keyIsSymbol, bytes);
             str.catWithCodeRange(valStr);
         }
     };
+
+    /**
+     * Append appropriate characters to indicate association (": " vs " => ").
+     *
+     * @param keyIsSymbol is the key a symbol
+     * @param bytes buffer to which to append
+     */
+    protected void appendAssociation(boolean keyIsSymbol, ByteList bytes) {
+        if (keyIsSymbol) {
+            bytes.append(':').append(' ');
+        } else {
+            bytes.append(' ').append('=').append('>').append(' ');
+        }
+    }
 
     /** rb_hash_inspect
      *
