@@ -706,13 +706,13 @@ public class RubyComplex extends RubyNumeric {
         return f_divide(context, this, other, (a, b) -> fdiv.call(context, a, a, b), fdiv);
     }
 
-    /** nucomp_expt
-     * 
+    /**
+     * MRI: nucomp_expt
      */
     @JRubyMethod(name = "**")
     public IRubyObject op_expt(ThreadContext context, IRubyObject other) {
         if (k_exact_p(other) && f_zero_p(context, other)) {
-            return newComplexBang(context, getMetaClass(), asFixnum(context, 0));
+            return newComplexBang(context, getMetaClass(), asFixnum(context, 1));
         }
 
         if (other instanceof RubyRational && f_one_p(context, f_denominator(context, other))) {
