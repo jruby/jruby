@@ -922,6 +922,16 @@ public class Numeric {
         return nurat_rationalize_internal(context, ary[0], ary[1]);
     }
 
+    public static boolean f_eqeq_p(ThreadContext context, IRubyObject x, IRubyObject y) {
+        if (x instanceof RubyFixnum xFixnum && y instanceof RubyFixnum yFixnum) {
+            return xFixnum.getLongValue() == yFixnum.getLongValue();
+        } else if (x instanceof RubyFloat || y instanceof RubyFloat) {
+            return RubyNumeric.num2dbl(context, x) == RubyNumeric.num2dbl(context, y);
+        }
+
+        return x.op_eqq(context, y).isTrue();
+    }
+
     @Deprecated
     public static void checkInteger(ThreadContext context, IRubyObject obj) {
         if (!(obj instanceof RubyInteger)) throw typeError(context, "not an integer");

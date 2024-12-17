@@ -54,7 +54,9 @@ import java.util.function.BiFunction;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asFloat;
 import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newRational;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.*;
 import static org.jruby.api.Warn.warn;
@@ -715,13 +717,20 @@ public class RubyComplex extends RubyNumeric {
             return newComplexBang(context, getMetaClass(), asFixnum(context, 1));
         }
 
-        if (other instanceof RubyRational && f_one_p(context, f_denominator(context, other))) {
+        if (other instanceof RubyRational otherRational && f_one_p(context, otherRational.getDenominator())) {
             other = f_numerator(context, other); 
         }
 
         if (other instanceof RubyComplex otherComplex && f_zero_p(context, otherComplex.image)) {
             other = otherComplex.real;
         }
+
+        if (other == RubyFixnum.one(context.runtime)) {
+            return newComplex(context, metaClass, real, image);
+        }
+
+        IRubyObject result = complexPowForSpecialAngle(context, other);
+        if (result != UNDEF) return result;
 
         if (other instanceof RubyComplex otherComplex) {
             IRubyObject otherReal = otherComplex.real;
@@ -805,6 +814,82 @@ public class RubyComplex extends RubyNumeric {
                     f_mul(context, theta, other));
         }
         return coerceBin(context, sites(context).op_exp, other);
+    }
+
+    // MRI: complex_pow_for_special_angle
+    private IRubyObject complexPowForSpecialAngle(ThreadContext context, IRubyObject other) {
+        if (!(other instanceof RubyInteger integer)) {
+            return UNDEF;
+        }
+
+        IRubyObject x = UNDEF;
+        int dir;
+        if (f_zero_p(context, image)) {
+            x = real;
+            dir = 0;
+        }
+        else if (f_zero_p(context, real)) {
+            x = image;
+            dir = 2;
+        }
+        else if (Numeric.f_eqeq_p(context, real, image)) {
+            x = real;
+            dir = 1;
+        }
+        else if (Numeric.f_eqeq_p(context, real, Numeric.f_negate(context, image))) {
+            x = image;
+            dir = 3;
+        } else {
+            dir = 0;
+        }
+
+        if (x == UNDEF) return x;
+
+        if (f_negative_p(context, x)) {
+            x = f_negate(context, x);
+            dir += 4;
+        }
+
+        IRubyObject zx;
+        if (dir % 2 == 0) {
+            zx = num_pow(context, x, other);
+        }
+        else {
+            RubyFixnum two = RubyFixnum.two(context.runtime);
+            zx = num_pow(context,
+                    sites(context).op_times.call(context, two.op_mul(context, x), x),
+                    integer.div(context, two)
+            );
+            if (f_odd_p(context, other)) {
+                zx = sites(context).op_times.call(context, zx, x);
+            }
+        }
+        int dirs[][] = {
+            {1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}, {-1, -1}, {0, -1}, {1, -1}
+        };
+        int z_dir = fix2int(asFixnum(context, dir).modulo(context, 8));
+
+        IRubyObject zr = context.fals, zi = context.fals;
+        switch (dirs[z_dir][0]) {
+            case 0: zr = zero_for(context, zx); break;
+            case 1: zr = zx; break;
+            case -1: zr = f_negate(context, zx); break;
+        }
+        switch (dirs[z_dir][1]) {
+            case 0: zi = zero_for(context, zx); break;
+            case 1: zi = zx; break;
+            case -1: zi = f_negate(context, zx); break;
+        }
+        return newComplex(context, metaClass, zr, zi);
+    }
+
+    private static IRubyObject zero_for(ThreadContext context, IRubyObject x) {
+        if (x instanceof RubyFloat)
+            return asFloat(context, 0);
+        if (x instanceof RubyRational)
+            return newRational(context, 0, 1);
+
+        return asFixnum(context, 0);
     }
 
     /** nucomp_equal_p
