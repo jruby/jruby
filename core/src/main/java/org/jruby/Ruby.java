@@ -5195,7 +5195,7 @@ public final class Ruby implements Constantizable {
     public interface RecursiveFunction extends MRIRecursionGuard.RecursiveFunction {}
 
     /**
-     * @deprecated Use ThreadContext.safeRecurse
+     * @deprecated Use {@link ThreadContext#safeRecurse(ThreadContext.RecursiveFunctionEx, Object, IRubyObject, String, boolean)}
      */
     @Deprecated
     public <T> IRubyObject safeRecurse(RecursiveFunctionEx<T> func, ThreadContext context, T state, IRubyObject obj, String name, boolean outer) {
