@@ -529,6 +529,20 @@ class Enumerator::Product < Enumerator
     self
   end
 
+  def inspect
+    JRuby::Util.safe_recurse(@__enums, self, "inspect") do |state, obj, recur|
+      if state.nil?
+        return "#<#{obj.class}: uninitialized>"
+      end
+
+      if recur
+        return "#<#{obj.class}: ...>"
+      end
+
+      return "#<#{obj.class}: #{state.inspect}>"
+    end
+  end
+
   private def initialize_copy(other)
     return self if self.equal?(other)
 
