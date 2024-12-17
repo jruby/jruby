@@ -334,7 +334,7 @@ public class RubyProcess {
             String message = switch ((int) places) {
                 case 7 -> "Process::Status#coredump?";
                 case 8 -> "Process::Status#exitstatus or Process::Status#stopsig";
-                default -> "other Process::Status predicates";
+                default -> "other Process::Status attributes";
             };
             deprecateAndSuggest(context, "Process::Status#>>", "3.5", message);
 
