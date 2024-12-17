@@ -43,7 +43,6 @@ package org.jruby;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.List;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
@@ -65,7 +64,6 @@ import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 
-import org.jruby.specialized.RubyObjectSpecializer;
 import org.jruby.util.cli.Options;
 
 /**
@@ -140,7 +138,7 @@ public class RubyObject extends RubyBasicObject {
      * argument because of the Object class' central part in runtime
      * initialization.
      */
-    public static void createObjectClass(RubyClass Object) {
+    public static void finishObjectClass(RubyClass Object) {
         Object.reifiedClass(RubyObject.class).classIndex(ClassIndex.OBJECT);
     }
 

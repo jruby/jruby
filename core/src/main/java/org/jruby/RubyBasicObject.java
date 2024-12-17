@@ -501,6 +501,23 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     /**
+     * This will create a new metaclass.  This is only used during bootstrapping before
+     * the initial ThreadContext is defined.  Normal needs of making a metaclass should use
+     * {@link RubyBasicObject#makeMetaClass(RubyClass)}
+     * @param superClass
+     * @param Class
+     * @return
+     */
+    public RubyClass makeMetaClassBootstrap(RubyClass superClass, RubyClass Class) {
+        MetaClass klass = new MetaClass(getRuntime(), superClass, Class, this); // rb_class_boot
+        setMetaClass(klass);
+
+        klass.setMetaClass(superClass.getRealClass().metaClass);
+
+        return klass;
+    }
+
+    /**
      * Makes it possible to change the metaclass of an object. In
      * practice, this is a simple version of Smalltalks Become, except
      * that it doesn't work when we're dealing with subclasses. In

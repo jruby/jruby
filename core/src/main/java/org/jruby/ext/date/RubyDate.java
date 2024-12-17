@@ -63,7 +63,6 @@ import static org.jruby.api.Access.*;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineClass;
-import static org.jruby.api.Define.defineClassUnder;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ext.date.DateUtils.*;
@@ -121,7 +120,7 @@ public class RubyDate extends RubyObject {
                 defineConstant(context, "VERSION", newString(context, "3.2.2"));
 
         var ArgumentError = argumentErrorClass(context);
-        RubyClass dateError = defineClassUnder(context, "Error", ArgumentError, ArgumentError.getAllocator(), Date);
+        RubyClass dateError = Date.defineClassUnder(context, "Error", ArgumentError, ArgumentError.getAllocator());
         context.runtime.setDateError(dateError);
 
         return (RubyClass) Date;

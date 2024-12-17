@@ -50,14 +50,31 @@ public final class MetaClass extends RubyClass {
      */
     MetaClass(Ruby runtime, RubyClass superClass, RubyBasicObject attached) {
         super(runtime, superClass, false);
-        this.attached = attached;
-        // use same ClassIndex as metaclass, since we're technically still of that type
-        classIndex(superClass.getClassIndex());
-        superClass.addSubclass(this);
+        metaClassInit(superClass, attached);
 
         if (LOG_SINGLETONS || LOG_SINGLETONS_VERBOSE) {
             logSingleton(runtime, superClass, attached);
         }
+    }
+
+    /**
+     * This is an internal API only used by Ruby constructor before ThreadContext exists.  This is for bootstrapping
+     * only.
+     * @param runtime
+     * @param superClass
+     * @param Class
+     * @param attached
+     */
+    MetaClass(Ruby runtime, RubyClass superClass, RubyClass Class, RubyBasicObject attached) {
+        super(runtime, superClass, Class);
+        metaClassInit(superClass, attached);
+    }
+
+    private void metaClassInit(RubyClass superClass, RubyBasicObject attached) {
+        this.attached = attached;
+        // use same ClassIndex as metaclass, since we're technically still of that type
+        classIndex(superClass.getClassIndex());
+        superClass.addSubclass(this);
     }
 
     private static void logSingleton(Ruby runtime, RubyClass superClass, RubyBasicObject attached) {

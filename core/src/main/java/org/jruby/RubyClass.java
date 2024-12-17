@@ -120,7 +120,7 @@ public class RubyClass extends RubyModule {
     private static final Logger LOG = LoggerFactory.getLogger(RubyClass.class);
     private static final double SUBCLASSES_CLEAN_FACTOR = 0.25;
 
-    public static void createClassClass(Ruby runtime, RubyClass Class) {
+    public static void finishClassClass(Ruby runtime, RubyClass Class) {
         Class.reifiedClass(RubyClass.class).
                 kindOf(new RubyModule.JavaClassKindOf(RubyClass.class)).
                 classIndex(ClassIndex.CLASS);
@@ -429,6 +429,25 @@ public class RubyClass extends RubyModule {
         }
 
         superClass(superClass); // this is the only case it might be null here (in MetaClass construction)
+    }
+
+    /**
+     *  This is an internal API only used by Ruby constructor before ThreadContext exists.
+     * @param runtime
+     * @param superClass
+     * @param Class
+     */
+    protected RubyClass(Ruby runtime, RubyClass superClass, RubyClass Class) {
+        super(runtime, Class, false);
+
+        this.runtime = runtime;
+        if ((this.realClass = superClass.realClass) != null) {
+            this.variableTableManager = realClass.variableTableManager;
+        } else {
+            this.variableTableManager = new VariableTableManager(this);
+        }
+
+        superClass(superClass);
     }
 
     /** used by CLASS_ALLOCATOR (any Class' class will be a Class!)

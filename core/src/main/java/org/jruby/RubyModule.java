@@ -190,15 +190,14 @@ public class RubyModule extends RubyObject {
 
     public static final ObjectAllocator MODULE_ALLOCATOR = RubyModule::new;
 
-    public static void createModuleClass(RubyClass Module) {
+    public static void finishModuleClass(RubyClass Module) {
         Module.reifiedClass(RubyModule.class).
                 kindOf(new RubyModule.JavaClassKindOf(RubyModule.class)).
                 classIndex(ClassIndex.MODULE);
     }
 
     public static void finishCreateModuleClass(ThreadContext context, RubyClass Module) {
-        Module.defineMethods(context, RubyModule.class);
-        Module.defineMethods(context, ModuleKernelMethods.class);
+        Module.defineMethods(context, RubyModule.class, ModuleKernelMethods.class);
     }
 
     public void checkValidBindTargetFrom(ThreadContext context, RubyModule originModule, boolean fromBind) throws RaiseException {
@@ -1563,7 +1562,7 @@ public class RubyModule extends RubyObject {
     @JRubyAPI
     public <T extends RubyClass> T defineClassUnder(ThreadContext context, String name, RubyClass superClass,
                                                     ObjectAllocator allocator) {
-        return (T) context.runtime.defineClassUnder(name, superClass, allocator, this, null);
+        return (T) context.runtime.defineClassUnder(context, name, superClass, allocator, this, null);
     }
 
     /**
@@ -1607,7 +1606,7 @@ public class RubyModule extends RubyObject {
     // MRI: rb_define_module_under
     @JRubyAPI
     public RubyModule defineModuleUnder(ThreadContext context, String name) {
-        return context.runtime.defineModuleUnder(name, this);
+        return context.runtime.defineModuleUnder(context, name, this);
     }
 
     /**
@@ -5921,6 +5920,21 @@ public class RubyModule extends RubyObject {
 
     protected IRubyObject constantTableStore(String name, IRubyObject value, boolean hidden) {
         return constantTableStore(name, value, hidden, false);
+    }
+
+    /**
+     * This is an internal API which is only used during runtime creation but BEFORE the first
+     * ThreadContext is created.  Nothing other that a few constants in the Ruby constructor should
+     * be calling this.  This method has no error checks.
+     *
+     * A secondary goal of this method is that it does not access Ruby or ThreadContext in any way.
+     *
+     * @param name of the constant
+     * @param value of the constant
+     * @return the value
+     */
+    public void defineConstantBootstrap(String name, IRubyObject value) {
+        constantTableStore(name, value, false, false, null, -1);
     }
 
     protected IRubyObject constantTableStore(String name, IRubyObject value, boolean hidden, boolean deprecated,
