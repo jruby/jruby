@@ -481,7 +481,14 @@ def Enumerator.product(*enums, **kwargs, &block)
   if kwargs && !kwargs.empty?
     raise ArgumentError.new("unknown keywords: " + kwargs.keys.map(&:inspect).join(", "))
   end
-  Enumerator::Product.new(*enums).each(&block)
+  product = Enumerator::Product.new(*enums)
+
+  if block_given?
+    product.each(&block)
+    return nil
+  end
+
+  product
 end
 
 class Enumerator::Product < Enumerator
