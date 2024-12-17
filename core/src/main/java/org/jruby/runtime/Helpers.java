@@ -92,6 +92,7 @@ import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.api.Warn.warn;
@@ -1863,7 +1864,7 @@ public class Helpers {
     }
 
     public static void preLoadCommon(ThreadContext context, StaticScope staticScope, boolean wrap) {
-        RubyModule objectClass = wrap ? RubyModule.newModule(context.runtime) : objectClass(context);
+        RubyModule objectClass = wrap ? defineModule(context) : objectClass(context);
 
         staticScope.setModule(objectClass);
 

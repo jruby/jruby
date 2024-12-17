@@ -38,10 +38,18 @@ public class Define {
      * @param name The name of the new module
      * @return The new module or existing one if it has already been defined.
      */
-    @Extension
     public static RubyModule defineModule(ThreadContext context, String name) {
         return context.runtime.defineModuleUnder(context, name, objectClass(context));
     }
 
-
+    /**
+     * There are times when an anonymous module is needed.  It is up to the caller
+     * to set it up as a constant or include methods or whatever else is needed.
+     *
+     * @param context the current thread context
+     * @return an instance of a RubyModule
+     */
+    public static RubyModule defineModule(ThreadContext context) {
+        return new RubyModule(context.runtime);
+    }
 }

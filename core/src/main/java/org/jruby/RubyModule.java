@@ -151,6 +151,7 @@ import static org.jruby.api.Access.loadService;
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.*;
 import static org.jruby.api.Warn.warn;
 import static org.jruby.api.Warn.warnDeprecated;
@@ -436,7 +437,7 @@ public class RubyModule extends RubyObject {
     /** standard path for Module construction
      *
      */
-    protected RubyModule(Ruby runtime) {
+    public RubyModule(Ruby runtime) {
         this(runtime, runtime.getModule());
     }
 
@@ -447,25 +448,41 @@ public class RubyModule extends RubyObject {
     /** rb_module_new
      *
      */
+    @Deprecated(since = "10.0")
     public static RubyModule newModule(Ruby runtime) {
         return new RubyModule(runtime);
     }
 
+    @Deprecated(since = "10.0")
+    public static RubyModule newModule(Ruby runtime, String name, RubyModule parent, boolean setParent, String file, int line) {
+        return newModule(runtime.getCurrentContext(), name, parent, setParent, file, line);
+    }
+
     /** rb_module_new/rb_define_module_id/rb_name_class/rb_set_class_path
      *
+     *  This is used by IR to define a new module.
      */
-    public static RubyModule newModule(Ruby runtime, String name, RubyModule parent, boolean setParent, String file, int line) {
-        RubyModule module = newModule(runtime).baseName(name);
+    public static RubyModule newModule(ThreadContext context, String name, RubyModule parent, boolean setParent, String file, int line) {
+        RubyModule module = defineModule(context).baseName(name);
         if (setParent) module.setParent(parent);
-        parent.setConstant(name, module, file, line);
+        if (file != null) {
+            parent.setConstant(name, module, file, line);
+        } else {
+            parent.setConstant(name, module);
+        }
         return module;
     }
 
+    @Deprecated(since = "10.0")
     public static RubyModule newModule(Ruby runtime, String name, RubyModule parent, boolean setParent) {
-        RubyModule module = newModule(runtime).baseName(name);
+        RubyModule module = new RubyModule(runtime).baseName(name);
         if (setParent) module.setParent(parent);
         parent.setConstant(name, module);
         return module;
+    }
+
+    public static RubyModule newModuleBootstrap(Ruby runtime, String name, RubyModule parent) {
+        return (RubyModule) parent.setConstant(name, new RubyModule(runtime).baseName(name));
     }
 
     // synchronized method per JRUBY-1173 (unsafe Double-Checked Locking)
@@ -2537,7 +2554,7 @@ public class RubyModule extends RubyObject {
         } else if ((module = searchProvidersForModule(name)) != null) {
             // reopen a java module
         } else {
-            module = RubyModule.newModule(context.runtime, name, this, true, file, line);
+            module = RubyModule.newModule(context, name, this, true, file, line);
         }
         return module;
     }

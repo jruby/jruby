@@ -1489,7 +1489,6 @@ public final class Ruby implements Constantizable {
      * @return The new module
      */
     @Deprecated(since = "10.0")
-    @Extension
     public RubyModule defineModule(String name) {
         return defineModuleUnder(getCurrentContext(), name, objectClass);
     }
@@ -1501,7 +1500,7 @@ public final class Ruby implements Constantizable {
      * @return The new module
      */
     public RubyModule defineModuleBootstrap(String name) {
-        return RubyModule.newModule(this, name, objectClass, false);
+        return RubyModule.newModuleBootstrap(this, name, objectClass);
     }
 
     @Deprecated(since = "10.0")
@@ -1527,7 +1526,7 @@ public final class Ruby implements Constantizable {
 
         return moduleObj != null ?
                 foundExistingModule(context, parent, moduleObj, parentIsObject) :
-                RubyModule.newModule(this, name, parent, !parentIsObject);
+                RubyModule.newModule(context, name, parent, !parentIsObject, null, -1);
     }
 
     private RubyModule foundExistingModule(ThreadContext context, RubyModule parent, IRubyObject moduleObj,
@@ -3048,7 +3047,7 @@ public final class Ruby implements Constantizable {
 
         if (wrap) {
             // toss an anonymous module into the search path
-            scope.getStaticScope().setModule(RubyModule.newModule(this));
+            scope.getStaticScope().setModule(new RubyModule(this));
         }
 
         runInterpreter(getCurrentContext(), scope, self);
@@ -3081,7 +3080,7 @@ public final class Ruby implements Constantizable {
         RubyModule wrapper = loadService.getWrapperSelf();
 
         if (wrapper == null || wrapper.isNil()) {
-            wrapper = RubyModule.newModule(this);
+            wrapper = new RubyModule(this);
         }
 
         // toss an anonymous module into the search path
