@@ -497,16 +497,16 @@ public class RubyComplex extends RubyNumeric {
 
         if (a1 instanceof RubyComplex) {
             RubyComplex a1c = (RubyComplex) a1;
-            if (k_exact_p(a1c.image) && f_zero_p(context, a1c.image)) a1 = a1c.real;
+            if (k_exact_zero_p(context, a1c.image)) a1 = a1c.real;
         }
 
         if (a2 instanceof RubyComplex) {
             RubyComplex a2c = (RubyComplex) a2;
-            if (k_exact_p(a2c.image) && f_zero_p(context, a2c.image)) a2 = a2c.real;
+            if (k_exact_zero_p(context, a2c.image)) a2 = a2c.real;
         }
 
         if (a1 instanceof RubyComplex) {
-            if (singleArg || (k_exact_p(a2) && f_zero_p(context, a2))) return a1;
+            if (singleArg || (k_exact_zero_p(context, a2))) return a1;
         }
 
         if (singleArg) {
@@ -714,7 +714,7 @@ public class RubyComplex extends RubyNumeric {
      */
     @JRubyMethod(name = "**")
     public IRubyObject op_expt(ThreadContext context, IRubyObject other) {
-        if (k_exact_p(other) && f_zero_p(context, other)) {
+        if (other instanceof RubyNumeric && k_exact_zero_p(context, other)) {
             return newComplexBang(context, getMetaClass(), asFixnum(context, 1));
         }
 
@@ -722,7 +722,7 @@ public class RubyComplex extends RubyNumeric {
             other = f_numerator(context, other); 
         }
 
-        if (other instanceof RubyComplex otherComplex && f_zero_p(context, otherComplex.image)) {
+        if (other instanceof RubyComplex otherComplex && k_exact_zero_p(context, otherComplex.image)) {
             other = otherComplex.real;
         }
 
@@ -1239,7 +1239,7 @@ public class RubyComplex extends RubyNumeric {
     }
 
     private void checkValidRational(ThreadContext context, String type) {
-        if (k_inexact_p(image) || !f_zero_p(context, image)) {
+        if (!k_exact_zero_p(context, image)) {
             throw rangeError(context, "can't convert " + f_to_s(context, this).convertToString() + " into " + type);
         }
     }
