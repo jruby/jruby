@@ -218,7 +218,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 defineConstant(context, "FIXEDENCODING", asFixnum(context, RE_FIXED)).
                 defineConstant(context, "NOENCODING", asFixnum(context, RE_NONE)).
                 defineMethods(context, RubyRegexp.class).
-                tap(c -> c.getSingletonClass().defineAlias(context, "compile", "new"));
+                tap(c -> c.singletonClass(context).defineAlias(context, "compile", "new"));
 
         context.runtime.setRubyTimeout(context.nil);
 

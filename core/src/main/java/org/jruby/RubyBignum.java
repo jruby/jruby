@@ -157,9 +157,10 @@ public class RubyBignum extends RubyInteger {
     }
 
     @Override
-    public RubyClass getSingletonClass() {
-        throw typeError(getRuntime().getCurrentContext(), "can't define singleton");
+    public RubyClass singletonClass(ThreadContext context) {
+        throw typeError(context, "can't define singleton");
     }
+
 
     /** Getter for property value.
      * @return Value of property value.

@@ -521,15 +521,15 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     }
     
     // Note: called from <clinit> of reified classes
-    public static JavaProxyClass setProxyClassReified(final Ruby runtime, final RubyClass clazz,
+    public static JavaProxyClass setProxyClassReified(ThreadContext context, final RubyClass clazz,
             final Class<? extends ReifiedJavaProxy> reified, final boolean allocator) {
-        JavaProxyClass proxyClass = new JavaProxyClass(runtime, reified);
+        JavaProxyClass proxyClass = new JavaProxyClass(context.runtime, reified);
         clazz.setInstanceVariable("@java_proxy_class", proxyClass);
 
-        RubyClass singleton = clazz.getSingletonClass();
+        RubyClass singleton = clazz.singletonClass(context);
 
         singleton.setInstanceVariable("@java_proxy_class", proxyClass);
-        singleton.setInstanceVariable("@java_class", Java.wrapJavaObject(runtime, reified));
+        singleton.setInstanceVariable("@java_class", Java.wrapJavaObject(context.runtime, reified));
 
         if (allocator) {
             DynamicMethod oldNewMethod = singleton.searchMethod("new");
@@ -538,7 +538,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
                 singleton.addMethod("new", new NewMethodReified(clazz, reified));
             }
             // Install initialize
-            StaticJCreateMethod.tryInstall(runtime, clazz, proxyClass, reified, defaultNew);
+            StaticJCreateMethod.tryInstall(context.runtime, clazz, proxyClass, reified, defaultNew);
         }
         return proxyClass;
     }

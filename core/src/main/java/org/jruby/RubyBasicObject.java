@@ -29,6 +29,7 @@
 package org.jruby;
 
 import org.jcodings.Encoding;
+import org.jruby.api.JRubyAPI;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.java.proxies.JavaProxy;
@@ -75,6 +76,7 @@ import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.api.Warn.warn;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
+import static org.jruby.ir.runtime.IRRuntimeHelpers.getCurrentClassBase;
 import static org.jruby.runtime.Helpers.invokeChecked;
 import static org.jruby.runtime.ThreadContext.*;
 import static org.jruby.runtime.Visibility.*;
@@ -460,16 +462,22 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return ((RubyBasicObject) arg).metaClass;
     }
 
-    /** rb_singleton_class
-     *
-     * Note: this method is specialized for RubyFixnum, RubySymbol,
-     * RubyNil and RubyBoolean
-     *
-     * Will either return the existing singleton class for this
-     * object, or create a new one and return that.
-     */
     @Override
     public RubyClass getSingletonClass() {
+        return singletonClass(getCurrentContext());
+    }
+
+    /**
+     * Will either return the existing singleton class for this object, or create a new one and return that.
+     * For a few types a singleton class is not possible so it will throw an error.
+     *
+     * @param context the current thread context
+     * @return the singleton of this type
+     */
+
+    // MRI: rb_singleton_class
+    @JRubyAPI
+    public RubyClass singletonClass(ThreadContext context) {
         RubyClass klass = metaClass.toSingletonClass(this);
 
         if (isFrozen()) klass.setFrozen(true);
@@ -1874,12 +1882,15 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return evalUnder(context, mod, evalStr, file, line, evalType);
     }
 
+    @Deprecated(since = "10.0")
     protected RubyModule getInstanceEvalClass() {
-        if (isImmediate()) {
-            // Ruby uses Qnil here, we use "dummy" because we need a class
-            return getRuntime().getDummy();
-        }
-        return getSingletonClass();
+        return getInstanceEvalClass(getCurrentContext());
+    }
+
+    protected RubyModule getInstanceEvalClass(ThreadContext context) {
+        return isImmediate() ?
+                context.runtime.getDummy() : // MRI uses Qnil here, we use "dummy" because we need a class
+                singletonClass(context);
     }
 
     /**
@@ -2535,25 +2546,25 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
             writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject instance_eval(ThreadContext context, Block block) {
-        return specificEval(context, getInstanceEvalClass(), block, EvalType.INSTANCE_EVAL);
+        return specificEval(context, getInstanceEvalClass(context), block, EvalType.INSTANCE_EVAL);
     }
     @JRubyMethod(name = "instance_eval",
             reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
             writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject instance_eval(ThreadContext context, IRubyObject arg0, Block block) {
-        return specificEval(context, getInstanceEvalClass(), arg0, block, EvalType.INSTANCE_EVAL);
+        return specificEval(context, getInstanceEvalClass(context), arg0, block, EvalType.INSTANCE_EVAL);
     }
     @JRubyMethod(name = "instance_eval",
             reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
             writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject instance_eval(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        return specificEval(context, getInstanceEvalClass(), arg0, arg1, block, EvalType.INSTANCE_EVAL);
+        return specificEval(context, getInstanceEvalClass(context), arg0, arg1, block, EvalType.INSTANCE_EVAL);
     }
     @JRubyMethod(name = "instance_eval",
             reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
             writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject instance_eval(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return specificEval(context, getInstanceEvalClass(), arg0, arg1, arg2, block, EvalType.INSTANCE_EVAL);
+        return specificEval(context, getInstanceEvalClass(context), arg0, arg1, arg2, block, EvalType.INSTANCE_EVAL);
     }
 
     // This is callable and will work but the rest = true is put so we can match the expected arity error message
@@ -2593,19 +2604,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
             writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
     public IRubyObject instance_exec(ThreadContext context, IRubyObject[] args, Block block) {
-        if (!block.isGiven()) {
-            throw context.runtime.newLocalJumpErrorNoBlock();
-        }
+        if (!block.isGiven()) throw context.runtime.newLocalJumpErrorNoBlock();
 
-        RubyModule klazz;
-        if (isImmediate()) {
-            // Ruby uses Qnil here, we use "dummy" because we need a class
-            klazz = context.runtime.getDummy();
-        } else {
-            klazz = getSingletonClass();
-        }
-
-        return yieldUnder(context, klazz, args, block, EvalType.INSTANCE_EVAL);
+        return yieldUnder(context, getInstanceEvalClass(context), args, block, EvalType.INSTANCE_EVAL);
     }
 
     /** rb_obj_extend

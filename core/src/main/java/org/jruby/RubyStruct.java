@@ -294,11 +294,12 @@ public class RubyStruct extends RubyObject {
         }
 
         // set reified class to RubyStruct, for Java subclasses to use
-        newStruct.reifiedClass(RubyStruct.class).classIndex(ClassIndex.STRUCT);
+        newStruct.reifiedClass(RubyStruct.class).
+                classIndex(ClassIndex.STRUCT);
         newStruct.setInternalVariable(SIZE_VAR, member.length(context));
         newStruct.setInternalVariable(MEMBER_VAR, member);
         newStruct.setInternalVariable(KEYWORD_INIT_VAR, keywordInitValue);
-        newStruct.getSingletonClass().defineMethods(context, StructMethods.class);
+        newStruct.singletonClass(context).defineMethods(context, StructMethods.class);
 
         // define access methods.
         for (int i = (name == null && !nilName) ? 0 : 1; i < argc; i++) {

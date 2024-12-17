@@ -139,8 +139,12 @@ public interface IRubyObject {
      * Retrieve <code>self.singleton_class</code>.
      * @return the Ruby singleton class
      */
-    @JRubyAPI
     RubyClass getSingletonClass();
+
+    @JRubyAPI
+    default RubyClass singletonClass(ThreadContext context) {
+        return getSingletonClass();
+    }
     
     /**
      * RubyMethod getType.

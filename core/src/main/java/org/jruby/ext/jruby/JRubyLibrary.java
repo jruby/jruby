@@ -88,7 +88,7 @@ public class JRubyLibrary implements Library {
              .defineMethods(context, JRubyExecutionContextLocal.class);
 
         JRuby.defineModuleUnder(context, "CONFIG").
-                tap(m -> m.getSingletonClass().defineMethods(context, JRubyConfig.class));
+                tap(m -> m.singletonClass(context).defineMethods(context, JRubyConfig.class));
     }
 
     /**
@@ -327,7 +327,7 @@ public class JRubyLibrary implements Library {
 
         final var subclasses = newArray(context);
 
-        RubyClass singletonClass = klass.getSingletonClass();
+        RubyClass singletonClass = klass.singletonClass(context);
         RubyObjectSpace.each_objectInternal(context, recv, new IRubyObject[] { singletonClass },
                 new Block(new JavaInternalBlockBody(context.runtime, Signature.ONE_ARGUMENT) {
 

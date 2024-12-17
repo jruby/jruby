@@ -16,11 +16,12 @@ final class ClassInitializer extends Initializer {
 
     @Override
     public RubyClass initialize(final RubyModule proxy) {
+        var context = proxy.getRuntime().getCurrentContext();
         final RubyClass proxyClass = (RubyClass) proxy;
 
         // flag the class as a Java class proxy.
         proxy.setJavaProxy(true);
-        proxy.getSingletonClass().setJavaProxy(true);
+        proxy.singletonClass(context).setJavaProxy(true);
 
         // set parent to either package module or outer class
         final RubyModule parent;

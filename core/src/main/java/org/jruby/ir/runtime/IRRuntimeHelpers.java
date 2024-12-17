@@ -1205,7 +1205,7 @@ public class IRRuntimeHelpers {
                 //   end
                 // -------------
                 case MODULE_EVAL  : return self instanceof RubyModule ? (RubyModule) self : self.getMetaClass();
-                case INSTANCE_EVAL: return self.getSingletonClass();
+                case INSTANCE_EVAL: return self.singletonClass(context);
                 case BINDING_EVAL : ds = ds.getParentScope(); break;
                 case NONE:
                     if (scopeType == null || scopeType.isClosureType()) {
@@ -1708,8 +1708,8 @@ public class IRRuntimeHelpers {
      * Construct a new DynamicMethod to wrap the given IRModuleBody and singletonizable object. Used by interpreter.
      */
     @Interp
-    public static DynamicMethod newInterpretedMetaClass(Ruby runtime, IRScope metaClassBody, IRubyObject obj) {
-        RubyClass singletonClass = newMetaClassFromIR(runtime, metaClassBody.getStaticScope(), obj, metaClassBody.maybeUsingRefinements());
+    public static DynamicMethod newInterpretedMetaClass(ThreadContext context, IRScope metaClassBody, IRubyObject obj) {
+        RubyClass singletonClass = newMetaClassFromIR(context, metaClassBody.getStaticScope(), obj, metaClassBody.maybeUsingRefinements());
 
         return new InterpretedIRBodyMethod(metaClassBody, singletonClass);
     }
@@ -1719,18 +1719,18 @@ public class IRRuntimeHelpers {
      */
     @JIT
     public static DynamicMethod newCompiledMetaClass(ThreadContext context, MethodHandle handle, StaticScope scope, IRubyObject obj, int line, boolean refinements, boolean dynscopeEliminated) {
-        RubyClass singletonClass = newMetaClassFromIR(context.runtime, scope, obj, refinements);
+        RubyClass singletonClass = newMetaClassFromIR(context, scope, obj, refinements);
 
         return new CompiledIRNoProtocolMethod(handle, scope, scope.getFile(), line,
                 singletonClass, !dynscopeEliminated);
     }
 
-    private static RubyClass newMetaClassFromIR(Ruby runtime, StaticScope scope, IRubyObject obj, boolean refinements) {
-        RubyClass singletonClass = Helpers.getSingletonClass(runtime, obj);
+    private static RubyClass newMetaClassFromIR(ThreadContext context, StaticScope scope, IRubyObject obj, boolean refinements) {
+        RubyClass singletonClass = obj.singletonClass(context);
 
         scope.setModule(singletonClass);
 
-        if (refinements) scope.captureParentRefinements(runtime.getCurrentContext());
+        if (refinements) scope.captureParentRefinements(context);
 
         return singletonClass;
     }
@@ -1853,7 +1853,7 @@ public class IRRuntimeHelpers {
 
         // if (obj.isFrozen()) throw context.runtime.newFrozenError("object");
 
-        return obj.getSingletonClass();
+        return obj.singletonClass(context);
     }
 
     @Interp

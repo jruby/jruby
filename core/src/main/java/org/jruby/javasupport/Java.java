@@ -506,7 +506,7 @@ public class Java implements Library {
         for (int i = extended.length; --i >= 0; ) {
             proxy.include(context, getInterfaceModule(context, extended[i]));
         }
-        Initializer.setupProxyModule(context.runtime, javaClass, proxy);
+        Initializer.setupProxyModule(context, javaClass, proxy);
         addToJavaPackageModule(proxy);
     }
 
@@ -572,7 +572,7 @@ public class Java implements Library {
 
         if ( invokeInherited ) proxyClass.inherit(superClass);
 
-        Initializer.setupProxyClass(context.runtime, javaClass, proxyClass);
+        Initializer.setupProxyClass(context, javaClass, proxyClass);
 
         return proxyClass;
     }
@@ -614,7 +614,7 @@ public class Java implements Library {
         // Subclasses of Java classes can safely use ivars, so we set this to silence warnings
         subclass.setCacheProxy(true);
 
-        final RubyClass subclassSingleton = subclass.getSingletonClass();
+        final RubyClass subclassSingleton = subclass.singletonClass(context);
         subclassSingleton.addReadAttribute(context, "java_proxy_class");
         subclassSingleton.addMethod("java_interfaces", new JavaMethodZero(subclassSingleton, PUBLIC, "java_interfaces") {
             @Override
@@ -1000,7 +1000,7 @@ public class Java implements Library {
         }
 
         // saves class in singletonized parent, so we don't come back here :
-        if ( cacheMethod ) bindJavaPackageOrClassMethod(parentPackage, name, result);
+        if ( cacheMethod )  bindJavaPackageOrClassMethod(context, parentPackage, name, result);
 
         return result;
     }
@@ -1148,17 +1148,17 @@ public class Java implements Library {
     private static boolean bindJavaPackageOrClassMethod(ThreadContext context, final String name,
         final RubyModule packageOrClass) {
         final RubyModule javaPackage = context.runtime.getJavaSupport().getJavaModule();
-        return bindJavaPackageOrClassMethod(javaPackage, name, packageOrClass);
+        return bindJavaPackageOrClassMethod(context, javaPackage, name, packageOrClass);
     }
 
-    private static boolean bindJavaPackageOrClassMethod(final RubyModule parentPackage,
+    private static boolean bindJavaPackageOrClassMethod(ThreadContext context, final RubyModule parentPackage,
         final String name, final RubyModule packageOrClass) {
 
         if ( parentPackage.getMetaClass().isMethodBound(name, false) ) {
             return false;
         }
 
-        final RubyClass singleton = parentPackage.getSingletonClass();
+        final RubyClass singleton = parentPackage.singletonClass(context);
         singleton.addMethod(name.intern(), new JavaAccessor(singleton, packageOrClass, parentPackage, name));
         return true;
     }

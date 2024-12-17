@@ -93,11 +93,10 @@ public class RubyNil extends RubyObject implements Constantizable {
         return true;
     }
 
-    @Override
-    public RubyClass getSingletonClass() {
+    public RubyClass singletonClass(ThreadContext context) {
         return metaClass;
     }
-    
+
     @Override
     public Class<?> getJavaClass() {
         return void.class;

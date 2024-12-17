@@ -430,7 +430,7 @@ public class RubyGlobal {
             runtime, environmentVariableMap, context.nil,
             instanceConfig.isNativeEnabled() && instanceConfig.isUpdateNativeENVEnabled()
         );
-        env.getSingletonClass().defineMethods(context, CaseInsensitiveStringOnlyRubyHash.class);
+        env.singletonClass(context).defineMethods(context, CaseInsensitiveStringOnlyRubyHash.class);
         runtime.defineGlobalConstant("ENV", env);
 
         // Define System.getProperties() in ENV_JAVA

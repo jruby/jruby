@@ -1595,7 +1595,7 @@ public class RubyKernel {
     public static IRubyObject define_singleton_method(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         int argc = Arity.checkArgumentCount(context, args, 1, 2);
 
-        RubyClass singleton_class = recv.getSingletonClass();
+        RubyClass singleton_class = recv.singletonClass(context);
         if (argc > 1) {
             IRubyObject arg1 = args[1];
             if (context.runtime.getUnboundMethod().isInstance(arg1)) {
@@ -2104,9 +2104,14 @@ public class RubyKernel {
         return newString(context, RubyFile.dirname(context, path.asJavaString()));
     }
 
-    @JRubyMethod(module = true)
+    @Deprecated(since = "10.0")
     public static IRubyObject singleton_class(IRubyObject recv) {
-        return recv.getSingletonClass();
+        return singleton_class(recv.getRuntime().getCurrentContext(), recv);
+    }
+
+    @JRubyMethod(module = true)
+    public static IRubyObject singleton_class(ThreadContext context, IRubyObject recv) {
+        return recv.singletonClass(context);
     }
 
     @JRubyMethod(rest = true, keywords = true, reads = SCOPE)

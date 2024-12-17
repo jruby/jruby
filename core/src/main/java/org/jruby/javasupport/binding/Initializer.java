@@ -5,6 +5,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.JavaSupport;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -32,44 +33,54 @@ public abstract class Initializer {
         this.javaClass = javaClass;
     }
 
+    @Deprecated(since = "10.0")
     public static RubyModule setupProxyClass(Ruby runtime, final Class<?> javaClass, RubyClass proxy) {
+        return setupProxyClass(runtime.getCurrentContext(), javaClass, proxy);
+    }
+
+    public static RubyModule setupProxyClass(ThreadContext context, final Class<?> javaClass, RubyClass proxy) {
         setJavaClassFor(javaClass, proxy);
 
         proxy.reifiedClass((Class) javaClass);
 
         if ( javaClass.isArray() ) {
-            flagAsJavaProxy(proxy); return proxy;
+            flagAsJavaProxy(context, proxy); return proxy;
         }
 
         if ( javaClass.isPrimitive() ) {
-            final RubyClass proxySingleton = proxy.getSingletonClass();
+            final RubyClass proxySingleton = proxy.singletonClass(context);
             proxySingleton.undefineMethod("new"); // remove ConcreteJavaProxy class method 'new'
             if ( javaClass == Void.TYPE ) {
                 // special treatment ... while Java::int[4] is OK Java::void[2] is NOT!
                 proxySingleton.undefineMethod("[]"); // from JavaProxy
                 proxySingleton.undefineMethod("new_array"); // from JavaProxy
             }
-            flagAsJavaProxy(proxy); return proxy;
+            flagAsJavaProxy(context, proxy); return proxy;
         }
 
-        proxy = new ClassInitializer(runtime, javaClass).initialize(proxy);
-        flagAsJavaProxy(proxy); return proxy;
+        proxy = new ClassInitializer(context.runtime, javaClass).initialize(proxy);
+        flagAsJavaProxy(context, proxy); return proxy;
     }
 
+    @Deprecated(since = "10.0")
     public static RubyModule setupProxyModule(Ruby runtime, final Class<?> javaClass, RubyModule proxy) {
+        return setupProxyModule(runtime.getCurrentContext(), javaClass, proxy);
+    }
+
+    public static RubyModule setupProxyModule(ThreadContext context, final Class<?> javaClass, RubyModule proxy) {
         setJavaClassFor(javaClass, proxy);
 
         assert javaClass.isInterface();
 
-        proxy = new InterfaceInitializer(runtime, javaClass).initialize(proxy);
-        flagAsJavaProxy(proxy);
+        proxy = new InterfaceInitializer(context.runtime, javaClass).initialize(proxy);
+        flagAsJavaProxy(context, proxy);
         return proxy;
     }
 
-    private static void flagAsJavaProxy(final RubyModule proxy) {
+    private static void flagAsJavaProxy(ThreadContext context, final RubyModule proxy) {
         // flag the class as a Java class proxy.
         proxy.setJavaProxy(true);
-        proxy.getSingletonClass().setJavaProxy(true);
+        proxy.singletonClass(context).setJavaProxy(true);
     }
 
     private static void setJavaClassFor(final Class<?> javaClass, final RubyModule proxy) {

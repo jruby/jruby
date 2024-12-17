@@ -536,7 +536,7 @@ public class RubyClass extends RubyModule {
     }
 
     /**
-     * @see #getSingletonClass()
+     * @see #singletonClass(ThreadContext)
      */
     RubyClass toSingletonClass(RubyBasicObject target) {
         // replaced after makeMetaClass with MetaClass's toSingletonClass
@@ -2216,6 +2216,7 @@ public class RubyClass extends RubyModule {
 
             // now create proxy class
             m.getstatic(javaPath, RUBY_FIELD, ci(Ruby.class));
+            m.invokevirtual("org/jruby/Ruby", "getCurrentContext", "()Lorg/jruby/runtime/ThreadContext;");
             m.getstatic(javaPath, RUBY_CLASS_FIELD, ci(RubyClass.class));
             m.ldc(org.objectweb.asm.Type.getType("L" + javaPath + ";"));
             // if (simpleAlloc) // if simple, don't init, if complex, do init
@@ -2224,7 +2225,7 @@ public class RubyClass extends RubyModule {
             m.iconst_1(); // true (as int)
 
             m.invokestatic(p(JavaProxyClass.class), "setProxyClassReified",
-                    sig(JavaProxyClass.class, Ruby.class, RubyClass.class, Class.class, boolean.class));
+                    sig(JavaProxyClass.class, ThreadContext.class, RubyClass.class, Class.class, boolean.class));
             m.dup();
             m.putstatic(javaPath, RUBY_PROXY_CLASS_FIELD, ci(JavaProxyClass.class));
 
@@ -2893,31 +2894,27 @@ public class RubyClass extends RubyModule {
      */
     public IRubyObject smartLoadOldUser(IRubyObject data) {
         ThreadContext context = runtime.getCurrentContext();
-        CacheEntry cache;
-        if ((cache = getSingletonClass().cachedLoad).token == getSingletonClass().generation) {
-            return cache.method.call(context, this, cache.sourceModule, "_load", data);
-        } else {
-            cache = getSingletonClass().searchWithCache("respond_to?");
-            DynamicMethod method = cache.method;
-            if (!method.equals(runtime.getRespondToMethod()) && !method.isUndefined()) {
+        var singleton = singletonClass(context);
+        CacheEntry cache = singleton.cachedLoad;
+        if (cache.token == singleton.generation) return cache.method.call(context, this, cache.sourceModule, "_load", data);
 
-                // custom respond_to?, cache nothing and use slow path
-                if (method.call(context, this, cache.sourceModule, "respond_to?", asSymbol(context, "_load")).isTrue()) {
-                    return callMethod(context, "_load", data);
-                } else {
-                    throw typeError(context, "class ", this, " needs to have method `_load'");
-                }
-
-            } else if (!(cache = getSingletonClass().searchWithCache("_load")).method.isUndefined()) {
-
-                // real _load defined, cache and call it
-                getSingletonClass().cachedLoad = cache;
-                return cache.method.call(context, this, cache.sourceModule, "_load", data);
-
+        cache = singleton.searchWithCache("respond_to?");
+        DynamicMethod method = cache.method;
+        if (!method.equals(runtime.getRespondToMethod()) && !method.isUndefined()) {
+            // custom respond_to?, cache nothing and use slow path
+            if (method.call(context, this, cache.sourceModule, "respond_to?", asSymbol(context, "_load")).isTrue()) {
+                return callMethod(context, "_load", data);
             } else {
-                // provide an error, since it doesn't exist
                 throw typeError(context, "class ", this, " needs to have method `_load'");
             }
+        } else if (!(cache = singleton.searchWithCache("_load")).method.isUndefined()) {
+            // real _load defined, cache and call it
+            singleton.cachedLoad = cache;
+            return cache.method.call(context, this, cache.sourceModule, "_load", data);
+
+        } else {
+            // provide an error, since it doesn't exist
+            throw typeError(context, "class ", this, " needs to have method `_load'");
         }
     }
 

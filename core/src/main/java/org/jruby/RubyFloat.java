@@ -104,7 +104,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
                 kindOf(new RubyModule.JavaClassKindOf(RubyFloat.class)).
                 classIndex(ClassIndex.FLOAT).
                 defineMethods(context, RubyFloat.class).
-                tap(c -> c.getSingletonClass().undefMethods(context, "new")).
+                tap(c -> c.singletonClass(context).undefMethods(context, "new")).
                 defineConstant(context, "ROUNDS", asFixnum(context, ROUNDS)).
                 defineConstant(context, "RADIX", asFixnum(context, RADIX)).
                 defineConstant(context, "MANT_DIG", asFixnum(context, MANT_DIG)).
@@ -147,9 +147,8 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         this.flags |= FROZEN_F;
     }
 
-    @Override
-    public RubyClass getSingletonClass() {
-        throw typeError(getRuntime().getCurrentContext(), "can't define singleton");
+    public RubyClass singletonClass(ThreadContext context) {
+        throw typeError(context, "can't define singleton");
     }
 
     @Override

@@ -122,12 +122,12 @@ public class TestMethodFactories extends Base {
     public void testModuleMethodOwner() {
         RubyModule mod = defineModule(context, "GH3463Module").defineMethods(context, GH3463Module.class);
 
-        DynamicMethod method = mod.getSingletonClass().searchMethod("a_module_method");
+        DynamicMethod method = mod.singletonClass(context).searchMethod("a_module_method");
 
-        assertEquals(mod.getSingletonClass(), method.getImplementationClass());
+        assertEquals(mod.singletonClass(context), method.getImplementationClass());
 
         RubyMethod rubyMethod = (RubyMethod)mod.method(asSymbol(context, "a_module_method"));
 
-        assertEquals(mod.getSingletonClass(), rubyMethod.owner(context));
+        assertEquals(mod.singletonClass(context), rubyMethod.owner(context));
     }
 }

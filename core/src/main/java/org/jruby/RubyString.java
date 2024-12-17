@@ -1269,6 +1269,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return str.checkStringType();
     }
 
+    @Deprecated(since = "10.0")
+    public RubyString to_s() {
+        return (RubyString) to_s(getCurrentContext());
+    }
+
     @SuppressWarnings("ReferenceEquality")
     @JRubyMethod(name = {"to_s", "to_str"})
     @Override
@@ -4968,15 +4973,14 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return pat; // String
     }
 
-    @Override
-    public RubyClass getSingletonClass() {
+    public RubyClass singletonClass(ThreadContext context) {
         if (isChilled()) {
             mutateChilledString();
         } else if (isFrozen()) {
-            throw typeError(getRuntime().getCurrentContext(), "can't define singleton");
+            throw typeError(context, "can't define singleton");
         }
 
-        return super.getSingletonClass();
+        return super.singletonClass(context);
     }
 
     // MRI: get_pat_quoted (scan error checking portion)

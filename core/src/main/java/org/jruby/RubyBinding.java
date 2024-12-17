@@ -75,7 +75,7 @@ public class RubyBinding extends RubyObject {
                 reifiedClass(RubyBinding.class).
                 classIndex(ClassIndex.BINDING).
                 defineMethods(context, RubyBinding.class).
-                tap(c -> c.getSingletonClass().undefMethods(context, "new"));
+                tap(c -> c.singletonClass(context).undefMethods(context, "new"));
     }
 
     public Binding getBinding() {

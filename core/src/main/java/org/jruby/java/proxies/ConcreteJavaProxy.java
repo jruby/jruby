@@ -426,12 +426,17 @@ public class ConcreteJavaProxy extends JavaProxy {
         if (getObject() == null) setObject(self);
     }
 
+    @Deprecated(since = "10.0")
     protected static void initialize(final RubyClass concreteJavaProxy) {
+        initialize(concreteJavaProxy.getRuntime().getCurrentContext(), concreteJavaProxy);
+    }
+
+    protected static void initialize(ThreadContext context, final RubyClass concreteJavaProxy) {
         concreteJavaProxy.addMethod("initialize", new InitializeMethod(concreteJavaProxy));
         // We define a custom "new" method to ensure that __jcreate! is getting called,
         // so that if the user doesn't call super in their subclasses, the object will
         // still get set up properly. See JRUBY-4704.
-        RubyClass singleton = concreteJavaProxy.getSingletonClass();
+        RubyClass singleton = concreteJavaProxy.singletonClass(context);
         singleton.addMethod("new", new NewMethod(singleton));
     }
 

@@ -88,8 +88,7 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
         return true;
     }
 
-    @Override
-    public RubyClass getSingletonClass() {
+    public RubyClass singletonClass(ThreadContext context) {
         return metaClass;
     }
 

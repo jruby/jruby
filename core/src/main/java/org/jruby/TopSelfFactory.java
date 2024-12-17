@@ -62,7 +62,7 @@ public final class TopSelfFactory {
     }
     
     public static IRubyObject finishTopSelf(ThreadContext context, IRubyObject topSelf, RubyClass Object, final boolean wrapper) {
-        final RubyClass singletonClass = topSelf.getSingletonClass();
+        final RubyClass singletonClass = topSelf.singletonClass(context);
 
         singletonClass.addMethod("to_s", new JavaMethod.JavaMethodZero(singletonClass, Visibility.PUBLIC, "to_s") {
             @Override

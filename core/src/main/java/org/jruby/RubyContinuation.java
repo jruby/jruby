@@ -62,7 +62,7 @@ public class RubyContinuation extends RubyObject {
         return defineClass(context, "Continuation", objectClass, objectClass.getAllocator()).
                 reifiedClass(RubyContinuation.class).
                 classIndex(ClassIndex.CONTINUATION).
-                tap(c -> c.getSingletonClass().undefMethods(context, "new"));
+                tap(c -> c.singletonClass(context).undefMethods(context, "new"));
     }
 
     @Deprecated

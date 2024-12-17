@@ -60,6 +60,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Convert.castAsModule;
+import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
@@ -70,7 +71,7 @@ public class JavaInterfaceTemplate {
     public static RubyModule createJavaInterfaceTemplateModule(ThreadContext context) {
         return defineModule(context, "JavaInterfaceTemplate").
                 defineMethods(context, JavaProxy.ClassMethods.class).
-                tap(m -> m.getSingletonClass().defineMethods(context, JavaInterfaceTemplate.class));
+                tap(m -> m.singletonClass(context).defineMethods(context, JavaInterfaceTemplate.class));
     }
 
     @JRubyMethod
@@ -129,13 +130,12 @@ public class JavaInterfaceTemplate {
     }
 
     private static void appendFeaturesToClass(ThreadContext context, final IRubyObject self, final RubyClass clazz) {
-        final Ruby runtime = context.runtime;
-        checkAlreadyReified(clazz, runtime);
+        checkAlreadyReified(context, clazz);
 
         final IRubyObject javaClass = JavaProxy.getJavaClass((RubyModule) self);
         RubyArray javaInterfaces;
         if ( ! clazz.hasInstanceVariable("@java_interfaces") ) {
-            javaInterfaces = RubyArray.newArray(runtime, javaClass);
+            javaInterfaces = newArray(context, javaClass);
             clazz.setInstanceVariable("@java_interfaces", javaInterfaces);
 
             initInterfaceImplMethods(context, clazz);
@@ -151,7 +151,7 @@ public class JavaInterfaceTemplate {
         }
     }
 
-    private static void checkAlreadyReified(final RubyClass clazz, Ruby runtime) throws RaiseException {
+    private static void checkAlreadyReified(ThreadContext context, final RubyClass clazz) throws RaiseException {
         // not allowed for original (non-generated) Java classes
         // note: not allowing for any previously created class right now;
         // this restriction might be loosened later for generated classes
@@ -159,11 +159,11 @@ public class JavaInterfaceTemplate {
                 ||
                 ( clazz.hasInstanceVariable("@java_class")
                     && clazz.getInstanceVariable("@java_class").isTrue()
-                    && !clazz.getSingletonClass().isMethodBound("java_proxy_class", false) )
+                    && !clazz.singletonClass(context).isMethodBound("java_proxy_class", false) )
                 ||
                 ( clazz.hasInstanceVariable("@java_proxy_class")
                     && clazz.getInstanceVariable("@java_proxy_class").isTrue() ) ) {
-            throw runtime.newArgumentError("can not add Java interface to existing Java class");
+            throw argumentError(context, "can not add Java interface to existing Java class");
         }
     }
 
@@ -174,7 +174,7 @@ public class JavaInterfaceTemplate {
             // First we make modifications to the class, to adapt it to being
             // both a Ruby class and a proxy for a Java type
 
-            RubyClass singleton = clazz.getSingletonClass();
+            RubyClass singleton = clazz.singletonClass(context);
 
             // list of interfaces we implement
             singleton.addReadAttribute(context, "java_interfaces");
@@ -214,7 +214,7 @@ public class JavaInterfaceTemplate {
 
         // Now we add an "implement" and "implement_all" methods to the class
         if ( ! clazz.isMethodBound("implement", false) ) {
-            final RubyClass singleton = clazz.getSingletonClass();
+            final RubyClass singleton = clazz.singletonClass(context);
 
             // implement is called to force this class to create stubs for all methods in the given interface,
             // so they'll show up in the list of methods and be invocable without passing through method_missing
@@ -325,7 +325,7 @@ public class JavaInterfaceTemplate {
         // well
         synchronized (module) {
             if ( initInterfaceModules(self, module) ) { // true - initialized
-                final RubyClass singleton = module.getSingletonClass();
+                final RubyClass singleton = module.singletonClass(context);
                 singleton.addMethod("append_features", new AppendFeatures(singleton));
             }
             else {
@@ -354,7 +354,7 @@ public class JavaInterfaceTemplate {
 
     @JRubyMethod
     public static IRubyObject extended(ThreadContext context, IRubyObject self, IRubyObject object) {
-        RubyClass singleton = object.getSingletonClass();
+        RubyClass singleton = object.singletonClass(context);
         singleton.include(context, self);
         return singleton;
     }
