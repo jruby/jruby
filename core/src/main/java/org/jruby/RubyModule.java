@@ -2459,12 +2459,12 @@ public class RubyModule extends RubyObject {
      * {@link RubyModule#defineClassUnder(ThreadContext, String, RubyClass, ObjectAllocator)} for native
      * extensions.
      *
-     * @param name
-     * @param superClazz
-     * @param allocator
-     * @param file
-     * @param line
-     * @return
+     * @param name to be defined
+     * @param superClazz the super class of this new class
+     * @param allocator how to allocate it
+     * @param file location where it was defined from
+     * @param line location where it was defined from
+     * @return the new class.
      */
     public RubyClass defineClassUnder(ThreadContext context, String name, RubyClass superClazz,
                                       ObjectAllocator allocator, String file, int line) {
@@ -2504,7 +2504,7 @@ public class RubyModule extends RubyObject {
                 }
             }
 
-            clazz = RubyClass.newClass(context.runtime, superClazz, name, allocator, this, true, file, line);
+            clazz = RubyClass.newClass(context, superClazz, name, allocator, this, true, file, line);
         }
 
         return clazz;

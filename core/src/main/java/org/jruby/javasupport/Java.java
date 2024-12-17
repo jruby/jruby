@@ -480,7 +480,7 @@ public class Java implements Library {
                 // other java proxy classes added under their superclass' java proxy
                 superClass = (RubyClass) getProxyClass(runtime, clazz.getSuperclass());
             }
-            proxy = RubyClass.newClass(runtime, superClass);
+            proxy = RubyClass.newClass(context, superClass, null);
         }
 
         // ensure proxy is visible down-thread
@@ -570,7 +570,7 @@ public class Java implements Library {
         }
         proxyClass.defineMethods(context, JavaProxy.ClassMethods.class);
 
-        if ( invokeInherited ) proxyClass.inherit(superClass);
+        if (invokeInherited) superClass.invokeInherited(context, superClass, proxyClass);
 
         Initializer.setupProxyClass(context, javaClass, proxyClass);
 

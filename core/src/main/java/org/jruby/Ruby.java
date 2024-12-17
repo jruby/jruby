@@ -362,9 +362,9 @@ public final class Ruby implements Constantizable {
 
         // nil, true, and false all are set in TC so they need to be created above (both class and instances).
         // their methods are added afterward since no dispatch happens until after first TC is defined.
-        nilClass = defineClassBootstrap("NilClass");
-        falseClass = defineClassBootstrap("FalseClass");
-        trueClass = defineClassBootstrap("TrueClass");
+        nilClass = RubyClass.newClassBootstrap(this, objectClass, "NilClass");
+        falseClass = RubyClass.newClassBootstrap(this, objectClass, "FalseClass");
+        trueClass = RubyClass.newClassBootstrap(this, objectClass, "TrueClass");
 
         nilObject = new RubyNil(this, nilClass);
         nilPrefilledArray = new IRubyObject[NIL_PREFILLED_ARRAY_SIZE];
@@ -1458,17 +1458,15 @@ public final class Ruby implements Constantizable {
 
         if (superClass == null) superClass = determineSuperClass(context, id, parent, parentIsObject);
 
-        return RubyClass.newClass(this, superClass, id, allocator, parent, !parentIsObject, callSites);
+        return RubyClass.newClass(context, superClass, id, allocator, parent, !parentIsObject, callSites);
     }
 
     private RubyClass determineSuperClass(ThreadContext context, String id, RubyModule parent, boolean parentIsObject) {
-        RubyClass superClass;
         IRubyObject className = parentIsObject ? ids(this, id) :
                 parent.toRubyString(context).append(newString("::")).append(ids(this, id));
         warn(context, str(this, "no super class for '", className, "', Object assumed"));
 
-        superClass = objectClass;
-        return superClass;
+        return objectClass;
     }
 
     private RubyClass foundExistingClass(ThreadContext context, String id, RubyClass superClass, ObjectAllocator allocator, IRubyObject obj) {
@@ -1494,16 +1492,6 @@ public final class Ruby implements Constantizable {
     @Extension
     public RubyModule defineModule(String name) {
         return defineModuleUnder(getCurrentContext(), name, objectClass);
-    }
-
-    /**
-     * This is only for defining nil,true,false.  The reason we have this is so all other define methods
-     * can count on ThreadContext being available.  These are defined before that point.
-     * @param name The name for the new class
-     * @return The new class
-     */
-    public RubyClass defineClassBootstrap(String name) {
-        return RubyClass.newClass(this, objectClass, name, NOT_ALLOCATABLE_ALLOCATOR, objectClass, false, null);
     }
 
     /**
