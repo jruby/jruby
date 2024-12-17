@@ -13,6 +13,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
 import org.jruby.RubyRange;
+import org.jruby.RubyRational;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.JavaSites;
@@ -320,6 +321,24 @@ public class Convert {
         IRubyObject conv = convertToTypeWithCheck(context, obj, context.runtime.getInteger(), sites.to_int_checked);
 
         return conv instanceof RubyInteger ? conv : context.nil;
+    }
+
+    // MRI: rb_check_convert_type with Rational and to_r
+    /**
+     * Convert the given argument to a Rational, or return nil if it cannot be converted.
+     *
+     * @param context the current thread context
+     * @param obj the object to convert
+     * @return a Rational based on the object, or nil if it could not be converted
+     */
+    public static IRubyObject checkToRational(ThreadContext context, IRubyObject obj) {
+        if (obj instanceof RubyRational) return obj;
+
+        JavaSites.TypeConverterSites sites = sites(context);
+
+        IRubyObject conv = convertToTypeWithCheck(context, obj, context.runtime.getRational(), sites.to_r_checked);
+
+        return conv instanceof RubyRational ? conv : context.nil;
     }
 
     /**

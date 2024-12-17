@@ -29,6 +29,7 @@ package org.jruby;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Convert;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
@@ -1216,7 +1217,15 @@ public class RubyComplex extends RubyNumeric {
      */
     @JRubyMethod(name = "to_r")
     public IRubyObject to_r(ThreadContext context) {
-        checkValidRational(context, "Rational");
+        if (image instanceof RubyFloat imageFloat && imageFloat.isZero(context)) {
+            /* Do nothing here */
+        } else if (!k_exact_zero_p(context, image)) {
+            IRubyObject imag = Convert.checkToRational(context, image);
+            if (imag.isNil() || !k_exact_zero_p(context, imag)) {
+                throw rangeError(context, "can't convert " + this + " into Rational");
+            }
+        }
+
         return f_to_r(context, real);
     }
 

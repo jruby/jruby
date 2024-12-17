@@ -761,6 +761,13 @@ public class Numeric {
         return !(x instanceof RubyFloat);
     }
 
+    /**
+     * MRI: k_exact_zero_p
+     */
+    public static boolean k_exact_zero_p(ThreadContext context, IRubyObject x) {
+        return k_exact_p(x) && f_zero_p(context, x);
+    }
+
     public static boolean k_inexact_p(IRubyObject x) {
         return x instanceof RubyFloat;
     }
