@@ -393,6 +393,7 @@ public class JavaSites {
         public final CheckedSites to_ary_checked = new CheckedSites("to_ary");
         public final CheckedSites to_a_checked = new CheckedSites("to_a");
         public final CheckedSites to_r_checked = new CheckedSites("to_r");
+        public final CheckedSites to_str_checked = new CheckedSites("to_str");
     }
 
     public static class HelpersSites {

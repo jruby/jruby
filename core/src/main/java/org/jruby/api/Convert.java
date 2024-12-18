@@ -341,6 +341,23 @@ public class Convert {
         return conv instanceof RubyRational ? conv : context.nil;
     }
 
+    // MRI: rb_check_to_string
+    /**
+     * Check whether the given object is a String or can be converted to a String using #to_str.
+     * @param context the current thread context
+     * @param obj the object to be converted
+     * @return the String value or nil if the object or conversion is not a String.
+     */
+    public static IRubyObject checkToString(ThreadContext context, IRubyObject obj) {
+        if (obj instanceof RubyString) return obj;
+
+        JavaSites.TypeConverterSites sites = sites(context);
+
+        IRubyObject conv = convertToTypeWithCheck(context, obj, context.runtime.getString(), sites.to_str_checked);
+
+        return conv instanceof RubyInteger ? conv : context.nil;
+    }
+
     /**
      * Check to make sure the long num given will fit into an int.
      *
