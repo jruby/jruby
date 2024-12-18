@@ -1195,6 +1195,11 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                     holder.enc2 = null;
                 }
             }
+            if (holder.enc2 == ASCIIEncoding.INSTANCE) {
+                /* If external is ASCII-8BIT, no transcoding */
+                holder.enc = holder.enc2;
+                holder.enc2 = null;
+            }
             EncodingUtils.SET_UNIVERSAL_NEWLINE_DECORATOR_IF_ENC2(holder.getEnc2(), ecflags);
             ecflags = EncodingUtils.econvPrepareOptions(context, opt, ecopts_p, ecflags);
         } else {
