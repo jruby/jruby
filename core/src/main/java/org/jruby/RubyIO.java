@@ -5604,7 +5604,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         final RubyThread[] waitThread = new RubyThread[1];
         waitThread[0] = new RubyThread(
                 runtime,
-                (RubyClass) runtime.getProcess().getConstantAt("WaitThread"), // Process::WaitThread
+                (RubyClass) runtime.getProcess().getConstantAt(context, "WaitThread"), // Process::WaitThread
                 new ThreadedRunnable() {
 
                     volatile Thread javaThread;

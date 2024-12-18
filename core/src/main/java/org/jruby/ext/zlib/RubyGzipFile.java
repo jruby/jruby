@@ -89,7 +89,7 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         Ruby runtime = recv.getRuntime();
         RubyGzipFile instance;
 
-        if (((RubyModule) recv).isKindOfModule(runtime.getModule("Zlib").getClass("GzipWriter"))) {
+        if (((RubyModule) recv).isKindOfModule(runtime.getModule("Zlib").getClass(context, "GzipWriter"))) {
             instance = JZlibRubyGzipWriter.newInstance(recv, args);
         } else {
             instance = JZlibRubyGzipReader.newInstance(recv, args);
@@ -208,25 +208,38 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return closed;
     }
 
-    @JRubyMethod(name = "orig_name")
+    @Deprecated(since = "10.0")
     public IRubyObject orig_name() {
-        if (closed) {
-            throw RubyZlib.newGzipFileError(getRuntime(), "closed gzip stream");
-        }
-        return nullFreeOrigName == null ? getRuntime().getNil() : nullFreeOrigName;
+        return orig_name(getCurrentContext());
+    }
+
+    @JRubyMethod(name = "orig_name")
+    public IRubyObject orig_name(ThreadContext context) {
+        if (closed) throw RubyZlib.newGzipFileError(context, "closed gzip stream");
+
+        return nullFreeOrigName == null ? context.nil : nullFreeOrigName;
+    }
+
+    @Deprecated(since = "10.0")
+    public IRubyObject to_io() {
+        return to_io(getCurrentContext());
     }
 
     @JRubyMethod(name = "to_io")
-    public IRubyObject to_io() {
+    public IRubyObject to_io(ThreadContext context) {
         return realIo;
     }
 
-    @JRubyMethod(name = "comment")
+    @Deprecated(since = "10.0")
     public IRubyObject comment() {
-        if (closed) {
-            throw RubyZlib.newGzipFileError(getRuntime(), "closed gzip stream");
-        }
-        return nullFreeComment == null ? getRuntime().getNil() : nullFreeComment;
+        return comment(getCurrentContext());
+    }
+
+    @JRubyMethod(name = "comment")
+    public IRubyObject comment(ThreadContext context) {
+        if (closed) throw RubyZlib.newGzipFileError(context, "closed gzip stream");
+
+        return nullFreeComment == null ? context.nil : nullFreeComment;
     }
 
     @Deprecated

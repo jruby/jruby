@@ -101,30 +101,30 @@ public abstract class Factory {
         synchronized (FFI) {
             var context = runtime.getCurrentContext();
             var Object = objectClass(context);
-            var _Type = FFI.getClass("Type");
-            var _Struct = FFI.getClass("Struct");
-            var _AbstractMemory = FFI.getClass(AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS);
-            var _Pointer = FFI.getClass("Pointer");
+            var _Type = FFI.getClass(context, "Type");
+            var _Struct = FFI.getClass(context, "Struct");
+            var _AbstractMemory = FFI.getClass(context, AbstractMemory.ABSTRACT_MEMORY_RUBY_CLASS);
+            var _Pointer = FFI.getClass(context, "Pointer");
             var _DataConverter = DataConverter.createDataConverterModule(context, FFI);
 
             if (_Type == null) _Type = Type.createTypeClass(context, FFI, Object);
             if (_AbstractMemory == null) _AbstractMemory = AbstractMemory.createAbstractMemoryClass(context, FFI, Object);
-            if (FFI.getClass("Buffer") == null) Buffer.createBufferClass(context, FFI, _AbstractMemory);
+            if (FFI.getClass(context, "Buffer") == null) Buffer.createBufferClass(context, FFI, _AbstractMemory);
             if (_Pointer == null) _Pointer = Pointer.createPointerClass(context, FFI, _AbstractMemory);
-            if (FFI.getClass("AutoPointer") == null) AutoPointer.createAutoPointerClass(context, FFI, _Pointer);
-            if (FFI.getClass("MemoryPointer") == null) MemoryPointer.createMemoryPointerClass(context, FFI, _Pointer);
+            if (FFI.getClass(context, "AutoPointer") == null) AutoPointer.createAutoPointerClass(context, FFI, _Pointer);
+            if (FFI.getClass(context, "MemoryPointer") == null) MemoryPointer.createMemoryPointerClass(context, FFI, _Pointer);
             if (_Struct == null) _Struct = Struct.createStructClass(context, FFI);
-            if (FFI.getClass(StructLayout.CLASS_NAME) == null) {
+            if (FFI.getClass(context, StructLayout.CLASS_NAME) == null) {
                 StructLayout.createStructLayoutClass(context, FFI, Object, enumerableModule(context), _Type, _Struct);
             }
-            if (FFI.getClass("StructByValue") == null) StructByValue.createStructByValueClass(context, FFI, _Type);
-            if (FFI.getClass(AbstractInvoker.CLASS_NAME) == null) {
+            if (FFI.getClass(context, "StructByValue") == null) StructByValue.createStructByValueClass(context, FFI, _Type);
+            if (FFI.getClass(context, AbstractInvoker.CLASS_NAME) == null) {
                 AbstractInvoker.createAbstractInvokerClass(context, FFI, _Pointer);
             }
-            if (FFI.getClass(CallbackInfo.CLASS_NAME) == null) CallbackInfo.createCallbackInfoClass(context, FFI, _Type);
-            if (FFI.getClass("Enums") == null) Enums.createEnumsClass(context, FFI, Object, _DataConverter);
-            if (_Type.getClass("Mapped") == null) MappedType.createConverterTypeClass(context, _Type);
-            if (FFI.getClass(FileDescriptorIO.CLASS_NAME) == null) {
+            if (FFI.getClass(context, CallbackInfo.CLASS_NAME) == null) CallbackInfo.createCallbackInfoClass(context, FFI, _Type);
+            if (FFI.getClass(context, "Enums") == null) Enums.createEnumsClass(context, FFI, Object, _DataConverter);
+            if (_Type.getClass(context, "Mapped") == null) MappedType.createConverterTypeClass(context, _Type);
+            if (FFI.getClass(context, FileDescriptorIO.CLASS_NAME) == null) {
                 FileDescriptorIO.createFileDescriptorIOClass(context, FFI, ioClass(context));
             }
 

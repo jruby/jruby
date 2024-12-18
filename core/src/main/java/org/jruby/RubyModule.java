@@ -467,18 +467,19 @@ public class RubyModule extends RubyObject {
         RubyModule module = defineModule(context).baseName(name);
         if (setParent) module.setParent(parent);
         if (file != null) {
-            parent.setConstant(name, module, file, line);
+            parent.setConstant(context, name, module, file, line);
         } else {
-            parent.setConstant(name, module);
+            parent.setConstant(context, name, module);
         }
         return module;
     }
 
     @Deprecated(since = "10.0")
     public static RubyModule newModule(Ruby runtime, String name, RubyModule parent, boolean setParent) {
+        var context = runtime.getCurrentContext();
         RubyModule module = new RubyModule(runtime).baseName(name);
         if (setParent) module.setParent(parent);
-        parent.setConstant(name, module);
+        parent.setConstant(context, name, module);
         return module;
     }
 
@@ -1194,22 +1195,31 @@ public class RubyModule extends RubyObject {
      * @since 9.2
      */
     public RubyModule getModule(String name) {
-        return (RubyModule) getConstantAt(name);
+        return (RubyModule) getConstantAt(getRuntime().getCurrentContext(), name);
+    }
+
+    @Deprecated(since = "10.0")
+    public RubyClass getClass(String name) {
+        return getClass(getCurrentContext(), name);
     }
 
     /**
-     * Finds a class that is within the current module (or class).
+     * Finds a class that is within the current module/class.  Also consider using
+     * the various methods in {@link org.jruby.api.Access} when they are core types
+     * to avoid a hash lookup.
      *
+     * @param context the current thread context
      * @param name to be found in this module (or class)
      * @return the class or null if no such class
      */
-    public RubyClass getClass(String name) {
-        return (RubyClass) getConstantAt(name);
+    @JRubyAPI
+    public RubyClass getClass(ThreadContext context, String name) {
+        return (RubyClass) getConstantAt(context, name);
     }
 
     @Deprecated
     public RubyClass fastGetClass(String internedName) {
-        return getClass(internedName);
+        return getClass(getCurrentContext(), internedName);
     }
 
     /**
@@ -4447,7 +4457,7 @@ public class RubyModule extends RubyObject {
 
             if (!inherit) {
                 if (!mod.constDefinedAt(id)) return false;
-                obj = mod.getConstantAt(id);
+                obj = mod.getConstantAt(context, id);
             } else if (index == 0 && segment.realSize() == 0) {
                 if (!mod.constDefined(id)) return false;
                 obj = mod.getConstant(id);
@@ -4614,7 +4624,7 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "const_set")
     public IRubyObject const_set(ThreadContext context, IRubyObject name, IRubyObject value) {
-        return setConstant(validateConstant(name), value, context.getFile(), context.getLine() + 1);
+        return setConstant(context, validateConstant(name), value, context.getFile(), context.getLine() + 1);
     }
 
     @JRubyMethod(name = "remove_const", visibility = PRIVATE)
@@ -5013,11 +5023,21 @@ public class RubyModule extends RubyObject {
         return value == UNDEF ? resolveUndefConstant(name) : value;
     }
 
+    @Deprecated(since = "10.0")
     public IRubyObject getConstantAt(String name) {
-        return getConstantAt(name, true);
+        return getConstantAt(getCurrentContext(), name);
     }
 
+    public IRubyObject getConstantAt(ThreadContext context, String name) {
+        return getConstantAt(context, name, true);
+    }
+
+    @Deprecated(since = "10.0")
     public IRubyObject getConstantAt(String name, boolean includePrivate) {
+        return getConstantAt(getCurrentContext(), name, includePrivate);
+    }
+
+    public IRubyObject getConstantAt(ThreadContext context, String name, boolean includePrivate) {
         IRubyObject value = fetchConstant(name, includePrivate);
 
         return value == UNDEF ? resolveUndefConstant(name) : value;
@@ -5025,7 +5045,7 @@ public class RubyModule extends RubyObject {
 
     @Deprecated
     public IRubyObject fastGetConstantAt(String internedName) {
-        return getConstantAt(internedName);
+        return getConstantAt(getCurrentContext(), internedName);
     }
 
     /**
@@ -5245,6 +5265,10 @@ public class RubyModule extends RubyObject {
         return getAutoloadConstant(name);
     }
 
+    public IRubyObject setConstantQuiet(String name, IRubyObject value) {
+        return setConstantQuiet(getCurrentContext(), name, value);
+    }
+
     /**
      * Set the named constant on this module. Also, if the value provided is another Module and
      * that module has not yet been named, assign it the specified name. This version does not
@@ -5254,8 +5278,13 @@ public class RubyModule extends RubyObject {
      * @param value The value to assign to it; if an unnamed Module, also set its basename to name
      * @return The result of setting the variable.
      */
-    public IRubyObject setConstantQuiet(String name, IRubyObject value) {
-        return setConstantCommon(name, value, false, false, null, -1);
+    public IRubyObject setConstantQuiet(ThreadContext context, String name, IRubyObject value) {
+        return setConstantCommon(context, name, value, false, false, null, -1);
+    }
+
+    @Deprecated(since = "10.0")
+    public IRubyObject setConstant(String name, IRubyObject value) {
+        return setConstant(getCurrentContext(), name, value);
     }
 
     /**
@@ -5266,16 +5295,26 @@ public class RubyModule extends RubyObject {
      * @param value The value to assign to it; if an unnamed Module, also set its basename to name
      * @return The result of setting the variable.
      */
-    public IRubyObject setConstant(String name, IRubyObject value) {
-        return setConstantCommon(name, value, false, true, null, -1);
+    public IRubyObject setConstant(ThreadContext context, String name, IRubyObject value) {
+        return setConstantCommon(context, name, value, false, true, null, -1);
     }
 
+    @Deprecated(since = "10.0")
     public IRubyObject setConstant(String name, IRubyObject value, String file, int line) {
-        return setConstantCommon(name, value, false, true, file, line);
+        return setConstant(getCurrentContext(), name, value, file, line);
     }
 
+    public IRubyObject setConstant(ThreadContext context, String name, IRubyObject value, String file, int line) {
+        return setConstantCommon(context, name, value, false, true, file, line);
+    }
+
+    @Deprecated(since = "10.0")
     public IRubyObject setConstant(String name, IRubyObject value, boolean hidden) {
-        return setConstantCommon(name, value, hidden, true, null, -1);
+        return setConstant(getCurrentContext(), name, value, hidden);
+    }
+
+    public IRubyObject setConstant(ThreadContext context, String name, IRubyObject value, boolean hidden) {
+        return setConstantCommon(context, name, value, hidden, true, null, -1);
     }
 
     /**
@@ -5289,7 +5328,8 @@ public class RubyModule extends RubyObject {
      *               and its value is being updated.
      * @return The result of setting the variable.
      */
-    private IRubyObject setConstantCommon(String name, IRubyObject value, boolean hidden, boolean warn, String file, int line) {
+    private IRubyObject setConstantCommon(ThreadContext context, String name, IRubyObject value, boolean hidden,
+                                          boolean warn, String file, int line) {
         ConstantEntry oldEntry = fetchConstantEntry(name, true);
 
         setParentForModule(name, value);
@@ -5299,7 +5339,6 @@ public class RubyModule extends RubyObject {
             boolean notAutoload = oldEntry.value != UNDEF;
             if (notAutoload || !setAutoloadConstant(name, value, file, line)) {
                 if (warn && notAutoload) {
-                    var context = getRuntime().getCurrentContext();
                     warn(context, "already initialized constant " +
                             (this.equals(objectClass(context)) ? name : (this + "::" + name)));
                 }
@@ -5325,9 +5364,9 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4-")
     public IRubyObject fastSetConstant(String internedName, IRubyObject value) {
-        return setConstant(internedName, value);
+        return setConstant(getCurrentContext(), internedName, value);
     }
 
     /**
@@ -5389,7 +5428,7 @@ public class RubyModule extends RubyObject {
     @JRubyAPI
     public <T extends RubyModule> T defineConstant(ThreadContext context, String name, IRubyObject value, boolean hidden) {
         if (!IdUtil.isValidConstantName(name)) throw context.runtime.newNameError("bad constant name " + name, name);
-        setConstantCommon(name, value, hidden, true, null, -1);
+        setConstantCommon(context, name, value, hidden, true, null, -1);
         return (T) this;
     }
 
@@ -5399,13 +5438,12 @@ public class RubyModule extends RubyObject {
     @Extension
     @Deprecated(since = "10.0")
     public void defineConstant(String name, IRubyObject value) {
+        var context = getCurrentContext();
         assert value != null;
 
-        if (!IdUtil.isValidConstantName(name)) {
-            throw getRuntime().newNameError("bad constant name " + name, name);
-        }
+        if (!IdUtil.isValidConstantName(name)) throw context.runtime.newNameError("bad constant name " + name, name);
 
-        setConstant(name, value);
+        setConstant(context, name, value);
     }
 
     public boolean isConstantDefined(String name, boolean inherit) {

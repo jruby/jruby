@@ -2531,11 +2531,11 @@ public class IRRuntimeHelpers {
     }
 
     private static void putConst(ThreadContext context, IRubyObject self, IRubyObject module, String id, IRubyObject value, String filename, int line) {
-        if (!(module instanceof RubyModule)) throw typeError(context, module.inspect(context) + " is not a class/module");
+        if (!(module instanceof RubyModule mod)) throw typeError(context, module.inspect(context) + " is not a class/module");
 
         warnSetConstInRefinement(context, self);
 
-        ((RubyModule) module).setConstant(id, value, filename, line);
+        mod.setConstant(context, id, value, filename, line);
     }
 
     @Interp @JIT

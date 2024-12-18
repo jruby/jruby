@@ -226,7 +226,7 @@ public class DataConverters {
                 if (ptr.getAddress() == 0) return context.nil;
 
                 return new org.jruby.ext.ffi.jffi.Function(context.runtime,
-                        context.runtime.getModule("FFI").getClass("Function"),
+                        context.runtime.getModule("FFI").getClass(context, "Function"),
                         new CodeMemoryIO(context.runtime, ptr), functionInfo, null);
             }
 

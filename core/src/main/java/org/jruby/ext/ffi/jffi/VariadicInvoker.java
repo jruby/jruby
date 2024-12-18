@@ -139,7 +139,7 @@ public class VariadicInvoker extends RubyObject {
         IRubyObject[] params = ((RubyArray) paramsArg).toJavaArrayMaybeUnsafe();
         com.kenai.jffi.Type[] ffiParamTypes = new com.kenai.jffi.Type[types.length];
         ParameterMarshaller[] marshallers = new ParameterMarshaller[types.length];
-        RubyClass builtinClass = Type.getTypeClass(context.getRuntime()).getClass("Builtin");
+        RubyClass builtinClass = Type.getTypeClass(context.runtime).getClass(context, "Builtin");
 
         for (int i = 0; i < types.length; ++i) {
             Type type = (Type) types[i];

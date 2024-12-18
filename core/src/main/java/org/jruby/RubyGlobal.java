@@ -127,7 +127,7 @@ public class RubyGlobal {
         if (objectClass.getConstantNoConstMissing("ARGV") != null) {
             ((RubyArray<?>) objectClass.getConstant("ARGV")).replace(context, argvArray);
         } else {
-            objectClass.setConstantQuiet("ARGV", argvArray);
+            objectClass.setConstantQuiet(context, "ARGV", argvArray);
             globalVariables(context).define("$*", new ValueAccessor(argvArray), GLOBAL);
         }
     }

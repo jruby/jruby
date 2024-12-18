@@ -308,52 +308,52 @@ public class RubyZlib {
         return adler32_combine(((RubyBasicObject) recv).getCurrentContext(), recv, arg0, arg1, arg2);
     }
 
-    static RaiseException newZlibError(Ruby runtime, String message) {
-        return newZlibError(runtime, "Error", message);
+    static RaiseException newZlibError(ThreadContext context, String message) {
+        return newZlibError(context, "Error", message);
     }
 
-    static RaiseException newBufError(Ruby runtime, String message) {
-        return newZlibError(runtime, "BufError", message);
+    static RaiseException newBufError(ThreadContext context, String message) {
+        return newZlibError(context, "BufError", message);
     }
 
-    static RaiseException newDictError(Ruby runtime, String message) {
-        return newZlibError(runtime, "NeedDict", message);
+    static RaiseException newDictError(ThreadContext context, String message) {
+        return newZlibError(context, "NeedDict", message);
     }
 
-    static RaiseException newStreamError(Ruby runtime, String message) {
-        return newZlibError(runtime, "StreamError", message);
+    static RaiseException newStreamError(ThreadContext context, String message) {
+        return newZlibError(context, "StreamError", message);
     }
 
-    static RaiseException newDataError(Ruby runtime, String message) {
-        return newZlibError(runtime, "DataError", message);
+    static RaiseException newDataError(ThreadContext context, String message) {
+        return newZlibError(context, "DataError", message);
     }
 
-    static RaiseException newZlibError(Ruby runtime, String klass, String message) {
-        RubyClass errorClass = runtime.getModule("Zlib").getClass(klass);
-        return RaiseException.from(runtime, errorClass, message);
+    static RaiseException newZlibError(ThreadContext context, String klass, String message) {
+        RubyClass errorClass = context.runtime.getModule("Zlib").getClass(context, klass);
+        return RaiseException.from(context.runtime, errorClass, message);
     }
 
-    static RaiseException newGzipFileError(Ruby runtime, String message) {
-        return newGzipFileError(runtime, "Error", message);
+    static RaiseException newGzipFileError(ThreadContext context, String message) {
+        return newGzipFileError(context, "Error", message);
     }
 
-    static RaiseException newCRCError(Ruby runtime, String message) {
-        return newGzipFileError(runtime, "CRCError", message);
+    static RaiseException newCRCError(ThreadContext context, String message) {
+        return newGzipFileError(context, "CRCError", message);
     }
 
-    static RaiseException newNoFooter(Ruby runtime, String message) {
-        return newGzipFileError(runtime, "NoFooter", message);
+    static RaiseException newNoFooter(ThreadContext context, String message) {
+        return newGzipFileError(context, "NoFooter", message);
     }
 
-    static RaiseException newLengthError(Ruby runtime, String message) {
-        return newGzipFileError(runtime, "LengthError", message);
+    static RaiseException newLengthError(ThreadContext context, String message) {
+        return newGzipFileError(context, "LengthError", message);
     }
 
-    static RaiseException newGzipFileError(Ruby runtime, String klass, String message) {
-        RubyClass errorClass = runtime.getModule("Zlib").getClass("GzipFile").getClass(klass);
-        RubyException excn = RubyException.newException(runtime, errorClass, message);
+    static RaiseException newGzipFileError(ThreadContext context, String klass, String message) {
+        RubyClass errorClass = context.runtime.getModule("Zlib").getClass(context, "GzipFile").getClass(context, klass);
+        RubyException excn = RubyException.newException(context.runtime, errorClass, message);
         // TODO: not yet supported. rewrite GzipReader/Writer with Inflate/Deflate?
-        excn.setInstanceVariable("@input", runtime.getNil());
+        excn.setInstanceVariable("@input", context.nil);
         return excn.toThrowable();
     }
 

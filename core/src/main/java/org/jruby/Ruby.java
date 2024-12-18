@@ -962,7 +962,7 @@ public final class Ruby implements Constantizable {
         ParseResult result = parseFromMain(filename, inputStream);
 
         // if no DATA, we're done with the stream, shut it down
-        if (fetchGlobalConstant("DATA") == null) {
+        if (objectClass.fetchConstant("DATA") == null) {
             try {inputStream.close();} catch (IOException ioe) {}
         }
 
@@ -1375,7 +1375,8 @@ public final class Ruby implements Constantizable {
      * @return The class
      */
     public RubyClass getClass(String name) {
-        return objectClass.getClass(name);
+        var context = getCurrentContext();
+        return objectClass.getClass(context, name);
     }
 
     /**
@@ -1453,7 +1454,7 @@ public final class Ruby implements Constantizable {
      */
     public RubyClass defineClassUnder(ThreadContext context, String id, RubyClass superClass, ObjectAllocator allocator,
                                       RubyModule parent, CallSite[] callSites) {
-        IRubyObject object = parent.getConstantAt(id);
+        IRubyObject object = parent.getConstantAt(context, id);
         if (object != null) return foundExistingClass(context, id, superClass, allocator, object);
 
         boolean parentIsObject = parent == objectClass;
@@ -1522,7 +1523,7 @@ public final class Ruby implements Constantizable {
      * @return The new module
      */
     public RubyModule defineModuleUnder(ThreadContext context, String name, RubyModule parent) {
-        IRubyObject moduleObj = parent.getConstantAt(name);
+        IRubyObject moduleObj = parent.getConstantAt(context, name);
 
         boolean parentIsObject = parent == objectClass;
 
@@ -1553,7 +1554,7 @@ public final class Ruby implements Constantizable {
     @Deprecated(since = "10.0")
     public RubyModule getOrCreateModule(String id) {
         var context = getCurrentContext();
-        IRubyObject module = objectClass.getConstantAt(id);
+        IRubyObject module = objectClass.getConstantAt(context, id);
         if (module == null) {
             module = Define.defineModule(context, id);
         } else if (!module.isModule()) {
@@ -1589,6 +1590,7 @@ public final class Ruby implements Constantizable {
      * @param name the name
      * @return the value
      */
+    @Deprecated(since = "10.0")
     public IRubyObject fetchGlobalConstant(String name) {
         return objectClass.fetchConstant(name, false);
     }
@@ -2887,36 +2889,39 @@ public final class Ruby implements Constantizable {
      * @return the module or null when flexible search is false and a constant cannot be found.
      */
     public RubyModule getClassFromPath(final String path, RubyClass undefinedExceptionClass, boolean flexibleSearch) {
+        var context = getCurrentContext();
+
         if (path.length() == 0 || path.charAt(0) == '#') {
-            throw newRaiseException(getTypeError(), str(this, "can't retrieve anonymous class ", ids(this, path)));
+            throw typeError(context, str(this, "can't retrieve anonymous class ", ids(this, path)));
         }
 
-        RubyModule c = getObject();
+        RubyModule clazz = getObject();
         int pbeg = 0, p = 0;
-        for (int l = path.length(); p < l; ) {
-            while ( p < l && path.charAt(p) != ':' ) p++;
+        for (int length = path.length(); p < length; ) {
+            while ( p < length && path.charAt(p) != ':' ) p++;
 
             final String str = path.substring(pbeg, p);
 
-            if ( p < l && path.charAt(p) == ':' ) {
-                if ( ++p < l && path.charAt(p) != ':' ) {
+            if ( p < length && path.charAt(p) == ':' ) {
+                if ( ++p < length && path.charAt(p) != ':' ) {
                     throw newRaiseException(undefinedExceptionClass, str(this, "undefined class/module ", ids(this, path)));
                 }
                 pbeg = ++p;
             }
 
             // FIXME: JI depends on const_missing getting called from Marshal.load (ruby objests do not).  We should marshal JI objects differently so we do not differentiate here.
-            IRubyObject cc = flexibleSearch || isJavaPackageOrJavaClassProxyType(c) ? c.getConstant(str) : c.getConstantAt(str);
+            IRubyObject cc = flexibleSearch || isJavaPackageOrJavaClassProxyType(clazz) ?
+                    clazz.getConstant(str) : clazz.getConstantAt(context, str);
 
             if (!flexibleSearch && cc == null) return null;
 
-            if (!(cc instanceof RubyModule)) {
-                throw newRaiseException(getTypeError(), str(this, ids(this, path), " does not refer to class/module"));
+            if (!(cc instanceof RubyModule mod)) {
+                throw typeError(context, str(this, ids(this, path), " does not refer to class/module"));
             }
-            c = (RubyModule) cc;
+            clazz = mod;
         }
 
-        return c;
+        return clazz;
     }
 
     private static boolean isJavaPackageOrJavaClassProxyType(final RubyModule type) {
@@ -3689,100 +3694,124 @@ public final class Ruby implements Constantizable {
     }
 
     public RaiseException newErrnoEBADFError() {
-        return newRaiseException(getErrno().getClass("EBADF"), "Bad file descriptor");
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "EBADF"), "Bad file descriptor");
     }
 
     public RaiseException newErrnoEISCONNError() {
-        return newRaiseException(getErrno().getClass("EISCONN"), "Socket is already connected");
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "EISCONN"), "Socket is already connected");
     }
 
     public RaiseException newErrnoEINPROGRESSError() {
-        return newRaiseException(getErrno().getClass("EINPROGRESS"), "Operation now in progress");
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "EINPROGRESS"), "Operation now in progress");
     }
 
     public RaiseException newErrnoEINPROGRESSWritableError() {
-        return newLightweightErrnoException(getIO().getClass("EINPROGRESSWaitWritable"), "");
+        var context = getCurrentContext();
+        return newLightweightErrnoException(getIO().getClass(context, "EINPROGRESSWaitWritable"), "");
     }
 
     public RaiseException newErrnoENOPROTOOPTError() {
-        return newRaiseException(getErrno().getClass("ENOPROTOOPT"), "Protocol not available");
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "ENOPROTOOPT"), "Protocol not available");
     }
 
     public RaiseException newErrnoEPIPEError() {
-        return newRaiseException(getErrno().getClass("EPIPE"), "Broken pipe");
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "EPIPE"), "Broken pipe");
     }
 
     public RaiseException newErrnoECONNABORTEDError() {
-        return newRaiseException(getErrno().getClass("ECONNABORTED"),
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "ECONNABORTED"),
                 "An established connection was aborted by the software in your host machine");
     }
 
     public RaiseException newErrnoECONNREFUSEDError() {
-        return newRaiseException(getErrno().getClass("ECONNREFUSED"), "Connection refused");
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "ECONNREFUSED"), "Connection refused");
     }
 
     public RaiseException newErrnoECONNREFUSEDError(String message) {
-        return newRaiseException(getErrno().getClass("ECONNREFUSED"), message);
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "ECONNREFUSED"), message);
     }
 
     public RaiseException newErrnoECONNRESETError() {
-        return newRaiseException(getErrno().getClass("ECONNRESET"), "Connection reset by peer");
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "ECONNRESET"), "Connection reset by peer");
     }
 
     public RaiseException newErrnoEADDRINUSEError() {
-        return newRaiseException(getErrno().getClass("EADDRINUSE"), "Address in use");
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "EADDRINUSE"), "Address in use");
     }
 
     public RaiseException newErrnoEADDRINUSEError(String message) {
-        return newRaiseException(getErrno().getClass("EADDRINUSE"), message);
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "EADDRINUSE"), message);
     }
 
     public RaiseException newErrnoEHOSTUNREACHError(String message) {
-        return newRaiseException(getErrno().getClass("EHOSTUNREACH"), message);
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "EHOSTUNREACH"), message);
     }
 
     public RaiseException newErrnoEINVALError() {
-        return newRaiseException(getErrno().getClass("EINVAL"), "Invalid file");
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "EINVAL"), "Invalid file");
     }
 
     public RaiseException newErrnoELOOPError() {
-        return newRaiseException(getErrno().getClass("ELOOP"), "Too many levels of symbolic links");
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "ELOOP"), "Too many levels of symbolic links");
     }
 
     public RaiseException newErrnoEMFILEError() {
-        return newRaiseException(getErrno().getClass("EMFILE"), "Too many open files");
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "EMFILE"), "Too many open files");
     }
 
     public RaiseException newErrnoENFILEError() {
-        return newRaiseException(getErrno().getClass("ENFILE"), "Too many open files in system");
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "ENFILE"), "Too many open files in system");
     }
 
     public RaiseException newErrnoENOENTError() {
-        return newRaiseException(getErrno().getClass("ENOENT"), "File not found");
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "ENOENT"), "File not found");
     }
 
     public RaiseException newErrnoEACCESError(String message) {
-        return newRaiseException(getErrno().getClass("EACCES"), message);
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "EACCES"), message);
     }
 
     public RaiseException newErrnoEAGAINError(String message) {
-        return newLightweightErrnoException(getErrno().getClass("EAGAIN"), message);
+        var context = getCurrentContext();
+        return newLightweightErrnoException(getErrno().getClass(context, "EAGAIN"), message);
     }
 
     public RaiseException newErrnoEAGAINReadableError(String message) {
-        return newLightweightErrnoException(getIO().getClass("EAGAINWaitReadable"), message);
+        var context = getCurrentContext();
+        return newLightweightErrnoException(getIO().getClass(context, "EAGAINWaitReadable"), message);
     }
 
     public RaiseException newErrnoEAGAINWritableError(String message) {
-        return newLightweightErrnoException(getIO().getClass("EAGAINWaitWritable"), message);
+        var context = getCurrentContext();
+        return newLightweightErrnoException(getIO().getClass(context, "EAGAINWaitWritable"), message);
     }
 
     public RaiseException newErrnoEISDirError(String message) {
-        return newRaiseException(getErrno().getClass("EISDIR"), message);
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "EISDIR"), message);
     }
 
     public RaiseException newErrnoEPERMError(String name) {
-        return newRaiseException(getErrno().getClass("EPERM"), "Operation not permitted - " + name);
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "EPERM"), "Operation not permitted - " + name);
     }
 
     public RaiseException newErrnoEISDirError() {
@@ -3790,103 +3819,128 @@ public final class Ruby implements Constantizable {
     }
 
     public RaiseException newErrnoESPIPEError() {
-        return newRaiseException(getErrno().getClass("ESPIPE"), "Illegal seek");
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "ESPIPE"), "Illegal seek");
     }
 
     public RaiseException newErrnoEBADFError(String message) {
-        return newRaiseException(getErrno().getClass("EBADF"), message);
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "EBADF"), message);
     }
 
     public RaiseException newErrnoEINPROGRESSError(String message) {
-        return newRaiseException(getErrno().getClass("EINPROGRESS"), message);
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "EINPROGRESS"), message);
     }
 
     public RaiseException newErrnoEINPROGRESSWritableError(String message) {
-        return newLightweightErrnoException(getIO().getClass("EINPROGRESSWaitWritable"), message);
+        var context = getCurrentContext();
+        return newLightweightErrnoException(getIO().getClass(context, "EINPROGRESSWaitWritable"), message);
     }
 
     public RaiseException newErrnoEISCONNError(String message) {
-        return newRaiseException(getErrno().getClass("EISCONN"), message);
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "EISCONN"), message);
     }
 
     public RaiseException newErrnoEINVALError(String message) {
-        return newRaiseException(getErrno().getClass("EINVAL"), message);
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "EINVAL"), message);
     }
 
     public RaiseException newErrnoENOTDIRError(String message) {
-        return newRaiseException(getErrno().getClass("ENOTDIR"), message);
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "ENOTDIR"), message);
     }
 
     public RaiseException newErrnoENOTEMPTYError(String message) {
-        return newRaiseException(getErrno().getClass("ENOTEMPTY"), message);
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "ENOTEMPTY"), message);
     }
 
     public RaiseException newErrnoENOTSOCKError(String message) {
-        return newRaiseException(getErrno().getClass("ENOTSOCK"), message);
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "ENOTSOCK"), message);
     }
 
     public RaiseException newErrnoENOTCONNError(String message) {
-        return newRaiseException(getErrno().getClass("ENOTCONN"), message);
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "ENOTCONN"), message);
     }
 
     public RaiseException newErrnoENOTCONNError() {
-        return newRaiseException(getErrno().getClass("ENOTCONN"), "Socket is not connected");
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "ENOTCONN"), "Socket is not connected");
     }
 
     public RaiseException newErrnoENOENTError(String message) {
-        return newRaiseException(getErrno().getClass("ENOENT"), message);
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "ENOENT"), message);
     }
 
     public RaiseException newErrnoEOPNOTSUPPError(String message) {
-        return newRaiseException(getErrno().getClass("EOPNOTSUPP"), message);
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "EOPNOTSUPP"), message);
     }
 
     public RaiseException newErrnoESPIPEError(String message) {
-        return newRaiseException(getErrno().getClass("ESPIPE"), message);
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "ESPIPE"), message);
     }
 
     public RaiseException newErrnoEEXISTError(String message) {
-        return newRaiseException(getErrno().getClass("EEXIST"), message);
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "EEXIST"), message);
     }
 
     public RaiseException newErrnoEDOMError(String message) {
-        return newRaiseException(getErrno().getClass("EDOM"), "Domain error - " + message);
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "EDOM"), "Domain error - " + message);
     }
 
     public RaiseException newErrnoEDOMError() {
-        return newRaiseException(getErrno().getClass("EDOM"), "Numerical argument out of domain");
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "EDOM"), "Numerical argument out of domain");
     }
 
     public RaiseException newErrnoECHILDError() {
-        return newRaiseException(getErrno().getClass("ECHILD"), "No child processes");
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "ECHILD"), "No child processes");
     }
 
     public RaiseException newErrnoEADDRNOTAVAILError(String message) {
-        return newRaiseException(getErrno().getClass("EADDRNOTAVAIL"), message);
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "EADDRNOTAVAIL"), message);
     }
 
     public RaiseException newErrnoESRCHError() {
-        return newRaiseException(getErrno().getClass("ESRCH"), null);
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "ESRCH"), null);
     }
 
     public RaiseException newErrnoEWOULDBLOCKError() {
-        return newRaiseException(getErrno().getClass("EWOULDBLOCK"), null);
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "EWOULDBLOCK"), null);
     }
 
     public RaiseException newErrnoEDESTADDRREQError(String func) {
-        return newRaiseException(getErrno().getClass("EDESTADDRREQ"), func);
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "EDESTADDRREQ"), func);
     }
 
     public RaiseException newErrnoENETUNREACHError() {
-        return newRaiseException(getErrno().getClass("ENETUNREACH"), null);
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "ENETUNREACH"), null);
     }
 
     public RaiseException newErrnoEMSGSIZEError() {
-        return newRaiseException(getErrno().getClass("EMSGSIZE"), null);
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "EMSGSIZE"), null);
     }
 
     public RaiseException newErrnoEXDEVError(String message) {
-        return newRaiseException(getErrno().getClass("EXDEV"), message);
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "EXDEV"), message);
     }
 
     public RaiseException newIndexError(String message) {
@@ -3906,15 +3960,18 @@ public final class Ruby implements Constantizable {
     }
 
     public RaiseException newErrnoEINTRError() {
-        return newRaiseException(getErrno().getClass("EINTR"), "Interrupted");
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "EINTR"), "Interrupted");
     }
 
     public RaiseException newErrnoEAFNOSUPPORTError(String message) {
-        return newRaiseException(getErrno().getClass("EAFNOSUPPORT"), message);
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "EAFNOSUPPORT"), message);
     }
 
     public RaiseException newErrnoETIMEDOUTError() {
-        return newRaiseException(getErrno().getClass("ETIMEDOUT"), "Broken pipe");
+        var context = getCurrentContext();
+        return newRaiseException(getErrno().getClass(context, "ETIMEDOUT"), "Broken pipe");
     }
 
     public RaiseException newErrnoFromLastPOSIXErrno() {
@@ -4032,14 +4089,16 @@ public final class Ruby implements Constantizable {
         return newRaiseException(getNotImplementedError(), message);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4-")
     public RaiseException newInvalidEncoding(String message) {
-        return newRaiseException(getClass("Iconv").getClass("InvalidEncoding"), message);
+        var context = getCurrentContext();
+        return newRaiseException(getClass("Iconv").getClass(context, "InvalidEncoding"), message);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4-")
     public RaiseException newIllegalSequence(String message) {
-        return newRaiseException(getClass("Iconv").getClass("IllegalSequence"), message);
+        var context = getCurrentContext();
+        return newRaiseException(getClass("Iconv").getClass(context, "IllegalSequence"), message);
     }
 
     /**

@@ -153,7 +153,7 @@ public final class StructLayout extends Type {
         for (IRubyObject obj : fields) {
             
             if (!(obj instanceof Field f)) {
-                throw typeError(context, obj, context.runtime.getModule("FFI").getClass("StructLayout").getClass("Field"));
+                throw typeError(context, obj, context.runtime.getModule("FFI").getClass(context, "StructLayout").getClass(context, "Field"));
             }
 
             if (!(f.name instanceof RubySymbol)) throw typeError(context, "fields list contains field with invalid name");
@@ -583,7 +583,7 @@ public final class StructLayout extends Type {
         }
 
         Field(Ruby runtime, RubyClass klass, FieldIO io) {
-            this(runtime, klass, (Type) runtime.getModule("FFI").getClass("Type").getConstant("VOID"),
+            this(runtime, klass, (Type) runtime.getModule("FFI").getClass(runtime.getCurrentContext(), "Type").getConstant("VOID"),
                     -1, io);
             
         }
@@ -626,7 +626,8 @@ public final class StructLayout extends Type {
         final Type checkType(IRubyObject type) {
             if (type instanceof Type ctype) return ctype;
 
-            throw typeError(getRuntime().getCurrentContext(), type, getRuntime().getModule("FFI").getClass("Type"));
+            var context = getRuntime().getCurrentContext();
+            throw typeError(context, type, getRuntime().getModule("FFI").getClass(context, "Type"));
         }
 
         public final int offset() {
@@ -796,7 +797,7 @@ public final class StructLayout extends Type {
             IRubyObject type = args[2];
 
             if (!(type instanceof CallbackInfo)) {
-                throw typeError(context, type, context.runtime.getModule("FFI").getClass("Type").getClass("Function"));
+                throw typeError(context, type, context.runtime.getModule("FFI").getClass(context, "Type").getClass(context, "Function"));
             }
             init(args, FunctionFieldIO.INSTANCE);
 
@@ -818,10 +819,10 @@ public final class StructLayout extends Type {
 
             IRubyObject type = args[2];
 
-            if (!(type instanceof StructByValue)) {
-                throw typeError(context, type, context.runtime.getModule("FFI").getClass("Type").getClass("Struct"));
+            if (!(type instanceof StructByValue structByValue)) {
+                throw typeError(context, type, context.runtime.getModule("FFI").getClass(context, "Type").getClass(context, "Struct"));
             }
-            init(args, new InnerStructFieldIO((StructByValue) type));
+            init(args, new InnerStructFieldIO(structByValue));
 
             return this;
         }
@@ -841,7 +842,7 @@ public final class StructLayout extends Type {
 
             IRubyObject type = args[2];
             if (!(type instanceof Type.Array)) {
-                throw typeError(context, type, context.runtime.getModule("FFI").getClass("Type").getClass("Array"));
+                throw typeError(context, type, context.runtime.getModule("FFI").getClass(context, "Type").getClass(context, "Array"));
             }
             init(args, new ArrayFieldIO((Type.Array) type));
 
@@ -870,7 +871,7 @@ public final class StructLayout extends Type {
         private IRubyObject[] valueCache;
 
         ArrayProxy(Ruby runtime, IRubyObject ptr, long offset, Type.Array type, MemoryOp aio) {
-            this(runtime, runtime.getModule("FFI").getClass(CLASS_NAME).getClass("ArrayProxy"),
+            this(runtime, runtime.getModule("FFI").getClass(runtime.getCurrentContext(), CLASS_NAME).getClass(runtime.getCurrentContext(), "ArrayProxy"),
                     ptr, offset, type, aio);
         }
 
@@ -970,7 +971,7 @@ public final class StructLayout extends Type {
     @JRubyClass(name="FFI::StructLayout::CharArrayProxy", parent="FFI::StructLayout::ArrayProxy")
     public static final class CharArrayProxy extends ArrayProxy {
         CharArrayProxy(Ruby runtime, IRubyObject ptr, long offset, Type.Array type, MemoryOp aio) {
-            super(runtime, runtime.getModule("FFI").getClass("StructLayout").getClass("CharArrayProxy"),
+            super(runtime, runtime.getModule("FFI").getClass(runtime.getCurrentContext(), "StructLayout").getClass(runtime.getCurrentContext(), "CharArrayProxy"),
                     ptr, offset, type, aio);
         }
 

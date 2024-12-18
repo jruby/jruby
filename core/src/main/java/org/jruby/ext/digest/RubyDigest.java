@@ -204,7 +204,7 @@ public class RubyDigest {
     public static void createDigestMD5(ThreadContext context) {
         loadService(context).require("digest");
         RubyModule Digest = context.runtime.getModule("Digest");
-        RubyClass Base = Digest.getClass("Base");
+        var Base = Digest.getClass(context, "Base");
         RubyClass MD5 = Digest.defineClassUnder(context, "MD5", Base, Base.getAllocator());
         MD5.setInternalVariable("metadata", new Metadata("MD5", 64));
     }
@@ -215,7 +215,7 @@ public class RubyDigest {
             throw context.runtime.newLoadError("RMD160 not supported without BouncyCastle");
         }
         RubyModule Digest = context.runtime.getModule("Digest");
-        RubyClass Base = Digest.getClass("Base");
+        var Base = Digest.getClass(context, "Base");
         RubyClass RMD160 = Digest.defineClassUnder(context, "RMD160", Base, Base.getAllocator());
         RMD160.setInternalVariable("metadata", new Metadata("RIPEMD160", 64));
     }
@@ -223,7 +223,7 @@ public class RubyDigest {
     public static void createDigestSHA1(ThreadContext context) {
         loadService(context).require("digest");
         RubyModule Digest = context.runtime.getModule("Digest");
-        RubyClass Base = Digest.getClass("Base");
+        var Base = Digest.getClass(context, "Base");
         RubyClass SHA1 = Digest.defineClassUnder(context, "SHA1", Base, Base.getAllocator());
         SHA1.setInternalVariable("metadata", new Metadata("SHA1", 64));
     }
@@ -238,7 +238,7 @@ public class RubyDigest {
             throw ex;
         }
         final RubyModule Digest = context.runtime.getModule("Digest");
-        final RubyClass Base = Digest.getClass("Base");
+        var Base = Digest.getClass(context, "Base");
         RubyClass SHA256 = Digest.defineClassUnder(context, "SHA256", Base, Base.getAllocator());
         SHA256.setInternalVariable("metadata", new Metadata("SHA-256", 64));
         RubyClass SHA384 = Digest.defineClassUnder(context, "SHA384", Base, Base.getAllocator());
@@ -250,7 +250,7 @@ public class RubyDigest {
     public static void createDigestBubbleBabble(ThreadContext context) {
         loadService(context).require("digest");
         RubyModule Digest = context.runtime.getModule("Digest");
-        RubyClass Base = Digest.getClass("Base");
+        var Base = Digest.getClass(context, "Base");
         RubyClass MD5 = Digest.defineClassUnder(context, "BubbleBabble", Base, Base.getAllocator());
         MD5.setInternalVariable("metadata", new Metadata("BubbleBabble", 64));
     }
@@ -294,7 +294,7 @@ public class RubyDigest {
             if(oth.isNil()) return context.fals;
 
             RubyString str1, str2;
-            RubyModule instance = (RubyModule)context.runtime.getModule("Digest").getConstantAt("Instance");
+            RubyModule instance = (RubyModule)context.runtime.getModule("Digest").getConstantAt(context, "Instance");
             if (oth.getMetaClass().getRealClass().hasModuleInHierarchy(instance)) {
                 str1 = digest(context, self, IRubyObject.NULL_ARRAY).convertToString();
                 str2 = digest(context, oth, IRubyObject.NULL_ARRAY).convertToString();
@@ -495,7 +495,9 @@ public class RubyDigest {
         public DigestBase(Ruby runtime, RubyClass type) {
             super(runtime,type);
 
-            if(type == runtime.getModule("Digest").getClass("Base")) {
+            var context = runtime.getCurrentContext();
+
+            if(type == runtime.getModule("Digest").getClass(context, "Base")) {
                 throw runtime.newNotImplementedError("Digest::Base is an abstract class");
             }
 

@@ -15,7 +15,8 @@ public class NullMemoryIO extends InvalidMemoryIO {
 
     @Override
     protected RubyClass getErrorClass(Ruby runtime) {
-        return runtime.getModule("FFI").getClass("NullPointerError");
+        var context = runtime.getCurrentContext();
+        return runtime.getModule("FFI").getClass(context, "NullPointerError");
     }
 
     @Override

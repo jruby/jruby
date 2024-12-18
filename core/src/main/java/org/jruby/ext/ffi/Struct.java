@@ -228,7 +228,7 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
         RubyClass klass = castAsClass(context, structClass);
 
         if (!(layout instanceof StructLayout)) {
-            throw typeError(context, layout, context.runtime.getModule("FFI").getClass("StructLayout"));
+            throw typeError(context, layout, context.runtime.getModule("FFI").getClass(context, "StructLayout"));
         }
 
         klass.setFFIHandle(layout);

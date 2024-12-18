@@ -186,14 +186,19 @@ public abstract class ZStream extends RubyObject {
         return getRuntime().getNil();
     }
 
+    @Deprecated(since = "10.0")
     void checkClosed() {
-        if (closed) throw RubyZlib.newZlibError(getRuntime(), "stream is not ready");
+        checkClosed(getCurrentContext());
+    }
+
+    void checkClosed(ThreadContext context) {
+        if (closed) throw RubyZlib.newZlibError(context, "stream is not ready");
     }
 
     // TODO: remove when JZlib checks the given level
     static int checkLevel(ThreadContext context, int level) {
         if ((level < 0 || level > 9) && level != JZlib.Z_DEFAULT_COMPRESSION) {
-            throw RubyZlib.newStreamError(context.runtime, "stream error: invalid level");
+            throw RubyZlib.newStreamError(context, "stream error: invalid level");
         }
         return level;
     }
@@ -208,7 +213,7 @@ public abstract class ZStream extends RubyObject {
     static int checkWindowBits(ThreadContext context, int value, boolean forInflate) {
         int wbits = Math.abs(value);
         if ((wbits & 0xf) < 8) {
-            throw RubyZlib.newStreamError(context.runtime, "stream error: invalid window bits");
+            throw RubyZlib.newStreamError(context, "stream error: invalid window bits");
         }
         if ((wbits & 0xf) != 0xf) {
             // windowBits < 15 for reducing memory is meaningless on Java platform. 
@@ -216,23 +221,24 @@ public abstract class ZStream extends RubyObject {
             // continue
         }
         if (forInflate && wbits > JZlib.MAX_WBITS + 32) {
-            throw RubyZlib.newStreamError(context.runtime, "stream error: invalid window bits");
+            throw RubyZlib.newStreamError(context, "stream error: invalid window bits");
         } else if (!forInflate && wbits > JZlib.MAX_WBITS + 16) {
-            throw RubyZlib.newStreamError(context.runtime, "stream error: invalid window bits");
+            throw RubyZlib.newStreamError(context, "stream error: invalid window bits");
         }
 
         return value;
     }
 
-    // TODO: remove when JZlib checks the given strategy
+    @Deprecated(since = "10.0")
     static void checkStrategy(Ruby runtime, int strategy) {
+        checkStrategy(runtime.getCurrentContext(), strategy);
+    }
+
+    // TODO: remove when JZlib checks the given strategy
+    static void checkStrategy(ThreadContext context, int strategy) {
         switch (strategy) {
-            case JZlib.Z_DEFAULT_STRATEGY:
-            case JZlib.Z_FILTERED:
-            case JZlib.Z_HUFFMAN_ONLY:
-                break;
-            default:
-                throw RubyZlib.newStreamError(runtime, "stream error: invalid strategy");
+            case JZlib.Z_DEFAULT_STRATEGY, JZlib.Z_FILTERED, JZlib.Z_HUFFMAN_ONLY -> {}
+            default -> throw RubyZlib.newStreamError(context, "stream error: invalid strategy");
         }
     }
 }

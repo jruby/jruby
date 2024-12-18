@@ -21,8 +21,9 @@ public final class StructByValue extends Type {
     private final RubyClass structClass;
 
     public static RubyClass createStructByValueClass(ThreadContext context, RubyModule FFI, RubyClass Type) {
-        return (RubyClass) Type.setConstant("Struct", FFI.defineClassUnder(context, "StructByValue", Type, NOT_ALLOCATABLE_ALLOCATOR).
-                defineMethods(context, StructByValue.class).defineConstants(context, StructByValue.class));
+        return (RubyClass) Type.setConstant(context, "Struct",
+                FFI.defineClassUnder(context, "StructByValue", Type, NOT_ALLOCATABLE_ALLOCATOR).
+                        defineMethods(context, StructByValue.class).defineConstants(context, StructByValue.class));
     }
 
     @JRubyMethod(name = "new", meta = true)
@@ -42,8 +43,9 @@ public final class StructByValue extends Type {
         this.structLayout = structLayout;
     }
 
+    @Deprecated(since = "10.0")
     StructByValue(Ruby runtime, RubyClass structClass, StructLayout structLayout) {
-        super(runtime, runtime.getModule("FFI").getClass("Type").getClass("Struct"),
+        super(runtime, runtime.getModule("FFI").getClass(runtime.getCurrentContext(), "Type").getClass(runtime.getCurrentContext(), "Struct"),
                 NativeType.STRUCT, structLayout.size, structLayout.alignment);
         this.structClass = structClass;
         this.structLayout = structLayout;

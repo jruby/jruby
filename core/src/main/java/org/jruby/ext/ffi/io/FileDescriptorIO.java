@@ -55,7 +55,7 @@ public class FileDescriptorIO extends RubyIO {
     }
 
     public FileDescriptorIO(Ruby runtime, IRubyObject fd) {
-        super(runtime, runtime.getModule("FFI").getClass(CLASS_NAME));
+        super(runtime, runtime.getModule("FFI").getClass(runtime.getCurrentContext(), CLASS_NAME));
         MakeOpenFile();
         ModeFlags modes = newModeFlags(runtime, ModeFlags.RDWR);
         int fileno = RubyNumeric.fix2int(fd);

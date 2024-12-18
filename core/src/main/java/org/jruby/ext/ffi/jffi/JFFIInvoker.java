@@ -27,13 +27,14 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
     private final IRubyObject enums;
     
     public static RubyClass createInvokerClass(ThreadContext context, RubyModule FFI) {
-        return FFI.defineClassUnder(context, "Invoker", FFI.getClass("AbstractInvoker"), NOT_ALLOCATABLE_ALLOCATOR).
+        return FFI.defineClassUnder(context, "Invoker", FFI.getClass(context, "AbstractInvoker"), NOT_ALLOCATABLE_ALLOCATOR).
                 defineMethods(context, AbstractInvoker.class, JFFIInvoker.class).
                 defineConstants(context, JFFIInvoker.class);
     }
 
+    @Deprecated(since = "10.0")
     JFFIInvoker(Ruby runtime, long address, Type returnType, Type[] parameterTypes, CallingConvention convention) {
-        this(runtime, runtime.getModule("FFI").getClass("Invoker"),
+        this(runtime, runtime.getModule("FFI").getClass(runtime.getCurrentContext(), "Invoker"),
                 new CodeMemoryIO(runtime, address),
                 returnType, parameterTypes, convention, null);
     }

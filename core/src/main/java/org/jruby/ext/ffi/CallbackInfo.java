@@ -60,7 +60,7 @@ public class CallbackInfo extends Type {
     protected final boolean stdcall;
 
     public static RubyClass createCallbackInfoClass(ThreadContext context, RubyModule module, RubyClass Type) {
-        return (RubyClass) Type.setConstant("Function",
+        return (RubyClass) Type.setConstant(context, "Function",
                 module.defineClassUnder(context, CLASS_NAME, Type, NOT_ALLOCATABLE_ALLOCATOR).
                         defineMethods(context, CallbackInfo.class).defineConstants(context, CallbackInfo.class));
     }

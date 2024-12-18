@@ -122,7 +122,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
             io.readHeader();
 
         } catch (IOException e) {
-            RaiseException re = RubyZlib.newGzipFileError(context.runtime, "not in gzip format");
+            RaiseException re = RubyZlib.newGzipFileError(context, "not in gzip format");
 
             byte[] input = io.getAvailIn();
             if (input != null && input.length > 0) {
@@ -318,8 +318,6 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
     public IRubyObject read(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 0, 1);
 
-        Ruby runtime = context.runtime;
-
         try {
             if (argc == 0 || args[0].isNil()) return readAll();
 
@@ -330,20 +328,20 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
                 return buf == null ? context.nil : newString(context, buf);
             }
 
-            return RubyString.newEmptyBinaryString(runtime);
+            return RubyString.newEmptyBinaryString(context.runtime);
         } catch (IOException ioe) {
             String m = ioe.getMessage();
 
             if (m.startsWith("Unexpected end of ZLIB input stream")) {
-                throw RubyZlib.newGzipFileError(runtime, ioe.getMessage());
+                throw RubyZlib.newGzipFileError(context, ioe.getMessage());
             } else if (m.startsWith("footer is not found")) {
-                throw RubyZlib.newNoFooter(runtime, "footer is not found");
+                throw RubyZlib.newNoFooter(context, "footer is not found");
             } else if (m.startsWith("incorrect data check")) {
-                throw RubyZlib.newCRCError(runtime, "invalid compressed data -- crc error");
+                throw RubyZlib.newCRCError(context, "invalid compressed data -- crc error");
             } else if (m.startsWith("incorrect length check")) {
-                throw RubyZlib.newLengthError(runtime, "invalid compressed data -- length error");
+                throw RubyZlib.newLengthError(context, "invalid compressed data -- length error");
             } else {
-                throw RubyZlib.newDataError(runtime, ioe.getMessage());
+                throw RubyZlib.newDataError(context, ioe.getMessage());
             }
         }
     }

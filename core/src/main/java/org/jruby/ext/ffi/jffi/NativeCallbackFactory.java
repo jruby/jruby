@@ -26,11 +26,12 @@ public class NativeCallbackFactory {
     private final CachingCallSite callSite = new FunctionalCachingCallSite("call");
 
     public NativeCallbackFactory(Ruby runtime, CallbackInfo cbInfo) {
+        var context = runtime.getCurrentContext();
         this.runtime = runtime;
         this.closureInfo = newFunctionInfo(runtime, cbInfo);
         this.closurePool = com.kenai.jffi.ClosureManager.getInstance().getClosurePool(closureInfo.callContext);
         this.callbackInfo = cbInfo;
-        this.callbackClass = runtime.getModule("FFI").getClass("Callback");
+        this.callbackClass = runtime.getModule("FFI").getClass(context, "Callback");
     }
 
     public final Pointer getCallback(RubyObject callable) {

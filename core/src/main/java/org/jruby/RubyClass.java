@@ -550,7 +550,7 @@ public class RubyClass extends RubyModule {
                 baseName(name);
         clazz.makeMetaClass(superClass.getMetaClass());
         if (setParent) clazz.setParent(parent);
-        parent.setConstant(name, clazz, file, line);
+        parent.setConstant(context, name, clazz, file, line);
         superClass.invokeInherited(context, superClass, clazz);
         return clazz;
     }
@@ -572,7 +572,7 @@ public class RubyClass extends RubyModule {
                 baseName(name);
         clazz.makeMetaClass(superClass.getMetaClass());
         if (setParent) clazz.setParent(parent);
-        parent.setConstant(name, clazz, BUILTIN_CONSTANT, -1);
+        parent.setConstant(context, name, clazz, BUILTIN_CONSTANT, -1);
         superClass.invokeInherited(context, superClass, clazz);
         return clazz;
     }
@@ -591,7 +591,7 @@ public class RubyClass extends RubyModule {
                 allocator(NOT_ALLOCATABLE_ALLOCATOR).
                 baseName(name);
         clazz.makeMetaClass(Object.getMetaClass());
-        Object.setConstant(name, clazz, BUILTIN_CONSTANT, -1);
+        Object.defineConstantBootstrap(name, clazz);
         return clazz;
     }
 

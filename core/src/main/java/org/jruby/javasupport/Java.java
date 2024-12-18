@@ -160,7 +160,7 @@ public class Java implements Library {
         // modify ENV_JAVA to be a read/write version
         final Map systemProperties = new SystemPropertiesMap();
         RubyClass proxyClass = (RubyClass) getProxyClass(runtime, SystemPropertiesMap.class);
-        Object.setConstantQuiet("ENV_JAVA", new MapJavaProxy(runtime, proxyClass, systemProperties));
+        Object.setConstantQuiet(context, "ENV_JAVA", new MapJavaProxy(runtime, proxyClass, systemProperties));
     }
 
     @SuppressWarnings("deprecation")
@@ -266,7 +266,7 @@ public class Java implements Library {
                     if (validateConstant) {
                         target.defineConstant(context, constName, proxyClass); // setConstant would not validate const-name
                     } else {
-                        target.setConstant(constName, proxyClass);
+                        target.setConstant(context, constName, proxyClass);
                     }
                 }
             }
@@ -891,16 +891,13 @@ public class Java implements Library {
             packageName = name.toString();
         }
 
+        var context = runtime.getCurrentContext();
         final RubyModule javaModule = runtime.getJavaSupport().getJavaModule();
-        final IRubyObject packageModule = javaModule.getConstantAt(packageName);
+        final IRubyObject packageModule = javaModule.getConstantAt(context, packageName);
 
-        if ( packageModule == null ) {
-            return createPackageModule(runtime.getCurrentContext(), javaModule, packageName, packageString);
-        }
-        if ( packageModule instanceof RubyModule ) {
-            return (RubyModule) packageModule;
-        }
-        return null;
+        if (packageModule == null) return createPackageModule(context, javaModule, packageName, packageString);
+
+        return packageModule instanceof RubyModule pkg ? pkg : null;
     }
 
     private static RubyModule createPackageModule(ThreadContext context,
@@ -910,10 +907,9 @@ public class Java implements Library {
 
         synchronized (parentModule) { // guard initializing in multiple threads
             final IRubyObject packageAlreadySet = parentModule.fetchConstant(name);
-            if ( packageAlreadySet != null ) {
-                return (RubyModule) packageAlreadySet;
-            }
-            parentModule.setConstant(name.intern(), packageModule);
+            if (packageAlreadySet != null) return (RubyModule) packageAlreadySet;
+
+            parentModule.setConstant(context, name.intern(), packageModule);
             //MetaClass metaClass = (MetaClass) packageModule.getMetaClass();
             //metaClass.setAttached(packageModule);
         }
@@ -924,8 +920,8 @@ public class Java implements Library {
 
     private static RubyModule getPackageModule(ThreadContext context, final String name) {
         final RubyModule javaModule = context.runtime.getJavaSupport().getJavaModule();
-        final IRubyObject packageModule = javaModule.getConstantAt(name);
-        if ( packageModule instanceof RubyModule ) return (RubyModule) packageModule;
+        final IRubyObject packageModule = javaModule.getConstantAt(context, name);
+        if ( packageModule instanceof RubyModule pkg) return pkg;
 
         final String packageName;
         if ( "Default".equals(name) ) packageName = "";
@@ -1305,7 +1301,7 @@ public class Java implements Library {
             synchronized (owner) {
                 final IRubyObject alreadySet = owner.fetchConstant(constName);
                 if ( alreadySet != null ) return (RubyModule) alreadySet;
-                owner.setConstant(constName, packageOrClass, hidden);
+                owner.setConstant(context, constName, packageOrClass, hidden);
             }
             return packageOrClass;
         }

@@ -1003,10 +1003,10 @@ public class RubySet extends RubyObject implements Set {
 
         static DivideTSortHash newInstance(final ThreadContext context) {
             RubyClass Set = context.runtime.getClass("Set");
-            RubyClass klass = (RubyClass) Set.getConstantAt(NAME, true);
+            RubyClass klass = (RubyClass) Set.getConstantAt(context, NAME, true);
             if (klass == null) { // initialize on-demand when Set#divide is first called
                 synchronized (DivideTSortHash.class) {
-                    klass = (RubyClass) Set.getConstantAt(NAME, true);
+                    klass = (RubyClass) Set.getConstantAt(context, NAME, true);
                     if (klass == null) {
                         var Hash = hashClass(context);
                         klass = Set.defineClassUnder(context, NAME, Hash, Hash.getAllocator()).

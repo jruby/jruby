@@ -1406,7 +1406,7 @@ public class Helpers {
         if (!(module instanceof RubyModule)) {
             throw typeError(context, str(context.runtime, ids(context.runtime, module), " is not a class/module"));
         }
-        ((RubyModule) module).setConstant(name, value);
+        ((RubyModule) module).setConstant(context, name, value);
 
         return value;
     }

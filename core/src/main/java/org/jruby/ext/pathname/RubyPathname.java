@@ -365,7 +365,7 @@ public class RubyPathname extends RubyObject {
         try {
             return dirClass(context).callMethod(context, "unlink", getPath());
         } catch (RaiseException ex) {
-            if (!errnoModule(context).getClass("ENOTDIR").isInstance(ex.getException())) throw ex;
+            if (!errnoModule(context).getClass(context, "ENOTDIR").isInstance(ex.getException())) throw ex;
             globalVariables.set("$!", oldExc); // Restore $!
             return fileClass(context).callMethod(context, "unlink", getPath());
         }

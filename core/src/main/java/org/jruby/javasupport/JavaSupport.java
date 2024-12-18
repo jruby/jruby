@@ -200,17 +200,21 @@ public abstract class JavaSupport {
         return javaArrayUtilitiesModule = runtime.getModule("JavaArrayUtilities");
     }
 
-    @Deprecated // no longer used
+    @Deprecated(since = "9.4-") // no longer used
     public RubyClass getJavaObjectClass() {
         RubyClass clazz;
         if ((clazz = javaObjectClass) != null) return clazz;
-        return javaObjectClass = getJavaModule().getClass("JavaObject");
+
+        var context = runtime.getCurrentContext();
+        return javaObjectClass = getJavaModule().getClass(context, "JavaObject");
     }
 
     public RubyClass getJavaProxyConstructorClass() {
         RubyClass clazz;
         if ((clazz = javaProxyConstructorClass) != null) return clazz;
-        return javaProxyConstructorClass = getJavaModule().getClass("JavaProxyConstructor");
+
+        var context = runtime.getCurrentContext();
+        return javaProxyConstructorClass = getJavaModule().getClass(context, "JavaProxyConstructor");
     }
 
     @Deprecated // no longer used
@@ -231,14 +235,18 @@ public abstract class JavaSupport {
     public RubyClass getJavaArrayClass() {
         RubyClass clazz;
         if ((clazz = javaArrayClass) != null) return clazz;
-        return javaArrayClass = getJavaModule().getClass("JavaArray");
+
+        var context = runtime.getCurrentContext();
+        return javaArrayClass = getJavaModule().getClass(context, "JavaArray");
     }
 
     @Deprecated
     public RubyClass getJavaClassClass() {
         RubyClass clazz;
         if ((clazz = javaClassClass) != null) return clazz;
-        return javaClassClass = getJavaModule().getClass("JavaClass");
+
+        var context = runtime.getCurrentContext();
+        return javaClassClass = getJavaModule().getClass(context, "JavaClass");
     }
 
     public RubyClass getJavaPackageClass() {
@@ -263,6 +271,8 @@ public abstract class JavaSupport {
     public RubyClass getJavaProxyClass() {
         RubyClass clazz;
         if ((clazz = javaProxyClass) != null) return clazz;
+
+        var context = runtime.getCurrentContext();
         return javaProxyClass = runtime.getClass("JavaProxy");
     }
 
@@ -294,21 +304,27 @@ public abstract class JavaSupport {
     public RubyClass getJavaFieldClass() {
         RubyClass clazz;
         if ((clazz = javaFieldClass) != null) return clazz;
-        return javaFieldClass = getJavaModule().getClass("JavaField");
+
+        var context = runtime.getCurrentContext();
+        return javaFieldClass = getJavaModule().getClass(context, "JavaField");
     }
 
     @Deprecated // not used
     public RubyClass getJavaMethodClass() {
         RubyClass clazz;
         if ((clazz = javaMethodClass) != null) return clazz;
-        return javaMethodClass = getJavaModule().getClass("JavaMethod");
+
+        var context = runtime.getCurrentContext();
+        return javaMethodClass = getJavaModule().getClass(context, "JavaMethod");
     }
 
     @Deprecated // not used
     public RubyClass getJavaConstructorClass() {
         RubyClass clazz;
         if ((clazz = javaConstructorClass) != null) return clazz;
-        return javaConstructorClass = getJavaModule().getClass("JavaConstructor");
+
+        var context = runtime.getCurrentContext();
+        return javaConstructorClass = getJavaModule().getClass(context, "JavaConstructor");
     }
 
     public Class<?> loadJavaClass(String className) throws ClassNotFoundException {

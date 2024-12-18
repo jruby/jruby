@@ -386,7 +386,7 @@ public class MethodGatherer {
             final RubyModule innerProxy = Java.getProxyClass(context.runtime, clazz);
 
             if ( IdUtil.isConstant(simpleName) ) {
-                if (proxy.getConstantAt(simpleName) == null) {
+                if (proxy.getConstantAt(context, simpleName) == null) {
                     proxy.const_set(newString(context, simpleName), innerProxy);
                 }
             }

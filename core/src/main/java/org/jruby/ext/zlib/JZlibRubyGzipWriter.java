@@ -101,16 +101,15 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
 
     @JRubyMethod(name = "initialize", rest = true, visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
-        Ruby runtime = context.getRuntime();
         IRubyObject opt = context.nil;
         
         int argc = args.length;
         if (argc > 1) {
-            opt = TypeConverter.checkHashType(runtime, opt);
+            opt = TypeConverter.checkHashType(context.runtime, opt);
             if (!opt.isNil()) argc--;
         }
         
-        level = processLevel(argc, args, runtime);
+        level = processLevel(context, argc, args);
         
         // unused; could not figure out how to get JZlib to take this right
         /*int strategy = */processStrategy(argc, args);
@@ -126,10 +125,10 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return argc < 3 ? JZlib.Z_DEFAULT_STRATEGY : RubyZlib.FIXNUMARG(args[2], JZlib.Z_DEFAULT_STRATEGY);
     }
 
-    private int processLevel(int argc, IRubyObject[] args, Ruby runtime) {
+    private int processLevel(ThreadContext context, int argc, IRubyObject[] args) {
         int level = argc < 2 ? JZlib.Z_DEFAULT_COMPRESSION : RubyZlib.FIXNUMARG(args[1], JZlib.Z_DEFAULT_COMPRESSION);
 
-        checkLevel(runtime, level);
+        checkLevel(context, level);
 
         return level;
     }
@@ -171,9 +170,9 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         }
     }
     
-    private static void checkLevel(Ruby runtime, int level) {
+    private static void checkLevel(ThreadContext context, int level) {
         if (level != JZlib.Z_DEFAULT_COMPRESSION && (level < JZlib.Z_NO_COMPRESSION || level > JZlib.Z_BEST_COMPRESSION)) {
-            throw RubyZlib.newStreamError(runtime, "stream error: invalid level");
+            throw RubyZlib.newStreamError(context, "stream error: invalid level");
         }
     }
 
@@ -257,7 +256,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         try {
             io.setName(nullFreeOrigName.toString());
         } catch (GZIPException e) {
-            throw RubyZlib.newGzipFileError(context.runtime, "header is already written");
+            throw RubyZlib.newGzipFileError(context, "header is already written");
         }
         
         return obj;
@@ -280,7 +279,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         try {
             io.setComment(nullFreeComment.toString());
         } catch (GZIPException e) {
-            throw RubyZlib.newGzipFileError(getRuntime(), "header is already written");
+            throw RubyZlib.newGzipFileError(context, "header is already written");
         }
         
         return obj;
@@ -360,24 +359,25 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return context.nil;
     }
 
-    @JRubyMethod(name = "mtime=")
+    @Deprecated(since = "10.0")
     public IRubyObject set_mtime(IRubyObject arg) {
-        Ruby runtime = getRuntime();
+        return set_mtime(getCurrentContext(), arg);
+    }
 
-        if (arg instanceof RubyTime) {
-            this.mtime = ((RubyTime) arg);
-        } else if (arg.isNil()) {
-            // ...nothing
-        } else {
-            this.mtime = RubyTime.newTime(runtime, RubyNumeric.fix2long(arg) * 1000);
+    @JRubyMethod(name = "mtime=")
+    public IRubyObject set_mtime(ThreadContext context, IRubyObject arg) {
+        if (arg instanceof RubyTime timeArg) {
+            this.mtime = timeArg;
+        } else if (!arg.isNil()) {
+            this.mtime = RubyTime.newTime(context.runtime, RubyNumeric.fix2long(arg) * 1000);
         }
         try {
-            io.setModifiedTime(this.mtime.to_i(runtime.getCurrentContext()).getLongValue());
+            io.setModifiedTime(this.mtime.to_i(context).getLongValue());
         } catch (GZIPException e) {
-            throw RubyZlib.newGzipFileError(runtime, "header is already written");
+            throw RubyZlib.newGzipFileError(context, "header is already written");
         }
         
-        return runtime.getNil();
+        return context.nil;
     }
 
     @Override

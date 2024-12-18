@@ -46,7 +46,7 @@ public class DynamicLibrary extends RubyObject {
                 defineMethods(context, DynamicLibrary.class).
                 defineConstants(context, DynamicLibrary.class);
 
-        DynamicLibary.defineClassUnder(context, "Symbol", FFI.getClass("Pointer"), NOT_ALLOCATABLE_ALLOCATOR).
+        DynamicLibary.defineClassUnder(context, "Symbol", FFI.getClass(context, "Pointer"), NOT_ALLOCATABLE_ALLOCATOR).
                 defineMethods(context, Symbol.class);
 
         return DynamicLibary;
@@ -155,7 +155,7 @@ public class DynamicLibrary extends RubyObject {
         private final String name;
         
         public Symbol(Ruby runtime, DynamicLibrary library, String name, MemoryIO io) {
-            super(runtime, runtime.getModule("FFI").getClass("DynamicLibrary").getClass("Symbol"),
+            super(runtime, runtime.getModule("FFI").getClass(runtime.getCurrentContext(), "DynamicLibrary").getClass(runtime.getCurrentContext(), "Symbol"),
                     io, Long.MAX_VALUE);
             this.library = library;
             this.name = name;

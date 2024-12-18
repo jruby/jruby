@@ -33,7 +33,7 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
     private volatile boolean autorelease = true;
 
     public static RubyClass createFunctionClass(ThreadContext context, RubyModule FFI) {
-        return FFI.defineClassUnder(context, "Function", FFI.getClass("Pointer"), NOT_ALLOCATABLE_ALLOCATOR).
+        return FFI.defineClassUnder(context, "Function", FFI.getClass(context, "Pointer"), NOT_ALLOCATABLE_ALLOCATOR).
                 defineMethods(context, AbstractInvoker.class, Function.class).
                 defineConstants(context, Function.class);
     }

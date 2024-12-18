@@ -246,7 +246,7 @@ public abstract class Type extends RubyObject {
          * Initializes a new <code>Type.Array</code> instance.
          */
         public Array(Ruby runtime, Type componentType, int length) {
-            this(runtime, getTypeClass(runtime).getClass("Array"), componentType, length);
+            this(runtime, getTypeClass(runtime).getClass(runtime.getCurrentContext(), "Array"), componentType, length);
         }
 
 

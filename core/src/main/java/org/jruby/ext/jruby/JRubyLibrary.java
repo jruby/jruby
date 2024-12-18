@@ -293,7 +293,7 @@ public class JRubyLibrary implements Library {
 
         scope.getStaticScope().setModule(runtime.getTopSelf().getMetaClass());
 
-        RubyClass CompiledScript = (RubyClass) runtime.getModule("JRuby").getConstantAt("CompiledScript");
+        RubyClass CompiledScript = (RubyClass) runtime.getModule("JRuby").getConstantAt(context, "CompiledScript");
         // JRuby::CompiledScript#initialize(filename, class_name, content, bytes)
         return CompiledScript.newInstance(context,
                 new IRubyObject[] {filename, asSymbol(context, scope.getId()), content, Java.getInstance(runtime, bytes)},

@@ -286,7 +286,7 @@ public class RubyStruct extends RubyObject {
             newStruct.makeMetaClass(superClass.metaClass);
             superClass.invokeInherited(context, superClass, newStruct);
         } else {
-            IRubyObject type = superClass.getConstantAt(name);
+            IRubyObject type = superClass.getConstantAt(context, name);
             if (type != null) {
                 context.runtime.getWarnings().warn(ID.STRUCT_CONSTANT_REDEFINED, context.getFile(), context.getLine(), "redefining constant " + type);
                 superClass.deleteConstant(name);

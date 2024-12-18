@@ -97,17 +97,14 @@ public class JavaObject extends RubyObject {
         objectAccessor.set(this, object);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4-")
     public static JavaObject wrap(final Ruby runtime, final Object value) {
         if ( value != null ) {
-            if ( value instanceof Class ) {
-                return JavaClass.get(runtime, (Class<?>) value);
-            }
-            if ( value.getClass().isArray() ) {
-                return new JavaArray(runtime, value);
-            }
+            if ( value instanceof Class clazz) return JavaClass.get(runtime, clazz);
+            if ( value.getClass().isArray() ) return new JavaArray(runtime, value);
         }
-        return new JavaObject(runtime, runtime.getJavaSupport().getJavaModule().getClass("JavaObject"), value);
+        var context = runtime.getCurrentContext();
+        return new JavaObject(runtime, runtime.getJavaSupport().getJavaModule().getClass(context, "JavaObject"), value);
     }
 
     @JRubyMethod(meta = true)

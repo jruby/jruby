@@ -92,6 +92,15 @@ public class Access {
     }
 
     /**
+     * Retrieve the instance of the class Enumerator
+     * @param context the current thread context
+     * @return the Class
+     */
+    public static RubyClass enumeratorClass(ThreadContext context) {
+        return context.runtime.getEnumerator();
+    }
+
+    /**
      * Retrieve the instance of the module Errno.
      * @param context the current thread context
      * @return the Module
@@ -220,7 +229,6 @@ public class Access {
         return context.runtime.getObject();
     }
 
-
     /**
      * Retrieve the instance of the class Proc
      * @param context the current thread context
@@ -228,6 +236,15 @@ public class Access {
      */
     public static RubyClass procClass(ThreadContext context) {
         return context.runtime.getProc();
+    }
+
+    /**
+     * Retrieve the instance of the module Process
+     * @param context the current thread context
+     * @return the Class
+     */
+    public static RubyModule processModule(ThreadContext context) {
+        return context.runtime.getProcess();
     }
 
     /**

@@ -78,7 +78,7 @@ import static org.jruby.api.Error.typeError;
 @JRubyClass(name="UNIXSocket", parent="BasicSocket")
 public class RubyUNIXSocket extends RubyBasicSocket {
     static RubyClass createUNIXSocket(ThreadContext context, RubyClass BasicSocket, RubyClass Object) {
-        return (RubyClass) Object.setConstant("UNIXsocket",
+        return (RubyClass) Object.setConstant(context, "UNIXsocket",
                 defineClass(context, "UNIXSocket", BasicSocket, RubyUNIXSocket::new).
                         defineMethods(context, RubyUNIXSocket.class));
     }

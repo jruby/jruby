@@ -110,13 +110,10 @@ public class JZlibDeflate extends ZStream {
         // TODO: Can we expect JZlib to check level, windowBits, and strategy here?
         // Then we should remove checkLevel, checkWindowsBits and checkStrategy.
         int err = flater.init(level, windowBits, memlevel);
-        if (err == com.jcraft.jzlib.JZlib.Z_STREAM_ERROR) {
-            throw RubyZlib.newStreamError(context.runtime, "stream error");
-        }
+        if (err == com.jcraft.jzlib.JZlib.Z_STREAM_ERROR) throw RubyZlib.newStreamError(context, "stream error");
+
         err = flater.params(level, strategy);
-        if (err == com.jcraft.jzlib.JZlib.Z_STREAM_ERROR) {
-            throw RubyZlib.newStreamError(context.runtime, "stream error");
-        }
+        if (err == com.jcraft.jzlib.JZlib.Z_STREAM_ERROR) throw RubyZlib.newStreamError(context, "stream error");
 
         collected = new byte[BASE_SIZE];
         collectedIdx = 0;
@@ -137,7 +134,7 @@ public class JZlibDeflate extends ZStream {
         this.flush = other.flush;
         this.flater = new com.jcraft.jzlib.Deflater();
         int ret = this.flater.copy(other.flater);
-        if (ret != com.jcraft.jzlib.JZlib.Z_OK) throw RubyZlib.newStreamError(context.runtime, "stream error");
+        if (ret != com.jcraft.jzlib.JZlib.Z_OK) throw RubyZlib.newStreamError(context, "stream error");
 
         return this;
     }
@@ -159,19 +156,17 @@ public class JZlibDeflate extends ZStream {
         checkLevel(context, l);
 
         int s = RubyNumeric.fix2int(strategy);
-        checkStrategy(getRuntime(), s);
+        checkStrategy(context, s);
 
         if (flater.next_out == null) flater.setOutput(ByteList.NULL_ARRAY);
 
         int err = flater.params(l, s);
-        if (err == com.jcraft.jzlib.JZlib.Z_STREAM_ERROR) {
-            throw RubyZlib.newStreamError(getRuntime(), "stream error");
-        }
+        if (err == com.jcraft.jzlib.JZlib.Z_STREAM_ERROR) throw RubyZlib.newStreamError(context, "stream error");
 
         if (collectedIdx != flater.next_out_index) collectedIdx = flater.next_out_index;
 
         run();
-        return getRuntime().getNil();
+        return context.nil;
     }
 
     @JRubyMethod(name = "set_dictionary")
@@ -180,12 +175,12 @@ public class JZlibDeflate extends ZStream {
             byte[] tmp = arg.convertToString().getBytes();
             int err = flater.setDictionary(tmp, tmp.length);
             if (err == com.jcraft.jzlib.JZlib.Z_STREAM_ERROR) {
-                throw RubyZlib.newStreamError(context.getRuntime(), "stream error: ");
+                throw RubyZlib.newStreamError(context, "stream error: ");
             }
             run();
             return arg;
         } catch (IllegalArgumentException iae) {
-            throw RubyZlib.newStreamError(context.getRuntime(), "stream error: " + iae.getMessage());
+            throw RubyZlib.newStreamError(context, "stream error: " + iae.getMessage());
         }
     }
 
@@ -212,11 +207,9 @@ public class JZlibDeflate extends ZStream {
 
     @JRubyMethod(name = "deflate", required = 1, optional = 1, checkArity = false)
     public IRubyObject deflate(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-
         args = Arity.scanArgs(context, args, 1, 1);
         if (internalFinished()) {
-            throw RubyZlib.newStreamError(runtime, "stream error");
+            throw RubyZlib.newStreamError(context, "stream error");
         }
 
         ByteList data = null;
@@ -228,7 +221,7 @@ public class JZlibDeflate extends ZStream {
         try {
             return deflate(data, flush);
         } catch (IOException ioe) {
-            throw runtime.newIOErrorFromException(ioe);
+            throw context.runtime.newIOErrorFromException(ioe);
         }
     }
 
@@ -309,7 +302,7 @@ public class JZlibDeflate extends ZStream {
             int err = flater.deflate(flush);
             switch (err) {
                 case com.jcraft.jzlib.JZlib.Z_STREAM_ERROR:
-                    throw RubyZlib.newStreamError(getRuntime(), "stream error: ");
+                    throw RubyZlib.newStreamError(getRuntime().getCurrentContext(), "stream error: ");
                 default:
             }
             if (collectedIdx == flater.next_out_index) break;

@@ -47,7 +47,7 @@ public abstract class ResourceException extends IOException {
 
         @Override
         public RaiseException newRaiseException(Ruby runtime) {
-            return runtime.newRaiseException(runtime.getErrno().getClass(errnoClass), path);
+            return runtime.newRaiseException(runtime.getErrno().getClass(runtime.getCurrentContext(), errnoClass), path);
         }
 
         public String getPath() {
