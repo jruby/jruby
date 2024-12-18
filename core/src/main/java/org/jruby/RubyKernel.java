@@ -1092,7 +1092,7 @@ public class RubyKernel {
                 break;
             default:
                 RubyException exception = convertToException(context, args[0], args[1]);
-                exception.setBacktrace(args[2]);
+                exception.setBacktrace(context, args[2]);
                 raise = exception.toThrowable();
                 break;
         }

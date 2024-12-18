@@ -4442,7 +4442,7 @@ public final class Ruby implements Constantizable {
         RubyException ex = RubyStopIteration.newInstance(context, result, message);
 
         if (!RubyInstanceConfig.STOPITERATION_BACKTRACE) {
-            ex.setBacktrace(disabledBacktrace());
+            ex.setBacktrace(context, disabledBacktrace());
         }
 
         return ex.toThrowable();
