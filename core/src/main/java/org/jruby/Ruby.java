@@ -401,7 +401,9 @@ public final class Ruby implements Constantizable {
         // Initialize all the core classes
         comparableModule = RubyComparable.createComparable(context);
         enumerableModule = RubyEnumerable.createEnumerableModule(context);
+
         stringClass = RubyString.createStringClass(context, objectClass, comparableModule);
+        emptyFrozenString = freezeAndDedupString(newEmptyString(context));
 
         falseString = Create.newString(context, FALSE_BYTES);
         falseString.setFrozen(true);
@@ -3516,6 +3518,10 @@ public final class Ruby implements Constantizable {
         return emptyFrozenArray;
     }
 
+    public RubyString getEmptyFrozenString() {
+        return emptyFrozenString;
+    }
+
     public RubyBoolean newBoolean(boolean value) {
         return value ? trueObject : falseObject;
     }
@@ -5903,6 +5909,7 @@ public final class Ruby implements Constantizable {
     }
 
     private final RubyArray emptyFrozenArray;
+    private final RubyString emptyFrozenString;
 
     /**
      * A map from Ruby string data to a pre-frozen global version of that string.
