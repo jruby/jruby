@@ -1898,28 +1898,29 @@ public class OpenFile implements Finalizable {
         int pos;
         Encoding enc;
         int cr;
+        RubyString string;
 
         boolean locked = lock();
         try {
             if (needsReadConversion()) {
                 SET_BINARY_MODE();
-                str = EncodingUtils.setStrBuf(runtime, str, 0);
+                string = EncodingUtils.setStrBuf(runtime, str, 0);
                 makeReadConversion(context);
                 while (true) {
                     Object v;
                     if (cbuf.len != 0) {
-                        str = shiftCbuf(context, cbuf.len, str);
+                        string = shiftCbuf(context, cbuf.len, string);
                     }
                     v = fillCbuf(context, 0);
                     if (!v.equals(MORE_CHAR_SUSPENDED) && !v.equals(MORE_CHAR_FINISHED)) {
                         if (cbuf.len != 0) {
-                            shiftCbuf(context, cbuf.len, str);
+                            shiftCbuf(context, cbuf.len, string);
                         }
                         throw (RaiseException) v;
                     }
                     if (v.equals(MORE_CHAR_FINISHED)) {
                         clearReadConversion();
-                        return EncodingUtils.ioEncStr(runtime, str, this);
+                        return EncodingUtils.ioEncStr(runtime, string, this);
                     }
                 }
             }
@@ -1934,11 +1935,11 @@ public class OpenFile implements Finalizable {
             if (siz == 0) siz = BUFSIZ;
             for (; ; ) {
                 READ_CHECK(context);
-                str = EncodingUtils.setStrBuf(context.runtime, str, siz);
-                ByteList strByteList = ((RubyString) str).getByteList();
+                str = string = EncodingUtils.setStrBuf(context.runtime, str, siz);
+                ByteList strByteList = string.getByteList();
                 n = fread(context, strByteList.unsafeBytes(), strByteList.begin() + bytes, siz - bytes);
                 if (n == 0 && bytes == 0) {
-                    ((RubyString) str).resize(0);
+                    string.resize(0);
                     break;
                 }
                 bytes += n;
@@ -1953,14 +1954,14 @@ public class OpenFile implements Finalizable {
                 siz += BUFSIZ;
                 ((RubyString) str).modify(BUFSIZ);
             }
-            str = EncodingUtils.ioEncStr(runtime, str, this);
+            string = EncodingUtils.ioEncStr(runtime, string, this);
         } finally {
             if (locked) unlock();
         }
 
-        ((RubyString)str).setCodeRange(cr);
+        string.setCodeRange(cr);
 
-        return str;
+        return string;
     }
 
     // io_bufread
