@@ -706,9 +706,8 @@ public class RubyBignum extends RubyInteger {
                 RubyComplex complex = RubyComplex.newComplexRaw(context.runtime, this);
                 return sites(context).op_exp.call(context, complex, complex, other);
             }
-        } else if (other instanceof RubyBignum bignum) {
-            d = bignum.getDoubleValue();
-            warn(context, "in a**b, b may be too big");
+        } else if (other instanceof RubyBignum) {
+            throw argumentError(context, "exponent is too large");
         } else if (other instanceof RubyFixnum fixnum) {
             return op_pow(context, fixnum.value);
         } else {
@@ -737,8 +736,7 @@ public class RubyBignum extends RubyInteger {
         }
         final int xbits = value.bitLength();
         if ((xbits > BIGLEN_LIMIT) || (xbits * other > BIGLEN_LIMIT)) {
-            warn(context, "in a**b, b may be too big");
-            return pow(context, (double) other);
+            throw argumentError(context, "exponent is too large");
         } else {
             return newBignum(context.runtime, value.pow((int) other));
         }
