@@ -169,7 +169,7 @@ public class TestRuby extends Base {
         RubyException exception = (RubyException)context.runtime.getClass("NameError").newInstance(context, new IRubyObject[]{ newString(context, "A message")},  Block.NULL_BLOCK);
         RubyString[] lines = new RubyString[] { newString(context, "Line 1"), newString(context, "Line 2") };
         RubyArray backtrace = RubyArray.newArray(ruby, Arrays.<IRubyObject>asList(lines));
-        exception.set_backtrace(backtrace);
+        exception.set_backtrace(context, backtrace);
         ruby.printError(exception);
         assertEquals("Line 1: A message (NameError)\n\tfrom Line 2\n", CRLFToNL(err.toString()));
     }
