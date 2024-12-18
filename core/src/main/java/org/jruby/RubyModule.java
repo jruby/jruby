@@ -483,7 +483,9 @@ public class RubyModule extends RubyObject {
     }
 
     public static RubyModule newModuleBootstrap(Ruby runtime, String name, RubyModule parent) {
-        return (RubyModule) parent.setConstant(name, new RubyModule(runtime).baseName(name));
+        var module = new RubyModule(runtime).baseName(name);
+        parent.defineConstantBootstrap(name, module);
+        return module;
     }
 
     // synchronized method per JRUBY-1173 (unsafe Double-Checked Locking)
