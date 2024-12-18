@@ -1103,7 +1103,7 @@ public class OpenFile implements Finalizable {
     private static final byte[] EMPTY_BYTE_ARRAY = ByteList.NULL_ARRAY;
 
     // MRI: appendline
-    public int appendline(ThreadContext context, int delim, final ByteList[] strp, final int[] lp) {
+    public int appendline(ThreadContext context, int delim, final ByteList[] strp, final int[] lp, Encoding enc) {
         ByteList str = strp[0];
         int limit = lp[0];
 
@@ -1117,9 +1117,9 @@ public class OpenFile implements Finalizable {
                     byte[] pBytes = READ_CHAR_PENDING_PTR();
                     p = READ_CHAR_PENDING_OFF();
                     if (0 < limit && limit < searchlen) searchlen = limit;
-                    e = memchr(pBytes, p, delim, searchlen);
+                    e = searchDelimiter(pBytes, p, delim, searchlen, enc);
                     if (e != -1) {
-                        int len = e - p + 1;
+                        int len = e - p;
                         if (str == null) {
                             strp[0] = str = new ByteList(pBytes, p, len);
                         } else {
@@ -1161,8 +1161,8 @@ public class OpenFile implements Finalizable {
                 int last;
 
                 if (limit > 0 && pending > limit) pending = limit;
-                int e = memchr(pBytes, p, delim, pending);
-                if (e != -1) pending = e - p + 1;
+                int e = searchDelimiter(pBytes, p, delim, pending, enc);
+                if (e != -1) pending = e - p;
                 if (str != null) {
                     last = str.getRealSize();
                     str.ensure(last + pending);
@@ -1187,6 +1187,29 @@ public class OpenFile implements Finalizable {
         } while (fillbuf(context) >= 0);
         lp[0] = limit;
         return EOF;
+    }
+
+    // MRI: search_delim
+    private static int searchDelimiter(byte[] pBytes, int p, int delim, int len, Encoding enc) {
+        if (enc.minLength() == 1) {
+            p = memchr(pBytes, p, delim, len);
+            if (p != -1) return p + 1;
+        } else {
+            int end = p + len;
+            while (p < end) {
+                int r = StringSupport.preciseLength(enc, pBytes, p, end);
+                if (!MBCLEN_CHARFOUND_P(r)) {
+                    p += enc.minLength();
+                    continue;
+                }
+                int n = MBCLEN_CHARFOUND_LEN(r);
+                if (enc.mbcToCode(pBytes, p, end) == delim) {
+                    return p + n;
+                }
+                p += n;
+            }
+        }
+        return -1;
     }
 
     private static int memchr(byte[] pBytes, int p, int delim, int length) {
