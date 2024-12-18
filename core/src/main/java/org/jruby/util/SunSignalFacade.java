@@ -49,9 +49,12 @@ import sun.misc.SignalHandler;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.jruby.api.Access.getModule;
 import static org.jruby.api.Access.globalVariables;
+import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newString;
 
 /**
  * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>
@@ -149,7 +152,7 @@ public class SunSignalFacade implements SignalFacade {
             synchronized (fakeOriginal) {
                 handler = fakeOriginal.remove(sig.toString());
             }
-            return getSignalResult(runtime, handler, true);
+            return getSignalResult(runtime.getCurrentContext(), handler, true);
         }
     }
 
@@ -184,39 +187,38 @@ public class SunSignalFacade implements SignalFacade {
             handled = signalName.equals("EXIT");
         }
 
-        return getSignalResult(runtime, oldHandler, handled);
+        return getSignalResult(runtime.getCurrentContext(), oldHandler, handled);
     }
 
-    private static IRubyObject getSignalResult(final Ruby runtime, final SignalHandler oldHandler, boolean handled) {
-        RubyBoolean handledBoolean = runtime.newBoolean(handled);
-        IRubyObject ret = null;
+    private static IRubyObject getSignalResult(ThreadContext context, final SignalHandler oldHandler, boolean handled) {
+        RubyBoolean handledBoolean = asBoolean(context, handled);
+        IRubyObject ret;
         BlockCallback callback = null;
 
-        if (oldHandler instanceof JRubySignalHandler) {
-            JRubySignalHandler jsHandler = (JRubySignalHandler) oldHandler;
+        if (oldHandler instanceof JRubySignalHandler jsHandler) {
             if (jsHandler.blockCallback != null) {
                 callback = jsHandler.blockCallback;
             } else {
                 ret = jsHandler.block;
-                return newArray(runtime.getCurrentContext(), ret, handledBoolean);
+                return newArray(context, ret, handledBoolean);
             }
         }
 
         if (callback == null) {
             if (oldHandler == SignalHandler.SIG_DFL) {
-                ret = runtime.newString("SYSTEM_DEFAULT");
+                ret = newString(context, "SYSTEM_DEFAULT");
             } else if (oldHandler == IGNORE) {
-                ret = runtime.newString("IGNORE");
+                ret = newString(context, "IGNORE");
             } else {
-                ret = runtime.newString("DEFAULT");
+                ret = newString(context,"DEFAULT");
             }
         } else {
-            Block block = CallBlock.newCallClosure(runtime.getCurrentContext(),
-                    runtime.getModule("Signal"), Signature.NO_ARGUMENTS, callback);
-            ret = RubyProc.newProc(runtime, block, Block.Type.PROC);
+            Block block = CallBlock.newCallClosure(context,
+                    getModule(context, "Signal"), Signature.NO_ARGUMENTS, callback);
+            ret = RubyProc.newProc(context.runtime, block, Block.Type.PROC);
         }
 
-        return RubyArray.newArrayMayCopy(runtime, ret, handledBoolean);
+        return RubyArray.newArrayMayCopy(context.runtime, ret, handledBoolean);
     }
 
 }// SunSignalFacade

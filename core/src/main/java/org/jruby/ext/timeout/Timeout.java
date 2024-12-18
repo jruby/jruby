@@ -52,6 +52,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.threading.DaemonThreadFactory;
 import org.jruby.util.ByteList;
 
+import static org.jruby.api.Access.getModule;
 import static org.jruby.api.Access.kernelModule;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineModule;
@@ -91,14 +92,9 @@ public class Timeout {
 
     @JRubyMethod(module = true)
     public static IRubyObject timeout(final ThreadContext context, IRubyObject recv, IRubyObject seconds, IRubyObject exceptionType, IRubyObject message, Block block) {
-        // No seconds, just yield
-        if ( nilOrZeroSeconds(context, seconds) ) {
-            return block.yieldSpecific(context);
-        }
+        if (nilOrZeroSeconds(context, seconds)) return block.yieldSpecific(context);   // No seconds, just yield
 
-        final Ruby runtime = context.runtime;
-        final RubyModule timeout = runtime.getModule("Timeout");
-
+        final RubyModule Timeout = getModule(context, "Timeout");
         final RubyThread currentThread = context.getThread();
         final AtomicBoolean latch = new AtomicBoolean(false);
 
@@ -106,19 +102,19 @@ public class Timeout {
         final RubyString exceptionMessage = message.isNil() ? defaultTimeoutMessage(context) : message.convertToString();
 
         Runnable timeoutRunnable = id != null ?
-                TimeoutTask.newAnonymousTask(currentThread, timeout, latch, id, exceptionMessage) :
-                TimeoutTask.newTaskWithException(currentThread, timeout, latch, exceptionType, exceptionMessage);
+                TimeoutTask.newAnonymousTask(currentThread, Timeout, latch, id, exceptionMessage) :
+                TimeoutTask.newTaskWithException(currentThread, Timeout, latch, exceptionType, exceptionMessage);
 
-        ScheduledThreadPoolExecutor executor = (ScheduledThreadPoolExecutor) timeout.getInternalVariable("__executor__");
+        ScheduledThreadPoolExecutor executor = (ScheduledThreadPoolExecutor) Timeout.getInternalVariable("__executor__");
 
         try {
             return yieldWithTimeout(executor, context, seconds, block, timeoutRunnable, latch);
         } catch (RaiseException re) {
             // if it's the exception we're expecting
-            if (re.getException().getMetaClass() == getTimeoutError(context, timeout)) {
+            if (re.getException().getMetaClass() == getTimeoutError(context, Timeout)) {
                 // and we were not given a specific exception
                 if (id != null) {
-                    raiseTimeoutErrorIfMatches(context, timeout, re, id);
+                    raiseTimeoutErrorIfMatches(context, Timeout, re, id);
                 }
             }
 

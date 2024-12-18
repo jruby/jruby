@@ -74,6 +74,7 @@ import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.UnsupportedAddressTypeException;
 
+import static org.jruby.api.Access.getModule;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineClass;
@@ -148,7 +149,7 @@ public class RubyUDPSocket extends RubyIPSocket {
         final int port = SocketUtils.portToInt(_port);
 
         try {
-            final InetSocketAddress addr = getInetSocketAddress(runtime, host, port);
+            final InetSocketAddress addr = getInetSocketAddress(context, host, port);
 
             if (multicastStateManager == null) {
                 ((DatagramChannel) getChannel()).bind(addr);
@@ -181,15 +182,15 @@ public class RubyUDPSocket extends RubyIPSocket {
         }
     }
 
-    private InetSocketAddress getInetSocketAddress(Ruby runtime, IRubyObject host, int port) throws UnknownHostException {
+    private InetSocketAddress getInetSocketAddress(ThreadContext context, IRubyObject host, int port) throws UnknownHostException {
         // Handle cases where we treat as INADDR_ANY
         if (host.isNil() || ((host instanceof RubyString) && ((RubyString) host).isEmpty())) return new InetSocketAddress(port);
         if (host instanceof RubyFixnum) {
             int intAddr = RubyNumeric.fix2int(host);
-            if (intAddr == RubyNumeric.fix2int(runtime.getModule("Socket").getConstant("INADDR_ANY"))) {
+            if (intAddr == RubyNumeric.fix2int(getModule(context, "Socket").getConstant("INADDR_ANY"))) {
                 return new InetSocketAddress(InetAddress.getByName("0.0.0.0"), port);
             } else {
-                if (multicastStateManager == null) throw runtime.newNotImplementedError("bind with host: " + intAddr);
+                if (multicastStateManager == null) throw context.runtime.newNotImplementedError("bind with host: " + intAddr);
                 return null;
             }
         }

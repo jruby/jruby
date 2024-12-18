@@ -19,6 +19,7 @@ import org.jruby.RubyObject;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
 import org.jruby.ext.ffi.InvalidMemoryIO;
 import org.jruby.ext.ffi.MemoryIO;
 import org.jruby.ext.ffi.Pointer;
@@ -155,7 +156,7 @@ public class DynamicLibrary extends RubyObject {
         private final String name;
         
         public Symbol(Ruby runtime, DynamicLibrary library, String name, MemoryIO io) {
-            super(runtime, runtime.getModule("FFI").getClass(runtime.getCurrentContext(), "DynamicLibrary").getClass(runtime.getCurrentContext(), "Symbol"),
+            super(runtime, Access.getClass(runtime.getCurrentContext(), "FFI", "DynamicLibrary", "Symbol"),
                     io, Long.MAX_VALUE);
             this.library = library;
             this.name = name;

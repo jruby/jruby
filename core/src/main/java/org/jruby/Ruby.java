@@ -42,6 +42,7 @@ package org.jruby;
 
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.anno.TypePopulator;
+import org.jruby.api.Access;
 import org.jruby.api.Create;
 import org.jruby.api.Define;
 import org.jruby.compiler.Constantizable;
@@ -183,7 +184,6 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
-import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
@@ -223,7 +223,6 @@ import static org.jruby.api.Create.newFrozenString;
 import static org.jruby.api.Error.*;
 import static org.jruby.api.Warn.warn;
 import static org.jruby.parser.ParserType.*;
-import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
 import static org.jruby.util.RubyStringBuilder.types;
@@ -1353,19 +1352,14 @@ public final class Ruby implements Constantizable {
         }
     }
 
-    /**
-     * Retrieve the module with the given name from the Object namespace.
-     *
-     * @param name The name of the module
-     * @return The module or null if not found
-     */
+    @Deprecated(since = "10.0")
     public RubyModule getModule(String name) {
-        return objectClass.getModule(name);
+        return Access.getModule(getCurrentContext(), name);
     }
 
     @Deprecated
     public RubyModule fastGetModule(String internedName) {
-        return getModule(internedName);
+        return Access.getModule(getCurrentContext(), internedName);
     }
 
     /**
@@ -1374,9 +1368,9 @@ public final class Ruby implements Constantizable {
      * @param name The name of the class
      * @return The class
      */
+    @Deprecated(since = "10.0")
     public RubyClass getClass(String name) {
-        var context = getCurrentContext();
-        return objectClass.getClass(context, name);
+        return Access.getClass(getCurrentContext(), name);
     }
 
     /**
@@ -1389,7 +1383,7 @@ public final class Ruby implements Constantizable {
      */
     @Deprecated
     public RubyClass fastGetClass(String internedName) {
-        return getClass(internedName);
+        return Access.getClass(getCurrentContext(), internedName);
     }
 
     /**
@@ -1595,8 +1589,9 @@ public final class Ruby implements Constantizable {
         return objectClass.fetchConstant(name, false);
     }
 
+    @Deprecated(since = "10.0")
     public boolean isClassDefined(String name) {
-        return getModule(name) != null;
+        return Access.getModule(getCurrentContext(), name) != null;
     }
 
     public JavaSupport loadJavaSupport() {
@@ -4092,13 +4087,13 @@ public final class Ruby implements Constantizable {
     @Deprecated(since = "9.4-")
     public RaiseException newInvalidEncoding(String message) {
         var context = getCurrentContext();
-        return newRaiseException(getClass("Iconv").getClass(context, "InvalidEncoding"), message);
+        return newRaiseException(Access.getClass(context, "Iconv", "InvalidEncoding"), message);
     }
 
     @Deprecated(since = "9.4-")
     public RaiseException newIllegalSequence(String message) {
         var context = getCurrentContext();
-        return newRaiseException(getClass("Iconv").getClass(context, "IllegalSequence"), message);
+        return newRaiseException(Access.getClass(context, "Iconv", "IllegalSequence"), message);
     }
 
     /**

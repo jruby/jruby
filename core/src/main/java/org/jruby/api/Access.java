@@ -203,6 +203,42 @@ public class Access {
     }
 
     /**
+     * Retrieve the instance of the module by name
+     * @param context the current thread context
+     * @param name of the module to return
+     * @return the Module
+     */
+    public static RubyModule getModule(ThreadContext context, String name) {
+        return objectClass(context).getModule(context, name);
+    }
+
+    /**
+     * Return a class instance based on the name of the class in Object.
+     * @param context the current context
+     * @param name to be resolved
+     * @return the eventual class found
+     */
+    public static RubyClass getClass(ThreadContext context, String name) {
+        return (RubyClass) objectClass(context).getModule(context, name);
+    }
+
+
+    /**
+     * Return a class instance based on a chain of module/classes starting at Object.
+     * @param context the current context
+     * @param names to be resolved
+     * @return the eventual class found
+     */
+    public static RubyClass getClass(ThreadContext context, String... names) {
+        RubyModule module = objectClass(context);
+        for (String name : names) {
+            module = module.getModule(context, name);
+        }
+
+        return (RubyClass) module;
+    }
+
+    /**
      * Retrieve the instance of the class Module
      * @param context the current thread context
      * @return the Class

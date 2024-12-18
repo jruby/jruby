@@ -35,6 +35,7 @@ package org.jruby.test;
 
 import org.jruby.RubyException;
 import org.jruby.RubyObject;
+import org.jruby.api.Access;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -84,9 +85,8 @@ public class TestKernel extends Base {
             fail("Expected a SystemExit to be thrown by calling exit.");
         } catch (RaiseException re) {
         	RubyException raisedException = re.getException();
-        	if (context.runtime.getClass("SystemExit").isInstance(raisedException)) {
-	            IRubyObject status = raisedException.callMethod(context, "status");
-	            assertEquals(expectedStatus, status);
+        	if (Access.getClass(context, "SystemExit").isInstance(raisedException)) {
+	            assertEquals(expectedStatus, raisedException.callMethod(context, "status"));
         	} else {
         		throw re;
         	}

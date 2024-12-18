@@ -43,8 +43,8 @@ import org.jruby.*;
 import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
 
+import org.jruby.api.Access;
 import org.jruby.ast.util.ArgsUtil;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -59,6 +59,7 @@ import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
 
 import static org.jruby.api.Access.kernelModule;
+import static org.jruby.api.Access.getModule;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineClass;
@@ -188,7 +189,7 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     public RubyBigDecimal(Ruby runtime, BigDecimal value) {
-        super(runtime, runtime.getClass("BigDecimal"));
+        super(runtime, Access.getClass(runtime.getCurrentContext(), "BigDecimal"));
         this.isNaN = false;
         this.infinitySign = 0;
         this.zeroSign = 0;
@@ -210,7 +211,7 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     public RubyBigDecimal(Ruby runtime, BigDecimal value, int infinitySign, int zeroSign) {
-        super(runtime, runtime.getClass("BigDecimal"));
+        super(runtime, Access.getClass(runtime.getCurrentContext(), "BigDecimal"));
         this.isNaN = false;
         this.infinitySign = infinitySign;
         this.zeroSign = zeroSign;
@@ -219,7 +220,7 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     public RubyBigDecimal(Ruby runtime, BigDecimal value, boolean isNan) {
-        super(runtime, runtime.getClass("BigDecimal"));
+        super(runtime, Access.getClass(runtime.getCurrentContext(), "BigDecimal"));
         this.isNaN = isNan;
         this.infinitySign = 0;
         this.zeroSign = 0;
@@ -249,7 +250,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
         @JRubyMethod(name = "BigDecimal", module = true, visibility = Visibility.PRIVATE) // required = 1, optional = 1
         public static IRubyObject newBigDecimal(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
-            RubyClass bigDecimal = context.runtime.getClass("BigDecimal");
+            RubyClass bigDecimal = Access.getClass(context, "BigDecimal");
             IRubyObject maybeOpts = ArgsUtil.getOptionsArg(context.runtime, arg1, false);
 
             if (maybeOpts.isNil()) return newInstance(context, bigDecimal, arg0, arg1, true, true);
@@ -269,7 +270,7 @@ public class RubyBigDecimal extends RubyNumeric {
             IRubyObject exObj = ArgsUtil.extractKeywordArg(context, "exception", maybeOpts);
             boolean exception = exObj.isNil() || exObj.isTrue();
 
-            return newInstance(context, context.runtime.getClass("BigDecimal"), arg0, arg1, true, exception);
+            return newInstance(context, Access.getClass(context, "BigDecimal"), arg0, arg1, true, exception);
         }
     }
 
@@ -412,11 +413,11 @@ public class RubyBigDecimal extends RubyNumeric {
 
     // The Fixnum cast should be fine because these are internal variables and user code cannot change them.
     private static long bigDecimalVar(ThreadContext context, String variableName) {
-        return ((RubyFixnum) context.runtime.getClass("BigDecimal").searchInternalModuleVariable(variableName)).getLongValue();
+        return ((RubyFixnum) Access.getClass(context, "BigDecimal").searchInternalModuleVariable(variableName)).getLongValue();
     }
 
     private static RoundingMode getRoundingMode(ThreadContext context) {
-        IRubyObject mode = context.runtime.getClass("BigDecimal").searchInternalModuleVariable("vpRoundingMode");
+        IRubyObject mode = Access.getClass(context, "BigDecimal").searchInternalModuleVariable("vpRoundingMode");
         return javaRoundingModeFromRubyRoundingMode(context, mode);
     }
 
@@ -493,10 +494,10 @@ public class RubyBigDecimal extends RubyNumeric {
     private static RubyBigDecimal getVpValue(ThreadContext context, IRubyObject value, boolean must) {
         return switch (((RubyBasicObject) value).getNativeClassIndex()) {
             case BIGDECIMAL -> (RubyBigDecimal) value;
-            case FIXNUM -> newInstance(context, context.runtime.getClass("BigDecimal"), (RubyFixnum) value, MathContext.UNLIMITED);
-            case BIGNUM -> newInstance(context, context.runtime.getClass("BigDecimal"), (RubyBignum) value, MathContext.UNLIMITED);
-            case FLOAT -> newInstance(context, context.runtime.getClass("BigDecimal"), (RubyFloat) value, new MathContext(RubyFloat.DIG));
-            case RATIONAL -> newInstance(context, context.runtime.getClass("BigDecimal"), (RubyRational) value, new MathContext(RubyFloat.DIG));
+            case FIXNUM -> newInstance(context, Access.getClass(context, "BigDecimal"), (RubyFixnum) value, MathContext.UNLIMITED);
+            case BIGNUM -> newInstance(context, Access.getClass(context, "BigDecimal"), (RubyBignum) value, MathContext.UNLIMITED);
+            case FLOAT -> newInstance(context, Access.getClass(context, "BigDecimal"), (RubyFloat) value, new MathContext(RubyFloat.DIG));
+            case RATIONAL -> newInstance(context, Access.getClass(context, "BigDecimal"), (RubyRational) value, new MathContext(RubyFloat.DIG));
             default -> cannotBeCoerced(context, value, must);
         };
     }
@@ -879,13 +880,13 @@ public class RubyBigDecimal extends RubyNumeric {
 
     private static RubyBigDecimal getZero(ThreadContext context, final int sign) {
         String constantName = sign < 0 ? "NEGATIVE_ZERO" : "POSITIVE_ZERO";
-        return (RubyBigDecimal) context.runtime.getClass("BigDecimal").getConstant(constantName);
+        return (RubyBigDecimal) Access.getClass(context, "BigDecimal").getConstant(constantName);
     }
 
     private static RubyBigDecimal getNaN(ThreadContext context) {
         if ( isNaNExceptionMode(context) ) throw newNaNFloatDomainError(context);
 
-        return (RubyBigDecimal) context.runtime.getClass("BigDecimal").getConstant("NAN");
+        return (RubyBigDecimal) Access.getClass(context, "BigDecimal").getConstant("NAN");
     }
 
     private static RaiseException newNaNFloatDomainError(ThreadContext context) {
@@ -902,7 +903,7 @@ public class RubyBigDecimal extends RubyNumeric {
         if (isInfinityExceptionMode(context)) throw newInfinityFloatDomainError(context, sign, type);
 
         String constantName = sign < 0 ? "NEGATIVE_INFINITY" : "INFINITY";
-        return (RubyBigDecimal) context.runtime.getClass("BigDecimal").getConstant(constantName);
+        return (RubyBigDecimal) Access.getClass(context, "BigDecimal").getConstant(constantName);
     }
 
     private static RaiseException newInfinityFloatDomainError(ThreadContext context, final int sign) {
@@ -1110,7 +1111,7 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private static IRubyObject vpPrecLimit(ThreadContext context) {
-        return context.runtime.getClass("BigDecimal").searchInternalModuleVariable("vpPrecLimit");
+        return Access.getClass(context, "BigDecimal").searchInternalModuleVariable("vpPrecLimit");
     }
 
     private static int getPrecLimit(ThreadContext context) {
@@ -1224,7 +1225,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     // mri bigdecimal_power_by_bigdecimal
     private IRubyObject bigdecimal_power_by_bigdecimal(ThreadContext context, IRubyObject exp, int precision) {
-        RubyModule bigMath = context.runtime.getModule("BigMath");
+        RubyModule bigMath = getModule(context, "BigMath");
         RubyBigDecimal log_x = (RubyBigDecimal) bigMath.callMethod(context, "log", new IRubyObject[]{this, asFixnum(context, precision + 1)});
         RubyBigDecimal multipled = (RubyBigDecimal) log_x.mult2(context, exp, asFixnum(context, precision + 1));
         return bigMath.callMethod(context, "exp", new IRubyObject[]{multipled, asFixnum(context, precision)});
@@ -2518,7 +2519,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @Deprecated // no longer used
     public RubyBigDecimal(Ruby runtime, RubyBigDecimal rbd) {
-        this(runtime, runtime.getClass("BigDecimal"), rbd);
+        this(runtime, Access.getClass(runtime.getCurrentContext(), "BigDecimal"), rbd);
     }
 
     @Deprecated // no longer used

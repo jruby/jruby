@@ -6,6 +6,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
 import org.jruby.ext.ffi.*;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -79,7 +80,7 @@ public class Factory extends org.jruby.ext.ffi.Factory {
     public Function newFunction(Ruby runtime, Pointer address, CallbackInfo cbInfo) {
         var context = runtime.getCurrentContext();
         CodeMemoryIO mem = new CodeMemoryIO(runtime, address);
-        RubyClass klass = runtime.getModule("FFI").getClass(context, "Function");
+        RubyClass klass = Access.getClass(context, "FFI", "Function");
         return new Function(runtime, klass, mem, 
                 cbInfo.getReturnType(), cbInfo.getParameterTypes(),
                 cbInfo.isStdcall() ? CallingConvention.STDCALL : CallingConvention.DEFAULT, null, false);

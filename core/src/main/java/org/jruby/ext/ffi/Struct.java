@@ -7,11 +7,13 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import org.jruby.*;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 
+import static org.jruby.api.Access.getModule;
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Error.*;
@@ -228,7 +230,7 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
         RubyClass klass = castAsClass(context, structClass);
 
         if (!(layout instanceof StructLayout)) {
-            throw typeError(context, layout, context.runtime.getModule("FFI").getClass(context, "StructLayout"));
+            throw typeError(context, layout, Access.getClass(context, "FFI", "StructLayout"));
         }
 
         klass.setFFIHandle(layout);

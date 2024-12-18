@@ -38,6 +38,7 @@ import org.jruby.RubyString;
 import org.jruby.RubyTime;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
@@ -86,14 +87,9 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
     
     @JRubyMethod(meta = true, name = "wrap", required = 1, optional = 1, checkArity = false)
     public static IRubyObject wrap(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = recv.getRuntime();
-        RubyGzipFile instance;
-
-        if (((RubyModule) recv).isKindOfModule(runtime.getModule("Zlib").getClass(context, "GzipWriter"))) {
-            instance = JZlibRubyGzipWriter.newInstance(recv, args);
-        } else {
-            instance = JZlibRubyGzipReader.newInstance(recv, args);
-        }
+        RubyGzipFile instance = ((RubyModule) recv).isKindOfModule(Access.getClass(context, "Zlib", "GzipWriter")) ?
+                JZlibRubyGzipWriter.newInstance(recv, args) :
+                JZlibRubyGzipReader.newInstance(recv, args);
 
         return wrapBlock(context, instance, block);
     }

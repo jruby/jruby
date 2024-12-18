@@ -9,6 +9,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
 import org.jruby.ext.ffi.*;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
@@ -34,7 +35,7 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
 
     @Deprecated(since = "10.0")
     JFFIInvoker(Ruby runtime, long address, Type returnType, Type[] parameterTypes, CallingConvention convention) {
-        this(runtime, runtime.getModule("FFI").getClass(runtime.getCurrentContext(), "Invoker"),
+        this(runtime, Access.getClass(runtime.getCurrentContext(), "FFI", "Invoker"),
                 new CodeMemoryIO(runtime, address),
                 returnType, parameterTypes, convention, null);
     }

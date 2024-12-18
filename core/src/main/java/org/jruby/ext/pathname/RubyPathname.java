@@ -39,6 +39,7 @@ import static org.jruby.api.Error.argumentError;
 import org.jruby.*;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
 import org.jruby.api.Define;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.JavaMethod;
@@ -157,7 +158,7 @@ public class RubyPathname extends RubyObject {
     }
 
     public static RubyPathname newInstance(ThreadContext context, IRubyObject path) {
-        return newInstance(context, context.runtime.getClass("Pathname"), path);
+        return newInstance(context, Access.getClass(context, "Pathname"), path);
     }
 
     @JRubyMethod(visibility = Visibility.PRIVATE)

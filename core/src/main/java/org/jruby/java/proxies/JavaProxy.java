@@ -27,6 +27,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyUnboundMethod;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
 import org.jruby.api.Convert;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.RaiseException;
@@ -87,16 +88,13 @@ public class JavaProxy extends RubyObject {
     @JRubyMethod(meta = true)
     public static IRubyObject wrap(final ThreadContext context, final IRubyObject self, final IRubyObject object) {
         final Object value = JavaUtil.unwrapJava(object, null);
-        if (value == null) return context.nil;
 
-        final Ruby runtime = context.runtime;
-        if (value instanceof Class) {
-            return Java.getProxyClass(runtime, (Class<?>) value);
-        }
-        if (value.getClass().isArray()) {
-            return new ArrayJavaProxy(runtime, runtime.getClass("ArrayJavaProxy"), value);
-        }
-        return new ConcreteJavaProxy(runtime, runtime.getClass("ConcreteJavaProxy"), value);
+        if (value == null) return context.nil;
+        if (value instanceof Class clazz) return Java.getProxyClass(context.runtime, clazz);
+
+        return value.getClass().isArray() ?
+                new ArrayJavaProxy(context.runtime, Access.getClass(context, "ArrayJavaProxy"), value) :
+                new ConcreteJavaProxy(context.runtime, Access.getClass(context, "ConcreteJavaProxy"), value);
     }
 
     @JRubyMethod(meta = true)

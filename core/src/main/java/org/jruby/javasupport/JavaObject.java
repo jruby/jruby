@@ -104,7 +104,7 @@ public class JavaObject extends RubyObject {
             if ( value.getClass().isArray() ) return new JavaArray(runtime, value);
         }
         var context = runtime.getCurrentContext();
-        return new JavaObject(runtime, runtime.getJavaSupport().getJavaModule().getClass(context, "JavaObject"), value);
+        return new JavaObject(runtime, runtime.getJavaSupport().getJavaModule(context).getClass(context, "JavaObject"), value);
     }
 
     @JRubyMethod(meta = true)

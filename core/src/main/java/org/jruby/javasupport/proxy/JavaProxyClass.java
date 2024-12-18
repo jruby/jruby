@@ -39,6 +39,7 @@ import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
 import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.proxies.ConcreteJavaProxy.NewMethodReified;
@@ -95,7 +96,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     private final HashMap<String, ArrayList<JavaProxyMethod>> methodMap = new HashMap<>();
 
     private JavaProxyClass(ThreadContext context, final Class<?> proxyClass) {
-        super(context.runtime, context.runtime.getModule("Java").getClass(context, "JavaProxyClass"));
+        super(context.runtime, Access.getClass(context, "Java", "JavaProxyClass"));
         this.proxyClass = proxyClass;
     }
 
@@ -207,7 +208,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         }
 
         private static RubyClass getJavaProxyMethod(ThreadContext context) {
-            return context.runtime.getJavaSupport().getJavaModule().getClass(context, "JavaProxyMethod");
+            return context.runtime.getJavaSupport().getJavaModule(context).getClass(context, "JavaProxyMethod");
         }
 
         @Override

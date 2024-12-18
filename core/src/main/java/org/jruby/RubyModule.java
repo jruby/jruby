@@ -1187,6 +1187,11 @@ public class RubyModule extends RubyObject {
         return includedModule;
     }
 
+    @Deprecated(since = "10.0")
+    public RubyModule getModule(String name) {
+        return getModule(getCurrentContext(), name);
+    }
+
     /**
      * Finds a module that is within the current module (or class).
      *
@@ -1194,8 +1199,8 @@ public class RubyModule extends RubyObject {
      * @return the module or null if no such module
      * @since 9.2
      */
-    public RubyModule getModule(String name) {
-        return (RubyModule) getConstantAt(getRuntime().getCurrentContext(), name);
+    public RubyModule getModule(ThreadContext context, String name) {
+        return (RubyModule) getConstantAt(context, name);
     }
 
     @Deprecated(since = "10.0")

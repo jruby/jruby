@@ -30,7 +30,6 @@ package org.jruby.ext.zlib;
 import com.jcraft.jzlib.JZlib;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
@@ -38,6 +37,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 
+import static org.jruby.api.Access.getModule;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Warn.warn;
@@ -99,40 +99,65 @@ public abstract class ZStream extends RubyObject {
         return internalStreamEndP() ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
-    @JRubyMethod(name = "data_type")
+    @Deprecated(since = "10.0")
     public IRubyObject data_type() {
-        checkClosed();
-        return getRuntime().getModule("Zlib").getConstant("UNKNOWN");
+        return data_type(getCurrentContext());
+    }
+
+    @JRubyMethod(name = "data_type")
+    public IRubyObject data_type(ThreadContext context) {
+        checkClosed(context);
+        return getModule(context, "Zlib").getConstant("UNKNOWN");
+    }
+
+    @Deprecated(since = "10.0")
+    public IRubyObject closed_p() {
+        return closed_p(getCurrentContext());
     }
 
     @JRubyMethod(name = {"closed?", "ended?"})
-    public IRubyObject closed_p() {
-        return closed ? getRuntime().getTrue() : getRuntime().getFalse();
+    public IRubyObject closed_p(ThreadContext context) {
+        return closed ? context.tru : context.fals;
+    }
+
+    @Deprecated(since = "10.0")
+    public IRubyObject reset() {
+        return reset(getCurrentContext());
     }
 
     @JRubyMethod(name = "reset")
-    public IRubyObject reset() {
-        checkClosed();
+    public IRubyObject reset(ThreadContext context) {
+        checkClosed(context);
         internalReset();
         
-        return getRuntime().getNil();
+        return context.nil;
+    }
+
+    @Deprecated(since = "10.0")
+    public IRubyObject avail_out() {
+        return avail_out(getCurrentContext());
     }
 
     @JRubyMethod(name = "avail_out")
-    public IRubyObject avail_out() {
-        return RubyFixnum.zero(getRuntime());
+    public IRubyObject avail_out(ThreadContext context) {
+        return asFixnum(context, 0);
+    }
+
+    @Deprecated(since = "10.0")
+    public IRubyObject set_avail_out(IRubyObject p1) {
+        return set_avail_out(getCurrentContext(), p1);
     }
 
     @JRubyMethod(name = "avail_out=")
-    public IRubyObject set_avail_out(IRubyObject p1) {
-        checkClosed();
+    public IRubyObject set_avail_out(ThreadContext context, IRubyObject p1) {
+        checkClosed(context);
         
         return p1;
     }
 
     @JRubyMethod(name = "adler")
     public IRubyObject adler(ThreadContext context) {
-        checkClosed();
+        checkClosed(context);
 
         return asFixnum(context, internalAdler());
     }
@@ -144,16 +169,21 @@ public abstract class ZStream extends RubyObject {
 
     @JRubyMethod(name = "finish")
     public IRubyObject finish(ThreadContext context, Block block) {
-        checkClosed();
+        checkClosed(context);
         
         IRubyObject result = internalFinish(block);
         
         return result;
     }
 
-    @JRubyMethod(name = "avail_in")
+    @Deprecated(since = "10.0")
     public IRubyObject avail_in() {
-        return RubyFixnum.zero(getRuntime());
+        return avail_in(getCurrentContext());
+    }
+
+    @JRubyMethod(name = "avail_in")
+    public IRubyObject avail_in(ThreadContext context) {
+        return asFixnum(context, 0);
     }
 
     @JRubyMethod(name = "flush_next_in")
@@ -168,22 +198,27 @@ public abstract class ZStream extends RubyObject {
 
     @JRubyMethod(name = "total_in")
     public IRubyObject total_in(ThreadContext context) {
-        checkClosed();
+        checkClosed(context);
         return asFixnum(context, internalTotalIn());
     }
 
     @JRubyMethod(name = "finished?")
     public IRubyObject finished_p(ThreadContext context) {
-        checkClosed();
+        checkClosed(context);
         return asBoolean(context, internalFinished());
     }
 
-    @JRubyMethod(name = {"close", "end"})
+    @Deprecated(since = "10.0")
     public IRubyObject close() {
-        checkClosed();
+        return close(getCurrentContext());
+    }
+
+    @JRubyMethod(name = {"close", "end"})
+    public IRubyObject close(ThreadContext context) {
+        checkClosed(context);
         internalClose();
         closed = true;
-        return getRuntime().getNil();
+        return context.nil;
     }
 
     @Deprecated(since = "10.0")

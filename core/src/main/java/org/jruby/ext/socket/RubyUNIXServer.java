@@ -36,6 +36,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -71,8 +72,6 @@ public class RubyUNIXServer extends RubyUNIXSocket {
 
     @JRubyMethod
     public IRubyObject accept(ThreadContext context) {
-        Ruby runtime = context.runtime;
-
         try {
 
             while (true) { // select loop to allow interrupting
@@ -85,7 +84,7 @@ public class RubyUNIXServer extends RubyUNIXSocket {
                 } else {
                     UnixSocketChannel socketChannel = asUnixServer().accept();
 
-                    RubyUNIXSocket sock = (RubyUNIXSocket)(Helpers.invoke(context, runtime.getClass("UNIXSocket"), "allocate"));
+                    RubyUNIXSocket sock = (RubyUNIXSocket)(Helpers.invoke(context, Access.getClass(context, "UNIXSocket"), "allocate"));
 
                     sock.init_sock(context.runtime, socketChannel, "");
 
@@ -125,7 +124,7 @@ public class RubyUNIXServer extends RubyUNIXSocket {
                         throw runtime.newErrnoEAGAINReadableError("accept(2) would block");
                     }
 
-                    RubyUNIXSocket sock = (RubyUNIXSocket)(Helpers.invoke(context, runtime.getClass("UNIXSocket"), "allocate"));
+                    RubyUNIXSocket sock = (RubyUNIXSocket)(Helpers.invoke(context, Access.getClass(context, "UNIXSocket"), "allocate"));
 
                     sock.init_sock(context.runtime, socketChannel, "");
 

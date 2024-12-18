@@ -33,6 +33,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.*;
 import org.jruby.RubyEnumerator.SizeFn;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.*;
@@ -51,6 +52,7 @@ import java.util.Set;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.api.Access.enumerableModule;
+import static org.jruby.api.Access.getModule;
 import static org.jruby.api.Access.hashClass;
 import static org.jruby.api.Access.loadService;
 import static org.jruby.api.Access.objectClass;
@@ -407,7 +409,7 @@ public class RubySet extends RubyObject implements Set {
         if ( args.length == 0 ) return to_set(context, block);
 
         IRubyObject klass = args[0];
-        final RubyClass Set = context.runtime.getClass("Set");
+        final RubyClass Set = Access.getClass(context, "Set");
 
         if (klass == Set && args.length == 1 && !block.isGiven()) return this;
 
@@ -834,7 +836,7 @@ public class RubySet extends RubyObject implements Set {
      */
     @JRubyMethod(name = "^")
     public IRubyObject op_xor(final ThreadContext context, IRubyObject enume) {
-        RubySet newSet = new RubySet(context.runtime, context.runtime.getClass("Set"));
+        RubySet newSet = new RubySet(context.runtime, Access.getClass(context, "Set"));
         newSet.initialize(context, enume, Block.NULL_BLOCK); // Set.new(enum)
         for (IRubyObject o : elementsOrdered()) {
             if (newSet.containsImpl(o)) {
@@ -941,7 +943,7 @@ public class RubySet extends RubyObject implements Set {
         if (block.getSignature().arityValue() == 2) return divideTSort(context, block);
 
         RubyHash vals = (RubyHash) classify(context, block);
-        final RubySet set = new RubySet(context.runtime, context.runtime.getClass("Set"));
+        final RubySet set = new RubySet(context.runtime, Access.getClass(context, "Set"));
         set.allocHash(context, vals.size());
         for ( IRubyObject val : (Collection<IRubyObject>) vals.directValues() ) {
             set.invokeAdd(context, val);
@@ -974,7 +976,7 @@ public class RubySet extends RubyObject implements Set {
           }
           set
          */
-        final RubyClass Set = context.runtime.getClass("Set");
+        final RubyClass Set = Access.getClass(context, "Set");
         final RubySet set = new RubySet(context.runtime, Set);
         set.allocHash(context, dig.size());
         sites(context).each_strongly_connected_component.call(context, this, dig, new Block(
@@ -1002,7 +1004,7 @@ public class RubySet extends RubyObject implements Set {
         private static final String NAME = "DivideTSortHash"; // private constant under Set::
 
         static DivideTSortHash newInstance(final ThreadContext context) {
-            RubyClass Set = context.runtime.getClass("Set");
+            RubyClass Set = Access.getClass(context, "Set");
             RubyClass klass = (RubyClass) Set.getConstantAt(context, NAME, true);
             if (klass == null) { // initialize on-demand when Set#divide is first called
                 synchronized (DivideTSortHash.class) {
@@ -1103,10 +1105,9 @@ public class RubySet extends RubyObject implements Set {
     }
 
     static RubyModule getTSort(ThreadContext context) {
-        if (!objectClass(context).hasConstant("TSort")) {
-            loadService(context).require("tsort");
-        }
-        return context.runtime.getModule("TSort");
+        if (!objectClass(context).hasConstant("TSort")) loadService(context).require("tsort");
+
+        return getModule(context, "TSort");
     }
 
     private static final byte[] RECURSIVE_BYTES = new byte[] { '.','.','.' };

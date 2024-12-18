@@ -53,6 +53,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
 import org.jruby.api.Convert;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
@@ -364,7 +365,7 @@ public class RubySocket extends RubyBasicSocket {
 
         try {
             sp = UnixSocketChannel.pair();
-            final RubyClass socketClass = runtime.getClass("Socket");
+            final RubyClass socketClass = Access.getClass(context, "Socket");
 
             RubySocket sock0 = new RubySocket(runtime, socketClass);
             ChannelFD fd0 = newChannelFD(runtime, sp[0]);
@@ -671,9 +672,7 @@ public class RubySocket extends RubyBasicSocket {
 
     @Override
     protected IRubyObject addrFor(ThreadContext context, InetSocketAddress addr, boolean reverse) {
-        final Ruby runtime = context.runtime;
-
-        return new Addrinfo(runtime, runtime.getClass("Addrinfo"), addr.getAddress(), addr.getPort(), Sock.SOCK_DGRAM);
+        return new Addrinfo(context.runtime, Access.getClass(context, "Addrinfo"), addr.getAddress(), addr.getPort(), Sock.SOCK_DGRAM);
     }
 
     @Override

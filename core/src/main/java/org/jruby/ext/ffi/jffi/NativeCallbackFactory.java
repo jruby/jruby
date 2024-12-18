@@ -5,6 +5,7 @@ import com.kenai.jffi.ClosurePool;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyObject;
+import org.jruby.api.Access;
 import org.jruby.ext.ffi.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
@@ -31,7 +32,7 @@ public class NativeCallbackFactory {
         this.closureInfo = newFunctionInfo(runtime, cbInfo);
         this.closurePool = com.kenai.jffi.ClosureManager.getInstance().getClosurePool(closureInfo.callContext);
         this.callbackInfo = cbInfo;
-        this.callbackClass = runtime.getModule("FFI").getClass(context, "Callback");
+        this.callbackClass = Access.getClass(context, "FFI", "Callback");
     }
 
     public final Pointer getCallback(RubyObject callable) {

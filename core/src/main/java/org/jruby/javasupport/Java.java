@@ -58,6 +58,7 @@ import com.headius.backport9.modules.Modules;
 import org.jcodings.Encoding;
 
 import org.jruby.*;
+import org.jruby.api.Access;
 import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.TypeError;
 import org.jruby.javasupport.binding.Initializer;
@@ -141,7 +142,7 @@ public class Java implements Library {
         loadService(context).load("jruby/java.rb", false);
 
         // rewire ArrayJavaProxy superclass to point at Object, so it inherits Object behaviors
-        runtime.getClass("ArrayJavaProxy").
+        Access.getClass(context, "ArrayJavaProxy").
                 superClass(objectClass).
                 include(context, Enumerable);
 
@@ -892,7 +893,7 @@ public class Java implements Library {
         }
 
         var context = runtime.getCurrentContext();
-        final RubyModule javaModule = runtime.getJavaSupport().getJavaModule();
+        final RubyModule javaModule = runtime.getJavaSupport().getJavaModule(context);
         final IRubyObject packageModule = javaModule.getConstantAt(context, packageName);
 
         if (packageModule == null) return createPackageModule(context, javaModule, packageName, packageString);
@@ -919,7 +920,7 @@ public class Java implements Library {
     private static final Pattern CAMEL_CASE_PACKAGE_SPLITTER = Pattern.compile("([a-z0-9_]+)([A-Z])");
 
     private static RubyModule getPackageModule(ThreadContext context, final String name) {
-        final RubyModule javaModule = context.runtime.getJavaSupport().getJavaModule();
+        final RubyModule javaModule = context.runtime.getJavaSupport().getJavaModule(context);
         final IRubyObject packageModule = javaModule.getConstantAt(context, name);
         if ( packageModule instanceof RubyModule pkg) return pkg;
 
@@ -1142,7 +1143,7 @@ public class Java implements Library {
 
     private static boolean bindJavaPackageOrClassMethod(ThreadContext context, final String name,
         final RubyModule packageOrClass) {
-        final RubyModule javaPackage = context.runtime.getJavaSupport().getJavaModule();
+        final RubyModule javaPackage = context.runtime.getJavaSupport().getJavaModule(context);
         return bindJavaPackageOrClassMethod(context, javaPackage, name, packageOrClass);
     }
 

@@ -48,6 +48,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 
+import org.jruby.api.Access;
 import org.jruby.api.Create;
 import org.jruby.exceptions.RaiseException;
 
@@ -329,8 +330,7 @@ public class RubyZlib {
     }
 
     static RaiseException newZlibError(ThreadContext context, String klass, String message) {
-        RubyClass errorClass = context.runtime.getModule("Zlib").getClass(context, klass);
-        return RaiseException.from(context.runtime, errorClass, message);
+        return RaiseException.from(context.runtime, Access.getClass(context, "Zlib", klass), message);
     }
 
     static RaiseException newGzipFileError(ThreadContext context, String message) {
@@ -350,7 +350,7 @@ public class RubyZlib {
     }
 
     static RaiseException newGzipFileError(ThreadContext context, String klass, String message) {
-        RubyClass errorClass = context.runtime.getModule("Zlib").getClass(context, "GzipFile").getClass(context, klass);
+        RubyClass errorClass = Access.getClass(context, "Zlib", "GzipFile", klass);
         RubyException excn = RubyException.newException(context.runtime, errorClass, message);
         // TODO: not yet supported. rewrite GzipReader/Writer with Inflate/Deflate?
         excn.setInstanceVariable("@input", context.nil);

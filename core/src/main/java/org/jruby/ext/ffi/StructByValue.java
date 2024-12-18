@@ -6,6 +6,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -45,7 +46,7 @@ public final class StructByValue extends Type {
 
     @Deprecated(since = "10.0")
     StructByValue(Ruby runtime, RubyClass structClass, StructLayout structLayout) {
-        super(runtime, runtime.getModule("FFI").getClass(runtime.getCurrentContext(), "Type").getClass(runtime.getCurrentContext(), "Struct"),
+        super(runtime, Access.getClass(runtime.getCurrentContext(), "FFI", "Type", "Struct"),
                 NativeType.STRUCT, structLayout.size, structLayout.alignment);
         this.structClass = structClass;
         this.structLayout = structLayout;
