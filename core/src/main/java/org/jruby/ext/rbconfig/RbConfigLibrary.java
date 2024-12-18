@@ -227,15 +227,12 @@ public class RbConfigLibrary implements Library {
     public void load(Ruby runtime, boolean wrap) {
         ThreadContext context = runtime.getCurrentContext();
 
-        final RubyModule rbConfig = defineModule(context, "RbConfig");
-
+        RubyString destDir = newEmptyString(context);
         normalizedHome = getNormalizedHome(runtime);
 
-        // Ruby installed directory.
-        rbConfig.setConstant("TOPDIR", newString(context, normalizedHome));
-        RubyString destDir = newEmptyString(context);
-        // DESTDIR on make install.
-        rbConfig.setConstant("DESTDIR", destDir);
+        final RubyModule rbConfig = defineModule(context, "RbConfig").
+                defineConstant(context, "TOPDIR", newString(context, normalizedHome)).  // Ruby installed directory.
+                defineConstant(context, "DESTDIR", destDir);                            // DESTDIR on make install.
 
         // The hash configurations stored.
         final RubyHash CONFIG = new RubyHash(runtime, 48);

@@ -531,7 +531,7 @@ public class RubyClass extends RubyModule {
 
         clazz.makeMetaClass(superClass.getMetaClass());
         if (setParent) clazz.setParent(parent);
-        parent.setConstant(name, clazz);
+        parent.defineConstant(context, name, clazz);
         superClass.invokeInherited(context, superClass, clazz);
         return clazz;
     }

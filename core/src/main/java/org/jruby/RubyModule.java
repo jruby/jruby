@@ -49,6 +49,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -1374,9 +1375,11 @@ public class RubyModule extends RubyObject {
 
         String[] names = jrubyConstant.value();
         if (names.length == 0) {
-            setConstant(field.getName(), realVal);
+            defineConstant(field.getName(), realVal);
         } else {
-            for (String name : names) setConstant(name, realVal);
+            for (String name : names) {
+                defineConstant(name, realVal);
+            }
         }
 
         return true;
@@ -1609,7 +1612,13 @@ public class RubyModule extends RubyObject {
      */
     @JRubyAPI
     public <C extends Enum<C> &Constant, T extends RubyModule> T defineConstantsFrom(ThreadContext context, Class<C> enumClass) {
-        context.runtime.loadConstantSet(this, enumClass);
+        for (C constant : EnumSet.allOf(enumClass)) {
+            String name = constant.name();
+            if (constant.defined() && Character.isUpperCase(name.charAt(0))) {
+                defineConstant(context, name, asFixnum(context, constant.intValue()));
+            }
+        }
+
         return (T) this;
     }
 
@@ -4593,12 +4602,16 @@ public class RubyModule extends RubyObject {
         return context.nil;
     }
 
+    @Deprecated(since = "10.0")
+    public IRubyObject const_set(IRubyObject name, IRubyObject value) {
+        return const_set(getCurrentContext(), name, value);
+    }
+
     /** rb_mod_const_set
      *
      */
     @JRubyMethod(name = "const_set")
-    public IRubyObject const_set(IRubyObject name, IRubyObject value) {
-        ThreadContext context = getRuntime().getCurrentContext();
+    public IRubyObject const_set(ThreadContext context, IRubyObject name, IRubyObject value) {
         return setConstant(validateConstant(name), value, context.getFile(), context.getLine() + 1);
     }
 

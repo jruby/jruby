@@ -4684,14 +4684,9 @@ public final class Ruby implements Constantizable {
      * @param <C> the enum type, which must implement {@link Constant}.
      * @deprecated Use {@link org.jruby.RubyModule#defineConstantsFrom(ThreadContext, Class)} instead.
      */
-    @Deprecated
+    @Deprecated(since = "10.0")
     public <C extends Enum<C> & Constant> void loadConstantSet(RubyModule module, Class<C> enumClass) {
-        for (C constant : EnumSet.allOf(enumClass)) {
-            String name = constant.name();
-            if (constant.defined() && Character.isUpperCase(name.charAt(0))) {
-                    module.setConstant(name, newFixnum(constant.intValue()));
-                }
-        }
+        module.defineConstantsFrom(getCurrentContext(), enumClass);
     }
 
     /**
@@ -4700,10 +4695,12 @@ public final class Ruby implements Constantizable {
      * @param module the module in which we want to define the constants
      * @param constantSetName the name of the constant set from which to get the constants
      */
+    @Deprecated(since = "10.0")
     public void loadConstantSet(RubyModule module, String constantSetName) {
+        var context = getCurrentContext();
         for (Constant c : ConstantSet.getConstantSet(constantSetName)) {
             if (c.defined() && Character.isUpperCase(c.name().charAt(0))) {
-                module.setConstant(c.name(), newFixnum(c.intValue()));
+                module.defineConstant(context, c.name(), newFixnum(c.intValue()));
             }
         }
     }

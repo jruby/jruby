@@ -44,7 +44,7 @@ public class Pointer extends AbstractMemory {
 
         // Add Pointer::NULL as a constant
         Pointer nullPointer = new Pointer(context.runtime, _Pointer, new NullMemoryIO(context.runtime));
-        _Pointer.setConstant("NULL", nullPointer);
+        _Pointer.defineConstant(context, "NULL", nullPointer);
 
         var NilClass = nilClass(context);
         NilClass.addMethod("to_ptr", new NilToPointerMethod(NilClass, nullPointer, "to_ptr"));

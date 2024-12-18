@@ -77,15 +77,15 @@ public class RubyEtc {
         if (!Platform.IS_WINDOWS) {
             for (Constant c : ConstantSet.getConstantSet("Sysconf")) {
                 String name = c.name().substring(1); // leading "_"
-                Etc.setConstant(name, asFixnum(context, c.intValue()));
+                Etc.defineConstant(context, name, asFixnum(context, c.intValue()));
             }
             for (Constant c : ConstantSet.getConstantSet("Confstr")) {
                 String name = c.name().substring(1); // leading "_"
-                Etc.setConstant(name, asFixnum(context, c.intValue()));
+                Etc.defineConstant(context, name, asFixnum(context, c.intValue()));
             }
             for (Constant c : ConstantSet.getConstantSet("Pathconf")) {
                 String name = c.name().substring(1); // leading "_"
-                Etc.setConstant(name, asFixnum(context, c.intValue()));
+                Etc.defineConstant(context, name, asFixnum(context, c.intValue()));
             }
         }
         

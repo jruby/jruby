@@ -41,8 +41,8 @@ public class RubyIOBuffer extends RubyObject {
                 defineMethods(context, RubyIOBuffer.class).
                 defineConstants(context, RubyIOBuffer.class);
 
-        IO.setConstant("READABLE", asFixnum(context, OpenFile.READABLE));
-        IO.setConstant("WRITABLE", asFixnum(context, OpenFile.WRITABLE));
+        IO.defineConstant(context, "READABLE", asFixnum(context, OpenFile.READABLE));
+        IO.defineConstant(context, "WRITABLE", asFixnum(context, OpenFile.WRITABLE));
 
         return IOBuffer;
     }

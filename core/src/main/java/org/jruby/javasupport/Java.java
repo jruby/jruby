@@ -148,13 +148,13 @@ public class Java implements Library {
         RubyClassPathVariable.createClassPathVariable(context, Enumerable, Object);
 
         // (legacy) JavaClass compatibility:
-        Java.setConstant("JavaClass", getProxyClass(runtime, java.lang.Class.class));
+        Java.defineConstant(context, "JavaClass", getProxyClass(runtime, java.lang.Class.class)).
+                defineConstant(context, "JavaField", getProxyClass(runtime, java.lang.reflect.Field.class)).
+                defineConstant(context, "JavaMethod", getProxyClass(runtime, java.lang.reflect.Method.class)).
+                defineConstant(context, "JavaConstructor", getProxyClass(runtime, java.lang.reflect.Constructor.class));
         Java.deprecateConstant(runtime, "JavaClass");
-        Java.setConstant("JavaField", getProxyClass(runtime, java.lang.reflect.Field.class));
         Java.deprecateConstant(runtime, "JavaField");
-        Java.setConstant("JavaMethod", getProxyClass(runtime, java.lang.reflect.Method.class));
         Java.deprecateConstant(runtime, "JavaMethod");
-        Java.setConstant("JavaConstructor", getProxyClass(runtime, java.lang.reflect.Constructor.class));
         Java.deprecateConstant(runtime, "JavaConstructor");
 
         // modify ENV_JAVA to be a read/write version
@@ -255,16 +255,16 @@ public class Java implements Library {
 
     public static RubyModule setProxyClass(final Ruby runtime, final RubyModule target, final String constName, final Class<?> javaClass) throws NameError {
         final RubyModule proxyClass = getProxyClass(runtime, javaClass);
-        setProxyClass(runtime, target, constName, proxyClass, true);
+        setProxyClass(runtime.getCurrentContext(), target, constName, proxyClass, true);
         return proxyClass;
     }
 
-    private static void setProxyClass(final Ruby runtime, final RubyModule target, final String constName, final RubyModule proxyClass, final boolean validateConstant) {
+    private static void setProxyClass(ThreadContext context, final RubyModule target, final String constName, final RubyModule proxyClass, final boolean validateConstant) {
         if (constantNotSetOrDifferent(target, constName, proxyClass)) {
             synchronized (target) { // synchronize to prevent "already initialized constant" warnings with multiple threads
                 if (constantNotSetOrDifferent(target, constName, proxyClass)) {
                     if (validateConstant) {
-                        target.const_set(runtime.newSymbol(constName), proxyClass); // setConstant would not validate const-name
+                        target.defineConstant(context, constName, proxyClass); // setConstant would not validate const-name
                     } else {
                         target.setConstant(constName, proxyClass);
                     }
@@ -507,7 +507,7 @@ public class Java implements Library {
             proxy.include(context, getInterfaceModule(context, extended[i]));
         }
         Initializer.setupProxyModule(context, javaClass, proxy);
-        addToJavaPackageModule(proxy);
+        addToJavaPackageModule(context, proxy);
     }
 
     private static void generateClassProxy(ThreadContext context, Class<?> clazz, RubyClass proxy, RubyClass superClass) {
@@ -529,7 +529,7 @@ public class Java implements Library {
             } else {
                 proxy.getMetaClass().defineMethods(context, OldStyleExtensionInherited.class);
             }
-            addToJavaPackageModule(proxy);
+            addToJavaPackageModule(context, proxy);
         }
         else {
             createProxyClass(context, proxy, clazz, superClass, false);
@@ -539,7 +539,7 @@ public class Java implements Library {
                 proxy.include(context, getInterfaceModule(context, interfaces[i]));
             }
             if ( Modifier.isPublic(clazz.getModifiers()) ) {
-                addToJavaPackageModule(proxy);
+                addToJavaPackageModule(context, proxy);
             }
         }
 
@@ -842,8 +842,7 @@ public class Java implements Library {
 
     // package scheme 2: separate module for each full package name, constructed
     // from the camel-cased package segments: Java::JavaLang::Object,
-    private static void addToJavaPackageModule(RubyModule proxyClass) {
-        final Ruby runtime = proxyClass.getRuntime();
+    private static void addToJavaPackageModule(ThreadContext context, RubyModule proxyClass) {
         final Class<?> clazz = (Class<?>)proxyClass.dataGetStruct();
         final String fullName;
         if ( ( fullName = clazz.getName() ) == null ) return;
@@ -861,14 +860,14 @@ public class Java implements Library {
         else {
             final int endPackage = fullName.lastIndexOf('.');
             String packageString = endPackage < 0 ? "" : fullName.substring(0, endPackage);
-            parentModule = getJavaPackageModule(runtime, packageString);
+            parentModule = getJavaPackageModule(context.runtime, packageString);
             className = parentModule == null ? fullName : fullName.substring(endPackage + 1);
         }
 
         if ( parentModule != null && // TODO a Java Ruby class should not validate (as well)
             ( IdUtil.isConstant(className) || parentModule instanceof JavaPackage ) ) {
             // setConstant without validation since Java class name might be lower-case
-            setProxyClass(runtime, parentModule, className, proxyClass, false);
+            setProxyClass(context, parentModule, className, proxyClass, false);
         }
     }
 
@@ -1285,7 +1284,7 @@ public class Java implements Library {
         if ( innerClass == null ) {
             return Helpers.invokeSuper(context, self, name, Block.NULL_BLOCK);
         }
-        return cacheConstant(self, constName, innerClass, true); // hidden == true (private_constant)
+        return cacheConstant(context, self, constName, innerClass, true); // hidden == true (private_constant)
     }
 
     @JRubyMethod(meta = true)
@@ -1295,10 +1294,10 @@ public class Java implements Library {
         // constant access won't pay the "penalty" for adding dynamic methods ...
         final RubyModule packageOrClass = getTopLevelProxyOrPackage(context, constName, false);
         if ( packageOrClass == null ) return context.nil; // compatibility (with packages)
-        return cacheConstant((RubyModule) self, constName, packageOrClass, false);
+        return cacheConstant(context, (RubyModule) self, constName, packageOrClass, false);
     }
 
-    private static RubyModule cacheConstant(final RubyModule owner, // e.g. ::Java
+    private static RubyModule cacheConstant(ThreadContext context, final RubyModule owner, // e.g. ::Java
         final String constName, final RubyModule packageOrClass, final boolean hidden) {
         if ( packageOrClass != null ) {
             // NOTE: if it's a package createPackageModule already set the constant

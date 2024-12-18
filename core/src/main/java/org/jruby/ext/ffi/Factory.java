@@ -128,7 +128,7 @@ public abstract class Factory {
                 FileDescriptorIO.createFileDescriptorIOClass(context, FFI, ioClass(context));
             }
 
-            FFI.setConstant("TypeDefs", newHash(context));
+            FFI.defineConstant(context, "TypeDefs", newHash(context));
 
             Platform.createPlatformModule(context, FFI);
             IOModule.createIOModule(context, FFI);

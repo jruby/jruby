@@ -53,7 +53,7 @@ import static org.jruby.api.Define.defineClass;
 @JRubyClass(name="UNIXServer", parent="UNIXSocket")
 public class RubyUNIXServer extends RubyUNIXSocket {
     static void createUNIXServer(ThreadContext context, RubyClass UNIXSocket, RubyClass Object) {
-        Object.setConstant("UNIXserver",
+        Object.defineConstant(context, "UNIXserver",
                 defineClass(context, "UNIXServer", UNIXSocket, RubyUNIXServer::new).
                         defineMethods(context, RubyUNIXServer.class));
     }

@@ -85,11 +85,11 @@ public abstract class Type extends RubyObject {
         try {
             if (names.length > 0) {
                 for (String n : names) {
-                    builtinClass.setConstant(n.toUpperCase(LOCALE),
+                    builtinClass.defineConstant(context, n.toUpperCase(LOCALE),
                             new Builtin(context, builtinClass, nativeType, n.toLowerCase(LOCALE)));
                 }
             } else {
-                builtinClass.setConstant(nativeType.name(),
+                builtinClass.defineConstant(context, nativeType.name(),
                         new Builtin(context, builtinClass, nativeType, nativeType.name().toLowerCase(LOCALE)));
             }
         } catch (UnsupportedOperationException ex) {
