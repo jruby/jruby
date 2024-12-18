@@ -56,6 +56,8 @@ import static org.jruby.util.StringSupport.*;
 
 public class OpenFile implements Finalizable {
 
+    private static final int IO_MAX_BUFFER_GROWTH = 8 * 1024 * 1024;
+
     // RB_IO_FPTR_NEW, minus fields that Java already initializes the same way
     public OpenFile(RubyIO io, IRubyObject nil) {
         this.io = io;
@@ -1952,7 +1954,16 @@ public class OpenFile implements Finalizable {
                 }
                 if (bytes < siz) break;
                 siz += BUFSIZ;
-                ((RubyString) str).modify(BUFSIZ);
+
+                int capa = string.capacity();
+                if (capa < string.size() + BUFSIZ) {
+                    if (capa < BUFSIZ) {
+                        capa = BUFSIZ;
+                    } else if (capa > IO_MAX_BUFFER_GROWTH) {
+                        capa = IO_MAX_BUFFER_GROWTH;
+                    }
+                    string.modifyExpand(capa);
+                }
             }
             string = EncodingUtils.ioEncStr(runtime, string, this);
         } finally {
