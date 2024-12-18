@@ -381,7 +381,7 @@ public class JavaInterfaceTemplate {
             // RubySymbol implements a Java compareTo thus will always work
         }
 
-        RubyClass implClass = RubyClass.newClass(context.runtime, objectClass(context)); // ImplClass = Class.new
+        RubyClass implClass = RubyClass.newClass(context, objectClass(context), null); // ImplClass = Class.new
         implClass.include(context, self); // ImplClass.include Interface
 
         final BlockInterfaceImpl ifaceImpl = new BlockInterfaceImpl(implClass, implBlock, methodNames);

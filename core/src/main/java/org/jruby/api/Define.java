@@ -14,7 +14,10 @@ import static org.jruby.api.Access.objectClass;
 public class Define {
     /**
      * Define a new class under the Object namespace. Roughly equivalent to
-     * rb_define_class in MRI.
+     * rb_define_class in MRI.  This is a convenience method as you could use
+     * {@link RubyModule#defineClassUnder(ThreadContext, String, RubyClass, ObjectAllocator)} on
+     * a reference to Object but this is such a common thing that it is its own method.
+     * Note: If a class already exists for this name it returns it or errors if it is not a Class at all.
      *
      * @param context the current thread context
      * @param name The name for the new class
@@ -24,42 +27,29 @@ public class Define {
      * @return The new class
      */
     public static RubyClass defineClass(ThreadContext context, String name, RubyClass superClass, ObjectAllocator allocator) {
-        return defineClassUnder(context, name, superClass, allocator, objectClass(context));
-    }
-
-    /**
-     * Define a new class with the given name under the given module or class
-     * namespace. Roughly equivalent to rb_define_class_under in MRI.
-     *
-     * If the name specified is already bound, its value will be returned if:
-     * * It is a class
-     * * No new superclass is being defined
-     *
-     * @param context the current thread context
-     * @param name The name for the new class
-     * @param superClass The super class for the new class
-     * @param allocator An ObjectAllocator instance that can construct
-     * instances of the new class.
-     * @param parent The namespace under which to define the new class
-     * @return The new class
-     */
-    public static RubyClass defineClassUnder(ThreadContext context, String name, RubyClass superClass,
-                                             ObjectAllocator allocator, RubyModule parent) {
-        return context.runtime.defineClassUnder(name, superClass, allocator, parent, null);
+        return objectClass(context).defineClassUnder(context, name, superClass, allocator);
     }
 
     /**
      * Define a new module under the Object namespace. Roughly equivalent to
      * rb_define_module in MRI.  Note: If a module already exists for this name
-     * it returns it.
+     * it returns it or errors if it is not a Module at all.
      *
      * @param name The name of the new module
      * @return The new module or existing one if it has already been defined.
      */
-    @Extension
     public static RubyModule defineModule(ThreadContext context, String name) {
-        return context.runtime.defineModuleUnder(name, objectClass(context));
+        return context.runtime.defineModuleUnder(context, name, objectClass(context));
     }
 
-
+    /**
+     * There are times when an anonymous module is needed.  It is up to the caller
+     * to set it up as a constant or include methods or whatever else is needed.
+     *
+     * @param context the current thread context
+     * @return an instance of a RubyModule
+     */
+    public static RubyModule defineModule(ThreadContext context) {
+        return new RubyModule(context.runtime);
+    }
 }

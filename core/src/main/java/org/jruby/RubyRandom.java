@@ -200,7 +200,7 @@ public class RubyRandom extends RubyRandomBase {
 
     @SuppressWarnings("deprecation")
     public static RubyClass createRandomClass(ThreadContext context, RubyClass Object) {
-        RubyClass RandomBase = RubyClass.newClass(context.runtime, Object).
+        RubyClass RandomBase = RubyClass.newClass(context, Object, null).
                 allocator(ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR).
                 baseName("Base").
                 defineMethods(context, RubyRandomBase.class);

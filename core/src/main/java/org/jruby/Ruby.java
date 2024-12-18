@@ -217,6 +217,7 @@ import static org.jruby.RubyRandom.randomSeed;
 import static org.jruby.api.Access.errnoModule;
 import static org.jruby.api.Access.loadService;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.newEmptyString;
 import static org.jruby.api.Create.newFrozenString;
 import static org.jruby.api.Error.*;
@@ -335,36 +336,35 @@ public final class Ruby implements Constantizable {
         classClass.setMetaClass(classClass);
         refinementClass.setMetaClass(classClass);
 
-        RubyClass metaClass;
-        metaClass = basicObjectClass.makeMetaClass(classClass); // runtime needed for 3 things:
-        metaClass = objectClass.makeMetaClass(metaClass);       // 1. ObjectSpace
-        metaClass = moduleClass.makeMetaClass(metaClass);       // 2. Access 'Class' for makeMetaClass
-        classClass.makeMetaClass(metaClass);                    // 3. booting check to ignore logging singletons
-        refinementClass.makeMetaClass(metaClass);
+        var metaClass = basicObjectClass.makeMetaClassBootstrap(classClass, classClass);
+        metaClass = objectClass.makeMetaClassBootstrap(metaClass, classClass);
+        metaClass = moduleClass.makeMetaClassBootstrap(metaClass, classClass);
+        classClass.makeMetaClassBootstrap(metaClass, classClass);
+        refinementClass.makeMetaClassBootstrap(metaClass, classClass);
 
-        RubyObject.createObjectClass(objectClass);
-        RubyModule.createModuleClass(moduleClass);
-        RubyClass.createClassClass(this, classClass);
+        RubyObject.finishObjectClass(objectClass);
+        RubyModule.finishModuleClass(moduleClass);
+        RubyClass.finishClassClass(this, classClass);
 
         // set constants now that they're initialized
-        basicObjectClass.setConstant("BasicObject", basicObjectClass);  // FIXME: We know these sets will work so make something primal
-        objectClass.setConstant("BasicObject", basicObjectClass);       // just for these (to remove all checks which would require
-        objectClass.setConstant("Object", objectClass);                 // runtime.
-        objectClass.setConstant("Class", classClass);
-        objectClass.setConstant("Module", moduleClass);
-        objectClass.setConstant("Refinement", refinementClass);
+        basicObjectClass.defineConstantBootstrap("BasicObject", basicObjectClass);
+        objectClass.defineConstantBootstrap("BasicObject", basicObjectClass);
+        objectClass.defineConstantBootstrap("Object", objectClass);
+        objectClass.defineConstantBootstrap("Class", classClass);
+        objectClass.defineConstantBootstrap("Module", moduleClass);
+        objectClass.defineConstantBootstrap("Refinement", refinementClass);
 
         // specializer for RubyObject subclasses
         objectSpecializer = new RubyObjectSpecializer(this);
 
-        kernelModule = defineModuleUnder("Kernel", objectClass);   // Initialize Kernel and include into Object
+        kernelModule = defineModuleBootstrap("Kernel");   // Initialize Kernel and include into Object
         topSelf = new RubyObject(this, objectClass);  // Object is ready, create top self
 
         // nil, true, and false all are set in TC so they need to be created above (both class and instances).
-        // their methods are added afterwards since no dispatch happens until after first TC is defined.
-        nilClass = defineClass("NilClass", objectClass, NOT_ALLOCATABLE_ALLOCATOR);
-        falseClass = defineClass("FalseClass", objectClass, NOT_ALLOCATABLE_ALLOCATOR);
-        trueClass = defineClass("TrueClass", objectClass, NOT_ALLOCATABLE_ALLOCATOR);
+        // their methods are added afterward since no dispatch happens until after first TC is defined.
+        nilClass = RubyClass.newClassBootstrap(this, objectClass, "NilClass");
+        falseClass = RubyClass.newClassBootstrap(this, objectClass, "FalseClass");
+        trueClass = RubyClass.newClassBootstrap(this, objectClass, "TrueClass");
 
         nilObject = new RubyNil(this, nilClass);
         nilPrefilledArray = new IRubyObject[NIL_PREFILLED_ARRAY_SIZE];
@@ -1392,24 +1392,6 @@ public final class Ruby implements Constantizable {
     }
 
     /**
-     * Define a new class under the Object namespace. Roughly equivalent to
-     * rb_define_class in MRI.  This is an internal API.  Please use
-     * {@link org.jruby.api.Define#defineClass(ThreadContext, String, RubyClass, ObjectAllocator)} instead.
-     * For bootstrappin we still need a non-ThreadContext define for nil and boolean class definition
-     * as they are required before we can initialize our topmost ThreadContext.
-     *
-     * @param name The name for the new class
-     * @param superClass The super class for the new class
-     * @param allocator An ObjectAllocator instance that can construct
-     * instances of the new class.
-     * @return The new class
-     */
-    @Extension
-    public RubyClass defineClass(String name, RubyClass superClass, ObjectAllocator allocator) {
-        return defineClassUnder(name, superClass, allocator, objectClass, null);
-    }
-
-    /**
      * A variation of defineClass that allows passing in an array of supplementary
      * call sites for improving dynamic invocation performance.
      *
@@ -1421,7 +1403,12 @@ public final class Ruby implements Constantizable {
      */
     @Deprecated(since = "10.0")
     public RubyClass defineClass(String name, RubyClass superClass, ObjectAllocator allocator, CallSite[] callSites) {
-        return defineClassUnder(name, superClass, allocator, objectClass, callSites);
+        return defineClassUnder(getCurrentContext(), name, superClass, allocator, objectClass, callSites);
+    }
+
+    @Deprecated(since = "10.0")
+    public RubyClass defineClass(String name, RubyClass superClass, ObjectAllocator allocator) {
+        return defineClassUnder(getCurrentContext(), name, superClass, allocator, objectClass, null);
     }
 
     /**
@@ -1442,15 +1429,20 @@ public final class Ruby implements Constantizable {
     @Extension
     @Deprecated(since = "10.0")
     public RubyClass defineClassUnder(String name, RubyClass superClass, ObjectAllocator allocator, RubyModule parent) {
-        return defineClassUnder(name, superClass, allocator, parent, null);
+        return defineClassUnder(runtimeError.getCurrentContext(), name, superClass, allocator, parent, null);
+    }
+
+    @Deprecated(since = "10.0")
+    public RubyClass defineClassUnder(String id, RubyClass superClass, ObjectAllocator allocator, RubyModule parent, CallSite[] callSites) {
+        return defineClassUnder(getCurrentContext(), id, superClass, allocator, parent, callSites);
     }
 
     /**
      * A variation of defineClassUnder that allows passing in an array of
      * supplementary call sites to improve dynamic invocation.  This is an internal API.  Please
-     * use {@link org.jruby.api.Define#defineClassUnder(ThreadContext, String, RubyClass, ObjectAllocator, RubyModule)}
-     * or {@link org.jruby.RubyModule#defineClassUnder(ThreadContext, String, RubyClass, ObjectAllocator)} instead.
+     * use {@link org.jruby.RubyModule#defineClassUnder(ThreadContext, String, RubyClass, ObjectAllocator)} instead.
      *
+     * @param context the current thread context
      * @param id The name for the new class as an ISO-8859_1 String (id-value)
      * @param superClass The super class for the new class
      * @param allocator An ObjectAllocator instance that can construct
@@ -1459,32 +1451,36 @@ public final class Ruby implements Constantizable {
      * @param callSites The array of call sites to add
      * @return The new class
      */
-    public RubyClass defineClassUnder(String id, RubyClass superClass, ObjectAllocator allocator, RubyModule parent, CallSite[] callSites) {
-        IRubyObject classObj = parent.getConstantAt(id);
-
-        if (classObj != null) {
-            if (!(classObj instanceof RubyClass)) throw typeError(getCurrentContext(), str(this, ids(this, id), " is not a class"));
-            RubyClass klazz = (RubyClass)classObj;
-            if (klazz.getSuperClass().getRealClass() != superClass) {
-                throw newNameError(str(this, ids(this, id), " is already defined"), newSymbol(id));
-            }
-            // If we define a class in Ruby, but later want to allow it to be defined in Java,
-            // the allocator needs to be updated
-            if (klazz.getAllocator() != allocator) klazz.allocator(allocator);
-            return klazz;
-        }
+    public RubyClass defineClassUnder(ThreadContext context, String id, RubyClass superClass, ObjectAllocator allocator,
+                                      RubyModule parent, CallSite[] callSites) {
+        IRubyObject object = parent.getConstantAt(id);
+        if (object != null) return foundExistingClass(context, id, superClass, allocator, object);
 
         boolean parentIsObject = parent == objectClass;
 
-        if (superClass == null) {
-            IRubyObject className = parentIsObject ? ids(this, id) :
-                    parent.toRubyString(getCurrentContext()).append(newString("::")).append(ids(this, id));
-            warn(getCurrentContext(), str(this, "no super class for '", className, "', Object assumed"));
+        if (superClass == null) superClass = determineSuperClass(context, id, parent, parentIsObject);
 
-            superClass = objectClass;
+        return RubyClass.newClass(context, superClass, id, allocator, parent, !parentIsObject, callSites);
+    }
+
+    private RubyClass determineSuperClass(ThreadContext context, String id, RubyModule parent, boolean parentIsObject) {
+        IRubyObject className = parentIsObject ? ids(this, id) :
+                parent.toRubyString(context).append(newString("::")).append(ids(this, id));
+        warn(context, str(this, "no super class for '", className, "', Object assumed"));
+
+        return objectClass;
+    }
+
+    private RubyClass foundExistingClass(ThreadContext context, String id, RubyClass superClass, ObjectAllocator allocator, IRubyObject obj) {
+        if (!(obj instanceof RubyClass klazz)) throw typeError(context, str(this, ids(this, id), " is not a class"));
+
+        if (klazz.getSuperClass().getRealClass() != superClass) {
+            throw newNameError(str(this, ids(this, id), " is already defined"), asSymbol(context, id));
         }
+        // If we define a class in Ruby, but later want to allow it to be defined in Java, the allocator needs to be updated
+        if (klazz.getAllocator() != allocator) klazz.allocator(allocator);
 
-        return RubyClass.newClass(this, superClass, id, allocator, parent, !parentIsObject, callSites);
+        return klazz;
     }
 
     /**
@@ -1495,9 +1491,23 @@ public final class Ruby implements Constantizable {
      * @return The new module
      */
     @Deprecated(since = "10.0")
-    @Extension
     public RubyModule defineModule(String name) {
-        return defineModuleUnder(name, objectClass);
+        return defineModuleUnder(getCurrentContext(), name, objectClass);
+    }
+
+    /**
+     * This is only for defining kernel.  The reason we have this is so all other define methods
+     * can count on ThreadContext being available.  These are defined before that point.
+     * @param name The name for the new class
+     * @return The new module
+     */
+    public RubyModule defineModuleBootstrap(String name) {
+        return RubyModule.newModuleBootstrap(this, name, objectClass);
+    }
+
+    @Deprecated(since = "10.0")
+    public RubyModule defineModuleUnder(String name, RubyModule parent) {
+        return defineModuleUnder(getCurrentContext(), name, parent);
     }
 
     /**
@@ -1511,22 +1521,24 @@ public final class Ruby implements Constantizable {
      * module
      * @return The new module
      */
-    @Extension
-    public RubyModule defineModuleUnder(String name, RubyModule parent) {
+    public RubyModule defineModuleUnder(ThreadContext context, String name, RubyModule parent) {
         IRubyObject moduleObj = parent.getConstantAt(name);
 
         boolean parentIsObject = parent == objectClass;
 
-        if (moduleObj != null) {
-            if (moduleObj.isModule()) return (RubyModule) moduleObj;
+        return moduleObj != null ?
+                foundExistingModule(context, parent, moduleObj, parentIsObject) :
+                RubyModule.newModule(context, name, parent, !parentIsObject, null, -1);
+    }
 
-            RubyString typeName = parentIsObject ?
-                    types(this, moduleObj.getMetaClass()) : types(this, parent, moduleObj.getMetaClass());
+    private RubyModule foundExistingModule(ThreadContext context, RubyModule parent, IRubyObject moduleObj,
+                                           boolean parentIsObject) {
+        if (moduleObj.isModule()) return (RubyModule) moduleObj;
 
-            throw typeError(getCurrentContext(), str(this, typeName, " is not a module"));
-        }
+        RubyString typeName = parentIsObject ?
+                types(this, moduleObj.getMetaClass()) : types(this, parent, moduleObj.getMetaClass());
 
-        return RubyModule.newModule(this, name, parent, !parentIsObject);
+        throw typeError(context, str(this, typeName, " is not a module"));
     }
 
     /**
@@ -3037,7 +3049,7 @@ public final class Ruby implements Constantizable {
 
         if (wrap) {
             // toss an anonymous module into the search path
-            scope.getStaticScope().setModule(RubyModule.newModule(this));
+            scope.getStaticScope().setModule(new RubyModule(this));
         }
 
         runInterpreter(getCurrentContext(), scope, self);
@@ -3070,7 +3082,7 @@ public final class Ruby implements Constantizable {
         RubyModule wrapper = loadService.getWrapperSelf();
 
         if (wrapper == null || wrapper.isNil()) {
-            wrapper = RubyModule.newModule(this);
+            wrapper = new RubyModule(this);
         }
 
         // toss an anonymous module into the search path

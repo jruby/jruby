@@ -61,7 +61,6 @@ import static org.jcodings.transcode.EConvResult.*;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
-import static org.jruby.api.Define.defineClassUnder;
 import static org.jruby.api.Error.*;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
@@ -121,7 +120,7 @@ public class RubyConverter extends RubyObject {
     }
 
     public static RubyClass createConverterClass(ThreadContext context, RubyClass Object, RubyClass Encoding) {
-        return defineClassUnder(context, "Converter", Object, RubyConverter::new, Encoding).
+        return Encoding.defineClassUnder(context, "Converter", Object, RubyConverter::new).
                 reifiedClass(RubyConverter.class).
                 kindOf(new RubyModule.JavaClassKindOf(RubyConverter.class)).
                 classIndex(ClassIndex.CONVERTER).

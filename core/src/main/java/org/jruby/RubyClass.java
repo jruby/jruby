@@ -38,6 +38,7 @@ import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Error.*;
 import static org.jruby.api.Warn.warn;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PUBLIC;
 import static org.jruby.util.CodegenUtils.ci;
@@ -120,7 +121,7 @@ public class RubyClass extends RubyModule {
     private static final Logger LOG = LoggerFactory.getLogger(RubyClass.class);
     private static final double SUBCLASSES_CLEAN_FACTOR = 0.25;
 
-    public static void createClassClass(Ruby runtime, RubyClass Class) {
+    public static void finishClassClass(Ruby runtime, RubyClass Class) {
         Class.reifiedClass(RubyClass.class).
                 kindOf(new RubyModule.JavaClassKindOf(RubyClass.class)).
                 classIndex(ClassIndex.CLASS);
@@ -135,7 +136,7 @@ public class RubyClass extends RubyModule {
 
     public static final ObjectAllocator CLASS_ALLOCATOR = (runtime, klass) -> {
         RubyClass clazz = new RubyClass(runtime);
-        clazz.allocator = ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR; // Class.allocate object is not allocatable before it is initialized
+        clazz.allocator = NOT_ALLOCATABLE_ALLOCATOR; // Class.allocate object is not allocatable before it is initialized
         return clazz;
     };
 
@@ -431,6 +432,25 @@ public class RubyClass extends RubyModule {
         superClass(superClass); // this is the only case it might be null here (in MetaClass construction)
     }
 
+    /**
+     *  This is an internal API only used by Ruby constructor before ThreadContext exists.
+     * @param runtime
+     * @param superClass
+     * @param Class
+     */
+    protected RubyClass(Ruby runtime, RubyClass superClass, RubyClass Class) {
+        super(runtime, Class, false);
+
+        this.runtime = runtime;
+        if ((this.realClass = superClass.realClass) != null) {
+            this.variableTableManager = realClass.variableTableManager;
+        } else {
+            this.variableTableManager = new VariableTableManager(this);
+        }
+
+        superClass(superClass);
+    }
+
     /** used by CLASS_ALLOCATOR (any Class' class will be a Class!)
      *  also used to bootstrap Object class
      */
@@ -472,20 +492,26 @@ public class RubyClass extends RubyModule {
      * and with Object as its immediate superclass.
      * Corresponds to rb_class_new in MRI.
      */
+    @Deprecated(since = "10.0")
     public static RubyClass newClass(Ruby runtime, RubyClass superClass) {
         if (superClass == runtime.getClassClass()) throw typeError(runtime.getCurrentContext(), "can't make subclass of Class");
         if (superClass.isSingleton()) throw typeError(runtime.getCurrentContext(), "can't make subclass of virtual class");
         return new RubyClass(runtime, superClass);
     }
 
+    @Deprecated(since = "10.0")
+    public static RubyClass newClass(Ruby runtime, RubyClass superClass, CallSite[] extraCallSites) {
+        return newClass(runtime.getCurrentContext(), superClass, extraCallSites);
+    }
+
     /**
      * A variation on newClass that allow passing in an array of supplementary
      * call sites to improve dynamic invocation.
      */
-    public static RubyClass newClass(Ruby runtime, RubyClass superClass, CallSite[] extraCallSites) {
-        if (superClass == runtime.getClassClass()) throw typeError(runtime.getCurrentContext(), "can't make subclass of Class");
-        if (superClass.isSingleton()) throw typeError(runtime.getCurrentContext(), "can't make subclass of virtual class");
-        return new RubyClass(runtime, superClass, extraCallSites);
+    public static RubyClass newClass(ThreadContext context, RubyClass superClass, CallSite[] extraCallSites) {
+        if (superClass == classClass(context)) throw typeError(context, "can't make subclass of Class");
+        if (superClass.isSingleton()) throw typeError(context, "can't make subclass of virtual class");
+        return new RubyClass(context.runtime, superClass, extraCallSites);
     }
 
     /**
@@ -496,42 +522,76 @@ public class RubyClass extends RubyModule {
      * Corresponds to rb_class_new/rb_define_class_id/rb_name_class/rb_set_class_path
      * in MRI.
      */
+    @Deprecated(since = "10.0")
     public static RubyClass newClass(Ruby runtime, RubyClass superClass, String name, ObjectAllocator allocator, RubyModule parent, boolean setParent) {
-        RubyClass clazz = newClass(runtime, superClass).
+        var context = runtime.getCurrentContext();
+        RubyClass clazz = newClass(context, superClass, null).
                 allocator(allocator).
                 baseName(name);
 
         clazz.makeMetaClass(superClass.getMetaClass());
         if (setParent) clazz.setParent(parent);
         parent.setConstant(name, clazz);
-        clazz.inherit(superClass);
+        superClass.invokeInherited(context, superClass, clazz);
         return clazz;
     }
 
+    @Deprecated(since = "10.0")
     public static RubyClass newClass(Ruby runtime, RubyClass superClass, String name, ObjectAllocator allocator,
                                      RubyModule parent, boolean setParent, String file, int line) {
-        RubyClass clazz = newClass(runtime, superClass).
+        return newClass(runtime.getCurrentContext(), superClass, name, allocator, parent, setParent, file, line);
+    }
+
+    public static RubyClass newClass(ThreadContext context, RubyClass superClass, String name, ObjectAllocator allocator,
+                                     RubyModule parent, boolean setParent, String file, int line) {
+        assert superClass != null;
+        RubyClass clazz = newClass(context, superClass, null).
                 allocator(allocator).
                 baseName(name);
         clazz.makeMetaClass(superClass.getMetaClass());
         if (setParent) clazz.setParent(parent);
         parent.setConstant(name, clazz, file, line);
-        clazz.inherit(superClass);
+        superClass.invokeInherited(context, superClass, clazz);
         return clazz;
+    }
+
+    @Deprecated(since = "10.0")
+    public static RubyClass newClass(Ruby runtime, RubyClass superClass, String name, ObjectAllocator allocator, RubyModule parent, boolean setParent, CallSite[] extraCallSites) {
+        return newClass(runtime.getCurrentContext(), superClass, name, allocator, parent, setParent, extraCallSites);
     }
 
     /**
      * A variation on newClass that allows passing in an array of supplementary
      * call sites to improve dynamic invocation performance.
      */
-    public static RubyClass newClass(Ruby runtime, RubyClass superClass, String name, ObjectAllocator allocator, RubyModule parent, boolean setParent, CallSite[] extraCallSites) {
-        RubyClass clazz = newClass(runtime, superClass, extraCallSites).
+    public static RubyClass newClass(ThreadContext context, RubyClass superClass, String name,
+                                     ObjectAllocator allocator, RubyModule parent, boolean setParent,
+                                     CallSite[] extraCallSites) {
+        RubyClass clazz = newClass(context, superClass, extraCallSites).
                 allocator(allocator).
                 baseName(name);
         clazz.makeMetaClass(superClass.getMetaClass());
         if (setParent) clazz.setParent(parent);
         parent.setConstant(name, clazz, BUILTIN_CONSTANT, -1);
-        clazz.inherit(superClass);
+        superClass.invokeInherited(context, superClass, clazz);
+        return clazz;
+    }
+
+    /**
+     * This is an internal API for bootstrapping a few classes before ThreadContext is available.  The API
+     * is intentionally limited/obtuse so no one is tempted to try and use it.
+     *
+     * @param runtime the runtime
+     * @param Object reference to Object which is superclass and parent for new type
+     * @param name the name of the new class
+     * @return the new class.
+     */
+    public static RubyClass newClassBootstrap(Ruby runtime, RubyClass Object, String name) {
+        RubyClass clazz = new RubyClass(runtime, Object).
+                allocator(NOT_ALLOCATABLE_ALLOCATOR).
+                baseName(name);
+        clazz.makeMetaClass(Object.getMetaClass());
+        Object.setConstant(name, clazz, BUILTIN_CONSTANT, -1);
         return clazz;
     }
 
@@ -1010,7 +1070,7 @@ public class RubyClass extends RubyModule {
 
         marshal = superClazz.marshal;
 
-        inherit(superClazz);
+        superClazz.invokeInherited(runtime.getCurrentContext(), superClazz, this);
         super.initialize(context, block);
 
         return this;
@@ -1328,12 +1388,11 @@ public class RubyClass extends RubyModule {
     /** rb_class_inherited (reversed semantics!)
      *
      */
+    @Deprecated(since = "10.0")
     public void inherit(RubyClass superClazz) {
         if (superClazz == null) superClazz = runtime.getObject();
 
-        if (runtime.getNil() != null) {
-            superClazz.invokeInherited(runtime.getCurrentContext(), superClazz, this);
-        }
+        superClazz.invokeInherited(runtime.getCurrentContext(), superClazz, this);
     }
 
     /** Return the real super class of this class.

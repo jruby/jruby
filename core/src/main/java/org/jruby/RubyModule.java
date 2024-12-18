@@ -151,6 +151,7 @@ import static org.jruby.api.Access.loadService;
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.*;
 import static org.jruby.api.Warn.warn;
 import static org.jruby.api.Warn.warnDeprecated;
@@ -190,15 +191,14 @@ public class RubyModule extends RubyObject {
 
     public static final ObjectAllocator MODULE_ALLOCATOR = RubyModule::new;
 
-    public static void createModuleClass(RubyClass Module) {
+    public static void finishModuleClass(RubyClass Module) {
         Module.reifiedClass(RubyModule.class).
                 kindOf(new RubyModule.JavaClassKindOf(RubyModule.class)).
                 classIndex(ClassIndex.MODULE);
     }
 
     public static void finishCreateModuleClass(ThreadContext context, RubyClass Module) {
-        Module.defineMethods(context, RubyModule.class);
-        Module.defineMethods(context, ModuleKernelMethods.class);
+        Module.defineMethods(context, RubyModule.class, ModuleKernelMethods.class);
     }
 
     public void checkValidBindTargetFrom(ThreadContext context, RubyModule originModule, boolean fromBind) throws RaiseException {
@@ -437,7 +437,7 @@ public class RubyModule extends RubyObject {
     /** standard path for Module construction
      *
      */
-    protected RubyModule(Ruby runtime) {
+    public RubyModule(Ruby runtime) {
         this(runtime, runtime.getModule());
     }
 
@@ -448,25 +448,41 @@ public class RubyModule extends RubyObject {
     /** rb_module_new
      *
      */
+    @Deprecated(since = "10.0")
     public static RubyModule newModule(Ruby runtime) {
         return new RubyModule(runtime);
     }
 
+    @Deprecated(since = "10.0")
+    public static RubyModule newModule(Ruby runtime, String name, RubyModule parent, boolean setParent, String file, int line) {
+        return newModule(runtime.getCurrentContext(), name, parent, setParent, file, line);
+    }
+
     /** rb_module_new/rb_define_module_id/rb_name_class/rb_set_class_path
      *
+     *  This is used by IR to define a new module.
      */
-    public static RubyModule newModule(Ruby runtime, String name, RubyModule parent, boolean setParent, String file, int line) {
-        RubyModule module = newModule(runtime).baseName(name);
+    public static RubyModule newModule(ThreadContext context, String name, RubyModule parent, boolean setParent, String file, int line) {
+        RubyModule module = defineModule(context).baseName(name);
         if (setParent) module.setParent(parent);
-        parent.setConstant(name, module, file, line);
+        if (file != null) {
+            parent.setConstant(name, module, file, line);
+        } else {
+            parent.setConstant(name, module);
+        }
         return module;
     }
 
+    @Deprecated(since = "10.0")
     public static RubyModule newModule(Ruby runtime, String name, RubyModule parent, boolean setParent) {
-        RubyModule module = newModule(runtime).baseName(name);
+        RubyModule module = new RubyModule(runtime).baseName(name);
         if (setParent) module.setParent(parent);
         parent.setConstant(name, module);
         return module;
+    }
+
+    public static RubyModule newModuleBootstrap(Ruby runtime, String name, RubyModule parent) {
+        return (RubyModule) parent.setConstant(name, new RubyModule(runtime).baseName(name));
     }
 
     // synchronized method per JRUBY-1173 (unsafe Double-Checked Locking)
@@ -1563,7 +1579,7 @@ public class RubyModule extends RubyObject {
     @JRubyAPI
     public <T extends RubyClass> T defineClassUnder(ThreadContext context, String name, RubyClass superClass,
                                                     ObjectAllocator allocator) {
-        return (T) context.runtime.defineClassUnder(name, superClass, allocator, this, null);
+        return (T) context.runtime.defineClassUnder(context, name, superClass, allocator, this, null);
     }
 
     /**
@@ -1607,7 +1623,7 @@ public class RubyModule extends RubyObject {
     // MRI: rb_define_module_under
     @JRubyAPI
     public RubyModule defineModuleUnder(ThreadContext context, String name) {
-        return context.runtime.defineModuleUnder(name, this);
+        return context.runtime.defineModuleUnder(context, name, this);
     }
 
     /**
@@ -2460,12 +2476,12 @@ public class RubyModule extends RubyObject {
      * {@link RubyModule#defineClassUnder(ThreadContext, String, RubyClass, ObjectAllocator)} for native
      * extensions.
      *
-     * @param name
-     * @param superClazz
-     * @param allocator
-     * @param file
-     * @param line
-     * @return
+     * @param name to be defined
+     * @param superClazz the super class of this new class
+     * @param allocator how to allocate it
+     * @param file location where it was defined from
+     * @param line location where it was defined from
+     * @return the new class.
      */
     public RubyClass defineClassUnder(ThreadContext context, String name, RubyClass superClazz,
                                       ObjectAllocator allocator, String file, int line) {
@@ -2505,7 +2521,7 @@ public class RubyModule extends RubyObject {
                 }
             }
 
-            clazz = RubyClass.newClass(context.runtime, superClazz, name, allocator, this, true, file, line);
+            clazz = RubyClass.newClass(context, superClazz, name, allocator, this, true, file, line);
         }
 
         return clazz;
@@ -2538,7 +2554,7 @@ public class RubyModule extends RubyObject {
         } else if ((module = searchProvidersForModule(name)) != null) {
             // reopen a java module
         } else {
-            module = RubyModule.newModule(context.runtime, name, this, true, file, line);
+            module = RubyModule.newModule(context, name, this, true, file, line);
         }
         return module;
     }
@@ -5921,6 +5937,21 @@ public class RubyModule extends RubyObject {
 
     protected IRubyObject constantTableStore(String name, IRubyObject value, boolean hidden) {
         return constantTableStore(name, value, hidden, false);
+    }
+
+    /**
+     * This is an internal API which is only used during runtime creation but BEFORE the first
+     * ThreadContext is created.  Nothing other that a few constants in the Ruby constructor should
+     * be calling this.  This method has no error checks.
+     *
+     * A secondary goal of this method is that it does not access Ruby or ThreadContext in any way.
+     *
+     * @param name of the constant
+     * @param value of the constant
+     * @return the value
+     */
+    public void defineConstantBootstrap(String name, IRubyObject value) {
+        constantTableStore(name, value, false, false, null, -1);
     }
 
     protected IRubyObject constantTableStore(String name, IRubyObject value, boolean hidden, boolean deprecated,

@@ -66,6 +66,7 @@ import org.jruby.runtime.scope.DynamicScopeGenerator;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
 import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Define.defineModule;
 
 /**
  * StaticScope represents lexical scoping of variables and module/class constants.
@@ -704,7 +705,7 @@ public class StaticScope implements Serializable, Cloneable {
     public RubyModule getOverlayModuleForWrite(ThreadContext context) {
         RubyModule omod = overlayModule;
         if (omod == null) {
-            overlayModule = omod = RubyModule.newModule(context.runtime);
+            overlayModule = omod = defineModule(context);
         }
         return omod;
     }
