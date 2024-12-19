@@ -269,4 +269,16 @@ public class Create {
     public static RubyString dupString(ThreadContext context, RubyString string) {
         return string.strDup(context.runtime, stringClass(context));
     }
+
+    /**
+     * Create a new Rational with the given long values for numerator and denominator.
+     *
+     * @param context the current thread context
+     * @param num the numerator
+     * @param den the denominator
+     * @return a new Rational
+     */
+    public static RubyRational newRational(ThreadContext context, long num, long den) {
+        return RubyRational.newRational(context.runtime, num, den);
+    }
 }

@@ -127,6 +127,7 @@ import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Warn.warnDeprecatedForRemovalAlternate;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -294,6 +295,7 @@ public class RubyKernel {
                 } else {
                     IRubyObject cmd = PopenExecutor.checkPipeCommand(context, tmp);
                     if (cmd != context.nil) {
+                        warnDeprecatedForRemovalAlternate(context, "Calling Kernel#open with a leading '|'", "4.0", "IO.popen");
                         if (PopenExecutor.nativePopenAvailable(context.runtime)) {
                             args[0] = cmd;
                             return PopenExecutor.popen(context, args, ioClass(context), block);
@@ -1092,7 +1094,7 @@ public class RubyKernel {
                 break;
             default:
                 RubyException exception = convertToException(context, args[0], args[1]);
-                exception.setBacktrace(args[2]);
+                exception.setBacktrace(context, args[2]);
                 raise = exception.toThrowable();
                 break;
         }

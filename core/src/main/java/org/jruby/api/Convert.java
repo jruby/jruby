@@ -13,6 +13,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
 import org.jruby.RubyRange;
+import org.jruby.RubyRational;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.JavaSites;
@@ -322,6 +323,41 @@ public class Convert {
         return conv instanceof RubyInteger ? conv : context.nil;
     }
 
+    // MRI: rb_check_convert_type with Rational and to_r
+    /**
+     * Convert the given argument to a Rational, or return nil if it cannot be converted.
+     *
+     * @param context the current thread context
+     * @param obj the object to convert
+     * @return a Rational based on the object, or nil if it could not be converted
+     */
+    public static IRubyObject checkToRational(ThreadContext context, IRubyObject obj) {
+        if (obj instanceof RubyRational) return obj;
+
+        JavaSites.TypeConverterSites sites = sites(context);
+
+        IRubyObject conv = convertToTypeWithCheck(context, obj, context.runtime.getRational(), sites.to_r_checked);
+
+        return conv instanceof RubyRational ? conv : context.nil;
+    }
+
+    // MRI: rb_check_to_string
+    /**
+     * Check whether the given object is a String or can be converted to a String using #to_str.
+     * @param context the current thread context
+     * @param obj the object to be converted
+     * @return the String value or nil if the object or conversion is not a String.
+     */
+    public static IRubyObject checkToString(ThreadContext context, IRubyObject obj) {
+        if (obj instanceof RubyString) return obj;
+
+        JavaSites.TypeConverterSites sites = sites(context);
+
+        IRubyObject conv = convertToTypeWithCheck(context, obj, context.runtime.getString(), sites.to_str_checked);
+
+        return conv instanceof RubyInteger ? conv : context.nil;
+    }
+
     /**
      * Check to make sure the long num given will fit into an int.
      *
@@ -332,7 +368,7 @@ public class Convert {
     public static int checkInt(ThreadContext context, long num) {
         if (((int) num) != num) {
             throw rangeError(context, "integer " + num +
-                    (num < Integer.MIN_VALUE ? " too small to convert to `int'" : " too big to convert to `int'"));
+                    (num < Integer.MIN_VALUE ? " too small to convert to 'int'" : " too big to convert to 'int'"));
         }
 
         return (int) num;
