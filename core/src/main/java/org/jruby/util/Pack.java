@@ -982,7 +982,9 @@ public class Pack {
         mainLoop: while (next != 0) {
             int type = next;
             next = getDirective(context, "unpack", formatString, format);
-            
+
+            if (isSpace(type)) continue;
+
             if (type == '#') {
                 while (type != '\n') {
                     if (next == 0) break mainLoop;
@@ -1094,13 +1096,6 @@ public class Pack {
                 case 'w':
                     value = unpack_w(context, block, result, encode, occurrences, mode);
                     break;
-                case ' ':       // various "ok" whitespace
-                case '\011':
-                case '\n':
-                case '\013':
-                case '\014':
-                case '\015':
-                    break;
                 default:
                     unknownDirective(context, "unpack", type, formatString);
                     break;
@@ -1109,6 +1104,15 @@ public class Pack {
             if (mode == UNPACK_1 && value != null) return value;
         }
         return result;
+    }
+
+    private static boolean isSpace(int type) {
+        boolean isSpace = switch (type) {
+            case ' ', '\011', '\n', '\013', '\014', '\015' -> true;
+            default -> false;
+        };
+        if (isSpace) return true;
+        return false;
     }
 
     private static IRubyObject unpack_w(ThreadContext context, Block block, RubyArray result, ByteBuffer encode, int occurrences, int mode) {
