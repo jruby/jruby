@@ -1402,6 +1402,13 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         len = realLength;
 
         if (step < 0) {
+            if (aseqExcl && !aseqEnd.isNil()) {
+                /* Handle exclusion before range reversal */
+                aseqEnd = asFixnum(context, aseqEnd.convertToInteger().getIntValue() + 1);
+
+                /* Don't exclude the previous beginning */
+                aseqExcl = false;
+            }
             IRubyObject tmp = aseqBeg;
             aseqBeg = aseqEnd;
             aseqEnd = tmp;

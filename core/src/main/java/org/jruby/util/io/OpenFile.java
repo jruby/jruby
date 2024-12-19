@@ -56,6 +56,8 @@ import static org.jruby.util.StringSupport.*;
 
 public class OpenFile implements Finalizable {
 
+    private static final int IO_MAX_BUFFER_GROWTH = 8 * 1024 * 1024;
+
     // RB_IO_FPTR_NEW, minus fields that Java already initializes the same way
     public OpenFile(RubyIO io, IRubyObject nil) {
         this.io = io;
@@ -1103,7 +1105,7 @@ public class OpenFile implements Finalizable {
     private static final byte[] EMPTY_BYTE_ARRAY = ByteList.NULL_ARRAY;
 
     // MRI: appendline
-    public int appendline(ThreadContext context, int delim, final ByteList[] strp, final int[] lp) {
+    public int appendline(ThreadContext context, int delim, final ByteList[] strp, final int[] lp, Encoding enc) {
         ByteList str = strp[0];
         int limit = lp[0];
 
@@ -1117,9 +1119,9 @@ public class OpenFile implements Finalizable {
                     byte[] pBytes = READ_CHAR_PENDING_PTR();
                     p = READ_CHAR_PENDING_OFF();
                     if (0 < limit && limit < searchlen) searchlen = limit;
-                    e = memchr(pBytes, p, delim, searchlen);
+                    e = searchDelimiter(pBytes, p, delim, searchlen, enc);
                     if (e != -1) {
-                        int len = e - p + 1;
+                        int len = e - p;
                         if (str == null) {
                             strp[0] = str = new ByteList(pBytes, p, len);
                         } else {
@@ -1161,8 +1163,8 @@ public class OpenFile implements Finalizable {
                 int last;
 
                 if (limit > 0 && pending > limit) pending = limit;
-                int e = memchr(pBytes, p, delim, pending);
-                if (e != -1) pending = e - p + 1;
+                int e = searchDelimiter(pBytes, p, delim, pending, enc);
+                if (e != -1) pending = e - p;
                 if (str != null) {
                     last = str.getRealSize();
                     str.ensure(last + pending);
@@ -1187,6 +1189,29 @@ public class OpenFile implements Finalizable {
         } while (fillbuf(context) >= 0);
         lp[0] = limit;
         return EOF;
+    }
+
+    // MRI: search_delim
+    private static int searchDelimiter(byte[] pBytes, int p, int delim, int len, Encoding enc) {
+        if (enc.minLength() == 1) {
+            p = memchr(pBytes, p, delim, len);
+            if (p != -1) return p + 1;
+        } else {
+            int end = p + len;
+            while (p < end) {
+                int r = StringSupport.preciseLength(enc, pBytes, p, end);
+                if (!MBCLEN_CHARFOUND_P(r)) {
+                    p += enc.minLength();
+                    continue;
+                }
+                int n = MBCLEN_CHARFOUND_LEN(r);
+                if (enc.mbcToCode(pBytes, p, end) == delim) {
+                    return p + n;
+                }
+                p += n;
+            }
+        }
+        return -1;
     }
 
     private static int memchr(byte[] pBytes, int p, int delim, int length) {
@@ -1875,28 +1900,29 @@ public class OpenFile implements Finalizable {
         int pos;
         Encoding enc;
         int cr;
+        RubyString string;
 
         boolean locked = lock();
         try {
             if (needsReadConversion()) {
                 SET_BINARY_MODE();
-                str = EncodingUtils.setStrBuf(runtime, str, 0);
+                string = EncodingUtils.setStrBuf(runtime, str, 0);
                 makeReadConversion(context);
                 while (true) {
                     Object v;
                     if (cbuf.len != 0) {
-                        str = shiftCbuf(context, cbuf.len, str);
+                        string = shiftCbuf(context, cbuf.len, string);
                     }
                     v = fillCbuf(context, 0);
                     if (!v.equals(MORE_CHAR_SUSPENDED) && !v.equals(MORE_CHAR_FINISHED)) {
                         if (cbuf.len != 0) {
-                            shiftCbuf(context, cbuf.len, str);
+                            shiftCbuf(context, cbuf.len, string);
                         }
                         throw (RaiseException) v;
                     }
                     if (v.equals(MORE_CHAR_FINISHED)) {
                         clearReadConversion();
-                        return EncodingUtils.ioEncStr(runtime, str, this);
+                        return EncodingUtils.ioEncStr(runtime, string, this);
                     }
                 }
             }
@@ -1911,11 +1937,11 @@ public class OpenFile implements Finalizable {
             if (siz == 0) siz = BUFSIZ;
             for (; ; ) {
                 READ_CHECK(context);
-                str = EncodingUtils.setStrBuf(context.runtime, str, siz);
-                ByteList strByteList = ((RubyString) str).getByteList();
+                str = string = EncodingUtils.setStrBuf(context.runtime, str, siz);
+                ByteList strByteList = string.getByteList();
                 n = fread(context, strByteList.unsafeBytes(), strByteList.begin() + bytes, siz - bytes);
                 if (n == 0 && bytes == 0) {
-                    ((RubyString) str).resize(0);
+                    string.resize(0);
                     break;
                 }
                 bytes += n;
@@ -1928,16 +1954,25 @@ public class OpenFile implements Finalizable {
                 }
                 if (bytes < siz) break;
                 siz += BUFSIZ;
-                ((RubyString) str).modify(BUFSIZ);
+
+                int capa = string.capacity();
+                if (capa < string.size() + BUFSIZ) {
+                    if (capa < BUFSIZ) {
+                        capa = BUFSIZ;
+                    } else if (capa > IO_MAX_BUFFER_GROWTH) {
+                        capa = IO_MAX_BUFFER_GROWTH;
+                    }
+                    string.modifyExpand(capa);
+                }
             }
-            str = EncodingUtils.ioEncStr(runtime, str, this);
+            string = EncodingUtils.ioEncStr(runtime, string, this);
         } finally {
             if (locked) unlock();
         }
 
-        ((RubyString)str).setCodeRange(cr);
+        string.setCodeRange(cr);
 
-        return str;
+        return string;
     }
 
     // io_bufread

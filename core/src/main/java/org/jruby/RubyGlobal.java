@@ -694,6 +694,16 @@ public class RubyGlobal {
         protected void replaceWith(ThreadContext context, RubyHash otherHash) {
             replaceExternally(context, otherHash);
         }
+
+        @Override
+        protected void appendAssociation(boolean keyIsSymbol, ByteList bytes) {
+            if (keyIsSymbol) {
+                // key should never be Symbol for ENV
+                bytes.append(':');
+            } else {
+                bytes.append('=').append('>');
+            }
+        }
     }
 
     /**

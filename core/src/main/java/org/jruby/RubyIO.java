@@ -124,6 +124,8 @@ import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
 import static org.jruby.util.io.ChannelHelper.*;
+import static org.jruby.util.io.EncodingUtils.encCodepointLength;
+import static org.jruby.util.io.EncodingUtils.strConvEnc;
 import static org.jruby.util.io.EncodingUtils.vperm;
 
 /**
@@ -750,6 +752,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
+    // MRI rb_io_getline_0
     private IRubyObject getlineImplSlowPart(ThreadContext context, final OpenFile fptr,
         RubyString str, IRubyObject rs, final int limit, final boolean chomp) {
 
@@ -779,9 +782,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 rslen = 2;
                 rspara = true;
                 fptr.swallow(context, '\n');
+                rs = null;
                 if (!enc.isAsciiCompatible()) {
                     rs = RubyString.newUsAsciiStringShared(runtime, rsptrBytes, rsptr, rslen);
-                    rs = EncodingUtils.rbStrEncode(context, rs, runtime.getEncodingService().convertEncodingToRubyEncoding(enc), 0, context.nil);
+                    rs = EncodingUtils.strConvEnc(context, (RubyString) rs, null, enc);
                     rs.setFrozen(true);
                     rsStr = (RubyString) rs;
                     rsByteList = rsStr.getByteList();
@@ -789,18 +793,31 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                     rsptr = rsByteList.getBegin();
                     rslen = rsByteList.getRealSize();
                 }
+                newline = '\n';
+            } else if (enc.minLength() == 1) {
+                rsptr = rsByteList.begin();
+                rsptrBytes = rsByteList.getUnsafeBytes();
+                newline = Byte.toUnsignedInt(rsptrBytes[rsptr + rslen - 1]);
             } else {
-                rsptrBytes = rsByteList.unsafeBytes();
+                rs = rsStr.encode(context, runtime.getEncodingService().convertEncodingToRubyEncoding(enc));
+                rsStr = (RubyString) rs;
+                rsByteList = rsStr.getByteList();
+                rsptrBytes = rsByteList.getUnsafeBytes();
                 rsptr = rsByteList.getBegin();
+                rslen = rsByteList.getRealSize();
+                int e = rsptr + rslen;
+                int last = enc.prevCharHead(rsptrBytes, rsptr, e, e);
+                int[] n = {0};
+                newline = encCodepointLength(context, rsptrBytes, last, e, n, enc);
+                if (last + n[0] != e) throw argumentError(context, "broken separator");
             }
-            newline = rsptrBytes[rsptr + rslen - 1] & 0xFF;
-            chompCR = chomp && rslen == 1 && newline == '\n';
+            chompCR = chomp && newline == '\n' && rslen == enc.minLength();
         }
 
         final ByteList[] strPtr = { str != null ? str.getByteList() : null };
         final int[] limit_p = { limit };
 
-        while ((c = fptr.appendline(context, newline, strPtr, limit_p)) != OpenFile.EOF) {
+        while ((c = fptr.appendline(context, newline, strPtr, limit_p, enc)) != OpenFile.EOF) {
             int s, p, pp, e;
 
             final byte[] strBytes = strPtr[0].getUnsafeBytes();
@@ -812,8 +829,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 s = begin;
                 e = s + realSize;
                 p = e - rslen;
-                pp = enc.leftAdjustCharHead(strBytes, s, p, e);
-                if (pp != p) continue;
+                if (!atCharacterBoundary(enc, strBytes, s, p, e)) continue;
+                if (!rspara) rscheck(context, rsptrBytes, rslen, rs);
                 if (ByteList.memcmp(strBytes, p, rsptrBytes, rsptr, rslen) == 0) {
                     if (chomp) {
                         if (chompCR && p > s && strBytes[p-1] == '\r') --p;
@@ -825,8 +842,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             if (limit_p[0] == 0) {
                 s = begin;
                 p = s + realSize;
-                pp = enc.leftAdjustCharHead(strBytes, s, p - 1, p);
-                if (extraLimit != 0 &&
+                pp = enc.prevCharHead(strBytes, s, p, p);
+                if (extraLimit != 0 && pp != -1 &&
                         StringSupport.MBCLEN_NEEDMORE_P(StringSupport.preciseLength(enc, strBytes, pp, p))) {
                     limit_p[0] = 1;
                     extraLimit--;
@@ -856,6 +873,17 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         if (str != null && !noLimit) fptr.incrementLineno(runtime, this);
 
         return str == null ? context.nil : str;
+    }
+
+    private static void rscheck(ThreadContext context, byte[] strBytes, int len, IRubyObject rs) {
+        if (rs == null || rs.isNil()) return;
+        if (((RubyString) rs).getByteList().getUnsafeBytes() != strBytes && ((RubyString) rs).getByteList().getRealSize() != len) {
+            throw runtimeError(context, "rs modified");
+        }
+    }
+
+    private static boolean atCharacterBoundary(Encoding enc, byte[] strBytes, int s, int p, int e) {
+        return enc.leftAdjustCharHead(strBytes, s, p, e) == p;
     }
 
     // fptr->enc and codeconv->enc
@@ -974,8 +1002,16 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             }
         }
 
-        if (opt != null && !opt.isNil() && ((RubyHash)opt).op_aref(context, asSymbol(context, "autoclose")) == context.fals) {
-            fmode_p[0] |= OpenFile.PREP;
+        IRubyObject path = null;
+        if (opt instanceof RubyHash optHash) {
+            if (optHash.op_aref(context, asSymbol(context, "autoclose")) == context.fals) {
+                fmode_p[0] |= OpenFile.PREP;
+            }
+
+            path = optHash.op_aref(context, asSymbol(context, "path"));
+            if (!path.isNil()) {
+                path = path.convertToString().newFrozen();
+            }
         }
 
         // JRUBY-4650: Make sure we clean up the old data, if it's present.
@@ -985,6 +1021,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         openFile.setMode(fmode_p[0]);
         openFile.encs = convconfig;
         openFile.clearCodeConversion();
+        if (path != null) openFile.setPath(path.toString());
 
         openFile.checkTTY();
         switch (fd.bestFileno()) {
@@ -1157,6 +1194,11 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                     /* Special case - "-" => no transcoding */
                     holder.enc2 = null;
                 }
+            }
+            if (holder.enc2 == ASCIIEncoding.INSTANCE) {
+                /* If external is ASCII-8BIT, no transcoding */
+                holder.enc = holder.enc2;
+                holder.enc2 = null;
             }
             EncodingUtils.SET_UNIVERSAL_NEWLINE_DECORATOR_IF_ENC2(holder.getEnc2(), ecflags);
             ecflags = EncodingUtils.econvPrepareOptions(context, opt, ecopts_p, ecflags);
@@ -4268,6 +4310,11 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 }
             }
             if (options == null) options = newHash(context);
+        }
+
+        long off;
+        if (!offset.isNil() && (off = RubyNumeric.num2long(offset)) < 0) {
+            throw argumentError(context, "negative offset " + off + " given");
         }
 
         RubyIO file = openKeyArgs(context, recv, new IRubyObject[]{path, length, offset}, options);

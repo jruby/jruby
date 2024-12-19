@@ -178,7 +178,7 @@ public abstract class IOChannel implements Channel {
         } else if (io.respondsTo("<<")) {
             return new FunctionalCachingCallSite("<<");
         } else {
-            throw new IllegalArgumentException(io.getMetaClass() + "not coercible to " + getClass().getSimpleName() + ": no `write' method");
+            throw new IllegalArgumentException(io.getMetaClass() + "not coercible to " + getClass().getSimpleName() + ": no 'write' method");
         }
     }
 

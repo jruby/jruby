@@ -481,7 +481,14 @@ def Enumerator.product(*enums, **kwargs, &block)
   if kwargs && !kwargs.empty?
     raise ArgumentError.new("unknown keywords: " + kwargs.keys.map(&:inspect).join(", "))
   end
-  Enumerator::Product.new(*enums).each(&block)
+  product = Enumerator::Product.new(*enums)
+
+  if block_given?
+    product.each(&block)
+    return nil
+  end
+
+  product
 end
 
 class Enumerator::Product < Enumerator
@@ -527,6 +534,20 @@ class Enumerator::Product < Enumerator
       enum.rewind if enum.respond_to?(:rewind)
     end
     self
+  end
+
+  def inspect
+    JRuby::Util.safe_recurse(@__enums, self, "inspect") do |state, obj, recur|
+      if state.nil?
+        return "#<#{obj.class}: uninitialized>"
+      end
+
+      if recur
+        return "#<#{obj.class}: ...>"
+      end
+
+      return "#<#{obj.class}: #{state.inspect}>"
+    end
   end
 
   private def initialize_copy(other)

@@ -76,6 +76,7 @@ import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.notImplementedError;
 import static org.jruby.api.Error.runtimeError;
 import static org.jruby.api.Warn.warn;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -481,6 +482,11 @@ public class RubyDir extends RubyObject implements Closeable {
         }
 
         return result;
+    }
+
+    @JRubyMethod(name = "fchdir", meta = true, notImplemented = true)
+    public static IRubyObject fchdir(ThreadContext context, IRubyObject dirClass, IRubyObject ignored) {
+        throw notImplementedError(context, "Dir.fchdir");
     }
 
     @JRubyMethod(name = "chdir")

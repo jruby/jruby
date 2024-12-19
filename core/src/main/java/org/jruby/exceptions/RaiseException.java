@@ -108,7 +108,7 @@ public class RaiseException extends JumpException {
      */
     public static RaiseException from(Ruby runtime, RubyClass exceptionClass, String msg, IRubyObject backtrace) {
         RubyException exception = RubyException.newException(runtime, exceptionClass, msg);
-        exception.setBacktrace(backtrace);
+        exception.setBacktrace(runtime.getCurrentContext(), backtrace);
         return exception.toThrowable();
     }
 
@@ -219,7 +219,7 @@ public class RaiseException extends JumpException {
                 setStackTraceFromException();
             }
         } else {
-            exception.setBacktrace(backtrace);
+            exception.setBacktrace(context, backtrace);
             if (!backtrace.isNil() && !isEmptyArray(backtrace)) {
                 if (requiresBacktrace(context)) exception.captureBacktrace(context);
             }

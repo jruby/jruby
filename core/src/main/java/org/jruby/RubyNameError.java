@@ -31,11 +31,12 @@ package org.jruby;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.api.Convert;
 import org.jruby.ast.util.ArgsUtil;
-import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -108,58 +109,103 @@ public class RubyNameError extends RubyStandardError {
 
         @JRubyMethod
         public IRubyObject to_str(ThreadContext context) {
+            String message = this.message;
+
             if (message == null) return context.nil;
 
             final Ruby runtime = context.runtime;
+            final IRubyObject object = this.object;
 
-            RubyString description = null;
-            boolean singleton = false;
+            RubyString emptyFrozenString = runtime.getEmptyFrozenString();
+            RubyString className, separator, description;
+            className = separator = description = emptyFrozenString;
 
             if (object == context.nil) {
-                description = RubyNil.inspect(runtime); // "nil"
+                description = runtime.getNilString(); // "nil"
             } else if (object == context.tru) {
-                description = RubyString.newStringShared(runtime, RubyBoolean.TRUE_BYTES); // "true"
+                description = runtime.getTrueString(); // "true"
             } else if (object == context.fals) {
-                description = RubyString.newStringShared(runtime, RubyBoolean.FALSE_BYTES); // "false"
+                description = runtime.getFalseString(); // "false"
             } else {
-                try {
-                    // FIXME: MRI eagerly calculates name but #to_s and #inspect do not seem to do this call to name.
-                    if (object instanceof RubyModule && ((RubyModule) object).respondsTo("name")) {
-                        IRubyObject name = ((RubyModule) object).callMethod("name");
 
-                        if (!name.isNil()) description = name.asString();
+                // set up description
+                if (message.contains("%2$s")) {
+                    description = getNameOrInspect(context, object);
+                }
+
+                // set up separator text and class name
+                IRubyObject classTmp = null;
+                if (!object.isSpecialConst()) {
+                    if (object instanceof RubyClass) {
+                        separator = newString(context, "class ");
+                        classTmp = object;
+                    } else if (object instanceof RubyModule) {
+                        separator = newString(context, "module ");
+                        classTmp = object;
                     }
-
-                    if (description == null) description = RubyObject.inspect(context, object).asString();
-                } catch (JumpException e) {
-                    context.setErrorInfo(context.nil);
                 }
 
-                if (description == null || description.size() > 65) {
-                    description = object.anyToString().asString();
+                if (classTmp == null) {
+                    RubyClass klass = object.getMetaClass();
+                    if (klass.isSingleton()) {
+                        separator = newString(context, "");
+                        if (object == runtime.getTopSelf()) {
+                            classTmp = newString(context, "main");
+                        } else {
+                            classTmp = object.anyToString();
+                        }
+                    } else {
+                        separator = newString(context, "an instance of ");
+                        classTmp = klass.getRealClass();
+                    }
                 }
 
-                singleton = !description.isEmpty() && description.getByteList().get(0) == '#';
+                className = getNameOrInspect(context, classTmp);
             }
-
-            RubyString separator;
-            RubyString className;
-
-            if (!singleton) {
-                separator = RubyString.newString(runtime, (byte) ':');
-                className = newString(context, object.getMetaClass().getRealClass().getName());
-            } else {
-                className = separator = newEmptyString(context);
-            }
-
-            // RubyString name = this.name.asString(); // Symbol -> String
 
             RubyArray arr = RubyArray.newArray(runtime, this.name, description, separator, className);
 
-            ByteList msgBytes = new ByteList(message.length() + description.size() + 16, USASCIIEncoding.INSTANCE); // name.size()
+            ByteList msgBytes = new ByteList(message.length() + description.size() + separator.size() + className.size(), USASCIIEncoding.INSTANCE);
             Sprintf.sprintf(msgBytes, message, arr);
 
             return newString(context, msgBytes);
+        }
+
+        // MRI: coercion dance for name error object inspection in name_err_mesg_to_str
+        private static RubyString getNameOrInspect(ThreadContext context, IRubyObject object) {
+            IRubyObject tmp = tryModuleName(context, object);
+
+            if (tmp == UNDEF || tmp.isNil()) tmp = tryInspect(context, object);
+            if (tmp == UNDEF) context.setErrorInfo(context.nil);
+
+            tmp = Convert.checkToString(context, tmp);
+            if (tmp.isNil()) tmp = tmp.anyToString();
+
+            return (RubyString) tmp;
+        }
+
+        // MRI: rb_protect with rb_inspect callback
+        private static IRubyObject tryInspect(ThreadContext context, IRubyObject object) {
+            try  {
+                return RubyObject.inspect(context, object);
+            } catch (RaiseException e) {
+                // ignore
+            }
+
+            return UNDEF;
+        }
+
+        // MRI: rb_protect with name_err_mesg_receiver_name callback
+        private static IRubyObject tryModuleName(ThreadContext context, IRubyObject obj) {
+            if (!obj.isSpecialConst() && obj instanceof RubyModule) {
+                try {
+                    return Helpers.invokeChecked(context, obj, "name");
+                } catch (RaiseException e) {
+                    // ignore
+                }
+            }
+
+            return UNDEF;
         }
     }
 

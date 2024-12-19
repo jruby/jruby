@@ -401,7 +401,9 @@ public final class Ruby implements Constantizable {
         // Initialize all the core classes
         comparableModule = RubyComparable.createComparable(context);
         enumerableModule = RubyEnumerable.createEnumerableModule(context);
+
         stringClass = RubyString.createStringClass(context, objectClass, comparableModule);
+        emptyFrozenString = freezeAndDedupString(newEmptyString(context));
 
         falseString = Create.newString(context, FALSE_BYTES);
         falseString.setFrozen(true);
@@ -3528,6 +3530,10 @@ public final class Ruby implements Constantizable {
         return emptyFrozenArray;
     }
 
+    public RubyString getEmptyFrozenString() {
+        return emptyFrozenString;
+    }
+
     public RubyBoolean newBoolean(boolean value) {
         return value ? trueObject : falseObject;
     }
@@ -4448,7 +4454,7 @@ public final class Ruby implements Constantizable {
         RubyException ex = RubyStopIteration.newInstance(context, result, message);
 
         if (!RubyInstanceConfig.STOPITERATION_BACKTRACE) {
-            ex.setBacktrace(disabledBacktrace());
+            ex.setBacktrace(context, disabledBacktrace());
         }
 
         return ex.toThrowable();
@@ -5207,7 +5213,7 @@ public final class Ruby implements Constantizable {
     public interface RecursiveFunction extends MRIRecursionGuard.RecursiveFunction {}
 
     /**
-     * @deprecated Use ThreadContext.safeRecurse
+     * @deprecated Use {@link ThreadContext#safeRecurse(ThreadContext.RecursiveFunctionEx, Object, IRubyObject, String, boolean)}
      */
     @Deprecated
     public <T> IRubyObject safeRecurse(RecursiveFunctionEx<T> func, ThreadContext context, T state, IRubyObject obj, String name, boolean outer) {
@@ -5915,6 +5921,7 @@ public final class Ruby implements Constantizable {
     }
 
     private final RubyArray emptyFrozenArray;
+    private final RubyString emptyFrozenString;
 
     /**
      * A map from Ruby string data to a pre-frozen global version of that string.

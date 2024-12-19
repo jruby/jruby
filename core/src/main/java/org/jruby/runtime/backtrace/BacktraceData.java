@@ -36,14 +36,18 @@ public class BacktraceData implements Serializable {
         this.excludeInternal = excludeInternal;
     }
 
-    public static final BacktraceData EMPTY = new BacktraceData(
-            Stream.empty(),
-            Stream.empty(),
-            false,
-            false,
-            false,
-            false,
-            false);
+    public BacktraceData(RubyStackTraceElement[] backtraceElements) {
+        this.backtraceElements = backtraceElements;
+        this.stackStream = Stream.empty();
+        this.rubyTrace = Stream.empty();
+        this.fullTrace = false;
+        this.rawTrace = false;
+        this.maskNative = false;
+        this.includeNonFiltered = false;
+        this.excludeInternal = false;
+    }
+
+    public static final BacktraceData EMPTY = new BacktraceData(null);
 
     public final RubyStackTraceElement[] getBacktrace(Ruby runtime) {
         if (backtraceElements == null) {
@@ -79,7 +83,7 @@ public class BacktraceData implements Serializable {
 
         eachBacktrace(boundMethods, (elt) -> {trace.add(elt); return trace.size() < count;});
 
-        return trace.toArray(RubyStackTraceElement.EMPTY_ARRAY);
+        return trace.toArray((i) -> new RubyStackTraceElement[i]);
     }
 
     private void eachBacktrace(Map<String, Map<String, String>> boundMethods, Predicate<RubyStackTraceElement> consumer) {

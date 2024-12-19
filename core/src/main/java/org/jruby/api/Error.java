@@ -4,6 +4,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyFrozenError;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.NotImplementedError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.ThreadContext;
@@ -181,6 +182,10 @@ public class Error {
     public static RaiseException withException(RaiseException error, Exception exception) {
         error.initCause(exception);
         return error;
+    }
+
+    public static NotImplementedError notImplementedError(ThreadContext context, String message) {
+        return (NotImplementedError) context.runtime.newNotImplementedError(message);
     }
 
     private static IRubyObject typeFor(Ruby runtime, IRubyObject object) {

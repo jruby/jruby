@@ -729,6 +729,15 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return this;
     }
 
+    /**
+     * Determine how much space exists after the begin offset in this string's buffer.
+     *
+     * @return the amount of capacity in this string's buffer after the begin offset
+     */
+    public int capacity() {
+        return value.getUnsafeBytes().length - value.begin();
+    }
+
     /** Encoding aware String construction routines for 1.9
      *
      */

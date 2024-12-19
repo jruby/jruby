@@ -47,7 +47,9 @@ import java.util.function.Function;
 import org.jruby.EvalType;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
+import org.jruby.api.Convert;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
+import org.jruby.runtime.ThreadContext.RecursiveFunctionEx;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.func.FunctionOneOrTwoOrThree;
 import org.jruby.util.func.TriFunction;
@@ -55,7 +57,7 @@ import org.jruby.util.func.TriFunction;
 /**
  *  Internal live representation of a block ({...} or do ... end).
  */
-public class Block implements FunctionOneOrTwoOrThree<ThreadContext, IRubyObject, IRubyObject, IRubyObject> {
+public class Block implements FunctionOneOrTwoOrThree<ThreadContext, IRubyObject, IRubyObject, IRubyObject>, RecursiveFunctionEx<IRubyObject> {
     public enum Type {
         NORMAL(false), PROC(false), LAMBDA(true), THREAD(false);
 
@@ -211,6 +213,14 @@ public class Block implements FunctionOneOrTwoOrThree<ThreadContext, IRubyObject
     @Override
     public IRubyObject apply(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         return call(context, arg0, arg1);
+    }
+
+    /**
+     * @see RecursiveFunctionEx#safeRecurse(RecursiveFunctionEx, Object, IRubyObject, String, boolean)
+     */
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject state, IRubyObject obj, boolean recur) {
+        return call(context, state, obj, Convert.asBoolean(context, recur));
     }
 
     // PROC/NORMAL/THREAD will spread a single argument array if the block expects more than one required argument.

@@ -441,4 +441,12 @@ public class JRubyUtilLibrary implements Library {
         warningDeprecated(context, "JRuby::Util.internal_libraries is deprecated");
         return newEmptyArray(context);
     }
+
+    /**
+     * @see ThreadContext#safeRecurse(ThreadContext.RecursiveFunctionEx, Object, IRubyObject, String, boolean)
+     */
+    @JRubyMethod(module = true)
+    public static IRubyObject safe_recurse(ThreadContext context, IRubyObject utilModule, IRubyObject state, IRubyObject obj, IRubyObject name, Block block) {
+        return context.safeRecurse(block, state, obj, name.convertToString().toString(), false);
+    }
 }

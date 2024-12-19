@@ -199,7 +199,7 @@ public class RubyException extends RubyObject {
             input.ivar(null, exc, null);
 
             exc.setMessage((IRubyObject) exc.removeInternalVariable("mesg"));
-            exc.set_backtrace((IRubyObject) exc.removeInternalVariable("bt"));
+            exc.set_backtrace(runtime.getCurrentContext(), (IRubyObject) exc.removeInternalVariable("bt"));
 
             return exc;
         }
@@ -301,19 +301,62 @@ public class RubyException extends RubyObject {
     }
 
     @JRubyMethod
-    public IRubyObject set_backtrace(IRubyObject obj) {
-        setBacktrace(obj);
+    public IRubyObject set_backtrace(ThreadContext context, IRubyObject obj) {
+        setBacktrace(context, obj);
         return backtrace();
     }
 
-    public void setBacktrace(IRubyObject obj) {
-        if (obj.isNil() || isArrayOfStrings(obj)) {
-            backtrace.backtraceObject = obj;
-        } else if (obj instanceof RubyString) {
-            backtrace.backtraceObject = RubyArray.newArray(getRuntime(), obj);
+    public void setBacktrace(ThreadContext context, IRubyObject obj) {
+        BacktraceData backtraceData = locationArrayToBacktrace(obj);
+        if (backtraceData != null) {
+            this.backtrace.backtraceData = backtraceData;
+            this.backtrace.backtraceObject = null;
+            this.backtrace.backtraceLocations = obj;
         } else {
-            throw typeError(getRuntime().getCurrentContext(), "backtrace must be Array of String");
+            this.backtrace.backtraceObject = checkBacktrace(context, obj);
         }
+    }
+
+    // MRI: rb_check_backtrace
+    private static IRubyObject checkBacktrace(ThreadContext context, IRubyObject obj) {
+        if (obj.isNil() || isArrayOfStrings(obj)) {
+            return obj;
+        } else if (obj instanceof RubyString) {
+            return RubyArray.newArray(context.runtime, obj);
+        } else {
+            throw typeError(context,  "backtrace must be an Array of String or an Array of Thread::Backtrace::Location");
+        }
+    }
+
+    // MRI: rb_location_ary_to_backtrace
+    private BacktraceData locationArrayToBacktrace(IRubyObject ary) {
+        if (!(ary instanceof RubyArray array) || array.size() == 0 || asBacktraceLocation(array.eltOk(0)) == null) {
+            return null;
+        }
+
+        int num_frames = array.size();
+        RubyStackTraceElement[] backtrace = new RubyStackTraceElement[num_frames];
+
+        for (int index = 0; index < num_frames; index++) {
+            RubyThread.Location locobj = asBacktraceLocation(array.eltOk(index));
+
+            if (locobj == null) {
+                return null;
+            }
+
+            backtrace[index] = locobj.getElement();
+        }
+
+        return new BacktraceData(backtrace);
+    }
+
+    // MRI: rb_frame_info_p
+    private static RubyThread.Location asBacktraceLocation(IRubyObject object) {
+        if (object instanceof RubyThread.Location) {
+            return (RubyThread.Location) object;
+        }
+
+        return null;
     }
 
     @JRubyMethod(omit = true)
@@ -498,7 +541,7 @@ public class RubyException extends RubyObject {
         errorStream.print(string);
     }
 
-    private boolean isArrayOfStrings(IRubyObject backtrace) {
+    private static boolean isArrayOfStrings(IRubyObject backtrace) {
         if (!(backtrace instanceof RubyArray)) return false;
 
         final RubyArray rTrace = ((RubyArray) backtrace);

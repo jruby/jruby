@@ -8,12 +8,33 @@ public class Warn {
     }
 
     /**
-     * Produce a warning id deprecated is set (e.g. Warning[:deprecated] = true)
+     * Produce a warning if deprecated is set (e.g. Warning[:deprecated] = true)
      * @param context the current context
      * @param message to be displayed as a warning
      */
     public static void warnDeprecated(ThreadContext context, String message) {
         context.runtime.getWarnings().warnDeprecated(message);
+    }
+
+    /**
+     * Produce a warning if deprecated is set (e.g. Warning[:deprecated] = true)
+     * @param context the current context
+     * @param message to be displayed as a warning
+     * @param version the version at which this deprecated feature will be removed
+     */
+    public static void warnDeprecatedForRemoval(ThreadContext context, String message, String version) {
+        context.runtime.getWarnings().warnDeprecatedForRemoval(message, version);
+    }
+
+    /**
+     * Produce a warning if deprecated is set (e.g. Warning[:deprecated] = true)
+     * @param context the current context
+     * @param message to be displayed as a warning
+     * @param version the version at which this deprecated feature will be removed
+     * @param alternate the alternate feature that should be used instead
+     */
+    public static void warnDeprecatedForRemovalAlternate(ThreadContext context, String message, String version, String alternate) {
+        context.runtime.getWarnings().warnDeprecatedForRemovalAlternate(message, version, alternate);
     }
 
     public static void warning(ThreadContext context, String message) {

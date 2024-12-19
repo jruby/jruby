@@ -2142,7 +2142,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     private static RubyString checkHome(ThreadContext context) {
         IRubyObject home = context.runtime.getENV().fastARef(RubyString.newStringShared(context.runtime, RubyDir.HOME));
         if (home == null || home == context.nil || ((RubyString) home).size() == 0) {
-            throw argumentError(context, "couldn't find HOME environment -- expanding `~'");
+            throw argumentError(context, "couldn't find HOME environment -- expanding '~'");
         }
         return (RubyString) home;
     }

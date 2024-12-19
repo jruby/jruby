@@ -854,7 +854,7 @@ public class RubyLexer extends LexingCommon {
     private boolean arg_ambiguous(int c) {
         if (warnings.isVerbose() && Options.PARSER_WARN_AMBIGUOUS_ARGUMENTS.load()) {
             if (c == '/') {
-                warning(ID.AMBIGUOUS_ARGUMENT, "ambiguity between regexp and two divisions: wrap regexp in parentheses or add a space after `/' operator");
+                warning(ID.AMBIGUOUS_ARGUMENT, "ambiguity between regexp and two divisions: wrap regexp in parentheses or add a space after '/' operator");
             } else {
                 warning(ID.AMBIGUOUS_ARGUMENT, "ambiguous first argument; put parentheses or a space even after '" + (char) c + "' operator");
             }
@@ -1594,7 +1594,7 @@ public class RubyLexer extends LexingCommon {
         if (!isIdentifierChar(c)) {
             StringBuilder builder = new StringBuilder();
             Formatter formatter = new Formatter(builder, Locale.US);
-            formatter.format("Invalid char `\\x%02x' in expression", c & 0xff);
+            formatter.format("Invalid char '\\x%02x' in expression", c & 0xff);
             compile_error(builder.toString());
         }
 
