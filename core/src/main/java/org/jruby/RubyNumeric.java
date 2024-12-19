@@ -1166,32 +1166,6 @@ public class RubyNumeric extends RubyObject {
         }
     }
 
-    static void floatStep(ThreadContext context, Ruby runtime, IRubyObject from, IRubyObject to, IRubyObject step, boolean excl, boolean allowEndless, Block block) {
-        double beg = num2dbl(context, from);
-        double end = allowEndless && to.isNil() ? RubyFloat.INFINITY : num2dbl(context, to);
-        double unit = num2dbl(context, step);
-
-        double n = floatStepSize(beg, end, unit, excl);
-
-        if (Double.isInfinite(unit)) {
-            /* if unit is infinity, i*unit+beg is NaN */
-            if (n != 0) block.yield(context, asFloat(context, beg));
-        } else if (unit == 0) {
-            RubyFloat value = asFloat(context, beg);
-            for (;;) {
-                block.yield(context, value);
-                context.pollThreadEvents();
-            }
-        } else {
-            for (long i=0; i<n; i++) {
-                double d = i*unit+beg;
-                if (unit >= 0 ? end < d : d < end) d = end;
-                block.yield(context, asFloat(context, d));
-                context.pollThreadEvents();
-            }
-        }
-    }
-
     private static void duckStep(ThreadContext context, IRubyObject from, IRubyObject to, IRubyObject step, boolean inf, boolean desc, Block block) {
         IRubyObject i = from;
 
