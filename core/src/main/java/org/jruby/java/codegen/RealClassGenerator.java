@@ -194,7 +194,7 @@ public abstract class RealClassGenerator {
                 String pathName = name.replace('.', '/');
 
                 // construct the class, implementing all supertypes
-                cw.visit(V_BC, ACC_PUBLIC | ACC_SUPER, pathName, null, p(Object.class), superTypeNames);
+                cw.visit(V_BC, ACC_PUBLIC | ACC_SUPER | ACC_SYNTHETIC, pathName, null, p(Object.class), superTypeNames);
                 cw.visitSource(pathName + ".gen", null);
 
                 // fields needed for dispatch and such

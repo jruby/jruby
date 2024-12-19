@@ -1737,6 +1737,29 @@ CLASSDEF
     end
   end
 
+  def test_no_warnings_on_interface_impls_being_set_as_constants
+    runner_base = Class.new do
+      class << self
+        def run; self != self end
+      end
+    end
+
+    runner_impl1 = Class.new(runner_base)
+    runner_impl2 = Class.new(runner_base)
+    runner_impl3 = Class.new(runner_base)
+
+    output = with_stderr_captured do
+      threads = []
+      threads << java.lang.Thread.new(runner_impl1)
+      threads << java.lang.Thread.new(runner_impl2)
+      threads << java.lang.Thread.new(runner_impl3)
+      threads.each(&:start)
+      threads.each(&:join)
+    end
+    # expect no warning: already initialized constant org.jruby.gen::InterfaceImpl1353309827
+    refute output.index('already initialized constant'), output
+  end
+
   def test_no_warnings_on_concurrent_package_const_initialization
     output = with_stderr_captured do
       threads = (0..10).map do # smt not yet initialized :
