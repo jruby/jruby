@@ -1659,15 +1659,26 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static IRubyObject searchConst(ThreadContext context, StaticScope staticScope, String constName, boolean noPrivateConsts) {
+<<<<<<< Updated upstream
         RubyModule object = objectClass(context);
         IRubyObject constant = staticScope == null ? object.getConstant(constName) : staticScope.getConstantInner(constName);
+=======
+        IRubyObject constant = staticScope.getScopedConstant(context, constName);
+>>>>>>> Stashed changes
 
         // Inheritance lookup
         RubyModule module = null;
         if (constant == null) {
+<<<<<<< Updated upstream
             // SSS FIXME: Is this null check case correct?
             module = staticScope == null ? object : staticScope.getModule();
             constant = noPrivateConsts ? module.getConstantFromNoConstMissing(constName, false) : module.getConstantNoConstMissing(constName);
+=======
+            module = staticScope.getModule();
+            constant = noPrivateConsts ?
+                    module.getConstantFromNoConstMissing(constName, false) :
+                    module.getConstantNoConstMissing(context, constName);
+>>>>>>> Stashed changes
         }
 
         // Call const_missing or cache
