@@ -190,9 +190,9 @@ public class RubyNumeric extends RubyObject {
 
     private static void checkIntFail(Ruby runtime, long num) {
         if (num < Integer.MIN_VALUE) {
-            throw runtime.newRangeError("integer " + num + " too small to convert to `int'");
+            throw runtime.newRangeError("integer " + num + " too small to convert to 'int'");
         } else {
-            throw runtime.newRangeError("integer " + num + " too big to convert to `int'");
+            throw runtime.newRangeError("integer " + num + " too big to convert to 'int'");
         }
     }
 

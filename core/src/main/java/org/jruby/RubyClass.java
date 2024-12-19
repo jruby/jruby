@@ -2856,7 +2856,7 @@ public class RubyClass extends RubyModule {
                     target.callMethod(context, "marshal_load", data);
                     return target;
                 } else {
-                    throw typeError(context, "class ", this, " needs to have method `marshal_load'");
+                    throw typeError(context, "class ", this, " needs to have method 'marshal_load'");
                 }
 
             } else if (!(cache = searchWithCache("marshal_load")).method.isUndefined()) {
@@ -2906,7 +2906,7 @@ public class RubyClass extends RubyModule {
             if (method.call(context, this, cache.sourceModule, "respond_to?", asSymbol(context, "_load")).isTrue()) {
                 return callMethod(context, "_load", data);
             } else {
-                throw typeError(context, "class ", this, " needs to have method `_load'");
+                throw typeError(context, "class ", this, " needs to have method '_load'");
             }
         } else if (!(cache = singleton.searchWithCache("_load")).method.isUndefined()) {
             // real _load defined, cache and call it
@@ -2915,7 +2915,7 @@ public class RubyClass extends RubyModule {
 
         } else {
             // provide an error, since it doesn't exist
-            throw typeError(context, "class ", this, " needs to have method `_load'");
+            throw typeError(context, "class ", this, " needs to have method '_load'");
         }
     }
 

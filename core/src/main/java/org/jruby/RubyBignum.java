@@ -198,7 +198,7 @@ public class RubyBignum extends RubyInteger {
         BigInteger big = val.value;
 
         if (big.compareTo(LONG_MIN) < 0 || big.compareTo(LONG_MAX) > 0) {
-            throw val.getRuntime().newRangeError("bignum too big to convert into `long'");
+            throw val.getRuntime().newRangeError("bignum too big to convert into 'long'");
         }
         return big.longValue();
     }
@@ -216,7 +216,7 @@ public class RubyBignum extends RubyInteger {
 
     public static long big2ulong(Ruby runtime, BigInteger big) {
         if (big.compareTo(BigInteger.ZERO) < 0 || big.compareTo(ULONG_MAX) > 0) {
-            throw runtime.newRangeError("bignum out of range for `ulong'");
+            throw runtime.newRangeError("bignum out of range for 'ulong'");
         }
 
         return big.longValue();

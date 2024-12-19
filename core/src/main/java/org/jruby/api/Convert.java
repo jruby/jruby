@@ -368,7 +368,7 @@ public class Convert {
     public static int checkInt(ThreadContext context, long num) {
         if (((int) num) != num) {
             throw rangeError(context, "integer " + num +
-                    (num < Integer.MIN_VALUE ? " too small to convert to `int'" : " too big to convert to `int'"));
+                    (num < Integer.MIN_VALUE ? " too small to convert to 'int'" : " too big to convert to 'int'"));
         }
 
         return (int) num;
