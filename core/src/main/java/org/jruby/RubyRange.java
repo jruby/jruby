@@ -881,7 +881,8 @@ public class RubyRange extends RubyObject {
     private void fixnumEndlessStep(ThreadContext context, IRubyObject step, Block block) {
         long i = begin.convertToInteger().getLongValue();
         long unit = step.convertToInteger().getLongValue();
-        while (i < Long.MAX_VALUE) {
+        // avoid overflow
+        while (i <= Long.MAX_VALUE - unit) {
             block.yield(context, asFixnum(context, i));
             i += unit;
         }
@@ -894,22 +895,26 @@ public class RubyRange extends RubyObject {
     private void fixnumStep(ThreadContext context, long step, Block block) {
         long end = fix2long(this.end);
         long i, unit = step;
+        // avoid overflow
+        long shortEnd = end - unit;
         if (unit < 0) {
-            if (!isExclusive)
-                end -= 1;
             i = fix2long(begin);
-            while (i > end) {
-                block.yield(context, asFixnum(context, i));
+            if (i > end) block.yield(context, asFixnum(context, i));
+            while (i > shortEnd) {
                 i += unit;
+                block.yield(context, asFixnum(context, i));
             }
+            if (!isExclusive && i == shortEnd)
+                block.yield(context, asFixnum(context, i + unit));
         } else {
-            if (!isExclusive)
-                end += 1;
             i = fix2long(begin);
-            while (i < end) {
-                block.yield(context, asFixnum(context, i));
+            if (i < end) block.yield(context, asFixnum(context, i));
+            while (i < shortEnd) {
                 i += unit;
+                block.yield(context, asFixnum(context, i));
             }
+            if (!isExclusive && i == shortEnd)
+                block.yield(context, asFixnum(context, i + unit));
         }
     }
 
