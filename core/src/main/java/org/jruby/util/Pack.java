@@ -1158,7 +1158,7 @@ public class Pack {
         try {
             positionBuffer(encode, pos);
         } catch (IllegalArgumentException e) {
-            throw argumentError(context, "in `unpack': poorly encoded input");
+            throw argumentError(context, "in 'unpack': poorly encoded input");
         }
         return context.nil;
     }
@@ -1171,7 +1171,7 @@ public class Pack {
         try {
             positionBuffer(encode, encode.position() + occurrences);
         } catch (IllegalArgumentException e) {
-            throw argumentError(context, "in `unpack': x outside of string");
+            throw argumentError(context, "in 'unpack': x outside of string");
         }
     }
 
@@ -1186,7 +1186,7 @@ public class Pack {
         try {
             positionBuffer(encode, encode.position() - occurrences);
         } catch (IllegalArgumentException e) {
-            throw argumentError(context, "in `unpack': X outside of string");
+            throw argumentError(context, "in 'unpack': X outside of string");
         }
     }
 
@@ -2198,7 +2198,7 @@ public class Pack {
         try {
             shrink(result, occurrences);
         } catch (IllegalArgumentException e) {
-            throw argumentError(context, "in `pack': X outside of string");
+            throw argumentError(context, "in 'pack': X outside of string");
         }
     }
 
