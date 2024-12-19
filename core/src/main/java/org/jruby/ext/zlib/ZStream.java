@@ -107,7 +107,7 @@ public abstract class ZStream extends RubyObject {
     @JRubyMethod(name = "data_type")
     public IRubyObject data_type(ThreadContext context) {
         checkClosed(context);
-        return getModule(context, "Zlib").getConstant("UNKNOWN");
+        return getModule(context, "Zlib").getConstant(context, "UNKNOWN");
     }
 
     @Deprecated(since = "10.0")

@@ -880,13 +880,13 @@ public class RubyBigDecimal extends RubyNumeric {
 
     private static RubyBigDecimal getZero(ThreadContext context, final int sign) {
         String constantName = sign < 0 ? "NEGATIVE_ZERO" : "POSITIVE_ZERO";
-        return (RubyBigDecimal) Access.getClass(context, "BigDecimal").getConstant(constantName);
+        return (RubyBigDecimal) Access.getClass(context, "BigDecimal").getConstant(context, constantName);
     }
 
     private static RubyBigDecimal getNaN(ThreadContext context) {
-        if ( isNaNExceptionMode(context) ) throw newNaNFloatDomainError(context);
+        if (isNaNExceptionMode(context)) throw newNaNFloatDomainError(context);
 
-        return (RubyBigDecimal) Access.getClass(context, "BigDecimal").getConstant("NAN");
+        return (RubyBigDecimal) Access.getClass(context, "BigDecimal").getConstant(context, "NAN");
     }
 
     private static RaiseException newNaNFloatDomainError(ThreadContext context) {
@@ -903,7 +903,7 @@ public class RubyBigDecimal extends RubyNumeric {
         if (isInfinityExceptionMode(context)) throw newInfinityFloatDomainError(context, sign, type);
 
         String constantName = sign < 0 ? "NEGATIVE_INFINITY" : "INFINITY";
-        return (RubyBigDecimal) Access.getClass(context, "BigDecimal").getConstant(constantName);
+        return (RubyBigDecimal) Access.getClass(context, "BigDecimal").getConstant(context, constantName);
     }
 
     private static RaiseException newInfinityFloatDomainError(ThreadContext context, final int sign) {
@@ -2037,11 +2037,11 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod
     public IRubyObject sign(ThreadContext context) {
-        if (isNaN()) return getMetaClass().getConstant("SIGN_NaN");
-        if (isInfinity()) return getMetaClass().getConstant(infinitySign < 0 ? "SIGN_NEGATIVE_INFINITE" : "SIGN_POSITIVE_INFINITE");
-        if (isZero(context)) return getMetaClass().getConstant(zeroSign < 0 ? "SIGN_NEGATIVE_ZERO" : "SIGN_POSITIVE_ZERO");
+        if (isNaN()) return getMetaClass().getConstant(context, "SIGN_NaN");
+        if (isInfinity()) return getMetaClass().getConstant(context, infinitySign < 0 ? "SIGN_NEGATIVE_INFINITE" : "SIGN_POSITIVE_INFINITE");
+        if (isZero(context)) return getMetaClass().getConstant(context, zeroSign < 0 ? "SIGN_NEGATIVE_ZERO" : "SIGN_POSITIVE_ZERO");
 
-        return getMetaClass().getConstant(value.signum() < 0 ? "SIGN_NEGATIVE_FINITE" : "SIGN_POSITIVE_FINITE");
+        return getMetaClass().getConstant(context, value.signum() < 0 ? "SIGN_NEGATIVE_FINITE" : "SIGN_POSITIVE_FINITE");
     }
 
     private RubyFixnum signValue(ThreadContext context) {

@@ -186,9 +186,14 @@ public class RubyZlib {
     @JRubyClass(name="Zlib::DataError", parent="Zlib::Error")
     public static class DataError extends Error {}
 
-    @JRubyMethod(name = "zlib_version", module = true, visibility = PRIVATE)
+    @Deprecated(since = "10.0")
     public static IRubyObject zlib_version(IRubyObject recv) {
-        return ((RubyModule)recv).getConstant("ZLIB_VERSION");
+        return zlib_version(recv.getRuntime().getCurrentContext(), recv);
+    }
+
+    @JRubyMethod(name = "zlib_version", module = true, visibility = PRIVATE)
+    public static IRubyObject zlib_version(ThreadContext context, IRubyObject recv) {
+        return ((RubyModule) recv).getConstant(context, "ZLIB_VERSION");
     }
 
     @JRubyMethod(name = "crc32", optional = 2, checkArity = false, module = true, visibility = PRIVATE)

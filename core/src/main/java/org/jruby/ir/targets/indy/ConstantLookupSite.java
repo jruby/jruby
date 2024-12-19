@@ -80,18 +80,21 @@ public class ConstantLookupSite extends MutableCallSite {
 
     public IRubyObject searchConst(ThreadContext context, StaticScope staticScope) {
         // Lexical lookup
-        RubyModule object = objectClass(context);
+        var object = objectClass(context);
 
         // get switchpoint before value
         SwitchPoint switchPoint = getSwitchPointForConstant(context.runtime);
-        IRubyObject constant = (staticScope == null) ? object.getConstant(name) : staticScope.getConstantInner(name);
+        IRubyObject constant = staticScope == null ?
+                object.getConstant(context, name) : staticScope.getScopedConstant(context, name);
 
         // Inheritance lookup
         RubyModule module = null;
         if (constant == null) {
             // SSS FIXME: Is this null check case correct?
             module = staticScope == null ? object : staticScope.getModule();
-            constant = publicOnly ? module.getConstantFromNoConstMissing(name, false) : module.getConstantNoConstMissing(name);
+            constant = publicOnly ?
+                    module.getConstantFromNoConstMissing(name, false) :
+                    module.getConstantNoConstMissing(context, name);
         }
 
         // Call const_missing or cache
@@ -133,7 +136,9 @@ public class ConstantLookupSite extends MutableCallSite {
 
         // get switchpoint before value
         SwitchPoint switchPoint = getSwitchPointForConstant(runtime);
-        IRubyObject constant = publicOnly ? module.getConstantFromNoConstMissing(name, false) : module.getConstantNoConstMissing(name);
+        IRubyObject constant = publicOnly ?
+                module.getConstantFromNoConstMissing(name, false) :
+                module.getConstantNoConstMissing(context, name);
 
         // Call const_missing or cache
         if (constant == null) {
@@ -159,16 +164,15 @@ public class ConstantLookupSite extends MutableCallSite {
     }
 
     public IRubyObject noCacheSearchModuleForConst(ThreadContext context, IRubyObject cmVal) {
-        if (!(cmVal instanceof RubyModule)) throw typeError(context, cmVal + " is not a type/class");
-        RubyModule module = (RubyModule) cmVal;
-
+        if (!(cmVal instanceof RubyModule module)) throw typeError(context, cmVal + " is not a type/class");
         // Inheritance lookup
-        IRubyObject constant = publicOnly ? module.getConstantFromNoConstMissing(name, false) : module.getConstantNoConstMissing(name);
+        IRubyObject constant = publicOnly ?
+                module.getConstantFromNoConstMissing(name, false) :
+                module.getConstantNoConstMissing(context, name);
 
         // Call const_missing or cache
-        if (constant == null) return module.callMethod(context, "const_missing", getSymbolicName(context));
-
-        return constant;
+        return constant == null ?
+                module.callMethod(context, "const_missing", getSymbolicName(context)) : constant;
     }
 
     public IRubyObject inheritanceSearchConst(ThreadContext context, IRubyObject cmVal) throws Throwable {
@@ -185,11 +189,8 @@ public class ConstantLookupSite extends MutableCallSite {
         SwitchPoint switchPoint = getSwitchPointForConstant(runtime);
 
         // Inheritance lookup
-        IRubyObject constant = module.getConstantNoConstMissingSkipAutoload(name);
-
-        if (constant == null) {
-            constant = UndefinedValue.UNDEFINED;
-        }
+        IRubyObject constant = module.getConstantNoConstMissingSkipAutoload(context, name);
+        if (constant == null) constant = UndefinedValue.UNDEFINED;
 
         // bind constant until invalidated
         bind(runtime, module, switchPoint, constant, ISC());
@@ -208,7 +209,7 @@ public class ConstantLookupSite extends MutableCallSite {
         RubyModule module = (RubyModule) cmVal;
 
         // Inheritance lookup
-        IRubyObject constant = module.getConstantNoConstMissingSkipAutoload(name);
+        IRubyObject constant = module.getConstantNoConstMissingSkipAutoload(context, name);
 
         return constant == null ? UndefinedValue.UNDEFINED : constant;
     }
@@ -275,7 +276,7 @@ public class ConstantLookupSite extends MutableCallSite {
 
         // get switchpoint before value
         SwitchPoint switchPoint = getSwitchPointForConstant(runtime);
-        IRubyObject constant = scope.getConstantDefined(name);
+        IRubyObject constant = scope.getConstantDefined(context, name);
 
         if (constant == null) {
             constant = UndefinedValue.UNDEFINED;

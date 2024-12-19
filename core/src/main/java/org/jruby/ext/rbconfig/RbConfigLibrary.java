@@ -421,11 +421,11 @@ public class RbConfigLibrary implements Library {
     private static final boolean IS_64_BIT = jnr.posix.util.Platform.IS_64_BIT;
 
     private static void setupMakefileConfig(ThreadContext context, final RubyHash mkmfHash) {
-        var object = objectClass(context);
-        RubyHash envHash = (RubyHash) object.fetchConstant("ENV");
-        String cc = getRubyEnv(envHash, "CC", "cc");
-        String cpp = getRubyEnv(envHash, "CPP", "cc -E");
-        String cxx = getRubyEnv(envHash, "CXX", "c++");
+        var Object = objectClass(context);
+        RubyHash ENV = (RubyHash) Object.fetchConstant(context, "ENV");
+        String cc = getRubyEnv(ENV, "CC", "cc");
+        String cpp = getRubyEnv(ENV, "CPP", "cc -E");
+        String cxx = getRubyEnv(ENV, "CXX", "c++");
 
         String jflags = " -fno-omit-frame-pointer -fno-strict-aliasing ";
         // String oflags = " -O2  -DNDEBUG";
@@ -511,7 +511,7 @@ public class RbConfigLibrary implements Library {
         setConfig(context, mkmfHash, "rubyhdrdir", hdr_dir);
         setConfig(context, mkmfHash, "archdir", hdr_dir);
 
-        object.defineConstant("CROSS_COMPILING", context.nil);
+        Object.defineConstant("CROSS_COMPILING", context.nil);
     }
 
     private static void setConfig(ThreadContext context, RubyHash hash, String key, String value) {

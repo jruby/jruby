@@ -38,6 +38,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyNil;
 import org.jruby.RubyObject;
 import org.jruby.embed.internal.BiVariableMap;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -153,14 +154,14 @@ public class Argv extends AbstractVariable {
      * @param vars map to save retrieved constants.
      */
     public static void retrieve(final RubyObject receiver, final BiVariableMap vars) {
-        if ( vars.isLazy() ) return;
-        updateARGV(receiver, vars);
+        if (vars.isLazy()) return;
+        updateARGV(receiver.getRuntime().getCurrentContext(), receiver, vars);
     }
 
-    private static void updateARGV(final IRubyObject receiver, final BiVariableMap vars) {
+    private static void updateARGV(ThreadContext context, IRubyObject receiver, final BiVariableMap vars) {
         final String name = "ARGV";
         final RubyObject topSelf = getTopSelf(receiver);
-        final IRubyObject argv = topSelf.getMetaClass().getConstant(name);
+        final IRubyObject argv = topSelf.getMetaClass().getConstant(context, name);
         if ( argv == null || (argv instanceof RubyNil) ) return;
         // ARGV constant should be only one
         if ( vars.containsKey(name) ) {
@@ -187,8 +188,9 @@ public class Argv extends AbstractVariable {
      * @param key instace varible name
      */
     public static void retrieveByKey(RubyObject receiver, BiVariableMap vars, String key) {
+        var context = receiver.getRuntime().getCurrentContext();
         assert key.equals("ARGV");
-        updateARGV(receiver, vars);
+        updateARGV(context, receiver, vars);
     }
 
     @Override

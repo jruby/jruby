@@ -37,6 +37,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.embed.internal.BiVariableMap;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -96,8 +97,9 @@ public class Constant extends AbstractVariable {
         // user defined constants of top level go to a super class
         updateConstantsOfSuperClass(receiver, vars);
         // Constants might have the same names but different receivers.
-        updateConstants(receiver, vars);
-        updateConstants(getTopSelf(receiver), vars);
+        var context = receiver.getRuntime().getCurrentContext();
+        updateConstants(context, receiver, vars);
+        updateConstants(context, getTopSelf(receiver), vars);
     }
 
     private static void updateConstantsOfSuperClass(RubyObject receiver, BiVariableMap vars) {
@@ -118,17 +120,16 @@ public class Constant extends AbstractVariable {
         }
     }
 
-    private static void updateConstants(final RubyObject receiver, final BiVariableMap vars) {
+    private static void updateConstants(ThreadContext context, final RubyObject receiver, final BiVariableMap vars) {
         final RubyClass klazz = receiver.getMetaClass();
         final Collection<String> constantNames = klazz.getConstantNames();
         for ( final String name : constantNames ) {
-            final IRubyObject value = klazz.getConstant(name);
+            final IRubyObject value = klazz.getConstant(context, name);
 
             final BiVariable var = vars.getVariable(receiver, name);
             if (var == null) {
                 vars.update(name, new Constant(receiver, name, value));
-            }
-            else {
+            } else {
                 var.setRubyObject(value);
             }
         }
@@ -147,16 +148,17 @@ public class Constant extends AbstractVariable {
         // if the specified key doesn't exist, this method is called before the
         // evaluation. Don't update value in this case.
         IRubyObject value = null;
+        var context = receiver.getRuntime().getCurrentContext();
 
         final RubyClass klazz = receiver.getMetaClass();
         if ( klazz.getConstantNames().contains(key) ) {
-            value = klazz.getConstant(key);
+            value = klazz.getConstant(context, key);
         }
         else if (getTopSelf(receiver).getMetaClass().getConstantNames().contains(key)) {
-            value = getTopSelf(receiver).getMetaClass().getConstant(key);
+            value = getTopSelf(receiver).getMetaClass().getConstant(context, key);
         }
         else if (getTopSelf(receiver).getMetaClass().getSuperClass().getConstantNames().contains(key)) {
-            value = getTopSelf(receiver).getMetaClass().getSuperClass().getConstant(key);
+            value = getTopSelf(receiver).getMetaClass().getSuperClass().getConstant(context, key);
         }
 
         if ( value == null ) return;

@@ -1145,7 +1145,7 @@ public class PopenExecutor {
             if (unsetenv_others) {
                 envtbl = newHash(context);
             } else {
-                envtbl = objectClass(context).getConstant("ENV");
+                envtbl = objectClass(context).getConstant(context, "ENV");
                 envtbl = TypeConverter.convertToType(envtbl, hashClass(context), "to_hash").dup();
             }
             if (envopts != null) {
@@ -1167,7 +1167,7 @@ public class PopenExecutor {
         } else {
             // In MRI, they use the current env as the baseline because they fork+exec. We can't do that,
             // and posix_spawn needs a full env, so we pass even unmodified env through.
-            envtbl = objectClass(context).getConstant("ENV");
+            envtbl = objectClass(context).getConstant(context, "ENV");
             envtbl = TypeConverter.convertToType(envtbl, hashClass(context), "to_hash");
         }
         buildEnvp(context, eargp, (RubyHash) envtbl);
@@ -1947,7 +1947,7 @@ public class PopenExecutor {
     }
 
     private static String dlnFindExeR(ThreadContext context, String fname, IRubyObject path) {
-        File exePath = ShellLauncher.findPathExecutable(context.runtime, fname, path);
+        File exePath = ShellLauncher.findPathExecutable(context, fname, path);
         return exePath != null ? exePath.getAbsolutePath() : null;
     }
 

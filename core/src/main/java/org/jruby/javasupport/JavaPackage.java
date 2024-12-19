@@ -128,17 +128,14 @@ public class JavaPackage extends RubyModule {
     @JRubyMethod(name = "const_get")
     public final IRubyObject const_get(final ThreadContext context, final IRubyObject name) {
         // skip constant validation and do not inherit or include object
-        IRubyObject constant = getConstantNoConstMissing(name.toString(), false, false);
-        if ( constant != null ) return constant;
-        return relativeJavaClassOrPackage(context, name, false); // e.g. javax.const_get(:script)
+        IRubyObject constant = getConstantNoConstMissing(context, name.toString(), false, false);
+        return constant != null ? constant : relativeJavaClassOrPackage(context, name, false); // e.g. javax.const_get(:script)
     }
 
     @JRubyMethod(name = "const_get")
-    public final IRubyObject const_get(final ThreadContext context,
-        final IRubyObject name, final IRubyObject inherit) {
-        IRubyObject constant = getConstantNoConstMissing(name.toString(), inherit.isTrue(), false);
-        if ( constant != null ) return constant;
-        return relativeJavaClassOrPackage(context, name, false);
+    public final IRubyObject const_get(final ThreadContext context, final IRubyObject name, final IRubyObject inherit) {
+        IRubyObject constant = getConstantNoConstMissing(context, name.toString(), inherit.isTrue(), false);
+        return constant != null ? constant : relativeJavaClassOrPackage(context, name, false);
     }
 
     @Override // so that e.g. java::util gets stored as expected

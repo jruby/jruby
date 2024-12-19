@@ -2493,13 +2493,23 @@ public class Helpers {
         throw argumentError(context, length, expected);
     }
 
+    @Deprecated(since = "10.0")
     public static boolean isModuleAndHasConstant(IRubyObject left, String name) {
-        return left instanceof RubyModule && ((RubyModule) left).publicConstDefinedFrom(name);
+        return isModuleAndHasConstant(left.getRuntime().getCurrentContext(), left, name);
+    }
+
+    public static boolean isModuleAndHasConstant(ThreadContext context, IRubyObject left, String name) {
+        return left instanceof RubyModule && ((RubyModule) left).publicConstDefinedFrom(context, name);
+    }
+
+    @Deprecated(since = "10.0")
+    public static IRubyObject getDefinedConstantOrBoundMethod(IRubyObject left, String name, IRubyObject definedConstantMessage, IRubyObject definedMethodMessage) {
+        return getDefinedConstantOrBoundMethod(left.getRuntime().getCurrentContext(), left, name, definedConstantMessage, definedMethodMessage);
     }
 
     @JIT @Interp
-    public static IRubyObject getDefinedConstantOrBoundMethod(IRubyObject left, String name, IRubyObject definedConstantMessage, IRubyObject definedMethodMessage) {
-        if (isModuleAndHasConstant(left, name)) return definedConstantMessage;
+    public static IRubyObject getDefinedConstantOrBoundMethod(ThreadContext context, IRubyObject left, String name, IRubyObject definedConstantMessage, IRubyObject definedMethodMessage) {
+        if (isModuleAndHasConstant(context, left, name)) return definedConstantMessage;
         if (left.getMetaClass().isMethodBound(name, true)) return definedMethodMessage;
         return null;
     }

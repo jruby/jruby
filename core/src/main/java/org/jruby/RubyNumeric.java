@@ -1451,8 +1451,8 @@ public class RubyNumeric extends RubyObject {
     public IRubyObject arg(ThreadContext context) {
         final double value = getDoubleValue();
         if (Double.isNaN(value)) return this;
-        return f_negative_p(context, this) || (value == 0.0 && 1 / value == Double.NEGATIVE_INFINITY) ?
-            context.runtime.getMath().getConstant("PI") : asFixnum(context, 0);
+        return f_negative_p(context, this) || value == 0.0 && 1 / value == Double.NEGATIVE_INFINITY ?
+            context.runtime.getMath().getConstant(context, "PI") : asFixnum(context, 0);
     }
 
     /** numeric_rect

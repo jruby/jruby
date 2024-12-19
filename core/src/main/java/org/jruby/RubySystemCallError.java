@@ -221,11 +221,10 @@ public class RubySystemCallError extends RubyStandardError {
         } else {
             // one optional and no required args
             Arity.checkArgumentCount(context, args, 0, 1);
-            if (argc == 1) {
-                msg = args[0];
-            }
+            if (argc == 1) msg = args[0];
+
             // try to get errno value out of the class
-            err = klass.getConstant("Errno");
+            err = klass.getConstant(context, "Errno");
         }
 
         String val = null;

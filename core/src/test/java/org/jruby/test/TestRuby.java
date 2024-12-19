@@ -70,7 +70,7 @@ public class TestRuby extends Base {
     }
     
     public void testArgvIsNonNil() throws Exception {
-        assert(!objectClass(context).getConstant("ARGV").isNil());
+        assert(!objectClass(context).getConstant(context, "ARGV").isNil());
         assert(!globalVariables(context).get("$*").isNil());
     }
     

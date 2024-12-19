@@ -584,7 +584,7 @@ public final class StructLayout extends Type {
         }
 
         Field(Ruby runtime, RubyClass klass, FieldIO io) {
-            this(runtime, klass, (Type) Access.getClass(runtime.getCurrentContext(), "FFI", "Type").getConstant("VOID"),
+            this(runtime, klass, (Type) Access.getClass(runtime.getCurrentContext(), "FFI", "Type").getConstant(runtime.getCurrentContext(), "VOID"),
                     -1, io);
             
         }

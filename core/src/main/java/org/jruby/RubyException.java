@@ -140,7 +140,7 @@ public class RubyException extends RubyObject {
     @JRubyMethod(name = "to_tty?", meta = true)
     public static IRubyObject to_tty_p(ThreadContext context, IRubyObject recv) {
         IRubyObject stderr = globalVariables(context).get("$stderr");
-        IRubyObject STDERR = objectClass(context).getConstant("STDERR");
+        IRubyObject STDERR = objectClass(context).getConstant(context, "STDERR");
         return equalInternal(context, stderr, STDERR) ? ((RubyIO) STDERR).tty_p(context) : context.fals;
     }
 

@@ -117,7 +117,7 @@ public class RubyArgsFile extends RubyObject {
     @JRubyMethod(name = "initialize", visibility = PRIVATE, rest = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         final var argv = args.length == 1 && args[0] == null ?
-                objectClass(context).getConstant("ARGV").convertToArray() :
+                objectClass(context).getConstant(context, "ARGV").convertToArray() :
                 newArray(context, args);
 
         // ARGF is intended to be a singleton from a Ruby perspective but it is still

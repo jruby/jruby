@@ -359,7 +359,7 @@ public class RuntimeCache {
     public IRubyObject reCache(ThreadContext context, StaticScope scope, String name, int index) {
         Invalidator invalidator = context.runtime.getConstantInvalidator(name);
         Object newGeneration = invalidator.getData();
-        IRubyObject value = scope.getConstant(name);
+        IRubyObject value = scope.getConstant(context, name);
         if (value != null) {
             constants[index] = new ConstantCache(value, newGeneration, invalidator);
         } else {

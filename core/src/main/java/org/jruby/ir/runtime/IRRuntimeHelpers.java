@@ -1030,8 +1030,10 @@ public class IRRuntimeHelpers {
     }
 
     @JIT @Interp
-    public static IRubyObject isDefinedConstantOrMethod(ThreadContext context, IRubyObject receiver, RubyString name, IRubyObject definedConstantMessage, IRubyObject definedMethodMessage) {
-        IRubyObject definedType = Helpers.getDefinedConstantOrBoundMethod(receiver, name.intern().idString(), definedConstantMessage, definedMethodMessage);
+    public static IRubyObject isDefinedConstantOrMethod(ThreadContext context, IRubyObject receiver, RubyString name,
+                                                        IRubyObject definedConstantMessage, IRubyObject definedMethodMessage) {
+        IRubyObject definedType = Helpers.getDefinedConstantOrBoundMethod(context, receiver, name.intern().idString(),
+                definedConstantMessage, definedMethodMessage);
 
         return definedType == null ? context.nil : definedType;
     }
@@ -1660,14 +1662,17 @@ public class IRRuntimeHelpers {
     @JIT
     public static IRubyObject searchConst(ThreadContext context, StaticScope staticScope, String constName, boolean noPrivateConsts) {
         RubyModule object = objectClass(context);
-        IRubyObject constant = staticScope == null ? object.getConstant(constName) : staticScope.getConstantInner(constName);
+        IRubyObject constant = staticScope == null ?
+                object.getConstant(context, constName) : staticScope.getScopedConstant(context, constName);
 
         // Inheritance lookup
         RubyModule module = null;
         if (constant == null) {
             // SSS FIXME: Is this null check case correct?
             module = staticScope == null ? object : staticScope.getModule();
-            constant = noPrivateConsts ? module.getConstantFromNoConstMissing(constName, false) : module.getConstantNoConstMissing(constName);
+            constant = noPrivateConsts ?
+                    module.getConstantFromNoConstMissing(constName, false) :
+                    module.getConstantNoConstMissing(context, constName);
         }
 
         // Call const_missing or cache
@@ -1677,21 +1682,18 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static IRubyObject inheritedSearchConst(ThreadContext context, IRubyObject cmVal, String constName, boolean noPrivateConsts) {
-        if (!(cmVal instanceof RubyModule)) throw typeError(context, "", cmVal, " is not a class/module");
-        RubyModule module = (RubyModule) cmVal;
+        if (!(cmVal instanceof RubyModule module)) throw typeError(context, "", cmVal, " is not a class/module");
 
-        IRubyObject constant = noPrivateConsts ? module.getConstantFromNoConstMissing(constName, false) : module.getConstantNoConstMissing(constName);
+        IRubyObject constant = noPrivateConsts ?
+                module.getConstantFromNoConstMissing(constName, false) :
+                module.getConstantNoConstMissing(context, constName);
 
-        if (constant == null) {
-            constant = UNDEFINED;
-        }
-
-        return constant;
+        return constant == null ? UNDEFINED : constant;
     }
 
     @JIT
     public static IRubyObject lexicalSearchConst(ThreadContext context, StaticScope staticScope, String constName) {
-        IRubyObject constant = staticScope.getConstantInner(constName);
+        IRubyObject constant = staticScope.getScopedConstant(context, constName);
 
         if (constant == null) {
             constant = UNDEFINED;

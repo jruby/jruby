@@ -962,10 +962,10 @@ public class RubyDate extends RubyObject {
     public IRubyObject start(ThreadContext context) {
         Chronology chrono = dt.getChronology();
         if (chrono instanceof GregorianChronology) {
-            return getMetaClass().getConstant("GREGORIAN"); // Date::GREGORIAN (-Date::Infinity)
+            return getMetaClass().getConstant(context, "GREGORIAN"); // Date::GREGORIAN (-Date::Infinity)
         }
         if (chrono instanceof JulianChronology) {
-            return getMetaClass().getConstant("JULIAN"); // Date::JULIAN (+Date::Infinity)
+            return getMetaClass().getConstant(context, "JULIAN"); // Date::JULIAN (+Date::Infinity)
         }
         long cutover = DateTimeUtils.toJulianDayNumber(((GJChronology) chrono).getGregorianCutover().getMillis());
         return new RubyFixnum(context.runtime, cutover);

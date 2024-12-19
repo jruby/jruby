@@ -91,7 +91,7 @@ public class RubyUDPSocket extends RubyIPSocket {
     static void createUDPSocket(ThreadContext context, RubyClass IPSocket, RubyClass Socket, RubyClass Object) {
         Object.defineConstant(context, "UDPsocket",
                 defineClass(context, "UDPSocket", IPSocket, RubyUDPSocket::new).
-                        include(context, (RubyModule) Socket.getConstant("Constants")).
+                        include(context, (RubyModule) Socket.getConstant(context, "Constants")).
                         defineMethods(context, RubyUDPSocket.class));
     }
 
@@ -187,7 +187,7 @@ public class RubyUDPSocket extends RubyIPSocket {
         if (host.isNil() || ((host instanceof RubyString) && ((RubyString) host).isEmpty())) return new InetSocketAddress(port);
         if (host instanceof RubyFixnum) {
             int intAddr = RubyNumeric.fix2int(host);
-            if (intAddr == RubyNumeric.fix2int(getModule(context, "Socket").getConstant("INADDR_ANY"))) {
+            if (intAddr == RubyNumeric.fix2int(getModule(context, "Socket").getConstant(context, "INADDR_ANY"))) {
                 return new InetSocketAddress(InetAddress.getByName("0.0.0.0"), port);
             } else {
                 if (multicastStateManager == null) throw context.runtime.newNotImplementedError("bind with host: " + intAddr);

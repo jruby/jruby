@@ -205,8 +205,8 @@ public class Java implements Library {
         ioClass(context).defineMethods(context, IOJavaAddons.class);
         classClass(context).defineMethods(context, ClassJavaAddons.class);
 
-        if (Object.isConstantDefined("StringIO") ) {
-            ((RubyClass) Object.getConstant("StringIO")).defineMethods(context, IOJavaAddons.AnyIO.class);
+        if (Object.isConstantDefined(context, "StringIO")) {
+            ((RubyClass) Object.getConstant(context, "StringIO")).defineMethods(context, IOJavaAddons.AnyIO.class);
         }
 
         Java.defineConstant(context, "JavaObject", _ConcreteJavaProxy); // obj.is_a?(Java::JavaObject) still works
@@ -261,9 +261,9 @@ public class Java implements Library {
     }
 
     private static void setProxyClass(ThreadContext context, final RubyModule target, final String constName, final RubyModule proxyClass, final boolean validateConstant) {
-        if (constantNotSetOrDifferent(target, constName, proxyClass)) {
+        if (constantNotSetOrDifferent(context, target, constName, proxyClass)) {
             synchronized (target) { // synchronize to prevent "already initialized constant" warnings with multiple threads
-                if (constantNotSetOrDifferent(target, constName, proxyClass)) {
+                if (constantNotSetOrDifferent(context, target, constName, proxyClass)) {
                     if (validateConstant) {
                         target.defineConstant(context, constName, proxyClass); // setConstant would not validate const-name
                     } else {
@@ -274,8 +274,10 @@ public class Java implements Library {
         }
     }
 
-    private static boolean constantNotSetOrDifferent(final RubyModule target, final String constName, final RubyModule proxyClass) {
-        return !target.constDefinedAt(constName) || !proxyClass.equals(target.getConstant(constName, false));
+    private static boolean constantNotSetOrDifferent(ThreadContext context, final RubyModule target,
+                                                     final String constName, final RubyModule proxyClass) {
+        return !target.constDefinedAt(context, constName) ||
+                !proxyClass.equals(target.getConstant(context, constName, false));
     }
 
     /**
@@ -907,7 +909,7 @@ public class Java implements Library {
         final RubyModule packageModule = JavaPackage.newPackage(context.runtime, packageString, parentModule);
 
         synchronized (parentModule) { // guard initializing in multiple threads
-            final IRubyObject packageAlreadySet = parentModule.fetchConstant(name);
+            final IRubyObject packageAlreadySet = parentModule.fetchConstant(context, name);
             if (packageAlreadySet != null) return (RubyModule) packageAlreadySet;
 
             parentModule.setConstant(context, name.intern(), packageModule);
@@ -1300,7 +1302,7 @@ public class Java implements Library {
             // NOTE: if it's a package createPackageModule already set the constant
             // ... but in case it's a (top-level) Java class name we still need to:
             synchronized (owner) {
-                final IRubyObject alreadySet = owner.fetchConstant(constName);
+                final IRubyObject alreadySet = owner.fetchConstant(context, constName);
                 if ( alreadySet != null ) return (RubyModule) alreadySet;
                 owner.setConstant(context, constName, packageOrClass, hidden);
             }

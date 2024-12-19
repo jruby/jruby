@@ -961,7 +961,7 @@ public final class Ruby implements Constantizable {
         ParseResult result = parseFromMain(filename, inputStream);
 
         // if no DATA, we're done with the stream, shut it down
-        if (objectClass.fetchConstant("DATA") == null) {
+        if (objectClass.fetchConstant(context, "DATA") == null) {
             try {inputStream.close();} catch (IOException ioe) {}
         }
 
@@ -1586,7 +1586,7 @@ public final class Ruby implements Constantizable {
      */
     @Deprecated(since = "10.0")
     public IRubyObject fetchGlobalConstant(String name) {
-        return objectClass.fetchConstant(name, false);
+        return objectClass.fetchConstant(getCurrentContext(), name, false);
     }
 
     @Deprecated(since = "10.0")
@@ -2906,7 +2906,7 @@ public final class Ruby implements Constantizable {
 
             // FIXME: JI depends on const_missing getting called from Marshal.load (ruby objests do not).  We should marshal JI objects differently so we do not differentiate here.
             IRubyObject cc = flexibleSearch || isJavaPackageOrJavaClassProxyType(clazz) ?
-                    clazz.getConstant(str) : clazz.getConstantAt(context, str);
+                    clazz.getConstant(context, str) : clazz.getConstantAt(context, str);
 
             if (!flexibleSearch && cc == null) return null;
 

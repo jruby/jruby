@@ -107,7 +107,7 @@ public class ShellLauncherTest extends TestCase {
         }
     }
     public void testUsesRubyEnvPathToRunShellPrograms() {
-        RubyHash env = (RubyHash) objectClass(context).getConstant("ENV");
+        RubyHash env = (RubyHash) objectClass(context).getConstant(context, "ENV");
         RubyString path = newString(context, "PATH");
         RubyString utilPath = newString(context, System.getProperty("jruby.home") + "/core/src/test/java/org/jruby/util");
         env.op_aset(context, path,

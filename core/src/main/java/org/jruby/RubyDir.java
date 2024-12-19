@@ -1105,7 +1105,7 @@ public class RubyDir extends RubyObject implements Closeable {
         RubyHash env = context.runtime.getENV();
 
         if (home == null || home == context.nil) {
-            IRubyObject ENV_JAVA = objectClass(context).getConstant("ENV_JAVA");
+            IRubyObject ENV_JAVA = objectClass(context).getConstant(context, "ENV_JAVA");
             home = ENV_JAVA.callMethod(context, "[]", newString(context, user_home, UTF8));
         }
 

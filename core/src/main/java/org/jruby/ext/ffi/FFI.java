@@ -40,10 +40,10 @@ public class FFI {
         this.functionClass = ffiModule.getClass(context, "Function");
         this.callbackClass = ffiModule.getClass(context, "Callback");
         this.typeClass = ffiModule.getClass(context, "Type");
-        this.typedefs = (RubyHash) ffiModule.getConstant("TypeDefs");
+        this.typedefs = (RubyHash) ffiModule.getConstant(context, "TypeDefs");
         this.typeResolver = new TypeResolver(this);
-        this.nullMemoryIO = new NullMemoryIO(ffiModule.getRuntime());
-        this.nullPointer = (Pointer) pointerClass.getConstant("NULL");
+        this.nullMemoryIO = new NullMemoryIO(context.runtime);
+        this.nullPointer = (Pointer) pointerClass.getConstant(context, "NULL");
     }
 
     public final TypeResolver getTypeResolver() {

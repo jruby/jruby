@@ -162,7 +162,7 @@ public class RaiseException extends JumpException {
     }
 
     private static RubyClass findExceptionClass(ThreadContext context, String exceptionPath) {
-        IRubyObject exceptionClass = objectClass(context).getConstant(exceptionPath);
+        IRubyObject exceptionClass = objectClass(context).getConstant(context, exceptionPath);
 
         if (exceptionClass == null) throw context.runtime.newNameError("exception class not found", exceptionPath);
 

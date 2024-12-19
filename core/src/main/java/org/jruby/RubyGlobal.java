@@ -124,8 +124,8 @@ public class RubyGlobal {
         }
         argvArray.finishRawArray(context);
 
-        if (objectClass.getConstantNoConstMissing("ARGV") != null) {
-            ((RubyArray<?>) objectClass.getConstant("ARGV")).replace(context, argvArray);
+        if (objectClass.getConstantNoConstMissing(context, "ARGV") != null) {
+            ((RubyArray<?>) objectClass.getConstant(context, "ARGV")).replace(context, argvArray);
         } else {
             objectClass.setConstantQuiet(context, "ARGV", argvArray);
             globalVariables(context).define("$*", new ValueAccessor(argvArray), GLOBAL);
@@ -317,6 +317,7 @@ public class RubyGlobal {
     }
 
     public static void initSTDIO(Ruby runtime, GlobalVariables globals) {
+        var context = runtime.getCurrentContext();
         RubyIO stdin, stdout, stderr;
 
         // If we're the main for the process and native stdio is enabled, use default descriptors
@@ -352,9 +353,9 @@ public class RubyGlobal {
 
             runtime.setOriginalStderr(stderr);
         } else {
-            ((RubyIO) object.getConstant("STDIN")).getOpenFile().setFD(stdin.getOpenFile().fd());
-            ((RubyIO) object.getConstant("STDOUT")).getOpenFile().setFD(stdout.getOpenFile().fd());
-            ((RubyIO) object.getConstant("STDERR")).getOpenFile().setFD(stderr.getOpenFile().fd());
+            ((RubyIO) object.getConstant(context, "STDIN")).getOpenFile().setFD(stdin.getOpenFile().fd());
+            ((RubyIO) object.getConstant(context, "STDOUT")).getOpenFile().setFD(stdout.getOpenFile().fd());
+            ((RubyIO) object.getConstant(context, "STDERR")).getOpenFile().setFD(stderr.getOpenFile().fd());
         }
     }
 

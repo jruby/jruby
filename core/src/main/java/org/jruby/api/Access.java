@@ -137,6 +137,15 @@ public class Access {
     }
 
     /**
+     * Retrieve the instance of the class Float
+     * @param context the current thread context
+     * @return the Class
+     */
+    public static RubyClass floatClass(ThreadContext context) {
+        return context.runtime.getFloat();
+    }
+
+    /**
      * Retrieve the object containing Ruby Global Variables.
      * @param context the current thread context
      * @return the object

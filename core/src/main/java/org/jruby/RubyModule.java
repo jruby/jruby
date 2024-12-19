@@ -242,7 +242,7 @@ public class RubyModule extends RubyObject {
             throw context.runtime.newNameError("autoload must be constant name", symbolStr);
         }
 
-        IRubyObject existingValue = fetchConstant(symbolStr);
+        IRubyObject existingValue = fetchConstant(context, symbolStr);
 
         if (existingValue != null && existingValue != RubyObject.UNDEF) return context.nil;
 
@@ -263,7 +263,7 @@ public class RubyModule extends RubyObject {
 
     public IRubyObject hasAutoload(ThreadContext context, String idString, boolean inherit) {
         for (RubyModule mod = this; mod != null; mod = mod.getSuperClass()) {
-            final IRubyObject loadedValue = mod.fetchConstant(idString);
+            final IRubyObject loadedValue = mod.fetchConstant(context, idString);
 
             if (loadedValue == UNDEF) {
                 final RubyString file;
@@ -2515,7 +2515,7 @@ public class RubyModule extends RubyObject {
         // so it uses the allocator of the specified superclass or default to
         // the Object allocator. It should NOT be used to define classes that require a native allocator.
 
-        IRubyObject classObj = getConstantAtSpecial(name);
+        IRubyObject classObj = getConstantAtSpecial(context, name);
         RubyClass clazz;
 
         if (classObj != null) {
@@ -2572,7 +2572,7 @@ public class RubyModule extends RubyObject {
     @JIT
     public RubyModule defineOrGetModuleUnder(ThreadContext context, String name, String file, int line) {
         // This method is intended only for defining new modules in Ruby code
-        IRubyObject moduleObj = getConstantAtSpecial(name);
+        IRubyObject moduleObj = getConstantAtSpecial(context, name);
         RubyModule module;
         if (moduleObj != null) {
             if (!moduleObj.isModule()) throw typeError(context, "", moduleObj, " is not a module");
@@ -4427,7 +4427,7 @@ public class RubyModule extends RubyObject {
 
             String id = sym.idString();
 
-            return inherit ? constDefined(id) : constDefinedAt(id);
+            return inherit ? constDefined(context, id) : constDefinedAt(context, id);
         }
 
         RubyString fullName = name.convertToString();
@@ -4461,13 +4461,13 @@ public class RubyModule extends RubyObject {
             IRubyObject obj;
 
             if (!inherit) {
-                if (!mod.constDefinedAt(id)) return false;
+                if (!mod.constDefinedAt(context, id)) return false;
                 obj = mod.getConstantAt(context, id);
             } else if (index == 0 && segment.realSize() == 0) {
-                if (!mod.constDefined(id)) return false;
-                obj = mod.getConstant(id);
+                if (!mod.constDefined(context, id)) return false;
+                obj = mod.getConstant(context, id);
             } else {
-                if (!mod.constDefinedFrom(id)) return false;
+                if (!mod.constDefinedFrom(context, id)) return false;
                 obj = mod.getConstantFrom(id);
             }
 
@@ -4483,7 +4483,7 @@ public class RubyModule extends RubyObject {
 
         String id = RubySymbol.newConstantSymbol(runtime, fullName, lastSegment).idString();
 
-        return mod.getConstantSkipAutoload(id, inherit, inherit) != null;
+        return mod.getConstantSkipAutoload(context, id, inherit, inherit) != null;
     }
 
     // MRI: rb_mod_const_get
@@ -5010,6 +5010,11 @@ public class RubyModule extends RubyObject {
     ////////////////// CONSTANT API METHODS ////////////////
     //
 
+    @Deprecated(since = "10.0")
+    public IRubyObject getConstantAtSpecial(String name) {
+        return getConstantAtSpecial(getCurrentContext(), name);
+    }
+
     /**
      * This version searches superclasses if we're starting with Object. This
      * corresponds to logic in rb_const_defined_0 that recurses for Object only.
@@ -5017,13 +5022,10 @@ public class RubyModule extends RubyObject {
      * @param name the constant name to find
      * @return the constant, or null if it was not found
      */
-    public IRubyObject getConstantAtSpecial(String name) {
-        IRubyObject value;
-        if (this == getRuntime().getObject()) {
-            value = getConstantNoConstMissing(name);
-        } else {
-            value = fetchConstant(name);
-        }
+    public IRubyObject getConstantAtSpecial(ThreadContext context, String name) {
+        IRubyObject value = this == objectClass(context) ?
+                getConstantNoConstMissing(context, name) :
+                fetchConstant(context, name);
 
         return value == UNDEF ? resolveUndefConstant(name) : value;
     }
@@ -5043,7 +5045,7 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject getConstantAt(ThreadContext context, String name, boolean includePrivate) {
-        IRubyObject value = fetchConstant(name, includePrivate);
+        IRubyObject value = fetchConstant(context, name, includePrivate);
 
         return value == UNDEF ? resolveUndefConstant(name) : value;
     }
@@ -5053,18 +5055,28 @@ public class RubyModule extends RubyObject {
         return getConstantAt(getCurrentContext(), internedName);
     }
 
+    @Deprecated(since = "10.0")
+    public IRubyObject getConstant(String name) {
+        return getConstant(getCurrentContext(), name);
+    }
+
     /**
      * Retrieve the named constant, invoking 'const_missing' should that be appropriate.
      *
      * @param name The constant to retrieve
      * @return The value for the constant, or null if not found
      */
-    public IRubyObject getConstant(String name) {
-        return getConstant(name, true);
+    public IRubyObject getConstant(ThreadContext context, String name) {
+        return getConstant(context, name, true);
     }
 
+    @Deprecated(since = "10.0")
     public IRubyObject getConstant(String name, boolean inherit) {
-        return getConstant(getRuntime().getCurrentContext(), name, inherit, true);
+        return getConstant(getCurrentContext(), name, inherit);
+    }
+
+    public IRubyObject getConstant(ThreadContext context, String name, boolean inherit) {
+        return getConstant(context, name, inherit, true);
     }
 
     public SourceLocation getConstantSourceLocation(String name, boolean inherit, boolean includeObject) {
@@ -5095,53 +5107,73 @@ public class RubyModule extends RubyObject {
         // NOTE: can not assert IdUtil.isConstant(name) until unmarshal-ing is using this for Java classes
         // since some classes won't assert the upper case first char (anonymous classes start with a digit)
 
-        IRubyObject value = getConstantNoConstMissing(name, inherit, includeObject);
+        IRubyObject value = getConstantNoConstMissing(context, name, inherit, includeObject);
         return value != null ? value : callMethod(context, "const_missing", asSymbol(context, name));
     }
 
     @Deprecated
     public IRubyObject fastGetConstant(String internedName) {
-        return getConstant(internedName);
+        return getConstant(getCurrentContext(), internedName);
     }
 
     @Deprecated
     public IRubyObject fastGetConstant(String internedName, boolean inherit) {
-        return getConstant(internedName, inherit);
+        return getConstant(getCurrentContext(), internedName, inherit);
     }
 
+    @Deprecated(since = "10.0")
     public IRubyObject getConstantNoConstMissing(String name) {
-        return getConstantNoConstMissing(name, true);
+        return getConstantNoConstMissing(getCurrentContext(), name);
     }
 
+    public IRubyObject getConstantNoConstMissing(ThreadContext context, String name) {
+        return getConstantNoConstMissing(context, name, true);
+    }
+
+    @Deprecated(since = "10.0")
     public IRubyObject getConstantNoConstMissing(String name, boolean inherit) {
-        return getConstantNoConstMissing(name, inherit, true);
+        return getConstantNoConstMissing(getCurrentContext(), name, inherit);
     }
 
+    public IRubyObject getConstantNoConstMissing(ThreadContext context, String name, boolean inherit) {
+        return getConstantNoConstMissing(context, name, inherit, true);
+    }
+
+    @Deprecated(since = "10.0")
     public IRubyObject getConstantNoConstMissing(String name, boolean inherit, boolean includeObject) {
-        IRubyObject constant = iterateConstantNoConstMissing(name, this, inherit, true);
+        return getConstantNoConstMissing(getCurrentContext(), name, inherit, includeObject);
+    }
+
+    public IRubyObject getConstantNoConstMissing(ThreadContext context, String name, boolean inherit, boolean includeObject) {
+        IRubyObject constant = iterateConstantNoConstMissing(context, name, this, inherit, true);
 
         if (constant == null && !isClass() && includeObject) {
-            constant = iterateConstantNoConstMissing(name, getRuntime().getObject(), inherit, true);
+            constant = iterateConstantNoConstMissing(context, name, objectClass(context), inherit, true);
         }
 
         return constant;
     }
 
+    @Deprecated(since = "10.0")
     public final IRubyObject getConstantNoConstMissingSkipAutoload(String name) {
-        return getConstantSkipAutoload(name, true, true);
+        return getConstantNoConstMissingSkipAutoload(getCurrentContext(), name);
+    }
+
+    public final IRubyObject getConstantNoConstMissingSkipAutoload(ThreadContext context, String name) {
+        return getConstantSkipAutoload(context, name, true, true);
     }
 
     @Deprecated
     public IRubyObject getConstantNoConstMissingSKipAutoload(String name) {
-        return getConstantSkipAutoload(name, true, true);
+        return getConstantSkipAutoload(getCurrentContext(), name, true, true);
     }
 
     // returns null for autoloads that have failed
-    private IRubyObject getConstantSkipAutoload(String name, boolean inherit, boolean includeObject) {
-        IRubyObject constant = iterateConstantNoConstMissing(name, this, inherit, false);
+    private IRubyObject getConstantSkipAutoload(ThreadContext context, String name, boolean inherit, boolean includeObject) {
+        IRubyObject constant = iterateConstantNoConstMissing(context, name, this, inherit, false);
 
         if (constant == null && !isClass() && includeObject) {
-            constant = iterateConstantNoConstMissing(name, getRuntime().getObject(), inherit, false);
+            constant = iterateConstantNoConstMissing(context, name, getRuntime().getObject(), inherit, false);
         }
 
         return constant;
@@ -5164,13 +5196,13 @@ public class RubyModule extends RubyObject {
         return null;
     }
 
-    private static IRubyObject iterateConstantNoConstMissing(String name,
+    private static IRubyObject iterateConstantNoConstMissing(ThreadContext context, String name,
         RubyModule init, boolean inherit, boolean loadConstant) {
         for (RubyModule mod = init; mod != null; mod = mod.getSuperClass()) {
             IRubyObject value =
                     loadConstant ?
                             mod.getConstantWithAutoload(name, null, true) :
-                            mod.fetchConstant(name, true);
+                            mod.fetchConstant(context, name, true);
 
             // if it's UNDEF and we're not loading and there's no autoload set up, consider it undefined
             if ( value == UNDEF && !loadConstant && mod.getAutoloadMap().get(name) == null) return null;
@@ -5189,17 +5221,23 @@ public class RubyModule extends RubyObject {
         return value != null ? value : getConstantFromConstMissing(name);
     }
 
+    @Deprecated(since = "10.0")
+    public IRubyObject getConstantWithAutoload(String name, IRubyObject failedAutoloadValue, boolean includePrivate) {
+        return getConstantWithAutoload(getCurrentContext(), name, failedAutoloadValue, includePrivate);
+    }
+
     /**
      * Search just this class for a constant value, or trigger autoloading.
      *
      * @param name
      * @return
      */
-    public IRubyObject getConstantWithAutoload(String name, IRubyObject failedAutoloadValue, boolean includePrivate) {
+    public IRubyObject getConstantWithAutoload(ThreadContext context, String name, IRubyObject failedAutoloadValue,
+                                               boolean includePrivate) {
         RubyModule autoloadModule = null;
         IRubyObject result;
 
-        while ((result = fetchConstant(name, includePrivate)) != null) { // loop for autoload
+        while ((result = fetchConstant(context, name, includePrivate)) != null) { // loop for autoload
             if (result == RubyObject.UNDEF) {
                 if (autoloadModule == this) return failedAutoloadValue;
                 autoloadModule = this;
@@ -5451,37 +5489,56 @@ public class RubyModule extends RubyObject {
         setConstant(context, name, value);
     }
 
+    @Deprecated(since = "10.0")
     public boolean isConstantDefined(String name, boolean inherit) {
-        return constDefinedInner(name, false, inherit, false);
+        return constDefinedInner(getCurrentContext(), name, false, inherit, false);
+    }
+
+    @Deprecated(since = "10.0")
+    public boolean constDefined(String name) {
+        return constDefined(getCurrentContext(), name);
     }
 
     // rb_const_defined
-    public boolean constDefined(String name) {
-        return constDefinedInner(name, false, true, false);
+    public boolean constDefined(ThreadContext context, String name) {
+        return constDefinedInner(context, name, false, true, false);
+    }
+
+    @Deprecated(since = "10.0")
+    public boolean constDefinedAt(String name) {
+        return constDefinedAt(getCurrentContext(), name);
     }
 
     // rb_const_defined_at
-    public boolean constDefinedAt(String name) {
-        return constDefinedInner(name, true, false, false);
+    public boolean constDefinedAt(ThreadContext context, String name) {
+        return constDefinedInner(context, name, true, false, false);
+    }
+
+    @Deprecated(since = "10.0")
+    public boolean constDefinedFrom(String name) {
+        return constDefinedFrom(getCurrentContext(), name);
     }
 
     // rb_const_defined_from
-    public boolean constDefinedFrom(String name) {
-        return constDefinedInner(name, true, true, false);
+    public boolean constDefinedFrom(ThreadContext context, String name) {
+        return constDefinedInner(context, name, true, true, false);
+    }
+
+    @Deprecated(since = "10.0")
+    public boolean publicConstDefinedFrom(String name) {
+        return publicConstDefinedFrom(getCurrentContext(), name);
     }
 
     // rb_public_const_defined_from
-    public boolean publicConstDefinedFrom(String name) {
-        return constDefinedInner(name, true, true, true);
+    public boolean publicConstDefinedFrom(ThreadContext context, String name) {
+        return constDefinedInner(context, name, true, true, true);
     }
 
     // Fix for JRUBY-1339 - search hierarchy for constant
     /**
      * rb_const_defined_0
      */
-    private boolean constDefinedInner(String name, boolean exclude, boolean recurse, boolean visibility) {
-        var context = getRuntime().getCurrentContext();
-
+    private boolean constDefinedInner(ThreadContext context, String name, boolean exclude, boolean recurse, boolean visibility) {
         RubyClass object = objectClass(context);
         boolean moduleRetry = false;
 
@@ -5491,9 +5548,7 @@ public class RubyModule extends RubyObject {
             while (module != null) {
                 ConstantEntry entry;
                 if ((entry = module.constantEntryFetch(name)) != null) {
-                    if (visibility && entry.hidden) {
-                        return false;
-                    }
+                    if (visibility && entry.hidden) return false;
 
                     IRubyObject value = entry.value;
 
@@ -5503,11 +5558,7 @@ public class RubyModule extends RubyObject {
                         return false;
                     }
 
-                    if (exclude && module == object && this != object) {
-                        return false;
-                    }
-
-                    return true;
+                    return !(exclude && module == object && this != object);
                 }
 
                 if (!recurse) break;
@@ -5567,8 +5618,13 @@ public class RubyModule extends RubyObject {
         return null; // autoload has yet to run
     }
 
+    @Deprecated(since = "10.0")
     public boolean isConstantDefined(String name) {
-        return constDefinedInner(name, false, true, false);
+        return isConstantDefined(getCurrentContext(), name);
+    }
+
+    public boolean isConstantDefined(ThreadContext context, String name) {
+        return constDefinedInner(context, name, false, true, false);
     }
 
     //
@@ -5791,12 +5847,22 @@ public class RubyModule extends RubyObject {
         return hasConstant(internedName);
     }
 
-    // returns the stored value without processing undefs (autoloads)
+    @Deprecated(since = "10.0")
     public IRubyObject fetchConstant(String name) {
-        return fetchConstant(name, true);
+        return fetchConstant(getCurrentContext(), name);
     }
 
+    // returns the stored value without processing undefs (autoloads)
+    public IRubyObject fetchConstant(ThreadContext context, String name) {
+        return fetchConstant(context, name, true);
+    }
+
+    @Deprecated(since = "10.0")
     public IRubyObject fetchConstant(String name, boolean includePrivate) {
+        return fetchConstant(getCurrentContext(), name, includePrivate);
+    }
+
+    public IRubyObject fetchConstant(ThreadContext context, String name, boolean includePrivate) {
         ConstantEntry entry = fetchConstantEntry(name, includePrivate);
 
         return entry != null ? entry.value : null;
@@ -5829,7 +5895,7 @@ public class RubyModule extends RubyObject {
 
     @Deprecated
     public IRubyObject fastFetchConstant(String internedName) {
-        return fetchConstant(internedName);
+        return fetchConstant(getCurrentContext(), internedName);
     }
 
     public IRubyObject storeConstant(String name, IRubyObject value) {
@@ -6554,7 +6620,7 @@ public class RubyModule extends RubyObject {
 
     @Deprecated
     public boolean fastIsConstantDefined(String internedName){
-        return isConstantDefined(internedName);
+        return isConstantDefined(getCurrentContext(), internedName);
     }
 
     @Deprecated
