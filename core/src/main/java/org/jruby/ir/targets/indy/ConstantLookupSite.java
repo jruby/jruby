@@ -80,31 +80,17 @@ public class ConstantLookupSite extends MutableCallSite {
 
     public IRubyObject searchConst(ThreadContext context, StaticScope staticScope) {
         // Lexical lookup
-<<<<<<< Updated upstream
-        RubyModule object = objectClass(context);
-
         // get switchpoint before value
         SwitchPoint switchPoint = getSwitchPointForConstant(context.runtime);
-        IRubyObject constant = (staticScope == null) ? object.getConstant(name) : staticScope.getConstantInner(name);
-=======
-        // get switchpoint before value
-        SwitchPoint switchPoint = getSwitchPointForConstant(context.runtime);
-        IRubyObject constant = staticScope.getScopedConstant(context, name);
->>>>>>> Stashed changes
+        IRubyObject constant = staticScope.getConstantInner(name);
 
         // Inheritance lookup
         RubyModule module = null;
         if (constant == null) {
-<<<<<<< Updated upstream
-            // SSS FIXME: Is this null check case correct?
-            module = staticScope == null ? object : staticScope.getModule();
-            constant = publicOnly ? module.getConstantFromNoConstMissing(name, false) : module.getConstantNoConstMissing(name);
-=======
             module = staticScope.getModule();
             constant = publicOnly ?
                     module.getConstantFromNoConstMissing(name, false) :
-                    module.getConstantNoConstMissing(context, name);
->>>>>>> Stashed changes
+                    module.getConstantNoConstMissing(name);
         }
 
         // Call const_missing or cache
