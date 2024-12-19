@@ -570,20 +570,20 @@ public abstract class InvokeSite extends MutableCallSite {
         }
 
         // rebuild with requested arity
-        Class[] params;
+        Class[] params = null;
 
         if (nativeCall.isStatic()) {
             if (hasContext) {
                 if (hasBlock) {
                     if (arity == -1) {
                         params = CodegenUtils.params(ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class);
-                    } else {
+                    } else if (arity <= 3) {
                         params = CodegenUtils.params(ThreadContext.class, IRubyObject.class, IRubyObject.class, arity, Block.class);
                     }
                 } else {
                     if (arity == -1) {
                         params = CodegenUtils.params(ThreadContext.class, IRubyObject.class, IRubyObject[].class);
-                    } else {
+                    } else if (arity <= 3) {
                         params = CodegenUtils.params(ThreadContext.class, IRubyObject.class, IRubyObject.class, arity);
                     }
                 }
@@ -591,13 +591,13 @@ public abstract class InvokeSite extends MutableCallSite {
                 if (hasBlock) {
                     if (arity == -1) {
                         params = CodegenUtils.params(IRubyObject.class, IRubyObject[].class, Block.class);
-                    } else {
+                    } else if (arity <= 3) {
                         params = CodegenUtils.params(IRubyObject.class, IRubyObject.class, arity, Block.class);
                     }
                 } else {
                     if (arity == -1) {
                         params = CodegenUtils.params(IRubyObject.class, IRubyObject[].class);
-                    } else {
+                    } else if (arity <= 3) {
                         params = CodegenUtils.params(IRubyObject.class, IRubyObject.class, arity);
                     }
                 }
@@ -607,13 +607,13 @@ public abstract class InvokeSite extends MutableCallSite {
                 if (hasBlock) {
                     if (arity == -1) {
                         params = CodegenUtils.params(ThreadContext.class, IRubyObject[].class, Block.class);
-                    } else {
+                    } else if (arity <= 3) {
                         params = CodegenUtils.params(ThreadContext.class, IRubyObject.class, arity, Block.class);
                     }
                 } else {
                     if (arity == -1) {
                         params = CodegenUtils.params(ThreadContext.class, IRubyObject[].class);
-                    } else {
+                    } else if (arity <= 3) {
                         params = CodegenUtils.params(ThreadContext.class, IRubyObject.class, arity);
                     }
                 }
@@ -621,29 +621,33 @@ public abstract class InvokeSite extends MutableCallSite {
                 if (hasBlock) {
                     if (arity == -1) {
                         params = CodegenUtils.params(IRubyObject[].class, Block.class);
-                    } else {
+                    } else if (arity <= 3) {
                         params = CodegenUtils.params(IRubyObject.class, arity, Block.class);
                     }
                 } else {
                     if (arity == -1) {
                         params = CodegenUtils.params(IRubyObject[].class);
-                    } else {
+                    } else if (arity <= 3) {
                         params = CodegenUtils.params(IRubyObject.class, arity);
                     }
                 }
             }
         }
-        try {
-            if (nativeCall.isStatic()) {
-                lookup().findStatic(nativeCall.getNativeTarget(), nativeCall.getNativeName(), methodType(nativeCall.getNativeReturn(), params));
-            } else {
-                lookup().findVirtual(nativeCall.getNativeTarget(), nativeCall.getNativeName(), methodType(nativeCall.getNativeReturn(), params));
+
+        if (params != null) {
+            try {
+                if (nativeCall.isStatic()) {
+                    lookup().findStatic(nativeCall.getNativeTarget(), nativeCall.getNativeName(), methodType(nativeCall.getNativeReturn(), params));
+                } else {
+                    lookup().findVirtual(nativeCall.getNativeTarget(), nativeCall.getNativeName(), methodType(nativeCall.getNativeReturn(), params));
+                }
+
+                return new DynamicMethod.NativeCall(nativeCall.getNativeTarget(), nativeCall.getNativeName(), nativeCall.getNativeReturn(), params, nativeCall.isStatic(), false);
+            } catch (NoSuchMethodException | IllegalAccessException e) {
             }
-        } catch (NoSuchMethodException | IllegalAccessException e) {
-            return null;
         }
 
-        return new DynamicMethod.NativeCall(nativeCall.getNativeTarget(), nativeCall.getNativeName(), nativeCall.getNativeReturn(), params, nativeCall.isStatic(), false);
+        return null;
     }
 
     private static int getArgCount(Class[] args, boolean isStatic) {
