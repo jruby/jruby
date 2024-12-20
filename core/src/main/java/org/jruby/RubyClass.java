@@ -1326,15 +1326,15 @@ public class RubyClass extends RubyModule {
      * global lock, which we would like to avoid.
      */
     @Override
-    public void invalidateCacheDescendants() {
-        super.invalidateCacheDescendants();
+    public void invalidateCacheDescendants(ThreadContext context) {
+        super.invalidateCacheDescendants(context);
 
         SubclassNode subclassNode = this.subclassNode;
         while (subclassNode != null) {
             WeakReference<RubyClass> ref = subclassNode.ref;
             RubyClass klass = ref.get();
             if (klass != null) {
-                klass.invalidateCacheDescendants();
+                klass.invalidateCacheDescendants(context);
             }
             subclassNode = subclassNode.next;
         }

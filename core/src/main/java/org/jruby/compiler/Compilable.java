@@ -11,10 +11,15 @@ import org.jruby.runtime.ThreadContext;
  * Blocks and methods both share same full build mechanism so they implement this to be buildable.
  */
 public interface Compilable<T> {
-    public void setCallCount(int count);
-    public void completeBuild(T buildResult);
-    public IRScope getIRScope();
-    public InterpreterContext ensureInstrsReady();
+    void setCallCount(int count);
+    default void completeBuild(T buildResult) {
+        completeBuild(getImplementationClass().getRuntime().getCurrentContext(), buildResult);
+    }
+    default void completeBuild(ThreadContext context, T buildResult) {
+        completeBuild(buildResult);
+    }
+    IRScope getIRScope();
+    InterpreterContext ensureInstrsReady();
 
     /**
      * Return the owning module/class name.

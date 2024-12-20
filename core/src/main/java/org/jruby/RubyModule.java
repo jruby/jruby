@@ -146,6 +146,8 @@ import static org.jruby.anno.FrameField.SCOPE;
 import static org.jruby.anno.FrameField.SELF;
 import static org.jruby.anno.FrameField.VISIBILITY;
 import static org.jruby.api.Access.basicObjectClass;
+import static org.jruby.api.Access.fixnumClass;
+import static org.jruby.api.Access.floatClass;
 import static org.jruby.api.Access.globalVariables;
 import static org.jruby.api.Access.instanceConfig;
 import static org.jruby.api.Access.loadService;
@@ -1261,7 +1263,7 @@ public class RubyModule extends RubyObject {
 
         synchronized (this) {
             if (hasModuleInPrepends(module)) {
-                invalidateCacheDescendants();
+                invalidateCacheDescendants(context);
                 return;
             }
 
@@ -1286,8 +1288,8 @@ public class RubyModule extends RubyObject {
                 }
             }
 
-            invalidateCoreClasses();
-            invalidateCacheDescendants();
+            invalidateCoreClasses(context);
+            invalidateCacheDescendants(context);
             invalidateConstantCacheForModuleInclusion(module);
         }
     }
@@ -1343,8 +1345,8 @@ public class RubyModule extends RubyObject {
             }
         }
 
-        invalidateCoreClasses();
-        invalidateCacheDescendants();
+        invalidateCoreClasses(context);
+        invalidateCacheDescendants(context);
         invalidateConstantCacheForModuleInclusion(module);
     }
 
@@ -1893,9 +1895,9 @@ public class RubyModule extends RubyObject {
 
     public final void addMethodInternal(ThreadContext context, String name, DynamicMethod method) {
         synchronized (methodLocation.getMethodsForWrite()) {
-            putMethod(context.runtime, name, method);
-            invalidateCoreClasses();
-            invalidateCacheDescendants();
+            putMethod(context, name, method);
+            invalidateCoreClasses(context);
+            invalidateCacheDescendants(context);
         }
     }
 
@@ -1926,8 +1928,8 @@ public class RubyModule extends RubyObject {
                 methodsForWrite.put(id, new RefinedMarker(method.getImplementationClass(), method.getVisibility(), id));
             }
 
-            invalidateCoreClasses();
-            invalidateCacheDescendants();
+            invalidateCoreClasses(context);
+            invalidateCacheDescendants(context);
         }
 
         methodRemoved(context, name);
@@ -2305,10 +2307,15 @@ public class RubyModule extends RubyObject {
         return getMethods().get(id);
     }
 
+    @Deprecated(since = "10.0")
     public void invalidateCacheDescendants() {
+        invalidateCacheDescendants(getCurrentContext());
+    }
+
+    public void invalidateCacheDescendants(ThreadContext context) {
         LOG.debug("{} invalidating descendants", baseName);
 
-        getRuntime().getCaches().incrementMethodInvalidations();
+       context.runtime.getCaches().incrementMethodInvalidations();
 
         if (includingHierarchies.isEmpty()) {
             // it's only us; just invalidate directly
@@ -2316,10 +2323,10 @@ public class RubyModule extends RubyObject {
             return;
         }
 
-        List<Invalidator> invalidators = new ArrayList<Invalidator>();
+        List<Invalidator> invalidators = new ArrayList<>();
         invalidators.add(methodInvalidator);
 
-        synchronized (getRuntime().getHierarchyLock()) {
+        synchronized (context.runtime.getHierarchyLock()) {
             for (RubyClass includingHierarchy : includingHierarchies) {
                 includingHierarchy.addInvalidatorsAndFlush(invalidators);
             }
@@ -2328,13 +2335,18 @@ public class RubyModule extends RubyObject {
         methodInvalidator.invalidateAll(invalidators);
     }
 
-    @SuppressWarnings("deprecation")
+    @Deprecated(since = "10.0")
     protected void invalidateCoreClasses() {
-        if (!getRuntime().isBootingCore()) {
-            if (this == getRuntime().getFixnum()) {
-                getRuntime().reopenFixnum();
-            } else if (this == getRuntime().getFloat()) {
-                getRuntime().reopenFloat();
+        invalidateCoreClasses(getCurrentContext());
+    }
+
+    @SuppressWarnings("deprecation")
+    protected void invalidateCoreClasses(ThreadContext context) {
+        if (!context.runtime.isBootingCore()) {
+            if (this == fixnumClass(context)) {
+                context.runtime.reopenFixnum();
+            } else if (this == floatClass(context)) {
+                context.runtime.reopenFloat();
             }
         }
     }
@@ -2724,8 +2736,8 @@ public class RubyModule extends RubyObject {
                 methodLocation.addMethod(context, name, newMethod);
             }
 
-            invalidateCoreClasses();
-            invalidateCacheDescendants();
+            invalidateCoreClasses(context);
+            invalidateCacheDescendants(context);
         }
     }
 
@@ -5539,8 +5551,8 @@ public class RubyModule extends RubyObject {
         checkAliasFrameAccesses(context, oldName, name, entry.method);
         putAlias(context, name, entry, oldName);
 
-        methodLocation.invalidateCoreClasses();
-        methodLocation.invalidateCacheDescendants();
+        methodLocation.invalidateCoreClasses(context);
+        methodLocation.invalidateCacheDescendants(context);
 
         return (T) this;
     }
@@ -6813,8 +6825,8 @@ public class RubyModule extends RubyObject {
             putAlias(context, name, entry, oldId);
         }
 
-        methodLocation.invalidateCoreClasses();
-        methodLocation.invalidateCacheDescendants();
+        methodLocation.invalidateCoreClasses(context);
+        methodLocation.invalidateCacheDescendants(context);
     }
 
     protected ClassIndex classIndex = ClassIndex.NO_INDEX;

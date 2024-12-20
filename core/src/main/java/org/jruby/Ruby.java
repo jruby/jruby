@@ -569,7 +569,7 @@ public final class Ruby implements Constantizable {
         loadService(context).require("jruby/profiler/shutdown_hook");
 
         // recache core methods, since they'll have profiling wrappers now
-        kernelModule.invalidateCacheDescendants(); // to avoid already-cached methods
+        kernelModule.invalidateCacheDescendants(context); // to avoid already-cached methods
         RubyKernel.recacheBuiltinMethods(this, kernelModule);
         RubyBasicObject.recacheBuiltinMethods(context, basicObjectClass);
     }

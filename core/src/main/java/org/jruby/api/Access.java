@@ -137,6 +137,15 @@ public class Access {
     }
 
     /**
+     * Retrieve the instance of the class Fixnum
+     * @param context the current thread context
+     * @return the Class
+     */
+    public static RubyClass fixnumClass(ThreadContext context) {
+        return context.runtime.getFixnum();
+    }
+
+    /**
      * Retrieve the instance of the class Float
      * @param context the current thread context
      * @return the Class

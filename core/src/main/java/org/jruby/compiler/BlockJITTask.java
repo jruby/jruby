@@ -75,17 +75,17 @@ class BlockJITTask extends JITCompiler.Task {
         JVMVisitor visitor = JVMVisitor.newForJIT(runtime);
         BlockJITClassGenerator generator = new BlockJITClassGenerator(className, blockId, key, runtime, body, visitor);
 
-        JVMVisitorMethodContext context = new JVMVisitorMethodContext();
-        generator.compile(context);
+        JVMVisitorMethodContext methodContext = new JVMVisitorMethodContext();
+        generator.compile(methodContext);
 
         Class<?> sourceClass = defineClass(generator, visitor, closure, body.ensureInstrsReady());
         if (sourceClass == null) return; // class could not be found nor generated; give up on JIT and bail out
 
         // successfully got back a jitted body
-        String jittedName = context.getVariableName();
+        String jittedName = methodContext.getVariableName();
 
         // blocks only have variable-arity
-        body.completeBuild(
+        body.completeBuild(runtime.getCurrentContext(),
                 new CompiledIRBlockBody(
                         JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, jittedName, JVMVisitor.CLOSURE_SIGNATURE.type()),
                         scope,
