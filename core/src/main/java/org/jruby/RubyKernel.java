@@ -173,7 +173,7 @@ public class RubyKernel {
 
         if (config.getKernelGsubDefined()) {
             MethodIndex.addMethodReadFields("gsub", FrameField.LASTLINE, FrameField.BACKREF);
-            Kernel.addMethod("gsub", new JavaMethod(Kernel, Visibility.PRIVATE, "gsub") {
+            Kernel.addMethod(context, "gsub", new JavaMethod(Kernel, Visibility.PRIVATE, "gsub") {
 
                 @Override
                 public IRubyObject call(ThreadContext context1, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {

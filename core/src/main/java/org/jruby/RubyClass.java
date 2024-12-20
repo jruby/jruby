@@ -1613,7 +1613,7 @@ public class RubyClass extends RubyModule {
             }
         }
 
-        String javaName = getReifiedJavaClassName();
+        String javaName = getReifiedJavaClassName(context);
         // *might* need to include a Class identifier in the Java class name, since a Ruby class might be dropped
         // (using remove_const) and re-created in which case using the same name would cause a conflict...
         if (classLoader.hasDefinedClass(javaName)) { // as Ruby class dropping is "unusual" - assume v0 to be the raw name
@@ -1692,10 +1692,10 @@ public class RubyClass extends RubyModule {
         }
     }
 
-    private String getReifiedJavaClassName() {
+    private String getReifiedJavaClassName(ThreadContext context) {
         final String basePackagePrefix = "rubyobj.";
         if (getBaseName() == null) { // anonymous Class instance: rubyobj.Class$0x1234abcd
-            return basePackagePrefix + anonymousMetaNameWithIdentifier().replace(':', '$');
+            return basePackagePrefix + anonymousMetaNameWithIdentifier(context).replace(':', '$');
         }
         final CharSequence name = StringSupport.replaceAll(getName(), "::", ".");
         return basePackagePrefix + name; // TheFoo::Bar -> rubyobj.TheFoo.Bar

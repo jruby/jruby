@@ -391,8 +391,7 @@ public final class Ruby implements Constantizable {
         RubyBasicObject.finishBasicObjectClass(context, basicObjectClass);
         TopSelfFactory.finishTopSelf(context, topSelf, objectClass, false);
 
-        // includeModule uses TC.
-        objectClass.includeModule(kernelModule);
+        objectClass.includeModule(context, kernelModule);
 
         // Construct the top-level execution frame and scope for the main thread
         context.prepareTopLevel(objectClass, topSelf);

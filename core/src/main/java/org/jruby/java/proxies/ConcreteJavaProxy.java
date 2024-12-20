@@ -240,9 +240,10 @@ public class ConcreteJavaProxy extends JavaProxy {
                         ConcreteJavaProxy.class, IRubyObject[].class, Block.class, Ruby.class, RubyClass.class });
                 // TODO: move initialize to real_initialize
                 // TODO: don't lock in this initialize method
-                if (overwriteInitialize) clazz.addMethod("initialize",
+                var context = runtime.getCurrentContext();
+                if (overwriteInitialize) clazz.addMethod(context,"initialize",
                         new StaticJCreateMethod(clazz, withBlock, clazz.searchMethod("initialize")));
-                clazz.addMethod("__jallocate!", new StaticJCreateMethod(clazz, withBlock, null));
+                clazz.addMethod(context, "__jallocate!", new StaticJCreateMethod(clazz, withBlock, null));
             } catch (SecurityException | NoSuchMethodException e) {
                 // TODO log?
                 // e.printStackTrace();
@@ -432,12 +433,12 @@ public class ConcreteJavaProxy extends JavaProxy {
     }
 
     protected static void initialize(ThreadContext context, final RubyClass concreteJavaProxy) {
-        concreteJavaProxy.addMethod("initialize", new InitializeMethod(concreteJavaProxy));
+        concreteJavaProxy.addMethod(context, "initialize", new InitializeMethod(concreteJavaProxy));
         // We define a custom "new" method to ensure that __jcreate! is getting called,
         // so that if the user doesn't call super in their subclasses, the object will
         // still get set up properly. See JRUBY-4704.
         RubyClass singleton = concreteJavaProxy.singletonClass(context);
-        singleton.addMethod("new", new NewMethod(singleton));
+        singleton.addMethod(context, "new", new NewMethod(singleton));
     }
 
     // This alternate ivar logic is disabled because it can cause self-referencing

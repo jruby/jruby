@@ -57,6 +57,7 @@ import static org.jruby.api.Access.hashClass;
 import static org.jruby.api.Access.stringClass;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -166,10 +167,11 @@ public class TypeConverter {
     }
 
     public static RubyString typeAsString(IRubyObject obj) {
-        if (obj.isNil()) return obj.getRuntime().newString("nil");
-        if (obj instanceof RubyBoolean) return obj.getRuntime().newString(obj.isTrue() ? "true" : "false");
+        var context = obj.getRuntime().getCurrentContext();
+        if (obj.isNil()) return newString(context, "nil");
+        if (obj instanceof RubyBoolean) return newString(context, obj.isTrue() ? "true" : "false");
 
-        return obj.getMetaClass().getRealClass().rubyName();
+        return obj.getMetaClass().getRealClass().rubyName(context);
     }
 
     @Deprecated(since = "10.0")

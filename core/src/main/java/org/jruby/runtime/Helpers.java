@@ -2072,7 +2072,7 @@ public class Helpers {
     }
 
     public static RubySymbol addInstanceMethod(RubyModule containingClass, RubySymbol symbol, DynamicMethod method, Visibility visibility, ThreadContext context) {
-        containingClass.addMethod(symbol.idString(), method);
+        containingClass.addMethod(context, symbol.idString(), method);
 
         if (!containingClass.isRefinement()) callNormalMethodHook(containingClass, context, symbol);
         if (visibility == Visibility.MODULE_FUNCTION) addModuleMethod(containingClass, method, context, symbol);
@@ -2085,7 +2085,7 @@ public class Helpers {
         var singletonClass = containingClass.singletonClass(context);
         singletonMethod.setImplementationClass(singletonClass);
         singletonMethod.setVisibility(Visibility.PUBLIC);
-        singletonClass.addMethod(sym.idString(), singletonMethod);
+        singletonClass.addMethod(context, sym.idString(), singletonMethod);
         containingClass.callMethod(context, "singleton_method_added", sym);
     }
 

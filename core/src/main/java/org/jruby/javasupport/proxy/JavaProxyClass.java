@@ -536,7 +536,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             DynamicMethod oldNewMethod = singleton.searchMethod("new");
             boolean defaultNew = !(oldNewMethod instanceof AbstractIRMethod); // TODO: is this the proper way to check if user-code has/not defined a method?
             if (defaultNew) {
-                singleton.addMethod("new", new NewMethodReified(clazz, reified));
+                singleton.addMethod(context, "new", new NewMethodReified(clazz, reified));
             }
             // Install initialize
             StaticJCreateMethod.tryInstall(context.runtime, clazz, proxyClass, reified, defaultNew);

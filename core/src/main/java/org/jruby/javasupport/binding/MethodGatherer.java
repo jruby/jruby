@@ -394,7 +394,7 @@ public class MethodGatherer {
                 if ( ! proxy.respondsTo(simpleName) ) {
                     var singleton = proxy.singletonClass(context);
                     // define a class method
-                    singleton.addMethod(simpleName, new JavaMethod.JavaMethodZero(singleton, PUBLIC, simpleName) {
+                    singleton.addMethod(context, simpleName, new JavaMethod.JavaMethodZero(singleton, PUBLIC, simpleName) {
                         @Override
                         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
                             return innerProxy;
@@ -490,13 +490,14 @@ public class MethodGatherer {
             localConstructor |= javaClass == constructor.getDeclaringClass();
         }
 
+        var context = proxy.getRuntime().getCurrentContext();
         if (localConstructor) {
             // we need to collect all methods, though we'll only
             // install the ones that are named in this class
-            proxy.addMethod(CONSTRUCTOR_NAME, new ConstructorInvoker(proxy, javaClass::getConstructors, CONSTRUCTOR_NAME));
+            proxy.addMethod(context, CONSTRUCTOR_NAME, new ConstructorInvoker(proxy, javaClass::getConstructors, CONSTRUCTOR_NAME));
         } else {
             // if there's no constructor, we must prevent construction
-            proxy.addMethod(CONSTRUCTOR_NAME, new NoConstructorMethod(proxy, CONSTRUCTOR_NAME));
+            proxy.addMethod(context, CONSTRUCTOR_NAME, new NoConstructorMethod(proxy, CONSTRUCTOR_NAME));
         }
     }
 

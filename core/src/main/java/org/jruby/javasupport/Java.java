@@ -129,9 +129,9 @@ public class Java implements Library {
         org.jruby.javasupport.ext.JavaLangReflect.define(context);
         org.jruby.javasupport.ext.JavaUtil.define(context, Enumerable);
         org.jruby.javasupport.ext.JavaUtilRegex.define(context);
-        org.jruby.javasupport.ext.JavaIo.define(runtime);
+        org.jruby.javasupport.ext.JavaIo.define(context);
         org.jruby.javasupport.ext.JavaNio.define(context);
-        org.jruby.javasupport.ext.JavaNet.define(runtime);
+        org.jruby.javasupport.ext.JavaNet.define(context);
         org.jruby.javasupport.ext.JavaMath.define(context);
         org.jruby.javasupport.ext.JavaTime.define(context);
 
@@ -550,7 +550,7 @@ public class Java implements Library {
         // solved here by adding an exception-throwing "inherited"
         if ( Modifier.isFinal(clazz.getModifiers()) ) {
             final String clazzName = clazz.getCanonicalName();
-            proxy.getMetaClass().addMethod("inherited", new org.jruby.internal.runtime.methods.JavaMethod(proxy, PUBLIC, "inherited") {
+            proxy.getMetaClass().addMethod(context, "inherited", new org.jruby.internal.runtime.methods.JavaMethod(proxy, PUBLIC, "inherited") {
                 @Override
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
                     throw typeError(context, "can not extend final Java class: " + clazzName);
@@ -619,7 +619,7 @@ public class Java implements Library {
 
         final RubyClass subclassSingleton = subclass.singletonClass(context);
         subclassSingleton.addReadAttribute(context, "java_proxy_class");
-        subclassSingleton.addMethod("java_interfaces", new JavaMethodZero(subclassSingleton, PUBLIC, "java_interfaces") {
+        subclassSingleton.addMethod(context, "java_interfaces", new JavaMethodZero(subclassSingleton, PUBLIC, "java_interfaces") {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
                 IRubyObject javaInterfaces = self.getInstanceVariables().getInstanceVariable("@java_interfaces");
@@ -629,7 +629,7 @@ public class Java implements Library {
         });
         ///TODO: investigate this, should jcreate! still exist?
 
-        subclass.addMethod("__jcreate!", new JCreateMethod(subclassSingleton));
+        subclass.addMethod(context, "__jcreate!", new JCreateMethod(subclassSingleton));
     }
 
     /**
@@ -1152,12 +1152,10 @@ public class Java implements Library {
     private static boolean bindJavaPackageOrClassMethod(ThreadContext context, final RubyModule parentPackage,
         final String name, final RubyModule packageOrClass) {
 
-        if ( parentPackage.getMetaClass().isMethodBound(name, false) ) {
-            return false;
-        }
+        if (parentPackage.getMetaClass().isMethodBound(name, false)) return false;
 
         final RubyClass singleton = parentPackage.singletonClass(context);
-        singleton.addMethod(name.intern(), new JavaAccessor(singleton, packageOrClass, parentPackage, name));
+        singleton.addMethod(context, name.intern(), new JavaAccessor(singleton, packageOrClass, parentPackage, name));
         return true;
     }
 
@@ -1578,6 +1576,7 @@ public class Java implements Library {
     @SuppressWarnings("unchecked")
     public static Class generateRealClass(final RubyClass clazz) {
         final Ruby runtime = clazz.getRuntime();
+        var context = runtime.getCurrentContext();
         final Class[] interfaces = getInterfacesFromRubyClass(clazz);
 
         // hashcode is a combination of the interfaces and the Ruby class we're using
@@ -1607,7 +1606,7 @@ public class Java implements Library {
             // add a default initialize if one does not already exist and this is a Java-hierarchy class
             if ( NEW_STYLE_EXTENSION &&
                 ! ( RubyBasicObject.class.isAssignableFrom(proxyImplClass) || clazz.getMethods().containsKey("initialize") ) ) {
-                clazz.addMethod("initialize", new DummyInitialize(clazz));
+                clazz.addMethod(context, "initialize", new DummyInitialize(clazz));
             }
         }
         clazz.reifiedClass(proxyImplClass).setRubyClassAllocator(proxyImplClass);

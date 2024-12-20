@@ -43,6 +43,8 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
             IRubyObject enums, boolean saveError) {
         super(runtime, klass, parameterTypes.length, address);
 
+        var context = runtime.getCurrentContext();
+
         this.functionInfo = new NativeFunctionInfo(runtime, returnType, parameterTypes, convention);
 
         function = new com.kenai.jffi.Function(address.address(),
@@ -50,14 +52,16 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
         
         this.enums = enums;
         this.saveError = saveError;
-        var singleton = singletonClass(getRuntime().getCurrentContext());
+        var singleton = singletonClass(context);
         // Wire up Function#call(*args) to use the super-fast native invokers
-        singleton.addMethod("call", createDynamicMethod(singleton));
+        singleton.addMethod(context, "call", createDynamicMethod(singleton));
     }
 
     Function(Ruby runtime, RubyClass klass, MemoryIO address,
             NativeFunctionInfo functionInfo, IRubyObject enums) {
         super(runtime, klass, functionInfo.parameterTypes.length, address);
+
+        var context = runtime.getCurrentContext();
 
         this.functionInfo = functionInfo;
 
@@ -65,9 +69,9 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
                 functionInfo.jffiReturnType, functionInfo.jffiParameterTypes, functionInfo.convention);
         this.enums = enums;
         this.saveError = true;
-        var singleton = singletonClass(getRuntime().getCurrentContext());
+        var singleton = singletonClass(context);
         // Wire up Function#call(*args) to use the super-fast native invokers
-        singleton.addMethod("call", createDynamicMethod(singleton));
+        singleton.addMethod(context, "call", createDynamicMethod(singleton));
     }
     
     @JRubyMethod(name = { "new" }, meta = true, required = 2, optional = 2, checkArity = false)

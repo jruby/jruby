@@ -149,9 +149,10 @@ public class PrependedModule extends RubyClass implements DelegatedModule {
     public IRubyObject id() {
         return origin.id();
     }
+
     @Override
-    public void addMethod(String id, DynamicMethod method) {
-        super.addMethod(id, method);
+    public void addMethod(ThreadContext context, String id, DynamicMethod method) {
+        super.addMethod(context, id, method);
         method.setDefinedClass(origin);
     }
 

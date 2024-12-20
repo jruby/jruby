@@ -215,16 +215,16 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
         } else {
             if (receiver instanceof RubyClass) {
                 str.catString("#<");
-                str.cat(mklass.rubyName());
+                str.cat(mklass.rubyName(context));
                 str.catString(":");
-                str.cat(((RubyClass) receiver).rubyName());
+                str.cat(((RubyClass) receiver).rubyName(context));
                 str.catString(">");
             } else {
-                str.cat(mklass.rubyName());
+                str.cat(mklass.rubyName(context));
             }
             if (definedClass != mklass) {
                 str.catString("(");
-                str.cat(definedClass.rubyName());
+                str.cat(definedClass.rubyName(context));
                 str.catString(")");
             }
         }

@@ -44,13 +44,15 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
             Type returnType, Type[] parameterTypes, CallingConvention convention, IRubyObject enums) {
         super(runtime, klass, parameterTypes.length, fptr);
 
+        var context = runtime.getCurrentContext();
+
         final com.kenai.jffi.Type jffiReturnType = FFIUtil.getFFIType(returnType);
-        if (jffiReturnType == null) throw argumentError(runtime.getCurrentContext(), "Invalid return type " + returnType);
+        if (jffiReturnType == null) throw argumentError(context, "Invalid return type " + returnType);
         
         com.kenai.jffi.Type[] jffiParamTypes = new com.kenai.jffi.Type[parameterTypes.length];
         for (int i = 0; i < jffiParamTypes.length; ++i) {
             if ((jffiParamTypes[i] = FFIUtil.getFFIType(parameterTypes[i])) == null) {
-                throw argumentError(runtime.getCurrentContext(), "Invalid parameter type " + parameterTypes[i]);
+                throw argumentError(context, "Invalid parameter type " + parameterTypes[i]);
             }
         }
         
@@ -59,9 +61,9 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
         this.returnType = returnType;
         this.convention = convention;
         this.enums = enums;
-        var singleton = singletonClass(getRuntime().getCurrentContext());
+        var singleton = singletonClass(context);
         // Wire up Function#call(*args) to use the super-fast native invokers
-        singleton.addMethod("call", createDynamicMethod(singleton));
+        singleton.addMethod(context, "call", createDynamicMethod(singleton));
     }
     
     @JRubyMethod(name = { "new" }, meta = true, required = 4)

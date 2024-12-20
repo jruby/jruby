@@ -308,9 +308,9 @@ public class RubyStruct extends RubyObject {
             final String memberName = args[i].asJavaString();
             // if we are storing a name as well, index is one too high for values
             final int index = (name == null && !nilName) ? i : i - 1;
-            newStruct.addMethod(memberName, new Accessor(newStruct, memberName, index));
+            newStruct.addMethod(context, memberName, new Accessor(newStruct, memberName, index));
             String nameAsgn = memberName + '=';
-            newStruct.addMethod(nameAsgn, new Mutator(newStruct, nameAsgn, index));
+            newStruct.addMethod(context, nameAsgn, new Mutator(newStruct, nameAsgn, index));
         }
 
         if (block.isGiven()) {

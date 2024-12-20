@@ -252,14 +252,14 @@ public class JavaUtil {
             }
 
             final Java.ProcToInterface procToIface = new Java.ProcToInterface(singletonClass);
-            singletonClass.addMethod("method_missing", procToIface);
+            singletonClass.addMethod(context, "method_missing", procToIface);
             // similar to Iface.impl { ... } - bind interface method(s) to avoid Java-Ruby conflicts
             // ... e.g. calling a Ruby implemented Predicate#test should not dispatch to Kernel#test
             // getMethods for interface returns all methods (including ones from super-interfaces)
             for ( Method method : targetType.getMethods() ) {
                 Java.ProcToInterface.ConcreteMethod implMethod = procToIface.getConcreteMethod(method.getName());
                 if ( Modifier.isAbstract(method.getModifiers()) ) {
-                    singletonClass.addMethodInternal(method.getName(), implMethod);
+                    singletonClass.addMethodInternal(context, method.getName(), implMethod);
                 }
             }
 

@@ -96,7 +96,7 @@ public class JavaInterfaceTemplate {
             final Method javaMethod = javaInstanceMethods[i];
             final String name = javaMethod.getName();
             if ( targetModule.searchMethod(name).isUndefined() ) {
-                targetModule.addMethod(name, dummyMethodImpl); // only those not-defined
+                targetModule.addMethod(context, name, dummyMethodImpl); // only those not-defined
             }
         }
 
@@ -194,7 +194,7 @@ public class JavaInterfaceTemplate {
 
                 // jcreate instantiates the proxy object which implements all interfaces
                 // and which is wrapped and implemented by this object
-                clazz.addMethod("__jcreate!", new InterfaceProxyFactory(clazz, "__jcreate!"));
+                clazz.addMethod(context, "__jcreate!", new InterfaceProxyFactory(clazz, "__jcreate!"));
             } else {
                 // The new "new" actually generates a real Java class to use for the Ruby class's
                 // backing store, instantiates that, and then calls initialize on it.
@@ -206,10 +206,10 @@ public class JavaInterfaceTemplate {
 
             // Used by our duck-typification of Proc into interface types, to allow
             // coercing a simple proc into an interface parameter.
-            clazz.addMethod("__jcreate_meta!", new InterfaceProxyFactory(clazz, "__jcreate_meta!"));
+            clazz.addMethod(context, "__jcreate_meta!", new InterfaceProxyFactory(clazz, "__jcreate_meta!"));
 
             // If we hold a Java object, we need a java_class accessor
-            clazz.addMethod("java_class", new JavaClassAccessor(clazz));
+            clazz.addMethod(context, "java_class", new JavaClassAccessor(clazz));
         }
 
         // Now we add an "implement" and "implement_all" methods to the class
@@ -218,7 +218,7 @@ public class JavaInterfaceTemplate {
 
             // implement is called to force this class to create stubs for all methods in the given interface,
             // so they'll show up in the list of methods and be invocable without passing through method_missing
-            singleton.addMethod("implement", new JavaMethodOne(clazz, Visibility.PRIVATE, "implement") {
+            singleton.addMethod(context, "implement", new JavaMethodOne(clazz, Visibility.PRIVATE, "implement") {
 
                 @Override
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject iface) {
@@ -231,7 +231,7 @@ public class JavaInterfaceTemplate {
             });
 
             // implement all forces implementation of all interfaces we intend for this class to implement
-            singleton.addMethod("implement_all", new JavaMethodOne(clazz, Visibility.PRIVATE, "implement_all") {
+            singleton.addMethod(context, "implement_all", new JavaMethodOne(clazz, Visibility.PRIVATE, "implement_all") {
 
                 @Override
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg) {
@@ -326,7 +326,7 @@ public class JavaInterfaceTemplate {
         synchronized (module) {
             if ( initInterfaceModules(self, module) ) { // true - initialized
                 final RubyClass singleton = module.singletonClass(context);
-                singleton.addMethod("append_features", new AppendFeatures(singleton));
+                singleton.addMethod(context, "append_features", new AppendFeatures(singleton));
             }
             else {
                 // already set up append_features, just add the interface if we haven't already
@@ -385,7 +385,7 @@ public class JavaInterfaceTemplate {
         implClass.include(context, self); // ImplClass.include Interface
 
         final BlockInterfaceImpl ifaceImpl = new BlockInterfaceImpl(implClass, implBlock, methodNames);
-        implClass.addMethod("method_missing", ifaceImpl); // def ImplClass.method_missing ...
+        implClass.addMethod(context, "method_missing", ifaceImpl); // def ImplClass.method_missing ...
 
         final Class<?> ifaceClass = JavaUtil.getJavaClass(((RubyModule) self));
         if ( methodNames == null ) {
@@ -395,7 +395,7 @@ public class JavaInterfaceTemplate {
                 if ( Modifier.isStatic( method.getModifiers() ) ) continue;
                 // override default methods (by default) - users should pass down method names or impl(false) { ... }
                 if ( ! allMethods && ! Modifier.isAbstract( method.getModifiers() ) ) continue;
-                implClass.addMethodInternal(method.getName(), implMethod); // might add twice - its fine
+                implClass.addMethodInternal(context, method.getName(), implMethod); // might add twice - its fine
             }
         }
         else {
@@ -409,7 +409,7 @@ public class JavaInterfaceTemplate {
                     if ( Modifier.isStatic( method.getModifiers() ) ) continue;
                     // add if its a declared method of the interface or its super-interfaces
                     if ( name.equals(decMethods[i].getName()) ) {
-                        implClass.addMethodInternal(name, implMethod);
+                        implClass.addMethodInternal(context, name, implMethod);
                         continue loop;
                     }
                 }

@@ -517,7 +517,7 @@ public class TraceType {
             errorStream.append(str);
         } else if (message.isNil()) {
             if (highlight) errorStream.catString(UNDERLINE);
-            errorStream.append(type.getRealClass().rubyName());
+            errorStream.append(type.getRealClass().rubyName(context));
             if (highlight) errorStream.catString(RESET);
 
         } else {

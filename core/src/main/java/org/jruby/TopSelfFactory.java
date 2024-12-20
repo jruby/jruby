@@ -64,7 +64,7 @@ public final class TopSelfFactory {
     public static IRubyObject finishTopSelf(ThreadContext context, IRubyObject topSelf, RubyClass Object, final boolean wrapper) {
         final RubyClass singletonClass = topSelf.singletonClass(context);
 
-        singletonClass.addMethod("to_s", new JavaMethod.JavaMethodZero(singletonClass, Visibility.PUBLIC, "to_s") {
+        singletonClass.addMethod(context, "to_s", new JavaMethod.JavaMethodZero(singletonClass, Visibility.PUBLIC, "to_s") {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
                 return newString(context, "main");
@@ -74,28 +74,28 @@ public final class TopSelfFactory {
         
         // The following three methods must be defined fast, since they expect to modify the current frame
         // (i.e. they expect no frame will be allocated for them). JRUBY-1185.
-        singletonClass.addMethod("include", new JavaMethod.JavaMethodN(singletonClass, Visibility.PRIVATE, "include") {
+        singletonClass.addMethod(context, "include", new JavaMethod.JavaMethodN(singletonClass, Visibility.PRIVATE, "include") {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
                 return Object.include(context, args);
             }
         });
         
-        singletonClass.addMethod("public", new JavaMethod.JavaMethodN(singletonClass, Visibility.PRIVATE, "public") {
+        singletonClass.addMethod(context, "public", new JavaMethod.JavaMethodN(singletonClass, Visibility.PRIVATE, "public") {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
                 return Object._public(context, args);
             }
         });
         
-        singletonClass.addMethod("private", new JavaMethod.JavaMethodN(singletonClass, Visibility.PRIVATE, "private") {
+        singletonClass.addMethod(context, "private", new JavaMethod.JavaMethodN(singletonClass, Visibility.PRIVATE, "private") {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
                 return Object._private(context, args);
             }
         });
 
-        singletonClass.addMethod("ruby2_keywords", new JavaMethod.JavaMethodN(singletonClass, Visibility.PRIVATE, "private") {
+        singletonClass.addMethod(context, "ruby2_keywords", new JavaMethod.JavaMethodN(singletonClass, Visibility.PRIVATE, "private") {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
                 return Object.ruby2_keywords(context, args);
@@ -103,7 +103,7 @@ public final class TopSelfFactory {
         });
 
         final RubyClass klass = wrapper ? singletonClass : Object;
-        singletonClass.addMethod("define_method", new JavaMethod.JavaMethodOneOrTwoBlock(singletonClass, Visibility.PRIVATE, "define_method") {
+        singletonClass.addMethod(context, "define_method", new JavaMethod.JavaMethodOneOrTwoBlock(singletonClass, Visibility.PRIVATE, "define_method") {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
                 if (klass == singletonClass) warnWrapper(context);
@@ -117,7 +117,7 @@ public final class TopSelfFactory {
             }
         });
 
-        singletonClass.addMethod("using", new JavaMethod.JavaMethodN(singletonClass, Visibility.PRIVATE, "using") {
+        singletonClass.addMethod(context, "using", new JavaMethod.JavaMethodN(singletonClass, Visibility.PRIVATE, "using") {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
                 Arity.checkArgumentCount(context, args, 1, 1);

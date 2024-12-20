@@ -206,12 +206,12 @@ public class MarshalStream extends FilterOutputStream {
     }
 
     public static String getPathFromClass(RubyModule clazz) {
-        RubyString path = clazz.rubyName();
+        var context = clazz.getRuntime().getCurrentContext();
+        RubyString path = clazz.rubyName(context);
         
         if (path.charAt(0) == '#') {
-            Ruby runtime = clazz.getRuntime();
             String type = clazz.isClass() ? "class" : "module";
-            throw typeError(runtime.getCurrentContext(), str(runtime, "can't dump anonymous " + type + " ", types(runtime, clazz)));
+            throw typeError(context, str(context.runtime, "can't dump anonymous " + type + " ", types(context.runtime, clazz)));
         }
         
         RubyModule real = clazz.isModule() ? clazz : ((RubyClass)clazz).getRealClass();
@@ -222,7 +222,7 @@ public class MarshalStream extends FilterOutputStream {
         // a properly encoded string.  If this is an issue we should make a clazz.IdPath where all segments are returned
         // by their id names.
         if (runtime.getClassFromPath(path.asJavaString()) != real) {
-            throw typeError(runtime.getCurrentContext(), str(runtime, types(runtime, clazz), " can't be referred"));
+            throw typeError(context, str(context.runtime, types(context.runtime, clazz), " can't be referred"));
         }
         return path.asJavaString();
     }

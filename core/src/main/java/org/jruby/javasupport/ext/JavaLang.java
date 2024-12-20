@@ -89,14 +89,14 @@ public abstract class JavaLang {
         JavaExtensions.put(runtime, java.lang.ClassLoader.class, proxy -> proxy.defineMethods(context, ClassLoader.class));
         // Java::byte[].class_eval ...
         JavaExtensions.put(runtime, new byte[0].getClass(), (byteArray) -> {
-            byteArray.addMethod("ubyte_get", new UByteGet(byteArray));
-            byteArray.addMethod("ubyte_set", new UByteSet(byteArray));
+            byteArray.addMethod(context, "ubyte_get", new UByteGet(byteArray));
+            byteArray.addMethod(context, "ubyte_set", new UByteSet(byteArray));
         });
         JavaExtensions.put(runtime, java.lang.CharSequence.class, proxy -> proxy.defineMethods(context, CharSequence.class));
         JavaExtensions.put(runtime, java.lang.String.class, proxy -> proxy.defineMethods(context, String.class));
         JavaExtensions.put(runtime, java.lang.Enum.class, proxy -> proxy.defineAlias(context, "inspect", "to_s"));
         JavaExtensions.put(runtime, java.lang.Boolean.class, proxy -> proxy.defineAlias(context, "inspect", "to_s"));
-        JavaExtensions.put(runtime, java.lang.Thread.class, proxy -> proxy.addMethod("inspect", new InspectThread(proxy)));
+        JavaExtensions.put(runtime, java.lang.Thread.class, proxy -> proxy.addMethod(context, "inspect", new InspectThread(proxy)));
     }
 
     @JRubyModule(name = "Java::JavaLang::Iterable", include = "Enumerable")

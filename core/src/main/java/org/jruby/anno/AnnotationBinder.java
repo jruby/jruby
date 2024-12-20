@@ -515,11 +515,11 @@ public class AnnotationBinder extends AbstractProcessor {
         ExecutableElement md) {
         CharSequence baseName = getBaseName(names, md);
         // aliasedMethod = type.putMethod(runtime, baseName, method);
-        out.println("        aliasedMethod = " + classVar + ".putMethod(runtime, \"" + baseName + "\", " + methodVar + ");");
+        out.println("        aliasedMethod = " + classVar + ".putMethod(context, \"" + baseName + "\", " + methodVar + ");");
         if (names.length > 0) {
             for (String name : names) {
                 if (!name.contentEquals(baseName)) {
-                    out.println("        " + classVar + ".putMethod(runtime, \"" + name + "\", " + methodVar + ");");
+                    out.println("        " + classVar + ".putMethod(context, \"" + name + "\", " + methodVar + ");");
                 }
             }
         }
@@ -527,7 +527,7 @@ public class AnnotationBinder extends AbstractProcessor {
         if (aliases.length > 0) {
             for (String alias : aliases) {
                 // type.putAlias(alias, aliasedMethod, baseName); /* baseName == method.getId() */
-                out.println("        " + classVar + ".putAlias(\"" + alias + "\", aliasedMethod, \"" + baseName + "\");");
+                out.println("        " + classVar + ".putAlias(context, \"" + alias + "\", aliasedMethod, \"" + baseName + "\");");
             }
         }
     }

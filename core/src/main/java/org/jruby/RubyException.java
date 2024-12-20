@@ -356,7 +356,7 @@ public class RubyException extends RubyObject {
     @JRubyMethod(name = "inspect")
     public RubyString inspect(ThreadContext context) {
         // rb_class_name skips intermediate classes (JRUBY-6786)
-        RubyString rubyClass = getMetaClass().getRealClass().rubyName();
+        RubyString rubyClass = getMetaClass().getRealClass().rubyName(context);
         RubyString exception = RubyString.objAsString(context, this);
 
         if (exception.isEmpty()) return rubyClass;

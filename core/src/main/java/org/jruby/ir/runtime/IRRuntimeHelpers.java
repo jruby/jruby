@@ -1805,7 +1805,7 @@ public class IRRuntimeHelpers {
             newMethod = new MixedModeIRMethod(method, Visibility.PUBLIC, rubyClass);
         }
 
-        rubyClass.addMethod(id, newMethod);
+        rubyClass.addMethod(context, id, newMethod);
         if (!rubyClass.isRefinement()) obj.callMethod(context, "singleton_method_added", method.getName());
     }
 
@@ -1820,7 +1820,7 @@ public class IRRuntimeHelpers {
         if (maybeRefined) scope.captureParentRefinements(context);
 
         // FIXME: needs checkID and proper encoding to force hard symbol
-        rubyClass.addMethod(id,
+        rubyClass.addMethod(context, id,
                 new CompiledIRMethod(handle, null, -1, id, line, scope, Visibility.PUBLIC, rubyClass,
                         encodedArgumentDescriptors, receivesKeywordArgs, needsToFindImplementer));
 
@@ -1841,7 +1841,7 @@ public class IRRuntimeHelpers {
 
         if (maybeRefined) scope.captureParentRefinements(context);
 
-        rubyClass.addMethod(id, new CompiledIRMethod(variable, specific, specificArity, id, line, scope,
+        rubyClass.addMethod(context, id, new CompiledIRMethod(variable, specific, specificArity, id, line, scope,
                 Visibility.PUBLIC, rubyClass, encodedArgumentDescriptors, receivesKeywordArgs, needsToFindImplementer));
 
         if (!rubyClass.isRefinement()) obj.callMethod(context, "singleton_method_added", asSymbol(context, id));
