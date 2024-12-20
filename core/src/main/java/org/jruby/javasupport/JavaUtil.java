@@ -1123,12 +1123,12 @@ public class JavaUtil {
         if (rubyObject.dataGetStruct() instanceof JavaObject) {
             rubyObject = (IRubyObject) rubyObject.dataGetStruct();
             if ( rubyObject == null ) {
-                throw new RuntimeException("dataGetStruct returned null for " + origObject.getType().getName());
+                throw new RuntimeException("dataGetStruct returned null for " + origObject.getType().getName(context));
             }
         } else if (rubyObject.respondsTo("java_object")) {
             rubyObject = rubyObject.callMethod(context, "java_object");
             if( rubyObject == null ) {
-                throw new RuntimeException("java_object returned null for " + origObject.getType().getName());
+                throw new RuntimeException("java_object returned null for " + origObject.getType().getName(context));
             }
         }
 

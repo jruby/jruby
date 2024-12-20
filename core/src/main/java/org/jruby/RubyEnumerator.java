@@ -363,11 +363,10 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
     }
 
     private IRubyObject inspect(ThreadContext context, boolean recurse) {
-        Ruby runtime = context.runtime;
         ByteList bytes = new ByteList(new byte[] {'#', '<'});
-        bytes.append(getMetaClass().getName().getBytes());
+        bytes.append(getMetaClass().getName(context).getBytes());
         bytes.append((byte)':').append((byte)' ');
-        RubyString result = RubyString.newStringNoCopy(runtime, bytes);
+        RubyString result = RubyString.newStringNoCopy(context.runtime, bytes);
 
         if (recurse) {
             return result.catString("...>");

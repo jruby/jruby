@@ -170,7 +170,7 @@ public class DynamicLibrary extends RubyObject {
         @JRubyMethod(name = "inspect")
         public IRubyObject inspect(ThreadContext context) {
             return newString(context, String.format("#<%s library=%s symbol=%s address=%#x>",
-                    getMetaClass().getName(), library.name, name, getAddress()));
+                    getMetaClass().getName(context), library.name, name, getAddress()));
         }
 
         @JRubyMethod(name = "to_s")

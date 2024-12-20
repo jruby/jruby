@@ -145,8 +145,8 @@ public class Pointer extends AbstractMemory {
     @JRubyMethod(name = { "to_s", "inspect" })
     public IRubyObject to_s(ThreadContext context) {
         String s = size != Long.MAX_VALUE
-                ? String.format("#<%s address=0x%x size=%s>", getMetaClass().getName(), getAddress(), size)
-                : String.format("#<%s address=0x%x>", getMetaClass().getName(), getAddress());
+                ? String.format("#<%s address=0x%x size=%s>", getMetaClass().getName(context), getAddress(), size)
+                : String.format("#<%s address=0x%x>", getMetaClass().getName(context), getAddress());
 
         return newString(context, s);
     }

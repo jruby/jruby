@@ -861,7 +861,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * information, and then call the initialize_copy Ruby method.
      */
     private static void initCopy(ThreadContext context, IRubyObject clone, IRubyObject original) {
-        assert !clone.isFrozen() : "frozen object (" + clone.getMetaClass().getName() + ") allocated";
+        assert !clone.isFrozen() : "frozen object (" + clone.getMetaClass().getName(context) + ") allocated";
 
         original.copySpecialInstanceVariables(clone);
 

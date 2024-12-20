@@ -5023,7 +5023,8 @@ public final class Ruby implements Constantizable {
      * @return the freeze-duped version of the string
      */
     public RubyString freezeAndDedupString(RubyString string) {
-        if (!string.isBare(this)) {
+        var context = getCurrentContext();
+        if (!string.isBare(context)) {
             // never cache a non-natural String
             string.setFrozen(true);
             return string;

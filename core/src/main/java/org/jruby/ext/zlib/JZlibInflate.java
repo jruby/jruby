@@ -325,7 +325,7 @@ public class JZlibInflate extends ZStream {
     }
 
     @Override
-    public IRubyObject avail_in() {
+    public IRubyObject avail_in(ThreadContext context) {
         return RubyFixnum.newFixnum(getRuntime(), flater.avail_in);
     }
 

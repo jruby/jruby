@@ -181,7 +181,7 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
         RubyString str = newString(context, "#<");
         String sharp = "#";
 
-        str.catString(getType().getName()).catString(": ");
+        str.catString(getType().getName(context)).catString(": ");
 
         RubyModule definedClass;
         RubyModule mklass = originModule;

@@ -104,11 +104,11 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
                 klass.setFFIHandle(layout); // Cache the layout for faster retrieval next time
                 return sl;
             }
-            throw runtimeError(context, "no valid struct layout for " + klass.getName());
+            throw runtimeError(context, "no valid struct layout for " + klass.getName(context));
         } catch (ClassCastException ex) {
             if (!(structClass instanceof RubyClass sc)) throw typeError(context, structClass, "subclass of Struct");
 
-            throw runtimeError(context, "invalid layout set for struct " + sc.getName());
+            throw runtimeError(context, "invalid layout set for struct " + sc.getName(context));
         }
     }
 
@@ -129,7 +129,7 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
         }
 
         if (((AbstractMemory) ptr).getSize() < layout.getSize()) {
-            throw argumentError(context, "memory object has insufficient space for " + getMetaClass().getName());
+            throw argumentError(context, "memory object has insufficient space for " + getMetaClass().getName(context));
         }
 
         memory = (AbstractMemory) ptr;

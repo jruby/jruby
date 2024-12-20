@@ -335,7 +335,7 @@ public class JavaProxy extends RubyObject {
 
         // We could not find all of them print out first one (we could print them all?)
         if (!fieldMap.isEmpty()) {
-            throw undefinedFieldError(context, topModule.getName(), fieldMap.keySet().iterator().next());
+            throw undefinedFieldError(context, topModule.getName(context), fieldMap.keySet().iterator().next());
         }
 
     }

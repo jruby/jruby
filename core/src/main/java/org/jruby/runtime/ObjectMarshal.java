@@ -48,7 +48,7 @@ public interface ObjectMarshal<T> {
         }
 
         public void marshalTo(Object obj, RubyClass type, NewMarshal marshalStream, ThreadContext context, NewMarshal.RubyOutputStream out) {
-            throw typeError(context, "no marshal_dump is defined for class " + type.getName());
+            throw typeError(context, "no marshal_dump is defined for class " + type.getName(context));
         }
 
         public Object unmarshalFrom(Ruby runtime, RubyClass type, UnmarshalStream unmarshalStream) {

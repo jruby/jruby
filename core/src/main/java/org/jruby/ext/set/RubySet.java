@@ -1116,47 +1116,39 @@ public class RubySet extends RubyObject implements Set {
     // e.g. "#<Set: {element1, element2, ...}>"
     @JRubyMethod(name = "inspect", alias = "to_s")
     public RubyString inspect(ThreadContext context) {
-        final Ruby runtime = context.runtime;
+        if (size() == 0) return inspectEmpty(context);
+        if (context.runtime.isInspecting(this)) return inspectRecurse(context);
 
-        final RubyString str;
-
-        if (size() == 0) {
-            return inspectEmpty(runtime);
-        }
-
-        if (runtime.isInspecting(this)) {
-            return inspectRecurse(runtime);
-        }
-
-        str = RubyString.newStringLight(runtime, 32, USASCIIEncoding.INSTANCE);
-        inspectPrefix(str, getMetaClass());
+        RubyString str = RubyString.newStringLight(context.runtime, 32, USASCIIEncoding.INSTANCE);
+        inspectPrefix(context, str, getMetaClass());
 
         try {
-            runtime.registerInspecting(this);
+            context.runtime.registerInspecting(this);
             inspectSet(context, str);
             return str.cat('>');
-        }
-        finally {
-            runtime.unregisterInspecting(this);
+        } finally {
+            context.runtime.unregisterInspecting(this);
         }
     }
 
-    private RubyString inspectEmpty(final Ruby runtime) {
-        RubyString str = RubyString.newStringLight(runtime, 16, USASCIIEncoding.INSTANCE);
-        inspectPrefix(str, getMetaClass()); str.cat('{').cat('}').cat('>'); // "#<Set: {}>"
+    private RubyString inspectEmpty(ThreadContext context) {
+        RubyString str = RubyString.newStringLight(context.runtime, 16, USASCIIEncoding.INSTANCE);
+        inspectPrefix(context, str, getMetaClass());
+        str.cat('{').cat('}').cat('>'); // "#<Set: {}>"
         return str;
     }
 
-    private RubyString inspectRecurse(final Ruby runtime) {
-        RubyString str = RubyString.newStringLight(runtime, 20, USASCIIEncoding.INSTANCE);
-        inspectPrefix(str, getMetaClass());
+    private RubyString inspectRecurse(ThreadContext context) {
+        RubyString str = RubyString.newStringLight(context.runtime, 20, USASCIIEncoding.INSTANCE);
+        inspectPrefix(context, str, getMetaClass());
         str.cat('{').cat(RECURSIVE_BYTES).cat('}').cat('>'); // "#<Set: {...}>"
         return str;
     }
 
-    private static RubyString inspectPrefix(final RubyString str, final RubyClass metaClass) {
-        str.cat('#').cat('<').cat(metaClass.getRealClass().getName().getBytes(RubyEncoding.UTF8));
-        str.cat(':').cat(' '); return str;
+    private static RubyString inspectPrefix(ThreadContext context, final RubyString str, final RubyClass metaClass) {
+        str.cat('#').cat('<').cat(metaClass.getRealClass().getName(context).getBytes(RubyEncoding.UTF8));
+        str.cat(':').cat(' ');
+        return str;
     }
 
     private void inspectSet(final ThreadContext context, final RubyString str) {

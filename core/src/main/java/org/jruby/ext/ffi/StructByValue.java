@@ -54,7 +54,7 @@ public final class StructByValue extends Type {
 
     @JRubyMethod(name = "to_s")
     public final IRubyObject to_s(ThreadContext context) {
-        return newString(context, String.format("#<FFI::StructByValue:%s>", structClass.getName()));
+        return newString(context, String.format("#<FFI::StructByValue:%s>", structClass.getName(context)));
     }
 
     @JRubyMethod(name = "layout")

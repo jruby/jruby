@@ -121,8 +121,8 @@ public class PrependedModule extends RubyClass implements DelegatedModule {
     }
 
     @Override
-    public String getName() {
-        return origin.getName();
+    public String getName(ThreadContext context) {
+        return origin.getName(context);
     }
 
     @Override

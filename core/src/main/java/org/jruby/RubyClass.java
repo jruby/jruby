@@ -1596,7 +1596,7 @@ public class RubyClass extends RubyModule {
         final boolean concreteExt = java_box[0];
 
         final Class<?> parentReified = superClass.getRealClass().reifiedClass();
-        if (parentReified == null) throw typeError(context, getName() + "'s parent class is not yet reified");
+        if (parentReified == null) throw typeError(context, getName(context) + "'s parent class is not yet reified");
 
 
         ClassDefiningClassLoader classLoader; // usually parent's class-loader
@@ -1672,16 +1672,16 @@ public class RubyClass extends RubyModule {
             JavaProxyClass.addStaticInitLookup((Object[]) null); // wipe any local values not retrieved
             final String msg = error.getMessage();
             if ( msg != null && msg.contains("duplicate class definition for name") ) {
-                logReifyException(error, false);
+                logReifyException(context, error, false);
             }
             else {
-                logReifyException(error, true);
+                logReifyException(context, error, true);
             }
         }
         catch (Exception ex) {
             if (nearEnd) Helpers.throwException(ex);
             JavaProxyClass.addStaticInitLookup((Object[]) null); // wipe any local values not retrieved
-            logReifyException(ex, true);
+            logReifyException(context, ex, true);
         }
 
         // If we get here, there's some other class in this classloader hierarchy with the same name. In order to
@@ -1698,7 +1698,7 @@ public class RubyClass extends RubyModule {
         if (getBaseName() == null) { // anonymous Class instance: rubyobj.Class$0x1234abcd
             return basePackagePrefix + anonymousMetaNameWithIdentifier(context).replace(':', '$');
         }
-        final CharSequence name = StringSupport.replaceAll(getName(), "::", ".");
+        final CharSequence name = StringSupport.replaceAll(getName(context), "::", ".");
         return basePackagePrefix + name; // TheFoo::Bar -> rubyobj.TheFoo.Bar
     }
 
@@ -2366,6 +2366,7 @@ public class RubyClass extends RubyModule {
 
         @Override
         protected void reifyConstructors() {
+            var context = runtime.getCurrentContext();
             Optional<Constructor<?>> zeroArg = Optional.empty();
             List<Constructor<?>> candidates = new ArrayList<>();
             for (Constructor<?> constructor : reifiedParent.getDeclaredConstructors()) {
@@ -2392,8 +2393,7 @@ public class RubyClass extends RubyModule {
             } else {
                 // TODO: copy validateArgs
                 // TODO: no ctors = error?
-                throw typeError(runtime.getCurrentContext(), "class " + reifiedParent.getName() +
-                        " doesn't have a public or protected constructor");
+                throw typeError(context, "class " + reifiedParent.getName() + " doesn't have a public or protected constructor");
             }
 
             if (zeroArg.isPresent()) {
@@ -2442,7 +2442,7 @@ public class RubyClass extends RubyModule {
                 RealClassGenerator.makeConcreteConstructorIROProxy(cw, position, this);
             } else if (generatedCtors.size() == 0) {
                 //TODO: Warn for static classe?
-                throw typeError(runtime.getCurrentContext(), "class " + getName() + " doesn't have any exposed java constructors");
+                throw typeError(context, "class " + getName(context) + " doesn't have any exposed java constructors");
             }
             
             // generate the real (IRubyObject) ctor. All other ctor generated proxy to this one
@@ -2488,10 +2488,10 @@ public class RubyClass extends RubyModule {
                methodSignature[ methodSignature.length - 1 ].isArray() ;
     }
 
-    private void logReifyException(final Throwable failure, final boolean error) {
+    private void logReifyException(ThreadContext context, final Throwable failure, final boolean error) {
         if (RubyInstanceConfig.REIFY_LOG_ERRORS) {
-            if ( error ) LOG.error("failed to reify class " + getName() + " due to: ", failure);
-            else LOG.info("failed to reify class " + getName() + " due to: ", failure);
+            if ( error ) LOG.error("failed to reify class " + getName(context) + " due to: ", failure);
+            else LOG.info("failed to reify class " + getName(context) + " due to: ", failure);
         }
     }
 

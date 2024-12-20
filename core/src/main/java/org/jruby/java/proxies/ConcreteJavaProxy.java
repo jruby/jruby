@@ -133,8 +133,7 @@ public class ConcreteJavaProxy extends JavaProxy {
         }
 
         // TODO: reload this on method changes?
-        private DynamicMethod reifyAndNewMethod(IRubyObject clazz) {
-
+        private DynamicMethod reifyAndNewMethod(ThreadContext context, IRubyObject clazz) {
             RubyClass parent = ((RubyClass) clazz);
             if (parent.getJavaProxy()) return newMethod;
 
@@ -142,7 +141,7 @@ public class ConcreteJavaProxy extends JavaProxy {
             if (parent.reifiedClass() == null) {
                 parent.reifyWithAncestors();
                 if (parent.reifiedClass() == null) {
-                    throw typeError(clazz.getRuntime().getCurrentContext(), "requested class " + parent.getName() + " was not reifiable");
+                    throw typeError(context, "requested class " + parent.getName(context) + " was not reifiable");
                 }
             }
 
@@ -151,52 +150,52 @@ public class ConcreteJavaProxy extends JavaProxy {
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            return reifyAndNewMethod(self).call(context, self, clazz, "new_proxy", args, block);
+            return reifyAndNewMethod(context, self).call(context, self, clazz, "new_proxy", args, block);
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-        	return reifyAndNewMethod(self).call(context, self, clazz, "new",block);
+        	return reifyAndNewMethod(context, self).call(context, self, clazz, "new",block);
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
-        	return reifyAndNewMethod(self).call(context, self, clazz, "new",arg0, block);
+        	return reifyAndNewMethod(context, self).call(context, self, clazz, "new",arg0, block);
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
-        	return reifyAndNewMethod(self).call(context, self, clazz, "new",arg0, arg1, block);
+        	return reifyAndNewMethod(context, self).call(context, self, clazz, "new",arg0, arg1, block);
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        	return reifyAndNewMethod(self).call(context, self, clazz, "new",arg0, arg1, arg2, block);
+        	return reifyAndNewMethod(context, self).call(context, self, clazz, "new",arg0, arg1, arg2, block);
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-        	return reifyAndNewMethod(self).call(context, self, clazz, "new",args);
+        	return reifyAndNewMethod(context, self).call(context, self, clazz, "new",args);
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-        	return reifyAndNewMethod(self).call(context, self, clazz,"new_proxy");
+        	return reifyAndNewMethod(context, self).call(context, self, clazz,"new_proxy");
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
-        	return reifyAndNewMethod(self).call(context, self, clazz, "new_proxy",arg0);
+        	return reifyAndNewMethod(context, self).call(context, self, clazz, "new_proxy",arg0);
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
-        	return reifyAndNewMethod(self).call(context, self, clazz,"new", arg0, arg1);
+        	return reifyAndNewMethod(context, self).call(context, self, clazz,"new", arg0, arg1);
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        	return reifyAndNewMethod(self).call(context, self, clazz,"new", arg0, arg1, arg2);
+        	return reifyAndNewMethod(context, self).call(context, self, clazz,"new", arg0, arg1, arg2);
         }
 
     }

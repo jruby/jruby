@@ -718,7 +718,7 @@ public class Queue extends RubyObject implements DataType {
     }
 
     protected RaiseException createInterruptedError(ThreadContext context, String methodName) {
-        return context.runtime.newThreadError("interrupted in " + getMetaClass().getName() + "#" + methodName);
+        return context.runtime.newThreadError("interrupted in " + getMetaClass().getName(context) + "#" + methodName);
     }
 
     private static class BlockingPollTask implements RubyThread.Task<Queue, IRubyObject> {

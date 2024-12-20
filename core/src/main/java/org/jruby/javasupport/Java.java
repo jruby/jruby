@@ -1536,8 +1536,7 @@ public class Java implements Library {
             if ( otherProxy == null ) return false;
             if ( Proxy.isProxyClass(otherProxy.getClass()) ) {
                 InvocationHandler other = Proxy.getInvocationHandler(otherProxy);
-                if ( other instanceof InterfaceProxyHandler ) {
-                    InterfaceProxyHandler that = (InterfaceProxyHandler) other;
+                if ( other instanceof InterfaceProxyHandler that) {
                     if ( this.wrapper != that.wrapper ) return false;
                     return Arrays.equals(this.ifaceNames, that.ifaceNames);
                 }
@@ -1590,7 +1589,7 @@ public class Java implements Library {
             // no-name class, generate a bogus name for it
             implClassName += "Class0x" + Integer.toHexString(System.identityHashCode(clazz)) + '_' + Math.abs(interfacesHashCode);
         } else {
-            implClassName += StringSupport.replaceAll(clazz.getName(), "::", "$$").toString() + '_' + Math.abs(interfacesHashCode);
+            implClassName += StringSupport.replaceAll(clazz.getName(context), "::", "$$").toString() + '_' + Math.abs(interfacesHashCode);
         }
         Class<? extends IRubyObject> proxyImplClass;
         try {

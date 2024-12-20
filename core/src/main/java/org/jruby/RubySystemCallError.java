@@ -252,10 +252,9 @@ public class RubySystemCallError extends RubyStandardError {
         }
 
         if (val == null) {
-            val = defaultMessages.get(klass.getName());
-            if (val == null) {
-                val = "Unknown error (" + klass.getName() + ")";
-            }
+            var className = klass.getName(context);
+            val = defaultMessages.get(className);
+            if (val == null) val = "Unknown error (" + className + ")";
         }
 
         // MRI behavior: we don't print errno for actual Errno errors

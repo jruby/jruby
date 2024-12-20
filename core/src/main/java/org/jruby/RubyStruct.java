@@ -699,7 +699,7 @@ public class RubyStruct extends RubyObject {
         RubyString buffer = newString(context, new ByteList(32));
         buffer.cat(STRUCT_BEG);
 
-        String cname = getMetaClass().getRealClass().getName();
+        String cname = getMetaClass().getRealClass().getName(context);
         final char first = cname.charAt(0);
 
         if (recur || first != '#') {

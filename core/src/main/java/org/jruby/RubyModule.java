@@ -516,7 +516,7 @@ public class RubyModule extends RubyObject {
     }
 
     protected void checkForCyclicPrepend(ThreadContext context, RubyModule m) throws RaiseException {
-        if (isSameOrigin(m)) throw argumentError(context, getName() + " cyclic prepend detected " + m.getName());
+        if (isSameOrigin(m)) throw argumentError(context, getName(context) + " cyclic prepend detected " + m.getName(context));
     }
 
     private RubyClass searchProvidersForClass(String name, RubyClass superClazz) {
@@ -4715,7 +4715,7 @@ public class RubyModule extends RubyObject {
 
         if (hasConstantInHierarchy(id)) throw cannotRemoveError(context, id);
 
-        throw context.runtime.newNameError("constant " + id + " not defined for " + getName(), id);
+        throw context.runtime.newNameError("constant " + id + " not defined for " + getName(context), id);
     }
 
     private boolean hasConstantInHierarchy(final String name) {
@@ -4920,7 +4920,7 @@ public class RubyModule extends RubyObject {
         ConstantEntry entry = getConstantMap().get(name);
 
         if (entry == null) {
-            throw context.runtime.newNameError("constant " + getName() + "::" + name + " not defined", name);
+            throw context.runtime.newNameError("constant " + getName(context) + "::" + name + " not defined", name);
         }
 
         storeConstant(context, name, entry.value, hidden, entry.getFile(), entry.getLine());
@@ -5097,7 +5097,7 @@ public class RubyModule extends RubyObject {
 
         throw isClassVarDefined(javaName) ?
                 cannotRemoveError(context, javaName):
-                context.runtime.newNameError("class variable " + javaName + " not defined for " + getName(), javaName);
+                context.runtime.newNameError("class variable " + javaName + " not defined for " + getName(context), javaName);
     }
 
 
@@ -6020,7 +6020,7 @@ public class RubyModule extends RubyObject {
             return null;
         }
         if (entry.deprecated) {
-            String parent = "Object".equals(getName()) ? "" : getName();
+            String parent = "Object".equals(getName(context)) ? "" : getName(context);
             warnDeprecated(context, "constant " + parent + "::" + name + " is deprecated");
         }
 
@@ -6170,16 +6170,13 @@ public class RubyModule extends RubyObject {
     }
 
     private void checkAndRaiseIfFrozen(ThreadContext context) throws RaiseException {
-        if ( isFrozen() ) {
-            if (this instanceof RubyClass) {
-                if (getBaseName() == null) { // anonymous
-                    // MRI 2.2.2 does get ugly ... as it skips this logic :
-                    // RuntimeError: can't modify frozen #<Class:#<Class:0x0000000095a920>>
-                    throw getRuntime().newFrozenError(getName(), this);
-                }
-                throw getRuntime().newFrozenError("#<Class:" + getName() + '>', this);
-            }
-            throw getRuntime().newFrozenError("Module", this);
+        if (isFrozen()) {
+            if (!(this instanceof RubyClass)) throw frozenError(context, this, "Module");
+            if (getBaseName() != null) throw frozenError(context, this, "#<Class:" + getName(context) + '>');
+
+            // MRI 2.2.2 does get ugly ... as it skips this logic :
+            // RuntimeError: can't modify frozen #<Class:#<Class:0x0000000095a920>>
+            throw frozenError(context, this, getName(context));
         }
     }
 
@@ -6714,7 +6711,7 @@ public class RubyModule extends RubyObject {
                 RubyModule module = castAsModule(context, _module);
 
                 if (module.getSuperClass() != null) {
-                    warn(context, module.getName() + " has ancestors, but Refinement#import_methods doesn't import their methods");
+                    warn(context, module.getName(context) + " has ancestors, but Refinement#import_methods doesn't import their methods");
                 }
             }
 
@@ -6735,7 +6732,7 @@ public class RubyModule extends RubyObject {
             DynamicMethod method = entry.getValue();
 
             if (!(method instanceof AbstractIRMethod)) {
-                throw argumentError(context, "Can't import method which is not defined with Ruby code: " + module.getName() + "#" + entry.getKey());
+                throw argumentError(context, "Can't import method which is not defined with Ruby code: " + module.getName(context) + "#" + entry.getKey());
             }
 
             DynamicMethod dup = entry.getValue().dup();

@@ -81,99 +81,99 @@ public class TestJavaClass extends junit.framework.TestCase {
         //System.out.println(klass + " " + klass.getId());
         type = Access.getClass(context, "Object").toJava(java.lang.Object.class);
         assertTrue(type instanceof RubyClass);
-        assertEquals("Object", ((RubyClass) type).getName());
+        assertEquals("Object", ((RubyClass) type).getName(context));
 
         type = Access.getClass(context, "Array").toJava(java.lang.Object.class);
         assertTrue(type instanceof RubyClass);
-        assertEquals("Array", ((RubyClass) type).getName());
+        assertEquals("Array", ((RubyClass) type).getName(context));
 
         type = Access.getClass(context, "Hash").toJava(java.lang.Object.class);
         assertTrue(type instanceof RubyClass);
-        assertEquals("Hash", ((RubyClass) type).getName());
+        assertEquals("Hash", ((RubyClass) type).getName(context));
 
         type = Access.getClass(context, "File").toJava(java.lang.Object.class);
         assertTrue(type instanceof RubyClass);
-        assertEquals("File", ((RubyClass) type).getName());
+        assertEquals("File", ((RubyClass) type).getName(context));
 
         type = Access.getClass(context, "IO").toJava(java.lang.Object.class);
         assertTrue(type instanceof RubyClass);
-        assertEquals("IO", ((RubyClass) type).getName());
+        assertEquals("IO", ((RubyClass) type).getName(context));
 
         type = Access.getClass(context, "String").toJava(java.lang.Object.class);
         assertTrue(type instanceof RubyClass);
-        assertEquals("String", ((RubyClass) type).getName());
+        assertEquals("String", ((RubyClass) type).getName(context));
 
         type = Access.getClass(context, "Symbol").toJava(java.lang.Object.class);
         assertTrue(type instanceof RubyClass);
-        assertEquals("Symbol", ((RubyClass) type).getName());
+        assertEquals("Symbol", ((RubyClass) type).getName(context));
 
         type = Access.getClass(context, "Module").toJava(java.lang.Object.class);
         assertTrue(type instanceof RubyClass);
-        assertEquals("Module", ((RubyClass) type).getName());
+        assertEquals("Module", ((RubyClass) type).getName(context));
 
         type = Access.getClass(context, "Class").toJava(java.lang.Object.class);
         assertTrue(type instanceof RubyClass);
-        assertEquals("Class", ((RubyClass) type).getName());
+        assertEquals("Class", ((RubyClass) type).getName(context));
 
         //
 
         type = Access.getClass(context, "Integer").toJava(java.lang.Object.class);
         assertTrue(type instanceof RubyClass);
-        assertEquals("Integer", ((RubyClass) type).getName());
+        assertEquals("Integer", ((RubyClass) type).getName(context));
 
         type = Access.getClass(context, "Fixnum").toJava(java.lang.Object.class);
         assertTrue(type instanceof RubyClass);
-        assertEquals("Integer", ((RubyClass) type).getName());
+        assertEquals("Integer", ((RubyClass) type).getName(context));
 
         type = Access.getClass(context, "Float").toJava(java.lang.Object.class);
         assertTrue(type instanceof RubyClass);
-        assertEquals("Float", ((RubyClass) type).getName());
+        assertEquals("Float", ((RubyClass) type).getName(context));
 
         type = Access.getClass(context, "Rational").toJava(java.lang.Object.class);
         assertTrue(type instanceof RubyClass);
-        assertEquals("Rational", ((RubyClass) type).getName());
+        assertEquals("Rational", ((RubyClass) type).getName(context));
 
         type = Access.getClass(context, "Dir").toJava(java.lang.Object.class);
         assertTrue(type instanceof RubyClass);
-        assertEquals("Dir", ((RubyClass) type).getName());
+        assertEquals("Dir", ((RubyClass) type).getName(context));
 
         type = kernelModule(context).toJava(java.lang.Object.class);
         assertTrue(type instanceof RubyModule);
-        assertEquals("Kernel", ((RubyModule) type).getName());
+        assertEquals("Kernel", ((RubyModule) type).getName(context));
 
         type = enumerableModule(context).toJava(java.lang.Object.class);
         assertTrue(type instanceof RubyModule);
-        assertEquals("Enumerable", ((RubyModule) type).getName());
+        assertEquals("Enumerable", ((RubyModule) type).getName(context));
 
         type = Access.getClass(context, "Struct").toJava(java.lang.Object.class);
         assertTrue(type instanceof RubyClass);
-        assertEquals("Struct", ((RubyClass) type).getName());
+        assertEquals("Struct", ((RubyClass) type).getName(context));
 
         type = Access.getClass(context, "Thread").toJava(java.lang.Object.class);
         assertTrue(type instanceof RubyClass);
-        assertEquals("Thread", ((RubyClass) type).getName());
+        assertEquals("Thread", ((RubyClass) type).getName(context));
 
         type = Access.getClass(context, "Exception").toJava(java.lang.Object.class);
         assertTrue(type instanceof RubyClass);
-        assertEquals("Exception", ((RubyClass) type).getName());
+        assertEquals("Exception", ((RubyClass) type).getName(context));
 
         type = Access.getClass(context, "NameError").toJava(java.lang.Object.class);
         assertTrue(type instanceof RubyClass);
-        assertEquals("NameError", ((RubyClass) type).getName());
+        assertEquals("NameError", ((RubyClass) type).getName(context));
 
         type = Access.getClass(context, "RuntimeError").toJava(java.lang.Object.class);
         assertTrue(type instanceof RubyClass);
-        assertEquals("RuntimeError", ((RubyClass) type).getName());
+        assertEquals("RuntimeError", ((RubyClass) type).getName(context));
 
         //
 
         type = Access.getClass(context, "NilClass").toJava(java.lang.Object.class);
         assertTrue(type instanceof RubyClass);
-        assertEquals("NilClass", ((RubyClass) type).getName());
+        assertEquals("NilClass", ((RubyClass) type).getName(context));
 
         type = Access.getClass(context, "FalseClass").toJava(java.lang.Object.class);
         assertTrue(type instanceof RubyClass);
-        assertEquals("FalseClass", ((RubyClass) type).getName());
+        assertEquals("FalseClass", ((RubyClass) type).getName(context));
     }
 
     static void requireJava(ThreadContext context) {

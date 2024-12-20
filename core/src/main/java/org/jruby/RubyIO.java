@@ -2989,7 +2989,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         final OpenFile openFile = this.openFile;
         if (openFile == null) return super.inspect(context);
 
-        String className = getMetaClass().getRealClass().getName();
+        String className = getMetaClass().getRealClass().getName(context);
         String path = openFile.getPath();
         String status = "";
 

@@ -306,7 +306,7 @@ public class RubyNameError extends RubyStandardError {
     @JRubyMethod
     @Override
     public IRubyObject to_s(ThreadContext context) {
-        if (message == context.nil) return newString(context, getMetaClass().getRealClass().getName());
+        if (message == context.nil) return newString(context, getMetaClass().getRealClass().getName(context));
 
         RubyString str = message.convertToString();
         if (str != message) message = str;

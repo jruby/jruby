@@ -384,7 +384,7 @@ public class RubyException extends RubyObject {
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s(ThreadContext context) {
         final IRubyObject msg = getMessage();
-        return !msg.isNil() ? msg.asString() : newString(context, getMetaClass().getRealClass().getName());
+        return !msg.isNil() ? msg.asString() : newString(context, getMetaClass().getRealClass().getName(context));
     }
 
     @JRubyMethod(name = "message")

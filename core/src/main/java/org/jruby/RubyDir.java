@@ -820,7 +820,7 @@ public class RubyDir extends RubyObject implements Closeable {
     @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {
         StringBuilder part = new StringBuilder();
-        String cname = getMetaClass().getRealClass().getName();
+        String cname = getMetaClass().getRealClass().getName(context);
         part.append("#<").append(cname).append(':');
         if (path != null) { part.append(path.asJavaString()); }
         part.append('>');

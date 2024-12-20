@@ -85,7 +85,7 @@ public class Option extends RubyObject {
         buf.append("#<");
 
         buf
-            .append(metaClass.getRealClass().getName())
+            .append(metaClass.getRealClass().getName(context))
             .append(": ")
             .append(noPrefix(family));
 

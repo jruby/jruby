@@ -335,10 +335,11 @@ public class MarshalStream extends FilterOutputStream {
     }
 
     private void userNewCommon(IRubyObject value, CacheEntry entry) throws IOException {
+        var context = runtime.getCurrentContext();
         registerLinkTarget(value);
         write(TYPE_USRMARSHAL);
         final RubyClass klass = getMetaClass(value);
-        writeAndRegisterSymbol(RubySymbol.newSymbol(runtime, klass.getRealClass().getName()).getBytes());
+        writeAndRegisterSymbol(RubySymbol.newSymbol(runtime, klass.getRealClass().getName(context)).getBytes());
 
         IRubyObject marshaled;
         if (entry != null) {

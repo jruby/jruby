@@ -110,7 +110,7 @@ public class JavaPackage extends RubyModule {
 
     @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {
-        return newString(context, getName()); // super.to_s()
+        return newString(context, getName(context)); // super.to_s()
     }
 
     @Override
@@ -144,11 +144,11 @@ public class JavaPackage extends RubyModule {
     }
 
     @Override // skip constant name assert
-    public final IRubyObject fetchConstant(String name, boolean includePrivate) {
+    public final IRubyObject fetchConstant(ThreadContext context, String name, boolean includePrivate) {
         ConstantEntry entry = constantEntryFetch(name);
         if (entry == null) return null;
         if (entry.hidden && !includePrivate) {
-            throw getRuntime().newNameError("private constant " + getName() + "::" + name + " referenced", name);
+            throw getRuntime().newNameError("private constant " + getName(context) + "::" + name + " referenced", name);
         }
         return entry.value;
     }

@@ -340,10 +340,10 @@ public class RaiseException extends JumpException {
     @Deprecated
     public RaiseException(Ruby runtime, RubyClass exceptionClass, String msg, IRubyObject backtrace) {
         super(msg == null ? msg = "No message available" : msg);
-
-        providedMessage = '(' + exceptionClass.getName() + ") " + msg;
-
         final ThreadContext context = runtime.getCurrentContext();
+
+        providedMessage = '(' + exceptionClass.getName(context) + ") " + msg;
+
         setException(RubyException.newException(context, exceptionClass, RubyString.newUnicodeString(runtime, msg)));
         preRaise(context, backtrace, true);
     }

@@ -260,7 +260,7 @@ public class RubyDigest {
     public static class DigestInstance {
 
         private static IRubyObject throwUnimplError(ThreadContext context, IRubyObject self, String name) {
-            throw runtimeError(context, String.format("%s does not implement %s()", self.getMetaClass().getRealClass().getName(), name));
+            throw runtimeError(context, String.format("%s does not implement %s()", self.getMetaClass().getRealClass().getName(context), name));
         }
 
         /* instance methods that should be overridden */
@@ -309,7 +309,7 @@ public class RubyDigest {
 
         @JRubyMethod()
         public static IRubyObject inspect(ThreadContext context, IRubyObject self) {
-            return RubyString.newStringNoCopy(context.runtime, ByteList.plain("#<" + self.getMetaClass().getRealClass().getName() + ": " + hexdigest(context, self, IRubyObject.NULL_ARRAY) + ">"));
+            return RubyString.newStringNoCopy(context.runtime, ByteList.plain("#<" + self.getMetaClass().getRealClass().getName(context) + ": " + hexdigest(context, self, IRubyObject.NULL_ARRAY) + ">"));
         }
 
         /* instance methods that need not usually be overridden */

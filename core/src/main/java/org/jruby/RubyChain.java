@@ -123,7 +123,7 @@ public class RubyChain extends RubyObject {
 
         ByteList str = new ByteList();
         str.append('#').append('<');
-        str.append(getMetaClass().getRealClass().getName().getBytes());
+        str.append(getMetaClass().getRealClass().getName(context).getBytes());
         str.append(':').append(' ');
 
         if (enums == null) {
