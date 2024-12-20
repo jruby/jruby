@@ -602,12 +602,28 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
 
     @Override
     public IRubyObject op_mul(ThreadContext context, long other) {
-        Ruby runtime = context.runtime;
-        try {
-            return newFixnum(runtime, Math.multiplyExact(value, other));
-        } catch (ArithmeticException ae) {
-            return RubyBignum.newBignum(runtime, value).op_mul(context, other);
+        final Ruby runtime = context.runtime;
+        final long value = this.value;
+
+        if (value == 0 || other == 0) {
+            return RubyFixnum.zero(runtime);
         }
+
+        // fast check for known ranges that won't overflow
+        if (
+                (value <= 3037000499L && other <= 3037000499L && value >= -3037000499L && other >= -3037000499L) ||
+                (value == -1 && other != Long.MIN_VALUE)
+        ) {
+            return newFixnum(runtime, value * other);
+        } else {
+            long result = value * other;
+            if (result / value == other) {
+                return newFixnum(runtime, result);
+            }
+        }
+
+        // if here (value * otherValue) overflows long, so must return Bignum
+        return RubyBignum.newBignum(runtime, value).op_mul(context, other);
     }
 
     public IRubyObject op_mul(ThreadContext context, double other) {
