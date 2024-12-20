@@ -91,7 +91,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
                 defineMethods(context, RubyEnumerator.class);
 
         Enumerator.defineClassUnder(context, "FeedValue", Object, NOT_ALLOCATABLE_ALLOCATOR).defineMethods(context, FeedValue.class);
-        Enumerator.setConstantVisibility(context.runtime, "FeedValue", true);
+        Enumerator.setConstantVisibility(context, "FeedValue", true);
 
         return Enumerator;
     }

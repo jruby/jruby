@@ -200,18 +200,18 @@ public class Constant extends AbstractVariable {
      */
     @Override
     public void inject() {
-        final Ruby runtime = getRuntime();
-        if (receiver == runtime.getTopSelf()) {
-            RubyModule rubyModule = getRubyClass(runtime);
+        var context = getRuntime().getCurrentContext();
+        if (receiver == context.runtime.getTopSelf()) {
+            RubyModule rubyModule = getRubyClass(context.runtime);
             // SSS FIXME: With rubyclass stack gone, this needs a replacement
             if (rubyModule == null) rubyModule = null; // receiver.getRuntime().getCurrentContext().getRubyClass();
             if (rubyModule == null) return;
-            rubyModule.storeConstant(name, rubyObject);
+            rubyModule.storeConstant(context, name, rubyObject);
         }
         else {
-            receiver.getMetaClass().storeConstant(name, rubyObject);
+            receiver.getMetaClass().storeConstant(context, name, rubyObject);
         }
-        runtime.getConstantInvalidator(name).invalidate();
+        context.runtime.getConstantInvalidator(name).invalidate();
         //initialized = true;
     }
 

@@ -138,15 +138,6 @@ public class JavaPackage extends RubyModule {
         return constant != null ? constant : relativeJavaClassOrPackage(context, name, false);
     }
 
-    @Override // so that e.g. java::util gets stored as expected
-    public final IRubyObject storeConstant(String name, IRubyObject value) {
-        // skip constant name validation
-        assert value != null : "value is null";
-
-        ensureConstantsSettable();
-        return constantTableStore(name, value);
-    }
-
     @Override // skip constant name assert
     public final boolean hasConstant(String name) {
         return constantTableContains(name);
@@ -160,13 +151,6 @@ public class JavaPackage extends RubyModule {
             throw getRuntime().newNameError("private constant " + getName() + "::" + name + " referenced", name);
         }
         return entry.value;
-    }
-
-    @Override // skip constant name assert
-    public final IRubyObject deleteConstant(String name) {
-        assert name != null : "name is null";
-        ensureConstantsSettable();
-        return constantTableRemove(name);
     }
 
     final CharSequence packageRelativeName(final CharSequence name) {

@@ -140,9 +140,10 @@ public class RubyGlobal {
 
     public static RubyHash createGlobalsAndENV(ThreadContext context, GlobalVariables globals, RubyInstanceConfig instanceConfig) {
         var runtime = context.runtime;
+        var Object = objectClass(context);
         var topLevelBinding = runtime.newBinding();
         runtime.setTopLevelBinding(topLevelBinding);
-        runtime.defineGlobalConstant("TOPLEVEL_BINDING", topLevelBinding);
+        Object.defineConstant(context, "TOPLEVEL_BINDING", topLevelBinding);
 
         initARGV(runtime);
 
@@ -156,27 +157,27 @@ public class RubyGlobal {
         IRubyObject version = RubyString.newFString(runtime, Constants.RUBY_VERSION);
         IRubyObject patchlevel = asFixnum(context, 0);
 
-        runtime.defineGlobalConstant("RUBY_VERSION", version);
-        runtime.defineGlobalConstant("RUBY_PATCHLEVEL", patchlevel);
-        runtime.defineGlobalConstant("RUBY_RELEASE_DATE", release);
-        runtime.defineGlobalConstant("RUBY_PLATFORM", platform);
+        Object.defineConstant(context, "RUBY_VERSION", version);
+        Object.defineConstant(context, "RUBY_PATCHLEVEL", patchlevel);
+        Object.defineConstant(context, "RUBY_RELEASE_DATE", release);
+        Object.defineConstant(context, "RUBY_PLATFORM", platform);
 
         IRubyObject description = RubyString.newFString(runtime, OutputStrings.getVersionString());
-        runtime.defineGlobalConstant("RUBY_DESCRIPTION", description);
+        Object.defineConstant(context, "RUBY_DESCRIPTION", description);
 
         IRubyObject copyright = RubyString.newFString(runtime, OutputStrings.getCopyrightString());
-        runtime.defineGlobalConstant("RUBY_COPYRIGHT", copyright);
+        Object.defineConstant(context, "RUBY_COPYRIGHT", copyright);
 
-        runtime.defineGlobalConstant("RELEASE_DATE", release);
-        runtime.defineGlobalConstant("PLATFORM", platform);
+        Object.defineConstant(context, "RELEASE_DATE", release);
+        Object.defineConstant(context, "PLATFORM", platform);
 
         IRubyObject jrubyVersion = RubyString.newFString(runtime, Constants.VERSION);
         IRubyObject jrubyRevision = RubyString.newFString(runtime, Constants.REVISION);
-        runtime.defineGlobalConstant("JRUBY_VERSION", jrubyVersion);
-        runtime.defineGlobalConstant("JRUBY_REVISION", jrubyRevision);
-        runtime.defineGlobalConstant("RUBY_REVISION", RubyString.newFString(runtime, Constants.REVISION));
-        runtime.defineGlobalConstant("RUBY_ENGINE", engine);
-        runtime.defineGlobalConstant("RUBY_ENGINE_VERSION", jrubyVersion);
+        Object.defineConstant(context, "JRUBY_VERSION", jrubyVersion);
+        Object.defineConstant(context, "JRUBY_REVISION", jrubyRevision);
+        Object.defineConstant(context, "RUBY_REVISION", RubyString.newFString(runtime, Constants.REVISION));
+        Object.defineConstant(context, "RUBY_ENGINE", engine);
+        Object.defineConstant(context, "RUBY_ENGINE_VERSION", jrubyVersion);
 
         RubyInstanceConfig.Verbosity verbosity = instanceConfig.getVerbosity();
         runtime.defineVariable(new WarningGlobalVariable(context, "$-W", verbosity), GLOBAL);
@@ -318,6 +319,7 @@ public class RubyGlobal {
 
     public static void initSTDIO(Ruby runtime, GlobalVariables globals) {
         var context = runtime.getCurrentContext();
+        var Object = objectClass(context);
         RubyIO stdin, stdout, stderr;
 
         // If we're the main for the process and native stdio is enabled, use default descriptors
@@ -341,15 +343,15 @@ public class RubyGlobal {
         }
 
         var object = runtime.getObject();
-        if (object.getConstantFromNoConstMissing("STDIN") == null) {
+        if (object.getConstantFromNoConstMissing(context, "STDIN") == null) {
             runtime.defineVariable(new InputGlobalVariable(runtime, "$stdin", stdin), GLOBAL);
             runtime.defineVariable(new OutputGlobalVariable(runtime, "$stdout", stdout), GLOBAL);
             globals.alias("$>", "$stdout");
             runtime.defineVariable(new OutputGlobalVariable(runtime, "$stderr", stderr), GLOBAL);
 
-            runtime.defineGlobalConstant("STDIN", stdin);
-            runtime.defineGlobalConstant("STDOUT", stdout);
-            runtime.defineGlobalConstant("STDERR", stderr);
+            Object.defineConstant(context, "STDIN", stdin);
+            Object.defineConstant(context, "STDOUT", stdout);
+            Object.defineConstant(context, "STDERR", stderr);
 
             runtime.setOriginalStderr(stderr);
         } else {
@@ -425,6 +427,7 @@ public class RubyGlobal {
     @SuppressWarnings("unchecked")
     private static RubyHash defineGlobalEnvConstants(ThreadContext context) {
         var runtime = context.runtime;
+        var Object = objectClass(context);
     	Map<RubyString, RubyString> environmentVariableMap = OSEnvironment.environmentVariableMap(runtime);
         var instanceConfig = instanceConfig(context);
     	RubyHash env = new CaseInsensitiveStringOnlyRubyHash(
@@ -432,13 +435,13 @@ public class RubyGlobal {
             instanceConfig.isNativeEnabled() && instanceConfig.isUpdateNativeENVEnabled()
         );
         env.singletonClass(context).defineMethods(context, CaseInsensitiveStringOnlyRubyHash.class);
-        runtime.defineGlobalConstant("ENV", env);
+        Object.defineConstant(context, "ENV", env);
 
         // Define System.getProperties() in ENV_JAVA
         Map<RubyString, RubyString> systemPropertiesMap = OSEnvironment.systemPropertiesMap(runtime);
         RubyHash envJava = new ReadOnlySystemPropertiesHash(runtime, systemPropertiesMap, context.nil);
         envJava.setFrozen(true);
-        runtime.defineGlobalConstant("ENV_JAVA", envJava);
+        Object.defineConstant(context, "ENV_JAVA", envJava);
 
         return env;
     }

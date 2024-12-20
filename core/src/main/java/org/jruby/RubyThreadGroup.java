@@ -65,7 +65,7 @@ public class RubyThreadGroup extends RubyObject {
         // create the default thread group
         RubyThreadGroup defaultThreadGroup = new RubyThreadGroup(context.runtime, ThreadGroup);
         context.runtime.setDefaultThreadGroup(defaultThreadGroup);
-        ThreadGroup.defineConstant("Default", defaultThreadGroup);
+        ThreadGroup.defineConstant(context, "Default", defaultThreadGroup);
 
         return ThreadGroup;
     }

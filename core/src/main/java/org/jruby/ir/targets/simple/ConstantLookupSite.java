@@ -36,7 +36,7 @@ public class ConstantLookupSite {
             // SSS FIXME: Is this null check case correct?
             module = staticScope == null ? object : staticScope.getModule();
             constant = publicOnly ?
-                    module.getConstantFromNoConstMissing(id, false) :
+                    module.getConstantFromNoConstMissing(context, id, false) :
                     module.getConstantNoConstMissing(context, id);
         }
 
@@ -104,7 +104,7 @@ public class ConstantLookupSite {
     private IRubyObject cacheSearchModuleForConst(ThreadContext context, RubyModule module, boolean publicOnly) {
         String id = this.id;
         IRubyObject constant = publicOnly ?
-                module.getConstantFromNoConstMissing(id, false) :
+                module.getConstantFromNoConstMissing(context, id, false) :
                 module.getConstantNoConstMissing(context, id);
         if (constant != null) {
             Invalidator invalidator = context.runtime.getConstantInvalidator(id);

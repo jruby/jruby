@@ -80,7 +80,7 @@ public class RubyComplex extends RubyNumeric {
                 undefMethods(context, "<", "<=", ">", ">=", "between?", "clamp", "%", "div", "divmod", "floor", "ceil",
                         "modulo", "remainder", "round", "step", "truncate", "positive?", "negative?").
                 tap(c -> c.singletonClass(context).undefMethods(context, "allocate", "new")).
-                tap(c -> c.defineConstant("I", RubyComplex.convert(context, c, asFixnum(context, 0), asFixnum(context, 1))));
+                tap(c -> c.defineConstant(context, "I", RubyComplex.convert(context, c, asFixnum(context, 0), asFixnum(context, 1))));
     }
 
     private RubyComplex(Ruby runtime, RubyClass clazz, IRubyObject real, IRubyObject image) {

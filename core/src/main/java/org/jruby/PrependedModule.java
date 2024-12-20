@@ -36,6 +36,7 @@ import java.util.Map;
 
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.RefinedMarker;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -192,8 +193,8 @@ public class PrependedModule extends RubyClass implements DelegatedModule {
     }
 
     @Override
-    protected IRubyObject getAutoloadConstant(String name, boolean forceLoad) {
-        return origin.getAutoloadConstant(name, forceLoad);
+    protected IRubyObject getAutoloadConstant(ThreadContext context, String name, boolean forceLoad) {
+        return origin.getAutoloadConstant(context, name, forceLoad);
     }
 
     @Override

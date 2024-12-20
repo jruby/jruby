@@ -381,7 +381,7 @@ public class RbConfigLibrary implements Library {
         setConfig(context, CONFIG, "UNICODE_VERSION", Config.UNICODE_VERSION_STRING);
         setConfig(context, CONFIG, "UNICODE_EMOJI_VERSION", Config.UNICODE_EMOJI_VERSION_STRING);
 
-        rbConfig.defineConstant("CONFIG", CONFIG);
+        rbConfig.defineConstant(context, "CONFIG", CONFIG);
 
 
         // TODO CONFIG and MAKEFILE_CONFIG seems to be the same Hash in Ruby 2.5
@@ -413,7 +413,7 @@ public class RbConfigLibrary implements Library {
 
         setupMakefileConfig(context, mkmfHash);
 
-        rbConfig.defineConstant("MAKEFILE_CONFIG", mkmfHash);
+        rbConfig.defineConstant(context, "MAKEFILE_CONFIG", mkmfHash);
 
         loadService(context).load("jruby/kernel/rbconfig.rb", false);
     }
@@ -511,7 +511,7 @@ public class RbConfigLibrary implements Library {
         setConfig(context, mkmfHash, "rubyhdrdir", hdr_dir);
         setConfig(context, mkmfHash, "archdir", hdr_dir);
 
-        Object.defineConstant("CROSS_COMPILING", context.nil);
+        Object.defineConstant(context, "CROSS_COMPILING", context.nil);
     }
 
     private static void setConfig(ThreadContext context, RubyHash hash, String key, String value) {

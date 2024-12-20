@@ -429,8 +429,8 @@ public final class Ruby implements Constantizable {
         encodingClass = RubyEncoding.createEncodingClass(context, objectClass);
         converterClass = RubyConverter.createConverterClass(context, objectClass, encodingClass);
 
-        encodingService.defineEncodings();
-        encodingService.defineAliases();
+        encodingService.defineEncodings(context);
+        encodingService.defineAliases(context);
 
         initDefaultEncodings(context);
 
@@ -463,7 +463,7 @@ public final class Ruby implements Constantizable {
         methodClass = profile.allowClass("Method") ? RubyMethod.createMethodClass(context, objectClass) : null;
         if (profile.allowClass("MatchData")) {
             matchDataClass = RubyMatchData.createMatchDataClass(context, objectClass);
-            defineGlobalConstant("MatchingData", matchDataClass);
+            objectClass.defineConstant(context, "MatchingData", matchDataClass);
         } else {
             matchDataClass = null;
         }
@@ -1572,7 +1572,10 @@ public final class Ruby implements Constantizable {
      *
      * @param name the name
      * @param value the value
+     * @deprecated Use {@link RubyModule#defineConstant(ThreadContext, String, IRubyObject)} with a reference
+     * to Object.
      */
+    @Deprecated(since = "10.0")
     public void defineGlobalConstant(String name, IRubyObject value) {
         objectClass.defineConstant(name, value);
     }
@@ -5073,7 +5076,7 @@ public final class Ruby implements Constantizable {
     public void defineDATA(IRubyObject io) {
         IRubyObject verbose = getVerbose();
         setVerbose(getNil());
-        defineGlobalConstant("DATA", io);
+        objectClass.defineConstant(getCurrentContext(), "DATA", io);
         setVerbose(verbose);
     }
 

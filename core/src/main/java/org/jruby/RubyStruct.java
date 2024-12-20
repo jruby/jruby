@@ -289,7 +289,7 @@ public class RubyStruct extends RubyObject {
             IRubyObject type = superClass.getConstantAt(context, name);
             if (type != null) {
                 context.runtime.getWarnings().warn(ID.STRUCT_CONSTANT_REDEFINED, context.getFile(), context.getLine(), "redefining constant " + type);
-                superClass.deleteConstant(name);
+                superClass.deleteConstant(context, name);
             }
             newStruct = superClass.defineClassUnder(context, name, superClass, RubyStruct::new);
         }

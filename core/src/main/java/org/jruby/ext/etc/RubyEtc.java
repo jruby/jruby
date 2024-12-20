@@ -112,7 +112,7 @@ public class RubyEtc {
 
         var PasswdStruct = RubyStruct.newInstance(context, structClass(context), args, Block.NULL_BLOCK);
         context.runtime.setPasswdStruct(PasswdStruct);
-        Etc.defineConstant("Passwd", PasswdStruct);
+        Etc.defineConstant(context, "Passwd", PasswdStruct);
     }
 
     private static void defineGroupStruct(ThreadContext context, RubyModule Etc) {
@@ -126,7 +126,7 @@ public class RubyEtc {
 
         var GroupStruct = RubyStruct.newInstance(context, structClass(context), args, Block.NULL_BLOCK);
         context.runtime.setGroupStruct(GroupStruct);
-        Etc.defineConstant("Group", GroupStruct);
+        Etc.defineConstant(context, "Group", GroupStruct);
     }
     
     private static IRubyObject setupPasswd(ThreadContext context, Passwd passwd) {

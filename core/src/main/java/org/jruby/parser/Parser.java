@@ -208,7 +208,7 @@ public class Parser {
             if (parser.lexer.isEndSeen() && configuration.isSaveData()) {
                 IRubyObject verbose = runtime.getVerbose();
                 runtime.setVerbose(runtime.getNil());
-                runtime.defineGlobalConstant("DATA", lexerSource.getRemainingAsIO());
+                runtime.getObject().defineConstant(runtime.getCurrentContext(), "DATA", lexerSource.getRemainingAsIO());
                 runtime.setVerbose(verbose);
             }
         } catch (IOException e) {

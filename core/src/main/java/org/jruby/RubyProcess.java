@@ -122,7 +122,7 @@ public class RubyProcess {
             Process.defineConstantsFrom(context, jnr.constants.platform.RLIM.class);
             for (RLIMIT r : RLIMIT.values()) {
                 if (!r.defined()) continue;
-                Process.defineConstant(r.name(), asFixnum(context, r.intValue()));
+                Process.defineConstant(context, r.name(), asFixnum(context, r.intValue()));
             }
         }
 
@@ -135,7 +135,7 @@ public class RubyProcess {
                         Convert.asSymbol(context, "cstime")},
                 Block.NULL_BLOCK);
 
-        Process.defineConstant("Tms", tmsStruct);
+        Process.defineConstant(context, "Tms", tmsStruct);
         context.runtime.setTmsStruct(tmsStruct);
 
         return Process;

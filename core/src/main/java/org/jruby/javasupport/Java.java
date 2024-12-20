@@ -153,10 +153,10 @@ public class Java implements Library {
                 defineConstant(context, "JavaField", getProxyClass(runtime, java.lang.reflect.Field.class)).
                 defineConstant(context, "JavaMethod", getProxyClass(runtime, java.lang.reflect.Method.class)).
                 defineConstant(context, "JavaConstructor", getProxyClass(runtime, java.lang.reflect.Constructor.class));
-        Java.deprecateConstant(runtime, "JavaClass");
-        Java.deprecateConstant(runtime, "JavaField");
-        Java.deprecateConstant(runtime, "JavaMethod");
-        Java.deprecateConstant(runtime, "JavaConstructor");
+        Java.deprecateConstant(context, "JavaClass");
+        Java.deprecateConstant(context, "JavaField");
+        Java.deprecateConstant(context, "JavaMethod");
+        Java.deprecateConstant(context, "JavaConstructor");
 
         // modify ENV_JAVA to be a read/write version
         final Map systemProperties = new SystemPropertiesMap();
@@ -210,9 +210,9 @@ public class Java implements Library {
         }
 
         Java.defineConstant(context, "JavaObject", _ConcreteJavaProxy); // obj.is_a?(Java::JavaObject) still works
-        Java.deprecateConstant(context.runtime, "JavaObject");
+        Java.deprecateConstant(context, "JavaObject");
         Java.defineConstant(context, "JavaArray", _ArrayJavaProxy);
-        Java.deprecateConstant(context.runtime, "JavaArray"); // obj.is_a?(Java::JavaArray) still works
+        Java.deprecateConstant(context, "JavaArray"); // obj.is_a?(Java::JavaArray) still works
 
         return Java;
     }

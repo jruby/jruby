@@ -60,7 +60,7 @@ public abstract class Type extends RubyObject {
             if (!Builtin.hasConstant(t.name())) {
                 try {
                     Type b = new Builtin(context, Builtin, t, t.name().toLowerCase(LOCALE));
-                    Builtin.defineConstant(t.name().toUpperCase(LOCALE), b);
+                    Builtin.defineConstant(context, t.name().toUpperCase(LOCALE), b);
                 } catch (UnsupportedOperationException ex) {
                 }
 
@@ -72,9 +72,9 @@ public abstract class Type extends RubyObject {
         //
         for (Map.Entry<String, RubyModule.ConstantEntry> c : Builtin.getConstantMap().entrySet()) {
             if (c.getValue().value instanceof Type.Builtin) {
-                Type.defineConstant(c.getKey(), c.getValue().value);
-                nativeType.defineConstant(c.getKey(), c.getValue().value);
-                FFI.defineConstant("TYPE_" + c.getKey(), c.getValue().value);
+                Type.defineConstant(context, c.getKey(), c.getValue().value);
+                nativeType.defineConstant(context, c.getKey(), c.getValue().value);
+                FFI.defineConstant(context, "TYPE_" + c.getKey(), c.getValue().value);
             }
         }
 

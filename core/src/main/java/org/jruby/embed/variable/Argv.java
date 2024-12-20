@@ -116,9 +116,9 @@ public class Argv extends AbstractVariable {
      */
     @Override
     public synchronized void inject() {
-        final Ruby runtime = getRuntime();
+        var context = getRuntime().getCurrentContext();
 
-        final var argv = RubyArray.newArray(runtime);
+        final var argv = RubyArray.newArray(context.runtime);
         if ( javaObject instanceof Collection ) {
             argv.addAll( (Collection) javaObject );
         }
@@ -127,14 +127,14 @@ public class Argv extends AbstractVariable {
         }
         this.rubyObject = argv; fromRuby = true;
 
-        RubyModule rubyModule = getRubyClass(runtime);
+        RubyModule rubyModule = getRubyClass(context.runtime);
         // SSS FIXME: With rubyclass stack gone, this needs a replacement
         if (rubyModule == null) rubyModule = null; // receiver.getRuntime().getCurrentContext().getRubyClass();
 
         if (rubyModule == null) return;
 
-        rubyModule.storeConstant(name, argv);
-        runtime.getConstantInvalidator(name).invalidate();
+        rubyModule.storeConstant(context, name, argv);
+        context.runtime.getConstantInvalidator(name).invalidate();
     }
 
     /**

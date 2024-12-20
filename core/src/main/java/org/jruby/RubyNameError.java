@@ -98,7 +98,7 @@ public class RubyNameError extends RubyStandardError {
         static RubyClass define(ThreadContext context, RubyClass Object, RubyClass NameError) {
             return NameError.defineClassUnder(context, "Message", Object, RubyNameErrorMessage::new).
                     defineMethods(context, RubyNameErrorMessage.class).
-                    tap(c -> c.parent.setConstantVisibility(context.runtime, "Message", true));
+                    tap(c -> c.parent.setConstantVisibility(context, "Message", true));
         }
 
         @JRubyMethod(name = "_dump")

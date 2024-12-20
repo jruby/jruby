@@ -87,7 +87,8 @@ public class RubyArgsFile extends RubyObject {
     }
 
     public static void initArgsFile(ThreadContext context, RubyModule Enumerable, GlobalVariables globals) {
-        RubyClass ARGF = defineClass(context, "ARGFClass", objectClass(context), RubyArgsFile::new).
+        var Object = objectClass(context);
+        RubyClass ARGF = defineClass(context, "ARGFClass", Object, RubyArgsFile::new).
                 include(context, Enumerable).
                 defineMethods(context, RubyArgsFile.class);
 
@@ -95,7 +96,7 @@ public class RubyArgsFile extends RubyObject {
 
         context.runtime.setArgsFile(argsFile);
         globals.defineReadonly("$<", new ArgsFileAccessor(context.runtime), GlobalVariable.Scope.GLOBAL);
-        context.runtime.defineGlobalConstant("ARGF", argsFile);
+        Object.defineConstant(context, "ARGF", argsFile);
         globals.defineReadonly("$FILENAME", new ValueAccessor(newString(context, "-")), GlobalVariable.Scope.GLOBAL);
     }
 

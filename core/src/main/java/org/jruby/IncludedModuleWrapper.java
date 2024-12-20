@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
@@ -161,8 +162,8 @@ public class IncludedModuleWrapper extends IncludedModule {
     }
 
     @Override
-    protected IRubyObject getAutoloadConstant(String name, boolean forceLoad) {
-        return origin.getAutoloadConstant(name, forceLoad);
+    protected IRubyObject getAutoloadConstant(ThreadContext context, String name, boolean forceLoad) {
+        return origin.getAutoloadConstant(context, name, forceLoad);
     }
 
     @Override

@@ -285,7 +285,7 @@ public class NewMarshal {
 
     public static RubySymbol getPathFromClass(ThreadContext context, RubyModule clazz) {
         Ruby runtime = context.runtime;
-        RubySymbol pathSym = clazz.symbolName();
+        RubySymbol pathSym = clazz.symbolName(context);
 
         if (pathSym == null) {
             String type = clazz.isClass() ? "class" : "module";

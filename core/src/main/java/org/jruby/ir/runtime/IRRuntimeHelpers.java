@@ -1671,7 +1671,7 @@ public class IRRuntimeHelpers {
             // SSS FIXME: Is this null check case correct?
             module = staticScope == null ? object : staticScope.getModule();
             constant = noPrivateConsts ?
-                    module.getConstantFromNoConstMissing(constName, false) :
+                    module.getConstantFromNoConstMissing(context, constName, false) :
                     module.getConstantNoConstMissing(context, constName);
         }
 
@@ -1685,7 +1685,7 @@ public class IRRuntimeHelpers {
         if (!(cmVal instanceof RubyModule module)) throw typeError(context, "", cmVal, " is not a class/module");
 
         IRubyObject constant = noPrivateConsts ?
-                module.getConstantFromNoConstMissing(constName, false) :
+                module.getConstantFromNoConstMissing(context, constName, false) :
                 module.getConstantNoConstMissing(context, constName);
 
         return constant == null ? UNDEFINED : constant;
@@ -2549,7 +2549,7 @@ public class IRRuntimeHelpers {
     public static void putClassVariable(ThreadContext context, IRubyObject self, RubyModule module, String id, IRubyObject value) {
         warnSetConstInRefinement(context, self);
 
-        module.setClassVar(id, value);
+        module.setClassVar(context, id, value);
     }
 
     @JIT

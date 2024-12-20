@@ -72,7 +72,7 @@ public class NativeException extends RubyException {
         RubyClass NativeException = defineClass(context, CLASS_NAME, baseClass, NativeException::new).
                 defineMethods(context, NativeException.class);
 
-        Object.deprecateConstant(context.runtime, CLASS_NAME);
+        Object.deprecateConstant(context, CLASS_NAME);
 
         return NativeException;
     }

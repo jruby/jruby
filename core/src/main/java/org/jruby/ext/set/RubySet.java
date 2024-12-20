@@ -1014,7 +1014,7 @@ public class RubySet extends RubyObject implements Set {
                         klass = Set.defineClassUnder(context, NAME, Hash, Hash.getAllocator()).
                                 include(context, getTSort(context)).
                                 defineMethods(context, DivideTSortHash.class);
-                        Set.setConstantVisibility(context.runtime, NAME, true); // private
+                        Set.setConstantVisibility(context, NAME, true); // private
                     }
                 }
             }
