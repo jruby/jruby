@@ -58,6 +58,7 @@ import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 
+import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyNumeric.*;
 import static org.jruby.api.Convert.*;
@@ -755,31 +756,11 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(name = "step")
     public IRubyObject step(final ThreadContext context, IRubyObject step, final Block block) {
-        String method = "step";
-        if (!block.isGiven()) {
-            return stepEnumeratorize(context, step, method);
-        }
-
-        step = checkStepDomain(context, step, method);
-
         return stepCommon(context, step, block);
     }
 
-    private IRubyObject checkStepDomain(ThreadContext context, IRubyObject step, String method) {
-        if (!(step instanceof RubyNumeric)) step = step.convertToInteger("to_int");
-        if (((RubyNumeric) step).isNegative(context)) throw argumentError(context, method + " can't be negative");
-        if (((RubyNumeric) step).isZero(context)) throw argumentError(context, method + " can't be 0");
-
-        return step;
-    }
-
     private IRubyObject stepEnumeratorize(ThreadContext context, IRubyObject step, String method) {
-        if (!step.isNil() && !(step instanceof RubyNumeric)) step = step.convertToInteger("to_int");
-        if ((step instanceof RubyNumeric num) && num.isZero(context)) throw argumentError(context, "step can't be 0");
-
-        if ((begin instanceof RubyNumeric && (end.isNil() || end instanceof RubyNumeric)) ||
-                (end instanceof RubyNumeric && begin.isNil())) {
-
+        if (step instanceof RubyNumeric && (begin instanceof RubyNumeric && (end.isNil() || end instanceof RubyNumeric)) || (begin.isNil() && end instanceof RubyNumeric)) {
             return RubyArithmeticSequence.newArithmeticSequence(
                     context,
                     this,
@@ -791,9 +772,14 @@ public class RubyRange extends RubyObject {
                     isExclusive ? context.tru : context.fals);
         }
 
+        // ...but generic Enumerator from beginless range is useless and probably an error.
+        if (begin.isNil()) {
+            throw argumentError(context, "#step for non-numeric beginless ranges is meaningless");
+        }
+
         return !step.isNil() ?
-                enumeratorizeWithSize(context, this, method, new IRubyObject[]{step}, RubyRange::stepSize) :
-                enumeratorizeWithSize(context, this, method, RubyRange::stepSize);
+                enumeratorize(context.runtime, this, method, step) :
+                enumeratorize(context.runtime, this, method);
     }
 
     @JRubyMethod(name = "%")
@@ -802,81 +788,153 @@ public class RubyRange extends RubyObject {
     }
 
     private IRubyObject stepCommon(ThreadContext context, IRubyObject step, Block block) {
-        Ruby runtime = context.runtime;
+        boolean beginIsNumeric = begin instanceof RubyNumeric;
+        boolean endIsNumeric = end instanceof RubyNumeric;
+        // For backward compatibility reasons (conforming to behavior before 3.4), String/Symbol
+        // supports both old behavior ('a'..).step(1) and new behavior ('a'..).step('a')
+        // Hence the additional conversion/additional checks.
+        IRubyObject strBegin = begin.checkStringType();
+        IRubyObject symBegin = begin instanceof RubySymbol symbol ? symbol.to_s(context) : context.nil;
+
+        if (step.isNil()) {
+            if (beginIsNumeric || !strBegin.isNil() || !symBegin.isNil() || (begin.isNil() && endIsNumeric)) {
+                step = asFixnum(context, 1);
+            } else {
+                throw argumentError(context, "step is required for non-numeric ranges");
+            }
+        }
+
+        boolean stepIsNumeric = step instanceof RubyNumeric;
+
+        if (stepIsNumeric && beginIsNumeric && step.op_eqq(context, asFixnum(context, 0)).isTrue()) {
+            throw argumentError(context, "step can't be 0");
+        }
+
+        if (!block.isGiven()) {
+            return stepEnumeratorize(context, step, "step");
+        }
+
+        if (begin.isNil()) {
+            throw argumentError(context, "#step iteration for beginless ranges is meaningless");
+        }
+
         if (begin instanceof RubyFixnum && end.isNil() && step instanceof RubyFixnum) {
-            long i = begin.convertToInteger().getLongValue();
-            long unit = step.convertToInteger().getLongValue();
-            while (i < Long.MAX_VALUE) {
-                block.yield(context, asFixnum(context, i));
-                i += unit;
-            }
-            IRubyObject b = asFixnum(context, i);
-            for (;; b = ((RubyInteger) b).op_plus(context, step)) {
-                block.yield(context, b);
-            }
+            fixnumEndlessStep(context, step, block);
         } else if (begin instanceof RubyFixnum && end instanceof RubyFixnum && step instanceof RubyFixnum) {
             fixnumStep(context, ((RubyFixnum) step).getLongValue(), block);
-        } else if (begin instanceof RubyFloat || end instanceof RubyFloat || step instanceof RubyFloat) {
-            RubyNumeric.floatStep(context, runtime, begin, end, step, isExclusive, isEndless, block);
-        } else if (begin instanceof RubySymbol && (end.isNil() || end instanceof RubySymbol)) { /* symbols are special */
-            RubyString b = begin.asString();
-            SymbolStepBlockCallBack callback = new SymbolStepBlockCallBack(block, RubyFixnum.one(runtime), step);
-            Block blockCallback = CallBlock.newCallClosure(context, this, Signature.ONE_ARGUMENT, callback);
-            if (end.isNil()) {
-                b.uptoEndless(context, blockCallback);
-            } else {
-                b.uptoCommon(context, end.asString(), isExclusive, blockCallback);
-            }
-        } else if (begin instanceof RubyNumeric
-                || !checkToInteger(context, begin).isNil()
-                || !checkToInteger(context, end).isNil()) {
-            numericStep(context, step, block);
+        } else if (beginIsNumeric && endIsNumeric && floatStep(context, begin, end, step, isExclusive, isEndless, block)) {
+            /* done */
+        } else if (!strBegin.isNil() && step instanceof RubyFixnum) {
+            // backwards compatibility behavior for String only, when no step/Integer step is passed
+            // See discussion in https://bugs.ruby-lang.org/issues/18368
+            stringStep(context, step, block, (RubyString) strBegin);
+        } else if (!symBegin.isNil() && step instanceof RubyFixnum) {
+            // same as above: backward compatibility for symbols
+            symbolStep(context, step, block, (RubyString) symBegin);
         } else {
-            IRubyObject tmp = begin.checkStringType();
-            if (!tmp.isNil()) {
-                StepBlockCallBack callback = new StepBlockCallBack(block, RubyFixnum.one(runtime), step);
-                Block blockCallback = CallBlock.newCallClosure(context, this, Signature.ONE_ARGUMENT, callback);
-                if (end.isNil()) {
-                    ((RubyString) tmp).uptoEndless(context, blockCallback);
+            int c, dir;
+            IRubyObject v = begin;
+            if (!end.isNil()) {
+                if (beginIsNumeric && stepIsNumeric && rangeLess(context, step, asFixnum(context, 0)) < 0) {
+                    // iterate backwards, for consistency with ArithmeticSequence
+                    if (isExclusive) {
+                        for (; rangeLess(context, end, v) < 0; v = v.callMethod(context, "+", step)) {
+                            block.yield(context, v);
+                        }
+                    } else {
+                        for (; (c = rangeLess(context, end, v)) <= 0; v = v.callMethod(context, "+", step)) {
+                            block.yield(context, v);
+                            if (c == 0) break;
+                        }
+                    }
+
                 } else {
-                    ((RubyString) tmp).uptoCommon(context, end, isExclusive, blockCallback);
+                    // Direction of the comparison. We use it as a comparison operator in cycle:
+                    // if begin < end, the cycle performs while value < end (iterating forward)
+                    // if begin > end, the cycle performs while value > end (iterating backward with
+                    // a negative step)
+                    dir = rangeLess(context, begin, end);
+                    // One preliminary addition to check the step moves iteration in the same direction as
+                    // from begin to end; otherwise, the iteration should be empty.
+                    if (rangeLess(context, begin, begin.callMethod(context, "+", step)) == dir) {
+                        if (isExclusive) {
+                            for (; rangeLess(context, v, end) == dir; v = v.callMethod(context, "+", step)) {
+                                block.yield(context, v);
+                            }
+                        } else {
+                            for (; (c = rangeLess(context, v, end)) == dir || c == 0; v = v.callMethod(context, "+", step)) {
+                                block.yield(context, v);
+                                if (c == 0) break;
+                            }
+                        }
+                    }
                 }
             } else {
-                if (!begin.respondsTo("succ")) throw typeError(context, "can't iterate from ", begin, "");
-
-                // range_each_func(range, step_i, b, e, args);
-                rangeEach(context, new StepBlockCallBack(block, RubyFixnum.one(runtime), step));
+                for (; ; v = v.callMethod(context, "+", step)) {
+                    block.yield(context, v);
+                }
             }
         }
         return this;
     }
 
-    private void fixnumStep(ThreadContext context, long step, Block block) {
-        // We must avoid integer overflows.
-        // Any method calling this method must ensure that "step" is greater than 0.
-        long to = ((RubyFixnum) end).getLongValue();
-        if (isExclusive) {
-            if (to == Long.MIN_VALUE) return;
-            to--;
-        }
-        long tov = Long.MAX_VALUE - step;
-        if (to < tov) tov = to;
-
-        long i;
-        for (i = ((RubyFixnum) begin).getLongValue(); i <= tov; i += step) {
+    private void fixnumEndlessStep(ThreadContext context, IRubyObject step, Block block) {
+        long i = begin.convertToInteger().getLongValue();
+        long unit = step.convertToInteger().getLongValue();
+        // avoid overflow
+        while (i <= Long.MAX_VALUE - unit) {
             block.yield(context, asFixnum(context, i));
+            i += unit;
         }
-        if (i <= to) block.yield(context, asFixnum(context, i));
+        IRubyObject b = asFixnum(context, i);
+        for (;; b = ((RubyInteger) b).op_plus(context, step)) {
+            block.yield(context, b);
+        }
     }
 
-    private void numericStep(ThreadContext context, IRubyObject step, Block block) {
-        final String method = isExclusive ? "<" : "<=";
-        IRubyObject beg = begin;
-        long i = 0;
-        while (beg.callMethod(context, method, end).isTrue()) {
-            block.yield(context, beg);
-            i++;
-            beg = begin.callMethod(context, "+", asFixnum(context, i).callMethod(context, "*", step));
+    private void fixnumStep(ThreadContext context, long step, Block block) {
+        long end = fix2long(this.end);
+        long i, unit = step;
+        // avoid overflow
+        long shortEnd = end - unit;
+        if (unit < 0) {
+            i = fix2long(begin);
+            if (i > end) block.yield(context, asFixnum(context, i));
+            while (i > shortEnd) {
+                i += unit;
+                block.yield(context, asFixnum(context, i));
+            }
+            if (!isExclusive && i == shortEnd)
+                block.yield(context, asFixnum(context, i + unit));
+        } else {
+            i = fix2long(begin);
+            if (i < end) block.yield(context, asFixnum(context, i));
+            while (i < shortEnd) {
+                i += unit;
+                block.yield(context, asFixnum(context, i));
+            }
+            if (!isExclusive && i == shortEnd)
+                block.yield(context, asFixnum(context, i + unit));
+        }
+    }
+
+    private void stringStep(ThreadContext context, IRubyObject step, Block block, RubyString strBegin) {
+        StepBlockCallBack callback = new StepBlockCallBack(block, RubyFixnum.one(context.runtime), step);
+        Block blockCallback = CallBlock.newCallClosure(context, this, Signature.ONE_ARGUMENT, callback);
+        if (end.isNil()) {
+            strBegin.uptoEndless(context, blockCallback);
+        } else {
+            strBegin.uptoCommon(context, end, isExclusive, blockCallback);
+        }
+    }
+
+    private void symbolStep(ThreadContext context, IRubyObject step, Block block, RubyString symBegin) {
+        SymbolStepBlockCallBack callback = new SymbolStepBlockCallBack(block, RubyFixnum.one(context.runtime), step);
+        Block blockCallback = CallBlock.newCallClosure(context, this, Signature.ONE_ARGUMENT, callback);
+        if (end.isNil()) {
+            symBegin.uptoEndless(context, blockCallback);
+        } else {
+            symBegin.uptoCommon(context, end.asString(), isExclusive, blockCallback);
         }
     }
 

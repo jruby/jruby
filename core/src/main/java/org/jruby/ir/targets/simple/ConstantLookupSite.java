@@ -25,16 +25,13 @@ public class ConstantLookupSite {
 
     private IRubyObject cacheSearchConst(ThreadContext context, StaticScope staticScope, boolean publicOnly) {
         // Lexical lookup
-        RubyModule object = objectClass(context);
         String id = this.id;
-        IRubyObject constant = staticScope == null ?
-                object.getConstant(context, id) : staticScope.getScopedConstant(context, id);
+        IRubyObject constant = staticScope.getScopedConstant(context, id);
 
         // Inheritance lookup
         RubyModule module = null;
         if (constant == null) {
-            // SSS FIXME: Is this null check case correct?
-            module = staticScope == null ? object : staticScope.getModule();
+            module = staticScope.getModule();
             constant = publicOnly ?
                     module.getConstantFromNoConstMissing(context, id, false) :
                     module.getConstantNoConstMissing(context, id);

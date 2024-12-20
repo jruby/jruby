@@ -2182,9 +2182,13 @@ public class EncodingUtils {
     }
 
     // io_enc_str
-    public static IRubyObject ioEncStr(Ruby runtime, IRubyObject str, OpenFile fptr) {
-        ((RubyString)str).setEncoding(fptr.readEncoding(runtime));
+    public static RubyString ioEncStr(Ruby runtime, RubyString str, OpenFile fptr) {
+        str.setEncoding(fptr.readEncoding(runtime));
         return str;
+    }
+
+    public static IRubyObject ioEncStr(Ruby runtime, IRubyObject str, OpenFile fptr) {
+        return ioEncStr(runtime, (RubyString) str, fptr);
     }
 
     // rb_enc_uint_chr

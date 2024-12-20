@@ -131,9 +131,9 @@ public class OutputStrings {
                 .append("# These properties can be used to alter runtime behavior for performance\n")
                 .append("# or compatibility.\n")
                 .append("#\n")
-                .append("# Specify them by passing `-X<property>=<value>` to the jruby command,\n")
-                .append("# or put `<property>=<value>` in .jrubyrc. If passing to the java command,\n")
-                .append("# use the flag `-Djruby.<property>=<value>`\n")
+                .append("# Specify them by passing '-X<property>=<value>' to the jruby command,\n")
+                .append("# or put '<property>=<value>' in .jrubyrc. If passing to the java command,\n")
+                .append("# use the flag '-Djruby.<property>=<value>'\n")
                 .append("#\n")
                 .append("# This output is the current settings as a valid .jrubyrc file.\n");
 

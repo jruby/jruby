@@ -332,7 +332,7 @@ public class TestRaiseException extends Base {
             evaler.eval(context.runtime, "no_method_with_this_name");
             fail("expected to throw");
         } catch (RaiseException re) {
-            assertEquals("(NameError) undefined local variable or method `no_method_with_this_name' for main:Object", re.getMessage());
+            assertEquals("(NameError) undefined local variable or method 'no_method_with_this_name' for main:Object", re.getMessage());
         }
     }
 

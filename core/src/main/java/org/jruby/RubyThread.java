@@ -558,6 +558,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             return RubyStackTraceElement.to_s_mri(context, element);
         }
 
+        public RubyStackTraceElement getElement() {
+            return element;
+        }
+
         public static RubyArray newLocationArray(Ruby runtime, RubyStackTraceElement[] elements) {
             return newLocationArray(runtime, elements, 0, elements.length);
         }
@@ -1565,7 +1569,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         exception = (RubyException) tmp;
 
         if (args.length == 3) {
-            exception.set_backtrace(args[2]);
+            exception.set_backtrace(context, args[2]);
         }
 
         IRubyObject cause = errorInfo;

@@ -2207,7 +2207,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      *  <em>produces:</em>
      *
-     *     prog.rb:3:in `&lt;&lt;': can't modify frozen array (TypeError)
+     *     prog.rb:3:in '&lt;&lt;': can't modify frozen array (TypeError)
      *     	from prog.rb:3
      */
     public IRubyObject freeze(ThreadContext context) {

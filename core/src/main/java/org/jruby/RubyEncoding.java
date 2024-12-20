@@ -37,6 +37,7 @@ import java.nio.charset.StandardCharsets;
 
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB.Entry;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF16BEEncoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -72,6 +73,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     public static final ByteList EXTERNAL = new ByteList(encodeISO("external"), false);
     public static final ByteList FILESYSTEM = new ByteList(encodeISO("filesystem"), false);
     public static final ByteList INTERNAL = new ByteList(encodeISO("internal"), false);
+    public static final ByteList BINARY_ASCII_NAME = new ByteList(encodeISO("BINARY (ASCII-8BIT)"), false);
 
     public static RubyClass createEncodingClass(ThreadContext context, RubyClass Object) {
         return defineClass(context, "Encoding", Object, NOT_ALLOCATABLE_ALLOCATOR).
@@ -574,10 +576,17 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     public IRubyObject inspect(ThreadContext context) {
         ByteList bytes = new ByteList();
         bytes.append("#<Encoding:".getBytes());
-        bytes.append(name);
+        bytes.append(inspectName());
         if (isDummy) bytes.append(" (dummy)".getBytes());
         bytes.append('>');
         return RubyString.newUsAsciiStringNoCopy(context.runtime, bytes);
+    }
+
+    private ByteList inspectName() {
+        if (encoding == ASCIIEncoding.INSTANCE) {
+            return BINARY_ASCII_NAME;
+        }
+        return name;
     }
 
     @SuppressWarnings("unchecked")
