@@ -519,6 +519,68 @@ public class RubyObject extends RubyBasicObject {
         return obj instanceof RubyArray && sites.dig_array.isBuiltin(obj.getMetaClass());
     }
 
+    /**
+     * Tries to support Java serialization of Ruby objects. This is
+     * still experimental and might not work.
+     */
+    // NOTE: Serialization is primarily supported for testing purposes, and there is no general
+    // guarantee that serialization will work correctly. Specifically, instance variables pointing
+    // at symbols, threads, modules, classes, and other unserializable types are not detected.
+    private void writeObject(ObjectOutputStream out) throws IOException {
+        out.defaultWriteObject();
+
+        // write out ivar count followed by name/value pairs
+        ObjectOutputter outputter = new ObjectOutputter(out);
+        forEachInstanceVariable(outputter);
+        outputter.writeCount();
+        forEachInstanceVariable(outputter);
+    }
+
+    private static class ObjectOutputter implements BiConsumer<String, IRubyObject> {
+        final ObjectOutputStream out;
+        int count = 0;
+        boolean counting = true;
+
+        ObjectOutputter(ObjectOutputStream out) {
+            this.out = out;
+        }
+
+        public void accept(String name, IRubyObject value) {
+            if (counting) {
+                count++;
+            } else {
+                try {
+                    out.writeObject(name);
+                    out.writeObject(value);
+                } catch (IOException ioe) {
+                    throwException(ioe);
+                }
+            }
+        }
+
+        public void writeCount() {
+            try {
+                out.writeInt(count);
+                counting = false;
+            } catch (IOException ioe) {
+                throwException(ioe);
+            }
+        }
+    }
+
+    /**
+     * Tries to support Java unserialization of Ruby objects. This is
+     * still experimental and might not work.
+     */
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        // rest in ivar count followed by name/value pairs
+        int ivarCount = in.readInt();
+        for (int i = 0; i < ivarCount; i++) {
+            setInstanceVariable((String)in.readObject(), (IRubyObject)in.readObject());
+        }
+    }
+
     private static ObjectSites sites(ThreadContext context) {
         return context.sites.Object;
     }
