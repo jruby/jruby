@@ -54,7 +54,7 @@ public class RubyNoMethodError extends RubyNameError {
     }
 
     protected RubyNoMethodError(Ruby runtime, RubyClass exceptionClass) {
-        super(runtime, exceptionClass, exceptionClass.getName());
+        super(runtime, exceptionClass, exceptionClass.getName(runtime.getCurrentContext()));
         this.args = runtime.getNil();
     }
     

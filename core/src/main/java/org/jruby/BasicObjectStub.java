@@ -42,6 +42,7 @@ import org.jruby.runtime.builtin.RubyJavaObject;
 import org.jruby.runtime.builtin.Variable;
 
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.invokedynamic.MethodNames.INSPECT;
 import static org.jruby.runtime.Helpers.invokedynamic;
@@ -230,27 +231,27 @@ public final class BasicObjectStub {
     }
 
     public static IRubyObject inspect(IRubyObject self) {
-        final Ruby runtime = getRuntime(self);
+        var context = getRuntime(self).getCurrentContext();;
         if (hasVariables(self)) {
             StringBuilder part = new StringBuilder();
-            String cname = getMetaClass(self).getRealClass().getName();
+            String cname = getMetaClass(self).getRealClass().getName(context);
             part.append("#<").append(cname).append(":0x");
             part.append(Integer.toHexString(System.identityHashCode(self)));
 
-            if (runtime.isInspecting(self)) {
+            if (context.runtime.isInspecting(self)) {
                 /* 6:tags 16:addr 1:eos */
                 part.append(" ...>");
-                return runtime.newString(part.toString());
+                return newString(context, part.toString());
             }
             try {
-                runtime.registerInspecting(self);
-                return runtime.newString(inspectObj(self, part).toString());
+                context.runtime.registerInspecting(self);
+                return newString(context, inspectObj(self, part).toString());
             } finally {
-                runtime.unregisterInspecting(self);
+                context.runtime.unregisterInspecting(self);
             }
         }
 
-        return Helpers.invoke(runtime.getCurrentContext(), self, "to_s");
+        return Helpers.invoke(context, self, "to_s");
     }
 
 

@@ -215,7 +215,7 @@ public class RubyNameError extends RubyStandardError {
     }
 
     protected RubyNameError(Ruby runtime, RubyClass exceptionClass) {
-        this(runtime, exceptionClass, exceptionClass.getName());
+        this(runtime, exceptionClass, exceptionClass.getName(runtime.getCurrentContext()));
     }
 
     public RubyNameError(Ruby runtime, RubyClass exceptionClass, String message) {

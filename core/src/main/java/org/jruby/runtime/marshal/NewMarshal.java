@@ -421,7 +421,7 @@ public class NewMarshal {
         registerLinkTarget(value);
         out.write(TYPE_USRMARSHAL);
         final RubyClass klass = getMetaClass(value);
-        writeAndRegisterSymbol(out, asSymbol(context, klass.getRealClass().getName()));
+        writeAndRegisterSymbol(out, asSymbol(context, klass.getRealClass().getName(context)));
 
         IRubyObject marshaled = entry != null ?
                 entry.method.call(context, value, entry.sourceModule, "marshal_dump") :
@@ -476,7 +476,7 @@ public class NewMarshal {
 
     private void dumpUserdefBase(RubyOutputStream out, ThreadContext context, RubyClass klass, RubyString marshaled) {
         out.write(TYPE_USERDEF);
-        writeAndRegisterSymbol(out, asSymbol(context, klass.getRealClass().getName()));
+        writeAndRegisterSymbol(out, asSymbol(context, klass.getRealClass().getName(context)));
         writeString(out, marshaled.getByteList());
     }
 
@@ -484,13 +484,13 @@ public class NewMarshal {
         out.write(TYPE_UCLASS);
 
         // w_unique
-        if (type.getName().charAt(0) == '#') {
+        if (type.getName(context).charAt(0) == '#') {
             Ruby runtime = context.runtime;
             throw typeError(context, str(runtime, "can't dump anonymous class ", types(runtime, type)));
         }
         
         // w_symbol
-        writeAndRegisterSymbol(out, asSymbol(context, type.getName()));
+        writeAndRegisterSymbol(out, asSymbol(context, type.getName(context)));
     }
 
     public void dumpVariables(ThreadContext context, RubyOutputStream out, IRubyObject value) {
@@ -578,7 +578,7 @@ public class NewMarshal {
         }
         while(type.isIncluded()) {
             out.write('e');
-            writeAndRegisterSymbol(out, asSymbol(context, type.getOrigin().getName()));
+            writeAndRegisterSymbol(out, asSymbol(context, type.getOrigin().getName(context)));
             type = type.getSuperClass();
         }
         return type;

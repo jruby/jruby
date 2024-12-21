@@ -138,8 +138,8 @@ class MethodJITTask extends JITCompiler.Task {
             String excludeModuleName = className;
             if (implementationClass.getMethodLocation().isSingleton()) {
                 RubyBasicObject possibleRealClass = ((MetaClass) implementationClass).getAttached();
-                if (possibleRealClass instanceof RubyModule) {
-                    excludeModuleName = "Meta:" + ((RubyModule) possibleRealClass).getName();
+                if (possibleRealClass instanceof RubyModule mod) {
+                    excludeModuleName = "Meta:" + mod.getName(mod.getRuntime().getCurrentContext());
                 }
             }
 

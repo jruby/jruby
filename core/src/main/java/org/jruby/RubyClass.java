@@ -1846,19 +1846,20 @@ public class RubyClass extends RubyModule {
 
         @Override
         public void customReify() {
+            var context = runtime.getCurrentContext();
             addClassAnnotations();
 
             // define fields
             defineFields();
 
             // gather a list of instance methods, so we don't accidentally make static ones that conflict
-            final Set<String> instanceMethods = new HashSet<String>(getMethods().size());
+            final Set<String> instanceMethods = new HashSet<>(getMethods().size());
 
             // define instance methods
             defineInstanceMethods(instanceMethods);
 
             // define class/static methods
-            defineClassMethods(instanceMethods);
+            defineClassMethods(context, instanceMethods);
         }
 
         private void addClassAnnotations() {
@@ -1893,7 +1894,7 @@ public class RubyClass extends RubyModule {
             }
         }
 
-        private void defineClassMethods(Set<String> instanceMethods) {
+        private void defineClassMethods(ThreadContext context, Set<String> instanceMethods) {
             SkinnyMethodAdapter m;
 
             // define class/static methods
@@ -1963,7 +1964,7 @@ public class RubyClass extends RubyModule {
                     RealClassGenerator.coerceResultAndReturn(m, methodSignature[0]);
                 }
 
-                if (DEBUG_REIFY) LOG.debug("defining {}.{} as {}.{}", getName(), id, javaName, javaMethodName + signature);
+                if (DEBUG_REIFY) LOG.debug("defining {}.{} as {}.{}", getName(context), id, javaName, javaMethodName + signature);
 
                 m.end();
             }
@@ -2008,6 +2009,7 @@ public class RubyClass extends RubyModule {
         
         protected String defineInstanceMethod(final String id, final String callid, final Signature sig,
                 PositionAware position, Class<?>[] methodSignature) {
+            var context = getRuntime().getCurrentContext();
             String javaMethodName = JavaNameMangler.mangleMethodName(id);
 
             Map<Class<?>, Map<String, Object>> methodAnnos = getMethodAnnotations().get(callid); // ruby side, use callid
@@ -2118,7 +2120,7 @@ public class RubyClass extends RubyModule {
             }
             m.end();
 
-            if (DEBUG_REIFY) LOG.debug("defining {}#{} (calling #{}) as {}#{}", getName(), id, callid, javaName, javaMethodName + signature);
+            if (DEBUG_REIFY) LOG.debug("defining {}#{} (calling #{}) as {}#{}", getName(context), id, callid, javaName, javaMethodName + signature);
 
             return javaMethodName + signature;
         }
