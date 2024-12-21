@@ -776,30 +776,7 @@ public class Dir {
         FileResource file = JRubyFile.createResource(runtime, cwd, fileName);
 
         if (file.exists()) {
-            byte[] newBytes;
-            
-            // get the real filename (case-sensitive)
-            if(file.isFile() && cwd != null) {
-                String path = file.isSymLink() ? file.absolutePath() : file.canonicalPath();
-
-                // compensate for missing slash
-                if (fileName.endsWith("/")) {
-                    path += "/";
-                }
-
-                if(fileName.contains("./")) {
-                    newBytes = ("./" + path.substring((path.length() - end + 2))).getBytes();
-                } else {
-                    int tempBegin = path.length() - fileName.length();
-                    newBytes = path.substring(tempBegin).getBytes();
-                }
-
-                end = newBytes.length;
-            } else {
-                newBytes = bytes;
-            }
-
-            return func.call(newBytes, begin, end - begin, enc, arg);
+            return func.call(bytes, begin, end - begin, enc, arg);
         }
 
         return 0;
