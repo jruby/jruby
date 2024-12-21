@@ -286,10 +286,10 @@ public class RubyStruct extends RubyObject {
             newStruct.makeMetaClass(superClass.metaClass);
             superClass.invokeInherited(context, superClass, newStruct);
         } else {
-            IRubyObject type = superClass.getConstantAt(name);
+            IRubyObject type = superClass.getConstantAt(context, name);
             if (type != null) {
                 context.runtime.getWarnings().warn(ID.STRUCT_CONSTANT_REDEFINED, context.getFile(), context.getLine(), "redefining constant " + type);
-                superClass.deleteConstant(name);
+                superClass.deleteConstant(context, name);
             }
             newStruct = superClass.defineClassUnder(context, name, superClass, RubyStruct::new);
         }
@@ -308,9 +308,9 @@ public class RubyStruct extends RubyObject {
             final String memberName = args[i].asJavaString();
             // if we are storing a name as well, index is one too high for values
             final int index = (name == null && !nilName) ? i : i - 1;
-            newStruct.addMethod(memberName, new Accessor(newStruct, memberName, index));
+            newStruct.addMethod(context, memberName, new Accessor(newStruct, memberName, index));
             String nameAsgn = memberName + '=';
-            newStruct.addMethod(nameAsgn, new Mutator(newStruct, nameAsgn, index));
+            newStruct.addMethod(context, nameAsgn, new Mutator(newStruct, nameAsgn, index));
         }
 
         if (block.isGiven()) {
@@ -699,7 +699,7 @@ public class RubyStruct extends RubyObject {
         RubyString buffer = newString(context, new ByteList(32));
         buffer.cat(STRUCT_BEG);
 
-        String cname = getMetaClass().getRealClass().getName();
+        String cname = getMetaClass().getRealClass().getName(context);
         final char first = cname.charAt(0);
 
         if (recur || first != '#') {

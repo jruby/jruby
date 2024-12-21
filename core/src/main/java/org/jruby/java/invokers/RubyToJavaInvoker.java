@@ -716,10 +716,9 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
     }
 
     private static String formatReceiver(final IRubyObject object) {
-        if ( object instanceof RubyModule ) {
-            return ((RubyModule) object).getName();
-        }
-        return object.getMetaClass().getRealClass().getName();
+        var context = object.getRuntime().getCurrentContext();
+        return object instanceof RubyModule mod ?
+                mod.getName(context) : object.getMetaClass().getRealClass().getName(context);
     }
 
     private static class NullHashMapLong<V> extends NonBlockingHashMapLong<V> {

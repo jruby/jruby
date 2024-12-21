@@ -132,44 +132,44 @@ public class JZlibInflate extends ZStream {
         run(false);
     }
 
-    @JRubyMethod(name = "sync_point?")
-    public IRubyObject sync_point_p() {
-        return sync_point();
-    }
+     @Deprecated(since = "10.0")
+     public IRubyObject sync_point_p() {
+         return sync_point_p(getCurrentContext());
+     }
 
-    public IRubyObject sync_point() {
+     @JRubyMethod(name = "sync_point?")
+     public IRubyObject sync_point_p(ThreadContext context) {
+         return sync_point(context);
+     }
+
+     @Deprecated(since = "10.0")
+     public IRubyObject sync_point() {
+         return sync_point(getCurrentContext());
+     }
+
+     public IRubyObject sync_point(ThreadContext context) {
         int ret = flater.syncPoint();
-        switch (ret) {
-            case 1:
-                return getRuntime().getTrue();
-            case com.jcraft.jzlib.JZlib.Z_DATA_ERROR:
-                throw RubyZlib.newStreamError(getRuntime(), "stream error");
-            default:
-                return getRuntime().getFalse();
-        }
+        return switch (ret) {
+             case 1 -> context.tru;
+             case JZlib.Z_DATA_ERROR -> throw RubyZlib.newStreamError(context, "stream error");
+             default -> context.fals;
+        };
     }
 
     @JRubyMethod(name = "set_dictionary")
     public IRubyObject set_dictionary(ThreadContext context, IRubyObject arg) {
         try {
-            return set_dictionary(arg);
+            byte[] tmp = arg.convertToString().getBytes();
+            int ret = flater.setDictionary(tmp, tmp.length);
+            switch (ret) {
+                case JZlib.Z_STREAM_ERROR -> throw RubyZlib.newStreamError(context, "stream error");
+                case JZlib.Z_DATA_ERROR -> throw RubyZlib.newDataError(context, "wrong dictionary");
+            }
+            run(false);
+            return arg;
         } catch (IllegalArgumentException iae) {
-            throw RubyZlib.newStreamError(context.getRuntime(), "stream error: " + iae.getMessage());
+            throw RubyZlib.newStreamError(context, "stream error: " + iae.getMessage());
         }
-    }
-
-    private IRubyObject set_dictionary(IRubyObject str) {
-        byte[] tmp = str.convertToString().getBytes();
-        int ret = flater.setDictionary(tmp, tmp.length);
-        switch (ret) {
-            case com.jcraft.jzlib.JZlib.Z_STREAM_ERROR:
-                throw RubyZlib.newStreamError(getRuntime(), "stream error");
-            case com.jcraft.jzlib.JZlib.Z_DATA_ERROR:
-                throw RubyZlib.newDataError(getRuntime(), "wrong dictionary");
-            default:
-        }
-        run(false);
-        return str;
     }
 
     @JRubyMethod(name = "inflate")
@@ -194,19 +194,16 @@ public class JZlibInflate extends ZStream {
     public IRubyObject sync(ThreadContext context, IRubyObject string) {
         if (flater.avail_in > 0) {
             switch (flater.sync()) {
-                case com.jcraft.jzlib.JZlib.Z_OK:
-                    flater.setInput(string.convertToString().getByteList().bytes(),
-                            true);
+                case JZlib.Z_OK -> {
+                    flater.setInput(string.convertToString().getByteList().bytes(), true);
                     return context.tru;
-                case com.jcraft.jzlib.JZlib.Z_DATA_ERROR:
-                    break;
-                default:
-                    throw RubyZlib.newStreamError(getRuntime(), "stream error");
+                }
+                case JZlib.Z_DATA_ERROR -> {}
+                default -> throw RubyZlib.newStreamError(context, "stream error");
             }
         }
-        if (string.convertToString().getByteList().length() <= 0) {
-            return context.fals;
-        }
+        if (string.convertToString().getByteList().length() <= 0) return context.fals;
+
         flater.setInput(string.convertToString().getByteList().bytes(), true);
         switch (flater.sync()) {
             case com.jcraft.jzlib.JZlib.Z_OK:
@@ -214,19 +211,19 @@ public class JZlibInflate extends ZStream {
             case com.jcraft.jzlib.JZlib.Z_DATA_ERROR:
                 return context.fals;
             default:
-                throw RubyZlib.newStreamError(getRuntime(), "stream error");
+                throw RubyZlib.newStreamError(context, "stream error");
         }
     }
 
     private void run(boolean finish) {
         int resultLength = -1;
-        Ruby runtime = getRuntime();
+        var context = getRuntime().getCurrentContext();
 
         while (!internalFinished() && resultLength != 0) {
             // MRI behavior
             boolean needsInput = flater.avail_in < 0;
             if (finish && needsInput) {
-                throw RubyZlib.newBufError(runtime, "buffer error");
+                throw RubyZlib.newBufError(context, "buffer error");
             }
 
             flater.setOutput(collected, collectedIdx, collected.length - collectedIdx);
@@ -241,9 +238,9 @@ public class JZlibInflate extends ZStream {
                      * inflated successfully. collected.append(outp, 0,
                      * resultLength); }
                      */
-                    throw RubyZlib.newDataError(runtime, flater.getMessage());
+                    throw RubyZlib.newDataError(context, flater.getMessage());
                 case com.jcraft.jzlib.JZlib.Z_NEED_DICT:
-                    throw RubyZlib.newDictError(runtime, "need dictionary");
+                    throw RubyZlib.newDictError(context, "need dictionary");
                 case com.jcraft.jzlib.JZlib.Z_STREAM_END:
                     if (flater.avail_in > 0) {
                         // MRI behavior: pass-through
@@ -267,7 +264,7 @@ public class JZlibInflate extends ZStream {
             if (!internalFinished()) {
                 int err = flater.inflate(com.jcraft.jzlib.JZlib.Z_FINISH);
                 if (err != com.jcraft.jzlib.JZlib.Z_OK) {
-                    throw RubyZlib.newBufError(getRuntime(), "buffer error");
+                    throw RubyZlib.newBufError(context, "buffer error");
                 }
             }
         }
@@ -328,7 +325,7 @@ public class JZlibInflate extends ZStream {
     }
 
     @Override
-    public IRubyObject avail_in() {
+    public IRubyObject avail_in(ThreadContext context) {
         return RubyFixnum.newFixnum(getRuntime(), flater.avail_in);
     }
 

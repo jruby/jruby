@@ -51,6 +51,7 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
 import org.jruby.api.Convert;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ext.fcntl.FcntlLibrary;
@@ -593,37 +594,31 @@ public class RubyBasicSocket extends RubyIO {
 
     @JRubyMethod
     public IRubyObject local_address(ThreadContext context) {
-        Ruby runtime = context.runtime;
-
         InetSocketAddress address = getInetSocketAddress();
 
         if (address != null) {
             SocketType socketType = SocketType.forChannel(getChannel());
-            return new Addrinfo(runtime, runtime.getClass("Addrinfo"), address, socketType.getSocketType(), socketType);
+            return new Addrinfo(context.runtime, Access.getClass(context, "Addrinfo"), address, socketType.getSocketType(), socketType);
         }
 
         UnixSocketAddress unix = getUnixSocketAddress();
-        return Addrinfo.unix(context, runtime.getClass("Addrinfo"), newString(context, unix.path()));
+        return Addrinfo.unix(context, Access.getClass(context, "Addrinfo"), newString(context, unix.path()));
     }
 
     @JRubyMethod
     public IRubyObject remote_address(ThreadContext context) {
-        Ruby runtime = context.runtime;
-
         InetSocketAddress address = getInetRemoteSocket();
 
         if (address != null) {
             SocketType socketType = SocketType.forChannel(getChannel());
-            return new Addrinfo(runtime, runtime.getClass("Addrinfo"), address, socketType.getSocketType(), socketType);
+            return new Addrinfo(context.runtime, Access.getClass(context, "Addrinfo"), address, socketType.getSocketType(), socketType);
         }
 
         UnixSocketAddress unix = getUnixRemoteSocket();
 
-         if (unix != null) {
-             return Addrinfo.unix(context, runtime.getClass("Addrinfo"), newString(context, unix.path()));
-         }
+         if (unix == null) throw context.runtime.newErrnoENOTCONNError();
 
-         throw runtime.newErrnoENOTCONNError();
+        return Addrinfo.unix(context, Access.getClass(context, "Addrinfo"), newString(context, unix.path()));
     }
 
     @JRubyMethod(optional = 1, checkArity = false)

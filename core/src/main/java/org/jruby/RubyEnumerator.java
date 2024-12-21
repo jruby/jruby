@@ -44,6 +44,7 @@ import org.jruby.util.ByteList;
 import java.util.Spliterator;
 import java.util.stream.Stream;
 
+import static org.jruby.api.Access.enumeratorClass;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
@@ -90,7 +91,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
                 defineMethods(context, RubyEnumerator.class);
 
         Enumerator.defineClassUnder(context, "FeedValue", Object, NOT_ALLOCATABLE_ALLOCATOR).defineMethods(context, FeedValue.class);
-        Enumerator.setConstantVisibility(context.runtime, "FeedValue", true);
+        Enumerator.setConstantVisibility(context, "FeedValue", true);
 
         return Enumerator;
     }
@@ -103,13 +104,18 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
         private volatile IRubyObject value;
 
-        private FeedValue(Ruby runtime, RubyClass type) {
-            super(runtime, type);
-            value = runtime.getNil();
+        private FeedValue(ThreadContext context, RubyClass type) {
+            super(context.runtime, type);
+            value = context.nil;
         }
 
+        @Deprecated(since = "10.0")
         FeedValue(Ruby runtime) {
-            this(runtime, (RubyClass) runtime.getEnumerator().getConstantAt("FeedValue", true));
+            this(runtime.getCurrentContext());
+        }
+
+        FeedValue(ThreadContext context) {
+            this(context, (RubyClass) enumeratorClass(context).getConstantAt(context, "FeedValue", true));
         }
 
         @JRubyMethod
@@ -357,11 +363,10 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
     }
 
     private IRubyObject inspect(ThreadContext context, boolean recurse) {
-        Ruby runtime = context.runtime;
         ByteList bytes = new ByteList(new byte[] {'#', '<'});
-        bytes.append(getMetaClass().getName().getBytes());
+        bytes.append(getMetaClass().getName(context).getBytes());
         bytes.append((byte)':').append((byte)' ');
-        RubyString result = RubyString.newStringNoCopy(runtime, bytes);
+        RubyString result = RubyString.newStringNoCopy(context.runtime, bytes);
 
         if (recurse) {
             return result.catString("...>");

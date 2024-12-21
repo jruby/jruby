@@ -57,14 +57,14 @@ public abstract class JavaNio {
         var runtime = context.runtime;
         JavaExtensions.put(runtime, java.nio.Buffer.class, (proxy) -> Buffer.define(context, (RubyClass) proxy));
         // make sure it does not use CharSequence#inspect but rather a unified Buffer#inspect format:
-        JavaExtensions.put(runtime, java.nio.CharBuffer.class, (proxy) -> proxy.addMethod("inspect", new InspectBuffer(proxy)));
+        JavaExtensions.put(runtime, java.nio.CharBuffer.class, (proxy) -> proxy.addMethod(context, "inspect", new InspectBuffer(proxy)));
     }
 
     @JRubyModule(name = "Java::JavaNio::Buffer")
     public static class Buffer {
         static RubyModule define(ThreadContext context, final RubyClass proxy) {
             proxy.defineMethods(context, Buffer.class).
-                    addMethod("inspect", new InspectBuffer(proxy));
+                    addMethod(context, "inspect", new InspectBuffer(proxy));
             return proxy;
         }
 

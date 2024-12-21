@@ -158,8 +158,9 @@ public class ClassVariable extends AbstractVariable {
      */
     @Override
     public void inject() {
-        RubyModule rubyClass = getRubyClass(receiver.getRuntime());
-        rubyClass.setClassVar(name, rubyObject);
+        var context = receiver.getRuntime().getCurrentContext();
+        RubyModule rubyClass = getRubyClass(context.runtime);
+        rubyClass.setClassVar(context, name, rubyObject);
     }
 
     /**
@@ -168,7 +169,8 @@ public class ClassVariable extends AbstractVariable {
      */
     @Override
     public void remove() {
-        RubyModule rubyClass = getRubyClass(receiver.getRuntime());
-        rubyClass.removeClassVariable(name);
+        var context = receiver.getRuntime().getCurrentContext();
+        RubyModule rubyClass = getRubyClass(context.runtime);
+        rubyClass.removeClassVariable(context, name);
     }
 }

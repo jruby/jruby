@@ -455,8 +455,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     private static RubyString basenameImpl(ThreadContext context, RubyClass klass, IRubyObject path, IRubyObject ext) {
-        final int separatorChar = getSeparatorChar(klass);
-        final int altSeparatorChar = getAltSeparatorChar(klass);
+        final int separatorChar = getSeparatorChar(context, klass);
+        final int altSeparatorChar = getAltSeparatorChar(context, klass);
 
         RubyString origString = get_path(context, path);
         Encoding origEncoding = origString.getEncoding();
@@ -528,13 +528,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return newString(context, RubyString.encodeBytelist(name, origEncoding));
     }
 
-    private static int getSeparatorChar(final RubyClass File) {
-        final RubyString sep = RubyString.stringValue(File.getConstant("SEPARATOR"));
+    private static int getSeparatorChar(ThreadContext context, final RubyClass File) {
+        final RubyString sep = RubyString.stringValue(File.getConstant(context, "SEPARATOR"));
         return sep.getByteList().get(0);
     }
 
-    private static int getAltSeparatorChar(final RubyClass File) {
-        final IRubyObject sep = File.getConstant("ALT_SEPARATOR");
+    private static int getAltSeparatorChar(ThreadContext context, final RubyClass File) {
+        final IRubyObject sep = File.getConstant(context, "ALT_SEPARATOR");
         return sep instanceof RubyString sepStr ? sepStr.getByteList().get(0) : NULL_CHAR;
     }
 
@@ -605,7 +605,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         if (level < 0) throw argumentError(context, "negative level: " + level);
 
         final RubyClass File = fileClass(context);
-        IRubyObject sep = File.getConstant("SEPARATOR");
+        IRubyObject sep = File.getConstant(context, "SEPARATOR");
         final String separator; final char separatorChar;
         if (sep instanceof RubyString && ((RubyString) sep).size() == 1) {
             separatorChar = ((RubyString) sep).getByteList().charAt(0);
@@ -616,7 +616,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
 
         String altSeparator = null; char altSeparatorChar = '\0';
-        final IRubyObject rbAltSeparator = File.getConstantNoConstMissing("ALT_SEPARATOR");
+        final IRubyObject rbAltSeparator = File.getConstantNoConstMissing(context, "ALT_SEPARATOR");
         if (rbAltSeparator != null && rbAltSeparator != context.nil) {
             altSeparator = rbAltSeparator.toString();
             if (!altSeparator.isEmpty()) altSeparatorChar = altSeparator.charAt(0);
@@ -2161,7 +2161,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     private static RubyString doJoin(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        final String separator = fileClass(context).getConstant("SEPARATOR").toString();
+        final String separator = fileClass(context).getConstant(context, "SEPARATOR").toString();
         final RubyArray argsAry = RubyArray.newArrayMayCopy(context.runtime, args);
         final StringBuilder buffer = new StringBuilder(24);
 

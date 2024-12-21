@@ -8,6 +8,7 @@ package org.jruby.test;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyObject;
+import org.jruby.api.Access;
 
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Define.defineClass;
@@ -41,7 +42,7 @@ public class TestRubyClass extends junit.framework.TestCase {
         public static Ruby currentRuntime;
         
         public MyRubyObjectSubclass() {
-            super(currentRuntime, currentRuntime.getClass("TestSetClassAllocatorClass"));
+            super(currentRuntime, Access.getClass(currentRuntime.getCurrentContext(), "TestSetClassAllocatorClass"));
         }
     }
 

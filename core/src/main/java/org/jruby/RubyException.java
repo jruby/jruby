@@ -140,7 +140,7 @@ public class RubyException extends RubyObject {
     @JRubyMethod(name = "to_tty?", meta = true)
     public static IRubyObject to_tty_p(ThreadContext context, IRubyObject recv) {
         IRubyObject stderr = globalVariables(context).get("$stderr");
-        IRubyObject STDERR = objectClass(context).getConstant("STDERR");
+        IRubyObject STDERR = objectClass(context).getConstant(context, "STDERR");
         return equalInternal(context, stderr, STDERR) ? ((RubyIO) STDERR).tty_p(context) : context.fals;
     }
 
@@ -384,7 +384,7 @@ public class RubyException extends RubyObject {
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s(ThreadContext context) {
         final IRubyObject msg = getMessage();
-        return !msg.isNil() ? msg.asString() : newString(context, getMetaClass().getRealClass().getName());
+        return !msg.isNil() ? msg.asString() : newString(context, getMetaClass().getRealClass().getName(context));
     }
 
     @JRubyMethod(name = "message")
@@ -399,7 +399,7 @@ public class RubyException extends RubyObject {
     @JRubyMethod(name = "inspect")
     public RubyString inspect(ThreadContext context) {
         // rb_class_name skips intermediate classes (JRUBY-6786)
-        RubyString rubyClass = getMetaClass().getRealClass().rubyName();
+        RubyString rubyClass = getMetaClass().getRealClass().rubyName(context);
         RubyString exception = RubyString.objAsString(context, this);
 
         if (exception.isEmpty()) return rubyClass;

@@ -299,46 +299,62 @@ public class StaticScope implements Serializable, Cloneable {
         System.arraycopy(names, 0, variableNames, 0, names.length);
     }
 
+    @Deprecated(since = "10.0")
+    public IRubyObject getConstantDefined(String internedName) {
+        return getConstantDefined(cref.getRuntime().getCurrentContext(), internedName);
+    }
+
     /**
      * Gets a constant back from lexical search from the cref in this scope.
      * As it is for defined? we will not forced resolution of autoloads nor
      * call const_defined
      */
-    public IRubyObject getConstantDefined(String internedName) {
-        IRubyObject result = cref.fetchConstant(internedName);
+    public IRubyObject getConstantDefined(ThreadContext context, String internedName) {
+        IRubyObject result = cref.fetchConstant(context, internedName);
 
         if (result != null) return result;
 
-        return previousCRefScope == null ? null : previousCRefScope.getConstantDefinedNoObject(internedName);
+        return previousCRefScope == null ? null : previousCRefScope.getConstantDefinedNoObject(context, internedName);
     }
 
+    @Deprecated(since = "10.0")
     public IRubyObject getConstantDefinedNoObject(String internedName) {
-        if (previousCRefScope == null) return null;
-
-        return getConstantDefined(internedName);
+        return getConstantDefinedNoObject(cref.getRuntime().getCurrentContext(), internedName);
     }
 
+    private IRubyObject getConstantDefinedNoObject(ThreadContext context, String internedName) {
+        return previousCRefScope == null ? null : getConstantDefined(context, internedName);
+    }
+
+    @Deprecated(since = "10.0")
     public IRubyObject getConstant(String internedName) {
-        IRubyObject result = getConstantInner(internedName);
+        return getConstant(cref.getRuntime().getCurrentContext(), internedName);
+    }
+
+    public IRubyObject getConstant(ThreadContext context, String internedName) {
+        IRubyObject result = getScopedConstant(context, internedName);
 
         // If we could not find the constant from cref..then try getting from inheritance hierarchy
-        return result == null ? cref.getConstantNoConstMissing(internedName) : result;
+        return result == null ? cref.getConstantNoConstMissing(context, internedName) : result;
     }
 
+    @Deprecated(since = "10.0")
     public IRubyObject getConstantInner(String internedName) {
-        IRubyObject result = cref.getConstantWithAutoload(internedName, RubyBasicObject.UNDEF, true);
+        return getScopedConstant(cref.getRuntime().getCurrentContext(), internedName);
+    }
+
+    public IRubyObject getScopedConstant(ThreadContext context, String internedName) {
+        IRubyObject result = cref.getConstantWithAutoload(context, internedName, RubyBasicObject.UNDEF, true);
 
         // If we had a failed autoload, give up hierarchy search
         if (result == RubyBasicObject.UNDEF) return null;
         if (result != null) return result;
 
-        return previousCRefScope == null ? null : previousCRefScope.getConstantInnerNoObject(internedName);
+        return previousCRefScope == null ? null : previousCRefScope.getConstantInnerNoObject(context, internedName);
     }
 
-    private IRubyObject getConstantInnerNoObject(String internedName) {
-        if (previousCRefScope == null) return null;
-
-        return getConstantInner(internedName);
+    private IRubyObject getConstantInnerNoObject(ThreadContext context, String internedName) {
+        return previousCRefScope == null ? null : getScopedConstant(context, internedName);
     }
 
     /**

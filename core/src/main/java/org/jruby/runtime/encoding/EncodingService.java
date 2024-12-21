@@ -207,23 +207,23 @@ public final class EncodingService {
         return loadEncodingEntry(entry);
     }
 
-    public void defineEncodings() {
+    public void defineEncodings(ThreadContext context) {
         HashEntryIterator hei = encodings.entryIterator();
         while (hei.hasNext()) {
             CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e =
                     ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)hei.next());
             Entry ee = e.value;
 
-            RubyEncoding encoding = RubyEncoding.newEncoding(runtime, e.bytes, e.p, e.end, ee.isDummy());
+            RubyEncoding encoding = RubyEncoding.newEncoding(context.runtime, e.bytes, e.p, e.end, ee.isDummy());
             encodingList[ee.getIndex()] = encoding;
 
             for (String constName : EncodingUtils.encodingNames(e.bytes, e.p, e.end)) {
-                defineEncodingConstant(runtime, (RubyEncoding) encodingList[ee.getIndex()], constName);
+                defineEncodingConstant(context, (RubyEncoding) encodingList[ee.getIndex()], constName);
             }
         }
     }
 
-    public void defineAliases() {
+    public void defineAliases(ThreadContext context) {
         HashEntryIterator i = aliases.entryIterator();
         while (i.hasNext()) {
             CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e =
@@ -232,13 +232,13 @@ public final class EncodingService {
 
             // The constant names must be treated by the the <code>encodingNames</code> helper.
             for (String constName : EncodingUtils.encodingNames(e.bytes, e.p, e.end)) {
-                defineEncodingConstant(runtime, (RubyEncoding) encodingList[entry.getIndex()], constName);
+                defineEncodingConstant(context, (RubyEncoding) encodingList[entry.getIndex()], constName);
             }
         }
     }
 
-    private void defineEncodingConstant(Ruby runtime, RubyEncoding encoding, String constName) {
-        runtime.getEncoding().defineConstant(constName, encoding);
+    private void defineEncodingConstant(ThreadContext context, RubyEncoding encoding, String constName) {
+        runtime.getEncoding().defineConstant(context, constName, encoding);
     }
 
     public IRubyObject getDefaultExternal() {

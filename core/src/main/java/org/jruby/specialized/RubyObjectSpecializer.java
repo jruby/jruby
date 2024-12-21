@@ -153,7 +153,8 @@ public class RubyObjectSpecializer {
     }
 
     private static String uniqueClassName(RubyClass klass) {
-        String className = klass.getName();
+        var context = klass.getRuntime().getCurrentContext();
+        String className = klass.getName(context);
 
         if (className.startsWith("#")) {
             className = "Anonymous" + Integer.toHexString(System.identityHashCode(klass));

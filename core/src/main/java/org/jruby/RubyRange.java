@@ -112,7 +112,7 @@ public class RubyRange extends RubyObject {
 
         Range.defineClassUnder(context, "BSearch", Object, OBJECT_ALLOCATOR).defineMethods(context, BSearch.class);
 
-        Range.setConstantVisibility(context.runtime, "BSearch", true);
+        Range.setConstantVisibility(context, "BSearch", true);
 
         return Range;
     }

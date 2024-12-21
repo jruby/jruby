@@ -1,6 +1,7 @@
 package org.jruby.util;
 
 import org.jruby.Ruby;
+import org.jruby.api.Access;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -22,7 +23,7 @@ public class TestIOChannel {
     @Test
     public void testBufferReuse() throws Exception {
         ThreadContext context = runtime.getCurrentContext();
-        IRubyObject myo = runtime.getClass("MyO").newInstance(context, Block.NULL_BLOCK);
+        IRubyObject myo = Access.getClass(context, "MyO").newInstance(context, Block.NULL_BLOCK);
         IOChannel.IOWritableByteChannel ioc = new IOChannel.IOWritableByteChannel(myo);
         ByteBuffer buf = ByteBuffer.wrap(new byte[] {(byte) 'f', (byte) 'o', (byte) 'o'});
         ioc.write(buf);

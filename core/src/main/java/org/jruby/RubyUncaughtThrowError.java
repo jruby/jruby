@@ -56,14 +56,25 @@ public class RubyUncaughtThrowError extends RubyArgumentError {
                 defineMethods(context, RubyUncaughtThrowError.class);
     }
 
+    @Deprecated(since = "10.0")
     protected RubyUncaughtThrowError(Ruby runtime, RubyClass exceptionClass) {
-        super(runtime, exceptionClass, exceptionClass.getName());
-        this.message = runtime.getNil();
+        this(runtime.getCurrentContext(), exceptionClass);
     }
 
+    protected RubyUncaughtThrowError(ThreadContext context, RubyClass exceptionClass) {
+        super(context.runtime, exceptionClass, exceptionClass.getName(context));
+        this.message = context.nil;
+    }
+
+    @Deprecated(since = "10.0")
     public static RubyUncaughtThrowError newUncaughtThrowError(final Ruby runtime,
-        IRubyObject tag, IRubyObject value, RubyString message) {
-        RubyUncaughtThrowError error = new RubyUncaughtThrowError(runtime, runtime.getUncaughtThrowError());
+                                                               IRubyObject tag, IRubyObject value, RubyString message) {
+        return newUncaughtThrowError(runtime.getCurrentContext(), tag, value, message);
+    }
+
+    public static RubyUncaughtThrowError newUncaughtThrowError(ThreadContext context,
+                                                               IRubyObject tag, IRubyObject value, RubyString message) {
+        RubyUncaughtThrowError error = new RubyUncaughtThrowError(context, context.runtime.getUncaughtThrowError());
         error.tag = tag;
         error.value = value;
         error.message = message;

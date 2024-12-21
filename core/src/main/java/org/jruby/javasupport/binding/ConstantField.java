@@ -16,11 +16,12 @@ public class ConstantField {
     public ConstantField(Field field) { this.field = field; }
 
     void install(final RubyModule proxy) {
+        var context = proxy.getRuntime().getCurrentContext();
         final String name = field.getName();
-        if ( proxy.getConstantAt(name) == null ) {
+        if (proxy.getConstantAt(context, name) == null) {
             try {
                 final Object value = field.get(null);
-                proxy.setConstant(name, JavaUtil.convertJavaToUsableRubyObject(proxy.getRuntime(), value));
+                proxy.setConstant(context, name, JavaUtil.convertJavaToUsableRubyObject(proxy.getRuntime(), value));
             }
             catch (IllegalAccessException iae) {
                 // if we can't read it, we don't set it

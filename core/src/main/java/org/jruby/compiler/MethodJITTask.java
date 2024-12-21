@@ -72,19 +72,19 @@ class MethodJITTask extends JITCompiler.Task {
         JVMVisitor visitor = JVMVisitor.newForJIT(runtime);
         MethodJITClassGenerator generator = new MethodJITClassGenerator(className, methodName, key, runtime, method, visitor);
 
-        JVMVisitorMethodContext context = new JVMVisitorMethodContext();
-        generator.compile(context);
+        JVMVisitorMethodContext methodContext = new JVMVisitorMethodContext();
+        generator.compile(methodContext);
 
         Class<?> sourceClass = defineClass(generator, visitor, method.getIRScope(), method.ensureInstrsReady());
         if (sourceClass == null) return; // class could not be found nor generated; give up on JIT and bail out
 
-        String variableName = context.getVariableName();
-        MethodHandle variable = JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, variableName, context.getNativeSignature(-1));
-        IntHashMap<MethodType> signatures = context.getNativeSignaturesExceptVariable();
+        String variableName = methodContext.getVariableName();
+        MethodHandle variable = JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, variableName, methodContext.getNativeSignature(-1));
+        IntHashMap<MethodType> signatures = methodContext.getNativeSignaturesExceptVariable();
 
         if (signatures.size() == 0) {
             // only variable-arity
-            method.completeBuild(
+            method.completeBuild(runtime.getCurrentContext(),
                     new CompiledIRMethod(
                             variable,
                             null,
@@ -97,10 +97,10 @@ class MethodJITTask extends JITCompiler.Task {
         } else {
             // also specific-arity
             for (IntHashMap.Entry<MethodType> entry : signatures.entrySet()) {
-                method.completeBuild(
+                method.completeBuild(runtime.getCurrentContext(),
                         new CompiledIRMethod(
                                 variable,
-                                JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, context.getSpecificName(), entry.getValue()),
+                                JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, methodContext.getSpecificName(), entry.getValue()),
                                 entry.getKey(),
                                 method.getIRScope(),
                                 method.getVisibility(),

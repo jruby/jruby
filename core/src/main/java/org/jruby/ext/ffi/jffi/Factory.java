@@ -6,6 +6,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
 import org.jruby.ext.ffi.*;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -30,12 +31,12 @@ public class Factory extends org.jruby.ext.ffi.Factory {
         var Object = objectClass(context);
 
         synchronized (FFI) {
-            if (FFI.getClass("DynamicLibrary") == null) DynamicLibrary.createDynamicLibraryClass(context, FFI, Object);
-            if (FFI.getClass("Invoker") == null) JFFIInvoker.createInvokerClass(context, FFI);
-            if (FFI.getClass("VariadicInvoker") == null) VariadicInvoker.createVariadicInvokerClass(context, FFI, Object);
-            if (FFI.getClass("Callback") == null) CallbackManager.createCallbackClass(context, FFI);
-            if (FFI.getClass("Function") == null) Function.createFunctionClass(context, FFI);
-            if (FFI.getClass("LastError") == null) {
+            if (FFI.getClass(context, "DynamicLibrary") == null) DynamicLibrary.createDynamicLibraryClass(context, FFI, Object);
+            if (FFI.getClass(context, "Invoker") == null) JFFIInvoker.createInvokerClass(context, FFI);
+            if (FFI.getClass(context, "VariadicInvoker") == null) VariadicInvoker.createVariadicInvokerClass(context, FFI, Object);
+            if (FFI.getClass(context, "Callback") == null) CallbackManager.createCallbackClass(context, FFI);
+            if (FFI.getClass(context, "Function") == null) Function.createFunctionClass(context, FFI);
+            if (FFI.getClass(context, "LastError") == null) {
                 var LastError = FFI.defineModuleUnder(context, "LastError").defineMethods(context, LastError.class);
                 if (Platform.IS_WINDOWS) LastError.defineMethods(context, WinapiLastError.class);
             }
@@ -77,8 +78,9 @@ public class Factory extends org.jruby.ext.ffi.Factory {
 
     @Override
     public Function newFunction(Ruby runtime, Pointer address, CallbackInfo cbInfo) {
+        var context = runtime.getCurrentContext();
         CodeMemoryIO mem = new CodeMemoryIO(runtime, address);
-        RubyClass klass = runtime.getModule("FFI").getClass("Function");
+        RubyClass klass = Access.getClass(context, "FFI", "Function");
         return new Function(runtime, klass, mem, 
                 cbInfo.getReturnType(), cbInfo.getParameterTypes(),
                 cbInfo.isStdcall() ? CallingConvention.STDCALL : CallingConvention.DEFAULT, null, false);

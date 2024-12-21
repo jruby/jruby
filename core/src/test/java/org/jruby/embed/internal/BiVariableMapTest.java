@@ -483,7 +483,7 @@ public class BiVariableMapTest {
         container.runScriptlet(script);
 
         Object klazz = container.get("Forecast");
-        assertEquals("Forecast", ((RubyClass)klazz).getName());
+        assertEquals("Forecast", ((RubyClass)klazz).getName(container.getProvider().getRuntime().getCurrentContext()));
         Object receiver = container.callMethod(klazz, "new", "blizzard", "6F");
         assertEquals("blizzard", container.get(receiver, "@weather"));
         assertEquals("6F", container.callMethod(receiver, "temp"));

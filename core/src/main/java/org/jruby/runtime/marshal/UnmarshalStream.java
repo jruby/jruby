@@ -431,7 +431,7 @@ public class UnmarshalStream extends InputStream {
             cls = obj.singletonClass(context);
 
             for (RubyModule mod: extendedModules) {
-                cls.prependModule(mod);
+                cls.prependModule(context, mod);
             }
         } else {
             extendedModules.add(mustBeModule(context, m, path));

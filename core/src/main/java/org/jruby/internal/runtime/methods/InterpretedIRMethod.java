@@ -250,7 +250,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
         }
     }
 
-    public void completeBuild(InterpreterContext interpreterContext) {
+    public void completeBuild(ThreadContext context, InterpreterContext interpreterContext) {
         this.interpreterContext = interpreterContext;
         // Reset so that we can see the new instr dump again
         this.displayedCFG = false;

@@ -16,8 +16,6 @@ public class InstanceFieldGetterInstaller extends FieldInstaller {
     }
 
     @Override void install(ThreadContext context, final RubyModule proxy) {
-        if (isAccessible()) {
-            proxy.addMethod(name, new InstanceFieldGetter(name, proxy, field));
-        }
+        if (isAccessible()) proxy.addMethod(context, name, new InstanceFieldGetter(name, proxy, field));
     }
 }

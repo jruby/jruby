@@ -820,7 +820,7 @@ public class RubyDir extends RubyObject implements Closeable {
     @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {
         StringBuilder part = new StringBuilder();
-        String cname = getMetaClass().getRealClass().getName();
+        String cname = getMetaClass().getRealClass().getName(context);
         part.append("#<").append(cname).append(':');
         if (path != null) { part.append(path.asJavaString()); }
         part.append('>');
@@ -1111,7 +1111,7 @@ public class RubyDir extends RubyObject implements Closeable {
         RubyHash env = context.runtime.getENV();
 
         if (home == null || home == context.nil) {
-            IRubyObject ENV_JAVA = objectClass(context).getConstant("ENV_JAVA");
+            IRubyObject ENV_JAVA = objectClass(context).getConstant(context, "ENV_JAVA");
             home = ENV_JAVA.callMethod(context, "[]", newString(context, user_home, UTF8));
         }
 

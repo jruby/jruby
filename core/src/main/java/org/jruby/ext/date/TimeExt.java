@@ -59,7 +59,7 @@ public abstract class TimeExt {
     public static RubyDate to_date(ThreadContext context, IRubyObject self) {
         final DateTime dt = ((RubyTime) self).getDateTime();
         long jd = civil_to_jd(dt.getYear(), dt.getMonthOfYear(), dt.getDayOfMonth(), GREGORIAN);
-        return new RubyDate(context, getDate(context.runtime), jd_to_ajd(context, jd), CHRONO_ITALY_UTC, 0);
+        return new RubyDate(context, getDate(context), jd_to_ajd(context, jd), CHRONO_ITALY_UTC, 0);
     }
 
     @JRubyMethod(name = "to_datetime")
@@ -93,18 +93,16 @@ public abstract class TimeExt {
                 dt.getMillisOfSecond(), getChronology(context, ITALY, dt.getZone())
         );
 
-        return new RubyDateTime(context.runtime, getDateTime(context.runtime), dt, off, ITALY, subMillisNum, subMillisDen);
+        return new RubyDateTime(context.runtime, getDateTime(context), dt, off, ITALY, subMillisNum, subMillisDen);
     }
 
     private static RubyDateTime calcAjdFromCivil(ThreadContext context, final DateTime dt, final int off,
                                                  final long subMillisNum, final long subMillisDen) {
-        final Ruby runtime = context.runtime;
-
         long jd = civil_to_jd(dt.getYear(), dt.getMonthOfYear(), dt.getDayOfMonth(), ITALY);
         RubyNumeric fr = timeToDayFraction(context, dt.getHourOfDay(), dt.getMinuteOfHour(), dt.getSecondOfMinute());
 
         final RubyNumeric ajd = jd_to_ajd(context, jd, fr, off);
-        RubyDateTime dateTime = new RubyDateTime(context, getDateTime(runtime), ajd, off, ITALY);
+        RubyDateTime dateTime = new RubyDateTime(context, getDateTime(context), ajd, off, ITALY);
         dateTime.dt = dateTime.dt.withMillisOfSecond(dt.getMillisOfSecond());
         dateTime.subMillisNum = subMillisNum; dateTime.subMillisDen = subMillisDen;
         return dateTime;

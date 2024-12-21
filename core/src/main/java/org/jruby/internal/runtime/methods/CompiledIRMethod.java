@@ -124,7 +124,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
     }
 
     @Override
-    public void completeBuild(DynamicMethod buildResult) {
+    public void completeBuild(ThreadContext context, DynamicMethod buildResult) {
         // unused but part of compilable interface.  jit task uses setVariable and setSpecific to update code.
     }
 

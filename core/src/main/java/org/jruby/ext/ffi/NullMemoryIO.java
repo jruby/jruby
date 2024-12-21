@@ -4,6 +4,7 @@ package org.jruby.ext.ffi;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.api.Access;
 
 /**
  * An implementation of MemoryIO that throws an exception on any access.
@@ -15,7 +16,7 @@ public class NullMemoryIO extends InvalidMemoryIO {
 
     @Override
     protected RubyClass getErrorClass(Ruby runtime) {
-        return runtime.getModule("FFI").getClass("NullPointerError");
+        return Access.getClass(runtime.getCurrentContext(), "FFI", "NullPointerError");
     }
 
     @Override

@@ -354,7 +354,7 @@ public class TraceType {
         IRubyObject highlightArg = checkHighlightKeyword(context, optArg, false);
         RubyString errorStream = newEmptyString(context);
 
-        printErrMessageToStream(exception, errorStream, highlightArg.isTrue());
+        printErrMessageToStream(context, exception, errorStream, highlightArg.isTrue());
 
         return errorStream;
     }
@@ -517,7 +517,7 @@ public class TraceType {
             errorStream.append(str);
         } else if (message.isNil()) {
             if (highlight) errorStream.catString(UNDERLINE);
-            errorStream.append(type.getRealClass().rubyName());
+            errorStream.append(type.getRealClass().rubyName(context));
             if (highlight) errorStream.catString(RESET);
 
         } else {
@@ -527,17 +527,17 @@ public class TraceType {
         errorStream.cat('\n');
     }
 
-    private static void printErrMessageToStream(IRubyObject exception, RubyString errorStream, boolean highlight) {
+    private static void printErrMessageToStream(ThreadContext context, IRubyObject exception, RubyString errorStream, boolean highlight) {
         RubyClass type = exception.getMetaClass();
         String info = exception.toString();
 
-        if (type == exception.getRuntime().getRuntimeError() && (info == null || info.length() == 0)) {
+        if (type == context.runtime.getRuntimeError() && (info == null || info.length() == 0)) {
 
             if (highlight) errorStream.catString(UNDERLINE);
             errorStream.catString("unhandled exception");
             if (highlight) errorStream.catString(RESET);
         } else {
-            String path = type.getName();
+            String path = type.getName(context);
 
             if (info.length() == 0) {
                 if (highlight) errorStream.catString(UNDERLINE);
@@ -648,7 +648,7 @@ public class TraceType {
         if (exception.getMetaClass() == runtime.getRuntimeError() && message.length() == 0) {
             message = "No current exception";
         }
-        String type = exception.getMetaClass().getName();
+        String type = exception.getMetaClass().getName(context);
 
         errorStream.print(printBacktraceJRuby(runtime, exception.getBacktraceElements(), type, message, console));
     }

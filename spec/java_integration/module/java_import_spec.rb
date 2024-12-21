@@ -35,7 +35,7 @@ describe "java_import" do
   it "raises error importing lower-case names" do
     expect do
       Module.new { java_import InnerClasses::lowerInnerClass }
-    end.to raise_error(NameError, /cannot import Java class .*?InnerClasses\$lowerInnerClass.*?: wrong constant name lowerInnerClass/)
+    end.to raise_error(NameError, /cannot import Java class .*?InnerClasses\$lowerInnerClass.*?: bad constant name lowerInnerClass/)
   end
 
   it "imports upper-case names successfully" do

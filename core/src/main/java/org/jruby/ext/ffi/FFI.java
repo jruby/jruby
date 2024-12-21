@@ -30,19 +30,20 @@ public class FFI {
 
 
     public FFI(RubyModule ffiModule) {
+        var context = ffiModule.getRuntime().getCurrentContext();
         this.ffiModule = ffiModule;
-        this.bufferClass = ffiModule.getClass("Buffer");
-        this.pointerClass = ffiModule.getClass("Pointer");
-        this.memptrClass = ffiModule.getClass("MemoryPointer");
-        this.memoryClass = ffiModule.getClass("AbstractMemory");
-        this.structClass = ffiModule.getClass("Struct");
-        this.functionClass = ffiModule.getClass("Function");
-        this.callbackClass = ffiModule.getClass("Callback");
-        this.typeClass = ffiModule.getClass("Type");
-        this.typedefs = (RubyHash) ffiModule.getConstant("TypeDefs");
+        this.bufferClass = ffiModule.getClass(context, "Buffer");
+        this.pointerClass = ffiModule.getClass(context, "Pointer");
+        this.memptrClass = ffiModule.getClass(context, "MemoryPointer");
+        this.memoryClass = ffiModule.getClass(context, "AbstractMemory");
+        this.structClass = ffiModule.getClass(context, "Struct");
+        this.functionClass = ffiModule.getClass(context, "Function");
+        this.callbackClass = ffiModule.getClass(context, "Callback");
+        this.typeClass = ffiModule.getClass(context, "Type");
+        this.typedefs = (RubyHash) ffiModule.getConstant(context, "TypeDefs");
         this.typeResolver = new TypeResolver(this);
-        this.nullMemoryIO = new NullMemoryIO(ffiModule.getRuntime());
-        this.nullPointer = (Pointer) pointerClass.getConstant("NULL");
+        this.nullMemoryIO = new NullMemoryIO(context.runtime);
+        this.nullPointer = (Pointer) pointerClass.getConstant(context, "NULL");
     }
 
     public final TypeResolver getTypeResolver() {

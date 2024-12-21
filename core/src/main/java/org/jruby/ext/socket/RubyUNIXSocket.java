@@ -48,6 +48,7 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -78,7 +79,7 @@ import static org.jruby.api.Error.typeError;
 @JRubyClass(name="UNIXSocket", parent="BasicSocket")
 public class RubyUNIXSocket extends RubyBasicSocket {
     static RubyClass createUNIXSocket(ThreadContext context, RubyClass BasicSocket, RubyClass Object) {
-        return (RubyClass) Object.setConstant("UNIXsocket",
+        return (RubyClass) Object.setConstant(context, "UNIXsocket",
                 defineClass(context, "UNIXSocket", BasicSocket, RubyUNIXSocket::new).
                         defineMethods(context, RubyUNIXSocket.class));
     }
@@ -247,7 +248,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         try {
             sp = UnixSocketChannel.pair();
 
-            final RubyClass UNIXSocket = runtime.getClass("UNIXSocket");
+            final RubyClass UNIXSocket = Access.getClass(context, "UNIXSocket");
             RubyUNIXSocket sock = (RubyUNIXSocket)(Helpers.invoke(context, UNIXSocket, "allocate"));
             sock.init_sock(runtime, sp[0], "");
 

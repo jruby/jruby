@@ -47,7 +47,7 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
      * @return The newly created ruby class
      */
     public static RubyClass createCallbackClass(ThreadContext context, RubyModule FFI) {
-        return FFI.defineClassUnder(context, "Callback", FFI.getClass("Pointer"), NOT_ALLOCATABLE_ALLOCATOR).
+        return FFI.defineClassUnder(context, "Callback", FFI.getClass(context, "Pointer"), NOT_ALLOCATABLE_ALLOCATOR).
                 defineMethods(context, AbstractInvoker.class).
                 defineConstants(context, AbstractInvoker.class);
     }

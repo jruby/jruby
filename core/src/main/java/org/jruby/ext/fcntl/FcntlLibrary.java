@@ -28,11 +28,15 @@ package org.jruby.ext.fcntl;
 
 import java.io.IOException;
 
+import jnr.constants.Constant;
+import jnr.constants.ConstantSet;
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.load.Library;
 
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Define.defineModule;
 
 /**
@@ -48,7 +52,21 @@ public class FcntlLibrary implements Library {
         var Fcntl = defineModule(context, "Fcntl").
                 defineConstant(context, "FD_CLOEXEC", RubyFixnum.newFixnum(runtime, FD_CLOEXEC));
 
-        runtime.loadConstantSet(Fcntl, "Fcntl");
-        runtime.loadConstantSet(Fcntl, "OpenFlags");
+        loadConstantSet(context, Fcntl, "Fcntl");
+        loadConstantSet(context, Fcntl, "OpenFlags");
+    }
+
+    /**
+     * Define all constants from the named jnr-constants set which are defined on the current platform.
+     *
+     * @param module the module in which we want to define the constants
+     * @param constantSetName the name of the constant set from which to get the constants
+     */
+    private static void loadConstantSet(ThreadContext context, RubyModule module, String constantSetName) {
+        for (Constant c : ConstantSet.getConstantSet(constantSetName)) {
+            if (c.defined() && Character.isUpperCase(c.name().charAt(0))) {
+                module.defineConstant(context, c.name(), asFixnum(context, c.intValue()));
+            }
+        }
     }
 }

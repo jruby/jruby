@@ -224,7 +224,7 @@ public class LoadService {
         addPaths(prependDirectories);
 
         // add $RUBYLIB paths
-        RubyHash env = (RubyHash) objectClass(context).getConstant("ENV");
+        RubyHash env = (RubyHash) objectClass(context).getConstant(context, "ENV");
         RubyString env_rubylib = newString(context, "RUBYLIB");
 
         if (env.has_key_p(context, env_rubylib).isTrue()) {

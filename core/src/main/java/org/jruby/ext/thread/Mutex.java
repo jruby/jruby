@@ -69,7 +69,7 @@ public class Mutex extends RubyObject implements DataType {
     }
 
     public static RubyClass setup(ThreadContext context, RubyClass Thread, RubyClass Object) {
-        return (RubyClass) Object.setConstant("Mutex",
+        return (RubyClass) Object.setConstant(context, "Mutex",
                 Thread.defineClassUnder(context, "Mutex", Object, Mutex::new).reifiedClass(Mutex.class).defineMethods(context, Mutex.class));
     }
 

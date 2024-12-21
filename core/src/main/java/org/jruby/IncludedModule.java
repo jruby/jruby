@@ -2,6 +2,7 @@ package org.jruby;
 
 import java.util.Map;
 
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class IncludedModule extends RubyClass implements DelegatedModule {
@@ -35,8 +36,8 @@ public class IncludedModule extends RubyClass implements DelegatedModule {
     }
 
     @Override
-    public String getName() {
-        return origin.getName();
+    public String getName(ThreadContext context) {
+        return origin.getName(context);
     }
 
     @Override

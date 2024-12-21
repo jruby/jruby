@@ -44,10 +44,10 @@ public class Pointer extends AbstractMemory {
 
         // Add Pointer::NULL as a constant
         Pointer nullPointer = new Pointer(context.runtime, _Pointer, new NullMemoryIO(context.runtime));
-        _Pointer.setConstant("NULL", nullPointer);
+        _Pointer.defineConstant(context, "NULL", nullPointer);
 
         var NilClass = nilClass(context);
-        NilClass.addMethod("to_ptr", new NilToPointerMethod(NilClass, nullPointer, "to_ptr"));
+        NilClass.addMethod(context, "to_ptr", new NilToPointerMethod(NilClass, nullPointer, "to_ptr"));
 
         return _Pointer;
     }
@@ -145,8 +145,8 @@ public class Pointer extends AbstractMemory {
     @JRubyMethod(name = { "to_s", "inspect" })
     public IRubyObject to_s(ThreadContext context) {
         String s = size != Long.MAX_VALUE
-                ? String.format("#<%s address=0x%x size=%s>", getMetaClass().getName(), getAddress(), size)
-                : String.format("#<%s address=0x%x>", getMetaClass().getName(), getAddress());
+                ? String.format("#<%s address=0x%x size=%s>", getMetaClass().getName(context), getAddress(), size)
+                : String.format("#<%s address=0x%x>", getMetaClass().getName(context), getAddress());
 
         return newString(context, s);
     }

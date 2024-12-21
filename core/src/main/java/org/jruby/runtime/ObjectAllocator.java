@@ -22,6 +22,7 @@ public interface ObjectAllocator {
     IRubyObject allocate(Ruby runtime, RubyClass klazz);
     
     ObjectAllocator NOT_ALLOCATABLE_ALLOCATOR = (runtime, klass) -> {
-        throw typeError(runtime.getCurrentContext(), "allocator undefined for " + klass.getName());
+        var context = runtime.getCurrentContext();
+        throw typeError(context, "allocator undefined for " + klass.getName(context));
     };
 }

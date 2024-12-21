@@ -47,7 +47,7 @@ public class ModuleVersionGuardInstr extends TwoOperandInstr implements FixedAri
 
     @Override
     public String[] toStringNonOperandArgs() {
-        return new String[] { "name: " + module.getName(), "expected_version: " + expectedVersion};
+        return new String[] { "name: " + module.getName(module.getRuntime().getCurrentContext()), "expected_version: " + expectedVersion};
     }
 
     @Override

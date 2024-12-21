@@ -47,7 +47,7 @@ public class RubyFatal extends RubyException {
     static RubyClass define(ThreadContext context, RubyClass Exception, RubyClass Object) {
         var Fatal = defineClass(context, "Fatal", Exception, RubyFatal::new);
 
-        Object.deleteConstant("Fatal"); // Remove the constant so it's not accessible (jruby/jruby#5648)
+        Object.deleteConstant(context, "Fatal"); // Remove the constant so it's not accessible (jruby/jruby#5648)
 
         return Fatal;
     }

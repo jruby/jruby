@@ -31,6 +31,7 @@ package org.jruby.ext.set;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -44,9 +45,7 @@ public abstract class EnumerableExt {
 
     //@JRubyMethod
     public static IRubyObject to_set(final ThreadContext context, final IRubyObject self, final Block block) {
-        final Ruby runtime = context.runtime;
-
-        RubySet set = new RubySet(runtime, runtime.getClass("Set"));
+        RubySet set = new RubySet(context.runtime, Access.getClass(context, "Set"));
         set.initialize(context, self, block);
         return set; // return runtime.getClass("Set").newInstance(context, self, block);
     }

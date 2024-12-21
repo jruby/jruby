@@ -38,6 +38,7 @@ import org.jruby.RubyString;
 import org.jruby.RubyTime;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
@@ -86,14 +87,9 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
     
     @JRubyMethod(meta = true, name = "wrap", required = 1, optional = 1, checkArity = false)
     public static IRubyObject wrap(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = recv.getRuntime();
-        RubyGzipFile instance;
-
-        if (((RubyModule) recv).isKindOfModule(runtime.getModule("Zlib").getClass("GzipWriter"))) {
-            instance = JZlibRubyGzipWriter.newInstance(recv, args);
-        } else {
-            instance = JZlibRubyGzipReader.newInstance(recv, args);
-        }
+        RubyGzipFile instance = ((RubyModule) recv).isKindOfModule(Access.getClass(context, "Zlib", "GzipWriter")) ?
+                JZlibRubyGzipWriter.newInstance(recv, args) :
+                JZlibRubyGzipReader.newInstance(recv, args);
 
         return wrapBlock(context, instance, block);
     }
@@ -208,25 +204,38 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return closed;
     }
 
-    @JRubyMethod(name = "orig_name")
+    @Deprecated(since = "10.0")
     public IRubyObject orig_name() {
-        if (closed) {
-            throw RubyZlib.newGzipFileError(getRuntime(), "closed gzip stream");
-        }
-        return nullFreeOrigName == null ? getRuntime().getNil() : nullFreeOrigName;
+        return orig_name(getCurrentContext());
+    }
+
+    @JRubyMethod(name = "orig_name")
+    public IRubyObject orig_name(ThreadContext context) {
+        if (closed) throw RubyZlib.newGzipFileError(context, "closed gzip stream");
+
+        return nullFreeOrigName == null ? context.nil : nullFreeOrigName;
+    }
+
+    @Deprecated(since = "10.0")
+    public IRubyObject to_io() {
+        return to_io(getCurrentContext());
     }
 
     @JRubyMethod(name = "to_io")
-    public IRubyObject to_io() {
+    public IRubyObject to_io(ThreadContext context) {
         return realIo;
     }
 
-    @JRubyMethod(name = "comment")
+    @Deprecated(since = "10.0")
     public IRubyObject comment() {
-        if (closed) {
-            throw RubyZlib.newGzipFileError(getRuntime(), "closed gzip stream");
-        }
-        return nullFreeComment == null ? getRuntime().getNil() : nullFreeComment;
+        return comment(getCurrentContext());
+    }
+
+    @JRubyMethod(name = "comment")
+    public IRubyObject comment(ThreadContext context) {
+        if (closed) throw RubyZlib.newGzipFileError(context, "closed gzip stream");
+
+        return nullFreeComment == null ? context.nil : nullFreeComment;
     }
 
     @Deprecated

@@ -39,6 +39,7 @@ import static org.jruby.api.Error.argumentError;
 import org.jruby.*;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
 import org.jruby.api.Define;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.JavaMethod;
@@ -66,23 +67,23 @@ public class RubyPathname extends RubyObject {
         kernelModule(context).defineMethods(context, PathnameKernelMethods.class);
 
         // FIXME: birthtime is provided separately in stat on some platforms (#2152)
-        defineDelegateMethods(Pathname, File, "atime", "ctime", "birthtime", "mtime", "ftype", "rename", "stat",
+        defineDelegateMethods(context, Pathname, File, "atime", "ctime", "birthtime", "mtime", "ftype", "rename", "stat",
                 "lstat", "truncate", "extname", "open");
-        defineDelegateMethodsAppendPath(Pathname, File, "chmod", "lchmod", "chown", "lchown", "utime");
-        defineDelegateMethodsSinglePath(Pathname, File, "realpath", "realdirpath", "basename", "dirname", "expand_path", "readlink");
-        defineDelegateMethodsArrayOfPaths(Pathname, File, "split");
+        defineDelegateMethodsAppendPath(context, Pathname, File, "chmod", "lchmod", "chown", "lchown", "utime");
+        defineDelegateMethodsSinglePath(context, Pathname, File, "realpath", "realdirpath", "basename", "dirname", "expand_path", "readlink");
+        defineDelegateMethodsArrayOfPaths(context, Pathname, File, "split");
 
-        defineDelegateMethods(Pathname, IO, "read", "binread", "write", "binwrite", "readlines", "sysopen");
+        defineDelegateMethods(context, Pathname, IO, "read", "binread", "write", "binwrite", "readlines", "sysopen");
 
-        defineDelegateMethods(Pathname, FileTest, "blockdev?", "chardev?", "executable?", "executable_real?", "exist?",
+        defineDelegateMethods(context, Pathname, FileTest, "blockdev?", "chardev?", "executable?", "executable_real?", "exist?",
                 "grpowned?", "directory?", "file?", "pipe?", "socket?", "owned?", "readable?", "world_readable?",
                 "readable_real?", "setuid?", "setgid?", "size", "size?", "sticky?", "symlink?", "writable?",
                 "world_writable?", "writable_real?", "zero?");
 
-        defineDelegateMethods(Pathname, Dir, "mkdir", "rmdir");
-        defineDelegateMethodsArrayOfPaths(Pathname, Dir, "entries");
+        defineDelegateMethods(context, Pathname, Dir, "mkdir", "rmdir");
+        defineDelegateMethodsArrayOfPaths(context, Pathname, Dir, "entries");
 
-        Pathname.undefineMethod("=~");
+        Pathname.undefMethods(context, "=~");
     }
 
     static interface ReturnValueMapper {
@@ -103,10 +104,10 @@ public class RubyPathname extends RubyObject {
 
     private static final AddArg APPEND_PATH = (args, path) -> insert(args, args.length, path);
 
-    private static void defineDelegateMethodsGeneric(RubyClass cPathname, final RubyModule klass,
+    private static void defineDelegateMethodsGeneric(ThreadContext context, RubyClass cPathname, final RubyModule klass,
             final ReturnValueMapper mapper, final AddArg addArg, String... methods) {
         for (String method : methods) {
-            cPathname.addMethod(method, new JavaMethod.JavaMethodNBlock(cPathname, Visibility.PUBLIC, method) {
+            cPathname.addMethod(context, method, new JavaMethod.JavaMethodNBlock(cPathname, Visibility.PUBLIC, method) {
                 @Override
                 public IRubyObject call(ThreadContext context, IRubyObject _self, RubyModule clazz,
                         String name, IRubyObject[] args, Block block) {
@@ -118,24 +119,24 @@ public class RubyPathname extends RubyObject {
         }
     }
 
-    private static void defineDelegateMethods(RubyClass cPathname, final RubyModule klass,
+    private static void defineDelegateMethods(ThreadContext context, RubyClass cPathname, final RubyModule klass,
             String... methods) {
-        defineDelegateMethodsGeneric(cPathname, klass, IDENTITY_MAPPER, UNSHIFT_PATH, methods);
+        defineDelegateMethodsGeneric(context, cPathname, klass, IDENTITY_MAPPER, UNSHIFT_PATH, methods);
     }
 
-    private static void defineDelegateMethodsAppendPath(RubyClass cPathname,
+    private static void defineDelegateMethodsAppendPath(ThreadContext context, RubyClass cPathname,
             final RubyModule klass, String... methods) {
-        defineDelegateMethodsGeneric(cPathname, klass, IDENTITY_MAPPER, APPEND_PATH, methods);
+        defineDelegateMethodsGeneric(context, cPathname, klass, IDENTITY_MAPPER, APPEND_PATH, methods);
     }
 
-    private static void defineDelegateMethodsSinglePath(RubyClass cPathname,
+    private static void defineDelegateMethodsSinglePath(ThreadContext context, RubyClass cPathname,
             final RubyModule klass, String... methods) {
-        defineDelegateMethodsGeneric(cPathname, klass, SINGLE_PATH_MAPPER, UNSHIFT_PATH, methods);
+        defineDelegateMethodsGeneric(context, cPathname, klass, SINGLE_PATH_MAPPER, UNSHIFT_PATH, methods);
     }
 
-    private static void defineDelegateMethodsArrayOfPaths(RubyClass cPathname,
+    private static void defineDelegateMethodsArrayOfPaths(ThreadContext context, RubyClass cPathname,
             final RubyModule klass, String... methods) {
-        defineDelegateMethodsGeneric(cPathname, klass, ARRAY_OF_PATHS_MAPPER, UNSHIFT_PATH, methods);
+        defineDelegateMethodsGeneric(context, cPathname, klass, ARRAY_OF_PATHS_MAPPER, UNSHIFT_PATH, methods);
     }
 
     public static class PathnameKernelMethods {
@@ -157,7 +158,7 @@ public class RubyPathname extends RubyObject {
     }
 
     public static RubyPathname newInstance(ThreadContext context, IRubyObject path) {
-        return newInstance(context, context.runtime.getClass("Pathname"), path);
+        return newInstance(context, Access.getClass(context, "Pathname"), path);
     }
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
@@ -365,7 +366,7 @@ public class RubyPathname extends RubyObject {
         try {
             return dirClass(context).callMethod(context, "unlink", getPath());
         } catch (RaiseException ex) {
-            if (!errnoModule(context).getClass("ENOTDIR").isInstance(ex.getException())) throw ex;
+            if (!errnoModule(context).getClass(context, "ENOTDIR").isInstance(ex.getException())) throw ex;
             globalVariables.set("$!", oldExc); // Restore $!
             return fileClass(context).callMethod(context, "unlink", getPath());
         }

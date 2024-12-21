@@ -36,6 +36,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.ModeFlags;
@@ -55,7 +56,7 @@ public class FileDescriptorIO extends RubyIO {
     }
 
     public FileDescriptorIO(Ruby runtime, IRubyObject fd) {
-        super(runtime, runtime.getModule("FFI").getClass(CLASS_NAME));
+        super(runtime, Access.getClass(runtime.getCurrentContext(), "FFI", CLASS_NAME));
         MakeOpenFile();
         ModeFlags modes = newModeFlags(runtime, ModeFlags.RDWR);
         int fileno = RubyNumeric.fix2int(fd);

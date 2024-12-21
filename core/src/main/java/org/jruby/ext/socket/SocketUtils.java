@@ -40,6 +40,7 @@ import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.api.Access;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Helpers;
@@ -206,7 +207,6 @@ public class SocketUtils {
     }
 
     public static List<Addrinfo> getaddrinfoList(ThreadContext context, IRubyObject[] args) {
-        final Ruby runtime = context.runtime;
         final List<Addrinfo> l = new ArrayList<Addrinfo>();
 
         buildAddrinfoList(context, args, false, (address, port, sock, reverse, usesCanonical) -> {
@@ -224,7 +224,7 @@ public class SocketUtils {
             }
 
             if (sock_dgram) {
-                l.add(new Addrinfo(runtime, runtime.getClass("Addrinfo"),
+                l.add(new Addrinfo(context.runtime, Access.getClass(context, "Addrinfo"),
                         new InetSocketAddress(address, port),
                         Sock.SOCK_DGRAM,
                         SocketType.DATAGRAM,
@@ -232,7 +232,7 @@ public class SocketUtils {
             }
 
             if (sock_stream) {
-                l.add(new Addrinfo(runtime, runtime.getClass("Addrinfo"),
+                l.add(new Addrinfo(context.runtime, Access.getClass(context, "Addrinfo"),
                         new InetSocketAddress(address, port),
                         Sock.SOCK_STREAM,
                         SocketType.SOCKET,
@@ -388,7 +388,7 @@ public class SocketUtils {
     public static IRubyObject ip_address_list(ThreadContext context) {
         try {
             var list = newArray(context);
-            RubyClass addrInfoCls = context.runtime.getClass("Addrinfo");
+            RubyClass addrInfoCls = Access.getClass(context, "Addrinfo");
 
             for (Enumeration<NetworkInterface> networkIfcs = NetworkInterface.getNetworkInterfaces(); networkIfcs.hasMoreElements() ; ) {
                 for (Enumeration<InetAddress> addresses = networkIfcs.nextElement().getInetAddresses(); addresses.hasMoreElements() ; ) {
@@ -482,7 +482,7 @@ public class SocketUtils {
     }
 
     public static RuntimeException sockerr(Ruby runtime, String msg) {
-        return RaiseException.from(runtime, runtime.getClass("SocketError"), msg);
+        return RaiseException.from(runtime, Access.getClass(runtime.getCurrentContext(), "SocketError"), msg);
     }
 
     public static RuntimeException sockerr_with_trace(Ruby runtime, String msg, StackTraceElement[] trace) {
@@ -492,7 +492,7 @@ public class SocketUtils {
         for (int i = 0, il = trace.length; i < il; i++) {
             sb.append(eol).append(trace[i].toString());
         }
-        return RaiseException.from(runtime, runtime.getClass("SocketError"), sb.toString());
+        return RaiseException.from(runtime, Access.getClass(runtime.getCurrentContext(), "SocketError"), sb.toString());
     }
 
     public static int getPortFrom(ThreadContext context, IRubyObject _port) {

@@ -44,15 +44,17 @@ import static org.jruby.api.Error.typeError;
 public interface ObjectMarshal<T> {
     ObjectMarshal NOT_MARSHALABLE_MARSHAL = new ObjectMarshal() {
         public void marshalTo(Ruby runtime, Object obj, RubyClass type, MarshalStream marshalStream) {
-            throw typeError(runtime.getCurrentContext(), "no marshal_dump is defined for class " + type.getName());
+            var context = runtime.getCurrentContext();
+            throw typeError(context, "no marshal_dump is defined for class " + type.getName(context));
         }
 
         public void marshalTo(Object obj, RubyClass type, NewMarshal marshalStream, ThreadContext context, NewMarshal.RubyOutputStream out) {
-            throw typeError(context, "no marshal_dump is defined for class " + type.getName());
+            throw typeError(context, "no marshal_dump is defined for class " + type.getName(context));
         }
 
         public Object unmarshalFrom(Ruby runtime, RubyClass type, UnmarshalStream unmarshalStream) {
-            throw typeError(runtime.getCurrentContext(), "no marshal_load is defined for class " + type.getName());
+            var context = runtime.getCurrentContext();
+            throw typeError(context, "no marshal_load is defined for class " + type.getName(context));
         }
     };
     

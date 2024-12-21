@@ -34,6 +34,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyException;
 import org.jruby.RubyString;
+import org.jruby.api.Access;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ThreadContext;
 
@@ -54,7 +55,7 @@ public class TestRubyException extends TestCase {
 	public void setUp() {
 		runtime = Ruby.newInstance();
 		context = runtime.getCurrentContext();
-		exception = new RubyException(runtime, runtime.getClass("StandardError"), "test");
+		exception = new RubyException(runtime, Access.getClass(context, "StandardError"), "test");
 	}
 
 	public void testToJava() {

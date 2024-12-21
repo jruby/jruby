@@ -17,7 +17,7 @@ public class StaticFieldSetterInstaller extends FieldInstaller {
 
     @Override void install(ThreadContext context, final RubyModule proxy) {
         if (isAccessible()) {
-            proxy.singletonClass(context).addMethod(name, new StaticFieldSetter(name, proxy, field));
+            proxy.singletonClass(context).addMethod(context, name, new StaticFieldSetter(name, proxy, field));
         }
     }
 }

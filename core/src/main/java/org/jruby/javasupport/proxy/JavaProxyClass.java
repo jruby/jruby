@@ -39,6 +39,7 @@ import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
 import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.proxies.ConcreteJavaProxy.NewMethodReified;
@@ -94,8 +95,8 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     private final ArrayList<JavaProxyMethod> methods = new ArrayList<>();
     private final HashMap<String, ArrayList<JavaProxyMethod>> methodMap = new HashMap<>();
 
-    private JavaProxyClass(final Ruby runtime, final Class<?> proxyClass) {
-        super(runtime, runtime.getModule("Java").getClass("JavaProxyClass"));
+    private JavaProxyClass(ThreadContext context, final Class<?> proxyClass) {
+        super(context.runtime, Access.getClass(context, "Java", "JavaProxyClass"));
         this.proxyClass = proxyClass;
     }
 
@@ -199,15 +200,15 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
         public ProxyMethodImpl(Ruby runtime, final JavaProxyClass clazz,
             final Method method, final Method superMethod) {
-            super(runtime, getJavaProxyMethod(runtime));
+            super(runtime, getJavaProxyMethod(runtime.getCurrentContext()));
             this.method = method;
             this.parameterTypes = method.getParameterTypes();
             this.superMethod = superMethod;
             this.proxyClass = clazz;
         }
 
-        private static RubyClass getJavaProxyMethod(final Ruby runtime) {
-            return runtime.getJavaSupport().getJavaModule().getClass("JavaProxyMethod");
+        private static RubyClass getJavaProxyMethod(ThreadContext context) {
+            return context.runtime.getJavaSupport().getJavaModule(context).getClass(context, "JavaProxyMethod");
         }
 
         @Override
@@ -523,7 +524,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     // Note: called from <clinit> of reified classes
     public static JavaProxyClass setProxyClassReified(ThreadContext context, final RubyClass clazz,
             final Class<? extends ReifiedJavaProxy> reified, final boolean allocator) {
-        JavaProxyClass proxyClass = new JavaProxyClass(context.runtime, reified);
+        JavaProxyClass proxyClass = new JavaProxyClass(context, reified);
         clazz.setInstanceVariable("@java_proxy_class", proxyClass);
 
         RubyClass singleton = clazz.singletonClass(context);
@@ -535,7 +536,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             DynamicMethod oldNewMethod = singleton.searchMethod("new");
             boolean defaultNew = !(oldNewMethod instanceof AbstractIRMethod); // TODO: is this the proper way to check if user-code has/not defined a method?
             if (defaultNew) {
-                singleton.addMethod("new", new NewMethodReified(clazz, reified));
+                singleton.addMethod(context, "new", new NewMethodReified(clazz, reified));
             }
             // Install initialize
             StaticJCreateMethod.tryInstall(context.runtime, clazz, proxyClass, reified, defaultNew);
