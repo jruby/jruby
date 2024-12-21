@@ -2926,7 +2926,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
 
         oos.defaultWriteObject();
-        oos.writeUTF(metaClass.getName());
+        oos.writeUTF(metaClass.getName(metaClass.getRuntime().getCurrentContext()));
 
         metaClass.getVariableTableManager().serializeVariables(this, oos);
     }

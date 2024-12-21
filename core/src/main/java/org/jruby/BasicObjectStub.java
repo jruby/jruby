@@ -199,7 +199,7 @@ public final class BasicObjectStub {
 
     public static IRubyObject anyToString(IRubyObject self) {
         final RubyClass metaClass = getMetaClass(self);
-        String cname = metaClass.getRealClass().getName();
+        String cname = metaClass.getRealClass().getName(metaClass.getRuntime().getCurrentContext());
         /* 6:tags 16:addr 1:eos */
         return metaClass.runtime.newString("#<" + cname + ":0x" + Integer.toHexString(System.identityHashCode(self)) + '>');
     }
