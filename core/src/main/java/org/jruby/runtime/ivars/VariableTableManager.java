@@ -482,28 +482,6 @@ public class VariableTableManager {
         return false;
     }
 
-    public void serializeVariables(RubyBasicObject object, ObjectOutputStream oos) throws IOException {
-        if (object.varTable != null) {
-            Map<String, VariableAccessor> accessors = getVariableAccessorsForRead();
-            oos.writeInt(accessors.size());
-            for (VariableAccessor accessor : accessors.values()) {
-                oos.writeUTF(RubyBasicObject.ERR_INSECURE_SET_INST_VAR);
-                oos.writeObject(accessor.get(object));
-            }
-        } else {
-            oos.writeInt(0);
-        }
-    }
-
-    public void deserializeVariables(RubyBasicObject object, ObjectInputStream ois) throws IOException, ClassNotFoundException {
-        int varCount = ois.readInt();
-        for (int i = 0; i < varCount; i++) {
-            String name = ois.readUTF();
-            Object value = ois.readObject();
-            getVariableAccessorForWrite(name).set(object, value);
-        }
-    }
-
     public Object clearVariable(RubyBasicObject object, String name) {
         synchronized(object) {
             Object value = getVariableAccessorForRead(name).get(object);

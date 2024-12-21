@@ -2903,61 +2903,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     /**
-     * Serialization of a Ruby (basic) object involves three steps:
-     *
-     * <ol>
-     * <li>Dump the object itself</li>
-     * <li>Dump a String used to load the appropriate Ruby class</li>
-     * <li>Dump each variable from varTable in turn</li>
-     * </ol>
-     *
-     * The metaClass field is marked transient since Ruby classes generally will
-     * not be able to serialize (since they hold references to method tables,
-     * other classes, and potentially thread-, runtime-, or jvm-local state.
-     *
-     * The varTable field is transient because the layout of the same class may
-     * differ across runtimes, since it is determined at runtime based on the
-     * order in which variables get assigned for a given class. We serialize
-     * entries by name to allow other layouts to work properly.
-     */
-    private void writeObject(ObjectOutputStream oos) throws IOException {
-        if (metaClass.isSingleton()) {
-            throw new IOException("can not serialize singleton object");
-        }
-
-        oos.defaultWriteObject();
-        oos.writeUTF(metaClass.getName());
-
-        metaClass.getVariableTableManager().serializeVariables(this, oos);
-    }
-
-    /**
-     * Deserialization proceeds as follows:
-     *
-     * <ol>
-     * <li>Deserialize the object instance. It will have null metaClass and
-     * varTable fields.</li>
-     * <li>Deserialize the name of the object's class, and retrieve class from a
-     * thread-local JRuby instance.</li>
-     * <li>Retrieve each variable in turn, re-assigning them by name.</li>
-     * </ol>
-     *
-     * @see RubyBasicObject#writeObject(java.io.ObjectOutputStream)
-     */
-    private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
-        Ruby ruby = Ruby.getThreadLocalRuntime();
-
-        if (ruby == null) {
-            throw new IOException("No thread-local org.jruby.Ruby available; can't deserialize Ruby object. Set with Ruby#setThreadLocalRuntime.");
-        }
-
-        ois.defaultReadObject();
-        metaClass = (RubyClass)ruby.getClassFromPath(ois.readUTF());
-
-        metaClass.getVariableTableManager().deserializeVariables(this, ois);
-    }
-
-    /**
      * Retrieve the call sites for this class.
      *
      * It is expected that all Java-based core classes that do call site caching will have a similar method.
