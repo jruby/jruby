@@ -1408,11 +1408,11 @@ public class RubyKernel {
 
         // No catch active for this throw
         IRubyObject value = arg == null ? context.nil : arg;
-        throw uncaughtThrow(runtime, tag, value, RubyString.newStringShared(runtime, uncaught_throw_p));
+        throw uncaughtThrow(context, tag, value, RubyString.newStringShared(runtime, uncaught_throw_p));
     }
 
-    private static RaiseException uncaughtThrow(Ruby runtime, IRubyObject tag, IRubyObject value, RubyString message) {
-        return RubyUncaughtThrowError.newUncaughtThrowError(runtime, tag, value, message).toThrowable();
+    private static RaiseException uncaughtThrow(ThreadContext context, IRubyObject tag, IRubyObject value, RubyString message) {
+        return RubyUncaughtThrowError.newUncaughtThrowError(context, tag, value, message).toThrowable();
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE, omit = true)

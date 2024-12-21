@@ -354,7 +354,10 @@ public class RubyProcess {
 
         @JRubyMethod
         public IRubyObject inspect(ThreadContext context) {
-            return inspect(context.runtime);
+            var className = getMetaClass().getName(context);
+            return unitialized() ?
+                    newString(context, "#<" + className + ": uninitialized>") :
+                    newString(context, pst_message("#<" + className + ": ", pid, status) + ">");
         }
 
         @JRubyMethod(name = "success?")
@@ -395,10 +398,9 @@ public class RubyProcess {
             return pid == PROCESS_STATUS_UNINITIALIZED;
         }
 
+        @Deprecated(since = "10.0")
         public IRubyObject inspect(Ruby runtime) {
-            return unitialized() ?
-                    runtime.newString("#<" + getMetaClass().getName() + ": uninitialized>") :
-                    runtime.newString(pst_message("#<" + getMetaClass().getName() + ": ", pid, status) + ">");
+            return inspect(runtime.getCurrentContext());
         }
 
         // MRI: pst_message

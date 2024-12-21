@@ -37,7 +37,7 @@ final class ClassInitializer extends Initializer {
         proxy.baseName(javaClass.isMemberClass() ?
                 javaClass.getSimpleName() :
                 inferBaseNameFromJavaName(enclosingClass)); // Anonymous of Local class
-        proxyClass.getName(); // trigger calculateName()
+        proxyClass.getName(context); // trigger calculateName()
 
         final MethodGatherer state = new MethodGatherer(runtime, javaClass.getSuperclass());
 

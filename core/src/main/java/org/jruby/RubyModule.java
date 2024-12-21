@@ -2835,21 +2835,15 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject newMethod(IRubyObject receiver, final String methodName, StaticScope scope, boolean bound, Visibility visibility, boolean respondToMissing, boolean priv) {
+        var context = getRuntime().getCurrentContext();
         CacheEntry entry = scope == null ? searchWithCache(methodName) : searchWithRefinements(methodName, scope);
 
-        if (entry.method.isUndefined() || (visibility != null && entry.method.getVisibility() != visibility)) {
-            if (respondToMissing) { // 1.9 behavior
-                if (receiver.respondsToMissing(methodName, priv)) {
-                    entry = new CacheEntry(
-                            new RespondToMissingMethod(this, PUBLIC, methodName),
-                            entry.sourceModule,
-                            entry.token);
-                } else {
-                    throw getRuntime().newNameError("undefined method '" + methodName + "' for class '" + getName() + '\'', methodName);
-                }
-            } else {
-                throw getRuntime().newNameError("undefined method '" + methodName + "' for class '" + getName() + '\'', methodName);
+        if (entry.method.isUndefined() || visibility != null && entry.method.getVisibility() != visibility) {
+            if (!respondToMissing || !receiver.respondsToMissing(methodName, priv)) {
+                throw context.runtime.newNameError("undefined method '" + methodName + "' for class '" + getName(context) + '\'', methodName);
             }
+
+            entry = new CacheEntry(new RespondToMissingMethod(this, PUBLIC, methodName), entry.sourceModule, entry.token);
         }
 
         RubyModule implementationModule = entry.method.getDefinedClass();
