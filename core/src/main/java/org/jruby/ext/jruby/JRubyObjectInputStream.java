@@ -26,10 +26,15 @@ public class JRubyObjectInputStream extends RubyObject {
                 defineMethods(context, JRubyObjectInputStream.class);
     }
 
-    @JRubyMethod(name = "new", rest = true, meta = true)
+    @Deprecated(since = "10.0")
     public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
-        IRubyObject obj = ((RubyClass)recv).allocate();
-        obj.callMethod(recv.getRuntime().getCurrentContext(), "initialize", args, block);
+        return newInstance(recv.getRuntime().getCurrentContext(), recv, args, block);
+    }
+
+    @JRubyMethod(name = "new", rest = true, meta = true)
+    public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        IRubyObject obj = ((RubyClass)recv).allocate(context);
+        obj.callMethod(context, "initialize", args, block);
         return obj;
     }
 

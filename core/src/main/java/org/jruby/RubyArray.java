@@ -160,12 +160,12 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      @JRubyMethod(name = "[]", rest = true, meta = true)
      public static IRubyObject create(ThreadContext context, IRubyObject klass, IRubyObject[] args, Block block) {
          switch (args.length) {
-             case 0: return ((RubyClass) klass).allocate();
+             case 0: return ((RubyClass) klass).allocate(context);
              case 1: return new RubyArrayOneObject((RubyClass) klass, args[0]);
              case 2: return new RubyArrayTwoObject((RubyClass) klass, args[0], args[1]);
          }
 
-         RubyArray arr = (RubyArray) ((RubyClass) klass).allocate();
+         RubyArray arr = (RubyArray) ((RubyClass) klass).allocate(context);
          arr.values = args.clone();
          arr.realLength = args.length;
          return arr;

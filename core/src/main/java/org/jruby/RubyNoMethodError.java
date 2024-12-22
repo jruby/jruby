@@ -71,7 +71,8 @@ public class RubyNoMethodError extends RubyNameError {
     public static RubyException newNoMethodError(IRubyObject recv, IRubyObject message, IRubyObject name, IRubyObject args) {
         RubyClass klass = (RubyClass)recv;
 
-        RubyException newError = (RubyException) klass.allocate();
+        var context = klass.getRuntime().getCurrentContext();
+        RubyException newError = (RubyException) klass.allocate(context);
 
         newError.callInit(message, name, args, Block.NULL_BLOCK);
 
@@ -81,7 +82,8 @@ public class RubyNoMethodError extends RubyNameError {
     public static RubyException newNoMethodError(IRubyObject recv, IRubyObject message, IRubyObject name, IRubyObject args, boolean privateCall) {
         RubyClass klass = (RubyClass)recv;
 
-        RubyNoMethodError newError = (RubyNoMethodError) klass.allocate();
+        var context = klass.getRuntime().getCurrentContext();
+        RubyNoMethodError newError = (RubyNoMethodError) klass.allocate(context);
 
         newError.callInit(message, name, args, Block.NULL_BLOCK);
 

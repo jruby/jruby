@@ -312,12 +312,12 @@ public class UnmarshalStream extends InputStream {
     private IRubyObject objectForData(ThreadContext context, MarshalState state, boolean partial,
                                       List<RubyModule> extendedModules) throws IOException {
         IRubyObject name = unique();
-        RubyClass klass = getClassFromPath(runtime, name.asJavaString());
-        IRubyObject obj = entry(klass.allocate());
+        RubyClass klass = getClassFromPath(context.runtime, name.asJavaString());
+        IRubyObject obj = entry(klass.allocate(context));
         // FIXME: Missing T_DATA error check?
 
         if (!obj.respondsTo("_load_data")) {
-            throw typeError(context, str(runtime, name, " needs to have instance method _load_data"));
+            throw typeError(context, str(context.runtime, name, " needs to have instance method _load_data"));
         }
 
         IRubyObject arg = object0(context, state, partial, extendedModules);
@@ -327,7 +327,7 @@ public class UnmarshalStream extends InputStream {
 
     private IRubyObject objectForObject(ThreadContext context, boolean partial) throws IOException {
         RubySymbol className = symbol();
-        RubyClass type = getClassFromPath(runtime, className.idString());
+        RubyClass type = getClassFromPath(context.runtime, className.idString());
 
         IRubyObject obj = (IRubyObject) type.unmarshal(this);
         return leave(context, obj, partial);
@@ -541,7 +541,7 @@ public class UnmarshalStream extends InputStream {
         byte opts = readSignedByte();
         RegexpOptions reOpts = RegexpOptions.fromJoniOptions(opts);
 
-        RubyRegexp regexp = (RubyRegexp) runtime.getRegexp().allocate();
+        RubyRegexp regexp = (RubyRegexp) runtime.getRegexp().allocate(runtime.getCurrentContext());
 
         IRubyObject ivarHolder = null;
         boolean[] hasEncoding = new boolean[] { false };
@@ -719,8 +719,8 @@ public class UnmarshalStream extends InputStream {
     // FIXME: This is missing a much more complicated set of logic in tracking old compatibility allocators. See MRI for more details
     private IRubyObject objectForUsrMarshal(ThreadContext context, MarshalState state, boolean partial,
                                             List<RubyModule> extendedModules) throws IOException {
-        RubyClass classInstance = getClassFromPath(runtime, unique().asJavaString());
-        IRubyObject obj = classInstance.allocate();
+        RubyClass classInstance = getClassFromPath(context.runtime, unique().asJavaString());
+        IRubyObject obj = classInstance.allocate(context);
 
         if (extendedModules != null) appendExtendedModules(context, obj, extendedModules);
 

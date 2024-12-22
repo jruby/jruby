@@ -194,12 +194,13 @@ public class RubyException extends RubyObject {
 
         @Override
         public RubyException unmarshalFrom(Ruby runtime, RubyClass type, UnmarshalStream input) throws IOException {
-            RubyException exc = (RubyException) input.entry(type.allocate());
+            var context = runtime.getCurrentContext();
+            RubyException exc = (RubyException) input.entry(type.allocate(context));
 
             input.ivar(null, exc, null);
 
             exc.setMessage((IRubyObject) exc.removeInternalVariable("mesg"));
-            exc.set_backtrace(runtime.getCurrentContext(), (IRubyObject) exc.removeInternalVariable("bt"));
+            exc.set_backtrace(context, (IRubyObject) exc.removeInternalVariable("bt"));
 
             return exc;
         }

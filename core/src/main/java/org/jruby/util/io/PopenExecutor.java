@@ -663,7 +663,7 @@ public class PopenExecutor {
         }
 
         var IO = ioClass(context);
-        port = (RubyIO) IO.allocate();
+        port = (RubyIO) IO.allocate(context);
         fptr = port.MakeOpenFile();
         fptr.setChannel(new NativeDeviceChannel(fd));
         fptr.setMode(fmode | (OpenFile.SYNC|OpenFile.DUPLEX));
@@ -690,7 +690,7 @@ public class PopenExecutor {
         fptr.setProcess(new POSIXProcess(runtime, finalPid));
 
         if (write_fd != -1) {
-            write_port = IO.allocate();
+            write_port = IO.allocate(context);
             write_fptr = ((RubyIO)write_port).MakeOpenFile();
             write_fptr.setChannel(new NativeDeviceChannel(write_fd));
             write_fptr.setMode((fmode & ~OpenFile.READABLE)| OpenFile.SYNC|OpenFile.DUPLEX);
