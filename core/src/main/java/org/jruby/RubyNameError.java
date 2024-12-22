@@ -99,7 +99,7 @@ public class RubyNameError extends RubyStandardError {
         static RubyClass define(ThreadContext context, RubyClass Object, RubyClass NameError) {
             return NameError.defineClassUnder(context, "Message", Object, RubyNameErrorMessage::new).
                     defineMethods(context, RubyNameErrorMessage.class).
-                    tap(c -> c.parent.setConstantVisibility(context.runtime, "Message", true));
+                    tap(c -> c.parent.setConstantVisibility(context, "Message", true));
         }
 
         @JRubyMethod(name = "_dump")
@@ -215,7 +215,7 @@ public class RubyNameError extends RubyStandardError {
     }
 
     protected RubyNameError(Ruby runtime, RubyClass exceptionClass) {
-        this(runtime, exceptionClass, exceptionClass.getName());
+        this(runtime, exceptionClass, exceptionClass.getName(runtime.getCurrentContext()));
     }
 
     public RubyNameError(Ruby runtime, RubyClass exceptionClass, String message) {
@@ -306,7 +306,7 @@ public class RubyNameError extends RubyStandardError {
     @JRubyMethod
     @Override
     public IRubyObject to_s(ThreadContext context) {
-        if (message == context.nil) return newString(context, getMetaClass().getRealClass().getName());
+        if (message == context.nil) return newString(context, getMetaClass().getRealClass().getName(context));
 
         RubyString str = message.convertToString();
         if (str != message) message = str;

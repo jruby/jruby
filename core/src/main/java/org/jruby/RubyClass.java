@@ -531,7 +531,7 @@ public class RubyClass extends RubyModule {
 
         clazz.makeMetaClass(superClass.getMetaClass());
         if (setParent) clazz.setParent(parent);
-        parent.setConstant(name, clazz);
+        parent.defineConstant(context, name, clazz);
         superClass.invokeInherited(context, superClass, clazz);
         return clazz;
     }
@@ -550,7 +550,7 @@ public class RubyClass extends RubyModule {
                 baseName(name);
         clazz.makeMetaClass(superClass.getMetaClass());
         if (setParent) clazz.setParent(parent);
-        parent.setConstant(name, clazz, file, line);
+        parent.setConstant(context, name, clazz, file, line);
         superClass.invokeInherited(context, superClass, clazz);
         return clazz;
     }
@@ -572,7 +572,7 @@ public class RubyClass extends RubyModule {
                 baseName(name);
         clazz.makeMetaClass(superClass.getMetaClass());
         if (setParent) clazz.setParent(parent);
-        parent.setConstant(name, clazz, BUILTIN_CONSTANT, -1);
+        parent.setConstant(context, name, clazz, BUILTIN_CONSTANT, -1);
         superClass.invokeInherited(context, superClass, clazz);
         return clazz;
     }
@@ -591,7 +591,7 @@ public class RubyClass extends RubyModule {
                 allocator(NOT_ALLOCATABLE_ALLOCATOR).
                 baseName(name);
         clazz.makeMetaClass(Object.getMetaClass());
-        Object.setConstant(name, clazz, BUILTIN_CONSTANT, -1);
+        Object.defineConstantBootstrap(name, clazz);
         return clazz;
     }
 
@@ -1327,15 +1327,15 @@ public class RubyClass extends RubyModule {
      * global lock, which we would like to avoid.
      */
     @Override
-    public void invalidateCacheDescendants() {
-        super.invalidateCacheDescendants();
+    public void invalidateCacheDescendants(ThreadContext context) {
+        super.invalidateCacheDescendants(context);
 
         SubclassNode subclassNode = this.subclassNode;
         while (subclassNode != null) {
             WeakReference<RubyClass> ref = subclassNode.ref;
             RubyClass klass = ref.get();
             if (klass != null) {
-                klass.invalidateCacheDescendants();
+                klass.invalidateCacheDescendants(context);
             }
             subclassNode = subclassNode.next;
         }
@@ -1596,7 +1596,7 @@ public class RubyClass extends RubyModule {
         final boolean concreteExt = java_box[0];
 
         final Class<?> parentReified = superClass.getRealClass().reifiedClass();
-        if (parentReified == null) throw typeError(context, getName() + "'s parent class is not yet reified");
+        if (parentReified == null) throw typeError(context, getName(context) + "'s parent class is not yet reified");
 
 
         ClassDefiningClassLoader classLoader; // usually parent's class-loader
@@ -1614,7 +1614,7 @@ public class RubyClass extends RubyModule {
             }
         }
 
-        String javaName = getReifiedJavaClassName();
+        String javaName = getReifiedJavaClassName(context);
         // *might* need to include a Class identifier in the Java class name, since a Ruby class might be dropped
         // (using remove_const) and re-created in which case using the same name would cause a conflict...
         if (classLoader.hasDefinedClass(javaName)) { // as Ruby class dropping is "unusual" - assume v0 to be the raw name
@@ -1672,16 +1672,16 @@ public class RubyClass extends RubyModule {
             JavaProxyClass.addStaticInitLookup((Object[]) null); // wipe any local values not retrieved
             final String msg = error.getMessage();
             if ( msg != null && msg.contains("duplicate class definition for name") ) {
-                logReifyException(error, false);
+                logReifyException(context, error, false);
             }
             else {
-                logReifyException(error, true);
+                logReifyException(context, error, true);
             }
         }
         catch (Exception ex) {
             if (nearEnd) Helpers.throwException(ex);
             JavaProxyClass.addStaticInitLookup((Object[]) null); // wipe any local values not retrieved
-            logReifyException(ex, true);
+            logReifyException(context, ex, true);
         }
 
         // If we get here, there's some other class in this classloader hierarchy with the same name. In order to
@@ -1693,12 +1693,12 @@ public class RubyClass extends RubyModule {
         }
     }
 
-    private String getReifiedJavaClassName() {
+    private String getReifiedJavaClassName(ThreadContext context) {
         final String basePackagePrefix = "rubyobj.";
         if (getBaseName() == null) { // anonymous Class instance: rubyobj.Class$0x1234abcd
-            return basePackagePrefix + anonymousMetaNameWithIdentifier().replace(':', '$');
+            return basePackagePrefix + anonymousMetaNameWithIdentifier(context).replace(':', '$');
         }
-        final CharSequence name = StringSupport.replaceAll(getName(), "::", ".");
+        final CharSequence name = StringSupport.replaceAll(getName(context), "::", ".");
         return basePackagePrefix + name; // TheFoo::Bar -> rubyobj.TheFoo.Bar
     }
 
@@ -1846,19 +1846,20 @@ public class RubyClass extends RubyModule {
 
         @Override
         public void customReify() {
+            var context = runtime.getCurrentContext();
             addClassAnnotations();
 
             // define fields
             defineFields();
 
             // gather a list of instance methods, so we don't accidentally make static ones that conflict
-            final Set<String> instanceMethods = new HashSet<String>(getMethods().size());
+            final Set<String> instanceMethods = new HashSet<>(getMethods().size());
 
             // define instance methods
             defineInstanceMethods(instanceMethods);
 
             // define class/static methods
-            defineClassMethods(instanceMethods);
+            defineClassMethods(context, instanceMethods);
         }
 
         private void addClassAnnotations() {
@@ -1893,7 +1894,7 @@ public class RubyClass extends RubyModule {
             }
         }
 
-        private void defineClassMethods(Set<String> instanceMethods) {
+        private void defineClassMethods(ThreadContext context, Set<String> instanceMethods) {
             SkinnyMethodAdapter m;
 
             // define class/static methods
@@ -1963,7 +1964,7 @@ public class RubyClass extends RubyModule {
                     RealClassGenerator.coerceResultAndReturn(m, methodSignature[0]);
                 }
 
-                if (DEBUG_REIFY) LOG.debug("defining {}.{} as {}.{}", getName(), id, javaName, javaMethodName + signature);
+                if (DEBUG_REIFY) LOG.debug("defining {}.{} as {}.{}", getName(context), id, javaName, javaMethodName + signature);
 
                 m.end();
             }
@@ -2008,6 +2009,7 @@ public class RubyClass extends RubyModule {
         
         protected String defineInstanceMethod(final String id, final String callid, final Signature sig,
                 PositionAware position, Class<?>[] methodSignature) {
+            var context = getRuntime().getCurrentContext();
             String javaMethodName = JavaNameMangler.mangleMethodName(id);
 
             Map<Class<?>, Map<String, Object>> methodAnnos = getMethodAnnotations().get(callid); // ruby side, use callid
@@ -2118,7 +2120,7 @@ public class RubyClass extends RubyModule {
             }
             m.end();
 
-            if (DEBUG_REIFY) LOG.debug("defining {}#{} (calling #{}) as {}#{}", getName(), id, callid, javaName, javaMethodName + signature);
+            if (DEBUG_REIFY) LOG.debug("defining {}#{} (calling #{}) as {}#{}", getName(context), id, callid, javaName, javaMethodName + signature);
 
             return javaMethodName + signature;
         }
@@ -2366,6 +2368,7 @@ public class RubyClass extends RubyModule {
 
         @Override
         protected void reifyConstructors() {
+            var context = runtime.getCurrentContext();
             Optional<Constructor<?>> zeroArg = Optional.empty();
             List<Constructor<?>> candidates = new ArrayList<>();
             for (Constructor<?> constructor : reifiedParent.getDeclaredConstructors()) {
@@ -2392,8 +2395,7 @@ public class RubyClass extends RubyModule {
             } else {
                 // TODO: copy validateArgs
                 // TODO: no ctors = error?
-                throw typeError(runtime.getCurrentContext(), "class " + reifiedParent.getName() +
-                        " doesn't have a public or protected constructor");
+                throw typeError(context, "class " + reifiedParent.getName() + " doesn't have a public or protected constructor");
             }
 
             if (zeroArg.isPresent()) {
@@ -2442,7 +2444,7 @@ public class RubyClass extends RubyModule {
                 RealClassGenerator.makeConcreteConstructorIROProxy(cw, position, this);
             } else if (generatedCtors.size() == 0) {
                 //TODO: Warn for static classe?
-                throw typeError(runtime.getCurrentContext(), "class " + getName() + " doesn't have any exposed java constructors");
+                throw typeError(context, "class " + getName(context) + " doesn't have any exposed java constructors");
             }
             
             // generate the real (IRubyObject) ctor. All other ctor generated proxy to this one
@@ -2488,10 +2490,10 @@ public class RubyClass extends RubyModule {
                methodSignature[ methodSignature.length - 1 ].isArray() ;
     }
 
-    private void logReifyException(final Throwable failure, final boolean error) {
+    private void logReifyException(ThreadContext context, final Throwable failure, final boolean error) {
         if (RubyInstanceConfig.REIFY_LOG_ERRORS) {
-            if ( error ) LOG.error("failed to reify class " + getName() + " due to: ", failure);
-            else LOG.info("failed to reify class " + getName() + " due to: ", failure);
+            if ( error ) LOG.error("failed to reify class " + getName(context) + " due to: ", failure);
+            else LOG.info("failed to reify class " + getName(context) + " due to: ", failure);
         }
     }
 

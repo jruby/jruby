@@ -54,10 +54,10 @@ public class JavaTime {
         JavaExtensions.put(runtime, java.time.LocalDateTime.class, proxy -> proxy.defineMethods(context, LocalDateTime.class));
         JavaExtensions.put(runtime, java.time.ZonedDateTime.class, proxy -> proxy.defineMethods(context, ZonedDateTime.class));
         JavaExtensions.put(runtime, java.time.ZoneId.class, (klass) -> {
-            klass.addMethod("inspect", new JavaLang.InspectRawValue(klass));
+            klass.addMethod(context, "inspect", new JavaLang.InspectRawValue(klass));
         });
         JavaExtensions.put(runtime, java.time.temporal.Temporal.class, (klass) -> {
-            klass.addMethod("inspect", new JavaLang.InspectValueWithTypePrefix(klass));
+            klass.addMethod(context, "inspect", new JavaLang.InspectValueWithTypePrefix(klass));
         });
     }
 

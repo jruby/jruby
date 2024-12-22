@@ -102,6 +102,7 @@ import static org.jruby.api.Access.globalVariables;
 import static org.jruby.api.Access.instanceConfig;
 import static org.jruby.api.Access.loadService;
 import static org.jruby.api.Access.objectClass;
+import static org.jruby.api.Access.processModule;
 import static org.jruby.api.Access.runtimeErrorClass;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.asBoolean;
@@ -766,9 +767,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     protected static RubyThread startWaiterThread(final Ruby runtime, long pid, Block block) {
-        final IRubyObject waiter = runtime.getProcess().getConstantAt("Waiter"); // Process::Waiter
+        var context = runtime.getCurrentContext();
+        final IRubyObject waiter = processModule(context).getConstantAt(context, "Waiter"); // Process::Waiter
         final RubyThread rubyThread = new RubyThread(runtime, (RubyClass) waiter, false);
-        rubyThread.op_aset(runtime.newSymbol("pid"), runtime.newFixnum(pid));
+        rubyThread.op_aset(asSymbol(context, "pid"), asFixnum(context, pid));
         rubyThread.callInit(IRubyObject.NULL_ARRAY, block);
         return rubyThread;
     }

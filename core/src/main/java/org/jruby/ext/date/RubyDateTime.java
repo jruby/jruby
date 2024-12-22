@@ -486,8 +486,7 @@ public class RubyDateTime extends RubyDate {
 
     @JRubyMethod // Date.civil(year, mon, mday, @sg)
     public RubyDate to_date(ThreadContext context) {
-        final Ruby runtime = context.runtime;
-        return new RubyDate(runtime, getDate(runtime), withTimeAt0InZone(dt, DateTimeZone.UTC), 0, start);
+        return new RubyDate(context.runtime, getDate(context), withTimeAt0InZone(dt, DateTimeZone.UTC), 0, start);
     }
 
     static DateTime withTimeAt0InZone(DateTime dt, DateTimeZone zone) {

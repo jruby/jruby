@@ -254,7 +254,7 @@ public class ShellLauncher {
 
         try {
             // dup for JRUBY-6603 (avoid concurrent modification while we walk it)
-            RubyHash hash = clearEnv ? newHash(context) : (RubyHash) objectClass(context).getConstant("ENV").dup();
+            RubyHash hash = clearEnv ? newHash(context) : (RubyHash) objectClass(context).getConstant(context, "ENV").dup();
 
             if (mergeEnv != null) {
                 if (mergeEnv instanceof Set) {
@@ -427,18 +427,22 @@ public class ShellLauncher {
 
     public static File findPathExecutable(Ruby runtime, String fname) {
         ThreadContext context = runtime.getCurrentContext();
-        RubyHash env = (RubyHash) objectClass(context).getConstant("ENV");
+        RubyHash env = (RubyHash) objectClass(context).getConstant(context, "ENV");
         IRubyObject pathObject = env.op_aref(context, newString(context, PATH_ENV));
-        return findPathExecutable(runtime, fname, pathObject);
+        return findPathExecutable(context, fname, pathObject);
+    }
+
+    @Deprecated(since = "10.0")
+    public static File findPathExecutable(Ruby runtime, String fname, IRubyObject pathObject) {
+        return findPathExecutable(runtime.getCurrentContext(), fname, pathObject);
     }
 
     // MRI: Hopefully close to dln_find_exe_r used by popen logic
-    public static File findPathExecutable(Ruby runtime, String fname, IRubyObject pathObject) {
+    public static File findPathExecutable(ThreadContext context, String fname, IRubyObject pathObject) {
         String[] pathNodes;
 
         if (pathObject == null || pathObject.isNil()) {
-            ThreadContext context = runtime.getCurrentContext();
-            RubyHash env = (RubyHash) objectClass(context).getConstant("ENV");
+            RubyHash env = (RubyHash) objectClass(context).getConstant(context, "ENV");
             pathObject = env.op_aref(context, newString(context, PATH_ENV));
         }
 
@@ -455,7 +459,7 @@ public class ShellLauncher {
             }
             pathNodes = path.split(pathSeparator);
         }
-        return findPathFile(runtime, fname, pathNodes, true);
+        return findPathFile(context.runtime, fname, pathNodes, true);
     }
 
     public static int runAndWait(Ruby runtime, IRubyObject[] rawArgs) {

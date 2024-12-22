@@ -1030,8 +1030,10 @@ public class IRRuntimeHelpers {
     }
 
     @JIT @Interp
-    public static IRubyObject isDefinedConstantOrMethod(ThreadContext context, IRubyObject receiver, RubyString name, IRubyObject definedConstantMessage, IRubyObject definedMethodMessage) {
-        IRubyObject definedType = Helpers.getDefinedConstantOrBoundMethod(receiver, name.intern().idString(), definedConstantMessage, definedMethodMessage);
+    public static IRubyObject isDefinedConstantOrMethod(ThreadContext context, IRubyObject receiver, RubyString name,
+                                                        IRubyObject definedConstantMessage, IRubyObject definedMethodMessage) {
+        IRubyObject definedType = Helpers.getDefinedConstantOrBoundMethod(context, receiver, name.intern(context).idString(),
+                definedConstantMessage, definedMethodMessage);
 
         return definedType == null ? context.nil : definedType;
     }
@@ -1659,15 +1661,15 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static IRubyObject searchConst(ThreadContext context, StaticScope staticScope, String constName, boolean noPrivateConsts) {
-        IRubyObject constant = staticScope.getConstantInner(constName);
+        IRubyObject constant = staticScope.getScopedConstant(context, constName);
 
         // Inheritance lookup
         RubyModule module = null;
         if (constant == null) {
             module = staticScope.getModule();
             constant = noPrivateConsts ?
-                    module.getConstantFromNoConstMissing(constName, false) :
-                    module.getConstantNoConstMissing(constName);
+                    module.getConstantFromNoConstMissing(context, constName, false) :
+                    module.getConstantNoConstMissing(context, constName);
         }
 
         // Call const_missing or cache
@@ -1677,21 +1679,18 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static IRubyObject inheritedSearchConst(ThreadContext context, IRubyObject cmVal, String constName, boolean noPrivateConsts) {
-        if (!(cmVal instanceof RubyModule)) throw typeError(context, "", cmVal, " is not a class/module");
-        RubyModule module = (RubyModule) cmVal;
+        if (!(cmVal instanceof RubyModule module)) throw typeError(context, "", cmVal, " is not a class/module");
 
-        IRubyObject constant = noPrivateConsts ? module.getConstantFromNoConstMissing(constName, false) : module.getConstantNoConstMissing(constName);
+        IRubyObject constant = noPrivateConsts ?
+                module.getConstantFromNoConstMissing(context, constName, false) :
+                module.getConstantNoConstMissing(context, constName);
 
-        if (constant == null) {
-            constant = UNDEFINED;
-        }
-
-        return constant;
+        return constant == null ? UNDEFINED : constant;
     }
 
     @JIT
     public static IRubyObject lexicalSearchConst(ThreadContext context, StaticScope staticScope, String constName) {
-        IRubyObject constant = staticScope.getConstantInner(constName);
+        IRubyObject constant = staticScope.getScopedConstant(context, constName);
 
         if (constant == null) {
             constant = UNDEFINED;
@@ -1803,7 +1802,7 @@ public class IRRuntimeHelpers {
             newMethod = new MixedModeIRMethod(method, Visibility.PUBLIC, rubyClass);
         }
 
-        rubyClass.addMethod(id, newMethod);
+        rubyClass.addMethod(context, id, newMethod);
         if (!rubyClass.isRefinement()) obj.callMethod(context, "singleton_method_added", method.getName());
     }
 
@@ -1818,7 +1817,7 @@ public class IRRuntimeHelpers {
         if (maybeRefined) scope.captureParentRefinements(context);
 
         // FIXME: needs checkID and proper encoding to force hard symbol
-        rubyClass.addMethod(id,
+        rubyClass.addMethod(context, id,
                 new CompiledIRMethod(handle, null, -1, id, line, scope, Visibility.PUBLIC, rubyClass,
                         encodedArgumentDescriptors, receivesKeywordArgs, needsToFindImplementer));
 
@@ -1839,7 +1838,7 @@ public class IRRuntimeHelpers {
 
         if (maybeRefined) scope.captureParentRefinements(context);
 
-        rubyClass.addMethod(id, new CompiledIRMethod(variable, specific, specificArity, id, line, scope,
+        rubyClass.addMethod(context, id, new CompiledIRMethod(variable, specific, specificArity, id, line, scope,
                 Visibility.PUBLIC, rubyClass, encodedArgumentDescriptors, receivesKeywordArgs, needsToFindImplementer));
 
         if (!rubyClass.isRefinement()) obj.callMethod(context, "singleton_method_added", asSymbol(context, id));
@@ -2531,23 +2530,23 @@ public class IRRuntimeHelpers {
     }
 
     private static void putConst(ThreadContext context, IRubyObject self, IRubyObject module, String id, IRubyObject value, String filename, int line) {
-        if (!(module instanceof RubyModule)) throw typeError(context, module.inspect(context) + " is not a class/module");
+        if (!(module instanceof RubyModule mod)) throw typeError(context, module.inspect(context) + " is not a class/module");
 
         warnSetConstInRefinement(context, self);
 
-        ((RubyModule) module).setConstant(id, value, filename, line);
+        mod.setConstant(context, id, value, filename, line);
     }
 
     @Interp @JIT
     public static IRubyObject getClassVariable(ThreadContext context, RubyModule module, String id) {
-        return module.getClassVar(id);
+        return module.getClassVar(context, id);
     }
 
     @Interp @JIT
     public static void putClassVariable(ThreadContext context, IRubyObject self, RubyModule module, String id, IRubyObject value) {
         warnSetConstInRefinement(context, self);
 
-        module.setClassVar(id, value);
+        module.setClassVar(context, id, value);
     }
 
     @JIT

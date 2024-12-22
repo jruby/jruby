@@ -33,6 +33,7 @@ import org.jruby.embed.internal.BiVariableMap;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -91,16 +92,19 @@ public class ClassVariable extends AbstractVariable {
      * @param vars map to save retrieved class variables.
      */
     public static void retrieve(final RubyObject receiver, final BiVariableMap vars) {
-        if ( vars.isLazy() ) return;
+        if (vars.isLazy()) return;
+
+        ThreadContext context = receiver.getCurrentContext();
         // trying to get variables from receiver;
-        updateClassVar(receiver, vars);
+        updateClassVar(context, receiver, vars);
         // trying to get variables from topself.
-        updateClassVar(getTopSelf(receiver), vars);
+        updateClassVar(context, getTopSelf(receiver), vars);
     }
 
-    private static void updateClassVar(final RubyObject receiver, final BiVariableMap vars) {
-        for ( final String name : receiver.getMetaClass().getClassVariableNameList() ) {
-            final IRubyObject value = receiver.getMetaClass().getClassVar(name);
+    private static void updateClassVar(ThreadContext context, final RubyObject receiver, final BiVariableMap vars) {
+        var metaClass = receiver.getMetaClass();
+        for ( final String name : metaClass.getClassVariableNameList() ) {
+            final IRubyObject value = metaClass.getClassVar(context, name);
             vars.updateVariable(receiver, name, value, ClassVariable.class);
         }
     }
@@ -113,17 +117,17 @@ public class ClassVariable extends AbstractVariable {
      * @param vars map to save retrieved instance variables.
      * @param name instace varible name
      */
-    public static void retrieveByKey(final RubyObject receiver,
-        final BiVariableMap vars, final String name) {
+    public static void retrieveByKey(final RubyObject receiver, final BiVariableMap vars, final String name) {
         final RubyClass klazz = receiver.getMetaClass();
+        var context = receiver.getCurrentContext();
         IRubyObject value = null;
         if ( receiver == receiver.getRuntime().getTopSelf() &&
              klazz.getClassVariableNameList().contains(name) ) {
-            value = klazz.getClassVar(name);
+            value = klazz.getClassVar(context, name);
         }
         else {
             if ( klazz.hasClassVariable(name) ) {
-                value = klazz.getClassVar(name);
+                value = klazz.getClassVar(context, name);
             }
         }
         if ( value == null ) return;
@@ -158,8 +162,9 @@ public class ClassVariable extends AbstractVariable {
      */
     @Override
     public void inject() {
-        RubyModule rubyClass = getRubyClass(receiver.getRuntime());
-        rubyClass.setClassVar(name, rubyObject);
+        var context = receiver.getRuntime().getCurrentContext();
+        RubyModule rubyClass = getRubyClass(context.runtime);
+        rubyClass.setClassVar(context, name, rubyObject);
     }
 
     /**
@@ -168,7 +173,8 @@ public class ClassVariable extends AbstractVariable {
      */
     @Override
     public void remove() {
-        RubyModule rubyClass = getRubyClass(receiver.getRuntime());
-        rubyClass.removeClassVariable(name);
+        var context = receiver.getRuntime().getCurrentContext();
+        RubyModule rubyClass = getRubyClass(context.runtime);
+        rubyClass.removeClassVariable(context, name);
     }
 }

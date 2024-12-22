@@ -344,11 +344,11 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
     }
 
     @Override
-    public void completeBuild(DynamicMethod newMethod) {
+    public void completeBuild(ThreadContext context, DynamicMethod newMethod) {
         setCallCount(-1);
         newMethod.serialNumber = this.serialNumber;
         actualMethod = newMethod;
-        getImplementationClass().invalidateCacheDescendants();
+        getImplementationClass().invalidateCacheDescendants(context);
     }
 
     @Override

@@ -232,7 +232,7 @@ abstract class DateUtils {
                 //if (d != n) rb_warning("fraction of offset is ignored");
                 return (int) n;
             case STRING:
-                RubyClass date = getDate(context.runtime);
+                RubyClass date = getDate(context);
                 vs = sites(context).zone_to_diff.call(context, date, date, of);
 
                 if (!(vs instanceof RubyFixnum)) return INVALID_OFFSET;

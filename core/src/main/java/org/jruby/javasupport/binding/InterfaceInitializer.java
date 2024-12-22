@@ -18,7 +18,7 @@ final class InterfaceInitializer extends Initializer {
 
         state.initialize(javaClass, proxy);
 
-        proxy.getName(); // trigger calculateName()
+        proxy.getName(runtime.getCurrentContext()); // trigger calculateName()
 
         return proxy;
     }

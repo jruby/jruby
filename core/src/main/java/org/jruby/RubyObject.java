@@ -180,7 +180,7 @@ public class RubyObject extends RubyBasicObject {
                         allocator = runtime.getObjectSpecializer().specializeForVariables(klass, foundVariables);
 
                         // invalidate metaclass so new allocator is picked up for specialized .new
-                        klass.metaClass.invalidateCacheDescendants();
+                        klass.metaClass.invalidateCacheDescendants(runtime.getCurrentContext());
                     }
                 }
             }

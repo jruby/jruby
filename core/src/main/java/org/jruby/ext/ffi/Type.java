@@ -60,7 +60,7 @@ public abstract class Type extends RubyObject {
             if (!Builtin.hasConstant(t.name())) {
                 try {
                     Type b = new Builtin(context, Builtin, t, t.name().toLowerCase(LOCALE));
-                    Builtin.defineConstant(t.name().toUpperCase(LOCALE), b);
+                    Builtin.defineConstant(context, t.name().toUpperCase(LOCALE), b);
                 } catch (UnsupportedOperationException ex) {
                 }
 
@@ -72,9 +72,9 @@ public abstract class Type extends RubyObject {
         //
         for (Map.Entry<String, RubyModule.ConstantEntry> c : Builtin.getConstantMap().entrySet()) {
             if (c.getValue().value instanceof Type.Builtin) {
-                Type.defineConstant(c.getKey(), c.getValue().value);
-                nativeType.defineConstant(c.getKey(), c.getValue().value);
-                FFI.defineConstant("TYPE_" + c.getKey(), c.getValue().value);
+                Type.defineConstant(context, c.getKey(), c.getValue().value);
+                nativeType.defineConstant(context, c.getKey(), c.getValue().value);
+                FFI.defineConstant(context, "TYPE_" + c.getKey(), c.getValue().value);
             }
         }
 
@@ -85,11 +85,11 @@ public abstract class Type extends RubyObject {
         try {
             if (names.length > 0) {
                 for (String n : names) {
-                    builtinClass.setConstant(n.toUpperCase(LOCALE),
+                    builtinClass.defineConstant(context, n.toUpperCase(LOCALE),
                             new Builtin(context, builtinClass, nativeType, n.toLowerCase(LOCALE)));
                 }
             } else {
-                builtinClass.setConstant(nativeType.name(),
+                builtinClass.defineConstant(context, nativeType.name(),
                         new Builtin(context, builtinClass, nativeType, nativeType.name().toLowerCase(LOCALE)));
             }
         } catch (UnsupportedOperationException ex) {
@@ -246,7 +246,7 @@ public abstract class Type extends RubyObject {
          * Initializes a new <code>Type.Array</code> instance.
          */
         public Array(Ruby runtime, Type componentType, int length) {
-            this(runtime, getTypeClass(runtime).getClass("Array"), componentType, length);
+            this(runtime, getTypeClass(runtime).getClass(runtime.getCurrentContext(), "Array"), componentType, length);
         }
 
 

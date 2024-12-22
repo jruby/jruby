@@ -174,7 +174,7 @@ public class RubyKernel {
 
         if (config.getKernelGsubDefined()) {
             MethodIndex.addMethodReadFields("gsub", FrameField.LASTLINE, FrameField.BACKREF);
-            Kernel.addMethod("gsub", new JavaMethod(Kernel, Visibility.PRIVATE, "gsub") {
+            Kernel.addMethod(context, "gsub", new JavaMethod(Kernel, Visibility.PRIVATE, "gsub") {
 
                 @Override
                 public IRubyObject call(ThreadContext context1, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
@@ -415,7 +415,7 @@ public class RubyKernel {
         IRubyObject exObj = ArgsUtil.extractKeywordArg(context,  opts, "exception");
 
         if (exObj != context.tru && exObj != context.fals) {
-            throw argumentError(context, "'" + rubyClass.getName() + "': expected true or false as exception: " + exObj);
+            throw argumentError(context, "'" + rubyClass.getName(context) + "': expected true or false as exception: " + exObj);
         }
 
         return  exObj.isTrue();
@@ -689,7 +689,7 @@ public class RubyKernel {
 
     @JRubyMethod(module = true)
     public static IRubyObject public_method(ThreadContext context, IRubyObject recv, IRubyObject symbol) {
-        return recv.getMetaClass().newMethod(recv, symbol.asJavaString(), true, PUBLIC, true, false);
+        return recv.getMetaClass().newMethod(context, recv, symbol.asJavaString(), null, true, PUBLIC, true, false);
     }
 
     /** rb_f_putc
@@ -1408,11 +1408,11 @@ public class RubyKernel {
 
         // No catch active for this throw
         IRubyObject value = arg == null ? context.nil : arg;
-        throw uncaughtThrow(runtime, tag, value, RubyString.newStringShared(runtime, uncaught_throw_p));
+        throw uncaughtThrow(context, tag, value, RubyString.newStringShared(runtime, uncaught_throw_p));
     }
 
-    private static RaiseException uncaughtThrow(Ruby runtime, IRubyObject tag, IRubyObject value, RubyString message) {
-        return RubyUncaughtThrowError.newUncaughtThrowError(runtime, tag, value, message).toThrowable();
+    private static RaiseException uncaughtThrow(ThreadContext context, IRubyObject tag, IRubyObject value, RubyString message) {
+        return RubyUncaughtThrowError.newUncaughtThrowError(context, tag, value, message).toThrowable();
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE, omit = true)
@@ -2328,7 +2328,7 @@ public class RubyKernel {
 
     @JRubyMethod(name = "method", required = 1, reads = SCOPE)
     public static IRubyObject method(ThreadContext context, IRubyObject self, IRubyObject symbol) {
-        return ((RubyBasicObject)self).method(symbol, context.getCurrentStaticScope());
+        return ((RubyBasicObject)self).method(context, symbol, context.getCurrentStaticScope());
     }
 
     /**

@@ -19,6 +19,7 @@ import org.jruby.RubyObject;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
 import org.jruby.ext.ffi.InvalidMemoryIO;
 import org.jruby.ext.ffi.MemoryIO;
 import org.jruby.ext.ffi.Pointer;
@@ -46,7 +47,7 @@ public class DynamicLibrary extends RubyObject {
                 defineMethods(context, DynamicLibrary.class).
                 defineConstants(context, DynamicLibrary.class);
 
-        DynamicLibary.defineClassUnder(context, "Symbol", FFI.getClass("Pointer"), NOT_ALLOCATABLE_ALLOCATOR).
+        DynamicLibary.defineClassUnder(context, "Symbol", FFI.getClass(context, "Pointer"), NOT_ALLOCATABLE_ALLOCATOR).
                 defineMethods(context, Symbol.class);
 
         return DynamicLibary;
@@ -155,7 +156,7 @@ public class DynamicLibrary extends RubyObject {
         private final String name;
         
         public Symbol(Ruby runtime, DynamicLibrary library, String name, MemoryIO io) {
-            super(runtime, runtime.getModule("FFI").getClass("DynamicLibrary").getClass("Symbol"),
+            super(runtime, Access.getClass(runtime.getCurrentContext(), "FFI", "DynamicLibrary", "Symbol"),
                     io, Long.MAX_VALUE);
             this.library = library;
             this.name = name;
@@ -169,7 +170,7 @@ public class DynamicLibrary extends RubyObject {
         @JRubyMethod(name = "inspect")
         public IRubyObject inspect(ThreadContext context) {
             return newString(context, String.format("#<%s library=%s symbol=%s address=%#x>",
-                    getMetaClass().getName(), library.name, name, getAddress()));
+                    getMetaClass().getName(context), library.name, name, getAddress()));
         }
 
         @JRubyMethod(name = "to_s")

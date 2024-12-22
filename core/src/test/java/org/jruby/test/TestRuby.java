@@ -45,6 +45,7 @@ import org.jruby.RubyException;
 import org.jruby.RubyIO;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyString;
+import org.jruby.api.Access;
 import org.jruby.exceptions.RaiseException;
 import jnr.posix.util.Platform;
 import org.jruby.runtime.Block;
@@ -69,7 +70,7 @@ public class TestRuby extends Base {
     }
     
     public void testArgvIsNonNil() throws Exception {
-        assert(!objectClass(context).getConstant("ARGV").isNil());
+        assert(!objectClass(context).getConstant(context, "ARGV").isNil());
         assert(!globalVariables(context).get("$*").isNil());
     }
     
@@ -166,7 +167,7 @@ public class TestRuby extends Base {
             setTraceType(TraceType.traceTypeFor("mri"));
         }};
         Ruby ruby = Ruby.newInstance(config);
-        RubyException exception = (RubyException)context.runtime.getClass("NameError").newInstance(context, new IRubyObject[]{ newString(context, "A message")},  Block.NULL_BLOCK);
+        RubyException exception = (RubyException) Access.getClass(context, "NameError").newInstance(context, new IRubyObject[]{ newString(context, "A message")},  Block.NULL_BLOCK);
         RubyString[] lines = new RubyString[] { newString(context, "Line 1"), newString(context, "Line 2") };
         RubyArray backtrace = RubyArray.newArray(ruby, Arrays.<IRubyObject>asList(lines));
         exception.set_backtrace(context, backtrace);
@@ -182,7 +183,7 @@ public class TestRuby extends Base {
             setTraceType(TraceType.traceTypeFor("mri"));
         }};
         Ruby ruby = Ruby.newInstance(config);
-        RubyException exception = (RubyException)context.runtime.getClass("NameError").newInstance(context, new IRubyObject[]{newString(context, "A message")},  Block.NULL_BLOCK);
+        RubyException exception = (RubyException) Access.getClass(context, "NameError").newInstance(context, new IRubyObject[]{newString(context, "A message")},  Block.NULL_BLOCK);
         ruby.printError(exception);
         //        assertEquals(":[0,0]:[0,7]: A message (NameError)\n", err.toString());
     }

@@ -274,7 +274,8 @@ public class JITCompiler implements JITCompilerMBean {
     }
 
     static void log(Compilable<?> target, String name, String message, Object... reason) {
-        String className = target.getImplementationClass().getName();
+        var context = target.getImplementationClass().getRuntime().getCurrentContext();
+        String className = target.getImplementationClass().getName(context);
         StringBuilder builder = new StringBuilder(32);
         builder.append(message).append(": ").append(className);
         if (name != null) builder.append(' ').append(name);

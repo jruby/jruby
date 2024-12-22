@@ -37,6 +37,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.*;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.api.Access;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRScriptBody;
@@ -293,7 +294,7 @@ public class JRubyLibrary implements Library {
 
         scope.getStaticScope().setModule(runtime.getTopSelf().getMetaClass());
 
-        RubyClass CompiledScript = (RubyClass) runtime.getModule("JRuby").getConstantAt("CompiledScript");
+        RubyClass CompiledScript = Access.getClass(context, "JRuby", "CompiledScript");
         // JRuby::CompiledScript#initialize(filename, class_name, content, bytes)
         return CompiledScript.newInstance(context,
                 new IRubyObject[] {filename, asSymbol(context, scope.getId()), content, Java.getInstance(runtime, bytes)},

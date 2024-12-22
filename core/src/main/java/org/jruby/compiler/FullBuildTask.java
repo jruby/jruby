@@ -26,17 +26,18 @@ class FullBuildTask implements Runnable {
 
     public void run() {
         try {
-            IRScope hardScope = method.getIRScope().getNearestTopLocalVariableScope();
+            var scope = method.getIRScope();
+            IRScope hardScope = scope.getNearestTopLocalVariableScope();
 
             // define_method may capture something outside itself and we need parents and children to compile
             // to agreement with respect to local variable access (e.g. dynscopes).
-            if (hardScope != method.getIRScope()) hardScope.prepareFullBuild();
+            if (hardScope != scope) hardScope.prepareFullBuild();
 
-            method.completeBuild(method.getIRScope().prepareFullBuild());
+            method.completeBuild(scope.getManager().getRuntime().getCurrentContext(), scope.prepareFullBuild());
 
-            if (IRRuntimeHelpers.shouldPrintIR(jitCompiler.runtime) && IRRuntimeHelpers.shouldPrintScope(method.getIRScope())) {
-                ByteArrayOutputStream baos = IRDumper.printIR(method.getIRScope(), true, true);
-                LOG.info("Printing full IR for " + method.getIRScope().getId() + ":\n" + new String(baos.toByteArray()));
+            if (IRRuntimeHelpers.shouldPrintIR(jitCompiler.runtime) && IRRuntimeHelpers.shouldPrintScope(scope)) {
+                ByteArrayOutputStream baos = IRDumper.printIR(scope, true, true);
+                LOG.info("Printing full IR for " + scope.getId() + ":\n" + new String(baos.toByteArray()));
             }
 
             if (jitCompiler.config.isJitLogging()) {

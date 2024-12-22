@@ -1406,7 +1406,7 @@ public class Helpers {
         if (!(module instanceof RubyModule)) {
             throw typeError(context, str(context.runtime, ids(context.runtime, module), " is not a class/module"));
         }
-        ((RubyModule) module).setConstant(name, value);
+        ((RubyModule) module).setConstant(context, name, value);
 
         return value;
     }
@@ -2072,7 +2072,7 @@ public class Helpers {
     }
 
     public static RubySymbol addInstanceMethod(RubyModule containingClass, RubySymbol symbol, DynamicMethod method, Visibility visibility, ThreadContext context) {
-        containingClass.addMethod(symbol.idString(), method);
+        containingClass.addMethod(context, symbol.idString(), method);
 
         if (!containingClass.isRefinement()) callNormalMethodHook(containingClass, context, symbol);
         if (visibility == Visibility.MODULE_FUNCTION) addModuleMethod(containingClass, method, context, symbol);
@@ -2085,7 +2085,7 @@ public class Helpers {
         var singletonClass = containingClass.singletonClass(context);
         singletonMethod.setImplementationClass(singletonClass);
         singletonMethod.setVisibility(Visibility.PUBLIC);
-        singletonClass.addMethod(sym.idString(), singletonMethod);
+        singletonClass.addMethod(context, sym.idString(), singletonMethod);
         containingClass.callMethod(context, "singleton_method_added", sym);
     }
 
@@ -2493,13 +2493,23 @@ public class Helpers {
         throw argumentError(context, length, expected);
     }
 
+    @Deprecated(since = "10.0")
     public static boolean isModuleAndHasConstant(IRubyObject left, String name) {
-        return left instanceof RubyModule && ((RubyModule) left).publicConstDefinedFrom(name);
+        return isModuleAndHasConstant(left.getRuntime().getCurrentContext(), left, name);
+    }
+
+    public static boolean isModuleAndHasConstant(ThreadContext context, IRubyObject left, String name) {
+        return left instanceof RubyModule && ((RubyModule) left).publicConstDefinedFrom(context, name);
+    }
+
+    @Deprecated(since = "10.0")
+    public static IRubyObject getDefinedConstantOrBoundMethod(IRubyObject left, String name, IRubyObject definedConstantMessage, IRubyObject definedMethodMessage) {
+        return getDefinedConstantOrBoundMethod(left.getRuntime().getCurrentContext(), left, name, definedConstantMessage, definedMethodMessage);
     }
 
     @JIT @Interp
-    public static IRubyObject getDefinedConstantOrBoundMethod(IRubyObject left, String name, IRubyObject definedConstantMessage, IRubyObject definedMethodMessage) {
-        if (isModuleAndHasConstant(left, name)) return definedConstantMessage;
+    public static IRubyObject getDefinedConstantOrBoundMethod(ThreadContext context, IRubyObject left, String name, IRubyObject definedConstantMessage, IRubyObject definedMethodMessage) {
+        if (isModuleAndHasConstant(context, left, name)) return definedConstantMessage;
         if (left.getMetaClass().isMethodBound(name, true)) return definedMethodMessage;
         return null;
     }

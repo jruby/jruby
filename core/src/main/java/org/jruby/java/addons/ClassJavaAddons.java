@@ -103,9 +103,8 @@ public abstract class ClassJavaAddons {
             Field field;
             try {
                 field = javaClass.getDeclaredField(name);
-            }
-            catch (NoSuchFieldException e) {
-                throw runtimeError(context, "no field: '" + name + "' in reified class for " + klass.getName());
+            } catch (NoSuchFieldException e) {
+                throw runtimeError(context, "no field: '" + name + "' in reified class for " + klass.getName(context));
             }
             JavaProxy.installField(context, name, field, klass);
         }

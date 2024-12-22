@@ -27,6 +27,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyUnboundMethod;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
 import org.jruby.api.Convert;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.RaiseException;
@@ -87,16 +88,13 @@ public class JavaProxy extends RubyObject {
     @JRubyMethod(meta = true)
     public static IRubyObject wrap(final ThreadContext context, final IRubyObject self, final IRubyObject object) {
         final Object value = JavaUtil.unwrapJava(object, null);
-        if (value == null) return context.nil;
 
-        final Ruby runtime = context.runtime;
-        if (value instanceof Class) {
-            return Java.getProxyClass(runtime, (Class<?>) value);
-        }
-        if (value.getClass().isArray()) {
-            return new ArrayJavaProxy(runtime, runtime.getClass("ArrayJavaProxy"), value);
-        }
-        return new ConcreteJavaProxy(runtime, runtime.getClass("ConcreteJavaProxy"), value);
+        if (value == null) return context.nil;
+        if (value instanceof Class clazz) return Java.getProxyClass(context.runtime, clazz);
+
+        return value.getClass().isArray() ?
+                new ArrayJavaProxy(context.runtime, Access.getClass(context, "ArrayJavaProxy"), value) :
+                new ConcreteJavaProxy(context.runtime, Access.getClass(context, "ConcreteJavaProxy"), value);
     }
 
     @JRubyMethod(meta = true)
@@ -290,7 +288,7 @@ public class JavaProxy extends RubyObject {
 
         if ( Modifier.isStatic(field.getModifiers()) ) {
             if ( asReader ) {
-                target.singletonClass(context).addMethod(asName, new StaticFieldGetter(fieldName, target, field));
+                target.singletonClass(context).addMethod(context, asName, new StaticFieldGetter(fieldName, target, field));
             }
             if ( asWriter == null || asWriter ) {
                 if ( Modifier.isFinal(field.getModifiers()) ) {
@@ -298,18 +296,18 @@ public class JavaProxy extends RubyObject {
                     // e.g. Cannot change final field 'private final char[] java.lang.String.value'
                     throw context.runtime.newSecurityError("Cannot change final field '" + field + "'");
                 }
-                target.singletonClass(context).addMethod(asName + '=', new StaticFieldSetter(fieldName, target, field));
+                target.singletonClass(context).addMethod(context, asName + '=', new StaticFieldSetter(fieldName, target, field));
             }
         } else {
             if ( asReader ) {
-                target.addMethod(asName, new InstanceFieldGetter(fieldName, target, field));
+                target.addMethod(context, asName, new InstanceFieldGetter(fieldName, target, field));
             }
             if ( asWriter == null || asWriter ) {
                 if ( Modifier.isFinal(field.getModifiers()) ) {
                     if ( asWriter == null ) return;
                     throw context.runtime.newSecurityError("Cannot change final field '" + field + "'");
                 }
-                target.addMethod(asName + '=', new InstanceFieldSetter(fieldName, target, field));
+                target.addMethod(context, asName + '=', new InstanceFieldSetter(fieldName, target, field));
             }
         }
     }
@@ -337,7 +335,7 @@ public class JavaProxy extends RubyObject {
 
         // We could not find all of them print out first one (we could print them all?)
         if (!fieldMap.isEmpty()) {
-            throw undefinedFieldError(context, topModule.getName(), fieldMap.keySet().iterator().next());
+            throw undefinedFieldError(context, topModule.getName(context), fieldMap.keySet().iterator().next());
         }
 
     }
@@ -714,7 +712,7 @@ public class JavaProxy extends RubyObject {
                 case "<init>" :
                     final Constructor constructor = getConstructorFromClass(context, clazz, name, argTypesClasses);
                     invoker = new ConstructorInvoker(proxyClass, () -> arrayOf(constructor), newNameStr);
-                    proxyClass.addMethod(newNameStr, invoker);
+                    proxyClass.addMethod(context, newNameStr, invoker);
 
                     break;
 
@@ -722,11 +720,11 @@ public class JavaProxy extends RubyObject {
                     final Method method = getMethodFromClass(context, clazz, name, argTypesClasses);
                     if ( Modifier.isStatic( method.getModifiers() ) ) {
                         invoker = new StaticMethodInvoker(proxyClass.getMetaClass(), () -> arrayOf(method), newNameStr);
-                        proxyClass.singletonClass(context).addMethod(newNameStr, invoker); // add alias to meta
+                        proxyClass.singletonClass(context).addMethod(context, newNameStr, invoker); // add alias to meta
                     }
                     else {
                         invoker = new InstanceMethodInvoker(proxyClass, () -> arrayOf(method), newNameStr);
-                        proxyClass.addMethod(newNameStr, invoker);
+                        proxyClass.addMethod(context, newNameStr, invoker);
                     }
             }
 

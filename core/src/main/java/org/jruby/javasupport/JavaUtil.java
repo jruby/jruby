@@ -252,14 +252,14 @@ public class JavaUtil {
             }
 
             final Java.ProcToInterface procToIface = new Java.ProcToInterface(singletonClass);
-            singletonClass.addMethod("method_missing", procToIface);
+            singletonClass.addMethod(context, "method_missing", procToIface);
             // similar to Iface.impl { ... } - bind interface method(s) to avoid Java-Ruby conflicts
             // ... e.g. calling a Ruby implemented Predicate#test should not dispatch to Kernel#test
             // getMethods for interface returns all methods (including ones from super-interfaces)
             for ( Method method : targetType.getMethods() ) {
                 Java.ProcToInterface.ConcreteMethod implMethod = procToIface.getConcreteMethod(method.getName());
                 if ( Modifier.isAbstract(method.getModifiers()) ) {
-                    singletonClass.addMethodInternal(method.getName(), implMethod);
+                    singletonClass.addMethodInternal(context, method.getName(), implMethod);
                 }
             }
 
@@ -1123,12 +1123,12 @@ public class JavaUtil {
         if (rubyObject.dataGetStruct() instanceof JavaObject) {
             rubyObject = (IRubyObject) rubyObject.dataGetStruct();
             if ( rubyObject == null ) {
-                throw new RuntimeException("dataGetStruct returned null for " + origObject.getType().getName());
+                throw new RuntimeException("dataGetStruct returned null for " + origObject.getType().getName(context));
             }
         } else if (rubyObject.respondsTo("java_object")) {
             rubyObject = rubyObject.callMethod(context, "java_object");
             if( rubyObject == null ) {
-                throw new RuntimeException("java_object returned null for " + origObject.getType().getName());
+                throw new RuntimeException("java_object returned null for " + origObject.getType().getName(context));
             }
         }
 

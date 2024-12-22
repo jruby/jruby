@@ -849,7 +849,7 @@ public final class ThreadContext {
      */
     @Deprecated
     public IRubyObject getConstant(String internedName) {
-        return getCurrentStaticScope().getConstant(internedName);
+        return getCurrentStaticScope().getConstant(this, internedName);
     }
 
     /**

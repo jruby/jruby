@@ -42,6 +42,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.api.Check;
 import org.jruby.api.Convert;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.java.proxies.JavaProxy;
@@ -56,6 +57,7 @@ import static org.jruby.api.Access.hashClass;
 import static org.jruby.api.Access.stringClass;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -165,33 +167,16 @@ public class TypeConverter {
     }
 
     public static RubyString typeAsString(IRubyObject obj) {
-        if (obj.isNil()) return obj.getRuntime().newString("nil");
-        if (obj instanceof RubyBoolean) return obj.getRuntime().newString(obj.isTrue() ? "true" : "false");
+        var context = obj.getRuntime().getCurrentContext();
+        if (obj.isNil()) return newString(context, "nil");
+        if (obj instanceof RubyBoolean) return newString(context, obj.isTrue() ? "true" : "false");
 
-        return obj.getMetaClass().getRealClass().rubyName();
+        return obj.getMetaClass().getRealClass().rubyName(context);
     }
 
-
-
-    /**
-     * Convert the supplied object into an internal identifier String.  Basically, symbols
-     * are stored internally as raw bytes from whatever encoding they were originally sourced from.
-     * When methods are stored they must also get stored in this same raw fashion so that if we
-     * use symbols to look up methods or make symbols from these method names they will match up.
-     *
-     * For 2.2 compatibility, we also force all incoming identifiers to get anchored as hard-referenced symbols.
-     */
+    @Deprecated(since = "10.0")
     public static RubySymbol checkID(IRubyObject obj) {
-        final Ruby runtime = obj.getRuntime();
-        if (obj instanceof RubySymbol || obj instanceof RubyString) {
-            return RubySymbol.newHardSymbol(runtime, obj);
-        }
-
-        final IRubyObject str = convertToTypeWithCheck(obj, runtime.getString(), "to_str");
-        if (!str.isNil()) return RubySymbol.newHardSymbol(runtime, str);
-
-        final ThreadContext context = runtime.getCurrentContext();
-        throw typeError(context, obj.callMethod(context, "inspect") + " is not a symbol nor a string");
+        return Check.checkID(obj.getRuntime().getCurrentContext(), obj);
     }
 
     /**
@@ -202,6 +187,7 @@ public class TypeConverter {
      *
      * For 2.2 compatibility, we also force all incoming identifiers to get anchored as hard-referenced symbols.
      */
+    @Deprecated(since = "10.0")
     public static RubySymbol checkID(Ruby runtime, String name) {
         return RubySymbol.newHardSymbol(runtime, name.intern());
     }

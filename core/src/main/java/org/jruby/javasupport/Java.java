@@ -58,6 +58,7 @@ import com.headius.backport9.modules.Modules;
 import org.jcodings.Encoding;
 
 import org.jruby.*;
+import org.jruby.api.Access;
 import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.TypeError;
 import org.jruby.javasupport.binding.Initializer;
@@ -128,9 +129,9 @@ public class Java implements Library {
         org.jruby.javasupport.ext.JavaLangReflect.define(context);
         org.jruby.javasupport.ext.JavaUtil.define(context, Enumerable);
         org.jruby.javasupport.ext.JavaUtilRegex.define(context);
-        org.jruby.javasupport.ext.JavaIo.define(runtime);
+        org.jruby.javasupport.ext.JavaIo.define(context);
         org.jruby.javasupport.ext.JavaNio.define(context);
-        org.jruby.javasupport.ext.JavaNet.define(runtime);
+        org.jruby.javasupport.ext.JavaNet.define(context);
         org.jruby.javasupport.ext.JavaMath.define(context);
         org.jruby.javasupport.ext.JavaTime.define(context);
 
@@ -141,26 +142,26 @@ public class Java implements Library {
         loadService(context).load("jruby/java.rb", false);
 
         // rewire ArrayJavaProxy superclass to point at Object, so it inherits Object behaviors
-        runtime.getClass("ArrayJavaProxy").
+        Access.getClass(context, "ArrayJavaProxy").
                 superClass(objectClass).
                 include(context, Enumerable);
 
         RubyClassPathVariable.createClassPathVariable(context, Enumerable, Object);
 
         // (legacy) JavaClass compatibility:
-        Java.setConstant("JavaClass", getProxyClass(runtime, java.lang.Class.class));
-        Java.deprecateConstant(runtime, "JavaClass");
-        Java.setConstant("JavaField", getProxyClass(runtime, java.lang.reflect.Field.class));
-        Java.deprecateConstant(runtime, "JavaField");
-        Java.setConstant("JavaMethod", getProxyClass(runtime, java.lang.reflect.Method.class));
-        Java.deprecateConstant(runtime, "JavaMethod");
-        Java.setConstant("JavaConstructor", getProxyClass(runtime, java.lang.reflect.Constructor.class));
-        Java.deprecateConstant(runtime, "JavaConstructor");
+        Java.defineConstant(context, "JavaClass", getProxyClass(runtime, java.lang.Class.class)).
+                defineConstant(context, "JavaField", getProxyClass(runtime, java.lang.reflect.Field.class)).
+                defineConstant(context, "JavaMethod", getProxyClass(runtime, java.lang.reflect.Method.class)).
+                defineConstant(context, "JavaConstructor", getProxyClass(runtime, java.lang.reflect.Constructor.class));
+        Java.deprecateConstant(context, "JavaClass");
+        Java.deprecateConstant(context, "JavaField");
+        Java.deprecateConstant(context, "JavaMethod");
+        Java.deprecateConstant(context, "JavaConstructor");
 
         // modify ENV_JAVA to be a read/write version
         final Map systemProperties = new SystemPropertiesMap();
         RubyClass proxyClass = (RubyClass) getProxyClass(runtime, SystemPropertiesMap.class);
-        Object.setConstantQuiet("ENV_JAVA", new MapJavaProxy(runtime, proxyClass, systemProperties));
+        Object.setConstantQuiet(context, "ENV_JAVA", new MapJavaProxy(runtime, proxyClass, systemProperties));
     }
 
     @SuppressWarnings("deprecation")
@@ -204,14 +205,14 @@ public class Java implements Library {
         ioClass(context).defineMethods(context, IOJavaAddons.class);
         classClass(context).defineMethods(context, ClassJavaAddons.class);
 
-        if (Object.isConstantDefined("StringIO") ) {
-            ((RubyClass) Object.getConstant("StringIO")).defineMethods(context, IOJavaAddons.AnyIO.class);
+        if (Object.isConstantDefined(context, "StringIO")) {
+            ((RubyClass) Object.getConstant(context, "StringIO")).defineMethods(context, IOJavaAddons.AnyIO.class);
         }
 
         Java.defineConstant(context, "JavaObject", _ConcreteJavaProxy); // obj.is_a?(Java::JavaObject) still works
-        Java.deprecateConstant(context.runtime, "JavaObject");
+        Java.deprecateConstant(context, "JavaObject");
         Java.defineConstant(context, "JavaArray", _ArrayJavaProxy);
-        Java.deprecateConstant(context.runtime, "JavaArray"); // obj.is_a?(Java::JavaArray) still works
+        Java.deprecateConstant(context, "JavaArray"); // obj.is_a?(Java::JavaArray) still works
 
         return Java;
     }
@@ -255,26 +256,28 @@ public class Java implements Library {
 
     public static RubyModule setProxyClass(final Ruby runtime, final RubyModule target, final String constName, final Class<?> javaClass) throws NameError {
         final RubyModule proxyClass = getProxyClass(runtime, javaClass);
-        setProxyClass(runtime, target, constName, proxyClass, true);
+        setProxyClass(runtime.getCurrentContext(), target, constName, proxyClass, true);
         return proxyClass;
     }
 
-    private static void setProxyClass(final Ruby runtime, final RubyModule target, final String constName, final RubyModule proxyClass, final boolean validateConstant) {
-        if (constantNotSetOrDifferent(target, constName, proxyClass)) {
+    private static void setProxyClass(ThreadContext context, final RubyModule target, final String constName, final RubyModule proxyClass, final boolean validateConstant) {
+        if (constantNotSetOrDifferent(context, target, constName, proxyClass)) {
             synchronized (target) { // synchronize to prevent "already initialized constant" warnings with multiple threads
-                if (constantNotSetOrDifferent(target, constName, proxyClass)) {
+                if (constantNotSetOrDifferent(context, target, constName, proxyClass)) {
                     if (validateConstant) {
-                        target.const_set(runtime.newSymbol(constName), proxyClass); // setConstant would not validate const-name
+                        target.defineConstant(context, constName, proxyClass); // setConstant would not validate const-name
                     } else {
-                        target.setConstant(constName, proxyClass);
+                        target.setConstant(context, constName, proxyClass);
                     }
                 }
             }
         }
     }
 
-    private static boolean constantNotSetOrDifferent(final RubyModule target, final String constName, final RubyModule proxyClass) {
-        return !target.constDefinedAt(constName) || !proxyClass.equals(target.getConstant(constName, false));
+    private static boolean constantNotSetOrDifferent(ThreadContext context, final RubyModule target,
+                                                     final String constName, final RubyModule proxyClass) {
+        return !target.constDefinedAt(context, constName) ||
+                !proxyClass.equals(target.getConstant(context, constName, false));
     }
 
     /**
@@ -507,7 +510,7 @@ public class Java implements Library {
             proxy.include(context, getInterfaceModule(context, extended[i]));
         }
         Initializer.setupProxyModule(context, javaClass, proxy);
-        addToJavaPackageModule(proxy);
+        addToJavaPackageModule(context, proxy);
     }
 
     private static void generateClassProxy(ThreadContext context, Class<?> clazz, RubyClass proxy, RubyClass superClass) {
@@ -529,7 +532,7 @@ public class Java implements Library {
             } else {
                 proxy.getMetaClass().defineMethods(context, OldStyleExtensionInherited.class);
             }
-            addToJavaPackageModule(proxy);
+            addToJavaPackageModule(context, proxy);
         }
         else {
             createProxyClass(context, proxy, clazz, superClass, false);
@@ -539,7 +542,7 @@ public class Java implements Library {
                 proxy.include(context, getInterfaceModule(context, interfaces[i]));
             }
             if ( Modifier.isPublic(clazz.getModifiers()) ) {
-                addToJavaPackageModule(proxy);
+                addToJavaPackageModule(context, proxy);
             }
         }
 
@@ -547,7 +550,7 @@ public class Java implements Library {
         // solved here by adding an exception-throwing "inherited"
         if ( Modifier.isFinal(clazz.getModifiers()) ) {
             final String clazzName = clazz.getCanonicalName();
-            proxy.getMetaClass().addMethod("inherited", new org.jruby.internal.runtime.methods.JavaMethod(proxy, PUBLIC, "inherited") {
+            proxy.getMetaClass().addMethod(context, "inherited", new org.jruby.internal.runtime.methods.JavaMethod(proxy, PUBLIC, "inherited") {
                 @Override
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
                     throw typeError(context, "can not extend final Java class: " + clazzName);
@@ -616,7 +619,7 @@ public class Java implements Library {
 
         final RubyClass subclassSingleton = subclass.singletonClass(context);
         subclassSingleton.addReadAttribute(context, "java_proxy_class");
-        subclassSingleton.addMethod("java_interfaces", new JavaMethodZero(subclassSingleton, PUBLIC, "java_interfaces") {
+        subclassSingleton.addMethod(context, "java_interfaces", new JavaMethodZero(subclassSingleton, PUBLIC, "java_interfaces") {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
                 IRubyObject javaInterfaces = self.getInstanceVariables().getInstanceVariable("@java_interfaces");
@@ -626,7 +629,7 @@ public class Java implements Library {
         });
         ///TODO: investigate this, should jcreate! still exist?
 
-        subclass.addMethod("__jcreate!", new JCreateMethod(subclassSingleton));
+        subclass.addMethod(context, "__jcreate!", new JCreateMethod(subclassSingleton));
     }
 
     /**
@@ -842,8 +845,7 @@ public class Java implements Library {
 
     // package scheme 2: separate module for each full package name, constructed
     // from the camel-cased package segments: Java::JavaLang::Object,
-    private static void addToJavaPackageModule(RubyModule proxyClass) {
-        final Ruby runtime = proxyClass.getRuntime();
+    private static void addToJavaPackageModule(ThreadContext context, RubyModule proxyClass) {
         final Class<?> clazz = (Class<?>)proxyClass.dataGetStruct();
         final String fullName;
         if ( ( fullName = clazz.getName() ) == null ) return;
@@ -861,14 +863,14 @@ public class Java implements Library {
         else {
             final int endPackage = fullName.lastIndexOf('.');
             String packageString = endPackage < 0 ? "" : fullName.substring(0, endPackage);
-            parentModule = getJavaPackageModule(runtime, packageString);
+            parentModule = getJavaPackageModule(context.runtime, packageString);
             className = parentModule == null ? fullName : fullName.substring(endPackage + 1);
         }
 
         if ( parentModule != null && // TODO a Java Ruby class should not validate (as well)
             ( IdUtil.isConstant(className) || parentModule instanceof JavaPackage ) ) {
             // setConstant without validation since Java class name might be lower-case
-            setProxyClass(runtime, parentModule, className, proxyClass, false);
+            setProxyClass(context, parentModule, className, proxyClass, false);
         }
     }
 
@@ -892,16 +894,13 @@ public class Java implements Library {
             packageName = name.toString();
         }
 
-        final RubyModule javaModule = runtime.getJavaSupport().getJavaModule();
-        final IRubyObject packageModule = javaModule.getConstantAt(packageName);
+        var context = runtime.getCurrentContext();
+        final RubyModule javaModule = runtime.getJavaSupport().getJavaModule(context);
+        final IRubyObject packageModule = javaModule.getConstantAt(context, packageName);
 
-        if ( packageModule == null ) {
-            return createPackageModule(runtime.getCurrentContext(), javaModule, packageName, packageString);
-        }
-        if ( packageModule instanceof RubyModule ) {
-            return (RubyModule) packageModule;
-        }
-        return null;
+        if (packageModule == null) return createPackageModule(context, javaModule, packageName, packageString);
+
+        return packageModule instanceof RubyModule pkg ? pkg : null;
     }
 
     private static RubyModule createPackageModule(ThreadContext context,
@@ -910,11 +909,10 @@ public class Java implements Library {
         final RubyModule packageModule = JavaPackage.newPackage(context.runtime, packageString, parentModule);
 
         synchronized (parentModule) { // guard initializing in multiple threads
-            final IRubyObject packageAlreadySet = parentModule.fetchConstant(name);
-            if ( packageAlreadySet != null ) {
-                return (RubyModule) packageAlreadySet;
-            }
-            parentModule.setConstant(name.intern(), packageModule);
+            final IRubyObject packageAlreadySet = parentModule.fetchConstant(context, name);
+            if (packageAlreadySet != null) return (RubyModule) packageAlreadySet;
+
+            parentModule.setConstant(context, name.intern(), packageModule);
             //MetaClass metaClass = (MetaClass) packageModule.getMetaClass();
             //metaClass.setAttached(packageModule);
         }
@@ -924,9 +922,9 @@ public class Java implements Library {
     private static final Pattern CAMEL_CASE_PACKAGE_SPLITTER = Pattern.compile("([a-z0-9_]+)([A-Z])");
 
     private static RubyModule getPackageModule(ThreadContext context, final String name) {
-        final RubyModule javaModule = context.runtime.getJavaSupport().getJavaModule();
-        final IRubyObject packageModule = javaModule.getConstantAt(name);
-        if ( packageModule instanceof RubyModule ) return (RubyModule) packageModule;
+        final RubyModule javaModule = context.runtime.getJavaSupport().getJavaModule(context);
+        final IRubyObject packageModule = javaModule.getConstantAt(context, name);
+        if ( packageModule instanceof RubyModule pkg) return pkg;
 
         final String packageName;
         if ( "Default".equals(name) ) packageName = "";
@@ -1147,19 +1145,17 @@ public class Java implements Library {
 
     private static boolean bindJavaPackageOrClassMethod(ThreadContext context, final String name,
         final RubyModule packageOrClass) {
-        final RubyModule javaPackage = context.runtime.getJavaSupport().getJavaModule();
+        final RubyModule javaPackage = context.runtime.getJavaSupport().getJavaModule(context);
         return bindJavaPackageOrClassMethod(context, javaPackage, name, packageOrClass);
     }
 
     private static boolean bindJavaPackageOrClassMethod(ThreadContext context, final RubyModule parentPackage,
         final String name, final RubyModule packageOrClass) {
 
-        if ( parentPackage.getMetaClass().isMethodBound(name, false) ) {
-            return false;
-        }
+        if (parentPackage.getMetaClass().isMethodBound(name, false)) return false;
 
         final RubyClass singleton = parentPackage.singletonClass(context);
-        singleton.addMethod(name.intern(), new JavaAccessor(singleton, packageOrClass, parentPackage, name));
+        singleton.addMethod(context, name.intern(), new JavaAccessor(singleton, packageOrClass, parentPackage, name));
         return true;
     }
 
@@ -1285,7 +1281,7 @@ public class Java implements Library {
         if ( innerClass == null ) {
             return Helpers.invokeSuper(context, self, name, Block.NULL_BLOCK);
         }
-        return cacheConstant(self, constName, innerClass, true); // hidden == true (private_constant)
+        return cacheConstant(context, self, constName, innerClass, true); // hidden == true (private_constant)
     }
 
     @JRubyMethod(meta = true)
@@ -1295,18 +1291,18 @@ public class Java implements Library {
         // constant access won't pay the "penalty" for adding dynamic methods ...
         final RubyModule packageOrClass = getTopLevelProxyOrPackage(context, constName, false);
         if ( packageOrClass == null ) return context.nil; // compatibility (with packages)
-        return cacheConstant((RubyModule) self, constName, packageOrClass, false);
+        return cacheConstant(context, (RubyModule) self, constName, packageOrClass, false);
     }
 
-    private static RubyModule cacheConstant(final RubyModule owner, // e.g. ::Java
+    private static RubyModule cacheConstant(ThreadContext context, final RubyModule owner, // e.g. ::Java
         final String constName, final RubyModule packageOrClass, final boolean hidden) {
         if ( packageOrClass != null ) {
             // NOTE: if it's a package createPackageModule already set the constant
             // ... but in case it's a (top-level) Java class name we still need to:
             synchronized (owner) {
-                final IRubyObject alreadySet = owner.fetchConstant(constName);
+                final IRubyObject alreadySet = owner.fetchConstant(context, constName);
                 if ( alreadySet != null ) return (RubyModule) alreadySet;
-                owner.setConstant(constName, packageOrClass, hidden);
+                owner.setConstant(context, constName, packageOrClass, hidden);
             }
             return packageOrClass;
         }
@@ -1540,8 +1536,7 @@ public class Java implements Library {
             if ( otherProxy == null ) return false;
             if ( Proxy.isProxyClass(otherProxy.getClass()) ) {
                 InvocationHandler other = Proxy.getInvocationHandler(otherProxy);
-                if ( other instanceof InterfaceProxyHandler ) {
-                    InterfaceProxyHandler that = (InterfaceProxyHandler) other;
+                if ( other instanceof InterfaceProxyHandler that) {
                     if ( this.wrapper != that.wrapper ) return false;
                     return Arrays.equals(this.ifaceNames, that.ifaceNames);
                 }
@@ -1580,6 +1575,7 @@ public class Java implements Library {
     @SuppressWarnings("unchecked")
     public static Class generateRealClass(final RubyClass clazz) {
         final Ruby runtime = clazz.getRuntime();
+        var context = runtime.getCurrentContext();
         final Class[] interfaces = getInterfacesFromRubyClass(clazz);
 
         // hashcode is a combination of the interfaces and the Ruby class we're using
@@ -1593,7 +1589,7 @@ public class Java implements Library {
             // no-name class, generate a bogus name for it
             implClassName += "Class0x" + Integer.toHexString(System.identityHashCode(clazz)) + '_' + Math.abs(interfacesHashCode);
         } else {
-            implClassName += StringSupport.replaceAll(clazz.getName(), "::", "$$").toString() + '_' + Math.abs(interfacesHashCode);
+            implClassName += StringSupport.replaceAll(clazz.getName(context), "::", "$$").toString() + '_' + Math.abs(interfacesHashCode);
         }
         Class<? extends IRubyObject> proxyImplClass;
         try {
@@ -1609,7 +1605,7 @@ public class Java implements Library {
             // add a default initialize if one does not already exist and this is a Java-hierarchy class
             if ( NEW_STYLE_EXTENSION &&
                 ! ( RubyBasicObject.class.isAssignableFrom(proxyImplClass) || clazz.getMethods().containsKey("initialize") ) ) {
-                clazz.addMethod("initialize", new DummyInitialize(clazz));
+                clazz.addMethod(context, "initialize", new DummyInitialize(clazz));
             }
         }
         clazz.reifiedClass(proxyImplClass).setRubyClassAllocator(proxyImplClass);

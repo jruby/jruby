@@ -54,7 +54,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
     }
 
     @Override
-    public void completeBuild(CompiledIRBlockBody blockBody) {
+    public void completeBuild(ThreadContext context, CompiledIRBlockBody blockBody) {
         setCallCount(-1);
         this.jittedBody = blockBody;
     }

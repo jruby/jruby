@@ -257,14 +257,14 @@ public class Queue extends RubyObject implements DataType {
     }
 
     public static RubyClass setup(ThreadContext context, RubyClass Thread, RubyClass Object) {
-        return (RubyClass) Object.setConstant("Queue",
+        return (RubyClass) Object.setConstant(context, "Queue",
                 Thread.defineClassUnder(context, "Queue", Object, Queue::new).
                         reifiedClass(Queue.class).defineMethods(context, Queue.class).
                         undefMethods(context, "initialize_copy"));
     }
 
     public static RubyClass setupError(ThreadContext context, RubyClass Queue, RubyClass StopIteration, RubyClass Object) {
-        return (RubyClass) Object.setConstant("ClosedQueueError",
+        return (RubyClass) Object.setConstant(context, "ClosedQueueError",
                 Queue.defineClassUnder(context, "ClosedQueueError", StopIteration, StopIteration.getAllocator()));
     }
 
@@ -718,7 +718,7 @@ public class Queue extends RubyObject implements DataType {
     }
 
     protected RaiseException createInterruptedError(ThreadContext context, String methodName) {
-        return context.runtime.newThreadError("interrupted in " + getMetaClass().getName() + "#" + methodName);
+        return context.runtime.newThreadError("interrupted in " + getMetaClass().getName(context) + "#" + methodName);
     }
 
     private static class BlockingPollTask implements RubyThread.Task<Queue, IRubyObject> {

@@ -142,15 +142,16 @@ public abstract class MethodInstaller extends NamedInstaller {
     }
 
     protected final void defineMethods(RubyModule target, DynamicMethod invoker, boolean checkDups) {
+        var context = target.getRuntime().getCurrentContext();
         String oldName = this.name;
-        target.addMethod(oldName, invoker);
+        target.addMethod(context, oldName, invoker);
 
         List<String> aliases = this.aliases;
         if ( aliases != null && isPublic() ) {
             for (int i = 0; i < aliases.size(); i++) {
                 String name = aliases.get(i);
                 if (checkDups && oldName.equals(name)) continue;
-                target.addMethod(name, invoker);
+                target.addMethod(context, name, invoker);
             }
         }
     }

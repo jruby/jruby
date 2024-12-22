@@ -129,16 +129,31 @@ public class RubyDate extends RubyObject {
     // Julian Day Number day 0 ... `def self.civil(y=-4712, m=1, d=1, sg=ITALY)`
     static final DateTime defaultDateTime = new DateTime(-4712 - 1, 1, 1, 0, 0, CHRONO_ITALY_UTC);
 
+    @Deprecated(since = "10.0")
     static RubyClass getDate(final Ruby runtime) {
-        return (RubyClass) runtime.getObject().getConstantAt("Date");
+        return getDate(runtime.getCurrentContext());
     }
 
+    static RubyClass getDate(ThreadContext context) {
+        return (RubyClass) objectClass(context).getConstantAt(context, "Date");
+    }
+
+    @Deprecated(since = "10.0")
     static RubyClass getDateTime(final Ruby runtime) {
-        return (RubyClass) runtime.getObject().getConstantAt("DateTime");
+        return getDateTime(runtime.getCurrentContext());
     }
 
+    static RubyClass getDateTime(ThreadContext context) {
+        return (RubyClass) objectClass(context).getConstantAt(context, "DateTime");
+    }
+
+    @Deprecated(since = "10.0")
     static boolean isDateTime(final Ruby runtime, final IRubyObject type) {
-        return ((RubyModule) type).hasAncestor(getDateTime(runtime));
+        return isDateTime(runtime.getCurrentContext(), type);
+    }
+
+    static boolean isDateTime(ThreadContext context, final IRubyObject type) {
+        return ((RubyModule) type).hasAncestor(getDateTime(context));
     }
 
     protected RubyDate(Ruby runtime, RubyClass klass) {
@@ -151,8 +166,9 @@ public class RubyDate extends RubyObject {
         this.dt = dt; // assuming of = 0 (UTC)
     }
 
+    @Deprecated(since = "10.0")
     public RubyDate(Ruby runtime, DateTime dt) {
-        this(runtime, getDate(runtime), dt);
+        this(runtime, getDate(runtime.getCurrentContext()), dt);
     }
 
     RubyDate(Ruby runtime, RubyClass klass, DateTime dt, int off, long start) {
@@ -170,8 +186,13 @@ public class RubyDate extends RubyObject {
         this.subMillisNum = subMillisNum; this.subMillisDen = subMillisDen;
     }
 
+    @Deprecated(since = "10.0")
     public RubyDate(Ruby runtime, long millis, Chronology chronology) {
-        super(runtime, getDate(runtime));
+        this(runtime.getCurrentContext(), millis, chronology);
+    }
+
+    public RubyDate(ThreadContext context, long millis, Chronology chronology) {
+        super(context.runtime, getDate(context));
 
         this.dt = new DateTime(millis, chronology);
     }
@@ -300,9 +321,9 @@ public class RubyDate extends RubyObject {
     @JRubyMethod(name = "new!", meta = true, visibility = Visibility.PRIVATE)
     @Deprecated(since = "9.4-")
     public static RubyDate new_(ThreadContext context, IRubyObject self) {
-        return isDateTime(context.runtime, self) ?
+        return isDateTime(context, self) ?
                 new RubyDateTime(context.runtime, 0, CHRONO_ITALY_UTC) :
-                new RubyDate(context.runtime, 0, CHRONO_ITALY_UTC);
+                new RubyDate(context, 0, CHRONO_ITALY_UTC);
     }
 
     /**
@@ -311,12 +332,13 @@ public class RubyDate extends RubyObject {
     @Deprecated(since = "9.4-")
     @JRubyMethod(name = "new!", meta = true, visibility = Visibility.PRIVATE)
     public static RubyDate new_(ThreadContext context, IRubyObject self, IRubyObject ajd) {
+        var isDateTime = isDateTime(context, ajd);
         if (ajd instanceof JavaProxy) { // backwards - compatibility with JRuby's date.rb
-            return isDateTime(context.runtime, self) ?
+            return isDateTime ?
                     new RubyDateTime(context.runtime, (RubyClass) self, JavaUtil.unwrapJavaValue(ajd)) :
                     new RubyDate(context.runtime, (RubyClass) self, JavaUtil.unwrapJavaValue(ajd));
         }
-        return isDateTime(context.runtime, self) ?
+        return isDateTime ?
                 new RubyDateTime(context, (RubyClass) self, ajd, CHRONO_ITALY_UTC, 0) :
                 new RubyDate(context, (RubyClass) self, ajd, CHRONO_ITALY_UTC, 0);
     }
@@ -327,7 +349,7 @@ public class RubyDate extends RubyObject {
     @Deprecated(since = "9.4-")
     @JRubyMethod(name = "new!", meta = true, visibility = Visibility.PRIVATE)
     public static RubyDate new_(ThreadContext context, IRubyObject self, IRubyObject ajd, IRubyObject of) {
-        return isDateTime(context.runtime, self) ?
+        return isDateTime(context, self) ?
                 new RubyDateTime(context.runtime, (RubyClass) self).initialize(context, ajd, of) :
                 new RubyDate(context.runtime, (RubyClass) self).initialize(context, ajd, of);
     }
@@ -338,7 +360,7 @@ public class RubyDate extends RubyObject {
     @Deprecated(since = "9.4-")
     @JRubyMethod(name = "new!", meta = true, visibility = Visibility.PRIVATE)
     public static RubyDate new_(ThreadContext context, IRubyObject self, IRubyObject ajd, IRubyObject of, IRubyObject sg) {
-        return isDateTime(context.runtime, self) ?
+        return isDateTime(context, self) ?
                 new RubyDateTime(context.runtime, (RubyClass) self).initialize(context, ajd, of, sg) :
                 new RubyDate(context.runtime, (RubyClass) self).initialize(context, ajd, of, sg);
     }
@@ -940,10 +962,10 @@ public class RubyDate extends RubyObject {
     public IRubyObject start(ThreadContext context) {
         Chronology chrono = dt.getChronology();
         if (chrono instanceof GregorianChronology) {
-            return getMetaClass().getConstant("GREGORIAN"); // Date::GREGORIAN (-Date::Infinity)
+            return getMetaClass().getConstant(context, "GREGORIAN"); // Date::GREGORIAN (-Date::Infinity)
         }
         if (chrono instanceof JulianChronology) {
-            return getMetaClass().getConstant("JULIAN"); // Date::JULIAN (+Date::Infinity)
+            return getMetaClass().getConstant(context, "JULIAN"); // Date::JULIAN (+Date::Infinity)
         }
         long cutover = DateTimeUtils.toJulianDayNumber(((GJChronology) chrono).getGregorianCutover().getMillis());
         return new RubyFixnum(context.runtime, cutover);
@@ -1610,7 +1632,7 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod
     public RubyDateTime to_datetime(ThreadContext context) {
-        return new RubyDateTime(context.runtime, getDateTime(context.runtime), dt.withTimeAtStartOfDay(), off, start);
+        return new RubyDateTime(context.runtime, getDateTime(context), dt.withTimeAtStartOfDay(), off, start);
     }
 
     @JRubyMethod // Time.local(year, mon, mday)

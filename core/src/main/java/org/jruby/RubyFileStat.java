@@ -423,7 +423,7 @@ public class RubyFileStat extends RubyObject {
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect(ThreadContext context) {
         StringBuilder buf = new StringBuilder("#<");
-        buf.append(getMetaClass().getRealClass().getName());
+        buf.append(getMetaClass().getRealClass().getName(context));
         if (stat == null) {
             buf.append(": uninitialized");
         } else {

@@ -61,7 +61,7 @@ public class ConditionVariable extends RubyObject {
     }
 
     public static RubyClass setup(ThreadContext context, RubyClass Thread, RubyClass Object) {
-        return (RubyClass) Object.setConstant("ConditionVariable",
+        return (RubyClass) Object.setConstant(context, "ConditionVariable",
                 Thread.defineClassUnder(context, "ConditionVariable", Object, ConditionVariable::new).
                         reifiedClass(ConditionVariable.class).
                         defineMethods(context, ConditionVariable.class).

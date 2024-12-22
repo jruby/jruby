@@ -110,7 +110,7 @@ public class JavaPackage extends RubyModule {
 
     @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {
-        return newString(context, getName()); // super.to_s()
+        return newString(context, getName(context)); // super.to_s()
     }
 
     @Override
@@ -128,26 +128,14 @@ public class JavaPackage extends RubyModule {
     @JRubyMethod(name = "const_get")
     public final IRubyObject const_get(final ThreadContext context, final IRubyObject name) {
         // skip constant validation and do not inherit or include object
-        IRubyObject constant = getConstantNoConstMissing(name.toString(), false, false);
-        if ( constant != null ) return constant;
-        return relativeJavaClassOrPackage(context, name, false); // e.g. javax.const_get(:script)
+        IRubyObject constant = getConstantNoConstMissing(context, name.toString(), false, false);
+        return constant != null ? constant : relativeJavaClassOrPackage(context, name, false); // e.g. javax.const_get(:script)
     }
 
     @JRubyMethod(name = "const_get")
-    public final IRubyObject const_get(final ThreadContext context,
-        final IRubyObject name, final IRubyObject inherit) {
-        IRubyObject constant = getConstantNoConstMissing(name.toString(), inherit.isTrue(), false);
-        if ( constant != null ) return constant;
-        return relativeJavaClassOrPackage(context, name, false);
-    }
-
-    @Override // so that e.g. java::util gets stored as expected
-    public final IRubyObject storeConstant(String name, IRubyObject value) {
-        // skip constant name validation
-        assert value != null : "value is null";
-
-        ensureConstantsSettable();
-        return constantTableStore(name, value);
+    public final IRubyObject const_get(final ThreadContext context, final IRubyObject name, final IRubyObject inherit) {
+        IRubyObject constant = getConstantNoConstMissing(context, name.toString(), inherit.isTrue(), false);
+        return constant != null ? constant : relativeJavaClassOrPackage(context, name, false);
     }
 
     @Override // skip constant name assert
@@ -156,20 +144,13 @@ public class JavaPackage extends RubyModule {
     }
 
     @Override // skip constant name assert
-    public final IRubyObject fetchConstant(String name, boolean includePrivate) {
+    public final IRubyObject fetchConstant(ThreadContext context, String name, boolean includePrivate) {
         ConstantEntry entry = constantEntryFetch(name);
         if (entry == null) return null;
         if (entry.hidden && !includePrivate) {
-            throw getRuntime().newNameError("private constant " + getName() + "::" + name + " referenced", name);
+            throw getRuntime().newNameError("private constant " + getName(context) + "::" + name + " referenced", name);
         }
         return entry.value;
-    }
-
-    @Override // skip constant name assert
-    public final IRubyObject deleteConstant(String name) {
-        assert name != null : "name is null";
-        ensureConstantsSettable();
-        return constantTableRemove(name);
     }
 
     final CharSequence packageRelativeName(final CharSequence name) {

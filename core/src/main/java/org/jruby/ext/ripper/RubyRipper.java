@@ -66,7 +66,7 @@ public class RubyRipper extends RubyObject {
 
     private static void defineLexStateConstants(ThreadContext context, RubyClass ripper) {
         for (int i = 0; i < lexStateNames.length; i++) {
-            ripper.defineConstant("EXPR_" + lexStateNames[i], asFixnum(context, lexStateValues[i]));
+            ripper.defineConstant(context, "EXPR_" + lexStateNames[i], asFixnum(context, lexStateValues[i]));
         }
     }
     

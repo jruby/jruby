@@ -41,6 +41,7 @@ import org.jruby.util.ByteList;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyEnumerator.SizeFn;
+import static org.jruby.api.Access.floatClass;
 import static org.jruby.api.Convert.asFixnum;
 
 /**
@@ -122,7 +123,7 @@ public class RubyChain extends RubyObject {
 
         ByteList str = new ByteList();
         str.append('#').append('<');
-        str.append(getMetaClass().getRealClass().getName().getBytes());
+        str.append(getMetaClass().getRealClass().getName(context).getBytes());
         str.append(':').append(' ');
 
         if (enums == null) {
@@ -152,17 +153,15 @@ public class RubyChain extends RubyObject {
     // enum_chain_total_size
     private static IRubyObject enumChainTotalSize(ThreadContext context, IRubyObject[] args) {
 
-        RubyFixnum total = RubyFixnum.zero(context.runtime);
+        RubyFixnum total = asFixnum(context, 0);
         for (int i = 0; i < args.length; i++) {
             IRubyObject size = args[i].respondsTo("size") ? args[i].callMethod(context, "size") : context.nil;
 
-            if (size.isNil() || (size instanceof RubyFloat) && size.equals(context.runtime.getFloat().getConstant("INFINITY"))) {
+            if (size.isNil() || (size instanceof RubyFloat flote) && flote.getValue() == RubyFloat.INFINITY) {
                 return size;
             }
 
-            if (!(size instanceof RubyInteger)) {
-                return context.nil;
-            }
+            if (!(size instanceof RubyInteger)) return context.nil;
 
             total = (RubyFixnum)total.callMethod("+", size);
         }

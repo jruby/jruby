@@ -1461,7 +1461,7 @@ public class RubyRational extends RubyNumeric {
             }
 
             if (exp != nil) {
-                IRubyObject denExp = (RubyInteger) f_to_i(context, exp);
+                IRubyObject denExp = f_to_i(context, exp);
                 if (denExp instanceof RubyFixnum) {
                     v = f_mul(context, v, f_expt(context, asFixnum(context, 10), denExp));
                 } else if (f_negative_p(context, denExp)) {
@@ -1486,7 +1486,7 @@ public class RubyRational extends RubyNumeric {
     private static IRubyObject str_to_r_strict(ThreadContext context, RubyString str, boolean raise) {
         IRubyObject[] ary = str_to_r_internal(context, str, raise);
         if (ary[0] == context.nil || ary[1].convertToString().getByteList().length() > 0) {
-            if (raise) throw argumentError(context, "invalid value for convert(): " + str.inspect(context.runtime));
+            if (raise) throw argumentError(context, "invalid value for convert(): " + str.inspect(context));
 
             return context.nil;
         }

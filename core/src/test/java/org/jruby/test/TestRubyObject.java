@@ -74,7 +74,7 @@ public class TestRubyObject extends TestCase {
     }
 
     public void testType() {
-        assertEquals("Object", rubyObject.getType().name().toString());
+        assertEquals("Object", rubyObject.getType().name(context).toString());
     }
 
     public void testFreeze() {

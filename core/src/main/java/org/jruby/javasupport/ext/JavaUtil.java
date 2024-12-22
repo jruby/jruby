@@ -74,10 +74,10 @@ public abstract class JavaUtil {
         JavaExtensions.put(runtime, java.util.Collection.class, proxy -> Collection.define(context, proxy, Enumerable));
         JavaExtensions.put(runtime, java.util.List.class, proxy -> proxy.defineMethods(context, List.class));
         JavaExtensions.put(runtime, java.util.Date.class, (dateClass) -> {
-            dateClass.addMethod("inspect", new JavaLang.InspectValueWithTypePrefix(dateClass));
+            dateClass.addMethod(context, "inspect", new JavaLang.InspectValueWithTypePrefix(dateClass));
         });
         JavaExtensions.put(runtime, java.util.TimeZone.class, proxy -> {
-            proxy.addMethod("inspect", new InspectTimeZone(proxy));
+            proxy.addMethod(context, "inspect", new InspectTimeZone(proxy));
         });
     }
 

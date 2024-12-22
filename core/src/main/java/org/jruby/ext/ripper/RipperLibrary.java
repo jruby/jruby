@@ -30,7 +30,10 @@
 package org.jruby.ext.ripper;
 
 import org.jruby.Ruby;
+import org.jruby.api.Access;
 import org.jruby.runtime.load.Library;
+
+import static org.jruby.api.Create.newString;
 
 
 public class RipperLibrary implements Library {
@@ -41,7 +44,7 @@ public class RipperLibrary implements Library {
         var context = runtime.getCurrentContext();
         RubyRipper.initRipper(context);
         
-        runtime.getClass("Ripper").setConstant("Version", 
-                runtime.newString(RIPPER_VERSION));
+        Access.getClass(context, "Ripper").
+                defineConstant(context, "Version", newString(context, RIPPER_VERSION));
     }
 }

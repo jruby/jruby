@@ -206,12 +206,12 @@ public class MarshalStream extends FilterOutputStream {
     }
 
     public static String getPathFromClass(RubyModule clazz) {
-        RubyString path = clazz.rubyName();
+        var context = clazz.getRuntime().getCurrentContext();
+        RubyString path = clazz.rubyName(context);
         
         if (path.charAt(0) == '#') {
-            Ruby runtime = clazz.getRuntime();
             String type = clazz.isClass() ? "class" : "module";
-            throw typeError(runtime.getCurrentContext(), str(runtime, "can't dump anonymous " + type + " ", types(runtime, clazz)));
+            throw typeError(context, str(context.runtime, "can't dump anonymous " + type + " ", types(context.runtime, clazz)));
         }
         
         RubyModule real = clazz.isModule() ? clazz : ((RubyClass)clazz).getRealClass();
@@ -222,7 +222,7 @@ public class MarshalStream extends FilterOutputStream {
         // a properly encoded string.  If this is an issue we should make a clazz.IdPath where all segments are returned
         // by their id names.
         if (runtime.getClassFromPath(path.asJavaString()) != real) {
-            throw typeError(runtime.getCurrentContext(), str(runtime, types(runtime, clazz), " can't be referred"));
+            throw typeError(context, str(context.runtime, types(context.runtime, clazz), " can't be referred"));
         }
         return path.asJavaString();
     }
@@ -335,10 +335,11 @@ public class MarshalStream extends FilterOutputStream {
     }
 
     private void userNewCommon(IRubyObject value, CacheEntry entry) throws IOException {
+        var context = runtime.getCurrentContext();
         registerLinkTarget(value);
         write(TYPE_USRMARSHAL);
         final RubyClass klass = getMetaClass(value);
-        writeAndRegisterSymbol(RubySymbol.newSymbol(runtime, klass.getRealClass().getName()).getBytes());
+        writeAndRegisterSymbol(RubySymbol.newSymbol(runtime, klass.getRealClass().getName(context)).getBytes());
 
         IRubyObject marshaled;
         if (entry != null) {
@@ -384,7 +385,7 @@ public class MarshalStream extends FilterOutputStream {
         }
 
         write(TYPE_USERDEF);
-        writeAndRegisterSymbol(asSymbol(context, klass.getRealClass().getName()).getBytes());
+        writeAndRegisterSymbol(asSymbol(context, klass.getRealClass().getName(context)).getBytes());
         writeString(marshaled.getByteList());
 
         if (variables != null) dumpVariables(variables);
@@ -393,17 +394,16 @@ public class MarshalStream extends FilterOutputStream {
     }
     
     public void writeUserClass(IRubyObject obj, RubyClass type) throws IOException {
+        var context = obj.getRuntime().getCurrentContext();
         write(TYPE_UCLASS);
-        
-        // w_unique
-        if (type.getName().charAt(0) == '#') {
-            Ruby runtime = obj.getRuntime();
 
-            throw typeError(runtime.getCurrentContext(), str(runtime, "can't dump anonymous class ", types(runtime, type)));
+        var className = type.getName(context);
+        if (className.charAt(0) == '#') { // w_unique
+            throw typeError(context, str(context.runtime, "can't dump anonymous class ", types(context.runtime, type)));
         }
         
         // w_symbol
-        writeAndRegisterSymbol(RubySymbol.newSymbol(runtime, type.getName()).getBytes());
+        writeAndRegisterSymbol(asSymbol(context, className).getBytes());
     }
     
     public void dumpVariablesWithEncoding(List<Variable<Object>> vars, IRubyObject obj) throws IOException {
@@ -459,15 +459,16 @@ public class MarshalStream extends FilterOutputStream {
      * 
      */
     private RubyClass dumpExtended(RubyClass type) throws IOException {
-        if(type.isSingleton()) {
+        var context = type.getRuntime().getCurrentContext();
+        if (type.isSingleton()) {
             if (hasSingletonMethods(type) || type.hasVariables()) { // any ivars, since we don't have __attached__ ivar now
-                throw typeError(type.getRuntime().getCurrentContext(), "singleton can't be dumped");
+                throw typeError(context, "singleton can't be dumped");
             }
             type = type.getSuperClass();
         }
-        while(type.isIncluded()) {
+        while (type.isIncluded()) {
             write('e');
-            writeAndRegisterSymbol(RubySymbol.newSymbol(runtime, type.getOrigin().getName()).getBytes());
+            writeAndRegisterSymbol(asSymbol(context, type.getOrigin().getName(context)).getBytes());
             type = type.getSuperClass();
         }
         return type;

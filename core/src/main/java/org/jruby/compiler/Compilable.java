@@ -7,14 +7,21 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.runtime.ThreadContext;
 
+import static org.jruby.api.Access.classClass;
+
 /**
  * Blocks and methods both share same full build mechanism so they implement this to be buildable.
  */
 public interface Compilable<T> {
-    public void setCallCount(int count);
-    public void completeBuild(T buildResult);
-    public IRScope getIRScope();
-    public InterpreterContext ensureInstrsReady();
+    void setCallCount(int count);
+    default void completeBuild(T buildResult) {
+        completeBuild(getImplementationClass().getRuntime().getCurrentContext(), buildResult);
+    }
+    default void completeBuild(ThreadContext context, T buildResult) {
+        completeBuild(buildResult);
+    }
+    IRScope getIRScope();
+    InterpreterContext ensureInstrsReady();
 
     /**
      * Return the owning module/class name.
@@ -53,23 +60,18 @@ public interface Compilable<T> {
      * @return class/module name e.g. Foo::Bar::Baz
      */
     static String resolveFullName(RubyModule implementationClass) {
-        String className;
+        var context = implementationClass.getRuntime().getCurrentContext();
+
         if (implementationClass.isSingleton()) {
             MetaClass metaClass = (MetaClass)implementationClass;
             RubyClass realClass = metaClass.getRealClass();
-            // if real class is Class
-            if (realClass == implementationClass.getRuntime().getClassClass()) {
-                // use the attached class's name
-                className = ((RubyClass) metaClass.getAttached()).getName();
-            } else {
-                // use the real class name
-                className = realClass.getName();
-            }
-        } else {
-            // use the class name
-            className = implementationClass.getName();
+            // if real class is Class then use the attached class's name
+            return realClass == classClass(context) ?
+                    ((RubyClass) metaClass.getAttached()).getName(context) :
+                    realClass.getName(context);
         }
-        return className;
+
+        return implementationClass.getName(context);  // use the class name
     }
 
 }

@@ -33,6 +33,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.*;
 import org.jruby.RubyEnumerator.SizeFn;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.*;
@@ -51,6 +52,7 @@ import java.util.Set;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.api.Access.enumerableModule;
+import static org.jruby.api.Access.getModule;
 import static org.jruby.api.Access.hashClass;
 import static org.jruby.api.Access.loadService;
 import static org.jruby.api.Access.objectClass;
@@ -407,7 +409,7 @@ public class RubySet extends RubyObject implements Set {
         if ( args.length == 0 ) return to_set(context, block);
 
         IRubyObject klass = args[0];
-        final RubyClass Set = context.runtime.getClass("Set");
+        final RubyClass Set = Access.getClass(context, "Set");
 
         if (klass == Set && args.length == 1 && !block.isGiven()) return this;
 
@@ -834,7 +836,7 @@ public class RubySet extends RubyObject implements Set {
      */
     @JRubyMethod(name = "^")
     public IRubyObject op_xor(final ThreadContext context, IRubyObject enume) {
-        RubySet newSet = new RubySet(context.runtime, context.runtime.getClass("Set"));
+        RubySet newSet = new RubySet(context.runtime, Access.getClass(context, "Set"));
         newSet.initialize(context, enume, Block.NULL_BLOCK); // Set.new(enum)
         for (IRubyObject o : elementsOrdered()) {
             if (newSet.containsImpl(o)) {
@@ -941,7 +943,7 @@ public class RubySet extends RubyObject implements Set {
         if (block.getSignature().arityValue() == 2) return divideTSort(context, block);
 
         RubyHash vals = (RubyHash) classify(context, block);
-        final RubySet set = new RubySet(context.runtime, context.runtime.getClass("Set"));
+        final RubySet set = new RubySet(context.runtime, Access.getClass(context, "Set"));
         set.allocHash(context, vals.size());
         for ( IRubyObject val : (Collection<IRubyObject>) vals.directValues() ) {
             set.invokeAdd(context, val);
@@ -974,7 +976,7 @@ public class RubySet extends RubyObject implements Set {
           }
           set
          */
-        final RubyClass Set = context.runtime.getClass("Set");
+        final RubyClass Set = Access.getClass(context, "Set");
         final RubySet set = new RubySet(context.runtime, Set);
         set.allocHash(context, dig.size());
         sites(context).each_strongly_connected_component.call(context, this, dig, new Block(
@@ -1002,17 +1004,17 @@ public class RubySet extends RubyObject implements Set {
         private static final String NAME = "DivideTSortHash"; // private constant under Set::
 
         static DivideTSortHash newInstance(final ThreadContext context) {
-            RubyClass Set = context.runtime.getClass("Set");
-            RubyClass klass = (RubyClass) Set.getConstantAt(NAME, true);
+            RubyClass Set = Access.getClass(context, "Set");
+            RubyClass klass = (RubyClass) Set.getConstantAt(context, NAME, true);
             if (klass == null) { // initialize on-demand when Set#divide is first called
                 synchronized (DivideTSortHash.class) {
-                    klass = (RubyClass) Set.getConstantAt(NAME, true);
+                    klass = (RubyClass) Set.getConstantAt(context, NAME, true);
                     if (klass == null) {
                         var Hash = hashClass(context);
                         klass = Set.defineClassUnder(context, NAME, Hash, Hash.getAllocator()).
                                 include(context, getTSort(context)).
                                 defineMethods(context, DivideTSortHash.class);
-                        Set.setConstantVisibility(context.runtime, NAME, true); // private
+                        Set.setConstantVisibility(context, NAME, true); // private
                     }
                 }
             }
@@ -1103,10 +1105,9 @@ public class RubySet extends RubyObject implements Set {
     }
 
     static RubyModule getTSort(ThreadContext context) {
-        if (!objectClass(context).hasConstant("TSort")) {
-            loadService(context).require("tsort");
-        }
-        return context.runtime.getModule("TSort");
+        if (!objectClass(context).hasConstant("TSort")) loadService(context).require("tsort");
+
+        return getModule(context, "TSort");
     }
 
     private static final byte[] RECURSIVE_BYTES = new byte[] { '.','.','.' };
@@ -1115,47 +1116,39 @@ public class RubySet extends RubyObject implements Set {
     // e.g. "#<Set: {element1, element2, ...}>"
     @JRubyMethod(name = "inspect", alias = "to_s")
     public RubyString inspect(ThreadContext context) {
-        final Ruby runtime = context.runtime;
+        if (size() == 0) return inspectEmpty(context);
+        if (context.runtime.isInspecting(this)) return inspectRecurse(context);
 
-        final RubyString str;
-
-        if (size() == 0) {
-            return inspectEmpty(runtime);
-        }
-
-        if (runtime.isInspecting(this)) {
-            return inspectRecurse(runtime);
-        }
-
-        str = RubyString.newStringLight(runtime, 32, USASCIIEncoding.INSTANCE);
-        inspectPrefix(str, getMetaClass());
+        RubyString str = RubyString.newStringLight(context.runtime, 32, USASCIIEncoding.INSTANCE);
+        inspectPrefix(context, str, getMetaClass());
 
         try {
-            runtime.registerInspecting(this);
+            context.runtime.registerInspecting(this);
             inspectSet(context, str);
             return str.cat('>');
-        }
-        finally {
-            runtime.unregisterInspecting(this);
+        } finally {
+            context.runtime.unregisterInspecting(this);
         }
     }
 
-    private RubyString inspectEmpty(final Ruby runtime) {
-        RubyString str = RubyString.newStringLight(runtime, 16, USASCIIEncoding.INSTANCE);
-        inspectPrefix(str, getMetaClass()); str.cat('{').cat('}').cat('>'); // "#<Set: {}>"
+    private RubyString inspectEmpty(ThreadContext context) {
+        RubyString str = RubyString.newStringLight(context.runtime, 16, USASCIIEncoding.INSTANCE);
+        inspectPrefix(context, str, getMetaClass());
+        str.cat('{').cat('}').cat('>'); // "#<Set: {}>"
         return str;
     }
 
-    private RubyString inspectRecurse(final Ruby runtime) {
-        RubyString str = RubyString.newStringLight(runtime, 20, USASCIIEncoding.INSTANCE);
-        inspectPrefix(str, getMetaClass());
+    private RubyString inspectRecurse(ThreadContext context) {
+        RubyString str = RubyString.newStringLight(context.runtime, 20, USASCIIEncoding.INSTANCE);
+        inspectPrefix(context, str, getMetaClass());
         str.cat('{').cat(RECURSIVE_BYTES).cat('}').cat('>'); // "#<Set: {...}>"
         return str;
     }
 
-    private static RubyString inspectPrefix(final RubyString str, final RubyClass metaClass) {
-        str.cat('#').cat('<').cat(metaClass.getRealClass().getName().getBytes(RubyEncoding.UTF8));
-        str.cat(':').cat(' '); return str;
+    private static RubyString inspectPrefix(ThreadContext context, final RubyString str, final RubyClass metaClass) {
+        str.cat('#').cat('<').cat(metaClass.getRealClass().getName(context).getBytes(RubyEncoding.UTF8));
+        str.cat(':').cat(' ');
+        return str;
     }
 
     private void inspectSet(final ThreadContext context, final RubyString str) {

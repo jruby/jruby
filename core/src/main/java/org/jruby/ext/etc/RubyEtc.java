@@ -77,15 +77,15 @@ public class RubyEtc {
         if (!Platform.IS_WINDOWS) {
             for (Constant c : ConstantSet.getConstantSet("Sysconf")) {
                 String name = c.name().substring(1); // leading "_"
-                Etc.setConstant(name, asFixnum(context, c.intValue()));
+                Etc.defineConstant(context, name, asFixnum(context, c.intValue()));
             }
             for (Constant c : ConstantSet.getConstantSet("Confstr")) {
                 String name = c.name().substring(1); // leading "_"
-                Etc.setConstant(name, asFixnum(context, c.intValue()));
+                Etc.defineConstant(context, name, asFixnum(context, c.intValue()));
             }
             for (Constant c : ConstantSet.getConstantSet("Pathconf")) {
                 String name = c.name().substring(1); // leading "_"
-                Etc.setConstant(name, asFixnum(context, c.intValue()));
+                Etc.defineConstant(context, name, asFixnum(context, c.intValue()));
             }
         }
         
@@ -112,7 +112,7 @@ public class RubyEtc {
 
         var PasswdStruct = RubyStruct.newInstance(context, structClass(context), args, Block.NULL_BLOCK);
         context.runtime.setPasswdStruct(PasswdStruct);
-        Etc.defineConstant("Passwd", PasswdStruct);
+        Etc.defineConstant(context, "Passwd", PasswdStruct);
     }
 
     private static void defineGroupStruct(ThreadContext context, RubyModule Etc) {
@@ -126,7 +126,7 @@ public class RubyEtc {
 
         var GroupStruct = RubyStruct.newInstance(context, structClass(context), args, Block.NULL_BLOCK);
         context.runtime.setGroupStruct(GroupStruct);
-        Etc.defineConstant("Group", GroupStruct);
+        Etc.defineConstant(context, "Group", GroupStruct);
     }
     
     private static IRubyObject setupPasswd(ThreadContext context, Passwd passwd) {
