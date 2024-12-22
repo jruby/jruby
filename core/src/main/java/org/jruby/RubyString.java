@@ -2485,11 +2485,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @Override
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect(ThreadContext context) {
-        return inspect(context.runtime);
+        return inspect(context, value);
     }
 
     final RubyString inspect(final Ruby runtime) {
-        return inspect(runtime, value);
+        return inspect(runtime.getCurrentContext(), value);
     }
 
     // MRI: rb_str_escape
@@ -2554,19 +2554,24 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return result;
     }
 
-    @SuppressWarnings("ReferenceEquality")
+    @Deprecated(since = "10.0")
     public static RubyString inspect(final Ruby runtime, ByteList byteList) {
+        return inspect(runtime.getCurrentContext(), byteList);
+    }
+
+    @SuppressWarnings("ReferenceEquality")
+    public static RubyString inspect(ThreadContext context, ByteList byteList) {
         Encoding enc = byteList.getEncoding();
         byte bytes[] = byteList.getUnsafeBytes();
         int p = byteList.getBegin();
         int end = p + byteList.getRealSize();
-        RubyString result = new RubyString(runtime, runtime.getString(), new ByteList(end - p));
-        Encoding resultEnc = runtime.getDefaultInternalEncoding();
+        RubyString result = Create.newString(context, new ByteList(end - p));
+        Encoding resultEnc = context.runtime.getDefaultInternalEncoding();
         boolean isUnicode = enc.isUnicode();
         boolean asciiCompat = enc.isAsciiCompatible();
 
 
-        if (resultEnc == null) resultEnc = runtime.getDefaultExternalEncoding();
+        if (resultEnc == null) resultEnc = context.runtime.getDefaultExternalEncoding();
         if (!resultEnc.isAsciiCompatible()) resultEnc = USASCIIEncoding.INSTANCE;
         result.associateEncoding(resultEnc);
         result.cat('"');
@@ -2586,7 +2591,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 if (end < p + n) n = end - p;
                 while (n-- > 0) {
                     result.modifyExpand(result.size() + 4);
-                    Sprintf.sprintf(runtime, result.getByteList() ,"\\x%02X", bytes[p] & 0377);
+                    Sprintf.sprintf(context.runtime, result.getByteList() ,"\\x%02X", bytes[p] & 0377);
                     prev = ++p;
                 }
                 continue;
@@ -2600,7 +2605,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                             (c == '#' &&
                                     p < end &&
                                     MBCLEN_CHARFOUND_P(StringSupport.preciseLength(enc, bytes, p, end)) &&
-                                    ((cc = codePoint(runtime.getCurrentContext(), enc, bytes, p, end)) == '$' ||
+                                    ((cc = codePoint(context, enc, bytes, p, end)) == '$' ||
                                             cc == '@' || cc == '{')
                             )
                     )) {
@@ -2637,7 +2642,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 continue;
             } else {
                 if (p - n > prev) result.cat(bytes, prev, p - n - prev);
-                Sprintf.sprintf(runtime, result.getByteList() , StringSupport.escapedCharFormat(c, isUnicode), (c & 0xFFFFFFFFL));
+                Sprintf.sprintf(context.runtime, result.getByteList() , StringSupport.escapedCharFormat(c, isUnicode), (c & 0xFFFFFFFFL));
                 prev = p;
                 continue;
             }

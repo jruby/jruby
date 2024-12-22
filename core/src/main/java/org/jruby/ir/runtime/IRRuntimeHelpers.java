@@ -2539,7 +2539,7 @@ public class IRRuntimeHelpers {
 
     @Interp @JIT
     public static IRubyObject getClassVariable(ThreadContext context, RubyModule module, String id) {
-        return module.getClassVar(id);
+        return module.getClassVar(context, id);
     }
 
     @Interp @JIT
