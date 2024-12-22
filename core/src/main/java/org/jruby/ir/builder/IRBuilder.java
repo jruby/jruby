@@ -53,6 +53,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import static org.jruby.api.Warn.warning;
 import static org.jruby.ir.IRFlags.*;
 import static org.jruby.ir.builder.StringStyle.Frozen;
 import static org.jruby.ir.builder.StringStyle.Mutable;
@@ -2838,8 +2839,9 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
         if (literal != null) {
             if (seenLiterals.contains(literal)) {
-                getManager().getRuntime().getWarnings().warning(IRubyWarnings.ID.MISCELLANEOUS, getFileName(), getLine(value),
-                        "duplicated 'when' clause with line " + (origLocs.get(literal) + 1) + " is ignored");
+                var context = manager.getRuntime().getCurrentContext();
+                warning(context, "'when' clause on line " + getLine(value) +
+                        " duplicates 'when' clause on line " + (origLocs.get(literal) + 1) + " and is ignored");
                 return false;
             } else {
                 seenLiterals.add(literal);

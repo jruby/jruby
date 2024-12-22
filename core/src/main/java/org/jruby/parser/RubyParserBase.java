@@ -286,9 +286,6 @@ public abstract class RubyParserBase {
 
             if (currentScope.isBlockScope() && slot != -1) {
                 if (isNumParamId(id) && isNumParamNested()) return null;
-                if (name.getBytes().equals(lexer.getCurrentArg())) {
-                    compile_error(str(getRuntime(), "circular argument reference - ", name));
-                }
 
                 Node newNode = new DVarNode(node.getLine(), slot, name);
 
@@ -300,9 +297,6 @@ public abstract class RubyParserBase {
 
             StaticScope.Type type = currentScope.getType();
             if (type == StaticScope.Type.LOCAL) {
-                if (name.getBytes().equals(lexer.getCurrentArg())) {
-                    compile_error(str(getRuntime(), "circular argument reference - ", name));
-                }
 
                 Node newNode = new LocalVarNode(node.getLine(), slot, name);
 
@@ -388,9 +382,6 @@ public abstract class RubyParserBase {
 
     public Node declareIdentifier(ByteList byteName) {
         RubySymbol name = symbolID(byteName);
-        if (byteName.equals(lexer.getCurrentArg())) {
-            compile_error(str(getRuntime(), "circular argument reference - ", name));
-        }
 
         String id = name.idString();
         boolean isNumParam = isNumParamId(id);
