@@ -689,7 +689,7 @@ public class RubyKernel {
 
     @JRubyMethod(module = true)
     public static IRubyObject public_method(ThreadContext context, IRubyObject recv, IRubyObject symbol) {
-        return recv.getMetaClass().newMethod(recv, symbol.asJavaString(), true, PUBLIC, true, false);
+        return recv.getMetaClass().newMethod(context, recv, symbol.asJavaString(), null, true, PUBLIC, true, false);
     }
 
     /** rb_f_putc
@@ -2328,7 +2328,7 @@ public class RubyKernel {
 
     @JRubyMethod(name = "method", required = 1, reads = SCOPE)
     public static IRubyObject method(ThreadContext context, IRubyObject self, IRubyObject symbol) {
-        return ((RubyBasicObject)self).method(symbol, context.getCurrentStaticScope());
+        return ((RubyBasicObject)self).method(context, symbol, context.getCurrentStaticScope());
     }
 
     /**

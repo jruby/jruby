@@ -1271,7 +1271,7 @@ public class RubyModule extends RubyObject {
 
             if (this.isModule()) {
                 boolean doPrepend = true;
-                synchronized (getRuntime().getHierarchyLock()) {
+                synchronized (context.runtime.getHierarchyLock()) {
                     for (RubyClass includeClass : includingHierarchies) {
                         RubyClass checkClass = includeClass;
                         while (checkClass != null) {
@@ -1290,7 +1290,7 @@ public class RubyModule extends RubyObject {
 
             invalidateCoreClasses(context);
             invalidateCacheDescendants(context);
-            invalidateConstantCacheForModuleInclusion(module);
+            invalidateConstantCacheForModuleInclusion(context, module);
         }
     }
 
@@ -1328,7 +1328,7 @@ public class RubyModule extends RubyObject {
 
         if (this.isModule()) {
             boolean doInclude = true;
-            synchronized (getRuntime().getHierarchyLock()) {
+            synchronized (context.runtime.getHierarchyLock()) {
                 for (RubyClass includeClass : includingHierarchies) {
                     RubyClass checkClass = includeClass;
                     while (checkClass != null) {
@@ -1347,7 +1347,7 @@ public class RubyModule extends RubyObject {
 
         invalidateCoreClasses(context);
         invalidateCacheDescendants(context);
-        invalidateConstantCacheForModuleInclusion(module);
+        invalidateConstantCacheForModuleInclusion(context, module);
     }
 
     /**
@@ -2104,12 +2104,12 @@ public class RubyModule extends RubyObject {
         return null;
     }
 
-    private void invalidateConstantCacheForModuleInclusion(RubyModule module) {
+    private void invalidateConstantCacheForModuleInclusion(ThreadContext context, RubyModule module) {
         Map<String, Invalidator> invalidators = null;
         for (RubyModule mod : gatherModules(module)) {
             for (String name : mod.getConstantMap().keySet()) {
                 if (invalidators == null) invalidators = new HashMap<>();
-                invalidators.put(name, getRuntime().getConstantInvalidator(name));
+                invalidators.put(name, context.runtime.getConstantInvalidator(name));
             }
         }
         if (invalidators != null) {
@@ -2381,7 +2381,7 @@ public class RubyModule extends RubyObject {
     @Deprecated(since = "10.0")
     protected void invalidateConstantCaches(Set<String> constantNames) {
         if (constantNames.size() > 0) {
-            Ruby runtime = getRuntime();
+            Ruby runtime = getCurrentContext().runtime;
 
             List<Invalidator> constantInvalidators = new ArrayList<>(constantNames.size());
             for (String name : constantNames) {
@@ -2787,20 +2787,24 @@ public class RubyModule extends RubyObject {
         return checkRespondTo ? respondsToMethod(name, checkVisibility): isMethodBound(name, checkVisibility);
     }
 
+    @Deprecated(since = "10.0")
     public final IRubyObject newMethod(IRubyObject receiver, String methodName, boolean bound, Visibility visibility) {
-        return newMethod(receiver, methodName, bound, visibility, false, true);
+        return newMethod(getCurrentContext(), receiver, methodName, null, bound, visibility, false, true);
     }
 
+    @Deprecated(since = "10.0")
     public final IRubyObject newMethod(IRubyObject receiver, String methodName, StaticScope refinedScope, boolean bound, Visibility visibility) {
-        return newMethod(receiver, methodName, refinedScope, bound, visibility, false, true);
+        return newMethod(getCurrentContext(), receiver, methodName, refinedScope, bound, visibility, false, true);
     }
 
+    @Deprecated(since = "10.0")
     public final IRubyObject newMethod(IRubyObject receiver, final String methodName, boolean bound, Visibility visibility, boolean respondToMissing) {
-        return newMethod(receiver, methodName, bound, visibility, respondToMissing, true);
+        return newMethod(getCurrentContext(), receiver, methodName, null, bound, visibility, respondToMissing, true);
     }
 
+    @Deprecated(since = "10.0")
     public final IRubyObject newMethod(IRubyObject receiver, final String methodName, StaticScope scope, boolean bound, Visibility visibility, boolean respondToMissing) {
-        return newMethod(receiver, methodName, scope, bound, visibility, respondToMissing, true);
+        return newMethod(getCurrentContext(), receiver, methodName, scope, bound, visibility, respondToMissing, true);
     }
 
     public static class RespondToMissingMethod extends JavaMethod.JavaMethodNBlock {
@@ -2832,12 +2836,20 @@ public class RubyModule extends RubyObject {
 
     }
 
-    public IRubyObject newMethod(IRubyObject receiver, final String methodName, boolean bound, Visibility visibility, boolean respondToMissing, boolean priv) {
-        return newMethod(receiver, methodName, null, bound, visibility, respondToMissing, priv);
+    @Deprecated(since = "10.0")
+    public IRubyObject newMethod(IRubyObject receiver, final String methodName, boolean bound, Visibility visibility,
+                                 boolean respondToMissing, boolean priv) {
+        return newMethod(getCurrentContext(), receiver, methodName, null, bound, visibility, respondToMissing, priv);
     }
 
-    public IRubyObject newMethod(IRubyObject receiver, final String methodName, StaticScope scope, boolean bound, Visibility visibility, boolean respondToMissing, boolean priv) {
-        var context = getRuntime().getCurrentContext();
+    @Deprecated(since = "10.0")
+    public IRubyObject newMethod(IRubyObject receiver, final String methodName, StaticScope scope, boolean bound,
+                                 Visibility visibility, boolean respondToMissing, boolean priv) {
+        return newMethod(getCurrentContext(), receiver, methodName, scope, bound, visibility, respondToMissing, priv);
+    }
+
+    protected IRubyObject newMethod(ThreadContext context, IRubyObject receiver, final String methodName, StaticScope scope,
+                                 boolean bound, Visibility visibility, boolean respondToMissing, boolean priv) {
         CacheEntry entry = scope == null ? searchWithCache(methodName) : searchWithRefinements(methodName, scope);
 
         if (entry.method.isUndefined() || visibility != null && entry.method.getVisibility() != visibility) {
@@ -2978,8 +2990,12 @@ public class RubyModule extends RubyObject {
         return getBaseName() == null ? context.nil : rubyName(context);
     }
 
+    @Deprecated(since = "10.0")
     protected final IRubyObject cloneMethods(RubyModule clone) {
-        Ruby runtime = getRuntime();
+        return cloneMethods(getCurrentContext(), clone);
+    }
+
+    protected final IRubyObject cloneMethods(ThreadContext context, RubyModule clone) {
         RubyModule realType = this.getOrigin();
         for (Map.Entry<String, DynamicMethod> entry : getMethods().entrySet()) {
             DynamicMethod method = entry.getValue();
@@ -2991,7 +3007,7 @@ public class RubyModule extends RubyObject {
                 // TODO: Make DynamicMethod immutable
                 DynamicMethod clonedMethod = method.dup();
                 clonedMethod.setImplementationClass(clone);
-                clone.putMethod(runtime, entry.getKey(), clonedMethod);
+                clone.putMethod(context.runtime, entry.getKey(), clonedMethod);
             }
         }
 
@@ -3010,13 +3026,13 @@ public class RubyModule extends RubyObject {
         RubyModule originalModule = (RubyModule)original;
 
         if (!getMetaClass().isSingleton()) {
-            setMetaClass(originalModule.getSingletonClassCloneAndAttach(this));
+            setMetaClass(originalModule.getSingletonClassCloneAndAttach(context, this));
         }
         superClass(originalModule.superClass());
         if (originalModule.hasVariables()) syncVariables(originalModule);
         syncConstants(originalModule);
 
-        originalModule.cloneMethods(this);
+        originalModule.cloneMethods(context, this);
         
         this.javaProxy = originalModule.javaProxy; 
 
@@ -3492,18 +3508,28 @@ public class RubyModule extends RubyObject {
      * @param not if true only find methods not matching supplied visibility
      * @return a RubyArray of instance method names
      */
+    @Deprecated(since = "10.0")
     private RubyArray instance_methods(IRubyObject[] args, Visibility visibility, boolean not) {
         boolean includeSuper = args.length > 0 ? args[0].isTrue() : true;
-        return instanceMethods(visibility, includeSuper, true, not);
+        return instanceMethods(getCurrentContext(), visibility, includeSuper, true, not);
     }
 
+    @Deprecated(since = "10.0")
     public RubyArray instanceMethods(IRubyObject[] args, Visibility visibility, boolean obj, boolean not) {
-        boolean includeSuper = args.length > 0 ? args[0].isTrue() : true;
-        return instanceMethods(visibility, includeSuper, obj, not);
+        return instanceMethods(getCurrentContext(), args, visibility, obj, not);
     }
 
+    public RubyArray instanceMethods(ThreadContext context, IRubyObject[] args, Visibility visibility, boolean obj, boolean not) {
+        boolean includeSuper = args.length > 0 ? args[0].isTrue() : true;
+        return instanceMethods(context, visibility, includeSuper, obj, not);
+    }
+
+    @Deprecated(since = "10.0")
     public RubyArray instanceMethods(Visibility visibility, boolean includeSuper, boolean obj, boolean not) {
-        var context = getRuntime().getCurrentContext();
+        return instanceMethods(getCurrentContext(), visibility, includeSuper, obj, not);
+    }
+
+    private RubyArray instanceMethods(ThreadContext context, Visibility visibility, boolean includeSuper, boolean obj, boolean not) {
         var ary = newArray(context);
 
         populateInstanceMethodNames(context, new HashSet<>(), ary, visibility, obj, not, includeSuper);
@@ -3570,7 +3596,7 @@ public class RubyModule extends RubyObject {
     public RubyArray instance_methods(ThreadContext context, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 1);
 
-        return instanceMethods(args, PRIVATE, false, true);
+        return instanceMethods(context, args, PRIVATE, false, true);
     }
 
     @Deprecated
@@ -3587,17 +3613,18 @@ public class RubyModule extends RubyObject {
     public RubyArray public_instance_methods(ThreadContext context, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 1);
 
-        return instanceMethods(args, PUBLIC, false, false);
+        return instanceMethods(context, args, PUBLIC, false, false);
     }
 
     @JRubyMethod(name = "instance_method", reads = SCOPE)
     public IRubyObject instance_method(ThreadContext context, IRubyObject symbol) {
-        return newMethod(null, checkID(context, symbol).idString(), context.getCurrentStaticScope(), false, null);
+        return newMethod(context, null, checkID(context, symbol).idString(), context.getCurrentStaticScope(),
+                false, null, false, true);
     }
 
     @Deprecated(since = "10.0")
     public IRubyObject instance_method(IRubyObject symbol) {
-        return newMethod(null, checkID(getCurrentContext(), symbol).idString(), false, null);
+        return instance_method(getCurrentContext(), symbol);
     }
 
     @Deprecated(since = "10.0")
@@ -3607,7 +3634,7 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "public_instance_method")
     public IRubyObject public_instance_method(ThreadContext context, IRubyObject symbol) {
-        return newMethod(null, checkID(context, symbol).idString(), false, PUBLIC);
+        return newMethod(context, null, checkID(context, symbol).idString(), null, false, PUBLIC, false, true);
     }
 
     @Deprecated
@@ -3622,7 +3649,7 @@ public class RubyModule extends RubyObject {
     public RubyArray protected_instance_methods(ThreadContext context, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 1);
 
-        return instanceMethods(args, PROTECTED, false, false);
+        return instanceMethods(context, args, PROTECTED, false, false);
     }
 
     @Deprecated
@@ -3637,7 +3664,7 @@ public class RubyModule extends RubyObject {
     public RubyArray private_instance_methods(ThreadContext context, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 1);
 
-        return instanceMethods(args, PRIVATE, false, false);
+        return instanceMethods(context, args, PRIVATE, false, false);
     }
 
     @JRubyMethod(name = "undefined_instance_methods")
@@ -5294,7 +5321,7 @@ public class RubyModule extends RubyObject {
         IRubyObject constant = iterateConstantNoConstMissing(context, name, this, inherit, false);
 
         if (constant == null && !isClass() && includeObject) {
-            constant = iterateConstantNoConstMissing(context, name, getRuntime().getObject(), inherit, false);
+            constant = iterateConstantNoConstMissing(context, name, objectClass(context), inherit, false);
         }
 
         return constant;
@@ -5962,10 +5989,9 @@ public class RubyModule extends RubyObject {
 
     @Deprecated(since = "10.0")
     protected final String validateClassVariable(IRubyObject nameObj, String name) {
-        if (IdUtil.isValidClassVariableName(name)) {
-            return name;
-        }
-        throw getRuntime().newNameError("'%1$s' is not allowed as a class variable name", this, nameObj);
+        if (IdUtil.isValidClassVariableName(name)) return name;
+
+        throw getCurrentContext().runtime.newNameError("'%1$s' is not allowed as a class variable name", this, nameObj);
     }
 
     @Deprecated(since = "10.0")

@@ -935,7 +935,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     // MRI: rb_clone_setup
     protected RubyBasicObject cloneSetup(ThreadContext context, RubyBasicObject clone, IRubyObject freeze) {
-        clone.setMetaClass(getSingletonClassCloneAndAttach(clone));
+        clone.setMetaClass(getSingletonClassCloneAndAttach(context, clone));
 
         initCopy(context, clone, this);
 
@@ -976,9 +976,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return cloneSetup(context, clone, freeze);
     }
 
-
+    @Deprecated(since = "10.0")
     protected RubyClass getSingletonClassClone() {
         return getSingletonClassCloneAndAttach(null);
+    }
+
+    @Deprecated(since = "10.0")
+    protected RubyClass getSingletonClassCloneAndAttach(RubyBasicObject attach) {
+        return getSingletonClassCloneAndAttach(getCurrentContext(), attach);
     }
 
     /** rb_singleton_class_clone
@@ -988,27 +993,21 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      * @return either a real class, or a clone of the current singleton class
      */
-    protected RubyClass getSingletonClassCloneAndAttach(RubyBasicObject attach) {
+    protected RubyClass getSingletonClassCloneAndAttach(ThreadContext context, RubyBasicObject attach) {
         RubyClass klass = getMetaClass();
 
-        if (!klass.isSingleton()) {
-            return klass;
-        }
+        if (!klass.isSingleton()) return klass;
 
-        MetaClass clone = new MetaClass(getRuntime(), klass.getSuperClass(), attach);
+        MetaClass clone = new MetaClass(context.runtime, klass.getSuperClass(), attach);
         clone.flags = klass.flags;
 
-        if (this instanceof RubyClass) {
-            clone.setMetaClass(clone);
-        } else {
-            clone.setMetaClass(klass.getSingletonClassClone());
-        }
+        clone.setMetaClass(this instanceof RubyClass ? clone : klass.getSingletonClassCloneAndAttach(context, null));
 
         if (klass.hasVariables()) clone.syncVariables(klass);
 
         clone.syncConstants(klass);
 
-        klass.cloneMethods(clone);
+        klass.cloneMethods(context, clone);
 
         ((MetaClass) clone.getMetaClass()).setAttached(clone);
 
@@ -2333,7 +2332,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *  in the receiver will be listed.
      */
     public IRubyObject public_methods(ThreadContext context, IRubyObject[] args) {
-        return getMetaClass().instanceMethods(args, PUBLIC, true, false);
+        return getMetaClass().instanceMethods(context, args, PUBLIC, true, false);
     }
 
     /** rb_obj_protected_methods
@@ -2349,7 +2348,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *  {@link RubyModule#protected_instance_methods} method.
      */
     public IRubyObject protected_methods(ThreadContext context, IRubyObject[] args) {
-        return getMetaClass().instanceMethods(args, PROTECTED, true, false);
+        return getMetaClass().instanceMethods(context, args, PROTECTED, true, false);
     }
 
     /** rb_obj_private_methods
@@ -2365,7 +2364,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *  {@link RubyModule#private_instance_methods} method.
      */
     public IRubyObject private_methods(ThreadContext context, IRubyObject[] args) {
-        return getMetaClass().instanceMethods(args, PRIVATE, true, false);
+        return getMetaClass().instanceMethods(context, args, PRIVATE, true, false);
     }
 
     /** rb_obj_singleton_methods
@@ -2476,7 +2475,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     public IRubyObject method(IRubyObject name) {
         final RubySymbol symbol = TypeConverter.checkID(name);
-        return getMetaClass().newMethod(this, symbol.idString(), true, null, true);
+        return getMetaClass().newMethod(getRuntime().getCurrentContext(), this, symbol.idString(), null, true, null, true, true);
+    }
+
+    @Deprecated(since = "10.0")
+    public IRubyObject method(IRubyObject name, StaticScope refinedScope) {
+        return method(getCurrentContext(), name, refinedScope);
     }
 
     /**
@@ -2486,9 +2490,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @param refinedScope the static scope for the caller method
      * @return
      */
-    public IRubyObject method(IRubyObject name, StaticScope refinedScope) {
+    public IRubyObject method(ThreadContext context, IRubyObject name, StaticScope refinedScope) {
         final RubySymbol symbol = TypeConverter.checkID(name);
-        return getMetaClass().newMethod(this, symbol.idString(), refinedScope, true, null, true);
+        return getMetaClass().newMethod(context, this, symbol.idString(), refinedScope, true, null, true, true);
     }
 
     /**

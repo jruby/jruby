@@ -744,10 +744,10 @@ public final class ArrayJavaProxy extends JavaProxy {
     @Override
     @JRubyMethod(name = "clone")
     public IRubyObject rbClone() {
-        final Ruby runtime = getRuntime();
+        var context = getRuntime().getCurrentContext();
 
-        RubyObject clone = new ArrayJavaProxy(runtime, getMetaClass(), cloneObject(), converter);
-        clone.setMetaClass(getSingletonClassClone());
+        RubyObject clone = new ArrayJavaProxy(context.runtime, getMetaClass(), cloneObject(), converter);
+        clone.setMetaClass(getSingletonClassCloneAndAttach(context, null));
 
         initCopy(clone, this, "initialize_clone");
         if (isFrozen()) clone.setFrozen(true);
