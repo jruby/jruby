@@ -129,7 +129,7 @@ public class RubyObject extends RubyBasicObject {
      */
     private static IRubyObject reifyAndAllocate(Ruby runtime, RubyClass klass) {
         klass.reifyWithAncestors();
-        return klass.allocate();
+        return klass.allocate(runtime.getCurrentContext());
     }
 
     /**

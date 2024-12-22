@@ -1500,7 +1500,7 @@ public class RubyTime extends RubyObject {
     public static RubyTime newInstance(ThreadContext context, IRubyObject recv, IRubyObject args[]) {
         int argc = Arity.checkArgumentCount(context, args, 0, 1);
 
-        RubyTime obj = allocateInstance((RubyClass) recv);
+        RubyTime obj = allocateInstance(context, (RubyClass) recv);
         if (argc == 1) {
             obj.getMetaClass().getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, recv, obj, args);
         } else {
@@ -1688,7 +1688,7 @@ public class RubyTime extends RubyObject {
     public static RubyTime local(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 1, 10);
 
-        RubyTime time = allocateInstance((RubyClass) recv);
+        RubyTime time = allocateInstance(context, (RubyClass) recv);
         TimeArgs timeArgs = new TimeArgs(context, args);
 
         timeArgs.initializeTime(context, time, getLocalTimeZone(context));
@@ -1913,7 +1913,7 @@ public class RubyTime extends RubyObject {
     public static RubyTime utc(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 1, 10);
 
-        RubyTime time = allocateInstance((RubyClass) recv);
+        RubyTime time = allocateInstance(context, (RubyClass) recv);
 
         TimeArgs timeArgs = new TimeArgs(context, args);
 
@@ -1922,18 +1922,19 @@ public class RubyTime extends RubyObject {
         return time;
     }
 
-    private static RubyTime allocateInstance(RubyClass recv) {
-        return (RubyTime) recv.allocate();
+    private static RubyTime allocateInstance(ThreadContext context, RubyClass recv) {
+        return (RubyTime) recv.allocate(context);
     }
 
     @Deprecated
     public static RubyTime load(IRubyObject recv, IRubyObject from, Block block) {
-        return s_mload(recv.getRuntime().getCurrentContext(), allocateInstance((RubyClass) recv), from);
+        var context = recv.getRuntime().getCurrentContext();
+        return s_mload(context, allocateInstance(context, (RubyClass) recv), from);
     }
 
     @JRubyMethod(name = "_load", meta = true)
     public static RubyTime load(ThreadContext context, IRubyObject recv, IRubyObject from) {
-        return s_mload(context, allocateInstance((RubyClass) recv), from);
+        return s_mload(context, allocateInstance(context, (RubyClass) recv), from);
     }
 
     // Java API

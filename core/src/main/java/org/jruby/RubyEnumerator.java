@@ -226,7 +226,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
             methodArgs = NULL_ARRAY;
         }
 
-        RubyEnumerator instance = (RubyEnumerator) ((RubyClass) klass).allocate();
+        RubyEnumerator instance = (RubyEnumerator) ((RubyClass) klass).allocate(context);
 
         if (size == null) {
             sizeFn = RubyEnumerable::size;

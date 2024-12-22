@@ -2041,7 +2041,7 @@ public class RubyEnumerable {
             return enumeratorizeWithSize(context, self, "chunk", RubyEnumerable::size);
         }
 
-        IRubyObject enumerator = runtime.getEnumerator().allocate();
+        IRubyObject enumerator = runtime.getEnumerator().allocate(context);
         enumerator.getInternalVariables().setInternalVariable("chunk_enumerable", self);
         enumerator.getInternalVariables().setInternalVariable("chunk_categorize",
                 RubyProc.newProc(runtime, block, block.type == Block.Type.LAMBDA ? block.type : Block.Type.PROC));

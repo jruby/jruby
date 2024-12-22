@@ -70,7 +70,7 @@ public class JZlibDeflate extends ZStream {
         if (!args[1].isNil()) level = checkLevel(context, RubyNumeric.fix2int(args[1]));
 
         RubyClass klass = (RubyClass)(recv.isClass() ? recv : context.runtime.getClassFromPath("Zlib::Deflate"));
-        JZlibDeflate deflate = (JZlibDeflate) klass.allocate();
+        JZlibDeflate deflate = (JZlibDeflate) klass.allocate(context);
         deflate.init(context, level, JZlib.DEF_WBITS, 8, JZlib.Z_DEFAULT_STRATEGY);
 
         try {

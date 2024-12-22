@@ -1410,7 +1410,7 @@ public class RubyDate extends RubyObject {
     @JRubyMethod(meta = true)
     public static RubyDate _load(ThreadContext context, IRubyObject klass, IRubyObject str) {
         IRubyObject a = RubyMarshal.load(context, null, new IRubyObject[] { str }, null);
-        RubyDate obj = (RubyDate) ((RubyClass) klass).allocate();
+        RubyDate obj = (RubyDate) ((RubyClass) klass).allocate(context);
         return obj.marshal_load(context, a);
     }
 

@@ -842,12 +842,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     @Override
     public IRubyObject dup() {
-        if (isSpecialObject()) {
-            return this;
-        }
+        if (isSpecialObject()) return this;
 
-        IRubyObject dup = metaClass.getRealClass().allocate();
         ThreadContext context = getRuntime().getCurrentContext();
+        IRubyObject dup = metaClass.getRealClass().allocate(context);
 
         initCopy(context, dup, this);
         sites(context).initialize_dup.call(context, dup, dup, this);
@@ -971,7 +969,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
 
         // We're cloning ourselves, so we know the result should be a RubyObject
-        RubyBasicObject clone = (RubyBasicObject) metaClass.getRealClass().allocate();
+        RubyBasicObject clone = (RubyBasicObject) metaClass.getRealClass().allocate(context);
 
         return cloneSetup(context, clone, freeze);
     }

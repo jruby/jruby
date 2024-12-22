@@ -371,7 +371,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     // MRI: rb_reg_new_str
     public static RubyRegexp newRegexpFromStr(Ruby runtime, RubyString s, int options) {
         var context = runtime.getCurrentContext();
-        RubyRegexp re = (RubyRegexp)runtime.getRegexp().allocate();
+        RubyRegexp re = (RubyRegexp)runtime.getRegexp().allocate(context);
         re.regexpInitializeString(context, s, RegexpOptions.fromJoniOptions(options), null);
         return re;
     }

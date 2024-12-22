@@ -285,17 +285,18 @@ public class RubyClass extends RubyModule {
         return withException(createTypeError(runtime.getCurrentContext(), msg.toString()), e);
     }
 
-    @JRubyMethod(name = "allocate")
+    @Deprecated(since = "10.0")
     public IRubyObject allocate() {
-        if (superClass == null) {
-            if (this != runtime.getBasicObject()) {
-                throw typeError(runtime.getCurrentContext(), "can't instantiate uninitialized class");
-            }
+        return allocate(getCurrentContext());
+    }
+
+    @JRubyMethod(name = "allocate")
+    public IRubyObject allocate(ThreadContext context) {
+        if (superClass == null && this != basicObjectClass(context)) {
+            throw typeError(context, "can't instantiate uninitialized class");
         }
-        IRubyObject obj = allocator.allocate(runtime, this);
-        if (getMetaClass(obj).getRealClass() != getRealClass()) {
-            throw typeError(runtime.getCurrentContext(), "wrong instance allocation");
-        }
+        IRubyObject obj = allocator.allocate(context.runtime, this);
+        if (getMetaClass(obj).getRealClass() != getRealClass()) throw typeError(context, "wrong instance allocation");
         return obj;
     }
 
@@ -1006,41 +1007,41 @@ public class RubyClass extends RubyModule {
     */
     @JRubyMethod(name = "new", keywords = true)
     public IRubyObject newInstance(ThreadContext context, Block block) {
-        IRubyObject obj = allocate();
+        IRubyObject obj = allocate(context);
         baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, block);
         return obj;
     }
 
     @JRubyMethod(name = "new", keywords = true)
     public IRubyObject newInstance(ThreadContext context, IRubyObject arg0, Block block) {
-        IRubyObject obj = allocate();
+        IRubyObject obj = allocate(context);
         baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, arg0, block);
         return obj;
     }
 
     public IRubyObject newInstance(ThreadContext context, IRubyObject arg0) {
-        IRubyObject obj = allocate();
+        IRubyObject obj = allocate(context);
         baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, arg0);
         return obj;
     }
 
     @JRubyMethod(name = "new", keywords = true)
     public IRubyObject newInstance(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        IRubyObject obj = allocate();
+        IRubyObject obj = allocate(context);
         baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, arg0, arg1, block);
         return obj;
     }
 
     @JRubyMethod(name = "new", keywords = true)
     public IRubyObject newInstance(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        IRubyObject obj = allocate();
+        IRubyObject obj = allocate(context);
         baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, arg0, arg1, arg2, block);
         return obj;
     }
 
     @JRubyMethod(name = "new", rest = true, keywords = true)
     public IRubyObject newInstance(ThreadContext context, IRubyObject[] args, Block block) {
-        IRubyObject obj = allocate();
+        IRubyObject obj = allocate(context);
         baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, args, block);
         return obj;
     }
@@ -1500,7 +1501,7 @@ public class RubyClass extends RubyModule {
 
         @Override
         public Object unmarshalFrom(Ruby runtime, RubyClass type, UnmarshalStream input) throws IOException {
-            IRubyObject result = input.entry(type.allocate());
+            IRubyObject result = input.entry(type.allocate(runtime.getCurrentContext()));
 
             input.ivar(null, result, null);
 

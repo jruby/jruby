@@ -74,7 +74,8 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
 
     public static JZlibRubyGzipWriter newInstance(IRubyObject recv, IRubyObject[] args) {
         RubyClass klass = (RubyClass) recv;
-        JZlibRubyGzipWriter result = (JZlibRubyGzipWriter) klass.allocate();
+        var context = klass.getRuntime().getCurrentContext();
+        JZlibRubyGzipWriter result = (JZlibRubyGzipWriter) klass.allocate(context);
 
         result.callInit(args, Block.NULL_BLOCK);
 

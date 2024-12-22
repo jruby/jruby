@@ -164,7 +164,7 @@ public class RubyHash extends RubyObject implements Map {
             final IRubyObject nil = context.nil;
             tmp = TypeConverter.convertToTypeWithCheck(args[0], Array, "to_ary");
             if (tmp != nil) {
-                RubyHash hash = (RubyHash) ((RubyClass) recv).allocate();
+                RubyHash hash = (RubyHash) ((RubyClass) recv).allocate(context);
                 var arr = (RubyArray<?>) tmp;
                 for (int i = 0, j = arr.getLength(); i<j; i++) {
                     IRubyObject e = arr.entry(i);
@@ -190,7 +190,7 @@ public class RubyHash extends RubyObject implements Map {
 
         if ((args.length & 1) != 0) throw argumentError(context, "odd number of arguments for Hash");
 
-        RubyHash hash = (RubyHash) ((RubyClass) recv).allocate();
+        RubyHash hash = (RubyHash) ((RubyClass) recv).allocate(context);
         for (int i=0; i < args.length; i+=2) hash.fastASetCheckString(context.runtime, args[i], args[i+1]);
 
         return hash;
