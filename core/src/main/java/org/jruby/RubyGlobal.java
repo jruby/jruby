@@ -657,7 +657,7 @@ public class RubyGlobal {
 
         @Deprecated
         public RubyHash to_h() {
-            return to_h(getRuntime().getCurrentContext(), Block.NULL_BLOCK);
+            return to_h(getCurrentContext(), Block.NULL_BLOCK);
         }
 
         @JRubyMethod

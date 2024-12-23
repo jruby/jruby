@@ -5,6 +5,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectStreamClass;
 import java.io.IOException;
 import org.jruby.Ruby;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyObject;
 import org.jruby.RubyClass;
 import org.jruby.runtime.ThreadContext;
@@ -26,10 +27,15 @@ public class JRubyObjectInputStream extends RubyObject {
                 defineMethods(context, JRubyObjectInputStream.class);
     }
 
-    @JRubyMethod(name = "new", rest = true, meta = true)
+    @Deprecated(since = "10.0")
     public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
-        IRubyObject obj = ((RubyClass)recv).allocate();
-        obj.callMethod(recv.getRuntime().getCurrentContext(), "initialize", args, block);
+        return newInstance(((RubyBasicObject) recv).getCurrentContext(), recv, args, block);
+    }
+
+    @JRubyMethod(name = "new", rest = true, meta = true)
+    public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        IRubyObject obj = ((RubyClass)recv).allocate(context);
+        obj.callMethod(context, "initialize", args, block);
         return obj;
     }
 

@@ -185,7 +185,7 @@ public class RubyProcess {
 
         @Override
         public Object unmarshalFrom(Ruby runtime, RubyClass type, UnmarshalStream input) throws IOException {
-            RubyStatus status = (RubyStatus) input.entry(type.allocate());
+            RubyStatus status = (RubyStatus) input.entry(type.allocate(runtime.getCurrentContext()));
 
             input.ivar(null, status, null);
 

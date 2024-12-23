@@ -36,6 +36,7 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
+import static org.jruby.api.Access.classClass;
 import static org.jruby.api.Error.typeError;
 
 public final class MetaClass extends RubyClass {
@@ -46,7 +47,7 @@ public final class MetaClass extends RubyClass {
     }
 
     /**
-     * rb_class_boot for meta classes ({@link #makeMetaClass(RubyClass)})
+     * rb_class_boot for meta classes ({@link #makeMetaClass(ThreadContext, RubyClass)})
      */
     MetaClass(Ruby runtime, RubyClass superClass, RubyBasicObject attached) {
         super(runtime, superClass, false);
@@ -104,8 +105,8 @@ public final class MetaClass extends RubyClass {
      * @return singleton-class for this (singleton) class
      */
     @Override
-    public RubyClass makeMetaClass(RubyClass superClass) {
-        MetaClass klass = new MetaClass(runtime, getSuperSingletonMetaClass(), this);
+    public RubyClass makeMetaClass(ThreadContext context, RubyClass superClass) {
+        MetaClass klass = new MetaClass(context.runtime, getSuperSingletonMetaClass(context), this);
         setMetaClass(klass);
 
         // Foo.singleton_class.singleton_class: #<Class:#<Class:Foo>>
@@ -115,23 +116,23 @@ public final class MetaClass extends RubyClass {
         return klass;
     }
 
-    private RubyClass getSuperSingletonMetaClass() {
+    private RubyClass getSuperSingletonMetaClass(ThreadContext context) {
         if (attached instanceof RubyClass att) {
             RubyClass superClass = att.superClass();
             if (superClass != null) superClass = superClass.getRealClass();
             // #<Class:BasicObject>'s singleton class == Class.singleton_class
             // Context should be safe here as we never make a metaclass from a metaclass before first TC is made.
-            var context = getRuntime().getCurrentContext();
-            if (superClass == null) return runtime.getClassClass().singletonClass(context);
-            return superClass.getMetaClass().singletonClass(context);
+            return superClass == null ?
+                    classClass(context).singletonClass(context) :
+                    superClass.getMetaClass().singletonClass(context);
         }
 
         return getSuperClass().getRealClass().getMetaClass(); // NOTE: is this correct?
     }
 
     @Override
-    RubyClass toSingletonClass(RubyBasicObject target) {
-        return attached == target ? this : super.toSingletonClass(target);
+    RubyClass toSingletonClass(ThreadContext context, RubyBasicObject target) {
+        return attached == target ? this : super.toSingletonClass(context, target);
     }
 
     @Override

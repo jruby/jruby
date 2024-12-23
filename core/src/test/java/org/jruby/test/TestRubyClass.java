@@ -52,12 +52,12 @@ public class TestRubyClass extends junit.framework.TestCase {
         // start out with a default RubyObject allocator
         RubyClass newClass = defineClass(context, "TestSetClassAllocatorClass", Object, Object.getAllocator());
 
-        assertEquals(RubyObject.class, newClass.allocate().getClass());
+        assertEquals(RubyObject.class, newClass.allocate(context).getClass());
 
         // switch to an allocator based on a default constructor
         MyRubyObjectSubclass.currentRuntime = runtime;
         newClass.setClassAllocator(MyRubyObjectSubclass.class);
 
-        assertEquals(MyRubyObjectSubclass.class, newClass.allocate().getClass());
+        assertEquals(MyRubyObjectSubclass.class, newClass.allocate(context).getClass());
     }
 }

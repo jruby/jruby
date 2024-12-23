@@ -29,6 +29,7 @@
 package org.jruby.ext.socket;
 
 import org.jruby.Ruby;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
@@ -309,16 +310,16 @@ public class RubyTCPServer extends RubyTCPSocket {
 
     @Deprecated
     public IRubyObject accept() {
-        return accept(getRuntime().getCurrentContext());
+        return accept(getCurrentContext());
     }
 
     @Deprecated
     public IRubyObject listen(IRubyObject backlog) {
-        return listen(getRuntime().getCurrentContext(), backlog);
+        return listen(((RubyBasicObject) backlog).getCurrentContext(), backlog);
     }
 
     @Deprecated
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
-        return open(recv.getRuntime().getCurrentContext(), recv, args, block);
+        return open(((RubyBasicObject) recv).getCurrentContext(), recv, args, block);
     }
 }

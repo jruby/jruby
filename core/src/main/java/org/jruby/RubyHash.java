@@ -164,7 +164,7 @@ public class RubyHash extends RubyObject implements Map {
             final IRubyObject nil = context.nil;
             tmp = TypeConverter.convertToTypeWithCheck(args[0], Array, "to_ary");
             if (tmp != nil) {
-                RubyHash hash = (RubyHash) ((RubyClass) recv).allocate();
+                RubyHash hash = (RubyHash) ((RubyClass) recv).allocate(context);
                 var arr = (RubyArray<?>) tmp;
                 for (int i = 0, j = arr.getLength(); i<j; i++) {
                     IRubyObject e = arr.entry(i);
@@ -190,7 +190,7 @@ public class RubyHash extends RubyObject implements Map {
 
         if ((args.length & 1) != 0) throw argumentError(context, "odd number of arguments for Hash");
 
-        RubyHash hash = (RubyHash) ((RubyClass) recv).allocate();
+        RubyHash hash = (RubyHash) ((RubyClass) recv).allocate(context);
         for (int i=0; i < args.length; i+=2) hash.fastASetCheckString(context.runtime, args[i], args[i+1]);
 
         return hash;
@@ -2503,7 +2503,7 @@ public class RubyHash extends RubyObject implements Map {
         int hashSize = hash.size();
         output.writeInt(out, hashSize);
         try {
-            hash.visitLimited(hash.getRuntime().getCurrentContext(), new VisitorWithState<NewMarshal>() {
+            hash.visitLimited(context, new VisitorWithState<NewMarshal>() {
                 @Override
                 public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, NewMarshal state) {
                     state.dumpObject(context, out, key);

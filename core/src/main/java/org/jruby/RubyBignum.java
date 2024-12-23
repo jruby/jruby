@@ -1162,7 +1162,7 @@ public class RubyBignum extends RubyInteger {
 
     @Deprecated
     public IRubyObject abs() {
-        return abs(metaClass.runtime.getCurrentContext());
+        return abs(getCurrentContext());
     }
 
     /** rb_big_abs

@@ -32,6 +32,7 @@ package org.jruby.ext.socket;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.anno.JRubyMethod;
@@ -238,11 +239,11 @@ public class RubyTCPSocket extends RubyIPSocket {
 
     @Deprecated
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
-        return open(recv.getRuntime().getCurrentContext(), recv, args, block);
+        return open(((RubyBasicObject) recv).getCurrentContext(), recv, args, block);
     }
 
     @Deprecated
     public static IRubyObject gethostbyname(IRubyObject recv, IRubyObject hostname) {
-        return gethostbyname(recv.getRuntime().getCurrentContext(), recv, hostname);
+        return gethostbyname(((RubyBasicObject) recv).getCurrentContext(), recv, hostname);
     }
 }

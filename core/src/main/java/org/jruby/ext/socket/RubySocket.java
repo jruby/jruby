@@ -148,7 +148,7 @@ public class RubySocket extends RubyBasicSocket {
 
         if (fd == null) throw runtime.newErrnoEBADFError();
 
-        RubySocket socket = (RubySocket)((RubyClass)socketClass).allocate();
+        RubySocket socket = (RubySocket)((RubyClass)socketClass).allocate(context);
 
         socket.initFieldsFromDescriptor(runtime, fd);
         socket.initSocket(fd);

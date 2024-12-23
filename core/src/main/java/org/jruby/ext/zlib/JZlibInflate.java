@@ -56,7 +56,7 @@ public class JZlibInflate extends ZStream {
     @JRubyMethod(name = "inflate", meta = true)
     public static IRubyObject s_inflate(ThreadContext context, IRubyObject recv, IRubyObject string) {
         RubyClass klass = (RubyClass)(recv.isClass() ? recv : context.runtime.getClassFromPath("Zlib::Inflate"));
-        JZlibInflate inflate = (JZlibInflate) klass.allocate();
+        JZlibInflate inflate = (JZlibInflate) klass.allocate(context);
         inflate.init(JZlib.DEF_WBITS);
 
         try {

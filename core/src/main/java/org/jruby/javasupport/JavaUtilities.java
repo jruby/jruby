@@ -1,6 +1,7 @@
 package org.jruby.javasupport;
 
 import org.jruby.Ruby;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyBoolean;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
@@ -23,7 +24,7 @@ public class JavaUtilities {
 
     @Deprecated(since = "10.0")
     public static IRubyObject get_interface_module(IRubyObject recv, IRubyObject arg0) {
-        return get_interface_module(recv.getRuntime().getCurrentContext(), recv, arg0);
+        return get_interface_module(((RubyBasicObject) recv).getCurrentContext(), recv, arg0);
     }
 
     @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
@@ -43,7 +44,7 @@ public class JavaUtilities {
 
     @Deprecated(since = "10.0")
     public static IRubyObject get_proxy_class(IRubyObject recv, IRubyObject arg0) {
-        return get_proxy_class(recv.getRuntime().getCurrentContext(), recv, arg0);
+        return get_proxy_class(((RubyBasicObject) recv).getCurrentContext(), recv, arg0);
     }
 
     @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
@@ -57,12 +58,16 @@ public class JavaUtilities {
         return Java.create_proxy_class(recv, arg0, arg1, arg2);
     }
 
-    @Deprecated // no longer used
-    @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
+    @Deprecated(since = "9.4-") // no longer used
     public static IRubyObject get_java_class(IRubyObject recv, IRubyObject arg0) {
-        final Ruby runtime = recv.getRuntime();
-        Class<?> javaClass = Java.getJavaClass(runtime, arg0.asJavaString());
-        return Java.getInstance(runtime, javaClass);
+        return get_java_class(((RubyBasicObject) recv).getCurrentContext(), recv, arg0);
+    }
+
+    @Deprecated(since = "10.0") // no longer used
+    @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject get_java_class(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
+        Class<?> javaClass = Java.getJavaClass(context.runtime, arg0.asJavaString());
+        return Java.getInstance(context.runtime, javaClass);
     }
 
     @JRubyMethod(module = true, visibility = Visibility.PRIVATE)

@@ -32,6 +32,7 @@ package org.jruby.ext.socket;
 import jnr.constants.platform.AddressFamily;
 import jnr.netdb.Service;
 import org.jruby.Ruby;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
@@ -667,26 +668,26 @@ public class RubyUDPSocket extends RubyIPSocket {
 
     @Deprecated
     public IRubyObject bind(IRubyObject host, IRubyObject port) {
-        return bind(getRuntime().getCurrentContext(), host, port);
+        return bind(getCurrentContext(), host, port);
     }
 
     @Deprecated
     public IRubyObject connect(IRubyObject host, IRubyObject port) {
-        return connect(getRuntime().getCurrentContext(), host, port);
+        return connect(getCurrentContext(), host, port);
     }
 
     @Deprecated
     public IRubyObject recvfrom(IRubyObject[] args) {
-        return recvfrom(getRuntime().getCurrentContext(), args);
+        return recvfrom(getCurrentContext(), args);
     }
 
     @Deprecated
     public IRubyObject send(IRubyObject[] args) {
-        return send(getRuntime().getCurrentContext(), args);
+        return send(getCurrentContext(), args);
     }
 
     @Deprecated
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
-        return open(recv.getRuntime().getCurrentContext(), recv, args, block);
+        return open(((RubyBasicObject) recv).getCurrentContext(), recv, args, block);
     }
 }// RubyUDPSocket

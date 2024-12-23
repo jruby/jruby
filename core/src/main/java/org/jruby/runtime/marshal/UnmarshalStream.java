@@ -313,7 +313,7 @@ public class UnmarshalStream extends InputStream {
                                       List<RubyModule> extendedModules) throws IOException {
         IRubyObject name = unique();
         RubyClass klass = getClassFromPath(runtime, name.asJavaString());
-        IRubyObject obj = entry(klass.allocate());
+        IRubyObject obj = entry(klass.allocate(context));
         // FIXME: Missing T_DATA error check?
 
         if (!obj.respondsTo("_load_data")) {
@@ -541,7 +541,7 @@ public class UnmarshalStream extends InputStream {
         byte opts = readSignedByte();
         RegexpOptions reOpts = RegexpOptions.fromJoniOptions(opts);
 
-        RubyRegexp regexp = (RubyRegexp) runtime.getRegexp().allocate();
+        RubyRegexp regexp = (RubyRegexp) runtime.getRegexp().allocate(runtime.getCurrentContext());
 
         IRubyObject ivarHolder = null;
         boolean[] hasEncoding = new boolean[] { false };
@@ -720,7 +720,7 @@ public class UnmarshalStream extends InputStream {
     private IRubyObject objectForUsrMarshal(ThreadContext context, MarshalState state, boolean partial,
                                             List<RubyModule> extendedModules) throws IOException {
         RubyClass classInstance = getClassFromPath(runtime, unique().asJavaString());
-        IRubyObject obj = classInstance.allocate();
+        IRubyObject obj = classInstance.allocate(context);
 
         if (extendedModules != null) appendExtendedModules(context, obj, extendedModules);
 

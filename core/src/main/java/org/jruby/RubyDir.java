@@ -109,13 +109,13 @@ public class RubyDir extends RubyObject implements Closeable {
                 defineMethods(context, RubyDir.class);
     }
 
-    private void checkDir() {
-        checkDirIgnoreClosed();
+    private void checkDir(ThreadContext context) {
+        checkDirIgnoreClosed(context);
 
-        if (!isOpen) throw getRuntime().newIOError("closed directory");
+        if (!isOpen) throw context.runtime.newIOError("closed directory");
     }
 
-    private void checkDirIgnoreClosed() {
+    private void checkDirIgnoreClosed(ThreadContext context) {
         testFrozen("Dir");
         // update snapshot (if changed) :
         if (snapshot == null || dir.exists() && dir.lastModified() > lastModified) {
@@ -172,7 +172,7 @@ public class RubyDir extends RubyObject implements Closeable {
         this.encoding = encoding;
 
         String adjustedPath = RubyFile.getAdjustedPath(context, newPath);
-        checkDirIsTwoSlashesOnWindows(getRuntime(), adjustedPath);
+        checkDirIsTwoSlashesOnWindows(context.runtime, adjustedPath);
 
         this.dir = JRubyFile.createResource(context, adjustedPath);
         this.snapshot = getEntries(context, dir, adjustedPath);
@@ -351,12 +351,17 @@ public class RubyDir extends RubyObject implements Closeable {
         return asRubyStringList(runtime, dirs);
     }
 
+    @Deprecated(since = "10.0")
+    public RubyArray entries() {
+        return entries(getCurrentContext());
+    }
+
     /**
      * @return all entries for this Dir
      */
     @JRubyMethod(name = "entries")
-    public RubyArray entries() {
-        return newEntryArray(getRuntime().getCurrentContext(), snapshot, encoding, false);
+    public RubyArray entries(ThreadContext context) {
+        return newEntryArray(context, snapshot, encoding, false);
     }
 
     /**
@@ -494,12 +499,17 @@ public class RubyDir extends RubyObject implements Closeable {
         return chdir(context, this.getMetaClass(), path, Block.NULL_BLOCK);
     }
 
+    @Deprecated(since = "10.0")
+    public static IRubyObject chroot(IRubyObject recv, IRubyObject path) {
+        return chroot(((RubyBasicObject) recv).getCurrentContext(), recv, path);
+    }
+
     /**
      * Changes the root directory (only allowed by super user).  Not available on all platforms.
      */
     @JRubyMethod(name = "chroot", meta = true, notImplemented = true)
-    public static IRubyObject chroot(IRubyObject recv, IRubyObject path) {
-        throw recv.getRuntime().newNotImplementedError("chroot not implemented: chroot is non-portable and is not supported.");
+    public static IRubyObject chroot(ThreadContext context, IRubyObject recv, IRubyObject path) {
+        throw context.runtime.newNotImplementedError("chroot not implemented: chroot is non-portable and is not supported.");
     }
 
     /**
@@ -524,7 +534,7 @@ public class RubyDir extends RubyObject implements Closeable {
 
     @Deprecated
     public static IRubyObject rmdir19(IRubyObject recv, IRubyObject path) {
-        return rmdir(recv.getRuntime().getCurrentContext(), recv, path);
+        return rmdir(((RubyBasicObject) recv).getCurrentContext(), recv, path);
     }
 
     /**
@@ -632,12 +642,15 @@ public class RubyDir extends RubyObject implements Closeable {
                 enumeratorize(context.runtime, recv, "foreach", path, encOpts);
     }
 
+    @Deprecated(since = "10.0")
+    public static RubyString getwd(IRubyObject recv) {
+        return getwd(((RubyBasicObject) recv).getCurrentContext(), recv);
+    }
+
     /** Returns the current directory. */
     @JRubyMethod(name = {"getwd", "pwd"}, meta = true)
-    public static RubyString getwd(IRubyObject recv) {
-        Ruby runtime = recv.getRuntime();
-
-        return newFilesystemString(runtime, getCWD(runtime));
+    public static RubyString getwd(ThreadContext context, IRubyObject recv) {
+        return newFilesystemString(context, getCWD(context.runtime));
     }
 
     /**
@@ -674,7 +687,7 @@ public class RubyDir extends RubyObject implements Closeable {
 
     @Deprecated
     public static IRubyObject mkdir(IRubyObject recv, IRubyObject[] args) {
-        return mkdir(recv.getRuntime().getCurrentContext(), recv, args);
+        return mkdir(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
 
     private static IRubyObject mkdirCommon(ThreadContext context, String path, IRubyObject[] args) {
@@ -746,21 +759,22 @@ public class RubyDir extends RubyObject implements Closeable {
      */
     @JRubyMethod(name = "close")
     public IRubyObject close(ThreadContext context) {
-        close();
+        // Make sure any read()s after close fail.
+        checkDirIgnoreClosed(context);
+        isOpen = false;
         return context.nil;
     }
 
+    @Deprecated(since = "10.0")
     public final void close() {
-        // Make sure any read()s after close fail.
-        checkDirIgnoreClosed();
-        isOpen = false;
+        close(getCurrentContext());
     }
 
     /**
      * Executes the block once for each entry in the directory.
      */
     public IRubyObject each(ThreadContext context, Encoding enc, Block block) {
-        checkDir();
+        checkDir(context);
 
         String[] contents = snapshot;
         for (pos = 0; pos < contents.length; pos++) {
@@ -790,7 +804,7 @@ public class RubyDir extends RubyObject implements Closeable {
      * (i.e. all the directory entries except for "." and "..").
      */
     public IRubyObject each_child(ThreadContext context, Encoding enc, Block block) {
-        checkDir();
+        checkDir(context);
 
         String[] contents = snapshot;
         for (pos = 0; pos < contents.length; pos++) {
@@ -833,7 +847,7 @@ public class RubyDir extends RubyObject implements Closeable {
      */
     @JRubyMethod(name = {"tell", "pos"})
     public RubyInteger tell(ThreadContext context) {
-        checkDir();
+        checkDir(context);
         return asFixnum(context, pos);
     }
 
@@ -842,14 +856,18 @@ public class RubyDir extends RubyObject implements Closeable {
         return tell(getCurrentContext());
     }
 
+    @Deprecated(since = "10.0")
+    public IRubyObject seek(IRubyObject newPos) {
+        return seek(getCurrentContext(), newPos);
+    }
+
     /**
      * Moves to a position <code>d</code>.  <code>pos</code> must be a value
      * returned by <code>tell</code> or 0.
      */
-
     @JRubyMethod(name = "seek")
-    public IRubyObject seek(IRubyObject newPos) {
-        checkDir();
+    public IRubyObject seek(ThreadContext context, IRubyObject newPos) {
+        checkDir(context);
 
         set_pos(newPos);
         return this;
@@ -876,23 +894,33 @@ public class RubyDir extends RubyObject implements Closeable {
         return path == null ? null : path.asJavaString();
     }
 
+    @Deprecated(since = "10.0")
+    public IRubyObject read() {
+        return read(getCurrentContext());
+    }
+
     /** Returns the next entry from this directory. */
     @JRubyMethod(name = "read")
-    public IRubyObject read() {
-        checkDir();
+    public IRubyObject read(ThreadContext context) {
+        checkDir(context);
 
         final String[] snapshot = this.snapshot;
-        if (pos >= snapshot.length) return getRuntime().getNil();
+        if (pos >= snapshot.length) return context.nil;
 
-        RubyString result = newExternalStringWithEncoding(getRuntime(), snapshot[pos], encoding);
+        RubyString result = newExternalStringWithEncoding(context.runtime, snapshot[pos], encoding);
         pos++;
         return result;
     }
 
+    @Deprecated(since = "10.0")
+    public IRubyObject rewind() {
+        return rewind(getCurrentContext());
+    }
+
     /** Moves position in this directory to the first entry. */
     @JRubyMethod(name = "rewind")
-    public IRubyObject rewind() {
-        checkDir();
+    public IRubyObject rewind(ThreadContext context) {
+        checkDir(context);
 
         pos = 0;
         return this;
@@ -1042,14 +1070,13 @@ public class RubyDir extends RubyObject implements Closeable {
          * TODO: /etc/passwd is also inadequate for MacOSX since it does not
          *       use /etc/passwd for regular user accounts
          */
-        Ruby runtime = context.runtime;
-        POSIX posix = runtime.getNativePosix();
+        POSIX posix = context.runtime.getNativePosix();
 
         if (posix != null) {
             try {
                 // try to use POSIX for this first
-                Passwd passwd = runtime.getPosix().getpwnam(user);
-                if (passwd != null) return newFilesystemString(runtime, passwd.getHome());
+                Passwd passwd = context.runtime.getPosix().getpwnam(user);
+                if (passwd != null) return newFilesystemString(context, passwd.getHome());
             } catch (Exception e) {
             }
         }
@@ -1068,7 +1095,7 @@ public class RubyDir extends RubyObject implements Closeable {
                 stream.close();
                 passwd = new String(bytes, 0, readBytes);
             } catch (IOException ioe) {
-                return runtime.getNil();
+                return context.nil;
             }
 
             List<String> rows = StringSupport.split(passwd, '\n');
@@ -1076,7 +1103,7 @@ public class RubyDir extends RubyObject implements Closeable {
                 List<String> fields = StringSupport.split(rows.get(i), ':');
                 if (fields.get(0).equals(user)) {
                     String home = fields.get(5);
-                    return newFilesystemString(runtime, home);
+                    return newFilesystemString(context, home);
                 }
             }
         }
@@ -1084,8 +1111,8 @@ public class RubyDir extends RubyObject implements Closeable {
         throw argumentError(context, "user " + user + " doesn't exist");
     }
 
-    private static RubyString newFilesystemString(Ruby runtime, String home) {
-        return newExternalStringWithEncoding(runtime, home, runtime.getDefaultFilesystemEncoding());
+    private static RubyString newFilesystemString(ThreadContext context, String home) {
+        return newExternalStringWithEncoding(context.runtime, home, context.runtime.getDefaultFilesystemEncoding());
     }
 
     static final ByteList HOME = new ByteList(new byte[] {'H','O','M','E'}, false);
@@ -1143,12 +1170,12 @@ public class RubyDir extends RubyObject implements Closeable {
 
     @Deprecated
     public static RubyArray entries(IRubyObject recv, IRubyObject path) {
-        return entries(recv.getRuntime().getCurrentContext(), recv, path);
+        return entries(((RubyBasicObject) recv).getCurrentContext(), recv, path);
     }
 
     @Deprecated
     public static RubyArray entries(IRubyObject recv, IRubyObject path, IRubyObject arg, IRubyObject opts) {
-        return entries(recv.getRuntime().getCurrentContext(), recv, path, opts);
+        return entries(((RubyBasicObject) recv).getCurrentContext(), recv, path, opts);
     }
 
     @Deprecated

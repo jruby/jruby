@@ -282,7 +282,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     // MRI: prep_io
     private static RubyIO prepIO(Ruby runtime, Channel fd, int fmode, RubyClass klass, String path) {
         OpenFile fp;
-        RubyIO io = (RubyIO)klass.allocate();
+        RubyIO io = (RubyIO)klass.allocate(runtime.getCurrentContext());
 
         fp = io.MakeOpenFile();
         fp.setChannel(fd);
@@ -4234,7 +4234,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 throw argumentError(context, "pipe open is not supported without native subprocess logic");
             }
         }
-        return (RubyIO) ((RubyFile) fileClass(context).allocate()).fileOpenGeneric(context, filename, oflags, fmode, convconfig, perm);
+        return (RubyIO) ((RubyFile) fileClass(context).allocate(context)).
+                fileOpenGeneric(context, filename, oflags, fmode, convconfig, perm);
     }
 
     /**

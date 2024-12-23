@@ -253,8 +253,9 @@ public class RubyNameError extends RubyStandardError {
     }
 
     private static RubyException newNameError(IRubyObject recv, IRubyObject[] args) {
+        var context = recv.getRuntime().getCurrentContext();
         final RubyClass klass = (RubyClass) recv;
-        RubyException newError = (RubyException) klass.allocate();
+        RubyException newError = (RubyException) klass.allocate(context);
 
         newError.callInit(args, Block.NULL_BLOCK);
 
@@ -262,8 +263,9 @@ public class RubyNameError extends RubyStandardError {
     }
 
     static RubyException newNameError(IRubyObject recv, IRubyObject message, IRubyObject name, boolean privateCall) {
+        var context = recv.getRuntime().getCurrentContext();
         final RubyClass klass = (RubyClass) recv;
-        RubyNameError newError = (RubyNameError) klass.allocate();
+        RubyNameError newError = (RubyNameError) klass.allocate(context);
 
         newError.callInit(message, name, Block.NULL_BLOCK);
 

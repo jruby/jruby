@@ -30,6 +30,7 @@
 package org.jruby.ext.socket;
 
 import org.jruby.Ruby;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -64,7 +65,7 @@ public class RubyIPSocket extends RubyBasicSocket {
 
     @JRubyMethod(name = "addr")
     public IRubyObject addr(ThreadContext context) {
-        return addrCommon(context, !context.getRuntime().isDoNotReverseLookupEnabled());
+        return addrCommon(context, !context.runtime.isDoNotReverseLookupEnabled());
     }
 
     @JRubyMethod(name = "addr")
@@ -74,7 +75,7 @@ public class RubyIPSocket extends RubyBasicSocket {
 
     @JRubyMethod(name = "peeraddr")
     public IRubyObject peeraddr(ThreadContext context) {
-        return peeraddrCommon(context, !context.getRuntime().isDoNotReverseLookupEnabled());
+        return peeraddrCommon(context, !context.runtime.isDoNotReverseLookupEnabled());
     }
 
     @JRubyMethod(name = "peeraddr")
@@ -200,7 +201,7 @@ public class RubyIPSocket extends RubyBasicSocket {
 
     @Deprecated
     public static IRubyObject getaddress(IRubyObject recv, IRubyObject hostname) {
-        return getaddress(recv.getRuntime().getCurrentContext(), recv, hostname);
+        return getaddress(((RubyBasicObject) recv).getCurrentContext(), recv, hostname);
     }
 
     @Deprecated

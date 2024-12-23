@@ -1294,7 +1294,7 @@ public class RubyRange extends RubyObject {
         @Override
         public Object unmarshalFrom(Ruby runtime, RubyClass type, UnmarshalStream input) throws IOException {
             var context = runtime.getCurrentContext();
-            RubyRange range = (RubyRange) input.entry(type.allocate());
+            RubyRange range = (RubyRange) input.entry(type.allocate(context));
 
             input.ivar(null, range, null);
 

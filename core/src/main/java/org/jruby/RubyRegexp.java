@@ -371,7 +371,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     // MRI: rb_reg_new_str
     public static RubyRegexp newRegexpFromStr(Ruby runtime, RubyString s, int options) {
         var context = runtime.getCurrentContext();
-        RubyRegexp re = (RubyRegexp)runtime.getRegexp().allocate();
+        RubyRegexp re = (RubyRegexp)runtime.getRegexp().allocate(context);
         re.regexpInitializeString(context, s, RegexpOptions.fromJoniOptions(options), null);
         return re;
     }
@@ -998,13 +998,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     // rb_reg_initialize_str
     private RubyRegexp regexpInitializeString(ThreadContext context, RubyString str, RegexpOptions options, IRubyObject timeout) {
-        if (isLiteral()) throw metaClass.runtime.newFrozenError(this);
+        if (isLiteral()) throw context.runtime.newFrozenError(this);
         ByteList bytes = str.getByteList();
         Encoding enc = bytes.getEncoding();
         if (options.isEncodingNone()) {
             if (enc != ASCIIEncoding.INSTANCE) {
                 if (str.scanForCodeRange() != StringSupport.CR_7BIT) {
-                    RegexpSupport.raiseRegexpError(metaClass.runtime, bytes, enc, options, "/.../n has a non escaped non ASCII character in non ASCII-8BIT script");
+                    RegexpSupport.raiseRegexpError(context.runtime, bytes, enc, options, "/.../n has a non escaped non ASCII character in non ASCII-8BIT script");
                 }
                 enc = ASCIIEncoding.INSTANCE;
             }

@@ -285,17 +285,19 @@ public class RubyClass extends RubyModule {
         return withException(createTypeError(runtime.getCurrentContext(), msg.toString()), e);
     }
 
-    @JRubyMethod(name = "allocate")
+    @Deprecated(since = "10.0")
     public IRubyObject allocate() {
-        if (superClass == null) {
-            if (this != runtime.getBasicObject()) {
-                throw typeError(runtime.getCurrentContext(), "can't instantiate uninitialized class");
-            }
+        return allocate(getCurrentContext());
+    }
+
+    @JRubyMethod(name = "allocate")
+    public IRubyObject allocate(ThreadContext context) {
+        if (superClass == null && this != basicObjectClass(context)) {
+            throw typeError(context, "can't instantiate uninitialized class");
         }
-        IRubyObject obj = allocator.allocate(runtime, this);
-        if (getMetaClass(obj).getRealClass() != getRealClass()) {
-            throw typeError(runtime.getCurrentContext(), "wrong instance allocation");
-        }
+        IRubyObject obj = allocator.allocate(context.runtime, this);
+        if (getMetaClass(obj).getRealClass() != getRealClass()) throw typeError(context, "wrong instance allocation");
+
         return obj;
     }
 
@@ -529,7 +531,7 @@ public class RubyClass extends RubyModule {
                 allocator(allocator).
                 baseName(name);
 
-        clazz.makeMetaClass(superClass.getMetaClass());
+        clazz.makeMetaClass(context, superClass.getMetaClass());
         if (setParent) clazz.setParent(parent);
         parent.defineConstant(context, name, clazz);
         superClass.invokeInherited(context, superClass, clazz);
@@ -548,7 +550,7 @@ public class RubyClass extends RubyModule {
         RubyClass clazz = newClass(context, superClass, null).
                 allocator(allocator).
                 baseName(name);
-        clazz.makeMetaClass(superClass.getMetaClass());
+        clazz.makeMetaClass(context, superClass.getMetaClass());
         if (setParent) clazz.setParent(parent);
         parent.setConstant(context, name, clazz, file, line);
         superClass.invokeInherited(context, superClass, clazz);
@@ -570,7 +572,7 @@ public class RubyClass extends RubyModule {
         RubyClass clazz = newClass(context, superClass, extraCallSites).
                 allocator(allocator).
                 baseName(name);
-        clazz.makeMetaClass(superClass.getMetaClass());
+        clazz.makeMetaClass(context, superClass.getMetaClass());
         if (setParent) clazz.setParent(parent);
         parent.setConstant(context, name, clazz, BUILTIN_CONSTANT, -1);
         superClass.invokeInherited(context, superClass, clazz);
@@ -586,21 +588,26 @@ public class RubyClass extends RubyModule {
      * @param name the name of the new class
      * @return the new class.
      */
-    public static RubyClass newClassBootstrap(Ruby runtime, RubyClass Object, String name) {
+    public static RubyClass newClassBootstrap(Ruby runtime, RubyClass Object, RubyClass Class, String name) {
         RubyClass clazz = new RubyClass(runtime, Object).
                 allocator(NOT_ALLOCATABLE_ALLOCATOR).
                 baseName(name);
-        clazz.makeMetaClass(Object.getMetaClass());
+        clazz.makeMetaClassBootstrap(runtime, Object.getMetaClass(), Class);
         Object.defineConstantBootstrap(name, clazz);
         return clazz;
+    }
+
+    @Deprecated(since = "10.0")
+    RubyClass toSingletonClass(RubyBasicObject target) {
+        return toSingletonClass(getCurrentContext(), target);
     }
 
     /**
      * @see #singletonClass(ThreadContext)
      */
-    RubyClass toSingletonClass(RubyBasicObject target) {
+    RubyClass toSingletonClass(ThreadContext context, RubyBasicObject target) {
         // replaced after makeMetaClass with MetaClass's toSingletonClass
-        return target.makeMetaClass(this);
+        return target.makeMetaClass(context, this);
     }
 
     static boolean notVisibleAndNotMethodMissing(DynamicMethod method, String name, IRubyObject caller, CallType callType) {
@@ -1006,41 +1013,41 @@ public class RubyClass extends RubyModule {
     */
     @JRubyMethod(name = "new", keywords = true)
     public IRubyObject newInstance(ThreadContext context, Block block) {
-        IRubyObject obj = allocate();
+        IRubyObject obj = allocate(context);
         baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, block);
         return obj;
     }
 
     @JRubyMethod(name = "new", keywords = true)
     public IRubyObject newInstance(ThreadContext context, IRubyObject arg0, Block block) {
-        IRubyObject obj = allocate();
+        IRubyObject obj = allocate(context);
         baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, arg0, block);
         return obj;
     }
 
     public IRubyObject newInstance(ThreadContext context, IRubyObject arg0) {
-        IRubyObject obj = allocate();
+        IRubyObject obj = allocate(context);
         baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, arg0);
         return obj;
     }
 
     @JRubyMethod(name = "new", keywords = true)
     public IRubyObject newInstance(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        IRubyObject obj = allocate();
+        IRubyObject obj = allocate(context);
         baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, arg0, arg1, block);
         return obj;
     }
 
     @JRubyMethod(name = "new", keywords = true)
     public IRubyObject newInstance(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        IRubyObject obj = allocate();
+        IRubyObject obj = allocate(context);
         baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, arg0, arg1, arg2, block);
         return obj;
     }
 
     @JRubyMethod(name = "new", rest = true, keywords = true)
     public IRubyObject newInstance(ThreadContext context, IRubyObject[] args, Block block) {
-        IRubyObject obj = allocate();
+        IRubyObject obj = allocate(context);
         baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, args, block);
         return obj;
     }
@@ -1065,12 +1072,12 @@ public class RubyClass extends RubyModule {
     private RubyClass initializeCommon(ThreadContext context, RubyClass superClazz, Block block) {
         superClass(superClazz);
         allocator = superClazz.allocator;
-        makeMetaClass(superClazz.getMetaClass());
+        makeMetaClass(context, superClazz.getMetaClass());
         superClazz.addSubclass(this);
 
         marshal = superClazz.marshal;
 
-        superClazz.invokeInherited(runtime.getCurrentContext(), superClazz, this);
+        superClazz.invokeInherited(context, superClazz, this);
         super.initialize(context, block);
 
         return this;
@@ -1430,7 +1437,7 @@ public class RubyClass extends RubyModule {
      */
     @Deprecated
     public static void checkInheritable(IRubyObject superClass) {
-        checkInheritable(superClass.getRuntime().getCurrentContext(), superClass);
+        checkInheritable(((RubyBasicObject) superClass).getCurrentContext(), superClass);
     }
 
     public static void checkInheritable(ThreadContext context, IRubyObject superClass) {
@@ -1500,7 +1507,7 @@ public class RubyClass extends RubyModule {
 
         @Override
         public Object unmarshalFrom(Ruby runtime, RubyClass type, UnmarshalStream input) throws IOException {
-            IRubyObject result = input.entry(type.allocate());
+            IRubyObject result = input.entry(type.allocate(runtime.getCurrentContext()));
 
             input.ivar(null, result, null);
 
@@ -2858,7 +2865,7 @@ public class RubyClass extends RubyModule {
             // recache
             CacheEntry entry = searchWithCache("respond_to?");
             DynamicMethod method = entry.method;
-            if (!method.equals(runtime.getRespondToMethod()) && !method.isUndefined()) {
+            if (!method.equals(context.runtime.getRespondToMethod()) && !method.isUndefined()) {
 
                 // custom respond_to?, always do slow default marshaling
                 tuple = (cachedDumpMarshal = new MarshalTuple(null, MarshalType.DEFAULT_SLOW, generation));

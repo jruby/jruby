@@ -740,10 +740,14 @@ public class RubyModule extends RubyObject {
         return symbolName == UNDEF ? null : (RubySymbol) symbolName;
     }
 
+    @Deprecated(since = "10.0")
     public RubyString rubyBaseName() {
+        return rubyBaseName(getCurrentContext());
+    }
+
+    public RubyString rubyBaseName(ThreadContext context) {
         String baseName = getBaseName();
 
-        var context = metaClass.runtime.getCurrentContext();
         return baseName == null ? null : (RubyString) asSymbol(context, baseName).to_s(context);
     }
 
@@ -771,7 +775,7 @@ public class RubyModule extends RubyObject {
              p != null && p != Object && p != this; // Break out of cyclic namespaces like C::A = C2; C2::A = C (jruby/jruby#2314)
              p = p.getParent()) {
 
-            RubyString name = p.rubyBaseName();
+            RubyString name = p.rubyBaseName(context);
 
             // This is needed when the enclosing class or module is a singleton.
             // In that case, we generated a name such as null::Foo, which broke
@@ -811,7 +815,7 @@ public class RubyModule extends RubyObject {
              p != null && p != Object && p != this; // Break out of cyclic namespaces like C::A = C2; C2::A = C (jruby/jruby#2314)
              p = p.getParent()) {
 
-            RubyString name = p.rubyBaseName();
+            RubyString name = p.rubyBaseName(context);
 
             if (name == null) {
                 return UNDEF;
@@ -833,7 +837,7 @@ public class RubyModule extends RubyObject {
             RubyString rubyString = fullName.catWithCodeRange(parents.get(i));
             rubyString.catWithCodeRange(colons);
         }
-        fullName.catWithCodeRange(rubyBaseName());
+        fullName.catWithCodeRange(rubyBaseName(context));
 
         fullName.setFrozen(true);
         return fullName;
@@ -4989,7 +4993,7 @@ public class RubyModule extends RubyObject {
 
         String methodName = nameIsTarget ? "target" : "refined_class";
         String errMsg = RubyStringBuilder.str(context.runtime,
-                "undefined method '"+ methodName +"' for ", rubyBaseName(), ":", getMetaClass());
+                "undefined method '"+ methodName +"' for ", rubyBaseName(context), ":", getMetaClass());
         throw context.runtime.newNoMethodError(errMsg, this, "target", newEmptyArray(context));
     }
 

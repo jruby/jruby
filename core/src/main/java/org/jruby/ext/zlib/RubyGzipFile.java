@@ -31,6 +31,7 @@ import org.jcodings.Encoding;
 import org.jcodings.transcode.EConv;
 import org.joda.time.DateTime;
 import org.jruby.Ruby;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
@@ -94,11 +95,16 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return wrapBlock(context, instance, block);
     }
 
-    @JRubyMethod(name = "new", meta = true)
+    @Deprecated(since = "10.0")
     public static RubyGzipFile newInstance(IRubyObject recv, Block block) {
+        return newInstance(((RubyBasicObject) recv).getCurrentContext(), recv, block);
+    }
+
+    @JRubyMethod(name = "new", meta = true)
+    public static RubyGzipFile newInstance(ThreadContext context, IRubyObject recv, Block block) {
         RubyClass klass = (RubyClass) recv;
 
-        RubyGzipFile result = (RubyGzipFile) klass.allocate();
+        RubyGzipFile result = (RubyGzipFile) klass.allocate(context);
 
         result.callInit(IRubyObject.NULL_ARRAY, block);
 

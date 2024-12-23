@@ -184,7 +184,7 @@ public class JRubyLibrary implements Library {
 
     @Deprecated
     public static RubyBoolean is_security_restricted(IRubyObject recv) {
-        return is_security_restricted(recv.getRuntime().getCurrentContext(), recv);
+        return is_security_restricted(((RubyBasicObject) recv).getCurrentContext(), recv);
     }
 
     // NOTE: its probably too late to set this when jruby library is booted (due the java library) ?

@@ -169,13 +169,14 @@ public class RubySystemCallError extends RubyStandardError {
 
         @Override
         public Object unmarshalFrom(Ruby runtime, RubyClass type, UnmarshalStream input) throws IOException {
-            RubySystemCallError exc = (RubySystemCallError) input.entry(type.allocate());
+            var context = runtime.getCurrentContext();
+            RubySystemCallError exc = (RubySystemCallError) input.entry(type.allocate(context));
 
             input.ivar(null, exc, null);
             
-            exc.message = (IRubyObject)exc.removeInternalVariable("mesg");
-            exc.errno = (IRubyObject)exc.removeInternalVariable("errno");
-            exc.set_backtrace(runtime.getCurrentContext(), (IRubyObject)exc.removeInternalVariable("bt"));
+            exc.message = (IRubyObject) exc.removeInternalVariable("mesg");
+            exc.errno = (IRubyObject) exc.removeInternalVariable("errno");
+            exc.set_backtrace(context, (IRubyObject) exc.removeInternalVariable("bt"));
             
             return exc;
         }

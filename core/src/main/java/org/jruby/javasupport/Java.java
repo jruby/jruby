@@ -562,7 +562,7 @@ public class Java implements Library {
     private static RubyClass createProxyClass(ThreadContext context, final RubyClass proxyClass,
                                               final Class<?> javaClass, final RubyClass superClass, boolean invokeInherited) {
 
-        proxyClass.makeMetaClass( superClass.getMetaClass() );
+        proxyClass.makeMetaClass(context, superClass.getMetaClass());
 
         if ( Map.class.isAssignableFrom( javaClass ) ) {
             proxyClass.allocator(context.runtime.getJavaSupport().getMapJavaProxyClass().getAllocator()).
@@ -1662,7 +1662,7 @@ public class Java implements Library {
             return new ArrayJavaProxy(runtime, clazz, javaObject, JavaUtil.getJavaConverter(javaObject.getClass().getComponentType()));
         }
 
-        final IRubyObject proxy = clazz.allocate();
+        final IRubyObject proxy = clazz.allocate(runtime.getCurrentContext());
         if ( proxy instanceof JavaProxy ) {
             ((JavaProxy) proxy).setObject(javaObject);
         } else {

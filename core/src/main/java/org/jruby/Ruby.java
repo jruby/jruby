@@ -335,11 +335,11 @@ public final class Ruby implements Constantizable {
         classClass.setMetaClass(classClass);
         refinementClass.setMetaClass(classClass);
 
-        var metaClass = basicObjectClass.makeMetaClassBootstrap(classClass, classClass);
-        metaClass = objectClass.makeMetaClassBootstrap(metaClass, classClass);
-        metaClass = moduleClass.makeMetaClassBootstrap(metaClass, classClass);
-        classClass.makeMetaClassBootstrap(metaClass, classClass);
-        refinementClass.makeMetaClassBootstrap(metaClass, classClass);
+        var metaClass = basicObjectClass.makeMetaClassBootstrap(this, classClass, classClass);
+        metaClass = objectClass.makeMetaClassBootstrap(this, metaClass, classClass);
+        metaClass = moduleClass.makeMetaClassBootstrap(this, metaClass, classClass);
+        classClass.makeMetaClassBootstrap(this, metaClass, classClass);
+        refinementClass.makeMetaClassBootstrap(this, metaClass, classClass);
 
         RubyObject.finishObjectClass(objectClass);
         RubyModule.finishModuleClass(moduleClass);
@@ -361,9 +361,9 @@ public final class Ruby implements Constantizable {
 
         // nil, true, and false all are set in TC so they need to be created above (both class and instances).
         // their methods are added afterward since no dispatch happens until after first TC is defined.
-        nilClass = RubyClass.newClassBootstrap(this, objectClass, "NilClass");
-        falseClass = RubyClass.newClassBootstrap(this, objectClass, "FalseClass");
-        trueClass = RubyClass.newClassBootstrap(this, objectClass, "TrueClass");
+        nilClass = RubyClass.newClassBootstrap(this, objectClass, classClass, "NilClass");
+        falseClass = RubyClass.newClassBootstrap(this, objectClass, classClass, "FalseClass");
+        trueClass = RubyClass.newClassBootstrap(this, objectClass, classClass, "TrueClass");
 
         nilObject = new RubyNil(this, nilClass);
         nilPrefilledArray = new IRubyObject[NIL_PREFILLED_ARRAY_SIZE];

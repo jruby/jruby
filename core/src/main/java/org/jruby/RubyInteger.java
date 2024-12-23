@@ -446,7 +446,7 @@ public abstract class RubyInteger extends RubyNumeric {
 
     private long toUnsignedInteger(ThreadContext context) {
         // rb_num_to_uint
-        long uintResult = numToUint(this);
+        long uintResult = numToUint(context, this);
         long uint = uintResult >>> 32;
         int ret = (int) (uintResult & 0xFFFFFFFF);
         if (ret != 0) {
@@ -465,9 +465,9 @@ public abstract class RubyInteger extends RubyNumeric {
      * @return ""
      * @deprecated Use {@link org.jruby.RubyInteger#numToUint(ThreadContext, IRubyObject)} instead.
      */
-    @Deprecated
+    @Deprecated(since = "10.0")
     public static long numToUint(IRubyObject val) {
-        return numToUint(val.getRuntime().getCurrentContext(), val);
+        return numToUint(((RubyBasicObject) val).getCurrentContext(), val);
     }
 
     /**
@@ -1069,34 +1069,39 @@ public abstract class RubyInteger extends RubyNumeric {
         return context.nil;
     }
 
+    @Deprecated(since = "10.0")
     public IRubyObject op_uminus() {
-        return op_uminus(getRuntime().getCurrentContext());
+        return op_uminus(getCurrentContext());
     }
 
+    @Deprecated(since = "10.0")
     public IRubyObject op_neg() {
-        return to_f(getRuntime().getCurrentContext());
+        return to_f(getCurrentContext());
     }
 
+    @Deprecated(since = "10.0")
     public IRubyObject op_aref(IRubyObject other) {
-        return op_aref(getRuntime().getCurrentContext(), other);
+        return op_aref(getCurrentContext(), other);
     }
 
     @Deprecated // no longer used
     public IRubyObject op_lshift(IRubyObject other) {
-        return op_lshift(getRuntime().getCurrentContext(), other);
+        return op_lshift(getCurrentContext(), other);
     }
 
     @Deprecated // no longer used
     public IRubyObject op_rshift(IRubyObject other) {
-        return op_rshift(getRuntime().getCurrentContext(), other);
+        return op_rshift(getCurrentContext(), other);
     }
 
+    @Deprecated(since = "10.0")
     public IRubyObject to_f() {
-        return to_f(getRuntime().getCurrentContext());
+        return to_f(getCurrentContext());
     }
 
+    @Deprecated(since = "10.0")
     public IRubyObject size() {
-        return size(getRuntime().getCurrentContext());
+        return size(getCurrentContext());
     }
 
     private static CallSite integer_p_site(ThreadContext context) {

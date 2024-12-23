@@ -68,7 +68,7 @@ public class JavaPackage extends RubyModule {
         JavaPackage.allocator(ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR).
                 baseName("JavaPackage").
                 defineMethods(context, JavaPackage.class);
-        ((MetaClass) JavaPackage.makeMetaClass(superClass)).setAttached(JavaPackage);
+        ((MetaClass) JavaPackage.makeMetaClass(context, superClass)).setAttached(JavaPackage);
         JavaPackage.setParent(Java);
         return JavaPackage;
     }

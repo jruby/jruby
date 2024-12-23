@@ -70,7 +70,7 @@ public class RubyFileTest {
 
     @Deprecated(since = "10.0", forRemoval = true)
     public static IRubyObject blockdev_p(IRubyObject recv, IRubyObject filename) {
-        return blockdev_p(recv.getRuntime().getCurrentContext(), recv, filename);
+        return blockdev_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
 
     @JRubyMethod(name = "chardev?", module = true)
@@ -82,12 +82,12 @@ public class RubyFileTest {
 
     @Deprecated(since = "10.0", forRemoval = true)
     public static IRubyObject chardev_p(IRubyObject recv, IRubyObject filename) {
-        return chardev_p(recv.getRuntime().getCurrentContext(), recv, filename);
+        return chardev_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
 
     @Deprecated(since = "10.0", forRemoval = true)
     public static IRubyObject directory_p(IRubyObject recv, IRubyObject filename) {
-        return directory_p(recv.getRuntime().getCurrentContext(), recv, filename);
+        return directory_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
 
     @Deprecated(since = "10.0", forRemoval = true)
@@ -115,7 +115,7 @@ public class RubyFileTest {
 
     @Deprecated(since = "10.0", forRemoval = true)
     public static IRubyObject executable_p(IRubyObject recv, IRubyObject filename) {
-        return executable_p(recv.getRuntime().getCurrentContext(), recv, filename);
+        return executable_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
 
     @JRubyMethod(name = "executable_real?", module = true)
@@ -130,12 +130,12 @@ public class RubyFileTest {
 
     @Deprecated(since = "10.0", forRemoval = true)
     public static IRubyObject executable_real_p(IRubyObject recv, IRubyObject filename) {
-        return executable_real_p(recv.getRuntime().getCurrentContext(), recv, filename);
+        return executable_real_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
 
     @Deprecated(since = "10.0", forRemoval = true)
     public static IRubyObject exist_p(IRubyObject recv, IRubyObject filename) {
-        return exist_p(recv.getRuntime().getCurrentContext(), recv, filename);
+        return exist_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
 
     @JRubyMethod(name = "exist?", module = true)
@@ -154,7 +154,7 @@ public class RubyFileTest {
 
     @Deprecated(since = "10.0", forRemoval = true)
     public static RubyBoolean file_p(IRubyObject recv, IRubyObject filename) {
-        return file_p(recv.getRuntime().getCurrentContext(), recv, filename);
+        return file_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
 
     @JRubyMethod(name = "file?", module = true)
@@ -174,7 +174,7 @@ public class RubyFileTest {
 
     @Deprecated(since = "10.0", forRemoval = true)
     public static IRubyObject grpowned_p(IRubyObject recv, IRubyObject filename) {
-        return grpowned_p(recv.getRuntime().getCurrentContext(), recv, filename);
+        return grpowned_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
 
     @JRubyMethod(name = "identical?", module = true)
@@ -225,12 +225,12 @@ public class RubyFileTest {
 
     @Deprecated(since = "10.0", forRemoval = true)
     public static IRubyObject pipe_p(IRubyObject recv, IRubyObject filename) {
-        return pipe_p(recv.getRuntime().getCurrentContext(), recv, filename);
+        return pipe_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
 
     @Deprecated(since = "10.0", forRemoval = true)
     public static IRubyObject readable_p(IRubyObject recv, IRubyObject filename) {
-        return readable_p(recv.getRuntime().getCurrentContext(), recv, filename);
+        return readable_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
 
     // We use file test since it is faster than a stat; also euid == uid in Java always
@@ -253,7 +253,7 @@ public class RubyFileTest {
 
     @Deprecated(since = "10.0", forRemoval = true)
     public static IRubyObject rowned_p(IRubyObject recv, IRubyObject filename) {
-        return rowned_p(recv.getRuntime().getCurrentContext(), recv, filename);
+        return rowned_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
 
     @JRubyMethod(name = "setgid?", module = true)
@@ -265,7 +265,7 @@ public class RubyFileTest {
 
     @Deprecated(since = "10.0", forRemoval = true)
     public static IRubyObject setgid_p(IRubyObject recv, IRubyObject filename) {
-        return setgid_p(recv.getRuntime().getCurrentContext(), recv, filename);
+        return setgid_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
 
     @JRubyMethod(name = "setuid?", module = true)
@@ -277,12 +277,12 @@ public class RubyFileTest {
 
     @Deprecated(since = "10.0", forRemoval = true)
     public static IRubyObject setuid_p(IRubyObject recv, IRubyObject filename) {
-        return setuid_p(recv.getRuntime().getCurrentContext(), recv, filename);
+        return setuid_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
 
     @Deprecated(since = "10.0", forRemoval = true)
     public static IRubyObject size(IRubyObject recv, IRubyObject filename) {
-        return size(recv.getRuntime().getCurrentContext(), recv, filename);
+        return size(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
 
     @JRubyMethod(name = "size", module = true)
@@ -511,7 +511,7 @@ public class RubyFileTest {
 
         @Deprecated(since = "10.0", forRemoval = true)
         public static IRubyObject setgid_p(IRubyObject recv, IRubyObject filename) {
-            return setgid_p(recv.getRuntime().getCurrentContext(), recv, filename);
+            return setgid_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
         }
 
         @JRubyMethod(name = "setuid?")
@@ -521,7 +521,7 @@ public class RubyFileTest {
 
         @Deprecated(since = "10.0", forRemoval = true)
         public static IRubyObject setuid_p(IRubyObject recv, IRubyObject filename) {
-            return setuid_p(recv.getRuntime().getCurrentContext(), recv, filename);
+            return setuid_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
         }
 
         @JRubyMethod(name = "size")
