@@ -150,17 +150,20 @@ public class RubyNameError extends RubyStandardError {
                     if (klass.isSingleton()) {
                         separator = newString(context, "");
                         if (object == runtime.getTopSelf()) {
-                            classTmp = newString(context, "main");
+                            className = newString(context, "main");
                         } else {
-                            classTmp = object.anyToString();
+                            className = (RubyString) object.anyToString();
                         }
                     } else {
                         separator = newString(context, "an instance of ");
                         classTmp = klass.getRealClass();
+                        className = getNameOrInspect(context, classTmp);
                     }
+                } else {
+                    className = getNameOrInspect(context, classTmp);
                 }
 
-                className = getNameOrInspect(context, classTmp);
+
             }
 
             RubyArray arr = RubyArray.newArray(runtime, this.name, description, separator, className);
