@@ -1656,18 +1656,19 @@ public class Java implements Library {
     }
 
     public static IRubyObject allocateProxy(Object javaObject, RubyClass clazz) {
-        final Ruby runtime = clazz.getRuntime();
+        var context = clazz.getRuntime().getCurrentContext();
         // Arrays are never stored in OPC
-        if ( clazz.getSuperClass() == runtime.getJavaSupport().getArrayProxyClass() ) {
-            return new ArrayJavaProxy(runtime, clazz, javaObject, JavaUtil.getJavaConverter(javaObject.getClass().getComponentType()));
+        if ( clazz.getSuperClass() == context.runtime.getJavaSupport().getArrayProxyClass() ) {
+            return new ArrayJavaProxy(context.runtime, clazz, javaObject, JavaUtil.getJavaConverter(javaObject.getClass().getComponentType()));
         }
 
-        final IRubyObject proxy = clazz.allocate(runtime.getCurrentContext());
-        if ( proxy instanceof JavaProxy ) {
-            ((JavaProxy) proxy).setObject(javaObject);
+        final IRubyObject proxy = clazz.allocate(context);
+
+        if ( proxy instanceof JavaProxy jproxy) {
+            jproxy.setObject(javaObject);
         } else {
             // TODO (JavaObject transition) is this really necessary?
-            proxy.dataWrapStruct(new JavaProxy(runtime, clazz, javaObject));
+            proxy.dataWrapStruct(new JavaProxy(context.runtime, clazz, javaObject));
         }
         return proxy;
     }

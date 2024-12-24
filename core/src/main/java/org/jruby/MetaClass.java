@@ -90,8 +90,8 @@ public final class MetaClass extends RubyClass {
     }
 
     @Override
-    public final IRubyObject allocate() {
-        throw typeError(getRuntime().getCurrentContext(), "can't create instance of virtual class");
+    public final IRubyObject allocate(ThreadContext context) {
+        throw typeError(context, "can't create instance of virtual class");
     }
 
     @Override

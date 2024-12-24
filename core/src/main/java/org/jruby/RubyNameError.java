@@ -150,17 +150,20 @@ public class RubyNameError extends RubyStandardError {
                     if (klass.isSingleton()) {
                         separator = newString(context, "");
                         if (object == runtime.getTopSelf()) {
-                            classTmp = newString(context, "main");
+                            className = newString(context, "main");
                         } else {
-                            classTmp = object.anyToString();
+                            className = (RubyString) object.anyToString();
                         }
                     } else {
                         separator = newString(context, "an instance of ");
                         classTmp = klass.getRealClass();
+                        className = getNameOrInspect(context, classTmp);
                     }
+                } else {
+                    className = getNameOrInspect(context, classTmp);
                 }
 
-                className = getNameOrInspect(context, classTmp);
+
             }
 
             RubyArray arr = RubyArray.newArray(runtime, this.name, description, separator, className);
@@ -239,21 +242,20 @@ public class RubyNameError extends RubyStandardError {
 
     @JRubyMethod(name = "exception", meta = true)
     public static IRubyObject exception(ThreadContext context, IRubyObject recv) {
-        return newNameError(recv, NULL_ARRAY);
+        return newNameError(context, recv, NULL_ARRAY);
     }
 
     @JRubyMethod(name = "exception", meta = true)
     public static RubyException exception(ThreadContext context, IRubyObject recv, IRubyObject message) {
-        return newNameError(recv, new IRubyObject[] { message });
+        return newNameError(context, recv, new IRubyObject[] { message });
     }
 
     @JRubyMethod(name = "exception", meta = true)
     public static RubyException exception(ThreadContext context, IRubyObject recv, IRubyObject message, IRubyObject name) {
-        return newNameError(recv, message, name, false);
+        return newNameError(context, recv, message, name, false);
     }
 
-    private static RubyException newNameError(IRubyObject recv, IRubyObject[] args) {
-        var context = recv.getRuntime().getCurrentContext();
+    private static RubyException newNameError(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         final RubyClass klass = (RubyClass) recv;
         RubyException newError = (RubyException) klass.allocate(context);
 
@@ -262,8 +264,7 @@ public class RubyNameError extends RubyStandardError {
         return newError;
     }
 
-    static RubyException newNameError(IRubyObject recv, IRubyObject message, IRubyObject name, boolean privateCall) {
-        var context = recv.getRuntime().getCurrentContext();
+    static RubyException newNameError(ThreadContext context, IRubyObject recv, IRubyObject message, IRubyObject name, boolean privateCall) {
         final RubyClass klass = (RubyClass) recv;
         RubyNameError newError = (RubyNameError) klass.allocate(context);
 

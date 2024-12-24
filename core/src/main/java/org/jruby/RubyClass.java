@@ -297,7 +297,6 @@ public class RubyClass extends RubyModule {
         }
         IRubyObject obj = allocator.allocate(context.runtime, this);
         if (getMetaClass(obj).getRealClass() != getRealClass()) throw typeError(context, "wrong instance allocation");
-
         return obj;
     }
 
