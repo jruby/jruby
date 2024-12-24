@@ -530,7 +530,7 @@ public class RubyClass extends RubyModule {
                 allocator(allocator).
                 baseName(name);
 
-        clazz.makeMetaClass(superClass.getMetaClass());
+        clazz.makeMetaClass(context, superClass.getMetaClass());
         if (setParent) clazz.setParent(parent);
         parent.defineConstant(context, name, clazz);
         superClass.invokeInherited(context, superClass, clazz);
@@ -549,7 +549,7 @@ public class RubyClass extends RubyModule {
         RubyClass clazz = newClass(context, superClass, null).
                 allocator(allocator).
                 baseName(name);
-        clazz.makeMetaClass(superClass.getMetaClass());
+        clazz.makeMetaClass(context, superClass.getMetaClass());
         if (setParent) clazz.setParent(parent);
         parent.setConstant(context, name, clazz, file, line);
         superClass.invokeInherited(context, superClass, clazz);
@@ -571,7 +571,7 @@ public class RubyClass extends RubyModule {
         RubyClass clazz = newClass(context, superClass, extraCallSites).
                 allocator(allocator).
                 baseName(name);
-        clazz.makeMetaClass(superClass.getMetaClass());
+        clazz.makeMetaClass(context, superClass.getMetaClass());
         if (setParent) clazz.setParent(parent);
         parent.setConstant(context, name, clazz, BUILTIN_CONSTANT, -1);
         superClass.invokeInherited(context, superClass, clazz);
@@ -587,21 +587,26 @@ public class RubyClass extends RubyModule {
      * @param name the name of the new class
      * @return the new class.
      */
-    public static RubyClass newClassBootstrap(Ruby runtime, RubyClass Object, String name) {
+    public static RubyClass newClassBootstrap(Ruby runtime, RubyClass Object, RubyClass Class, String name) {
         RubyClass clazz = new RubyClass(runtime, Object).
                 allocator(NOT_ALLOCATABLE_ALLOCATOR).
                 baseName(name);
-        clazz.makeMetaClass(Object.getMetaClass());
+        clazz.makeMetaClassBootstrap(runtime, Object.getMetaClass(), Class);
         Object.defineConstantBootstrap(name, clazz);
         return clazz;
+    }
+
+    @Deprecated(since = "10.0")
+    RubyClass toSingletonClass(RubyBasicObject target) {
+        return toSingletonClass(getCurrentContext(), target);
     }
 
     /**
      * @see #singletonClass(ThreadContext)
      */
-    RubyClass toSingletonClass(RubyBasicObject target) {
+    RubyClass toSingletonClass(ThreadContext context, RubyBasicObject target) {
         // replaced after makeMetaClass with MetaClass's toSingletonClass
-        return target.makeMetaClass(this);
+        return target.makeMetaClass(context, this);
     }
 
     static boolean notVisibleAndNotMethodMissing(DynamicMethod method, String name, IRubyObject caller, CallType callType) {
@@ -1066,12 +1071,12 @@ public class RubyClass extends RubyModule {
     private RubyClass initializeCommon(ThreadContext context, RubyClass superClazz, Block block) {
         superClass(superClazz);
         allocator = superClazz.allocator;
-        makeMetaClass(superClazz.getMetaClass());
+        makeMetaClass(context, superClazz.getMetaClass());
         superClazz.addSubclass(this);
 
         marshal = superClazz.marshal;
 
-        superClazz.invokeInherited(runtime.getCurrentContext(), superClazz, this);
+        superClazz.invokeInherited(context, superClazz, this);
         super.initialize(context, block);
 
         return this;
@@ -1431,7 +1436,7 @@ public class RubyClass extends RubyModule {
      */
     @Deprecated
     public static void checkInheritable(IRubyObject superClass) {
-        checkInheritable(superClass.getRuntime().getCurrentContext(), superClass);
+        checkInheritable(((RubyBasicObject) superClass).getCurrentContext(), superClass);
     }
 
     public static void checkInheritable(ThreadContext context, IRubyObject superClass) {
@@ -2859,7 +2864,7 @@ public class RubyClass extends RubyModule {
             // recache
             CacheEntry entry = searchWithCache("respond_to?");
             DynamicMethod method = entry.method;
-            if (!method.equals(runtime.getRespondToMethod()) && !method.isUndefined()) {
+            if (!method.equals(context.runtime.getRespondToMethod()) && !method.isUndefined()) {
 
                 // custom respond_to?, always do slow default marshaling
                 tuple = (cachedDumpMarshal = new MarshalTuple(null, MarshalType.DEFAULT_SLOW, generation));

@@ -1289,7 +1289,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
 
     @Deprecated
     public IRubyObject zero_p() {
-        return zero_p(getRuntime().getCurrentContext());
+        return zero_p(getCurrentContext());
     }
 
     @Deprecated

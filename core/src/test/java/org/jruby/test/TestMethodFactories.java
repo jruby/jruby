@@ -126,7 +126,7 @@ public class TestMethodFactories extends Base {
 
         assertEquals(mod.singletonClass(context), method.getImplementationClass());
 
-        RubyMethod rubyMethod = (RubyMethod)mod.method(asSymbol(context, "a_module_method"));
+        RubyMethod rubyMethod = (RubyMethod)mod.method(context, asSymbol(context, "a_module_method"), null);
 
         assertEquals(mod.singletonClass(context), rubyMethod.owner(context));
     }

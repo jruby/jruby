@@ -754,7 +754,7 @@ public class RubyComplex extends RubyNumeric {
             RubyComplex self = this;
             if (n < 0) {
                 self = (RubyComplex) f_reciprocal(context, self);
-                other = otherFixnum.op_uminus();
+                other = otherFixnum.op_uminus(context);
                 n = -n;
             }
             {

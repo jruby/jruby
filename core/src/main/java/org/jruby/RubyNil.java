@@ -155,7 +155,7 @@ public class RubyNil extends RubyObject implements Constantizable {
      */
     @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {
-        return RubyNil.inspect(metaClass.runtime);
+        return RubyNil.inspect(context.runtime);
     }
 
     static final byte[] nilBytes = new byte[] { 'n','i','l' }; // RubyString.newUSASCIIString(runtime, "nil")

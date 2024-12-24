@@ -117,7 +117,7 @@ public abstract class JavaLangReflect {
 
         @Deprecated(since = "9.4", forRemoval = true)
         public static IRubyObject public_p(final IRubyObject self) {
-            return public_p(self.getRuntime().getCurrentContext(), self);
+            return public_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
 
         @JRubyMethod(name = "protected?")
@@ -280,8 +280,9 @@ public abstract class JavaLangReflect {
             return isStatic(context, self, thiz.getModifiers());
         }
 
+        @Deprecated(since = "10.0")
         public static IRubyObject static_p(final IRubyObject self) {
-            return static_p(self.getRuntime().getCurrentContext(), self);
+            return static_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
 
     }

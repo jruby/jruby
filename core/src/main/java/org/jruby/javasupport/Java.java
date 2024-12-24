@@ -562,7 +562,7 @@ public class Java implements Library {
     private static RubyClass createProxyClass(ThreadContext context, final RubyClass proxyClass,
                                               final Class<?> javaClass, final RubyClass superClass, boolean invokeInherited) {
 
-        proxyClass.makeMetaClass( superClass.getMetaClass() );
+        proxyClass.makeMetaClass(context, superClass.getMetaClass());
 
         if ( Map.class.isAssignableFrom( javaClass ) ) {
             proxyClass.allocator(context.runtime.getJavaSupport().getMapJavaProxyClass().getAllocator()).
@@ -1663,8 +1663,9 @@ public class Java implements Library {
         }
 
         final IRubyObject proxy = clazz.allocate(context);
-        if ( proxy instanceof JavaProxy ) {
-            ((JavaProxy) proxy).setObject(javaObject);
+
+        if ( proxy instanceof JavaProxy jproxy) {
+            jproxy.setObject(javaObject);
         } else {
             // TODO (JavaObject transition) is this really necessary?
             proxy.dataWrapStruct(new JavaProxy(context.runtime, clazz, javaObject));

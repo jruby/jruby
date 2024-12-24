@@ -516,10 +516,9 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     private void realloc(ThreadContext context, int newLength, int valuesLength) {
         unpack(context);
-        Ruby runtime = metaClass.runtime;
-        IRubyObject[] reallocated = IRubyObject.array(validateBufferLength(runtime, newLength));
+        IRubyObject[] reallocated = IRubyObject.array(validateBufferLength(context.runtime, newLength));
         if (newLength > valuesLength) {
-            Helpers.fillNil(reallocated, valuesLength, newLength, runtime);
+            Helpers.fillNil(reallocated, valuesLength, newLength, context.runtime);
             safeArrayCopy(context, values, begin, reallocated, 0, valuesLength); // elements and trailing nils
         } else {
             safeArrayCopy(context, values, begin, reallocated, 0, newLength); // ???
@@ -625,7 +624,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     }
 
     private RubyArray makeShared(ThreadContext context, int beg, int len, RubyClass klass) {
-        return makeShared(context, beg, len, new RubyArray(klass.runtime, klass));
+        return makeShared(context, beg, len, new RubyArray(context.runtime, klass));
     }
 
     private final RubyArray makeShared(ThreadContext context, int beg, int len, RubyArray sharedArray) {
@@ -1131,7 +1130,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         int valuesLength = values.length - begin;
         if (beg >= realLength) {
             len = beg + rlen;
-            if (len >= valuesLength) spliceRealloc(len, valuesLength);
+            if (len >= valuesLength) spliceRealloc(context, len, valuesLength);
             try {
                 Helpers.fillNil(values, begin + realLength, begin + beg, context.runtime);
             } catch (ArrayIndexOutOfBoundsException e) {
@@ -1141,7 +1140,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         } else {
             if (beg + len > realLength) len = realLength - beg;
             int alen = realLength + rlen - len;
-            if (alen >= valuesLength) spliceRealloc(alen, valuesLength);
+            if (alen >= valuesLength) spliceRealloc(context, alen, valuesLength);
 
             if (len != rlen) {
                 safeArrayCopy(context, values, begin + (beg + len), values, begin + beg + rlen, realLength - (beg + len));
@@ -1166,13 +1165,13 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         int valuesLength = values.length - begin;
         if (beg >= realLength) {
             int len = (int) beg + 1;
-            if (len >= valuesLength) spliceRealloc(len, valuesLength);
-            Helpers.fillNil(values, begin + realLength, begin + ((int) beg), metaClass.runtime);
+            if (len >= valuesLength) spliceRealloc(context, len, valuesLength);
+            Helpers.fillNil(values, begin + realLength, begin + ((int) beg), context.runtime);
             realLength = len;
         } else {
             int len = beg > realLength ? realLength - (int) beg : 0;
             int alen = realLength + 1 - len;
-            if (alen >= valuesLength) spliceRealloc(alen, valuesLength);
+            if (alen >= valuesLength) spliceRealloc(context, alen, valuesLength);
 
             if (len == 0) {
                 safeArrayCopy(context, values, begin + (int) beg, values, begin + (int) beg + 1, realLength - (int) beg);
@@ -1183,33 +1182,29 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         safeArraySet(context, values, begin + (int) beg, rpl);
     }
 
-    private void spliceRealloc(int length, int valuesLength) {
-        Ruby runtime = metaClass.runtime;
-
-        int tryLength = calculateBufferLength(runtime, valuesLength);
+    private void spliceRealloc(ThreadContext context, int length, int valuesLength) {
+        int tryLength = calculateBufferLength(context.runtime, valuesLength);
         int len = length > tryLength ? length : tryLength;
         IRubyObject[] vals = IRubyObject.array(len);
         System.arraycopy(values, begin, vals, 0, realLength);
 
         // only fill if there actually will remain trailing storage
         if (len > length) {
-            Helpers.fillNil(vals, length, len, runtime);
+            Helpers.fillNil(vals, length, len, context.runtime);
         }
         begin = 0;
         values = vals;
     }
 
     private void unshiftRealloc(ThreadContext context, int valuesLength) {
-        Ruby runtime = metaClass.runtime;
-
         int newLength = valuesLength >> 1;
         if (newLength < ARRAY_DEFAULT_SIZE) newLength = ARRAY_DEFAULT_SIZE;
 
-        newLength = addBufferLength(runtime, valuesLength, newLength);
+        newLength = addBufferLength(context.runtime, valuesLength, newLength);
 
         IRubyObject[] vals = IRubyObject.array(newLength);
         safeArrayCopy(context, values, begin, vals, 1, valuesLength);
-        Helpers.fillNil(vals, valuesLength + 1, newLength, runtime);
+        Helpers.fillNil(vals, valuesLength + 1, newLength, context.runtime);
         values = vals;
         begin = 0;
     }
@@ -3773,11 +3768,11 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         }
     }
 
-    private void clearValues(final int from, final int to) {
+    private void clearValues(ThreadContext context, final int from, final int to) {
         try {
-            Helpers.fillNil(values, begin + from, begin + to, metaClass.runtime);
+            Helpers.fillNil(values, begin + from, begin + to, context.runtime);
         } catch (ArrayIndexOutOfBoundsException ex) {
-            throw concurrentModification(getRuntime().getCurrentContext(), ex);
+            throw concurrentModification(context, ex);
         }
     }
 
@@ -3793,7 +3788,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         unpack(context);
 
         setValuesFrom(context, hash);
-        clearValues(newLength, realLength);
+        clearValues(context, newLength, realLength);
         realLength = newLength;
 
         return this;
@@ -3814,7 +3809,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         unpack(context);
 
         setValuesFrom(context, hash);
-        clearValues(newLength, realLength);
+        clearValues(context, newLength, realLength);
         realLength = newLength;
 
         return this;
@@ -5798,7 +5793,7 @@ float_loop:
     }
 
     public boolean add(ThreadContext context, Object element) {
-        append(context, JavaUtil.convertJavaToUsableRubyObject(metaClass.runtime, element));
+        append(context, JavaUtil.convertJavaToUsableRubyObject(context.runtime, element));
         return true;
     }
 

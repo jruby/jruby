@@ -86,8 +86,8 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
     }
 
     public static JZlibRubyGzipReader newInstance(IRubyObject recv, IRubyObject[] args) {
+        var context = recv.getRuntime().getCurrentContext();
         RubyClass klass = (RubyClass) recv;
-        var context = klass.getRuntime().getCurrentContext();
         JZlibRubyGzipReader result = (JZlibRubyGzipReader) klass.allocate(context);
 
         result.callInit(args, Block.NULL_BLOCK);

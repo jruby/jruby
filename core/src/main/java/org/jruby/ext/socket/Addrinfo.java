@@ -653,7 +653,7 @@ public class Addrinfo extends RubyObject {
 
                 try {
                     InetAddress newAddr = InetAddress.getByAddress(ip4Raw);
-                    Addrinfo newAddrInfo = new Addrinfo(getRuntime(), getMetaClass());
+                    Addrinfo newAddrInfo = new Addrinfo(context.runtime, getMetaClass());
                     newAddrInfo.pfamily = PF_INET;
                     newAddrInfo.socketAddress = new InetSocketAddress(newAddr, getPort());
                     newAddrInfo.sock = sock;
@@ -669,7 +669,7 @@ public class Addrinfo extends RubyObject {
             if (looksLikeV4ButIsV6) {
                 if (is_0001(((Inet4Address) in).getAddress())) return context.nil;
                 if (getAddressFamily() != AF_INET) {
-                    Addrinfo newAddrInfo = new Addrinfo(getRuntime(), getMetaClass());
+                    Addrinfo newAddrInfo = new Addrinfo(context.runtime, getMetaClass());
                     newAddrInfo.pfamily = PF_INET;
                     newAddrInfo.socketAddress = socketAddress;
                     newAddrInfo.sock = sock;

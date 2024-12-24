@@ -478,11 +478,16 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     // MRI: rb_singleton_class
     @JRubyAPI
     public RubyClass singletonClass(ThreadContext context) {
-        RubyClass klass = metaClass.toSingletonClass(this);
+        RubyClass klass = metaClass.toSingletonClass(context, this);
 
         if (isFrozen()) klass.setFrozen(true);
 
         return klass;
+    }
+
+    @Deprecated(since = "10.0")
+    public RubyClass makeMetaClass(RubyClass superClass) {
+        return makeMetaClass(getCurrentContext(), superClass);
     }
 
     /** rb_make_metaclass
@@ -491,8 +496,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * classes for this specific object, and return the generated meta
      * class.
      */
-    public RubyClass makeMetaClass(RubyClass superClass) {
-        MetaClass klass = new MetaClass(getRuntime(), superClass, this); // rb_class_boot
+    public RubyClass makeMetaClass(ThreadContext context, RubyClass superClass) {
+        MetaClass klass = new MetaClass(context.runtime, superClass, this); // rb_class_boot
         setMetaClass(klass);
 
         klass.setMetaClass(superClass.getRealClass().metaClass);
@@ -503,13 +508,13 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /**
      * This will create a new metaclass.  This is only used during bootstrapping before
      * the initial ThreadContext is defined.  Normal needs of making a metaclass should use
-     * {@link RubyBasicObject#makeMetaClass(RubyClass)}
+     * {@link RubyBasicObject#makeMetaClass(ThreadContext, RubyClass)}
      * @param superClass
      * @param Class
      * @return
      */
-    public RubyClass makeMetaClassBootstrap(RubyClass superClass, RubyClass Class) {
-        MetaClass klass = new MetaClass(getRuntime(), superClass, Class, this); // rb_class_boot
+    public RubyClass makeMetaClassBootstrap(Ruby runtime, RubyClass superClass, RubyClass Class) {
+        MetaClass klass = new MetaClass(runtime, superClass, Class, this); // rb_class_boot
         setMetaClass(klass);
 
         klass.setMetaClass(superClass.getRealClass().metaClass);
@@ -1279,7 +1284,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
             finalizer = new Finalizer(fixnumId);
             setInternalVariable("__finalizer__", finalizer);
-            getRuntime().addFinalizer(finalizer);
+            context.runtime.addFinalizer(finalizer);
         }
         return finalizer.addFinalizer(context, f);
     }
@@ -2471,9 +2476,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     m = l.method("hello")
      *     m.call   #=&gt; "Hello, {@literal @}iv = Fred"
      */
+    @Deprecated(since = "10.0")
     public IRubyObject method(IRubyObject name) {
         final RubySymbol symbol = TypeConverter.checkID(name);
-        return getMetaClass().newMethod(getRuntime().getCurrentContext(), this, symbol.idString(), null, true, null, true, true);
+        return getMetaClass().newMethod(getCurrentContext(), this, symbol.idString(), null, true, null, true, true);
     }
 
     @Deprecated(since = "10.0")

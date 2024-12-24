@@ -283,7 +283,7 @@ public class RubyStruct extends RubyObject {
         if (name == null || nilName) {
             newStruct = RubyClass.newClass(context, superClass, null).
                     allocator(RubyStruct::new);
-            newStruct.makeMetaClass(superClass.metaClass);
+            newStruct.makeMetaClass(context, superClass.metaClass);
             superClass.invokeInherited(context, superClass, newStruct);
         } else {
             IRubyObject type = superClass.getConstantAt(context, name);

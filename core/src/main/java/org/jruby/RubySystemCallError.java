@@ -174,9 +174,9 @@ public class RubySystemCallError extends RubyStandardError {
 
             input.ivar(null, exc, null);
             
-            exc.message = (IRubyObject)exc.removeInternalVariable("mesg");
-            exc.errno = (IRubyObject)exc.removeInternalVariable("errno");
-            exc.set_backtrace(context, (IRubyObject)exc.removeInternalVariable("bt"));
+            exc.message = (IRubyObject) exc.removeInternalVariable("mesg");
+            exc.errno = (IRubyObject) exc.removeInternalVariable("errno");
+            exc.set_backtrace(context, (IRubyObject) exc.removeInternalVariable("bt"));
             
             return exc;
         }

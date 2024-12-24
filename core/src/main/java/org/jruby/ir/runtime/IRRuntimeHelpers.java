@@ -1847,7 +1847,7 @@ public class IRRuntimeHelpers {
     private static RubyClass checkClassForDef(ThreadContext context, String id, IRubyObject obj) {
         if (obj instanceof RubyFixnum || obj instanceof RubySymbol || obj instanceof RubyFloat) {
             throw typeError(context, str(context.runtime, "can't define singleton method \"",
-                    ids(context.runtime, id), "\" for ", obj.getMetaClass().rubyBaseName()));
+                    ids(context.runtime, id), "\" for ", obj.getMetaClass().rubyBaseName(context)));
         }
 
         // if (obj.isFrozen()) throw context.runtime.newFrozenError("object");
