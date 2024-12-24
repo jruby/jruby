@@ -986,11 +986,10 @@ public class Pack {
             if (isSpace(type)) continue;
 
             if (type == '#') {
-                while (type != '\n') {
-                    if (next == 0) break mainLoop;
-                    type = next;
-                    next = getDirective(context, "unpack", formatString, format);
-                }
+                for (type = safeGet(format); type != '\n' && type != 0; type = safeGet(format)) {}
+                type = safeGet(format);
+                if (type == 0) break;
+                next = getDirective(context, "unpack", formatString, format);
             }
 
             // Next indicates to decode using native encoding format
