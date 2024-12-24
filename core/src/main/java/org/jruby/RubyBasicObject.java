@@ -945,7 +945,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         if (freeze == context.nil) {
             sites(context).initialize_clone.call(context, clone, clone, this);
             if (this instanceof RubyString str && str.isChilled()) {
-                ((RubyString) clone).chill();
+                if (str.isChilledLiteral()) {
+                    ((RubyString) clone).chill();
+                } else {
+                    ((RubyString) clone).chill_symbol_string();
+                }
             } else if (isFrozen()) {
                 clone.setFrozen(true);
             }

@@ -478,11 +478,11 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     @Override
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s(ThreadContext context) {
-        return RubyString.newStringShared(context.runtime, getBytes());
+        return RubyString.newStringShared(context.runtime, getBytes()).chill_symbol_string();
     }
 
     final RubyString to_s(Ruby runtime) {
-        return RubyString.newStringShared(runtime, getBytes());
+        return (RubyString) to_s(runtime.getCurrentContext());
     }
 
     @JRubyMethod(name = "name")
