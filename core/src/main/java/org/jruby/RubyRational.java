@@ -1422,9 +1422,9 @@ public class RubyRational extends RubyNumeric {
         }
         if (m != nil) {
             RubyMatchData match = (RubyMatchData) m;
-            IRubyObject si = match.at(1);
-            RubyString nu = (RubyString) match.at(2);
-            IRubyObject de = match.at(3);
+            IRubyObject si = match.at(context, 1);
+            RubyString nu = (RubyString) match.at(context, 2);
+            IRubyObject de = match.at(context, 3);
             IRubyObject re = match.post_match(context);
             
             var a = nu.split(context, RubyRegexp.newDummyRegexp(context.runtime, Numeric.RationalPatterns.an_e_pat));

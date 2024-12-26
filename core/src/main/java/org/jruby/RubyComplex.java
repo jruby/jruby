@@ -1289,8 +1289,8 @@ public class RubyComplex extends RubyNumeric {
 
         if (m != nil) {
             RubyMatchData match = (RubyMatchData)m;
-            sr = match.at(1);
-            si = match.at(2);
+            sr = match.at(context, 1);
+            si = match.at(context, 2);
             re = match.post_match(context);
             po = true;
         }
@@ -1301,9 +1301,9 @@ public class RubyComplex extends RubyNumeric {
             if (m != nil) {
                 RubyMatchData match = (RubyMatchData)m;
                 sr = nil;
-                si = match.at(1);
+                si = match.at(context, 1);
                 if (si == nil) si = runtime.newString();
-                IRubyObject t = match.at(2);
+                IRubyObject t = match.at(context, 2);
                 if (t == nil) t = runtime.newString(RubyInteger.singleCharByteList((byte) '1'));
                 ((RubyString) (si = si.convertToString())).cat(t.convertToString());
                 re = match.post_match(context);
@@ -1315,12 +1315,12 @@ public class RubyComplex extends RubyNumeric {
             m = RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.comp_pat2).match_m(context, str, false);
             if (m == nil) return new IRubyObject[] { context.nil, str };
             RubyMatchData match = (RubyMatchData) m;
-            sr = match.at(1);
-            if (match.at(2) == nil) {
+            sr = match.at(context, 1);
+            if (match.at(context, 2) == nil) {
                 si = context.nil;
             } else {
-                si = match.at(3);
-                IRubyObject t = match.at(4);
+                si = match.at(context, 3);
+                IRubyObject t = match.at(context, 4);
                 if (t == nil) t = runtime.newString(RubyInteger.singleCharByteList((byte) '1'));
                 ((RubyString) (si = si.convertToString())).cat(t.convertToString());
             }

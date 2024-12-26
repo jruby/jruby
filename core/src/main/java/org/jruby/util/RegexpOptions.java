@@ -11,6 +11,7 @@ import org.jcodings.specific.EUCJPEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyRegexp;
+import org.jruby.runtime.ThreadContext;
 
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
@@ -236,8 +237,12 @@ public class RegexpOptions implements Cloneable {
         return options;
     }
 
-    // This is the options Regexp#new supports.  It is not all valid suffixes.
     public static RegexpOptions fromByteList(Ruby runtime, ByteList string) {
+        return fromByteList(runtime.getCurrentContext(), string);
+    }
+
+    // This is the options Regexp#new supports.  It is not all valid suffixes.
+    public static RegexpOptions fromByteList(ThreadContext context, ByteList string) {
         RegexpOptions options = new RegexpOptions();
         byte[] bytes = string.unsafeBytes();
         int length = string.realSize();
@@ -258,8 +263,7 @@ public class RegexpOptions implements Cloneable {
                     options.setOnce(true);
                     break;
                 default:
-                    throw argumentError(runtime.getCurrentContext(),
-                            str(runtime, "unknown regexp option: ", newString(runtime.getCurrentContext(), string)));
+                    throw argumentError(context, str(context.runtime, "unknown regexp option: ", newString(context, string)));
             }
         }
 

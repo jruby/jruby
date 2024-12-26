@@ -22,11 +22,11 @@ public class TestRegexpCache extends Base {
         //assertSame(regex, RubyRegexp.getQuotedRegexpFromCache(runtime, GH2078_TEST_BYTELIST.dup(), RegexpOptions.NULL_OPTIONS, false));
         RubyString str = newString(context, ByteList.create("GH2078"));
 
-        Regex regex = RubyRegexp.getQuotedRegexpFromCache(context.runtime, str, RegexpOptions.NULL_OPTIONS);
-        assertSame(regex, RubyRegexp.getQuotedRegexpFromCache(context.runtime, str, RegexpOptions.NULL_OPTIONS));
-        assertSame(regex, RubyRegexp.getQuotedRegexpFromCache(context.runtime, (RubyString) str.dup(), RegexpOptions.NULL_OPTIONS));
-        assertSame(regex, RubyRegexp.getQuotedRegexpFromCache(context.runtime, newString(context, "GH2078"), RegexpOptions.NULL_OPTIONS));
-        assertSame(regex, RubyRegexp.getQuotedRegexpFromCache(context.runtime, str.newFrozen(), RegexpOptions.NULL_OPTIONS));
+        Regex regex = RubyRegexp.getQuotedRegexpFromCache(context, str, RegexpOptions.NULL_OPTIONS);
+        assertSame(regex, RubyRegexp.getQuotedRegexpFromCache(context, str, RegexpOptions.NULL_OPTIONS));
+        assertSame(regex, RubyRegexp.getQuotedRegexpFromCache(context, (RubyString) str.dup(), RegexpOptions.NULL_OPTIONS));
+        assertSame(regex, RubyRegexp.getQuotedRegexpFromCache(context, newString(context, "GH2078"), RegexpOptions.NULL_OPTIONS));
+        assertSame(regex, RubyRegexp.getQuotedRegexpFromCache(context, str.newFrozen(), RegexpOptions.NULL_OPTIONS));
 
         // Should only have one entry
         assertEquals(1, RubyRegexp.quotedPatternCache.size());

@@ -1076,30 +1076,22 @@ public class Helpers {
 
     @Deprecated
     public static IRubyObject backrefLastMatch(ThreadContext context) {
-        IRubyObject backref = context.getBackRef();
-
-        return RubyRegexp.last_match(backref);
+        return RubyRegexp.last_match(context.getBackRef());
     }
 
     @Deprecated
     public static IRubyObject backrefMatchPre(ThreadContext context) {
-        IRubyObject backref = context.getBackRef();
-
-        return RubyRegexp.match_pre(backref);
+        return RubyRegexp.match_pre(context, context.getBackRef());
     }
 
     @Deprecated
     public static IRubyObject backrefMatchPost(ThreadContext context) {
-        IRubyObject backref = context.getBackRef();
-
-        return RubyRegexp.match_post(backref);
+        return RubyRegexp.match_post(context.getBackRef());
     }
 
     @Deprecated
     public static IRubyObject backrefMatchLast(ThreadContext context) {
-        IRubyObject backref = context.getBackRef();
-
-        return RubyRegexp.match_last(backref);
+        return RubyRegexp.match_last(context, context.getBackRef());
     }
 
     public static IRubyObject[] appendToObjectArray(IRubyObject[] array, IRubyObject add) {
