@@ -353,12 +353,17 @@ public class RubySet extends RubyObject implements Set {
     public IRubyObject rb_clear(ThreadContext context) {
         modifyCheck(context);
 
-        clearImpl();
+        clearImpl(context);
         return this;
     }
 
+    @Deprecated(since = "10.0")
     protected void clearImpl() {
-        hash.rb_clear(getRuntime().getCurrentContext());
+        clearImpl(getCurrentContext());
+    }
+
+    protected void clearImpl(ThreadContext context) {
+        hash.rb_clear(context);
     }
 
     /**
@@ -368,7 +373,7 @@ public class RubySet extends RubyObject implements Set {
     public RubySet replace(final ThreadContext context, IRubyObject enume) {
         if (enume instanceof RubySet enu) {
             modifyCheck(context);
-            clearImpl();
+            clearImpl(context);
             addImplSet(context, enu);
         } else {
             // do_with_enum(enum)  # make sure enum is enumerable before calling clear :
@@ -376,7 +381,7 @@ public class RubySet extends RubyObject implements Set {
                 // NOTE: likely no need to do this but due MRI compat (do_with_enum) :
                 if (!enume.respondsTo("each_entry")) throw argumentError(context, "value must be enumerable");
             }
-            clearImpl();
+            clearImpl(context);
             rb_merge(context, enume);
         }
 
@@ -689,7 +694,7 @@ public class RubySet extends RubyObject implements Set {
     public IRubyObject collect_bang(final ThreadContext context, Block block) {
         if (!block.isGiven()) return enumeratorizeWithSize(context, this, "collect!", RubySet::size);
 
-        final RubyArray elems = to_a(context); clearImpl();
+        final RubyArray elems = to_a(context); clearImpl(context);
         for ( int i=0; i<elems.size(); i++ ) {
             addImpl(context, block.yield(context, elems.eltInternal(i)));
         }
@@ -1199,7 +1204,14 @@ public class RubySet extends RubyObject implements Set {
 
     public boolean isEmpty() { return hash.isEmpty(); }
 
-    public void clear() { clearImpl(); }
+    // FIXME: How do we obey Set#clear() but not access runtime?  Probably make special path into hash which does unsafe clear
+    public void clear() {
+        clear(getRuntime().getCurrentContext());
+    }
+
+    public void clear(ThreadContext context) {
+        clearImpl(context);
+    }
 
     public boolean contains(Object o) {
         return containsImpl(toRuby(o));

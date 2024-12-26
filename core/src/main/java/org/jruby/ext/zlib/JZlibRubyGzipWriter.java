@@ -180,15 +180,13 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
 
     @Override
     @JRubyMethod(name = "close")
-    public IRubyObject close() {
+    public IRubyObject close(ThreadContext context) {
         if (!closed) {
             try {
                 io.close();
-                if (realIo.respondsTo("close")) {
-                    realIo.callMethod(realIo.getRuntime().getCurrentContext(), "close");
-                }
+                if (realIo.respondsTo("close")) realIo.callMethod(context, "close");
             } catch (IOException ioe) {
-                throw getRuntime().newIOErrorFromException(ioe);
+                throw context.runtime.newIOErrorFromException(ioe);
             }
         }
         
@@ -235,9 +233,14 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return context.nil;
     }
 
-    @JRubyMethod(name = {"pos", "tell"})
+    @Deprecated(since = "10.0")
     public IRubyObject pos() {
-        return RubyNumeric.int2fix(getRuntime(), io.getTotalIn());
+        return pos(getCurrentContext());
+    }
+
+    @JRubyMethod(name = {"pos", "tell"})
+    public IRubyObject pos(ThreadContext context) {
+        return asFixnum(context, io.getTotalIn());
     }
 
     /**
@@ -297,14 +300,19 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return obj;
     }
 
-    @JRubyMethod(name = "putc")
+    @Deprecated(since = "10.0")
     public IRubyObject putc(IRubyObject p1) {
+        return putc(getCurrentContext(), p1);
+    }
+
+    @JRubyMethod(name = "putc")
+    public IRubyObject putc(ThreadContext context, IRubyObject p1) {
         try {
             io.write(RubyNumeric.num2chr(p1));
             
             return p1;
         } catch (IOException ioe) {
-            throw getRuntime().newIOErrorFromException(ioe);
+            throw context.runtime.newIOErrorFromException(ioe);
         }
     }
 
@@ -314,12 +322,12 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
     }
 
     @Override
-    public IRubyObject finish() {
+    public IRubyObject finish(ThreadContext context) {
         if (!finished) {
             try {
                 io.finish();
             } catch (IOException ioe) {
-                throw getRuntime().newIOErrorFromException(ioe);
+                throw context.runtime.newIOErrorFromException(ioe);
             }
         }
         
@@ -330,7 +338,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
 
     @Deprecated
     public IRubyObject flush(IRubyObject[] args) {
-        return flush(getRuntime().getCurrentContext(), args);
+        return flush(getCurrentContext(), args);
     }
 
     @JRubyMethod(name = "flush", optional = 1, checkArity = false)
@@ -392,7 +400,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
             // not calculated yet
         }
         
-        return getRuntime().newFixnum(crc);
+        return asFixnum(context, crc);
     }
 
     @Deprecated
@@ -422,8 +430,8 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
 
     @Override
     @JRubyMethod
-    public IRubyObject set_sync(IRubyObject arg) {
-        IRubyObject s = super.set_sync(arg);
+    public IRubyObject set_sync(ThreadContext context, IRubyObject arg) {
+        IRubyObject s = super.set_sync(context, arg);
         
         io.setSyncFlush(sync);
         

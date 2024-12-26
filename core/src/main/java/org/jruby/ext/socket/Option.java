@@ -50,9 +50,9 @@ public class Option extends RubyObject {
 
     @JRubyMethod(required = 4, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
-        family = SocketUtils.protocolFamilyFromArg(args[0]);
-        level = SocketUtils.levelFromArg(args[1]);
-        option = SocketUtils.optionFromArg(args[2]);
+        family = SocketUtils.protocolFamilyFromArg(context, args[0]);
+        level = SocketUtils.levelFromArg(context, args[1]);
+        option = SocketUtils.optionFromArg(context, args[2]);
         data = args[3].convertToString().getByteList();
 
         return this;
@@ -168,9 +168,9 @@ public class Option extends RubyObject {
 
     @JRubyMethod(name = "int", required = 4, meta = true)
     public static IRubyObject rb_int(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        ProtocolFamily family = SocketUtils.protocolFamilyFromArg(args[0]);
-        SocketLevel level = SocketUtils.levelFromArg(args[1]);
-        SocketOption option = SocketUtils.optionFromArg(args[2]);
+        ProtocolFamily family = SocketUtils.protocolFamilyFromArg(context, args[0]);
+        SocketLevel level = SocketUtils.levelFromArg(context, args[1]);
+        SocketOption option = SocketUtils.optionFromArg(context, args[2]);
         ByteList data = packInt(RubyNumeric.fix2int(args[3]));
 
         return new Option(context.getRuntime(), family, level, option, data);
@@ -185,9 +185,9 @@ public class Option extends RubyObject {
 
     @JRubyMethod(required = 4, meta = true)
     public static IRubyObject bool(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        ProtocolFamily family = SocketUtils.protocolFamilyFromArg(args[0]);
-        SocketLevel level = SocketUtils.levelFromArg(args[1]);
-        SocketOption option = SocketUtils.optionFromArg(args[2]);
+        ProtocolFamily family = SocketUtils.protocolFamilyFromArg(context, args[0]);
+        SocketLevel level = SocketUtils.levelFromArg(context, args[1]);
+        SocketOption option = SocketUtils.optionFromArg(context, args[2]);
         ByteList data = packInt(args[3].isTrue() ? 1 : 0);
 
         return new Option(context.getRuntime(), family, level, option, data);

@@ -119,7 +119,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
     @JRubyMethod
     public IRubyObject peeraddr(ThreadContext context) {
-        final String _path = getUnixRemoteSocket().path();
+        final String _path = getUnixRemoteSocket(context).path();
         final RubyString path = _path == null ? newEmptyString(context) : newString(context, _path);
         return newArray(context, newString(context, "AF_UNIX"), path);
     }
@@ -264,8 +264,8 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
     @Override
     public IRubyObject setsockopt(ThreadContext context, IRubyObject _level, IRubyObject _opt, IRubyObject val) {
-        SocketLevel level = SocketUtils.levelFromArg(_level);
-        SocketOption opt = SocketUtils.optionFromArg(_opt);
+        SocketLevel level = SocketUtils.levelFromArg(context, _level);
+        SocketOption opt = SocketUtils.optionFromArg(context, _opt);
 
         switch(level) {
             case SOL_SOCKET:

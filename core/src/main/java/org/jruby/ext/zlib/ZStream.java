@@ -58,14 +58,28 @@ public abstract class ZStream extends RubyObject {
 
     protected abstract boolean internalStreamEndP();
 
-    protected abstract void internalReset();
+    @Deprecated(since = "10.0")
+    protected void internalReset() {
+        internalReset(getCurrentContext());
+    }
+
+    protected void internalReset(ThreadContext context) {
+        throw new RuntimeException("Missing internalReset Implementation");
+    }
 
     protected abstract boolean internalFinished();
 
     protected abstract long internalAdler();
 
-    // TODO: eliminate?
-    protected abstract IRubyObject internalFinish(Block block);
+    @Deprecated(since = "10.0")
+    protected IRubyObject internalFinish(Block block) {
+        return internalFinish(getCurrentContext(), block);
+    }
+
+    protected IRubyObject internalFinish(ThreadContext context, Block block) {
+        throw new RuntimeException("Missing internalFinish Implementation");
+    }
+
 
     protected abstract void internalClose();
 
@@ -90,13 +104,18 @@ public abstract class ZStream extends RubyObject {
 
     @JRubyMethod
     public IRubyObject total_out(ThreadContext context) {
-        checkClosed();
+        checkClosed(context);
         return asFixnum(context, internalTotalOut());
     }
 
-    @JRubyMethod(name = "stream_end?")
+    @Deprecated(since = "10.0")
     public IRubyObject stream_end_p() {
-        return internalStreamEndP() ? getRuntime().getTrue() : getRuntime().getFalse();
+        return stream_end_p(getCurrentContext());
+    }
+
+    @JRubyMethod(name = "stream_end?")
+    public IRubyObject stream_end_p(ThreadContext context) {
+        return internalStreamEndP() ? context.tru : context.fals;
     }
 
     @Deprecated(since = "10.0")
@@ -128,7 +147,7 @@ public abstract class ZStream extends RubyObject {
     @JRubyMethod(name = "reset")
     public IRubyObject reset(ThreadContext context) {
         checkClosed(context);
-        internalReset();
+        internalReset(context);
         
         return context.nil;
     }
@@ -171,7 +190,7 @@ public abstract class ZStream extends RubyObject {
     public IRubyObject finish(ThreadContext context, Block block) {
         checkClosed(context);
         
-        IRubyObject result = internalFinish(block);
+        IRubyObject result = internalFinish(context, block);
         
         return result;
     }

@@ -158,19 +158,13 @@ public class RubySocket extends RubyBasicSocket {
 
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject domain, IRubyObject type) {
-        Ruby runtime = context.runtime;
-
-        initFromArgs(runtime, domain, type);
-
+        initFromArgs(context, domain, type);
         return this;
     }
 
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject domain, IRubyObject type, IRubyObject protocol) {
-        Ruby runtime = context.runtime;
-
-        initFromArgs(runtime, domain, type, protocol);
-
+        initFromArgs(context, domain, type, protocol);
         return this;
     }
 
@@ -336,7 +330,7 @@ public class RubySocket extends RubyBasicSocket {
 
     @JRubyMethod(name = {"socketpair", "pair"}, meta = true)
     public static IRubyObject socketpair(ThreadContext context, IRubyObject recv, IRubyObject domain, IRubyObject type, IRubyObject protocol) {
-        ProtocolFamily pf = SocketUtils.protocolFamilyFromArg(protocol);
+        ProtocolFamily pf = SocketUtils.protocolFamilyFromArg(context, protocol);
         if (pf == null ) pf = ProtocolFamily.PF_UNIX;
 
         if (pf != ProtocolFamily.PF_UNIX && pf.ordinal() != 0) {
@@ -348,9 +342,9 @@ public class RubySocket extends RubyBasicSocket {
 
     @JRubyMethod(name = {"socketpair", "pair"}, meta = true)
     public static IRubyObject socketpair(ThreadContext context, IRubyObject recv, IRubyObject domain, IRubyObject type) {
-        AddressFamily af = SocketUtils.addressFamilyFromArg(domain);
+        AddressFamily af = SocketUtils.addressFamilyFromArg(context, domain);
         if (af == null) af = AddressFamily.AF_UNIX;
-        Sock s = SocketUtils.sockFromArg(type);
+        Sock s = SocketUtils.sockFromArg(context, type);
         if (s == null) s = Sock.SOCK_STREAM;
 
         if (af != AddressFamily.AF_UNIX || s != Sock.SOCK_STREAM) {
@@ -411,16 +405,16 @@ public class RubySocket extends RubyBasicSocket {
         }
     }
 
-    private void initFromArgs(Ruby runtime, IRubyObject domain, IRubyObject type, IRubyObject protocol) {
-        setProtocol(protocol);
-        initFromArgs(runtime, domain, type);
+    private void initFromArgs(ThreadContext context, IRubyObject domain, IRubyObject type, IRubyObject protocol) {
+        setProtocol(context, protocol);
+        initFromArgs(context, domain, type);
     }
 
-    private void initFromArgs(Ruby runtime, IRubyObject domain, IRubyObject type) {
-        setDomain(runtime, domain);
-        setType(runtime, type);
+    private void initFromArgs(ThreadContext context, IRubyObject domain, IRubyObject type) {
+        setDomain(context, domain);
+        setType(context, type);
 
-        ChannelFD fd = initChannelFD(runtime);
+        ChannelFD fd = initChannelFD(context.runtime);
         initSocket(fd);
     }
 
@@ -464,25 +458,25 @@ public class RubySocket extends RubyBasicSocket {
         }
     }
 
-    private void setProtocol(IRubyObject protocol) {
-        soProtocol = SocketUtils.protocolFromArg(protocol);
+    private void setProtocol(ThreadContext context, IRubyObject protocol) {
+        soProtocol = SocketUtils.protocolFromArg(context, protocol);
     }
 
-    private void setType(Ruby runtime, IRubyObject type) {
-        Sock sockType = SocketUtils.sockFromArg(type);
+    private void setType(ThreadContext context, IRubyObject type) {
+        Sock sockType = SocketUtils.sockFromArg(context, type);
 
         if (sockType == null) {
-            throw SocketUtils.sockerr(runtime, "unknown socket type " + type);
+            throw SocketUtils.sockerr(context.runtime, "unknown socket type " + type);
         }
 
         soType = sockType;
     }
 
-    private void setDomain(Ruby runtime, IRubyObject domain) {
-        AddressFamily family = SocketUtils.addressFamilyFromArg(domain);
+    private void setDomain(ThreadContext context, IRubyObject domain) {
+        AddressFamily family = SocketUtils.addressFamilyFromArg(context, domain);
 
         if (family == null) {
-            throw SocketUtils.sockerr(runtime, "unknown socket domain " + domain);
+            throw SocketUtils.sockerr(context.runtime, "unknown socket domain " + domain);
         }
 
         soDomain = family;

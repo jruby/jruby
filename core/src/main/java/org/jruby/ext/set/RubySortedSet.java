@@ -133,8 +133,8 @@ public class RubySortedSet extends RubySet implements SortedSet {
     }
 
     @Override
-    protected void clearImpl() {
-        hash.rb_clear(getRuntime().getCurrentContext());
+    protected void clearImpl(ThreadContext context) {
+        hash.rb_clear(context);
         order.clear();
     }
 
