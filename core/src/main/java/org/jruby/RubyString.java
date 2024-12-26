@@ -62,7 +62,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Create;
 import org.jruby.api.JRubyAPI;
 import org.jruby.ast.util.ArgsUtil;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.JumpException;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
@@ -89,7 +88,8 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.function.Function;
 
-import static org.jruby.ObjectFlags.CHILLED_F;
+import static org.jruby.ObjectFlags.CHILLED_LITERAL_F;
+import static org.jruby.ObjectFlags.CHILLED_SYMBOL_TO_S_F;
 import static org.jruby.RubyComparable.invcmp;
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorize;
@@ -984,12 +984,20 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private void mutateChilledString() {
-        getRuntime().getWarnings().warn("literal string will be frozen in the future");
-        flags &= ~CHILLED_F;
+        if ((flags & CHILLED_LITERAL_F) != 0) {
+            getRuntime().getWarnings().warn("literal string will be frozen in the future");
+        } else if ((flags & CHILLED_SYMBOL_TO_S_F) != 0) {
+            getRuntime().getWarnings().warn("string returned by :" + value + ".to_s will be frozen in the future");
+        }
+        flags &= ~(CHILLED_LITERAL_F|CHILLED_SYMBOL_TO_S_F);
     }
 
     protected boolean isChilled() {
-        return (flags & CHILLED_F) != 0;
+        return (flags & (CHILLED_LITERAL_F|CHILLED_SYMBOL_TO_S_F)) != 0;
+    }
+
+    protected boolean isChilledLiteral() {
+        return (flags & CHILLED_LITERAL_F) != 0;
     }
 
     /** rb_str_modify
@@ -6803,14 +6811,19 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod @JRubyAPI
     public IRubyObject freeze(ThreadContext context) {
-        if (isChilled()) flags &= ~CHILLED_F;
+        if (isChilled()) flags &= ~(CHILLED_LITERAL_F|CHILLED_SYMBOL_TO_S_F);
         if (isFrozen()) return this;
         resize(size());
         return super.freeze(context);
     }
 
     public RubyString chill() {
-        flags |= CHILLED_F;
+        flags |= CHILLED_LITERAL_F;
+        return this;
+    }
+
+    public RubyString chill_symbol_string() {
+        flags |= CHILLED_SYMBOL_TO_S_F;
         return this;
     }
 
