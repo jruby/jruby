@@ -3018,7 +3018,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private IRubyObject subBangIter(ThreadContext context, RubyRegexp regexp, RubyHash hash, Block block) {
-        Regex pattern = regexp.getPattern();
+        Regex pattern = regexp.getPattern(context);
         Regex prepared = regexp.preparePattern(context, this);
 
         int begin = value.getBegin();
@@ -3118,7 +3118,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private RubyMatchData subBangMatch(ThreadContext context, RubyRegexp regexp, RubyString repl) {
-        Regex pattern = regexp.getPattern();
+        Regex pattern = regexp.getPattern(context);
         Regex prepared = regexp.preparePattern(context, this);
 
         int begin = value.getBegin();
@@ -3352,7 +3352,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     private IRubyObject gsubCommon(ThreadContext context, Block block, RubyString repl,
             RubyHash hash, RubyRegexp regexp, final boolean bang, int tuFlags, boolean useBackref) {
-        Regex pattern = regexp.getPattern();
+        Regex pattern = regexp.getPattern(context);
         Regex prepared = regexp.preparePattern(context, this);
 
         final byte[] spBytes = value.getUnsafeBytes();
@@ -3491,8 +3491,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 return context.nil;
             }
 
-            pos = singleByteOptimizable() ? pos : StringSupport.nth(regexp.checkEncoding(this), value, pos) - value.getBegin();
-            pos = regexp.adjustStartPos(this, pos, false);
+            pos = singleByteOptimizable() ?
+                    pos : StringSupport.nth(regexp.checkEncoding(context, this), value, pos) - value.getBegin();
+            pos = regexp.adjustStartPos(context, this, pos, false);
             pos = regexp.search(context, this, pos, false);
             if (pos >= 0) pos = subLength(context.getLocalMatch().begin(0));
         } else {
@@ -4099,7 +4100,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         // this cast should be ok, since nil matchdata will be < 0 above
         RubyMatchData match = context.getLocalMatch();
 
-        int nth = backref == null ? 0 : subpatSetCheck(context, match.backrefNumber(context.runtime, backref), match.regs);
+        int nth = backref == null ? 0 : subpatSetCheck(context, match.backrefNumber(context, backref), match.regs);
 
         final int start, end;
         if (match.regs == null) {
@@ -4129,7 +4130,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             // set backref for user
             context.setBackRef(match);
 
-            return RubyRegexp.nth_match(match.backrefNumber(context.runtime, backref), match);
+            return RubyRegexp.nth_match(context, match.backrefNumber(context, backref), match);
         }
 
         context.clearBackRef();
@@ -4146,7 +4147,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             // set backref for user
             context.setBackRef(match);
 
-            return RubyRegexp.nth_match(0, match);
+            return RubyRegexp.nth_match(context, 0, match);
         }
 
         // set backref for user
@@ -4703,7 +4704,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         }
 
         if (pattern instanceof RubyRegexp regexp) {
-            if (regexp.isSimpleString()) return regexp.rawSource(); // Simple string-only regexp use Optimized String split
+            if (regexp.isSimpleString(context)) return regexp.rawSource(); // Simple string-only regexp use Optimized String split
             return regexp;
         }
 
@@ -4729,7 +4730,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         byte[] bytes = value.getUnsafeBytes();
         Encoding enc = value.getEncoding();
 
-        boolean captures = pattern.getPattern().numberOfCaptures() != 0;
+        boolean captures = pattern.getPattern(context).numberOfCaptures() != 0;
 
         int end, beg = 0;
         boolean lastNull = false;
@@ -5084,12 +5085,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 startp[0] = matchEnd;
             }
             if (match.numRegs() == 1) {
-                return RubyRegexp.nth_match(0, match);
+                return RubyRegexp.nth_match(context, 0, match);
             }
             int size = match.numRegs();
             RubyArray result = RubyArray.newBlankArrayInternal(context.runtime, size - 1);
             for (int i = 1; i < size; i++) {
-                result.eltInternalSet(i - 1, RubyRegexp.nth_match(i, match));
+                result.eltInternalSet(i - 1, RubyRegexp.nth_match(context, i, match));
             }
             result.realLength = size - 1;
 
@@ -5561,7 +5562,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             IRubyObject tmp = rindex(context, arg);
             if (tmp.isNil()) return rpartitionMismatch(context);
             pos = tmp.convertToInteger().getIntValue();
-            sep = (RubyString)RubyRegexp.nth_match(0, context.getLocalMatchOrNil());
+            sep = (RubyString)RubyRegexp.nth_match(context, 0, context.getLocalMatchOrNil());
         } else {
             IRubyObject tmp = arg.checkStringType();
             if (tmp.isNil()) throw typeError(context, "type mismatch: ", arg, " given");

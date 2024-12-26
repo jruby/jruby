@@ -640,21 +640,23 @@ public final class ThreadContext {
     /**
      * MRI: rb_reg_last_match
      */
+    @JIT
     public IRubyObject last_match() {
-        return RubyRegexp.nth_match(0, frameStack[frameIndex].getBackRef(nil));
+        return RubyRegexp.nth_match(this, 0, frameStack[frameIndex].getBackRef(nil));
     }
 
     /**
      * MRI: rb_reg_match_pre
      */
+    @JIT
     public IRubyObject match_pre() {
-        return RubyRegexp.match_pre(frameStack[frameIndex].getBackRef(nil));
+        return RubyRegexp.match_pre(this, frameStack[frameIndex].getBackRef(nil));
     }
-
 
     /**
      * MRI: rb_reg_match_post
      */
+    @JIT
     public IRubyObject match_post() {
         return RubyRegexp.match_post(frameStack[frameIndex].getBackRef(nil));
     }
@@ -662,8 +664,9 @@ public final class ThreadContext {
     /**
      * MRI: rb_reg_match_last
      */
+    @JIT
     public IRubyObject match_last() {
-        return RubyRegexp.match_last(frameStack[frameIndex].getBackRef(nil));
+        return RubyRegexp.match_last(this, frameStack[frameIndex].getBackRef(nil));
     }
 
     /**

@@ -918,7 +918,8 @@ public class RubyGlobal {
 
         @Override
         public IRubyObject get() {
-            return RubyRegexp.match_pre(runtime.getCurrentContext().getBackRef());
+            var context = runtime.getCurrentContext();
+            return RubyRegexp.match_pre(context, context.getBackRef());
         }
     }
 
@@ -940,7 +941,8 @@ public class RubyGlobal {
 
         @Override
         public IRubyObject get() {
-            return RubyRegexp.match_last(runtime.getCurrentContext().getBackRef());
+            var context = runtime.getCurrentContext();
+            return RubyRegexp.match_last(context, context.getBackRef());
         }
     }
 

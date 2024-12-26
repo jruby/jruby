@@ -1000,13 +1000,8 @@ public class IRRuntimeHelpers {
     public static IRubyObject isDefinedNthRef(ThreadContext context, int matchNumber, IRubyObject definedMessage) {
         IRubyObject backref = context.getBackRef();
 
-        if (backref instanceof RubyMatchData) {
-            if (!((RubyMatchData) backref).group(matchNumber).isNil()) {
-                return definedMessage;
-            }
-        }
-
-        return context.nil;
+        return backref instanceof RubyMatchData match && !match.group(context, matchNumber).isNil() ?
+                definedMessage : context.nil;
     }
 
     @JIT @Interp
@@ -1070,7 +1065,7 @@ public class IRRuntimeHelpers {
     }
 
     public static IRubyObject nthMatch(ThreadContext context, int matchNumber) {
-        return RubyRegexp.nth_match(matchNumber, context.getBackRef());
+        return RubyRegexp.nth_match(context, matchNumber, context.getBackRef());
     }
 
     public static void defineAlias(ThreadContext context, IRubyObject self, DynamicScope currDynScope,
@@ -1342,9 +1337,9 @@ public class IRRuntimeHelpers {
     public static IRubyObject setCapturedVar(ThreadContext context, IRubyObject matchRes, String id) {
         if (matchRes.isNil()) return context.nil;
 
-        IRubyObject backref = context.getBackRef();
+        RubyMatchData backref = (RubyMatchData) context.getBackRef();
 
-        return RubyRegexp.nth_match(((RubyMatchData) backref).getNameToBackrefNumber(id), backref);
+        return RubyRegexp.nth_match(context, backref.getNameToBackrefNumber(context, id), backref);
     }
 
     @JIT // for JVM6
