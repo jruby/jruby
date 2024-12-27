@@ -387,7 +387,7 @@ public class JavaInterfaceTemplate {
         final BlockInterfaceImpl ifaceImpl = new BlockInterfaceImpl(implClass, implBlock, methodNames);
         implClass.addMethod(context, "method_missing", ifaceImpl); // def ImplClass.method_missing ...
 
-        final Class<?> ifaceClass = JavaUtil.getJavaClass(((RubyModule) self));
+        final Class<?> ifaceClass = JavaUtil.getJavaClass(context, ((RubyModule) self));
         if ( methodNames == null ) {
             for ( Method method : ifaceClass.getMethods() ) {
                 BlockInterfaceImpl.ConcreteMethod implMethod = ifaceImpl.getConcreteMethod(method.getName());

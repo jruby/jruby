@@ -125,7 +125,7 @@ public class JavaProxyMethods {
      */
     @Deprecated(since = "10.0")
     public static IRubyObject inspect(IRubyObject recv) {
-        return inspect(recv.getRuntime().getCurrentContext(), recv);
+        return inspect(((RubyBasicObject) recv).getCurrentContext(), recv);
     }
 
     @JRubyMethod

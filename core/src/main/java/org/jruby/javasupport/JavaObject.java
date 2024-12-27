@@ -108,13 +108,11 @@ public class JavaObject extends RubyObject {
     }
 
     @JRubyMethod(meta = true)
-    public static IRubyObject wrap(final ThreadContext context,
-        final IRubyObject self, final IRubyObject object) {
+    public static IRubyObject wrap(final ThreadContext context, final IRubyObject self, final IRubyObject object) {
         final Object objectValue = unwrapJava(object, NEVER);
 
-        if ( objectValue == NEVER ) return context.nil;
-
-        return wrap(context.runtime, objectValue);
+        return objectValue == NEVER ?
+                context.nil : wrap(context.runtime, objectValue);
     }
 
     @Override

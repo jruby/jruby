@@ -423,7 +423,7 @@ public class RubyKernel {
 
     @Deprecated(since = "10.0", forRemoval = true)
     public static RubyFloat new_float(IRubyObject recv, IRubyObject object) {
-        return (RubyFloat) new_float(recv.getRuntime().getCurrentContext(), object, true);
+        return (RubyFloat) new_float(((RubyBasicObject) recv).getCurrentContext(), object, true);
     }
 
     private static final ByteList ZEROx = new ByteList(new byte[] { '0','x' }, false);
@@ -893,7 +893,7 @@ public class RubyKernel {
 
     @Deprecated
     public static IRubyObject exit(IRubyObject recv, IRubyObject[] args) {
-        return exit(recv.getRuntime().getCurrentContext(), recv, args);
+        return exit(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
 
     // FIXME: Add at_exit and finalizers to exit, then make exit_bang not call those.
@@ -909,7 +909,7 @@ public class RubyKernel {
 
     @Deprecated
     public static IRubyObject exit_bang(IRubyObject recv, IRubyObject[] args) {
-        return exit_bang(recv.getRuntime().getCurrentContext(), recv, args);
+        return exit_bang(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
 
     @JRubyMethod(name = "exit!", optional = 1, checkArity = false, module = true, visibility = PRIVATE)
@@ -1018,7 +1018,7 @@ public class RubyKernel {
 
     @Deprecated
     public static IRubyObject sprintf(IRubyObject recv, IRubyObject[] args) {
-        return sprintf(recv.getRuntime().getCurrentContext(), recv, args);
+        return sprintf(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
     public static IRubyObject raise(ThreadContext context, IRubyObject self, IRubyObject arg0) {
         // semi extract_raise_opts :
@@ -2108,7 +2108,7 @@ public class RubyKernel {
 
     @Deprecated(since = "10.0")
     public static IRubyObject singleton_class(IRubyObject recv) {
-        return singleton_class(recv.getRuntime().getCurrentContext(), recv);
+        return singleton_class(((RubyBasicObject) recv).getCurrentContext(), recv);
     }
 
     @JRubyMethod(module = true)
@@ -2142,7 +2142,7 @@ public class RubyKernel {
 
     @Deprecated(since = "10.0")
     public static IRubyObject eql_p(IRubyObject self, IRubyObject obj) {
-        return eql_p(self.getRuntime().getCurrentContext(), self, obj);
+        return eql_p(((RubyBasicObject) self).getCurrentContext(), self, obj);
     }
 
     /*
@@ -2174,7 +2174,7 @@ public class RubyKernel {
      */
     @Deprecated(since = "10.0")
     public static IRubyObject initialize_copy(IRubyObject self, IRubyObject original) {
-        return initialize_copy(self.getRuntime().getCurrentContext(), self, original);
+        return initialize_copy(((RubyBasicObject) self).getCurrentContext(), self, original);
     }
 
     @JRubyMethod(name = "initialize_copy", required = 1, visibility = PRIVATE)
@@ -2258,7 +2258,7 @@ public class RubyKernel {
 
     @Deprecated(since = "10.0")
     public static IRubyObject inspect(IRubyObject self) {
-        return inspect(self.getRuntime().getCurrentContext(), self);
+        return inspect(((RubyBasicObject) self).getCurrentContext(), self);
     }
 
     @JRubyMethod(name = "inspect")
@@ -2338,7 +2338,7 @@ public class RubyKernel {
      */
     @Deprecated(since = "10.0", forRemoval = true)
     public static IRubyObject to_s(IRubyObject self) {
-        return to_s(self.getRuntime().getCurrentContext(), self);
+        return to_s(((RubyBasicObject) self).getCurrentContext(), self);
     }
 
     @JRubyMethod(name = "to_s")
@@ -2348,7 +2348,7 @@ public class RubyKernel {
 
     @Deprecated
     public static IRubyObject extend(IRubyObject self, IRubyObject[] args) {
-        return extend(self.getRuntime().getCurrentContext(), self, args);
+        return extend(((RubyBasicObject) self).getCurrentContext(), self, args);
     }
 
     @JRubyMethod(name = "extend", required = 1, rest = true, checkArity = false)
@@ -2517,7 +2517,7 @@ public class RubyKernel {
 
     @Deprecated
     public static IRubyObject require(IRubyObject recv, IRubyObject name, Block block) {
-        return require(recv.getRuntime().getCurrentContext(), recv, name, block);
+        return require(((RubyBasicObject) recv).getCurrentContext(), recv, name, block);
     }
 
     @Deprecated
@@ -2529,7 +2529,7 @@ public class RubyKernel {
 
     @Deprecated
     public static IRubyObject autoload(final IRubyObject recv, IRubyObject symbol, IRubyObject file) {
-        return autoload(recv.getRuntime().getCurrentContext(), recv, symbol, file);
+        return autoload(((RubyBasicObject) recv).getCurrentContext(), recv, symbol, file);
     }
 
     @Deprecated

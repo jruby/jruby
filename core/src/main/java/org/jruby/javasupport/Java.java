@@ -372,7 +372,7 @@ public class Java implements Library {
     public static Class<?> resolveClassType(final ThreadContext context, final IRubyObject type) throws TypeError {
         RubyModule proxyClass = Java.resolveType(context.runtime, type);
         if (proxyClass == null) throw typeError(context, "unable to convert to type: " + type);
-        return JavaUtil.getJavaClass(proxyClass);
+        return JavaUtil.getJavaClass(context, proxyClass);
     }
 
     public static RubyModule resolveType(final Ruby runtime, final IRubyObject type) {
@@ -1393,7 +1393,7 @@ public class Java implements Library {
         // Create list of interface names to proxy (and make sure they really are interfaces)
         Class[] unwrapped = new Class[javaClasses.length];
         for (int i = 0; i < javaClasses.length; i++) {
-            final Class<?> klass = JavaUtil.unwrapJava(javaClasses[i]); // TypeError if not a Java wrapper
+            final Class<?> klass = JavaUtil.unwrapJava(context, javaClasses[i]); // TypeError if not a Java wrapper
 
             if (!klass.isInterface()) throw argumentError(context, "Java interface expected, got: " + klass);
 

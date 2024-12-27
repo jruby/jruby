@@ -188,7 +188,7 @@ public class JavaProxy extends RubyObject {
 
     @JRubyMethod(name = "[]", meta = true, rest = true)
     public static IRubyObject op_aref(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        final Class<?> type = JavaUtil.getJavaClass((RubyModule) self);
+        final Class<?> type = JavaUtil.getJavaClass(context, (RubyModule) self);
         if ( args.length > 0 ) { // construct new array proxy (ArrayJavaProxy)
             return new ArrayJavaProxyCreator(context, type, args); // e.g. Byte[64]
         }
@@ -198,7 +198,7 @@ public class JavaProxy extends RubyObject {
 
     @JRubyMethod(meta = true)
     public static IRubyObject new_array(ThreadContext context, IRubyObject self, IRubyObject len) {
-        final Class<?> componentType = JavaUtil.getJavaClass((RubyModule) self);
+        final Class<?> componentType = JavaUtil.getJavaClass(context, (RubyModule) self);
         final int length = (int) len.convertToInteger().getLongValue();
         return ArrayJavaProxy.newArray(context.runtime, componentType, length);
     }
@@ -706,7 +706,7 @@ public class JavaProxy extends RubyObject {
             String newNameStr = newName.asJavaString();
             Class<?>[] argTypesClasses = (Class[]) argTypes.convertToArray().toArray(ClassUtils.EMPTY_CLASS_ARRAY);
 
-            final Class<?> clazz = JavaUtil.getJavaClass(proxyClass);
+            final Class<?> clazz = JavaUtil.getJavaClass(context, proxyClass);
             final RubyToJavaInvoker invoker;
             switch (name) {
                 case "<init>" :
@@ -733,7 +733,7 @@ public class JavaProxy extends RubyObject {
 
         private static AbstractRubyMethod getRubyMethod(ThreadContext context, IRubyObject clazz, String name, Class... argTypesClasses) {
             final RubyModule proxyClass = Convert.castAsModule(context, clazz);
-            final Method method = getMethodFromClass(context, JavaUtil.getJavaClass(proxyClass), name, argTypesClasses);
+            final Method method = getMethodFromClass(context, JavaUtil.getJavaClass(context, proxyClass), name, argTypesClasses);
             final String prettyName = name + CodegenUtils.prettyParams(argTypesClasses);
 
             if ( Modifier.isStatic( method.getModifiers() ) ) {
@@ -746,7 +746,7 @@ public class JavaProxy extends RubyObject {
         }
 
         private static Method getMethodFromClass(final ThreadContext context, final IRubyObject klass, final String name, final Class... argTypes) {
-            return getMethodFromClass(context, JavaUtil.getJavaClass((RubyModule) klass), name, argTypes);
+            return getMethodFromClass(context, JavaUtil.getJavaClass(context, (RubyModule) klass), name, argTypes);
         }
 
         private static Method getMethodFromClass(final ThreadContext context, final Class<?> clazz, final String name, final Class... argTypes) {

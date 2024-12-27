@@ -120,7 +120,7 @@ public class JavaClass extends JavaObject {
     }
 
     /**
-     * @see JavaUtil#getJavaClass(RubyModule)
+     * @see JavaUtil#getJavaClass(ThreadContext, RubyModule)
      */
     @Deprecated // no longer used
     public static Class<?> getJavaClass(final ThreadContext context, final RubyModule proxy) {

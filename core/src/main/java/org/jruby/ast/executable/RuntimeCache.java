@@ -117,9 +117,10 @@ public class RuntimeCache {
         return regexps[index];
     }
 
+    @Deprecated(since = "10.0")
     public final RubyRegexp cacheRegexp(int index, RubyString pattern, int options) {
         RubyRegexp regexp = regexps[index];
-        Ruby runtime = pattern.getRuntime();
+        Ruby runtime = pattern.getCurrentContext().runtime;
         if (regexp == null || runtime.getKCode() != regexp.getKCode()) {
             regexp = RubyRegexp.newRegexp(runtime, pattern.getByteList(), RegexpOptions.fromEmbeddedOptions(options));
             regexps[index] = regexp;
@@ -127,6 +128,7 @@ public class RuntimeCache {
         return regexp;
     }
 
+    @Deprecated(since = "10.0")
     public final RubyRegexp cacheRegexp(int index, RubyRegexp regexp) {
         regexps[index] = regexp;
         return regexp;

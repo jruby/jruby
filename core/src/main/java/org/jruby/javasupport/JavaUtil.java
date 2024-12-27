@@ -52,6 +52,7 @@ import static java.lang.Character.toUpperCase;
 import static org.jruby.api.Access.procClass;
 import static org.jruby.api.Access.stringClass;
 import static org.jruby.api.Create.newArrayNoCopy;
+import static org.jruby.api.Error.rangeError;
 import static org.jruby.api.Error.typeError;
 
 import java.math.BigDecimal;
@@ -634,7 +635,12 @@ public class JavaUtil {
     }
 
     public interface NumericConverter<T> {
-        T coerce(RubyNumeric numeric, Class<T> target);
+        @Deprecated(since = "10.0")
+        default T coerce(RubyNumeric numeric, Class<T> target) {
+            return coerce(numeric.getCurrentContext(), numeric, target);
+        }
+
+        T coerce(ThreadContext context, RubyNumeric numeric, Class<T> target);
     }
 
     public static IRubyObject trySimpleConversions(Ruby runtime, Object object) {
@@ -976,61 +982,45 @@ public class JavaUtil {
         JAVA_CONVERTERS.put(BigInteger.class, JAVA_BIGINTEGER_CONVERTER);
     }
 
-    private static final NumericConverter<Byte> NUMERIC_TO_BYTE = (numeric, target) -> {
+    private static long processLongConvert(ThreadContext context, RubyNumeric numeric, String type) {
         final long value = numeric.getLongValue();
-        if ( isLongByteable(value) ) return (byte) value;
-        throw numeric.getRuntime().newRangeError("too big for byte: " + numeric);
-    };
-    private static final NumericConverter<Short> NUMERIC_TO_SHORT = (numeric, target) -> {
-        final long value = numeric.getLongValue();
-        if ( isLongShortable(value) ) return (short) value;
-        throw numeric.getRuntime().newRangeError("too big for short: " + numeric);
-    };
-    private static final NumericConverter<Character> NUMERIC_TO_CHARACTER = (numeric, target) -> {
-        final long value = numeric.getLongValue();
-        if ( isLongCharable(value) ) return (char) value;
-        throw numeric.getRuntime().newRangeError("too big for char: " + numeric);
-    };
-    private static final NumericConverter<Integer> NUMERIC_TO_INTEGER = (numeric, target) -> {
-        final long value = numeric.getLongValue();
-        if ( isLongIntable(value) ) return (int) value;
-        throw numeric.getRuntime().newRangeError("too big for int: " + numeric);
-    };
-    private static final NumericConverter<Long> NUMERIC_TO_LONG = (numeric, target) -> numeric.getLongValue();
-    private static final NumericConverter<Float> NUMERIC_TO_FLOAT = (numeric, target) -> {
+        if (!isLongByteable(value)) throw rangeError(context, "too big for " + type + " : " + numeric);
+        return value;
+    }
+
+    private static final NumericConverter<Byte> NUMERIC_TO_BYTE =
+            (context, numeric, target) -> (byte) processLongConvert(context, numeric, "byte");
+    private static final NumericConverter<Short> NUMERIC_TO_SHORT =
+            (context,numeric, target) -> (short) processLongConvert(context, numeric, "short");
+    private static final NumericConverter<Character> NUMERIC_TO_CHARACTER =
+            (context, numeric, target) -> (char) processLongConvert(context, numeric, "char");
+    private static final NumericConverter<Integer> NUMERIC_TO_INTEGER =
+            (context, numeric, target) -> (int) processLongConvert(context, numeric, "int");
+    private static final NumericConverter<Long> NUMERIC_TO_LONG = (context, numeric, target) -> numeric.getLongValue();
+    private static final NumericConverter<Float> NUMERIC_TO_FLOAT = (context, numeric, target) -> {
         final double value = numeric.getDoubleValue();
         // many cases are ok to convert to float; if not one of these, error
-        if ( isDoubleFloatable(value) ) return (float) value;
-        throw typeError(numeric.getRuntime().getCurrentContext(), "too big for float: " + numeric);
+        if (!isDoubleFloatable(value)) throw typeError(context, "too big for float: " + numeric);
+        return (float) value;
     };
-    private static final NumericConverter<Double> NUMERIC_TO_DOUBLE = (numeric, target) -> numeric.getDoubleValue();
-    private static final NumericConverter<BigInteger> NUMERIC_TO_BIGINTEGER = (numeric, target) -> numeric.getBigIntegerValue();
+    private static final NumericConverter<Double> NUMERIC_TO_DOUBLE =
+            (context, numeric, target) -> numeric.getDoubleValue();
+    private static final NumericConverter<BigInteger> NUMERIC_TO_BIGINTEGER =
+            (context, numeric, target) -> numeric.getBigIntegerValue();
 
-    private static final NumericConverter NUMERIC_TO_OTHER = (numeric, target) -> {
-        if (target.isAssignableFrom(numeric.getClass())) {
-            // just return as-is, since we can't do any coercion
-            return numeric;
-        }
-        // otherwise, error; no conversion available
-        throw typeError(numeric.getRuntime().getCurrentContext(), "could not coerce " + numeric.getMetaClass() + " to " + target);
+    private static final NumericConverter NUMERIC_TO_OTHER = (context, numeric, target) -> {
+        if (!target.isAssignableFrom(numeric.getClass())) throw typeError(context, "could not coerce " + numeric.getMetaClass() + " to " + target);
+        return numeric;  // just return as-is, since we can't do any coercion
     };
-    private static final NumericConverter<Object> NUMERIC_TO_OBJECT = (numeric, target) -> {
+    private static final NumericConverter<Object> NUMERIC_TO_OBJECT = (context, numeric, target) -> {
         // for Object, default to natural wrapper type
-        if (numeric instanceof RubyFixnum) {
-            long value = numeric.getLongValue();
-            return Long.valueOf(value);
-        } else if (numeric instanceof RubyFloat) {
-            double value = numeric.getDoubleValue();
-            return Double.valueOf(value);
-        } else if (numeric instanceof RubyBignum) {
-            return ((RubyBignum)numeric).getValue();
-        } else if (numeric instanceof RubyBigDecimal) {
-            return ((RubyBigDecimal)numeric).getValue();
-        } else {
-            return NUMERIC_TO_OTHER.coerce(numeric, target);
-        }
+        if (numeric instanceof RubyFixnum) return Long.valueOf(numeric.getLongValue());
+        if (numeric instanceof RubyFloat) return Double.valueOf(numeric.getDoubleValue());
+        if (numeric instanceof RubyBignum) return ((RubyBignum)numeric).getValue();
+        if (numeric instanceof RubyBigDecimal) return ((RubyBigDecimal)numeric).getValue();
+        return NUMERIC_TO_OTHER.coerce(context, numeric, target);
     };
-    private static final NumericConverter NUMERIC_TO_VOID = (numeric, target) -> null;
+    private static final NumericConverter NUMERIC_TO_VOID = (context, numeric, target) -> null;
     private static boolean isDoubleFloatable(double value) {
         return true;
     }
@@ -1116,8 +1106,7 @@ public class JavaUtil {
             return null;
         }
 
-        final Ruby runtime = rubyObject.getRuntime();
-        final ThreadContext context = runtime.getCurrentContext();
+        final ThreadContext context = ((RubyBasicObject) rubyObject).getCurrentContext();
 
         IRubyObject origObject = rubyObject;
         if (rubyObject.dataGetStruct() instanceof JavaObject) {
@@ -1134,7 +1123,7 @@ public class JavaUtil {
 
         if (rubyObject instanceof JavaObject) {
             Object value =  ((JavaObject) rubyObject).getValue();
-            return convertArgument(runtime, value, value.getClass());
+            return convertArgument(context.runtime, value, value.getClass());
         }
 
         if (javaClass == Object.class || javaClass == null) {
@@ -1196,7 +1185,7 @@ public class JavaUtil {
             return ((JavaObject) rubyObject).getValue();
         }
         catch (ClassCastException ex) {
-            if (runtime.getDebug().isTrue()) ex.printStackTrace();
+            if (context.runtime.getDebug().isTrue()) ex.printStackTrace();
             return null;
         }
     }
@@ -1490,13 +1479,14 @@ public class JavaUtil {
      */
     @Deprecated
     public static IRubyObject ruby_to_java(final IRubyObject recv, IRubyObject object, Block unusedBlock) {
+        var context = ((RubyObject) recv).getCurrentContext();
         if (object.respondsTo("to_java_object")) {
             IRubyObject result = (IRubyObject)object.dataGetStruct();
             if (result == null) {
-                result = object.callMethod(recv.getRuntime().getCurrentContext(), "to_java_object");
+                result = object.callMethod(context, "to_java_object");
             }
             if (result instanceof JavaObject) {
-                recv.getRuntime().getJavaSupport().getObjectProxyCache().put(((JavaObject) result).getValue(), object);
+                context.runtime.getJavaSupport().getObjectProxyCache().put(((JavaObject) result).getValue(), object);
             }
             return result;
         }
@@ -1506,20 +1496,16 @@ public class JavaUtil {
 
     @Deprecated
     public static IRubyObject java_to_primitive(IRubyObject recv, IRubyObject object, Block unusedBlock) {
-        if (object instanceof JavaObject) {
-            return JavaUtil.convertJavaToRuby(recv.getRuntime(), ((JavaObject) object).getValue());
-        }
-
-        return object;
+        return object instanceof JavaObject jo ?
+                JavaUtil.convertJavaToRuby(((RubyBasicObject) recv).getCurrentContext().runtime, jo.getValue()) :
+                object;
     }
 
     @Deprecated
     @SuppressWarnings("deprecation")
     public static IRubyObject primitive_to_java(IRubyObject recv, IRubyObject object, Block unusedBlock) {
-        if (object instanceof JavaObject) {
-            return object;
-        }
-        Ruby runtime = recv.getRuntime();
+        if (object instanceof JavaObject) return object;
+
         Object javaObject;
         switch (object.getMetaClass().getClassIndex()) {
         case NIL:
@@ -1554,7 +1540,7 @@ public class JavaUtil {
         }
 
         // we've found a Java type to which we've coerced the Ruby value, wrap it
-        return Java.getInstance(runtime, javaObject);
+        return Java.getInstance(((RubyBasicObject) object).getCurrentContext().runtime, javaObject);
     }
 
     @Deprecated
@@ -1681,12 +1667,22 @@ public class JavaUtil {
         return defaultValue;
     }
 
+    @Deprecated(since = "10.0")
     public static <T> T unwrapJava(final IRubyObject wrapped) {
+        return unwrapJava(((RubyBasicObject) wrapped).getCurrentContext(), wrapped);
+    }
+
+    public static <T> T unwrapJava(ThreadContext context, final IRubyObject wrapped) {
         if (wrapped == null) throw new NullPointerException();
 
         Object unwrap = unwrapJava(wrapped, RubyBasicObject.NEVER);
-        if (unwrap == RubyBasicObject.NEVER) throw typeError(wrapped.getRuntime().getCurrentContext(), wrapped, "JavaProxy");
+        if (unwrap == RubyBasicObject.NEVER) throw typeError(context, wrapped, "JavaProxy");
         return (T) unwrap;
+    }
+
+    @Deprecated(since = "10.0")
+    public static Class<?> getJavaClass(final RubyModule type) throws TypeError {
+        return getJavaClass(type.getCurrentContext(), type);
     }
 
     /**
@@ -1697,10 +1693,8 @@ public class JavaUtil {
      * @param type
      * @return class
      */
-    public static Class<?> getJavaClass(final RubyModule type) throws TypeError {
-        return getJavaClass(type, () -> {
-            throw typeError(type.getRuntime().getCurrentContext(), type, "Java proxy of responds to java_class");
-        });
+    public static Class<?> getJavaClass(ThreadContext context, final RubyModule type) throws TypeError {
+        return getJavaClass(type, () -> { throw typeError(context, type, "Java proxy of responds to java_class"); });
     }
 
     /**
