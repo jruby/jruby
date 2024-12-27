@@ -82,12 +82,17 @@ public abstract class TypePopulator {
     }
 
     public abstract void populate(RubyModule clsmod, Class clazz);
+
+    public void populate(ThreadContext context, RubyModule cls, Class clazz) {
+        // old populated code will naturally call other version and new populated code will override this method.
+        populate(cls, clazz);
+    }
     
     public static final TypePopulator DEFAULT = new DefaultTypePopulator();
     public static class DefaultTypePopulator extends TypePopulator {
         public void populate(RubyModule clsmod, Class clazz) {
             ReflectiveTypePopulator populator = new ReflectiveTypePopulator(clazz);
-            populator.populate(clsmod, clazz);
+            populator.populate(clsmod.getRuntime().getCurrentContext(), clsmod, clazz);
         }
     }
 

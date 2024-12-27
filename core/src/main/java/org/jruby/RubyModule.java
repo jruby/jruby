@@ -1529,7 +1529,8 @@ public class RubyModule extends RubyObject {
 
     @Deprecated(since = "10.0")
     public final void defineAnnotatedMethodsIndividually(Class clazz) {
-        getCurrentContext().runtime.POPULATORS.get(clazz).populate(this, clazz);
+        var context = getCurrentContext();
+        context.runtime.POPULATORS.get(clazz).populate(context, this, clazz);
     }
 
     /**
@@ -1689,7 +1690,7 @@ public class RubyModule extends RubyObject {
         var populators = context.runtime.POPULATORS;
 
         for (var clazz : methodSources) {
-            populators.get(clazz).populate(this, clazz);
+            populators.get(clazz).populate(context, this, clazz);
         }
         return (T) this;
     }
