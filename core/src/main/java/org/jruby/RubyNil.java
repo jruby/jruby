@@ -203,7 +203,7 @@ public class RubyNil extends RubyObject implements Constantizable {
 
     @Deprecated
     public IRubyObject nil_p() {
-        return getRuntime().getTrue();
+        return nil_p(getCurrentContext());
     }
 
     @JRubyMethod

@@ -199,7 +199,7 @@ public class RubyMarshal {
 
     @Deprecated
     public static IRubyObject dump(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-        return dump(recv.getRuntime().getCurrentContext(), recv, args, unusedBlock);
+        return dump(((RubyBasicObject) recv).getCurrentContext(), recv, args, unusedBlock);
     }
 
     @Deprecated

@@ -1653,17 +1653,17 @@ public class RubyNumeric extends RubyObject {
 
     @Deprecated
     public IRubyObject floor() {
-        return floor(getRuntime().getCurrentContext());
+        return floor(getCurrentContext());
     }
 
     @Deprecated
     public IRubyObject ceil() {
-        return ceil(getRuntime().getCurrentContext());
+        return ceil(getCurrentContext());
     }
 
     @Deprecated
     public IRubyObject round() {
-        return round(getRuntime().getCurrentContext());
+        return round(getCurrentContext());
     }
 
     /** num_truncate
@@ -1671,7 +1671,7 @@ public class RubyNumeric extends RubyObject {
      */
     @Deprecated
     public IRubyObject truncate() {
-        return truncate(getRuntime().getCurrentContext());
+        return truncate(getCurrentContext());
     }
 
     private static JavaSites.NumericSites sites(ThreadContext context) {

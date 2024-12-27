@@ -1266,7 +1266,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     @Deprecated
     public IRubyObject insert(IRubyObject[] args) {
-        return insert(getRuntime().getCurrentContext(), args);
+        return insert(getCurrentContext(), args);
     }
 
     @JRubyMethod(name = "insert", required = 1, rest = true, checkArity = false)
@@ -1302,7 +1302,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     @Deprecated(since = "10.0", forRemoval = true)
     public RubyArray transpose() {
-        return transpose(getRuntime().getCurrentContext());
+        return transpose(getCurrentContext());
     }
 
     /** rb_ary_transpose
@@ -1341,7 +1341,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     @Deprecated(since = "10.0", forRemoval = true)
     public IRubyObject values_at(IRubyObject[] args) {
-        return values_at(getRuntime().getCurrentContext(), args);
+        return values_at(getCurrentContext(), args);
     }
 
     /** rb_values_at
@@ -1770,7 +1770,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     @Deprecated(since = "9.4")
     public IRubyObject aref(IRubyObject[] args) {
-        ThreadContext context = getRuntime().getCurrentContext();
+        ThreadContext context = getCurrentContext();
         return switch (args.length) {
             case 1 -> aref(context, args[0]);
             case 2 -> aref(context, args[0], args[1]);
@@ -1783,7 +1783,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     @Deprecated
     public IRubyObject aref(IRubyObject arg0) {
-        return aref(getRuntime().getCurrentContext(), arg0);
+        return aref(getCurrentContext(), arg0);
     }
 
     /** rb_ary_aref
@@ -1816,7 +1816,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     @Deprecated(since = "10.0")
     public IRubyObject aref(IRubyObject arg0, IRubyObject arg1) {
-        return aref(getRuntime().getCurrentContext(), arg0, arg1);
+        return aref(getCurrentContext(), arg0, arg1);
     }
 
     @JRubyMethod(name = {"[]", "slice"})
@@ -1835,7 +1835,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return switch (args.length) {
             case 2 -> aset(args[0], args[1]);
             case 3 -> aset(args[0], args[1], args[2]);
-            default -> throw argumentError(getRuntime().getCurrentContext(), "wrong number of arguments (" + args.length + " for 2)");
+            default -> throw argumentError(getCurrentContext(), "wrong number of arguments (" + args.length + " for 2)");
         };
     }
 
@@ -3385,7 +3385,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         case 2:
             return slice_bang(args[0], args[1]);
         default:
-            Arity.raiseArgumentError(getRuntime().getCurrentContext(), args.length, 1, 2);
+            Arity.raiseArgumentError(getCurrentContext(), args.length, 1, 2);
             return null; // not reached
         }
     }

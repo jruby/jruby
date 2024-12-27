@@ -3010,12 +3010,12 @@ public class RubyHash extends RubyObject implements Map {
     @Deprecated
     @Override
     public RubyArray to_a() {
-        return to_a(getRuntime().getCurrentContext());
+        return to_a(getCurrentContext());
     }
 
     @Deprecated
     public IRubyObject default_value_set(final IRubyObject defaultValue) {
-        return default_value_set(getRuntime().getCurrentContext(), defaultValue);
+        return default_value_set(getCurrentContext(), defaultValue);
     }
 
     @Deprecated
@@ -3025,7 +3025,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @Deprecated
     public IRubyObject set_default_proc(IRubyObject proc) {
-        return set_default_proc(getRuntime().getCurrentContext(), proc);
+        return set_default_proc(getCurrentContext(), proc);
     }
 
     @Deprecated
@@ -3040,12 +3040,12 @@ public class RubyHash extends RubyObject implements Map {
 
     @Deprecated
     public RubyHash rehash() {
-        return rehash(getRuntime().getCurrentContext());
+        return rehash(getCurrentContext());
     }
 
     @Deprecated
     public RubyHash to_hash() {
-        return to_hash(getRuntime().getCurrentContext());
+        return to_hash(getCurrentContext());
     }
 
     @Deprecated
@@ -3055,7 +3055,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @Deprecated
     public RubyHash rb_clear() {
-        return rb_clear(getRuntime().getCurrentContext());
+        return rb_clear(getCurrentContext());
     }
 
     @Deprecated
@@ -3069,7 +3069,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @Deprecated
     public IRubyObject initialize(IRubyObject[] args, final Block block) {
-        var context = getRuntime().getCurrentContext();
+        var context = getCurrentContext();
         return switch (args.length) {
             case 0 -> initialize(context, block);
             case 1 -> initialize(context, args[0], block);
