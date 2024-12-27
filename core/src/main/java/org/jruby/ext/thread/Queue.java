@@ -244,10 +244,15 @@ public class Queue extends RubyObject implements DataType {
         putLock.unlock();
     }
 
+    @Deprecated(since = "10.0")
     protected void initializedCheck() {
+        initializedCheck(getCurrentContext());
+    }
+
+    protected void initializedCheck(ThreadContext context) {
         // Ruby initialized check seems to be a genius way to make all methods slower :),
         // here we piggy back on capacity not being allowed to equal 0.
-        if (capacity == 0) throw typeError(getRuntime().getCurrentContext(), this + " not initialized");
+        if (capacity == 0) throw typeError(context, this + " not initialized");
     }
 
     public Queue(Ruby runtime, RubyClass type) {
@@ -294,7 +299,7 @@ public class Queue extends RubyObject implements DataType {
      */
     @JRubyMethod
     public IRubyObject clear(ThreadContext context) {
-        initializedCheck();
+        initializedCheck(context);
         try {
             clearInternal();
         } catch (InterruptedException ie) {
@@ -336,19 +341,19 @@ public class Queue extends RubyObject implements DataType {
 
     @JRubyMethod(name = "empty?")
     public RubyBoolean empty_p(ThreadContext context) {
-        initializedCheck();
+        initializedCheck(context);
         return asBoolean(context, count.get() == 0);
     }
 
     @JRubyMethod(name = {"length", "size"})
     public RubyNumeric length(ThreadContext context) {
-        initializedCheck();
+        initializedCheck(context);
         return RubyNumeric.int2fix(context.runtime, count.get());
     }
 
     @JRubyMethod
     public RubyNumeric num_waiting(ThreadContext context) {
-        initializedCheck();
+        initializedCheck(context);
         final ReentrantLock takeLock = this.takeLock;
         try {
             takeLock.lockInterruptibly();
@@ -364,7 +369,7 @@ public class Queue extends RubyObject implements DataType {
 
     @JRubyMethod(name = {"pop", "deq", "shift"})
     public IRubyObject pop(ThreadContext context) {
-        initializedCheck();
+        initializedCheck(context);
         try {
             return context.getThread().executeTaskBlocking(context, this, BLOCKING_TAKE_TASK);
         } catch (InterruptedException ie) {
@@ -375,7 +380,7 @@ public class Queue extends RubyObject implements DataType {
 
     @JRubyMethod(name = {"pop", "deq", "shift"})
     public IRubyObject pop(ThreadContext context, IRubyObject nonblockOrOpts) {
-        initializedCheck();
+        initializedCheck(context);
 
         boolean nonblock = false;
         long timeoutNS = 0;
@@ -401,7 +406,7 @@ public class Queue extends RubyObject implements DataType {
 
     @JRubyMethod(name = {"pop", "deq", "shift"})
     public IRubyObject pop(ThreadContext context, IRubyObject _nonblock, IRubyObject _opts) {
-        initializedCheck();
+        initializedCheck(context);
 
         boolean nonblock = _nonblock.isTrue();
         long timeoutNS = 0;
@@ -457,7 +462,7 @@ public class Queue extends RubyObject implements DataType {
 
     @JRubyMethod(name = {"push", "<<", "enq"})
     public IRubyObject push(ThreadContext context, IRubyObject value) {
-        initializedCheck();
+        initializedCheck(context);
         try {
             putInternal(context, value);
         } catch (InterruptedException ie) {
@@ -535,7 +540,7 @@ public class Queue extends RubyObject implements DataType {
 
     @JRubyMethod
     public IRubyObject close(ThreadContext context) {
-        initializedCheck();
+        initializedCheck(context);
         try {
             closeInternal();
         } catch (InterruptedException ie) {
@@ -580,7 +585,7 @@ public class Queue extends RubyObject implements DataType {
 
     @JRubyMethod(name = "closed?")
     public IRubyObject closed_p(ThreadContext context) {
-        initializedCheck();
+        initializedCheck(context);
         return asBoolean(context, closed);
     }
 
@@ -592,9 +597,10 @@ public class Queue extends RubyObject implements DataType {
         return closed;
     }
 
+    @Deprecated(since = "10.0")
     public synchronized void checkShutdown() {
         if (isShutdown()) {
-            Ruby runtime = getRuntime();
+            Ruby runtime = getCurrentContext().runtime;
             throw RaiseException.from(runtime, runtime.getThreadError(), "queue shut down");
         }
     }

@@ -75,9 +75,14 @@ public abstract class JRubyExecutionContextLocal extends RubyObject {
         return default_value;
     }
 
-    @JRubyMethod(name = "default_proc")
+    @Deprecated(since = "10.0")
     public IRubyObject getDefaultProc() {
-        return (default_proc != null) ? default_proc : getRuntime().getNil();
+        return getDefaultProc(getCurrentContext());
+    }
+
+    @JRubyMethod(name = "default_proc")
+    public IRubyObject getDefaultProc(ThreadContext context) {
+        return (default_proc != null) ? default_proc : context.nil;
     }
 
     @JRubyMethod(name = "value")

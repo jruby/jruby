@@ -3,6 +3,7 @@ package org.jruby.javasupport.binding;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.ThreadContext;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -137,12 +138,17 @@ public abstract class MethodInstaller extends NamedInstaller {
         aliases.remove(alias);
     }
 
+    @Deprecated(since = "10.0")
     final void defineMethods(RubyModule target, DynamicMethod invoker) {
-        defineMethods(target, invoker, true);
+        defineMethods(target.getCurrentContext(), target, invoker, true);
     }
 
+    @Deprecated(since = "10.0")
     protected final void defineMethods(RubyModule target, DynamicMethod invoker, boolean checkDups) {
-        var context = target.getRuntime().getCurrentContext();
+        defineMethods(target.getCurrentContext(), target, invoker, checkDups);
+    }
+
+    protected final void defineMethods(ThreadContext context, RubyModule target, DynamicMethod invoker, boolean checkDups) {
         String oldName = this.name;
         target.addMethod(context, oldName, invoker);
 

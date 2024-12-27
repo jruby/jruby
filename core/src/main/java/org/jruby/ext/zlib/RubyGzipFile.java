@@ -89,8 +89,8 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
     @JRubyMethod(meta = true, name = "wrap", required = 1, optional = 1, checkArity = false)
     public static IRubyObject wrap(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         RubyGzipFile instance = ((RubyModule) recv).isKindOfModule(Access.getClass(context, "Zlib", "GzipWriter")) ?
-                JZlibRubyGzipWriter.newInstance(recv, args) :
-                JZlibRubyGzipReader.newInstance(recv, args);
+                JZlibRubyGzipWriter.newInstance(context, (RubyClass) recv, args) :
+                JZlibRubyGzipReader.newInstance(context, (RubyClass) recv, args);
 
         return wrapBlock(context, instance, block);
     }

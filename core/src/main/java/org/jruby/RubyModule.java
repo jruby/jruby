@@ -519,26 +519,26 @@ public class RubyModule extends RubyObject {
         if (isSameOrigin(m)) throw argumentError(context, getName(context) + " cyclic prepend detected " + m.getName(context));
     }
 
-    private RubyClass searchProvidersForClass(String name, RubyClass superClazz) {
+    private RubyClass searchProvidersForClass(ThreadContext context, String name, RubyClass superClazz) {
         Set<ClassProvider> classProviders = this.classProviders;
         if (classProviders == Collections.EMPTY_SET) return null;
 
         RubyClass clazz;
         for (ClassProvider classProvider: classProviders) {
-            if ((clazz = classProvider.defineClassUnder(this, name, superClazz)) != null) {
+            if ((clazz = classProvider.defineClassUnder(context, this, name, superClazz)) != null) {
                 return clazz;
             }
         }
         return null;
     }
 
-    private RubyModule searchProvidersForModule(String name) {
+    private RubyModule searchProvidersForModule(ThreadContext context, String name) {
         Set<ClassProvider> classProviders = this.classProviders;
         if (classProviders == Collections.EMPTY_SET) return null;
 
         RubyModule module;
         for (ClassProvider classProvider: classProviders) {
-            if ((module = classProvider.defineModuleUnder(this, name)) != null) {
+            if ((module = classProvider.defineModuleUnder(context, this, name)) != null) {
                 return module;
             }
         }
@@ -2582,7 +2582,7 @@ public class RubyModule extends RubyObject {
                 if (tmp != null) tmp = tmp.getRealClass();
                 if (tmp != superClazz) throw typeError(context, "superclass mismatch for class " + ids(context.runtime, name));
             }
-        } else if ((clazz = searchProvidersForClass(name, superClazz)) != null) {
+        } else if ((clazz = searchProvidersForClass(context, name, superClazz)) != null) {
             // reopen a java class
         } else {
             if (superClazz == null) superClazz = objectClass(context);
@@ -2631,7 +2631,7 @@ public class RubyModule extends RubyObject {
         if (moduleObj != null) {
             if (!moduleObj.isModule()) throw typeError(context, "", moduleObj, " is not a module");
             module = (RubyModule)moduleObj;
-        } else if ((module = searchProvidersForModule(name)) != null) {
+        } else if ((module = searchProvidersForModule(context, name)) != null) {
             // reopen a java module
         } else {
             module = RubyModule.newModule(context, name, this, true, file, line);

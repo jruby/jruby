@@ -234,9 +234,13 @@ public abstract class JavaLang {
             return RubyArray.newArrayMayCopy(runtime, backtrace);
         }
 
-        @JRubyMethod // can not set backtrace for a java.lang.Throwable
         public static IRubyObject set_backtrace(final IRubyObject self, final IRubyObject backtrace) {
-            return self.getRuntime().getNil();
+            return set_backtrace(((RubyBasicObject) self).getCurrentContext(), self, backtrace);
+        }
+
+        @JRubyMethod // can not set backtrace for a java.lang.Throwable
+        public static IRubyObject set_backtrace(ThreadContext context, final IRubyObject self, final IRubyObject backtrace) {
+            return context.nil;
         }
 
         @JRubyMethod

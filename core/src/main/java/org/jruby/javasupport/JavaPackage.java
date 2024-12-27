@@ -100,9 +100,14 @@ public class JavaPackage extends RubyModule {
 
     // NOTE: name is Ruby name not pkg.name ~ maybe it should be just like with JavaClass?
 
-    @JRubyMethod(name = "package_name", alias = "to_s")
+    @Deprecated(since = "10.0")
     public RubyString package_name() {
-        return getRuntime().newString(packageName);
+        return package_name(getCurrentContext());
+    }
+
+    @JRubyMethod(name = "package_name", alias = "to_s")
+    public RubyString package_name(ThreadContext context) {
+        return newString(context, packageName);
     }
 
     @Override
@@ -148,7 +153,7 @@ public class JavaPackage extends RubyModule {
         ConstantEntry entry = constantEntryFetch(name);
         if (entry == null) return null;
         if (entry.hidden && !includePrivate) {
-            throw getRuntime().newNameError("private constant " + getName(context) + "::" + name + " referenced", name);
+            throw context.runtime.newNameError("private constant " + getName(context) + "::" + name + " referenced", name);
         }
         return entry.value;
     }
@@ -285,23 +290,21 @@ public class JavaPackage extends RubyModule {
 
         static final JavaClassProvider INSTANCE = new JavaClassProvider();
 
-        public RubyClass defineClassUnder(RubyModule pkg, String name, RubyClass superClazz) {
+        public RubyClass defineClassUnder(ThreadContext context, RubyModule pkg, String name, RubyClass superClazz) {
             // shouldn't happen, but if a superclass is specified, it's not ours
             if ( superClazz != null ) return null;
 
             final String subPackageName = JavaPackage.buildPackageName(pkg, name).toString();
 
-            final Ruby runtime = pkg.getRuntime();
-            Class<?> javaClass = Java.getJavaClass(runtime, subPackageName);
-            return (RubyClass) Java.getProxyClass(runtime, javaClass);
+            Class<?> javaClass = Java.getJavaClass(context.runtime, subPackageName);
+            return (RubyClass) Java.getProxyClass(context.runtime, javaClass);
         }
 
-        public RubyModule defineModuleUnder(RubyModule pkg, String name) {
+        public RubyModule defineModuleUnder(ThreadContext context, RubyModule pkg, String name) {
             final String subPackageName = JavaPackage.buildPackageName(pkg, name).toString();
 
-            final Ruby runtime = pkg.getRuntime();
-            Class<?> javaClass = Java.getJavaClass(runtime, subPackageName);
-            return Java.getInterfaceModule(runtime.getCurrentContext(), javaClass);
+            Class<?> javaClass = Java.getJavaClass(context.runtime, subPackageName);
+            return Java.getInterfaceModule(context, javaClass);
         }
 
     }

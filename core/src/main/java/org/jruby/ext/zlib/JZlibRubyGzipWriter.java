@@ -33,6 +33,7 @@ import com.jcraft.jzlib.GZIPOutputStream;
 import com.jcraft.jzlib.JZlib;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.Ruby;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyIO;
 import org.jruby.RubyKernel;
@@ -67,14 +68,17 @@ import static org.jruby.runtime.Visibility.PRIVATE;
 public class JZlibRubyGzipWriter extends RubyGzipFile {
     @JRubyMethod(name = "new", rest = true, meta = true, keywords = true)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        JZlibRubyGzipWriter result = newInstance(recv, args);
+        JZlibRubyGzipWriter result = newInstance(context, (RubyClass) recv, args);
 
         return RubyGzipFile.wrapBlock(context, result, block);
     }
 
+    @Deprecated(since = "10.0")
     public static JZlibRubyGzipWriter newInstance(IRubyObject recv, IRubyObject[] args) {
-        var context = recv.getRuntime().getCurrentContext();
-        RubyClass klass = (RubyClass) recv;
+        return newInstance(((RubyBasicObject) recv).getCurrentContext(), (RubyClass) recv, args);
+    }
+
+    public static JZlibRubyGzipWriter newInstance(ThreadContext context, RubyClass klass, IRubyObject[] args) {
         JZlibRubyGzipWriter result = (JZlibRubyGzipWriter) klass.allocate(context);
 
         result.callInit(args, Block.NULL_BLOCK);
@@ -87,7 +91,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         Arity.checkArgumentCount(context, args, 1, 4);
         args[0] = Helpers.invoke(context, fileClass(context), "open", args[0], newString(context, "wb"));
         
-        JZlibRubyGzipWriter gzio = newInstance(recv, args);
+        JZlibRubyGzipWriter gzio = newInstance(context, (RubyClass) recv, args);
         
         return RubyGzipFile.wrapBlock(context, gzio, block);
     }

@@ -31,6 +31,7 @@ import com.jcraft.jzlib.GZIPException;
 import com.jcraft.jzlib.GZIPInputStream;
 import com.jcraft.jzlib.Inflater;
 import org.jruby.Ruby;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyEnumerator;
 import org.jruby.RubyException;
@@ -79,14 +80,17 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
     @JRubyMethod(name = "new", rest = true, meta = true, keywords = true)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        JZlibRubyGzipReader result = newInstance(recv, args);
+        JZlibRubyGzipReader result = newInstance(context, (RubyClass) recv, args);
 
         return RubyGzipFile.wrapBlock(context, result, block);
     }
 
+    @Deprecated(since = "10.0")
     public static JZlibRubyGzipReader newInstance(IRubyObject recv, IRubyObject[] args) {
-        var context = recv.getRuntime().getCurrentContext();
-        RubyClass klass = (RubyClass) recv;
+        return newInstance(((RubyBasicObject) recv).getCurrentContext(), (RubyClass) recv, args);
+    }
+
+    public static JZlibRubyGzipReader newInstance(ThreadContext context, RubyClass klass, IRubyObject[] args) {
         JZlibRubyGzipReader result = (JZlibRubyGzipReader) klass.allocate(context);
 
         result.callInit(args, Block.NULL_BLOCK);
@@ -100,7 +104,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
         args[0] = Helpers.invoke(context, fileClass(context), "open", args[0], newString(context, "rb"));
 
-        JZlibRubyGzipReader gzio = newInstance(recv, args);
+        JZlibRubyGzipReader gzio = newInstance(context, (RubyClass) recv, args);
 
         return RubyGzipFile.wrapBlock(context, gzio, block);
     }
