@@ -269,8 +269,13 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return sync ? context.tru : context.fals;
     }
 
-    @JRubyMethod(name = "finish")
+    @Deprecated(since = "10.0")
     public IRubyObject finish() {
+        return finish(getCurrentContext());
+    }
+
+    @JRubyMethod(name = "finish")
+    public IRubyObject finish(ThreadContext context) {
         if (!finished) {
             //io.finish();
         }
@@ -278,8 +283,13 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return realIo;
     }
 
-    @JRubyMethod(name = "close")
+    @Deprecated(since = "10.0")
     public IRubyObject close() {
+        return close(getCurrentContext());
+    }
+
+    @JRubyMethod(name = "close")
+    public IRubyObject close(ThreadContext context) {
         return realIo;
     }
 
@@ -293,10 +303,14 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return asFixnum(context, level);
     }
 
-    @JRubyMethod(name = "sync=")
     public IRubyObject set_sync(IRubyObject arg) {
+        return set_sync(getCurrentContext(), arg);
+    }
+
+    @JRubyMethod(name = "sync=")
+    public IRubyObject set_sync(ThreadContext context, IRubyObject arg) {
         sync = arg.isTrue();
-        return sync ? getRuntime().getTrue() : getRuntime().getFalse();
+        return sync ? context.tru : context.fals;
     }
     
     @Override

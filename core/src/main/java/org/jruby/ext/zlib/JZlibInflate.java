@@ -35,6 +35,8 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -63,13 +65,13 @@ public class JZlibInflate extends ZStream {
             return inflate.inflate(context, string, Block.NULL_BLOCK);
         } finally {
             inflate.finish(context, Block.NULL_BLOCK);
-            inflate.close();
+            inflate.close(context);
         }
     }
 
     @Deprecated
     public IRubyObject _initialize(IRubyObject[] args) {
-         return _initialize(getRuntime().getCurrentContext(), args);
+         return _initialize(getCurrentContext(), args);
     }
 
     @JRubyMethod(name = "initialize", optional = 1, checkArity = false, visibility = PRIVATE)
@@ -114,22 +116,27 @@ public class JZlibInflate extends ZStream {
 
     @JRubyMethod(name = "<<")
     public IRubyObject append(ThreadContext context, IRubyObject arg) {
-        checkClosed();
+        checkClosed(context);
         if (arg.isNil()) {
-            run(true);
+            run(context, true);
         } else {
-            append(arg.convertToString().getByteList());
+            append(context, arg.convertToString().getByteList());
         }
         return this;
     }
 
-    public void append(ByteList obj) {
+    @Deprecated(since = "10.0")
+     public void append(ByteList obj) {
+        append(getCurrentContext(), obj);
+     }
+
+     public void append(ThreadContext context, ByteList obj) {
         if (!internalFinished()) {
             flater.setInput(obj.bytes(), true);
         } else {
             input.append(obj);
         }
-        run(false);
+        run(context, false);
     }
 
      @Deprecated(since = "10.0")
@@ -165,7 +172,7 @@ public class JZlibInflate extends ZStream {
                 case JZlib.Z_STREAM_ERROR -> throw RubyZlib.newStreamError(context, "stream error");
                 case JZlib.Z_DATA_ERROR -> throw RubyZlib.newDataError(context, "wrong dictionary");
             }
-            run(false);
+            run(context, false);
             return arg;
         } catch (IllegalArgumentException iae) {
             throw RubyZlib.newStreamError(context, "stream error: " + iae.getMessage());
@@ -182,12 +189,10 @@ public class JZlibInflate extends ZStream {
     }
 
     public IRubyObject inflate(ThreadContext context, ByteList str, Block block) {
-        if (null == str) {
-            return internalFinish(block);
-        } else {
-            append(str);
-            return flushOutput(context, block);
-        }
+        if (str == null) return internalFinish(context, block);
+
+        append(context, str);
+        return flushOutput(context, block);
     }
 
     @JRubyMethod(name = "sync")
@@ -215,9 +220,8 @@ public class JZlibInflate extends ZStream {
         }
     }
 
-    private void run(boolean finish) {
+    private void run(ThreadContext context, boolean finish) {
         int resultLength = -1;
-        var context = getRuntime().getCurrentContext();
 
         while (!internalFinished() && resultLength != 0) {
             // MRI behavior
@@ -286,7 +290,7 @@ public class JZlibInflate extends ZStream {
     }
 
     @Override
-    protected void internalReset() {
+    protected void internalReset(ThreadContext context) {
         init(windowBits);
     }
 
@@ -301,8 +305,8 @@ public class JZlibInflate extends ZStream {
     }
 
     @Override
-    protected IRubyObject internalFinish(Block block) {
-        run(true);
+    protected IRubyObject internalFinish(ThreadContext context, Block block) {
+        run(context, true);
         // MRI behavior: in finished mode, we work as pass-through
         if (internalFinished()) {
             if (input.getRealSize() > 0) {
@@ -316,7 +320,7 @@ public class JZlibInflate extends ZStream {
                 resetBuffer(input);
             }
         }
-        return flushOutput(getRuntime().getCurrentContext(), block);
+        return flushOutput(context, block);
     }
 
     @Override
@@ -326,7 +330,7 @@ public class JZlibInflate extends ZStream {
 
     @Override
     public IRubyObject avail_in(ThreadContext context) {
-        return RubyFixnum.newFixnum(getRuntime(), flater.avail_in);
+        return asFixnum(context, flater.avail_in);
     }
 
     private static void resetBuffer(ByteList l) {

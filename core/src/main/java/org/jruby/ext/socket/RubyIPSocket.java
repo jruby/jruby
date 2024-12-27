@@ -91,7 +91,7 @@ public class RubyIPSocket extends RubyBasicSocket {
     @JRubyMethod
     public IRubyObject recvfrom(ThreadContext context, IRubyObject _length) {
         IRubyObject result = recv(context, _length);
-        InetSocketAddress sender = getInetRemoteSocket();
+        InetSocketAddress sender = getInetRemoteSocket(context);
 
         int port;
         String hostName;
@@ -128,16 +128,12 @@ public class RubyIPSocket extends RubyBasicSocket {
 
     @Override
     protected IRubyObject getSocknameCommon(ThreadContext context, String caller) {
-        InetSocketAddress sock = getInetSocketAddress();
-
-        return Sockaddr.packSockaddrFromAddress(context, sock);
+        return Sockaddr.packSockaddrFromAddress(context, getInetSocketAddress());
     }
 
     @Override
     public IRubyObject getpeername(ThreadContext context) {
-       InetSocketAddress sock = getInetRemoteSocket();
-
-       return Sockaddr.packSockaddrFromAddress(context, sock);
+       return Sockaddr.packSockaddrFromAddress(context, getInetRemoteSocket(context));
     }
 
     private IRubyObject addrCommon(ThreadContext context, IRubyObject reverse) {
@@ -169,7 +165,7 @@ public class RubyIPSocket extends RubyBasicSocket {
     }
 
     private IRubyObject peeraddrCommon(ThreadContext context, boolean reverse) {
-        InetSocketAddress address = getInetRemoteSocket();
+        InetSocketAddress address = getInetRemoteSocket(context);
 
         checkAddress(context, address);
 

@@ -34,7 +34,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyEnumerator;
 import org.jruby.RubyException;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
@@ -210,9 +209,8 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
             case 0:
                 break;
             case 1:
-                if (args[0].isNil()) {
-                    return readAll();
-                }
+                if (args[0].isNil()) return readAll(context);
+
                 IRubyObject tmp = args[0].checkStringType();
                 if (tmp.isNil()) {
                     limit = RubyNumeric.fix2int(args[0]);
@@ -223,18 +221,17 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
             case 2:
             default:
                 limit = RubyNumeric.fix2int(args[1]);
-                if (args[0].isNil()) {
-                    return readAll(limit);
-                }
+                if (args[0].isNil()) return readAll(context, limit);
+
                 sep = args[0].convertToString().getByteList();
                 break;
         }
 
-        return internalSepGets(sep, limit);
+        return internalSepGets(context, sep, limit);
     }
 
-    private IRubyObject internalSepGets(ByteList sep) throws IOException {
-        return internalSepGets(sep, -1);
+    private IRubyObject internalSepGets(ThreadContext context, ByteList sep) throws IOException {
+        return internalSepGets(context, sep, -1);
     }
 
     private ByteList newReadByteList() {
@@ -249,7 +246,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         return byteList;
     }
 
-    private IRubyObject internalSepGets(ByteList sep, int limit) throws IOException {
+    private IRubyObject internalSepGets(ThreadContext context, ByteList sep, int limit) throws IOException {
         ByteList result = newReadByteList();
         boolean stripNewlines = false;
 
@@ -279,12 +276,12 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
         // io.available() only returns 0 after EOF is encountered
         // so we need to differentiate between the empty string and EOF
-        if (0 == result.length() && -1 == ce) return getRuntime().getNil();
+        if (0 == result.length() && -1 == ce) return context.nil;
 
         line++;
         position += result.length();
 
-        return newStr(getRuntime(), result);
+        return newStr(context.runtime, result);
     }
 
     private static final int NEWLINE = '\n';
@@ -310,7 +307,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
             
             return result;
         } catch (IOException ioe) {
-            throw getRuntime().newIOErrorFromException(ioe);
+            throw context.runtime.newIOErrorFromException(ioe);
         }
     }
     private final static int BUFF_SIZE = 4096;
@@ -320,7 +317,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         int argc = Arity.checkArgumentCount(context, args, 0, 1);
 
         try {
-            if (argc == 0 || args[0].isNil()) return readAll();
+            if (argc == 0 || args[0].isNil()) return readAll(context);
 
             int len = RubyNumeric.fix2int(args[0]);
             if (len < 0) throw argumentError(context, "negative length " + len + " given");
@@ -349,7 +346,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
     @Deprecated
     public IRubyObject readpartial(IRubyObject[] args) {
-        return readpartial(getRuntime().getCurrentContext(), args);
+        return readpartial(getCurrentContext(), args);
     }
 
     @JRubyMethod(name = "readpartial", required = 1, optional = 1, checkArity = false)
@@ -383,11 +380,11 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         return newStr(context.runtime, val);
     }
 
-    private RubyString readAll() throws IOException {
-        return readAll(-1);
+    private RubyString readAll(ThreadContext context) throws IOException {
+        return readAll(context, -1);
     }
 
-    private RubyString readAll(int limit) throws IOException {
+    private RubyString readAll(ThreadContext context, int limit) throws IOException {
         ByteList val = newReadByteList(10);
         int rest = limit == -1 ? BUFF_SIZE : limit;
         byte[] buffer = new byte[rest];
@@ -403,7 +400,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         fixBrokenTrailingCharacter(val);
         
         this.position += val.length();
-        return newStr(getRuntime(), val);
+        return newStr(context.runtime, val);
     }
 
 
@@ -439,9 +436,14 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         return lineArg;
     }
 
-    @JRubyMethod(name = {"pos", "tell"})
+    @Deprecated(since = "10.0")
     public IRubyObject pos() {
-        return RubyNumeric.int2fix(getRuntime(), position);
+        return pos(getCurrentContext());
+    }
+
+    @JRubyMethod(name = {"pos", "tell"})
+    public IRubyObject pos(ThreadContext context) {
+        return asFixnum(context, position);
     }
 
     @Deprecated
@@ -536,7 +538,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
     @Override
     @JRubyMethod(name = "close")
-    public IRubyObject close() {
+    public IRubyObject close(ThreadContext context) {
         if (!closed) {
             try {
                 /**
@@ -553,38 +555,49 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
                  * TODO: implement this without IOInputStream? Not so hard.
                  */
                 bufferedStream.close();
-                if (realIo.respondsTo("close")) {
-                    realIo.callMethod(realIo.getRuntime().getCurrentContext(), "close");
-                }
+                if (realIo.respondsTo("close")) realIo.callMethod(context, "close");
             } catch (IOException ioe) {
-                throw getRuntime().newIOErrorFromException(ioe);
+                throw context.runtime.newIOErrorFromException(ioe);
             }
         }
         this.closed = true;
         return realIo;
     }
 
-    @JRubyMethod(name = "eof")
+    @Deprecated(since = "10.0")
     public IRubyObject eof() {
+        return eof(getCurrentContext());
+    }
+
+    @JRubyMethod(name = "eof")
+    public IRubyObject eof(ThreadContext context) {
         try {
-            return isEof() ? getRuntime().getTrue() : getRuntime().getFalse();
+            return isEof() ? context.tru : context.fals;
         } catch (IOException ioe) {
-            throw getRuntime().newIOErrorFromException(ioe);
+            throw context.runtime.newIOErrorFromException(ioe);
         }
     }
 
-    @JRubyMethod(name = "eof?")
+    @Deprecated(since = "10.0")
     public IRubyObject eof_p() {
-        return eof();
+        return eof_p(getCurrentContext());
+    }
+
+    @JRubyMethod(name = "eof?")
+    public IRubyObject eof_p(ThreadContext context) {
+        return eof(context);
+    }
+
+    @Deprecated(since = "10.0")
+    public IRubyObject unused() {
+        return unused(getCurrentContext());
     }
 
     @JRubyMethod
-    public IRubyObject unused() {
+    public IRubyObject unused(ThreadContext context) {
         byte[] tmp = io.getAvailIn();
         
-        if (tmp == null) return getRuntime().getNil();
-
-        return RubyString.newString(getRuntime(), tmp);
+        return tmp == null ? context.nil : newString(context, new ByteList(tmp));
     }
 
     @Override
@@ -612,22 +625,22 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
     @Override
     @JRubyMethod
-    public IRubyObject orig_name() {
+    public IRubyObject orig_name(ThreadContext context) {
         String name = io.getName();
 
-        nullFreeOrigName = getRuntime().newString(name);
+        nullFreeOrigName = newString(context, name);
 
-        return super.orig_name();
+        return super.orig_name(context);
     }
 
     @Override
     @JRubyMethod
-    public IRubyObject comment() {
+    public IRubyObject comment(ThreadContext context) {
         String comment = io.getComment();
 
-        nullFreeComment = getRuntime().newString(comment);
+        nullFreeComment = newString(context, comment);
 
-        return super.comment();
+        return super.comment(context);
     }
 
     @JRubyMethod(optional = 1, checkArity = false)
@@ -643,7 +656,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         }
 
         try {
-            for (IRubyObject result = internalSepGets(sep); !result.isNil(); result = internalSepGets(sep)) {
+            for (IRubyObject result = internalSepGets(context, sep); !result.isNil(); result = internalSepGets(context, sep)) {
                 block.yield(context, result);
             }
         } catch (IOException ioe) {
@@ -680,18 +693,23 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         return context.nil;
     }
 
-    @JRubyMethod
+    @Deprecated(since = "10.0")
     public IRubyObject ungetbyte(IRubyObject b) {
+        return ungetbyte(getCurrentContext(), b);
+    }
+
+    @JRubyMethod
+    public IRubyObject ungetbyte(ThreadContext context, IRubyObject b) {
         if (b.isNil()) return b;
 
         try {
             bufferedStream.unread(b.convertToInteger().getIntValue());
             position--;
         } catch (IOException ioe) {
-            throw getRuntime().newIOErrorFromException(ioe);
+            throw context.runtime.newIOErrorFromException(ioe);
         }
 
-        return getRuntime().getNil();
+        return context.nil;
     }
 
     @JRubyMethod(optional = 1, checkArity = false)
@@ -708,7 +726,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
             if (argc > 0) sep = args[0].convertToString().getByteList();
 
             try {
-                for (IRubyObject result = internalSepGets(sep); !result.isNil(); result = internalSepGets(sep)) {
+                for (IRubyObject result = internalSepGets(context, sep); !result.isNil(); result = internalSepGets(context, sep)) {
                     array.add(result);
                 }
             } catch (IOException ioe) {
@@ -773,14 +791,14 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
                 }
                 else {
                     if (buf == null) buf = newEmptyString(context);
-                    tmpbuf = obj.readAll();
+                    tmpbuf = obj.readAll(context);
                     buf.cat(tmpbuf);
                 }
 
                 obj.read(context, IRubyObject.NULL_ARRAY);
                 pos = io.callMethod(context, "pos").convertToInteger().getLongValue();
                 unused = obj.unused();
-                obj.finish();
+                obj.finish(context);
                 if (!unused.isNil()) {
                     pos -= unused.callMethod(context, "length").convertToInteger().getLongValue();
                     io.callMethod(context, "pos=", asFixnum(context, pos));

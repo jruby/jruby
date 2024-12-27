@@ -120,7 +120,7 @@ public class RubyTCPServer extends RubyTCPSocket {
         } catch(UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "initialize: name or service not known");
         } catch(BindException e) {
-            throw runtime.newErrnoFromBindException(e, bindContextMessage(_host, port));
+            throw runtime.newErrnoFromBindException(e, bindContextMessage(context, _host, port));
         } catch(SocketException e) {
             String msg = e.getMessage();
 

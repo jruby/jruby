@@ -77,10 +77,9 @@ public class Sockaddr {
 
         IRubyObject addr = sockaddr.pop(context);
         IRubyObject _port = sockaddr.pop(context);
-        int port = SocketUtils.portToInt(_port);
 
         return new InetSocketAddress(
-                addr.convertToString().toString(), port);
+                addr.convertToString().toString(), SocketUtils.portToInt(context, _port));
     }
 
     public static SocketAddress addressFromSockaddr(ThreadContext context, IRubyObject arg) {

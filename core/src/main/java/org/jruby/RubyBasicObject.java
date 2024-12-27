@@ -971,8 +971,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         // MRI: immutable_obj_clone
         if (isSpecialObject()) {
-            final Ruby runtime = context.runtime;
-            if (freeze == runtime.getFalse()) throw argumentError(context, str(runtime, "can't unfreeze ", types(runtime, getType())));
+            if (freeze == context.fals) throw argumentError(context, str(context.runtime, "can't unfreeze ", types(context.runtime, getType())));
 
             return this;
         }

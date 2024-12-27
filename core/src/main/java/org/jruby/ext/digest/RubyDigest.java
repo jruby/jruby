@@ -40,6 +40,7 @@ import java.util.Map;
 
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
@@ -171,7 +172,7 @@ public class RubyDigest {
      */
     @Deprecated(since = "10.0", forRemoval = true)
     public static RubyString hexencode(IRubyObject self, IRubyObject arg) {
-        return hexencode(self.getRuntime().getCurrentContext(), self, arg);
+        return hexencode(((RubyBasicObject) self).getCurrentContext(), self, arg);
     }
 
     @JRubyMethod(name = "hexencode", meta = true)
@@ -179,10 +180,16 @@ public class RubyDigest {
         return toHexString(context, arg.convertToString().getBytes());
     }
 
-    @JRubyMethod(name = "bubblebabble", meta = true)
+    @Deprecated(since = "10.0")
     public static RubyString bubblebabble(IRubyObject recv, IRubyObject arg) {
+        return bubblebabble(((RubyBasicObject) recv).getCurrentContext(), recv, arg);
+    }
+
+
+    @JRubyMethod(name = "bubblebabble", meta = true)
+    public static RubyString bubblebabble(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         final ByteList bytes = arg.convertToString().getByteList();
-        return RubyString.newString(recv.getRuntime(), BubbleBabble.bubblebabble(bytes.unsafeBytes(), bytes.begin(), bytes.length()));
+        return newString(context, BubbleBabble.bubblebabble(bytes.unsafeBytes(), bytes.begin(), bytes.length()));
     }
 
     private record Metadata(String name, int blockLength) {
@@ -478,7 +485,7 @@ public class RubyDigest {
 
         @Deprecated
         public static RubyString bubblebabble(IRubyObject recv, IRubyObject arg) {
-            return bubblebabble(recv.getRuntime().getCurrentContext(), recv, arg);
+            return bubblebabble(((RubyBasicObject) recv).getCurrentContext(), recv, arg);
         }
 
         @Deprecated
@@ -549,9 +556,14 @@ public class RubyDigest {
             return this;
         }
 
-        @JRubyMethod()
+        @Deprecated(since = "10.0")
         public IRubyObject finish() {
-            IRubyObject digest = RubyString.newStringNoCopy(getRuntime(), algo.digest());
+            return finish(getCurrentContext());
+        }
+
+        @JRubyMethod()
+        public IRubyObject finish(ThreadContext context) {
+            IRubyObject digest = RubyString.newStringNoCopy(context.runtime, algo.digest());
             algo.reset();
             return digest;
         }

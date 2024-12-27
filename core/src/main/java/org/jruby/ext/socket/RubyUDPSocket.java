@@ -108,7 +108,7 @@ public class RubyUDPSocket extends RubyIPSocket {
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject _family) {
-        AddressFamily family = SocketUtils.addressFamilyFromArg(_family);
+        AddressFamily family = SocketUtils.addressFamilyFromArg(context, _family);
 
         if (family == AddressFamily.AF_INET) {
             explicitFamily = Inet4Address.class;
@@ -147,7 +147,7 @@ public class RubyUDPSocket extends RubyIPSocket {
     @JRubyMethod
     public IRubyObject bind(ThreadContext context, IRubyObject host, IRubyObject _port) {
         final Ruby runtime = context.runtime;
-        final int port = SocketUtils.portToInt(_port);
+        final int port = SocketUtils.portToInt(context, _port);
 
         try {
             final InetSocketAddress addr = getInetSocketAddress(context, host, port);
@@ -166,15 +166,15 @@ public class RubyUDPSocket extends RubyIPSocket {
         } catch (UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "bind: name or service not known");
         } catch (BindException e) {
-            throw runtime.newErrnoFromBindException(e, bindContextMessage(host, port));
+            throw runtime.newErrnoFromBindException(e, bindContextMessage(context, host, port));
         } catch (AlreadyBoundException e) {
-            throw runtime.newErrnoEINVALError(bindContextMessage(host, port));
+            throw runtime.newErrnoEINVALError(bindContextMessage(context, host, port));
         } catch (SocketException e) {
             final String message = e.getMessage();
             if ( message != null ) {
                 switch ( message ) {
                     case "Permission denied" :
-                        throw runtime.newErrnoEACCESError(bindContextMessage(host, port));
+                        throw runtime.newErrnoEACCESError(bindContextMessage(context, host, port));
                 }
             }
             throw sockerr(runtime, "bind: name or service not known", e);
@@ -215,7 +215,7 @@ public class RubyUDPSocket extends RubyIPSocket {
                 if (explicitFamily != null && !explicitFamily.isInstance(a)) continue;
 
                 try {
-                    InetSocketAddress addr = new InetSocketAddress(addrs[i], SocketUtils.portToInt(port));
+                    InetSocketAddress addr = new InetSocketAddress(addrs[i], SocketUtils.portToInt(context, port));
 
                     ((DatagramChannel) this.getChannel()).connect(addr);
 

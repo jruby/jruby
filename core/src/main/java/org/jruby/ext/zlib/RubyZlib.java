@@ -188,7 +188,7 @@ public class RubyZlib {
 
     @Deprecated(since = "10.0")
     public static IRubyObject zlib_version(IRubyObject recv) {
-        return zlib_version(recv.getRuntime().getCurrentContext(), recv);
+        return zlib_version(((RubyBasicObject) recv).getCurrentContext(), recv);
     }
 
     @JRubyMethod(name = "zlib_version", module = true, visibility = PRIVATE)
@@ -261,7 +261,7 @@ public class RubyZlib {
      */
     @Deprecated(since = "10.0", forRemoval = true)
     public static IRubyObject deflate(IRubyObject recv, IRubyObject[] args) {
-        return deflate(((RubyBasicObject) recv).getRuntime().getCurrentContext(), recv, args);
+        return deflate(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
 
     @JRubyMethod(required = 1, optional = 1, checkArity = false, module = true)

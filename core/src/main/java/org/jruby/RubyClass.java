@@ -1862,7 +1862,7 @@ public class RubyClass extends RubyModule {
             final Set<String> instanceMethods = new HashSet<>(getMethods().size());
 
             // define instance methods
-            defineInstanceMethods(instanceMethods);
+            defineInstanceMethods(context, instanceMethods);
 
             // define class/static methods
             defineClassMethods(context, instanceMethods);
@@ -1977,7 +1977,7 @@ public class RubyClass extends RubyModule {
         }
 
         //TODO: only generate that are overrideable (javaproxyclass)
-        protected void defineInstanceMethods(Set<String> instanceMethods) {
+        protected void defineInstanceMethods(ThreadContext context, Set<String> instanceMethods) {
             Set<String> defined = new HashSet<>();
             for (Map.Entry<String,DynamicMethod> methodEntry : getMethods().entrySet()) { // TODO: explicitly included but not-yet defined methods?
                 final String id = methodEntry.getKey();
@@ -2003,19 +2003,18 @@ public class RubyClass extends RubyModule {
                 if (methodSignature == null) {
                     // TODO: should inherited search for java mangledName?
                     for (Class<?>[] sig : searchInheritedSignatures(id, arity)) { // id (vs callid) here as this is searching in java
-                        String signature = defineInstanceMethod(id, callid, arity, position, sig);
+                        String signature = defineInstanceMethod(context, id, callid, arity, position, sig);
                         if (signature != null) instanceMethods.add(signature);
                     }
                 } else {
-                    String signature = defineInstanceMethod(id, callid, arity, position, methodSignature);
+                    String signature = defineInstanceMethod(context, id, callid, arity, position, methodSignature);
                     if (signature != null) instanceMethods.add(signature);
                 }
             }
         }
         
-        protected String defineInstanceMethod(final String id, final String callid, final Signature sig,
-                PositionAware position, Class<?>[] methodSignature) {
-            var context = getRuntime().getCurrentContext();
+        protected String defineInstanceMethod(ThreadContext context, final String id, final String callid,
+                                              final Signature sig, PositionAware position, Class<?>[] methodSignature) {
             String javaMethodName = JavaNameMangler.mangleMethodName(id);
 
             Map<Class<?>, Map<String, Object>> methodAnnos = getMethodAnnotations().get(callid); // ruby side, use callid

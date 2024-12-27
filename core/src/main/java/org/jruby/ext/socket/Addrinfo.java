@@ -186,10 +186,11 @@ public class Addrinfo extends RubyObject {
     /* special recommended flags for getipnodebyname */
     public static final int AI_DEFAULT = (AI_V4MAPPED_CFG | AI_ADDRCONFIG);
 
-    private Addrinfo initializeSimple(IRubyObject host, IRubyObject port, int socketType, int protocolFamily) {
+    private Addrinfo initializeSimple(ThreadContext context, IRubyObject host, IRubyObject port,
+                                      int socketType, int protocolFamily) {
         InetAddress inetAddress = getRubyInetAddress(host);
 
-        this.socketAddress = new InetSocketAddress(inetAddress, port != null ? SocketUtils.portToInt(port) : 0);
+        this.socketAddress = new InetSocketAddress(inetAddress, port != null ? SocketUtils.portToInt(context, port) : 0);
         this.pfamily = getInetAddress() instanceof Inet4Address ? PF_INET : PF_INET6;
         this.protocol = Protocol.getProtocolByNumber(protocolFamily);
         this.socketType = SocketType.values()[socketType];
@@ -206,13 +207,13 @@ public class Addrinfo extends RubyObject {
             IRubyObject testArray = TypeConverter.checkArrayType(context, sockaddrArg);
             if (testArray != context.nil) {
                 RubyArray sockaddAry = (RubyArray) testArray;
-                AddressFamily af = SocketUtils.addressFamilyFromArg(sockaddAry.entry(0).convertToString());
+                AddressFamily af = SocketUtils.addressFamilyFromArg(context, sockaddAry.entry(0).convertToString());
 
                 ProtocolFamily pf;
                 if (protocolFamilyArg.isNil()) {
                     pf = af == AF_INET6 ? PF_INET6 : PF_INET;
                 } else {
-                    pf = SocketUtils.protocolFamilyFromArg(protocolFamilyArg);
+                    pf = SocketUtils.protocolFamilyFromArg(context, protocolFamilyArg);
                 }
 
                 if (pf != PF_UNIX) {
@@ -298,9 +299,9 @@ public class Addrinfo extends RubyObject {
 
             } else {
                 this.socketAddress = Sockaddr.sockaddrFromBytes(context, sockaddrArg.convertToString().getBytes());
-                this.pfamily = protocolFamilyArg.isNil() ? PF_UNSPEC: SocketUtils.protocolFamilyFromArg(protocolFamilyArg);
-                if (!protocolArg.isNil()) this.protocol = SocketUtils.protocolFromArg(protocolArg);
-                if (!socketTypeArg.isNil()) this.sock = SocketUtils.sockFromArg(socketTypeArg);
+                this.pfamily = protocolFamilyArg.isNil() ? PF_UNSPEC: SocketUtils.protocolFamilyFromArg(context, protocolFamilyArg);
+                if (!protocolArg.isNil()) this.protocol = SocketUtils.protocolFromArg(context, protocolArg);
+                if (!socketTypeArg.isNil()) this.sock = SocketUtils.sockFromArg(context, socketTypeArg);
                 this.socketType = SocketType.SOCKET;
             }
         } catch (IOException ioe) {
@@ -402,13 +403,13 @@ public class Addrinfo extends RubyObject {
     @JRubyMethod(meta = true)
     public static IRubyObject tcp(ThreadContext context, IRubyObject recv, IRubyObject host, IRubyObject port) {
         Addrinfo addrinfo = new Addrinfo(context.runtime, (RubyClass) recv);
-        return addrinfo.initializeSimple(host, port, SOCK_STREAM.intValue(), IPPROTO_TCP.intValue());
+        return addrinfo.initializeSimple(context, host, port, SOCK_STREAM.intValue(), IPPROTO_TCP.intValue());
     }
 
     @JRubyMethod(meta = true)
     public static IRubyObject udp(ThreadContext context, IRubyObject recv, IRubyObject host, IRubyObject port) {
         Addrinfo addrinfo = new Addrinfo(context.runtime, (RubyClass) recv);
-        return addrinfo.initializeSimple(host, port, SOCK_DGRAM.intValue(), IPPROTO_UDP.intValue());
+        return addrinfo.initializeSimple(context, host, port, SOCK_DGRAM.intValue(), IPPROTO_UDP.intValue());
     }
 
     @JRubyMethod(meta = true)
@@ -429,7 +430,7 @@ public class Addrinfo extends RubyObject {
         Addrinfo addrinfo = new Addrinfo(context.runtime, (RubyClass) recv);
 
         addrinfo.socketAddress = new UnixSocketAddress(new File(path.convertToString().toString()));
-        addrinfo.sock = SocketUtils.sockFromArg(type);
+        addrinfo.sock = SocketUtils.sockFromArg(context, type);
         addrinfo.socketType = SocketType.UNIX;
         addrinfo.pfamily = PF_UNIX;
         addrinfo.protocol = Protocol.getProtocolByName("ip");
