@@ -70,7 +70,7 @@ public final class Kernel {
     }
 
     private static IRubyObject get_pkg(final ThreadContext context, final String name) {
-        RubyModule module = Java.getJavaPackageModule(context.runtime, name);
+        RubyModule module = Java.getJavaPackageModule(context, name);
         return module == null ? context.nil : module;
     }
 

@@ -79,7 +79,32 @@ public class Error {
     }
 
     /**
-     * Create a runtime error with a simple ASCII String.
+     * Create a name error with a simple ASCII String and the failing name.
+     *
+     * @param context the current thread context
+     * @param message to be displayed in the error
+     * @param name involved in the error
+     * @return the error
+     */
+    public static RaiseException nameError(ThreadContext context, String message, String name) {
+        return context.runtime.newNameError(message, name);
+    }
+
+    /**
+     * Create a name error with a simple ASCII String and the failing name.
+     *
+     * @param context the current thread context
+     * @param message to be displayed in the error
+     * @param name involved in the error
+     * @param throwable the exception which caused this name error
+     * @return the error
+     */
+    public static RaiseException nameError(ThreadContext context, String message, String name, Throwable throwable) {
+        return context.runtime.newNameError(message, name, throwable);
+    }
+
+    /**
+     * Create a range error with a simple ASCII String.
      *
      * @param context the current thread context
      * @param message to be displayed in the error

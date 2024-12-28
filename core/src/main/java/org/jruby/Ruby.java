@@ -868,7 +868,7 @@ public final class Ruby implements Constantizable {
         context.preEvalScriptlet(scope);
 
         try {
-            return interpreter.execute(this, rootNode, getTopSelf());
+            return interpreter.execute(context, rootNode, getTopSelf());
         } finally {
             context.postEvalScriptlet();
         }
@@ -1214,7 +1214,7 @@ public final class Ruby implements Constantizable {
 
     private ScriptAndCode tryCompile(ParseResult result, ClassDefiningClassLoader classLoader) {
         try {
-            return Compiler.getInstance().execute(this, result, classLoader);
+            return Compiler.getInstance().execute(getCurrentContext(), result, classLoader);
         } catch (NotCompilableException | VerifyError e) {
             if (Options.JIT_LOGGING.load()) {
                 if (Options.JIT_LOGGING_VERBOSE.load()) {
@@ -1249,7 +1249,7 @@ public final class Ruby implements Constantizable {
 
     public IRubyObject runInterpreter(ThreadContext context, ParseResult parseResult, IRubyObject self) {
         try {
-            return interpreter.execute(this, parseResult, self);
+            return interpreter.execute(context, parseResult, self);
         } catch (IRReturnJump ex) {
             /* We happen to not push script scope as a dynamic scope or at least we seem to get rid of it.
              * This will capture any return which says it should return to a script scope as the reasonable
@@ -1271,7 +1271,7 @@ public final class Ruby implements Constantizable {
 
     public IRubyObject runInterpreter(ThreadContext context,  Node rootNode, IRubyObject self) {
         assert rootNode != null : "scriptNode is not null";
-        return interpreter.execute(this, (ParseResult) rootNode, self);
+        return interpreter.execute(context, (ParseResult) rootNode, self);
     }
 
     public IRubyObject runInterpreter(Node scriptNode) {

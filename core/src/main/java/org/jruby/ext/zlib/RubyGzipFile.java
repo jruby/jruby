@@ -50,6 +50,7 @@ import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.IOEncodable;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newString;
 
 /**
  *
@@ -155,9 +156,14 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
             ecopts = opts;
         }
     }
-    
+
+    @Deprecated(since = "10.0")
     public Encoding getReadEncoding() {
-        return enc == null ? getRuntime().getDefaultExternalEncoding() : enc;
+        return getReadEncoding(getCurrentContext());
+    }
+
+    public Encoding getReadEncoding(ThreadContext context) {
+        return enc == null ? context.runtime.getDefaultExternalEncoding() : enc;
     }
     
     public Encoding getEnc() {
@@ -172,18 +178,18 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return enc2;
     }
 
-    // c: gzfile_newstr
+    @Deprecated(since = "10.0")
     protected RubyString newStr(Ruby runtime, ByteList value) {
-        if (enc2 == null) {
-            return RubyString.newString(runtime, value, getReadEncoding());
-        }
+        return newStr(runtime.getCurrentContext(), value);
+    }
 
-        if (ec != null && enc2.isDummy()) {
-            value = EncodingUtils.econvStrConvert(runtime.getCurrentContext(), ec, value, 0);
-            return RubyString.newString(runtime, value, getEnc());
-        }
+    // c: gzfile_newstr
+    protected RubyString newStr(ThreadContext context, ByteList value) {
+        if (enc2 == null) return newString(context, value, getReadEncoding(context));
 
-        return EncodingUtils.strConvEncOpts(runtime.getCurrentContext(), RubyString.newString(runtime, value), enc2, enc, ecflags, ecopts);
+        return ec != null && enc2.isDummy() ?
+                newString(context, EncodingUtils.econvStrConvert(context, ec, value, 0), getEnc()) :
+                EncodingUtils.strConvEncOpts(context, newString(context, value), enc2, enc, ecflags, ecopts);
     }
 
     @Deprecated

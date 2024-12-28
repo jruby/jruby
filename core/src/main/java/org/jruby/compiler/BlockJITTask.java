@@ -37,6 +37,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.CompiledIRBlockBody;
 import org.jruby.runtime.MixedModeIRBlockBody;
+import org.jruby.runtime.ThreadContext;
 
 import static org.jruby.compiler.MethodJITTask.*;
 
@@ -57,7 +58,7 @@ class BlockJITTask extends JITCompiler.Task {
     }
 
     @Override
-    public void exec() throws NoSuchMethodException, IllegalAccessException {
+    public void exec(ThreadContext context) throws NoSuchMethodException, IllegalAccessException {
         // Check if the method has been explicitly excluded
         String excludeModuleName = checkExcludedMethod(jitCompiler.config, className, methodName, body);
         if (excludeModuleName != null) {
@@ -85,7 +86,7 @@ class BlockJITTask extends JITCompiler.Task {
         String jittedName = methodContext.getVariableName();
 
         // blocks only have variable-arity
-        body.completeBuild(runtime.getCurrentContext(),
+        body.completeBuild(context,
                 new CompiledIRBlockBody(
                         JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, jittedName, JVMVisitor.CLOSURE_SIGNATURE.type()),
                         scope,

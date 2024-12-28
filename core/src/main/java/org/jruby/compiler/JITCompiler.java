@@ -304,14 +304,14 @@ public class JITCompiler implements JITCompilerMBean {
             // See #4739 for a reproduction script that produced various errors without this.
             synchronized (jitCompiler) {
                 try {
-                    exec();
+                    exec(jitCompiler.runtime.getCurrentContext());
                 } catch (Throwable ex) {
                     jitFailed(ex);
                 }
             }
         }
 
-        protected abstract void exec() throws Exception ;
+        protected abstract void exec(ThreadContext context) throws Exception ;
 
         protected String getSourceFile() {
             return null; // unknown by default

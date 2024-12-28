@@ -150,7 +150,7 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
 
     @JRubyMethod(name = "parameters")
     public IRubyObject parameters(ThreadContext context) {
-        return Helpers.methodToParameters(context.runtime, this);
+        return Helpers.methodToParameters(context, this);
     }
 
     protected IRubyObject super_method(ThreadContext context, IRubyObject receiver, RubyModule superClass) {
@@ -240,7 +240,7 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
         }
 
         str.catString("(");
-        ArgumentDescriptor[] descriptors = Helpers.methodToArgumentDescriptors(method);
+        ArgumentDescriptor[] descriptors = Helpers.methodToArgumentDescriptors(context, method);
         if (descriptors.length > 0) {
             RubyString desc = descriptors[0].asParameterName(context);
 

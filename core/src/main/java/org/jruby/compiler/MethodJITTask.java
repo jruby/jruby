@@ -40,6 +40,7 @@ import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.targets.JVMVisitor;
 import org.jruby.ir.targets.JVMVisitorMethodContext;
 import org.jruby.runtime.ArgumentDescriptor;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.util.collections.IntHashMap;
 
 class MethodJITTask extends JITCompiler.Task {
@@ -56,7 +57,7 @@ class MethodJITTask extends JITCompiler.Task {
     }
 
     @Override
-    public void exec() throws NoSuchMethodException, IllegalAccessException {
+    public void exec(ThreadContext context) throws NoSuchMethodException, IllegalAccessException {
         // Check if the method has been explicitly excluded
         String excludeModuleName = checkExcludedMethod(jitCompiler.config, className, methodName, method);
         if (excludeModuleName != null) {
@@ -68,9 +69,8 @@ class MethodJITTask extends JITCompiler.Task {
         }
 
         String key = SexpMaker.sha1(method.getIRScope());
-        Ruby runtime = jitCompiler.runtime;
-        JVMVisitor visitor = JVMVisitor.newForJIT(runtime);
-        MethodJITClassGenerator generator = new MethodJITClassGenerator(className, methodName, key, runtime, method, visitor);
+        JVMVisitor visitor = JVMVisitor.newForJIT(context.runtime);
+        MethodJITClassGenerator generator = new MethodJITClassGenerator(className, methodName, key, context.runtime, method, visitor);
 
         JVMVisitorMethodContext methodContext = new JVMVisitorMethodContext();
         generator.compile(methodContext);
@@ -84,7 +84,7 @@ class MethodJITTask extends JITCompiler.Task {
 
         if (signatures.size() == 0) {
             // only variable-arity
-            method.completeBuild(runtime.getCurrentContext(),
+            method.completeBuild(context,
                     new CompiledIRMethod(
                             variable,
                             null,
@@ -97,7 +97,7 @@ class MethodJITTask extends JITCompiler.Task {
         } else {
             // also specific-arity
             for (IntHashMap.Entry<MethodType> entry : signatures.entrySet()) {
-                method.completeBuild(runtime.getCurrentContext(),
+                method.completeBuild(context,
                         new CompiledIRMethod(
                                 variable,
                                 JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, methodContext.getSpecificName(), entry.getValue()),

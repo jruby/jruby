@@ -100,8 +100,9 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         super(runtime, type);
     }
 
+    @Deprecated(since = "10.0")
     public IRubyObject initialize(IRubyObject[] args) {
-        return initialize(getRuntime().getCurrentContext(), args, Block.NULL_BLOCK);
+        return initialize(getCurrentContext(), args, Block.NULL_BLOCK);
     }
 
     @JRubyMethod(name = "initialize", rest = true, visibility = PRIVATE)

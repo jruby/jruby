@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyModule;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.JavaPackage;
@@ -122,7 +123,7 @@ public class ObjectSpace {
 
     @Deprecated
     public void addFinalizer(IRubyObject object, IRubyObject proc) {
-        addFinalizer(object.getRuntime().getCurrentContext(), object, proc);
+        addFinalizer(((RubyBasicObject) object).getCurrentContext(), object, proc);
     }
 
     public IRubyObject addFinalizer(ThreadContext context, IRubyObject object, IRubyObject proc) {

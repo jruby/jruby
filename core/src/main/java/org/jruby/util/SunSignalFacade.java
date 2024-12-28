@@ -56,9 +56,6 @@ import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
 
-/**
- * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>
- */
 public class SunSignalFacade implements SignalFacade {
     /**
      * Remembers the original signal handlers before JRuby started messing around with them,
@@ -99,7 +96,7 @@ public class SunSignalFacade implements SignalFacade {
             // reinstall handler for platforms that clear it (HP-UX)
             Signal.handle(new Signal(this.signal), this);
 
-            ThreadContext context = runtime.getCurrentContext();
+            var context = runtime.getCurrentContext();
             var globalVariables = globalVariables(context);
             IRubyObject oldExc = globalVariables.get("$!"); // Save $!
             try {
@@ -121,21 +118,20 @@ public class SunSignalFacade implements SignalFacade {
         }
     }
 
-    public IRubyObject trap(final IRubyObject recv, IRubyObject blk, IRubyObject sig) {
-        return trap(recv.getRuntime(), new JRubySignalHandler(recv.getRuntime(), blk, sig.toString()));
+    public IRubyObject trap(ThreadContext context, final IRubyObject recv, IRubyObject blk, IRubyObject sig) {
+        return trap(context, new JRubySignalHandler(context.runtime, blk, sig.toString()));
     }
         
-    public IRubyObject trap(final Ruby runtime, BlockCallback blk, String sig) {
-        return trap(runtime, new JRubySignalHandler(runtime, blk, sig));
+    public IRubyObject trap(ThreadContext context, BlockCallback blk, String sig) {
+        return trap(context, new JRubySignalHandler(context.runtime, blk, sig));
     }
 
-    private IRubyObject trap(final Ruby runtime, final JRubySignalHandler handler) {
-        return trap(runtime,handler.signal, handler);
+    private IRubyObject trap(ThreadContext context, final JRubySignalHandler handler) {
+        return trap(context, handler.signal, handler);
     }
 
-    public IRubyObject restorePlatformDefault(IRubyObject recv, IRubyObject sig) {
+    public IRubyObject restorePlatformDefault(ThreadContext context, IRubyObject recv, IRubyObject sig) {
         SignalHandler handler;
-        Ruby runtime = recv.getRuntime();
         try {
             synchronized (original) {
                 handler = original.get(new Signal(sig.toString()));
@@ -144,7 +140,7 @@ public class SunSignalFacade implements SignalFacade {
             handler = null;
         }
         if (handler != null) {
-            return trap(runtime, sig.toString(), handler);
+            return trap(context, sig.toString(), handler);
         } else {
             // JRuby hasn't touched this signal handler, so it should be the platform default already
             // We still need to return the handler if one exists, though.
@@ -152,19 +148,19 @@ public class SunSignalFacade implements SignalFacade {
             synchronized (fakeOriginal) {
                 handler = fakeOriginal.remove(sig.toString());
             }
-            return getSignalResult(runtime.getCurrentContext(), handler, true);
+            return getSignalResult(context, handler, true);
         }
     }
 
-    public IRubyObject restoreOSDefault(IRubyObject recv, IRubyObject sig) {
-        return trap(recv.getRuntime(), sig.toString(), SignalHandler.SIG_DFL);
+    public IRubyObject restoreOSDefault(ThreadContext context, IRubyObject recv, IRubyObject sig) {
+        return trap(context, sig.toString(), SignalHandler.SIG_DFL);
     }
 
-    public IRubyObject ignore(IRubyObject recv, IRubyObject sig) {
-        return trap(recv.getRuntime(), sig.toString(), IGNORE);
+    public IRubyObject ignore(ThreadContext context, IRubyObject recv, IRubyObject sig) {
+        return trap(context, sig.toString(), IGNORE);
     }
 
-    private IRubyObject trap(final Ruby runtime, final String signalName, final SignalHandler handler) {
+    private IRubyObject trap(ThreadContext context, final String signalName, final SignalHandler handler) {
         boolean handled;
 
         SignalHandler oldHandler;
@@ -178,7 +174,6 @@ public class SunSignalFacade implements SignalFacade {
             }
             handled = true;
         } catch (IllegalArgumentException e) {
-            signal = null;
             oldHandler = fakeOriginal.get(signalName);
             synchronized (fakeOriginal) {
                 fakeOriginal.put(signalName, handler);
@@ -187,7 +182,7 @@ public class SunSignalFacade implements SignalFacade {
             handled = signalName.equals("EXIT");
         }
 
-        return getSignalResult(runtime.getCurrentContext(), oldHandler, handled);
+        return getSignalResult(context, oldHandler, handled);
     }
 
     private static IRubyObject getSignalResult(ThreadContext context, final SignalHandler oldHandler, boolean handled) {

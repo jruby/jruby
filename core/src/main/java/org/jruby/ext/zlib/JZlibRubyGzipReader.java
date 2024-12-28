@@ -274,7 +274,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
             result.append(ce);
         }
         
-        fixBrokenTrailingCharacter(result);
+        fixBrokenTrailingCharacter(context, result);
 
         if (stripNewlines) skipNewlines();
 
@@ -285,7 +285,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         line++;
         position += result.length();
 
-        return newStr(context.runtime, result);
+        return newStr(context, result);
     }
 
     private static final int NEWLINE = '\n';
@@ -381,7 +381,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
         if (outbuf != null) outbuf.view(val);
 
-        return newStr(context.runtime, val);
+        return newStr(context, val);
     }
 
     private RubyString readAll(ThreadContext context) throws IOException {
@@ -401,10 +401,10 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
             if (limit != -1) rest -= read;
         }
         
-        fixBrokenTrailingCharacter(val);
+        fixBrokenTrailingCharacter(context, val);
         
         this.position += val.length();
-        return newStr(context.runtime, val);
+        return newStr(context, val);
     }
 
 
@@ -681,7 +681,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
     public IRubyObject ungetc(ThreadContext context, IRubyObject c) {
         if (c.isNil()) return c;
         if (c instanceof RubyInteger) {
-            c = EncodingUtils.encUintChr(context, ((RubyInteger) c).getIntValue(), getReadEncoding());
+            c = EncodingUtils.encUintChr(context, ((RubyInteger) c).getIntValue(), getReadEncoding(context));
         } else {
             c = c.convertToString();
         }
@@ -815,9 +815,10 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         return block.isGiven() ? context.nil : buf;
     }
 
-    private void fixBrokenTrailingCharacter(ByteList result) throws IOException {
+    private void fixBrokenTrailingCharacter(ThreadContext context, ByteList result) throws IOException {
         // fix broken trailing character
-        int extraBytes = StringSupport.bytesToFixBrokenTrailingCharacter(result.getUnsafeBytes(), result.getBegin(), result.getRealSize(), getReadEncoding(), result.length());
+        int extraBytes = StringSupport.bytesToFixBrokenTrailingCharacter(result.getUnsafeBytes(), result.getBegin(),
+                result.getRealSize(), getReadEncoding(context), result.length());
 
         for (int i = 0; i < extraBytes; i++) {
             int read = bufferedStream.read();

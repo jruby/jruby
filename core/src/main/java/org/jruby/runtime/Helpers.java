@@ -966,11 +966,16 @@ public class Helpers {
 
     @Deprecated
     public static RubyArray ensureRubyArray(IRubyObject value) {
-        return ensureRubyArray(value.getRuntime(), value);
+        return ensureRubyArray(((RubyBasicObject) value).getCurrentContext(), value);
     }
 
+    @Deprecated(since = "10.0")
     public static RubyArray ensureRubyArray(Ruby runtime, IRubyObject value) {
-        return value instanceof RubyArray ? (RubyArray)value : RubyArray.newArray(runtime, value);
+        return ensureRubyArray(runtime.getCurrentContext(), value);
+    }
+
+    public static RubyArray ensureRubyArray(ThreadContext context, IRubyObject value) {
+        return value instanceof RubyArray ary ? ary : newArray(context, value);
     }
 
     @Deprecated // not used
@@ -1015,9 +1020,10 @@ public class Helpers {
         }
     }
 
+    @Deprecated(since = "10.0")
     public static String getLocalJumpTypeOrRethrow(RaiseException re) {
         RubyException exception = re.getException();
-        Ruby runtime = exception.getRuntime();
+        Ruby runtime = exception.getCurrentContext().runtime;
         if (runtime.getLocalJumpError().isInstance(exception)) {
             RubyLocalJumpError jumpError = (RubyLocalJumpError)re.getException();
 
@@ -1070,8 +1076,9 @@ public class Helpers {
         return block.getFrame().getBlock();
     }
 
+    @Deprecated(since = "10.0")
     public static Block getBlockFromBlockPassBody(IRubyObject proc, Block currentBlock) {
-        return getBlockFromBlockPassBody(proc.getRuntime(), proc, currentBlock);
+        return getBlockFromBlockPassBody(((RubyBasicObject) proc).getCurrentContext().runtime, proc, currentBlock);
     }
 
     @Deprecated
@@ -1904,8 +1911,9 @@ public class Helpers {
         return context.getLastLine();
     }
 
+    @Deprecated(since = "10.0")
     public static RubyArray arrayValue(IRubyObject value) {
-        return arrayValue(value.getRuntime().getCurrentContext(), value);
+        return arrayValue(((RubyBasicObject) value).getCurrentContext(), value);
     }
 
     /**
@@ -1961,7 +1969,7 @@ public class Helpers {
 
     @Deprecated // not used
     public static IRubyObject aryToAry(IRubyObject value) {
-        return aryToAry(value.getRuntime().getCurrentContext(), value);
+        return aryToAry(((RubyBasicObject) value).getCurrentContext(), value);
     }
 
     public static IRubyObject aryToAry(ThreadContext context, IRubyObject value) {
@@ -1992,7 +2000,7 @@ public class Helpers {
 
     @Deprecated // not used
     public static IRubyObject aValueSplat(IRubyObject value) {
-        var context = value.getRuntime().getCurrentContext();
+        var context = ((RubyBasicObject) value).getCurrentContext();
         if (!(value instanceof RubyArray array) || array.length().getLongValue() == 0) {
             return context.nil;
         }
@@ -2002,22 +2010,19 @@ public class Helpers {
 
     @Deprecated(since = "9.4-") // not used
     public static RubyArray splatValue(IRubyObject value) {
-        var context = value.getRuntime().getCurrentContext();
+        var context = ((RubyBasicObject) value).getCurrentContext();
         return value.isNil() ? newArray(context, value) : arrayValue(context, value);
     }
 
     @Deprecated(since = "9.4-") // no longer used
     public static IRubyObject[] splatToArguments(IRubyObject value) {
-        if (value.isNil()) {
-            return value.getRuntime().getSingleNilArray();
-        }
+        var context = ((RubyBasicObject) value).getCurrentContext();
+        if (value.isNil()) return context.runtime.getSingleNilArray();
 
         IRubyObject tmp = value.checkArrayType();
 
-        if (tmp.isNil()) {
-            return convertSplatToJavaArray(value.getRuntime().getCurrentContext(), value);
-        }
-        return ((RubyArray)tmp).toJavaArrayMaybeUnsafe();
+        return tmp.isNil() ?
+                convertSplatToJavaArray(context, value) : ((RubyArray)tmp).toJavaArrayMaybeUnsafe();
     }
 
     @Deprecated(since = "9.4-")
@@ -2226,38 +2231,22 @@ public class Helpers {
 
     @Deprecated // not used
     public static IRubyObject arrayEntryOrNil(RubyArray array, int index) {
-        if (index < array.getLength()) {
-            return array.eltInternal(index);
-        } else {
-            return array.getRuntime().getNil();
-        }
+        return index < array.getLength() ? array.eltInternal(index) : array.getCurrentContext().nil;
     }
 
     @Deprecated // not used
     public static IRubyObject arrayEntryOrNilZero(RubyArray array) {
-        if (0 < array.getLength()) {
-            return array.eltInternal(0);
-        } else {
-            return array.getRuntime().getNil();
-        }
+        return 0 < array.getLength() ? array.eltInternal(0) : array.getCurrentContext().nil;
     }
 
     @Deprecated // not used
     public static IRubyObject arrayEntryOrNilOne(RubyArray array) {
-        if (1 < array.getLength()) {
-            return array.eltInternal(1);
-        } else {
-            return array.getRuntime().getNil();
-        }
+        return 1 < array.getLength() ? array.eltInternal(1) : array.getCurrentContext().nil;
     }
 
     @Deprecated // not used
     public static IRubyObject arrayEntryOrNilTwo(RubyArray array) {
-        if (2 < array.getLength()) {
-            return array.eltInternal(2);
-        } else {
-            return array.getRuntime().getNil();
-        }
+        return 2 < array.getLength() ? array.eltInternal(2) : array.getCurrentContext().nil;
     }
 
     @Deprecated // not used
@@ -2267,7 +2256,7 @@ public class Helpers {
         } else if (pre + index < array.getLength()) {
             return array.eltInternal(pre + index);
         } else {
-            return array.getRuntime().getNil();
+            return array.getCurrentContext().nil;
         }
     }
 
@@ -2278,7 +2267,7 @@ public class Helpers {
         } else if (pre + 0 < array.getLength()) {
             return array.eltInternal(pre + 0);
         } else {
-            return array.getRuntime().getNil();
+            return array.getCurrentContext().nil;
         }
     }
 
@@ -2289,7 +2278,7 @@ public class Helpers {
         } else if (pre + 1 < array.getLength()) {
             return array.eltInternal(pre + 1);
         } else {
-            return array.getRuntime().getNil();
+            return array.getCurrentContext().nil;
         }
     }
 
@@ -2300,7 +2289,7 @@ public class Helpers {
         } else if (pre + 2 < array.getLength()) {
             return array.eltInternal(pre + 2);
         } else {
-            return array.getRuntime().getNil();
+            return array.getCurrentContext().nil;
         }
     }
 
@@ -2323,9 +2312,9 @@ public class Helpers {
     }
 
     public static RubyModule checkIsModule(IRubyObject maybeModule) {
-        if (maybeModule instanceof RubyModule) return (RubyModule) maybeModule;
+        if (maybeModule instanceof RubyModule mod) return mod;
 
-        throw typeError(maybeModule.getRuntime().getCurrentContext(), "", maybeModule, " is not a class/module");
+        throw typeError(((RubyBasicObject) maybeModule).getCurrentContext(), "", maybeModule, " is not a class/module");
     }
 
     public static IRubyObject getGlobalVariable(Ruby runtime, String name) {
@@ -2487,7 +2476,7 @@ public class Helpers {
 
     @Deprecated(since = "10.0")
     public static boolean isModuleAndHasConstant(IRubyObject left, String name) {
-        return isModuleAndHasConstant(left.getRuntime().getCurrentContext(), left, name);
+        return isModuleAndHasConstant(((RubyBasicObject) left).getCurrentContext(), left, name);
     }
 
     public static boolean isModuleAndHasConstant(ThreadContext context, IRubyObject left, String name) {
@@ -2496,7 +2485,7 @@ public class Helpers {
 
     @Deprecated(since = "10.0")
     public static IRubyObject getDefinedConstantOrBoundMethod(IRubyObject left, String name, IRubyObject definedConstantMessage, IRubyObject definedMethodMessage) {
-        return getDefinedConstantOrBoundMethod(left.getRuntime().getCurrentContext(), left, name, definedConstantMessage, definedMethodMessage);
+        return getDefinedConstantOrBoundMethod(((RubyBasicObject) left).getCurrentContext(), left, name, definedConstantMessage, definedMethodMessage);
     }
 
     @JIT @Interp
@@ -2588,12 +2577,12 @@ public class Helpers {
     public static RubyArray argsCat(ThreadContext context, IRubyObject first, IRubyObject second) {
         IRubyObject secondArgs = IRRuntimeHelpers.irSplat(context, second);
 
-        return ((RubyArray) Helpers.ensureRubyArray(context.runtime, first).dup()).concat(secondArgs);
+        return ((RubyArray) Helpers.ensureRubyArray(context, first).dup()).concat(secondArgs);
     }
 
     @Deprecated
     public static RubyArray argsCat(IRubyObject first, IRubyObject second) {
-        return argsCat(first.getRuntime().getCurrentContext(), first, second);
+        return argsCat(((RubyBasicObject) first).getCurrentContext(), first, second);
     }
 
     /** Use an ArgsNode (used for blocks) to generate ArgumentDescriptors */
@@ -2677,11 +2666,16 @@ public class Helpers {
         return descs.toArray(new ArgumentDescriptor[descs.size()]);
     }
 
+    @Deprecated(since = "10.0")
+    public static ArgumentDescriptor[] parameterListToArgumentDescriptors(Ruby runtime, String[] parameterList, boolean isLambda) {
+        return parameterListToArgumentDescriptors(runtime.getCurrentContext(), parameterList, isLambda);
+    }
+
     /**
      * Convert a parameter list from prefix format to ArgumentDescriptor format.  This source is expected to come
      * from a native path.  Therefore we will be assuming parameterList is UTF-8.
      */
-    public static ArgumentDescriptor[] parameterListToArgumentDescriptors(Ruby runtime, String[] parameterList, boolean isLambda) {
+    public static ArgumentDescriptor[] parameterListToArgumentDescriptors(ThreadContext context, String[] parameterList, boolean isLambda) {
         ArgumentDescriptor[] parms = new ArgumentDescriptor[parameterList.length];
 
         for (int i = 0; i < parameterList.length; i++) {
@@ -2696,7 +2690,7 @@ public class Helpers {
 
             // 'R', 'o', 'n' forms can get here without a name
             if (param.length() > 1) {
-                parms[i] = new ArgumentDescriptor(type, runtime.newSymbol(param.substring(1)));
+                parms[i] = new ArgumentDescriptor(type, asSymbol(context, param.substring(1)));
             } else {
                 parms[i] = new ArgumentDescriptor(type.anonymousForm());
             }
@@ -2729,11 +2723,16 @@ public class Helpers {
         return Create.newArrayNoCopy(context, objArray);
     }
 
+    @Deprecated(since = "10.0")
     public static ArgumentDescriptor[] methodToArgumentDescriptors(DynamicMethod method) {
+        return methodToArgumentDescriptors(method.getImplementationClass().getCurrentContext(), method);
+    }
+
+    public static ArgumentDescriptor[] methodToArgumentDescriptors(ThreadContext context, DynamicMethod method) {
         method = method.getRealMethod();
 
         if (method instanceof MethodArgs2) {
-            return parameterListToArgumentDescriptors(method.getImplementationClass().getRuntime(), ((MethodArgs2) method).getParameterList(), true);
+            return parameterListToArgumentDescriptors(context.runtime, ((MethodArgs2) method).getParameterList(), true);
         } else if (method instanceof IRMethodArgs) {
             return ((IRMethodArgs) method).getArgumentDescriptors();
         } else {
@@ -2741,10 +2740,15 @@ public class Helpers {
         }
     }
 
+    @Deprecated(since = "10.0")
     public static IRubyObject methodToParameters(Ruby runtime, AbstractRubyMethod recv) {
+        return methodToParameters(runtime.getCurrentContext(), recv);
+    }
+
+    public static IRubyObject methodToParameters(ThreadContext context, AbstractRubyMethod recv) {
         DynamicMethod method = recv.getMethod().getRealMethod();
 
-        return argumentDescriptorsToParameters(runtime, methodToArgumentDescriptors(method), true);
+        return argumentDescriptorsToParameters(context, methodToArgumentDescriptors(context, method), true);
     }
 
     public static IRubyObject getDefinedCall(ThreadContext context, IRubyObject self, IRubyObject receiver, String name, IRubyObject definedMessage) {
