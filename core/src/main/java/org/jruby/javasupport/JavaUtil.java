@@ -64,6 +64,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -982,20 +983,20 @@ public class JavaUtil {
         JAVA_CONVERTERS.put(BigInteger.class, JAVA_BIGINTEGER_CONVERTER);
     }
 
-    private static long processLongConvert(ThreadContext context, RubyNumeric numeric, String type) {
+    private static long processLongConvert(ThreadContext context, Predicate<Long> pred, RubyNumeric numeric, String type) {
         final long value = numeric.getLongValue();
-        if (!isLongByteable(value)) throw rangeError(context, "too big for " + type + " : " + numeric);
+        if (!pred.test(value)) throw rangeError(context, "too big for " + type + " : " + numeric);
         return value;
     }
 
     private static final NumericConverter<Byte> NUMERIC_TO_BYTE =
-            (context, numeric, target) -> (byte) processLongConvert(context, numeric, "byte");
+            (context, numeric, target) -> (byte) processLongConvert(context, JavaUtil::isLongByteable, numeric, "byte");
     private static final NumericConverter<Short> NUMERIC_TO_SHORT =
-            (context,numeric, target) -> (short) processLongConvert(context, numeric, "short");
+            (context,numeric, target) -> (short) processLongConvert(context, JavaUtil::isLongShortable, numeric, "short");
     private static final NumericConverter<Character> NUMERIC_TO_CHARACTER =
-            (context, numeric, target) -> (char) processLongConvert(context, numeric, "char");
+            (context, numeric, target) -> (char) processLongConvert(context, JavaUtil::isLongCharable, numeric, "char");
     private static final NumericConverter<Integer> NUMERIC_TO_INTEGER =
-            (context, numeric, target) -> (int) processLongConvert(context, numeric, "int");
+            (context, numeric, target) -> (int) processLongConvert(context, JavaUtil::isLongIntable, numeric, "int");
     private static final NumericConverter<Long> NUMERIC_TO_LONG = (context, numeric, target) -> numeric.getLongValue();
     private static final NumericConverter<Float> NUMERIC_TO_FLOAT = (context, numeric, target) -> {
         final double value = numeric.getDoubleValue();
@@ -1024,6 +1025,7 @@ public class JavaUtil {
     private static boolean isDoubleFloatable(double value) {
         return true;
     }
+
     private static boolean isLongByteable(long value) {
         return value >= Byte.MIN_VALUE && value <= Byte.MAX_VALUE;
     }
