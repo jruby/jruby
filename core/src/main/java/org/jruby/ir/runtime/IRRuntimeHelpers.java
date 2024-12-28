@@ -1396,7 +1396,7 @@ public class IRRuntimeHelpers {
 
         Object[] newArgs = RubyToJavaInvoker.convertArguments(javaMethod, args);
 
-        JavaProxyClass jpc = JavaProxyClass.getProxyClass(context.runtime, definingModule);
+        JavaProxyClass jpc = JavaProxyClass.getProxyClass(context, definingModule);
 
         if (jpc != null) {
             // self is a Java subclass, need to do a bit more logic to dispatch the right method

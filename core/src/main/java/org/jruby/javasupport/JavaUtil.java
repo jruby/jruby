@@ -985,7 +985,7 @@ public class JavaUtil {
 
     private static long processLongConvert(ThreadContext context, Predicate<Long> pred, RubyNumeric numeric, String type) {
         final long value = numeric.getLongValue();
-        if (!pred.test(value)) throw rangeError(context, "too big for " + type + " : " + numeric);
+        if (!pred.test(value)) throw rangeError(context, "too big for " + type + ": " + numeric);
         return value;
     }
 

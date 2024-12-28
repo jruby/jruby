@@ -58,6 +58,7 @@ import org.jruby.util.JRubyObjectInputStream;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.javasupport.JavaUtil.unwrapJava;
 
@@ -178,13 +179,19 @@ public class JavaObject extends RubyObject {
         return JavaProxyMethods.to_s(runtime.getCurrentContext(), dataStruct);
     }
 
-    @JRubyMethod(name = {"==", "eql?"})
+    @Deprecated(since = "10.0")
     public IRubyObject op_equal(final IRubyObject other) {
-        return JavaProxyMethods.equals(getRuntime(), getValue(), other);
+        return op_equal(getCurrentContext(), other);
     }
 
+    @JRubyMethod(name = {"==", "eql?"})
+    public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
+        return JavaProxyMethods.equals(context.runtime, getValue(), other);
+    }
+
+    @Deprecated(since = "10.0")
     public static RubyBoolean op_equal(JavaProxy self, IRubyObject other) {
-        return JavaProxyMethods.equals(self.getRuntime(), self.getObject(), other);
+        return JavaProxyMethods.equals(self.getCurrentContext().runtime, self.getObject(), other);
     }
 
     @JRubyMethod(name = "equal?")
@@ -203,29 +210,49 @@ public class JavaObject extends RubyObject {
         return same(getCurrentContext(), other);
     }
 
-    @JRubyMethod
+    @Deprecated(since = "10.0")
     public RubyString java_type() {
-        return getRuntime().newString(getJavaClass().getName());
+        return java_type(getCurrentContext());
     }
 
-    @Deprecated
+    @JRubyMethod
+    public RubyString java_type(ThreadContext context) {
+        return newString(context, getJavaClass().getName());
+    }
+
+    @Deprecated(since = "9.4-")
     public JavaClass java_class() {
-        return JavaClass.get(getRuntime(), getJavaClass());
+        return JavaClass.get(getCurrentContext().runtime, getJavaClass());
     }
 
-    @JRubyMethod
+    @Deprecated(since = "10.0")
     public IRubyObject get_java_class() {
-        return Java.getInstance(getRuntime(), getJavaClass());
+        return get_java_class(getCurrentContext());
     }
 
     @JRubyMethod
+    public IRubyObject get_java_class(ThreadContext context) {
+        return Java.getInstance(context.runtime, getJavaClass());
+    }
+
+    @Deprecated(since = "10.0")
     public RubyFixnum length() {
-        throw typeError(getRuntime().getCurrentContext(), "not a java array");
+        return length(getCurrentContext());
+    }
+
+    @JRubyMethod
+    public RubyFixnum length(ThreadContext context) {
+        throw typeError(context, "not a java array");
+    }
+
+    @Deprecated(since = "10.0")
+    public IRubyObject is_java_proxy() {
+        return is_java_proxy(getCurrentContext());
     }
 
     @JRubyMethod(name = "java_proxy?")
-    public IRubyObject is_java_proxy() {
-        return getRuntime().getTrue();
+    public IRubyObject is_java_proxy(ThreadContext context) {
+        return context.tru;
     }
 
     @JRubyMethod(name = "synchronized")

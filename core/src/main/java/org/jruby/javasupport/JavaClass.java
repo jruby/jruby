@@ -39,6 +39,7 @@ package org.jruby.javasupport;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
@@ -200,11 +201,12 @@ public class JavaClass extends JavaObject {
     @Deprecated
     @JRubyMethod(name = "for_name", meta = true)
     public static JavaClass for_name(IRubyObject recv, IRubyObject name) {
-        return for_name(recv, name.asJavaString());
+        return forNameVerbose(((RubyBasicObject) recv).getCurrentContext().getRuntime(), name.asJavaString());
     }
 
+    @Deprecated(since = "10.0")
     static JavaClass for_name(IRubyObject recv, String name) {
-        return forNameVerbose(recv.getRuntime(), name);
+        return forNameVerbose(((RubyBasicObject) recv).getCurrentContext().getRuntime(), name);
     }
 
     @Override

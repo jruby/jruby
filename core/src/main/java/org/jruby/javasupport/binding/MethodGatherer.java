@@ -129,7 +129,7 @@ public class MethodGatherer {
         }
     }
 
-    void initialize(Class<?> javaClass, RubyModule proxy) {
+    void initialize(ThreadContext context, Class<?> javaClass, RubyModule proxy) {
         setupFieldsAndConstants(javaClass);
         setupMethods(javaClass);
         setupScalaSingleton(javaClass);
@@ -143,19 +143,19 @@ public class MethodGatherer {
         Map<String, AssignedName> instanceAssignedNames = javaSupport.getInstanceAssignedNames().get(javaClass);
         if (javaClass.isInterface()) {
             instanceAssignedNames.clear();
-            installInstanceMethods(proxy);
+            installInstanceMethods(context, proxy);
         } else {
             assignInstanceAliases();
 
             instanceAssignedNames.putAll(instanceNames);
 
-            installInstanceMethods(proxy);
-            installConstructors(javaClass, proxy);
+            installInstanceMethods(context, proxy);
+            installConstructors(context, javaClass, proxy);
         }
 
-        installConstants(proxy);
-        installClassMethods(proxy);
-        installInnerClasses(javaClass, proxy);
+        installConstants(context, proxy);
+        installClassMethods(context, proxy);
+        installInnerClasses(context, javaClass, proxy);
     }
 
     static Map<String, List<Method>> getMethods(final Class<?> javaClass) {
@@ -358,10 +358,9 @@ public class MethodGatherer {
     };
 
     @SuppressWarnings("deprecation")
-    protected void installInnerClasses(final Class<?> javaClass, final RubyModule proxy) {
+    protected void installInnerClasses(ThreadContext context, final Class<?> javaClass, final RubyModule proxy) {
         // setup constants for public inner classes
         Class<?>[] classes = ClassUtils.getDeclaredClasses(javaClass);
-        var context = proxy.getRuntime().getCurrentContext();
 
         for ( int i = classes.length; --i >= 0; ) {
             final Class<?> clazz = classes[i];
@@ -473,16 +472,15 @@ public class MethodGatherer {
         return s;
     }
 
-    protected void installConstants(final RubyModule proxy) {
-        constantFields.forEach((name, field) -> field.install(proxy));
+    protected void installConstants(ThreadContext context, final RubyModule proxy) {
+        constantFields.forEach((name, field) -> field.install(context, proxy));
     }
 
-    protected void installClassMethods(final RubyModule proxy) {
-        var context = proxy.getRuntime().getCurrentContext();
+    protected void installClassMethods(ThreadContext context, final RubyModule proxy) {
         getStaticInstallers().forEach(($, value) -> value.install(context, proxy));
     }
 
-    void installConstructors(Class<?> javaClass, final RubyModule proxy) {
+    void installConstructors(ThreadContext context, Class<?> javaClass, final RubyModule proxy) {
         Constructor[] constructors = ClassUtils.getConstructors(javaClass);
 
         boolean localConstructor = false;
@@ -490,7 +488,6 @@ public class MethodGatherer {
             localConstructor |= javaClass == constructor.getDeclaringClass();
         }
 
-        var context = proxy.getRuntime().getCurrentContext();
         if (localConstructor) {
             // we need to collect all methods, though we'll only
             // install the ones that are named in this class
@@ -693,8 +690,7 @@ public class MethodGatherer {
         }
     }
 
-    void installInstanceMethods(final RubyModule proxy) {
-        var context = proxy.getRuntime().getCurrentContext();
+    void installInstanceMethods(ThreadContext context, final RubyModule proxy) {
         getInstanceInstallers().forEach(($, value) -> value.install(context, proxy));
     }
 
