@@ -810,7 +810,7 @@ public abstract class RubyInteger extends RubyNumeric {
 
     @JRubyMethod(name = "to_s")
     public RubyString to_s(ThreadContext context, IRubyObject x) {
-        throw context.runtime.newRuntimeError("integer type missing native to_s(ThreadContext, IRubyObject) impl");
+        throw runtimeError(context, "integer type missing native to_s(ThreadContext, IRubyObject) impl");
     }
 
     @JRubyMethod(name = "-@")

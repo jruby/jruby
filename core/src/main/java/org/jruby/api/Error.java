@@ -87,7 +87,19 @@ public class Error {
      * @return the error
      */
     public static RaiseException nameError(ThreadContext context, String message, String name) {
-        return context.runtime.newNameError(message, name);
+        return context.runtime.newNameError(message, name, null, false);
+    }
+
+    /**
+     * Create a name error with a simple ASCII String and the failing name.
+     *
+     * @param context the current thread context
+     * @param message to be displayed in the error
+     * @param name involved in the error
+     * @return the error
+     */
+    public static RaiseException nameError(ThreadContext context, String message, IRubyObject name) {
+        return context.runtime.newNameError(message, name, (Throwable) null, false);
     }
 
     /**
@@ -100,7 +112,7 @@ public class Error {
      * @return the error
      */
     public static RaiseException nameError(ThreadContext context, String message, String name, Throwable throwable) {
-        return context.runtime.newNameError(message, name, throwable);
+        return context.runtime.newNameError(message, name, throwable, false);
     }
 
     /**

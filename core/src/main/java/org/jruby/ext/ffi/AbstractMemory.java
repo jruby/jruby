@@ -96,12 +96,9 @@ abstract public class AbstractMemory extends MemoryObject {
         throw typeError(obj.getRuntime().getCurrentContext(), "Array expected");
     }
 
-    private static int checkArrayLength(IRubyObject val) {
+    private static int checkArrayLength(ThreadContext context, IRubyObject val) {
         int i = RubyNumeric.num2int(val);
-        if (i < 0) {
-            throw val.getRuntime().newIndexError("negative array length (" + i + ")");
-        }
-
+        if (i < 0) throw indexError(context, "negative array length (" + i + ")");
         return i;
     }
 
@@ -160,9 +157,8 @@ abstract public class AbstractMemory extends MemoryObject {
     public final IRubyObject aref(ThreadContext context, IRubyObject indexArg) {
         final int index = RubyNumeric.num2int(indexArg);
         final int offset = index * typeSize;
-        if (offset >= size) {
-            throw context.runtime.newIndexError(String.format("Index %d out of range", index));
-        }
+        if (offset >= size) throw indexError(context, String.format("Index %d out of range", index));
+
         return slice(context.runtime, offset);
     }
 
@@ -1764,7 +1760,7 @@ abstract public class AbstractMemory extends MemoryObject {
         MemoryOp op = MemoryOp.getMemoryOp(type);
         if (op == null) throw typeError(context, "cannot get memory reader for type " + type);
 
-        int len = checkArrayLength(lenArg);
+        int len = checkArrayLength(context, lenArg);
 
         var objArray = new IRubyObject[len];
         for (int i = 0, off = 0; i < len; i++, off += type.size) {
@@ -1779,7 +1775,7 @@ abstract public class AbstractMemory extends MemoryObject {
         Type type = context.runtime.getFFI().getTypeResolver().findType(context.runtime, typeArg);
         DynamicMethod method = getMetaClass().searchMethod(reader.asJavaString());
         
-        int len = checkArrayLength(lenArg);
+        int len = checkArrayLength(context, lenArg);
 
         var objArray = new IRubyObject[len];
         for (int i = 0, off = 0; i < len; i++, off += type.size) {

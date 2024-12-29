@@ -27,7 +27,7 @@ final class ClassInitializer extends Initializer {
         final RubyModule parent;
         final Class<?> enclosingClass = javaClass.getEnclosingClass();
         if ( enclosingClass != null ) {
-            parent = Java.getProxyClass(runtime, enclosingClass);
+            parent = Java.getProxyClass(context, enclosingClass);
         } else {
             parent = Java.getJavaPackageModule(runtime, javaClass.getPackage());
         }

@@ -557,7 +557,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         RubyClass singleton = clazz.singletonClass(context);
 
         singleton.setInstanceVariable("@java_proxy_class", proxyClass);
-        singleton.setInstanceVariable("@java_class", Java.wrapJavaObject(context.runtime, reified));
+        singleton.setInstanceVariable("@java_class", Java.wrapJavaObject(context, reified));
 
         if (allocator) {
             DynamicMethod oldNewMethod = singleton.searchMethod("new");

@@ -34,6 +34,9 @@ package org.jruby.runtime;
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Error.nameError;
+
 public class ReadonlyGlobalVariable extends GlobalVariable {
 
     public ReadonlyGlobalVariable(Ruby runtime, String name, IRubyObject value) {
@@ -42,6 +45,7 @@ public class ReadonlyGlobalVariable extends GlobalVariable {
 
     @Override
     public IRubyObject set(IRubyObject value) {
-        throw runtime.newNameError(name() + " is a read-only variable", runtime.newSymbol(name()));
+        var context = runtime.getCurrentContext();
+        throw nameError(context, name() + " is a read-only variable", asSymbol(context, name()));
     }
 }

@@ -48,7 +48,7 @@ public class CompiledIRBlockBody extends IRBlockBody {
 
     private static void checkArity(ThreadContext context, Block selfBlock, IRubyObject[] args, Block block) {
         if (selfBlock.type == Block.Type.LAMBDA) {
-            selfBlock.getSignature().checkArity(context.runtime, args);
+            selfBlock.getSignature().checkArity(context, args);
         }
     }
 

@@ -71,7 +71,7 @@ public abstract class TypePopulator {
     // Still needed for older generated populators.
     @Deprecated(since = "10.0")
     public static DynamicMethod populateModuleMethod(RubyModule cls, DynamicMethod javaMethod) {
-        return populateModuleMethod(cls, cls.singletonClass(cls.getRuntime().getCurrentContext()), javaMethod);
+        return populateModuleMethod(cls, cls.singletonClass(cls.getCurrentContext()), javaMethod);
     }
 
     public static DynamicMethod populateModuleMethod(RubyModule cls, RubyClass singletonClass, DynamicMethod javaMethod) {
@@ -113,7 +113,12 @@ public abstract class TypePopulator {
                     .ifPresent(classAnno -> AnnotationHelper.addSubclassNames(classAndSubs, classAnno));
         }
 
-        public void populate(final RubyModule target, final Class clazz) {
+        @Deprecated(since = "10.0")
+        public void populate(RubyModule target, Class clazz) {
+            populate(target.getCurrentContext(), target, clazz);
+        }
+
+        public void populate(ThreadContext context, final RubyModule target, final Class clazz) {
             assert clazz == this.clazz : "populator for " + this.clazz + " used for " + clazz;
 
             // fallback on non-pregenerated logic
@@ -122,22 +127,20 @@ public abstract class TypePopulator {
             AnnotationHelper.populateMethodIndex(clumper.readGroups, MethodIndex::addMethodReadFieldsPacked);
             AnnotationHelper.populateMethodIndex(clumper.writeGroups, MethodIndex::addMethodWriteFieldsPacked);
 
-            final Ruby runtime = target.getRuntime();
-            var context = runtime.getCurrentContext();
-            final MethodFactory methodFactory = MethodFactory.createFactory(runtime.getJRubyClassLoader());
+            final MethodFactory methodFactory = MethodFactory.createFactory(context.runtime.getJRubyClassLoader());
 
             for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getStaticAnnotatedMethods().entrySet()) {
                 final String name = entry.getKey();
                 final List<JavaMethodDescriptor> methods = entry.getValue();
                 target.defineAnnotatedMethod(context, name, methods, methodFactory);
-                addBoundMethodsUnlessOmitted(runtime, name, methods);
+                addBoundMethodsUnlessOmitted(context.runtime, name, methods);
             }
 
             for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getAnnotatedMethods().entrySet()) {
                 final String name = entry.getKey();
                 final List<JavaMethodDescriptor> methods = entry.getValue();
                 target.defineAnnotatedMethod(context, name, methods, methodFactory);
-                addBoundMethodsUnlessOmitted(runtime, name, methods);
+                addBoundMethodsUnlessOmitted(context.runtime, name, methods);
             }
         }
 

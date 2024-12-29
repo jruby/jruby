@@ -21,7 +21,7 @@ public class TestJava extends junit.framework.TestCase {
     public void testProxyCreation() {
         final Ruby runtime = Ruby.newInstance();
         try {
-            Java.getProxyClass(runtime, B.class);
+            Java.getProxyClass(runtime.getCurrentContext(), B.class);
             assert(true);
         }
         catch (AssertionError ae) {

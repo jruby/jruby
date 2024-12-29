@@ -76,7 +76,7 @@ public class JavaUtilities {
     @Deprecated(since = "10.0") // no longer used
     @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject get_java_class(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
-        Class<?> javaClass = Java.getJavaClass(context.runtime, arg0.asJavaString());
+        Class<?> javaClass = Java.getJavaClass(context, arg0.asJavaString());
         return Java.getInstance(context.runtime, javaClass);
     }
 

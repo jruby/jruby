@@ -37,11 +37,8 @@ public class InterfaceJavaProxy extends JavaProxy {
     public static class JavaInterfaceExtender {
         @JRubyMethod(visibility = Visibility.PRIVATE)
         public static IRubyObject initialize(ThreadContext context, IRubyObject self, IRubyObject javaClassName, Block block) {
-            Ruby runtime = context.runtime;
-
-            JavaProxy.setJavaClass(self, Java.getJavaClass(runtime, javaClassName.asJavaString()));
-            self.getInstanceVariables().setInstanceVariable("@block", RubyProc.newProc(runtime, block, block.type));
-
+            JavaProxy.setJavaClass(context, self, Java.getJavaClass(context, javaClassName.asJavaString()));
+            self.getInstanceVariables().setInstanceVariable("@block", RubyProc.newProc(context.runtime, block, block.type));
             self.getInternalVariables().getInternalVariable("@block");
 
             return context.nil;

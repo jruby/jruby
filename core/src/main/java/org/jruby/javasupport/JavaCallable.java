@@ -46,6 +46,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
 public abstract class JavaCallable implements ParameterTypes {
@@ -81,9 +82,7 @@ public abstract class JavaCallable implements ParameterTypes {
     }
 
     protected final void checkArity(ThreadContext context, final int length) {
-        if ( length != getArity() ) {
-            throw context.runtime.newArgumentError(length, getArity());
-        }
+        if ( length != getArity() ) throw argumentError(context, length, getArity());
     }
 
     protected final IRubyObject handleThrowable(ThreadContext context, final Throwable ex) {
