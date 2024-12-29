@@ -343,42 +343,42 @@ public class RubyStruct extends RubyObject {
 
         @Deprecated(since = "10.0")
         public static IRubyObject newStruct(IRubyObject recv, Block block) {
-            return Create.newStruct(((RubyBasicObject) recv).getCurrentContext(), block);
+            return Create.newStruct(((RubyBasicObject) recv).getCurrentContext(), (RubyClass) recv, block);
         }
 
         @JRubyMethod(name = {"new", "[]"}, keywords = true)
         public static IRubyObject newStruct(ThreadContext context, IRubyObject recv, Block block) {
-            return Create.newStruct(context, block);
+            return Create.newStruct(context, (RubyClass) recv, block);
         }
 
         @Deprecated(since = "10.0")
         public static IRubyObject newStruct(IRubyObject recv, IRubyObject arg0, Block block) {
-            return Create.newStruct(((RubyBasicObject) recv).getCurrentContext(), arg0, block);
+            return Create.newStruct(((RubyBasicObject) recv).getCurrentContext(), (RubyClass) recv, arg0, block);
         }
 
         @JRubyMethod(name = {"new", "[]"}, keywords = true)
         public static IRubyObject newStruct(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
-            return Create.newStruct(context, arg0, block);
+            return Create.newStruct(context, (RubyClass) recv, arg0, block);
         }
 
         @Deprecated(since = "10.0")
         public static IRubyObject newStruct(IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
-            return Create.newStruct(((RubyBasicObject) recv).getCurrentContext(), arg0, arg1, block);
+            return Create.newStruct(((RubyBasicObject) recv).getCurrentContext(), (RubyClass) recv, arg0, arg1, block);
         }
 
         @JRubyMethod(name = {"new", "[]"}, keywords = true)
         public static IRubyObject newStruct(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
-            return Create.newStruct(context, arg0, arg1, block);
+            return Create.newStruct(context, (RubyClass) recv, arg0, arg1, block);
         }
 
         @Deprecated(since = "10.0")
         public static IRubyObject newStruct(IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-            return Create.newStruct(((RubyBasicObject) recv).getCurrentContext(), arg0, arg1, arg2, block);
+            return Create.newStruct(((RubyBasicObject) recv).getCurrentContext(), (RubyClass) recv, arg0, arg1, arg2, block);
         }
 
         @JRubyMethod(name = {"new", "[]"}, keywords = true)
         public static IRubyObject newStruct(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-            return Create.newStruct(context, arg0, arg1, arg2, block);
+            return Create.newStruct(context, (RubyClass) recv, arg0, arg1, arg2, block);
         }
 
         @Deprecated(since = "10.0")
@@ -431,11 +431,11 @@ public class RubyStruct extends RubyObject {
      * @param recv
      * @param block
      * @return
-     * @deprecated Use {@link org.jruby.api.Create#newStruct(ThreadContext, Block)} instead.
+     * @deprecated Use {@link org.jruby.api.Create#newStruct(ThreadContext, RubyClass, Block)} instead.
      */
     @Deprecated(since = "10.0")
     public static RubyStruct newStruct(IRubyObject recv, Block block) {
-        return Create.newStruct(((RubyBasicObject) recv).getCurrentContext(), block);
+        return Create.newStruct(((RubyBasicObject) recv).getCurrentContext(), (RubyClass) recv, block);
     }
 
     /**
@@ -443,11 +443,11 @@ public class RubyStruct extends RubyObject {
      * @param arg0
      * @param block
      * @return
-     * @deprecated Use {@link org.jruby.api.Create#newStruct(ThreadContext, IRubyObject, Block)} instead.
+     * @deprecated Use {@link org.jruby.api.Create#newStruct(ThreadContext, RubyClass, IRubyObject, Block)} instead.
      */
     @Deprecated(since = "10.0")
     public static RubyStruct newStruct(IRubyObject recv, IRubyObject arg0, Block block) {
-        return Create.newStruct(((RubyBasicObject) recv).getCurrentContext(), arg0, block);
+        return Create.newStruct(((RubyBasicObject) recv).getCurrentContext(), (RubyClass) recv, arg0, block);
     }
 
     /**
@@ -456,11 +456,11 @@ public class RubyStruct extends RubyObject {
      * @param arg1
      * @param block
      * @return
-     * @deprecated Use {@link org.jruby.api.Create#newStruct(ThreadContext, IRubyObject, IRubyObject, Block)} instead.
+     * @deprecated Use {@link org.jruby.api.Create#newStruct(ThreadContext, RubyClass, IRubyObject, IRubyObject, Block)} instead.
      */
     @Deprecated(since = "10.0")
     public static RubyStruct newStruct(IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
-        return Create.newStruct(((RubyBasicObject) recv).getCurrentContext(), arg0, arg1, block);
+        return Create.newStruct(((RubyBasicObject) recv).getCurrentContext(), (RubyClass) recv, arg0, arg1, block);
     }
 
     /**
@@ -470,10 +470,10 @@ public class RubyStruct extends RubyObject {
      * @param arg2
      * @param block
      * @return
-     * @deprecated Use {@link org.jruby.api.Create#newStruct(ThreadContext, IRubyObject, IRubyObject, IRubyObject, Block)} instead.
+     * @deprecated Use {@link org.jruby.api.Create#newStruct(ThreadContext, RubyClass, IRubyObject, IRubyObject, IRubyObject, Block)} instead.
      */
     public static RubyStruct newStruct(IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        return Create.newStruct(((RubyBasicObject) recv).getCurrentContext(), arg0, arg1, arg2, block);
+        return Create.newStruct(((RubyBasicObject) recv).getCurrentContext(), (RubyClass) recv, arg0, arg1, arg2, block);
     }
 
     private void checkSize(ThreadContext context, int length) {

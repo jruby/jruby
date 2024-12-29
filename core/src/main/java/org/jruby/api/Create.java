@@ -291,8 +291,8 @@ public class Create {
      * @param block
      * @return
      */
-    public static RubyStruct newStruct(ThreadContext context, Block block) {
-        RubyStruct struct = new RubyStruct(context, structClass(context));
+    public static RubyStruct newStruct(ThreadContext context, RubyClass structClass, Block block) {
+        RubyStruct struct = new RubyStruct(context, structClass);
         struct.callInit(block);
         return struct;
     }
@@ -305,8 +305,8 @@ public class Create {
      * @param block
      * @return
      */
-    public static RubyStruct newStruct(ThreadContext context, IRubyObject arg0, Block block) {
-        RubyStruct struct = new RubyStruct(context, structClass(context));
+    public static RubyStruct newStruct(ThreadContext context, RubyClass structClass, IRubyObject arg0, Block block) {
+        RubyStruct struct = new RubyStruct(context, structClass);
         struct.callInit(arg0, block);
         return struct;
     }
@@ -320,8 +320,8 @@ public class Create {
      * @param block
      * @return
      */
-    public static RubyStruct newStruct(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        RubyStruct struct = new RubyStruct(context, structClass(context));
+    public static RubyStruct newStruct(ThreadContext context, RubyClass structClass, IRubyObject arg0, IRubyObject arg1, Block block) {
+        RubyStruct struct = new RubyStruct(context, structClass);
         struct.callInit(arg0, arg1, block);
         return struct;
     }
@@ -336,9 +336,9 @@ public class Create {
      * @param block
      * @return
      */
-    public static RubyStruct newStruct(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2,
+    public static RubyStruct newStruct(ThreadContext context, RubyClass structClass, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2,
                                        Block block) {
-        RubyStruct struct = new RubyStruct(context, structClass(context));
+        RubyStruct struct = new RubyStruct(context, structClass);
         struct.callInit(arg0, arg1, arg2, block);
         return struct;
     }
