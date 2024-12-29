@@ -64,7 +64,7 @@ class BlockJITTask extends JITCompiler.Task {
         if (excludeModuleName != null) {
             body.setCallCount(-1);
             if (jitCompiler.config.isJitLogging()) {
-                JITCompiler.log(body, blockId, "skipping block in " + excludeModuleName);
+                JITCompiler.log(context, body, blockId, "skipping block in " + excludeModuleName);
             }
             return;
         }
@@ -102,18 +102,18 @@ class BlockJITTask extends JITCompiler.Task {
     }
 
     @Override
-    protected void logJitted() {
-        logImpl("block done jitting");
+    protected void logJitted(ThreadContext context) {
+        logImpl(context, "block done jitting");
     }
 
     @Override
-    protected void logFailed(final Throwable ex) {
-        logImpl("could not compile block; passes run: " + body.getIRScope().getExecutedPasses(), ex);
+    protected void logFailed(ThreadContext context, Throwable ex) {
+        logImpl(context, "could not compile block; passes run: " + body.getIRScope().getExecutedPasses(), ex);
     }
 
     @Override
-    protected void logImpl(final String message, Object... reason) {
-        JITCompiler.log(body, blockId, message, reason);
+    protected void logImpl(ThreadContext context, final String message, Object... reason) {
+        JITCompiler.log(context, body, blockId, message, reason);
     }
 
 }

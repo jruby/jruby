@@ -211,7 +211,7 @@ public class JITCompiler implements JITCompilerMBean {
 
         if (task instanceof Task && config.getJitMax() >= 0 && config.getJitMax() < getSuccessCount()) {
             if (config.isJitLogging()) {
-                JITCompiler.log(method, method.getName(), "skipping: jit.max threshold reached");
+                JITCompiler.log(context, method, method.getName(), "skipping: jit.max threshold reached");
             }
             return;
         }
@@ -273,8 +273,12 @@ public class JITCompiler implements JITCompilerMBean {
         return new OneShotClassLoader(runtime.getJRubyClassLoader());
     }
 
+    @Deprecated(since = "10.0")
     static void log(Compilable<?> target, String name, String message, Object... reason) {
-        var context = target.getImplementationClass().getRuntime().getCurrentContext();
+        log(target.getImplementationClass().getRuntime().getCurrentContext(), target, name, message, reason);
+    }
+
+    static void log(ThreadContext context, Compilable<?> target, String name, String message, Object... reason) {
         String className = target.getImplementationClass().getName(context);
         StringBuilder builder = new StringBuilder(32);
         builder.append(message).append(": ").append(className);
@@ -303,10 +307,11 @@ public class JITCompiler implements JITCompilerMBean {
             // This works around unsolved concurrency issues within the process of preparing and jitting the IR.
             // See #4739 for a reproduction script that produced various errors without this.
             synchronized (jitCompiler) {
+                var context = jitCompiler.runtime.getCurrentContext();
                 try {
-                    exec(jitCompiler.runtime.getCurrentContext());
+                    exec(context);
                 } catch (Throwable ex) {
-                    jitFailed(ex);
+                    jitFailed(context, ex);
                 }
             }
         }
@@ -319,9 +324,9 @@ public class JITCompiler implements JITCompilerMBean {
 
         // shared helper methods :
 
-        protected void jitFailed(final Throwable ex) {
+        protected void jitFailed(ThreadContext context, final Throwable ex) {
             if (jitCompiler.config.isJitLogging()) {
-                logFailed(ex);
+                logFailed(context, ex);
                 if (jitCompiler.config.isJitLoggingVerbose()) {
                     ex.printStackTrace();
                 }
@@ -332,6 +337,7 @@ public class JITCompiler implements JITCompilerMBean {
 
         protected Class<?> defineClass(final JITClassGenerator generator, final JVMVisitor visitor,
                                        final IRScope scope, final InterpreterContext interpreterContext) {
+            var context = scope.getManager().getRuntime().getCurrentContext();
             // FIXME: reinstate active bytecode size check
             // At this point we still need to reinstate the bytecode size check, to ensure we're not loading code
             // that's so big that JVMs won't even try to compile it. Removed the check because with the new IR JIT
@@ -349,12 +355,12 @@ public class JITCompiler implements JITCompilerMBean {
             // successfully got back a jitted method/block
             long methodCount = jitCompiler.counts.successCount.incrementAndGet();
 
-            if (jitCompiler.config.isJitLogging()) logJitted();
+            if (jitCompiler.config.isJitLogging()) logJitted(context);
 
             // logEvery n methods based on configuration
             if (jitCompiler.config.getJitLogEvery() > 0) {
                 if (methodCount % jitCompiler.config.getJitLogEvery() == 0) {
-                    logImpl("live compiled count: " + methodCount);
+                    logImpl(context, "live compiled count: " + methodCount);
                 }
             }
 
@@ -365,15 +371,15 @@ public class JITCompiler implements JITCompilerMBean {
             return jitCompiler.getLoaderFor(getSourceFile());
         }
 
-        protected void logJitted() {
-            logImpl("done jitting");
+        protected void logJitted(ThreadContext context) {
+            logImpl(context, "done jitting");
         }
 
-        protected void logFailed(Throwable ex) {
-            logImpl("could not compile", ex);
+        protected void logFailed(ThreadContext context, Throwable ex) {
+            logImpl(context, "could not compile", ex);
         }
 
-        protected abstract void logImpl(String msg, Object... cause) ;
+        protected abstract void logImpl(ThreadContext context, String msg, Object... cause) ;
 
     }
 

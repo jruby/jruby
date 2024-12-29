@@ -220,7 +220,7 @@ public class Java implements Library {
     public static class OldStyleExtensionInherited {
         @Deprecated
         public static IRubyObject inherited(IRubyObject self, IRubyObject subclass) {
-            return inherited(self.getRuntime().getCurrentContext(), self, subclass);
+            return inherited(((RubyBasicObject) self).getCurrentContext(), self, subclass);
         }
 
         @JRubyMethod
@@ -232,7 +232,7 @@ public class Java implements Library {
     public static class NewStyleExtensionInherited {
         @Deprecated
         public static IRubyObject inherited(IRubyObject self, IRubyObject subclass) {
-            return inherited(self.getRuntime().getCurrentContext(), self, subclass);
+            return inherited(((RubyBasicObject) self).getCurrentContext(), self, subclass);
         }
 
         @JRubyMethod
@@ -243,12 +243,8 @@ public class Java implements Library {
     }
 
     @Deprecated(since = "9.4")
-    public static IRubyObject create_proxy_class(
-            IRubyObject self,
-            IRubyObject name,
-            IRubyObject javaClass,
-            IRubyObject mod) {
-        var context = self.getRuntime().getCurrentContext();
+    public static IRubyObject create_proxy_class(IRubyObject self, IRubyObject name, IRubyObject javaClass, IRubyObject mod) {
+        var context = ((RubyBasicObject) self).getCurrentContext();
         RubyModule module = castAsModule(context, mod);
 
         return setProxyClass(context.runtime, module, name.asJavaString(), resolveJavaClassArgument(context, javaClass));
@@ -337,7 +333,7 @@ public class Java implements Library {
 
     @Deprecated(since = "10.0")
     public static RubyModule get_proxy_class(final IRubyObject self, final IRubyObject java_class) {
-        return get_proxy_class(self.getRuntime().getCurrentContext(), self, java_class);
+        return get_proxy_class(((RubyBasicObject) self).getCurrentContext(), self, java_class);
     }
 
     public static RubyModule get_proxy_class(ThreadContext context, IRubyObject self, final IRubyObject java_class) {

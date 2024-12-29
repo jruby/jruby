@@ -63,7 +63,7 @@ class MethodCompiledJITTask extends JITCompiler.Task {
         if (excludeModuleName != null) {
             method.setCallCount(-1);
             if (jitCompiler.config.isJitLogging()) {
-                logImpl("skipping (compiled) method in " + excludeModuleName);
+                logImpl(context, "skipping (compiled) method in " + excludeModuleName);
             }
             return;
         }
@@ -99,17 +99,17 @@ class MethodCompiledJITTask extends JITCompiler.Task {
     }
 
     @Override
-    protected void logJitted() {
-        logImpl("(compiled) method done jitting");
+    protected void logJitted(ThreadContext context) {
+        logImpl(context, "(compiled) method done jitting");
     }
 
     @Override
-    protected void logFailed(final Throwable ex) {
-        logImpl("could not re-compile method; passes run: " + method.getIRScope().getExecutedPasses(), ex);
+    protected void logFailed(ThreadContext context, final Throwable ex) {
+        logImpl(context, "could not re-compile method; passes run: " + method.getIRScope().getExecutedPasses(), ex);
     }
 
     @Override
-    protected void logImpl(final String message, Object... reason) {
+    protected void logImpl(ThreadContext context, final String message, Object... reason) {
         JITCompiler.log(method, methodName, message, reason);
     }
 
