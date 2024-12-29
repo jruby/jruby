@@ -32,14 +32,24 @@ public class JavaUtilities {
         return Java.get_interface_module(context, arg0);
     }
 
-    @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
+    @Deprecated(since = "10.0")
     public static IRubyObject get_package_module(IRubyObject recv, IRubyObject arg0) {
-        return Java.get_package_module(recv, arg0);
+        return get_package_module(((RubyBasicObject) recv).getCurrentContext(), recv, arg0);
     }
 
     @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject get_package_module(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
+        return Java.get_package_module(context, recv, arg0);
+    }
+
+    @Deprecated(since = "10.0")
     public static IRubyObject get_package_module_dot_format(IRubyObject recv, IRubyObject arg0) {
-        return Java.get_package_module_dot_format(recv, arg0);
+        return get_package_module_dot_format(((RubyBasicObject) recv).getCurrentContext(), recv, arg0);
+    }
+
+    @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject get_package_module_dot_format(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
+        return Java.get_package_module_dot_format(context, recv, arg0);
     }
 
     @Deprecated(since = "10.0")

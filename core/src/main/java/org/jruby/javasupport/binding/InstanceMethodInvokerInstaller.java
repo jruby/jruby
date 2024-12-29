@@ -14,8 +14,8 @@ public class InstanceMethodInvokerInstaller extends MethodInstaller {
     public InstanceMethodInvokerInstaller(String name) { super(name, INSTANCE_METHOD); }
 
     @Override void install(ThreadContext context, final RubyModule proxy) {
-        if ( hasLocalMethod() ) {
-            defineMethods(proxy, new InstanceMethodInvoker(proxy, () -> methods.toArray(new Method[methods.size()]), name));
+        if (hasLocalMethod()) {
+            defineMethods(context, proxy, new InstanceMethodInvoker(proxy, () -> methods.toArray(new Method[methods.size()]), name), true);
         }
     }
 }

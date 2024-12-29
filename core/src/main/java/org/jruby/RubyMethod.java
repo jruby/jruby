@@ -225,23 +225,17 @@ public class RubyMethod extends AbstractRubyMethod {
      */
     @JRubyMethod
     public IRubyObject to_proc(ThreadContext context) {
-        Ruby runtime = context.runtime;
-
-        MethodBlockBody body;
         Signature signature = method.getSignature();
-        ArgumentDescriptor[] argsDesc;
-        if (method instanceof IRMethodArgs) {
-            argsDesc = ((IRMethodArgs) method).getArgumentDescriptors();
-        } else {
-            argsDesc = Helpers.methodToArgumentDescriptors(method);
-        }
+        ArgumentDescriptor[] argsDesc = method instanceof IRMethodArgs ?
+                ((IRMethodArgs) method).getArgumentDescriptors() :
+                Helpers.methodToArgumentDescriptors(context, method);
 
         int line = getLine(); // getLine adds 1 to 1-index but we need to reset to 0-index internally
-        body = new MethodBlockBody(runtime.getStaticScopeFactory().getDummyScope(), signature, entry, argsDesc,
+        MethodBlockBody body = new MethodBlockBody(context.runtime.getStaticScopeFactory().getDummyScope(), signature, entry, argsDesc,
                 receiver, originModule, originName, getFilename(), line == -1 ? -1 : line - 1);
         Block b = MethodBlockBody.createMethodBlock(body);
 
-        RubyProc proc = RubyProc.newProc(runtime, b, Block.Type.LAMBDA);
+        RubyProc proc = RubyProc.newProc(context.runtime, b, Block.Type.LAMBDA);
         proc.setFromMethod();
         return proc;
     }
@@ -273,7 +267,7 @@ public class RubyMethod extends AbstractRubyMethod {
 
     @JRubyMethod
     public IRubyObject parameters(ThreadContext context) {
-        return Helpers.methodToParameters(context.runtime, this);
+        return Helpers.methodToParameters(context, this);
     }
 
     @JRubyMethod

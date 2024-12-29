@@ -58,7 +58,7 @@ public abstract class Initializer {
             flagAsJavaProxy(context, proxy); return proxy;
         }
 
-        proxy = new ClassInitializer(context.runtime, javaClass).initialize(proxy);
+        proxy = new ClassInitializer(context.runtime, javaClass).initialize(context, proxy);
         flagAsJavaProxy(context, proxy); return proxy;
     }
 
@@ -88,7 +88,12 @@ public abstract class Initializer {
         proxy.dataWrapStruct(javaClass);
     }
 
-    public abstract RubyModule initialize(RubyModule proxy);
+    public RubyModule initialize(RubyModule proxy) {
+        return initialize(proxy.getCurrentContext(), proxy);
+    }
+
+
+    public abstract RubyModule initialize(ThreadContext context, RubyModule proxy);
 
     @Deprecated
     public static final ClassValue<Method[]> DECLARED_METHODS = MethodGatherer.DECLARED_METHODS;

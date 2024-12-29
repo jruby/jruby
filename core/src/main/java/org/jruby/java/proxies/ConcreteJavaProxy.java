@@ -286,7 +286,7 @@ public class ConcreteJavaProxy extends JavaProxy {
             }
 
             if (ctor == null) {
-                ReifiedJavaProxy proxy = JavaUtil.unwrapJava(initialize.call(context, self, clazz, "new", args));
+                ReifiedJavaProxy proxy = JavaUtil.unwrapJava(context, initialize.call(context, self, clazz, "new", args));
                 return proxy.___jruby$rubyObject();
             } else {
 

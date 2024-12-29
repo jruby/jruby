@@ -29,6 +29,7 @@
 package org.jruby.javasupport;
 
 import org.jruby.Ruby;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
@@ -41,6 +42,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 
 import static org.jruby.api.Convert.castAsString;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.typeError;
 
@@ -64,25 +66,27 @@ public class JavaArrayUtilities {
     public static IRubyObject bytes_to_ruby_string(ThreadContext context, IRubyObject recv, IRubyObject wrappedObject, IRubyObject encoding) {
         byte[] bytes = null;
 
-        if (wrappedObject instanceof JavaProxy) {
-            Object wrapped = ((JavaProxy) wrappedObject).getObject();
+        if (wrappedObject instanceof JavaProxy proxy) {
+            Object wrapped = proxy.getObject();
             if (wrapped instanceof byte[]) bytes = (byte[]) wrapped;
         }
 
         if (bytes == null) throw typeError(context, wrappedObject, "byte[]");
 
-        RubyString string = context.runtime.newString(new ByteList(bytes, true));
+        RubyString string = newString(context, new ByteList(bytes, true));
 
         if (!encoding.isNil()) string.force_encoding(context, encoding);
 
         return string;
     }
 
-    @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject ruby_string_to_bytes(IRubyObject recv, IRubyObject string) {
-        Ruby runtime = recv.getRuntime();
+        return ruby_string_to_bytes(((RubyBasicObject) recv).getCurrentContext(), recv, string);
+    }
 
-        return JavaUtil.convertJavaToUsableRubyObject(runtime, castAsString(runtime.getCurrentContext(), string).getBytes());
+    @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject ruby_string_to_bytes(ThreadContext context, IRubyObject recv, IRubyObject string) {
+        return JavaUtil.convertJavaToUsableRubyObject(context.runtime, castAsString(context, string).getBytes());
     }
 
     @JRubyMethod(module = true)

@@ -139,7 +139,12 @@ public class AnnotationBinder extends AbstractProcessor {
             out.println("@Generated(\"org.jruby.anno.AnnotationBinder\")");
             out.println("@SuppressWarnings(\"deprecation\")");
             out.println("public class " + qualifiedName + POPULATOR_SUFFIX + " extends TypePopulator {");
+            out.println("    @Deprecated(since = \"10.0\")");
             out.println("    public void populate(RubyModule cls, Class clazz) {");
+            out.println("        populate(cls.getCurrentContext(), cls, clazz);");
+            out.println("    }");
+            out.println("");
+            out.println("    public void populate(ThreadContext context, RubyModule cls, Class clazz) {");
             if (DEBUG) {
                 out.println("        System.out.println(\"Using pregenerated populator: \" + \"" + qualifiedName + POPULATOR_SUFFIX + "\");");
             }
@@ -162,7 +167,6 @@ public class AnnotationBinder extends AbstractProcessor {
 
             out.println("        JavaMethod javaMethod;");
             out.println("        DynamicMethod moduleMethod, aliasedMethod;");
-            out.println("        ThreadContext context = cls.getRuntime().getCurrentContext();");
             out.println("        Ruby runtime = context.runtime;");
             if (hasMeta || hasModule) {
                 out.println("        RubyClass singletonClass = cls.singletonClass(context);");

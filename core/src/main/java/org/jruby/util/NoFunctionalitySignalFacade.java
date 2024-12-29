@@ -30,29 +30,30 @@ package org.jruby.util;
 
 import org.jruby.Ruby;
 import org.jruby.runtime.BlockCallback;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>
  */
 public class NoFunctionalitySignalFacade implements SignalFacade {
-    public IRubyObject trap(IRubyObject recv, IRubyObject block, IRubyObject sig) {
-        return recv.getRuntime().getNil();
+    public IRubyObject trap(ThreadContext context, IRubyObject recv, IRubyObject block, IRubyObject sig) {
+        return context.nil;
     }
 
-    public IRubyObject trap(Ruby runtime, BlockCallback block, String sig) {
-        return runtime.getNil();
+    public IRubyObject trap(ThreadContext context, BlockCallback block, String sig) {
+        return context.nil;
     }
 
-    public IRubyObject restorePlatformDefault(IRubyObject recv, IRubyObject sig) {
-        return recv.getRuntime().getNil();
+    public IRubyObject restorePlatformDefault(ThreadContext context, IRubyObject recv, IRubyObject sig) {
+        return context.nil;
     }
 
-    public IRubyObject restoreOSDefault(IRubyObject recv, IRubyObject sig) {
-        return recv.getRuntime().getNil();
+    public IRubyObject restoreOSDefault(ThreadContext context, IRubyObject recv, IRubyObject sig) {
+        return context.nil;
     }
 
-    public IRubyObject ignore(IRubyObject recv, IRubyObject sig) {
-        return recv.getRuntime().getNil();
+    public IRubyObject ignore(ThreadContext context, IRubyObject recv, IRubyObject sig) {
+        return context.nil;
     }
 }// NoFunctionalitySignalFacade

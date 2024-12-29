@@ -4,6 +4,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.javasupport.Java;
+import org.jruby.runtime.ThreadContext;
 
 /**
 * Created by headius on 2/26/15.
@@ -15,8 +16,7 @@ final class ClassInitializer extends Initializer {
     }
 
     @Override
-    public RubyClass initialize(final RubyModule proxy) {
-        var context = proxy.getRuntime().getCurrentContext();
+    public RubyClass initialize(ThreadContext context, final RubyModule proxy) {
         final RubyClass proxyClass = (RubyClass) proxy;
 
         // flag the class as a Java class proxy.
@@ -41,7 +41,7 @@ final class ClassInitializer extends Initializer {
 
         final MethodGatherer state = new MethodGatherer(runtime, javaClass.getSuperclass());
 
-        state.initialize(javaClass, proxy);
+        state.initialize(context, javaClass, proxy);
 
         return proxyClass;
     }

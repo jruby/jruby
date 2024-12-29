@@ -23,6 +23,7 @@ public class SingletonMethodInvokerInstaller extends StaticMethodInvokerInstalle
         // we don't check haveLocalMethod() here because it's not local and we know
         // that we always want to go ahead and install it
         final RubyClass singletonClass = proxy.singletonClass(context);
-        defineMethods(singletonClass, new SingletonMethodInvoker(this.singleton, singletonClass, () -> methods.toArray(new Method[methods.size()]), name), false);
+        defineMethods(context, singletonClass,
+                new SingletonMethodInvoker(this.singleton, singletonClass, () -> methods.toArray(new Method[methods.size()]), name), false);
     }
 }

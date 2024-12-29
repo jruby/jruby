@@ -31,6 +31,7 @@ import com.jcraft.jzlib.GZIPException;
 import com.jcraft.jzlib.GZIPInputStream;
 import com.jcraft.jzlib.Inflater;
 import org.jruby.Ruby;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyEnumerator;
 import org.jruby.RubyException;
@@ -79,14 +80,17 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
     @JRubyMethod(name = "new", rest = true, meta = true, keywords = true)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        JZlibRubyGzipReader result = newInstance(recv, args);
+        JZlibRubyGzipReader result = newInstance(context, (RubyClass) recv, args);
 
         return RubyGzipFile.wrapBlock(context, result, block);
     }
 
+    @Deprecated(since = "10.0")
     public static JZlibRubyGzipReader newInstance(IRubyObject recv, IRubyObject[] args) {
-        var context = recv.getRuntime().getCurrentContext();
-        RubyClass klass = (RubyClass) recv;
+        return newInstance(((RubyBasicObject) recv).getCurrentContext(), (RubyClass) recv, args);
+    }
+
+    public static JZlibRubyGzipReader newInstance(ThreadContext context, RubyClass klass, IRubyObject[] args) {
         JZlibRubyGzipReader result = (JZlibRubyGzipReader) klass.allocate(context);
 
         result.callInit(args, Block.NULL_BLOCK);
@@ -100,7 +104,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
         args[0] = Helpers.invoke(context, fileClass(context), "open", args[0], newString(context, "rb"));
 
-        JZlibRubyGzipReader gzio = newInstance(recv, args);
+        JZlibRubyGzipReader gzio = newInstance(context, (RubyClass) recv, args);
 
         return RubyGzipFile.wrapBlock(context, gzio, block);
     }
@@ -270,7 +274,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
             result.append(ce);
         }
         
-        fixBrokenTrailingCharacter(result);
+        fixBrokenTrailingCharacter(context, result);
 
         if (stripNewlines) skipNewlines();
 
@@ -281,7 +285,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         line++;
         position += result.length();
 
-        return newStr(context.runtime, result);
+        return newStr(context, result);
     }
 
     private static final int NEWLINE = '\n';
@@ -377,7 +381,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
         if (outbuf != null) outbuf.view(val);
 
-        return newStr(context.runtime, val);
+        return newStr(context, val);
     }
 
     private RubyString readAll(ThreadContext context) throws IOException {
@@ -397,10 +401,10 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
             if (limit != -1) rest -= read;
         }
         
-        fixBrokenTrailingCharacter(val);
+        fixBrokenTrailingCharacter(context, val);
         
         this.position += val.length();
-        return newStr(context.runtime, val);
+        return newStr(context, val);
     }
 
 
@@ -677,7 +681,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
     public IRubyObject ungetc(ThreadContext context, IRubyObject c) {
         if (c.isNil()) return c;
         if (c instanceof RubyInteger) {
-            c = EncodingUtils.encUintChr(context, ((RubyInteger) c).getIntValue(), getReadEncoding());
+            c = EncodingUtils.encUintChr(context, ((RubyInteger) c).getIntValue(), getReadEncoding(context));
         } else {
             c = c.convertToString();
         }
@@ -811,9 +815,10 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         return block.isGiven() ? context.nil : buf;
     }
 
-    private void fixBrokenTrailingCharacter(ByteList result) throws IOException {
+    private void fixBrokenTrailingCharacter(ThreadContext context, ByteList result) throws IOException {
         // fix broken trailing character
-        int extraBytes = StringSupport.bytesToFixBrokenTrailingCharacter(result.getUnsafeBytes(), result.getBegin(), result.getRealSize(), getReadEncoding(), result.length());
+        int extraBytes = StringSupport.bytesToFixBrokenTrailingCharacter(result.getUnsafeBytes(), result.getBegin(),
+                result.getRealSize(), getReadEncoding(context), result.length());
 
         for (int i = 0; i < extraBytes; i++) {
             int read = bufferedStream.read();

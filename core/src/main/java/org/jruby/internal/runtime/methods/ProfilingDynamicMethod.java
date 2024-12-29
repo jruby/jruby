@@ -167,7 +167,7 @@ public class ProfilingDynamicMethod extends DelegatingDynamicMethod implements I
 
     public ArgumentDescriptor[] getArgumentDescriptors() {
         return delegate instanceof IRMethodArgs ?
-                ((IRMethodArgs) delegate).getArgumentDescriptors() : Helpers.methodToArgumentDescriptors(delegate);
+                ((IRMethodArgs) delegate).getArgumentDescriptors() : Helpers.methodToArgumentDescriptors(delegate.getImplementationClass().getRuntime().getCurrentContext(), delegate);
     }
 
     @Override

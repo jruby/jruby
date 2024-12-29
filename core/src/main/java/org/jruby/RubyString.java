@@ -294,9 +294,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return checkEncoding((CodeRangeable) other);
     }
 
+    @Deprecated(since = "10.0")
     final Encoding checkEncoding(EncodingCapable other) {
+        var context = ((RubyBasicObject) other).getCurrentContext();
         Encoding enc = isCompatibleWith(other);
-        if (enc == null) throw getRuntime().newEncodingCompatibilityError("incompatible character encodings: " +
+        if (enc == null) throw context.runtime.newEncodingCompatibilityError("incompatible character encodings: " +
                                 value.getEncoding() + " and " + other.getEncoding());
         return enc;
     }
@@ -4587,37 +4589,48 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      * @param delimiter
      * @return splited entries
      */
+    @Deprecated(since = "10.0")
     public RubyArray split(RubyRegexp delimiter) {
-        return splitCommon(getRuntime().getCurrentContext(), delimiter, 0);
+        return splitCommon(getCurrentContext(), delimiter, 0);
     }
 
-    /**
-     * Split for ext (Java) callers (does not write $~).
-     * @param delimiter
-     * @param limit
-     * @return splited entries
-     */
+    @Deprecated(since = "10.0")
     public RubyArray split(RubyRegexp delimiter, int limit) {
-        return splitCommon(getRuntime().getCurrentContext(), delimiter, limit);
+        return split(getCurrentContext(), delimiter, limit);
     }
 
     /**
      * Split for ext (Java) callers (does not write $~).
-     * @param delimiter
-     * @return splited entries
-     */
-    public RubyArray split(RubyString delimiter) {
-        return splitCommon(getRuntime().getCurrentContext(), delimiter, 0);
-    }
-
-    /**
-     * Split for ext (Java) callers (does not write $~).
+     * @param the thread context
      * @param delimiter
      * @param limit
      * @return splited entries
      */
+    @JRubyAPI
+    public RubyArray split(ThreadContext context, RubyRegexp delimiter, int limit) {
+        return splitCommon(context, delimiter, limit);
+    }
+
+    @Deprecated(since = "10.0")
+    public RubyArray split(RubyString delimiter) {
+        return splitCommon(getCurrentContext(), delimiter, 0);
+    }
+
+    @Deprecated(since = "10.0")
     public RubyArray split(RubyString delimiter, int limit) {
-        return splitCommon(getRuntime().getCurrentContext(), delimiter, limit);
+        return split(getCurrentContext(), delimiter, limit);
+    }
+
+    /**
+     * Split for ext (Java) callers (does not write $~).
+     * @param context the thread context
+     * @param delimiter
+     * @param limit
+     * @return splited entries
+     */
+    @JRubyAPI
+    public RubyArray split(ThreadContext context, RubyString delimiter, int limit) {
+        return splitCommon(context, delimiter, limit);
     }
 
     // MRI: rb_str_split_m, overall structure

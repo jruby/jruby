@@ -2300,11 +2300,13 @@ public class RubyClass extends RubyModule {
 
                 for (String sig : sigs) {
                     m.dup();
+                    m.getstatic(javaPath, RUBY_FIELD, ci(Ruby.class));
+                    m.invokevirtual("org/jruby/Ruby", "getCurrentContext", "()Lorg/jruby/runtime/ThreadContext;");
                     m.ldc(name);
                     m.ldc(sig);
                     m.iconst_1();
                     m.invokevirtual(p(JavaProxyClass.class), "initMethod",
-                            sig(void.class, String.class, String.class, boolean.class));
+                            sig(void.class, ThreadContext.class, String.class, String.class, boolean.class));
                 }
             });
             m.pop();

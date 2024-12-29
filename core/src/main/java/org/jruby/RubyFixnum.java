@@ -234,7 +234,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
 
     @Deprecated // not used
     public final RubyFixnum newFixnum(long newValue) {
-        return newFixnum(getRuntime(), newValue);
+        return newFixnum(getCurrentContext().runtime, newValue);
     }
 
     public static RubyFixnum zero(Ruby runtime) {
@@ -440,9 +440,10 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
      */
     @Deprecated
     public IRubyObject to_sym() {
-        RubySymbol symbol = RubySymbol.getSymbolLong(getRuntime(), value);
+        var context = getCurrentContext();
+        RubySymbol symbol = RubySymbol.getSymbolLong(context.runtime, value);
 
-        return symbol != null ? symbol : getRuntime().getNil();
+        return symbol != null ? symbol : context.nil;
     }
 
     /** fix_uminus
@@ -1286,7 +1287,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
 
     @Deprecated // no longer used
     public IRubyObject op_lshift(long width) {
-        return op_lshift(getRuntime().getCurrentContext(), width);
+        return op_lshift(getCurrentContext(), width);
     }
 
     /** fix_rshift
@@ -1294,11 +1295,9 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
      */
     @Override
     public IRubyObject op_rshift(ThreadContext context, IRubyObject other) {
-        if (!(other instanceof RubyFixnum)) {
-            return RubyBignum.newBignum(context.runtime, value).op_rshift(context, other);
-        }
-
-        return op_rshift(context, ((RubyFixnum) other).value);
+        return other instanceof RubyFixnum fix ?
+                op_rshift(context, fix.value) :
+                RubyBignum.newBignum(context.runtime, value).op_rshift(context, other);
     }
 
     @Override
@@ -1317,7 +1316,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
 
     @Deprecated
     public IRubyObject op_rshift(long width) {
-        return op_rshift(getRuntime().getCurrentContext(), width);
+        return op_rshift(getCurrentContext(), width);
     }
 
     /** fix_to_f
@@ -1343,7 +1342,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
 
     @Deprecated
     public IRubyObject zero_p() {
-        return zero_p(getRuntime().getCurrentContext());
+        return zero_p(getCurrentContext());
     }
 
     /** fix_zero_p

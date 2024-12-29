@@ -214,11 +214,11 @@ public class ArrayUtils {
             ThreadContext context, RubyArray rubyArray, int src, org.jruby.javasupport.JavaArray javaArray, int dest, int length) {
         Class targetType = javaArray.getComponentType();
 
-        int destLength = (int)javaArray.length().getLongValue();
+        int destLength = javaArray.getLength();
         int srcLength = rubyArray.getLength();
 
         for (int i = 0; src + i < srcLength && dest + i < destLength && i < length; i++) {
-            javaArray.setWithExceptionHandling(dest + i, rubyArray.entry(src + i).toJava(targetType));
+            javaArray.setWithExceptionHandling(context, dest + i, rubyArray.entry(src + i).toJava(targetType));
         }
     }
 }

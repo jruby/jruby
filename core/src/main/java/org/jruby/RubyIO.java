@@ -1254,7 +1254,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @Deprecated
     public static IRubyObject sysopen(IRubyObject recv, IRubyObject[] args, Block block) {
-        return sysopen(recv.getRuntime().getCurrentContext(), recv, args, block);
+        return sysopen(((RubyBasicObject) recv).getCurrentContext(), recv, args, block);
     }
 
     // rb_io_s_sysopen
@@ -3030,7 +3030,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @Deprecated
     public IRubyObject getc() {
-        return getbyte(getRuntime().getCurrentContext());
+        return getbyte(getCurrentContext());
     }
 
     /**
@@ -3568,7 +3568,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @Deprecated
     public IRubyObject readchar() {
-        return readchar(getRuntime().getCurrentContext());
+        return readchar(getCurrentContext());
     }
 
     @JRubyMethod

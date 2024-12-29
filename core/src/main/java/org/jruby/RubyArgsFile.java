@@ -236,7 +236,7 @@ public class RubyArgsFile extends RubyObject {
 
         @Deprecated
         public static ArgsFileData getDataFrom(IRubyObject recv) {
-            return getArgsFileData(recv.getRuntime());
+            return getArgsFileData(((RubyBasicObject) recv).getCurrentContext().runtime);
         }
 
         private void createNewFile(File file) {
@@ -295,7 +295,7 @@ public class RubyArgsFile extends RubyObject {
 
     @Deprecated
     public static void setCurrentLineNumber(IRubyObject recv, int newLineNumber) {
-        recv.getRuntime().setCurrentLine(newLineNumber);
+        ((RubyBasicObject) recv).getCurrentContext().runtime.setCurrentLine(newLineNumber);
     }
 
     @JRubyMethod
@@ -600,13 +600,17 @@ public class RubyArgsFile extends RubyObject {
         return data.currentFile;
     }
 
-    @JRubyMethod(name = "skip")
+    @Deprecated(since = "10.0")
     public static IRubyObject skip(IRubyObject recv) {
-        Ruby runtime = recv.getRuntime();
-        ArgsFileData data = ArgsFileData.getArgsFileData(runtime);
+        return skip(((RubyBasicObject) recv).getCurrentContext(), recv);
+    }
+
+    @JRubyMethod(name = "skip")
+    public static IRubyObject skip(ThreadContext context, IRubyObject recv) {
+        ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
 
         if (data.inited && data.next_p == Next.SameFile) {
-            argf_close(runtime.getCurrentContext(), data.currentFile);
+            argf_close(context, data.currentFile);
             data.next_p = NextFile;
         }
 
@@ -905,9 +909,14 @@ public class RubyArgsFile extends RubyObject {
         return globalVariables(context).get("$FILENAME");
     }
 
-    @JRubyMethod(name = "to_s", alias = "inspect")
+    @Deprecated(since = "10.0")
     public static IRubyObject to_s(IRubyObject recv) {
-        return recv.getRuntime().newString("ARGF");
+        return to_s(((RubyBasicObject) recv).getCurrentContext(), recv);
+    }
+
+    @JRubyMethod(name = "to_s", alias = "inspect")
+    public static IRubyObject to_s(ThreadContext context, IRubyObject recv) {
+        return newString(context, "ARGF");
     }
 
     private static RubyIO getCurrentDataFile(ThreadContext context, String errorMessage) {

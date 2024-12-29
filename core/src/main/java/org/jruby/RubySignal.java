@@ -159,24 +159,44 @@ public class RubySignal {
         return names;
     }
 
-    @JRubyMethod(meta = true)
+    @Deprecated(since = "10.0")
     public static IRubyObject __jtrap_kernel(final IRubyObject recv, IRubyObject block, IRubyObject sig) {
-        return SIGNAL_FACADE.trap(recv, block, sig);
+        return __jtrap_kernel(((RubyBasicObject) recv).getCurrentContext(), recv, block, sig);
     }
 
     @JRubyMethod(meta = true)
+    public static IRubyObject __jtrap_kernel(ThreadContext context, final IRubyObject recv, IRubyObject block, IRubyObject sig) {
+        return SIGNAL_FACADE.trap(context, recv, block, sig);
+    }
+
+    @Deprecated(since = "10.0")
     public static IRubyObject __jtrap_platform_kernel(final IRubyObject recv, IRubyObject sig) {
-        return SIGNAL_FACADE.restorePlatformDefault(recv, sig);
+        return __jtrap_platform_kernel(((RubyBasicObject) recv).getCurrentContext(), recv, sig);
     }
 
     @JRubyMethod(meta = true)
+    public static IRubyObject __jtrap_platform_kernel(ThreadContext context, final IRubyObject recv, IRubyObject sig) {
+        return SIGNAL_FACADE.restorePlatformDefault(context, recv, sig);
+    }
+
+    @Deprecated(since = "10.0")
     public static IRubyObject __jtrap_osdefault_kernel(final IRubyObject recv, IRubyObject sig) {
-        return SIGNAL_FACADE.restoreOSDefault(recv, sig);
+        return __jtrap_osdefault_kernel(((RubyBasicObject) recv).getCurrentContext(), recv, sig);
     }
 
     @JRubyMethod(meta = true)
+    public static IRubyObject __jtrap_osdefault_kernel(ThreadContext context, final IRubyObject recv, IRubyObject sig) {
+        return SIGNAL_FACADE.restoreOSDefault(context, recv, sig);
+    }
+
+    @Deprecated(since = "10.0")
     public static IRubyObject __jtrap_restore_kernel(final IRubyObject recv, IRubyObject sig) {
-        return SIGNAL_FACADE.ignore(recv, sig);
+        return __jtrap_restore_kernel(((RubyBasicObject) recv).getCurrentContext(), recv, sig);
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject __jtrap_restore_kernel(ThreadContext context, final IRubyObject recv, IRubyObject sig) {
+        return SIGNAL_FACADE.ignore(context, recv, sig);
     }
 
     @JRubyMethod(meta = true)

@@ -2,6 +2,7 @@ package org.jruby.javasupport.binding;
 
 import org.jruby.RubyModule;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.runtime.ThreadContext;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -15,13 +16,12 @@ public class ConstantField {
 
     public ConstantField(Field field) { this.field = field; }
 
-    void install(final RubyModule proxy) {
-        var context = proxy.getRuntime().getCurrentContext();
+    void install(ThreadContext context, final RubyModule proxy) {
         final String name = field.getName();
         if (proxy.getConstantAt(context, name) == null) {
             try {
                 final Object value = field.get(null);
-                proxy.setConstant(context, name, JavaUtil.convertJavaToUsableRubyObject(proxy.getRuntime(), value));
+                proxy.setConstant(context, name, JavaUtil.convertJavaToUsableRubyObject(context.runtime, value));
             }
             catch (IllegalAccessException iae) {
                 // if we can't read it, we don't set it

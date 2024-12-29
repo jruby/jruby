@@ -43,36 +43,50 @@ public class JRubyObjectInputStream extends RubyObject {
     public JRubyObjectInputStream(Ruby runtime, RubyClass rubyClass) {
 	    super(runtime,rubyClass);
     }
+
+    @Deprecated(since = "10.0")
+    public IRubyObject initialize(IRubyObject wrappedStream) {
+        return initialize(getCurrentContext(), wrappedStream);
+    }
     
     @JRubyMethod(name="initialize",required=1, visibility = Visibility.PRIVATE)
-    public IRubyObject initialize(IRubyObject wrappedStream) {
-        InputStream stream = (InputStream) wrappedStream.toJava(InputStream.class);
+    public IRubyObject initialize(ThreadContext context, IRubyObject wrappedStream) {
+        InputStream stream = wrappedStream.toJava(InputStream.class);
         try {
-            impl = new JRubyObjectInputStreamImpl(getRuntime(), stream);
+            impl = new JRubyObjectInputStreamImpl(context.runtime, stream);
         } catch (IOException ioe) {
-            throw getRuntime().newIOErrorFromException(ioe);
+            throw context.runtime.newIOErrorFromException(ioe);
         }
         return this;
     }
 
+    @Deprecated(since = "10.0")
+    public IRubyObject readObject() {
+        return readObject(getCurrentContext());
+    }
+
     @JRubyMethod(name="read_object", alias="readObject")
-	public IRubyObject readObject() {
+    public IRubyObject readObject(ThreadContext context) {
         try {
-        	return Java.getInstance(getRuntime(), impl.readObject());
+        	return Java.getInstance(context.runtime, impl.readObject());
         } catch (IOException ioe) {
-            throw getRuntime().newIOErrorFromException(ioe);
+            throw context.runtime.newIOErrorFromException(ioe);
         } catch (ClassNotFoundException cnfe) {
-            throw getRuntime().newNameError(cnfe.getLocalizedMessage(), cnfe.getMessage(), cnfe);
+            throw context.runtime.newNameError(cnfe.getLocalizedMessage(), cnfe.getMessage(), cnfe);
         }
     }
 
+    @Deprecated(since = "10.0")
+    public IRubyObject close() {
+        return close(getCurrentContext());
+    }
 
     @JRubyMethod(name="close")
-    public IRubyObject close() {
+    public IRubyObject close(ThreadContext context) {
         try {
             impl.close();
         } catch (IOException ioe) {
-            throw getRuntime().newIOErrorFromException(ioe);
+            throw context.runtime.newIOErrorFromException(ioe);
         }
         return this;
     }

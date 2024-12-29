@@ -2,6 +2,7 @@ package org.jruby.api;
 
 import org.jcodings.Encoding;
 import org.jruby.*;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -11,6 +12,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static org.jruby.api.Access.stringClass;
+import static org.jruby.api.Access.structClass;
 
 public class Create {
     /**
@@ -281,4 +283,80 @@ public class Create {
     public static RubyRational newRational(ThreadContext context, long num, long den) {
         return RubyRational.newRational(context.runtime, num, den);
     }
+
+    /**
+     * Create a new Struct.
+     *
+     * @param context the current thread context
+     * @param block
+     * @return
+     */
+    public static RubyStruct newStruct(ThreadContext context, RubyClass structClass, Block block) {
+        RubyStruct struct = new RubyStruct(context, structClass);
+        struct.callInit(block);
+        return struct;
+    }
+
+    /**
+     * Create a new Struct.
+     *
+     * @param context the current thread context
+     * @param arg0 name of class or first member of struct
+     * @param block
+     * @return
+     */
+    public static RubyStruct newStruct(ThreadContext context, RubyClass structClass, IRubyObject arg0, Block block) {
+        RubyStruct struct = new RubyStruct(context, structClass);
+        struct.callInit(arg0, block);
+        return struct;
+    }
+
+    /**
+     * Create a new Struct.
+     *
+     * @param context the current thread context
+     * @param arg0 name of class or first member of struct
+     * @param arg1 a member of struct
+     * @param block
+     * @return
+     */
+    public static RubyStruct newStruct(ThreadContext context, RubyClass structClass, IRubyObject arg0, IRubyObject arg1, Block block) {
+        RubyStruct struct = new RubyStruct(context, structClass);
+        struct.callInit(arg0, arg1, block);
+        return struct;
+    }
+
+    /**
+     * Create a new Struct.
+     *
+     * @param context the current thread context
+     * @param arg0 name of class or first member of struct
+     * @param arg1 a member of struct
+     * @param arg2 a member of struct
+     * @param block
+     * @return
+     */
+    public static RubyStruct newStruct(ThreadContext context, RubyClass structClass, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2,
+                                       Block block) {
+        RubyStruct struct = new RubyStruct(context, structClass);
+        struct.callInit(arg0, arg1, arg2, block);
+        return struct;
+    }
+
+    /**
+     * Create a new Struct (prefer 0-3 arity versions of this function if you know you arity and it is Struct and
+     * not a subclass of Struct).
+     *
+     * @param context the current thread context
+     * @param structClass expects either a reference to Struct or a subclass of Struct (Passwd for example)
+     * @param args for thr struct
+     * @param block
+     * @return
+     */
+    public static RubyStruct newStruct(ThreadContext context, RubyClass structClass, IRubyObject[] args, Block block) {
+        RubyStruct struct = new RubyStruct(context, structClass);
+        struct.callInit(args, block);
+        return struct;
+    }
+
 }

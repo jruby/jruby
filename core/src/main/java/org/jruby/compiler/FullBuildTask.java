@@ -27,22 +27,21 @@ class FullBuildTask implements Runnable {
     public void run() {
         try {
             var scope = method.getIRScope();
+            var context = scope.getManager().getRuntime().getCurrentContext();
             IRScope hardScope = scope.getNearestTopLocalVariableScope();
 
             // define_method may capture something outside itself and we need parents and children to compile
             // to agreement with respect to local variable access (e.g. dynscopes).
             if (hardScope != scope) hardScope.prepareFullBuild();
 
-            method.completeBuild(scope.getManager().getRuntime().getCurrentContext(), scope.prepareFullBuild());
+            method.completeBuild(context, scope.prepareFullBuild());
 
             if (IRRuntimeHelpers.shouldPrintIR(jitCompiler.runtime) && IRRuntimeHelpers.shouldPrintScope(scope)) {
                 ByteArrayOutputStream baos = IRDumper.printIR(scope, true, true);
                 LOG.info("Printing full IR for " + scope.getId() + ":\n" + new String(baos.toByteArray()));
             }
 
-            if (jitCompiler.config.isJitLogging()) {
-                JITCompiler.log(method, method.getName(), "done building");
-            }
+            if (jitCompiler.config.isJitLogging()) JITCompiler.log(context, method, method.getName(), "done building");
         } catch (Throwable t) {
             if (jitCompiler.config.isJitLogging()) {
                 //JITCompiler.log(method, method.getName(), "could not build; passes run: " + method.getIRScope().getExecutedPasses(), t);

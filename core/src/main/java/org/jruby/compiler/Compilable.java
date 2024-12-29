@@ -1,6 +1,7 @@
 package org.jruby.compiler;
 
 import org.jruby.MetaClass;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.ir.IRScope;
@@ -14,8 +15,9 @@ import static org.jruby.api.Access.classClass;
  */
 public interface Compilable<T> {
     void setCallCount(int count);
+    @Deprecated(since = "10.0")
     default void completeBuild(T buildResult) {
-        completeBuild(getImplementationClass().getRuntime().getCurrentContext(), buildResult);
+        completeBuild(getImplementationClass().getCurrentContext(), buildResult);
     }
     default void completeBuild(ThreadContext context, T buildResult) {
         completeBuild(buildResult);
@@ -27,9 +29,14 @@ public interface Compilable<T> {
      * Return the owning module/class name.
      * @return method/block owner's name
      */
+    @Deprecated(since = "10.0")
     default String getOwnerName() {
+        return getOwnerName(getImplementationClass().getCurrentContext());
+    }
+
+    default String getOwnerName(ThreadContext context) {
         RubyModule implClass = getImplementationClass();
-        return implClass == null ? null : resolveFullName(implClass);
+        return implClass == null ? null : resolveFullName(context, implClass);
     }
 
     /**
@@ -51,7 +58,7 @@ public interface Compilable<T> {
 
     @Deprecated
     default String getClassName(ThreadContext context) {
-        return getOwnerName();
+        return getOwnerName(context);
     }
 
     /**
@@ -59,9 +66,7 @@ public interface Compilable<T> {
      * @param implementationClass
      * @return class/module name e.g. Foo::Bar::Baz
      */
-    static String resolveFullName(RubyModule implementationClass) {
-        var context = implementationClass.getRuntime().getCurrentContext();
-
+    static String resolveFullName(ThreadContext context, RubyModule implementationClass) {
         if (implementationClass.isSingleton()) {
             MetaClass metaClass = (MetaClass)implementationClass;
             RubyClass realClass = metaClass.getRealClass();

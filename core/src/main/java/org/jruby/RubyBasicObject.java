@@ -29,17 +29,40 @@
 package org.jruby;
 
 import org.jcodings.Encoding;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.api.JRubyAPI;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.java.proxies.JavaProxy;
+import org.jruby.javasupport.JavaUtil;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.CallType;
+import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.BasicObjectSites;
+import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.builtin.InstanceVariables;
+import org.jruby.runtime.builtin.InternalVariables;
+import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callsite.CacheEntry;
+import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.ivars.VariableAccessor;
+import org.jruby.runtime.ivars.VariableTableManager;
+import org.jruby.runtime.marshal.CoreObjectType;
+import org.jruby.util.ArraySupport;
+import org.jruby.util.ByteList;
+import org.jruby.util.IdUtil;
+import org.jruby.util.TypeConverter;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -54,56 +77,53 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import org.jruby.anno.JRubyMethod;
-import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.javasupport.JavaUtil;
-import org.jruby.runtime.Helpers;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.CallType;
-import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
-
-import static org.jruby.anno.FrameField.*;
+import static org.jruby.anno.FrameField.BACKREF;
+import static org.jruby.anno.FrameField.BLOCK;
+import static org.jruby.anno.FrameField.CLASS;
+import static org.jruby.anno.FrameField.FILENAME;
+import static org.jruby.anno.FrameField.LASTLINE;
+import static org.jruby.anno.FrameField.LINE;
+import static org.jruby.anno.FrameField.METHODNAME;
+import static org.jruby.anno.FrameField.SCOPE;
+import static org.jruby.anno.FrameField.SELF;
+import static org.jruby.anno.FrameField.VISIBILITY;
 import static org.jruby.api.Access.arrayClass;
 import static org.jruby.api.Access.globalVariables;
 import static org.jruby.api.Access.hashClass;
 import static org.jruby.api.Access.stringClass;
-import static org.jruby.api.Convert.*;
-import static org.jruby.api.Create.*;
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Convert.castAsModule;
+import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newEmptyArray;
+import static org.jruby.api.Create.newRawArray;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.api.Warn.warn;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
-import static org.jruby.ir.runtime.IRRuntimeHelpers.getCurrentClassBase;
 import static org.jruby.runtime.Helpers.invokeChecked;
-import static org.jruby.runtime.ThreadContext.*;
-import static org.jruby.runtime.Visibility.*;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.builtin.InstanceVariables;
-import org.jruby.runtime.builtin.InternalVariables;
-import org.jruby.runtime.builtin.Variable;
-import org.jruby.runtime.component.VariableEntry;
-import org.jruby.runtime.marshal.CoreObjectType;
-import org.jruby.util.ArraySupport;
-import org.jruby.util.ByteList;
-import org.jruby.util.IdUtil;
-import org.jruby.util.TypeConverter;
-
 import static org.jruby.runtime.Helpers.invokedynamic;
-import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
-import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
+import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
+import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_REST;
+import static org.jruby.runtime.ThreadContext.CALL_SPLATS;
+import static org.jruby.runtime.Visibility.PRIVATE;
+import static org.jruby.runtime.Visibility.PROTECTED;
+import static org.jruby.runtime.Visibility.PUBLIC;
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
 import static org.jruby.runtime.invokedynamic.MethodNames.INSPECT;
-import static org.jruby.util.Inspector.*;
+import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
+import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
+import static org.jruby.util.Inspector.COMMA;
+import static org.jruby.util.Inspector.EQUALS;
+import static org.jruby.util.Inspector.GT;
+import static org.jruby.util.Inspector.SPACE;
+import static org.jruby.util.Inspector.SPACE_DOT_DOT_DOT_GT;
+import static org.jruby.util.Inspector.inspectPrefix;
 import static org.jruby.util.RubyStringBuilder.ids;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
 import static org.jruby.util.io.EncodingUtils.encStrBufCat;
-
-import org.jruby.runtime.ivars.VariableTableManager;
 
 /**
  * RubyBasicObject is the only implementation of the
@@ -192,7 +212,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * means that creating RubyObjects from outside the class might
      * cause problems.
      */
-    private RubyBasicObject(){};
+    private RubyBasicObject(){}
 
     /**
      * Default allocator instance for all Ruby objects. The only
@@ -509,9 +529,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * This will create a new metaclass.  This is only used during bootstrapping before
      * the initial ThreadContext is defined.  Normal needs of making a metaclass should use
      * {@link RubyBasicObject#makeMetaClass(ThreadContext, RubyClass)}
-     * @param superClass
-     * @param Class
-     * @return
+     * @param superClass of the metaclass
+     * @param Class a reference to Ruby Class
+     * @return the new metaclass
      */
     public RubyClass makeMetaClassBootstrap(Ruby runtime, RubyClass superClass, RubyClass Class) {
         MetaClass klass = new MetaClass(runtime, superClass, Class, this); // rb_class_boot
@@ -2303,7 +2323,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     k.methods.length   #=&gt; 42
      */
     public IRubyObject methods(ThreadContext context, IRubyObject... args) {
-        return methodsImpl(context, args.length == 1 ? args[0].isTrue() : true);
+        return methodsImpl(context, args.length != 1 || args[0].isTrue());
     }
 
     final IRubyObject methodsImpl(ThreadContext context, final boolean all) {

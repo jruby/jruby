@@ -253,12 +253,12 @@ public class JavaInterfaceTemplate {
 
         @Override // will be called with zero args
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-            return newInterfaceProxy(self);
+            return newInterfaceProxy(context, self);
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-            return newInterfaceProxy(self);
+            return newInterfaceProxy(context, self);
         }
 
     }
@@ -301,11 +301,11 @@ public class JavaInterfaceTemplate {
         });
     }
 
-    private static IRubyObject newInterfaceProxy(final IRubyObject self) {
+    private static IRubyObject newInterfaceProxy(ThreadContext context, final IRubyObject self) {
         final RubyClass current = self.getMetaClass();
         // construct the new interface impl and set it into the object
-        Object impl = Java.newInterfaceImpl(self, Java.getInterfacesFromRubyClass(current));
-        IRubyObject implWrapper = Java.getInstance(self.getRuntime(), impl);
+        Object impl = Java.newInterfaceImpl(context, self, Java.getInterfacesFromRubyClass(current));
+        IRubyObject implWrapper = Java.getInstance(context.runtime, impl);
         JavaUtilities.set_java_object(self, self, implWrapper); // self.dataWrapStruct(newObject);
         return implWrapper;
     }
@@ -324,16 +324,13 @@ public class JavaInterfaceTemplate {
         // for this module to call append_features on each of those interfaces as
         // well
         synchronized (module) {
-            if ( initInterfaceModules(self, module) ) { // true - initialized
+            if (initInterfaceModules(context, self, module)) { // true - initialized
                 final RubyClass singleton = module.singletonClass(context);
                 singleton.addMethod(context, "append_features", new AppendFeatures(singleton));
-            }
-            else {
+            } else {
                 // already set up append_features, just add the interface if we haven't already
                 final var interfaceModules = getInterfaceModules(module);
-                if ( ! interfaceModules.includes(context, self) ) {
-                    interfaceModules.append(context, self);
-                }
+                if (!interfaceModules.includes(context, self)) interfaceModules.append(context, self);
             }
         }
     }
@@ -387,7 +384,7 @@ public class JavaInterfaceTemplate {
         final BlockInterfaceImpl ifaceImpl = new BlockInterfaceImpl(implClass, implBlock, methodNames);
         implClass.addMethod(context, "method_missing", ifaceImpl); // def ImplClass.method_missing ...
 
-        final Class<?> ifaceClass = JavaUtil.getJavaClass(((RubyModule) self));
+        final Class<?> ifaceClass = JavaUtil.getJavaClass(context, ((RubyModule) self));
         if ( methodNames == null ) {
             for ( Method method : ifaceClass.getMethods() ) {
                 BlockInterfaceImpl.ConcreteMethod implMethod = ifaceImpl.getConcreteMethod(method.getName());
@@ -529,9 +526,9 @@ public class JavaInterfaceTemplate {
         return (RubyArray) module.getInstanceVariables().getInstanceVariable("@java_interface_mods");
     }
 
-    private static boolean initInterfaceModules(final IRubyObject self, final IRubyObject module) {
+    private static boolean initInterfaceModules(ThreadContext context, final IRubyObject self, final IRubyObject module) {
         if ( ! module.getInstanceVariables().hasInstanceVariable("@java_interface_mods") ) {
-            final RubyArray interfaceMods = RubyArray.newArray(self.getRuntime(), self);
+            final RubyArray interfaceMods = newArray(context, self);
             module.getInstanceVariables().setInstanceVariable("@java_interface_mods", interfaceMods);
             return true;
         }

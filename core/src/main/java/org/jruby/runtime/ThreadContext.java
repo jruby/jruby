@@ -1377,9 +1377,7 @@ public final class ThreadContext {
     }
 
     public IRubyObject addThreadTraceFunction(IRubyObject trace_func, boolean useContextHook) {
-        if (!(trace_func instanceof RubyProc)) {
-            throw typeError(trace_func.getRuntime().getCurrentContext(), "trace_func needs to be Proc.");
-        }
+        if (!(trace_func instanceof RubyProc)) throw typeError(this, "trace_func needs to be Proc.");
 
         TraceEventManager.CallTraceFuncHook hook;
 
