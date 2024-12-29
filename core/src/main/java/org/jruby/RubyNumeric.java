@@ -378,7 +378,7 @@ public class RubyNumeric extends RubyObject {
 
     @Deprecated
     public static IRubyObject num2fix(IRubyObject val) {
-        return num2fix(val.getRuntime().getCurrentContext(), val);
+        return num2fix(((RubyBasicObject) val).getCurrentContext(), val);
     }
 
     /** rb_num2fix

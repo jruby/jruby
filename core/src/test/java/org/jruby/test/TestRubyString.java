@@ -56,7 +56,7 @@ public class TestRubyString extends Base {
 
     public void testSplit() throws RaiseException {
         RubyString str = newString(context, "JRuby is so awesome!");
-        RubyArray res = str.split(newString(context, " "));
+        RubyArray res = str.split(context, newString(context, " "), 0);
         assertEquals(4, res.size());
         assertEquals("JRuby", res.get(0));
         res = str.split(newString(context, " "), 2);
@@ -65,12 +65,12 @@ public class TestRubyString extends Base {
         assertEquals("is so awesome!", res.get(1));
 
         RubyRegexp pat = RubyRegexp.newRegexp(context.runtime, ByteList.create("[ie]s"));
-        res = str.split(pat);
+        res = str.split(context, pat, 0);
         assertEquals(3, res.size());
         assertEquals("JRuby ", res.get(0));
         assertEquals(" so aw", res.get(1));
         assertEquals("ome!", res.get(2));
-        res = str.split(pat, 4);
+        res = str.split(context, pat, 4);
         assertEquals(3, res.size());
     }
 }

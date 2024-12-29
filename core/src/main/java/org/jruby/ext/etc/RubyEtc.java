@@ -11,6 +11,7 @@ import jnr.constants.platform.Confstr;
 import jnr.constants.platform.Pathconf;
 
 import org.jruby.RubyArray;
+import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
@@ -144,7 +145,7 @@ public class RubyEtc {
 
         };
         
-        return RubyStruct.newStruct(context.runtime.getPasswdStruct(), args, Block.NULL_BLOCK);
+        return newStruct(context, (RubyClass) context.runtime.getPasswdStruct(), args, Block.NULL_BLOCK);
     }
 
     
@@ -156,7 +157,7 @@ public class RubyEtc {
                 intoStringArray(context, group.getMembers())
         };
         
-        return RubyStruct.newStruct(context.runtime.getGroupStruct(), args, Block.NULL_BLOCK);
+        return newStruct(context, (RubyClass) context.runtime.getGroupStruct(), args, Block.NULL_BLOCK);
     }
 
     private static IRubyObject intoStringArray(ThreadContext context, String[] members) {
