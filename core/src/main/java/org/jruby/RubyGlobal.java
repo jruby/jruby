@@ -981,7 +981,7 @@ public class RubyGlobal {
 
         @Override
         public IRubyObject set(IRubyObject value) {
-            int line = (int)value.convertToInteger().getLongValue();
+            int line = (int)value.convertToInteger().asLong(runtime.getCurrentContext());
             runtime.setCurrentLine(line);
             return value;
         }

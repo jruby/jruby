@@ -195,7 +195,7 @@ public class RubyArithmeticSequence extends RubyObject {
         }
 
         /* TODO: the following code should be extracted as arith_seq_take */
-        long n = numericToLong(context, num);
+        long n = numToLong(context, num);
 
         if (n < 0) throw argumentError(context, "attempt to take negative size");
         if (n == 0) return newEmptyArray(context);
@@ -322,16 +322,16 @@ public class RubyArithmeticSequence extends RubyObject {
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
         IRubyObject v = safeHash(context, excludeEnd);
-        long hash = hashStart(context.runtime, v.convertToInteger().getLongValue());
+        long hash = hashStart(context.runtime, numToLong(context, v));
 
         v = safeHash(context, begin);
-        hash = murmurCombine(hash, v.convertToInteger().getLongValue());
+        hash = murmurCombine(hash, numToLong(context, v));
 
         v = safeHash(context, end);
-        hash = murmurCombine(hash, v.convertToInteger().getLongValue());
+        hash = murmurCombine(hash, numToLong(context, v));
 
         v = safeHash(context, step);
-        hash = murmurCombine(hash, v.convertToInteger().getLongValue());
+        hash = murmurCombine(hash, numToLong(context, v));
         hash = hashEnd(hash);
 
         return asFixnum(context, hash);
@@ -453,7 +453,7 @@ public class RubyArithmeticSequence extends RubyObject {
         CallSite op_gt = sites(context).op_gt;
         if (RubyNumeric.numFuncall(context, nv, op_gt, len).isTrue()) nv = len;
 
-        long n = numericToLong(context, nv);
+        long n = numToLong(context, nv);
         if (n < 0) throw argumentError(context, "negative array size");
 
         var ary = newRawArray(context, n);
@@ -531,7 +531,7 @@ public class RubyArithmeticSequence extends RubyObject {
 
     @JRubyMethod(name = "each_cons")
     public IRubyObject each_cons(ThreadContext context, IRubyObject arg, final Block block) {
-        int size = (int) numericToLong(context, arg);
+        int size = (int) numToLong(context, arg);
         if (size <= 0) throw argumentError(context, "invalid size");
         return block.isGiven() ? RubyEnumerable.each_consCommon(context, this, size, block) :
                 enumeratorize(context.runtime, this, "each_cons", arg);
@@ -539,7 +539,7 @@ public class RubyArithmeticSequence extends RubyObject {
 
     @JRubyMethod(name = "each_slice")
     public IRubyObject each_slice(ThreadContext context, IRubyObject arg, final Block block) {
-        int size = (int) numericToLong(context, arg);
+        int size = (int) numToLong(context, arg);
         if (size <= 0) throw argumentError(context, "invalid size");
 
         return block.isGiven() ? RubyEnumerable.each_sliceCommon(context, this, size, block) :

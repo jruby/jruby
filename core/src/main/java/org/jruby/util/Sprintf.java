@@ -48,7 +48,7 @@ import org.jruby.util.io.EncodingUtils;
 import static org.jruby.api.Access.integerClass;
 import static org.jruby.api.Access.stringClass;
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Convert.numericToLong;
+import static org.jruby.api.Convert.numToLong;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
@@ -606,7 +606,7 @@ public class Sprintf {
                             n = StringSupport.codeLength(bl.getEncoding(), c);
                         }
                     } else {
-                        c = (int) numericToLong(context, arg) & 0xFFFFFFFF;
+                        c = (int) numToLong(context, arg) & 0xFFFFFFFF;
                         try {
                             n = StringSupport.codeLength(encoding, c);
                         } catch (EncodingException e) {
@@ -641,8 +641,8 @@ public class Sprintf {
                     arg = args.getArg();
 
                     ByteList bytes = new ByteList();
-                    final boolean positive = isPositive(arg);
-                    double fval = RubyKernel.new_float(context, arg).getDoubleValue();
+                    final boolean positive = isPositive(context, arg);
+                    double fval = RubyKernel.new_float(context, arg).asDouble(context);
                     boolean negative = fval < 0.0d || (fval == 0.0d && Double.doubleToLongBits(fval) == Double.doubleToLongBits(-0.0));
                     boolean isnan = Double.isNaN(fval);
                     boolean isinf = fval == Double.POSITIVE_INFINITY || fval == Double.NEGATIVE_INFINITY;
@@ -667,7 +667,7 @@ public class Sprintf {
                         bytes.append('0');
                         bytes.append(fchar == 'a' ? 'x' : 'X');
                     }
-                    precision = generateBinaryFloat(flags, precision, fchar, bytes, arg);
+                    precision = generateBinaryFloat(context, flags, precision, fchar, bytes, arg);
                     int bytesLength = bytes.length(); // We know numbers will be 7 bit ascii.
 
                     if ((flags & FLAG_MINUS) == 0) {
@@ -1031,7 +1031,7 @@ public class Sprintf {
                 float_value: {
                     arg = args.getArg();
 
-                    double fval = RubyKernel.new_float(context, arg).getDoubleValue();
+                    double fval = RubyKernel.new_float(context, arg).asDouble(context);
                     boolean isnan = Double.isNaN(fval);
                     boolean isinf = fval == Double.POSITIVE_INFINITY || fval == Double.NEGATIVE_INFINITY;
                     boolean negative = fval < 0.0d || (fval == 0.0d && Double.doubleToLongBits(fval) == Double.doubleToLongBits(-0.0));
@@ -1550,9 +1550,9 @@ public class Sprintf {
         return "aAbBcdeEfgGiopsuxX".contains(""+b);
     }
 
-    private static int generateBinaryFloat(int flags, int precision, byte fchar, ByteList bytes, IRubyObject arg) {
-        long exponent = getExponent(arg);
-        final byte[] mantissaBytes = getMantissaBytes(arg);
+    private static int generateBinaryFloat(ThreadContext context, int flags, int precision, byte fchar, ByteList bytes, IRubyObject arg) {
+        long exponent = getExponent(context, arg);
+        final byte[] mantissaBytes = getMantissaBytes(context, arg);
 
         if (mantissaBytes[0] == 0) {
             exponent = 0;
@@ -1923,9 +1923,9 @@ public class Sprintf {
         }
     }
 
-    private static boolean isPositive(Object value) {
+    private static boolean isPositive(ThreadContext context, Object value) {
         if (value instanceof RubyFloat) {
-            final long bits = Double.doubleToRawLongBits(((RubyFloat) value).getDoubleValue());
+            final long bits = Double.doubleToRawLongBits(((RubyFloat) value).asDouble(context));
             return (bits & SIGN_MASK) == 0;
         } else if (value instanceof RubyFixnum) {
             return ((RubyFixnum) value).getLongValue() >= 0;
@@ -1941,10 +1941,10 @@ public class Sprintf {
     private static final byte[] HEX_DIGITS = new byte[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
     private static final byte[] HEX_DIGITS_UPPER_CASE = new byte[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 
-    private static byte[] getMantissaBytes(IRubyObject value) {
+    private static byte[] getMantissaBytes(ThreadContext context, IRubyObject value) {
         BigInteger bi;
         if (value instanceof RubyFloat) {
-            final long bits = Double.doubleToRawLongBits(((RubyFloat) value).getDoubleValue());
+            final long bits = Double.doubleToRawLongBits(((RubyFloat) value).asDouble(context));
             long biasedExp = ((bits & BIASED_EXP_MASK) >> 52);
             long mantissaBits = bits & MANTISSA_MASK;
             if (biasedExp > 0) {
@@ -1974,14 +1974,14 @@ public class Sprintf {
         return bi.toByteArray();
     }
 
-    private static long getExponent(IRubyObject value) {
+    private static long getExponent(ThreadContext context, IRubyObject value) {
         if (value instanceof RubyBignum) {
             return ((RubyBignum) value).getValue().abs().bitLength() - 1;
         } else if (value instanceof RubyFixnum) {
             long lval = ((RubyFixnum) value).getLongValue();
             return lval == Long.MIN_VALUE ? 63 : 63 - Long.numberOfLeadingZeros(Math.abs(lval));
         } else if (value instanceof RubyFloat) {
-            final long bits = Double.doubleToRawLongBits(((RubyFloat) value).getDoubleValue());
+            final long bits = Double.doubleToRawLongBits(((RubyFloat) value).asDouble(context));
             long biasedExp = ((bits & BIASED_EXP_MASK) >> 52);
             long mantissaBits = bits & MANTISSA_MASK;
             if (biasedExp == 0) {

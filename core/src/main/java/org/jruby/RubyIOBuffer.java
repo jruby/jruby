@@ -1003,12 +1003,12 @@ public class RubyIOBuffer extends RubyObject {
         return asFloat(context, value);
     }
 
-    private static long unwrapLong(IRubyObject value) {
-        return value.convertToInteger().getLongValue();
+    private static long unwrapLong(ThreadContext context, IRubyObject value) {
+        return value.convertToInteger().asLong(context);
     }
 
-    private static double unwrapDouble(IRubyObject value) {
-        return value.convertToFloat().getDoubleValue();
+    private static double unwrapDouble(ThreadContext context, IRubyObject value) {
+        return value.convertToFloat().asDouble(context);
     }
 
     private static long unwrapUnsignedLong(IRubyObject value) {
@@ -1226,34 +1226,34 @@ public class RubyIOBuffer extends RubyObject {
 
         switch (dataType) {
             case S8:
-                writeByte(context, buffer, offset, (byte) unwrapLong(value));
+                writeByte(context, buffer, offset, (byte) unwrapLong(context, value));
                 return;
             case U8:
-                writeUnsignedByte(context, buffer, offset, (int) unwrapLong(value));
+                writeUnsignedByte(context, buffer, offset, (int) unwrapLong(context, value));
                 return;
             case u16:
-                writeUnsignedShort(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, (int) unwrapLong(value));
+                writeUnsignedShort(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, (int) unwrapLong(context, value));
                 return;
             case U16:
-                writeUnsignedShort(context, buffer, offset, ByteOrder.BIG_ENDIAN, (int) unwrapLong(value));
+                writeUnsignedShort(context, buffer, offset, ByteOrder.BIG_ENDIAN, (int) unwrapLong(context, value));
                 return;
             case s16:
-                writeShort(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, (short) unwrapLong(value));
+                writeShort(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, (short) unwrapLong(context, value));
                 return;
             case S16:
-                writeShort(context, buffer, offset, ByteOrder.BIG_ENDIAN, (short) unwrapLong(value));
+                writeShort(context, buffer, offset, ByteOrder.BIG_ENDIAN, (short) unwrapLong(context, value));
                 return;
             case u32:
-                writeUnsignedInt(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, unwrapLong(value));
+                writeUnsignedInt(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, unwrapLong(context, value));
                 return;
             case U32:
-                writeUnsignedInt(context, buffer, offset, ByteOrder.BIG_ENDIAN, unwrapLong(value));
+                writeUnsignedInt(context, buffer, offset, ByteOrder.BIG_ENDIAN, unwrapLong(context, value));
                 return;
             case s32:
-                writeInt(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, (int) unwrapLong(value));
+                writeInt(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, (int) unwrapLong(context, value));
                 return;
             case S32:
-                writeInt(context, buffer, offset, ByteOrder.BIG_ENDIAN, (int) unwrapLong(value));
+                writeInt(context, buffer, offset, ByteOrder.BIG_ENDIAN, (int) unwrapLong(context, value));
                 return;
             case u64:
                 writeUnsignedLong(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, unwrapUnsignedLong(value));
@@ -1262,22 +1262,22 @@ public class RubyIOBuffer extends RubyObject {
                 writeUnsignedLong(context, buffer, offset, ByteOrder.BIG_ENDIAN, unwrapUnsignedLong(value));
                 return;
             case s64:
-                writeLong(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, unwrapLong(value));
+                writeLong(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, unwrapLong(context, value));
                 return;
             case S64:
-                writeLong(context, buffer, offset, ByteOrder.BIG_ENDIAN, unwrapLong(value));
+                writeLong(context, buffer, offset, ByteOrder.BIG_ENDIAN, unwrapLong(context, value));
                 return;
             case f32:
-                writeFloat(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, (float) unwrapDouble(value));
+                writeFloat(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, (float) unwrapDouble(context, value));
                 return;
             case F32:
-                writeFloat(context, buffer, offset, ByteOrder.BIG_ENDIAN, (float) unwrapDouble(value));
+                writeFloat(context, buffer, offset, ByteOrder.BIG_ENDIAN, (float) unwrapDouble(context, value));
                 return;
             case f64:
-                writeDouble(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, unwrapDouble(value));
+                writeDouble(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, unwrapDouble(context, value));
                 return;
             case F64:
-                writeDouble(context, buffer, offset, ByteOrder.BIG_ENDIAN, unwrapDouble(value));
+                writeDouble(context, buffer, offset, ByteOrder.BIG_ENDIAN, unwrapDouble(context, value));
                 return;
         }
 

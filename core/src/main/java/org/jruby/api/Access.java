@@ -302,6 +302,15 @@ public class Access {
     }
 
     /**
+     * Retrieve the instance of the class Random
+     * @param context the current thread context
+     * @return the Class
+     */
+    public static RubyClass randomClass(ThreadContext context) {
+        return context.runtime.getRandomClass();
+    }
+
+    /**
      * Retrieve the instance of the class RuntimeError
      * @param context the current thread context
      * @return the Class

@@ -579,9 +579,8 @@ public class RubyKernel {
     }
 
     static RubyFloat new_float(ThreadContext context, RubyInteger num) {
-        return num instanceof RubyBignum ?
-                asFloat(context, RubyBignum.big2dbl((RubyBignum) num)) :
-                asFloat(context, num.getDoubleValue());
+        return asFloat(context, num instanceof RubyBignum big ?
+                RubyBignum.big2dbl(big) : num.asDouble(context));
     }
 
     @JRubyMethod(name = "Hash", required = 1, module = true, visibility = PRIVATE)
@@ -1258,7 +1257,7 @@ public class RubyKernel {
             if (args.length > 3) {
                 // line given, use it and force it into binding
                 // -1 because parser uses zero offsets and other code compensates
-                binding.setLine(((int) args[3].convertToInteger().getLongValue()) - 1);
+                binding.setLine(((int) args[3].convertToInteger().asLong(context)) - 1);
             } else {
                 // filename given, but no line, start from the beginning.
                 binding.setLine(0);
@@ -1759,13 +1758,13 @@ public class RubyKernel {
 
     private static int getTestCommand(ThreadContext context, IRubyObject arg0) {
         int cmd;
-        if (arg0 instanceof RubyFixnum) {
-            cmd = (int)((RubyFixnum) arg0).getLongValue();
+        if (arg0 instanceof RubyFixnum fixnum) {
+            cmd = fixnum.getIntValue();
         } else if (arg0 instanceof RubyString && ((RubyString) arg0).getByteList().length() > 0) {
             // MRI behavior: use first byte of string value if len > 0
             cmd = ((RubyString) arg0).getByteList().charAt(0);
         } else {
-            cmd = (int) arg0.convertToInteger().getLongValue();
+            cmd = (int) arg0.convertToInteger().asLong(context);
         }
 
         // MRI behavior: raise ArgumentError for 'unknown command' before checking number of args

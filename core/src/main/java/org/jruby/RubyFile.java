@@ -319,7 +319,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod
     public IRubyObject chmod(ThreadContext context, IRubyObject arg) {
         checkClosed(context);
-        int mode = (int) arg.convertToInteger().getLongValue();
+        int mode = (int) arg.convertToInteger().asLong(context);
         final String path = getPath();
         if (!new File(path).exists()) throw context.runtime.newErrnoENOENTError(path);
 
@@ -549,7 +549,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
             if (!filename.exists()) throw context.runtime.newErrnoENOENTError(filename.toString());
 
-            if (0 != context.runtime.getPosix().chmod(filename.getAbsolutePath(), (int) mode.getLongValue())) {
+            if (0 != context.runtime.getPosix().chmod(filename.getAbsolutePath(), (int) mode.asLong(context))) {
                 throw context.runtime.newErrnoFromLastPOSIXErrno();
             } else {
                 count++;
@@ -952,7 +952,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         for (int i = 1; i < argc; i++) {
             JRubyFile file = file(args[i]);
-            if (0 != context.runtime.getPosix().lchmod(file.toString(), (int) mode.getLongValue())) {
+            if (0 != context.runtime.getPosix().lchmod(file.toString(), (int) mode.asLong(context))) {
                 throw context.runtime.newErrnoFromLastPOSIXErrno();
             } else {
                 count++;
@@ -1118,7 +1118,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         int argc = Arity.checkArgumentCount(context, args, 0, 1);
         int oldMask = argc == 0 ?
                 PosixShim.umask(context.runtime.getPosix()) :
-                PosixShim.umask(context.runtime.getPosix(), (int) args[0].convertToInteger().getLongValue());
+                PosixShim.umask(context.runtime.getPosix(), (int) args[0].convertToInteger().asLong(context));
 
         return asFixnum(context, oldMask);
     }
@@ -1571,19 +1571,19 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     private static long[] extractTimespec(ThreadContext context, IRubyObject value) {
         long[] timespec = new long[2];
 
-        if (value instanceof RubyFloat) {
-            timespec[0] = Platform.IS_32_BIT ? RubyNumeric.num2int(value) : numericToLong(context, value);
-            double fraction = ((RubyFloat) value).getDoubleValue() % 1.0;
+        if (value instanceof RubyFloat flote) {
+            timespec[0] = Platform.IS_32_BIT ? RubyNumeric.num2int(value) : numToLong(context, value);
+            double fraction = flote.asDouble(context) % 1.0;
             timespec[1] = (long)(fraction * 1e9 + 0.5);
         } else if (value instanceof RubyNumeric) {
-            timespec[0] = Platform.IS_32_BIT ? RubyNumeric.num2int(value) : numericToLong(context, value);
+            timespec[0] = Platform.IS_32_BIT ? RubyNumeric.num2int(value) : numToLong(context, value);
             timespec[1] = 0;
         } else {
             RubyTime time = value instanceof RubyTime t ?
                     t : (RubyTime) TypeConverter.convertToType(context, value, timeClass(context), sites(context).to_time_checked, true);
 
-            timespec[0] = Platform.IS_32_BIT ? asInt(context, time.to_i(context)) : numericToLong(context, time.to_i(context));
-            timespec[1] = Platform.IS_32_BIT ? asInt(context, time.nsec(context)) : numericToLong(context, time.nsec(context));
+            timespec[0] = Platform.IS_32_BIT ? asInt(context, time.to_i(context)) : numToLong(context, time.to_i(context));
+            timespec[1] = Platform.IS_32_BIT ? asInt(context, time.nsec(context)) : numToLong(context, time.nsec(context));
         }
 
         return timespec;
@@ -2265,7 +2265,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         File testFile = childFile.isAbsolute() ? childFile : new File(runtime.getCurrentDirectory(), filenameString);
 
         if (!testFile.exists()) throw runtime.newErrnoENOENTError(filenameString);
-        if (newLength.getLongValue() < 0) throw runtime.newErrnoEINVALError(filenameString);
+        if (newLength.asLong(context) < 0) throw runtime.newErrnoEINVALError(filenameString);
 
         IRubyObject[] args = new IRubyObject[] { filename, newString(context, "r+") };
         RubyFile file = (RubyFile) open(context, recv, args, Block.NULL_BLOCK);

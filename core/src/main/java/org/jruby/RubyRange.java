@@ -178,7 +178,7 @@ public class RubyRange extends RubyObject {
     }
 
     final boolean checkBegin(ThreadContext context, long length) {
-        long beg = isBeginless ? 0 : numericToLong(context, this.begin);
+        long beg = isBeginless ? 0 : numToLong(context, this.begin);
         if (beg < 0) {
             beg += length;
             if (beg < 0) {
@@ -191,8 +191,8 @@ public class RubyRange extends RubyObject {
     }
 
     final long[] begLen(ThreadContext context, long len, int err) {
-        long beg = isBeginless ? 0 : numericToLong(context, this.begin);
-        long end = isEndless ? -1: numericToLong(context, this.end);
+        long beg = isBeginless ? 0 : numToLong(context, this.begin);
+        long end = isEndless ? -1: numToLong(context, this.end);
 
         if (beg < 0) {
             beg += len;
@@ -220,7 +220,7 @@ public class RubyRange extends RubyObject {
     }
 
     final long begLen0(ThreadContext context, long len) {
-        long beg = isBeginless ? 0 : numericToLong(context, this.begin);
+        long beg = isBeginless ? 0 : numToLong(context, this.begin);
 
         if (beg < 0) {
             beg += len;
@@ -231,7 +231,7 @@ public class RubyRange extends RubyObject {
     }
 
     final long begLen1(ThreadContext context, long len, long beg) {
-        long end = isEndless ? -1 : numericToLong(context, this.end);
+        long end = isEndless ? -1 : numToLong(context, this.end);
 
         if (end < 0) end += len;
         if (!isExclusive || isEndless) end++;
@@ -1215,13 +1215,13 @@ public class RubyRange extends RubyObject {
             return newEmptyArray(context);
         }
 
-        long n = numericToLong(context, arg);
+        long n = numToLong(context, arg);
         if (n < 0) throw argumentError(context, "negative array size");
 
         nv = asFixnum(context, n);
         if (Numeric.f_gt_p(context, nv, len)) {
              nv = len;
-             n = numericToLong(context, nv);
+             n = numToLong(context, nv);
         }
 
         RubyArray<?> array = newRawArray(context, n);
@@ -1441,9 +1441,7 @@ public class RubyRange extends RubyObject {
     public static class BSearch {
         @JRubyMethod(meta = true)
         public static IRubyObject double_to_long_bits(ThreadContext context, IRubyObject bsearch, IRubyObject flote) {
-            return flote instanceof RubyFixnum value ?
-                    asFixnum(context, Double.doubleToLongBits(value.getDoubleValue())) :
-                    asFixnum(context, Double.doubleToLongBits(((RubyFloat) flote).getDoubleValue()));
+            return asFixnum(context, Double.doubleToLongBits(((RubyNumeric) flote).asDouble(context)));
         }
 
         @JRubyMethod(meta = true)
@@ -1453,7 +1451,7 @@ public class RubyRange extends RubyObject {
 
         @JRubyMethod(meta = true)
         public static IRubyObject abs(ThreadContext context, IRubyObject bsearch, IRubyObject flote) {
-            return asFloat(context, Math.abs(((RubyFloat) flote).getDoubleValue()));
+            return asFloat(context, Math.abs(((RubyFloat) flote).asDouble(context)));
         }
     }
 

@@ -713,7 +713,7 @@ public class RubyDir extends RubyObject implements Closeable {
         File newDir = res.unwrap(File.class);
         if (File.separatorChar == '\\') newDir = new File(newDir.getPath());
 
-        int mode = args.length == 2 ? ((int) args[1].convertToInteger().getLongValue()) : 0777;
+        int mode = args.length == 2 ? ((int) args[1].convertToInteger().asLong(context)) : 0777;
 
         if (context.runtime.getPosix().mkdir(newDir.getAbsolutePath(), mode) < 0) {
             // FIXME: This is a system error based on errno

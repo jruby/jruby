@@ -36,7 +36,6 @@ package org.jruby.ext.zlib;
 import java.util.zip.CRC32;
 import java.util.zip.Adler32;
 
-import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
@@ -57,7 +56,7 @@ import org.jruby.runtime.ThreadContext;
 
 import static org.jruby.api.Access.*;
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Convert.numericToLong;
+import static org.jruby.api.Convert.numToLong;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineModule;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
@@ -202,7 +201,7 @@ public class RubyZlib {
         long start = 0;
         ByteList bytes = null;
         if (!args[0].isNil()) bytes = args[0].convertToString().getByteList();
-        if (!args[1].isNil()) start = numericToLong(context, args[1]);
+        if (!args[1].isNil()) start = numToLong(context, args[1]);
         start &= 0xFFFFFFFFL;
 
         final boolean slowPath = start != 0;
@@ -230,7 +229,7 @@ public class RubyZlib {
         int start = 1;
         ByteList bytes = null;
         if (!args[0].isNil()) bytes = args[0].convertToString().getByteList();
-        if (!args[1].isNil()) start = (int) numericToLong(context, args[1]);
+        if (!args[1].isNil()) start = (int) numToLong(context, args[1]);
 
         Adler32 checksum = new Adler32();
         if (bytes != null) {
@@ -287,9 +286,9 @@ public class RubyZlib {
     @JRubyMethod(name = "crc32_combine", module = true, visibility = PRIVATE)
     public static IRubyObject crc32_combine(ThreadContext context, IRubyObject recv,
                                             IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        long crc1 = numericToLong(context, arg0);
-        long crc2 = numericToLong(context, arg1);
-        long len2 = numericToLong(context, arg2);
+        long crc1 = numToLong(context, arg0);
+        long crc2 = numToLong(context, arg1);
+        long len2 = numToLong(context, arg2);
 
         return asFixnum(context, com.jcraft.jzlib.JZlib.crc32_combine(crc1, crc2, len2));
     }
@@ -302,9 +301,9 @@ public class RubyZlib {
     @JRubyMethod(name = "adler32_combine", module = true, visibility = PRIVATE)
     public static IRubyObject adler32_combine(ThreadContext context, IRubyObject recv,
                                               IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        long adler1 = numericToLong(context, arg0);
-        long adler2 = numericToLong(context, arg1);
-        long len2 = numericToLong(context, arg2);
+        long adler1 = numToLong(context, arg0);
+        long adler2 = numToLong(context, arg1);
+        long len2 = numToLong(context, arg2);
 
         return asFixnum(context, com.jcraft.jzlib.JZlib.adler32_combine(adler1, adler2, len2));
     }

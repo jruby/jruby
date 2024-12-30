@@ -34,6 +34,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.JRubyAPI;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.RaiseException;
@@ -1071,7 +1072,8 @@ public class RubyRational extends RubyNumeric {
     }
 
     @Override
-    public long getLongValue() {
+    @JRubyAPI
+    public long asLong(ThreadContext context) {
         return convertToInteger().getLongValue();
     }
 
@@ -1209,17 +1211,12 @@ public class RubyRational extends RubyNumeric {
 
     @JRubyMethod(name = "to_f")
     public IRubyObject to_f(ThreadContext context) {
-        return context.runtime.newFloat(getDoubleValue(context));
+        return asFloat(context, asDouble(context));
     }
-    
+
     @Override
-    public double getDoubleValue() {
-        return getDoubleValue(getRuntime().getCurrentContext());
-    }
-
-    private static final long ML = (long)(Math.log(Double.MAX_VALUE) / Math.log(2.0) - 1);
-
-    public double getDoubleValue(ThreadContext context) {
+    @JRubyAPI
+    public double asDouble(ThreadContext context) {
         if (f_zero_p(context, num)) return 0;
 
         RubyInteger myNum = this.num;
@@ -1262,6 +1259,18 @@ public class RubyRational extends RubyNumeric {
         if (Double.isInfinite(f) || Double.isNaN(f)) warn(context, "out of Float range");
 
         return f;
+    }
+
+    private static final long ML = (long)(Math.log(Double.MAX_VALUE) / Math.log(2.0) - 1);
+
+    /**
+     * @param context
+     * @return
+     * @deprecated USe {@link org.jruby.RubyRational#asDouble(ThreadContext)} instead.
+     */
+    @Deprecated(since = "10.0")
+    public double getDoubleValue(ThreadContext context) {
+        return asDouble(context);
     }
 
     /** nurat_to_r

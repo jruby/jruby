@@ -21,16 +21,16 @@ public class Create {
      * @param context the current thread context
      * @return the new array
      */
-    // mri: rb_ary_new2
+    // mri: rb_ary_new
     public static RubyArray<?> newArray(ThreadContext context) {
-        return RubyArray.newArray(context.runtime);
+        return RubyArray.newArray(context);
     }
 
     // mri: rb_ary_new2
 
     public static RubyArray<?> newArray(ThreadContext context, int length) {
         // FIXME: This should be newBlankArray but things go very wrong in a tough to figure out where sort of way.
-        return RubyArray.newArray(context.runtime, length);
+        return RubyArray.newArray(context, length);
     }
 
     public static <T extends IRubyObject> RubyArray<?> newArray(ThreadContext context, int length,

@@ -43,9 +43,10 @@ public class TestRubyRational extends junit.framework.TestCase {
 
     @Test // JRUBY-5941
     public void testRationalToDouble() {
+        var context = runtime.getCurrentContext();
         RubyRational rational = RubyRational.newRational(runtime, 1, 1000);
-        double toDouble = rational.getDoubleValue();
-        double expected = ((RubyFloat)rational.to_f(runtime.getCurrentContext())).getDoubleValue();
+        double toDouble = rational.asDouble(context);
+        double expected = ((RubyFloat)rational.to_f(context)).asDouble(context);
         assertEquals(expected, toDouble, 0);
     }
 

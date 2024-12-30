@@ -46,6 +46,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.JRubyAPI;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ClassIndex;
@@ -164,12 +165,14 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     }
 
     @Override
-    public double getDoubleValue() {
+    @JRubyAPI
+    public double asDouble(ThreadContext context) {
         return value;
     }
 
     @Override
-    public long getLongValue() {
+    @JRubyAPI
+    public long asLong(ThreadContext context) {
         return (long) value;
     }
 
@@ -314,7 +317,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @Override
     public IRubyObject op_plus(ThreadContext context, IRubyObject other) {
         return switch (other.getMetaClass().getClassIndex()) {
-            case INTEGER, FLOAT -> asFloat(context, value + ((RubyNumeric) other).getDoubleValue());
+            case INTEGER, FLOAT -> asFloat(context, value + ((RubyNumeric) other).asDouble(context));
             default -> coerceBin(context, sites(context).op_plus, other);
         };
     }
@@ -329,7 +332,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @JRubyMethod(name = "-")
     public IRubyObject op_minus(ThreadContext context, IRubyObject other) {
         return switch (other.getMetaClass().getClassIndex()) {
-            case INTEGER, FLOAT -> asFloat(context, value - ((RubyNumeric) other).getDoubleValue());
+            case INTEGER, FLOAT -> asFloat(context, value - ((RubyNumeric) other).asDouble(context));
             default -> coerceBin(context, sites(context).op_minus, other);
         };
     }
@@ -344,7 +347,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @JRubyMethod(name = "*")
     public IRubyObject op_mul(ThreadContext context, IRubyObject other) {
         return switch (other.getMetaClass().getClassIndex()) {
-            case INTEGER, FLOAT -> asFloat(context, value * ((RubyNumeric) other).getDoubleValue());
+            case INTEGER, FLOAT -> asFloat(context, value * ((RubyNumeric) other).asDouble(context));
             default -> coerceBin(context, sites(context).op_times, other);
         };
     }
@@ -359,15 +362,14 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @JRubyMethod(name = "/")
     public IRubyObject op_div(ThreadContext context, IRubyObject other) { // don't override Numeric#div !
         switch (getMetaClass(other).getClassIndex()) {
-        case INTEGER:
-        case FLOAT:
-            try {
-                return asFloat(context, value / ((RubyNumeric) other).getDoubleValue());
-            } catch (NumberFormatException nfe) {
-                throw context.runtime.newFloatDomainError(other.toString());
-            }
-        default:
-            return coerceBin(context, sites(context).op_quo, other);
+            case INTEGER, FLOAT:
+                try {
+                    return asFloat(context, value / ((RubyNumeric) other).asDouble(context));
+                } catch (NumberFormatException nfe) {
+                    throw context.runtime.newFloatDomainError(other.toString());
+                }
+            default:
+                return coerceBin(context, sites(context).op_quo, other);
         }
     }
 
@@ -389,9 +391,8 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @JRubyMethod(name = {"%", "modulo"})
     public IRubyObject op_mod(ThreadContext context, IRubyObject other) {
         switch (getMetaClass(other).getClassIndex()) {
-        case INTEGER:
-        case FLOAT:
-            return op_mod(context, ((RubyNumeric) other).getDoubleValue());
+        case INTEGER, FLOAT:
+            return op_mod(context, ((RubyNumeric) other).asDouble(context));
         default:
             return coerceBin(context, sites(context).op_mod, other);
         }
@@ -415,9 +416,8 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @JRubyMethod(name = "divmod")
     public IRubyObject divmod(ThreadContext context, IRubyObject other) {
         switch (getMetaClass(other).getClassIndex()) {
-        case INTEGER:
-        case FLOAT:
-            double y = ((RubyNumeric) other).getDoubleValue();
+        case INTEGER, FLOAT:
+            double y = ((RubyNumeric) other).asDouble(context);
             if (y == 0) throw context.runtime.newZeroDivisionError();
             double x = value;
 
@@ -443,9 +443,8 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @JRubyMethod(name = "**")
     public IRubyObject op_pow(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
-            case INTEGER:
-            case FLOAT:
-                double d_other = ((RubyNumeric) other).getDoubleValue();
+            case INTEGER, FLOAT:
+                double d_other = ((RubyNumeric) other).asDouble(context);
                 if (value < 0 && (d_other != Math.round(d_other))) {
                     RubyComplex complex = RubyComplex.newComplexRaw(context.runtime, this);
                     return sites(context).op_exp.call(context, complex, complex, other);
@@ -466,31 +465,20 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @JRubyMethod(name = {"==", "==="})
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
-        if (Double.isNaN(value)) {
-            return context.fals;
-        }
-        switch (other.getMetaClass().getClassIndex()) {
-        case INTEGER:
-        case FLOAT:
-            return asBoolean(context, value == ((RubyNumeric) other).getDoubleValue());
-        default:
-            // Numeric.equal
-            return super.op_num_equal(context, other);
-        }
+        if (Double.isNaN(value)) return context.fals;
+
+        return switch (other.getMetaClass().getClassIndex()) {
+            case INTEGER, FLOAT -> asBoolean(context, value == ((RubyNumeric) other).asDouble(context));
+            default -> super.op_num_equal(context, other); // Numeric.equal
+        };
     }
 
     public IRubyObject op_equal(ThreadContext context, double other) {
-        if (Double.isNaN(value)) {
-            return context.fals;
-        }
-        return asBoolean(context, value == other);
+        return Double.isNaN(value) ? context.fals : asBoolean(context, value == other);
     }
 
     public IRubyObject op_not_equal(ThreadContext context, double other) {
-        if (Double.isNaN(value)) {
-            return context.tru;
-        }
-        return asBoolean(context, value != other);
+        return Double.isNaN(value) ? context.tru : asBoolean(context, value != other);
     }
 
     public boolean fastEqual(RubyFloat other) {
@@ -499,14 +487,11 @@ public class RubyFloat extends RubyNumeric implements Appendable {
 
     @Override
     public final int compareTo(IRubyObject other) {
-        switch (other.getMetaClass().getClassIndex()) {
-        case INTEGER:
-        case FLOAT:
-            return Double.compare(value, ((RubyNumeric) other).getDoubleValue());
-        default:
-            ThreadContext context = metaClass.runtime.getCurrentContext();
-            return (int) coerceCmp(context, sites(context).op_cmp, other).convertToInteger().getLongValue();
-        }
+        ThreadContext context = metaClass.runtime.getCurrentContext();
+        return switch (other.getMetaClass().getClassIndex()) {
+            case INTEGER, FLOAT -> Double.compare(value, ((RubyNumeric) other).asDouble(context));
+            default -> (int) numToLong(context, coerceCmp(context, sites(context).op_cmp, other));
+        };
     }
 
     /** flo_cmp
@@ -514,15 +499,12 @@ public class RubyFloat extends RubyNumeric implements Appendable {
      */
     @JRubyMethod(name = "<=>")
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
-        final Ruby runtime = context.runtime;
         switch (other.getMetaClass().getClassIndex()) {
         case INTEGER:
-            if (Double.isInfinite(value)) {
-                return value > 0.0 ? RubyFixnum.one(runtime) : RubyFixnum.minus_one(runtime);
-            }
+            if (Double.isInfinite(value)) return asFixnum(context, value > 0.0 ? 1 : -1);
         case FLOAT:
-            double b = ((RubyNumeric) other).getDoubleValue();
-            return dbl_cmp(runtime, value, b);
+            double b = ((RubyNumeric) other).asDouble(context);
+            return dbl_cmp(context.runtime, value, b);
         default:
             FloatSites sites = sites(context);
             if (Double.isInfinite(value) && sites.respond_to_infinite.respondsTo(context, other, other, true)) {
@@ -530,15 +512,12 @@ public class RubyFloat extends RubyNumeric implements Appendable {
                 if (infinite.isTrue()) {
                     int sign = RubyComparable.cmpint(context, infinite, this, other);
 
-                    if (sign > 0) {
-                        return value > 0.0 ? RubyFixnum.zero(runtime) : RubyFixnum.minus_one(runtime);
-                    } else {
-                        return value < 0.0 ? RubyFixnum.zero(runtime) : RubyFixnum.one(runtime);
-                    }
-
+                    return sign > 0 ?
+                            asFixnum(context, value > 0.0 ? 0 : -1) :
+                            asFixnum(context, value < 0.0 ? 0 : 1);
                 }
 
-                return value > 0.0 ? RubyFixnum.one(runtime) : RubyFixnum.minus_one(runtime);
+                return asFixnum(context, value > 0.0 ? 1 : -1);
             }
             return coerceCmp(context, sites.op_cmp, other);
         }
@@ -554,9 +533,8 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @JRubyMethod(name = ">")
     public IRubyObject op_gt(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
-        case INTEGER:
-        case FLOAT:
-            double b = ((RubyNumeric) other).getDoubleValue();
+        case INTEGER, FLOAT:
+            double b = ((RubyNumeric) other).asDouble(context);
             return asBoolean(context, !Double.isNaN(b) && value > b);
         default:
             return coerceRelOp(context, sites(context).op_gt, other);
@@ -573,9 +551,8 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @JRubyMethod(name = ">=")
     public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
-        case INTEGER:
-        case FLOAT:
-            double b = ((RubyNumeric) other).getDoubleValue();
+        case INTEGER, FLOAT:
+            double b = ((RubyNumeric) other).asDouble(context);
             return asBoolean(context, !Double.isNaN(b) && value >= b);
         default:
             return coerceRelOp(context, sites(context).op_ge, other);
@@ -592,9 +569,8 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @JRubyMethod(name = "<")
     public IRubyObject op_lt(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
-        case INTEGER:
-        case FLOAT:
-            double b = ((RubyNumeric) other).getDoubleValue();
+        case INTEGER, FLOAT:
+            double b = ((RubyNumeric) other).asDouble(context);
             return asBoolean(context, !Double.isNaN(b) && value < b);
         default:
             return coerceRelOp(context, sites(context).op_lt, other);
@@ -611,9 +587,8 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @JRubyMethod(name = "<=")
     public IRubyObject op_le(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
-        case INTEGER:
-        case FLOAT:
-            double b = ((RubyNumeric) other).getDoubleValue();
+        case INTEGER, FLOAT:
+            double b = ((RubyNumeric) other).asDouble(context);
             return asBoolean(context, !Double.isNaN(b) && value <= b);
         default:
             return coerceRelOp(context, sites(context).op_le, other);

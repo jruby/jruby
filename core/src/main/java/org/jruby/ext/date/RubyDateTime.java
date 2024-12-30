@@ -296,20 +296,22 @@ public class RubyDateTime extends RubyDate {
         return (int) (v < 0 ? v + 60 : v); // JODA will handle invalid value
     }
 
+    private static boolean isSecondAWholeNumber(ThreadContext context, IRubyObject val) {
+        if (val instanceof RubyRational rat) {
+            RubyInteger den = rat.getDenominator();
+            return den instanceof RubyFixnum && den.getLongValue() == 1;
+        } else if (val instanceof RubyFloat flote) {
+            double v = flote.asDouble(context);
+            return v == (double) Math.round(v);
+        }
+
+        return true;
+    }
+
     static int getSecond(ThreadContext context, IRubyObject val, final long[] rest) {
         // MRI: num2int_with_frac(s,n)
         // NOTE: missing "invalid fraction" detection (would be relevant for hour and min)
-        boolean wholeNum;
-        if (val instanceof RubyRational) {
-            RubyInteger den = ((RubyRational) (val)).getDenominator();
-            wholeNum = den instanceof RubyFixnum && den.getLongValue() == 1;
-        } else if (val instanceof RubyFloat) {
-            double v = ((RubyFloat) val).getDoubleValue();
-            wholeNum = (double) Math.round(v) == v;
-        } else {
-            wholeNum = true;
-        }
-
+        boolean wholeNum = isSecondAWholeNumber(context, val);
         long i = 0;
         final long r0 = rest[0], r1 = rest[1];
         if (r0 != 0) {
@@ -321,7 +323,7 @@ public class RubyDateTime extends RubyDate {
         if (wholeNum) {
             v = val.convertToInteger().getLongValue();
         } else {
-            val = ((RubyNumeric) val).divmod(context, RubyFixnum.one(context.runtime));
+            val = ((RubyNumeric) val).divmod(context, asFixnum(context, 1));
             v = ((RubyInteger) ((RubyArray) val).eltInternal(0)).getLongValue();
             RubyNumeric fr = (RubyNumeric) ((RubyArray) val).eltInternal(1);
             // NOTE: we don't:

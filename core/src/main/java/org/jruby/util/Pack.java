@@ -100,11 +100,11 @@ public class Pack {
     }
 
     private static float obj2flt(ThreadContext context, IRubyObject o) {
-        return (float) toFloat(context.runtime, o).getDoubleValue();
+        return (float) toFloat(context.runtime, o).asDouble(context);
     }
 
     private static double obj2dbl(ThreadContext context, IRubyObject o) {
-        return toFloat(context.runtime, o).getDoubleValue();
+        return toFloat(context.runtime, o).asDouble(context);
     }
 
     static {

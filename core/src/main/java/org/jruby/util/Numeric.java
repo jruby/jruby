@@ -206,11 +206,11 @@ public class Numeric {
     // MRI: safe_mul
     public static IRubyObject safe_mul(ThreadContext context, IRubyObject a, IRubyObject b, boolean az, boolean bz) {
         double v;
-        if (!az && bz && a instanceof RubyFloat aa && !Double.isNaN(v = aa.getDoubleValue())) {
-            a = v < 0.0d ? asFloat(context, -1.0d) : asFloat(context, 1.0d);
+        if (!az && bz && a instanceof RubyFloat aa && !Double.isNaN(v = aa.asDouble(context))) {
+            a = asFloat(context, v < 0.0d ? -1.0d : 1.0d);
         }
-        if (!bz && az && b instanceof RubyFloat bb && !Double.isNaN(v = bb.getDoubleValue())) {
-            b = v < 0.0d ? asFloat(context, -1.0) : asFloat(context, 1.0);
+        if (!bz && az && b instanceof RubyFloat bb && !Double.isNaN(v = bb.asDouble(context))) {
+            b = asFloat(context, v < 0.0d ? -1.0 : 1.0);
         }
         return f_mul(context, a, b);
     }

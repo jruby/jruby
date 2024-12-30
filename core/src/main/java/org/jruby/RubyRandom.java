@@ -71,7 +71,7 @@ public class RubyRandom extends RubyRandomBase {
         }
 
         public static Random randomFromFixnum(RubyFixnum seed) {
-            return randomFromLong(numericToLong(seed.getRuntime().getCurrentContext(), seed));
+            return randomFromLong(numToLong(seed.getRuntime().getCurrentContext(), seed));
         }
 
         public static Random randomFromLong(long seed) {

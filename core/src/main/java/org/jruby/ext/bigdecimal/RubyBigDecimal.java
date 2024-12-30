@@ -44,6 +44,7 @@ import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
 
 import org.jruby.api.Access;
+import org.jruby.api.JRubyAPI;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
@@ -453,7 +454,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     private static BigDecimal toBigDecimal(ThreadContext context, final RubyInteger value) {
         return value instanceof RubyFixnum ?
-            BigDecimal.valueOf(numericToLong(context, value)) : new BigDecimal(value.getBigIntegerValue());
+            BigDecimal.valueOf(numToLong(context, value)) : new BigDecimal(value.getBigIntegerValue());
     }
 
     private static RubyBigDecimal getVpRubyObjectWithPrecInner(ThreadContext context, RubyRational value, RoundingMode mode) {
@@ -468,8 +469,8 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private RubyBigDecimal getVpValueWithPrec(ThreadContext context, IRubyObject value, boolean must) {
-        if (value instanceof RubyFloat) {
-            double doubleValue = ((RubyFloat) value).getDoubleValue();
+        if (value instanceof RubyFloat flote) {
+            double doubleValue = flote.asDouble(context);
 
             if (Double.isInfinite(doubleValue)) {
                 throw context.runtime.newFloatDomainError(doubleValue < 0 ? "-Infinity" : "Infinity");
@@ -544,8 +545,8 @@ public class RubyBigDecimal extends RubyNumeric {
 
     private static RubyBigDecimal newFloatSpecialCases(ThreadContext context, RubyFloat val) {
         if (val.isNaN()) return getNaN(context);
-        if (val.isInfinite()) return getInfinity(context, val.getDoubleValue() == Double.POSITIVE_INFINITY ? 1 : -1);
-        if (val.isZero(context)) return getZero(context, Double.doubleToLongBits(val.getDoubleValue()) == NEGATIVE_ZERO_LONG_BITS ? -1 : 1);
+        if (val.isInfinite()) return getInfinity(context, val.asDouble(context) == Double.POSITIVE_INFINITY ? 1 : -1);
+        if (val.isZero(context)) return getZero(context, Double.doubleToLongBits(val.asDouble(context)) == NEGATIVE_ZERO_LONG_BITS ? -1 : 1);
         return null;
     }
 
@@ -1197,7 +1198,7 @@ public class RubyBigDecimal extends RubyNumeric {
         } else if ( ! ( exp instanceof RubyInteger ) ) {
             // when pow is not an integer we're play the oldest trick :
             // X pow (T+R) = X pow T * X pow R
-            BigDecimal expVal = BigDecimal.valueOf( ((RubyNumeric) exp).getDoubleValue() );
+            BigDecimal expVal = BigDecimal.valueOf( ((RubyNumeric) exp).asDouble(context) );
             BigDecimal[] divAndRem = expVal.divideAndRemainder(BigDecimal.ONE);
             times = divAndRem[0].intValueExact(); rem = divAndRem[1].doubleValue();
         } else {
@@ -1679,10 +1680,14 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     @Override
-    public double getDoubleValue() { return SafeDoubleParser.doubleValue(value); }
+    @JRubyAPI
+    public double asDouble(ThreadContext context) {
+        return SafeDoubleParser.doubleValue(value);
+    }
 
     @Override
-    public long getLongValue() {
+    @JRubyAPI
+    public long asLong(ThreadContext context) {
         return value.longValue();
     }
 

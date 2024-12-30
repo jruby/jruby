@@ -748,7 +748,7 @@ public class RubyComplex extends RubyNumeric {
                     f_mul(context, otherImage, RubyMath.log(context, r)));
             return f_complex_polar(context, getMetaClass(), nr, ntheta);
         } else if (other instanceof RubyFixnum otherFixnum) {
-            long n = otherFixnum.getLongValue();
+            long n = otherFixnum.asLong(context);
             if (n == 0) return newInstance(context, getMetaClass(), asFixnum(context, 1), asFixnum(context, 0));
 
             RubyComplex self = this;

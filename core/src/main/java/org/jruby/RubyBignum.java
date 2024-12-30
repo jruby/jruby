@@ -40,7 +40,7 @@ import java.math.BigInteger;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Create;
-import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.api.JRubyAPI;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
@@ -137,12 +137,14 @@ public class RubyBignum extends RubyInteger {
     }
 
     @Override
-    public double getDoubleValue() {
+    @JRubyAPI
+    public double asDouble(ThreadContext context) {
         return big2dbl(this);
     }
 
     @Override
-    public long getLongValue() {
+    @JRubyAPI
+    public long asLong(ThreadContext context) {
         return big2long(this);
     }
 
@@ -677,18 +679,14 @@ public class RubyBignum extends RubyInteger {
      */
     @Override
     @JRubyMethod(name = "quo")
-    public IRubyObject quo(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyInteger && ((RubyInteger) other).getDoubleValue() == 0) {
-            throw context.runtime.newZeroDivisionError();
-        }
+    public IRubyObject quo(ThreadContext context, IRubyObject otherArg) {
+        if (otherArg instanceof RubyNumeric num) {
+            double other = num.asDouble(context);
+            if (other == 0) throw context.runtime.newZeroDivisionError();
 
-        if (other instanceof RubyNumeric) {
-            if (((RubyNumeric) other).getDoubleValue() == 0) {
-                throw context.runtime.newZeroDivisionError();
-            }
-            return RubyFloat.newFloat(context.runtime, big2dbl(this) / ((RubyNumeric) other).getDoubleValue());
+            return asFloat(context, big2dbl(this) / other);
         } else {
-            return coerceBin(context, sites(context).quo, other);
+            return coerceBin(context, sites(context).quo, otherArg);
         }
     }
 
@@ -943,7 +941,7 @@ public class RubyBignum extends RubyInteger {
                 return RubyFixnum.one(context.runtime);
             }
         }
-        long position = numericToLong(context, other);
+        long position = numToLong(context, other);
         if (position < 0 || position > Integer.MAX_VALUE) {
             return zero(context.runtime);
         }
@@ -1067,11 +1065,10 @@ public class RubyBignum extends RubyInteger {
 
     @Override
     public final int compareTo(IRubyObject other) {
-        if (other instanceof RubyBignum) {
-            return value.compareTo(((RubyBignum)other).value);
-        }
-        ThreadContext context = metaClass.runtime.getCurrentContext();
-        return (int)coerceCmp(context, sites(context).op_cmp, other).convertToInteger().getLongValue();
+        if (other instanceof RubyBignum bignum) return value.compareTo(bignum.value);
+
+        ThreadContext context = getRuntime().getCurrentContext();
+        return (int) coerceCmp(context, sites(context).op_cmp, other).convertToInteger().asLong(context);
     }
 
     @Override
@@ -1152,12 +1149,7 @@ public class RubyBignum extends RubyInteger {
      */
     @Override
     public IRubyObject to_f(ThreadContext context) {
-        return RubyFloat.newFloat(context.runtime, getDoubleValue());
-    }
-
-    @Override
-    public IRubyObject to_f() {
-        return RubyFloat.newFloat(getRuntime(), getDoubleValue());
+        return asFloat(context, asDouble(context));
     }
 
     @Deprecated
@@ -1268,48 +1260,39 @@ public class RubyBignum extends RubyInteger {
     // MRI: rb_big_fdiv_double
     @Override
     public IRubyObject fdivDouble(ThreadContext context, IRubyObject y) {
-        double dx, dy;
+        double dy;
+        double dx = asDouble(context);
+        if (y instanceof RubyFixnum fix) {
+            if (Double.isInfinite(dx)) return fdivInt(context, BigDecimal.valueOf(fix.value));
 
-        dx = getDoubleValue();
-        if (y instanceof RubyFixnum) {
-            long ly = ((RubyFixnum) y).value;
-            if (Double.isInfinite(dx)) {
-                return fdivInt(context.runtime, BigDecimal.valueOf(ly));
-            }
-            dy = (double) ly;
-        } else if (y instanceof RubyBignum) {
-            return fdivDouble(context, (RubyBignum) y);
-        } else if (y instanceof RubyFloat) {
-            dy = ((RubyFloat) y).value;
-            if (Double.isNaN(dy)) {
-                return context.runtime.newFloat(dy);
-            }
-            if (Double.isInfinite(dx)) {
-                return fdivFloat(context, (RubyFloat) y);
-            }
+            dy = (double) fix.value;
+        } else if (y instanceof RubyBignum big) {
+            return fdivDouble(context, big);
+        } else if (y instanceof RubyFloat flote) {
+            dy = flote.value;
+            if (Double.isNaN(dy)) return asFloat(context, dy);
+            if (Double.isInfinite(dx)) return fdivFloat(context, flote);
         } else {
             return coerceBin(context, sites(context).fdiv, y);
         }
-        return context.runtime.newFloat(dx / dy);
+        return asFloat(context, dx / dy);
     }
 
     final RubyFloat fdivDouble(ThreadContext context, RubyBignum y) {
-        double dx = getDoubleValue();
+        double dx = asDouble(context);
         double dy = RubyBignum.big2dbl(y);
-        if (Double.isInfinite(dx) || Double.isInfinite(dy)) {
-            return (RubyFloat) fdivInt(context, y);
-        }
 
-        return context.runtime.newFloat(dx / dy);
+        return Double.isInfinite(dx) || Double.isInfinite(dy) ?
+                (RubyFloat) fdivInt(context, y) : asFloat(context, dx / dy);
     }
 
     // MRI: big_fdiv_int and big_fdiv
     public IRubyObject fdivInt(ThreadContext context, RubyBignum y) {
-        return fdivInt(context.runtime, new BigDecimal(y.value));
+        return fdivInt(context, new BigDecimal(y.value));
     }
 
-    private RubyFloat fdivInt(final Ruby runtime, BigDecimal y) {
-        return runtime.newFloat(new BigDecimal(value).divide(y).doubleValue());
+    private RubyFloat fdivInt(ThreadContext context, BigDecimal y) {
+        return asFloat(context, new BigDecimal(value).divide(y).doubleValue());
     }
 
     // MRI: big_fdiv_float

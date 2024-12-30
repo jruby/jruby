@@ -38,6 +38,7 @@ package org.jruby;
 import org.jruby.RubyEnumerator.SizeFn;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.JRubyAPI;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
@@ -60,6 +61,8 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.api.Access.floatClass;
+import static org.jruby.api.Access.integerClass;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Define.defineClass;
@@ -138,19 +141,50 @@ public class RubyNumeric extends RubyObject {
     /**
      * Return the value of this numeric as a 64-bit long. If the value does not
      * fit in 64 bits, it will be truncated.
+     * @deprecated Use {@link org.jruby.RubyNumeric#asLong(ThreadContext)} instead.
      */
-    public long getLongValue() { return 0; }
+    @Deprecated(since = "10.0")
+    public long getLongValue() {
+        return asLong(getCurrentContext());
+    }
 
     /**
      * Return the value of this numeric as a 32-bit long. If the value does not
      * fit in 32 bits, it will be truncated.
      */
-    public int getIntValue() { return (int) getLongValue(); }
+    public int getIntValue() { return (int) asLong(getRuntime().getCurrentContext()); }
 
-    public double getDoubleValue() { return getLongValue(); }
+    /**
+     * Return the value of this numeric as a 64-bit long. If the value does not
+     * fit in 64 bits, it will be truncated.
+     */
+    @JRubyAPI
+    public long asLong(ThreadContext context) {
+        return 0;
+    }
+
+    /**
+     * Return a double representation of this numerical value
+     *
+     * @param context the current thread context
+     * @return a double
+     */
+    @JRubyAPI
+    public double asDouble(ThreadContext context) {
+        return asLong(context);
+    }
+
+    /**
+     * @return
+     * @deprecated Use {@link org.jruby.RubyNumeric#asDouble(ThreadContext)} instead.
+     */
+    @Deprecated(since = "10.0")
+    public double getDoubleValue() {
+        return asDouble(getCurrentContext());
+    }
 
     public BigInteger getBigIntegerValue() {
-        return BigInteger.valueOf(getLongValue());
+        return BigInteger.valueOf(asLong(getRuntime().getCurrentContext()));
     }
 
     public static RubyNumeric newNumeric(Ruby runtime) {
@@ -217,13 +251,13 @@ public class RubyNumeric extends RubyObject {
     }
 
     private static long other2long(IRubyObject arg) throws RaiseException {
-        if (arg instanceof RubyFloat) return float2long((RubyFloat) arg);
-        if (arg instanceof RubyBignum) return RubyBignum.big2long((RubyBignum) arg);
+        if (arg instanceof RubyFloat flote) return float2long(flote);
+        if (arg instanceof RubyBignum bignum) return RubyBignum.big2long(bignum);
 
-        Ruby runtime = arg.getRuntime();
-        if (arg.isNil()) throw typeError(runtime.getCurrentContext(), "no implicit conversion from nil to integer");
+        var context = arg.getRuntime().getCurrentContext();
+        if (arg.isNil()) throw typeError(context, "no implicit conversion from nil to integer");
 
-        return ((RubyInteger) TypeConverter.convertToType(arg, runtime.getInteger(), "to_int")).getLongValue();
+        return ((RubyInteger) TypeConverter.convertToType(arg, integerClass(context), "to_int")).asLong(context);
     }
 
     public static long float2long(RubyFloat flt) {
@@ -323,13 +357,13 @@ public class RubyNumeric extends RubyObject {
             case FLOAT:
                 return ((RubyFloat) arg).value;
             case FIXNUM:
-                if (context.sites.Fixnum.to_f.isBuiltin(arg)) return ((RubyFixnum) arg).value;
+                if (context.sites.Fixnum.to_f.isBuiltin(arg)) return ((RubyNumeric) arg).asDouble(context);
                 break;
             case BIGNUM:
-                if (context.sites.Bignum.to_f.isBuiltin(arg)) return ((RubyBignum) arg).getDoubleValue();
+                if (context.sites.Bignum.to_f.isBuiltin(arg)) return ((RubyBignum) arg).asDouble(context);
                 break;
             case RATIONAL:
-                if (context.sites.Rational.to_f.isBuiltin(arg)) return ((RubyRational) arg).getDoubleValue();
+                if (context.sites.Rational.to_f.isBuiltin(arg)) return ((RubyRational) arg).asDouble(context);
                 break;
             case STRING:
                 throw typeError(context, "no implicit conversion to float from string");
@@ -340,7 +374,7 @@ public class RubyNumeric extends RubyObject {
             case FALSE:
                 throw typeError(context, "no implicit conversion to float from false");
         }
-        IRubyObject val = TypeConverter.convertToType(arg, context.runtime.getFloat(), "to_f");
+        IRubyObject val = TypeConverter.convertToType(arg, floatClass(context), "to_f");
         return ((RubyFloat) val).value;
     }
 
@@ -1143,7 +1177,7 @@ public class RubyNumeric extends RubyObject {
             }
         } else {
             // We must avoid integer overflows in "i += step".
-            long end = ((RubyFixnum) to).getLongValue();
+            long end = ((RubyFixnum) to).getValue();
             if (desc) {
                 long tov = Long.MIN_VALUE - diff;
                 if (end > tov) tov = end;
@@ -1423,10 +1457,12 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = {"arg", "angle", "phase"})
     public IRubyObject arg(ThreadContext context) {
-        final double value = getDoubleValue();
+        final double value = asDouble(context);
         if (Double.isNaN(value)) return this;
+
         return f_negative_p(context, this) || value == 0.0 && 1 / value == Double.NEGATIVE_INFINITY ?
-            context.runtime.getMath().getConstant(context, "PI") : asFixnum(context, 0);
+                context.runtime.getMath().getConstant(context, "PI") :
+                asFixnum(context, 0);
     }
 
     /** numeric_rect

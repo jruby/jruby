@@ -1386,7 +1386,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private RubyString multiplyByteList(ThreadContext context, IRubyObject arg) {
-        long longLen = numericToLong(context, arg);
+        long longLen = numToLong(context, arg);
         if (longLen < 0) throw argumentError(context, "negative argument");
         if (size() == 0) return (RubyString) dup();
 
@@ -3884,7 +3884,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod
     public IRubyObject byteslice(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
-        return byteSubstr(context, numericToLong(context, arg1), numericToLong(context, arg2));
+        return byteSubstr(context, numToLong(context, arg1), numToLong(context, arg2));
     }
 
     @JRubyMethod
@@ -6589,7 +6589,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod
     public IRubyObject sum(ThreadContext context, IRubyObject arg) {
-        return sumCommon(context, numericToLong(context, arg));
+        return sumCommon(context, numToLong(context, arg));
     }
 
     public IRubyObject sumCommon(ThreadContext context, long bits) {

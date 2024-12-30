@@ -1605,7 +1605,7 @@ public class RubyTime extends RubyObject {
                 nanosecs = nanos.longValue();
             } else {
                 nanosecs = 0;
-                millisecs = numericToLong(context, arg) * 1000;
+                millisecs = numToLong(context, arg) * 1000;
             }
 
             try {
@@ -1633,7 +1633,7 @@ public class RubyTime extends RubyObject {
             millisecs = (long) (dbl * 1000);
             nanosecs = ((long) (dbl * 1000000000)) % 1000000;
         } else {
-            millisecs = numericToLong(context, arg1) * 1000;
+            millisecs = numToLong(context, arg1) * 1000;
         }
 
         if (!(arg3 instanceof RubySymbol unit)) throw argumentError(context, "unexpected unit " + arg3);
@@ -1650,23 +1650,23 @@ public class RubyTime extends RubyObject {
                 millisecs += (long) (nanos / 1000000);
                 nanosecs += (long) (nanos % 1000000);
             } else if (asSymbol(context, "nanosecond").eql(unit) || asSymbol(context, "nsec").eql(unit)) {
-                nanosecs += numericToLong(context, arg2);
+                nanosecs += numToLong(context, arg2);
             } else {
                 throw argumentError(context, "unexpected unit " + arg3);
             }
         } else {
             if (asSymbol(context, "microsecond").eql(unit) || asSymbol(context, "usec").eql(unit)) {
-                long micros = numericToLong(context, arg2);
+                long micros = numToLong(context, arg2);
                 long nanos = micros * 1000;
                 millisecs += nanos / 1000000;
                 nanosecs += nanos % 1000000;
             } else if (asSymbol(context, "millisecond").eql(unit)) {
-                double millis = numericToLong(context, arg2);
+                double millis = numToLong(context, arg2);
                 double nanos = millis * 1000000;
                 millisecs += nanos / 1000000;
                 nanosecs += nanos % 1000000;
             } else if (asSymbol(context, "nanosecond").eql(unit) || asSymbol(context, "nsec").eql(unit)) {
-                nanosecs += numericToLong(context, arg2);
+                nanosecs += numToLong(context, arg2);
             } else {
                 throw argumentError(context, "unexpected unit " + arg3);
             }
@@ -2087,7 +2087,7 @@ public class RubyTime extends RubyObject {
     // MRI: time.c ~ rb_time_interval 1.9 ... invokes time_timespec(VALUE num, TRUE)
     public static double convertTimeInterval(ThreadContext context, IRubyObject sec) {
         double seconds;
-        if (sec instanceof RubyNumeric num) seconds = num.getDoubleValue();
+        if (sec instanceof RubyNumeric num) seconds = num.asDouble(context);
 
         // NOTE: we can probably do better here, but we're matching MRI behavior
         // this is for converting custom objects such as ActiveSupport::Duration
@@ -2095,8 +2095,8 @@ public class RubyTime extends RubyObject {
             IRubyObject result = sites(context).divmod.call(context, sec, sec, 1);
             if (!(result instanceof RubyArray arr)) throw typeError(context, "unexpected divmod result: into ", result, "");
 
-            seconds = ((RubyNumeric) arr.eltOk(0)).getDoubleValue() + // div
-                    ((RubyNumeric) arr.eltOk(1)).getDoubleValue(); // mod
+            seconds = ((RubyNumeric) arr.eltOk(0)).asDouble(context) + // div
+                    ((RubyNumeric) arr.eltOk(1)).asDouble(context); // mod
         } else {
             boolean raise = true;
             seconds = 0;

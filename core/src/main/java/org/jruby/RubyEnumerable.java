@@ -31,8 +31,6 @@ package org.jruby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.api.Access;
-import org.jruby.api.Convert;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
@@ -73,8 +71,9 @@ import static org.jruby.api.Access.arrayClass;
 import static org.jruby.api.Access.enumerableModule;
 import static org.jruby.api.Access.hashClass;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asFloat;
 import static org.jruby.api.Convert.asSymbol;
-import static org.jruby.api.Convert.numericToLong;
+import static org.jruby.api.Convert.numToLong;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.*;
@@ -197,7 +196,7 @@ public class RubyEnumerable {
             return enumeratorizeWithSize(context, self, "cycle", new IRubyObject[] { arg }, RubyEnumerable::cycleSize);
         }
 
-        long times = numericToLong(context, arg);
+        long times = numToLong(context, arg);
         if (times <= 0) return context.nil;
 
         return cycleCommon(context, self, times, block);
@@ -247,7 +246,7 @@ public class RubyEnumerable {
 
         if (args != null && args.length > 0) {
             n = args[0];
-            if (!n.isNil()) mul = n.convertToInteger().getLongValue();
+            if (!n.isNil()) mul = n.convertToInteger().asLong(context);
         }
 
         IRubyObject size = size(context, self, args);
@@ -268,7 +267,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "take")
     public static IRubyObject take(ThreadContext context, IRubyObject self, IRubyObject n, Block block) {
-        final long len = numericToLong(context, n);
+        final long len = numToLong(context, n);
 
         if (len < 0) throw argumentError(context, "attempt to take negative size");
         if (len == 0) return newEmptyArray(context);
@@ -322,7 +321,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "drop")
     public static IRubyObject drop(ThreadContext context, IRubyObject self, IRubyObject n, final Block block) {
-        final long len = numericToLong(context, n);
+        final long len = numToLong(context, n);
         if (len < 0) throw argumentError(context, "attempt to drop negative size");
 
         final var result = newArray(context);
@@ -400,7 +399,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "first")
     public static IRubyObject first(ThreadContext context, IRubyObject self, final IRubyObject num) {
-        final long firstCount = numericToLong(context, num);
+        final long firstCount = numToLong(context, num);
         if (firstCount == 0) return newEmptyArray(context);
         if (firstCount < 0) throw argumentError(context, "attempt to take negative size");
 
@@ -963,56 +962,29 @@ public class RubyEnumerable {
          * See http://link.springer.com/article/10.1007/s00607-005-0139-x
          */
         double x = 0.0, t;
-        if (lhs instanceof RubyFloat) {
-            if (rhs instanceof RubyFloat) {
-                f = ((RubyFloat) lhs).value;
-                x = ((RubyFloat) rhs).value;
-                floats = true;
-            } else if (rhs instanceof RubyFixnum) {
-                f = ((RubyFloat) lhs).value;
-                x = ((RubyFixnum) rhs).value;
-                floats = true;
-            } else if (rhs instanceof RubyBignum) {
-                f = ((RubyFloat) lhs).value;
-                x = ((RubyBignum) rhs).getDoubleValue();
-                floats = true;
-            } else if (rhs instanceof RubyRational) {
-                f = ((RubyFloat) lhs).getValue();
-                x = ((RubyRational) rhs).getDoubleValue(context);
+        if (lhs instanceof RubyFloat lhsFloat) {
+            if (rhs instanceof RubyNumeric num) {
+                f = lhsFloat.value;
+                x = num.asDouble(context);
                 floats = true;
             }
-        } else if (rhs instanceof RubyFloat) {
-            if (lhs instanceof RubyFixnum) {
+        } else if (rhs instanceof RubyFloat rhsFloat) {
+            if (lhs instanceof RubyNumeric num) {
                 c.d = 0.0;
-                f = ((RubyFixnum) lhs).value;
-                x = ((RubyFloat) rhs).value;
-                floats = true;
-            } else if (lhs instanceof RubyBignum) {
-                c.d = 0.0;
-                f = ((RubyBignum) lhs).getDoubleValue();
-                x = ((RubyFloat) rhs).value;
-                floats = true;
-            } else if (lhs instanceof RubyRational) {
-                c.d = 0.0;
-                f = ((RubyRational) lhs).getDoubleValue();
-                x = ((RubyFloat) rhs).value;
+                f = num.asDouble(context);
+                x = rhsFloat.value;
                 floats = true;
             }
         }
 
-        if (!floats) {
-            return sites(context).sum_op_plus.call(context, lhs, lhs, rhs);
-        }
-
-        Ruby runtime = context.runtime;
+        if (!floats) return sites(context).sum_op_plus.call(context, lhs, lhs, rhs);
 
         if (Double.isNaN(f)) return lhs;
-        if (Double.isNaN(x)) {
-            return lhs;
-        }
+        if (Double.isNaN(x)) return lhs;
+
         if (Double.isInfinite(x)) {
             if (Double.isInfinite(f) && Math.signum(x) != Math.signum(f)) {
-                return new RubyFloat(runtime, RubyFloat.NAN);
+                return asFloat(context, RubyFloat.NAN);
             } else {
                 return rhs;
             }
@@ -1028,7 +1000,7 @@ public class RubyEnumerable {
         }
         f = t;
 
-        return new RubyFloat(runtime, f);
+        return asFloat(context, f);
     }
 
     public static IRubyObject injectCommon(final ThreadContext context, IRubyObject self, IRubyObject init, final Block block) {
@@ -1217,7 +1189,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "each_slice")
     public static IRubyObject each_slice(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
-        int size = (int) numericToLong(context, arg);
+        int size = (int) numToLong(context, arg);
         if (size <= 0) throw argumentError(context, "invalid size");
 
         return block.isGiven() ? each_sliceCommon(context, self, size, block) :
@@ -1257,7 +1229,7 @@ public class RubyEnumerable {
     private static IRubyObject eachSliceSize(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         assert args != null && args.length > 0 && args[0] instanceof RubyNumeric; // #each_slice ensures arg[0] is numeric
 
-        long sliceSize = ((RubyNumeric) args[0]).getLongValue();
+        long sliceSize = ((RubyNumeric) args[0]).asLong(context);
         if (sliceSize <= 0) throw argumentError(context, "invalid slice size");
 
         IRubyObject size = RubyEnumerable.size(context, self, args);
@@ -1269,7 +1241,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "each_cons")
     public static IRubyObject each_cons(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
-        int size = (int) numericToLong(context, arg);
+        int size = (int) numToLong(context, arg);
         if (size <= 0) throw argumentError(context, "invalid size");
         return block.isGiven() ? each_consCommon(context, self, size, block) : enumeratorizeWithSize(context, self, "each_cons", new IRubyObject[] { arg }, (SizeFn) RubyEnumerable::eachConsSize);
     }
@@ -1294,14 +1266,14 @@ public class RubyEnumerable {
      */
     private static IRubyObject eachConsSize(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         assert args != null && args.length > 0 && args[0] instanceof RubyNumeric; // #each_cons ensures arg[0] is numeric
-        long consSize = ((RubyNumeric) args[0]).getLongValue();
+        long consSize = ((RubyNumeric) args[0]).asLong(context);
         if (consSize <= 0) throw argumentError(context, "invalid size");
 
-        IRubyObject size = ((SizeFn) RubyEnumerable::size).size(context, self, args);
+        IRubyObject size = size(context, self, args);
         if (size == null || size.isNil()) return context.nil;
 
         IRubyObject n = sites(context).each_cons_op_plus.call(context, size, size, 1 - consSize);
-        RubyFixnum zero = RubyFixnum.zero(context.runtime);
+        RubyFixnum zero = asFixnum(context, 0);
         return RubyComparable.cmpint(context, sites(context).each_cons_op_cmp.call(context, n, n, zero), n, zero) == -1 ? zero : n;
     }
 

@@ -115,36 +115,27 @@ public final class JITRuntime {
     }
 
     public static long u64Value64(IRubyObject parameter) {
-        return parameter instanceof RubyFixnum
-                ? ((RubyFixnum) parameter).getLongValue()
+        return parameter instanceof RubyFixnum fixnum
+                ? fixnum.getLongValue()
                 : other2u64(parameter);
     }
 
     public static int f32Value32(IRubyObject parameter) {
-        if (parameter instanceof RubyFloat) {
-            return Float.floatToRawIntBits((float) ((RubyFloat) parameter).getDoubleValue());
-
-        } else {
-            return (int) other2long(parameter);
-        }
+        return parameter instanceof RubyFloat flote ?
+                Float.floatToRawIntBits((float) flote.getValue()) :
+                (int) other2long(parameter);
     }
 
     public static long f32Value64(IRubyObject parameter) {
-        if (parameter instanceof RubyFloat) {
-            return Float.floatToRawIntBits((float) ((RubyFloat) parameter).getDoubleValue());
-
-        } else {
-            return other2long(parameter);
-        }
+        return parameter instanceof RubyFloat flote ?
+                Float.floatToRawIntBits((float) flote.getValue()) :
+                other2long(parameter);
     }
     
     public static long f64Value64(IRubyObject parameter) {
-        if (parameter instanceof RubyFloat) {
-            return Double.doubleToRawLongBits(((RubyFloat) parameter).getDoubleValue());
-        
-        } else {
-            return other2long(parameter);
-        }
+        return parameter instanceof RubyFloat flote ?
+                Double.doubleToRawLongBits(flote.getValue()) :
+                other2long(parameter);
     }
 
     public static int boolValue32(IRubyObject parameter) {

@@ -1263,7 +1263,7 @@ public class RubyDate extends RubyObject {
     static final int SUB_MS_PRECISION = 1_000_000_000;
 
     static RubyNumeric roundToPrecision(ThreadContext context, RubyFloat sub, final long precision) {
-        long s = Math.round(sub.getDoubleValue() * precision);
+        long s = Math.round(sub.asDouble(context) * precision);
         return (RubyNumeric) RubyRational.newRationalCanonicalize(context, s, precision);
     }
 
@@ -1539,11 +1539,12 @@ public class RubyDate extends RubyObject {
 
     // MRI: #define val2sg(vsg,dsg)
     static long val2sg(ThreadContext context, IRubyObject sg) {
-        return getValidStart(context, sg.convertToFloat().getDoubleValue(), ITALY);
+        return getValidStart(context, sg.convertToFloat().asDouble(context), ITALY);
     }
 
+    @Deprecated(since = "10.0")
     static long valid_sg(ThreadContext context, IRubyObject sg) {
-        return getValidStart(context, sg.convertToFloat().getDoubleValue(), 0);
+        return getValidStart(context, sg.convertToFloat().asDouble(context), 0);
     }
 
     // MRI: #define valid_sg(sg)

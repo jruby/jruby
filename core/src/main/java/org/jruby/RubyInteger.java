@@ -112,7 +112,8 @@ public abstract class RubyInteger extends RubyNumeric {
 
     // conversion
     protected RubyFloat toFloat() {
-        return RubyFloat.newFloat(metaClass.runtime, getDoubleValue());
+        var context = getRuntime().getCurrentContext();
+        return asFloat(context, asDouble(context));
     }
 
     public int signum() { return getBigIntegerValue().signum(); }
@@ -338,7 +339,7 @@ public abstract class RubyInteger extends RubyNumeric {
      */
     protected static IRubyObject timesSize(ThreadContext context, RubyInteger recv, IRubyObject[] args) {
         RubyFixnum zero = RubyFixnum.zero(context.runtime);
-        if ((recv instanceof RubyFixnum && recv.getLongValue() < 0)
+        if ((recv instanceof RubyFixnum && recv.asLong(context) < 0)
                 || sites(context).op_lt.call(context, recv, recv, zero).isTrue()) {
             return zero;
         }
@@ -451,7 +452,8 @@ public abstract class RubyInteger extends RubyNumeric {
         int ret = (int) (uintResult & 0xFFFFFFFF);
         if (ret != 0) {
             throw rangeError(context, this instanceof RubyFixnum ?
-                    getLongValue() + " out of char range" : "bignum out of char range");
+                    asLong(context) + " out of char range" :
+                    "bignum out of char range");
         }
         return uint;
     }
@@ -635,7 +637,7 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     protected boolean int_round_zero_p(ThreadContext context, int ndigits) {
-        long bytes = numericToLong(context, sites(context).size.call(context, this, this));
+        long bytes = numToLong(context, sites(context).size.call(context, this, this));
         return (-0.415241 * ndigits - 0.125 > bytes);
     }
 
@@ -695,7 +697,7 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     private static long op_mod_two(ThreadContext context, RubyInteger self) {
-        return ((RubyInteger) sites(context).op_mod.call(context, self, self, RubyFixnum.two(context.runtime))).getLongValue();
+        return ((RubyInteger) sites(context).op_mod.call(context, self, self, RubyFixnum.two(context.runtime))).asLong(context);
     }
 
     @JRubyMethod(name = "allbits?")

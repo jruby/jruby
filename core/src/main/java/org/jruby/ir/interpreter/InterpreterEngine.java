@@ -4,6 +4,7 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
+import org.jruby.RubyNumeric;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.ArgReceiver;
@@ -519,23 +520,15 @@ public class InterpreterEngine {
 
             case UNBOX_FLOAT: {
                 UnboxInstr ui = (UnboxInstr)instr;
-                Object val = retrieveOp(ui.getValue(), context, self, currDynScope, currScope, temp);
-                if (val instanceof RubyFloat) {
-                    floats[((TemporaryLocalVariable)ui.getResult()).offset] = ((RubyFloat)val).getValue();
-                } else {
-                    floats[((TemporaryLocalVariable)ui.getResult()).offset] = ((RubyFixnum)val).getDoubleValue();
-                }
+                var val = (RubyNumeric) retrieveOp(ui.getValue(), context, self, currDynScope, currScope, temp);
+                floats[((TemporaryLocalVariable)ui.getResult()).offset] = val.asDouble(context);
                 break;
             }
 
             case UNBOX_FIXNUM: {
                 UnboxInstr ui = (UnboxInstr)instr;
-                Object val = retrieveOp(ui.getValue(), context, self, currDynScope, currScope, temp);
-                if (val instanceof RubyFloat) {
-                    fixnums[((TemporaryLocalVariable)ui.getResult()).offset] = ((RubyFloat)val).getLongValue();
-                } else {
-                    fixnums[((TemporaryLocalVariable)ui.getResult()).offset] = ((RubyFixnum)val).getLongValue();
-                }
+                var val = (RubyNumeric) retrieveOp(ui.getValue(), context, self, currDynScope, currScope, temp);
+                fixnums[((TemporaryLocalVariable)ui.getResult()).offset] = val.getLongValue();
                 break;
             }
 

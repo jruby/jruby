@@ -266,9 +266,9 @@ public final class ArrayJavaProxy extends JavaProxy {
 
     private boolean includes(final ThreadContext context, final float[] array, final IRubyObject obj) {
         final int len = array.length;
-        if ( len == 0 ) return false;
-        if ( obj instanceof RubyFloat flote) {
-            final double objVal = flote.getDoubleValue();
+        if (len == 0) return false;
+        if (obj instanceof RubyFloat flote) {
+            final double objVal = flote.asDouble(context);
 
             for (float v : array) {
                 if ((float) objVal == v) return true;
@@ -283,9 +283,9 @@ public final class ArrayJavaProxy extends JavaProxy {
 
     private boolean includes(final ThreadContext context, final double[] array, final IRubyObject obj) {
         final int len = array.length;
-        if ( len == 0 ) return false;
+        if (len == 0) return false;
         if (obj instanceof RubyFloat flote) {
-            final double objVal = flote.getDoubleValue();
+            final double objVal = flote.asDouble(context);
 
             for (double v : array) {
                 if (objVal == v) return true;

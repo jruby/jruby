@@ -224,7 +224,7 @@ abstract class DateUtils {
                 if (i != -1 && i != 0 && i != 1) return INVALID_OFFSET;
 	            return (int) i * DAY_IN_SECONDS;
             case FLOAT:
-                double d = ((RubyFloat) of).getDoubleValue();
+                double d = ((RubyFloat) of).asDouble(context);
 
                 d = d * DAY_IN_SECONDS;
                 if (d < -DAY_IN_SECONDS || d > DAY_IN_SECONDS) return INVALID_OFFSET;

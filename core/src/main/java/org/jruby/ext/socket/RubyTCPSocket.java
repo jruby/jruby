@@ -97,7 +97,7 @@ public class RubyTCPSocket extends RubyIPSocket {
                 if (opts != null) {
                     IRubyObject timeoutObj = ArgsUtil.extractKeywordArg(context, opts, "connect_timeout");
                     if (!timeoutObj.isNil()) {
-                        timeout = (long) (timeoutObj.convertToFloat().getDoubleValue() * 1000);
+                        timeout = (long) (timeoutObj.convertToFloat().asDouble(context) * 1000);
                     }
                 }
 
