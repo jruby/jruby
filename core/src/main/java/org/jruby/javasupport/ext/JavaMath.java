@@ -40,6 +40,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Error.nameError;
 import static org.jruby.javasupport.JavaUtil.unwrapIfJavaObject;
 
 /**
@@ -83,7 +84,7 @@ public class JavaMath {
         private static RubyBigDecimal asRubyBigDecimal(ThreadContext context, final java.math.BigDecimal value) {
             final RubyClass klass = Access.getClass(context, "BigDecimal");
             if (klass == null) { // user should require 'bigdecimal'
-                throw context.runtime.newNameError("uninitialized constant BigDecimal", asSymbol(context, "BigDecimal"));
+                throw nameError(context, "uninitialized constant BigDecimal", asSymbol(context, "BigDecimal"));
             }
             return new RubyBigDecimal(context.runtime, klass, value);
         }

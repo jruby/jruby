@@ -77,14 +77,17 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static org.jruby.api.Convert.*;
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.nameError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
-import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
+import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.StringSupport.CR_7BIT;
 import static org.jruby.util.StringSupport.CR_UNKNOWN;
 import static org.jruby.util.StringSupport.codeLength;
@@ -403,25 +406,30 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return newHardSymbol(runtime, bytes, handler);
     }
 
+    @Deprecated(since = "10.0")
+    public static RubySymbol newConstantSymbol(Ruby runtime, IRubyObject fqn, ByteList bytes) {
+        return newConstantSymbol(runtime.getCurrentContext(), fqn, bytes);
+    }
+
     /**
      * Create a symbol whose intention is to be used as a constant.  This will not
      * only guarantee a symbol entry in the table but it will also verify the symbol
      * conforms as a valid constant identifier.
      *
-     * @param runtime of this Ruby instance.
+     * @param context the current thread context
      * @param fqn if this constant symbol is part of a broader chain this is used for full name error reporting.
      * @param bytes to be made into a symbol (or to help retreive existing symbol)
      * @return a new or existing symbol
      */
-    public static RubySymbol newConstantSymbol(Ruby runtime, IRubyObject fqn, ByteList bytes) {
+    public static RubySymbol newConstantSymbol(ThreadContext context, IRubyObject fqn, ByteList bytes) {
         if (bytes.isEmpty()) {
-            throw runtime.newNameError(str(runtime, "wrong constant name ", ids(runtime, fqn)), runtime.newSymbol(""));
+            throw nameError(context, str(context.runtime, "wrong constant name ", ids(context.runtime, fqn)), asSymbol(context, ""));
         }
 
-        RubySymbol symbol = runtime.newSymbol(bytes);
+        RubySymbol symbol = asSymbol(context, bytes);
 
         if (!symbol.validConstantName()) {
-            throw runtime.newNameError(str(runtime, "wrong constant name ", ids(runtime, fqn)), symbol);
+            throw nameError(context, str(context.runtime, "wrong constant name ", ids(context.runtime, fqn)), symbol);
         }
 
         return symbol;

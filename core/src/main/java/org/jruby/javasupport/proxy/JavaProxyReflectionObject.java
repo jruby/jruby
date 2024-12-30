@@ -191,7 +191,7 @@ public class JavaProxyReflectionObject extends RubyObject {
     static RubyArray toClassArray(ThreadContext context, final Class<?>[] classes) {
         IRubyObject[] javaClasses = new IRubyObject[classes.length];
         for ( int i = classes.length; --i >= 0; ) {
-            javaClasses[i] = Java.getProxyClass(context.runtime, classes[i]);
+            javaClasses[i] = Java.getProxyClass(context, classes[i]);
         }
         return RubyArray.newArrayMayCopy(context.runtime, javaClasses);
     }

@@ -98,6 +98,8 @@ import static org.jruby.api.Create.newFrozenString;
 import static org.jruby.api.Create.newRawArray;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.nameError;
+import static org.jruby.api.Error.runtimeError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.api.Warn.warnDeprecated;
 import static org.jruby.api.Warn.warningDeprecated;
@@ -890,13 +892,14 @@ public class RubyGlobal {
 
         @Override
         public IRubyObject get() {
-            IRubyObject lastExitStatus = runtime.getCurrentContext().getLastExitStatus();
-            return lastExitStatus == null ? runtime.getNil() : lastExitStatus;
+            var context = runtime.getCurrentContext();
+            IRubyObject lastExitStatus = context.getLastExitStatus();
+            return lastExitStatus == null ? context.nil : lastExitStatus;
         }
 
         @Override
         public IRubyObject set(IRubyObject lastExitStatus) {
-            throw runtime.newNameError("$? is a read-only variable", "$?");
+            throw nameError(runtime.getCurrentContext(), "$? is a read-only variable", "$?");
         }
     }
 
@@ -1276,7 +1279,7 @@ public class RubyGlobal {
         }
 
         public IRubyObject setValue(IRubyObject newValue) {
-            throw runtime.newRuntimeError("cannot assign to $$");
+            throw runtimeError(runtime.getCurrentContext(), "cannot assign to $$");
         }
     }
 

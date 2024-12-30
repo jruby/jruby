@@ -89,10 +89,12 @@ public class JavaClass extends JavaObject {
         return getValue().hashCode();
     }
 
+    @Deprecated(since = "10.0")
     public final RubyModule getProxyModule() {
-        return Java.getProxyClass(getRuntime(), javaClass());
+        return Java.getProxyClass(getRuntime().getCurrentContext(), javaClass());
     }
 
+    @Deprecated(since = "10.0")
     public final RubyClass getProxyClass() {
         return (RubyClass) getProxyModule();
     }
@@ -175,7 +177,7 @@ public class JavaClass extends JavaObject {
      */
     @Deprecated
     public static JavaClass resolveType(final ThreadContext context, final IRubyObject type) {
-        RubyModule proxyClass = Java.resolveType(context.runtime, type);
+        RubyModule proxyClass = Java.resolveType(context, type);
         return proxyClass == null ? null : get(context.runtime, JavaUtil.getJavaClass(proxyClass, null));
     }
 

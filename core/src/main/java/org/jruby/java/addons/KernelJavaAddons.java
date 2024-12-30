@@ -35,7 +35,7 @@ public class KernelJavaAddons {
 
     static ArrayJavaProxy toJavaArray(ThreadContext context, final Class<?> type, final RubyArray fromArray) {
         final Object newArray = toJavaArrayInternal(context, type, fromArray);
-        return new ArrayJavaProxy(context.runtime, Java.getProxyClassForObject(context.runtime, newArray), newArray, JavaUtil.getJavaConverter(type));
+        return new ArrayJavaProxy(context.runtime, Java.getProxyClassForObject(context, newArray), newArray, JavaUtil.getJavaConverter(type));
     }
 
     private static Object toJavaArrayInternal(ThreadContext context, final Class<?> type, final RubyArray fromArray) {

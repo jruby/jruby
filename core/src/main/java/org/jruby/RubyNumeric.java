@@ -609,9 +609,8 @@ public class RubyNumeric extends RubyObject {
 
     private static IRubyObject coerceBitRecursive(ThreadContext context, JavaSites.CheckedSites site, IRubyObject _array, boolean recur) {
         if (recur) {
-            Ruby runtime = context.runtime;
             String methodName = site.methodName;
-            throw runtime.newNameError(str(runtime, "recursive call to ", ids(runtime, methodName)), runtime.newSymbol(methodName));
+            throw nameError(context, str(context.runtime, "recursive call to ", ids(context.runtime, methodName)), asSymbol(context, methodName));
         }
 
         RubyArray array = (RubyArray) _array;

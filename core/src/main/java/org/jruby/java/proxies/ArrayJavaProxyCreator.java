@@ -56,7 +56,7 @@ public class ArrayJavaProxyCreator extends RubyObject {
 
     @JRubyMethod(name = { "new", "new_instance" })
     public final ArrayJavaProxy new_instance(ThreadContext context) {
-        return ArrayJavaProxy.newArray(context.runtime, elementType, dimensions);
+        return ArrayJavaProxy.newArray(context, elementType, dimensions);
     }
 
     private void aggregateDimensions(final IRubyObject[] sizes) {

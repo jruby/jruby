@@ -136,7 +136,7 @@ public class Java implements Library {
         org.jruby.javasupport.ext.JavaTime.define(context);
 
         // initialize java.lang.Object proxy early
-        RubyClass objectClass = (RubyClass) getProxyClass(runtime, java.lang.Object.class);
+        RubyClass objectClass = (RubyClass) getProxyClass(context, java.lang.Object.class);
 
         // load Ruby parts of the 'java' library
         loadService(context).load("jruby/java.rb", false);
@@ -149,10 +149,10 @@ public class Java implements Library {
         RubyClassPathVariable.createClassPathVariable(context, Enumerable, Object);
 
         // (legacy) JavaClass compatibility:
-        Java.defineConstant(context, "JavaClass", getProxyClass(runtime, java.lang.Class.class)).
-                defineConstant(context, "JavaField", getProxyClass(runtime, java.lang.reflect.Field.class)).
-                defineConstant(context, "JavaMethod", getProxyClass(runtime, java.lang.reflect.Method.class)).
-                defineConstant(context, "JavaConstructor", getProxyClass(runtime, java.lang.reflect.Constructor.class));
+        Java.defineConstant(context, "JavaClass", getProxyClass(context, java.lang.Class.class)).
+                defineConstant(context, "JavaField", getProxyClass(context, java.lang.reflect.Field.class)).
+                defineConstant(context, "JavaMethod", getProxyClass(context, java.lang.reflect.Method.class)).
+                defineConstant(context, "JavaConstructor", getProxyClass(context, java.lang.reflect.Constructor.class));
         Java.deprecateConstant(context, "JavaClass");
         Java.deprecateConstant(context, "JavaField");
         Java.deprecateConstant(context, "JavaMethod");
@@ -160,7 +160,7 @@ public class Java implements Library {
 
         // modify ENV_JAVA to be a read/write version
         final Map systemProperties = new SystemPropertiesMap();
-        RubyClass proxyClass = (RubyClass) getProxyClass(runtime, SystemPropertiesMap.class);
+        RubyClass proxyClass = (RubyClass) getProxyClass(context, SystemPropertiesMap.class);
         Object.setConstantQuiet(context, "ENV_JAVA", new MapJavaProxy(runtime, proxyClass, systemProperties));
     }
 
@@ -247,12 +247,19 @@ public class Java implements Library {
         var context = ((RubyBasicObject) self).getCurrentContext();
         RubyModule module = castAsModule(context, mod);
 
-        return setProxyClass(context.runtime, module, name.asJavaString(), resolveJavaClassArgument(context, javaClass));
+        return setProxyClass(context, module, name.asJavaString(), resolveJavaClassArgument(context, javaClass));
     }
 
-    public static RubyModule setProxyClass(final Ruby runtime, final RubyModule target, final String constName, final Class<?> javaClass) throws NameError {
-        final RubyModule proxyClass = getProxyClass(runtime, javaClass);
-        setProxyClass(runtime.getCurrentContext(), target, constName, proxyClass, true);
+    @Deprecated(since = "10.0")
+    public static RubyModule setProxyClass(final Ruby runtime, final RubyModule target, final String constName,
+                                           final Class<?> javaClass) throws NameError {
+        return setProxyClass(runtime.getCurrentContext(), target, constName, javaClass);
+    }
+
+        public static RubyModule setProxyClass(ThreadContext context, final RubyModule target, final String constName,
+                                           final Class<?> javaClass) throws NameError {
+        final RubyModule proxyClass = getProxyClass(context, javaClass);
+        setProxyClass(context, target, constName, proxyClass, true);
         return proxyClass;
     }
 
@@ -298,7 +305,7 @@ public class Java implements Library {
      */
     public static IRubyObject getInstance(Ruby runtime, Object rawJavaObject, boolean forceCache) {
         if (rawJavaObject != null) {
-            RubyClass proxyClass = (RubyClass) getProxyClass(runtime, rawJavaObject.getClass());
+            RubyClass proxyClass = (RubyClass) getProxyClass(runtime.getCurrentContext(), rawJavaObject.getClass());
 
             if (OBJECT_PROXY_CACHE || forceCache || proxyClass.getCacheProxy()) {
                 return runtime.getJavaSupport().getObjectProxyCache().getOrCreate(rawJavaObject, proxyClass);
@@ -319,7 +326,7 @@ public class Java implements Library {
     }
 
     public static RubyModule getInterfaceModule(ThreadContext context, final Class javaClass) {
-        return Java.getProxyClass(context.runtime, javaClass);
+        return Java.getProxyClass(context, javaClass);
     }
 
     @Deprecated(since = "10.0")
@@ -337,20 +344,18 @@ public class Java implements Library {
     }
 
     public static RubyModule get_proxy_class(ThreadContext context, IRubyObject self, final IRubyObject java_class) {
-        return getProxyClass(context.runtime, resolveJavaClassArgument(context, java_class));
+        return getProxyClass(context, resolveJavaClassArgument(context, java_class));
     }
 
     @SuppressWarnings("deprecation")
     private static Class<?> resolveJavaClassArgument(ThreadContext context, final IRubyObject java_class) {
-        if (java_class instanceof RubyString) {
-            return getJavaClass(context.runtime, java_class.asJavaString());
-        }
+        if (java_class instanceof RubyString) return getJavaClass(context, java_class.asJavaString());
+
         if (java_class instanceof JavaProxy proxy) {
             Object obj = proxy.getObject();
             if (obj instanceof Class cls) return cls;
-            if (obj instanceof String str) { // java.lang.String proxy
-                return getJavaClass(context.runtime, str);
-            }
+            if (obj instanceof String str) return getJavaClass(context, str); // j.l.String proxy
+
             throw argumentError(context, "expected a Java class, got " + java_class.inspect(context));
         }
 
@@ -361,29 +366,37 @@ public class Java implements Library {
         return (Class) ((JavaProxy) self).getObject();
     }
 
+    @Deprecated(since = "10.0")
     public static RubyClass getProxyClassForObject(Ruby runtime, Object object) {
-        return (RubyClass) getProxyClass(runtime, object.getClass());
+        return getProxyClassForObject(runtime.getCurrentContext(), object);
+    }
+
+    public static RubyClass getProxyClassForObject(ThreadContext context, Object object) {
+        return (RubyClass) getProxyClass(context, object.getClass());
     }
 
     public static Class<?> resolveClassType(final ThreadContext context, final IRubyObject type) throws TypeError {
-        RubyModule proxyClass = Java.resolveType(context.runtime, type);
+        RubyModule proxyClass = Java.resolveType(context, type);
         if (proxyClass == null) throw typeError(context, "unable to convert to type: " + type);
         return JavaUtil.getJavaClass(context, proxyClass);
     }
 
+    @Deprecated(since = "10.0")
     public static RubyModule resolveType(final Ruby runtime, final IRubyObject type) {
+        return resolveType(runtime.getCurrentContext(), type);
+    }
+
+    public static RubyModule resolveType(ThreadContext context, final IRubyObject type) {
         Class<?> klass;
         if (type instanceof RubyString || type instanceof RubySymbol) {
             final String className = type.toString();
             klass = resolveShortClassName(className);
-            if (klass == null) klass = getJavaClass(runtime, className);
+            if (klass == null) klass = getJavaClass(context, className);
         } else {
             klass = resolveClassType(type);
-            if (klass == null) {
-                throw typeError(runtime.getCurrentContext(), "expected a Java class, got: " + type);
-            }
+            if (klass == null) throw typeError(context, "expected a Java class, got: " + type);
         }
-        return getProxyClass(runtime, klass);
+        return getProxyClass(context, klass);
     }
 
     // this should handle the type returned from Class#java_class
@@ -442,14 +455,20 @@ public class Java implements Library {
 
     @Deprecated
     public static RubyModule getProxyClass(Ruby runtime, JavaClass javaClass) {
-        return getProxyClass(runtime, javaClass.javaClass());
+        return getProxyClass(runtime.getCurrentContext(), javaClass.javaClass());
+    }
+
+    @Deprecated(since = "10.0")
+    public static RubyModule getProxyClass(final Ruby runtime, final Class<?> clazz) {
+        return getProxyClass(runtime.getCurrentContext(), clazz);
     }
 
     @SuppressWarnings("deprecation")
-    public static RubyModule getProxyClass(final Ruby runtime, final Class<?> clazz) {
-        RubyModule proxy = runtime.getJavaSupport().getUnfinishedProxy(clazz);
-        if (proxy != null) return proxy;
-        return runtime.getJavaSupport().getProxyClassFromCache(clazz);
+    public static RubyModule getProxyClass(ThreadContext context, final Class<?> clazz) {
+        var javaSupport = context.runtime.getJavaSupport();
+        RubyModule proxy = javaSupport.getUnfinishedProxy(clazz);
+
+        return proxy != null ? proxy : javaSupport.getProxyClassFromCache(clazz);
     }
 
     // expected to handle Java proxy (Ruby) sub-classes as well
@@ -477,7 +496,7 @@ public class Java implements Library {
                 superClass = javaSupport.getConcreteProxyClass();
             } else {
                 // other java proxy classes added under their superclass' java proxy
-                superClass = (RubyClass) getProxyClass(runtime, clazz.getSuperclass());
+                superClass = (RubyClass) getProxyClass(context, clazz.getSuperclass());
             }
             proxy = RubyClass.newClass(context, superClass, null);
         }
@@ -1015,20 +1034,35 @@ public class Java implements Library {
         return JavaUtil.getPrimitiveClass(name) != null;
     }
 
+    @Deprecated(since = "10.0")
     public static Class getJavaClass(final Ruby runtime, final String className) throws RaiseException {
-        return getJavaClass(runtime, className, true);
+        return getJavaClass(runtime.getCurrentContext(), className);
     }
 
+    public static Class getJavaClass(ThreadContext context, final String className) throws RaiseException {
+        return getJavaClass(context, className, true);
+    }
+
+    @Deprecated(since = "10.0")
     public static Class getJavaClass(final Ruby runtime, final String className, boolean initialize) throws RaiseException {
+        return getJavaClass(runtime.getCurrentContext(), className, initialize);
+    }
+
+    public static Class getJavaClass(ThreadContext context, final String className, boolean initialize) throws RaiseException {
         try {
-            return loadJavaClass(runtime, className, initialize);
+            return loadJavaClass(context.runtime, className, initialize);
         } catch (ClassNotFoundException ex) {
-            throw initCause(runtime.newNameError("Java class " + className + " not found", className, ex), ex);
+            throw initCause(nameError(context, "Java class " + className + " not found", className, ex), ex);
         }
     }
 
+    @Deprecated(since = "10.0")
     public static Class loadJavaClass(final Ruby runtime, final String className) throws ClassNotFoundException, RaiseException {
-        return loadJavaClass(runtime, className, true);
+        return loadJavaClass(runtime.getCurrentContext(), className);
+    }
+
+    public static Class loadJavaClass(ThreadContext context, final String className) throws ClassNotFoundException, RaiseException {
+        return loadJavaClass(context.runtime, className, true);
     }
 
     static Class loadJavaClass(final Ruby runtime, final String className, boolean initialize) throws ClassNotFoundException, RaiseException {
@@ -1042,13 +1076,13 @@ public class Java implements Library {
                 return runtime.getJavaSupport().loadJavaClass(className, initialize);
             }
         } catch (ExceptionInInitializerError ex) {
-            throw initCause(runtime.newNameError("cannot initialize Java class " + className + ' ' + '(' + ex + ')', className, ex), ex);
+            throw initCause(nameError(runtime.getCurrentContext(), "cannot initialize Java class " + className + ' ' + '(' + ex + ')', className, ex), ex);
         } catch (UnsupportedClassVersionError ex) { // LinkageError
             String msg = getJavaVersionErrorMessage(ex);
             // cannot link Java class com.sample.FooBar needs Java 8 (java.lang.UnsupportedClassVersionError: com/sample/FooBar : Unsupported major.minor version 52.0)
-            throw initCause(runtime.newNameError("cannot link Java class " + className + ' ' + msg, className, ex), ex);
+            throw initCause(nameError(runtime.getCurrentContext(), "cannot link Java class " + className + ' ' + msg, className, ex), ex);
         } catch (LinkageError ex) {
-            throw initCause(runtime.newNameError("cannot link Java class " + className + ' ' + '(' + ex + ')', className, ex), ex);
+            throw initCause(nameError(runtime.getCurrentContext(), "cannot link Java class " + className + ' ' + '(' + ex + ')', className, ex), ex);
         } catch (SecurityException ex) {
             throw initCause(runtime.newSecurityError(ex.getLocalizedMessage()), ex);
         }
@@ -1079,11 +1113,11 @@ public class Java implements Library {
     private static RubyModule getProxyClassOrNull(ThreadContext context, final String className) {
         final Class<?> clazz;
         try {
-            clazz = loadJavaClass(context.runtime, className);
+            clazz = loadJavaClass(context, className);
         } catch (ClassNotFoundException ex) { // used to catch NoClassDefFoundError for whatever reason
             return null;
         }
-        return getProxyClass(context.runtime, clazz);
+        return getProxyClass(context, clazz);
     }
 
     private static int mapMajorMinorClassVersionToJavaVersion(String msg, final int offset) {
@@ -1674,8 +1708,13 @@ public class Java implements Library {
         return proxy;
     }
 
+    @Deprecated(since = "10.0")
     public static IRubyObject wrapJavaObject(Ruby runtime, Object object) {
-        return allocateProxy(object, getProxyClassForObject(runtime, object));
+        return wrapJavaObject(runtime.getCurrentContext(), object);
+    }
+
+    public static IRubyObject wrapJavaObject(ThreadContext context, Object object) {
+        return allocateProxy(object, getProxyClassForObject(context, object));
     }
 
     @SuppressWarnings("unchecked")
