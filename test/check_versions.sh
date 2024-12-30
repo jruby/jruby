@@ -71,6 +71,6 @@ check maven/jruby-dist/target/jruby-dist-$jar_version-bin.tar.gz 45 jruby-$jar_v
 check maven/jruby-dist/target/jruby-dist-$jar_version-src.zip 20 jruby-$jar_version
 check maven/jruby-dist/target/jruby-dist-$jar_version-bin.zip 45 jruby-$jar_version
 check core/target/jruby-base-$jar_version.jar 10
-check shaded/target/jruby-core-$jar_version.jar 16
+check shaded/target/jruby-core-$jar_version.jar 17
 
 exit "${failed[0]}"
