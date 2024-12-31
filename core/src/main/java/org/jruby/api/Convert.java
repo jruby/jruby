@@ -461,7 +461,6 @@ public class Convert {
      * @return the long value
      */
     public static long numToLong(ThreadContext context, IRubyObject arg) {
-        // FIXME: Move this logic out of numeric and into a place which accepts and uses context.
         return num2long(arg);
     }
 
@@ -472,8 +471,18 @@ public class Convert {
      * @return the int value
      */
     public static int numToInt(ThreadContext context, IRubyObject arg) {
-        // FIXME: Move this logic out of numeric and into a place which accepts and uses context.
         return num2int(arg);
+    }
+
+    /**
+     * Safely convert a Ruby Numeric into a java long value.  Raising if the value will not fit.
+     * @param context the current thread context
+     * @param arg the RubyNumeric to convert
+     * @return the int value
+     */
+    public static RubyInteger numToInteger(ThreadContext context, IRubyObject arg) {
+        // FIXME: Make proper impl which is amalgam of RubyNumeric num2int and convertToInteger and hen have numTo{Long,Int} use this
+        return arg.convertToInteger();
     }
 
     /**

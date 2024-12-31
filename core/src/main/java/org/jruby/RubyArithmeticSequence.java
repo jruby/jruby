@@ -430,37 +430,35 @@ public class RubyArithmeticSequence extends RubyObject {
     // arith_seq_last
     @JRubyMethod
     public IRubyObject last(ThreadContext context, IRubyObject num) {
-        IRubyObject b = begin, e = end, s = step, len_1, len;
-        boolean last_is_adjusted;
+        var b = (RubyNumeric) begin;
+        if (end.isNil()) throw rangeError(context, "cannot get the last element of endless arithmetic sequence");
+        var e = (RubyNumeric) end;
+        IRubyObject s = step;
 
-        if (e.isNil()) throw rangeError(context, "cannot get the last element of endless arithmetic sequence");
-
-        len_1 = ((RubyNumeric)((RubyNumeric)e).op_minus(context, b)).idiv(context, s);
+        var len_1 = (RubyNumeric) ((RubyNumeric) e.op_minus(context, b)).idiv(context, s);
         if (Numeric.f_negative_p(context, len_1)) return num == null ? context.nil : newEmptyArray(context);
 
-        IRubyObject last = ((RubyNumeric)b).op_plus(context, Numeric.f_mul(context, s, len_1));
-        if ((last_is_adjusted = excludeEnd.isTrue()) && Helpers.rbEqual(context, last, e).isTrue()) {
-            last = ((RubyNumeric)last).op_minus(context, s);
+        var last = (RubyNumeric) b.op_plus(context, Numeric.f_mul(context, s, len_1));
+        boolean last_is_adjusted = excludeEnd.isTrue();
+        if (last_is_adjusted && Helpers.rbEqual(context, last, e).isTrue()) {
+            last = (RubyNumeric) last.op_minus(context, s);
         }
 
         if (num == null) return last;
 
-        len = last_is_adjusted ? len_1 : ((RubyNumeric)len_1).op_plus(context, asFixnum(context, 1));
+        var len = last_is_adjusted ? len_1 : (RubyNumeric) len_1.op_plus(context, asFixnum(context, 1));
+        RubyNumeric nv = !(num instanceof RubyInteger numm) ? numToInteger(context, num) : numm;
 
-        IRubyObject nv = num;
-        if (!(nv instanceof RubyInteger)) nv = num.convertToInteger();
-
-        CallSite op_gt = sites(context).op_gt;
-        if (RubyNumeric.numFuncall(context, nv, op_gt, len).isTrue()) nv = len;
+        if (RubyNumeric.numFuncall(context, nv, sites(context).op_gt, len).isTrue()) nv = len;
 
         long n = numToLong(context, nv);
         if (n < 0) throw argumentError(context, "negative array size");
 
         var ary = newRawArray(context, n);
-        b = ((RubyNumeric)last).op_minus(context, Numeric.f_mul(context, s, nv));
+        var i = (RubyNumeric) last.op_minus(context, Numeric.f_mul(context, s, nv));
         while (n > 0) {
-            b = ((RubyNumeric)b).op_plus(context, s);
-            ary.append(context, b);
+            i = (RubyNumeric) i.op_plus(context, s);
+            ary.append(context, i);
             --n;
         }
 
