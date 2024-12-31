@@ -14,6 +14,8 @@ import org.jruby.platform.Platform;
 
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.numToInt;
+import static org.jruby.api.Convert.numToLong;
 
 public class Factory extends org.jruby.ext.ffi.Factory {
 
@@ -117,7 +119,7 @@ public class Factory extends org.jruby.ext.ffi.Factory {
 
         @JRubyMethod(name = {  "error=" }, module = true)
         public static final IRubyObject error_set(ThreadContext context, IRubyObject recv, IRubyObject value) {
-            com.kenai.jffi.LastError.getInstance().set((int)value.convertToInteger().getLongValue());
+            com.kenai.jffi.LastError.getInstance().set(numToInt(context, value));
 
             return value;
         }

@@ -93,6 +93,7 @@ import static org.jruby.api.Access.instanceConfig;
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.numToInt;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newFrozenString;
 import static org.jruby.api.Create.newRawArray;
@@ -981,7 +982,7 @@ public class RubyGlobal {
 
         @Override
         public IRubyObject set(IRubyObject value) {
-            int line = (int)value.convertToInteger().asLong(runtime.getCurrentContext());
+            int line = numToInt(runtime.getCurrentContext(), value);
             runtime.setCurrentLine(line);
             return value;
         }

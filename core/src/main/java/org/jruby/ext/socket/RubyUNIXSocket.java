@@ -70,6 +70,7 @@ import static com.headius.backport9.buffer.Buffers.flipBuffer;
 import static org.jruby.api.Access.ioClass;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.numToInt;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
@@ -90,13 +91,12 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
     @JRubyMethod(meta = true)
     public static IRubyObject for_fd(ThreadContext context, IRubyObject recv, IRubyObject _fileno) {
-        Ruby runtime = context.runtime;
-        int fileno = (int)_fileno.convertToInteger().getLongValue();
+        int fileno = numToInt(context, _fileno);
 
         RubyClass klass = (RubyClass)recv;
         RubyUNIXSocket unixSocket = (RubyUNIXSocket)(Helpers.invoke(context, klass, "allocate"));
         UnixSocketChannel channel = UnixSocketChannel.fromFD(fileno);
-        unixSocket.init_sock(runtime, channel);
+        unixSocket.init_sock(context.runtime, channel);
         return unixSocket;
     }
 

@@ -77,6 +77,7 @@ import static jnr.constants.platform.Sock.SOCK_STREAM;
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asInt;
+import static org.jruby.api.Convert.numToInt;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.ext.socket.Addrinfo.AI_CANONNAME;
@@ -287,7 +288,7 @@ public class SocketUtils {
             port = getservbyname(context, new IRubyObject[]{port});
         }
 
-        int p = port.isNil() ? 0 : (int)port.convertToInteger().getLongValue();
+        int p = port.isNil() ? 0 : numToInt(context, port);
 
         // TODO: implement flags
         int flag = flags.isNil() ? 0 : RubyNumeric.fix2int(flags);

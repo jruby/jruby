@@ -22,6 +22,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
 import static org.jruby.RubyBignum.big2long;
+import static org.jruby.RubyNumeric.num2int;
 import static org.jruby.RubyNumeric.num2long;
 import static org.jruby.api.Error.rangeError;
 import static org.jruby.api.Error.typeError;
@@ -462,6 +463,17 @@ public class Convert {
     public static long numToLong(ThreadContext context, IRubyObject arg) {
         // FIXME: Move this logic out of numeric and into a place which accepts and uses context.
         return num2long(arg);
+    }
+
+    /**
+     * Safely convert a Ruby Numeric into a java long value.  Raising if the value will not fit.
+     * @param context the current thread context
+     * @param arg the RubyNumeric to convert
+     * @return the int value
+     */
+    public static int numToInt(ThreadContext context, IRubyObject arg) {
+        // FIXME: Move this logic out of numeric and into a place which accepts and uses context.
+        return num2int(arg);
     }
 
     /**

@@ -240,27 +240,19 @@ public class RubyEnumerable {
      * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
      */
     private static IRubyObject cycleSize(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
         long mul = 0;
-        IRubyObject n = runtime.getNil();
+        IRubyObject n = context.nil;
 
         if (args != null && args.length > 0) {
             n = args[0];
-            if (!n.isNil()) mul = n.convertToInteger().asLong(context);
+            if (!n.isNil()) mul = numToLong(context, n);
         }
 
         IRubyObject size = size(context, self, args);
-        if (size == null || size.isNil() || size.equals(RubyFixnum.zero(runtime))) {
-            return size;
-        }
 
-        if (n == null || n.isNil()) {
-            return RubyFloat.newFloat(runtime, RubyFloat.INFINITY);
-        }
-
-        if (mul <= 0) {
-            return RubyFixnum.zero(runtime);
-        }
+        if (size == null || size.isNil() || size.equals(asFixnum(context, 0))) return size;
+        if (n == null || n.isNil()) return asFloat(context, RubyFloat.INFINITY);
+        if (mul <= 0) return asFixnum(context, 0);
 
         return sites(context).cycle_op_mul.call(context, size, size, mul);
     }

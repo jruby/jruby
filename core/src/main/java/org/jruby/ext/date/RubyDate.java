@@ -291,9 +291,9 @@ public class RubyDate extends RubyObject {
             throw argumentError(context, "Date out of range: millis=" + millis + " (" + millis.getMetaClass() + ")");
         }
 
-        IRubyObject subMillis = ((RubyArray) val).eltInternal(1);
-        this.subMillisNum = ((RubyNumeric) subMillis).numerator(context).convertToInteger().getLongValue();
-        this.subMillisDen = ((RubyNumeric) subMillis).denominator(context).convertToInteger().getLongValue();
+        var subMillis = (RubyNumeric) ((RubyArray) val).eltInternal(1);
+        this.subMillisNum = numToLong(context, subMillis.numerator(context));
+        this.subMillisDen = numToLong(context, subMillis.denominator(context));
 
         return ms.getLongValue();
     }
@@ -438,7 +438,7 @@ public class RubyDate extends RubyObject {
 
     private static RubyDate civilImpl(ThreadContext context, RubyClass klass,
                                       IRubyObject year, IRubyObject month, IRubyObject mday, final long sg) {
-        final int y = (sg > 0) ? getYear(year) : year.convertToInteger().getIntValue();
+        final int y = (sg > 0) ? getYear(year) : numToInt(context, year);
         final int m = getMonth(month);
         final long[] rest = new long[] { 0, 1 };
         final int d = (int) RubyDateTime.getDay(context, mday, rest);
@@ -751,10 +751,10 @@ public class RubyDate extends RubyObject {
         int argc = Arity.checkArgumentCount(context, args, 4, 5);
 
         final long sg = argc > 4 ? val2sg(context, args[4]) : GREGORIAN;
-        final int y = args[0].convertToInteger().getIntValue();
-        final int w = args[1].convertToInteger().getIntValue();
-        final int d = args[2].convertToInteger().getIntValue();
-        final int f = args[3].convertToInteger().getIntValue();
+        final int y = numToInt(context, args[0]);
+        final int w = numToInt(context, args[1]);
+        final int d = numToInt(context, args[2]);
+        final int f = numToInt(context, args[3]);
         final Long jd = DateUtils._valid_weeknum_p(y, w, d, f, sg);
         return jd == null ? context.nil : asFixnum(context, jd);
     }
@@ -1185,14 +1185,12 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod(name = "julian_leap?", meta = true)
     public static IRubyObject julian_leap_p(ThreadContext context, IRubyObject self, IRubyObject year) {
-        final RubyInteger y = year.convertToInteger();
-        return asBoolean(context, isJulianLeap(y.getLongValue()));
+        return asBoolean(context, isJulianLeap(numToLong(context, year)));
     }
 
     @JRubyMethod(name = "gregorian_leap?", alias = "leap?", meta = true)
     public static IRubyObject gregorian_leap_p(ThreadContext context, IRubyObject self, IRubyObject year) {
-        final RubyInteger y = year.convertToInteger();
-        return asBoolean(context, isGregorianLeap(y.getLongValue()));
+        return asBoolean(context, isGregorianLeap(numToLong(context, year)));
     }
 
     // All years divisible by 4 are leap years in the Julian calendar.
@@ -1252,8 +1250,8 @@ public class RubyDate extends RubyObject {
             sub_millis = (RubyNumeric) sub_millis.op_plus(context, sub);
         }
 
-        long subNum = sub_millis.numerator(context).convertToInteger().getLongValue();
-        long subDen = sub_millis.denominator(context).convertToInteger().getLongValue();
+        long subNum = numToLong(context, sub_millis.numerator(context));
+        long subDen = numToLong(context, sub_millis.denominator(context));
         if (subNum / subDen >= 1) { // sub_millis >= 1
             subNum -= subDen; ms += 1; // sub_millis -= 1
         }
@@ -1316,7 +1314,7 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod
     public IRubyObject next_day(ThreadContext context, IRubyObject n) {
-        return newInstance(context, dt.plusDays(+simpleIntDiff(n)), off, start);
+        return newInstance(context, dt.plusDays(+simpleIntDiff(context, n)), off, start);
     }
 
     @JRubyMethod
@@ -1326,7 +1324,7 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod
     public IRubyObject prev_day(ThreadContext context, IRubyObject n) {
-        return newInstance(context, dt.plusDays(-simpleIntDiff(n)), off, start);
+        return newInstance(context, dt.plusDays(-simpleIntDiff(context, n)), off, start);
     }
 
     @JRubyMethod
@@ -1336,7 +1334,7 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod
     public IRubyObject next_month(ThreadContext context, IRubyObject n) {
-        return newInstance(context, dt.plusMonths(+simpleIntDiff(n)), off, start);
+        return newInstance(context, dt.plusMonths(+simpleIntDiff(context, n)), off, start);
     }
 
     @JRubyMethod
@@ -1346,17 +1344,14 @@ public class RubyDate extends RubyObject {
 
     @JRubyMethod
     public IRubyObject prev_month(ThreadContext context, IRubyObject n) {
-        return newInstance(context, dt.plusMonths(-simpleIntDiff(n)), off, start);
+        return newInstance(context, dt.plusMonths(-simpleIntDiff(context, n)), off, start);
     }
 
-    private static int simpleIntDiff(IRubyObject n) {
-        final int days = n.convertToInteger().getIntValue();
-        if (n instanceof RubyRational) {
-            if (((RubyRational) n).getDenominator().getLongValue() != 1) {
-                return days + 1; // MRI rulez: 1/2 -> 1 (but 0.5 -> 0)
-            }
-        }
-        return days;
+    private static int simpleIntDiff(ThreadContext context, IRubyObject n) {
+        final int days = numToInt(context, n);
+        return n instanceof RubyRational rat && rat.getDenominator().getLongValue() != 1 ?
+                days + 1 : // MRI rulez: 1/2 -> 1 (but 0.5 -> 0)
+                days;
     }
 
     @JRubyMethod(name = ">>")
@@ -1397,8 +1392,8 @@ public class RubyDate extends RubyObject {
     }
 
     static long timesIntDiff(final ThreadContext context, IRubyObject n, final int times) {
-        IRubyObject mul = asFixnum(context, times).op_mul(context, n);
-        return ((RubyNumeric) mul).round(context).convertToInteger().getLongValue();
+        var mul = (RubyNumeric) asFixnum(context, times).op_mul(context, n);
+        return numToLong(context, mul.round(context));
     }
 
     @JRubyMethod // [ ajd, @of, @sg ]

@@ -517,7 +517,7 @@ public class RubyStruct extends RubyObject {
                         key = asSymbol(context, key.convertToString().getByteList());
                     IRubyObject index = __members__.index(context, key);
                     if (index.isNil()) throw argumentError(context, str(context.runtime, "unknown keywords: ", key));
-                    values[index.convertToInteger().getIntValue()] = entry.getValue();
+                    values[numToInt(context, index)] = entry.getValue();
                 });
 
         return context.nil;

@@ -61,6 +61,8 @@ import java.time.*;
 
 import static org.jruby.api.Access.timeClass;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.numToInt;
+import static org.jruby.api.Convert.numToLong;
 import static org.jruby.api.Define.defineClass;
 
 /**
@@ -186,21 +188,21 @@ public class RubyDateTime extends RubyDate {
         if (argc == 8) sg = val2sg(context, args[7]);
         if (argc >= 7) off = val2off(context, args[6]);
 
-        final int year = (sg > 0) ? getYear(args[0]) : args[0].convertToInteger().getIntValue();
+        final int year = (sg > 0) ? getYear(args[0]) : numToInt(context, args[0]);
         final int month = getMonth(args[1]);
         final long[] rest = new long[] { 0, 1 };
         final int day = (int) getDay(context, args[2], rest);
 
         if (argc >= 4 || rest[0] != 0) {
-            hour = getHour(context, argc >= 4 ? args[3] : RubyFixnum.zero(context.runtime), rest);
+            hour = getHour(context, argc >= 4 ? args[3] : asFixnum(context, 0), rest);
         }
 
         if (argc >= 5 || rest[0] != 0) {
-            minute = getMinute(context, argc >= 5 ? args[4] : RubyFixnum.zero(context.runtime), rest);
+            minute = getMinute(context, argc >= 5 ? args[4] : asFixnum(context, 0), rest);
         }
 
         if (argc >= 6 || rest[0] != 0) {
-            IRubyObject sec = argc >= 6 ? args[5] : RubyFixnum.zero(context.runtime);
+            IRubyObject sec = argc >= 6 ? args[5] : asFixnum(context, 0);
             second = getSecond(context, sec, rest);
             final long r0 = rest[0], r1 = rest[1];
             if (r0 != 0) {
@@ -233,7 +235,7 @@ public class RubyDateTime extends RubyDate {
     }
 
     static long getDay(ThreadContext context, IRubyObject day, final long[] rest) {
-        long d = day.convertToInteger().getLongValue();
+        long d = numToLong(context, day);
 
         if (!(day instanceof RubyInteger) && day instanceof RubyNumeric) { // Rational|Float
             RubyRational rat = ((RubyNumeric) day).convertToRational(context);
@@ -269,7 +271,7 @@ public class RubyDateTime extends RubyDate {
     }
 
     static int getHour(ThreadContext context, IRubyObject hour, final long[] rest) {
-        long h = hour.convertToInteger().getLongValue();
+        long h = numToLong(context, hour);
         long i = 0;
         final long r0 = rest[0], r1 = rest[1];
         if (r0 != 0) {
@@ -283,7 +285,7 @@ public class RubyDateTime extends RubyDate {
     }
 
     static int getMinute(ThreadContext context, IRubyObject val, final long[] rest) {
-        long v = val.convertToInteger().getLongValue();
+        long v = numToLong(context, val);
         long i = 0;
         final long r0 = rest[0], r1 = rest[1];
         if (r0 != 0) {
@@ -321,7 +323,7 @@ public class RubyDateTime extends RubyDate {
         // MRI: s_trunc
         long v;
         if (wholeNum) {
-            v = val.convertToInteger().getLongValue();
+            v = numToLong(context, val);
         } else {
             val = ((RubyNumeric) val).divmod(context, asFixnum(context, 1));
             v = ((RubyInteger) ((RubyArray) val).eltInternal(0)).getLongValue();
@@ -362,7 +364,7 @@ public class RubyDateTime extends RubyDate {
             rest[0] = rat.getNumerator().getLongValue();
             rest[1] = rat.getDenominator().getLongValue();
         } else {
-            rest[0] = res.convertToInteger().getLongValue();
+            rest[0] = numToLong(context, res);
             rest[1] = 1;
         }
     }

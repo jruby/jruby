@@ -374,7 +374,7 @@ public class RubyBigDecimal extends RubyNumeric {
             if (value.isNil()) return c.searchInternalModuleVariable("vpExceptionMode");
             if (!(value instanceof RubyBoolean)) throw argumentError(context, "second argument must be true or false");
 
-            long newExceptionMode = c.searchInternalModuleVariable("vpExceptionMode").convertToInteger().getLongValue();
+            long newExceptionMode = numToLong(context, c.searchInternalModuleVariable("vpExceptionMode"));
 
             boolean enable = value.isTrue();
 
@@ -827,7 +827,7 @@ public class RubyBigDecimal extends RubyNumeric {
             throw typeError(context, "can't convert " + arg.inspect(context) + " into BigDecimal");
         }
 
-        int digits = (int) mathArg.convertToInteger().getLongValue();
+        int digits = numToInt(context, mathArg);
         if (digits < 0) {
             if (!strict) return getZero(context, 1);
             if (!exception) return context.nil;

@@ -309,7 +309,7 @@ public final class ArrayJavaProxy extends JavaProxy {
     @JRubyMethod(name = "first") // Enumerable override
     public IRubyObject first(ThreadContext context, IRubyObject count) {
         final Object array = getObject();
-        int len = count.convertToInteger().getIntValue();
+        int len = numToInt(context, count);
         int size = Array.getLength(array); if ( len > size ) len = size;
 
         final Ruby runtime = context.runtime;

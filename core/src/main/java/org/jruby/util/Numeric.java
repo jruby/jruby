@@ -655,7 +655,7 @@ public class Numeric {
     }
 
     public static long i_ilog2(ThreadContext context, RubyInteger x) {
-        long q = (x.size(context).convertToInteger().getLongValue() - 8) * 8 + 1;
+        long q = (numToInt(context, x.size(context)) - 8) * 8 + 1;
 
         if (q > 0) {
             x = x.op_rshift(context, q);

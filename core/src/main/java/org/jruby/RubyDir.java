@@ -73,6 +73,7 @@ import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.numToInt;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
@@ -713,7 +714,7 @@ public class RubyDir extends RubyObject implements Closeable {
         File newDir = res.unwrap(File.class);
         if (File.separatorChar == '\\') newDir = new File(newDir.getPath());
 
-        int mode = args.length == 2 ? ((int) args[1].convertToInteger().asLong(context)) : 0777;
+        int mode = args.length == 2 ? numToInt(context, args[1]) : 0777;
 
         if (context.runtime.getPosix().mkdir(newDir.getAbsolutePath(), mode) < 0) {
             // FIXME: This is a system error based on errno

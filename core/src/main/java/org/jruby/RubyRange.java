@@ -326,9 +326,9 @@ public class RubyRange extends RubyObject {
 
         hash = hashStart(context.runtime, hash);
         IRubyObject v = safeHash(context, begin);
-        hash = murmurCombine(hash, v.convertToInteger().getLongValue());
+        hash = murmurCombine(hash, numToLong(context, v));
         v = safeHash(context, end);
-        hash = murmurCombine(hash, v.convertToInteger().getLongValue());
+        hash = murmurCombine(hash, numToLong(context, v));
         hash = murmurCombine(hash, exclusiveBit << 24);
         hash = hashEnd(hash);
 
@@ -879,8 +879,8 @@ public class RubyRange extends RubyObject {
     }
 
     private void fixnumEndlessStep(ThreadContext context, IRubyObject step, Block block) {
-        long i = begin.convertToInteger().getLongValue();
-        long unit = step.convertToInteger().getLongValue();
+        long i = numToLong(context, begin);
+        long unit = numToInt(context, step);
         // avoid overflow
         while (i <= Long.MAX_VALUE - unit) {
             block.yield(context, asFixnum(context, i));
@@ -1371,8 +1371,8 @@ public class RubyRange extends RubyObject {
         IRubyObject _beg = sites.begin.call(context, range, range);
         IRubyObject _end = sites.end.call(context, range, range);
         boolean excludeEnd = sites.exclude_end.call(context, range, range).isTrue();
-        int beg = _beg.isNil() ? 0 : _beg.convertToInteger().getIntValue();
-        int end = _end.isNil() ? -1 :_end.convertToInteger().getIntValue();
+        int beg = _beg.isNil() ? 0 : numToInt(context, _beg);
+        int end = _end.isNil() ? -1 : numToInt(context, _end);
         int origBeg = beg;
         int origEnd = end;
 

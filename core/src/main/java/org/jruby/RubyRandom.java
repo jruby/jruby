@@ -389,7 +389,7 @@ public class RubyRandom extends RubyRandomBase {
 
     @JRubyMethod(name = "urandom", meta = true)
     public static IRubyObject urandom(ThreadContext context, IRubyObject recv, IRubyObject num) {
-        int n = num.convertToInteger().getIntValue();
+        int n = numToInt(context, num);
 
         if (n < 0) throw argumentError(context, "negative string size (or size too big)");
 

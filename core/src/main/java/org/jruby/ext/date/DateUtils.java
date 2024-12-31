@@ -6,6 +6,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.numToInt;
+import static org.jruby.api.Convert.numToLong;
 import static org.jruby.ext.date.RubyDate.*;
 import static org.jruby.util.Numeric.*;
 
@@ -419,7 +421,7 @@ abstract class DateUtils {
         if (!f_zero_p(context, nth[0])) { // f_nonzero_p(*nth)
             t = f_mod(context, t, asFixnum(context, period));
         }
-        return t.convertToInteger().getIntValue() - 4712; /* unshift */
+        return numToInt(context, t) - 4712; /* unshift */
     }
 
     static long guess_style(ThreadContext context, IRubyObject y, double sg) { /* -/+oo or zero */
@@ -432,7 +434,7 @@ abstract class DateUtils {
         } else if (!(y instanceof RubyFixnum)) {
             style = ((RubyNumeric) y).isPositive(context) ? GREGORIAN : JULIAN;
         } else {
-            long iy = y.convertToInteger().getLongValue();
+            long iy = numToLong(context, y);
 
             if (iy < REFORM_BEGIN_YEAR)
                 style = JULIAN; // Double.POSITIVE_INFINITY;

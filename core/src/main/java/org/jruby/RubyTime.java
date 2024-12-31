@@ -2168,7 +2168,7 @@ public class RubyTime extends RubyObject {
         IRubyObject zoneVar = (IRubyObject) from.getInternalVariables().getInternalVariable("zone");
 
         if (nano_num != null && nano_den != null) {
-            long nanos = nano_num.convertToInteger().getLongValue() / nano_den.convertToInteger().getLongValue();
+            long nanos = numToLong(context, nano_num) / numToLong(context, nano_den);
             time.nsec += nanos;
         }
 
@@ -2176,7 +2176,7 @@ public class RubyTime extends RubyObject {
         if (offsetVar != null && offsetVar.respondsTo("to_int")) {
             final IRubyObject $ex = context.getErrorInfo();
             try {
-                offset = offsetVar.convertToInteger().getIntValue() * 1000;
+                offset = numToInt(context, offsetVar) * 1000;
             }
             catch (TypeError typeError) {
                 context.setErrorInfo($ex); // restore $!
@@ -2243,15 +2243,11 @@ public class RubyTime extends RubyObject {
     }
 
     private static long extractTime(ThreadContext context, IRubyObject time) {
-        long t;
+        if (time instanceof RubyTime tm) return tm.getDateTime().withZoneRetainFields(DateTimeZone.UTC).getMillis();
 
-        if (time instanceof RubyTime) {
-            return ((RubyTime) time).getDateTime().withZoneRetainFields(DateTimeZone.UTC).getMillis();
-        } else if (time instanceof RubyStruct) {
-            t = ((RubyStruct) time).aref(context, asSymbol(context, "to_i")).convertToInteger().getLongValue();
-        } else {
-            t =  time.callMethod(context, "to_i").convertToInteger().getLongValue();
-        }
+        long t = time instanceof RubyStruct ?
+                numToLong(context, ((RubyStruct) time).aref(context, asSymbol(context, "to_i"))) :
+                numToLong(context, time.callMethod(context, "to_i"));
 
         return t * 1000;
     }

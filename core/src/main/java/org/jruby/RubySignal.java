@@ -41,6 +41,7 @@ import org.jruby.util.NoFunctionalitySignalFacade;
 import java.util.*;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.numToInt;
 import static org.jruby.api.Create.newHash;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineModule;
@@ -201,7 +202,7 @@ public class RubySignal {
 
     @JRubyMethod(meta = true)
     public static IRubyObject signame(ThreadContext context, final IRubyObject recv, IRubyObject rubySig) {
-        long sig = rubySig.convertToInteger().getLongValue();
+        long sig = numToInt(context, rubySig);
         String signame = signo2signm(sig);
         if (signame == null) {
             if (sig == 0) return newString(context, "EXIT");

@@ -50,6 +50,8 @@ import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Convert.numToInt;
+import static org.jruby.api.Convert.numToLong;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.runtimeError;
@@ -1292,7 +1294,7 @@ public class PopenExecutor {
                     } else if (val == context.tru) {
                         pgroup = 0; /* new process group. */
                     } else {
-                        pgroup = val.convertToInteger().getLongValue();
+                        pgroup = numToLong(context, val);
                         if (pgroup < 0) {
                             throw argumentError(context, "negative process group symbol : " + pgroup);
                         }
@@ -1352,7 +1354,7 @@ public class PopenExecutor {
                     eargp.chdir_dir = valTmp.toString();
                 }
                 else if (id.equals("umask")) {
-                    int cmask = val.convertToInteger().getIntValue();
+                    int cmask = numToInt(context, val);
                     if (eargp.umaskGiven) {
                         throw argumentError(context, "umask option specified twice");
                     }
@@ -1384,7 +1386,7 @@ public class PopenExecutor {
 //                    checkUidSwitch();
                     {
 //                        PREPARE_GETPWNAM;
-                        eargp.uid = val.convertToInteger().getIntValue();
+                        eargp.uid = numToInt(context, val);
                         eargp.uidGiven = true;
                     }
 //                    #else
@@ -1398,7 +1400,7 @@ public class PopenExecutor {
 //                    checkGidSwitch();
                     {
 //                        PREPARE_GETGRNAM;
-                        eargp.gid = val.convertToInteger().getIntValue();
+                        eargp.gid = numToInt(context, val);
                         eargp.gidGiven = true;
                     }
 //                    #else
@@ -1490,7 +1492,7 @@ public class PopenExecutor {
                     else if (flags instanceof RubyString)
                         intFlags = OpenFile.ioModestrOflags(context, flags.toString());
                     else
-                        intFlags = flags.convertToInteger().getIntValue();
+                        intFlags = numToInt(context, flags);
                     flags = asFixnum(context, intFlags);
                     perm = ((RubyArray)val).entry(2);
                     perm = perm.isNil() ? asFixnum(context, 0644) : perm.convertToInteger();

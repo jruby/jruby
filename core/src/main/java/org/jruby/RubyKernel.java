@@ -115,6 +115,7 @@ import static org.jruby.anno.FrameField.VISIBILITY;
 import static org.jruby.api.Access.argsFile;
 import static org.jruby.api.Access.fileClass;
 import static org.jruby.api.Access.globalVariables;
+import static org.jruby.api.Access.integerClass;
 import static org.jruby.api.Access.ioClass;
 import static org.jruby.api.Access.kernelModule;
 import static org.jruby.api.Access.loadService;
@@ -605,16 +606,12 @@ public class RubyKernel {
         IRubyObject maybeOpts = ArgsUtil.getOptionsArg(context.runtime, baseOrOpts, false);
 
         if (maybeOpts.isNil()) {
-            return TypeConverter.convertToInteger(context, object, baseOrOpts.convertToInteger().getIntValue(), true);
+            return TypeConverter.convertToInteger(context, object, numToInt(context, baseOrOpts), true);
         }
 
-        boolean exception = checkExceptionOpt(context, context.runtime.getInteger(), maybeOpts);
+        boolean exception = checkExceptionOpt(context, integerClass(context), maybeOpts);
 
-        return TypeConverter.convertToInteger(
-                context,
-                object,
-                0,
-                exception);
+        return TypeConverter.convertToInteger(context, object, 0, exception);
     }
 
     @JRubyMethod(name = "Integer", module = true, visibility = PRIVATE)
@@ -1257,7 +1254,7 @@ public class RubyKernel {
             if (args.length > 3) {
                 // line given, use it and force it into binding
                 // -1 because parser uses zero offsets and other code compensates
-                binding.setLine(((int) args[3].convertToInteger().asLong(context)) - 1);
+                binding.setLine(numToInt(context, args[3]) - 1);
             } else {
                 // filename given, but no line, start from the beginning.
                 binding.setLine(0);
@@ -1764,18 +1761,14 @@ public class RubyKernel {
             // MRI behavior: use first byte of string value if len > 0
             cmd = ((RubyString) arg0).getByteList().charAt(0);
         } else {
-            cmd = (int) arg0.convertToInteger().asLong(context);
+            cmd = numToInt(context, arg0);
         }
 
         // MRI behavior: raise ArgumentError for 'unknown command' before checking number of args
-        switch(cmd) {
-        case 'A': case 'b': case 'c': case 'C': case 'd': case 'e': case 'f': case 'g': case 'G':
-        case 'k': case 'M': case 'l': case 'o': case 'O': case 'p': case 'r': case 'R': case 's':
-        case 'S': case 'u': case 'w': case 'W': case 'x': case 'X': case 'z': case '=': case '<':
-        case '>': case '-':
-            break;
-        default:
-            throw argumentError(context, "unknown command ?" + (char) cmd);
+        switch (cmd) {
+            case 'A', 'b', 'c', 'C', 'd', 'e', 'f', 'g', 'G', 'k', 'M', 'l', 'o', 'O', 'p', 'r', 'R', 's', 'S', 'u',
+                 'w', 'W', 'x', 'X', 'z', '=', '<', '>', '-' -> {}
+            default -> throw argumentError(context, "unknown command ?" + (char) cmd);
         }
         return cmd;
     }

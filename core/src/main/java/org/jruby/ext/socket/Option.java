@@ -204,7 +204,7 @@ public class Option extends RubyObject {
     public static IRubyObject linger(ThreadContext context, IRubyObject self, IRubyObject vonoffArg, IRubyObject vsecs) {
         IRubyObject vonoff = checkToInteger(context, vonoffArg);
         int coercedVonoff = !vonoff.isNil() ? Convert.asInt(context, (RubyInteger) vonoff) : (vonoffArg.isTrue() ? 1 : 0);
-        ByteList data = packLinger(coercedVonoff, vsecs.convertToInteger().getIntValue());
+        ByteList data = packLinger(coercedVonoff, numToInt(context, vsecs));
 
         return new Option(context.runtime, ProtocolFamily.PF_UNSPEC, SocketLevel.SOL_SOCKET, SocketOption.SO_LINGER, data);
      }

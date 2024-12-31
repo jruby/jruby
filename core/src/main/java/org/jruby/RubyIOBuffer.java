@@ -137,7 +137,7 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(meta = true)
     public static IRubyObject string(ThreadContext context, IRubyObject self, IRubyObject _length, Block block) {
-        int size = _length.convertToInteger().getIntValue();
+        int size = numToInt(context, _length);
         if (size < 0) throw argumentError(context, "negative string size (or size too big)");
         RubyString string = RubyString.newString(context.runtime, new byte[size]);
         ByteList bytes = string.getByteList();
@@ -295,26 +295,22 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "initialize")
     public IRubyObject initialize(ThreadContext context, IRubyObject size) {
-        return initialize(context, size.convertToInteger().getIntValue());
+        return initialize(context, numToInt(context, size));
     }
 
     @JRubyMethod(name = "initialize")
     public IRubyObject initialize(ThreadContext context, IRubyObject _size, IRubyObject flags) {
-        IRubyObject nil = context.nil;
+        int size = numToInt(context, _size);
 
-        int size = _size.convertToInteger().getIntValue();
+        initialize(context, new byte[size], size, numToInt(context, flags), context.nil);
 
-        initialize(context, new byte[size], size, flags.convertToInteger().getIntValue(), nil);
-
-        return nil;
+        return context.nil;
     }
 
     public IRubyObject initialize(ThreadContext context, int size) {
-        IRubyObject nil = context.nil;
+        initialize(context, new byte[size], size, flagsForSize(size), context.nil);
 
-        initialize(context, new byte[size], size, flagsForSize(size), nil);
-
-        return nil;
+        return context.nil;
     }
 
     // MRI: io_buffer_initialize
@@ -706,7 +702,7 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "resize")
     public IRubyObject resize(ThreadContext context, IRubyObject size) {
-        resize(context, size.convertToInteger().getIntValue());
+        resize(context, numToInt(context, size));
 
         return this;
     }
@@ -1003,10 +999,6 @@ public class RubyIOBuffer extends RubyObject {
         return asFloat(context, value);
     }
 
-    private static long unwrapLong(ThreadContext context, IRubyObject value) {
-        return value.convertToInteger().asLong(context);
-    }
-
     private static double unwrapDouble(ThreadContext context, IRubyObject value) {
         return value.convertToFloat().asDouble(context);
     }
@@ -1113,7 +1105,7 @@ public class RubyIOBuffer extends RubyObject {
 
         ByteBuffer buffer = getBufferForReading(context);
         DataType dataType = getDataType(_dataType);
-        int offset = _offset.convertToInteger().getIntValue();
+        int offset = numToInt(context, _offset);
 
         return each(context, buffer, dataType, offset, size - offset, block);
     }
@@ -1124,8 +1116,8 @@ public class RubyIOBuffer extends RubyObject {
 
         ByteBuffer buffer = getBufferForReading(context);
         DataType dataType = getDataType(_dataType);
-        int offset = _offset.convertToInteger().getIntValue();
-        int count = _count.convertToInteger().getIntValue();
+        int offset = numToInt(context, _offset);
+        int count = numToInt(context, _count);
 
         return each(context, buffer, dataType, offset, count, block);
     }
@@ -1153,7 +1145,7 @@ public class RubyIOBuffer extends RubyObject {
     public IRubyObject values(ThreadContext context, IRubyObject _dataType, IRubyObject _offset) {
         ByteBuffer buffer = getBufferForReading(context);
         DataType dataType = getDataType(_dataType);
-        int offset = _offset.convertToInteger().getIntValue();
+        int offset = numToInt(context, _offset);
 
         return values(context, buffer, dataType, offset, size - offset);
     }
@@ -1162,8 +1154,8 @@ public class RubyIOBuffer extends RubyObject {
     public IRubyObject values(ThreadContext context, IRubyObject _dataType, IRubyObject _offset, IRubyObject _count) {
         ByteBuffer buffer = getBufferForReading(context);
         DataType dataType = getDataType(_dataType);
-        int offset = _offset.convertToInteger().getIntValue();
-        int count = _count.convertToInteger().getIntValue();
+        int offset = numToInt(context, _offset);
+        int count = numToInt(context, _count);
 
         return values(context, buffer, dataType, offset, count);
     }
@@ -1194,7 +1186,7 @@ public class RubyIOBuffer extends RubyObject {
         if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, this, "each_byte", Helpers.arrayOf(_offset));
 
         ByteBuffer buffer = getBufferForReading(context);
-        int offset = _offset.convertToInteger().getIntValue();
+        int offset = numToInt(context, _offset);
 
         return eachByte(context, buffer, offset, size - offset, block);
     }
@@ -1204,8 +1196,8 @@ public class RubyIOBuffer extends RubyObject {
         if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, this, "each_byte", Helpers.arrayOf(_offset, _count));
 
         ByteBuffer buffer = getBufferForReading(context);
-        int offset = _offset.convertToInteger().getIntValue();
-        int count = _count.convertToInteger().getIntValue();
+        int offset = numToInt(context, _offset);
+        int count = numToInt(context, _count);
 
         return eachByte(context, buffer, offset, count, block);
     }
@@ -1226,34 +1218,34 @@ public class RubyIOBuffer extends RubyObject {
 
         switch (dataType) {
             case S8:
-                writeByte(context, buffer, offset, (byte) unwrapLong(context, value));
+                writeByte(context, buffer, offset, (byte) numToLong(context, value));
                 return;
             case U8:
-                writeUnsignedByte(context, buffer, offset, (int) unwrapLong(context, value));
+                writeUnsignedByte(context, buffer, offset, (int) numToLong(context, value));
                 return;
             case u16:
-                writeUnsignedShort(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, (int) unwrapLong(context, value));
+                writeUnsignedShort(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, (int) numToLong(context, value));
                 return;
             case U16:
-                writeUnsignedShort(context, buffer, offset, ByteOrder.BIG_ENDIAN, (int) unwrapLong(context, value));
+                writeUnsignedShort(context, buffer, offset, ByteOrder.BIG_ENDIAN, (int) numToLong(context, value));
                 return;
             case s16:
-                writeShort(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, (short) unwrapLong(context, value));
+                writeShort(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, (short) numToLong(context, value));
                 return;
             case S16:
-                writeShort(context, buffer, offset, ByteOrder.BIG_ENDIAN, (short) unwrapLong(context, value));
+                writeShort(context, buffer, offset, ByteOrder.BIG_ENDIAN, (short) numToLong(context, value));
                 return;
             case u32:
-                writeUnsignedInt(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, unwrapLong(context, value));
+                writeUnsignedInt(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, numToLong(context, value));
                 return;
             case U32:
-                writeUnsignedInt(context, buffer, offset, ByteOrder.BIG_ENDIAN, unwrapLong(context, value));
+                writeUnsignedInt(context, buffer, offset, ByteOrder.BIG_ENDIAN, numToLong(context, value));
                 return;
             case s32:
-                writeInt(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, (int) unwrapLong(context, value));
+                writeInt(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, (int) numToLong(context, value));
                 return;
             case S32:
-                writeInt(context, buffer, offset, ByteOrder.BIG_ENDIAN, (int) unwrapLong(context, value));
+                writeInt(context, buffer, offset, ByteOrder.BIG_ENDIAN, (int) numToLong(context, value));
                 return;
             case u64:
                 writeUnsignedLong(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, unwrapUnsignedLong(value));
@@ -1262,10 +1254,10 @@ public class RubyIOBuffer extends RubyObject {
                 writeUnsignedLong(context, buffer, offset, ByteOrder.BIG_ENDIAN, unwrapUnsignedLong(value));
                 return;
             case s64:
-                writeLong(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, unwrapLong(context, value));
+                writeLong(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, numToLong(context, value));
                 return;
             case S64:
-                writeLong(context, buffer, offset, ByteOrder.BIG_ENDIAN, unwrapLong(context, value));
+                writeLong(context, buffer, offset, ByteOrder.BIG_ENDIAN, numToLong(context, value));
                 return;
             case f32:
                 writeFloat(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, (float) unwrapDouble(context, value));

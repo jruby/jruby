@@ -291,20 +291,17 @@ public class RubyBignum extends RubyInteger {
      */
     @Override
     public IRubyObject ceil(ThreadContext context, IRubyObject arg){
-        int ndigits = arg.convertToInteger().getIntValue();
+        int ndigits = numToInt(context, arg);
         BigInteger self = value;
-        if (ndigits >= 0){
-            return this;
-        } else {
-            int posdigits = Math.abs(ndigits);
-            BigInteger exp = BigInteger.TEN.pow(posdigits);
-            BigInteger mod = self.mod(exp);
-            BigInteger res = self;
-            if (mod.signum() != 0) {
-                res = self.add( exp.subtract(mod) );// self + (exp - (mod));
-            }
-            return newBignum(context.runtime, res);
-        }
+        if (ndigits >= 0) return this;
+
+        int posdigits = Math.abs(ndigits);
+        BigInteger exp = BigInteger.TEN.pow(posdigits);
+        BigInteger mod = self.mod(exp);
+        BigInteger res = self;
+        if (mod.signum() != 0) res = self.add( exp.subtract(mod) );// self + (exp - (mod));
+
+        return newBignum(context.runtime, res);
     }
 
     /** rb_big_floor
@@ -312,16 +309,14 @@ public class RubyBignum extends RubyInteger {
      */
     @Override
     public IRubyObject floor(ThreadContext context, IRubyObject arg){
-        int ndigits = arg.convertToInteger().getIntValue();
+        int ndigits = numToInt(context, arg);
         BigInteger self = value;
-        if (ndigits >= 0){
-            return this;
-        } else {
-            int posdigits = Math.abs(ndigits);
-            BigInteger exp = BigInteger.TEN.pow(posdigits);
-            BigInteger res = self.subtract(self.mod(exp));
-            return newBignum(context.runtime, res);
-        }
+        if (ndigits >= 0) return this;
+
+        int posdigits = Math.abs(ndigits);
+        BigInteger exp = BigInteger.TEN.pow(posdigits);
+        BigInteger res = self.subtract(self.mod(exp));
+        return newBignum(context.runtime, res);
     }
 
     /** rb_big_truncate
@@ -1068,7 +1063,7 @@ public class RubyBignum extends RubyInteger {
         if (other instanceof RubyBignum bignum) return value.compareTo(bignum.value);
 
         ThreadContext context = getRuntime().getCurrentContext();
-        return (int) coerceCmp(context, sites(context).op_cmp, other).convertToInteger().asLong(context);
+        return numToInt(context, coerceCmp(context, sites(context).op_cmp, other));
     }
 
     @Override

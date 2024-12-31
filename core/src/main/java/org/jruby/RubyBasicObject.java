@@ -96,6 +96,8 @@ import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Convert.castAsModule;
+import static org.jruby.api.Convert.numToInt;
+import static org.jruby.api.Convert.numToLong;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Create.newRawArray;
@@ -1239,9 +1241,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         IRubyObject cmp = invokedynamic(context, this, OP_CMP, other);
 
         // if RubyBasicObject#op_cmp is used, the result may be nil (not comparable)
-        if ( ! cmp.isNil() ) {
-            return (int) cmp.convertToInteger().asLong(context);
-        }
+        if (!cmp.isNil()) return numToInt(context, cmp);
 
         /* We used to raise an error if two IRubyObject were not comparable, but
          * in order to support the new ConcurrentHashMapV8 and other libraries
@@ -1920,7 +1920,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         // We just want the TypeError if the argument doesn't convert to a String (JRUBY-386)
         RubyString evalStr = arg0 instanceof RubyString str ? str : arg0.convertToString();
         String file = arg1.convertToString().asJavaString();
-        int line = (int)(arg2.convertToInteger().asLong(context) - 1);
+        int line = numToInt(context, arg2) - 1;
 
         return evalUnder(context, mod, evalStr, file, line, evalType);
     }
@@ -2904,10 +2904,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     protected static int nonFixnumHashCode(IRubyObject hashValue) {
-        RubyInteger integer = hashValue.convertToInteger();
-        return integer instanceof RubyBignum ?
-                integer.getBigIntegerValue().intValue() :
-                (int) ((RubyFixnum) integer).getValue();
+        return numToInt(hashValue.getRuntime().getCurrentContext(), hashValue);
     }
 
     /**

@@ -319,7 +319,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod
     public IRubyObject chmod(ThreadContext context, IRubyObject arg) {
         checkClosed(context);
-        int mode = (int) arg.convertToInteger().asLong(context);
+        int mode = numToInt(context, arg);
         final String path = getPath();
         if (!new File(path).exists()) throw context.runtime.newErrnoENOENTError(path);
 
@@ -1118,7 +1118,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         int argc = Arity.checkArgumentCount(context, args, 0, 1);
         int oldMask = argc == 0 ?
                 PosixShim.umask(context.runtime.getPosix()) :
-                PosixShim.umask(context.runtime.getPosix(), (int) args[0].convertToInteger().asLong(context));
+                PosixShim.umask(context.runtime.getPosix(), numToInt(context, args[0]));
 
         return asFixnum(context, oldMask);
     }

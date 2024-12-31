@@ -12,6 +12,8 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 
 import static org.jruby.api.Access.globalVariables;
+import static org.jruby.api.Convert.numToInt;
+import static org.jruby.api.Convert.numToLong;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
@@ -233,7 +235,7 @@ public class Getline {
             }
         }
 
-        limit = lim == nil ? -1 : lim.convertToInteger().getLongValue();
+        limit = lim == nil ? -1 : numToLong(context, lim);
 
         return getline.getline(context, self, rs, (int) limit, chomp, block);
     }

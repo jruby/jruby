@@ -65,6 +65,8 @@ import static org.jruby.api.Access.fileClass;
 import static org.jruby.api.Access.globalVariables;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.castAsString;
+import static org.jruby.api.Convert.numToInt;
+import static org.jruby.api.Convert.numToLong;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -707,7 +709,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         if (b.isNil()) return b;
 
         try {
-            bufferedStream.unread(b.convertToInteger().getIntValue());
+            bufferedStream.unread(numToInt(context, b));
             position--;
         } catch (IOException ioe) {
             throw context.runtime.newIOErrorFromException(ioe);
@@ -800,14 +802,14 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
                 }
 
                 obj.read(context, IRubyObject.NULL_ARRAY);
-                pos = io.callMethod(context, "pos").convertToInteger().getLongValue();
+                pos = numToLong(context, io.callMethod(context, "pos"));
                 unused = obj.unused();
                 obj.finish(context);
                 if (!unused.isNil()) {
-                    pos -= unused.callMethod(context, "length").convertToInteger().getLongValue();
+                    pos -= numToLong(context, unused.callMethod(context, "length"));
                     io.callMethod(context, "pos=", asFixnum(context, pos));
                 }
-            } while (pos < io.callMethod(context, "size").convertToInteger().getLongValue());
+            } while (pos < numToLong(context, io.callMethod(context, "size")));
         } catch (IOException ioe) {
             throw context.runtime.newIOErrorFromException(ioe);
         }

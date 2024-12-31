@@ -1302,7 +1302,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @Override
     public final int compareTo(IRubyObject other) {
-        return (int) op_cmp(metaClass.runtime.getCurrentContext(), other).convertToInteger().getLongValue();
+        var context = getRuntime().getCurrentContext();
+        return numToInt(context, op_cmp(context, other));
     }
 
     /* rb_str_cmp_m */
@@ -1794,7 +1795,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             IRubyObject encoding = opts.fastARef(asSymbol(context, "encoding"));
             IRubyObject capacity = opts.fastARef(asSymbol(context, "capacity"));
 
-            if (capacity != null && !capacity.isNil()) modify(capacity.convertToInteger().getIntValue());
+            if (capacity != null && !capacity.isNil()) modify(numToInt(context, capacity));
             if (encoding != null && !encoding.isNil()) {
                 modify();
                 setEncodingAndCodeRange(context.runtime.getEncodingService().getEncodingFromObject(encoding), CR_UNKNOWN);
@@ -4481,7 +4482,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      */
     @JRubyMethod(name = "to_i")
     public IRubyObject to_i(ThreadContext context, IRubyObject arg0) {
-        int base = (int) arg0.convertToInteger().getLongValue();
+        int base = numToInt(context, arg0);
         if (base < 0) throw argumentError(context, "illegal radix " + base);
         return stringToInum(base);
     }
@@ -5574,7 +5575,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (arg instanceof RubyRegexp) {
             IRubyObject tmp = rindex(context, arg);
             if (tmp.isNil()) return rpartitionMismatch(context);
-            pos = tmp.convertToInteger().getIntValue();
+            pos = numToInt(context, tmp);
             sep = (RubyString)RubyRegexp.nth_match(context, 0, context.getLocalMatchOrNil());
         } else {
             IRubyObject tmp = arg.checkStringType();
@@ -6686,7 +6687,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (options.size() == 1) {
             IRubyObject offsetArg = options.fastARef(asSymbol(context, "offset"));
             if (offsetArg == null) throw argumentError(context, "unknown keyword: " + options.keys().first(context).inspect(context));
-            offset = offsetArg.convertToInteger().getLongValue();
+            offset = numToLong(context, offsetArg);
         }
         // FIXME: keyword arg processing incomplete.  We need a better system.
 

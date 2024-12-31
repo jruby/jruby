@@ -1043,7 +1043,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         int arraySize = size();
         var result = Create.newRawArray(context, length);
         for (int i = 0; i < length; i++) {
-            int index = args[i].convertToInteger().getIntValue();
+            int index = numToInt(context, args[i]);
             // FIXME: lookup the bounds part of this in error message??
             if (index >= arraySize) {
                 if (!block.isGiven()) throw context.runtime.newIndexError("index " + index + " outside of array bounds: 0...0");
@@ -1066,7 +1066,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (index < 0) index += realLength;
         if (index < 0 || index >= realLength) {
             if (block.isGiven()) return block.yield(context, arg0);
-            throw context.runtime.newIndexError("index " + index + " out of array");
+            throw indexError(context, "index " + index + " out of array");
         }
 
         return eltOk((int) index);
@@ -1406,7 +1406,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (step < 0) {
             if (aseqExcl && !aseqEnd.isNil()) {
                 /* Handle exclusion before range reversal */
-                aseqEnd = asFixnum(context, aseqEnd.convertToInteger().getIntValue() + 1);
+                aseqEnd = asFixnum(context, numToLong(context, aseqEnd) + 1);
 
                 /* Don't exclude the previous beginning */
                 aseqExcl = false;
@@ -1491,7 +1491,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     }
 
     private Long getStep(ThreadContext context, RubyArithmeticSequence arg0) {
-        return arg0.step(context).isNil() ? null: arg0.step(context).convertToInteger().asLong(context);
+        return arg0.step(context).isNil() ? null: numToLong(context, arg0.step(context));
     }
 
     /** rb_ary_subseq

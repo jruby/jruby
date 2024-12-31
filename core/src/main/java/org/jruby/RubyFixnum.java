@@ -62,6 +62,8 @@ import org.jruby.util.cli.Options;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.numToInt;
+import static org.jruby.api.Convert.numToLong;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Error.argumentError;
@@ -329,20 +331,17 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
      */
     @Override
     public IRubyObject ceil(ThreadContext context, IRubyObject arg){
-        long ndigits = arg.convertToInteger().asLong(context);
-        if (ndigits >= 0) {
-            return this;
-        } else {
-            long self = this.value;
-            long posdigits = Math.abs(ndigits);
-            long exp = (long) Math.pow(10, posdigits);
-            long mod = (self % exp + exp) % exp;
-            long res = self;
-            if (mod != 0) {
-                res = self + (exp - (mod));
-            }
-            return newFixnum(context.runtime, res);
-        }
+        long ndigits = numToLong(context, arg);
+        if (ndigits >= 0) return this;
+
+        long self = this.value;
+        long posdigits = Math.abs(ndigits);
+        long exp = (long) Math.pow(10, posdigits);
+        long mod = (self % exp + exp) % exp;
+        long res = self;
+        if (mod != 0) res = self + (exp - (mod));
+
+        return asFixnum(context, res);
     }
 
     /** rb_fix_floor
@@ -350,7 +349,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
      */
     @Override
     public IRubyObject floor(ThreadContext context, IRubyObject arg){
-        long ndigits = arg.convertToInteger().asLong(context);
+        long ndigits = numToLong(context, arg);
         if (ndigits >= 0) return this;
 
         long self = this.value;
@@ -888,22 +887,20 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
         long tmp = 1L;
         long yy;
 
-        for (/*NOP*/; !(y instanceof RubyFixnum); y = (RubyInteger) sites(context).op_rshift.call(context, y, y, RubyFixnum.one(context.runtime))) {
-            if (f_odd_p(context, y)) {
-                tmp = (tmp * xx) % mm;
-            }
+        var one = asFixnum(context, 1);
+        for (/*NOP*/; !(y instanceof RubyFixnum); y = (RubyInteger) sites(context).op_rshift.call(context, y, y, one)) {
+            if (f_odd_p(context, y)) tmp = (tmp * xx) % mm;
+
             xx = (xx * xx) % mm;
         }
-        for (yy = y.convertToInteger().asLong(context); yy != 0L; yy >>= 1L) {
-            if ((yy & 1L) != 0L) {
-                tmp = (tmp * xx) % mm;
-            }
+        for (yy = numToLong(context, y); yy != 0L; yy >>= 1L) {
+            if ((yy & 1L) != 0L) tmp = (tmp * xx) % mm;
+
             xx = (xx * xx) % mm;
         }
 
-        if (negaFlg && (tmp != 0)) {
-            tmp -= mm;
-        }
+        if (negaFlg && (tmp != 0)) tmp -= mm;
+
         return asFixnum(context, tmp);
     }
 
@@ -1040,10 +1037,10 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
     }
 
     private int compareToOther(IRubyObject other) {
-        if (other instanceof RubyBignum) return BigInteger.valueOf(value).compareTo(((RubyBignum) other).value);
-        if (other instanceof RubyFloat) return Double.compare((double) value, ((RubyFloat) other).value);
-        ThreadContext context = metaClass.runtime.getCurrentContext();
-        return (int) coerceCmp(context, sites(context).op_cmp, other).convertToInteger().asLong(context);
+        if (other instanceof RubyBignum bignum) return BigInteger.valueOf(value).compareTo(bignum.value);
+        if (other instanceof RubyFloat flote) return Double.compare((double) value, flote.value);
+        ThreadContext context = getRuntime().getCurrentContext();
+        return numToInt(context, coerceCmp(context, sites(context).op_cmp, other));
     }
 
     /** fix_cmp

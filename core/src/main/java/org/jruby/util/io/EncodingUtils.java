@@ -328,7 +328,7 @@ public class EncodingUtils {
 
                 IRubyObject extraFlags = hashARef(context, options, "flags");
                 if (!extraFlags.isNil()) {
-                    oflags_p[0] |= extraFlags.convertToInteger().getIntValue();
+                    oflags_p[0] |= numToInt(context, extraFlags);
                 }
 
                 ecflags = (fmode_p[0] & OpenFile.READABLE) != 0 ?
@@ -2052,7 +2052,7 @@ public class EncodingUtils {
         if (!flags.isNil()) {
             if (!opt.isNil()) throw argumentError(context, args.length, 3);
 
-            ecflags_p[0] = (int)flags.convertToInteger().getLongValue();
+            ecflags_p[0] = numToInt(context, flags);
             ecopts_p[0] = context.nil;
         } else if (!opt.isNil()) {
             ecflags_p[0] = EncodingUtils.econvPrepareOpts(context, opt, ecopts_p);
