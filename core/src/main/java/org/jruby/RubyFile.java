@@ -1568,18 +1568,18 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         long[] timespec = new long[2];
 
         if (value instanceof RubyFloat flote) {
-            timespec[0] = Platform.IS_32_BIT ? RubyNumeric.num2int(value) : toLong(context, value);
+            timespec[0] = Platform.IS_32_BIT ? flote.asInt(context) : flote.asLong(context);
             double fraction = flote.asDouble(context) % 1.0;
             timespec[1] = (long)(fraction * 1e9 + 0.5);
-        } else if (value instanceof RubyNumeric) {
-            timespec[0] = Platform.IS_32_BIT ? RubyNumeric.num2int(value) : toLong(context, value);
+        } else if (value instanceof RubyNumeric numeric) {
+            timespec[0] = Platform.IS_32_BIT ? numeric.asInt(context) : numeric.asLong(context);
             timespec[1] = 0;
         } else {
             RubyTime time = value instanceof RubyTime t ?
                     t : (RubyTime) TypeConverter.convertToType(context, value, timeClass(context), sites(context).to_time_checked, true);
 
-            timespec[0] = Platform.IS_32_BIT ? asInt(context, time.to_i(context)) : toLong(context, time.to_i(context));
-            timespec[1] = Platform.IS_32_BIT ? asInt(context, time.nsec(context)) : toLong(context, time.nsec(context));
+            timespec[0] = Platform.IS_32_BIT ? time.to_i(context).asInt(context) : time.to_i(context).asLong(context);
+            timespec[1] = Platform.IS_32_BIT ? time.nsec(context).asInt(context) : time.nsec(context).asLong(context);
         }
 
         return timespec;

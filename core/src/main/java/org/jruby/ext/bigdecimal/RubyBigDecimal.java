@@ -321,7 +321,7 @@ public class RubyBigDecimal extends RubyNumeric {
         IRubyObject old = limit(context, recv);
 
         if (arg == context.nil) return old;
-        if (castAsFixnum(context, arg).getLongValue() < 0) throw argumentError(context, "argument must be positive");
+        if (castAsFixnum(context, arg).getValue() < 0) throw argumentError(context, "argument must be positive");
 
         ((RubyModule) recv).setInternalModuleVariable("vpPrecLimit", arg);
 
@@ -367,7 +367,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
         args = Arity.scanArgs(context, args, 1, 1);
 
-        long mode = castAsFixnum(context, args[0]).getLongValue();
+        long mode = castAsFixnum(context, args[0]).getValue();
         IRubyObject value = args[1];
 
         if ((mode & EXCEPTION_ALL) != 0) {
@@ -414,7 +414,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     // The Fixnum cast should be fine because these are internal variables and user code cannot change them.
     private static long bigDecimalVar(ThreadContext context, String variableName) {
-        return ((RubyFixnum) Access.getClass(context, "BigDecimal").searchInternalModuleVariable(variableName)).getLongValue();
+        return ((RubyFixnum) Access.getClass(context, "BigDecimal").searchInternalModuleVariable(variableName)).getValue();
     }
 
     private static RoundingMode getRoundingMode(ThreadContext context) {
@@ -453,8 +453,8 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private static BigDecimal toBigDecimal(ThreadContext context, final RubyInteger value) {
-        return value instanceof RubyFixnum ?
-            BigDecimal.valueOf(toLong(context, value)) : new BigDecimal(value.getBigIntegerValue());
+        return value instanceof RubyFixnum fixnum ?
+            BigDecimal.valueOf(fixnum.getValue()) : new BigDecimal(value.getBigIntegerValue());
     }
 
     private static RubyBigDecimal getVpRubyObjectWithPrecInner(ThreadContext context, RubyRational value, RoundingMode mode) {
@@ -513,9 +513,10 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private static RubyBigDecimal newInstance(ThreadContext context, IRubyObject recv, RubyFixnum arg, MathContext mathContext) {
-        final long value = arg.getLongValue();
-        if (value == 0) return getZero(context, 1);
-        return new RubyBigDecimal(context.runtime, (RubyClass) recv, new BigDecimal(value, mathContext));
+        final long value = arg.getValue();
+        return value == 0 ?
+                getZero(context, 1) :
+                new RubyBigDecimal(context.runtime, (RubyClass) recv, new BigDecimal(value, mathContext));
     }
 
     private static RubyBigDecimal newInstance(ThreadContext context, IRubyObject recv, RubyRational arg, MathContext mathContext) {
@@ -2516,10 +2517,9 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private static boolean isEven(final RubyNumeric x) {
-        if (x instanceof RubyFixnum) return (((RubyFixnum) x).getLongValue() & 1) == 0;
-        if (x instanceof RubyBignum) {
-            return ((RubyBignum) x).getBigIntegerValue().testBit(0) == false; // 0-th bit -> 0
-        }
+        if (x instanceof RubyFixnum fix) return (fix.getValue() & 1) == 0;
+        if (x instanceof RubyBignum bignum) return bignum.getBigIntegerValue().testBit(0) == false; // 0-th bit -> 0
+
         return false;
     }
 

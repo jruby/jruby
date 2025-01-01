@@ -71,11 +71,11 @@ public abstract class TimeExt {
         if (time.getNSec() != 0) {
             IRubyObject subMillis = RubyRational.newRationalCanonicalize(context, time.getNSec(), 1_000_000);
             if (subMillis instanceof RubyRational) {
-                subMillisNum = ((RubyRational) subMillis).getNumerator().getLongValue();
-                subMillisDen = ((RubyRational) subMillis).getDenominator().getLongValue();
+                subMillisNum = ((RubyRational) subMillis).getNumerator().asLong(context);
+                subMillisDen = ((RubyRational) subMillis).getDenominator().asLong(context);
             }
             else {
-                subMillisNum = ((RubyInteger) subMillis).getLongValue();
+                subMillisNum = ((RubyInteger) subMillis).asLong(context);
             }
         }
 

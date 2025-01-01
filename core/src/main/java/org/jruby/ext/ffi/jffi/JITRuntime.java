@@ -29,79 +29,79 @@ public final class JITRuntime {
     
     public static int s8Value32(IRubyObject parameter) {
         return (byte) (parameter instanceof RubyFixnum
-                ? ((RubyFixnum) parameter).getLongValue()
+                ? ((RubyFixnum) parameter).getValue()
                 : other2long(parameter));
     }
 
     public static long s8Value64(IRubyObject parameter) {
         return (byte) (parameter instanceof RubyFixnum
-                ? ((RubyFixnum) parameter).getLongValue()
+                ? ((RubyFixnum) parameter).getValue()
                 : other2long(parameter));
     }
 
     public static int u8Value32(IRubyObject parameter) {
         return (int) ((parameter instanceof RubyFixnum
-                ? ((RubyFixnum) parameter).getLongValue()
+                ? ((RubyFixnum) parameter).getValue()
                 : other2long(parameter)) & 0xffL);
     }
 
     public static long u8Value64(IRubyObject parameter) {
         return (parameter instanceof RubyFixnum
-                ? ((RubyFixnum) parameter).getLongValue()
+                ? ((RubyFixnum) parameter).getValue()
                 : other2long(parameter)) & 0xffL;
     }
 
     public static int s16Value32(IRubyObject parameter) {
         return (short) (parameter instanceof RubyFixnum
-                ? ((RubyFixnum) parameter).getLongValue()
+                ? ((RubyFixnum) parameter).getValue()
                 : other2long(parameter));
     }
 
     public static long s16Value64(IRubyObject parameter) {
         return (short) (parameter instanceof RubyFixnum
-                ? ((RubyFixnum) parameter).getLongValue()
+                ? ((RubyFixnum) parameter).getValue()
                 : other2long(parameter));
     }
 
     public static int u16Value32(IRubyObject parameter) {
         return (int) (((parameter instanceof RubyFixnum)
-                ? ((RubyFixnum) parameter).getLongValue()
+                ? ((RubyFixnum) parameter).getValue()
                 : other2long(parameter))  & 0xffffL);
     }
 
     public static long u16Value64(IRubyObject parameter) {
         return ((parameter instanceof RubyFixnum)
-                ? ((RubyFixnum) parameter).getLongValue()
+                ? ((RubyFixnum) parameter).getValue()
                 : other2long(parameter)) & 0xffffL;
     }
 
     public static int s32Value32(IRubyObject parameter) {
         return (int) (parameter instanceof RubyFixnum
-                ? ((RubyFixnum) parameter).getLongValue()
+                ? ((RubyFixnum) parameter).getValue()
                 : other2long(parameter));
     }
 
     public static long s32Value64(IRubyObject parameter) {
         return (int) (parameter instanceof RubyFixnum
-                ? ((RubyFixnum) parameter).getLongValue()
+                ? ((RubyFixnum) parameter).getValue()
                 : other2long(parameter));
     }
 
     public static int u32Value32(IRubyObject parameter) {
         return (int) ((parameter instanceof RubyFixnum
-                ? ((RubyFixnum) parameter).getLongValue()
+                ? ((RubyFixnum) parameter).getValue()
                 : other2long(parameter)) & 0xffffffffL);
     }
 
     public static long u32Value64(IRubyObject parameter) {
         return (parameter instanceof RubyFixnum
-                ? ((RubyFixnum) parameter).getLongValue()
+                ? ((RubyFixnum) parameter).getValue()
                 : other2long(parameter)) & 0xffffffffL;
     }
 
     public static long s64Value64(IRubyObject parameter) {
         return parameter instanceof RubyFixnum
-                ? ((RubyFixnum) parameter).getLongValue()
+                ? ((RubyFixnum) parameter).getValue()
                 : other2long(parameter);
     }
 
@@ -116,7 +116,7 @@ public final class JITRuntime {
 
     public static long u64Value64(IRubyObject parameter) {
         return parameter instanceof RubyFixnum fixnum
-                ? fixnum.getLongValue()
+                ? fixnum.getValue()
                 : other2u64(parameter);
     }
 
@@ -146,10 +146,10 @@ public final class JITRuntime {
         return boolValue(parameter) ? 1L : 0L;
     }
 
-    private static boolean other2bool(IRubyObject parameter) {
-        if (parameter instanceof RubyNumeric numeric) return numeric.getLongValue() != 0;
+    private static boolean other2bool(ThreadContext context, IRubyObject parameter) {
+        if (parameter instanceof RubyNumeric numeric) return numeric.asLong(context) != 0;
 
-        throw typeError(parameter.getRuntime().getCurrentContext(), "cannot convert ", parameter, " to bool");
+        throw typeError(context, "cannot convert ", parameter, " to bool");
     }
 
     public static boolean boolValue(IRubyObject parameter) {
@@ -157,7 +157,7 @@ public final class JITRuntime {
             return parameter.isTrue();
         }
         
-        return other2bool(parameter);
+        return other2bool(parameter.getRuntime().getCurrentContext(), parameter);
     }
     
     public static IRubyObject other2ptr(ThreadContext context, IRubyObject parameter) {

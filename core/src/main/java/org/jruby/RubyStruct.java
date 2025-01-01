@@ -172,7 +172,7 @@ public class RubyStruct extends RubyObject {
         for (int i = 0; i < values.length; i++) {
             h = (h << 1) | (h < 0 ? 1 : 0);
             IRubyObject hash = context.safeRecurse(
-                    (ctx, runtime1, obj, recur) -> recur ? RubyFixnum.zero(runtime1) : invokedynamic(ctx, obj, HASH),
+                    (ctx, runtime1, obj, recur) -> recur ? asFixnum(ctx, 0) : invokedynamic(ctx, obj, HASH),
                     context.runtime, values[i], "hash", true);
             h ^= toLong(context, hash);
         }

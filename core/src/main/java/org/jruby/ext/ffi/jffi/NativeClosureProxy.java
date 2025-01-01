@@ -72,9 +72,9 @@ final class NativeClosureProxy implements Closure {
      * @param value The Ruby object to convert
      * @return a java long value.
      */
-    private static final long longValue(IRubyObject value) {
-        if (value instanceof RubyNumeric) {
-            return ((RubyNumeric) value).getLongValue();
+    private static final long longValue(ThreadContext context, IRubyObject value) {
+        if (value instanceof RubyNumeric num) {
+            return num.asLong(context);
         } else if (value.isNil()) {
             return 0L;
         }
@@ -89,9 +89,9 @@ final class NativeClosureProxy implements Closure {
      * @param value The Ruby object to convert
      * @return a java long value.
      */
-    private static final long addressValue(IRubyObject value) {
-        if (value instanceof RubyNumeric) {
-            return ((RubyNumeric) value).getLongValue();
+    private static final long addressValue(ThreadContext context, IRubyObject value) {
+        if (value instanceof RubyNumeric num) {
+            return num.asLong(context);
         } else if (value instanceof Pointer) {
             return ((Pointer) value).getAddress();
         } else if (value.isNil()) {
@@ -115,18 +115,18 @@ final class NativeClosureProxy implements Closure {
                 case VOID:
                     break;
                 case CHAR, UCHAR:
-                    buffer.setByteReturn((byte) longValue(value)); break;
+                    buffer.setByteReturn((byte) longValue(context, value)); break;
                 case SHORT, USHORT:
-                    buffer.setShortReturn((short) longValue(value)); break;
+                    buffer.setShortReturn((short) longValue(context, value)); break;
                 case INT, UINT:
-                    buffer.setIntReturn((int) longValue(value)); break;
+                    buffer.setIntReturn((int) longValue(context, value)); break;
                 case LONG_LONG:
                     buffer.setLongReturn(Util.int64Value(value)); break;
                 case ULONG_LONG:
                     buffer.setLongReturn(Util.uint64Value(value)); break;
                 case LONG, ULONG:
                     if (LONG_SIZE == 32) {
-                        buffer.setIntReturn((int) longValue(value));
+                        buffer.setIntReturn((int) longValue(context, value));
                     } else {
                         buffer.setLongReturn(Util.int64Value(value));
                     }
@@ -138,7 +138,7 @@ final class NativeClosureProxy implements Closure {
 //                case LONGDOUBLE:
 //                    break; // not implemented
                 case POINTER:
-                    buffer.setAddressReturn(addressValue(value)); break;
+                    buffer.setAddressReturn(addressValue(context, value)); break;
 
                 case BOOL:
                     buffer.setIntReturn(value.isTrue() ? 1 : 0); break;
@@ -147,7 +147,7 @@ final class NativeClosureProxy implements Closure {
         } else if (type instanceof CallbackInfo) {
             if (value instanceof RubyProc || value.respondsTo("call")) {
                 Pointer cb = Factory.getInstance().getCallbackManager().getCallback(context, (CallbackInfo) type, value);
-                buffer.setAddressReturn(addressValue(cb));
+                buffer.setAddressReturn(addressValue(context, cb));
             } else {
                 buffer.setAddressReturn(0L);
                 throw typeError(context, "invalid callback return value, expected Proc or callable object");

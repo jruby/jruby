@@ -91,6 +91,7 @@ import static org.jruby.api.Access.moduleClass;
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Convert.toInteger;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.argumentError;
@@ -2011,9 +2012,7 @@ public class Helpers {
     @Deprecated // not used
     public static IRubyObject aValueSplat(IRubyObject value) {
         var context = ((RubyBasicObject) value).getCurrentContext();
-        if (!(value instanceof RubyArray array) || array.length().getLongValue() == 0) {
-            return context.nil;
-        }
+        if (!(value instanceof RubyArray array) || array.length().getValue() == 0) return context.nil;
 
         return array.getLength() == 1 ? array.first(context) : array;
     }
@@ -3081,7 +3080,7 @@ public class Helpers {
         while (!(hval instanceof RubyFixnum fixnum)) {
             // This is different from MRI because we don't have rb_integer_pack
             if (hval instanceof RubyBignum bignum) return bignum.hash(context);
-            hval = hval.convertToInteger();
+            hval = toInteger(context, hval);
         }
 
         return fixnum;

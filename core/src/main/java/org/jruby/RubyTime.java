@@ -1564,8 +1564,7 @@ public class RubyTime extends RubyObject {
     private static RubyTime at1(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         final RubyTime time;
 
-        if (arg instanceof RubyTime) {
-            RubyTime other = (RubyTime) arg;
+        if (arg instanceof RubyTime other) {
             time = new RubyTime(context.runtime, (RubyClass) recv, other.dt);
             time.setNSec(other.getNSec());
         } else {
@@ -1577,10 +1576,10 @@ public class RubyTime extends RubyObject {
             // In the case of two arguments, MRI will discard the portion of
             // the first argument after a decimal point (i.e., "floor").
             // However in the case of a single argument, any portion after the decimal point is honored.
-            if (arg instanceof RubyFloat) {
+            if (arg instanceof RubyFloat flote) {
                 // use integral and decimal forms to calculate nanos
-                long seconds = RubyNumeric.float2long((RubyFloat) arg);
-                double dbl = ((RubyFloat) arg).value;
+                long seconds = RubyNumeric.float2long(flote);
+                double dbl = flote.value;
 
                 long nano = (long)((dbl - seconds) * 1000000000);
 
@@ -1590,10 +1589,8 @@ public class RubyTime extends RubyObject {
 
                 millisecs = seconds * 1000 + nano / 1000000;
                 nanosecs = nano % 1000000;
-            } else if (arg instanceof RubyRational) {
+            } else if (arg instanceof RubyRational rational) {
                 // use Rational numerator and denominator to calculate nanos
-                RubyRational rational = (RubyRational) arg;
-
                 BigInteger numerator = rational.getNumerator().getBigIntegerValue();
                 BigInteger denominator = rational.getDenominator().getBigIntegerValue();
 
@@ -1621,7 +1618,8 @@ public class RubyTime extends RubyObject {
         return time;
     }
 
-    private static RubyTime atMulti(ThreadContext context, RubyClass recv, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject zone) {
+    private static RubyTime atMulti(ThreadContext context, RubyClass recv, IRubyObject arg1, IRubyObject arg2,
+                                    IRubyObject arg3, IRubyObject zone) {
         long millisecs;
         long nanosecs = 0;
 

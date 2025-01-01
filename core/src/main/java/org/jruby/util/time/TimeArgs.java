@@ -128,7 +128,7 @@ public class TimeArgs {
 
                     RubyRational nsec = (RubyRational) rat.op_mul(context, asFixnum(context, 1_000_000_000));
 
-                    long fullNanos = nsec.getLongValue();
+                    long fullNanos = nsec.asLong(context);
                     long fullMillis = fullNanos / 1_000_000;
 
                     nanos = fullNanos - fullMillis * 1_000_000;

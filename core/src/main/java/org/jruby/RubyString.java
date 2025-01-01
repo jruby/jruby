@@ -1389,7 +1389,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     private RubyString multiplyByteList(ThreadContext context, IRubyObject arg) {
         long longLen = toLong(context, arg);
         if (longLen < 0) throw argumentError(context, "negative argument");
-        if (size() == 0) return (RubyString) dup();
+        if (isEmpty()) return (RubyString) dup();
 
         // we limit to int because ByteBuffer can only allocate int sizes
         int len = Helpers.multiplyBufferLength(context, value.getRealSize(), checkInt(context, longLen));
@@ -2797,10 +2797,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             return concatNumeric(context, (int)(fixnum.value & 0xFFFFFFFF));
         }
         if (other instanceof RubyBignum bignum) {
-            if (bignum.getBigIntegerValue().signum() < 0) {
-                throw rangeError(context, "negative string size (or size too big)");
-            }
-            return concatNumeric(context, (int) bignum.getLongValue());
+            if (bignum.signum() < 0) throw rangeError(context, "negative string size (or size too big)");
+
+            return concatNumeric(context, bignum.asInt(context));
         }
         if (other instanceof RubyFloat flote) {
             modifyCheck();

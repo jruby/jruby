@@ -528,7 +528,7 @@ public class InterpreterEngine {
             case UNBOX_FIXNUM: {
                 UnboxInstr ui = (UnboxInstr)instr;
                 var val = (RubyNumeric) retrieveOp(ui.getValue(), context, self, currDynScope, currScope, temp);
-                fixnums[((TemporaryLocalVariable)ui.getResult()).offset] = val.getLongValue();
+                fixnums[((TemporaryLocalVariable)ui.getResult()).offset] = val.asLong(context);
                 break;
             }
 

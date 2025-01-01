@@ -242,8 +242,8 @@ public class RubyDateTime extends RubyDate {
             if (rat.getNumerator() instanceof RubyBignum || rat.getDenominator() instanceof RubyBignum) {
                 calcBigIntDayRest(rat, d, rest);
             } else {
-                long num = rat.getNumerator().getLongValue();
-                long den = rat.getDenominator().getLongValue();
+                long num = rat.getNumerator().asLong(context);
+                long den = rat.getDenominator().asLong(context);
                 rest[0] = num - d * den; rest[1] = den;
             }
         }
@@ -301,7 +301,7 @@ public class RubyDateTime extends RubyDate {
     private static boolean isSecondAWholeNumber(ThreadContext context, IRubyObject val) {
         if (val instanceof RubyRational rat) {
             RubyInteger den = rat.getDenominator();
-            return den instanceof RubyFixnum && den.getLongValue() == 1;
+            return den instanceof RubyFixnum denf && denf.getValue() == 1;
         } else if (val instanceof RubyFloat flote) {
             double v = flote.asDouble(context);
             return v == (double) Math.round(v);
@@ -326,7 +326,7 @@ public class RubyDateTime extends RubyDate {
             v = toLong(context, val);
         } else {
             val = ((RubyNumeric) val).divmod(context, asFixnum(context, 1));
-            v = ((RubyInteger) ((RubyArray) val).eltInternal(0)).getLongValue();
+            v = ((RubyInteger) ((RubyArray) val).eltInternal(0)).asLong(context);
             RubyNumeric fr = (RubyNumeric) ((RubyArray) val).eltInternal(1);
             // NOTE: we don't:
             // *fr = f_quo(*fr, INT2FIX(86400));
@@ -345,8 +345,8 @@ public class RubyDateTime extends RubyDate {
     }
 
     private static void addRationalModToRest(ThreadContext context, RubyRational rat, long ival, final long[] rest) {
-        long num = rat.getNumerator().getLongValue();
-        long den = rat.getDenominator().getLongValue();
+        long num = rat.getNumerator().asLong(context);
+        long den = rat.getDenominator().asLong(context);
         num -= ival * den;
         if (num != 0) {
             addFraction(context, rest, RubyRational.newRational(context.runtime, num, den), false);
@@ -356,13 +356,13 @@ public class RubyDateTime extends RubyDate {
     private static void addFraction(ThreadContext context, final long[] rest, RubyNumeric fr, boolean roundFloat) {
         RubyNumeric res = (RubyNumeric) RubyRational.newRational(context.runtime, rest[0], rest[1]).op_plus(context, fr);
         if (res instanceof RubyRational rat) {
-            rest[0] = rat.getNumerator().getLongValue();
-            rest[1] = rat.getDenominator().getLongValue();
+            rest[0] = rat.getNumerator().asLong(context);
+            rest[1] = rat.getDenominator().asLong(context);
         } else if (roundFloat && res instanceof RubyFloat flote) {
             // currently only used for (sub) sec rounding - will need a revision for others
             var rat = roundToPrecision(context, flote, SUB_MS_PRECISION * 1000L).convertToRational(context);
-            rest[0] = rat.getNumerator().getLongValue();
-            rest[1] = rat.getDenominator().getLongValue();
+            rest[0] = rat.getNumerator().asLong(context);
+            rest[1] = rat.getDenominator().asLong(context);
         } else {
             rest[0] = toLong(context, res);
             rest[1] = 1;
@@ -516,7 +516,7 @@ public class RubyDateTime extends RubyDate {
         RubyTime time = new RubyTime(context.runtime, timeClass(context), dt, true);
         if (subMillisNum != 0) {
             RubyNumeric usec = (RubyNumeric) subMillis(context).op_mul(context, asFixnum(context, 1_000_000));
-            time.setNSec(usec.getLongValue());
+            time.setNSec(usec.asLong(context));
         }
         return time;
     }

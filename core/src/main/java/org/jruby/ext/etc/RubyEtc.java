@@ -42,6 +42,7 @@ import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.notImplementedError;
 import static org.jruby.api.Error.runtimeError;
 import static org.jruby.api.Warn.warn;
 
@@ -169,9 +170,8 @@ public class RubyEtc {
     
     @JRubyMethod(module = true)
     public static synchronized IRubyObject sysconf(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        Ruby runtime = context.runtime;
         Sysconf name = Sysconf.valueOf(toLong(context, arg));
-        POSIX posix = runtime.getPosix();
+        POSIX posix = context.runtime.getPosix();
         posix.errno(0);
         long ret = posix.sysconf(name);
 
@@ -181,12 +181,12 @@ public class RubyEtc {
             if (errno == Errno.ENOENT.intValue() || errno == 0) {
                 return context.nil;
             } else if (errno == Errno.EOPNOTSUPP.intValue()) {
-                throw runtime.newNotImplementedError("sysconf() function is unimplemented on this machine");
+                throw notImplementedError(context, "sysconf() function is unimplemented on this machine");
             } else {
-                throw runtime.newErrnoFromLastPOSIXErrno();
+                throw context.runtime.newErrnoFromLastPOSIXErrno();
             }
         }
-        return RubyFixnum.newFixnum(runtime, ret);
+        return asFixnum(context, ret);
     }
     
     @JRubyMethod(module = true)

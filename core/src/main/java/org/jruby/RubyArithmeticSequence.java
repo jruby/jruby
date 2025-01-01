@@ -180,19 +180,7 @@ public class RubyArithmeticSequence extends RubyObject {
         IRubyObject b = begin, e = end, s = step;
         RubyArray ary;
 
-        if (num == null) {
-            if (b.isNil()) return context.nil;
-            if (!e.isNil()) {
-                IRubyObject zero = asFixnum(context, 0);
-                CallSite op_cmp = sites(context).op_cmp;
-                CallSite op_gt = sites(context).op_gt;
-                CallSite op_lt = sites(context).op_lt;
-                int r = RubyComparable.cmpint(context, ((RubyNumeric)step).coerceCmp(context, op_cmp, zero), s, zero);
-                if (r > 0 && RubyNumeric.numFuncall(context, b, op_gt, e).isTrue()) return context.nil;
-                if (r < 0 && RubyNumeric.numFuncall(context, b, op_lt, e).isTrue()) return context.nil;
-            }
-            return b;
-        }
+        if (num == null) return firstNoNum(context, b, e, s);
 
         /* TODO: the following code should be extracted as arith_seq_take */
         long n = toLong(context, num);
@@ -290,6 +278,20 @@ public class RubyArithmeticSequence extends RubyObject {
         return Helpers.invokeSuper(context, this, context.runtime.getEnumerator(), "first", num, Block.NULL_BLOCK);
     }
 
+    private IRubyObject firstNoNum(ThreadContext context, IRubyObject b, IRubyObject e, IRubyObject s) {
+        if (b.isNil()) return context.nil;
+        if (!e.isNil()) {
+            IRubyObject zero = asFixnum(context, 0);
+            CallSite op_cmp = sites(context).op_cmp;
+            CallSite op_gt = sites(context).op_gt;
+            CallSite op_lt = sites(context).op_lt;
+            int r = RubyComparable.cmpint(context, ((RubyNumeric)step).coerceCmp(context, op_cmp, zero), s, zero);
+            if (r > 0 && RubyNumeric.numFuncall(context, b, op_gt, e).isTrue()) return context.nil;
+            if (r < 0 && RubyNumeric.numFuncall(context, b, op_lt, e).isTrue()) return context.nil;
+        }
+        return b;
+    }
+
     // arith_seq_eq
     @JRubyMethod(name = {"==", "eql?"})
     @Override
@@ -321,17 +323,17 @@ public class RubyArithmeticSequence extends RubyObject {
 
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
-        IRubyObject v = safeHash(context, excludeEnd);
-        long hash = hashStart(context.runtime, toLong(context, v));
+        var v = safeHash(context, excludeEnd);
+        long hash = hashStart(context.runtime, v.getValue());
 
         v = safeHash(context, begin);
-        hash = murmurCombine(hash, toLong(context, v));
+        hash = murmurCombine(hash, v.getValue());
 
         v = safeHash(context, end);
-        hash = murmurCombine(hash, toLong(context, v));
+        hash = murmurCombine(hash, v.getValue());
 
         v = safeHash(context, step);
-        hash = murmurCombine(hash, toLong(context, v));
+        hash = murmurCombine(hash, v.getValue());
         hash = hashEnd(hash);
 
         return asFixnum(context, hash);

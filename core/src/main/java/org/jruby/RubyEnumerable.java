@@ -73,6 +73,7 @@ import static org.jruby.api.Access.hashClass;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asFloat;
 import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineModule;
@@ -1181,7 +1182,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "each_slice")
     public static IRubyObject each_slice(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
-        int size = (int) toLong(context, arg);
+        int size = toInt(context, arg);
         if (size <= 0) throw argumentError(context, "invalid size");
 
         return block.isGiven() ? each_sliceCommon(context, self, size, block) :
@@ -1233,7 +1234,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "each_cons")
     public static IRubyObject each_cons(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
-        int size = (int) toLong(context, arg);
+        int size = toInt(context, arg);
         if (size <= 0) throw argumentError(context, "invalid size");
         return block.isGiven() ? each_consCommon(context, self, size, block) : enumeratorizeWithSize(context, self, "each_cons", new IRubyObject[] { arg }, (SizeFn) RubyEnumerable::eachConsSize);
     }

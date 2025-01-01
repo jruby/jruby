@@ -67,7 +67,7 @@ public class RubyRandomBase extends RubyObject {
 
         checkFrozen();
 
-        random = new RubyRandom.RandomType((argc == 0) ? RubyRandom.randomSeed(context.runtime) : args[0]);
+        random = new RubyRandom.RandomType(context, (argc == 0) ? RubyRandom.randomSeed(context.runtime) : args[0]);
 
         return this;
     }
@@ -475,7 +475,7 @@ public class RubyRandomBase extends RubyObject {
 
         if (rnd == null) {
             RubyInteger v = Helpers.invokePublic(context, obj, "rand", asFixnum(context, limit + 1)).convertToInteger();
-            long r = toLong(context, v);
+            long r = v.asLong(context);
             if (r < 0) throw rangeError(context, "random number too small " + r);
             if (r > limit) throw rangeError(context, "random number too big " + r);
 

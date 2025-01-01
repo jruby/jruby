@@ -412,11 +412,12 @@ public class RubyBignum extends RubyInteger {
      */
     @Override
     public IRubyObject op_plus(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyFixnum fix) return op_plus(context, fix.value);
-        if (other instanceof RubyBignum big) return op_plus(context, big.value);
-        if (other instanceof RubyFloat flote) return addFloat(flote);
-
-        return addOther(context, other);
+        return switch (other) {
+            case RubyFixnum fix -> op_plus(context, fix.value);
+            case RubyBignum big -> op_plus(context, big.value);
+            case RubyFloat flote -> addFloat(context, flote);
+            default -> addOther(context, other);
+        };
     }
 
     @Override
@@ -432,8 +433,8 @@ public class RubyBignum extends RubyInteger {
         return bignorm(context.runtime, result);
     }
 
-    private IRubyObject addFloat(RubyFloat other) {
-        return RubyFloat.newFloat(getRuntime(), big2dbl(this) + other.value);
+    private IRubyObject addFloat(ThreadContext context, RubyFloat other) {
+        return asFloat(context, big2dbl(this) + other.value);
     }
 
     private IRubyObject addOther(ThreadContext context, IRubyObject other) {
@@ -445,16 +446,12 @@ public class RubyBignum extends RubyInteger {
      */
     @Override
     public IRubyObject op_minus(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyFixnum) {
-            return op_minus(context, ((RubyFixnum) other).value);
-        }
-        if (other instanceof RubyBignum) {
-            return op_minus(context, ((RubyBignum) other).value);
-        }
-        if (other instanceof RubyFloat) {
-            return subtractFloat((RubyFloat) other);
-        }
-        return subtractOther(context, other);
+        return switch (other) {
+            case RubyFixnum fixnum -> op_minus(context, fixnum.value);
+            case RubyBignum bignum -> op_minus(context, bignum.value);
+            case RubyFloat flote -> subtractFloat(flote);
+            default -> subtractOther(context, other);
+        };
     }
 
     @Override
@@ -908,23 +905,16 @@ public class RubyBignum extends RubyInteger {
      */
     @Override
     protected IRubyObject op_aref_subclass(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyBignum) {
-            // Need to normalize first
-            other = bignorm(context.runtime, ((RubyBignum) other).value);
-            if (other instanceof RubyBignum) {
-                // '!=' for negative value
-                if ((((RubyBignum) other).value.signum() >= 0) != (value.signum() == -1)) {
-                    return zero(context.runtime);
-                }
-                return RubyFixnum.one(context.runtime);
+        if (other instanceof RubyBignum bignum) { // Need to normalize first
+            other = bignorm(context.runtime, bignum.value);
+            if (other instanceof RubyBignum bignum2) { // '!=' for negative value
+                return asFixnum(context, (bignum2.value.signum() >= 0) != (value.signum() == -1) ? 0 : 1);
             }
         }
         long position = toLong(context, other);
-        if (position < 0 || position > Integer.MAX_VALUE) {
-            return zero(context.runtime);
-        }
+        if (position < 0 || position > Integer.MAX_VALUE) return asFixnum(context, 0);
 
-        return value.testBit((int)position) ? RubyFixnum.one(context.runtime) : zero(context.runtime);
+        return asFixnum(context, value.testBit((int)position) ? 1: 0);
     }
 
     private enum BIGNUM_OP_T {

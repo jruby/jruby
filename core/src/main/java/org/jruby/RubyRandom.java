@@ -58,20 +58,30 @@ public class RubyRandom extends RubyRandomBase {
 
         // RandomType(Ruby runtime) { this(randomSeed(runtime)); }
 
-        // c: rand_init
+        @Deprecated(since = "10.0")
         RandomType(IRubyObject seed) {
-            this.seed = seed.convertToInteger();
-            if (this.seed instanceof RubyFixnum) {
-                this.impl = randomFromFixnum((RubyFixnum) this.seed);
-            } else if (this.seed instanceof RubyBignum) {
-                this.impl = randomFromBignum((RubyBignum) this.seed);
+            this(((RubyBasicObject) seed).getCurrentContext(), seed);
+        }
+
+        // c: rand_init
+        RandomType(ThreadContext context, IRubyObject seed) {
+            this.seed = toInteger(context, seed);
+            if (this.seed instanceof RubyFixnum fixnum) {
+                this.impl = randomFromFixnum(context, fixnum);
+            } else if (this.seed instanceof RubyBignum bignum) {
+                this.impl = randomFromBignum(bignum);
             } else {
-                throw typeError(seed.getRuntime().getCurrentContext(), "failed to convert ",  seed, " into Integer");
+                throw typeError(context, "failed to convert ",  seed, " into Integer");
             }
         }
 
+        @Deprecated(since = "10.0")
         public static Random randomFromFixnum(RubyFixnum seed) {
-            return randomFromLong(toLong(seed.getRuntime().getCurrentContext(), seed));
+            return randomFromFixnum(seed.getCurrentContext(), seed);
+        }
+
+        public static Random randomFromFixnum(ThreadContext context, RubyFixnum seed) {
+            return randomFromLong(seed.asLong(context));
         }
 
         public static Random randomFromLong(long seed) {
@@ -217,10 +227,13 @@ public class RubyRandom extends RubyRandomBase {
         return Random;
     }
 
+    @Deprecated(since = "10.0")
     public static RubyRandom newRandom(Ruby runtime, RubyClass randomClass, IRubyObject seed) {
-        RubyRandom random = new RubyRandom(runtime, randomClass, new RandomType(seed));
+        return newRandom(runtime.getCurrentContext(), randomClass, seed);
+    }
 
-        return random;
+    public static RubyRandom newRandom(ThreadContext context, RubyClass randomClass, IRubyObject seed) {
+        return new RubyRandom(context.runtime, randomClass, new RandomType(context, seed));
     }
 
     public RandomType getRandomType() {
@@ -306,7 +319,7 @@ public class RubyRandom extends RubyRandomBase {
         RubyRandom defaultRandom = getDefaultRandom(runtime);
         RubyInteger previousSeed = defaultRandom.getRandomType().getSeed();
 
-        defaultRandom = newRandom(runtime, runtime.getRandomClass(), newSeed);
+        defaultRandom = newRandom(context, runtime.getRandomClass(), newSeed);
         context.runtime.setDefaultRandom(defaultRandom);
 
         return previousSeed;

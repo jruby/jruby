@@ -77,6 +77,7 @@ import java.nio.channels.UnsupportedAddressTypeException;
 
 import static org.jruby.api.Access.getModule;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asInt;
 import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineClass;
@@ -376,7 +377,7 @@ public class RubyUDPSocket extends RubyIPSocket {
                     if (service != null) {
                         port = service.getPort();
                     } else {
-                        port = (int) _port.convertToInteger("to_i").getLongValue();
+                        port = (int) _port.convertToInteger("to_i").asLong(context);
                     }
 
                 } else {

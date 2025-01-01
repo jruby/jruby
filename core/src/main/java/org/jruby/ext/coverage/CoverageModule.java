@@ -28,7 +28,6 @@ package org.jruby.ext.coverage;
 
 import java.util.Map;
 
-import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyHash;
 import org.jruby.RubyString;
@@ -218,7 +217,7 @@ public class CoverageModule {
             final IntList val = entry.getValue();
             boolean oneshot = (mode & CoverageData.ONESHOT_LINES) != 0;
 
-            var ary = Create.constructArray(context, val, val.size(),
+            var ary = Create.newArray(context, val, val.size(),
                     oneshot ?
                             CoverageModule::convertCoverageOneshot :
                             CoverageModule::convertCoverage

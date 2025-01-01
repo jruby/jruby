@@ -91,7 +91,7 @@ public class Pointer extends AbstractMemory {
         return asFixnum(context, Factory.getInstance().sizeOf(NativeType.POINTER));
     }
 
-    @JRubyMethod(name = { "initialize" }, visibility = PRIVATE)
+    @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject address) {
         setMemoryIO(address instanceof Pointer
                 ? ((Pointer) address).getMemoryIO()
@@ -102,7 +102,7 @@ public class Pointer extends AbstractMemory {
         return this;
     }
 
-    @JRubyMethod(name = { "initialize" }, visibility = PRIVATE)
+    @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject type, IRubyObject address) {
         setMemoryIO(address instanceof Pointer
                 ? ((Pointer) address).getMemoryIO()

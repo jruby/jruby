@@ -198,10 +198,8 @@ public class RubyZlib {
     @JRubyMethod(name = "crc32", optional = 2, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject crc32(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         args = Arity.scanArgs(context, args, 0, 2);
-        long start = 0;
-        ByteList bytes = null;
-        if (!args[0].isNil()) bytes = args[0].convertToString().getByteList();
-        if (!args[1].isNil()) start = toLong(context, args[1]);
+        ByteList bytes = !args[0].isNil() ? args[0].convertToString().getByteList() : null;
+        long start = !args[1].isNil() ? toLong(context, args[1]) : 0;
         start &= 0xFFFFFFFFL;
 
         final boolean slowPath = start != 0;
@@ -226,19 +224,15 @@ public class RubyZlib {
     @JRubyMethod(name = "adler32", optional = 2, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject adler32(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         args = Arity.scanArgs(context, args, 0, 2);
-        int start = 1;
-        ByteList bytes = null;
-        if (!args[0].isNil()) bytes = args[0].convertToString().getByteList();
-        if (!args[1].isNil()) start = (int) toLong(context, args[1]);
+        ByteList bytes = !args[0].isNil() ? args[0].convertToString().getByteList() : null;
+        int start = !args[1].isNil() ? (int) toLong(context, args[1]) : 1;
 
         Adler32 checksum = new Adler32();
-        if (bytes != null) {
-            checksum.update(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
-        }
+        if (bytes != null) checksum.update(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
+
         long result = checksum.getValue();
-        if (start != 1) {
-            result = JZlib.adler32_combine(start, result, bytes.length());
-        }
+        if (start != 1) result = JZlib.adler32_combine(start, result, bytes.length());
+
         return asFixnum(context, result);
     }
 
@@ -271,7 +265,7 @@ public class RubyZlib {
     @JRubyMethod(name = "crc_table", module = true, visibility = PRIVATE)
     public static IRubyObject crc_table(ThreadContext context, IRubyObject recv) {
         int[] table = com.jcraft.jzlib.CRC32.getCRC32Table();
-        return Create.constructArray(context, table, table.length, RubyZlib::crctablePopulator);
+        return Create.newArray(context, table, table.length, RubyZlib::crctablePopulator);
     }
 
     private static void crctablePopulator(ThreadContext c, int[] t, RubyArray<IRubyObject> a) {

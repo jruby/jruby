@@ -128,7 +128,8 @@ public class MarshalStream extends FilterOutputStream {
     }
 
     private static boolean isMarshalFixnum(RubyFixnum fixnum) {
-        return fixnum.getLongValue() <= RubyFixnum.MAX_MARSHAL_FIXNUM && fixnum.getLongValue() >= RubyFixnum.MIN_MARSHAL_FIXNUM;
+        var value = fixnum.getValue();
+        return value <= RubyFixnum.MAX_MARSHAL_FIXNUM && value >= RubyFixnum.MIN_MARSHAL_FIXNUM;
     }
 
     private void writeAndRegisterSymbol(ByteList sym) throws IOException {
@@ -252,11 +253,11 @@ public class MarshalStream extends FilterOutputStream {
 
                 if (isMarshalFixnum(fixnum)) {
                     write('i');
-                    writeInt((int) fixnum.getLongValue());
+                    writeInt((int) fixnum.getValue());
                     return;
                 }
                 // FIXME: inefficient; constructing a bignum just for dumping?
-                value = RubyBignum.newBignum(value.getRuntime(), fixnum.getLongValue());
+                value = RubyBignum.newBignum(value.getRuntime(), fixnum.getValue());
 
                 // fall through
             case BIGNUM:

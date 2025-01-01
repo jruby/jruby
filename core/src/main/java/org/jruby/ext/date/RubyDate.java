@@ -282,7 +282,7 @@ public class RubyDate extends RubyObject {
             val = DAY_MS(context).op_mul(context, val);
         }
 
-        if (val instanceof RubyFixnum fix) return fix.getLongValue();
+        if (val instanceof RubyFixnum fix) return fix.getValue();
 
         // fallback
         val = ((RubyNumeric) val).divmod(context, RubyFixnum.one(context.runtime));
@@ -295,7 +295,7 @@ public class RubyDate extends RubyObject {
         this.subMillisNum = toLong(context, subMillis.numerator(context));
         this.subMillisDen = toLong(context, subMillis.denominator(context));
 
-        return ms.getLongValue();
+        return ms.getValue();
     }
 
     private RubyFixnum DAY_MS(final ThreadContext context) {
@@ -535,9 +535,9 @@ public class RubyDate extends RubyObject {
     public static IRubyObject _valid_time_p(ThreadContext context, IRubyObject self,
                                             IRubyObject h, IRubyObject m, IRubyObject s) {
 
-        long hour = normIntValue(h, 24);
-        long min = normIntValue(m, 60);
-        long sec = normIntValue(s, 60);
+        long hour = normIntValue(context, h, 24);
+        long min = normIntValue(context, m, 60);
+        long sec = normIntValue(context, s, 60);
 
         if (valid_time_p(hour, min, sec)) {
             return timeToDayFraction(context, (int) hour, (int) min, (int) sec);
@@ -545,14 +545,10 @@ public class RubyDate extends RubyObject {
         return context.nil;
     }
 
-    private static long normIntValue(IRubyObject val, final int negOffset) {
-        long v;
-        if (val instanceof RubyFixnum) {
-            v = ((RubyFixnum) val).getLongValue();
-        }
-        else {
-            v = val.convertToInteger().getLongValue();
-        }
+    private static long normIntValue(ThreadContext context, IRubyObject val, final int negOffset) {
+        long v = val instanceof RubyFixnum fixnum ?
+                fixnum.getValue() : toLong(context, val);
+
         return (v < 0) ? v + negOffset : v;
     }
 
@@ -1248,7 +1244,7 @@ public class RubyDate extends RubyObject {
         RubyNumeric val = (RubyNumeric) asFixnum(context, DAY_MS).op_mul(context, n);
 
         var res = (RubyArray<?>) val.divmod(context, asFixnum(context, 1));
-        long ms = ((RubyInteger) res.eltInternal(0)).getLongValue();
+        long ms = ((RubyInteger) res.eltInternal(0)).asLong(context);
         RubyNumeric sub = (RubyNumeric) res.eltInternal(1);
 
         RubyNumeric sub_millis = subMillis(context);
@@ -1361,7 +1357,7 @@ public class RubyDate extends RubyObject {
 
     private static int simpleIntDiff(ThreadContext context, IRubyObject n) {
         final int days = toInt(context, n);
-        return n instanceof RubyRational rat && rat.getDenominator().getLongValue() != 1 ?
+        return n instanceof RubyRational rat && rat.getDenominator().asLong(context) != 1 ?
                 days + 1 : // MRI rulez: 1/2 -> 1 (but 0.5 -> 0)
                 days;
     }
@@ -1715,7 +1711,7 @@ public class RubyDate extends RubyObject {
     public static RubyInteger _comp_year69(ThreadContext context, IRubyObject self, IRubyObject year) {
         RubyInteger y = _i(context, self, year);
         if (((RubyString) year).strLength() < 4) {
-            final long yi = y.getLongValue();
+            final long yi = y.asLong(context);
             return asFixnum(context, yi >= 69 ? yi + 1900 : yi + 2000);
         }
         return y;
@@ -2079,7 +2075,7 @@ public class RubyDate extends RubyObject {
             sub = subSpace(context, str, re);
             if (sub instanceof RubyMatchData match) {
                 RubyInteger v = (RubyInteger) ((RubyString) match.at(context, 1)).to_i(context);
-                long vi = v.getLongValue();
+                long vi = v.asLong(context);
                 if (1 <= vi && vi <= 31) hash.fastASet(asSymbol(context, "mday"), v);
             }
         }
@@ -2091,7 +2087,7 @@ public class RubyDate extends RubyObject {
             }
             if (sub instanceof RubyMatchData match) {
                 RubyInteger v = (RubyInteger) ((RubyString) match.at(context, 1)).to_i(context);
-                long vi = v.getLongValue();
+                long vi = v.asLong(context);
                 if (0 <= vi && vi <= 24) hash.fastASet(asSymbol(context, "hour"), v);
             }
         }
@@ -2169,14 +2165,14 @@ public class RubyDate extends RubyObject {
 
             y = (RubyInteger) hashGet(context, hash, "cwyear");
             if (y != null) {
-                long yi = y.getLongValue();
+                long yi = y.asLong(context);
                 if (yi >= 0 && yi <= 99) {
                     set_hash(context, hash, "cwyear", y.op_plus(context, yi >= 69 ? 1900 : 2000));
                 }
             }
             y = (RubyInteger) hashGet(context, hash, "year");
             if (y != null) {
-                long yi = y.getLongValue();
+                long yi = y.asLong(context);
                 if (yi >= 0 && yi <= 99) {
                     set_hash(context, hash, "year", y.op_plus(context, yi >= 69 ? 1900 : 2000));
                 }
@@ -2486,7 +2482,7 @@ public class RubyDate extends RubyObject {
     public int getNanos() {
         final ThreadContext context = getRuntime().getCurrentContext();
         RubyNumeric usec = (RubyNumeric) subMillis(context).op_mul(context, asFixnum(context, 1_000_000));
-        return (int) usec.getLongValue();
+        return usec.asInt(context);
     }
 
     public Date toDate() {

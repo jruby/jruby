@@ -75,19 +75,17 @@ abstract public class AbstractMemory extends MemoryObject {
     }
     
     protected static final int calculateTypeSize(ThreadContext context, IRubyObject sizeArg) {
-        if (sizeArg instanceof RubyFixnum fix) return (int) fix.getLongValue();
-        if (sizeArg instanceof RubySymbol sym) return TypeSizeMapper.getTypeSize(context, sym);
-        if (sizeArg instanceof Type type) return type.getNativeSize();
-
-
-        if (sizeArg instanceof RubyClass && Struct.isStruct(context, (RubyClass) sizeArg)) {
-            return Struct.getStructSize(context, sizeArg);
-        }
-
-        DynamicMethod sizeMethod = sizeArg.getMetaClass().searchMethod("size");
-        if (sizeMethod.isUndefined()) throw argumentError(context, "Invalid size argument");
-
-        return (int) toLong(context, sizeMethod.call(context, sizeArg, sizeArg.getMetaClass(), "size"));
+        return switch (sizeArg) {
+            case RubyFixnum fix -> fix.asInt(context);
+            case RubySymbol sym -> TypeSizeMapper.getTypeSize(context, sym);
+            case Type type -> type.getNativeSize();
+            case RubyClass cls when Struct.isStruct(context, cls) -> Struct.getStructSize(context, sizeArg);
+            default -> {
+                DynamicMethod sizeMethod = sizeArg.getMetaClass().searchMethod("size");
+                if (sizeMethod.isUndefined()) throw argumentError(context, "Invalid size argument");
+                yield toInt(context, sizeMethod.call(context, sizeArg, sizeArg.getMetaClass(), "size"));
+            }
+        };
     }
 
     protected static final RubyArray checkArray(IRubyObject obj) {
@@ -1914,7 +1912,7 @@ abstract public class AbstractMemory extends MemoryObject {
     @JRubyMethod(name = "write_string")
     public IRubyObject write_string(ThreadContext context, IRubyObject strArg, IRubyObject lenArg) {
         ByteList bl = strArg.convertToString().getByteList();
-        getMemoryIO().put(0, bl.getUnsafeBytes(), bl.begin(), Math.min(bl.length(), (int) toLong(context, lenArg)));
+        getMemoryIO().put(0, bl.getUnsafeBytes(), bl.begin(), Math.min(bl.length(), toInt(context, lenArg)));
         return this;
     }
 
@@ -2097,10 +2095,11 @@ abstract public class AbstractMemory extends MemoryObject {
     @JRubyMethod(name = "get")
     public final IRubyObject put(ThreadContext context, IRubyObject typeName, IRubyObject offset) {
         Type type = context.runtime.getFFI().getTypeResolver().findType(context.runtime, typeName);
-        MemoryOp op = MemoryOp.getMemoryOp(type);
-        if (op != null) return op.get(context, getMemoryIO(), toLong(context, offset));
 
-        throw argumentError(context, "undefined type " + typeName);
+        MemoryOp op = MemoryOp.getMemoryOp(type);
+        if (op == null) throw argumentError(context, "undefined type " + typeName);
+
+        return op.get(context, getMemoryIO(), toLong(context, offset));
     }
 
     @JRubyMethod(name = "put")

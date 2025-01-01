@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static org.jruby.api.Access.stringClass;
-import static org.jruby.api.Access.structClass;
 
 public class Create {
     /**
@@ -122,7 +121,7 @@ public class Create {
      * @param <State> a state object for the consumer
      * @param <T> the type of object the Array will hold
      */
-    public static <State, T extends IRubyObject> RubyArray<?> constructArray(ThreadContext context, State state, int length, TriConsumer<ThreadContext, State, RubyArray<T>> populator) {
+    public static <State, T extends IRubyObject> RubyArray<?> newArray(ThreadContext context, State state, int length, TriConsumer<ThreadContext, State, RubyArray<T>> populator) {
         RubyArray rawArray = newRawArray(context, length);
         populator.accept(context, state, rawArray);
         return rawArray.finishRawArray(context);

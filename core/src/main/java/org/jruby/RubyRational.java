@@ -235,7 +235,7 @@ public class RubyRational extends RubyNumeric {
         RubyInteger _num = (RubyInteger) asFixnum(context, num).idiv(context, gcd);
         RubyInteger _den = (RubyInteger) asFixnum(context, den).idiv(context, gcd);
 
-        if (Numeric.CANON && canonicalization && _den.getLongValue() == 1) return _num;
+        if (Numeric.CANON && canonicalization && _den.asLong(context) == 1) return _num;
 
         return newRational(context.runtime, clazz, _num, _den);
     }
@@ -625,12 +625,12 @@ public class RubyRational extends RubyNumeric {
                                         RubyInteger anum, RubyInteger aden, RubyInteger bnum, RubyInteger bden,
                                         final boolean plus) {
         RubyInteger newNum, newDen, g, a, b;
-        if (anum instanceof RubyFixnum && aden instanceof RubyFixnum &&
-            bnum instanceof RubyFixnum && bden instanceof RubyFixnum) {
-            long an = anum.getLongValue();
-            long ad = aden.getLongValue();
-            long bn = bnum.getLongValue();
-            long bd = bden.getLongValue();
+        if (anum instanceof RubyFixnum anumf && aden instanceof RubyFixnum adenf &&
+            bnum instanceof RubyFixnum bnumf && bden instanceof RubyFixnum bdenf) {
+            long an = anumf.getValue();
+            long ad = adenf.getValue();
+            long bn = bnumf.getValue();
+            long bd = bdenf.getValue();
             long ig = i_gcd(ad, bd);
 
             g = asFixnum(context, ig);
@@ -718,12 +718,12 @@ public class RubyRational extends RubyNumeric {
         }
         
         final RubyInteger newNum, newDen;
-        if (anum instanceof RubyFixnum && aden instanceof RubyFixnum &&
-            bnum instanceof RubyFixnum && bden instanceof RubyFixnum) {
-            long an = anum.getLongValue();
-            long ad = aden.getLongValue();
-            long bn = bnum.getLongValue();
-            long bd = bden.getLongValue();
+        if (anum instanceof RubyFixnum anumf && aden instanceof RubyFixnum adenf &&
+            bnum instanceof RubyFixnum bnumf && bden instanceof RubyFixnum bdenf) {
+            long an = anumf.getValue();
+            long ad = adenf.getValue();
+            long bn = bnumf.getValue();
+            long bd = bdenf.getValue();
             long g1 = i_gcd(an, bd);
             long g2 = i_gcd(ad, bn);
             
@@ -938,7 +938,7 @@ public class RubyRational extends RubyNumeric {
 
     public final IRubyObject op_equal(ThreadContext context, RubyInteger other) {
         if (num.isZero(context)) return asBoolean(context, other.isZero(context));
-        if (!(den instanceof RubyFixnum) || den.getLongValue() != 1) return context.fals;
+        if (!(den instanceof RubyFixnum) || den.asLong(context) != 1) return context.fals;
         return f_equal(context, num, other);
     }
 
@@ -1068,7 +1068,7 @@ public class RubyRational extends RubyNumeric {
     @Override
     @JRubyAPI
     public long asLong(ThreadContext context) {
-        return convertToInteger().getLongValue();
+        return convertToInteger().asLong(context);
     }
 
     @Override

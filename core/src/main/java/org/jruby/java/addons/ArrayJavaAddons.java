@@ -106,20 +106,19 @@ public class ArrayJavaAddons {
     private static RubyArray<?> calcDimensions(ThreadContext context,
         final RubyArray<?> array, final RubyArray dims, final int index) {
 
+        var zero = asFixnum(context, 0);
         while ( dims.size() <= index ) {
-            dims.append(context, RubyFixnum.zero(context.runtime) );
+            dims.append(context, zero);
         }
 
-        final long dim = ((RubyFixnum) dims.eltInternal(index)).getLongValue();
+        final long dim = ((RubyFixnum) dims.eltInternal(index)).getValue();
         if ( array.size() > dim ) {
             dims.eltInternalSet(index, asFixnum(context, array.size()));
         }
 
         for ( int i = 0; i < array.size(); i++ ) {
             final IRubyObject element = array.eltInternal(i);
-            if ( element instanceof RubyArray ) {
-                calcDimensions(context, (RubyArray<?>) element, dims, 1);
-            }
+            if ( element instanceof RubyArray ary) calcDimensions(context, ary, dims, 1);
         }
 
         return dims;

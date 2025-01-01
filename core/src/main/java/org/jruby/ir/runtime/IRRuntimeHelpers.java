@@ -322,12 +322,12 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static double unboxFloat(IRubyObject val) {
-        return val instanceof RubyFloat flote ? flote.getValue() : (double) ((RubyFixnum)val).getLongValue();
+        return val instanceof RubyFloat flote ? flote.getValue() : (double) ((RubyFixnum)val).getValue();
     }
 
     @JIT
     public static long unboxFixnum(IRubyObject val) {
-        return val instanceof RubyFloat flote ? (long) flote.getValue() : ((RubyFixnum)val).getLongValue();
+        return val instanceof RubyFloat flote ? (long) flote.getValue() : ((RubyFixnum)val).getValue();
     }
 
     public static boolean flt(double v1, double v2) {

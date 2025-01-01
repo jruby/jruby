@@ -222,7 +222,7 @@ abstract class DateUtils {
         long n; IRubyObject vs;
         switch (of.getMetaClass().getClassIndex()) {
             case INTEGER:
-                long i = ((RubyInteger) of).getLongValue();
+                long i = ((RubyInteger) of).asLong(context);
                 if (i != -1 && i != 0 && i != 1) return INVALID_OFFSET;
 	            return (int) i * DAY_IN_SECONDS;
             case FLOAT:
@@ -237,8 +237,8 @@ abstract class DateUtils {
                 RubyClass date = getDate(context);
                 vs = sites(context).zone_to_diff.call(context, date, date, of);
 
-                if (!(vs instanceof RubyFixnum)) return INVALID_OFFSET;
-                n = ((RubyFixnum) vs).getLongValue();
+                if (!(vs instanceof RubyFixnum fixnum)) return INVALID_OFFSET;
+                n = fixnum.getValue();
                 if (n < -DAY_IN_SECONDS || n > DAY_IN_SECONDS) return INVALID_OFFSET;
                 return (int) n;
 //            default:
@@ -253,22 +253,22 @@ abstract class DateUtils {
                 vs = day_to_sec(context, of);
 
                 if (!(vs instanceof RubyRational)) {
-                    if (!(vs instanceof RubyFixnum)) return INVALID_OFFSET;
-                    n = ((RubyFixnum) vs).getLongValue();
+                    if (!(vs instanceof RubyFixnum vsf)) return INVALID_OFFSET;
+                    n = vsf.getValue();
                     if (n < -DAY_IN_SECONDS || n > DAY_IN_SECONDS) return INVALID_OFFSET;
 		            return (int) n;
                 }
 
-                RubyInteger vn = (RubyInteger) ((RubyRational) vs).getNumerator();
-                RubyInteger vd = (RubyInteger) ((RubyRational) vs).getDenominator();
+                RubyInteger vn = ((RubyRational) vs).getNumerator();
+                RubyInteger vd = ((RubyRational) vs).getDenominator();
 
-                if (vn instanceof RubyFixnum && vd instanceof RubyFixnum && vd.getLongValue() == 1)
-                    n = ((RubyFixnum) vn).getLongValue();
+                if (vn instanceof RubyFixnum vnf && vd instanceof RubyFixnum vdf && vdf.getValue() == 1)
+                    n = vnf.getValue();
                 else {
                     vn = (RubyInteger) ((RubyRational) vs).round(context);
                     //if (!f_eqeq_p(vn, vs)) rb_warning("fraction of offset is ignored");
-                    if (!(vn instanceof RubyFixnum)) return INVALID_OFFSET;
-                    n = ((RubyFixnum) vn).getLongValue();
+                    if (!(vn instanceof RubyFixnum vnf)) return INVALID_OFFSET;
+                    n = vnf.getValue();
                     if (n < -DAY_IN_SECONDS || n > DAY_IN_SECONDS) return INVALID_OFFSET;
                 }
 	            return (int) n;
@@ -399,16 +399,13 @@ abstract class DateUtils {
 
     // static void decode_year(VALUE y, double style, VALUE *nth, int *ry)
     static int decode_year(ThreadContext context, IRubyObject y, final int style, RubyInteger[] nth) {
-        final int period = style < 0 ? CM_PERIOD_GCY : CM_PERIOD_JCY;
-        if (y instanceof RubyFixnum) {
-            long iy, it, inth;
-            iy = ((RubyFixnum) y).getLongValue();
+        final long period = style < 0 ? CM_PERIOD_GCY : CM_PERIOD_JCY;
+        if (y instanceof RubyFixnum yf) {
+            long iy = yf.getValue();
             if (iy < RubyFixnum.MAX - 4712) {
-                it = iy + 4712; /* shift */
-                inth = (it / ((long) period));
-                if (inth != 0) {
-                    it = (it % ((long) period));
-                }
+                long it = iy + 4712; /* shift */
+                long inth = it / period;
+                if (inth != 0) it = it % period;
 
                 nth[0] = asFixnum(context, inth);
                 return (int) it - 4712; /* unshift */

@@ -162,7 +162,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         final int len = array.length;
         if ( len == 0 ) return false;
         if ( obj instanceof RubyFixnum fix) {
-            final long objVal = fix.getLongValue();
+            final long objVal = fix.getValue();
             if ( objVal < Byte.MIN_VALUE || objVal > Byte.MAX_VALUE ) return false;
 
             for (byte b : array) {
@@ -180,7 +180,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         final int len = array.length;
         if ( len == 0 ) return false;
         if (obj instanceof RubyFixnum fix) {
-            final long objVal = fix.getLongValue();
+            final long objVal = fix.getValue();
             if ( objVal < Short.MIN_VALUE || objVal > Short.MAX_VALUE ) return false;
 
             for (short value : array) {
@@ -198,7 +198,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         final int len = array.length;
         if ( len == 0 ) return false;
         if (obj instanceof RubyFixnum fix) {
-            final long objVal = fix.getLongValue();
+            final long objVal = fix.getValue();
             if ( objVal < Integer.MIN_VALUE || objVal > Integer.MAX_VALUE ) return false;
 
             for (int j : array) {
@@ -216,7 +216,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         final int len = array.length;
         if ( len == 0 ) return false;
         if ( obj instanceof RubyFixnum fix) {
-            final long objVal = fix.getLongValue();
+            final long objVal = fix.getValue();
 
             for (long l : array) {
                 if (objVal == l) return true;
@@ -233,7 +233,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         final int len = array.length;
         if ( len == 0 ) return false;
         if (obj instanceof RubyFixnum fix) {
-            final long objVal = fix.getLongValue();
+            final long objVal = fix.getValue();
             if ( objVal < Character.MIN_VALUE || objVal > Character.MAX_VALUE ) return false;
 
             for (char c : array) {
