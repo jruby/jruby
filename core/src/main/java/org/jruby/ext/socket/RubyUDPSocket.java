@@ -77,9 +77,9 @@ import java.nio.channels.UnsupportedAddressTypeException;
 
 import static org.jruby.api.Access.getModule;
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Convert.asInt;
 import static org.jruby.api.Convert.toInt;
-import static org.jruby.api.Create.*;
+import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.runtime.Helpers.extractExceptionOnlyArg;
 

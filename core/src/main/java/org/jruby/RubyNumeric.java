@@ -204,7 +204,7 @@ public class RubyNumeric extends RubyObject {
      */
 
     /** rb_num2int, NUM2INT
-     * if you know it is Integer use {@link org.jruby.api.Convert#asInt(ThreadContext, RubyInteger)}.
+     * if you know it is Integer use {@link org.jruby.api.Convert#toInt(ThreadContext, IRubyObject)}.
      */
     public static int num2int(IRubyObject arg) {
         long num = num2long(arg);

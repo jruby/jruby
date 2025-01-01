@@ -76,9 +76,10 @@ import static jnr.constants.platform.Sock.SOCK_DGRAM;
 import static jnr.constants.platform.Sock.SOCK_STREAM;
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Convert.asInt;
 import static org.jruby.api.Convert.toInt;
-import static org.jruby.api.Create.*;
+import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newEmptyArray;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.ext.socket.Addrinfo.AI_CANONNAME;
 
@@ -679,7 +680,7 @@ public class SocketUtils {
 
             if (serv != null) return serv.getPort();
 
-            return asInt(context, (RubyInteger) portStr.to_i(context));
+            return ((RubyInteger) portStr.to_i(context)).asInt(context);
         }
         return RubyNumeric.fix2int(port);
     }

@@ -81,7 +81,7 @@ public class RubySignalException extends RubyException {
         long _signo;
 
         if (argnum == 2) {
-            _signo = asLong(context, (RubyInteger) sig);
+            _signo = ((RubyInteger) sig).asLong(context);
             if (_signo < 0 || _signo > NSIG.longValue()) throw argumentError(context, "invalid signal number (" + _signo + ")");
 
             sig = argc > 1 ? args[1] : newString(context, RubySignal.signmWithPrefix(RubySignal.signo2signm(_signo)));

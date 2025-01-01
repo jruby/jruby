@@ -8,6 +8,7 @@ import jnr.posix.POSIX;
 import org.jruby.RubySystemCallError;
 import org.jruby.exceptions.SystemCallError;
 import org.jruby.platform.Platform;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.io.Closeable;
@@ -22,6 +23,8 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.jruby.api.Convert.toInt;
 
 /**
 * Created by headius on 5/24/14.
@@ -182,8 +185,8 @@ public class ChannelFD implements Closeable {
                 // We check for EPERM due to GH-6129, and because it has only been seen on WSL inotify file descriptors
                 // we assume that it means this is not a normal file.
                 IRubyObject errno = ((RubySystemCallError) e.getException()).errno();
-                if (errno.isNil()
-                        || errno.convertToInteger().getIntValue() != Errno.EPERM.intValue()) {
+                var context = errno.getRuntime().getCurrentContext();
+                if (errno.isNil() || toInt(context, errno) != Errno.EPERM.intValue()) {
                     // rethrow anything not EPERM
                     throw e;
                 }

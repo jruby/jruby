@@ -427,32 +427,6 @@ public class Convert {
         return RubyFloat.newFloat(context.runtime, value);
     }
 
-    /**
-     * Safely convert a Ruby Integer into a java int value.  Raising if the value will not fit.
-     * @param context the current thread context
-     * @param value the RubyInteger to convert
-     * @return the int value
-     */
-    public static int asInt(ThreadContext context, RubyInteger value) {
-        long num = value.getLongValue();
-
-        return checkInt(context, num);
-    }
-
-    /**
-     * Safely convert a Ruby Integer into a java int value.  Raising if the value will not fit.
-     * @param context the current thread context
-     * @param value the RubyInteger to convert
-     * @return the int value
-     */
-    public static long asLong(ThreadContext context, RubyInteger value) {
-        if (value instanceof RubyBignum) {
-            return big2long((RubyBignum) value);
-        }
-
-        return value.getLongValue();
-    }
-
     // MRI: rb_num2long and FIX2LONG (numeric.c)
     /**
      * Safely convert a Ruby Numeric into a java long value.  Raising if the value will not fit.

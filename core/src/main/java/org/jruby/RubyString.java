@@ -3855,7 +3855,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @JRubyMethod(name = {"[]", "slice"}, writes = BACKREF)
     public IRubyObject op_aref(ThreadContext context, IRubyObject arg) {
         if (arg instanceof RubyFixnum fixnum) {
-            return op_aref(context, asInt(context, fixnum));
+            return op_aref(context, fixnum.asInt(context));
         } else if (arg instanceof RubyRegexp regexp) {
             return subpat(context, regexp);
         } else if (arg instanceof RubyString str) {
@@ -4163,7 +4163,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      */
     @JRubyMethod(name = "[]=", writes = BACKREF)
     public IRubyObject op_aset(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        if (arg0 instanceof RubyFixnum fixnum) return op_aset(context, asInt(context, fixnum), arg1);
+        if (arg0 instanceof RubyFixnum fixnum) return op_aset(context, fixnum.asInt(context), arg1);
         if (arg0 instanceof RubyRegexp regexp) {
             subpatSet(context, regexp, null, arg1);
             return arg1;
@@ -4601,7 +4601,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     /**
      * Split for ext (Java) callers (does not write $~).
-     * @param the thread context
+     * @param context the thread context
      * @param delimiter
      * @param limit
      * @return splited entries

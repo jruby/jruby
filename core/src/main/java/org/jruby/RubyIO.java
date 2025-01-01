@@ -1279,7 +1279,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         if (vmode.isNil())
             oflags = OpenFlags.O_RDONLY.intValue();
         else if (!(intmode = checkToInteger(context, vmode)).isNil())
-            oflags = asInt(context, (RubyInteger) intmode);
+            oflags = ((RubyInteger) intmode).asInt(context);
         else {
             vmode = vmode.convertToString();
             oflags = OpenFile.ioModestrOflags(context, vmode.toString());

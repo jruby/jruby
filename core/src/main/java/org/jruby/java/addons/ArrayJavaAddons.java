@@ -10,7 +10,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Convert.asInt;
 import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Error.typeError;
 
@@ -100,7 +99,7 @@ public class ArrayJavaAddons {
         assert dims instanceof RubyArray;
         assert index instanceof RubyFixnum;
 
-        return calcDimensions(context, (RubyArray<?>) rubyArray, (RubyArray<?>) dims, asInt(context, (RubyFixnum) index));
+        return calcDimensions(context, (RubyArray<?>) rubyArray, (RubyArray<?>) dims, ((RubyFixnum) index).asInt(context));
     }
 
     private static RubyArray<?> calcDimensions(ThreadContext context,

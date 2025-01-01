@@ -45,6 +45,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.EncodingUtils;
 
+import static org.jruby.api.Access.fixnumClass;
 import static org.jruby.api.Access.integerClass;
 import static org.jruby.api.Access.stringClass;
 import static org.jruby.api.Convert.asFixnum;
@@ -287,31 +288,11 @@ public class Sprintf {
             return object;
         }
 
-        @Deprecated
-        IRubyObject get(int index) {
-            return getPositionArg(index);
-        }
-
-        @Deprecated
-        IRubyObject getNth(int formatIndex) {
-            return getPositionArg(formatIndex);
-        }
-
-        @Deprecated
-        int nextInt() {
-            return intValue(next(null));
-        }
-
-        @Deprecated
-        int getNthInt(int formatIndex) {
-            return intValue(get(formatIndex - 1));
-        }
-
-        int intValue(IRubyObject obj) {
-            if (obj instanceof RubyNumeric num) return num.getIntValue();
+        int intValue(ThreadContext context, IRubyObject obj) {
+            if (obj instanceof RubyNumeric num) return num.asInt(context);
 
             // basically just forcing a TypeError here to match MRI
-            obj = TypeConverter.convertToType(obj, obj.getRuntime().getFixnum(), "to_int", true);
+            obj = TypeConverter.convertToType(obj, fixnumClass(context), "to_int", true);
             return (int)((RubyFixnum)obj).getValue();
         }
 
@@ -548,7 +529,7 @@ public class Sprintf {
                 case '*':
                     if ((flags & FLAG_WIDTH) != 0) raiseArgumentError(args,"width given twice");
                     flags |= FLAG_WIDTH;
-                    int[] p_width = GETASTER(args, format, offset, length, true);
+                    int[] p_width = GETASTER(context, args, format, offset, length, true);
                     offset = p_width[0]; width = p_width[1];
                     if (width < 0) {
                         flags |= FLAG_MINUS;
@@ -565,7 +546,7 @@ public class Sprintf {
                     checkOffset(args, ++offset, length, ERR_MALFORMED_DOT_NUM);
                     fchar = format[offset];
                     if (fchar == '*') {
-                        int[] p_prec = GETASTER(args, format, offset, length, false);
+                        int[] p_prec = GETASTER(context, args, format, offset, length, false);
                         offset = p_prec[0]; precision = p_prec[1];
                         if (precision < 0) {
                             flags &= ~FLAG_PRECISION;
@@ -1716,8 +1697,8 @@ public class Sprintf {
         }
     }
 
-    private static int[] GETASTER(final Args args, final byte[] format, int offset, final int length,
-                                  final boolean width) {
+    private static int[] GETASTER(ThreadContext context, final Args args, final byte[] format, int offset,
+                                  final int length, final boolean width) {
         checkOffset(args, ++offset, length, ERR_MALFORMED_STAR_NUM);
 
         final int mark = offset;
@@ -1736,7 +1717,7 @@ public class Sprintf {
             tmp = args.getNextArg();
             offset = mark;
         }
-        return new int[] { offset, args.intValue(tmp) }; // [ offset, prec/width ]
+        return new int[] { offset, args.intValue(context, tmp) }; // [ offset, prec/width ]
     }
 
     private static int extendWidth(Args args, int oldWidth, byte newChar, final String errMessage) {
