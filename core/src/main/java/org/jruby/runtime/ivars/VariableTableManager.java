@@ -48,6 +48,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.specialized.RubyObjectSpecializer;
 import org.jruby.util.ArraySupport;
 
+import static org.jruby.api.Error.nameError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
@@ -208,7 +209,7 @@ public class VariableTableManager {
                     RubyObjectSpecializer.LOOKUP.findGetter(reifiedClass, config.name, fieldType),
                     RubyObjectSpecializer.LOOKUP.findSetter(reifiedClass, config.name, fieldType));
         } catch (NoSuchFieldException e) {
-            throw realClass.getClassRuntime().newNameError("java_field " + config.name + " was marked for @ivar mapping, but wasn't found (was the class reifed already?)", config.name);
+            throw nameError(realClass.getClassRuntime().getCurrentContext(), "java_field " + config.name + " was marked for @ivar mapping, but wasn't found (was the class reifed already?)", config.name);
         } catch (IllegalAccessException e) {
             throw realClass.getClassRuntime().newSecurityError("Error in accessing java_field " +config.name+ ": " + e.getMessage());
         }

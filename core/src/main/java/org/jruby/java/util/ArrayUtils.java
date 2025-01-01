@@ -35,7 +35,7 @@ public class ArrayUtils {
         int oldLength = Array.getLength(original);
         int addLength = Array.getLength(additional);
 
-        ArrayJavaProxy proxy = newProxiedArray(context.runtime, original.getClass().getComponentType(), oldLength + addLength);
+        ArrayJavaProxy proxy = newProxiedArray(context, original.getClass().getComponentType(), oldLength + addLength);
         Object newArray = proxy.getObject();
 
         System.arraycopy(original, 0, newArray, 0, oldLength);
@@ -44,18 +44,28 @@ public class ArrayUtils {
         return proxy;
     }
 
+    @Deprecated(since = "10.0")
     public static ArrayJavaProxy newProxiedArray(Ruby runtime, Class<?> componentType, int size) {
-        return newProxiedArray(runtime, componentType, JavaUtil.getJavaConverter(componentType), size);
+        return newProxiedArray(runtime.getCurrentContext(), componentType, size);
     }
 
+    public static ArrayJavaProxy newProxiedArray(ThreadContext context, Class<?> componentType, int size) {
+        return newProxiedArray(context, componentType, JavaUtil.getJavaConverter(componentType), size);
+    }
+
+    @Deprecated(since = "10.0")
     public static ArrayJavaProxy newProxiedArray(Ruby runtime, Class<?> componentType, JavaUtil.JavaConverter converter, int size) {
+        return newProxiedArray(runtime.getCurrentContext(), componentType, converter, size);
+    }
+
+    public static ArrayJavaProxy newProxiedArray(ThreadContext context, Class<?> componentType, JavaUtil.JavaConverter converter, int size) {
         final Object array = Array.newInstance(componentType, size);
-        RubyClass proxyClass = (RubyClass) Java.getProxyClass(runtime, array.getClass());
-        return new ArrayJavaProxy(runtime, proxyClass, array, converter);
+        RubyClass proxyClass = (RubyClass) Java.getProxyClass(context, array.getClass());
+        return new ArrayJavaProxy(context.runtime, proxyClass, array, converter);
     }
 
     public static IRubyObject emptyJavaArrayDirect(ThreadContext context, Class componentType) {
-        return newProxiedArray(context.runtime, componentType, 0);
+        return newProxiedArray(context, componentType, 0);
     }
 
     public static IRubyObject javaArraySubarrayDirect(ThreadContext context, Object fromArray, int index, int size) {
@@ -66,7 +76,7 @@ public class ArrayUtils {
             size = actualLength - index;
         }
 
-        ArrayJavaProxy proxy = ArrayUtils.newProxiedArray(context.runtime, fromArray.getClass().getComponentType(), size);
+        ArrayJavaProxy proxy = ArrayUtils.newProxiedArray(context, fromArray.getClass().getComponentType(), size);
         Object newArray = proxy.getObject();
         System.arraycopy(fromArray, index, newArray, 0, size);
 
@@ -77,7 +87,7 @@ public class ArrayUtils {
         final int oldLength = Array.getLength(original);
         final int addLength = RubyFixnum.fix2int(Helpers.invoke(context, additional, "length"));
 
-        ArrayJavaProxy proxy = ArrayUtils.newProxiedArray(context.runtime, original.getClass().getComponentType(), oldLength + addLength);
+        ArrayJavaProxy proxy = ArrayUtils.newProxiedArray(context, original.getClass().getComponentType(), oldLength + addLength);
 
         System.arraycopy(original, 0, proxy.getObject(), 0, oldLength);
 

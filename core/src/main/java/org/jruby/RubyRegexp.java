@@ -90,6 +90,7 @@ import static org.jruby.api.Create.newHash;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.indexError;
 import static org.jruby.api.Error.runtimeError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.api.Warn.warn;
@@ -1829,7 +1830,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                         try {
                             no = pattern.nameToBackrefNumber(sBytes, name, nameEnd, regs);
                         } catch (JOniException je) {
-                            throw context.runtime.newIndexError(je.getMessage());
+                            throw indexError(context, je.getMessage());
                         }
                         p = s = nameEnd + clen[0];
                         break;

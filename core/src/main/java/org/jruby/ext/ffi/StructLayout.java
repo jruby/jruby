@@ -887,9 +887,9 @@ public final class StructLayout extends Type {
                     || type.getComponentType() instanceof StructByValue);
         }
 
-        private long getOffset(int index) {
+        private long getOffset(ThreadContext context, int index) {
             if (index < 0 || (index >= arrayType.length() && arrayType.length() > 0)) {
-                throw getRuntime().newIndexError("index " + index + " out of bounds");
+                throw indexError(context, "index " + index + " out of bounds");
             }
 
             return index * (long) arrayType.getComponentType().getNativeSize();
@@ -901,7 +901,7 @@ public final class StructLayout extends Type {
             if (valueCache != null && (obj = valueCache[index]) != null) {
                 return obj;
             }
-            putCachedValue(index, obj = aio.get(context, ptr, getOffset(index)));
+            putCachedValue(index, obj = aio.get(context, ptr, getOffset(context, index)));
             
             return obj;
         }
@@ -926,7 +926,7 @@ public final class StructLayout extends Type {
             
             putCachedValue(idx, value);
             
-            aio.put(context, ptr, getOffset(idx), value);
+            aio.put(context, ptr, getOffset(context, idx), value);
             
             return value;
         }
@@ -1276,14 +1276,14 @@ public final class StructLayout extends Type {
                 } else if (valueLen == arrayLen) {
                     ptr.getMemoryIO().put(m.offset, bl.getUnsafeBytes(), bl.begin(), valueLen);
                 } else {
-                    throw context.runtime.newIndexError("String is longer (" + valueLen +
+                    throw indexError(context, "String is longer (" + valueLen +
                             " bytes) than the char array (" + arrayLen + " bytes)");
                 }
             } else if (false) {
                 RubyArray ary = value.convertToArray();
                 int count = ary.size();
                 if (count > arrayType.length()) {
-                    throw context.runtime.newIndexError("array too big");
+                    throw indexError(context, "array too big");
                 }
                 AbstractMemory memory = (AbstractMemory) ptr;
 

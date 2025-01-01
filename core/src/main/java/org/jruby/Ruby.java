@@ -1473,7 +1473,7 @@ public final class Ruby implements Constantizable {
         if (!(obj instanceof RubyClass klazz)) throw typeError(context, str(this, ids(this, id), " is not a class"));
 
         if (klazz.getSuperClass().getRealClass() != superClass) {
-            throw newNameError(str(this, ids(this, id), " is already defined"), asSymbol(context, id));
+            throw nameError(context, str(this, ids(this, id), " is already defined"), asSymbol(context, id));
         }
         // If we define a class in Ruby, but later want to allow it to be defined in Java, the allocator needs to be updated
         if (klazz.getAllocator() != allocator) klazz.allocator(allocator);
@@ -3670,6 +3670,13 @@ public final class Ruby implements Constantizable {
         return newRaiseException(getArgumentError(), message);
     }
 
+    /**
+     * @param got
+     * @param expected
+     * @return
+     * @deprecated Use {@link org.jruby.api.Error#argumentError(ThreadContext, int, int)} instead.
+     */
+    @Deprecated(since = "10.0")
     public RaiseException newArgumentError(int got, int expected) {
         return newArgumentError(got, expected, expected);
     }
@@ -3684,10 +3691,12 @@ public final class Ruby implements Constantizable {
         }
     }
 
+    @Deprecated(since = "10.0")
     public RaiseException newArgumentError(String name, int got, int expected) {
         return newArgumentError(name, got, expected, expected);
     }
 
+    @Deprecated(since = "10.0")
     public RaiseException newArgumentError(String name, int got, int min, int max) {
         if (min == max) {
             return newRaiseException(getArgumentError(), "wrong number of arguments (given " + got + ", expected " + min + ")");
@@ -4202,17 +4211,20 @@ public final class Ruby implements Constantizable {
     /**
      * Construct a NameError with a pre-formatted message and name.
      *
-     * This is the same as calling {@link #newNameError(String, String, Throwable)} with a null
-     * originating exception.
-     *
      * @param message the pre-formatted message for the error
      * @param name the name that failed
      * @return a new NameError
+     * @deprecated Use {@link org.jruby.api.Error#nameError(ThreadContext, String, String)}
      */
+    @Deprecated(since = "10.0")
     public RaiseException newNameError(String message, String name) {
-        return newNameError(message, name, null);
+        return newNameError(message, name, null, false);
     }
 
+    /**
+     * @deprecated Use {@link org.jruby.api.Error#nameError(ThreadContext, String, String)}
+     */
+    @Deprecated(since = "10.0")
     public RaiseException newNameError(String message, IRubyObject name) {
         return newNameError(message, name, (Throwable) null, false);
     }
@@ -4228,7 +4240,9 @@ public final class Ruby implements Constantizable {
      * @param name the name that failed
      * @param origException the original exception, or null if none
      * @return a new NameError
+     * @deprecated Use {@link org.jruby.api.Error#nameError(ThreadContext, String, String, Throwable)} instead.
      */
+    @Deprecated(since = "10.0")
     public RaiseException newNameError(String message, String name, Throwable origException) {
         return newNameError(message, name, origException, false);
     }

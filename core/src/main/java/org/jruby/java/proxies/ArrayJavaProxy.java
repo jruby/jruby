@@ -21,6 +21,7 @@ import org.jruby.util.RubyStringBuilder;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.indexError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.javasupport.ext.JavaLang.Character.inspectCharValue;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
@@ -47,20 +48,25 @@ public final class ArrayJavaProxy extends JavaProxy {
                 tap(c -> c.singletonClass(context).addMethod(context, "new", new ArrayNewMethod(c.singletonClass(context), Visibility.PUBLIC)));
     }
 
+    @Deprecated(since = "10.0")
     public static ArrayJavaProxy newArray(final Ruby runtime, final Class<?> elementType, final int... dimensions) {
+        return newArray(runtime.getCurrentContext(), elementType, dimensions);
+    }
+
+    public static ArrayJavaProxy newArray(ThreadContext context, final Class<?> elementType, final int... dimensions) {
         final Object array;
         try {
             array = Array.newInstance(elementType, dimensions);
         } catch (IllegalArgumentException e) {
-            throw argumentError(runtime.getCurrentContext(), "can not create " + dimensions.length + " dimensional array");
+            throw argumentError(context, "can not create " + dimensions.length + " dimensional array");
         }
-        return new ArrayJavaProxy(runtime, Java.getProxyClassForObject(runtime, array), array);
+        return new ArrayJavaProxy(context.runtime, Java.getProxyClassForObject(context, array), array);
     }
 
     @Override
     @Deprecated
     protected org.jruby.javasupport.JavaArray asJavaObject(final Object array) {
-        return new org.jruby.javasupport.JavaArray(getRuntime(), array);
+        return new org.jruby.javasupport.JavaArray(getCurrentContext().runtime, array);
     }
 
     @Deprecated
@@ -478,7 +484,7 @@ public final class ArrayJavaProxy extends JavaProxy {
 
     @JRubyMethod(name = "component_type")
     public IRubyObject component_type(ThreadContext context) {
-        return Java.getProxyClass(context.runtime, getComponentType());
+        return Java.getProxyClass(context, getComponentType());
     }
 
     private static final byte[] END_BRACKET_COLON_SPACE = new byte[] { ']', ':', ' ' };
@@ -497,7 +503,7 @@ public final class ArrayJavaProxy extends JavaProxy {
 
         final Object[] ary = (Object[]) getObject();
 
-        RubyModule type = Java.getProxyClass(runtime, componentClass);
+        RubyModule type = Java.getProxyClass(context, componentClass);
         RubyString buf = inspectPrefixTypeOnly(context, type);
         RubyStringBuilder.cat(runtime, buf, BEG_BRACKET); // [
         RubyStringBuilder.cat(runtime, buf, ConvertBytes.intToCharBytes(ary.length));
@@ -823,7 +829,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         int first = castAsFixnum(context, rFirst, "Only Integer ranges supported").asInt(context);
         int length = castAsFixnum(context, rLength, "Only Integer ranges supported").asInt(context);
 
-        if (length > arrayLength) throw context.runtime.newIndexError("length specified is longer than array");
+        if (length > arrayLength) throw indexError(context, "length specified is longer than array");
         if (length < 0) return context.nil;
 
         first = first >= 0 ? first : arrayLength + first;
@@ -836,7 +842,7 @@ public final class ArrayJavaProxy extends JavaProxy {
     private IRubyObject subarrayProxy(ThreadContext context, Object ary, final int aryLength, int index, int size) {
         if (index + size > aryLength) size = aryLength - index;
 
-        ArrayJavaProxy proxy = ArrayUtils.newProxiedArray(context.runtime, ary.getClass().getComponentType(), converter, size);
+        ArrayJavaProxy proxy = ArrayUtils.newProxiedArray(context, ary.getClass().getComponentType(), converter, size);
         System.arraycopy(ary, index, proxy.getObject(), 0, size);
 
         return proxy;

@@ -125,7 +125,7 @@ public class JRubyUtilLibrary implements Library {
      */
     @JRubyMethod(meta = true)
     public static IRubyObject load_java_class(ThreadContext context, IRubyObject recv, IRubyObject name) {
-        Class<?> klass = Java.getJavaClass(context.runtime, name.convertToString().asJavaString());
+        Class<?> klass = Java.getJavaClass(context, name.convertToString().asJavaString());
         return Java.getInstance(context.runtime, klass);
     }
 
@@ -235,7 +235,7 @@ public class JRubyUtilLibrary implements Library {
 
     private static boolean loadExtension(ThreadContext context, final String className) {
         var runtime = context.runtime;
-        Class<?> clazz = Java.getJavaClass(runtime, className);
+        Class<?> clazz = Java.getJavaClass(context, className);
         // 1. BasicLibraryService interface
         if (BasicLibraryService.class.isAssignableFrom(clazz)) {
             try {

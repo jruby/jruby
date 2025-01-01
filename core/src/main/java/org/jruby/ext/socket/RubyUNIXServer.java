@@ -48,6 +48,7 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineClass;
 
@@ -120,7 +121,7 @@ public class RubyUNIXServer extends RubyUNIXSocket {
                     UnixSocketChannel socketChannel = ((UnixServerSocketChannel) selectable).accept();
 
                     if (socketChannel == null) {
-                        if (!ex) return runtime.newSymbol("wait_readable");
+                        if (!ex) return asSymbol(context, "wait_readable");
                         throw runtime.newErrnoEAGAINReadableError("accept(2) would block");
                     }
 
@@ -136,7 +137,7 @@ public class RubyUNIXServer extends RubyUNIXSocket {
 
             } catch (IOException ioe) {
                 if (ioe.getMessage().equals("accept failed: Resource temporarily unavailable")) {
-                    if (!ex) return runtime.newSymbol("wait_readable");
+                    if (!ex) return asSymbol(context, "wait_readable");
                     throw runtime.newErrnoEAGAINReadableError("accept");
                 }
 

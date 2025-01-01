@@ -931,12 +931,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     // MRI: rb_ary_store
     @JRubyAPI
     public IRubyObject store(ThreadContext context, long index, IRubyObject value) {
-        if (index < 0 && (index += realLength) < 0) {
-            throw context.runtime.newIndexError("index " + (index - realLength) + " out of array");
-        }
-        if (index >= Integer.MAX_VALUE) {
-            throw context.runtime.newIndexError("index " + index  + " too big");
-        }
+        if (index < 0 && (index += realLength) < 0) throw indexError(context, "index " + (index - realLength) + " out of array");
+        if (index >= Integer.MAX_VALUE) throw indexError(context, "index " + index  + " too big");
 
         modify(context);
 
@@ -963,7 +959,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (newLength < ARRAY_DEFAULT_SIZE) newLength = ARRAY_DEFAULT_SIZE;
 
         newLength += index;
-        if (newLength >= Integer.MAX_VALUE) throw context.runtime.newIndexError("index " + index  + " too big");
+        if (newLength >= Integer.MAX_VALUE) throw indexError(context, "index " + index  + " too big");
 
         realloc(context, (int) newLength, valuesLength);
     }
@@ -1046,7 +1042,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             int index = toInt(context, args[i]);
             // FIXME: lookup the bounds part of this in error message??
             if (index >= arraySize) {
-                if (!block.isGiven()) throw context.runtime.newIndexError("index " + index + " outside of array bounds: 0...0");
+                if (!block.isGiven()) throw indexError(context, "index " + index + " outside of array bounds: 0...0");
                 result.append(context, block.yield(context, asFixnum(context, index)));
             } else {
                 result.append(context, eltOk(index));
@@ -1104,9 +1100,9 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     }
 
     private void splice(ThreadContext context, int beg, int len, IRubyObject rpl) {
-        if (len < 0) throw context.runtime.newIndexError("negative length (" + len + ")");
-        if (beg < 0 && (beg += realLength) < 0)
-            throw context.runtime.newIndexError("index " + (beg - realLength) + " out of array");
+        if (len < 0) throw indexError(context, "negative length (" + len + ")");
+        if (beg < 0 && (beg += realLength) < 0) throw indexError(context, "index " + (beg - realLength) + " out of array");
+
         final RubyArray rplArr;
         final int rlen;
 
@@ -1129,8 +1125,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      *
      */
     private void splice(ThreadContext context, int beg, int len, final RubyArray rplArr, final int rlen) {
-        if (len < 0) throw context.runtime.newIndexError("negative length (" + len + ")");
-        if (beg < 0 && (beg += realLength) < 0) throw context.runtime.newIndexError("index " + (beg - realLength) + " out of array");
+        if (len < 0) throw indexError(context, "negative length (" + len + ")");
+        if (beg < 0 && (beg += realLength) < 0) indexError(context, "index " + (beg - realLength) + " out of array");
 
         unpack(context);
         modify(context);
@@ -1327,8 +1323,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                     result[j] = newBlankArray(context, alen);
                 }
             } else if (elen != tmp.realLength) {
-                throw context.runtime.newIndexError("element size differs (" + tmp.realLength
-                        + " should be " + elen + ")");
+                throw indexError(context, "element size differs (" + tmp.realLength + " should be " + elen + ")");
             }
             for (int j = 0; j < elen; j++) {
                 ((RubyArray<?>) result[j]).storeInternal(context, i, tmp.elt(j));
@@ -1551,7 +1546,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         modify(context);
         int valuesLength = values.length - begin;
         if (realLength == valuesLength) {
-            if (realLength == Integer.MAX_VALUE) throw context.runtime.newIndexError("index " + Integer.MAX_VALUE + " too big");
+            if (realLength == Integer.MAX_VALUE) throw indexError(context, "index " + Integer.MAX_VALUE + " too big");
 
             long newLength = valuesLength + (valuesLength >> 1);
             if (newLength > Integer.MAX_VALUE) {
@@ -1871,9 +1866,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     // stand in method for checkInt as it raises the wrong type of 
     // exception to mri
     private int checkLongForInt(ThreadContext context, long value) {
-        if (((int)value) != value) {
-            throw context.runtime.newIndexError(String.format("index %d is too big", value));
-        }
+        if (((int)value) != value) throw indexError(context, String.format("index %d is too big", value));
+
         return (int)value;
     }
 

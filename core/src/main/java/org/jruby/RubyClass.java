@@ -1660,7 +1660,7 @@ public class RubyClass extends RubyModule {
                 // setAllocator(ConcreteJavaProxy.ALLOCATOR); // this should be already set
                 // Allocator "set" via clinit {@link JavaProxyClass#setProxyClassReified()}
 
-                this.setInstanceVariable("@java_class", Java.wrapJavaObject(runtime, result));
+                this.setInstanceVariable("@java_class", Java.wrapJavaObject(context, result));
                 JavaProxy.setJavaClass(this, result);
                 reifiedClassJava = Boolean.TRUE;
             } else {

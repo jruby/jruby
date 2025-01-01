@@ -296,6 +296,7 @@ public final class EncodingService {
         return findEncodingCommon(((RubyString) arg).getByteList(), error);
     }
 
+    @Deprecated(since = "10.0")
     private Encoding getEncodingFromNKFName(final String name) {
         HashEntryIterator hei = encodings.entryIterator();
         while (hei.hasNext()) {

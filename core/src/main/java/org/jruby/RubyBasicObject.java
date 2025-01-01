@@ -101,6 +101,7 @@ import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Create.newRawArray;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.nameError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.api.Warn.warn;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
@@ -2468,7 +2469,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             }
         }
         var context = getRuntime().getCurrentContext();
-        throw context.runtime.newNameError(str(context.runtime, "undefined method '", symbol,  "' for '", inspect(context), "'"), symbol);
+        throw nameError(context, str(context.runtime, "undefined method '", symbol,  "' for '", inspect(context), "'"), symbol);
     }
 
     /** rb_obj_method

@@ -123,12 +123,12 @@ public class JRubyLibrary implements Library {
      */
     @JRubyMethod(module = true)
     public static IRubyObject reference0(ThreadContext context, IRubyObject recv, IRubyObject obj) {
-        return Java.wrapJavaObject(context.runtime, obj);
+        return Java.wrapJavaObject(context, obj);
     }
 
     @JRubyMethod(module = true)
     public static IRubyObject runtime(ThreadContext context, IRubyObject recv) {
-        return Java.wrapJavaObject(context.runtime, context.runtime);
+        return Java.wrapJavaObject(context, context.runtime);
     }
 
     /**
@@ -174,7 +174,7 @@ public class JRubyLibrary implements Library {
             loader = JavaUtil.unwrapJavaObject(args[0]);
         }
         java.lang.Thread.currentThread().setContextClassLoader(loader);
-        return Java.wrapJavaObject(context.runtime, loader); // reference0
+        return Java.wrapJavaObject(context, loader); // reference0
     }
 
     @JRubyMethod(name = "security_restricted?", module = true)
@@ -209,13 +209,13 @@ public class JRubyLibrary implements Library {
     @JRubyMethod(module = true, name = "parse", alias = "ast_for", required = 1, optional = 3, checkArity = false)
     public static IRubyObject parse(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         // def parse(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, lineno = 0, &block)
-        return Java.wrapJavaObject(context.runtime, parseImpl(context, args, block).getAST());
+        return Java.wrapJavaObject(context, parseImpl(context, args, block).getAST());
     }
 
     @JRubyMethod(module = true, name = "parse_result", required = 1, optional = 3, checkArity = false)
     public static IRubyObject parse_result(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         // def parse(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, lineno = 0, &block)
-        return Java.wrapJavaObject(context.runtime, parseImpl(context, args, block));
+        return Java.wrapJavaObject(context, parseImpl(context, args, block));
     }
 
     private static ParseResult parseImpl(ThreadContext context, IRubyObject[] args, Block block) {
@@ -261,7 +261,7 @@ public class JRubyLibrary implements Library {
     @JRubyMethod(module = true, name = "compile_ir", required = 1, optional = 3, checkArity = false)
     public static IRubyObject compile_ir(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         // def compile_ir(content = nil, filename = DEFAULT_FILENAME, extra_position_info = false, &block)
-        return Java.wrapJavaObject(context.runtime, compileIR(context, args, block));
+        return Java.wrapJavaObject(context, compileIR(context, args, block));
     }
 
     private static IRScriptBody compileIR(ThreadContext context, IRubyObject[] args, Block block) {

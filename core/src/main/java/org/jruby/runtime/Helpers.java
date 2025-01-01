@@ -95,6 +95,7 @@ import static org.jruby.api.Convert.toInteger;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.nameError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.api.Warn.warn;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_EMPTY;
@@ -1345,7 +1346,7 @@ public class Helpers {
         if (klass == null) {
             if (name != null) {
                 Ruby runtime = context.runtime;
-                throw runtime.newNameError(str(runtime, "superclass method '", ids(runtime, name), "' disabled"), name);
+                throw nameError(context, str(runtime, "superclass method '", ids(runtime, name), "' disabled"), name);
             }
         }
         if (name == null) {

@@ -314,7 +314,7 @@ public class RubyProc extends RubyObject implements DataType {
 
     private static IRubyObject[] checkArityForLambda(ThreadContext context, Block.Type type, BlockBody blockBody, IRubyObject... args) {
         if (type == Block.Type.LAMBDA) {
-            blockBody.getSignature().checkArity(context.runtime, args);
+            blockBody.getSignature().checkArity(context, args);
         }
 
         return args;

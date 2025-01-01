@@ -60,6 +60,7 @@ import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.nameError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.javasupport.JavaUtil.convertJavaToUsableRubyObject;
 import static org.jruby.javasupport.JavaUtil.isJavaObject;
@@ -474,7 +475,7 @@ public abstract class JavaLang {
         @JRubyMethod(name = "ruby_class")
         public static IRubyObject proxy_class(final ThreadContext context, final IRubyObject self) {
             final java.lang.Class klass = unwrapJavaObject(self);
-            return Java.getProxyClass(context.runtime, klass);
+            return Java.getProxyClass(context, klass);
         }
 
         @JRubyMethod
@@ -685,7 +686,7 @@ public abstract class JavaLang {
         @JRubyMethod
         public static IRubyObject extend_proxy(final ThreadContext context, IRubyObject self, IRubyObject extender) {
             java.lang.Class<?> klass = Java.unwrapClassProxy(self);
-            RubyModule proxy = Java.getProxyClass(context.runtime, klass);
+            RubyModule proxy = Java.getProxyClass(context, klass);
             try {
                 return extender.callMethod(context, "extend_proxy", proxy);
             } catch (NoMethodError ex) {
@@ -713,7 +714,7 @@ public abstract class JavaLang {
                 return Java.getInstance(context.runtime, method); // a JavaMethod like
             } catch (NoSuchMethodException e) {
                 final Ruby runtime = context.runtime;
-                throw runtime.newNameError(undefinedMethodMessage(runtime, ids(runtime, methodName), ids(runtime, klass.getName()), false), methodName);
+                throw nameError(context, undefinedMethodMessage(runtime, ids(runtime, methodName), ids(runtime, klass.getName()), false), methodName);
             }
         }
 
@@ -740,19 +741,16 @@ public abstract class JavaLang {
             Arity.checkArgumentCount(context, args, 1, -1);
 
             final java.lang.Class klass = unwrapJavaObject(self);
-
             final java.lang.String methodName = args[0].asJavaString();
-
             java.lang.Class<?>[] argumentTypes = ClassUtils.getArgumentTypes(context, args, 1);
-
             AccessibleObject callable = ClassUtils.getMatchingCallable(klass, methodName, argumentTypes);
 
-            if ( callable != null ) {
-                return Java.getInstance(context.runtime, callable); // a JavaMethod or JavaConstructor like
+            if (callable == null) {
+                final Ruby runtime = context.runtime;
+                throw nameError(context, undefinedMethodMessage(runtime, ids(runtime, methodName), ids(runtime, klass.getName()), false), methodName);
             }
 
-            final Ruby runtime = context.runtime;
-            throw runtime.newNameError(undefinedMethodMessage(runtime, ids(runtime, methodName), ids(runtime, klass.getName()), false), methodName);
+            return Java.getInstance(context.runtime, callable); // a JavaMethod or JavaConstructor like
         }
 
         @SuppressWarnings("deprecation")
@@ -806,7 +804,7 @@ public abstract class JavaLang {
                 for (int i = len; --i >= 0; ) {
                     dimensions[i] = Convert.castAsInteger(context, aryLengths[i]).asInt(context);
                 }
-                return ArrayJavaProxy.newArray(context.runtime, klass, dimensions);
+                return ArrayJavaProxy.newArray(context, klass, dimensions);
             }
 
             throw argumentError(context, "invalid length or dimensions specifier for java array - must be Integer or Array of Integer");

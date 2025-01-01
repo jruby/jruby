@@ -2175,7 +2175,7 @@ public class IRRuntimeHelpers {
                     args = toAry(context, args);
                 }
 
-                sig.checkArity(context.runtime, args);
+                sig.checkArity(context, args);
                 return args;
             case PROC:
                 return prepareProcArgs(context, block, args);
@@ -2231,7 +2231,7 @@ public class IRRuntimeHelpers {
     public static IRubyObject[] prepareNoBlockArgs(ThreadContext context, Block block, IRubyObject[] args) {
         if (args == null) args = IRubyObject.NULL_ARRAY;
 
-        if (block.type == LAMBDA) block.getSignature().checkArity(context.runtime, args);
+        if (block.type == LAMBDA) block.getSignature().checkArity(context, args);
 
         return args;
     }
@@ -2242,7 +2242,7 @@ public class IRRuntimeHelpers {
 
         switch (block.type) {
             case LAMBDA:
-                block.getBody().getSignature().checkArity(context.runtime, args);
+                block.getBody().getSignature().checkArity(context, args);
                 return args;
             case PROC:
                 if (args.length == 0) {
@@ -2264,7 +2264,7 @@ public class IRRuntimeHelpers {
 
         switch (block.type) {
             case LAMBDA:
-                block.getBody().getSignature().checkArity(context.runtime, args);
+                block.getBody().getSignature().checkArity(context, args);
                 return args;
             case PROC:
                 return prepareProcArgs(context, block, args);

@@ -14,6 +14,7 @@ import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
 
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.Arity.UNLIMITED_ARGUMENTS;
 
 /**
@@ -350,20 +351,25 @@ public class Signature {
         return "signature(pre=" + pre + ",opt=" + opt + ",post=" + post + ",rest=" + rest + ",kwargs=" + kwargs + ",kwreq=" + requiredKwargs + ",kwrest=" + keyRest + ")";
     }
 
+    @Deprecated(since = "10.0")
     public void checkArity(Ruby runtime, IRubyObject[] args) {
+        checkArity(runtime.getCurrentContext(), args);
+    }
+
+    public void checkArity(ThreadContext context, IRubyObject[] args) {
         if (args.length < required()) {
-            throw runtime.newArgumentError(args.length, required(), hasRest() ? UNLIMITED_ARGUMENTS : (required() + opt));
+            throw argumentError(context, args.length, required(), hasRest() ? UNLIMITED_ARGUMENTS : (required() + opt));
         }
         if (rest == Rest.NONE || rest == Rest.ANON) {
             // no rest, so we have a maximum
             if (args.length > required() + opt()) {
-                if (hasKwargs() && !TypeConverter.checkHashType(runtime, args[args.length - 1]).isNil()) {
+                if (hasKwargs() && !TypeConverter.checkHashType(context.runtime, args[args.length - 1]).isNil()) {
                     // we have kwargs and a potential kwargs hash, check with length - 1
                     if (args.length - 1 > required() + opt()) {
-                        throw runtime.newArgumentError(args.length, required(), hasRest() ? UNLIMITED_ARGUMENTS : (required() + opt));
+                        throw argumentError(context, args.length, required(), hasRest() ? UNLIMITED_ARGUMENTS : (required() + opt));
                     }
                 } else {
-                    throw runtime.newArgumentError(args.length, required(), hasRest() ? UNLIMITED_ARGUMENTS : (required() + opt));
+                    throw argumentError(context, args.length, required(), hasRest() ? UNLIMITED_ARGUMENTS : (required() + opt));
                 }
             }
         }

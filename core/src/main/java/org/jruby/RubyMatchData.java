@@ -498,10 +498,10 @@ public class RubyMatchData extends RubyObject {
             return pattern.nameToBackrefNumber(value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), regs);
         } catch (JOniException je) {
             if (je instanceof ValueException) {
-                throw context.runtime.newIndexError(str(context.runtime, "undefined group name reference: ", newString(context, value)));
+                throw indexError(context, str(context.runtime, "undefined group name reference: ", newString(context, value)));
             }
             // FIXME: I think we could only catch ValueException here, but someone needs to audit that.
-            throw context.runtime.newIndexError(je.getMessage());
+            throw indexError(context, je.getMessage());
         }
     }
 
@@ -556,7 +556,7 @@ public class RubyMatchData extends RubyObject {
     }
 
     private int nameToBackrefError(ThreadContext context, String name) {
-        throw context.runtime.newIndexError("undefined group name reference " + name);
+        throw indexError(context, "undefined group name reference " + name);
     }
 
     // MRI: match_ary_subseq
@@ -787,7 +787,7 @@ public class RubyMatchData extends RubyObject {
 
     private void backrefNumberCheck(ThreadContext context, int i) {
         if (i < 0 || (regs == null ? 1 : regs.getNumRegs()) <= i) {
-            throw context.runtime.newIndexError("index " + i + " out of matches");
+            throw indexError(context, "index " + i + " out of matches");
         }
     }
 

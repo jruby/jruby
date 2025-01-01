@@ -20,6 +20,7 @@ import java.util.function.Predicate;
 import org.jruby.AbstractRubyMethod;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.RubyMethod;
@@ -61,7 +62,9 @@ import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.castAsModule;
 import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.newEmptyArray;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineClass;
+import static org.jruby.api.Error.nameError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.api.Warn.warn;
 import static org.jruby.runtime.Helpers.arrayOf;
@@ -91,7 +94,7 @@ public class JavaProxy extends RubyObject {
         final Object value = JavaUtil.unwrapJava(object, null);
 
         if (value == null) return context.nil;
-        if (value instanceof Class clazz) return Java.getProxyClass(context.runtime, clazz);
+        if (value instanceof Class clazz) return Java.getProxyClass(context, clazz);
 
         return value.getClass().isArray() ?
                 new ArrayJavaProxy(context.runtime, Access.getClass(context, "ArrayJavaProxy"), value) :
@@ -119,8 +122,13 @@ public class JavaProxy extends RubyObject {
         setJavaClass(target.getClassRuntime(), target, javaClass);
     }
 
+    @Deprecated(since = "10.0")
     public static void setJavaClass(final IRubyObject target, final Class<?> javaClass) {
-        setJavaClass(target.getRuntime(), target.getInternalVariables(), javaClass);
+        setJavaClass(((RubyBasicObject) target).getCurrentContext(), target, javaClass);
+    }
+
+    public static void setJavaClass(ThreadContext context, final IRubyObject target, final Class<?> javaClass) {
+        setJavaClass(context.runtime, target.getInternalVariables(), javaClass);
     }
 
     static void setJavaClass(final Ruby runtime, final InternalVariables target, final Class<?> javaClass) {
@@ -194,7 +202,7 @@ public class JavaProxy extends RubyObject {
             return new ArrayJavaProxyCreator(context, type, args); // e.g. Byte[64]
         }
         final Class<?> arrayType = Array.newInstance(type, 0).getClass();
-        return Java.getProxyClass(context.runtime, arrayType);
+        return Java.getProxyClass(context, arrayType);
     }
 
     @JRubyMethod(meta = true)
@@ -342,7 +350,7 @@ public class JavaProxy extends RubyObject {
     }
 
     private static RaiseException undefinedFieldError(ThreadContext context, String javaClassName, String name) {
-        return context.runtime.newNameError("undefined field '" + name + "' for class '" + javaClassName + "'", name);
+        return nameError(context, "undefined field '" + name + "' for class '" + javaClassName + "'", name);
     }
 
     @JRubyMethod(meta = true, rest = true)
@@ -450,18 +458,22 @@ public class JavaProxy extends RubyObject {
         return getRubyMethod(context, name, argTypesClasses);
     }
 
-    @JRubyMethod
+    @Deprecated(since = "10.0")
     public IRubyObject marshal_dump() {
-        if ( ! Serializable.class.isAssignableFrom(object.getClass()) ) {
-            throw typeError(getRuntime().getCurrentContext(), "Java type is not serializable, cannot be marshaled " + getJavaClass());
+        return marshal_dump(getCurrentContext());
+    }
+
+    @JRubyMethod
+    public IRubyObject marshal_dump(ThreadContext context) {
+        if (!Serializable.class.isAssignableFrom(object.getClass())) {
+            throw typeError(context, "Java type is not serializable, cannot be marshaled " + getJavaClass());
         }
         try {
             ByteArrayOutputStream bytes = new ByteArrayOutputStream();
             new ObjectOutputStream(bytes).writeObject(object);
-            return getRuntime().newString(new ByteList(bytes.toByteArray(), false));
-        }
-        catch (IOException ex) {
-            throw typeError(getRuntime().getCurrentContext(), "Java type is not serializable: " + ex.getMessage());
+            return newString(context, new ByteList(bytes.toByteArray(), false));
+        } catch (IOException ex) {
+            throw typeError(context, "Java type is not serializable: " + ex.getMessage());
         }
     }
 
@@ -509,13 +521,13 @@ public class JavaProxy extends RubyObject {
             return true;
         };
 
-        MethodGatherer.eachAccessibleMethod(
-                originalClass,
-                predicate, predicate);
+        MethodGatherer.eachAccessibleMethod(originalClass, predicate, predicate);
 
-        if (holder[0] != null) return holder[0];
+        if (holder[0] == null) {
+            throw JavaMethod.newMethodNotFoundError(context, originalClass, name + CodegenUtils.prettyParams(argTypes), name);
+        }
 
-        throw JavaMethod.newMethodNotFoundError(context.runtime, originalClass, name + CodegenUtils.prettyParams(argTypes), name);
+        return holder[0];
     }
 
     private MethodInvoker getMethodInvoker(Method method) {
@@ -592,13 +604,12 @@ public class JavaProxy extends RubyObject {
     private void confirmCachedProxy(ThreadContext context, String message) {
         final RubyClass realClass = metaClass.getRealClass();
         if ( ! realClass.getCacheProxy() ) {
-            final Ruby runtime = getRuntime();
             if (Java.OBJECT_PROXY_CACHE) {
-                runtime.getWarnings().warnOnce(IRubyWarnings.ID.NON_PERSISTENT_JAVA_PROXY, MessageFormat.format(message, realClass));
+                context.runtime.getWarnings().warnOnce(IRubyWarnings.ID.NON_PERSISTENT_JAVA_PROXY, MessageFormat.format(message, realClass));
             } else {
                 warn(context, MessageFormat.format(message, realClass));
                 realClass.setCacheProxy(true);
-                runtime.getJavaSupport().getObjectProxyCache().put(getObject(), this);
+                context.runtime.getJavaSupport().getObjectProxyCache().put(getObject(), this);
             }
         }
     }
@@ -754,7 +765,7 @@ public class JavaProxy extends RubyObject {
             try {
                 return clazz.getMethod(name, argTypes);
             } catch (NoSuchMethodException e) {
-                throw newNameError(context.runtime, "Java method not found: " + format(clazz, name, argTypes), name, e);
+                throw newNameError(context, "Java method not found: " + format(clazz, name, argTypes), name, e);
             }
         }
 
@@ -762,7 +773,7 @@ public class JavaProxy extends RubyObject {
             try {
                 return clazz.getConstructor(argTypes);
             } catch (NoSuchMethodException e) {
-                throw newNameError(context.runtime, "Java initializer not found: " + format(clazz, name, argTypes), name, e);
+                throw newNameError(context, "Java initializer not found: " + format(clazz, name, argTypes), name, e);
             }
         }
 
@@ -770,8 +781,9 @@ public class JavaProxy extends RubyObject {
             return clazz.getName() + '.' + name + CodegenUtils.prettyParams(argTypes); // e.g. SomeClass.someMethod(java.lang.String)
         }
 
-        private static RaiseException newNameError(final Ruby runtime, final String msg, final String name, final ReflectiveOperationException cause) {
-            RaiseException ex = runtime.newNameError(msg, name);
+        private static RaiseException newNameError(ThreadContext context, final String msg, final String name,
+                                                   final ReflectiveOperationException cause) {
+            RaiseException ex = nameError(context, msg, name);
             ex.initCause(cause);
             return ex;
         }

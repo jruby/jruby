@@ -58,6 +58,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.jruby.api.Access.getModule;
+import static org.jruby.api.Error.nameError;
 import static org.jruby.javasupport.Java.initCause;
 
 public abstract class JavaSupport {
@@ -132,14 +133,15 @@ public abstract class JavaSupport {
 
     @Deprecated
     public Class loadJavaClassVerbose(String className) {
+        var context = runtime.getCurrentContext();
         try {
             return loadJavaClass(className);
         } catch (ClassNotFoundException ex) {
-            throw initCause(runtime.newNameError("cannot load Java class " + className, className, ex), ex);
+            throw initCause(nameError(context, "cannot load Java class " + className, className, ex), ex);
         } catch (ExceptionInInitializerError ex) {
-            throw initCause(runtime.newNameError("cannot initialize Java class " + className, className, ex), ex);
+            throw initCause(nameError(context, "cannot initialize Java class " + className, className, ex), ex);
         } catch (LinkageError ex) {
-            throw initCause(runtime.newNameError("cannot link Java class " + className + ", probable missing dependency: " + ex.getLocalizedMessage(), className, ex), ex);
+            throw initCause(nameError(context, "cannot link Java class " + className + ", probable missing dependency: " + ex.getLocalizedMessage(), className, ex), ex);
         } catch (SecurityException ex) {
             if (runtime.isVerbose()) ex.printStackTrace(runtime.getErrorStream());
             throw initCause(runtime.newSecurityError(ex.getLocalizedMessage()), ex);

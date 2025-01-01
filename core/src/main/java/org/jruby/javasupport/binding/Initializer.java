@@ -39,7 +39,7 @@ public abstract class Initializer {
     }
 
     public static RubyModule setupProxyClass(ThreadContext context, final Class<?> javaClass, RubyClass proxy) {
-        setJavaClassFor(javaClass, proxy);
+        setJavaClassFor(context, javaClass, proxy);
 
         proxy.reifiedClass((Class) javaClass);
 
@@ -68,7 +68,7 @@ public abstract class Initializer {
     }
 
     public static RubyModule setupProxyModule(ThreadContext context, final Class<?> javaClass, RubyModule proxy) {
-        setJavaClassFor(javaClass, proxy);
+        setJavaClassFor(context, javaClass, proxy);
 
         assert javaClass.isInterface();
 
@@ -83,8 +83,8 @@ public abstract class Initializer {
         proxy.singletonClass(context).setJavaProxy(true);
     }
 
-    private static void setJavaClassFor(final Class<?> javaClass, final RubyModule proxy) {
-        JavaProxy.setJavaClass(proxy, javaClass);
+    private static void setJavaClassFor(ThreadContext context, final Class<?> javaClass, final RubyModule proxy) {
+        JavaProxy.setJavaClass(context, proxy, javaClass);
         proxy.dataWrapStruct(javaClass);
     }
 

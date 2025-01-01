@@ -41,7 +41,11 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.NullMethod;
-import org.jruby.runtime.*;
+import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.Signature;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ClassProvider;
 import org.jruby.util.TypeConverter;
@@ -49,6 +53,7 @@ import org.jruby.util.TypeConverter;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.nameError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 /**
@@ -153,7 +158,7 @@ public class JavaPackage extends RubyModule {
         ConstantEntry entry = constantEntryFetch(name);
         if (entry == null) return null;
         if (entry.hidden && !includePrivate) {
-            throw context.runtime.newNameError("private constant " + getName(context) + "::" + name + " referenced", name);
+            throw nameError(context, "private constant " + getName(context) + "::" + name + " referenced", name);
         }
         return entry.value;
     }
@@ -172,9 +177,11 @@ public class JavaPackage extends RubyModule {
         return Java.getProxyOrPackageUnderPackage(context, this, name.toString(), cacheMethod);
     }
 
+    @Deprecated(since = "10.0")
     RubyModule relativeJavaProxyClass(final Ruby runtime, final IRubyObject name) {
+        var context = runtime.getCurrentContext();
         final String fullName = packageRelativeName( name.toString() ).toString();
-        return Java.getProxyClass(runtime, Java.getJavaClass(runtime, fullName));
+        return Java.getProxyClass(context, Java.getJavaClass(context, fullName));
     }
 
     @JRubyMethod(name = "respond_to?")
@@ -296,14 +303,14 @@ public class JavaPackage extends RubyModule {
 
             final String subPackageName = JavaPackage.buildPackageName(pkg, name).toString();
 
-            Class<?> javaClass = Java.getJavaClass(context.runtime, subPackageName);
-            return (RubyClass) Java.getProxyClass(context.runtime, javaClass);
+            Class<?> javaClass = Java.getJavaClass(context, subPackageName);
+            return (RubyClass) Java.getProxyClass(context, javaClass);
         }
 
         public RubyModule defineModuleUnder(ThreadContext context, RubyModule pkg, String name) {
             final String subPackageName = JavaPackage.buildPackageName(pkg, name).toString();
 
-            Class<?> javaClass = Java.getJavaClass(context.runtime, subPackageName);
+            Class<?> javaClass = Java.getJavaClass(context, subPackageName);
             return Java.getInterfaceModule(context, javaClass);
         }
 

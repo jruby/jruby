@@ -17,6 +17,7 @@ import org.jruby.runtime.Visibility;
 
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Define.defineClass;
+import static org.jruby.api.Error.nameError;
 
 public class JRubyObjectInputStream extends RubyObject {
 
@@ -72,7 +73,7 @@ public class JRubyObjectInputStream extends RubyObject {
         } catch (IOException ioe) {
             throw context.runtime.newIOErrorFromException(ioe);
         } catch (ClassNotFoundException cnfe) {
-            throw context.runtime.newNameError(cnfe.getLocalizedMessage(), cnfe.getMessage(), cnfe);
+            throw nameError(context, cnfe.getLocalizedMessage(), cnfe.getMessage(), cnfe);
         }
     }
 

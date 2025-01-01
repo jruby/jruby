@@ -11,6 +11,7 @@ import jnr.constants.platform.Confstr;
 import jnr.constants.platform.Pathconf;
 
 import org.jruby.RubyArray;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.anno.JRubyMethod;
@@ -221,7 +222,7 @@ public class RubyEtc {
 
     @Deprecated
     public static synchronized IRubyObject getpwuid(IRubyObject recv, IRubyObject[] args) {
-        return getpwuid(recv.getRuntime().getCurrentContext(), recv, args);
+        return getpwuid(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
 
     @JRubyMethod(optional = 1, checkArity = false, module = true)
@@ -255,7 +256,7 @@ public class RubyEtc {
 
     @Deprecated(since = "10.0")
     public static synchronized IRubyObject getpwnam(IRubyObject recv, IRubyObject name) {
-        return getpwnam(recv.getRuntime().getCurrentContext(), recv, name);
+        return getpwnam(((RubyBasicObject) recv).getCurrentContext(), recv, name);
     }
 
     @JRubyMethod(module = true)
@@ -287,7 +288,7 @@ public class RubyEtc {
      */
     @Deprecated(since = "10.0", forRemoval = true)
     public static synchronized IRubyObject passwd(IRubyObject recv, Block block) {
-        return passwd(recv.getRuntime().getCurrentContext(), recv, block);
+        return passwd(((RubyBasicObject) recv).getCurrentContext(), recv, block);
     }
 
     @JRubyMethod(module = true)
@@ -320,31 +321,30 @@ public class RubyEtc {
         }
     }
 
-    @JRubyMethod(module = true)
+    @Deprecated(since = "10.0")
     public static synchronized IRubyObject getlogin(IRubyObject recv) {
-        Ruby runtime = recv.getRuntime();
+        return getlogin(((RubyBasicObject) recv).getCurrentContext(), recv);
+    }
 
+    @JRubyMethod(module = true)
+    public static synchronized IRubyObject getlogin(ThreadContext context, IRubyObject recv) {
         try {
-            String login = runtime.getPosix().getlogin();
-            if (login != null) {
-                return runtime.newString(login);
-            }
+            String login = context.runtime.getPosix().getlogin();
+            if (login != null) return newString(context, login);
 
             login = System.getenv("USER");
-            if (login != null) {
-                return runtime.newString(login);
-            }
-            
-            return runtime.getNil();
+            if (login != null) return newString(context, login);
+
+            return context.nil;
         } catch (Exception e) {
             // fall back on env entry for USER
-            return runtime.newString(System.getProperty("user.name"));
+            return newString(context, System.getProperty("user.name"));
         }
     }
 
     @Deprecated(since = "10.0")
     public static synchronized IRubyObject endpwent(IRubyObject recv) {
-        return endpwent(recv.getRuntime().getCurrentContext(), recv);
+        return endpwent(((RubyBasicObject) recv).getCurrentContext(), recv);
     }
 
     @JRubyMethod(module = true)
@@ -361,7 +361,7 @@ public class RubyEtc {
 
     @Deprecated(since = "10.0")
     public static synchronized IRubyObject setpwent(IRubyObject recv) {
-        return setpwent(recv.getRuntime().getCurrentContext(), recv);
+        return setpwent(((RubyBasicObject) recv).getCurrentContext(), recv);
     }
 
     @JRubyMethod(module = true)
@@ -378,7 +378,7 @@ public class RubyEtc {
 
     @Deprecated(since = "10.0")
     public static synchronized IRubyObject getpwent(IRubyObject recv) {
-        return getpwent(recv.getRuntime().getCurrentContext(), recv);
+        return getpwent(((RubyBasicObject) recv).getCurrentContext(), recv);
     }
 
     @JRubyMethod(module = true)
@@ -403,7 +403,7 @@ public class RubyEtc {
      */
     @Deprecated(since = "10.0", forRemoval = true)
     public static synchronized IRubyObject getgrnam(IRubyObject recv, IRubyObject name) {
-        return getgrnam(recv.getRuntime().getCurrentContext(), recv, name);
+        return getgrnam(((RubyBasicObject) recv).getCurrentContext(), recv, name);
     }
 
     @JRubyMethod(module = true)
@@ -428,7 +428,7 @@ public class RubyEtc {
 
     @Deprecated
     public static synchronized IRubyObject getgrgid(IRubyObject recv, IRubyObject[] args) {
-        return getgrgid(recv.getRuntime().getCurrentContext(), recv, args);
+        return getgrgid(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
 
     @JRubyMethod(optional = 1, checkArity = false, module = true)
@@ -456,7 +456,7 @@ public class RubyEtc {
 
     @Deprecated(since = "10.0")
     public static synchronized IRubyObject endgrent(IRubyObject recv) {
-        return endgrent(recv.getRuntime().getCurrentContext(), recv);
+        return endgrent(((RubyBasicObject) recv).getCurrentContext(), recv);
     }
 
     @JRubyMethod(module = true)
@@ -473,7 +473,7 @@ public class RubyEtc {
 
     @Deprecated(since = "10.0")
     public static synchronized IRubyObject setgrent(IRubyObject recv) {
-        return setgrent(recv.getRuntime().getCurrentContext(), recv);
+        return setgrent(((RubyBasicObject) recv).getCurrentContext(), recv);
     }
 
     @JRubyMethod(module = true)
@@ -496,7 +496,7 @@ public class RubyEtc {
      */
     @Deprecated(since = "10.0", forRemoval = true)
     public static synchronized IRubyObject group(IRubyObject recv, Block block) {
-        return group(recv.getRuntime().getCurrentContext(), recv, block);
+        return group(((RubyBasicObject) recv).getCurrentContext(), recv, block);
     }
 
     @JRubyMethod(module = true)
@@ -543,7 +543,7 @@ public class RubyEtc {
      */
     @Deprecated(since = "10.0", forRemoval = true)
     public static synchronized IRubyObject getgrent(IRubyObject recv) {
-        return getgrent(recv.getRuntime().getCurrentContext(), recv);
+        return getgrent(((RubyBasicObject) recv).getCurrentContext(), recv);
     }
 
     @JRubyMethod(module = true)
