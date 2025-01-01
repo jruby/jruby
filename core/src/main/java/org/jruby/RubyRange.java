@@ -178,7 +178,7 @@ public class RubyRange extends RubyObject {
     }
 
     final boolean checkBegin(ThreadContext context, long length) {
-        long beg = isBeginless ? 0 : numToLong(context, this.begin);
+        long beg = isBeginless ? 0 : toLong(context, this.begin);
         if (beg < 0) {
             beg += length;
             if (beg < 0) {
@@ -191,8 +191,8 @@ public class RubyRange extends RubyObject {
     }
 
     final long[] begLen(ThreadContext context, long len, int err) {
-        long beg = isBeginless ? 0 : numToLong(context, this.begin);
-        long end = isEndless ? -1: numToLong(context, this.end);
+        long beg = isBeginless ? 0 : toLong(context, this.begin);
+        long end = isEndless ? -1: toLong(context, this.end);
 
         if (beg < 0) {
             beg += len;
@@ -220,7 +220,7 @@ public class RubyRange extends RubyObject {
     }
 
     final long begLen0(ThreadContext context, long len) {
-        long beg = isBeginless ? 0 : numToLong(context, this.begin);
+        long beg = isBeginless ? 0 : toLong(context, this.begin);
 
         if (beg < 0) {
             beg += len;
@@ -231,7 +231,7 @@ public class RubyRange extends RubyObject {
     }
 
     final long begLen1(ThreadContext context, long len, long beg) {
-        long end = isEndless ? -1 : numToLong(context, this.end);
+        long end = isEndless ? -1 : toLong(context, this.end);
 
         if (end < 0) end += len;
         if (!isExclusive || isEndless) end++;
@@ -326,9 +326,9 @@ public class RubyRange extends RubyObject {
 
         hash = hashStart(context.runtime, hash);
         IRubyObject v = safeHash(context, begin);
-        hash = murmurCombine(hash, numToLong(context, v));
+        hash = murmurCombine(hash, toLong(context, v));
         v = safeHash(context, end);
-        hash = murmurCombine(hash, numToLong(context, v));
+        hash = murmurCombine(hash, toLong(context, v));
         hash = murmurCombine(hash, exclusiveBit << 24);
         hash = hashEnd(hash);
 
@@ -879,8 +879,8 @@ public class RubyRange extends RubyObject {
     }
 
     private void fixnumEndlessStep(ThreadContext context, IRubyObject step, Block block) {
-        long i = numToLong(context, begin);
-        long unit = numToInt(context, step);
+        long i = toLong(context, begin);
+        long unit = toInt(context, step);
         // avoid overflow
         while (i <= Long.MAX_VALUE - unit) {
             block.yield(context, asFixnum(context, i));
@@ -1215,13 +1215,13 @@ public class RubyRange extends RubyObject {
             return newEmptyArray(context);
         }
 
-        long n = numToLong(context, arg);
+        long n = toLong(context, arg);
         if (n < 0) throw argumentError(context, "negative array size");
 
         nv = asFixnum(context, n);
         if (Numeric.f_gt_p(context, nv, len)) {
              nv = len;
-             n = numToLong(context, nv);
+             n = toLong(context, nv);
         }
 
         RubyArray<?> array = newRawArray(context, n);
@@ -1371,8 +1371,8 @@ public class RubyRange extends RubyObject {
         IRubyObject _beg = sites.begin.call(context, range, range);
         IRubyObject _end = sites.end.call(context, range, range);
         boolean excludeEnd = sites.exclude_end.call(context, range, range).isTrue();
-        int beg = _beg.isNil() ? 0 : numToInt(context, _beg);
-        int end = _end.isNil() ? -1 : numToInt(context, _end);
+        int beg = _beg.isNil() ? 0 : toInt(context, _beg);
+        int end = _end.isNil() ? -1 : toInt(context, _end);
         int origBeg = beg;
         int origEnd = end;
 

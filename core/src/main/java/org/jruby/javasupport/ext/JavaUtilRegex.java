@@ -37,7 +37,7 @@ import org.jruby.util.RubyStringBuilder;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Convert.numToInt;
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
 import static org.jruby.javasupport.JavaUtil.convertJavaToUsableRubyObject;
@@ -118,7 +118,7 @@ public abstract class JavaUtilRegex {
             final java.util.regex.Matcher matcher = unwrapJavaObject(self);
             if (idx instanceof RubySymbol) return asFixnum(context, matcher.start(idx.toString()));
 
-            final int group = numToInt(context, idx);
+            final int group = toInt(context, idx);
             return asFixnum(context, matcher.start(group));
         }
 
@@ -127,7 +127,7 @@ public abstract class JavaUtilRegex {
             final java.util.regex.Matcher matcher = unwrapJavaObject(self);
             if (idx instanceof RubySymbol) return asFixnum(context, matcher.end(idx.toString()));
 
-            final int group = numToInt(context, idx);
+            final int group = toInt(context, idx);
             return asFixnum(context, matcher.end(group));
         }
 
@@ -141,7 +141,7 @@ public abstract class JavaUtilRegex {
                 beg = asFixnum(context, matcher.start(idx.toString()));
                 end = asFixnum(context, matcher.end(idx.toString()));
             } else {
-                final int group = numToInt(context, idx);
+                final int group = toInt(context, idx);
                 beg = asFixnum(context, matcher.start(group));
                 end = asFixnum(context, matcher.end(group));
             }
@@ -207,11 +207,10 @@ public abstract class JavaUtilRegex {
             if ( idx instanceof RubySymbol || idx instanceof RubyString ) {
                 return newString(context, matcher.group(idx.toString()));
             }
-            if ( idx instanceof RubyInteger ) {
-                final int group = ((RubyInteger) idx).getIntValue();
-                return newString(context, matcher.group(group));
-            }
-            return to_a(context, self).aref(context, idx); // Range
+
+            return idx instanceof RubyInteger group ?
+                    newString(context, matcher.group(group.asInt(context))) :
+                    to_a(context, self).aref(context, idx); // Range
         }
 
         @JRubyMethod(name = "[]")

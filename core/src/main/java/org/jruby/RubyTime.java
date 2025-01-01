@@ -1605,7 +1605,7 @@ public class RubyTime extends RubyObject {
                 nanosecs = nanos.longValue();
             } else {
                 nanosecs = 0;
-                millisecs = numToLong(context, arg) * 1000;
+                millisecs = toLong(context, arg) * 1000;
             }
 
             try {
@@ -1633,7 +1633,7 @@ public class RubyTime extends RubyObject {
             millisecs = (long) (dbl * 1000);
             nanosecs = ((long) (dbl * 1000000000)) % 1000000;
         } else {
-            millisecs = numToLong(context, arg1) * 1000;
+            millisecs = toLong(context, arg1) * 1000;
         }
 
         if (!(arg3 instanceof RubySymbol unit)) throw argumentError(context, "unexpected unit " + arg3);
@@ -1650,23 +1650,23 @@ public class RubyTime extends RubyObject {
                 millisecs += (long) (nanos / 1000000);
                 nanosecs += (long) (nanos % 1000000);
             } else if (asSymbol(context, "nanosecond").eql(unit) || asSymbol(context, "nsec").eql(unit)) {
-                nanosecs += numToLong(context, arg2);
+                nanosecs += toLong(context, arg2);
             } else {
                 throw argumentError(context, "unexpected unit " + arg3);
             }
         } else {
             if (asSymbol(context, "microsecond").eql(unit) || asSymbol(context, "usec").eql(unit)) {
-                long micros = numToLong(context, arg2);
+                long micros = toLong(context, arg2);
                 long nanos = micros * 1000;
                 millisecs += nanos / 1000000;
                 nanosecs += nanos % 1000000;
             } else if (asSymbol(context, "millisecond").eql(unit)) {
-                double millis = numToLong(context, arg2);
+                double millis = toLong(context, arg2);
                 double nanos = millis * 1000000;
                 millisecs += nanos / 1000000;
                 nanosecs += nanos % 1000000;
             } else if (asSymbol(context, "nanosecond").eql(unit) || asSymbol(context, "nsec").eql(unit)) {
-                nanosecs += numToLong(context, arg2);
+                nanosecs += toLong(context, arg2);
             } else {
                 throw argumentError(context, "unexpected unit " + arg3);
             }
@@ -2168,7 +2168,7 @@ public class RubyTime extends RubyObject {
         IRubyObject zoneVar = (IRubyObject) from.getInternalVariables().getInternalVariable("zone");
 
         if (nano_num != null && nano_den != null) {
-            long nanos = numToLong(context, nano_num) / numToLong(context, nano_den);
+            long nanos = toLong(context, nano_num) / toLong(context, nano_den);
             time.nsec += nanos;
         }
 
@@ -2176,7 +2176,7 @@ public class RubyTime extends RubyObject {
         if (offsetVar != null && offsetVar.respondsTo("to_int")) {
             final IRubyObject $ex = context.getErrorInfo();
             try {
-                offset = numToInt(context, offsetVar) * 1000;
+                offset = toInt(context, offsetVar) * 1000;
             }
             catch (TypeError typeError) {
                 context.setErrorInfo($ex); // restore $!
@@ -2246,8 +2246,8 @@ public class RubyTime extends RubyObject {
         if (time instanceof RubyTime tm) return tm.getDateTime().withZoneRetainFields(DateTimeZone.UTC).getMillis();
 
         long t = time instanceof RubyStruct ?
-                numToLong(context, ((RubyStruct) time).aref(context, asSymbol(context, "to_i"))) :
-                numToLong(context, time.callMethod(context, "to_i"));
+                toLong(context, ((RubyStruct) time).aref(context, asSymbol(context, "to_i"))) :
+                toLong(context, time.callMethod(context, "to_i"));
 
         return t * 1000;
     }

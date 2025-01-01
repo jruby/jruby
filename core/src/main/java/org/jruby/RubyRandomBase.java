@@ -475,7 +475,7 @@ public class RubyRandomBase extends RubyObject {
 
         if (rnd == null) {
             RubyInteger v = Helpers.invokePublic(context, obj, "rand", asFixnum(context, limit + 1)).convertToInteger();
-            long r = numToLong(context, v);
+            long r = toLong(context, v);
             if (r < 0) throw rangeError(context, "random number too small " + r);
             if (r > limit) throw rangeError(context, "random number too big " + r);
 

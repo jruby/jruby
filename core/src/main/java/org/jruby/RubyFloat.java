@@ -177,7 +177,8 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     }
 
     @Override
-    public int getIntValue() {
+    @JRubyAPI
+    public int asInt(ThreadContext context) {
         return (int) value;
     }
 
@@ -490,7 +491,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         ThreadContext context = metaClass.runtime.getCurrentContext();
         return switch (other.getMetaClass().getClassIndex()) {
             case INTEGER, FLOAT -> Double.compare(value, ((RubyNumeric) other).asDouble(context));
-            default -> (int) numToLong(context, coerceCmp(context, sites(context).op_cmp, other));
+            default -> (int) toLong(context, coerceCmp(context, sites(context).op_cmp, other));
         };
     }
 

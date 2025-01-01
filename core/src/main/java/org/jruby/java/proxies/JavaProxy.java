@@ -59,7 +59,7 @@ import org.jruby.util.JRubyObjectInputStream;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.castAsModule;
-import static org.jruby.api.Convert.numToInt;
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.typeError;
@@ -200,7 +200,7 @@ public class JavaProxy extends RubyObject {
     @JRubyMethod(meta = true)
     public static IRubyObject new_array(ThreadContext context, IRubyObject self, IRubyObject len) {
         final Class<?> componentType = JavaUtil.getJavaClass(context, (RubyModule) self);
-        final int length = numToInt(context, len);
+        final int length = toInt(context, len);
         return ArrayJavaProxy.newArray(context.runtime, componentType, length);
     }
 

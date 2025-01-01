@@ -241,7 +241,7 @@ public class JRubyLibrary implements Library {
             case 4 :
                 filename = args[1].convertToString().toString();
                 inlineSource = args[2].isTrue();
-                lineno = numToInt(context, args[3]);
+                lineno = toInt(context, args[3]);
                 break;
             default :
                 throw new AssertionError("unexpected arguments: " + java.util.Arrays.toString(args));

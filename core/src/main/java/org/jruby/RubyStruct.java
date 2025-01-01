@@ -174,7 +174,7 @@ public class RubyStruct extends RubyObject {
             IRubyObject hash = context.safeRecurse(
                     (ctx, runtime1, obj, recur) -> recur ? RubyFixnum.zero(runtime1) : invokedynamic(ctx, obj, HASH),
                     context.runtime, values[i], "hash", true);
-            h ^= numToLong(context, hash);
+            h ^= toLong(context, hash);
         }
 
         return asFixnum(context, h);
@@ -517,7 +517,7 @@ public class RubyStruct extends RubyObject {
                         key = asSymbol(context, key.convertToString().getByteList());
                     IRubyObject index = __members__.index(context, key);
                     if (index.isNil()) throw argumentError(context, str(context.runtime, "unknown keywords: ", key));
-                    values[numToInt(context, index)] = entry.getValue();
+                    values[toInt(context, index)] = entry.getValue();
                 });
 
         return context.nil;

@@ -309,7 +309,7 @@ public final class ArrayJavaProxy extends JavaProxy {
     @JRubyMethod(name = "first") // Enumerable override
     public IRubyObject first(ThreadContext context, IRubyObject count) {
         final Object array = getObject();
-        int len = numToInt(context, count);
+        int len = toInt(context, count);
         int size = Array.getLength(array); if ( len > size ) len = size;
 
         final Ruby runtime = context.runtime;
@@ -795,8 +795,8 @@ public final class ArrayJavaProxy extends JavaProxy {
     private IRubyObject arrayRange(final ThreadContext context, final RubyRange range) {
         final Object array = getObject();
         final int arrayLength = Array.getLength( array );
-        int first = castAsFixnum(context, range.first(context), "Only Integer ranges supported").getIntValue();
-        int last = castAsFixnum(context, range.last(context), "Only Integer ranges supported").getIntValue();
+        int first = castAsFixnum(context, range.first(context), "Only Integer ranges supported").asInt(context);
+        int last = castAsFixnum(context, range.last(context), "Only Integer ranges supported").asInt(context);
 
         first = first >= 0 ? first : arrayLength + first;
         if (first < 0 || first >= arrayLength) return context.nil;
@@ -820,8 +820,8 @@ public final class ArrayJavaProxy extends JavaProxy {
         final Object array = getObject();
         final int arrayLength = Array.getLength( array );
 
-        int first = castAsFixnum(context, rFirst, "Only Integer ranges supported").getIntValue();
-        int length = castAsFixnum(context, rLength, "Only Integer ranges supported").getIntValue();
+        int first = castAsFixnum(context, rFirst, "Only Integer ranges supported").asInt(context);
+        int length = castAsFixnum(context, rLength, "Only Integer ranges supported").asInt(context);
 
         if (length > arrayLength) throw context.runtime.newIndexError("length specified is longer than array");
         if (length < 0) return context.nil;

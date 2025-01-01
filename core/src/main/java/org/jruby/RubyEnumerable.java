@@ -73,7 +73,7 @@ import static org.jruby.api.Access.hashClass;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asFloat;
 import static org.jruby.api.Convert.asSymbol;
-import static org.jruby.api.Convert.numToLong;
+import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.*;
@@ -196,7 +196,7 @@ public class RubyEnumerable {
             return enumeratorizeWithSize(context, self, "cycle", new IRubyObject[] { arg }, RubyEnumerable::cycleSize);
         }
 
-        long times = numToLong(context, arg);
+        long times = toLong(context, arg);
         if (times <= 0) return context.nil;
 
         return cycleCommon(context, self, times, block);
@@ -245,7 +245,7 @@ public class RubyEnumerable {
 
         if (args != null && args.length > 0) {
             n = args[0];
-            if (!n.isNil()) mul = numToLong(context, n);
+            if (!n.isNil()) mul = toLong(context, n);
         }
 
         IRubyObject size = size(context, self, args);
@@ -259,7 +259,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "take")
     public static IRubyObject take(ThreadContext context, IRubyObject self, IRubyObject n, Block block) {
-        final long len = numToLong(context, n);
+        final long len = toLong(context, n);
 
         if (len < 0) throw argumentError(context, "attempt to take negative size");
         if (len == 0) return newEmptyArray(context);
@@ -313,7 +313,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "drop")
     public static IRubyObject drop(ThreadContext context, IRubyObject self, IRubyObject n, final Block block) {
-        final long len = numToLong(context, n);
+        final long len = toLong(context, n);
         if (len < 0) throw argumentError(context, "attempt to drop negative size");
 
         final var result = newArray(context);
@@ -391,7 +391,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "first")
     public static IRubyObject first(ThreadContext context, IRubyObject self, final IRubyObject num) {
-        final long firstCount = numToLong(context, num);
+        final long firstCount = toLong(context, num);
         if (firstCount == 0) return newEmptyArray(context);
         if (firstCount < 0) throw argumentError(context, "attempt to take negative size");
 
@@ -1181,7 +1181,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "each_slice")
     public static IRubyObject each_slice(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
-        int size = (int) numToLong(context, arg);
+        int size = (int) toLong(context, arg);
         if (size <= 0) throw argumentError(context, "invalid size");
 
         return block.isGiven() ? each_sliceCommon(context, self, size, block) :
@@ -1233,7 +1233,7 @@ public class RubyEnumerable {
 
     @JRubyMethod(name = "each_cons")
     public static IRubyObject each_cons(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
-        int size = (int) numToLong(context, arg);
+        int size = (int) toLong(context, arg);
         if (size <= 0) throw argumentError(context, "invalid size");
         return block.isGiven() ? each_consCommon(context, self, size, block) : enumeratorizeWithSize(context, self, "each_cons", new IRubyObject[] { arg }, (SizeFn) RubyEnumerable::eachConsSize);
     }

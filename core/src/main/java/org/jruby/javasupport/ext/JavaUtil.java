@@ -48,7 +48,7 @@ import java.lang.reflect.InvocationTargetException;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Convert.numToInt;
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.*;
 import static org.jruby.javasupport.JavaUtil.convertJavaArrayToRuby;
 import static org.jruby.javasupport.JavaUtil.convertJavaToUsableRubyObject;
@@ -166,7 +166,7 @@ public abstract class JavaUtil {
         @JRubyMethod(name = { "first", "ruby_first" }) // re-def Enumerable#first(n)
         public static IRubyObject first(final ThreadContext context, final IRubyObject self, final IRubyObject count) {
             final java.util.Collection<?> coll = unwrapIfJavaObject(self);
-            int len = numToInt(context, count);
+            int len = toInt(context, count);
             int size = coll.size(); if ( len > size ) len = size;
             if ( len == 0 ) return RubyArray.newEmptyArray(context.runtime);
             var objArray = new IRubyObject[len];
@@ -314,8 +314,8 @@ public abstract class JavaUtil {
             final int size = list.size();
 
             if ( idx instanceof RubyRange ) {
-                int first = numToInt(context, idx.callMethod(context, "first"));
-                int last = numToInt(context, idx.callMethod(context, "last"));
+                int first = toInt(context, idx.callMethod(context, "first"));
+                int last = toInt(context, idx.callMethod(context, "last"));
                 if ( last < 0 ) last += size;
                 if ( first < 0 ) first += size;
                 if ( first < 0 || first >= size ) return context.nil;
@@ -325,7 +325,7 @@ public abstract class JavaUtil {
                 return Java.getInstance(context.runtime, list.subList(first, last));
             }
 
-            int i = numToInt(context, idx);
+            int i = toInt(context, idx);
             if ( i < 0 ) i = size + i; // -1 ... size - 1
             if ( i >= size || i < 0 ) return context.nil;
             return convertJavaToUsableRubyObject(context.runtime, list.get(i));
@@ -339,12 +339,12 @@ public abstract class JavaUtil {
 
             final java.util.List list = unwrapIfJavaObject(self);
 
-            int i = numToInt(context, idx.convertToInteger());
+            int i = toInt(context, idx.convertToInteger());
             final int size = list.size();
             if ( i < 0 ) i = size + i; // -1 ... size - 1
             if ( i >= size || i < 0 ) return context.nil;
 
-            int last = numToInt(context, len);
+            int last = toInt(context, len);
             if ( last < 0 ) return context.nil;
             last += i; if ( last > size ) last = size;
 
@@ -359,8 +359,8 @@ public abstract class JavaUtil {
             final int size = list.size();
 
             if ( idx instanceof RubyRange ) {
-                int first = numToInt(context, idx.callMethod(context, "first"));
-                int last = numToInt(context, idx.callMethod(context, "last"));
+                int first = toInt(context, idx.callMethod(context, "first"));
+                int last = toInt(context, idx.callMethod(context, "last"));
                 if ( last < 0 ) last += size;
                 if ( first < 0 ) first += size;
                 if ( ((RubyRange) idx).isExcludeEnd() ) last--;
@@ -372,7 +372,7 @@ public abstract class JavaUtil {
                 return val;
             }
 
-            int i = numToInt(context, idx);
+            int i = toInt(context, idx);
             if ( i < 0 ) i = size + i; // -1 ... size - 1
             if ( i >= size ) {
                 for ( int t = 0; t < i - size; t++ ) list.add(null);
@@ -394,7 +394,7 @@ public abstract class JavaUtil {
         @JRubyMethod(name = { "first", "ruby_first" }) // #first ext like with array: [1, 2, 3].first(2) == [1, 2]
         public static IRubyObject first(final ThreadContext context, final IRubyObject self, final IRubyObject count) {
             final java.util.List list = unwrapIfJavaObject(self);
-            int len = numToInt(context, count);
+            int len = toInt(context, count);
             int size = list.size(); if ( len > size ) len = size;
             return Java.getInstance(context.runtime, list.subList(0, len));
         }
@@ -409,7 +409,7 @@ public abstract class JavaUtil {
         @JRubyMethod(name = { "last", "ruby_last" }) // #last ext like with array: [1, 2, 3].last(2) == [2, 3]
         public static IRubyObject last(final ThreadContext context, final IRubyObject self, final IRubyObject count) {
             final java.util.List list = unwrapIfJavaObject(self);
-            int len = numToInt(context, count);
+            int len = toInt(context, count);
             int size = list.size();
             int start = size - len; if ( start < 0 ) start = 0;
             int end = start + len; if ( end > size ) end = size;

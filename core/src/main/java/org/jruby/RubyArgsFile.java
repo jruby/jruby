@@ -68,7 +68,7 @@ import static org.jruby.api.Access.stringClass;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asSymbol;
-import static org.jruby.api.Convert.numToLong;
+import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Create.newEmptyString;
@@ -863,7 +863,7 @@ public class RubyArgsFile extends RubyObject {
             str = length = nil;
         }
 
-        if (length != nil) len = numToLong(context, length);
+        if (length != nil) len = toLong(context, length);
 
         if (str != nil) {
             str = str.convertToString();

@@ -236,7 +236,7 @@ public class RubyConverter extends RubyObject {
                 hashArg = 2;
             } else {
                 outputByteOffsetObj = args[2];
-                outputByteoffset = numToInt(context, args[2]);
+                outputByteoffset = toInt(context, args[2]);
             }
         }
         
@@ -245,7 +245,7 @@ public class RubyConverter extends RubyObject {
                 hashArg = 3;
             } else {
                 outputBytesizeObj = args[3];
-                outputBytesize = numToInt(context, args[3]);
+                outputBytesize = toInt(context, args[3]);
             }
         }
         
@@ -255,7 +255,7 @@ public class RubyConverter extends RubyObject {
             if (args[4] instanceof RubyHash) {
                 hashArg = 4;
             } else {
-                flags = numToInt(context, args[4]);
+                flags = toInt(context, args[4]);
             }
         }
         
@@ -549,7 +549,7 @@ public class RubyConverter extends RubyObject {
     public IRubyObject putback(ThreadContext context, IRubyObject[] argv) {
         int argc = Arity.checkArgumentCount(context, argv, 0, 1);
         IRubyObject max = argc == 0 ? context.nil : argv[0];
-        int n = max.isNil() ? ec.putbackable() : Math.min(numToInt(context, max), ec.putbackable());
+        int n = max.isNil() ? ec.putbackable() : Math.min(toInt(context, max), ec.putbackable());
         RubyString str = RubyString.newStringLight(context.runtime, n);
         ByteList strBL = str.getByteList();
 

@@ -61,8 +61,8 @@ import java.time.*;
 
 import static org.jruby.api.Access.timeClass;
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Convert.numToInt;
-import static org.jruby.api.Convert.numToLong;
+import static org.jruby.api.Convert.toInt;
+import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Define.defineClass;
 
 /**
@@ -188,8 +188,8 @@ public class RubyDateTime extends RubyDate {
         if (argc == 8) sg = val2sg(context, args[7]);
         if (argc >= 7) off = val2off(context, args[6]);
 
-        final int year = (sg > 0) ? getYear(args[0]) : numToInt(context, args[0]);
-        final int month = getMonth(args[1]);
+        final int year = (sg > 0) ? getYear(context, args[0]) : toInt(context, args[0]);
+        final int month = getMonth(context, args[1]);
         final long[] rest = new long[] { 0, 1 };
         final int day = (int) getDay(context, args[2], rest);
 
@@ -235,7 +235,7 @@ public class RubyDateTime extends RubyDate {
     }
 
     static long getDay(ThreadContext context, IRubyObject day, final long[] rest) {
-        long d = numToLong(context, day);
+        long d = toLong(context, day);
 
         if (!(day instanceof RubyInteger) && day instanceof RubyNumeric) { // Rational|Float
             RubyRational rat = ((RubyNumeric) day).convertToRational(context);
@@ -271,7 +271,7 @@ public class RubyDateTime extends RubyDate {
     }
 
     static int getHour(ThreadContext context, IRubyObject hour, final long[] rest) {
-        long h = numToLong(context, hour);
+        long h = toLong(context, hour);
         long i = 0;
         final long r0 = rest[0], r1 = rest[1];
         if (r0 != 0) {
@@ -285,7 +285,7 @@ public class RubyDateTime extends RubyDate {
     }
 
     static int getMinute(ThreadContext context, IRubyObject val, final long[] rest) {
-        long v = numToLong(context, val);
+        long v = toLong(context, val);
         long i = 0;
         final long r0 = rest[0], r1 = rest[1];
         if (r0 != 0) {
@@ -323,7 +323,7 @@ public class RubyDateTime extends RubyDate {
         // MRI: s_trunc
         long v;
         if (wholeNum) {
-            v = numToLong(context, val);
+            v = toLong(context, val);
         } else {
             val = ((RubyNumeric) val).divmod(context, asFixnum(context, 1));
             v = ((RubyInteger) ((RubyArray) val).eltInternal(0)).getLongValue();
@@ -364,7 +364,7 @@ public class RubyDateTime extends RubyDate {
             rest[0] = rat.getNumerator().getLongValue();
             rest[1] = rat.getDenominator().getLongValue();
         } else {
-            rest[0] = numToLong(context, res);
+            rest[0] = toLong(context, res);
             rest[1] = 1;
         }
     }

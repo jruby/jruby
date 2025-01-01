@@ -152,11 +152,18 @@ public class RubyNumeric extends RubyObject {
      * Return the value of this numeric as a 32-bit long. If the value does not
      * fit in 32 bits, it will be truncated.
      */
-    public int getIntValue() { return (int) asLong(getRuntime().getCurrentContext()); }
+    public int getIntValue() { return asInt(getRuntime().getCurrentContext()); }
 
     /**
-     * Return the value of this numeric as a 64-bit long. If the value does not
-     * fit in 64 bits, it will be truncated.
+     * Returns the value of this numeric and a java int.
+     */
+    @JRubyAPI
+    public int asInt(ThreadContext context) {
+        return (int) asLong(context);
+    }
+
+    /**
+     * Return the value of this numeric as a 64-bit long.
      */
     @JRubyAPI
     public long asLong(ThreadContext context) {
@@ -1253,7 +1260,7 @@ public class RubyNumeric extends RubyObject {
             double n = floatStepSize(from.convertToFloat().value, to.convertToFloat().value, step.convertToFloat().value, excl);
 
             if (Double.isInfinite(n)) return asFloat(context, n);
-            if (posFixable(n)) return asFloat(context, n).convertToInteger();
+            if (posFixable(n)) return toInteger(context, asFloat(context, n));
 
             return RubyBignum.newBignorm(context.runtime, n);
         }

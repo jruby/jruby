@@ -38,7 +38,7 @@ public class RubyTimeParser {
         IRubyObject year;
         IRubyObject subsec = context.nil;
         int mon = -1, mday = -1, hour = -1, min = -1, sec = -1;
-        long prec = precision.isNil() ? SIZE_MAX : numToLong(context, precision);
+        long prec = precision.isNil() ? SIZE_MAX : toLong(context, precision);
 
         if (!isEOS() && (isSpace() || Character.isSpaceChar(bytes[end - 1]))) {
             throw argumentError(context, str(context.runtime, "can't parse: ", str));

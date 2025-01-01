@@ -8,7 +8,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import static org.jruby.api.Convert.numToInt;
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
@@ -69,7 +69,7 @@ public class ArrayJavaProxyCreator extends RubyObject {
             System.arraycopy(dimensions, 0, newDimensions, 0, dlen);
         }
         for ( int i = 0; i < slen; i++ ) {
-            int size = numToInt(context, sizes[i]);
+            int size = toInt(context, sizes[i]);
             newDimensions[ i + dlen ] = size;
         }
         dimensions = newDimensions;

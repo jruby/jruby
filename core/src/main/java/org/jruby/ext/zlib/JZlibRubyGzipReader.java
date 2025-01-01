@@ -65,8 +65,8 @@ import static org.jruby.api.Access.fileClass;
 import static org.jruby.api.Access.globalVariables;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.castAsString;
-import static org.jruby.api.Convert.numToInt;
-import static org.jruby.api.Convert.numToLong;
+import static org.jruby.api.Convert.toInt;
+import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -680,16 +680,15 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
     }
 
     @JRubyMethod
-    public IRubyObject ungetc(ThreadContext context, IRubyObject c) {
-        if (c.isNil()) return c;
-        if (c instanceof RubyInteger) {
-            c = EncodingUtils.encUintChr(context, ((RubyInteger) c).getIntValue(), getReadEncoding(context));
-        } else {
-            c = c.convertToString();
-        }
+    public IRubyObject ungetc(ThreadContext context, IRubyObject cArg) {
+        if (cArg.isNil()) return context.nil;
+
+        RubyString c = cArg instanceof RubyInteger cint ?
+                EncodingUtils.encUintChr(context, cint.asInt(context), getReadEncoding(context)) :
+                cArg.convertToString();
 
         try {
-            byte[] bytes = ((RubyString) c).getBytes();
+            byte[] bytes = c.getBytes();
             bufferedStream.unread(bytes);
             position -= bytes.length;
         } catch (IOException ioe) {
@@ -709,7 +708,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         if (b.isNil()) return b;
 
         try {
-            bufferedStream.unread(numToInt(context, b));
+            bufferedStream.unread(toInt(context, b));
             position--;
         } catch (IOException ioe) {
             throw context.runtime.newIOErrorFromException(ioe);
@@ -802,14 +801,14 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
                 }
 
                 obj.read(context, IRubyObject.NULL_ARRAY);
-                pos = numToLong(context, io.callMethod(context, "pos"));
+                pos = toLong(context, io.callMethod(context, "pos"));
                 unused = obj.unused();
                 obj.finish(context);
                 if (!unused.isNil()) {
-                    pos -= numToLong(context, unused.callMethod(context, "length"));
+                    pos -= toLong(context, unused.callMethod(context, "length"));
                     io.callMethod(context, "pos=", asFixnum(context, pos));
                 }
-            } while (pos < numToLong(context, io.callMethod(context, "size")));
+            } while (pos < toLong(context, io.callMethod(context, "size")));
         } catch (IOException ioe) {
             throw context.runtime.newIOErrorFromException(ioe);
         }

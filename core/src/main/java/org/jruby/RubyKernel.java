@@ -59,7 +59,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.api.Warn;
 import org.jruby.ast.util.ArgsUtil;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.common.RubyWarnings;
 import org.jruby.exceptions.CatchThrow;
 import org.jruby.exceptions.MainExitException;
@@ -85,7 +84,6 @@ import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.callsite.CachingCallSite;
-import org.jruby.runtime.load.LoadService;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
@@ -606,7 +604,7 @@ public class RubyKernel {
         IRubyObject maybeOpts = ArgsUtil.getOptionsArg(context.runtime, baseOrOpts, false);
 
         if (maybeOpts.isNil()) {
-            return TypeConverter.convertToInteger(context, object, numToInt(context, baseOrOpts), true);
+            return TypeConverter.convertToInteger(context, object, toInt(context, baseOrOpts), true);
         }
 
         boolean exception = checkExceptionOpt(context, integerClass(context), maybeOpts);
@@ -617,16 +615,11 @@ public class RubyKernel {
     @JRubyMethod(name = "Integer", module = true, visibility = PRIVATE)
     public static IRubyObject new_integer(ThreadContext context, IRubyObject recv, IRubyObject object, IRubyObject base, IRubyObject opts) {
         boolean exception = checkExceptionOpt(context, context.runtime.getInteger(), opts);
-
         IRubyObject baseInteger = TypeConverter.convertToInteger(context, base, 0, exception);
 
-        if (baseInteger.isNil()) return baseInteger;
-
-        return TypeConverter.convertToInteger(
-                context,
-                object,
-                ((RubyInteger) baseInteger).getIntValue(),
-                exception);
+        return baseInteger.isNil() ?
+                baseInteger :
+                TypeConverter.convertToInteger(context, object, ((RubyInteger) baseInteger).asInt(context), exception);
     }
 
     @JRubyMethod(name = "String", required = 1, module = true, visibility = PRIVATE)
@@ -1254,7 +1247,7 @@ public class RubyKernel {
             if (args.length > 3) {
                 // line given, use it and force it into binding
                 // -1 because parser uses zero offsets and other code compensates
-                binding.setLine(numToInt(context, args[3]) - 1);
+                binding.setLine(toInt(context, args[3]) - 1);
             } else {
                 // filename given, but no line, start from the beginning.
                 binding.setLine(0);
@@ -1754,15 +1747,12 @@ public class RubyKernel {
     }
 
     private static int getTestCommand(ThreadContext context, IRubyObject arg0) {
-        int cmd;
-        if (arg0 instanceof RubyFixnum fixnum) {
-            cmd = fixnum.getIntValue();
-        } else if (arg0 instanceof RubyString && ((RubyString) arg0).getByteList().length() > 0) {
+        int cmd = switch(arg0) {
+            case RubyFixnum fixnum -> fixnum.asInt(context);
             // MRI behavior: use first byte of string value if len > 0
-            cmd = ((RubyString) arg0).getByteList().charAt(0);
-        } else {
-            cmd = numToInt(context, arg0);
-        }
+            case RubyString str when !str.getByteList().isEmpty() -> str.getByteList().charAt(0);
+            default -> toInt(context, arg0);
+        };
 
         // MRI behavior: raise ArgumentError for 'unknown command' before checking number of args
         switch (cmd) {

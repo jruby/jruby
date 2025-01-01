@@ -95,7 +95,7 @@ public class Pointer extends AbstractMemory {
     public IRubyObject initialize(ThreadContext context, IRubyObject address) {
         setMemoryIO(address instanceof Pointer
                 ? ((Pointer) address).getMemoryIO()
-                : Factory.getInstance().wrapDirectMemory(context.runtime, numToLong(context, address)));
+                : Factory.getInstance().wrapDirectMemory(context.runtime, toLong(context, address)));
         size = Long.MAX_VALUE;
         typeSize = 1;
 
@@ -106,7 +106,7 @@ public class Pointer extends AbstractMemory {
     public IRubyObject initialize(ThreadContext context, IRubyObject type, IRubyObject address) {
         setMemoryIO(address instanceof Pointer
                 ? ((Pointer) address).getMemoryIO()
-                : Factory.getInstance().wrapDirectMemory(context.runtime, numToLong(context, address)));
+                : Factory.getInstance().wrapDirectMemory(context.runtime, toLong(context, address)));
         size = Long.MAX_VALUE;
         typeSize = calculateTypeSize(context, type);
 

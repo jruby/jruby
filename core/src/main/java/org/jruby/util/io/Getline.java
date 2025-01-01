@@ -1,7 +1,6 @@
 package org.jruby.util.io;
 
 import org.jcodings.Encoding;
-import org.jruby.Ruby;
 import org.jruby.RubyHash;
 import org.jruby.RubyString;
 import org.jruby.ast.util.ArgsUtil;
@@ -12,8 +11,7 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 
 import static org.jruby.api.Access.globalVariables;
-import static org.jruby.api.Convert.numToInt;
-import static org.jruby.api.Convert.numToLong;
+import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
@@ -235,7 +233,7 @@ public class Getline {
             }
         }
 
-        limit = lim == nil ? -1 : numToLong(context, lim);
+        limit = lim == nil ? -1 : toLong(context, lim);
 
         return getline.getline(context, self, rs, (int) limit, chomp, block);
     }

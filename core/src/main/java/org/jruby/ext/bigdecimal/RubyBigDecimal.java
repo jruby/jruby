@@ -374,7 +374,7 @@ public class RubyBigDecimal extends RubyNumeric {
             if (value.isNil()) return c.searchInternalModuleVariable("vpExceptionMode");
             if (!(value instanceof RubyBoolean)) throw argumentError(context, "second argument must be true or false");
 
-            long newExceptionMode = numToLong(context, c.searchInternalModuleVariable("vpExceptionMode"));
+            long newExceptionMode = toLong(context, c.searchInternalModuleVariable("vpExceptionMode"));
 
             boolean enable = value.isTrue();
 
@@ -454,7 +454,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     private static BigDecimal toBigDecimal(ThreadContext context, final RubyInteger value) {
         return value instanceof RubyFixnum ?
-            BigDecimal.valueOf(numToLong(context, value)) : new BigDecimal(value.getBigIntegerValue());
+            BigDecimal.valueOf(toLong(context, value)) : new BigDecimal(value.getBigIntegerValue());
     }
 
     private static RubyBigDecimal getVpRubyObjectWithPrecInner(ThreadContext context, RubyRational value, RoundingMode mode) {
@@ -827,7 +827,7 @@ public class RubyBigDecimal extends RubyNumeric {
             throw typeError(context, "can't convert " + arg.inspect(context) + " into BigDecimal");
         }
 
-        int digits = numToInt(context, mathArg);
+        int digits = toInt(context, mathArg);
         if (digits < 0) {
             if (!strict) return getZero(context, 1);
             if (!exception) return context.nil;
@@ -1284,7 +1284,7 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private static int getPositiveInt(ThreadContext context, IRubyObject arg) {
-        int value = castAsFixnum(context, arg).getIntValue();
+        int value = castAsFixnum(context, arg).asInt(context);
         if (value < 0) throw argumentError(context, "argument must be positive");
         return value;
     }
@@ -1692,7 +1692,8 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     @Override
-    public int getIntValue() {
+    @JRubyAPI
+    public int asInt(ThreadContext context) {
         return value.intValue();
     }
 

@@ -50,7 +50,7 @@ public class RubyEtc {
     public static class IOExt {
         @JRubyMethod
         public static synchronized IRubyObject pathconf(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-            Pathconf name = Pathconf.valueOf(numToLong(context, arg));
+            Pathconf name = Pathconf.valueOf(toLong(context, arg));
             RubyIO io = (RubyIO) recv;
             OpenFile fptr = io.getOpenFileChecked();
             POSIX posix = context.runtime.getPosix();
@@ -170,7 +170,7 @@ public class RubyEtc {
     @JRubyMethod(module = true)
     public static synchronized IRubyObject sysconf(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         Ruby runtime = context.runtime;
-        Sysconf name = Sysconf.valueOf(numToLong(context, arg));
+        Sysconf name = Sysconf.valueOf(toLong(context, arg));
         POSIX posix = runtime.getPosix();
         posix.errno(0);
         long ret = posix.sysconf(name);
@@ -191,7 +191,7 @@ public class RubyEtc {
     
     @JRubyMethod(module = true)
     public static synchronized IRubyObject confstr(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        Confstr name = Confstr.valueOf(numToLong(context, arg));
+        Confstr name = Confstr.valueOf(toLong(context, arg));
         ByteBuffer buf;
 
         POSIX posix = context.runtime.getPosix();

@@ -58,8 +58,7 @@ import org.jruby.util.TypeConverter;
 import static org.jruby.api.Access.arrayClass;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Convert.numToInt;
-import static org.jruby.api.Convert.numToLong;
+import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
@@ -455,7 +454,7 @@ public class Queue extends RubyObject implements DataType {
         if (_timeout.isNil()) {
             timeoutNS = 0;
         } else if (_timeout instanceof RubyFixnum) {
-            timeoutNS = TimeUnit.NANOSECONDS.convert(numToLong(context, _timeout), TimeUnit.SECONDS);
+            timeoutNS = TimeUnit.NANOSECONDS.convert(toLong(context, _timeout), TimeUnit.SECONDS);
         } else {
             timeoutNS = (long) (RubyNumeric.num2dbl(context, _timeout) * 1_000_000_000);
         }

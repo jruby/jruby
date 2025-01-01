@@ -1303,7 +1303,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @Override
     public final int compareTo(IRubyObject other) {
         var context = getRuntime().getCurrentContext();
-        return numToInt(context, op_cmp(context, other));
+        return toInt(context, op_cmp(context, other));
     }
 
     /* rb_str_cmp_m */
@@ -1387,7 +1387,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private RubyString multiplyByteList(ThreadContext context, IRubyObject arg) {
-        long longLen = numToLong(context, arg);
+        long longLen = toLong(context, arg);
         if (longLen < 0) throw argumentError(context, "negative argument");
         if (size() == 0) return (RubyString) dup();
 
@@ -1795,7 +1795,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             IRubyObject encoding = opts.fastARef(asSymbol(context, "encoding"));
             IRubyObject capacity = opts.fastARef(asSymbol(context, "capacity"));
 
-            if (capacity != null && !capacity.isNil()) modify(numToInt(context, capacity));
+            if (capacity != null && !capacity.isNil()) modify(toInt(context, capacity));
             if (encoding != null && !encoding.isNil()) {
                 modify();
                 setEncodingAndCodeRange(context.runtime.getEncodingService().getEncodingFromObject(encoding), CR_UNKNOWN);
@@ -3885,7 +3885,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod
     public IRubyObject byteslice(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
-        return byteSubstr(context, numToLong(context, arg1), numToLong(context, arg2));
+        return byteSubstr(context, toLong(context, arg1), toLong(context, arg2));
     }
 
     @JRubyMethod
@@ -4482,7 +4482,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      */
     @JRubyMethod(name = "to_i")
     public IRubyObject to_i(ThreadContext context, IRubyObject arg0) {
-        int base = numToInt(context, arg0);
+        int base = toInt(context, arg0);
         if (base < 0) throw argumentError(context, "illegal radix " + base);
         return stringToInum(base);
     }
@@ -5575,7 +5575,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (arg instanceof RubyRegexp) {
             IRubyObject tmp = rindex(context, arg);
             if (tmp.isNil()) return rpartitionMismatch(context);
-            pos = numToInt(context, tmp);
+            pos = toInt(context, tmp);
             sep = (RubyString)RubyRegexp.nth_match(context, 0, context.getLocalMatchOrNil());
         } else {
             IRubyObject tmp = arg.checkStringType();
@@ -5631,14 +5631,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private void appendBytes(ThreadContext context, IRubyObject arg) {
-        if (arg instanceof RubyFixnum fix) {
-            cat(fix.getIntValue() & 0xff);
-        } else if (arg instanceof RubyBignum big) {
-            cat(big.getBigIntegerValue().intValue() & 0xff);
-        } else if (arg instanceof RubyString str) {
-            value.append(str.getByteList());
-        } else {
-            throw runtimeError(context, "BUG: append_as_bytes arguments should have been validated");
+        switch (arg) {
+            case RubyFixnum fix -> cat(fix.asInt(context) & 0xff);
+            case RubyBignum big -> cat(big.getBigIntegerValue().intValue() & 0xff);
+            case RubyString str -> value.append(str.getByteList());
+            default -> throw runtimeError(context, "BUG: append_as_bytes arguments should have been validated");
         }
     }
 
@@ -6590,7 +6587,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod
     public IRubyObject sum(ThreadContext context, IRubyObject arg) {
-        return sumCommon(context, numToLong(context, arg));
+        return sumCommon(context, toLong(context, arg));
     }
 
     public IRubyObject sumCommon(ThreadContext context, long bits) {
@@ -6687,7 +6684,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (options.size() == 1) {
             IRubyObject offsetArg = options.fastARef(asSymbol(context, "offset"));
             if (offsetArg == null) throw argumentError(context, "unknown keyword: " + options.keys().first(context).inspect(context));
-            offset = numToLong(context, offsetArg);
+            offset = toLong(context, offsetArg);
         }
         // FIXME: keyword arg processing incomplete.  We need a better system.
 

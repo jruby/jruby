@@ -53,8 +53,7 @@ import org.jruby.lexer.StrftimeLexer;
 import org.jruby.runtime.ThreadContext;
 
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Convert.numToInt;
-import static org.jruby.api.Convert.numToLong;
+import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.util.CommonByteLists.*;
 import static org.jruby.util.RubyDateFormatter.FieldType.*;
@@ -638,7 +637,7 @@ public class RubyDateFormatter {
         RubyNumeric truncated = (RubyNumeric) sub_millis.numerator(context).
                 convertToInteger().op_mul(context, power);
         truncated = (RubyNumeric) truncated.idiv(context, sub_millis.denominator(context));
-        long decimals = numToLong(context, truncated);
+        long decimals = toLong(context, truncated);
         RubyTimeOutputFormatter.formatNumber(buff, decimals, prec, '0');
     }
 

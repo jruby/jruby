@@ -87,7 +87,7 @@ abstract public class AbstractMemory extends MemoryObject {
         DynamicMethod sizeMethod = sizeArg.getMetaClass().searchMethod("size");
         if (sizeMethod.isUndefined()) throw argumentError(context, "Invalid size argument");
 
-        return (int) numToLong(context, sizeMethod.call(context, sizeArg, sizeArg.getMetaClass(), "size"));
+        return (int) toLong(context, sizeMethod.call(context, sizeArg, sizeArg.getMetaClass(), "size"));
     }
 
     protected static final RubyArray checkArray(IRubyObject obj) {
@@ -1914,7 +1914,7 @@ abstract public class AbstractMemory extends MemoryObject {
     @JRubyMethod(name = "write_string")
     public IRubyObject write_string(ThreadContext context, IRubyObject strArg, IRubyObject lenArg) {
         ByteList bl = strArg.convertToString().getByteList();
-        getMemoryIO().put(0, bl.getUnsafeBytes(), bl.begin(), Math.min(bl.length(), (int) numToLong(context, lenArg)));
+        getMemoryIO().put(0, bl.getUnsafeBytes(), bl.begin(), Math.min(bl.length(), (int) toLong(context, lenArg)));
         return this;
     }
 
@@ -2098,7 +2098,7 @@ abstract public class AbstractMemory extends MemoryObject {
     public final IRubyObject put(ThreadContext context, IRubyObject typeName, IRubyObject offset) {
         Type type = context.runtime.getFFI().getTypeResolver().findType(context.runtime, typeName);
         MemoryOp op = MemoryOp.getMemoryOp(type);
-        if (op != null) return op.get(context, getMemoryIO(), numToLong(context, offset));
+        if (op != null) return op.get(context, getMemoryIO(), toLong(context, offset));
 
         throw argumentError(context, "undefined type " + typeName);
     }
@@ -2108,7 +2108,7 @@ abstract public class AbstractMemory extends MemoryObject {
         Type type = context.runtime.getFFI().getTypeResolver().findType(context.runtime, typeName);
         MemoryOp op = MemoryOp.getMemoryOp(type);
         if (op != null) {
-            op.put(context, getMemoryIO(), numToLong(context, offset), value);
+            op.put(context, getMemoryIO(), toLong(context, offset), value);
             return context.nil;
         }
 

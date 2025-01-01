@@ -794,18 +794,17 @@ public abstract class JavaLang {
         public static IRubyObject new_array(ThreadContext context, IRubyObject self, IRubyObject length) {
             final java.lang.Class klass = unwrapJavaObject(self);
 
-            if (length instanceof RubyInteger) { // one-dimensional array
-                int len = ((RubyInteger) length).getIntValue();
-                return ArrayJavaProxy.newArray(context.runtime, klass, len);
+            if (length instanceof RubyInteger lenint) { // one-dimensional array
+                return ArrayJavaProxy.newArray(context.runtime, klass, lenint.asInt(context));
             }
-            if (length instanceof RubyArray) { // n-dimensional array
-                IRubyObject[] aryLengths = ((RubyArray) length).toJavaArrayMaybeUnsafe();
+            if (length instanceof RubyArray ary) { // n-dimensional array
+                IRubyObject[] aryLengths = ary.toJavaArrayMaybeUnsafe();
                 final int len = aryLengths.length;
                 if (len == 0) throw argumentError(context, "empty dimensions specifier for java array");
 
                 final int[] dimensions = new int[len];
                 for (int i = len; --i >= 0; ) {
-                    dimensions[i] = Convert.castAsInteger(context, aryLengths[i]).getIntValue();
+                    dimensions[i] = Convert.castAsInteger(context, aryLengths[i]).asInt(context);
                 }
                 return ArrayJavaProxy.newArray(context.runtime, klass, dimensions);
             }
@@ -942,7 +941,7 @@ public abstract class JavaLang {
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, java.lang.String name, IRubyObject idx) {
             final RubyInteger val = (RubyInteger) self.callMethod(context, "[]", idx);
-            int byte_val = val.getIntValue();
+            int byte_val = val.asInt(context);
             if ( byte_val >= 0 ) return val;
             return asFixnum(context, byte_val + 256); // byte += 256 if byte < 0
         }
@@ -956,7 +955,7 @@ public abstract class JavaLang {
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, java.lang.String name, IRubyObject idx, IRubyObject val) {
-            int byte_val = ((RubyInteger) val).getIntValue();
+            int byte_val = ((RubyInteger) val).asInt(context);
             if ( byte_val > 127 ) {
                 val = asFixnum(context, byte_val - 256); // value -= 256 if value > 127
             }

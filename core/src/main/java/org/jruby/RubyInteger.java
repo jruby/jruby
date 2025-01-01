@@ -41,6 +41,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Convert;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -118,9 +119,13 @@ public abstract class RubyInteger extends RubyNumeric {
 
     public int signum() { return getBigIntegerValue().signum(); }
 
-    public RubyInteger negate() { // abstract - Fixnum/Bignum do override
-        ThreadContext context = metaClass.runtime.getCurrentContext();
-        return sites(context).op_uminus.call(context, this, this).convertToInteger();
+    @Deprecated(since = "10.0")
+    public RubyInteger negate() {
+        return negate(getCurrentContext());
+    }
+
+    public RubyInteger negate(ThreadContext context) { // abstract - Fixnum/Bignum do override
+        return Convert.toInteger(context, sites(context).op_uminus.call(context, this, this));
     }
 
     @Override
@@ -153,7 +158,7 @@ public abstract class RubyInteger extends RubyNumeric {
      */
     @JRubyMethod(meta = true)
     public static IRubyObject sqrt(ThreadContext context, IRubyObject self, IRubyObject num) {
-        return num.convertToInteger().sqrt(context);
+        return Convert.toInteger(context, num).sqrt(context);
     }
 
     @JRubyMethod(meta = true)
@@ -637,7 +642,7 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     protected boolean int_round_zero_p(ThreadContext context, int ndigits) {
-        long bytes = numToLong(context, sites(context).size.call(context, this, this));
+        long bytes = toLong(context, sites(context).size.call(context, this, this));
         return (-0.415241 * ndigits - 0.125 > bytes);
     }
 
@@ -656,7 +661,7 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     protected static boolean int_half_p_half_even(ThreadContext context, RubyInteger num, RubyNumeric n, IRubyObject f) {
-        return n.div(context, f).convertToInteger().odd_p(context).isTrue();
+        return Convert.toInteger(context, n.div(context, f)).odd_p(context).isTrue();
     }
 
     protected static boolean int_half_p_half_up(ThreadContext context, RubyInteger num, RubyNumeric n, IRubyObject f) {
@@ -880,7 +885,7 @@ public abstract class RubyInteger extends RubyNumeric {
         RubyInteger pow = castAsInteger(context, m, "Integer#pow() 2nd argument not allowed unless all arguments are integers");
 
         if (pow.isNegative(context)) {
-            pow = pow.negate();
+            pow = pow.negate(context);
             negaFlg = true;
         }
 
@@ -946,13 +951,12 @@ public abstract class RubyInteger extends RubyNumeric {
 
     @JRubyMethod(name = "[]")
     public IRubyObject op_aref(ThreadContext context, IRubyObject index) {
-        if (index instanceof RubyRange) {
-            RubyRange range = (RubyRange) index;
+        if (index instanceof RubyRange range) {
             IRubyObject beg = range.begin(context);
             IRubyObject end = range.end(context);
             boolean isExclusive = range.isExcludeEnd();
 
-            if (!end.isNil()) end = end.convertToInteger();
+            if (!end.isNil()) end = Convert.toInteger(context, end);
 
             if (beg.isNil()) {
                 if (!negativeInt(context, end)) {
@@ -966,7 +970,7 @@ public abstract class RubyInteger extends RubyNumeric {
                     return asFixnum(context, 0);
                 }
             }
-            beg = beg.convertToInteger();
+            beg = Convert.toInteger(context, beg);
             IRubyObject num = op_rshift(context, beg);
             long cmp = compareIndexes(context, beg, end);
             if (!end.isNil() && cmp < 0) {

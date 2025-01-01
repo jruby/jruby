@@ -48,7 +48,7 @@ import org.jruby.util.io.EncodingUtils;
 import static org.jruby.api.Access.integerClass;
 import static org.jruby.api.Access.stringClass;
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Convert.numToLong;
+import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
@@ -606,7 +606,7 @@ public class Sprintf {
                             n = StringSupport.codeLength(bl.getEncoding(), c);
                         }
                     } else {
-                        c = (int) numToLong(context, arg) & 0xFFFFFFFF;
+                        c = (int) toLong(context, arg) & 0xFFFFFFFF;
                         try {
                             n = StringSupport.codeLength(encoding, c);
                         } catch (EncodingException e) {

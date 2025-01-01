@@ -71,7 +71,7 @@ public class RubyRandom extends RubyRandomBase {
         }
 
         public static Random randomFromFixnum(RubyFixnum seed) {
-            return randomFromLong(numToLong(seed.getRuntime().getCurrentContext(), seed));
+            return randomFromLong(toLong(seed.getRuntime().getCurrentContext(), seed));
         }
 
         public static Random randomFromLong(long seed) {
@@ -272,7 +272,7 @@ public class RubyRandom extends RubyRandomBase {
         if (arg == context.nil) return randFloat(context, random);
         if (arg instanceof RubyRange) return randRandom(context, self, random, arg);
 
-        RubyInteger max = arg.convertToInteger();
+        RubyInteger max = toInteger(context, arg);
         if (max.isZero(context)) return randFloat(context, random);
 
         IRubyObject r = randInt(context, self, random, max, false);
@@ -389,7 +389,7 @@ public class RubyRandom extends RubyRandomBase {
 
     @JRubyMethod(name = "urandom", meta = true)
     public static IRubyObject urandom(ThreadContext context, IRubyObject recv, IRubyObject num) {
-        int n = numToInt(context, num);
+        int n = toInt(context, num);
 
         if (n < 0) throw argumentError(context, "negative string size (or size too big)");
 

@@ -67,10 +67,11 @@ import java.nio.ByteOrder;
 import java.nio.channels.Channel;
 
 import static com.headius.backport9.buffer.Buffers.flipBuffer;
+import static org.jruby.api.Access.fixnumClass;
 import static org.jruby.api.Access.ioClass;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Convert.numToInt;
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
@@ -91,7 +92,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
     @JRubyMethod(meta = true)
     public static IRubyObject for_fd(ThreadContext context, IRubyObject recv, IRubyObject _fileno) {
-        int fileno = numToInt(context, _fileno);
+        int fileno = toInt(context, _fileno);
 
         RubyClass klass = (RubyClass)recv;
         RubyUNIXSocket unixSocket = (RubyUNIXSocket)(Helpers.invoke(context, klass, "allocate"));
@@ -142,8 +143,8 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
         if (arg.callMethod(context, "kind_of?", ioClass(context)).isTrue()) {
           fd = ((RubyIO) arg).getOpenFileChecked().getFileno();
-        } else if (arg.callMethod(context, "kind_of?", context.runtime.getFixnum()).isTrue()) {
-          fd = ((RubyFixnum) arg).getIntValue();
+        } else if (arg.callMethod(context, "kind_of?", fixnumClass(context)).isTrue()) {
+          fd = ((RubyFixnum) arg).asInt(context);
         } else {
           throw typeError(context, "neither IO nor file descriptor");
         }

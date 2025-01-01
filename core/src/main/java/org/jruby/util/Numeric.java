@@ -33,7 +33,6 @@ import org.joni.WarnCallback;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
-import org.jruby.RubyBoolean;
 import org.jruby.RubyComplex;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
@@ -379,7 +378,7 @@ public class Numeric {
     }
 
     public static RubyInteger f_negate(ThreadContext context, RubyInteger x) {
-        return x.negate();
+        return x.negate(context);
     }
 
     /** f_to_f
@@ -655,7 +654,7 @@ public class Numeric {
     }
 
     public static long i_ilog2(ThreadContext context, RubyInteger x) {
-        long q = (numToInt(context, x.size(context)) - 8) * 8 + 1;
+        long q = (toInt(context, x.size(context)) - 8) * 8 + 1;
 
         if (q > 0) {
             x = x.op_rshift(context, q);

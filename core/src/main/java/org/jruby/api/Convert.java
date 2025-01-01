@@ -41,7 +41,7 @@ import static org.jruby.util.TypeConverter.sites;
  * Methods where the parameter to `As` methods will omit the type from in front of as.  For example,
  * `longAsInteger` will be `asInteger(context, long)`.  Additionally, naming is terse but in cases where
  * something is ambiguous (asFloat() return a Ruby float but if we need a Java equivalent it will take
- * the extra naming asJavaFloat()).  Luckily for Java primitivesas Ruby types there are not too many
+ * the extra naming asJavaFloat()).  Luckily for Java primitives as Ruby types there are not too many
  * conflicts.
  */
 public class Convert {
@@ -460,7 +460,7 @@ public class Convert {
      * @param arg the RubyNumeric to convert
      * @return the long value
      */
-    public static long numToLong(ThreadContext context, IRubyObject arg) {
+    public static long toLong(ThreadContext context, IRubyObject arg) {
         return num2long(arg);
     }
 
@@ -470,7 +470,7 @@ public class Convert {
      * @param arg the RubyNumeric to convert
      * @return the int value
      */
-    public static int numToInt(ThreadContext context, IRubyObject arg) {
+    public static int toInt(ThreadContext context, IRubyObject arg) {
         return num2int(arg);
     }
 
@@ -480,7 +480,7 @@ public class Convert {
      * @param arg the RubyNumeric to convert
      * @return the int value
      */
-    public static RubyInteger numToInteger(ThreadContext context, IRubyObject arg) {
+    public static RubyInteger toInteger(ThreadContext context, IRubyObject arg) {
         // FIXME: Make proper impl which is amalgam of RubyNumeric num2int and convertToInteger and hen have numTo{Long,Int} use this
         return arg.convertToInteger();
     }
