@@ -115,7 +115,7 @@ public class RubyProcess {
         context.runtime.setProcSys(Process.defineModuleUnder(context, "Sys").defineMethods(context, Sys.class));
 
         if (Platform.IS_WINDOWS) {
-            var singleton = ProcessStatus.singletonClass(context);
+            var singleton = Process.singletonClass(context);
             // mark rlimit methods as not implemented and skip defining the constants (GH-6491)
             singleton.retrieveMethod("getrlimit").setNotImplemented(true);
             singleton.retrieveMethod("setrlimit").setNotImplemented(true);
@@ -194,8 +194,8 @@ public class RubyProcess {
             var pstatus = (RubyFixnum) status.removeInternalVariable("status");
             var pid = (RubyFixnum) status.removeInternalVariable("pid");
 
-            status.status = pstatus.getValue();
-            status.pid = pid.getValue();
+            status.status = pstatus.asLong(context);
+            status.pid = pid.asLong(context);
 
             return status;
         }
