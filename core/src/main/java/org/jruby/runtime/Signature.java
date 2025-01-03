@@ -146,7 +146,7 @@ public class Signature {
         boolean hasOptionalKeywords = kwargs - requiredKwargs > 0;
         boolean optionalFromRest = rest() != Rest.NONE && rest != Rest.ANON;
 
-        if (opt() > 0 || optionalFromRest || (hasOptionalKeywords || restKwargs()) && oneForKeywords == 0) {
+        if (opt() > 0 || optionalFromRest || fixedValue == 0 && (hasOptionalKeywords || restKwargs())) {
             return -1 * (fixedValue + 1);
         }
 
