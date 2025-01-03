@@ -142,15 +142,14 @@ public class RubySocket extends RubyBasicSocket {
 
     @JRubyMethod(meta = true)
     public static IRubyObject for_fd(ThreadContext context, IRubyObject socketClass, IRubyObject _fd) {
-        int intFD = Convert.castAsFixnum(context, _fd).getIntValue();
-        Ruby runtime = context.runtime;
-        ChannelFD fd = runtime.getFilenoUtil().getWrapperFromFileno(intFD);
+        int intFD = Convert.castAsFixnum(context, _fd).asInt(context);
+        ChannelFD fd = context.runtime.getFilenoUtil().getWrapperFromFileno(intFD);
 
-        if (fd == null) throw runtime.newErrnoEBADFError();
+        if (fd == null) throw context.runtime.newErrnoEBADFError();
 
         RubySocket socket = (RubySocket)((RubyClass)socketClass).allocate(context);
 
-        socket.initFieldsFromDescriptor(runtime, fd);
+        socket.initFieldsFromDescriptor(context.runtime, fd);
         socket.initSocket(fd);
 
         return socket;

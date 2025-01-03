@@ -178,7 +178,7 @@ public class RubyRange extends RubyObject {
     }
 
     final boolean checkBegin(ThreadContext context, long length) {
-        long beg = isBeginless ? 0 : numericToLong(context, this.begin);
+        long beg = isBeginless ? 0 : toLong(context, this.begin);
         if (beg < 0) {
             beg += length;
             if (beg < 0) {
@@ -191,8 +191,8 @@ public class RubyRange extends RubyObject {
     }
 
     final long[] begLen(ThreadContext context, long len, int err) {
-        long beg = isBeginless ? 0 : numericToLong(context, this.begin);
-        long end = isEndless ? -1: numericToLong(context, this.end);
+        long beg = isBeginless ? 0 : toLong(context, this.begin);
+        long end = isEndless ? -1: toLong(context, this.end);
 
         if (beg < 0) {
             beg += len;
@@ -220,7 +220,7 @@ public class RubyRange extends RubyObject {
     }
 
     final long begLen0(ThreadContext context, long len) {
-        long beg = isBeginless ? 0 : numericToLong(context, this.begin);
+        long beg = isBeginless ? 0 : toLong(context, this.begin);
 
         if (beg < 0) {
             beg += len;
@@ -231,7 +231,7 @@ public class RubyRange extends RubyObject {
     }
 
     final long begLen1(ThreadContext context, long len, long beg) {
-        long end = isEndless ? -1 : numericToLong(context, this.end);
+        long end = isEndless ? -1 : toLong(context, this.end);
 
         if (end < 0) end += len;
         if (!isExclusive || isEndless) end++;
@@ -325,10 +325,10 @@ public class RubyRange extends RubyObject {
         long hash = exclusiveBit;
 
         hash = hashStart(context.runtime, hash);
-        IRubyObject v = safeHash(context, begin);
-        hash = murmurCombine(hash, v.convertToInteger().getLongValue());
+        RubyFixnum v = safeHash(context, begin);
+        hash = murmurCombine(hash, v.asLong(context));
         v = safeHash(context, end);
-        hash = murmurCombine(hash, v.convertToInteger().getLongValue());
+        hash = murmurCombine(hash, v.asLong(context));
         hash = murmurCombine(hash, exclusiveBit << 24);
         hash = hashEnd(hash);
 
@@ -425,7 +425,7 @@ public class RubyRange extends RubyObject {
         @Override
         public void doCall(ThreadContext context, IRubyObject arg) {
             if (iter instanceof RubyFixnum iterFixnum) {
-                iter = asFixnum(context, iterFixnum.getLongValue() - 1);
+                iter = asFixnum(context, iterFixnum.getValue() - 1);
             } else if (iter instanceof RubyInteger iterInteger) {
                 iter = iterInteger.op_minus(context, 1);
             } else {
@@ -624,7 +624,7 @@ public class RubyRange extends RubyObject {
 
         if (beg instanceof RubyFixnum && end instanceof RubyFixnum endFixnum) {
             if (excl) {
-                if (endFixnum.getLongValue() == RubyFixnum.MIN) return this;
+                if (endFixnum.getValue() == RubyFixnum.MIN) return this;
 
                 end = endFixnum.op_minus(context, 1);
             }
@@ -820,8 +820,8 @@ public class RubyRange extends RubyObject {
 
         if (begin instanceof RubyFixnum && end.isNil() && step instanceof RubyFixnum) {
             fixnumEndlessStep(context, step, block);
-        } else if (begin instanceof RubyFixnum && end instanceof RubyFixnum && step instanceof RubyFixnum) {
-            fixnumStep(context, ((RubyFixnum) step).getLongValue(), block);
+        } else if (begin instanceof RubyFixnum && end instanceof RubyFixnum && step instanceof RubyFixnum stepf) {
+            fixnumStep(context, stepf.getValue(), block);
         } else if (beginIsNumeric && endIsNumeric && floatStep(context, begin, end, step, isExclusive, isEndless, block)) {
             /* done */
         } else if (!strBegin.isNil() && step instanceof RubyFixnum) {
@@ -879,8 +879,8 @@ public class RubyRange extends RubyObject {
     }
 
     private void fixnumEndlessStep(ThreadContext context, IRubyObject step, Block block) {
-        long i = begin.convertToInteger().getLongValue();
-        long unit = step.convertToInteger().getLongValue();
+        long i = toLong(context, begin);
+        long unit = toLong(context, step);
         // avoid overflow
         while (i <= Long.MAX_VALUE - unit) {
             block.yield(context, asFixnum(context, i));
@@ -1100,7 +1100,7 @@ public class RubyRange extends RubyObject {
             if (!(begin instanceof RubyInteger)) throw typeError(context, "cannot exclude end value with non Integer begin value");
 
             return end instanceof RubyFixnum fixnum ?
-                    asFixnum(context, fixnum.getLongValue() - 1) :
+                    asFixnum(context, fixnum.getValue() - 1) :
                     end.callMethod(context, "-", RubyFixnum.one(context.runtime));
         }
 
@@ -1199,35 +1199,35 @@ public class RubyRange extends RubyObject {
 
     // MRI rb_int_range_last
     private RubyArray intRangeLast(ThreadContext context, IRubyObject arg) {
-        IRubyObject one = asFixnum(context, 1);
-        IRubyObject len1, len, nv, b;
-
-        len1 = ((RubyInteger)end).op_minus(context, begin);
+        RubyFixnum one = asFixnum(context, 1);
+        RubyInteger e = (RubyInteger) end;
+        RubyInteger len;
+        RubyInteger len1 = (RubyInteger) e.op_minus(context, begin);
 
         if (isExclusive) {
-            end = ((RubyInteger)end).op_minus(context, one);
+            e = (RubyInteger) e.op_minus(context, one);
             len = len1;
         } else {
-            len = ((RubyInteger)len1).op_plus(context, one);
+            len = (RubyInteger) len1.op_plus(context, one);
         }
 
-        if (((RubyInteger)len).isZero(context) || Numeric.f_negative_p(context, (RubyInteger)len)) {
+        if (len.isZero(context) || Numeric.f_negative_p(context, len)) {
             return newEmptyArray(context);
         }
 
-        long n = numericToLong(context, arg);
+        long n = toLong(context, arg);
         if (n < 0) throw argumentError(context, "negative array size");
 
-        nv = asFixnum(context, n);
+        RubyInteger nv = asFixnum(context, n);
         if (Numeric.f_gt_p(context, nv, len)) {
              nv = len;
-             n = numericToLong(context, nv);
+             n = toLong(context, nv);
         }
 
         RubyArray<?> array = newRawArray(context, n);
-        b = ((RubyInteger)end).op_minus(context, nv);
+        RubyInteger b = (RubyInteger) e.op_minus(context, nv);
         while (n > 0) {
-            b = ((RubyInteger)b).op_plus(context, one);
+            b = (RubyInteger) b.op_plus(context, one);
             array.append(context, b);
             n--;
         }
@@ -1371,8 +1371,8 @@ public class RubyRange extends RubyObject {
         IRubyObject _beg = sites.begin.call(context, range, range);
         IRubyObject _end = sites.end.call(context, range, range);
         boolean excludeEnd = sites.exclude_end.call(context, range, range).isTrue();
-        int beg = _beg.isNil() ? 0 : _beg.convertToInteger().getIntValue();
-        int end = _end.isNil() ? -1 :_end.convertToInteger().getIntValue();
+        int beg = _beg.isNil() ? 0 : toInt(context, _beg);
+        int end = _end.isNil() ? -1 : toInt(context, _end);
         int origBeg = beg;
         int origEnd = end;
 
@@ -1441,19 +1441,17 @@ public class RubyRange extends RubyObject {
     public static class BSearch {
         @JRubyMethod(meta = true)
         public static IRubyObject double_to_long_bits(ThreadContext context, IRubyObject bsearch, IRubyObject flote) {
-            return flote instanceof RubyFixnum value ?
-                    asFixnum(context, Double.doubleToLongBits(value.getDoubleValue())) :
-                    asFixnum(context, Double.doubleToLongBits(((RubyFloat) flote).getDoubleValue()));
+            return asFixnum(context, Double.doubleToLongBits(((RubyNumeric) flote).asDouble(context)));
         }
 
         @JRubyMethod(meta = true)
         public static IRubyObject long_bits_to_double(ThreadContext context, IRubyObject bsearch, IRubyObject fixnum) {
-            return asFloat(context, Double.longBitsToDouble(((RubyFixnum) fixnum).getLongValue()));
+            return asFloat(context, Double.longBitsToDouble(((RubyFixnum) fixnum).asLong(context)));
         }
 
         @JRubyMethod(meta = true)
         public static IRubyObject abs(ThreadContext context, IRubyObject bsearch, IRubyObject flote) {
-            return asFloat(context, Math.abs(((RubyFloat) flote).getDoubleValue()));
+            return asFloat(context, Math.abs(((RubyFloat) flote).asDouble(context)));
         }
     }
 

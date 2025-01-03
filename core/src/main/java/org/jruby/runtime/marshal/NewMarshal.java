@@ -170,7 +170,8 @@ public class NewMarshal {
     }
 
     private static boolean isMarshalFixnum(RubyFixnum fixnum) {
-        return fixnum.getLongValue() <= RubyFixnum.MAX_MARSHAL_FIXNUM && fixnum.getLongValue() >= RubyFixnum.MIN_MARSHAL_FIXNUM;
+        var value = fixnum.getValue();
+        return value <= RubyFixnum.MAX_MARSHAL_FIXNUM && value >= RubyFixnum.MIN_MARSHAL_FIXNUM;
     }
 
     private void writeAndRegisterSymbol(RubyOutputStream out, RubySymbol sym) {
@@ -332,12 +333,12 @@ public class NewMarshal {
 
                 if (isMarshalFixnum(fixnum)) {
                     out.write('i');
-                    writeInt(out, (int) fixnum.getLongValue());
+                    writeInt(out, (int) fixnum.getValue());
                     return;
                 }
                 // FIXME: inefficient; constructing a bignum just for dumping?
                 runtime = context.runtime;
-                value = RubyBignum.newBignum(runtime, fixnum.getLongValue());
+                value = RubyBignum.newBignum(runtime, fixnum.getValue());
 
                 // fall through
             case BIGNUM:

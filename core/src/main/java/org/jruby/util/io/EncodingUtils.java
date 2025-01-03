@@ -253,7 +253,7 @@ public class EncodingUtils {
 
                 if (!intmode.isNil()) {
                     vmode(vmodeAndVperm_p, intmode);
-                    oflags_p[0] = asInt(context, (RubyInteger) intmode);
+                    oflags_p[0] = ((RubyInteger) intmode).asInt(context);
                     fmode_p[0] = ModeFlags.getOpenFileFlagsFor(oflags_p[0]);
                 } else {
                     String p = vmode(vmodeAndVperm_p).convertToString().asJavaString();
@@ -328,7 +328,7 @@ public class EncodingUtils {
 
                 IRubyObject extraFlags = hashARef(context, options, "flags");
                 if (!extraFlags.isNil()) {
-                    oflags_p[0] |= extraFlags.convertToInteger().getIntValue();
+                    oflags_p[0] |= toInt(context, extraFlags);
                 }
 
                 ecflags = (fmode_p[0] & OpenFile.READABLE) != 0 ?
@@ -1748,11 +1748,11 @@ public class EncodingUtils {
         if ((io.getOpenFile().getMode() & OpenFile.READABLE) == 0) return null;
         if ((b1 = io.getbyte(context)).isNil()) return null;
 
-        switch ((int)((RubyFixnum)b1).getLongValue()) {
+        switch ((int)((RubyFixnum)b1).getValue()) {
             case 0xEF:
                 if ((b2 = io.getbyte(context)).isNil()) break;
-                if (b2 instanceof RubyFixnum && ((RubyFixnum)b2).getLongValue() == 0xBB && !(b3 = io.getbyte(context)).isNil()) {
-                    if (((RubyFixnum)b3).getLongValue() == 0xBF) {
+                if (b2 instanceof RubyFixnum && ((RubyFixnum)b2).getValue() == 0xBB && !(b3 = io.getbyte(context)).isNil()) {
+                    if (((RubyFixnum)b3).getValue() == 0xBF) {
                         return UTF8Encoding.INSTANCE;
                     }
                     io.ungetbyte(context, b3);
@@ -1761,17 +1761,17 @@ public class EncodingUtils {
                 break;
             case 0xFE:
                 if ((b2 = io.getbyte(context)).isNil()) break;
-                if (b2 instanceof RubyFixnum && ((RubyFixnum)b2).getLongValue() == 0xFF) {
+                if (b2 instanceof RubyFixnum && ((RubyFixnum)b2).getValue() == 0xFF) {
                     return UTF16BEEncoding.INSTANCE;
                 }
                 io.ungetbyte(context, b2);
                 break;
             case 0xFF:
                 if ((b2 = io.getbyte(context)).isNil()) break;
-                if (b2 instanceof RubyFixnum && ((RubyFixnum)b2).getLongValue() == 0xFE) {
+                if (b2 instanceof RubyFixnum && ((RubyFixnum)b2).getValue() == 0xFE) {
                     b3 = io.getbyte(context);
-                    if (b3 instanceof RubyFixnum && ((RubyFixnum)b3).getLongValue() == 0 && !(b4 = io.getbyte(context)).isNil()) {
-                        if (((RubyFixnum)b4).getLongValue() == 0) {
+                    if (b3 instanceof RubyFixnum && ((RubyFixnum)b3).getValue() == 0 && !(b4 = io.getbyte(context)).isNil()) {
+                        if (((RubyFixnum)b4).getValue() == 0) {
                             return UTF32LEEncoding.INSTANCE;
                         }
                         io.ungetbyte(context, b4);
@@ -1785,9 +1785,9 @@ public class EncodingUtils {
                 break;
             case 0:
                 if ((b2 = io.getbyte(context)).isNil()) break;
-                if (b2 instanceof RubyFixnum && ((RubyFixnum)b2).getLongValue() == 0 && !(b3 = io.getbyte(context)).isNil()) {
-                    if (b3 instanceof RubyFixnum && ((RubyFixnum)b3).getLongValue() == 0xFE && !(b4 = io.getbyte(context)).isNil()) {
-                        if (b4 instanceof RubyFixnum && ((RubyFixnum)b4).getLongValue() == 0xFF) {
+                if (b2 instanceof RubyFixnum && ((RubyFixnum)b2).getValue() == 0 && !(b3 = io.getbyte(context)).isNil()) {
+                    if (b3 instanceof RubyFixnum && ((RubyFixnum)b3).getValue() == 0xFE && !(b4 = io.getbyte(context)).isNil()) {
+                        if (b4 instanceof RubyFixnum && ((RubyFixnum)b4).getValue() == 0xFF) {
                             return UTF32BEEncoding.INSTANCE;
                         }
                         io.ungetbyte(context, b4);
@@ -2052,7 +2052,7 @@ public class EncodingUtils {
         if (!flags.isNil()) {
             if (!opt.isNil()) throw argumentError(context, args.length, 3);
 
-            ecflags_p[0] = (int)flags.convertToInteger().getLongValue();
+            ecflags_p[0] = toInt(context, flags);
             ecopts_p[0] = context.nil;
         } else if (!opt.isNil()) {
             ecflags_p[0] = EncodingUtils.econvPrepareOpts(context, opt, ecopts_p);

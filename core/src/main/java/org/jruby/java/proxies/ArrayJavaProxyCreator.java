@@ -8,6 +8,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
@@ -39,7 +40,7 @@ public class ArrayJavaProxyCreator extends RubyObject {
     ArrayJavaProxyCreator(final ThreadContext context, Class<?> elementType, final IRubyObject[] sizes) {
         this(context.runtime, elementType);
         assert sizes.length > 0;
-        aggregateDimensions(sizes);
+        aggregateDimensions(context, sizes);
     }
 
     private ArrayJavaProxyCreator(final Ruby runtime, Class<?> elementType) {
@@ -50,7 +51,7 @@ public class ArrayJavaProxyCreator extends RubyObject {
     @JRubyMethod(name = "[]", required = 1, rest = true, checkArity = false)
     public final IRubyObject op_aref(ThreadContext context, IRubyObject[] sizes) {
         Arity.checkArgumentCount(context, sizes, 1, -1);
-        aggregateDimensions(sizes);
+        aggregateDimensions(context, sizes);
         return this;
     }
 
@@ -59,7 +60,7 @@ public class ArrayJavaProxyCreator extends RubyObject {
         return ArrayJavaProxy.newArray(context, elementType, dimensions);
     }
 
-    private void aggregateDimensions(final IRubyObject[] sizes) {
+    private void aggregateDimensions(ThreadContext context, final IRubyObject[] sizes) {
         final int slen = sizes.length; if ( slen == 0 ) return;
         final int dlen = dimensions.length;
         final int[] newDimensions = new int[ dlen + slen ];
@@ -68,7 +69,7 @@ public class ArrayJavaProxyCreator extends RubyObject {
             System.arraycopy(dimensions, 0, newDimensions, 0, dlen);
         }
         for ( int i = 0; i < slen; i++ ) {
-            int size = (int) sizes[i].convertToInteger().getLongValue();
+            int size = toInt(context, sizes[i]);
             newDimensions[ i + dlen ] = size;
         }
         dimensions = newDimensions;

@@ -93,7 +93,7 @@ public class JavaArray extends JavaObject {
     @Deprecated(since = "10.0")
     public IRubyObject aset(IRubyObject indexArg, IRubyObject value) {
         var context = getCurrentContext();
-        var index = Convert.castAsInteger(context, indexArg).getIntValue();
+        var index = Convert.castAsInteger(context, indexArg).asInt(context);
         var javaObject = castToJavaObject(context, value).getValue();
 
         ArrayUtils.setWithExceptionHandlingDirect(context.runtime, javaObject, index, javaObject);
@@ -113,8 +113,8 @@ public class JavaArray extends JavaObject {
     @Deprecated(since = "10.0")
     public IRubyObject afill(IRubyObject beginArg, IRubyObject endArg, IRubyObject value) {
         var context = ((RubyBasicObject) beginArg).getCurrentContext();
-        var beginIndex = Convert.castAsInteger(context, beginArg).getIntValue();
-        var endIndex = Convert.castAsInteger(context, endArg).getIntValue();
+        var beginIndex = Convert.castAsInteger(context, beginArg).asInt(context);
+        var endIndex = Convert.castAsInteger(context, endArg).asInt(context);
         var javaValue = castToJavaObject(context, value).getValue();
 
         fillWithExceptionHandling(context, beginIndex, endIndex, javaValue);

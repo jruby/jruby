@@ -91,22 +91,22 @@ public class Pointer extends AbstractMemory {
         return asFixnum(context, Factory.getInstance().sizeOf(NativeType.POINTER));
     }
 
-    @JRubyMethod(name = { "initialize" }, visibility = PRIVATE)
+    @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject address) {
         setMemoryIO(address instanceof Pointer
                 ? ((Pointer) address).getMemoryIO()
-                : Factory.getInstance().wrapDirectMemory(context.runtime, numericToLong(context, address)));
+                : Factory.getInstance().wrapDirectMemory(context.runtime, toLong(context, address)));
         size = Long.MAX_VALUE;
         typeSize = 1;
 
         return this;
     }
 
-    @JRubyMethod(name = { "initialize" }, visibility = PRIVATE)
+    @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject type, IRubyObject address) {
         setMemoryIO(address instanceof Pointer
                 ? ((Pointer) address).getMemoryIO()
-                : Factory.getInstance().wrapDirectMemory(context.runtime, numericToLong(context, address)));
+                : Factory.getInstance().wrapDirectMemory(context.runtime, toLong(context, address)));
         size = Long.MAX_VALUE;
         typeSize = calculateTypeSize(context, type);
 

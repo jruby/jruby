@@ -36,7 +36,6 @@ package org.jruby.ext.zlib;
 import java.util.zip.CRC32;
 import java.util.zip.Adler32;
 
-import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
@@ -57,7 +56,7 @@ import org.jruby.runtime.ThreadContext;
 
 import static org.jruby.api.Access.*;
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Convert.numericToLong;
+import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineModule;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
@@ -199,10 +198,8 @@ public class RubyZlib {
     @JRubyMethod(name = "crc32", optional = 2, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject crc32(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         args = Arity.scanArgs(context, args, 0, 2);
-        long start = 0;
-        ByteList bytes = null;
-        if (!args[0].isNil()) bytes = args[0].convertToString().getByteList();
-        if (!args[1].isNil()) start = numericToLong(context, args[1]);
+        ByteList bytes = !args[0].isNil() ? args[0].convertToString().getByteList() : null;
+        long start = !args[1].isNil() ? toLong(context, args[1]) : 0;
         start &= 0xFFFFFFFFL;
 
         final boolean slowPath = start != 0;
@@ -227,19 +224,15 @@ public class RubyZlib {
     @JRubyMethod(name = "adler32", optional = 2, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject adler32(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         args = Arity.scanArgs(context, args, 0, 2);
-        int start = 1;
-        ByteList bytes = null;
-        if (!args[0].isNil()) bytes = args[0].convertToString().getByteList();
-        if (!args[1].isNil()) start = (int) numericToLong(context, args[1]);
+        ByteList bytes = !args[0].isNil() ? args[0].convertToString().getByteList() : null;
+        int start = !args[1].isNil() ? (int) toLong(context, args[1]) : 1;
 
         Adler32 checksum = new Adler32();
-        if (bytes != null) {
-            checksum.update(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
-        }
+        if (bytes != null) checksum.update(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
+
         long result = checksum.getValue();
-        if (start != 1) {
-            result = JZlib.adler32_combine(start, result, bytes.length());
-        }
+        if (start != 1) result = JZlib.adler32_combine(start, result, bytes.length());
+
         return asFixnum(context, result);
     }
 
@@ -272,7 +265,7 @@ public class RubyZlib {
     @JRubyMethod(name = "crc_table", module = true, visibility = PRIVATE)
     public static IRubyObject crc_table(ThreadContext context, IRubyObject recv) {
         int[] table = com.jcraft.jzlib.CRC32.getCRC32Table();
-        return Create.constructArray(context, table, table.length, RubyZlib::crctablePopulator);
+        return Create.newArray(context, table, table.length, RubyZlib::crctablePopulator);
     }
 
     private static void crctablePopulator(ThreadContext c, int[] t, RubyArray<IRubyObject> a) {
@@ -287,9 +280,9 @@ public class RubyZlib {
     @JRubyMethod(name = "crc32_combine", module = true, visibility = PRIVATE)
     public static IRubyObject crc32_combine(ThreadContext context, IRubyObject recv,
                                             IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        long crc1 = numericToLong(context, arg0);
-        long crc2 = numericToLong(context, arg1);
-        long len2 = numericToLong(context, arg2);
+        long crc1 = toLong(context, arg0);
+        long crc2 = toLong(context, arg1);
+        long len2 = toLong(context, arg2);
 
         return asFixnum(context, com.jcraft.jzlib.JZlib.crc32_combine(crc1, crc2, len2));
     }
@@ -302,9 +295,9 @@ public class RubyZlib {
     @JRubyMethod(name = "adler32_combine", module = true, visibility = PRIVATE)
     public static IRubyObject adler32_combine(ThreadContext context, IRubyObject recv,
                                               IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        long adler1 = numericToLong(context, arg0);
-        long adler2 = numericToLong(context, arg1);
-        long len2 = numericToLong(context, arg2);
+        long adler1 = toLong(context, arg0);
+        long adler2 = toLong(context, arg1);
+        long len2 = toLong(context, arg2);
 
         return asFixnum(context, com.jcraft.jzlib.JZlib.adler32_combine(adler1, adler2, len2));
     }

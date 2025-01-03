@@ -218,6 +218,8 @@ import static org.jruby.api.Access.errnoModule;
 import static org.jruby.api.Access.loadService;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Convert.toInt;
+import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Create.newEmptyString;
 import static org.jruby.api.Create.newFrozenString;
 import static org.jruby.api.Error.*;
@@ -448,7 +450,7 @@ public final class Ruby implements Constantizable {
         }
         floatClass = profile.allowClass("Float") ? RubyFloat.createFloatClass(context, numericClass) : null;
         randomClass = RubyRandom.createRandomClass(context, objectClass);
-        setDefaultRandom(newRandom(this, randomClass, randomSeed(this)));
+        setDefaultRandom(newRandom(context, randomClass, randomSeed(this)));
         ioClass = RubyIO.createIOClass(context, objectClass, enumerableModule);
         ioBufferClass = Options.FIBER_SCHEDULER.load() ?
             RubyIOBuffer.createIOBufferClass(context, objectClass, comparableModule, ioClass) : null;
@@ -3485,7 +3487,7 @@ public final class Ruby implements Constantizable {
 
     @Deprecated(since = "10.0")
     public RubyArray newArray() {
-        return RubyArray.newArray(this);
+        return RubyArray.newArray(this.getCurrentContext());
     }
 
     @Deprecated(since = "10.0")
@@ -3525,7 +3527,7 @@ public final class Ruby implements Constantizable {
 
     @Deprecated(since = "10.0")
     public RubyArray newArray(int size) {
-        return RubyArray.newArray(this, size);
+        return RubyArray.newArray(this.getCurrentContext(), size);
     }
 
     public RubyArray getEmptyFrozenArray() {
@@ -5968,7 +5970,7 @@ public final class Ruby implements Constantizable {
                 RubyException raisedException = exit.getException();
                 // adopt new exit code
                 // see jruby/jruby#5437 and related issues
-                return raisedException.callMethod(context, "status").convertToInteger().getIntValue();
+                return toInt(context, raisedException.callMethod(context, "status"));
             } catch (RaiseException re) {
                 // display and set error result but do not propagate other errors raised during at_exit
                 Ruby.this.printError(re.getException());

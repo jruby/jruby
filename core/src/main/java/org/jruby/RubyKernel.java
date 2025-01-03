@@ -59,7 +59,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.api.Warn;
 import org.jruby.ast.util.ArgsUtil;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.common.RubyWarnings;
 import org.jruby.exceptions.CatchThrow;
 import org.jruby.exceptions.MainExitException;
@@ -85,7 +84,6 @@ import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.callsite.CachingCallSite;
-import org.jruby.runtime.load.LoadService;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
@@ -115,6 +113,7 @@ import static org.jruby.anno.FrameField.VISIBILITY;
 import static org.jruby.api.Access.argsFile;
 import static org.jruby.api.Access.fileClass;
 import static org.jruby.api.Access.globalVariables;
+import static org.jruby.api.Access.integerClass;
 import static org.jruby.api.Access.ioClass;
 import static org.jruby.api.Access.kernelModule;
 import static org.jruby.api.Access.loadService;
@@ -579,9 +578,8 @@ public class RubyKernel {
     }
 
     static RubyFloat new_float(ThreadContext context, RubyInteger num) {
-        return num instanceof RubyBignum ?
-                asFloat(context, RubyBignum.big2dbl((RubyBignum) num)) :
-                asFloat(context, num.getDoubleValue());
+        return asFloat(context, num instanceof RubyBignum big ?
+                RubyBignum.big2dbl(big) : num.asDouble(context));
     }
 
     @JRubyMethod(name = "Hash", required = 1, module = true, visibility = PRIVATE)
@@ -606,31 +604,22 @@ public class RubyKernel {
         IRubyObject maybeOpts = ArgsUtil.getOptionsArg(context.runtime, baseOrOpts, false);
 
         if (maybeOpts.isNil()) {
-            return TypeConverter.convertToInteger(context, object, baseOrOpts.convertToInteger().getIntValue(), true);
+            return TypeConverter.convertToInteger(context, object, toInt(context, baseOrOpts), true);
         }
 
-        boolean exception = checkExceptionOpt(context, context.runtime.getInteger(), maybeOpts);
+        boolean exception = checkExceptionOpt(context, integerClass(context), maybeOpts);
 
-        return TypeConverter.convertToInteger(
-                context,
-                object,
-                0,
-                exception);
+        return TypeConverter.convertToInteger(context, object, 0, exception);
     }
 
     @JRubyMethod(name = "Integer", module = true, visibility = PRIVATE)
     public static IRubyObject new_integer(ThreadContext context, IRubyObject recv, IRubyObject object, IRubyObject base, IRubyObject opts) {
         boolean exception = checkExceptionOpt(context, context.runtime.getInteger(), opts);
-
         IRubyObject baseInteger = TypeConverter.convertToInteger(context, base, 0, exception);
 
-        if (baseInteger.isNil()) return baseInteger;
-
-        return TypeConverter.convertToInteger(
-                context,
-                object,
-                ((RubyInteger) baseInteger).getIntValue(),
-                exception);
+        return baseInteger.isNil() ?
+                baseInteger :
+                TypeConverter.convertToInteger(context, object, ((RubyInteger) baseInteger).asInt(context), exception);
     }
 
     @JRubyMethod(name = "String", required = 1, module = true, visibility = PRIVATE)
@@ -1258,7 +1247,7 @@ public class RubyKernel {
             if (args.length > 3) {
                 // line given, use it and force it into binding
                 // -1 because parser uses zero offsets and other code compensates
-                binding.setLine(((int) args[3].convertToInteger().getLongValue()) - 1);
+                binding.setLine(toInt(context, args[3]) - 1);
             } else {
                 // filename given, but no line, start from the beginning.
                 binding.setLine(0);
@@ -1758,25 +1747,18 @@ public class RubyKernel {
     }
 
     private static int getTestCommand(ThreadContext context, IRubyObject arg0) {
-        int cmd;
-        if (arg0 instanceof RubyFixnum) {
-            cmd = (int)((RubyFixnum) arg0).getLongValue();
-        } else if (arg0 instanceof RubyString && ((RubyString) arg0).getByteList().length() > 0) {
+        int cmd = switch(arg0) {
+            case RubyFixnum fixnum -> fixnum.asInt(context);
             // MRI behavior: use first byte of string value if len > 0
-            cmd = ((RubyString) arg0).getByteList().charAt(0);
-        } else {
-            cmd = (int) arg0.convertToInteger().getLongValue();
-        }
+            case RubyString str when !str.getByteList().isEmpty() -> str.getByteList().charAt(0);
+            default -> toInt(context, arg0);
+        };
 
         // MRI behavior: raise ArgumentError for 'unknown command' before checking number of args
-        switch(cmd) {
-        case 'A': case 'b': case 'c': case 'C': case 'd': case 'e': case 'f': case 'g': case 'G':
-        case 'k': case 'M': case 'l': case 'o': case 'O': case 'p': case 'r': case 'R': case 's':
-        case 'S': case 'u': case 'w': case 'W': case 'x': case 'X': case 'z': case '=': case '<':
-        case '>': case '-':
-            break;
-        default:
-            throw argumentError(context, "unknown command ?" + (char) cmd);
+        switch (cmd) {
+            case 'A', 'b', 'c', 'C', 'd', 'e', 'f', 'g', 'G', 'k', 'M', 'l', 'o', 'O', 'p', 'r', 'R', 's', 'S', 'u',
+                 'w', 'W', 'x', 'X', 'z', '=', '<', '>', '-' -> {}
+            default -> throw argumentError(context, "unknown command ?" + (char) cmd);
         }
         return cmd;
     }

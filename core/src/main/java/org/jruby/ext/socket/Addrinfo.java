@@ -50,6 +50,7 @@ import static jnr.constants.platform.Sock.*;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.*;
 import static org.jruby.ext.socket.SocketUtils.IP_V4_MAPPED_ADDRESS_PREFIX;
 import static org.jruby.ext.socket.SocketUtils.sockerr;
@@ -188,7 +189,7 @@ public class Addrinfo extends RubyObject {
 
     private Addrinfo initializeSimple(ThreadContext context, IRubyObject host, IRubyObject port,
                                       int socketType, int protocolFamily) {
-        InetAddress inetAddress = getRubyInetAddress(host);
+        InetAddress inetAddress = getRubyInetAddress(context, host);
 
         this.socketAddress = new InetSocketAddress(inetAddress, port != null ? SocketUtils.portToInt(context, port) : 0);
         this.pfamily = getInetAddress() instanceof Inet4Address ? PF_INET : PF_INET6;
@@ -227,8 +228,8 @@ public class Addrinfo extends RubyObject {
                     throw sockerr(runtime, "Address family must be AF_UNIX, AF_INET, AF_INET6, PF_INET or PF_INET6");
                 }
 
-                int proto = protocolArg.isNil() ? 0 : protocolArg.convertToInteger().getIntValue();
-                int socketType = socketTypeArg.isNil() ? 0 : socketTypeArg.convertToInteger().getIntValue();
+                int proto = protocolArg.isNil() ? 0 : toInt(context, protocolArg);
+                int socketType = socketTypeArg.isNil() ? 0 : toInt(context, socketTypeArg);
 
                 if (socketType == 0) {
                     if (proto != 0 && proto != IPPROTO_UDP.intValue()) throw sockerr(runtime, "getaddrinfo: ai_socktype not supported");
@@ -259,7 +260,7 @@ public class Addrinfo extends RubyObject {
                     IRubyObject service = sockaddAry.entry(1).convertToInteger();
                     IRubyObject nodename = sockaddAry.entry(2);
                     String numericnode = sockaddAry.entry(3).convertToString().toString();
-                    int _port = service.convertToInteger().getIntValue();
+                    int _port = toInt(context, service);
 
                     InetAddress inetAddress;
                     boolean ipv4PrefixedString;
@@ -806,15 +807,15 @@ public class Addrinfo extends RubyObject {
         return null;
     }
 
-    private static InetAddress getRubyInetAddress(IRubyObject node) {
+    private static InetAddress getRubyInetAddress(ThreadContext context, IRubyObject node) {
         try {
             if (node instanceof RubyInteger) {
                 byte[] bytes;
-                if (node instanceof RubyBignum) {
+                if (node instanceof RubyBignum bignum) {
                     // IP6 addresses will be 16 bytes wide
-                    bytes = ((RubyBignum) node).getBigIntegerValue().toByteArray();
+                    bytes = bignum.getBigIntegerValue().toByteArray();
                 } else {
-                    long i = node.convertToInteger().getIntValue() & 0xFFFFL;
+                    long i = toInt(context, node) & 0xFFFFL;
 
                     bytes = new byte[]{
                             (byte) ((i >> 24) & 0xFF),
@@ -854,7 +855,7 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod
     public IRubyObject getnameinfo(ThreadContext context, IRubyObject flags) {
-        return getnameinfo(context, flags.convertToInteger().getIntValue());
+        return getnameinfo(context, toInt(context, flags));
     }
 
     public IRubyObject getnameinfo(ThreadContext context, int flags) {

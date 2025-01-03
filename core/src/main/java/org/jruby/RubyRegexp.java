@@ -1279,7 +1279,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         if (timeout != null && timeout.isNil()) return -1; // local override to ignore global timeout.
         if (timeout == null) timeout = context.runtime.getRubyTimeout();
 
-        return timeout.isNil() ? -1 : (long) (timeout.convertToFloat().getDoubleValue() * 1_000_000_000);
+        return timeout.isNil() ? -1 : (long) (timeout.convertToFloat().asDouble(context) * 1_000_000_000);
     }
 
     /**
@@ -1566,7 +1566,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
         if (pattern.numberOfNames() == 0) return newEmptyArray(context);
 
-        var ary = RubyArray.newBlankArray(context.runtime, pattern.numberOfNames());
+        var ary = RubyArray.newBlankArray(context, pattern.numberOfNames());
         int index = 0;
         for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
             NameEntry e = i.next();

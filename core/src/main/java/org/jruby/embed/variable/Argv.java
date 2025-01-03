@@ -41,6 +41,8 @@ import org.jruby.embed.internal.BiVariableMap;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Create.newArray;
+
 /**
  *
  * @author yoko
@@ -118,7 +120,7 @@ public class Argv extends AbstractVariable {
     public synchronized void inject() {
         var context = getRuntime().getCurrentContext();
 
-        final var argv = RubyArray.newArray(context.runtime);
+        final var argv = newArray(context);
         if ( javaObject instanceof Collection ) {
             argv.addAll( (Collection) javaObject );
         }

@@ -168,7 +168,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         final int len = array.length;
         if ( len == 0 ) return false;
         if ( obj instanceof RubyFixnum fix) {
-            final long objVal = fix.getLongValue();
+            final long objVal = fix.getValue();
             if ( objVal < Byte.MIN_VALUE || objVal > Byte.MAX_VALUE ) return false;
 
             for (byte b : array) {
@@ -186,7 +186,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         final int len = array.length;
         if ( len == 0 ) return false;
         if (obj instanceof RubyFixnum fix) {
-            final long objVal = fix.getLongValue();
+            final long objVal = fix.getValue();
             if ( objVal < Short.MIN_VALUE || objVal > Short.MAX_VALUE ) return false;
 
             for (short value : array) {
@@ -204,7 +204,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         final int len = array.length;
         if ( len == 0 ) return false;
         if (obj instanceof RubyFixnum fix) {
-            final long objVal = fix.getLongValue();
+            final long objVal = fix.getValue();
             if ( objVal < Integer.MIN_VALUE || objVal > Integer.MAX_VALUE ) return false;
 
             for (int j : array) {
@@ -222,7 +222,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         final int len = array.length;
         if ( len == 0 ) return false;
         if ( obj instanceof RubyFixnum fix) {
-            final long objVal = fix.getLongValue();
+            final long objVal = fix.getValue();
 
             for (long l : array) {
                 if (objVal == l) return true;
@@ -239,7 +239,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         final int len = array.length;
         if ( len == 0 ) return false;
         if (obj instanceof RubyFixnum fix) {
-            final long objVal = fix.getLongValue();
+            final long objVal = fix.getValue();
             if ( objVal < Character.MIN_VALUE || objVal > Character.MAX_VALUE ) return false;
 
             for (char c : array) {
@@ -272,9 +272,9 @@ public final class ArrayJavaProxy extends JavaProxy {
 
     private boolean includes(final ThreadContext context, final float[] array, final IRubyObject obj) {
         final int len = array.length;
-        if ( len == 0 ) return false;
-        if ( obj instanceof RubyFloat flote) {
-            final double objVal = flote.getDoubleValue();
+        if (len == 0) return false;
+        if (obj instanceof RubyFloat flote) {
+            final double objVal = flote.asDouble(context);
 
             for (float v : array) {
                 if ((float) objVal == v) return true;
@@ -289,9 +289,9 @@ public final class ArrayJavaProxy extends JavaProxy {
 
     private boolean includes(final ThreadContext context, final double[] array, final IRubyObject obj) {
         final int len = array.length;
-        if ( len == 0 ) return false;
+        if (len == 0) return false;
         if (obj instanceof RubyFloat flote) {
-            final double objVal = flote.getDoubleValue();
+            final double objVal = flote.asDouble(context);
 
             for (double v : array) {
                 if (objVal == v) return true;
@@ -315,7 +315,7 @@ public final class ArrayJavaProxy extends JavaProxy {
     @JRubyMethod(name = "first") // Enumerable override
     public IRubyObject first(ThreadContext context, IRubyObject count) {
         final Object array = getObject();
-        int len = count.convertToInteger().getIntValue();
+        int len = toInt(context, count);
         int size = Array.getLength(array); if ( len > size ) len = size;
 
         final Ruby runtime = context.runtime;
@@ -801,8 +801,8 @@ public final class ArrayJavaProxy extends JavaProxy {
     private IRubyObject arrayRange(final ThreadContext context, final RubyRange range) {
         final Object array = getObject();
         final int arrayLength = Array.getLength( array );
-        int first = castAsFixnum(context, range.first(context), "Only Integer ranges supported").getIntValue();
-        int last = castAsFixnum(context, range.last(context), "Only Integer ranges supported").getIntValue();
+        int first = castAsFixnum(context, range.first(context), "Only Integer ranges supported").asInt(context);
+        int last = castAsFixnum(context, range.last(context), "Only Integer ranges supported").asInt(context);
 
         first = first >= 0 ? first : arrayLength + first;
         if (first < 0 || first >= arrayLength) return context.nil;
@@ -826,8 +826,8 @@ public final class ArrayJavaProxy extends JavaProxy {
         final Object array = getObject();
         final int arrayLength = Array.getLength( array );
 
-        int first = castAsFixnum(context, rFirst, "Only Integer ranges supported").getIntValue();
-        int length = castAsFixnum(context, rLength, "Only Integer ranges supported").getIntValue();
+        int first = castAsFixnum(context, rFirst, "Only Integer ranges supported").asInt(context);
+        int length = castAsFixnum(context, rLength, "Only Integer ranges supported").asInt(context);
 
         if (length > arrayLength) throw indexError(context, "length specified is longer than array");
         if (length < 0) return context.nil;

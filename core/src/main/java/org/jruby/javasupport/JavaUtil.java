@@ -984,7 +984,7 @@ public class JavaUtil {
     }
 
     private static long processLongConvert(ThreadContext context, Predicate<Long> pred, RubyNumeric numeric, String type) {
-        final long value = numeric.getLongValue();
+        final long value = numeric.asLong(context);
         if (!pred.test(value)) throw rangeError(context, "too big for " + type + ": " + numeric);
         return value;
     }
@@ -997,15 +997,15 @@ public class JavaUtil {
             (context, numeric, target) -> (char) processLongConvert(context, JavaUtil::isLongCharable, numeric, "char");
     private static final NumericConverter<Integer> NUMERIC_TO_INTEGER =
             (context, numeric, target) -> (int) processLongConvert(context, JavaUtil::isLongIntable, numeric, "int");
-    private static final NumericConverter<Long> NUMERIC_TO_LONG = (context, numeric, target) -> numeric.getLongValue();
+    private static final NumericConverter<Long> NUMERIC_TO_LONG = (context, numeric, target) -> numeric.asLong(context);
     private static final NumericConverter<Float> NUMERIC_TO_FLOAT = (context, numeric, target) -> {
-        final double value = numeric.getDoubleValue();
+        final double value = numeric.asDouble(context);
         // many cases are ok to convert to float; if not one of these, error
         if (!isDoubleFloatable(value)) throw typeError(context, "too big for float: " + numeric);
         return (float) value;
     };
     private static final NumericConverter<Double> NUMERIC_TO_DOUBLE =
-            (context, numeric, target) -> numeric.getDoubleValue();
+            (context, numeric, target) -> numeric.asDouble(context);
     private static final NumericConverter<BigInteger> NUMERIC_TO_BIGINTEGER =
             (context, numeric, target) -> numeric.getBigIntegerValue();
 
@@ -1015,8 +1015,8 @@ public class JavaUtil {
     };
     private static final NumericConverter<Object> NUMERIC_TO_OBJECT = (context, numeric, target) -> {
         // for Object, default to natural wrapper type
-        if (numeric instanceof RubyFixnum) return Long.valueOf(numeric.getLongValue());
-        if (numeric instanceof RubyFloat) return Double.valueOf(numeric.getDoubleValue());
+        if (numeric instanceof RubyFixnum fixnum) return Long.valueOf(fixnum.getValue());
+        if (numeric instanceof RubyFloat) return Double.valueOf(numeric.asDouble(context));
         if (numeric instanceof RubyBignum) return ((RubyBignum)numeric).getValue();
         if (numeric instanceof RubyBigDecimal) return ((RubyBigDecimal)numeric).getValue();
         return NUMERIC_TO_OTHER.coerce(context, numeric, target);
@@ -1123,8 +1123,8 @@ public class JavaUtil {
             }
         }
 
-        if (rubyObject instanceof JavaObject) {
-            Object value =  ((JavaObject) rubyObject).getValue();
+        if (rubyObject instanceof JavaObject jo) {
+            Object value = jo.getValue();
             return convertArgument(context.runtime, value, value.getClass());
         }
 
@@ -1162,20 +1162,16 @@ public class JavaUtil {
             return rubyObject.convertToString().getByteList();
         }
         if (javaClass == BigInteger.class) {
-         	if ( rubyObject instanceof RubyBignum ) {
-         		return ((RubyBignum) rubyObject).getValue();
-         	}
-            if ( rubyObject instanceof RubyNumeric ) {
- 				return BigInteger.valueOf( ((RubyNumeric) rubyObject).getLongValue() );
-         	}
+         	if (rubyObject instanceof RubyBignum bignum) return bignum.getValue();
+            if ( rubyObject instanceof RubyNumeric num) return BigInteger.valueOf(num.asLong(context));
             if ( rubyObject.respondsTo("to_i") ) {
          		RubyNumeric rubyNumeric = ((RubyNumeric) rubyObject.callMethod(context, "to_f"));
- 				return  BigInteger.valueOf( rubyNumeric.getLongValue() );
+ 				return BigInteger.valueOf(rubyNumeric.asLong(context));
          	}
         }
         if (javaClass == BigDecimal.class && !(rubyObject instanceof JavaObject)) {
          	if (rubyObject.respondsTo("to_f")) {
-             	double double_value = ((RubyNumeric)rubyObject.callMethod(context, "to_f")).getDoubleValue();
+             	double double_value = ((RubyNumeric)rubyObject.callMethod(context, "to_f")).asDouble(context);
              	return new BigDecimal(double_value);
          	}
         }
@@ -1253,7 +1249,7 @@ public class JavaUtil {
     public static final RubyConverter RUBY_BYTE_CONVERTER = new RubyConverter() {
         public Object convert(ThreadContext context, IRubyObject rubyObject) {
             if (rubyObject.respondsTo("to_i")) {
-                return (byte) ((RubyNumeric) rubyObject.callMethod(context, "to_i")).getLongValue();
+                return (byte) ((RubyNumeric) rubyObject.callMethod(context, "to_i")).asLong(context);
             }
             return (byte) 0;
         }
@@ -1263,7 +1259,7 @@ public class JavaUtil {
     public static final RubyConverter RUBY_SHORT_CONVERTER = new RubyConverter() {
         public Object convert(ThreadContext context, IRubyObject rubyObject) {
             if (rubyObject.respondsTo("to_i")) {
-                return (short) ((RubyNumeric) rubyObject.callMethod(context, "to_i")).getLongValue();
+                return (short) ((RubyNumeric) rubyObject.callMethod(context, "to_i")).asLong(context);
             }
             return (short) 0;
         }
@@ -1273,7 +1269,7 @@ public class JavaUtil {
     public static final RubyConverter RUBY_CHAR_CONVERTER = new RubyConverter() {
         public Object convert(ThreadContext context, IRubyObject rubyObject) {
             if (rubyObject.respondsTo("to_i")) {
-                return (char) ((RubyNumeric) rubyObject.callMethod(context, "to_i")).getLongValue();
+                return (char) ((RubyNumeric) rubyObject.callMethod(context, "to_i")).asLong(context);
             }
             return (char) 0;
         }
@@ -1283,7 +1279,7 @@ public class JavaUtil {
     public static final RubyConverter RUBY_INTEGER_CONVERTER = new RubyConverter() {
         public Object convert(ThreadContext context, IRubyObject rubyObject) {
             if (rubyObject.respondsTo("to_i")) {
-                return (int) ((RubyNumeric) rubyObject.callMethod(context, "to_i")).getLongValue();
+                return (int) ((RubyNumeric) rubyObject.callMethod(context, "to_i")).asLong(context);
             }
             return (int) 0;
         }
@@ -1293,7 +1289,7 @@ public class JavaUtil {
     public static final RubyConverter RUBY_LONG_CONVERTER = new RubyConverter() {
         public Object convert(ThreadContext context, IRubyObject rubyObject) {
             if (rubyObject.respondsTo("to_i")) {
-                return ((RubyNumeric) rubyObject.callMethod(context, "to_i")).getLongValue();
+                return ((RubyNumeric) rubyObject.callMethod(context, "to_i")).asLong(context);
             }
             return 0L;
         }
@@ -1302,20 +1298,18 @@ public class JavaUtil {
     @Deprecated
     public static final RubyConverter RUBY_FLOAT_CONVERTER = new RubyConverter() {
         public Object convert(ThreadContext context, IRubyObject rubyObject) {
-            if (rubyObject.respondsTo("to_f")) {
-                return (float) ((RubyNumeric) rubyObject.callMethod(context, "to_f")).getDoubleValue();
-            }
-            return 0.0f;
+            return rubyObject.respondsTo("to_f") ?
+                    (float) ((RubyNumeric) rubyObject.callMethod(context, "to_f")).asDouble(context) :
+                    0.0f;
         }
     };
 
     @Deprecated
     public static final RubyConverter RUBY_DOUBLE_CONVERTER = new RubyConverter() {
         public Object convert(ThreadContext context, IRubyObject rubyObject) {
-            if (rubyObject.respondsTo("to_f")) {
-                return ((RubyNumeric) rubyObject.callMethod(context, "to_f")).getDoubleValue();
-            }
-            return 0.0d;
+            return rubyObject.respondsTo("to_f") ?
+                    ((RubyNumeric) rubyObject.callMethod(context, "to_f")).asDouble(context) :
+                    0.0d;
         }
     };
 
@@ -1514,8 +1508,8 @@ public class JavaUtil {
             javaObject = null;
             break;
         case INTEGER:
-            if (object instanceof RubyFixnum) {
-                javaObject = Long.valueOf(((RubyFixnum) object).getLongValue());
+            if (object instanceof RubyFixnum fix) {
+                javaObject = Long.valueOf(fix.getValue());
             } else {
                 javaObject = ((RubyBignum) object).getValue();
             }

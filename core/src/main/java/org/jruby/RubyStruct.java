@@ -104,7 +104,7 @@ public class RubyStruct extends RubyObject {
 
         values = new IRubyObject[size];
 
-        Helpers.fillNil(values, context.runtime);
+        Helpers.fillNil(context, values);
     }
 
     public static RubyClass createStructClass(ThreadContext context, RubyClass Object, RubyModule Enumerable) {
@@ -172,9 +172,9 @@ public class RubyStruct extends RubyObject {
         for (int i = 0; i < values.length; i++) {
             h = (h << 1) | (h < 0 ? 1 : 0);
             IRubyObject hash = context.safeRecurse(
-                    (ctx, runtime1, obj, recur) -> recur ? RubyFixnum.zero(runtime1) : invokedynamic(ctx, obj, HASH),
+                    (ctx, runtime1, obj, recur) -> recur ? asFixnum(ctx, 0) : invokedynamic(ctx, obj, HASH),
                     context.runtime, values[i], "hash", true);
-            h ^= numericToLong(context, hash);
+            h ^= toLong(context, hash);
         }
 
         return asFixnum(context, h);
@@ -500,7 +500,7 @@ public class RubyStruct extends RubyObject {
             return initialize(context, args[0]);
         } else {
             System.arraycopy(args, 0, values, 0, args.length);
-            Helpers.fillNil(values, args.length, values.length, context.runtime);
+            Helpers.fillNil(context, values, args.length, values.length);
         }
 
         return context.nil;
@@ -517,7 +517,7 @@ public class RubyStruct extends RubyObject {
                         key = asSymbol(context, key.convertToString().getByteList());
                     IRubyObject index = __members__.index(context, key);
                     if (index.isNil()) throw argumentError(context, str(context.runtime, "unknown keywords: ", key));
-                    values[index.convertToInteger().getIntValue()] = entry.getValue();
+                    values[toInt(context, index)] = entry.getValue();
                 });
 
         return context.nil;
@@ -571,7 +571,7 @@ public class RubyStruct extends RubyObject {
             values[0] = arg0;
         }
 
-        if (provided < values.length) Helpers.fillNil(values, provided, values.length, context.runtime);
+        if (provided < values.length) Helpers.fillNil(context, values, provided, values.length);
 
         return context.nil;
     }
@@ -931,7 +931,7 @@ public class RubyStruct extends RubyObject {
                 }
                 if ( beg + len > j ) {
                     IRubyObject [] tmp = new IRubyObject[beg + len - j];
-                    Helpers.fillNil(tmp, context.runtime);
+                    Helpers.fillNil(context, tmp);
                     result.push(context, tmp);
                 }
                 continue;

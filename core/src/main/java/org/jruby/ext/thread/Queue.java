@@ -58,6 +58,7 @@ import org.jruby.util.TypeConverter;
 import static org.jruby.api.Access.arrayClass;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
@@ -448,16 +449,11 @@ public class Queue extends RubyObject implements DataType {
     }
 
     protected static long queueTimeoutToNanos(ThreadContext context, IRubyObject _timeout) {
-        long timeoutNS;
+        if (_timeout.isNil()) return 0;
 
-        if (_timeout.isNil()) {
-            timeoutNS = 0;
-        } else if (_timeout instanceof RubyFixnum) {
-            timeoutNS = TimeUnit.NANOSECONDS.convert(_timeout.convertToInteger().getLongValue(), TimeUnit.SECONDS);
-        } else {
-            timeoutNS = (long) (RubyNumeric.num2dbl(context, _timeout) * 1_000_000_000);
-        }
-        return timeoutNS;
+        return _timeout instanceof RubyFixnum fixnum ?
+                TimeUnit.NANOSECONDS.convert(fixnum.getValue(), TimeUnit.SECONDS) :
+                (long) (RubyNumeric.num2dbl(context, _timeout) * 1_000_000_000);
     }
 
     @JRubyMethod(name = {"push", "<<", "enq"})

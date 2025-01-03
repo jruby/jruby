@@ -84,6 +84,7 @@ import static jnr.constants.platform.TCP.TCP_KEEPIDLE;
 import static jnr.constants.platform.TCP.TCP_KEEPINTVL;
 import static jnr.constants.platform.TCP.TCP_NODELAY;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
@@ -110,7 +111,7 @@ public class RubyBasicSocket extends RubyIO {
     @JRubyMethod(meta = true)
     public static IRubyObject for_fd(ThreadContext context, IRubyObject _klass, IRubyObject _fileno) {
         Ruby runtime = context.runtime;
-        int fileno = (int)_fileno.convertToInteger().getLongValue();
+        int fileno = toInt(context, _fileno);
         RubyClass klass = (RubyClass)_klass;
 
         ChannelFD fd = runtime.getFilenoUtil().getWrapperFromFileno(fileno);
@@ -432,8 +433,8 @@ public class RubyBasicSocket extends RubyIO {
                 return new Option(context.runtime, ProtocolFamily.PF_INET, level, opt, packedValue);
 
             default:
-                int intLevel = _level.convertToInteger().getIntValue();
-                int intOpt = _opt.convertToInteger().getIntValue();
+                int intLevel = toInt(context, _level);
+                int intOpt = toInt(context, _opt);
                 ChannelFD fd = getOpenFile().fd();
                 IPProto proto = IPProto.valueOf(intLevel);
  
@@ -498,11 +499,11 @@ public class RubyBasicSocket extends RubyIO {
                     socketType.setSocketOption(channel, opt, asNumber(context, val));
                 }
 
-                return RubyFixnum.zero(runtime);
+                return asFixnum(context, 0);
 
             default:
-                int intLevel = _level.convertToInteger().getIntValue();
-                int intOpt = _opt.convertToInteger().getIntValue();
+                int intLevel = toInt(context, _level);
+                int intOpt = toInt(context, _opt);
                 ChannelFD fd = getOpenFile().fd();
                 IPProto proto = IPProto.valueOf(intLevel);
 
@@ -515,7 +516,7 @@ public class RubyBasicSocket extends RubyIO {
 
                             ByteBuffer buf = ByteBuffer.allocate(4);
                             buf.order(ByteOrder.nativeOrder());
-                            flipBuffer(buf.putInt(val.convertToInteger().getIntValue()));
+                            flipBuffer(buf.putInt(toInt(context, val)));
                             int ret = SOCKOPT.setsockopt(fd.realFileno, intLevel, intOpt, buf, buf.remaining());
 
                             if (ret != 0) {

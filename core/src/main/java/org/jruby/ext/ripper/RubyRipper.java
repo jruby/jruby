@@ -370,7 +370,7 @@ public class RubyRipper extends RubyObject {
     @JRubyMethod(meta = true)
     public static IRubyObject dedent_string(ThreadContext context, IRubyObject self, IRubyObject _input, IRubyObject _width) {
         RubyString input = _input.convertToString();
-        int wid = _width.convertToInteger().getIntValue();
+        int wid = toInt(context, _width);
         input.modifyAndClearCodeRange();
         int col = LexingCommon.dedent_string(input.getByteList(), wid);
         return asFixnum(context, col);
@@ -383,7 +383,7 @@ public class RubyRipper extends RubyObject {
 
     @JRubyMethod(meta = true)
     public static IRubyObject lex_state_name(ThreadContext context, IRubyObject self, IRubyObject lexStateParam) {
-        int lexState = lexStateParam.convertToInteger().getIntValue();
+        int lexState = toInt(context, lexStateParam);
 
         boolean needsSeparator = false;
         RubyString name = null;

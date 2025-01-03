@@ -238,7 +238,7 @@ public final class StructLayout extends Type {
      */
     @JRubyMethod(name = "members")
     public IRubyObject members(ThreadContext context) {
-        return Create.constructArray(context, fieldNames, fieldNames.size(), StructLayout::memberPopulator);
+        return Create.newArray(context, fieldNames, fieldNames.size(), StructLayout::memberPopulator);
     }
 
     private static void memberPopulator(ThreadContext c, List<IRubyObject> f, RubyArray<IRubyObject> a) {
@@ -254,7 +254,7 @@ public final class StructLayout extends Type {
      */
     @JRubyMethod(name = "offsets")
     public IRubyObject offsets(ThreadContext context) {
-        return Create.constructArray(context, this, fieldNames.size(), StructLayout::offsetsPopulator);
+        return Create.newArray(context, this, fieldNames.size(), StructLayout::offsetsPopulator);
     }
 
     private static void offsetsPopulator(ThreadContext c, StructLayout s, RubyArray<IRubyObject> a) {

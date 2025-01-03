@@ -10,6 +10,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.util.RubyStringBuilder.str;
 
@@ -38,7 +39,7 @@ public class RubyTimeParser {
         IRubyObject year;
         IRubyObject subsec = context.nil;
         int mon = -1, mday = -1, hour = -1, min = -1, sec = -1;
-        long prec = precision.isNil() ? SIZE_MAX : numericToLong(context, precision);
+        long prec = precision.isNil() ? SIZE_MAX : toLong(context, precision);
 
         if (!isEOS() && (isSpace() || Character.isSpaceChar(bytes[end - 1]))) {
             throw argumentError(context, str(context.runtime, "can't parse: ", str));
@@ -95,21 +96,21 @@ public class RubyTimeParser {
         int zend = ptr;
         eatSpace();
         if (!isEOS()) {
-            IRubyObject invalid = context.runtime.newString(new ByteList(bytes, ptr, end - ptr, true));
+            IRubyObject invalid = newString(context, new ByteList(bytes, ptr, end - ptr, true));
             throw argumentError(context, str(context.runtime, "can't parse at: ", invalid));
         }
         if (zend > zstr) {
-            zone = context.runtime.newString(new ByteList(bytes, zstr, zend - zstr, true));
+            zone = newString(context, new ByteList(bytes, zstr, zend - zstr, true));
         } else if (hour == -1) {
             throw argumentError(context, "no time information");
         }
         if (!subsec.isNil()) {
             if (ndigits < TIME_SCALE_NUMDIGITS) {
                 int mul = (int) Math.pow(10, TIME_SCALE_NUMDIGITS - ndigits);
-                subsec = asFixnum(context, asLong(context, (RubyInteger) subsec) * mul);
+                subsec = asFixnum(context, ((RubyInteger) subsec).asLong(context) * mul);
             } else if (ndigits > TIME_SCALE_NUMDIGITS) {
                 int mul = (int) Math.pow(10, ndigits - TIME_SCALE_NUMDIGITS);
-                subsec = RubyRational.newRational(context.runtime, asLong(context, (RubyInteger) subsec), mul);
+                subsec = RubyRational.newRational(context.runtime, ((RubyInteger) subsec).asLong(context), mul);
             }
         }
 

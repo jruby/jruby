@@ -93,6 +93,7 @@ import static org.jruby.api.Access.instanceConfig;
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newFrozenString;
 import static org.jruby.api.Create.newRawArray;
@@ -102,7 +103,6 @@ import static org.jruby.api.Error.nameError;
 import static org.jruby.api.Error.runtimeError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.api.Warn.warnDeprecated;
-import static org.jruby.api.Warn.warningDeprecated;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.FRAME;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.GLOBAL;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.THREAD;
@@ -984,7 +984,7 @@ public class RubyGlobal {
 
         @Override
         public IRubyObject set(IRubyObject value) {
-            int line = (int)value.convertToInteger().getLongValue();
+            int line = toInt(runtime.getCurrentContext(), value);
             runtime.setCurrentLine(line);
             return value;
         }

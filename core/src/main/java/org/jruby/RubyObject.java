@@ -56,6 +56,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
 
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.invokedynamic;
@@ -355,7 +356,7 @@ public class RubyObject extends RubyBasicObject {
         int line;
         if (args.length > 1) {
             file = args[1].convertToString().asJavaString();
-            line = args.length > 2 ? (int)(args[2].convertToInteger().getLongValue() - 1) : 0;
+            line = args.length > 2 ? toInt(context, args[2]) - 1 : 0;
         } else {
             file = "(eval at " + context.getFileAndLine() + ")";
             line = 0;

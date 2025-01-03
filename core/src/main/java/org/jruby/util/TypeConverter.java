@@ -54,6 +54,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Access.arrayClass;
 import static org.jruby.api.Access.hashClass;
+import static org.jruby.api.Access.integerClass;
 import static org.jruby.api.Access.stringClass;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Convert.asSymbol;
@@ -422,24 +423,21 @@ public class TypeConverter {
             }
         }
 
-        if (val instanceof RubyFloat) {
-            RubyFloat f = (RubyFloat) val;
-            if (!exception && !Double.isFinite(f.getDoubleValue())) return context.nil;
+        if (val instanceof RubyFloat f) {
+            if (!exception && !Double.isFinite(f.asDouble(context))) return context.nil;
             return RubyNumeric.dbl2ival(context.runtime, f.getValue());
         } else if (val instanceof RubyInteger) {
             return val;
-        } else if (val instanceof RubyString) {
-            return RubyNumeric.str2inum(context.runtime, (RubyString) val, base, true, exception);
+        } else if (val instanceof RubyString str) {
+            return RubyNumeric.str2inum(context.runtime, str, base, true, exception);
         } else if (val.isNil()) {
             if (!exception) return context.nil;
             throw typeError(context, "can't convert nil into Integer");
         }
 
         try {
-            tmp = TypeConverter.convertToType(context, val, runtime.getInteger(), sites(context).to_int_checked, false);
-            if (tmp instanceof RubyInteger) {
-                return tmp;
-            }
+            tmp = TypeConverter.convertToType(context, val, integerClass(context), sites(context).to_int_checked, false);
+            if (tmp instanceof RubyInteger) return tmp;
         } catch (RaiseException re) {
             if (!exception) return context.nil;
             throw re;
@@ -447,7 +445,7 @@ public class TypeConverter {
 
         if (!exception) {
             try {
-                IRubyObject ret = TypeConverter.convertToType(context, val, runtime.getInteger(), sites(context).to_i_checked, false);
+                IRubyObject ret = TypeConverter.convertToType(context, val, integerClass(context), sites(context).to_i_checked, false);
                 if (ret instanceof RubyInteger) return ret;
             } catch (RaiseException re) {
                 if (exception) throw re;

@@ -33,7 +33,6 @@ import org.joni.WarnCallback;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
-import org.jruby.RubyBoolean;
 import org.jruby.RubyComplex;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
@@ -60,30 +59,28 @@ public class Numeric {
         CachingCallSite op_plus = sites(context).op_plus;
 
         if (op_plus.isBuiltin(x)) {
-            if (x instanceof RubyInteger) {
-                if (fixnumZero(x)) return y;
-                if (fixnumZero(y)) return x;
-                return ((RubyInteger) x).op_plus(context, y);
-            } else if (x instanceof RubyFloat) {
-                if (fixnumZero(y)) return x;
-                return ((RubyFloat) x).op_plus(context, y);
-            } else if (x instanceof RubyRational) {
-                if (fixnumZero(y)) return x;
-                return ((RubyRational) x).op_plus(context, y);
+            if (x instanceof RubyInteger rint) {
+                if (fixnumZero(context, x)) return y;
+                if (fixnumZero(context, y)) return x;
+                return rint.op_plus(context, y);
+            } else if (x instanceof RubyFloat flote) {
+                if (fixnumZero(context, y)) return x;
+                return flote.op_plus(context, y);
+            } else if (x instanceof RubyRational rat) {
+                if (fixnumZero(context, y)) return x;
+                return rat.op_plus(context, y);
             }
         }
 
         return op_plus.call(context, x, x, y);
     }
 
-    private static boolean fixnumZero(IRubyObject y) {
-        return y instanceof RubyFixnum
-                && ((RubyFixnum) y).getLongValue() == 0;
+    private static boolean fixnumZero(ThreadContext context, IRubyObject y) {
+        return y instanceof RubyFixnum fixnum && fixnum.isZero(context);
     }
 
     private static boolean fixnumOne(IRubyObject y) {
-        return y instanceof RubyFixnum
-                && ((RubyFixnum) y).getLongValue() == 1;
+        return y instanceof RubyFixnum fix && fix.getValue() == 1;
     }
 
     public static RubyInteger f_add(ThreadContext context, RubyInteger x, RubyInteger y) {
@@ -101,19 +98,16 @@ public class Numeric {
     }
 
     public static RubyFixnum f_cmp(ThreadContext context, RubyInteger x, RubyInteger y) {
-        final int cmp;
-        if (x instanceof RubyFixnum && y instanceof RubyFixnum) {
-            cmp = Long.compare(((RubyFixnum) x).getLongValue(), ((RubyFixnum) y).getLongValue());
-        }
-        else { // RubyBignum || RubyFixnum
-            cmp = x.getBigIntegerValue().compareTo(y.getBigIntegerValue());
-        }
+        final int cmp = x instanceof RubyFixnum fixx && y instanceof RubyFixnum fixy ?
+                Long.compare(fixx.getValue(), fixy.getValue()) :
+                x.getBigIntegerValue().compareTo(y.getBigIntegerValue());
+
         return asFixnum(context, cmp);
     }
 
     public static RubyFixnum f_cmp(ThreadContext context, RubyInteger x, long y) {
         final int cmp = x instanceof RubyFixnum xx ?
-                Long.compare(xx.getLongValue(), y) :
+                Long.compare(xx.getValue(), y) :
                 x.getBigIntegerValue().compareTo(BigInteger.valueOf(y));
 
         return asFixnum(context, cmp);
@@ -123,7 +117,7 @@ public class Numeric {
      *
      */
     public static IRubyObject f_div(ThreadContext context, IRubyObject x, IRubyObject y) {
-        return y instanceof RubyFixnum yy && yy.getLongValue() == 1 ?
+        return y instanceof RubyFixnum yy && yy.getValue() == 1 ?
                 x : sites(context).op_quo.call(context, x, x, y);
     }
 
@@ -131,34 +125,30 @@ public class Numeric {
      *
      */
     public static boolean f_gt_p(ThreadContext context, IRubyObject x, IRubyObject y) {
-        if (x instanceof RubyFixnum && y instanceof RubyFixnum) {
-            return ((RubyFixnum)x).getLongValue() > ((RubyFixnum)y).getLongValue();
-        }
-        return sites(context).op_gt.call(context, x, x, y).isTrue();
+        return x instanceof RubyFixnum fixx && y instanceof RubyFixnum fixy ?
+                fixx.getValue() > fixy.getValue() :
+                sites(context).op_gt.call(context, x, x, y).isTrue();
     }
 
     public static boolean f_gt_p(ThreadContext context, RubyInteger x, RubyInteger y) {
-        if (x instanceof RubyFixnum && y instanceof RubyFixnum) {
-            return ((RubyFixnum)x).getLongValue() > ((RubyFixnum)y).getLongValue();
-        }
-        return x.getBigIntegerValue().compareTo(y.getBigIntegerValue()) > 0;
+        return x instanceof RubyFixnum fixx && y instanceof RubyFixnum fixy ?
+                fixx.getValue() > fixy.getValue() :
+                x.getBigIntegerValue().compareTo(y.getBigIntegerValue()) > 0;
     }
 
     /** f_lt_p
      *
      */
     public static boolean f_lt_p(ThreadContext context, IRubyObject x, IRubyObject y) {
-        if (x instanceof RubyFixnum && y instanceof RubyFixnum) {
-            return ((RubyFixnum)x).getLongValue() < ((RubyFixnum)y).getLongValue();
-        }
-        return sites(context).op_lt.call(context, x, x, y).isTrue();
+        return x instanceof RubyFixnum fixx && y instanceof RubyFixnum fixy ?
+                fixx.getValue() < fixy.getValue() :
+                sites(context).op_lt.call(context, x, x, y).isTrue();
     }
 
     public static boolean f_lt_p(ThreadContext context, RubyInteger x, RubyInteger y) {
-        if (x instanceof RubyFixnum && y instanceof RubyFixnum) {
-            return ((RubyFixnum)x).getLongValue() < ((RubyFixnum)y).getLongValue();
-        }
-        return x.getBigIntegerValue().compareTo(y.getBigIntegerValue()) < 0;
+        return x instanceof RubyFixnum fixx && y instanceof RubyFixnum fixy ?
+                fixx.getValue() < fixy.getValue() :
+                x.getBigIntegerValue().compareTo(y.getBigIntegerValue()) < 0;
     }
 
     /** f_mod
@@ -176,12 +166,8 @@ public class Numeric {
 
         if (op_times.isBuiltin(x)) {
             if (x instanceof RubyInteger) {
-                if (fixnumZero(y)) {
-                    return y;
-                }
-                if (fixnumZero(x) && y instanceof RubyInteger) {
-                    return x;
-                }
+                if (fixnumZero(context, y)) return y;
+                if (fixnumZero(context, x) && y instanceof RubyInteger) return x;
                 if (fixnumOne(x)) return y;
                 if (fixnumOne(y)) return x;
                 return ((RubyInteger) x).op_mul(context, y);
@@ -206,11 +192,11 @@ public class Numeric {
     // MRI: safe_mul
     public static IRubyObject safe_mul(ThreadContext context, IRubyObject a, IRubyObject b, boolean az, boolean bz) {
         double v;
-        if (!az && bz && a instanceof RubyFloat aa && !Double.isNaN(v = aa.getDoubleValue())) {
-            a = v < 0.0d ? asFloat(context, -1.0d) : asFloat(context, 1.0d);
+        if (!az && bz && a instanceof RubyFloat aa && !Double.isNaN(v = aa.asDouble(context))) {
+            a = asFloat(context, v < 0.0d ? -1.0d : 1.0d);
         }
-        if (!bz && az && b instanceof RubyFloat bb && !Double.isNaN(v = bb.getDoubleValue())) {
-            b = v < 0.0d ? asFloat(context, -1.0) : asFloat(context, 1.0);
+        if (!bz && az && b instanceof RubyFloat bb && !Double.isNaN(v = bb.asDouble(context))) {
+            b = asFloat(context, v < 0.0d ? -1.0 : 1.0);
         }
         return f_mul(context, a, b);
     }
@@ -221,7 +207,7 @@ public class Numeric {
     public static IRubyObject f_sub(ThreadContext context, IRubyObject x, IRubyObject y) {
         CachingCallSite op_minus = sites(context).op_minus;
 
-        if (op_minus.isBuiltin(x) && fixnumZero(y)) {
+        if (op_minus.isBuiltin(x) && fixnumZero(context, y)) {
             return x;
         }
 
@@ -379,7 +365,7 @@ public class Numeric {
     }
 
     public static RubyInteger f_negate(ThreadContext context, RubyInteger x) {
-        return x.negate();
+        return x.negate(context);
     }
 
     /** f_to_f
@@ -428,11 +414,9 @@ public class Numeric {
      *
      */
     public static IRubyObject f_equal(ThreadContext context, IRubyObject a, IRubyObject b) {
-        if (a instanceof RubyFixnum x && b instanceof RubyFixnum y) {
-            return asBoolean(context, x.getLongValue() == y.getLongValue());
-        }
-
-        return sites(context).op_equals.call(context, a, a, b);
+        return a instanceof RubyFixnum x && b instanceof RubyFixnum y ?
+                asBoolean(context, x.getValue() == y.getValue()) :
+                sites(context).op_equals.call(context, a, a, b);
     }
 
     public static IRubyObject f_equal(ThreadContext context, RubyInteger x, RubyInteger y) {
@@ -526,25 +510,27 @@ public class Numeric {
      *
      */
     public static boolean f_one_p(ThreadContext context, IRubyObject x) {
-        if (x instanceof RubyFixnum) return ((RubyFixnum) x).getLongValue() == 1;
-        return sites(context).op_equals.call(context, x, x, RubyFixnum.one(context.runtime)).isTrue();
+        return x instanceof RubyFixnum fixx ?
+                fixx.getValue() == 1 :
+                sites(context).op_equals.call(context, x, x, asFixnum(context, 1)).isTrue();
     }
 
    /** f_minus_one_p
     *
     */
     public static boolean f_minus_one_p(ThreadContext context, IRubyObject x) {
-        if (x instanceof RubyFixnum) return ((RubyFixnum) x).getLongValue() == -1;
-        return sites(context).op_equals.call(context, x, x, RubyFixnum.minus_one(context.runtime)).isTrue();
+        return x instanceof RubyFixnum fixx ?
+                fixx.getValue() == -1 :
+                sites(context).op_equals.call(context, x, x, asFixnum(context, -1)).isTrue();
     }
 
    /** f_odd_p
     *
     */
     public static boolean f_odd_p(ThreadContext context, IRubyObject i) {
-        if (i instanceof RubyFixnum) return ((RubyFixnum) i).getLongValue() % 2 != 0;
-        RubyFixnum two = RubyFixnum.two(context.runtime);
-        return (((RubyFixnum) sites(context).op_mod.call(context, i, i, two)).getLongValue() != 0);
+        return i instanceof RubyFixnum fixx ?
+                fixx.getValue() % 2 != 0 :
+                !((RubyFixnum) sites(context).op_mod.call(context, i, i, asFixnum(context, 2))).isZero(context);
     }
 
     /**
@@ -599,7 +585,7 @@ public class Numeric {
      */
     public static IRubyObject f_gcd(ThreadContext context, IRubyObject x, IRubyObject y) {
         if (x instanceof RubyFixnum xx && y instanceof RubyFixnum yy && isLongMinValue(xx)) {
-            return asFixnum(context, i_gcd(xx.getLongValue(), yy.getLongValue()));
+            return asFixnum(context, i_gcd(xx.getValue(), yy.getValue()));
         }
 
         if (f_negative_p(context, x)) x = f_negate(context, x);
@@ -610,7 +596,7 @@ public class Numeric {
 
         for (;;) {
             if (x instanceof RubyFixnum xx && y instanceof RubyFixnum yy && isLongMinValue(xx)) {
-                return asFixnum(context, i_gcd(xx.getLongValue(), yy.getLongValue()));
+                return asFixnum(context, i_gcd(xx.getValue(), yy.getValue()));
             }
             IRubyObject z = x;
             x = f_mod(context, y, x);
@@ -621,7 +607,7 @@ public class Numeric {
     // 'fast' gcd version
     public static RubyInteger f_gcd(ThreadContext context, RubyInteger x, RubyInteger y) {
         if (x instanceof RubyFixnum xx && y instanceof RubyFixnum yy && isLongMinValue(xx)) {
-            return asFixnum(context, i_gcd(xx.getLongValue(), yy.getLongValue()));
+            return asFixnum(context, i_gcd(xx.getValue(), yy.getValue()));
         }
 
         BigInteger gcd = x.getBigIntegerValue().gcd(y.getBigIntegerValue());
@@ -637,7 +623,7 @@ public class Numeric {
      * @return true if it is equal to Long.MAX_VALUE, false otherwise.
      */
     protected static boolean isLongMinValue(RubyFixnum x) {
-        return x.getLongValue() != Long.MIN_VALUE;
+        return x.getValue() != Long.MIN_VALUE;
     }
 
     /** f_lcm
@@ -655,13 +641,13 @@ public class Numeric {
     }
 
     public static long i_ilog2(ThreadContext context, RubyInteger x) {
-        long q = (x.size(context).convertToInteger().getLongValue() - 8) * 8 + 1;
+        long q = (toInt(context, x.size(context)) - 8) * 8 + 1;
 
         if (q > 0) {
             x = x.op_rshift(context, q);
         }
 
-        long fx = x.getLongValue();
+        long fx = x.asLong(context);
         long r = -1;
 
         while (fx != 0) {
@@ -930,8 +916,8 @@ public class Numeric {
     }
 
     public static boolean f_eqeq_p(ThreadContext context, IRubyObject x, IRubyObject y) {
-        if (x instanceof RubyFixnum xFixnum && y instanceof RubyFixnum yFixnum) {
-            return xFixnum.getLongValue() == yFixnum.getLongValue();
+        if (x instanceof RubyFixnum fixx && y instanceof RubyFixnum fixy) {
+            return fixx.getValue() == fixy.getValue();
         } else if (x instanceof RubyFloat || y instanceof RubyFloat) {
             return RubyNumeric.num2dbl(context, x) == RubyNumeric.num2dbl(context, y);
         }

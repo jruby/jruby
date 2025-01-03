@@ -819,7 +819,7 @@ public class RubyHash extends RubyObject implements Map {
         if (keywords) {
             IRubyObject[] opts = ArgsUtil.extractKeywordArgs(context, (RubyHash) _default, "capacity");
             // This will allocFirst twice since it already happened before initialize was called.  I think this is ok?
-            if (opts[0] instanceof RubyFixnum fixnum && fixnum.getIntValue() > 0) allocFirst(fixnum.getIntValue());
+            if (opts[0] instanceof RubyFixnum fixnum && fixnum.asInt(context) > 0) allocFirst(fixnum.asInt(context));
 
             if (block.isGiven()) {
                 ifNone = context.runtime.newProc(Block.Type.PROC, block);
@@ -843,7 +843,7 @@ public class RubyHash extends RubyObject implements Map {
         IRubyObject[] opts = ArgsUtil.extractKeywordArgs(context, (RubyHash) hash, "capacity");
 
         // This will allocFirst twice since it already happened before initialize was called.  I think this is ok?
-        if (opts[0] instanceof RubyFixnum fixnum && fixnum.getIntValue() > 0) allocFirst(fixnum.getIntValue());
+        if (opts[0] instanceof RubyFixnum fixnum && fixnum.asInt(context) > 0) allocFirst(fixnum.asInt(context));
 
         modify();
 

@@ -22,8 +22,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
 import static org.jruby.RubyBignum.big2long;
+import static org.jruby.RubyNumeric.num2int;
 import static org.jruby.RubyNumeric.num2long;
-import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.rangeError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.TypeConverter.convertToTypeWithCheck;
@@ -31,15 +31,18 @@ import static org.jruby.util.TypeConverter.sites;
 
 /**
  * Conversion utilities.
- *
+ * <p>
  * By convention if a method has `As` in it then it implies it is already the thing and it may error
- * if wrong.  If it has `To` in it then it implies it is converting to that thing and it if might not
+ * if wrong.  If it has `To` in it then it implies it is converting to that thing and it might not
  * be that thing.  For example, `integerAsInt` implies the value is already an int and will error if
  * it is not.  `checkToInteger` implies the value might not be an integer and that it may try and convert
  * it to one.
- *
+ * <p>
  * Methods where the parameter to `As` methods will omit the type from in front of as.  For example,
- * `longAsInteger` will be `asInteger(context, long)`.a
+ * `longAsInteger` will be `asInteger(context, long)`.  Additionally, naming is terse but in cases where
+ * something is ambiguous (asFloat() return a Ruby float but if we need a Java equivalent it will take
+ * the extra naming asJavaFloat()).  Luckily for Java primitives as Ruby types there are not too many
+ * conflicts.
  */
 public class Convert {
     /**
@@ -424,32 +427,6 @@ public class Convert {
         return RubyFloat.newFloat(context.runtime, value);
     }
 
-    /**
-     * Safely convert a Ruby Integer into a java int value.  Raising if the value will not fit.
-     * @param context the current thread context
-     * @param value the RubyInteger to convert
-     * @return the int value
-     */
-    public static int asInt(ThreadContext context, RubyInteger value) {
-        long num = value.getLongValue();
-
-        return checkInt(context, num);
-    }
-
-    /**
-     * Safely convert a Ruby Integer into a java int value.  Raising if the value will not fit.
-     * @param context the current thread context
-     * @param value the RubyInteger to convert
-     * @return the int value
-     */
-    public static long asLong(ThreadContext context, RubyInteger value) {
-        if (value instanceof RubyBignum) {
-            return big2long((RubyBignum) value);
-        }
-
-        return value.getLongValue();
-    }
-
     // MRI: rb_num2long and FIX2LONG (numeric.c)
     /**
      * Safely convert a Ruby Numeric into a java long value.  Raising if the value will not fit.
@@ -457,9 +434,29 @@ public class Convert {
      * @param arg the RubyNumeric to convert
      * @return the long value
      */
-    public static long numericToLong(ThreadContext context, IRubyObject arg) {
-        // FIXME: Move this logic out of numeric and into a place which accepts and uses context.
+    public static long toLong(ThreadContext context, IRubyObject arg) {
         return num2long(arg);
+    }
+
+    /**
+     * Safely convert a Ruby Numeric into a java long value.  Raising if the value will not fit.
+     * @param context the current thread context
+     * @param arg the RubyNumeric to convert
+     * @return the int value
+     */
+    public static int toInt(ThreadContext context, IRubyObject arg) {
+        return num2int(arg);
+    }
+
+    /**
+     * Safely convert a Ruby Numeric into a java long value.  Raising if the value will not fit.
+     * @param context the current thread context
+     * @param arg the RubyNumeric to convert
+     * @return the int value
+     */
+    public static RubyInteger toInteger(ThreadContext context, IRubyObject arg) {
+        // FIXME: Make proper impl which is amalgam of RubyNumeric num2int and convertToInteger and hen have numTo{Long,Int} use this
+        return arg.convertToInteger();
     }
 
     /**

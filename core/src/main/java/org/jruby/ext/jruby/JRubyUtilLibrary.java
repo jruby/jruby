@@ -197,9 +197,7 @@ public class JRubyUtilLibrary implements Library {
     public static IRubyObject set_last_exit_status(ThreadContext context, IRubyObject recv,
                                                    IRubyObject status, IRubyObject pid) {
         RubyProcess.RubyStatus processStatus = RubyProcess.RubyStatus.newProcessStatus(context.runtime,
-                status.convertToInteger().getLongValue(),
-                pid.convertToInteger().getLongValue()
-        );
+                toLong(context, status), toLong(context, pid));
         context.setLastExitStatus(processStatus);
         return processStatus;
     }
@@ -333,7 +331,7 @@ public class JRubyUtilLibrary implements Library {
     public static IRubyObject wait(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject timeoutMillis) throws InterruptedException {
         Object obj = getSyncObject(arg);
 
-        obj.wait(timeoutMillis.convertToInteger().getLongValue());
+        obj.wait(toLong(context, timeoutMillis));
 
         return arg;
     }
@@ -353,11 +351,7 @@ public class JRubyUtilLibrary implements Library {
      */
     @JRubyMethod(module = true)
     public static IRubyObject wait(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject timeoutMillis, IRubyObject timeoutNanos) throws InterruptedException {
-        Object obj = getSyncObject(arg);
-
-        obj.wait(
-                timeoutMillis.convertToInteger().getLongValue(),
-                timeoutNanos.convertToInteger().getIntValue());
+        getSyncObject(arg).wait(toLong(context, timeoutMillis), toInt(context, timeoutNanos));
 
         return arg;
     }

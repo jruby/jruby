@@ -236,7 +236,7 @@ public class RubyConverter extends RubyObject {
                 hashArg = 2;
             } else {
                 outputByteOffsetObj = args[2];
-                outputByteoffset = (int)args[2].convertToInteger().getLongValue();
+                outputByteoffset = toInt(context, args[2]);
             }
         }
         
@@ -245,7 +245,7 @@ public class RubyConverter extends RubyObject {
                 hashArg = 3;
             } else {
                 outputBytesizeObj = args[3];
-                outputBytesize = (int)args[3].convertToInteger().getLongValue();
+                outputBytesize = toInt(context, args[3]);
             }
         }
         
@@ -255,7 +255,7 @@ public class RubyConverter extends RubyObject {
             if (args[4] instanceof RubyHash) {
                 hashArg = 4;
             } else {
-                flags = (int)args[4].convertToInteger().getLongValue();
+                flags = toInt(context, args[4]);
             }
         }
         
@@ -546,39 +546,17 @@ public class RubyConverter extends RubyObject {
 
     // econv_putback
     @JRubyMethod(optional = 1, checkArity = false)
-    public IRubyObject putback(ThreadContext context, IRubyObject[] argv)
-    {
+    public IRubyObject putback(ThreadContext context, IRubyObject[] argv) {
         int argc = Arity.checkArgumentCount(context, argv, 0, 1);
+        IRubyObject max = argc == 0 ? context.nil : argv[0];
+        int n = max.isNil() ? ec.putbackable() : Math.min(toInt(context, max), ec.putbackable());
+        RubyString str = RubyString.newStringLight(context.runtime, n);
+        ByteList strBL = str.getByteList();
 
-        Ruby runtime = context.runtime;
-        int n;
-        int putbackable;
-        IRubyObject str, max;
-
-        if (argc == 0) {
-            max = context.nil;
-        } else {
-            max = argv[0];
-        }
-
-        if (max.isNil()) {
-            n = ec.putbackable();
-        } else {
-            n = (int)max.convertToInteger().getLongValue();
-            putbackable = ec.putbackable();
-            if (putbackable < n) {
-                n = putbackable;
-            }
-        }
-
-        str = RubyString.newStringLight(runtime, n);
-        ByteList strBL = ((RubyString)str).getByteList();
         ec.putback(strBL.getUnsafeBytes(), strBL.getBegin(), n);
         strBL.setRealSize(n);
 
-        if (ec.sourceEncoding != null) {
-            ((RubyString)str).setEncoding(ec.sourceEncoding);
-        }
+        if (ec.sourceEncoding != null) ((RubyString)str).setEncoding(ec.sourceEncoding);
 
         return str;
     }

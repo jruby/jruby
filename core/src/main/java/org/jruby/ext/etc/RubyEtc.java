@@ -16,7 +16,6 @@ import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import jnr.posix.Passwd;
 import jnr.posix.Group;
@@ -44,6 +43,7 @@ import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.notImplementedError;
 import static org.jruby.api.Error.runtimeError;
 import static org.jruby.api.Warn.warn;
 
@@ -52,7 +52,7 @@ public class RubyEtc {
     public static class IOExt {
         @JRubyMethod
         public static synchronized IRubyObject pathconf(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-            Pathconf name = Pathconf.valueOf(numericToLong(context, arg));
+            Pathconf name = Pathconf.valueOf(toLong(context, arg));
             RubyIO io = (RubyIO) recv;
             OpenFile fptr = io.getOpenFileChecked();
             POSIX posix = context.runtime.getPosix();
@@ -171,9 +171,8 @@ public class RubyEtc {
     
     @JRubyMethod(module = true)
     public static synchronized IRubyObject sysconf(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        Ruby runtime = context.runtime;
-        Sysconf name = Sysconf.valueOf(numericToLong(context, arg));
-        POSIX posix = runtime.getPosix();
+        Sysconf name = Sysconf.valueOf(toLong(context, arg));
+        POSIX posix = context.runtime.getPosix();
         posix.errno(0);
         long ret = posix.sysconf(name);
 
@@ -183,17 +182,17 @@ public class RubyEtc {
             if (errno == Errno.ENOENT.intValue() || errno == 0) {
                 return context.nil;
             } else if (errno == Errno.EOPNOTSUPP.intValue()) {
-                throw runtime.newNotImplementedError("sysconf() function is unimplemented on this machine");
+                throw notImplementedError(context, "sysconf() function is unimplemented on this machine");
             } else {
-                throw runtime.newErrnoFromLastPOSIXErrno();
+                throw context.runtime.newErrnoFromLastPOSIXErrno();
             }
         }
-        return RubyFixnum.newFixnum(runtime, ret);
+        return asFixnum(context, ret);
     }
     
     @JRubyMethod(module = true)
     public static synchronized IRubyObject confstr(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        Confstr name = Confstr.valueOf(numericToLong(context, arg));
+        Confstr name = Confstr.valueOf(toLong(context, arg));
         ByteBuffer buf;
 
         POSIX posix = context.runtime.getPosix();

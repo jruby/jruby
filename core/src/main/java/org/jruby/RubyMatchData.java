@@ -62,6 +62,7 @@ import java.util.stream.StreamSupport;
 
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Create.newEmptyString;
@@ -458,7 +459,7 @@ public class RubyMatchData extends RubyObject {
 
         for (IRubyObject arg : args) {
             if (arg instanceof RubyFixnum fix) {
-                result.append(context, RubyRegexp.nth_match(context, fix.getIntValue(), this));
+                result.append(context, RubyRegexp.nth_match(context, fix.asInt(context), this));
             } else {
                 int num = namevToBackrefNumber(context, arg);
                 if (num >= 0) {
@@ -592,7 +593,7 @@ public class RubyMatchData extends RubyObject {
         if (isRange.isNil()) return context.nil;
 
         if (!isRange.isTrue()) {
-            IRubyObject nthMatch = RubyRegexp.nth_match(context, index.convertToInteger().getIntValue(), this);
+            IRubyObject nthMatch = RubyRegexp.nth_match(context, toInt(context, index), this);
 
             // this should never happen here, but MRI allows any VALUE for result
             // if (result.isNil()) return nthMatch;
@@ -779,9 +780,8 @@ public class RubyMatchData extends RubyObject {
     private int nthToIndex(ThreadContext context, IRubyObject id) {
         int index = namevToBackrefNumber(context, id);
 
-        if (index == -1 && id instanceof RubyInteger) {
-            index = id.convertToInteger().getIntValue();
-        }
+        if (index == -1 && id instanceof RubyInteger) index = toInt(context, id);
+
         return index;
     }
 

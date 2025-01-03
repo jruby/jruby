@@ -53,6 +53,7 @@ import org.jruby.util.IOOutputStream;
 import org.jruby.util.io.TransparentByteArrayOutputStream;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.argumentError;
@@ -86,7 +87,7 @@ public class RubyMarshal {
         if (ioOrLimit instanceof RubyIO || sites(context).respond_to_write.respondsTo(context, ioOrLimit, ioOrLimit)) {
             io = ioOrLimit;
         } else if (ioOrLimit instanceof RubyFixnum fixnum) {
-            depthLimit = fixnum.getIntValue();
+            depthLimit = fixnum.asInt(context);
         } else {
             throw typeError(context, "Instance of IO needed");
         }
@@ -100,7 +101,7 @@ public class RubyMarshal {
             throw typeError(context, "Instance of IO needed");
         }
 
-        int depthLimit = limit.convertToInteger().getIntValue();
+        int depthLimit = toInt(context, limit);
 
         return dumpCommon(context, object, io, depthLimit);
     }

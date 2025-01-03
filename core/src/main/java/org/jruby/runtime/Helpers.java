@@ -91,6 +91,7 @@ import static org.jruby.api.Access.moduleClass;
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Convert.toInteger;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.argumentError;
@@ -549,17 +550,22 @@ public class Helpers {
         throw argumentError(context, "argument too big");
     }
 
+    @Deprecated(since = "10.0")
+    public static int addBufferLength(Ruby runtime, int base, int extra) {
+        return addBufferLength(runtime.getCurrentContext(), base, extra);
+    }
+
     /**
      * Calculate a buffer length based on a base size and a extra size. If the resulting size exceeds MAX_ARRAY_SIZE
      * and the extra size is nonzero, use the MAX_ARRAY_SIZE as the buffer length.
      *
-     * @param runtime the runtime
+     * @param context the current thread context
      * @param base the base size
      * @param extra the extra buffer size
      * @return the combined buffer size, or MAX_ARRAY_SIZE
      * @throws ArgumentError if the original or combined size cannot be accommodated by MAX_ARRAY_SIZE
      */
-    public static int addBufferLength(Ruby runtime, int base, int extra) {
+    public static int addBufferLength(ThreadContext context, int base, int extra) {
         try {
             int newSize = Math.addExact(base, extra);
 
@@ -570,16 +576,21 @@ public class Helpers {
             // fall through to error below
         }
 
-        throw argumentError(runtime.getCurrentContext(), "argument too big");
+        throw argumentError(context, "argument too big");
+    }
+
+    // FIXME: We need to deprecate this one RubyArray no longer needs it
+    public static int validateBufferLength(Ruby runtime, long length) {
+        return validateBufferLength(runtime.getCurrentContext(), length);
     }
 
     /**
      * Check that the buffer length requested is within the valid range of 0 to MAX_ARRAY_SIZE, or raise an argument
      * error.
      */
-    public static int validateBufferLength(Ruby runtime, long length) {
-        if (length < 0) throw argumentError(runtime.getCurrentContext(), "negative argument");
-        if (length > MAX_ARRAY_SIZE) throw argumentError(runtime.getCurrentContext(), "argument too big");
+    public static int validateBufferLength(ThreadContext context, long length) {
+        if (length < 0) throw argumentError(context, "negative argument");
+        if (length > MAX_ARRAY_SIZE) throw argumentError(context, "argument too big");
 
         return (int) length;
     }
@@ -2002,9 +2013,7 @@ public class Helpers {
     @Deprecated // not used
     public static IRubyObject aValueSplat(IRubyObject value) {
         var context = ((RubyBasicObject) value).getCurrentContext();
-        if (!(value instanceof RubyArray array) || array.length().getLongValue() == 0) {
-            return context.nil;
-        }
+        if (!(value instanceof RubyArray array) || array.length().getValue() == 0) return context.nil;
 
         return array.getLength() == 1 ? array.first(context) : array;
     }
@@ -2346,9 +2355,14 @@ public class Helpers {
         return RubyProc.newProc(context.runtime, block, Block.Type.LAMBDA);
     }
 
+    @Deprecated(since = "10.0")
     public static void fillNil(final IRubyObject[] arr, int from, int to, Ruby runtime) {
+        fillNil(runtime.getCurrentContext(), arr, from, to);
+    }
+
+    public static void fillNil(ThreadContext context, final IRubyObject[] arr, int from, int to) {
         if (arr.length == 0) return;
-        IRubyObject nils[] = runtime.getNilPrefilledArray();
+        IRubyObject nils[] = context.runtime.getNilPrefilledArray();
         int i;
 
         // NOTE: seems that Arrays.fill(arr, runtime.getNil()) won't do better ... on Java 8
@@ -2389,8 +2403,13 @@ public class Helpers {
         return arr;
     }
 
+    @Deprecated(since = "10.0")
     public static void fillNil(IRubyObject[] arr, Ruby runtime) {
-        fillNil(arr, 0, arr.length, runtime);
+        fillNil(runtime.getCurrentContext(), arr);
+    }
+
+    public static void fillNil(ThreadContext context, IRubyObject[] arr) {
+        fillNil(context, arr, 0, arr.length);
     }
 
     public static Block getBlock(ThreadContext context, IRubyObject self, Node node) {
@@ -3062,7 +3081,7 @@ public class Helpers {
         while (!(hval instanceof RubyFixnum fixnum)) {
             // This is different from MRI because we don't have rb_integer_pack
             if (hval instanceof RubyBignum bignum) return bignum.hash(context);
-            hval = hval.convertToInteger();
+            hval = toInteger(context, hval);
         }
 
         return fixnum;
