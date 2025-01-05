@@ -175,7 +175,8 @@ public class RubyException extends RubyObject {
         @Override
         public void marshalTo(Ruby runtime, RubyException exc, RubyClass type,
                               MarshalStream marshalStream) throws IOException {
-            marshalStream.registerLinkTarget(exc);
+            var context = runtime.getCurrentContext();
+            marshalStream.registerLinkTarget(context, exc);
             List<Variable<Object>> attrs = exc.getMarshalVariableList();
             attrs.add(new VariableEntry<>("mesg", exc.getMessage()));
             attrs.add(new VariableEntry<>("bt", exc.getBacktrace()));

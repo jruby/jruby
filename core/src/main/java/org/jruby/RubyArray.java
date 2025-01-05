@@ -1353,7 +1353,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         for (int i = 0; i < args.length; i++) {
             final IRubyObject arg = args[i];
             if (arg instanceof RubyFixnum fix) {
-                result.append(context, entry(fix.getValue()));
+                result.append(context, entry(fix.asLong(context)));
                 continue;
             }
 
@@ -4146,11 +4146,11 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         } */
 
         public int compare(IRubyObject obj1, IRubyObject obj2) {
-            if (fixnumBypass && obj1 instanceof RubyFixnum && obj2 instanceof RubyFixnum) {
-                return compareInteger((RubyFixnum) obj1, (RubyFixnum) obj2);
+            if (fixnumBypass && obj1 instanceof RubyFixnum fix1 && obj2 instanceof RubyFixnum fix2) {
+                return compareInteger(fix1, fix2);
             }
-            if (stringBypass && obj1 instanceof RubyString && obj2 instanceof RubyString) {
-                return compareString((RubyString) obj1, (RubyString) obj2);
+            if (stringBypass && obj1 instanceof RubyString str1 && obj2 instanceof RubyString str2) {
+                return compareString(str1, str2);
             }
             return compareGeneric(obj1, obj2);
         }
@@ -5354,8 +5354,13 @@ float_loop:
         return ifnone != null && !ifnone.isNil() ? sites(context).call.call(context, ifnone, ifnone) : context.nil;
     }
 
+    @Deprecated(since = "10.0")
     public static void marshalTo(RubyArray array, MarshalStream output) throws IOException {
-        output.registerLinkTarget(array);
+        marshalTo(((RubyBasicObject) array).getCurrentContext(), array, output);
+    }
+
+    public static void marshalTo(ThreadContext context, RubyArray array, MarshalStream output) throws IOException {
+        output.registerLinkTarget(context, array);
 
         int length = array.realLength;
 
@@ -5365,7 +5370,7 @@ float_loop:
                 output.dumpObject(array.eltInternal(i));
             }
         } catch (ArrayIndexOutOfBoundsException ex) {
-            throw concurrentModification(array.getRuntime().getCurrentContext(), ex);
+            throw concurrentModification(context, ex);
         }
     }
 

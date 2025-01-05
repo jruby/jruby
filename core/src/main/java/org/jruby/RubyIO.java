@@ -5232,7 +5232,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 if (arg instanceof RubyString) { // Overrides all?
                     ioOptions = newIOOptions(runtime, arg.asJavaString());
                 } else if (arg instanceof RubyFixnum fixnum) {
-                    ioOptions = newIOOptions(runtime, fixnum.getValue());
+                    ioOptions = newIOOptions(runtime, fixnum.asLong(context));
                 } else if (arg instanceof RubyHash hash) {
                     ioOptions = updateIOOptionsFromOptions(context, hash, ioOptions);
                 }

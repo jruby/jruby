@@ -339,8 +339,6 @@ public class RubyKernel {
     public static IRubyObject abort(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 0, 1);
 
-        Ruby runtime = context.runtime;
-
         RubyString message = null;
         if(argc == 1) {
             message = args[0].convertToString();
@@ -348,8 +346,7 @@ public class RubyKernel {
             sites(context).puts.call(context, stderr, stderr, message);
         }
 
-        exit(runtime, new IRubyObject[] { runtime.getFalse(), message }, false);
-        return runtime.getNil(); // not reached
+        throw exit(context, new IRubyObject[] { context.fals, message }, false);
     }
 
     // MRI: rb_f_array
@@ -888,12 +885,9 @@ public class RubyKernel {
     // FIXME: Add at_exit and finalizers to exit, then make exit_bang not call those.
     @JRubyMethod(optional = 1, module = true, visibility = PRIVATE)
     public static IRubyObject exit(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-
         Arity.checkArgumentCount(context, args, 0, 1);
 
-        exit(runtime, args, false);
-        return runtime.getNil(); // not reached
+        throw exit(context, args, false);
     }
 
     @Deprecated
@@ -903,15 +897,12 @@ public class RubyKernel {
 
     @JRubyMethod(name = "exit!", optional = 1, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject exit_bang(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-
         Arity.checkArgumentCount(context, args, 0, 1);
 
-        exit(runtime, args, true);
-        return runtime.getNil(); // not reached
+        throw exit(context, args, true);
     }
 
-    private static void exit(Ruby runtime, IRubyObject[] args, boolean hard) {
+    private static RuntimeException exit(ThreadContext context, IRubyObject[] args, boolean hard) {
         int status = hard ? 1 : 0;
         String message = null;
 
@@ -924,25 +915,21 @@ public class RubyKernel {
             }
         }
 
-        if (args.length == 2) {
-            if (args[1] instanceof RubyString) {
-                message = ((RubyString) args[1]).toString();
-            }
+        if (args.length == 2 && args[1] instanceof RubyString string) {
+            message = string.toString();
         }
 
         if (hard) {
-            if (runtime.getInstanceConfig().isHardExit()) {
+            if (context.runtime.getInstanceConfig().isHardExit()) {
                 System.exit(status);
             } else {
-                throw new MainExitException(status, true);
-            }
-        } else {
-            if (message == null) {
-                throw runtime.newSystemExit(status);
-            } else {
-                throw runtime.newSystemExit(status, message);
+                return new MainExitException(status, true);
             }
         }
+
+        return message == null ?
+                context.runtime.newSystemExit(status) :
+                context.runtime.newSystemExit(status, message);
     }
 
 
@@ -2029,8 +2016,7 @@ public class RubyKernel {
         // FIXME: Make jnr-posix Pure-Java backend do this as well
         int resultCode = ShellLauncher.execAndWait(runtime, args);
 
-        exit(runtime, new IRubyObject[] {asFixnum(context, resultCode)}, true);
-        return context.nil; // not reached
+        throw exit(context, new IRubyObject[] {asFixnum(context, resultCode)}, true);
     }
 
     @JRubyMethod(name = "fork", module = true, visibility = PRIVATE, notImplemented = true)

@@ -282,7 +282,7 @@ public class RubyDate extends RubyObject {
             val = DAY_MS(context).op_mul(context, val);
         }
 
-        if (val instanceof RubyFixnum fix) return fix.getValue();
+        if (val instanceof RubyFixnum fix) return fix.asLong(context);
 
         // fallback
         val = ((RubyNumeric) val).divmod(context, RubyFixnum.one(context.runtime));
@@ -295,7 +295,7 @@ public class RubyDate extends RubyObject {
         this.subMillisNum = toLong(context, subMillis.numerator(context));
         this.subMillisDen = toLong(context, subMillis.denominator(context));
 
-        return ms.getValue();
+        return ms.asLong(context);
     }
 
     private RubyFixnum DAY_MS(final ThreadContext context) {
@@ -547,7 +547,7 @@ public class RubyDate extends RubyObject {
 
     private static long normIntValue(ThreadContext context, IRubyObject val, final int negOffset) {
         long v = val instanceof RubyFixnum fixnum ?
-                fixnum.getValue() : toLong(context, val);
+                fixnum.asLong(context) : toLong(context, val);
 
         return (v < 0) ? v + negOffset : v;
     }

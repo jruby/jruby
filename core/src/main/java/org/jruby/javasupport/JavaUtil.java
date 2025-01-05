@@ -1007,19 +1007,18 @@ public class JavaUtil {
     private static final NumericConverter<Double> NUMERIC_TO_DOUBLE =
             (context, numeric, target) -> numeric.asDouble(context);
     private static final NumericConverter<BigInteger> NUMERIC_TO_BIGINTEGER =
-            (context, numeric, target) -> numeric.getBigIntegerValue();
+            (context, numeric, target) -> numeric.asBigInteger(context);
 
     private static final NumericConverter NUMERIC_TO_OTHER = (context, numeric, target) -> {
         if (!target.isAssignableFrom(numeric.getClass())) throw typeError(context, "could not coerce " + numeric.getMetaClass() + " to " + target);
         return numeric;  // just return as-is, since we can't do any coercion
     };
-    private static final NumericConverter<Object> NUMERIC_TO_OBJECT = (context, numeric, target) -> {
-        // for Object, default to natural wrapper type
-        if (numeric instanceof RubyFixnum fixnum) return Long.valueOf(fixnum.getValue());
-        if (numeric instanceof RubyFloat) return Double.valueOf(numeric.asDouble(context));
-        if (numeric instanceof RubyBignum) return ((RubyBignum)numeric).getValue();
-        if (numeric instanceof RubyBigDecimal) return ((RubyBigDecimal)numeric).getValue();
-        return NUMERIC_TO_OTHER.coerce(context, numeric, target);
+    private static final NumericConverter<Object> NUMERIC_TO_OBJECT = (context, numeric, target) -> switch (numeric) {
+        case RubyFixnum fixnum -> Long.valueOf(fixnum.asLong(context));
+        case RubyFloat flote-> Double.valueOf(flote.asDouble(context));
+        case RubyBignum bignum -> bignum.asLong(context);
+        case RubyBigDecimal bigdec -> bigdec.asLong(context);
+        default -> NUMERIC_TO_OTHER.coerce(context, numeric, target);
     };
     private static final NumericConverter NUMERIC_TO_VOID = (context, numeric, target) -> null;
     private static boolean isDoubleFloatable(double value) {
@@ -1162,7 +1161,7 @@ public class JavaUtil {
             return rubyObject.convertToString().getByteList();
         }
         if (javaClass == BigInteger.class) {
-         	if (rubyObject instanceof RubyBignum bignum) return bignum.getValue();
+         	if (rubyObject instanceof RubyBignum bignum) return bignum.asLong(context);
             if ( rubyObject instanceof RubyNumeric num) return BigInteger.valueOf(num.asLong(context));
             if ( rubyObject.respondsTo("to_i") ) {
          		RubyNumeric rubyNumeric = ((RubyNumeric) rubyObject.callMethod(context, "to_f"));
@@ -1502,6 +1501,7 @@ public class JavaUtil {
     public static IRubyObject primitive_to_java(IRubyObject recv, IRubyObject object, Block unusedBlock) {
         if (object instanceof JavaObject) return object;
 
+        var context = ((RubyObject) recv).getCurrentContext();
         Object javaObject;
         switch (object.getMetaClass().getClassIndex()) {
         case NIL:
@@ -1509,13 +1509,13 @@ public class JavaUtil {
             break;
         case INTEGER:
             if (object instanceof RubyFixnum fix) {
-                javaObject = Long.valueOf(fix.getValue());
+                javaObject = Long.valueOf(fix.asLong(context));
             } else {
-                javaObject = ((RubyBignum) object).getValue();
+                javaObject = ((RubyBignum) object).asLong(context);
             }
             break;
         case FLOAT:
-            javaObject = Double.valueOf(((RubyFloat) object).getValue());
+            javaObject = Double.valueOf(((RubyFloat) object).asLong(context));
             break;
         case STRING:
             ByteList bytes = ((RubyString) object).getByteList();
@@ -1654,11 +1654,11 @@ public class JavaUtil {
 
     @SuppressWarnings("deprecation")
     public static <T> T unwrapJava(final Object wrapped, final T defaultValue) {
-        if ( wrapped instanceof JavaProxy ) {
-            return (T) ((JavaProxy) wrapped).getObject();
+        if ( wrapped instanceof JavaProxy proxy) {
+            return (T) proxy.getObject();
         }
-        if ( wrapped instanceof JavaObject ) { // handles JavaClass as well
-            return (T) ((JavaObject) wrapped).getValue();
+        if ( wrapped instanceof JavaObject jobject) { // handles JavaClass as well
+            return (T) jobject.getValue();
         }
         return defaultValue;
     }

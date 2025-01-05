@@ -1473,7 +1473,8 @@ public class RubyClass extends RubyModule {
     }
 
     public static void marshalTo(RubyClass clazz, MarshalStream output) throws java.io.IOException {
-        output.registerLinkTarget(clazz);
+        var context = clazz.getRuntime().getCurrentContext();
+        output.registerLinkTarget(context, clazz);
         output.writeString(MarshalStream.getPathFromClass(clazz));
     }
 
@@ -1491,8 +1492,9 @@ public class RubyClass extends RubyModule {
         @Override
         public void marshalTo(Ruby runtime, Object obj, RubyClass type, MarshalStream marshalStream) throws IOException {
             IRubyObject object = (IRubyObject) obj;
+            var context = object.getRuntime().getCurrentContext();
 
-            marshalStream.registerLinkTarget(object);
+            marshalStream.registerLinkTarget(context, object);
             marshalStream.dumpVariables(object.getMarshalVariableList());
         }
 
@@ -2753,23 +2755,24 @@ public class RubyClass extends RubyModule {
          * @throws IOException If there is an IO error during dumping
          */
         public void dump(MarshalStream stream, IRubyObject object) throws IOException {
+            var context = object.getRuntime().getCurrentContext();
             switch (type) {
                 case DEFAULT:
-                    stream.writeDirectly(object);
+                    stream.writeDirectly(context, object);
                     return;
                 case NEW_USER:
-                    stream.userNewMarshal(object, entry);
+                    stream.userNewMarshal(context, object, entry);
                     return;
                 case OLD_USER:
-                    stream.userMarshal(object, entry);
+                    stream.userMarshal(context, object, entry);
                     return;
                 case DEFAULT_SLOW:
                     if (object.respondsTo("marshal_dump")) {
-                        stream.userNewMarshal(object);
+                        stream.userNewMarshal(context, object);
                     } else if (object.respondsTo("_dump")) {
-                        stream.userMarshal(object);
+                        stream.userMarshal(context, object);
                     } else {
-                        stream.writeDirectly(object);
+                        stream.writeDirectly(context, object);
                     }
             }
         }

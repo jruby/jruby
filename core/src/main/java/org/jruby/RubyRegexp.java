@@ -1922,12 +1922,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     public static void marshalTo(RubyRegexp regexp, MarshalStream output) throws java.io.IOException {
-        output.registerLinkTarget(regexp);
+        var context = regexp.getRuntime().getCurrentContext();
+        output.registerLinkTarget(context, regexp);
         output.writeString(regexp.str);
 
         int options = regexp.pattern.getOptions() & EMBEDDABLE;
 
-        if (regexp.getOptions(regexp.getRuntime().getCurrentContext()).isFixed()) options |= RE_FIXED;
+        if (regexp.getOptions(context).isFixed()) options |= RE_FIXED;
 
         output.writeByte(options);
     }

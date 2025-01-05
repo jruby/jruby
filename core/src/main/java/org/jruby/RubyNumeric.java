@@ -151,8 +151,33 @@ public class RubyNumeric extends RubyObject {
     /**
      * Return the value of this numeric as a 32-bit long. If the value does not
      * fit in 32 bits, it will be truncated.
+     * @deprecated Use {@link org.jruby.RubyNumeric#asInt(ThreadContext)} instead.
      */
+    @Deprecated(since = "10.0")
     public int getIntValue() { return asInt(getRuntime().getCurrentContext()); }
+
+
+    /**
+     * Return a BigInteger representation of this numerical value
+     *
+     * @param context the current thread context
+     * @return a BigInteger
+     */
+    @JRubyAPI
+    public BigInteger asBigInteger(ThreadContext context) {
+        return BigInteger.valueOf(asLong(context));
+    }
+
+    /**
+     * Return a double representation of this numerical value
+     *
+     * @param context the current thread context
+     * @return a double
+     */
+    @JRubyAPI
+    public double asDouble(ThreadContext context) {
+        return asLong(context);
+    }
 
     /**
      * Returns the value of this numeric and a java int.
@@ -171,17 +196,6 @@ public class RubyNumeric extends RubyObject {
     }
 
     /**
-     * Return a double representation of this numerical value
-     *
-     * @param context the current thread context
-     * @return a double
-     */
-    @JRubyAPI
-    public double asDouble(ThreadContext context) {
-        return asLong(context);
-    }
-
-    /**
      * @return
      * @deprecated Use {@link org.jruby.RubyNumeric#asDouble(ThreadContext)} instead.
      */
@@ -190,8 +204,9 @@ public class RubyNumeric extends RubyObject {
         return asDouble(getCurrentContext());
     }
 
+    @Deprecated(since = "10.0")
     public BigInteger getBigIntegerValue() {
-        return BigInteger.valueOf(asLong(getRuntime().getCurrentContext()));
+        return asBigInteger(getCurrentContext());
     }
 
     public static RubyNumeric newNumeric(Ruby runtime) {
@@ -1183,7 +1198,7 @@ public class RubyNumeric extends RubyObject {
             }
         } else {
             // We must avoid integer overflows in "i += step".
-            long end = ((RubyFixnum) to).getValue();
+            long end = ((RubyFixnum) to).asLong(context);
             if (desc) {
                 long tov = Long.MIN_VALUE - diff;
                 if (end > tov) tov = end;

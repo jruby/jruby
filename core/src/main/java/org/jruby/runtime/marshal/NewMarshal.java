@@ -149,7 +149,7 @@ public class NewMarshal {
     }
 
     public void registerLinkTarget(IRubyObject newObject) {
-        if (shouldBeRegistered(newObject)) {
+        if (shouldBeRegistered(newObject.getRuntime().getCurrentContext(), newObject)) {
             cache.register(newObject);
         }
     }
@@ -158,19 +158,19 @@ public class NewMarshal {
         cache.registerSymbol(sym);
     }
 
-    static boolean shouldBeRegistered(IRubyObject value) {
+    static boolean shouldBeRegistered(ThreadContext context, IRubyObject value) {
         if (value.isNil()) {
             return false;
         } else if (value instanceof RubyBoolean) {
             return false;
         } else if (value instanceof RubyFixnum) {
-            return ! isMarshalFixnum((RubyFixnum)value);
+            return ! isMarshalFixnum(context, (RubyFixnum)value);
         }
         return true;
     }
 
-    private static boolean isMarshalFixnum(RubyFixnum fixnum) {
-        var value = fixnum.getValue();
+    private static boolean isMarshalFixnum(ThreadContext context, RubyFixnum fixnum) {
+        var value = fixnum.asLong(context);
         return value <= RubyFixnum.MAX_MARSHAL_FIXNUM && value >= RubyFixnum.MIN_MARSHAL_FIXNUM;
     }
 
@@ -331,14 +331,13 @@ public class NewMarshal {
             case FIXNUM:
                 RubyFixnum fixnum = (RubyFixnum)value;
 
-                if (isMarshalFixnum(fixnum)) {
+                if (isMarshalFixnum(context, fixnum)) {
                     out.write('i');
-                    writeInt(out, (int) fixnum.getValue());
+                    writeInt(out, fixnum.asInt(context));
                     return;
                 }
                 // FIXME: inefficient; constructing a bignum just for dumping?
-                runtime = context.runtime;
-                value = RubyBignum.newBignum(runtime, fixnum.getValue());
+                value = RubyBignum.newBignum(context.runtime, fixnum.asLong(context));
 
                 // fall through
             case BIGNUM:

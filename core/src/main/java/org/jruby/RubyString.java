@@ -2797,7 +2797,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             return concatNumeric(context, (int)(fixnum.value & 0xFFFFFFFF));
         }
         if (other instanceof RubyBignum bignum) {
-            if (bignum.signum() < 0) throw rangeError(context, "negative string size (or size too big)");
+            if (bignum.signum(context) < 0) throw rangeError(context, "negative string size (or size too big)");
 
             return concatNumeric(context, bignum.asInt(context));
         }
@@ -5632,7 +5632,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     private void appendBytes(ThreadContext context, IRubyObject arg) {
         switch (arg) {
             case RubyFixnum fix -> cat(fix.asInt(context) & 0xff);
-            case RubyBignum big -> cat(big.getBigIntegerValue().intValue() & 0xff);
+            case RubyBignum big -> cat(big.asBigInteger(context).intValue() & 0xff);
             case RubyString str -> value.append(str.getByteList());
             default -> throw runtimeError(context, "BUG: append_as_bytes arguments should have been validated");
         }

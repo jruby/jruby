@@ -968,10 +968,11 @@ public class RubyStruct extends RubyObject {
     }
 
     public static void marshalTo(RubyStruct struct, MarshalStream output) throws java.io.IOException {
-        output.registerLinkTarget(struct);
-        output.dumpDefaultObjectHeader('S', struct.getMetaClass());
+        var context = struct.getRuntime().getCurrentContext();
+        output.registerLinkTarget(context, struct);
+        output.dumpDefaultObjectHeader(context, 'S', struct.getMetaClass());
 
-        RubyArray member = __member__(struct.getRuntime().getCurrentContext(), struct.classOf());
+        RubyArray member = __member__(context, struct.classOf());
         output.writeInt(member.size());
 
         for (int i = 0; i < member.size(); i++) {

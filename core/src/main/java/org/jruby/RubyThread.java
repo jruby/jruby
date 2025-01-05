@@ -290,7 +290,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
                 if (err == UNDEF) {
                     // no error
-                } else if (err instanceof RubyFixnum fix && (fix.getValue() == 0 || fix.getValue() == 1 || fix.getValue() == 2)) {
+                } else if (err instanceof RubyFixnum fix && 
+                        (fix.asLong(context) == 0 || fix.asLong(context) == 1 || fix.asLong(context) == 2)) {
                     toKill();
                 } else {
                     if (getStatus() == Status.SLEEP) exitSleep();
@@ -1419,13 +1420,23 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return this;
     }
 
-    @JRubyMethod
+    @Deprecated(since = "10.0")
     public RubyFixnum priority() {
-        return RubyFixnum.newFixnum(getRuntime(), javaPriorityToRubyPriority(threadImpl.getPriority()));
+        return priority(getCurrentContext());
+    }
+
+    @JRubyMethod
+    public RubyFixnum priority(ThreadContext context) {
+        return asFixnum(context, javaPriorityToRubyPriority(threadImpl.getPriority()));
+    }
+
+    @Deprecated(since = "10.0")
+    public IRubyObject priority_set(IRubyObject priority) {
+        return priority_set(getCurrentContext(), priority);
     }
 
     @JRubyMethod(name = "priority=")
-    public IRubyObject priority_set(IRubyObject priority) {
+    public IRubyObject priority_set(ThreadContext context, IRubyObject priority) {
         int iPriority = RubyNumeric.fix2int(priority);
 
         if (iPriority < RUBY_MIN_THREAD_PRIORITY) {
@@ -1444,7 +1455,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             threadImpl.setPriority(jPriority);
         }
 
-        return RubyFixnum.newFixnum(getRuntime(), iPriority);
+        return asFixnum(context, iPriority);
     }
 
     /* helper methods to translate Java thread priority (1-10) to

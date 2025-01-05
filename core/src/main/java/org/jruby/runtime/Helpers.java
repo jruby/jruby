@@ -2013,7 +2013,7 @@ public class Helpers {
     @Deprecated // not used
     public static IRubyObject aValueSplat(IRubyObject value) {
         var context = ((RubyBasicObject) value).getCurrentContext();
-        if (!(value instanceof RubyArray array) || array.length().getValue() == 0) return context.nil;
+        if (!(value instanceof RubyArray array) || array.length().asLong(context) == 0) return context.nil;
 
         return array.getLength() == 1 ? array.first(context) : array;
     }
