@@ -83,6 +83,27 @@ public class Signature {
     public int keyRest() { return keyRest; }
 
     /**
+     * The minimum number of parameters supplied which can fulfill a call to this signature.  This
+     * method is for calculating the public-facing arity value.
+     *
+     * @return the minimum amount of params expected.
+     */
+    public int min() {
+        return required() + (requiredKwargs > 0 ? 1 : 0);
+    }
+
+    /**
+     * The maximum number of parameters supplied which can fulfill a call to this signature.  This
+     * method is for calculating the public-facing arity value.
+     *
+     * @return the minimum amount of params expected.
+     */
+    public int max() {
+        return rest != Rest.NONE && rest != Rest.ANON ?
+                -1 : required() + opt() + (kwargs() > 0 || restKwargs() ? 1 : 0);
+    }
+
+    /**
      * Total number of keyword argument parameters.
      * @return the number of kwarg parameters
      */
@@ -146,7 +167,7 @@ public class Signature {
         boolean hasOptionalKeywords = kwargs - requiredKwargs > 0;
         boolean optionalFromRest = rest() != Rest.NONE && rest != Rest.ANON;
 
-        if (opt() > 0 || optionalFromRest || (hasOptionalKeywords || restKwargs()) && oneForKeywords == 0) {
+        if (opt() > 0 || optionalFromRest || fixedValue == 0 && (hasOptionalKeywords || restKwargs())) {
             return -1 * (fixedValue + 1);
         }
 

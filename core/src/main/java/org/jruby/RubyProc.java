@@ -392,11 +392,11 @@ public class RubyProc extends RubyObject implements DataType {
     public RubyFixnum arity(ThreadContext context) {
         Signature signature = block.getSignature();
 
-        if (block.type == Block.Type.LAMBDA) return asFixnum(context, signature.arityValue());
+        int min = signature.min();
+        int max = signature.max();
+        boolean test = isLambda() ? min == max : max != -1; // specific value or unlimited
 
-        // FIXME: Consider min/max like MRI here instead of required + kwarg count.
-        return asFixnum(context, signature.hasRest() ?
-                signature.arityValue() : signature.required() + signature.getRequiredKeywordForArityCount());
+        return asFixnum(context, test ? min : -min-1);
     }
 
     @JRubyMethod(name = "to_proc")
