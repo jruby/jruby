@@ -201,7 +201,10 @@ public class BacktraceData implements Serializable {
                 // mask internal file paths
                 filename = TraceType.maskInternalFiles(filename);
 
-                RubyStackTraceElement rubyElement = new RubyStackTraceElement("RUBY", newName, filename, rubyFrame.line + 1, false, frameType);
+                // use class name if given
+                String klass = rubyFrame.klass;
+
+                RubyStackTraceElement rubyElement = new RubyStackTraceElement(klass == null ? "RUBY" : klass, newName, filename, rubyFrame.line + 1, false, frameType);
 
                 // dup if masking native and previous frame was native
                 if (maskNative && dupFrame) {
