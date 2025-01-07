@@ -556,7 +556,9 @@ public class Java implements Library {
             for ( int i = interfaces.length; --i >= 0; ) {
                 proxy.include(context, getInterfaceModule(context, interfaces[i]));
             }
-            if ( Modifier.isPublic(clazz.getModifiers()) ) {
+            // we don't want to expose any synthetic classes into Ruby constants,
+            // JRuby generated classes such as interface impls (org.jruby.gen.InterfaceImpl) are marked synthetic
+            if (Modifier.isPublic(clazz.getModifiers()) && !clazz.isSynthetic()) {
                 addToJavaPackageModule(context, proxy);
             }
         }
