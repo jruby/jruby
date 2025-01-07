@@ -61,7 +61,7 @@ class Data
         # Without exposing some very internal methods using JRuby.reference we cannot generate this
         # naturally so we will post-process the output.
         _original_inspect_.tap do |original_inspect|
-          original_inspect.gsub! /@([^=]+=)/, '\1'
+          original_inspect.gsub!(/@([^=]+=)/, '\1')
         end
       end
 
