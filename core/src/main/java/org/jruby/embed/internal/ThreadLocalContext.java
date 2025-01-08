@@ -29,8 +29,9 @@
  */
 package org.jruby.embed.internal;
 
-import java.lang.ref.Cleaner;
-import java.lang.ref.Cleaner.Cleanable;
+import java.lang.ref.PhantomReference;
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -43,8 +44,8 @@ import java.util.function.Supplier;
  */
 class ThreadLocalContext {
 	private final ConcurrentHashMap<LocalContextCleaningAction, Object> contextRefs = new ConcurrentHashMap<>();
-	private final Cleaner cleaner = Cleaner.create();
 	private final Supplier<LocalContext> localContextFactory;
+	private final Cleaner cleaner = new Cleaner();
 
 	public ThreadLocalContext(final Supplier<LocalContext> localContextFactory) {
 		this.localContextFactory = localContextFactory;
@@ -61,13 +62,13 @@ class ThreadLocalContext {
 			// GC'd (i.e. when this class gets GC'd because terminate() was never called).
 			// see ThreadLocal JavaDoc: ref will stay reachable "as long as the thread is
 			// alive and the ThreadLocal instance is accessible"
-			final Cleanable cleanable = cleaner.register(ref, ctx);
+			ctx.register(ref, cleaner);
 			if (contextHolder == null)
 				// boundary case if we're already terminating: clean up immediately, because
 				// there is no more cleanup thread to do that later
 				// the returned context will be null, but that's to be expected when operating
 				// on an object that has been terminated
-				cleanable.clean();
+				ctx.run();
 			return ref;
 		}
 	};
@@ -77,6 +78,7 @@ class ThreadLocalContext {
 	}
 
 	public void terminate() {
+		cleaner.interrupt();
 		contextHolder = null;
 		for (final LocalContextCleaningAction ref : contextRefs.keySet())
 			ref.run();
@@ -88,10 +90,13 @@ class ThreadLocalContext {
 	 * everything that is GC-reachable from them will stay reachable until the
 	 * cleaning action has been run.
 	 */
-	private static class LocalContextCleaningAction extends AtomicReference<LocalContext> implements Runnable {
+	static class LocalContextCleaningAction extends AtomicReference<LocalContext> implements Runnable {
 		private static final long serialVersionUID = 1L;
 
 		private final ConcurrentHashMap<LocalContextCleaningAction, Object> contextRefs;
+
+		@SuppressWarnings("unused") // only used to make sure the PhantomReference doesn't get GC'd
+		private CleanerReference phantomReference;
 
 		private LocalContextCleaningAction(final ConcurrentHashMap<LocalContextCleaningAction, Object> contextRefs,
 				final LocalContext context) {
@@ -110,6 +115,43 @@ class ThreadLocalContext {
 			if (lc != null)
 				lc.remove();
 			contextRefs.remove(this);
+		}
+
+		private void register(final AtomicReference<LocalContextCleaningAction> ref, final Cleaner cleaner) {
+			phantomReference = new CleanerReference(ref, cleaner.q, this);
+		}
+	}
+
+	private static class CleanerReference extends PhantomReference<AtomicReference<LocalContextCleaningAction>> {
+		private Runnable cleanup;
+
+		public CleanerReference(final AtomicReference<LocalContextCleaningAction> referent,
+				final ReferenceQueue<AtomicReference<LocalContextCleaningAction>> q, final Runnable cleanup) {
+			super(referent, q);
+			this.cleanup = cleanup;
+		}
+	}
+
+	private static class Cleaner extends Thread {
+		private final ReferenceQueue<AtomicReference<LocalContextCleaningAction>> q = new ReferenceQueue<>();
+
+		public Cleaner() {
+			setName("JRuby-ThreadLocalContext-Cleaner-" + getId());
+			setDaemon(true);
+			start();
+		}
+
+		@Override
+		public void run() {
+			while (!interrupted()) {
+				final Reference<?> cleanable;
+				try {
+					cleanable = q.remove();
+				} catch (InterruptedException e) {
+					break;
+				}
+				((CleanerReference) cleanable).cleanup.run();
+			}
 		}
 	}
 }
