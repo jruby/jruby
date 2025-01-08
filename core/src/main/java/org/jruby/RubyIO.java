@@ -73,6 +73,7 @@ import org.jruby.exceptions.EOFError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.internal.runtime.ThreadedRunnable;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -4292,21 +4293,24 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     // MRI: io_s_write
     public static IRubyObject ioStaticWrite(ThreadContext context, IRubyObject recv, IRubyObject[] argv, boolean binary) {
-        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
+        IRubyObject keywords = IRRuntimeHelpers.receiveKeywords(context, argv, false, true, false);
         final Ruby runtime = context.runtime;
         IRubyObject string, offset, opt;
         string = offset = opt = context.nil;
 
         switch (argv.length) {
             case 4:
-                if (!keywords) throw runtime.newArgumentError(argv.length, 2, 3);
-                opt = argv[3].convertToHash();
+                if (!(keywords instanceof RubyHash)) throw runtime.newArgumentError(argv.length, 2, 3);
+                opt = keywords;
                 offset = argv[2];
                 string = argv[1];
                 break;
             case 3:
-                opt = TypeConverter.checkHashType(runtime, argv[2]);
-                if (opt.isNil()) offset = argv[2];
+                if (keywords instanceof RubyHash) {
+                    opt = keywords;
+                } else {
+                    offset = argv[2];
+                }
                 string = argv[1];
                 break;
             case 2:
