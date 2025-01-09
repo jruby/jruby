@@ -4229,7 +4229,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     // Enebo: annotation processing forced me to do pangea method here...
     @JRubyMethod(name = "read", meta = true, required = 1, optional = 3, checkArity = false, keywords = true)
     public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
+        IRubyObject keywords = IRRuntimeHelpers.receiveKeywords(context, args, false, true, false);
         int argc = Arity.checkArgumentCount(context, args, 1, 4);
 
         Ruby runtime = context.runtime;
@@ -4239,20 +4239,20 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         { // rb_scan_args logic, basically
             if (argc > 3) {
-                if (!keywords) throw runtime.newArgumentError(args.length, 1, 4);
-                options = (RubyHash) args[3];
+                if (!(keywords instanceof RubyHash)) throw runtime.newArgumentError(args.length, 1, 4);
+                options = args[3];
                 offset = args[2];
                 length = args[1];
             } else if (argc > 2) {
-                if (args[2] instanceof RubyHash) {
-                    options = (RubyHash) args[2];
+                if (keywords instanceof RubyHash) {
+                    options = keywords;
                 } else {
                     offset = args[2];
                 }
                 length = args[1];
             } else if (argc > 1) {
-                if (args[1] instanceof RubyHash) {
-                    options = (RubyHash) args[1];
+                if (keywords instanceof RubyHash) {
+                    options = keywords;
                 } else {
                     length = args[1];
                 }
