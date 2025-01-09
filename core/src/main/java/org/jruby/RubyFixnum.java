@@ -194,6 +194,16 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
     }
 
     @Override
+    public double getDoubleValue() {
+        return value;
+    }
+
+    @Override
+    public long getLongValue() {
+        return value;
+    }
+
+    @Override
     @JRubyAPI
     public double asDouble(ThreadContext context) {
         return value;
