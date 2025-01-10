@@ -632,7 +632,10 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
         try {
             return asFixnum(context, Math.multiplyExact(value, other));
         } catch (ArithmeticException ae) {
-            return RubyBignum.newBignum(context.runtime, value).op_mul(context, other);
+            // overflow, use Bignum
+            BigInteger valueBig = BigInteger.valueOf(value);
+            BigInteger otherBig = BigInteger.valueOf(other);
+            return RubyBignum.newBignum(context.runtime, valueBig.multiply(otherBig));
         }
     }
 
