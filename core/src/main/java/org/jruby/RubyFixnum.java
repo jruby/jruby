@@ -629,14 +629,18 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
 
     @Override
     public IRubyObject op_mul(ThreadContext context, long other) {
-        try {
-            return asFixnum(context, Math.multiplyExact(value, other));
-        } catch (ArithmeticException ae) {
-            // overflow, use Bignum
-            BigInteger valueBig = BigInteger.valueOf(value);
-            BigInteger otherBig = BigInteger.valueOf(other);
-            return RubyBignum.newBignum(context.runtime, valueBig.multiply(otherBig));
+        long value = this.value;
+        long high = Math.multiplyHigh(value, other);
+        if (high == 0) {
+            return asFixnum(context, value * other);
         }
+
+        // overflow, use Bignum
+        return multiplyAsBignum(context, value, other);
+    }
+
+    private static RubyInteger multiplyAsBignum(ThreadContext context, long value, long other) {
+        return RubyBignum.newBignum(context.runtime, BigInteger.valueOf(value).multiply(BigInteger.valueOf(other)));
     }
 
     public IRubyObject op_mul(ThreadContext context, double other) {
