@@ -630,9 +630,11 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
     @Override
     public IRubyObject op_mul(ThreadContext context, long other) {
         long value = this.value;
+        long low = value * other;
         long high = Math.multiplyHigh(value, other);
-        if (high == 0) {
-            return asFixnum(context, value * other);
+        if ((high == 0 && low >= 0) // result is zero or positive and < MAX
+                || (high == -1 && low < 0)) { // result is negative and >= MIN
+            return asFixnum(context, low);
         }
 
         // overflow, use Bignum
