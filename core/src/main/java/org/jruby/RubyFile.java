@@ -45,6 +45,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.NotImplementedError;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.*;
 import org.jruby.runtime.JavaSites.FileSites;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -344,9 +345,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     // rb_file_initialize
     @JRubyMethod(name = "initialize", required = 1, optional = 3, checkArity = false, visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
-        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
+        // capture callInfo for delegating to IO#initialize
+        int callInfo = context.callInfo;
+        IRubyObject keywords = IRRuntimeHelpers.receiveKeywords(context, args, false, true, false);
         // Mild hack. We want to arity-mismatch if extra arg is not really a kwarg but not if it is one.
-        int maxArgs = keywords ? 4 : 3;
+        int maxArgs = keywords instanceof RubyHash ? 4 : 3;
         int argc = Arity.checkArgumentCount(context, args, 1, maxArgs);
 
         if (openFile != null) throw context.runtime.newRuntimeError("reinitializing File");
@@ -354,6 +357,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         if (argc > 0 && argc <= 3) {
             IRubyObject fd = TypeConverter.convertToTypeWithCheck(context, args[0], context.runtime.getFixnum(), sites(context).to_int_checked);
             if (!fd.isNil()) {
+                // restore callInfo for delegated call to IO#initialize
+                IRRuntimeHelpers.setCallInfo(context, callInfo);
                 if (argc == 1) {
                     return super.initialize(context, fd, block);
                 } else if (argc == 2) {
