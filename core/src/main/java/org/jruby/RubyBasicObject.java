@@ -941,8 +941,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     @Override
     public IRubyObject rbClone() {
-        Ruby runtime = getRuntime();
-        return rbCloneInternal(runtime.getCurrentContext(), runtime.getNil());
+        var context = getRuntime().getCurrentContext();
+        return rbCloneInternal(context, context.nil);
     }
 
     public IRubyObject rbClone(ThreadContext context, IRubyObject maybeOpts) {

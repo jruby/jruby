@@ -168,7 +168,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         final int len = array.length;
         if ( len == 0 ) return false;
         if ( obj instanceof RubyFixnum fix) {
-            final long objVal = fix.getValue();
+            final long objVal = fix.asLong(context);
             if ( objVal < Byte.MIN_VALUE || objVal > Byte.MAX_VALUE ) return false;
 
             for (byte b : array) {
@@ -186,7 +186,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         final int len = array.length;
         if ( len == 0 ) return false;
         if (obj instanceof RubyFixnum fix) {
-            final long objVal = fix.getValue();
+            final long objVal = fix.asLong(context);
             if ( objVal < Short.MIN_VALUE || objVal > Short.MAX_VALUE ) return false;
 
             for (short value : array) {
@@ -204,7 +204,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         final int len = array.length;
         if ( len == 0 ) return false;
         if (obj instanceof RubyFixnum fix) {
-            final long objVal = fix.getValue();
+            final long objVal = fix.asLong(context);
             if ( objVal < Integer.MIN_VALUE || objVal > Integer.MAX_VALUE ) return false;
 
             for (int j : array) {
@@ -222,7 +222,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         final int len = array.length;
         if ( len == 0 ) return false;
         if ( obj instanceof RubyFixnum fix) {
-            final long objVal = fix.getValue();
+            final long objVal = fix.asLong(context);
 
             for (long l : array) {
                 if (objVal == l) return true;
@@ -239,7 +239,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         final int len = array.length;
         if ( len == 0 ) return false;
         if (obj instanceof RubyFixnum fix) {
-            final long objVal = fix.getValue();
+            final long objVal = fix.asLong(context);
             if ( objVal < Character.MIN_VALUE || objVal > Character.MAX_VALUE ) return false;
 
             for (char c : array) {
@@ -356,29 +356,27 @@ public final class ArrayJavaProxy extends JavaProxy {
 
     @JRubyMethod(name = "count") // @override Enumerable#count
     public IRubyObject count(final ThreadContext context, final Block block) {
-        final Ruby runtime = context.runtime;
-        if ( block.isGiven() ) {
-            final Object array = getObject(); int count = 0;
-            for ( int i = 0; i < Array.getLength(array); i++ ) {
-                IRubyObject next = JavaUtil.convertJavaArrayElementToRuby(runtime, converter, array, i);
-                if ( block.yield( context, next ).isTrue() ) count++;
-            }
-            return RubyFixnum.newFixnum(runtime, count);
+        if (!block.isGiven()) return asFixnum(context, length());
+
+        final Object array = getObject();
+        int count = 0;
+        for ( int i = 0; i < Array.getLength(array); i++ ) {
+            IRubyObject next = JavaUtil.convertJavaArrayElementToRuby(context.runtime, converter, array, i);
+            if (block.yield(context, next).isTrue()) count++;
         }
-        return RubyFixnum.newFixnum(runtime, length());
+        return asFixnum(context, count);
     }
 
     @JRubyMethod(name = "count") // @override Enumerable#count
     public IRubyObject count(final ThreadContext context, final IRubyObject obj, final Block unused) {
         // unused block due DescriptorInfo not (yet) supporting if a method receives block and an override doesn't
-        final Ruby runtime = context.runtime;
         final Object array = getObject(); int count = 0;
         for ( int i = 0; i < Array.getLength(array); i++ ) {
             // NOTE: could be former improved by special case handling primitive arrays and == ...
-            IRubyObject next = JavaUtil.convertJavaArrayElementToRuby(runtime, converter, array, i);
+            IRubyObject next = JavaUtil.convertJavaArrayElementToRuby(context.runtime, converter, array, i);
             if ( RubyObject.equalInternal(context, next, obj) ) count++;
         }
-        return RubyFixnum.newFixnum(runtime, count);
+        return asFixnum(context, count);
     }
 
     @JRubyMethod(name = "dig", required = 1, rest = true, checkArity = false)

@@ -133,7 +133,7 @@ public class RubyObjectSpace {
 
     @JRubyMethod(name = "_id2ref", module = true, visibility = PRIVATE)
     public static IRubyObject id2ref(ThreadContext context, IRubyObject recv, IRubyObject id) {
-        long longId = castAsFixnum(context, id).getValue();
+        long longId = castAsFixnum(context, id).asLong(context);
         if (longId == 0) return context.fals;
         if (longId == 20) return context.tru;
         if (longId == 8) return context.nil;

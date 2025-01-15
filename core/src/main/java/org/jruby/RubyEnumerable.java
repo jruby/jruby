@@ -591,7 +591,6 @@ public class RubyEnumerable {
     }
 
     public static IRubyObject detectCommon(final ThreadContext context, CallSite each, IRubyObject self, IRubyObject ifnone, final Block block) {
-        final Ruby runtime = context.runtime;
         final SingleObject<IRubyObject> result = new SingleObject<>(null);
 
         try {
@@ -613,7 +612,8 @@ public class RubyEnumerable {
             return result.object;
         }
 
-        return ifnone != null && !ifnone.isNil() ? sites(context).detect_call.call(context, ifnone, ifnone) : runtime.getNil();
+        return ifnone != null && !ifnone.isNil() ?
+                sites(context).detect_call.call(context, ifnone, ifnone) : context.nil;
     }
 
     @JRubyMethod

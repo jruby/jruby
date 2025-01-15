@@ -813,7 +813,7 @@ public class Addrinfo extends RubyObject {
                 byte[] bytes;
                 if (node instanceof RubyBignum bignum) {
                     // IP6 addresses will be 16 bytes wide
-                    bytes = bignum.getBigIntegerValue().toByteArray();
+                    bytes = bignum.asBigInteger(context).toByteArray();
                 } else {
                     long i = toInt(context, node) & 0xFFFFL;
 

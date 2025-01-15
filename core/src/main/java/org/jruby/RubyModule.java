@@ -4186,7 +4186,8 @@ public class RubyModule extends RubyObject {
     }
 
     public static void marshalTo(RubyModule module, MarshalStream output) throws java.io.IOException {
-        output.registerLinkTarget(module);
+        var context = module.getRuntime().getCurrentContext();
+        output.registerLinkTarget(context, module);
         output.writeString(MarshalStream.getPathFromClass(module));
     }
 

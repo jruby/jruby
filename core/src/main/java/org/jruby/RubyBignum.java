@@ -139,14 +139,14 @@ public class RubyBignum extends RubyInteger {
 
     @Override
     @JRubyAPI
-    public double asDouble(ThreadContext context) {
-        return big2dbl(this);
+    public BigInteger asBigInteger(ThreadContext context) {
+        return value;
     }
 
     @Override
     @JRubyAPI
-    public long asLong(ThreadContext context) {
-        return big2long(this);
+    public double asDouble(ThreadContext context) {
+        return big2dbl(this);
     }
 
     @Override
@@ -156,8 +156,9 @@ public class RubyBignum extends RubyInteger {
     }
 
     @Override
-    public BigInteger getBigIntegerValue() {
-        return value;
+    @JRubyAPI
+    public long asLong(ThreadContext context) {
+        return big2long(this);
     }
 
     @Override
@@ -174,7 +175,8 @@ public class RubyBignum extends RubyInteger {
     }
 
     @Override
-    public int signum() { return value.signum(); }
+    @JRubyAPI
+    public int signum(ThreadContext context) { return value.signum(); }
 
     @Override
     public RubyInteger negate(ThreadContext context) {
@@ -1157,7 +1159,8 @@ public class RubyBignum extends RubyInteger {
     }
 
     public static void marshalTo(RubyBignum bignum, MarshalStream output) throws IOException {
-        output.registerLinkTarget(bignum);
+        var context = bignum.getCurrentContext();
+        output.registerLinkTarget(context, bignum);
 
         output.write(bignum.value.signum() >= 0 ? '+' : '-');
 

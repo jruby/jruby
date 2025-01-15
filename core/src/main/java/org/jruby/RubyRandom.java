@@ -97,7 +97,7 @@ public class RubyRandom extends RubyRandomBase {
         }
 
         public static Random randomFromBignum(RubyBignum seed) {
-            BigInteger big = seed.getBigIntegerValue();
+            BigInteger big = seed.asBigInteger(seed.getRuntime().getCurrentContext());
             return randomFromBigInteger(big);
         }
 
@@ -119,9 +119,14 @@ public class RubyRandom extends RubyRandomBase {
             }
         }
 
+        @Deprecated(since = "10.0")
         RandomType(IRubyObject vseed, RubyBignum state, int left) {
+            this(((RubyBasicObject) vseed).getCurrentContext(), vseed, state, left);
+        }
+
+        RandomType(ThreadContext context, IRubyObject vseed, RubyBignum state, int left) {
             this.seed = vseed.convertToInteger();
-            byte[] bytes = state.getBigIntegerValue().toByteArray();
+            byte[] bytes = state.asBigInteger(context).toByteArray();
             int[] ints = new int[bytes.length / 4];
             for (int i = 0; i < ints.length; ++i) {
                 ints[i] = getIntBigIntegerBuffer(bytes, i);
@@ -381,7 +386,7 @@ public class RubyRandom extends RubyRandomBase {
 
         checkFrozen();
 
-        random = new RandomType(seed, state, left);
+        random = new RandomType(context, seed, state, left);
         if (load.hasVariables()) syncVariables((IRubyObject) load);
 
         setFrozen(true);

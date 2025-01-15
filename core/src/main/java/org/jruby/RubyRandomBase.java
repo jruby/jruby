@@ -113,7 +113,7 @@ public class RubyRandomBase extends RubyObject {
             }
             return randomUlongLimited(context, self, random, max - 1);
         } else {
-            BigInteger big = vmax.getBigIntegerValue();
+            BigInteger big = vmax.asBigInteger(context);
             if (big.equals(BigInteger.ZERO)) return context.nil;
 
             if (big.signum() < 0) {

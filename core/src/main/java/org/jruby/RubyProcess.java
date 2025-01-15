@@ -35,8 +35,8 @@ import jnr.constants.platform.RLIMIT;
 import jnr.constants.platform.Sysconf;
 import jnr.ffi.byref.IntByReference;
 import jnr.posix.Group;
-import jnr.posix.Passwd;
 import jnr.posix.POSIX;
+import jnr.posix.Passwd;
 import jnr.posix.RLimit;
 import jnr.posix.Times;
 import jnr.posix.Timeval;
@@ -44,6 +44,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.api.Convert;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
@@ -53,16 +54,6 @@ import org.jruby.runtime.CallBlock;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
-
-import static org.jruby.api.Convert.*;
-import static org.jruby.api.Create.*;
-import static org.jruby.api.Define.defineModule;
-import static org.jruby.api.Error.argumentError;
-import static org.jruby.api.Error.notImplementedError;
-import static org.jruby.api.Error.rangeError;
-import static org.jruby.api.Warn.warn;
-import static org.jruby.runtime.Helpers.throwException;
-import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.component.VariableEntry;
@@ -72,24 +63,42 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.NewMarshal;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ShellLauncher;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
 import org.jruby.util.io.PopenExecutor;
 import org.jruby.util.io.PosixShim;
 
-import static org.jruby.runtime.Helpers.invokedynamic;
-import static org.jruby.util.WindowsFFI.kernel32;
-import static org.jruby.util.WindowsFFI.Kernel32.*;
-
 import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.management.ThreadMXBean;
 import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.function.ToIntFunction;
+
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asFloat;
+import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Convert.toInt;
+import static org.jruby.api.Convert.toLong;
+import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.newStruct;
+import static org.jruby.api.Define.defineModule;
+import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.notImplementedError;
+import static org.jruby.api.Error.rangeError;
+import static org.jruby.api.Warn.warn;
+import static org.jruby.runtime.Helpers.invokedynamic;
+import static org.jruby.runtime.Helpers.throwException;
+import static org.jruby.runtime.Visibility.PRIVATE;
+import static org.jruby.util.WindowsFFI.Kernel32.ERROR_INVALID_PARAMETER;
+import static org.jruby.util.WindowsFFI.Kernel32.PROCESS_QUERY_INFORMATION;
+import static org.jruby.util.WindowsFFI.Kernel32.PROCESS_TERMINATE;
+import static org.jruby.util.WindowsFFI.Kernel32.STILL_ACTIVE;
+import static org.jruby.util.WindowsFFI.kernel32;
 
 /**
  */
@@ -160,12 +169,13 @@ public class RubyProcess {
         public void marshalTo(Ruby runtime, Object obj, RubyClass type,
                               MarshalStream marshalStream) throws IOException {
             RubyStatus status = (RubyStatus) obj;
+            var context = runtime.getCurrentContext();
 
-            marshalStream.registerLinkTarget(status);
+            marshalStream.registerLinkTarget(context, status);
             List<Variable<Object>> attrs = status.getMarshalVariableList();
 
-            attrs.add(new VariableEntry("status", runtime.newFixnum(status.status)));
-            attrs.add(new VariableEntry("pid", runtime.newFixnum(status.pid)));
+            attrs.add(new VariableEntry("status", asFixnum(context, status.status)));
+            attrs.add(new VariableEntry("pid", asFixnum(context, status.pid)));
 
             marshalStream.dumpVariables(attrs);
         }
@@ -1926,13 +1936,9 @@ public class RubyProcess {
 
     @JRubyMethod(rest = true, module = true, visibility = PRIVATE)
     public static RubyFixnum spawn(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-
-        if (PopenExecutor.nativePopenAvailable(runtime)) {
-            return PopenExecutor.spawn(context, args);
-        }
-
-        return RubyFixnum.newFixnum(runtime, ShellLauncher.runExternalWithoutWait(runtime, args));
+        return PopenExecutor.nativePopenAvailable(context.runtime) ?
+                PopenExecutor.spawn(context, args) :
+                asFixnum(context, ShellLauncher.runExternalWithoutWait(context.runtime, args));
     }
 
     @JRubyMethod(name = "exit", optional = 1, checkArity = false, module = true, visibility = PRIVATE)

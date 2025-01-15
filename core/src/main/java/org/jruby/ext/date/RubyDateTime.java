@@ -237,10 +237,10 @@ public class RubyDateTime extends RubyDate {
     static long getDay(ThreadContext context, IRubyObject day, final long[] rest) {
         long d = toLong(context, day);
 
-        if (!(day instanceof RubyInteger) && day instanceof RubyNumeric) { // Rational|Float
-            RubyRational rat = ((RubyNumeric) day).convertToRational(context);
+        if (!(day instanceof RubyInteger) && day instanceof RubyNumeric daynum) { // Rational|Float
+            RubyRational rat = daynum.convertToRational(context);
             if (rat.getNumerator() instanceof RubyBignum || rat.getDenominator() instanceof RubyBignum) {
-                calcBigIntDayRest(rat, d, rest);
+                calcBigIntDayRest(context, rat, d, rest);
             } else {
                 long num = rat.getNumerator().asLong(context);
                 long den = rat.getDenominator().asLong(context);
@@ -251,9 +251,9 @@ public class RubyDateTime extends RubyDate {
         return d;
     }
 
-    private static void calcBigIntDayRest(final RubyRational day, final long d, final long[] rest) {
-        BigInteger num = day.getNumerator().getBigIntegerValue();
-        BigInteger den = day.getDenominator().getBigIntegerValue();
+    private static void calcBigIntDayRest(ThreadContext context, final RubyRational day, final long d, final long[] rest) {
+        BigInteger num = day.getNumerator().asBigInteger(context);
+        BigInteger den = day.getDenominator().asBigInteger(context);
         BigInteger r0 = num.subtract(den.multiply(BigInteger.valueOf(d)));
         BigInteger r1 = den;
         BigInteger gcd = r0.gcd(r1);
@@ -301,7 +301,7 @@ public class RubyDateTime extends RubyDate {
     private static boolean isSecondAWholeNumber(ThreadContext context, IRubyObject val) {
         if (val instanceof RubyRational rat) {
             RubyInteger den = rat.getDenominator();
-            return den instanceof RubyFixnum denf && denf.getValue() == 1;
+            return den instanceof RubyFixnum denf && denf.asLong(context) == 1;
         } else if (val instanceof RubyFloat flote) {
             double v = flote.asDouble(context);
             return v == (double) Math.round(v);

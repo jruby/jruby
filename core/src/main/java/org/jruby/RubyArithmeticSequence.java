@@ -324,16 +324,16 @@ public class RubyArithmeticSequence extends RubyObject {
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
         var v = safeHash(context, excludeEnd);
-        long hash = hashStart(context.runtime, v.getValue());
+        long hash = hashStart(context.runtime, v.asLong(context));
 
         v = safeHash(context, begin);
-        hash = murmurCombine(hash, v.getValue());
+        hash = murmurCombine(hash, v.asLong(context));
 
         v = safeHash(context, end);
-        hash = murmurCombine(hash, v.getValue());
+        hash = murmurCombine(hash, v.asLong(context));
 
         v = safeHash(context, step);
-        hash = murmurCombine(hash, v.getValue());
+        hash = murmurCombine(hash, v.asLong(context));
         hash = hashEnd(hash);
 
         return asFixnum(context, hash);

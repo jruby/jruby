@@ -50,7 +50,7 @@ public class FcntlLibrary implements Library {
     public void load(final Ruby runtime, boolean wrap) throws IOException {
         var context = runtime.getCurrentContext();
         var Fcntl = defineModule(context, "Fcntl").
-                defineConstant(context, "FD_CLOEXEC", RubyFixnum.newFixnum(runtime, FD_CLOEXEC));
+                defineConstant(context, "FD_CLOEXEC", asFixnum(context, FD_CLOEXEC));
 
         loadConstantSet(context, Fcntl, "Fcntl");
         loadConstantSet(context, Fcntl, "OpenFlags");

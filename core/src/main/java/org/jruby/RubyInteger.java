@@ -42,6 +42,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Convert;
+import org.jruby.api.JRubyAPI;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -117,7 +118,14 @@ public abstract class RubyInteger extends RubyNumeric {
         return asFloat(context, asDouble(context));
     }
 
-    public int signum() { return getBigIntegerValue().signum(); }
+    public int signum() {
+        return signum(getCurrentContext());
+    }
+
+    @JRubyAPI
+    public int signum(ThreadContext context) {
+        return asBigInteger(context).signum();
+    }
 
     @Deprecated(since = "10.0")
     public RubyInteger negate() {
@@ -140,12 +148,12 @@ public abstract class RubyInteger extends RubyNumeric {
 
     @Override
     public boolean isNegative(ThreadContext context) {
-        return signum() < 0;
+        return signum(context) < 0;
     }
 
     @Override
     public boolean isPositive(ThreadContext context) {
-        return signum() > 0;
+        return signum(context) > 0;
     }
 
     /*  =============
@@ -907,16 +915,13 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     protected IRubyObject intPowTmp3(ThreadContext context, RubyInteger y, RubyBignum m, boolean negaFlg) {
-        BigInteger xn, yn, mn, zn;
+        var xn = asBigInteger(context);
+        var yn = y.asBigInteger(context);
+        var mn = m.asBigInteger(context);
 
-        xn = getBigIntegerValue();
-        yn = y.getBigIntegerValue();
-        mn = m.getBigIntegerValue();
+        var zn = xn.modPow(yn, mn);
+        if (negaFlg & zn.signum() == 1) zn = zn.negate();
 
-        zn = xn.modPow(yn, mn);
-        if (negaFlg & zn.signum() == 1) {
-            zn = zn.negate();
-        }
         return RubyBignum.bignorm(context.runtime, zn);
     }
 
@@ -1041,8 +1046,13 @@ public abstract class RubyInteger extends RubyNumeric {
     @JRubyMethod(name = "bit_length")
     public abstract IRubyObject bit_length(ThreadContext context);
 
+    @Deprecated(since = "10.0")
     boolean isOne() {
-        return getBigIntegerValue().equals(BigInteger.ONE);
+        return isOne(getCurrentContext());
+    }
+
+    boolean isOne(ThreadContext context) {
+        return asBigInteger(context).equals(BigInteger.ONE);
     }
 
     @JRubyMethod(name = ">")
