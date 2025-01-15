@@ -1016,7 +1016,7 @@ public class JavaUtil {
     private static final NumericConverter<Object> NUMERIC_TO_OBJECT = (context, numeric, target) -> switch (numeric) {
         case RubyFixnum fixnum -> Long.valueOf(fixnum.asLong(context));
         case RubyFloat flote-> Double.valueOf(flote.asDouble(context));
-        case RubyBignum bignum -> bignum.asLong(context);
+        case RubyBignum bignum -> bignum.getValue();
         case RubyBigDecimal bigdec -> bigdec.asLong(context);
         default -> NUMERIC_TO_OTHER.coerce(context, numeric, target);
     };
