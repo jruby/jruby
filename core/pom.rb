@@ -52,7 +52,7 @@ project 'JRuby Base' do
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
   jar 'org.jruby.joni:joni:2.2.1'
-  jar 'org.jruby.jcodings:jcodings:1.0.58'
+  jar 'org.jruby.jcodings:jcodings:1.0.59'
   jar 'org.jruby:dirgra:0.3'
 
   jar 'com.headius:invokebinder:1.13'
