@@ -996,8 +996,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         public SymbolTable(Ruby runtime) {
             this.runtime = runtime;
             this.loadFactor = DEFAULT_LOAD_FACTOR;
-            this.threshold = (int)(DEFAULT_INITIAL_CAPACITY * DEFAULT_LOAD_FACTOR);
-            this.symbolTable = new SymbolEntry[DEFAULT_INITIAL_CAPACITY];
+            reset();
         }
 
         // note all fields are final -- rehash creates new entries when necessary.
@@ -1335,6 +1334,15 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         public int size() {
             return size;
+        }
+
+        public void clear() {
+            reset();
+        }
+
+        private void reset() {
+            this.threshold = (int)(DEFAULT_INITIAL_CAPACITY * DEFAULT_LOAD_FACTOR);
+            this.symbolTable = new SymbolEntry[DEFAULT_INITIAL_CAPACITY];
         }
 
         private SymbolEntry[] rehash() {
