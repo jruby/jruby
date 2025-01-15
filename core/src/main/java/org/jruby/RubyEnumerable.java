@@ -2025,7 +2025,19 @@ public class RubyEnumerable {
         if (block.isGiven()) {
             callEach(context, each, self, Signature.OPTIONAL, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
-                    return call(ctx, packEnumValues(ctx, largs), blk);
+                    final IRubyObject obj; boolean ary = false;
+                    switch (largs.length) {
+                        case 0:  obj = ctx.nil; break;
+                        case 1:  obj = largs[0]; break;
+                        default: obj = RubyArray.newArrayMayCopy(ctx.runtime, largs); ary = true;
+                    }
+
+                    IRubyObject key = ary ? block.yieldArray(ctx, obj, null) : block.yield(ctx, obj);
+
+                    if (hash.getEntry(key) == RubyHash.NO_ENTRY) {
+                        hash.internalPut(key, obj);
+                    }
+                    return obj;
                 }
                 @Override
                 public IRubyObject call(ThreadContext ctx, IRubyObject obj, Block blk) {
