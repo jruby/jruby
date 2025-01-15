@@ -37,12 +37,15 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.Sprintf;
+import org.jruby.util.TypeConverter;
+import org.jruby.util.cli.Options;
 
 /**
  * The Java representation of a Ruby NameError.
@@ -104,6 +107,113 @@ public class RubyNameError extends RubyStandardError {
 
         @JRubyMethod
         public IRubyObject to_str(ThreadContext context) {
+            if (Options.NAME_ERROR_INSPECT_OBJECT.load()) {
+                // use old logic that inspects the target object
+                return inspectToStr(context);
+            }
+
+            String message = this.message;
+            if (message == null) return context.nil;
+
+            final Ruby runtime = context.runtime;
+            final IRubyObject object = this.object;
+
+            RubyString emptyFrozenString = runtime.getEmptyFrozenString();
+            RubyString className, separator, description;
+            className = separator = description = emptyFrozenString;
+
+            if (object == context.nil) {
+                description = runtime.getNilString(); // "nil"
+            } else if (object == context.tru) {
+                description = runtime.getTrueString(); // "true"
+            } else if (object == context.fals) {
+                description = runtime.getFalseString(); // "false"
+            } else {
+
+                // set up description
+                if (message.contains("%2$s")) {
+                    description = getNameOrInspect(context, object);
+                }
+
+                // set up separator text and class name
+                IRubyObject classTmp = null;
+                if (!object.isSpecialConst()) {
+                    if (object instanceof RubyClass) {
+                        separator = RubyString.newString(runtime, "class ");
+                        classTmp = object;
+                    } else if (object instanceof RubyModule) {
+                        separator = RubyString.newString(runtime, "module ");
+                        classTmp = object;
+                    }
+                }
+
+                if (classTmp == null) {
+                    RubyClass klass = object.getMetaClass();
+                    if (klass.isSingleton()) {
+                        separator = RubyString.newString(runtime, "");
+                        if (object == runtime.getTopSelf()) {
+                            classTmp = RubyString.newString(runtime, "main");
+                        } else {
+                            classTmp = object.anyToString();
+                        }
+                    } else {
+                        separator = RubyString.newString(runtime, "an instance of ");
+                        classTmp = klass.getRealClass();
+                    }
+                }
+
+                className = getNameOrInspect(context, classTmp);
+            }
+
+            RubyArray arr = RubyArray.newArray(runtime, this.name, description, separator, className);
+
+            ByteList msgBytes = new ByteList(message.length() + description.size() + separator.size() + className.size(), USASCIIEncoding.INSTANCE);
+            Sprintf.sprintf(msgBytes, message, arr);
+
+            return RubyString.newString(runtime, msgBytes);
+        }
+
+        // MRI: coercion dance for name error object inspection in name_err_mesg_to_str
+        private static RubyString getNameOrInspect(ThreadContext context, IRubyObject object) {
+            IRubyObject tmp = tryModuleName(context, object);
+            if (tmp == UNDEF || tmp.isNil()) tmp = tryInspect(context, object);
+            if (tmp == UNDEF) context.setErrorInfo(context.nil);
+            tmp = TypeConverter.checkStringType(context.runtime, tmp);
+            if (tmp.isNil()) tmp = tmp.anyToString();
+            return (RubyString) tmp;
+        }
+
+        // MRI: rb_protect with rb_inspect callback
+        private static IRubyObject tryInspect(ThreadContext context, IRubyObject object) {
+            try  {
+                return RubyObject.inspect(context, object);
+            } catch (RaiseException e) {
+                // ignore
+            }
+            return UNDEF;
+        }
+
+        // MRI: rb_protect with name_err_mesg_receiver_name callback
+        private static IRubyObject tryModuleName(ThreadContext context, IRubyObject obj) {
+            if (!obj.isSpecialConst() && obj instanceof RubyModule) {
+                try {
+                    return Helpers.invokeChecked(context, obj, "name");
+                } catch (RaiseException e) {
+                    // ignore
+                }
+            }
+            return UNDEF;
+        }
+
+        /**
+         * Build the NameError message by inspecting the target object.
+         *
+         * Configurable by {@link Options#INSPECT_NAME_ERROR_OBJECT}. Removed in JRuby 10 to align with CRuby 3.4.
+         *
+         * @param context the current thread context
+         * @return a string representing this NameError and its object
+         */
+        private IRubyObject inspectToStr(ThreadContext context) {
             if (message == null) return context.nil;
 
             final Ruby runtime = context.runtime;
@@ -119,7 +229,6 @@ public class RubyNameError extends RubyStandardError {
                 description = RubyString.newStringShared(runtime, RubyBoolean.FALSE_BYTES); // "false"
             } else {
                 try {
-                    // FIXME: MRI eagerly calculates name but #to_s and #inspect do not seem to do this call to name.
                     if (object instanceof RubyModule && ((RubyModule) object).respondsTo("name")) {
                         IRubyObject name = ((RubyModule) object).callMethod("name");
 
@@ -147,8 +256,6 @@ public class RubyNameError extends RubyStandardError {
             } else {
                 className = separator = RubyString.newEmptyString(runtime);
             }
-
-            // RubyString name = this.name.asString(); // Symbol -> String
 
             RubyArray arr = RubyArray.newArray(runtime, this.name, description, separator, className);
 
