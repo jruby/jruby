@@ -1009,4 +1009,9 @@ public class LoadService {
 
         return filename;
     }
+
+    public void tearDown() {
+        loadedFeatures.clear();
+        librarySearcher.tearDown();
+    }
 }
