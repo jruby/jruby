@@ -475,7 +475,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s(ThreadContext context) {
-        return to_s(context.runtime);
+        return getNameString(context).strDup(context.runtime);
     }
 
     final RubyString to_s(Ruby runtime) {
