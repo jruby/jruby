@@ -265,6 +265,7 @@ public class RubyDir extends RubyObject implements Closeable {
 
                 options.base = base;
             }
+            if (processFlags) options.flags &= ~Dir.FNM_CASEFOLD;
         }
     }
 

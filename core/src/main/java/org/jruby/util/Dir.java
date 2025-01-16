@@ -53,7 +53,7 @@ import static org.jruby.util.StringSupport.codePoint;
  */
 public class Dir {
     public final static boolean DOSISH = Platform.IS_WINDOWS;
-    public final static boolean CASEFOLD_FILESYSTEM = DOSISH;
+    public final static boolean CASEFOLD_FILESYSTEM = DOSISH || Platform.IS_MAC;
 
     public final static int FNM_NOESCAPE = 0x01;
     public final static int FNM_PATHNAME = 0x02;
@@ -653,21 +653,23 @@ public class Dir {
         return patterns;
     }
 
-    private static boolean has_magic(byte[] bytes, int begin, int end, int flags) {
+    enum GlobMagic  { PLAIN, ALPHA, MAGICAL };
+
+    private static GlobMagic has_magic(byte[] bytes, int begin, int end, int flags) {
         boolean escape = (flags & FNM_NOESCAPE) == 0;
-        boolean nocase = (flags & FNM_CASEFOLD) != 0;
         int open = 0;
+        boolean hasalpha = false;
 
         for (int i = begin; i < end; i++) {
             switch (bytes[i]) {
             case '?':
             case '*':
-                return true;
+                return GlobMagic.MAGICAL;
             case '[':	/* Only accept an open brace if there is a close */
                 open++;	/* brace to match it.  Bracket expressions must be */
                 continue;	/* complete, according to Posix.2 */
             case ']':
-                if (open > 0) return true;
+                if (open > 0) return GlobMagic.MAGICAL;
 
                 continue;
             case '\\':
@@ -677,15 +679,21 @@ public class Dir {
 //                if (escape && i == end) return false;
 //                break;
 
-                if (escape) return true; // force magic logic whenever there's escaped chars
+                if (escape) return GlobMagic.MAGICAL; // force magic logic whenever there's escaped chars
 
                 continue;
             default:
-                if (FNM_SYSCASE == 0 && nocase && Character.isLetter((char)(bytes[i] & 0xFF))) return true;
+                if (Platform.IS_WINDOWS || isAlpha(bytes[i])) {
+                    hasalpha = true;
+                }
             }
         }
 
-        return false;
+        return hasalpha ? GlobMagic.ALPHA : GlobMagic.PLAIN;
+    }
+
+    private static boolean isAlpha(byte b) {
+        return Character.isLetter((char)(b & 0xFF));
     }
 
     private static int remove_backslashes(byte[] bytes, int index, int end) {
@@ -795,8 +803,9 @@ public class Dir {
         int status = 0;
 
         int ptr = sub != -1 ? sub : begin;
+        final GlobMagic nonMagic = CASEFOLD_FILESYSTEM ? GlobMagic.PLAIN : GlobMagic.ALPHA;
 
-        if ( ! has_magic(path, ptr, end, flags) ) {
+        if ( has_magic(path, ptr, end, flags).compareTo(nonMagic) <= 0 ) {
             if ( DOSISH || (flags & FNM_NOESCAPE) == 0 ) {
                 if ( sub != -1 ) { // can modify path (our internal buf[])
                     end = remove_backslashes(path, sub, end);
@@ -831,7 +840,8 @@ public class Dir {
             if ( path[ptr] == '/' ) ptr++;
 
             final int SLASH_INDEX = indexOf(path, ptr, end, (byte) '/');
-            if (has_magic(path, ptr, SLASH_INDEX == -1 ? end : SLASH_INDEX, flags) ) {
+            final GlobMagic magical = has_magic(path, ptr, SLASH_INDEX == -1 ? end : SLASH_INDEX, flags);
+            if (magical.compareTo(nonMagic) > 0) {
                 finalize: do {
                     byte[] base = extract_path(path, begin, ptr);
                     byte[] dir = begin == ptr ? new byte[] { '.' } : base;
@@ -869,7 +879,9 @@ public class Dir {
                     }
 
                     boolean skipdot = (flags & FNM_GLOB_SKIPDOT) != 0;
-                    flags |= FNM_GLOB_SKIPDOT;
+                    if (recursive || magical.compareTo(GlobMagic.MAGICAL) >= 0) {
+                        flags |= FNM_GLOB_SKIPDOT;
+                    }
 
                     final String[] files = files(resource);
 
