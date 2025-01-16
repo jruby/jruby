@@ -2281,7 +2281,7 @@ public class RubyModule extends RubyObject {
         final Ruby runtime = context.runtime;
 
         if (visibility == MODULE_FUNCTION) {
-            runtime.getWarnings().warn(ID.ACCESSOR_MODULE_FUNCTION, "attribute accessor as module_function");
+            runtime.getWarnings().warning(ID.ACCESSOR_MODULE_FUNCTION, "attribute accessor as module_function");
             visibility = PRIVATE;
         }
 
