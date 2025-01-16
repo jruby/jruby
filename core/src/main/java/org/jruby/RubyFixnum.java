@@ -194,16 +194,6 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
     }
 
     @Override
-    public double getDoubleValue() {
-        return value;
-    }
-
-    @Override
-    public long getLongValue() {
-        return value;
-    }
-
-    @Override
     @JRubyAPI
     public BigInteger asBigInteger(ThreadContext context) {
         return BigInteger.valueOf(value);
@@ -222,6 +212,18 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
     @Override
     @JRubyAPI
     public long asLong(ThreadContext context) {
+        return value;
+    }
+
+    @Override
+    @Deprecated(since = "10.0")
+    public double getDoubleValue() {
+        return value;
+    }
+
+    @Override
+    @Deprecated(since = "10.0")
+    public long getLongValue() {
         return value;
     }
 
