@@ -22,6 +22,30 @@ public interface Compilable<T> {
     default void completeBuild(ThreadContext context, T buildResult) {
         completeBuild(buildResult);
     }
+
+    /**
+     * Force this Compilable to finish its build process.
+     *
+     * Override this and {@link #isBuildComplete()} for implementations that have a build process.
+     *
+     * @param context the current thread context
+     * @return true if the forced build completed; false otherwise
+     */
+    default boolean forceBuild(ThreadContext context) {
+        return false;
+    }
+
+    /**
+     * Indicates whether this Compilable has completed its build process.
+     *
+     * Override this and {@link #forceBuild(ThreadContext)} for implementations that have a build process.
+     *
+     * @return true if the build has completed; false otherwise.
+     */
+    default boolean isBuildComplete() {
+        return true;
+    }
+
     IRScope getIRScope();
     InterpreterContext ensureInstrsReady();
 

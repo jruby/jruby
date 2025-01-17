@@ -67,6 +67,7 @@ import org.joni.Matcher;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Create;
+import org.jruby.compiler.Compilable;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
@@ -658,6 +659,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (threadImpl != ThreadLike.DUMMY) throw context.runtime.newThreadError("already initialized thread");
 
         BlockBody body = block.getBody();
+
+        // Force top-level body for thread to compile, since it may be executed only once and never get to JIT
+        if (body instanceof Compilable compilable) {
+            compilable.forceBuild(context);
+        }
+
         startThread(context, new RubyRunnable(this, context, args, block, callInfo), body.getFile(), body.getLine());
 
         return context.nil;

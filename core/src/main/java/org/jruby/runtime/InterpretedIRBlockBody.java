@@ -110,9 +110,20 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
         return Interpreter.INTERPRET_BLOCK(context, block, self, fullInterpreterContext, args, block.getBinding().getMethod(), Block.NULL_BLOCK);
     }
 
+    // TODO: Duplicated in InterpretedIRBlockBody
+    private static void tryJIT(InterpretedIRBlockBody body, ThreadContext context) {
+        // don't JIT during runtime boot
+        if (body.callCount >= 0 && (!context.runtime.isBooting() || Options.JIT_KERNEL.load())) {
+            // we don't synchronize callCount++ it does not matter if count isn't accurate
+            if (body.callCount++ >= instanceConfig(context).getJitThreshold()) {
+                body.promoteToFullBuild(context, false);
+            }
+        }
+    }
+
     @Override
     protected IRubyObject commonYieldPath(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self, Block blockArg) {
-        if (callCount >= 0) promoteToFullBuild(context);
+        tryJIT(this, context);
 
         InterpreterContext ic = ensureInstrsReady();
 
@@ -141,20 +152,28 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
         }
     }
 
+    @Override
+    public boolean forceBuild(ThreadContext context) {
+        promoteToFullBuild(context, true);
+
+        // Force = true should trigger jit to run synchronously, so we'll be optimistic
+        return true;
+    }
+
+    @Override
+    public boolean isBuildComplete() {
+        // Successful build and disabled build both set callCount to -1, indicating no further build is possible.
+        return callCount < 0;
+    }
+
     // Unlike JIT in MixedMode this will always successfully build but if using executor pool it may take a while
     // and replace interpreterContext asynchronously.
-    private void promoteToFullBuild(ThreadContext context) {
-        if (context.runtime.isBooting() && !Options.JIT_KERNEL.load()) return; // don't JIT during runtime boot
+    private void promoteToFullBuild(ThreadContext context, boolean force) {
+        synchronized (this) { // disable same jit tasks from entering queue twice
+            if (this.callCount >= 0) {
+                this.callCount = Integer.MIN_VALUE; // so that callCount++ stays < 0
 
-        if (this.callCount < 0) return;
-        // we don't synchronize callCount++ it does not matter if count isn't accurate
-        if (this.callCount++ >= instanceConfig(context).getJitThreshold()) {
-            synchronized (this) { // disable same jit tasks from entering queue twice
-                if (this.callCount >= 0) {
-                    this.callCount = Integer.MIN_VALUE; // so that callCount++ stays < 0
-
-                    context.runtime.getJITCompiler().buildThresholdReached(context, this);
-                }
+                context.runtime.getJITCompiler().buildThresholdReached(context, this, force);
             }
         }
     }
