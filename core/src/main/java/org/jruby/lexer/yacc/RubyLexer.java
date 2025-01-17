@@ -495,8 +495,8 @@ public class RubyLexer extends LexingCommon {
             addNewline = !message.endsWith("\n");
             int highlightSize = pb + (pre.length() == 3 ? -4 : 0);
             String highlightLine = "";
-            if (highlightSize > 0) {
-                highlightLine = new String(new char[pb + (pre.length() == 3 ? -4 : 0)]);
+            if (highlightSize >= 0) {
+                highlightLine = new String(new char[highlightSize]);
                 highlightLine = highlightLine.replace("\0", " ") + "^";
                 if (end_column - start_column > 1) {
                     String underscore = new String(new char[end_column - start_column - 1]);
