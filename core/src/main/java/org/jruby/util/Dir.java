@@ -731,9 +731,35 @@ public class Dir {
         return extract_path(bytes, begin, elementEnd);
     }
 
+    private static byte[] extractScheme(byte[] path, int begin, int end) {
+        int colon = findScheme(path, begin, end);
+        if (colon == -1) return null;
+        do { colon++; } while (colon < end && path[colon] == '/');
+        colon--;
+        byte[] scheme = new byte[colon - begin];
+        System.arraycopy(path, begin, scheme, 0, colon - begin);
+        return scheme;
+    }
+
+    private static byte[] prependScheme(byte[] scheme, byte[] path, int begin, int end) {
+        byte [] newpath = new byte[scheme.length + (end - begin)];
+        System.arraycopy(scheme, 0, newpath, 0, scheme.length);
+        System.arraycopy(path, begin, newpath, scheme.length, end - begin);
+        return newpath;
+    }
+
     // Win drive letter X:/
     private static boolean beginsWithDriveLetter(byte[] path, int begin, int end) {
         return DOSISH && begin + 2 < end && path[begin + 1] == ':' && isdirsep(path[begin + 2]);
+    }
+
+    private static int findScheme(byte[] path, int begin, int end) {
+        String schemeStr = new String(path, begin, Math.min(16, end - begin));
+        if (schemeStr.startsWith("uri:classloader:")) return 15;
+        if (schemeStr.startsWith("uri:")) return 3;
+        if (schemeStr.startsWith("file:")) return 4;
+        if (schemeStr.startsWith("classpath:")) return 9;
+        return -1;
     }
 
     // Is this nothing or literally root directory for the OS.
@@ -791,18 +817,29 @@ public class Dir {
     }
 
     private static int glob_helper(Ruby runtime, String cwd, ByteList path, int sub, int flags, GlobFunc<GlobArgs> func, GlobArgs arg) {
-        final int begin = path.getBegin();
-        final int end = begin + path.getRealSize();
+        int begin = path.getBegin();
+        final int end = begin + path.length();
         final Encoding enc = path.getEncoding();
-        return glob_helper(runtime, cwd, path.getUnsafeBytes(), begin, end, enc, sub, flags, func, arg);
+        final byte[] bytes = path.getUnsafeBytes();
+        final byte[] scheme = extractScheme(bytes, begin, end);
+        if (scheme != null) begin += scheme.length;
+        return glob_helper(runtime, cwd, scheme, bytes, begin, end, enc, sub, flags, func, arg);
     }
 
-    private static int glob_helper(Ruby runtime, String cwd,
+    private static int glob_helper(Ruby runtime, String cwd, byte[] scheme, ByteList path, int sub, int flags, GlobFunc<GlobArgs> func, GlobArgs arg) {
+        final int begin = path.getBegin();
+        final int end = begin + path.length();
+        final Encoding enc = path.getEncoding();
+        return glob_helper(runtime, cwd, scheme, path.getUnsafeBytes(), begin, end, enc, sub, flags, func, arg);
+    }
+
+    private static int glob_helper(Ruby runtime, String cwd, byte[] scheme,
         byte[] path, int begin, int end, Encoding enc, int sub,
         int flags, GlobFunc<GlobArgs> func, GlobArgs arg) {
         int status = 0;
 
         int ptr = sub != -1 ? sub : begin;
+
         final GlobMagic nonMagic = CASEFOLD_FILESYSTEM ? GlobMagic.PLAIN : GlobMagic.ALPHA;
 
         if ( has_magic(path, ptr, end, flags).compareTo(nonMagic) <= 0 ) {
@@ -817,6 +854,11 @@ public class Dir {
                     begin = 0; end = remove_backslashes(newPath, 0, len);
                     path = newPath;
                 }
+            }
+
+            if (scheme != null) {
+                path = prependScheme(scheme, path, begin, end);
+                begin = 0; end = path.length;
             }
 
             if (end > begin) {
@@ -845,6 +887,9 @@ public class Dir {
                 finalize: do {
                     byte[] base = extract_path(path, begin, ptr);
                     byte[] dir = begin == ptr ? new byte[] { '.' } : base;
+                    if (scheme != null) {
+                        dir = prependScheme(scheme, dir, 0, dir.length);
+                    }
                     byte[] magic = extract_elem(path, ptr, end);
                     boolean recursive = false;
 
@@ -871,7 +916,7 @@ public class Dir {
                             }
                             remainingPathStartIndex = lengthOfBase > 0 ? remainingPathStartIndex : remainingPathStartIndex + 1;
                             buf.append(path, remainingPathStartIndex, end - remainingPathStartIndex);
-                            status = glob_helper(runtime, cwd, buf, lengthOfBase, flags, func, arg);
+                            status = glob_helper(runtime, cwd, scheme, buf, lengthOfBase, flags, func, arg);
                             if ( status != 0 ) break finalize;
                         }
                     } else {
@@ -906,19 +951,28 @@ public class Dir {
                             buf.append(base);
                             buf.append( isRoot(base) ? EMPTY : SLASH );
                             buf.append( getBytesInUTF8(file) );
-                            resource = JRubyFile.createResource(runtime, cwd, new String(buf.unsafeBytes(), buf.begin(), buf.length(), enc.getCharset()));
+                            byte [] bufBytes = buf.unsafeBytes();
+                            int bufBegin = buf.begin();
+                            int bufLen = buf.length();
+                            if (scheme != null) {
+                                bufBytes = prependScheme(scheme, bufBytes, bufBegin, bufBegin + bufLen);
+                                bufBegin = 0;
+                                bufLen = bufBytes.length;
+                            }
+                            resource = JRubyFile.createResource(runtime, cwd, new String(bufBytes, bufBegin, bufLen, enc.getCharset()));
                             if ( !resource.isSymLink() && resource.isDirectory() && !".".equals(file) && !"..".equals(file) ) {
                                 final int len = buf.getRealSize();
                                 buf.append(SLASH);
                                 buf.append(DOUBLE_STAR);
                                 buf.append(path, SLASH_INDEX, end - SLASH_INDEX);
-                                status = glob_helper(runtime, cwd, buf, buf.getBegin() + len, flags, func, arg);
+                                status = glob_helper(runtime, cwd, scheme, buf, buf.getBegin() + len, flags, func, arg);
                                 if ( status != 0 ) break;
                             }
                             continue;
                         }
                         if ( fnmatch(magic, 0, magic.length, fileBytes, 0, fileBytes.length, flags) == 0 ) {
                             buf.length(0);
+                            if (scheme != null && SLASH_INDEX == -1) buf.append(scheme);
                             buf.append(base);
                             buf.append( isRoot(base) ? EMPTY : SLASH );
                             buf.append( getBytesInUTF8(file) );
@@ -944,7 +998,7 @@ public class Dir {
                                 buf.length(0);
                                 buf.append(link);
                                 buf.append(path, SLASH_INDEX, end - SLASH_INDEX);
-                                status = glob_helper(runtime, cwd, buf, buf.getBegin() + len, flags, func, arg);
+                                status = glob_helper(runtime, cwd, scheme, buf, buf.getBegin() + len, flags, func, arg);
                             }
                         }
                     }
