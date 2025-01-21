@@ -579,6 +579,39 @@ public abstract class RubyParserBase {
         return call_bin_op(firstNode, CommonByteLists.EQUAL_TILDE, secondNode);
     }
 
+    private void aryset_check(Node args) {
+        Node block = null;
+        boolean keywords = false;
+        if (args instanceof BlockPassNode bp) {
+            block = bp.getBodyNode();
+            args = bp.getArgsNode();
+        }
+
+        if (args != null && args instanceof ArgsCatNode ac) {
+            args = ac.getSecondNode();
+        }
+
+        if (args != null && args instanceof ArgsPushNode ap) {
+            keywords = ap.getSecondNode() instanceof KeywordArgNode || ap.getSecondNode() instanceof KeywordRestArgNode;
+        } else {
+            if (args instanceof ListNode list) {
+                for (int i = 0; i < list.size(); i++) {
+                    Node next = list.get(i);
+                    if (next instanceof HashNode hash && !hash.isLiteral()) {
+                        keywords = true;
+                    }
+                }
+            }
+        }
+
+        if (keywords) {
+            yyerror("keyword arg given in index");
+        }
+        if (block != null) {
+            yyerror("block arg given in index");
+        }
+    }
+
     /**
      * Define an array set condition so we can return lhs
      * 
@@ -588,6 +621,7 @@ public abstract class RubyParserBase {
      */
     public Node aryset(Node receiver, Node index) {
         value_expr(receiver);
+        aryset_check(index);
 
         return new_attrassign(receiver.getLine(), receiver, CommonByteLists.ASET_METHOD, index, false);
     }
