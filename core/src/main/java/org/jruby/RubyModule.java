@@ -4981,11 +4981,6 @@ public class RubyModule extends RubyObject {
         return getRefinedClassOrThrow(context, true);
     }
 
-    @JRubyMethod(name = "refined_class")
-    public IRubyObject refined_class(ThreadContext context) {
-        return getRefinedClassOrThrow(context, false);
-    }
-
     private IRubyObject getRefinedClassOrThrow(ThreadContext context, boolean nameIsTarget) {
         if (isRefinement()) return refinedClass;
 
