@@ -1,11 +1,7 @@
-exclude :test_export_format_is_RSA_PUBKEY, 'needs investigation'
 exclude :test_export_password_length, 'needs investigation'
 exclude :test_new_break, 'needs investigation'
 exclude :test_read_private_key_pem_pw, 'needs investigation'
-exclude :test_read_public_key_pem, 'needs investigation'
 exclude :test_sign_verify_memory_leak, 'depends on GC.start forcing GC and changing memory size (e.g. RSS)'
-exclude :"test_PUBKEY", "work in progress"
-exclude :"test_RSAPublicKey", "work in progress"
 exclude :"test_encrypt_decrypt", "work in progress"
 exclude :"test_encrypt_decrypt_legacy", "work in progress"
 exclude :"test_export", "work in progress"
