@@ -260,7 +260,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
     // executor pool it may take a while
     // and replace interpreterContext asynchronously.
     private void promoteToFullBuild(ThreadContext context) {
-        tryJit(context, this);
+        tryJit(context, this, false);
     }
 
     @Deprecated

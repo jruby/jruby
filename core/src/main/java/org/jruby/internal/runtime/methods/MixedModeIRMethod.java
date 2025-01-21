@@ -105,7 +105,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
 
         // try jit before checking actualMethod, so we use jitted version immediately if
         // it's ready
-        if (callCount >= 0) tryJit(context, this);
+        if (callCount >= 0) tryJit(context, this, false);
 
         DynamicMethod jittedMethod = actualMethod;
         if (jittedMethod != null) {
@@ -141,7 +141,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
 
         // try jit before checking actualMethod, so we use jitted version immediately if
         // it's ready
-        if (callCount >= 0) tryJit(context, this);
+        if (callCount >= 0) tryJit(context, this, false);
 
         DynamicMethod jittedMethod = actualMethod;
         if (jittedMethod != null) {
@@ -178,7 +178,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
 
         // try jit before checking actualMethod, so we use jitted version immediately if
         // it's ready
-        if (callCount >= 0) tryJit(context, this);
+        if (callCount >= 0) tryJit(context, this, false);
 
         DynamicMethod jittedMethod = actualMethod;
         if (jittedMethod != null) {
@@ -215,7 +215,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
 
         // try jit before checking actualMethod, so we use jitted version immediately if
         // it's ready
-        if (callCount >= 0) tryJit(context, this);
+        if (callCount >= 0) tryJit(context, this, false);
 
         DynamicMethod jittedMethod = actualMethod;
         if (jittedMethod != null) {
@@ -252,7 +252,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
 
         // try jit before checking actualMethod, so we use jitted version immediately if
         // it's ready
-        if (callCount >= 0) tryJit(context, this);
+        if (callCount >= 0) tryJit(context, this, false);
 
         DynamicMethod jittedMethod = actualMethod;
         if (jittedMethod != null) {
@@ -358,6 +358,14 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         x.actualMethod = actualMethod;
 
         return x;
+    }
+
+    @Override
+    public boolean forceBuild(ThreadContext context) {
+        build(context, this, true);
+
+        // Force = true should trigger jit to run synchronously, so we'll be optimistic
+        return true;
     }
 
 }
