@@ -3397,6 +3397,18 @@ public final class Ruby implements Constantizable {
         threadService.teardown();
         threadService = new ThreadService(this);
 
+        // Release classloader resources
+        releaseClassLoader();
+
+        // Tear down LoadService
+        loadService.tearDown();
+
+        // Clear runtime tables to aid GC
+        boundMethods.clear();
+        allModules.clear();
+        constantNameInvalidators.clear();
+        symbolTable.clear();
+        javaSupport = loadJavaSupport();
     }
 
     private int userTeardown(ThreadContext context) {
@@ -3449,7 +3461,6 @@ public final class Ruby implements Constantizable {
     public void releaseClassLoader() {
         if (jrubyClassLoader != null) {
             jrubyClassLoader.close();
-            //jrubyClassLoader = null;
         }
     }
 
@@ -5735,7 +5746,7 @@ public final class Ruby implements Constantizable {
     private PrintStream err;
 
     // Java support
-    private final JavaSupport javaSupport;
+    private JavaSupport javaSupport;
     private final JRubyClassLoader jrubyClassLoader;
 
     // Object Specializer

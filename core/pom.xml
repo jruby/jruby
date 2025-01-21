@@ -149,12 +149,12 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>org.jruby.joni</groupId>
       <artifactId>joni</artifactId>
-      <version>2.2.2-SNAPSHOT</version>
+      <version>2.2.3</version>
     </dependency>
     <dependency>
       <groupId>org.jruby.jcodings</groupId>
       <artifactId>jcodings</artifactId>
-      <version>1.0.58</version>
+      <version>1.0.61</version>
     </dependency>
     <dependency>
       <groupId>org.jruby</groupId>

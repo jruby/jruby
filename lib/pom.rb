@@ -48,7 +48,7 @@ default_gems = [
     ['irb', '1.14.1'],
     ['jar-dependencies', '0.4.1'],
     ['jruby-readline', '1.3.7'],
-    ['jruby-openssl', '0.15.0'],
+    ['jruby-openssl', '0.15.3'],
     ['json', '2.9.0'],
     ['logger', '1.6.2'],
     ['net-http', '0.6.0'],
@@ -64,7 +64,7 @@ default_gems = [
     ['pp', '0.6.2'],
     ['prettyprint', '0.2.0'],
     ['pstore', '0.1.4'],
-    ['psych', '5.2.0'],
+    ['psych', '5.2.3'],
     ['rake-ant', '1.0.6'],
     ['rdoc', '6.8.1'],
     # Ext removed from CRuby in 3.3, equivalent for us would be to remove jruby-readline but unknown implications.

@@ -2660,7 +2660,7 @@ public class RubyModule extends RubyObject {
         String internedIdentifier = identifier.idString();
 
         if (visibility == MODULE_FUNCTION) {
-            warn(context, "attribute accessor as module_function");
+            warning(context, "attribute accessor as module_function");
             visibility = PRIVATE;
         }
 

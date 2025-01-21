@@ -1,8 +1,8 @@
 module Process
-  class << self
-    def argv0
-      $0
-    end
+  ARGV0 = -$0
+  private_constant :ARGV0
+  module_function def argv0
+    return ARGV0
   end
 
   class WaitThread < Thread
