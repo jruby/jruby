@@ -76,8 +76,6 @@ project 'JRuby Base' do
 
   jar 'com.headius:backport9:1.13'
 
-  jar 'jakarta.annotation:jakarta.annotation-api:2.0.0', scope: 'provided'
-
   jar 'org.crac:crac:1.5.0'
 
   plugin_management do
