@@ -755,10 +755,10 @@ public class Dir {
 
     private static int findScheme(byte[] path, int begin, int end) {
         String schemeStr = new String(path, begin, Math.min(16, end - begin));
-        if (schemeStr.startsWith("uri:classloader:")) return 15;
-        if (schemeStr.startsWith("uri:")) return 3;
-        if (schemeStr.startsWith("file:")) return 4;
-        if (schemeStr.startsWith("classpath:")) return 9;
+        if (schemeStr.startsWith("uri:classloader:")) return 16;
+        if (schemeStr.startsWith("uri:")) return 4;
+        if (schemeStr.startsWith("file:")) return 5;
+        if (schemeStr.startsWith("classpath:")) return 10;
         return -1;
     }
 
