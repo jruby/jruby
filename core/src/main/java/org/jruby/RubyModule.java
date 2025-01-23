@@ -72,6 +72,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.anno.TypePopulator;
 import org.jruby.api.JRubyAPI;
+import org.jruby.api.Warn;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.embed.Extension;
 import org.jruby.exceptions.LoadError;
@@ -5553,6 +5554,8 @@ public class RubyModule extends RubyObject {
                 storeConstant(context, name, value, hidden, file, line);
             }
         } else {
+            if (this instanceof RubyObject && name.equals("Ruby")) Warn.warnReservedName(context, "::Ruby", "3.5");
+
             storeConstant(context, name, value, hidden, file, line);
         }
 
