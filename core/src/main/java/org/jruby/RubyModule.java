@@ -2087,7 +2087,7 @@ public class RubyModule extends RubyObject {
         return generationObject;
     }
 
-    private final Map<String, CacheEntry> getCachedMethods() {
+    protected final Map<String, CacheEntry> getCachedMethods() {
         return this.cachedMethods;
     }
 
