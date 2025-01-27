@@ -48,8 +48,6 @@ import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 import static org.objectweb.asm.Opcodes.ACC_VARARGS;
 
 import java.io.IOException;
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -90,7 +88,6 @@ import org.jruby.runtime.ivars.VariableAccessorField;
 import org.jruby.runtime.ivars.VariableTableManager;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.runtime.opto.Invalidator;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.CodegenUtils;
@@ -98,8 +95,6 @@ import org.jruby.util.JavaNameMangler;
 import org.jruby.util.Loader;
 import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.StringSupport;
-import org.jruby.util.WeakIdentityHashMap;
-import org.jruby.util.collections.ConcurrentWeakHashMap;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.AnnotationVisitor;
@@ -116,7 +111,6 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 public class RubyClass extends RubyModule {
 
     private static final Logger LOG = LoggerFactory.getLogger(RubyClass.class);
-    private static final double SUBCLASSES_CLEAN_FACTOR = 0.25;
 
     public static void createClassClass(Ruby runtime, RubyClass classClass) {
         classClass.setClassIndex(ClassIndex.CLASS);
@@ -1017,8 +1011,8 @@ public class RubyClass extends RubyModule {
 
     @JRubyMethod
     public IRubyObject subclasses(ThreadContext context) {
-        RubyArray<RubyClass> subs = newConcreteSubclassesArray(context);
-        concreteSubclasses(subs);
+        SubclassArray subs = newConcreteSubclassesArray(context);
+        addVisibleSubclasses(subs);
         finishConcreteSubclasses(context, subs);
 
         return subs;
@@ -1056,50 +1050,51 @@ public class RubyClass extends RubyModule {
     }
 
     public Collection<RubyClass> subclasses(boolean includeDescendants) {
-        Collection<RubyClass> mine = newSubclassesList(includeDescendants);
-        subclassesInner(mine, includeDescendants);
-        finishSubclasses(mine, includeDescendants);
+        SubclassList mine = newSubclassesList(includeDescendants);
+        addAllSubclasses(mine);
+        finishSubclasses(mine);
 
         return mine;
     }
 
-    private RubyArray<RubyClass> newConcreteSubclassesArray(ThreadContext context) {
-        RubyArray<RubyClass> subs = RubyArray.newRawArray(context, this.concreteSubclassesEstimate);
-        return subs;
+    private SubclassArray newConcreteSubclassesArray(ThreadContext context) {
+        return new SubclassArray(context.runtime, this.concreteSubclassesEstimate);
     }
 
-    private Collection<RubyClass> newSubclassesList(boolean includeDescendants) {
-        Collection<RubyClass> mine = new ArrayList<>(includeDescendants ? allDescendantsEstimate : allSubclassesEstimate);
-        return mine;
+    private static class SubclassArray extends RubyArray<RubyClass> implements BiConsumer<RubyClass, Object> {
+        public SubclassArray(Ruby runtime, int length) {
+            super(runtime, length);
+        }
+
+        @Override
+        public void accept(RubyClass klass, Object o) {
+            processConcreteSubclass(this, klass);
+        }
     }
 
-    private void subclassesInner(Collection<RubyClass> mine, boolean includeDescendants) {
-        Map<RubyClass, Object> subclasses = getSubclassesForRead();
-        subclasses.forEach((k, v) -> processSubclass(mine, includeDescendants, (RubyClass) k));
+    private SubclassList newSubclassesList(boolean includeDescendants) {
+        return new SubclassList(includeDescendants, includeDescendants ? allDescendantsEstimate : allSubclassesEstimate);
+    }
+
+    void addAllSubclasses(SubclassList mine) {
+        getSubclassesForRead().forEach(mine);
     }
 
     private Map<RubyClass, Object> getSubclassesForRead() {
         return SUBCLASSES_UPDATER.updateAndGet(this, RubyClass::getOrDefaultSubclasses);
     }
 
-    private static void processSubclass(Collection<RubyClass> mine, boolean includeDescendants, RubyClass klass) {
-        mine.add(klass);
-
-        if (includeDescendants) klass.subclassesInner(mine, includeDescendants);
-    }
-
-    private void finishSubclasses(Collection<RubyClass> mine, boolean includeDescendants) {
+    private void finishSubclasses(SubclassList mine) {
         int newSize = mine.size();
-        if (includeDescendants) {
+        if (mine.includeDescendants) {
             allDescendantsEstimate = newSize;
         } else {
             allSubclassesEstimate = newSize;
         }
     }
 
-    private void concreteSubclasses(RubyArray<RubyClass> subs) {
-        Map<RubyClass, Object> visibleSubclasses = getVisibleSubclassesForRead();
-        visibleSubclasses.forEach((k, v) -> processConcreteSubclass(subs, (RubyClass) k));
+    private void addVisibleSubclasses(SubclassArray subs) {
+        getVisibleSubclassesForRead().forEach(subs);
     }
 
     private Map<RubyClass, Object> getVisibleSubclassesForRead() {
@@ -1107,11 +1102,11 @@ public class RubyClass extends RubyModule {
         return visibleSubclasses;
     }
 
-    private static void processConcreteSubclass(RubyArray<RubyClass> subs, RubyClass klass) {
+    private static void processConcreteSubclass(SubclassArray subs, RubyClass klass) {
         assert !klass.isSingleton();
 
         if (klass.isIncluded() || klass.isPrepended()) {
-            klass.concreteSubclasses(subs);
+            klass.addVisibleSubclasses(subs);
         } else {
             subs.append(klass);
         }
@@ -1152,10 +1147,10 @@ public class RubyClass extends RubyModule {
 
     private static Map<RubyClass, Object> getOrCreateSubclasses(Map<RubyClass, Object> subclasses) {
         if (subclasses != null && subclasses != Collections.EMPTY_MAP) return subclasses;
-        return new ReadWriteWeakHashMap<>();
+        return new SubclassesWeakMap<>();
     }
 
-    private static class ReadWriteWeakHashMap<K, V> extends WeakHashMap<K, V> {
+    private static class SubclassesWeakMap<K, V> extends WeakHashMap<K, V> {
         final ReentrantReadWriteLock.ReadLock readLock;
         final ReentrantReadWriteLock.WriteLock writeLock;
         {
@@ -1223,8 +1218,7 @@ public class RubyClass extends RubyModule {
     public void becomeSynchronized() {
         super.becomeSynchronized();
 
-        Map<RubyClass, Object> subclasses = getSubclassesForRead();
-        subclasses.forEach((k, v) -> k.becomeSynchronized());
+        getSubclassesForRead().forEach((k, v) -> k.becomeSynchronized());
     }
 
     /**
@@ -1243,19 +1237,17 @@ public class RubyClass extends RubyModule {
     public void invalidateCacheDescendants() {
         super.invalidateCacheDescendants();
 
-        Map<RubyClass, Object> subclasses = getSubclassesForRead();
-        subclasses.forEach((k, v) -> k.invalidateCacheDescendants());
+        getSubclassesForRead().forEach((k, v) -> k.invalidateCacheDescendants());
     }
 
-    public void addInvalidatorsAndFlush(List<Invalidator> invalidators) {
+    void addInvalidatorsAndFlush(InvalidatorList invalidators) {
         // add this class's invalidators to the aggregate
         invalidators.add(methodInvalidator);
 
         // if we're not at boot time, don't bother fully clearing caches
         if (!runtime.isBootingCore()) cachedMethods.clear();
 
-        Map<RubyClass, Object> subclasses = getSubclassesForRead();
-        subclasses.forEach((k, v) -> k.addInvalidatorsAndFlush(invalidators));
+        getSubclassesForRead().forEach(invalidators);
     }
 
     public final Ruby getClassRuntime() {
