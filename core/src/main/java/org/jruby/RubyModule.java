@@ -57,6 +57,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
@@ -1955,22 +1957,56 @@ public class RubyModule extends RubyObject {
 
         getRuntime().getCaches().incrementMethodInvalidations();
 
+        Invalidator methodInvalidator = this.methodInvalidator;
+        Set<RubyClass> includingHierarchies = this.includingHierarchies;
+
         if (includingHierarchies.isEmpty()) {
             // it's only us; just invalidate directly
             methodInvalidator.invalidate();
             return;
         }
 
-        List<Invalidator> invalidators = new ArrayList<Invalidator>();
+        InvalidatorList invalidators = new InvalidatorList();
         invalidators.add(methodInvalidator);
 
         synchronized (getRuntime().getHierarchyLock()) {
-            for (RubyClass includingHierarchy : includingHierarchies) {
-                includingHierarchy.addInvalidatorsAndFlush(invalidators);
-            }
+            includingHierarchies.forEach(invalidators);
         }
 
         methodInvalidator.invalidateAll(invalidators);
+    }
+
+    static class InvalidatorList<T> extends ArrayList<T> implements BiConsumer<RubyClass, Object>, Consumer<RubyClass> {
+        public InvalidatorList() {
+            super();
+        }
+
+        @Override
+        public void accept(RubyClass rubyClass, Object o) {
+            rubyClass.addInvalidatorsAndFlush(this);
+        }
+
+        @Override
+        public void accept(RubyClass rubyClass) {
+            rubyClass.addInvalidatorsAndFlush(this);
+        }
+    }
+
+    static class SubclassList extends ArrayList<RubyClass> implements BiConsumer<RubyClass, Object> {
+        boolean includeDescendants;
+
+        public SubclassList(boolean includeDescendants, int i) {
+            super(i);
+
+            this.includeDescendants = includeDescendants;
+        }
+
+        @Override
+        public void accept(RubyClass klass, Object o) {
+            add(klass);
+
+            if (includeDescendants) klass.addAllSubclasses(this);
+        }
     }
 
     @SuppressWarnings("deprecation")
