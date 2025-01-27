@@ -385,7 +385,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>jar-dependencies</artifactId>
-      <version>0.4.1</version>
+      <version>0.5.3</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1119,7 +1119,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/io-wait-0.3.0*</include>
           <include>specifications/ipaddr-1.2.4*</include>
           <include>specifications/irb-1.4.2*</include>
-          <include>specifications/jar-dependencies-0.4.1*</include>
+          <include>specifications/jar-dependencies-0.5.3*</include>
           <include>specifications/jruby-readline-1.3.7*</include>
           <include>specifications/jruby-openssl-0.15.3*</include>
           <include>specifications/json-2.7.1*</include>
@@ -1199,7 +1199,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/io-wait-0.3.0*/**/*</include>
           <include>gems/ipaddr-1.2.4*/**/*</include>
           <include>gems/irb-1.4.2*/**/*</include>
-          <include>gems/jar-dependencies-0.4.1*/**/*</include>
+          <include>gems/jar-dependencies-0.5.3*/**/*</include>
           <include>gems/jruby-readline-1.3.7*/**/*</include>
           <include>gems/jruby-openssl-0.15.3*/**/*</include>
           <include>gems/json-2.7.1*/**/*</include>
@@ -1279,7 +1279,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/io-wait-0.3.0*</include>
           <include>cache/ipaddr-1.2.4*</include>
           <include>cache/irb-1.4.2*</include>
-          <include>cache/jar-dependencies-0.4.1*</include>
+          <include>cache/jar-dependencies-0.5.3*</include>
           <include>cache/jruby-readline-1.3.7*</include>
           <include>cache/jruby-openssl-0.15.3*</include>
           <include>cache/json-2.7.1*</include>
