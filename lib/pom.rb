@@ -17,13 +17,13 @@ end
 default_gems = [
     # treat RGs update special:
     # - we do not want bin/update_rubygems or bin/gem overrides
-    ['rubygems-update', '3.3.26', { bin: false, require_paths: ['lib'] }],
+    ['rubygems-update', '3.6.3', { bin: false, require_paths: ['lib'] }],
     ['abbrev', '0.1.0'],
     ['base64', '0.1.1'],
     ['benchmark', '0.2.0'],
     # Extension still lives in JRuby. See https://github.com/ruby/bigdecimal/issues/268
     ['bigdecimal', '3.1.4'],
-    ['bundler', '2.3.26'],
+    ['bundler', '2.6.3'],
     ['cgi', '0.3.6'],
     ['csv', '3.2.5'],
     # Currently using a stub gem for JRuby until we can incorporate our code.
