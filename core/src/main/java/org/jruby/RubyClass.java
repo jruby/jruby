@@ -55,6 +55,7 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.StampedLock;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
@@ -1081,6 +1082,12 @@ public class RubyClass extends RubyModule {
     }
 
     private Map<RubyClass, Object> getSubclassesForRead() {
+        Map<RubyClass, Object> result = this.subclasses;
+
+        if (result != null) {
+            return result;
+        }
+
         return SUBCLASSES_UPDATER.updateAndGet(this, RubyClass::getOrDefaultSubclasses);
     }
 
@@ -1138,10 +1145,22 @@ public class RubyClass extends RubyModule {
     }
 
     private Map<RubyClass, Object> getVisibleSubclassesForWrite() {
+        Map<RubyClass, Object> visibleSubclasses = this.visibleSubclasses;
+
+        if (visibleSubclasses != null && visibleSubclasses != Collections.EMPTY_MAP) {
+            return visibleSubclasses;
+        }
+
         return VISIBLE_SUBCLASSES_UPDATER.updateAndGet(this, RubyClass::getOrCreateSubclasses);
     }
 
     private Map<RubyClass, Object> getSubclassesForWrite() {
+        Map<RubyClass, Object> subclasses = this.subclasses;
+
+        if (subclasses != null && subclasses != Collections.EMPTY_MAP) {
+            return subclasses;
+        }
+
         return SUBCLASSES_UPDATER.updateAndGet(this, RubyClass::getOrCreateSubclasses);
     }
 
@@ -1151,31 +1170,27 @@ public class RubyClass extends RubyModule {
     }
 
     private static class SubclassesWeakMap<K, V> extends WeakHashMap<K, V> {
-        final ReentrantReadWriteLock.ReadLock readLock;
-        final ReentrantReadWriteLock.WriteLock writeLock;
-        {
-            ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-            readLock = lock.readLock();
-            writeLock = lock.writeLock();
-        }
+        final StampedLock lock = new StampedLock();
 
         @Override
         public V put(K key, V value) {
-            writeLock.lock();
+            StampedLock lock = this.lock;
+            long stamp = lock.writeLock();
             try {
                 return super.put(key, value);
             } finally {
-                writeLock.unlock();
+                lock.unlockWrite(stamp);
             }
         }
 
         @Override
         public void forEach(BiConsumer<? super K, ? super V> action) {
-            readLock.lock();
+            StampedLock lock = this.lock;
+            long stamp = lock.readLock();
             try {
                 super.forEach(action);
             } finally {
-                readLock.unlock();
+                lock.unlockRead(stamp);
             }
         }
     }
