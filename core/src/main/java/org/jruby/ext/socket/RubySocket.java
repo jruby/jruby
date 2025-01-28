@@ -700,17 +700,6 @@ public class RubySocket extends RubyBasicSocket {
     }
 
     @Override
-    @JRubyMethod
-    public IRubyObject close(final ThreadContext context) {
-        if (getOpenFile() != null) {
-            if (isClosed()) return context.nil;
-            openFile.checkClosed();
-            return rbIoClose(context);
-        }
-        return context.nil;
-    }
-
-    @Override
     public RubyBoolean closed_p(ThreadContext context) {
         if (getOpenFile() == null) return context.fals;
 

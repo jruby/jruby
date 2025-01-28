@@ -2204,7 +2204,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         fptr = openFile;
         checkInitialized();
-        return fptr.fd() == null;
+        ChannelFD fd = fptr.fd();
+        return fd == null || !fd.ch.isOpen();
     }
 
     /**
