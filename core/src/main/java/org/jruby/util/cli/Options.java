@@ -90,6 +90,7 @@ public class Options {
 
     // NOTE: -1 jit.threshold is way of having interpreter not promote full builds
     public static final Option<Integer> JIT_THRESHOLD = integer(JIT, "jit.threshold", Constants.JIT_THRESHOLD, "Set the JIT threshold to the specified method invocation count.");
+    public static final Option<Long> JIT_TIME_DELTA = longInteger(JIT, "jit.time.delta", -1L, "Set the JIT hotness time delta in ns to consider JITting");
     public static final Option<Integer> JIT_MAX = integer(JIT, "jit.max", Constants.JIT_MAX_LIMIT, "Set the max count of active methods eligible for JIT-compilation.");
     public static final Option<Integer> JIT_MAXSIZE = integer(JIT, "jit.maxsize", Constants.JIT_MAX_SIZE_LIMIT, "Set the max size (in IR instructions) for a method to be eligible to JIT.");
     public static final Option<Boolean> JIT_LOGGING = bool(JIT, "jit.logging", false, "Enable JIT logging (reports successful compilation).");
@@ -277,6 +278,30 @@ public class Options {
         Option<Integer> option = Option.integer("jruby", name, category, defval, description);
         _loadedOptions.add(option);
         return option;
+    }
+
+    private static Option<Long> longInteger(Category category, String name, Long defval, String description) {
+        Option<Long> option = new LongOption("jruby", name, category, defval, description);;
+        _loadedOptions.add(option);
+        return option;
+    }
+
+    // TODO move to com.headius:options
+    private static class LongOption extends Option<Long> {
+
+        public LongOption(String prefix, String name, Enum category, Long defval, String description) {
+            super(prefix, name, Long.class, category, null, defval, description);
+        }
+
+        public Long reloadValue() {
+            String value = super.loadProperty();
+
+            if (value == null) {
+                return defval;
+            }
+
+            return Long.parseLong(value);
+        }
     }
 
     private static <T extends Enum<T>> Option<T> enumeration(Category category, String name, Class<T> enumClass, T defval, String description) {
