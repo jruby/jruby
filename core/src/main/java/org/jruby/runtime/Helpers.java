@@ -2138,7 +2138,7 @@ public class Helpers {
                 Integer.toString(scope.getType().ordinal()) + ';'
                 + scope.getFile() + ';'
                 + Arrays.stream(scope.getVariables()).collect(Collectors.joining(",")) + ';'
-                + scope.getKeywordIndices().stream().mapToObj((b) -> "" + b) + ';' +
+                + Arrays.toString(scope.getKeywordIndices().toByteArray()) + ';' +
                 + (signature == null ? Signature.NO_ARGUMENTS.encode() : signature.encode()) + ';'
                 + scope.getIRScope().getScopeType().ordinal() + ';'
                 + (instanceVariableNames.size() > 0
