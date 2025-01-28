@@ -228,6 +228,13 @@ public class CodegenUtils {
         return classes;
     }
 
+    public static Class[] params(Class clsFill, int times, Class clsTail) {
+        Class[] classes = new Class[times + 1];
+        Arrays.fill(classes, 0, times, clsFill);
+        classes[times] = clsTail;
+        return classes;
+    }
+
     public static Class[] params(Class cls1, Class clsFill, int times, Class clsTail) {
         Class[] classes = new Class[times + 2];
         Arrays.fill(classes, 1, 1 + times, clsFill);
