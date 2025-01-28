@@ -555,12 +555,8 @@ public final class Ruby implements Constantizable {
 
         // Done booting JRuby runtime
         runtimeIsBooted = true;
-        if ("true".equals(System.getenv("USE_SUBSPAWN"))) {
-            if (Platform.IS_WINDOWS) {
-                LOG.warn("env USE_SUBSPAWN=true is unsupported on Windows at this time");
-            } else {
-                getLoadService().require("subspawn/replace-builtin");
-            }
+        if (posix.isNative() && !Platform.IS_WINDOWS) {
+            getLoadService().require("subspawn/replace-builtin");
         }
     }
 
