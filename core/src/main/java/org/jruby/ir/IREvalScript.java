@@ -3,6 +3,7 @@ package org.jruby.ir;
 import org.jruby.EvalType;
 import org.jruby.ir.operands.Label;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
 
 public class IREvalScript extends IRClosure {
@@ -17,6 +18,7 @@ public class IREvalScript extends IRClosure {
         super(manager, lexicalParent, lineNumber, staticScope, 0, EVAL);
 
         this.fileName = fileName;
+        this.signature = Signature.NO_ARGUMENTS;
 
         if (staticScope != null) {
             // SSS FIXME: This is awkward!
