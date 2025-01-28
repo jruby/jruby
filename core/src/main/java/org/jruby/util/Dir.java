@@ -653,6 +653,7 @@ public class Dir {
         return patterns;
     }
 
+    /* NOTE: Order here is important */
     enum GlobMagic  { PLAIN, ALPHA, MAGICAL };
 
     private static GlobMagic has_magic(byte[] bytes, int begin, int end, int flags) {
@@ -693,7 +694,7 @@ public class Dir {
     }
 
     private static boolean isAlpha(byte b) {
-        return Character.isLetter((char)(b & 0xFF));
+        return Character.isLetter(Byte.toUnsignedInt(b));
     }
 
     private static int remove_backslashes(byte[] bytes, int index, int end) {
