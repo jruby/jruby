@@ -14,6 +14,7 @@ jruby/test_block
 jruby/test_caller
 jruby/test_case
 jruby/test_class
+jruby/test_class_subclasses
 jruby/test_comparable
 jruby/test_core_arities
 jruby/test_coverage
