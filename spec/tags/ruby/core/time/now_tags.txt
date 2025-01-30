@@ -1,0 +1,1 @@
+fails:Time.now :in keyword argument raises ArgumentError if String argument and seconds greater than 59

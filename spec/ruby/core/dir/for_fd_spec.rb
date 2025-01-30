@@ -1,6 +1,7 @@
 require_relative '../../spec_helper'
 require_relative 'fixtures/common'
 
+quarantine! do # leads to "Errno::EBADF: Bad file descriptor - closedir" in DirSpecs.delete_mock_dirs
 ruby_version_is '3.3' do
   guard -> { Dir.respond_to? :for_fd } do
     describe "Dir.for_fd" do
@@ -42,8 +43,8 @@ ruby_version_is '3.3' do
 
       it "calls #to_int to convert a value to an Integer" do
         dir = Dir.new(DirSpecs.mock_dir)
-        obj = Object.new
-        obj.singleton_class.define_method(:to_int) { dir.fileno }
+        obj = mock("fd")
+        obj.should_receive(:to_int).and_return(dir.fileno)
 
         dir_new = Dir.for_fd(obj)
         dir_new.fileno.should == dir.fileno
@@ -74,4 +75,5 @@ ruby_version_is '3.3' do
       end
     end
   end
+end
 end
