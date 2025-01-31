@@ -9,6 +9,7 @@ import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.parser.StaticScope;
 
 import java.io.IOException;
+import java.util.BitSet;
 
 /**
  * Write IR data out to persistent store.  IRReader is capable of re-reading this
@@ -95,7 +96,7 @@ public class IRWriter {
         // This naively looks like a bug because these represent id's and not properly encoded names BUT all of those
         // symbols for these ids will be created when IRScope loads the LocalVariable versions of these...so this is ok.
         file.encode(staticScope.getVariables());
-        file.encode(staticScope.getFirstKeywordIndex());
+        file.encode(staticScope.getKeywordIndices().toByteArray());
         file.encode(staticScope.getSignature());
     }
 

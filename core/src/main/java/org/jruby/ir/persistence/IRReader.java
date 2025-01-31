@@ -15,6 +15,7 @@ import org.jruby.parser.StaticScopeFactory;
 import org.jruby.runtime.Signature;
 
 import java.io.IOException;
+import java.util.BitSet;
 import java.util.EnumSet;
 
 import org.jruby.util.ByteList;
@@ -123,10 +124,15 @@ public class IRReader implements IRPersistenceValues {
         StaticScope.Type type = decoder.decodeStaticScopeType();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeStaticScope: type = " + type);
         String[] ids = decoder.decodeStringArray();
-        int firstKeywordIndex = decoder.decodeInt();
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeStaticScope: keyword index = " + firstKeywordIndex);
+        byte[] keywordIndices = decoder.decodeByteArray();
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeStaticScope: keyword indices count = " + keywordIndices.length);
 
-        StaticScope scope = StaticScopeFactory.newStaticScope(parentScope, type, decoder.getFilename(), ids, firstKeywordIndex);
+        StaticScope scope = StaticScopeFactory.newStaticScope(parentScope, type, decoder.getFilename(), ids, -1);
+
+        // We encode as empty list to not deal with null check here
+        if (keywordIndices.length > 0) {
+            scope.setKeywordIndices(BitSet.valueOf(keywordIndices));
+        }
 
         Signature signature = decoder.decodeSignature();
         scope.setSignature(signature);
