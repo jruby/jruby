@@ -155,7 +155,7 @@ public class VariableTableManager {
         if(UnsafeHolder.U == null) {
             SynchronizedVariableAccessor.setVariable(self,realClass,index,value);
         } else {
-            StampedVariableAccessor.setVariable(self,realClass,index,value);
+            AtomicVariableTable.setVariableAtomic(self,realClass,true,index,value);
         }
     }
 
@@ -171,7 +171,7 @@ public class VariableTableManager {
         if(UnsafeHolder.U == null) {
             SynchronizedVariableAccessor.setVariable(self,realClass,index,value);
         } else {
-            StampedVariableAccessor.setVariable(self,realClass,index,value);
+            AtomicVariableTable.setVariableAtomic(self,realClass,true,index,value);
         }
     }
 
