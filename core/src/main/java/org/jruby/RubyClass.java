@@ -54,7 +54,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
-import java.util.concurrent.locks.StampedLock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
@@ -1196,7 +1196,7 @@ public class RubyClass extends RubyModule {
     };
 
     static class WeakRubyClassSet extends WeakHashMap<RubyClass, Object> implements RubyClassSet {
-        final StampedLock lock = new StampedLock();
+        final ReentrantLock lock = new ReentrantLock();
 
         public WeakRubyClassSet() {
             super();
@@ -1208,45 +1208,45 @@ public class RubyClass extends RubyModule {
 
         @Override
         public void addClass(RubyClass klass) {
-            StampedLock lock = this.lock;
-            long stamp = lock.writeLock();
+            ReentrantLock lock = this.lock;
+            lock.lock();
             try {
                 super.put(klass, NEVER);
             } finally {
-                lock.unlockWrite(stamp);
+                lock.unlock();
             }
         }
 
         @Override
         public void forEachClass(BiConsumerIgnoresSecond<RubyClass> action) {
-            StampedLock lock = this.lock;
-            long stamp = lock.readLock();
+            ReentrantLock lock = this.lock;
+            lock.lock();
             try {
                 super.forEach(action);
             } finally {
-                lock.unlockRead(stamp);
+                lock.unlock();
             }
         }
 
         @Override
         public void removeClass(RubyClass klass) {
-            StampedLock lock = this.lock;
-            long stamp = lock.writeLock();
+            ReentrantLock lock = this.lock;
+            lock.lock();
             try {
                 super.remove(klass);
             } finally {
-                lock.unlockWrite(stamp);
+                lock.unlock();
             }
         }
 
         @Override
         public boolean isEmptyOfClasses() {
-            StampedLock lock = this.lock;
-            long stamp = lock.readLock();
+            ReentrantLock lock = this.lock;
+            lock.lock();
             try {
                 return super.isEmpty();
             } finally {
-                lock.unlockRead(stamp);
+                lock.unlock();
             }
         }
     }
