@@ -2,6 +2,7 @@ package org.jruby.runtime.ivars;
 
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
+import org.jruby.java.proxies.JavaProxy;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.unsafe.UnsafeHolder;
 
@@ -60,6 +61,11 @@ public class AtomicVariableTable {
 
         if (currentTable != null) {
             ArraySupport.copy(currentTable, 0, newTable, 0, currentTable.length);
+        } else {
+            // on first table create, run additional warning checks
+            if (self instanceof JavaProxy) {
+                ((JavaProxy) self).checkVariablesOnProxy();
+            }
         }
 
         newTable[index] = value;

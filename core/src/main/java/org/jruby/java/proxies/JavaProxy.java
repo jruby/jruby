@@ -565,14 +565,18 @@ public class JavaProxy extends RubyObject {
 
     @Override
     public Object getVariable(int index) {
-        confirmCachedProxy(NONPERSISTENT_IVAR_MESSAGE);
+        checkVariablesOnProxy();
         return super.getVariable(index);
     }
 
     @Override
     public void setVariable(int index, Object value) {
-        confirmCachedProxy(NONPERSISTENT_IVAR_MESSAGE);
+        checkVariablesOnProxy();
         super.setVariable(index, value);
+    }
+
+    public void checkVariablesOnProxy() {
+        confirmCachedProxy(NONPERSISTENT_IVAR_MESSAGE);
     }
 
     /** rb_singleton_class
