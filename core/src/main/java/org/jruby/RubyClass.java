@@ -54,8 +54,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.concurrent.locks.StampedLock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
@@ -1062,13 +1061,13 @@ public class RubyClass extends RubyModule {
         return new SubclassArray(context.runtime, this.concreteSubclassesEstimate);
     }
 
-    private static class SubclassArray extends RubyArray<RubyClass> implements BiConsumer<RubyClass, Object> {
+    private static class SubclassArray extends RubyArray<RubyClass> implements BiConsumerIgnoresSecond<RubyClass> {
         public SubclassArray(Ruby runtime, int length) {
             super(runtime, length);
         }
 
         @Override
-        public void accept(RubyClass klass, Object o) {
+        public void accept(RubyClass klass) {
             processConcreteSubclass(this, klass);
         }
     }
@@ -1078,11 +1077,11 @@ public class RubyClass extends RubyModule {
     }
 
     void addAllSubclasses(SubclassList mine) {
-        getSubclassesForRead().forEach(mine);
+        getSubclassesForRead().forEachClass(mine);
     }
 
-    private Map<RubyClass, Object> getSubclassesForRead() {
-        Map<RubyClass, Object> result = this.subclasses;
+    private RubyClassSet getSubclassesForRead() {
+        RubyClassSet result = this.subclasses;
 
         if (result != null) {
             return result;
@@ -1101,11 +1100,11 @@ public class RubyClass extends RubyModule {
     }
 
     private void addVisibleSubclasses(SubclassArray subs) {
-        getVisibleSubclassesForRead().forEach(subs);
+        getVisibleSubclassesForRead().forEachClass(subs);
     }
 
-    private Map<RubyClass, Object> getVisibleSubclassesForRead() {
-        Map<RubyClass, Object> visibleSubclasses = VISIBLE_SUBCLASSES_UPDATER.updateAndGet(this, RubyClass::getOrDefaultSubclasses);
+    private RubyClassSet getVisibleSubclassesForRead() {
+        RubyClassSet visibleSubclasses = VISIBLE_SUBCLASSES_UPDATER.updateAndGet(this, RubyClass::getOrDefaultSubclasses);
         return visibleSubclasses;
     }
 
@@ -1135,69 +1134,126 @@ public class RubyClass extends RubyModule {
      * @param subclass The subclass to add
      */
     public void addSubclass(RubyClass subclass) {
-        Map<RubyClass, Object> subclasses = getSubclassesForWrite();
-        subclasses.put(subclass, NEVER);
+        RubyClassSet subclasses = getSubclassesForWrite();
+        subclasses.addClass(subclass);
 
         if (!subclass.isSingleton()) {
-            Map visibleSubclasses = getVisibleSubclassesForWrite();
-            visibleSubclasses.put(subclass, NEVER);
+            RubyClassSet visibleSubclasses = getVisibleSubclassesForWrite();
+            visibleSubclasses.addClass(subclass);
         }
     }
 
-    private Map<RubyClass, Object> getVisibleSubclassesForWrite() {
-        Map<RubyClass, Object> visibleSubclasses = this.visibleSubclasses;
+    private RubyClassSet getVisibleSubclassesForWrite() {
+        RubyClassSet visibleSubclasses = this.visibleSubclasses;
 
-        if (visibleSubclasses != null && visibleSubclasses != Collections.EMPTY_MAP) {
+        if (visibleSubclasses != null && visibleSubclasses != EMPTY_RUBYCLASS_SET) {
             return visibleSubclasses;
         }
 
         return VISIBLE_SUBCLASSES_UPDATER.updateAndGet(this, RubyClass::getOrCreateSubclasses);
     }
 
-    private Map<RubyClass, Object> getSubclassesForWrite() {
-        Map<RubyClass, Object> subclasses = this.subclasses;
+    private RubyClassSet getSubclassesForWrite() {
+        RubyClassSet subclasses = this.subclasses;
 
-        if (subclasses != null && subclasses != Collections.EMPTY_MAP) {
+        if (subclasses != null && subclasses != EMPTY_RUBYCLASS_SET) {
             return subclasses;
         }
 
         return SUBCLASSES_UPDATER.updateAndGet(this, RubyClass::getOrCreateSubclasses);
     }
 
-    private static Map<RubyClass, Object> getOrCreateSubclasses(Map<RubyClass, Object> subclasses) {
-        if (subclasses != null && subclasses != Collections.EMPTY_MAP) return subclasses;
-        return new SubclassesWeakMap<>();
+    private static RubyClassSet getOrCreateSubclasses(RubyClassSet subclasses) {
+        if (subclasses != null && subclasses != EMPTY_RUBYCLASS_SET) return subclasses;
+        return new WeakRubyClassSet();
     }
 
-    private static class SubclassesWeakMap<K, V> extends WeakHashMap<K, V> {
-        final StampedLock lock = new StampedLock();
+    interface RubyClassSet {
+        void addClass(RubyClass klass);
+        void forEachClass(BiConsumerIgnoresSecond<RubyClass> action);
+        void removeClass(RubyClass klass);
+        boolean isEmptyOfClasses();
+    }
+
+    interface BiConsumerIgnoresSecond<T> extends BiConsumer<T, Object> {
+        default void accept(T t, Object u) {
+            accept(t);
+        }
+        void accept(T t);
+    }
+
+    static RubyClassSet EMPTY_RUBYCLASS_SET = new RubyClassSet() {
+        public void addClass(RubyClass klass) {
+            throw new UnsupportedOperationException("EMPTY_RUBYCLASS_SET is unmodifiable");
+        }
+        public void forEachClass(BiConsumerIgnoresSecond<RubyClass> action) {}
+        public void removeClass(RubyClass key) {
+            throw new UnsupportedOperationException("EMPTY_RUBYCLASS_SET is unmodifiable");
+        }
+        public boolean isEmptyOfClasses() {
+            return true;
+        }
+    };
+
+    static class WeakRubyClassSet extends WeakHashMap<RubyClass, Object> implements RubyClassSet {
+        final ReentrantLock lock = new ReentrantLock();
+
+        public WeakRubyClassSet() {
+            super();
+        }
+
+        public WeakRubyClassSet(int size) {
+            super(size);
+        }
 
         @Override
-        public V put(K key, V value) {
-            StampedLock lock = this.lock;
-            long stamp = lock.writeLock();
+        public void addClass(RubyClass klass) {
+            ReentrantLock lock = this.lock;
+            lock.lock();
             try {
-                return super.put(key, value);
+                super.put(klass, NEVER);
             } finally {
-                lock.unlockWrite(stamp);
+                lock.unlock();
             }
         }
 
         @Override
-        public void forEach(BiConsumer<? super K, ? super V> action) {
-            StampedLock lock = this.lock;
-            long stamp = lock.readLock();
+        public void forEachClass(BiConsumerIgnoresSecond<RubyClass> action) {
+            ReentrantLock lock = this.lock;
+            lock.lock();
             try {
                 super.forEach(action);
             } finally {
-                lock.unlockRead(stamp);
+                lock.unlock();
+            }
+        }
+
+        @Override
+        public void removeClass(RubyClass klass) {
+            ReentrantLock lock = this.lock;
+            lock.lock();
+            try {
+                super.remove(klass);
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        @Override
+        public boolean isEmptyOfClasses() {
+            ReentrantLock lock = this.lock;
+            lock.lock();
+            try {
+                return super.isEmpty();
+            } finally {
+                lock.unlock();
             }
         }
     }
 
-    private static Map<RubyClass, Object> getOrDefaultSubclasses(Map<RubyClass, Object> subclasses) {
+    private static RubyClassSet getOrDefaultSubclasses(RubyClassSet subclasses) {
         if (subclasses != null) return subclasses;
-        return Collections.EMPTY_MAP;
+        return EMPTY_RUBYCLASS_SET;
     }
 
     /**
@@ -1206,12 +1262,12 @@ public class RubyClass extends RubyModule {
      * @param subclass The subclass to remove
      */
     public void removeSubclass(RubyClass subclass) {
-        Map subclasses = SUBCLASSES_UPDATER.updateAndGet(this, RubyClass::getOrCreateSubclasses);
-        subclasses.remove(subclass);
+        RubyClassSet subclasses = SUBCLASSES_UPDATER.updateAndGet(this, RubyClass::getOrCreateSubclasses);
+        subclasses.removeClass(subclass);
 
         if (!subclass.isSingleton()) {
-            Map visibleSubclasses = VISIBLE_SUBCLASSES_UPDATER.updateAndGet(this, RubyClass::getOrCreateSubclasses);
-            visibleSubclasses.remove(subclass);
+            RubyClassSet visibleSubclasses = VISIBLE_SUBCLASSES_UPDATER.updateAndGet(this, RubyClass::getOrCreateSubclasses);
+            visibleSubclasses.removeClass(subclass);
         }
     }
 
@@ -1233,7 +1289,7 @@ public class RubyClass extends RubyModule {
     public void becomeSynchronized() {
         super.becomeSynchronized();
 
-        getSubclassesForRead().forEach((k, v) -> k.becomeSynchronized());
+        getSubclassesForRead().forEachClass(RubyClass::becomeSynchronized);
     }
 
     /**
@@ -1252,7 +1308,7 @@ public class RubyClass extends RubyModule {
     public void invalidateCacheDescendants() {
         super.invalidateCacheDescendants();
 
-        getSubclassesForRead().forEach((k, v) -> k.invalidateCacheDescendants());
+        getSubclassesForRead().forEachClass(RubyClass::invalidateCacheDescendants);
     }
 
     void addInvalidatorsAndFlush(InvalidatorList invalidators) {
@@ -1262,7 +1318,7 @@ public class RubyClass extends RubyModule {
         // if we're not at boot time, don't bother fully clearing caches
         if (!runtime.isBootingCore()) cachedMethods.clear();
 
-        getSubclassesForRead().forEach(invalidators);
+        getSubclassesForRead().forEachClass(invalidators);
     }
 
     public final Ruby getClassRuntime() {
@@ -3157,10 +3213,10 @@ public class RubyClass extends RubyModule {
     protected final Ruby runtime;
     private ObjectAllocator allocator; // the default allocator
     protected ObjectMarshal marshal;
-    private volatile Map<RubyClass, Object> subclasses;
-    private volatile Map<RubyClass, Object> visibleSubclasses;
-    private static final AtomicReferenceFieldUpdater<RubyClass, Map> SUBCLASSES_UPDATER = AtomicReferenceFieldUpdater.newUpdater(RubyClass.class, Map.class, "subclasses");
-    private static final AtomicReferenceFieldUpdater<RubyClass, Map> VISIBLE_SUBCLASSES_UPDATER = AtomicReferenceFieldUpdater.newUpdater(RubyClass.class, Map.class, "visibleSubclasses");
+    private volatile RubyClassSet subclasses;
+    private volatile RubyClassSet visibleSubclasses;
+    private static final AtomicReferenceFieldUpdater<RubyClass, RubyClassSet> SUBCLASSES_UPDATER = AtomicReferenceFieldUpdater.newUpdater(RubyClass.class, RubyClassSet.class, "subclasses");
+    private static final AtomicReferenceFieldUpdater<RubyClass, RubyClassSet> VISIBLE_SUBCLASSES_UPDATER = AtomicReferenceFieldUpdater.newUpdater(RubyClass.class, RubyClassSet.class, "visibleSubclasses");
     private int concreteSubclassesEstimate = 4;
     private int allDescendantsEstimate = 4;
     private int allSubclassesEstimate = 4;
