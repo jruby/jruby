@@ -29,6 +29,7 @@ package org.jruby.runtime.ivars;
 
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
+import org.jruby.java.proxies.JavaProxy;
 import org.jruby.util.ArraySupport;
 
 /**
@@ -102,6 +103,10 @@ public class SynchronizedVariableAccessor extends VariableAccessor {
     private static Object[] ensureTable(RubyBasicObject self, RubyClass realClass, int index) {
         Object[] currentTable = self.varTable;
         if (currentTable == null) {
+            // on first table create, run additional warning checks
+            if (self instanceof JavaProxy) {
+                ((JavaProxy) self).checkVariablesOnProxy();
+            }
             return createTable(self, realClass);
         }
         if (currentTable.length <= index) {

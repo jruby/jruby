@@ -31,3 +31,14 @@ describe "A class which has been set persistent" do
   end
 end
 
+describe "A class which has not been set persistent" do
+  it "warns when the first instance variable is set" do
+    warns = with_warn_captured {
+      java.lang.Object.new.instance_variable_set :@foo, 1
+    }
+    warns.first.first.should =~ /instance vars on non-persistent Java type/
+
+    java.lang.Object.__persistent__ = false
+  end
+end
+
