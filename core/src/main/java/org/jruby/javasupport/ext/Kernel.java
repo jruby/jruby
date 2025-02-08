@@ -44,13 +44,12 @@ import static org.jruby.runtime.Visibility.PUBLIC;
  */
 public final class Kernel {
 
-    public static void define(final Ruby runtime) {
-        final RubyModule Kernel = runtime.getKernel();
-        Kernel.addMethodInternal("java", new JavaPackageMethod(Kernel, "java"));
-        Kernel.addMethodInternal("javax", new JavaPackageMethod(Kernel, "javax"));
-        Kernel.addMethodInternal("javafx", new JavaPackageMethod(Kernel, "javafx"));
-        Kernel.addMethodInternal("com", new JavaPackageMethod(Kernel, "com"));
-        Kernel.addMethodInternal("org", new JavaPackageMethod(Kernel, "org"));
+    public static void define(ThreadContext context, RubyModule Kernel) {
+        Kernel.addMethodInternal(context, "java", new JavaPackageMethod(Kernel, "java"));
+        Kernel.addMethodInternal(context, "javax", new JavaPackageMethod(Kernel, "javax"));
+        Kernel.addMethodInternal(context, "javafx", new JavaPackageMethod(Kernel, "javafx"));
+        Kernel.addMethodInternal(context, "com", new JavaPackageMethod(Kernel, "com"));
+        Kernel.addMethodInternal(context, "org", new JavaPackageMethod(Kernel, "org"));
     }
 
     private static final class JavaPackageMethod extends JavaMethod.JavaMethodZero {
@@ -71,7 +70,7 @@ public final class Kernel {
     }
 
     private static IRubyObject get_pkg(final ThreadContext context, final String name) {
-        RubyModule module = Java.getJavaPackageModule(context.runtime, name);
+        RubyModule module = Java.getJavaPackageModule(context, name);
         return module == null ? context.nil : module;
     }
 

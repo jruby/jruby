@@ -51,8 +51,8 @@ project 'JRuby Base' do
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
-  jar 'org.jruby.joni:joni:2.2.2-SNAPSHOT'
-  jar 'org.jruby.jcodings:jcodings:1.0.58'
+  jar 'org.jruby.joni:joni:2.2.3'
+  jar 'org.jruby.jcodings:jcodings:1.0.61'
   jar 'org.jruby:dirgra:0.5'
 
   jar 'com.headius:invokebinder:1.14'
@@ -196,8 +196,8 @@ project 'JRuby Base' do
           'verbose' => 'false',
           'showWarnings' => 'true',
           'showDeprecation' => 'true',
-          'source' => [ '${base.java.version}', '17' ],
-          'target' => [ '${base.javac.version}', '17' ],
+          'source' => [ '${base.java.version}', '21' ],
+          'target' => [ '${base.javac.version}', '21' ],
           'useIncrementalCompilation' =>  'false' ) do
     execute_goals( 'compile',
                    :id => 'anno',

@@ -48,7 +48,6 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
-import org.jruby.util.StringSupport;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
@@ -74,14 +73,10 @@ public class RubyFileStat extends RubyObject {
         if (stat == null) throw typeError(context, "uninitialized File::Stat");
     }
 
-    public static RubyClass createFileStatClass(Ruby runtime) {
-        // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here. Confirm. JRUBY-415
-        final RubyClass fileStatClass = runtime.getFile().defineClassUnder("Stat",runtime.getObject(), RubyFileStat::new);
-
-        fileStatClass.includeModule(runtime.getModule("Comparable"));
-        fileStatClass.defineAnnotatedMethods(RubyFileStat.class);
-
-        return fileStatClass;
+    public static RubyClass createFileStatClass(ThreadContext context, RubyClass Object, RubyClass File, RubyModule Comparable) {
+        return File.defineClassUnder(context, "Stat", Object, RubyFileStat::new).
+                include(context, Comparable).
+                defineMethods(context, RubyFileStat.class);
     }
 
     protected RubyFileStat(Ruby runtime, RubyClass clazz) {
@@ -401,9 +396,8 @@ public class RubyFileStat extends RubyObject {
     }
     
     @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
-    @Override
-    public IRubyObject initialize_copy(IRubyObject original) {
-        if (!(original instanceof RubyFileStat)) throw typeError(getRuntime().getCurrentContext(), "wrong argument class");
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject original) {
+        if (!(original instanceof RubyFileStat)) throw typeError(context, "wrong argument class");
 
         checkFrozen();
         
@@ -427,11 +421,9 @@ public class RubyFileStat extends RubyObject {
     }
 
     @JRubyMethod(name = "inspect")
-    @Override
-    public IRubyObject inspect() {
-        ThreadContext context = metaClass.runtime.getCurrentContext();
+    public IRubyObject inspect(ThreadContext context) {
         StringBuilder buf = new StringBuilder("#<");
-        buf.append(getMetaClass().getRealClass().getName());
+        buf.append(getMetaClass().getRealClass().getName(context));
         if (stat == null) {
             buf.append(": uninitialized");
         } else {
@@ -448,12 +440,12 @@ public class RubyFileStat extends RubyObject {
             try { buf.append("rdev=0x").append(Long.toHexString(stat.rdev())); } catch (Exception e) {} finally { buf.append(", "); }
             buf.append("size=").append(sizeInternal(context)).append(", ");
             try {
-                buf.append("blksize=").append(blockSize(context).inspect().toString()); } catch (Exception e) {} finally { buf.append(", "); }
-            try { buf.append("blocks=").append(blocks().inspect().toString()); } catch (Exception e) {} finally { buf.append(", "); }
+                buf.append("blksize=").append(blockSize(context).inspect(context).toString()); } catch (Exception e) {} finally { buf.append(", "); }
+            try { buf.append("blocks=").append(blocks().inspect(context).toString()); } catch (Exception e) {} finally { buf.append(", "); }
 
-            buf.append("atime=").append(atime().inspect()).append(", ");
-            buf.append("mtime=").append(mtime().inspect()).append(", ");
-            buf.append("ctime=").append(ctime().inspect());
+            buf.append("atime=").append(atime().inspect(context)).append(", ");
+            buf.append("mtime=").append(mtime().inspect(context)).append(", ");
+            buf.append("ctime=").append(ctime().inspect(context));
             if (Platform.IS_BSD || Platform.IS_MAC) {
                 buf.append(", ").append("birthtime=").append(birthtime());
             }

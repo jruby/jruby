@@ -32,6 +32,7 @@ package org.jruby.ext.socket;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.anno.JRubyMethod;
@@ -59,14 +60,13 @@ import static jnr.constants.platform.AddressFamily.AF_INET;
 import static jnr.constants.platform.AddressFamily.AF_INET6;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineClass;
 
 public class RubyTCPSocket extends RubyIPSocket {
-    static void createTCPSocket(Ruby runtime) {
-        RubyClass rb_cTCPSocket = runtime.defineClass("TCPSocket", runtime.getClass("IPSocket"), RubyTCPSocket::new);
-
-        rb_cTCPSocket.defineAnnotatedMethods(RubyTCPSocket.class);
-
-        runtime.getObject().setConstant("TCPsocket",rb_cTCPSocket);
+    static RubyClass createTCPSocket(ThreadContext context, RubyClass IPSocket, RubyClass Object) {
+        return (RubyClass) Object.setConstant(context, "TCPsocket",
+                defineClass(context, "TCPSocket", IPSocket, RubyTCPSocket::new).
+                        defineMethods(context, RubyTCPSocket.class));
     }
 
     public RubyTCPSocket(Ruby runtime, RubyClass type) {
@@ -97,7 +97,7 @@ public class RubyTCPSocket extends RubyIPSocket {
                 if (opts != null) {
                     IRubyObject timeoutObj = ArgsUtil.extractKeywordArg(context, opts, "connect_timeout");
                     if (!timeoutObj.isNil()) {
-                        timeout = (long) (timeoutObj.convertToFloat().getDoubleValue() * 1000);
+                        timeout = (long) (timeoutObj.convertToFloat().asDouble(context) * 1000);
                     }
                 }
 
@@ -120,7 +120,7 @@ public class RubyTCPSocket extends RubyIPSocket {
         }
 
         // did not complete and only path out is n repeated ConnectExceptions
-        throw context.runtime.newErrnoECONNREFUSEDError("connect(2) for " + host.inspect() + " port " + remotePort);
+        throw context.runtime.newErrnoECONNREFUSEDError("connect(2) for " + host.inspect(context) + " port " + remotePort);
     }
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
@@ -239,11 +239,11 @@ public class RubyTCPSocket extends RubyIPSocket {
 
     @Deprecated
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
-        return open(recv.getRuntime().getCurrentContext(), recv, args, block);
+        return open(((RubyBasicObject) recv).getCurrentContext(), recv, args, block);
     }
 
     @Deprecated
     public static IRubyObject gethostbyname(IRubyObject recv, IRubyObject hostname) {
-        return gethostbyname(recv.getRuntime().getCurrentContext(), recv, hostname);
+        return gethostbyname(((RubyBasicObject) recv).getCurrentContext(), recv, hostname);
     }
 }

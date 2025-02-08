@@ -2,12 +2,16 @@ package org.jruby.api;
 
 import org.jcodings.Encoding;
 import org.jruby.*;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.func.TriConsumer;
 
 import java.util.List;
+import java.util.function.Consumer;
+
+import static org.jruby.api.Access.stringClass;
 
 public class Create {
     /**
@@ -16,16 +20,23 @@ public class Create {
      * @param context the current thread context
      * @return the new array
      */
-    // mri: rb_ary_new2
+    // mri: rb_ary_new
     public static RubyArray<?> newArray(ThreadContext context) {
-        return RubyArray.newArray(context.runtime);
+        return RubyArray.newArray(context);
     }
 
     // mri: rb_ary_new2
 
     public static RubyArray<?> newArray(ThreadContext context, int length) {
         // FIXME: This should be newBlankArray but things go very wrong in a tough to figure out where sort of way.
-        return RubyArray.newArray(context.runtime, length);
+        return RubyArray.newArray(context, length);
+    }
+
+    public static <T extends IRubyObject> RubyArray<?> newArray(ThreadContext context, int length,
+                                                                Consumer<RubyArray<T>> populator) {
+        RubyArray rawArray = newRawArray(context, length);
+        populator.accept(rawArray);
+        return rawArray.finishRawArray(context);
     }
 
     /**
@@ -110,7 +121,7 @@ public class Create {
      * @param <State> a state object for the consumer
      * @param <T> the type of object the Array will hold
      */
-    public static <State, T extends IRubyObject> RubyArray<?> constructArray(ThreadContext context, State state, int length, TriConsumer<ThreadContext, State, RubyArray<T>> populator) {
+    public static <State, T extends IRubyObject> RubyArray<?> newArray(ThreadContext context, State state, int length, TriConsumer<ThreadContext, State, RubyArray<T>> populator) {
         RubyArray rawArray = newRawArray(context, length);
         populator.accept(context, state, rawArray);
         return rawArray.finishRawArray(context);
@@ -212,6 +223,20 @@ public class Create {
     }
 
     /**
+     * Creates a new frozen RubyString from the provided java String.
+     *
+     * @param context the current thread context
+     * @param string the contents to become a string
+     * @return the new RubyString
+     */
+    public static RubyString newFrozenString(ThreadContext context, String string) {
+        // replace with custom subclass that is born frozen
+        RubyString rubyString = RubyString.newString(context.runtime, string);
+        rubyString.setFrozen(true);
+        return rubyString;
+    }
+
+    /**
      * Create a new String which is intended to be empty for its entire lifetime.
      * It can still grow but the intention is you think it won't grow (or cannot).
      * If you want a default-size array then use {@link Create#newString(ThreadContext, String)}.
@@ -243,6 +268,94 @@ public class Create {
      * @return the new string
      */
     public static RubyString dupString(ThreadContext context, RubyString string) {
-        return string.strDup(context.runtime, context.runtime.getString());
+        return string.strDup(context.runtime, stringClass(context));
     }
+
+    /**
+     * Create a new Rational with the given long values for numerator and denominator.
+     *
+     * @param context the current thread context
+     * @param num the numerator
+     * @param den the denominator
+     * @return a new Rational
+     */
+    public static RubyRational newRational(ThreadContext context, long num, long den) {
+        return RubyRational.newRational(context.runtime, num, den);
+    }
+
+    /**
+     * Create a new Struct.
+     *
+     * @param context the current thread context
+     * @param block
+     * @return
+     */
+    public static RubyStruct newStruct(ThreadContext context, RubyClass structClass, Block block) {
+        RubyStruct struct = new RubyStruct(context, structClass);
+        struct.callInit(block);
+        return struct;
+    }
+
+    /**
+     * Create a new Struct.
+     *
+     * @param context the current thread context
+     * @param arg0 name of class or first member of struct
+     * @param block
+     * @return
+     */
+    public static RubyStruct newStruct(ThreadContext context, RubyClass structClass, IRubyObject arg0, Block block) {
+        RubyStruct struct = new RubyStruct(context, structClass);
+        struct.callInit(arg0, block);
+        return struct;
+    }
+
+    /**
+     * Create a new Struct.
+     *
+     * @param context the current thread context
+     * @param arg0 name of class or first member of struct
+     * @param arg1 a member of struct
+     * @param block
+     * @return
+     */
+    public static RubyStruct newStruct(ThreadContext context, RubyClass structClass, IRubyObject arg0, IRubyObject arg1, Block block) {
+        RubyStruct struct = new RubyStruct(context, structClass);
+        struct.callInit(arg0, arg1, block);
+        return struct;
+    }
+
+    /**
+     * Create a new Struct.
+     *
+     * @param context the current thread context
+     * @param arg0 name of class or first member of struct
+     * @param arg1 a member of struct
+     * @param arg2 a member of struct
+     * @param block
+     * @return
+     */
+    public static RubyStruct newStruct(ThreadContext context, RubyClass structClass, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2,
+                                       Block block) {
+        RubyStruct struct = new RubyStruct(context, structClass);
+        struct.callInit(arg0, arg1, arg2, block);
+        return struct;
+    }
+
+    /**
+     * Create a new Struct (prefer 0-3 arity versions of this function if you know you arity and it is Struct and
+     * not a subclass of Struct).
+     *
+     * @param context the current thread context
+     * @param structClass expects either a reference to Struct or a subclass of Struct (Passwd for example)
+     * @param args for thr struct
+     * @param block
+     * @return
+     */
+    public static RubyStruct newStruct(ThreadContext context, RubyClass structClass, IRubyObject[] args, Block block) {
+        RubyStruct struct = new RubyStruct(context, structClass);
+        struct.callInit(args, block);
+        return struct;
+    }
+
 }

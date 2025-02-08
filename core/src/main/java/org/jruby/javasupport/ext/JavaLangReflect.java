@@ -53,21 +53,16 @@ import static org.jruby.util.Inspector.inspectPrefix;
  */
 public abstract class JavaLangReflect {
 
-    public static void define(final Ruby runtime) {
-        JavaExtensions.put(runtime, java.lang.reflect.AccessibleObject.class, (proxyClass) -> AccessibleObject.define(runtime, (RubyClass) proxyClass));
-        JavaExtensions.put(runtime, java.lang.reflect.Constructor.class, (proxyClass) -> Constructor.define(runtime, (RubyClass) proxyClass));
-        JavaExtensions.put(runtime, java.lang.reflect.Field.class, (proxyClass) -> Field.define(runtime, (RubyClass) proxyClass));
-        JavaExtensions.put(runtime, java.lang.reflect.Method.class, (proxyClass) -> Method.define(runtime, (RubyClass) proxyClass));
+    public static void define(ThreadContext context) {
+        var runtime = context.runtime;
+        JavaExtensions.put(runtime, java.lang.reflect.AccessibleObject.class, proxy -> proxy.defineMethods(context, AccessibleObject.class));
+        JavaExtensions.put(runtime, java.lang.reflect.Constructor.class, proxy -> proxy.defineMethods(context, Constructor.class));
+        JavaExtensions.put(runtime, java.lang.reflect.Field.class, proxy -> proxy.defineMethods(context, Field.class));
+        JavaExtensions.put(runtime, java.lang.reflect.Method.class, proxy -> proxy.defineMethods(context, Method.class));
     }
 
     @JRubyClass(name = "Java::JavaLangReflect::AccessibleObject")
     public static class AccessibleObject {
-
-        static RubyClass define(final Ruby runtime, final RubyClass proxy) {
-            proxy.defineAnnotatedMethods(AccessibleObject.class);
-            return proxy;
-        }
-
         @JRubyMethod
         public static IRubyObject inspect(final ThreadContext context, final IRubyObject self) {
             final java.lang.reflect.AccessibleObject obj = JavaUtil.unwrapJavaObject(self);
@@ -83,12 +78,6 @@ public abstract class JavaLangReflect {
 
     @JRubyClass(name = "Java::JavaLangReflect::Constructor")
     public static class Constructor {
-
-        static RubyClass define(final Ruby runtime, final RubyClass proxy) {
-            proxy.defineAnnotatedMethods(Constructor.class);
-            return proxy;
-        }
-
         @JRubyMethod
         public static IRubyObject return_type(final ThreadContext context, final IRubyObject self) {
             return context.nil;
@@ -128,7 +117,7 @@ public abstract class JavaLangReflect {
 
         @Deprecated(since = "9.4", forRemoval = true)
         public static IRubyObject public_p(final IRubyObject self) {
-            return public_p(self.getRuntime().getCurrentContext(), self);
+            return public_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
 
         @JRubyMethod(name = "protected?")
@@ -181,12 +170,6 @@ public abstract class JavaLangReflect {
 
     @JRubyClass(name = "Java::JavaLangReflect::Method")
     public static class Method {
-
-        static RubyClass define(final Ruby runtime, final RubyClass proxy) {
-            proxy.defineAnnotatedMethods(Method.class);
-            return proxy;
-        }
-
         @JRubyMethod
         public static IRubyObject return_type(final ThreadContext context, final IRubyObject self) {
             final java.lang.reflect.Method thiz = JavaUtil.unwrapJavaObject(self);
@@ -297,20 +280,15 @@ public abstract class JavaLangReflect {
             return isStatic(context, self, thiz.getModifiers());
         }
 
+        @Deprecated(since = "10.0")
         public static IRubyObject static_p(final IRubyObject self) {
-            return static_p(self.getRuntime().getCurrentContext(), self);
+            return static_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
 
     }
 
     @JRubyClass(name = "Java::JavaLangReflect::Field")
     public static class Field {
-
-        static RubyClass define(final Ruby runtime, final RubyClass proxy) {
-            proxy.defineAnnotatedMethods(Field.class);
-            return proxy;
-        }
-
         @JRubyMethod
         public static IRubyObject value_type(final ThreadContext context, final IRubyObject self) {
             final java.lang.reflect.Field field = JavaUtil.unwrapJavaObject(self);

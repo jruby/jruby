@@ -29,12 +29,14 @@
 package org.jruby.ext.socket;
 
 import org.jruby.Ruby;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -55,6 +57,8 @@ import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
@@ -63,13 +67,10 @@ import static org.jruby.api.Error.typeError;
  */
 @JRubyClass(name="TCPServer", parent="TCPSocket")
 public class RubyTCPServer extends RubyTCPSocket {
-    static void createTCPServer(Ruby runtime) {
-        RubyClass rb_cTCPServer = runtime.defineClass(
-                "TCPServer", runtime.getClass("TCPSocket"), RubyTCPServer::new);
-
-        rb_cTCPServer.defineAnnotatedMethods(RubyTCPServer.class);
-
-        runtime.getObject().setConstant("TCPserver",rb_cTCPServer);
+    static void createTCPServer(ThreadContext context, RubyClass TCPSocket, RubyClass Object) {
+        Object.defineConstant(context, "TCPServer",
+                defineClass(context, "TCPServer", TCPSocket, RubyTCPServer::new).
+                        defineMethods(context, RubyTCPServer.class));
     }
 
     public RubyTCPServer(Ruby runtime, RubyClass type) {
@@ -119,7 +120,7 @@ public class RubyTCPServer extends RubyTCPSocket {
         } catch(UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "initialize: name or service not known");
         } catch(BindException e) {
-            throw runtime.newErrnoFromBindException(e, bindContextMessage(_host, port));
+            throw runtime.newErrnoFromBindException(e, bindContextMessage(context, _host, port));
         } catch(SocketException e) {
             String msg = e.getMessage();
 
@@ -137,8 +138,7 @@ public class RubyTCPServer extends RubyTCPSocket {
 
     @JRubyMethod(name = "accept")
     public IRubyObject accept(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        RubyTCPSocket socket = new RubyTCPSocket(runtime, runtime.getClass("TCPSocket"));
+        RubyTCPSocket socket = new RubyTCPSocket(context.runtime, Access.getClass(context, "TCPSocket"));
 
         try {
             RubyThread thread = context.getThread();
@@ -163,14 +163,14 @@ public class RubyTCPServer extends RubyTCPSocket {
                     }
 
                     // otherwise one key has been selected (ours) so we get the channel and hand it off
-                    socket.initSocket(newChannelFD(runtime, connected));
+                    socket.initSocket(newChannelFD(context.runtime, connected));
 
                     return socket;
                 }
             }
 
         } catch(IOException e) {
-            throw runtime.newIOErrorFromException(e);
+            throw context.runtime.newIOErrorFromException(e);
         }
     }
 
@@ -185,7 +185,7 @@ public class RubyTCPServer extends RubyTCPSocket {
     }
 
     public IRubyObject accept_nonblock(ThreadContext context, Ruby runtime, boolean ex) {
-        RubyTCPSocket socket = new RubyTCPSocket(runtime, runtime.getClass("TCPSocket"));
+        RubyTCPSocket socket = new RubyTCPSocket(runtime, Access.getClass(context, "TCPSocket"));
         Selector selector = null;
         ServerSocketChannel ssc = getServerSocketChannel();
 
@@ -205,7 +205,7 @@ public class RubyTCPServer extends RubyTCPSocket {
                         throw runtime.newErrnoEAGAINReadableError("Resource temporarily unavailable");
                     }
 
-                    return runtime.newSymbol("wait_readable");
+                    return asSymbol(context, "wait_readable");
 
                 } else {
                     // otherwise one key has been selected (ours) so we get the channel and hand it off
@@ -310,16 +310,16 @@ public class RubyTCPServer extends RubyTCPSocket {
 
     @Deprecated
     public IRubyObject accept() {
-        return accept(getRuntime().getCurrentContext());
+        return accept(getCurrentContext());
     }
 
     @Deprecated
     public IRubyObject listen(IRubyObject backlog) {
-        return listen(getRuntime().getCurrentContext(), backlog);
+        return listen(((RubyBasicObject) backlog).getCurrentContext(), backlog);
     }
 
     @Deprecated
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
-        return open(recv.getRuntime().getCurrentContext(), recv, args, block);
+        return open(((RubyBasicObject) recv).getCurrentContext(), recv, args, block);
     }
 }

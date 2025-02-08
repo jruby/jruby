@@ -38,7 +38,10 @@ import org.jruby.RubyModule;
 import org.jruby.RubyNil;
 import org.jruby.RubyObject;
 import org.jruby.embed.internal.BiVariableMap;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import static org.jruby.api.Create.newArray;
 
 /**
  *
@@ -115,9 +118,9 @@ public class Argv extends AbstractVariable {
      */
     @Override
     public synchronized void inject() {
-        final Ruby runtime = getRuntime();
+        var context = getRuntime().getCurrentContext();
 
-        final var argv = RubyArray.newArray(runtime);
+        final var argv = newArray(context);
         if ( javaObject instanceof Collection ) {
             argv.addAll( (Collection) javaObject );
         }
@@ -126,14 +129,14 @@ public class Argv extends AbstractVariable {
         }
         this.rubyObject = argv; fromRuby = true;
 
-        RubyModule rubyModule = getRubyClass(runtime);
+        RubyModule rubyModule = getRubyClass(context.runtime);
         // SSS FIXME: With rubyclass stack gone, this needs a replacement
         if (rubyModule == null) rubyModule = null; // receiver.getRuntime().getCurrentContext().getRubyClass();
 
         if (rubyModule == null) return;
 
-        rubyModule.storeConstant(name, argv);
-        runtime.getConstantInvalidator(name).invalidate();
+        rubyModule.storeConstant(context, name, argv);
+        context.runtime.getConstantInvalidator(name).invalidate();
     }
 
     /**
@@ -153,14 +156,14 @@ public class Argv extends AbstractVariable {
      * @param vars map to save retrieved constants.
      */
     public static void retrieve(final RubyObject receiver, final BiVariableMap vars) {
-        if ( vars.isLazy() ) return;
-        updateARGV(receiver, vars);
+        if (vars.isLazy()) return;
+        updateARGV(receiver.getRuntime().getCurrentContext(), receiver, vars);
     }
 
-    private static void updateARGV(final IRubyObject receiver, final BiVariableMap vars) {
+    private static void updateARGV(ThreadContext context, IRubyObject receiver, final BiVariableMap vars) {
         final String name = "ARGV";
         final RubyObject topSelf = getTopSelf(receiver);
-        final IRubyObject argv = topSelf.getMetaClass().getConstant(name);
+        final IRubyObject argv = topSelf.getMetaClass().getConstant(context, name);
         if ( argv == null || (argv instanceof RubyNil) ) return;
         // ARGV constant should be only one
         if ( vars.containsKey(name) ) {
@@ -187,8 +190,9 @@ public class Argv extends AbstractVariable {
      * @param key instace varible name
      */
     public static void retrieveByKey(RubyObject receiver, BiVariableMap vars, String key) {
+        var context = receiver.getRuntime().getCurrentContext();
         assert key.equals("ARGV");
-        updateARGV(receiver, vars);
+        updateARGV(context, receiver, vars);
     }
 
     @Override

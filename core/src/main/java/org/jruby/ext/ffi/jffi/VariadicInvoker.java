@@ -39,14 +39,10 @@ public class VariadicInvoker extends RubyObject {
     private static final java.util.Locale LOCALE = java.util.Locale.ENGLISH;
 
 
-    public static RubyClass createVariadicInvokerClass(Ruby runtime, RubyModule module) {
-        RubyClass result = module.defineClassUnder("VariadicInvoker",
-                runtime.getObject(),
-                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        result.defineAnnotatedMethods(VariadicInvoker.class);
-        result.defineAnnotatedConstants(VariadicInvoker.class);
-
-        return result;
+    public static RubyClass createVariadicInvokerClass(ThreadContext context, RubyModule FFI, RubyClass Object) {
+        return FFI.defineClassUnder(context, "VariadicInvoker", Object, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR).
+                defineMethods(context, VariadicInvoker.class).
+                defineConstants(context, VariadicInvoker.class);
     }
 
     private VariadicInvoker(Ruby runtime, IRubyObject klazz, Pointer address,
@@ -143,7 +139,7 @@ public class VariadicInvoker extends RubyObject {
         IRubyObject[] params = ((RubyArray) paramsArg).toJavaArrayMaybeUnsafe();
         com.kenai.jffi.Type[] ffiParamTypes = new com.kenai.jffi.Type[types.length];
         ParameterMarshaller[] marshallers = new ParameterMarshaller[types.length];
-        RubyClass builtinClass = Type.getTypeClass(context.getRuntime()).getClass("Builtin");
+        RubyClass builtinClass = Type.getTypeClass(context.runtime).getClass(context, "Builtin");
 
         for (int i = 0; i < types.length; ++i) {
             Type type = (Type) types[i];
@@ -152,18 +148,18 @@ public class VariadicInvoker extends RubyObject {
                 case SHORT:
                 case INT:
                     ffiParamTypes[i] = com.kenai.jffi.Type.SINT32;
-                    marshallers[i] = DefaultMethodFactory.getMarshaller((Type)builtinClass.getConstant(NativeType.INT.name().toUpperCase(LOCALE)), convention, enums);
+                    marshallers[i] = DefaultMethodFactory.getMarshaller((Type)builtinClass.getConstant(context, NativeType.INT.name().toUpperCase(LOCALE)), convention, enums);
                     break;
                 case UCHAR:
                 case USHORT:
                 case UINT:
                     ffiParamTypes[i] = com.kenai.jffi.Type.UINT32;
-                    marshallers[i] = DefaultMethodFactory.getMarshaller((Type)builtinClass.getConstant(NativeType.UINT.name().toUpperCase(LOCALE)), convention, enums);
+                    marshallers[i] = DefaultMethodFactory.getMarshaller((Type)builtinClass.getConstant(context, NativeType.UINT.name().toUpperCase(LOCALE)), convention, enums);
                     break;
                 case FLOAT:
                 case DOUBLE:
                     ffiParamTypes[i] = com.kenai.jffi.Type.DOUBLE;
-                    marshallers[i] = DefaultMethodFactory.getMarshaller((Type)builtinClass.getConstant(NativeType.DOUBLE.name().toUpperCase(LOCALE)), convention, enums);
+                    marshallers[i] = DefaultMethodFactory.getMarshaller((Type)builtinClass.getConstant(context, NativeType.DOUBLE.name().toUpperCase(LOCALE)), convention, enums);
                     break;
                 default:
                     ffiParamTypes[i] = FFIUtil.getFFIType(type);

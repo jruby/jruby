@@ -39,15 +39,21 @@ import org.jcodings.Encoding;
 import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.*;
+import org.jruby.api.Warn;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.EncodingUtils;
 
-import static org.jruby.api.Convert.numericToLong;
+import static org.jruby.api.Access.fixnumClass;
+import static org.jruby.api.Access.integerClass;
+import static org.jruby.api.Access.stringClass;
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Warn.warn;
 
 
 /**
@@ -109,7 +115,7 @@ public class Sprintf {
             if (rubyObject instanceof RubyArray) {
                 this.rubyArray = (RubyArray)rubyObject;
 
-                if (rubyArray.last() instanceof RubyHash) {
+                if (rubyArray.last(rubyArray.getRuntime().getCurrentContext()) instanceof RubyHash) {
                     this.rubyHash = (RubyHash) rubyArray.pop(rubyArray.getRuntime().getCurrentContext());
                 } else {
                     this.rubyHash = null;
@@ -153,10 +159,6 @@ public class Sprintf {
 
         void warn(ID id, String message) {
             runtime.getWarnings().warn(id, message);
-        }
-
-        void warning(ID id, String message) {
-            if (runtime.isVerbose()) runtime.getWarnings().warning(id, message);
         }
 
         private IRubyObject getHashValue(ByteList name, char startDelim, char endDelim) {
@@ -286,32 +288,12 @@ public class Sprintf {
             return object;
         }
 
-        @Deprecated
-        IRubyObject get(int index) {
-            return getPositionArg(index);
-        }
-
-        @Deprecated
-        IRubyObject getNth(int formatIndex) {
-            return getPositionArg(formatIndex);
-        }
-
-        @Deprecated
-        int nextInt() {
-            return intValue(next(null));
-        }
-
-        @Deprecated
-        int getNthInt(int formatIndex) {
-            return intValue(get(formatIndex - 1));
-        }
-
-        int intValue(IRubyObject obj) {
-            if (obj instanceof RubyNumeric) return (int)((RubyNumeric)obj).getLongValue();
+        int intValue(ThreadContext context, IRubyObject obj) {
+            if (obj instanceof RubyNumeric num) return num.asInt(context);
 
             // basically just forcing a TypeError here to match MRI
-            obj = TypeConverter.convertToType(obj, obj.getRuntime().getFixnum(), "to_int", true);
-            return (int)((RubyFixnum)obj).getLongValue();
+            obj = TypeConverter.convertToType(obj, fixnumClass(context), "to_int", true);
+            return ((RubyFixnum)obj).asInt(context);
         }
 
         byte getDecimalSeparator() {
@@ -364,8 +346,7 @@ public class Sprintf {
 
     private static void rubySprintfToBuffer(final ByteList buf, final CharSequence charFormat,
                                                final Args args, final boolean usePrefixForZero) {
-        final Ruby runtime = args.runtime;
-        ThreadContext context = runtime.getCurrentContext();
+        ThreadContext context = args.runtime.getCurrentContext();
         final byte[] format;
         final Encoding encoding;
 
@@ -476,7 +457,7 @@ public class Sprintf {
 
                     if (nameEnd == nameStart) raiseArgumentError(args, ERR_MALFORMED_NAME);
                     ByteList newName = new ByteList(format, nameStart, nameEnd - nameStart, encoding, false);
-                    if (name != null) raiseArgumentError(args, "named<" + newString(runtime.getCurrentContext(), newName) + "> after <" + RubyString.newString(runtime, name) + ">");
+                    if (name != null) raiseArgumentError(args, "named<" + newString(context, newName) + "> after <" + newString(context, name) + ">");
                     name = newName;
                     // we retrieve value from hash so we can generate argument error as side-effect.
                     args.nextObject = args.getHashValue(name, '<', '>');
@@ -500,13 +481,13 @@ public class Sprintf {
 
                     ByteList localName = new ByteList(format, nameStart, nameEnd - nameStart, encoding, false);
                     IRubyObject value = args.getHashValue(localName, '{', '}');
-                    RubyString str = (RubyString) TypeConverter.convertToType(value, runtime.getString(), "to_s");
+                    RubyString str = (RubyString) TypeConverter.convertToType(value, stringClass(context), "to_s");
                     ByteList bytes = str.getByteList();
 
                     // peek to see if it has a format specifier.  If not we need to handle it now.
                     if (offset < length && !isFormatSpecifier(format[offset]) || offset == length) {
                         int len = bytes.length();
-                        Encoding enc = RubyString.checkEncoding(runtime, buf, bytes);
+                        Encoding enc = RubyString.checkEncoding(context.runtime, buf, bytes);
                         if ((flags & (FLAG_PRECISION|FLAG_WIDTH)) != 0) {
                             int strLen = str.strLength();
                             if ((flags & FLAG_PRECISION) != 0 && precision < strLen) {
@@ -548,12 +529,12 @@ public class Sprintf {
                 case '*':
                     if ((flags & FLAG_WIDTH) != 0) raiseArgumentError(args,"width given twice");
                     flags |= FLAG_WIDTH;
-                    int[] p_width = GETASTER(args, format, offset, length, true);
+                    int[] p_width = GETASTER(context, args, format, offset, length, true);
                     offset = p_width[0]; width = p_width[1];
                     if (width < 0) {
                         flags |= FLAG_MINUS;
                         width = -width;
-                        if (width < 0) throw argumentError(runtime.getCurrentContext(), "width too big");
+                        if (width < 0) throw argumentError(context, "width too big");
                     }
                     break;
 
@@ -565,7 +546,7 @@ public class Sprintf {
                     checkOffset(args, ++offset, length, ERR_MALFORMED_DOT_NUM);
                     fchar = format[offset];
                     if (fchar == '*') {
-                        int[] p_prec = GETASTER(args, format, offset, length, false);
+                        int[] p_prec = GETASTER(context, args, format, offset, length, false);
                         offset = p_prec[0]; precision = p_prec[1];
                         if (precision < 0) {
                             flags &= ~FLAG_PRECISION;
@@ -606,28 +587,25 @@ public class Sprintf {
                             n = StringSupport.codeLength(bl.getEncoding(), c);
                         }
                     } else {
-                        c = (int) numericToLong(context, arg) & 0xFFFFFFFF;
+                        c = (int) toLong(context, arg) & 0xFFFFFFFF;
                         try {
                             n = StringSupport.codeLength(encoding, c);
                         } catch (EncodingException e) {
                             n = -1;
                         }
                     }
-                    if (n < 0) {
-                        throw argumentError(runtime.getCurrentContext(), "invalid character");
-                    }
+                    if (n < 0) throw argumentError(context, "invalid character");
+
                     if ((flags & FLAG_WIDTH) == 0) {
                         buf.ensure(buf.length() + n);
                         EncodingUtils.encMbcput(context, c, buf.unsafeBytes(), buf.realSize(), encoding);
                         buf.realSize(buf.realSize() + n);
-                    }
-                    else if ((flags & FLAG_MINUS) != 0) {
+                    } else if ((flags & FLAG_MINUS) != 0) {
                         buf.ensure(buf.length() + n);
                         EncodingUtils.encMbcput(context, c, buf.unsafeBytes(), buf.realSize(), encoding);
                         buf.realSize(buf.realSize() + n);
                         buf.fill(' ', width - n);
-                    }
-                    else {
+                    } else {
                         buf.fill(' ', width - n);
                         buf.ensure(buf.length() + n);
                         EncodingUtils.encMbcput(context, c, buf.unsafeBytes(), buf.realSize(), encoding);
@@ -644,8 +622,8 @@ public class Sprintf {
                     arg = args.getArg();
 
                     ByteList bytes = new ByteList();
-                    final boolean positive = isPositive(arg);
-                    double fval = RubyKernel.new_float(context, arg).getDoubleValue();
+                    final boolean positive = isPositive(context, arg);
+                    double fval = RubyKernel.new_float(context, arg).asDouble(context);
                     boolean negative = fval < 0.0d || (fval == 0.0d && Double.doubleToLongBits(fval) == Double.doubleToLongBits(-0.0));
                     boolean isnan = Double.isNaN(fval);
                     boolean isinf = fval == Double.POSITIVE_INFINITY || fval == Double.NEGATIVE_INFINITY;
@@ -670,7 +648,7 @@ public class Sprintf {
                         bytes.append('0');
                         bytes.append(fchar == 'a' ? 'x' : 'X');
                     }
-                    precision = generateBinaryFloat(flags, precision, fchar, bytes, arg);
+                    precision = generateBinaryFloat(context, flags, precision, fchar, bytes, arg);
                     int bytesLength = bytes.length(); // We know numbers will be 7 bit ascii.
 
                     if ((flags & FLAG_MINUS) == 0) {
@@ -713,12 +691,12 @@ public class Sprintf {
                     arg = args.getArg();
 
                     if (fchar == 'p') {
-                        arg = arg.callMethod(runtime.getCurrentContext(), "inspect");
+                        arg = arg.callMethod(context, "inspect");
                     }
                     RubyString str = arg.asString();
                     ByteList bytes = str.getByteList();
                     int len = bytes.length();
-                    Encoding enc = RubyString.checkEncoding(runtime, buf, bytes);
+                    Encoding enc = RubyString.checkEncoding(context.runtime, buf, bytes);
                     if ((flags & (FLAG_PRECISION|FLAG_WIDTH)) != 0) {
                         int strLen = str.strLength();
                         if ((flags & FLAG_PRECISION) != 0 && precision < strLen) {
@@ -766,14 +744,14 @@ public class Sprintf {
                     case INTEGER: // no-op
                         break;
                     case FLOAT:
-                        arg = RubyNumeric.dbl2ival(runtime, ((RubyFloat) arg).getValue());
+                        arg = RubyNumeric.dbl2ival(context.runtime, ((RubyFloat) arg).asLong(context));
                         break;
                     case STRING:
                         arg = ((RubyString) arg).stringToInum(0, true);
                         break;
                     default:
-                        arg = TypeConverter.convertToInteger(runtime.getCurrentContext(), arg, 0);
-                        if (!(arg instanceof RubyInteger)) throw typeError(runtime.getCurrentContext(), arg, runtime.getInteger());
+                        arg = TypeConverter.convertToInteger(context, arg, 0);
+                        if (!(arg instanceof RubyInteger)) throw typeError(context, arg, integerClass(context));
                         break;
                     }
                     byte[] bytes;
@@ -812,8 +790,8 @@ public class Sprintf {
                     // uses C-sprintf, in part, to format numeric output, while
                     // we'll use Java's numeric formatting code (and our own).
                     boolean zero;
-                    if (arg instanceof RubyFixnum) {
-                        final long v = ((RubyFixnum) arg).getLongValue();
+                    if (arg instanceof RubyFixnum fixnum) {
+                        final long v = fixnum.asLong(context);
                         negative = v < 0;
                         zero = v == 0;
                         if (negative && fchar == 'u') {
@@ -860,7 +838,7 @@ public class Sprintf {
                         }
                     } else if (negative) {
                         if (base == 10) {
-                            warning(ID.NEGATIVE_NUMBER_FOR_U, args, "negative number for %u specifier");
+                            Warn.warning(context, "negative number for %u specifier");
                             leadChar = '.';
                             len += 2;
                         } else {
@@ -945,7 +923,7 @@ public class Sprintf {
                     byte sign = (flags & FLAG_PLUS) != 0 ? (byte) 1 : (byte) 0; int zero = 0;
 
                     if (arg instanceof RubyInteger) {
-                        den = RubyFixnum.one(runtime);
+                        den = asFixnum(context, 1);
                         num = (RubyInteger) arg;
                     }
                     else if (arg instanceof RubyRational) {
@@ -961,12 +939,12 @@ public class Sprintf {
                     if (num != null) { // else -> goto float_value;
                         if ((flags & FLAG_PRECISION) == 0) precision = 6; // default_float_precision;
 
-                        if (num.isNegative()) {
+                        if (num.isNegative(context)) {
                             num = (RubyInteger) num.op_uminus(context);
                             sign = -1;
                         }
 
-                        if (!(den instanceof RubyFixnum) || den.getLongValue() != 1) {
+                        if (!(den instanceof RubyFixnum) || den.asLong(context) != 1) {
                             num = (RubyInteger) num.op_mul(context, Numeric.int_pow(context, 10, precision));
                             num = (RubyInteger) num.op_plus(context, den.idiv(context, 2));
                             num = (RubyInteger) num.idiv(context, den);
@@ -1034,7 +1012,7 @@ public class Sprintf {
                 float_value: {
                     arg = args.getArg();
 
-                    double fval = RubyKernel.new_float(context, arg).getDoubleValue();
+                    double fval = RubyKernel.new_float(context, arg).asDouble(context);
                     boolean isnan = Double.isNaN(fval);
                     boolean isinf = fval == Double.POSITIVE_INFINITY || fval == Double.NEGATIVE_INFINITY;
                     boolean negative = fval < 0.0d || (fval == 0.0d && Double.doubleToLongBits(fval) == Double.doubleToLongBits(-0.0));
@@ -1541,10 +1519,10 @@ public class Sprintf {
 
         // MRI behavior: validate only the unnumbered arguments
         if (args.rubyHash == null && args.positionIndex >= 0 && args.nextIndex <= args.length) {
-            if (args.runtime.isDebug()) {
+            if (context.runtime.isDebug()) {
                 args.raiseArgumentError("too many arguments for format string");
-            } else if (args.runtime.isVerbose()) {
-                args.warn(ID.TOO_MANY_ARGUMENTS, "too many arguments for format string");
+            } else if (context.runtime.isVerbose()) {
+                warn(context, "too many arguments for format string");
             }
         }
     }
@@ -1553,9 +1531,9 @@ public class Sprintf {
         return "aAbBcdeEfgGiopsuxX".contains(""+b);
     }
 
-    private static int generateBinaryFloat(int flags, int precision, byte fchar, ByteList bytes, IRubyObject arg) {
-        long exponent = getExponent(arg);
-        final byte[] mantissaBytes = getMantissaBytes(arg);
+    private static int generateBinaryFloat(ThreadContext context, int flags, int precision, byte fchar, ByteList bytes, IRubyObject arg) {
+        long exponent = getExponent(context, arg);
+        final byte[] mantissaBytes = getMantissaBytes(context, arg);
 
         if (mantissaBytes[0] == 0) {
             exponent = 0;
@@ -1713,18 +1691,14 @@ public class Sprintf {
         args.raiseArgumentError(message);
     }
 
-    private static void warning(ID id, Args args, String message) {
-        args.warning(id, message);
-    }
-
     private static void checkOffset(Args args, int offset, int length, String message) {
         if (offset >= length) {
             raiseArgumentError(args, message);
         }
     }
 
-    private static int[] GETASTER(final Args args, final byte[] format, int offset, final int length,
-                                  final boolean width) {
+    private static int[] GETASTER(ThreadContext context, final Args args, final byte[] format, int offset,
+                                  final int length, final boolean width) {
         checkOffset(args, ++offset, length, ERR_MALFORMED_STAR_NUM);
 
         final int mark = offset;
@@ -1743,7 +1717,7 @@ public class Sprintf {
             tmp = args.getNextArg();
             offset = mark;
         }
-        return new int[] { offset, args.intValue(tmp) }; // [ offset, prec/width ]
+        return new int[] { offset, args.intValue(context, tmp) }; // [ offset, prec/width ]
     }
 
     private static int extendWidth(Args args, int oldWidth, byte newChar, final String errMessage) {
@@ -1930,16 +1904,13 @@ public class Sprintf {
         }
     }
 
-    private static boolean isPositive(Object value) {
-        if (value instanceof RubyFloat) {
-            final long bits = Double.doubleToRawLongBits(((RubyFloat) value).getDoubleValue());
-            return (bits & SIGN_MASK) == 0;
-        } else if (value instanceof RubyFixnum) {
-            return ((RubyFixnum) value).getLongValue() >= 0;
-        } else if (value instanceof RubyBignum) {
-            return ((RubyBignum) value).signum() >= 0;
-        }
-        return true;
+    private static boolean isPositive(ThreadContext context, Object value) {
+        return switch (value) {
+            case RubyFloat flote -> (Double.doubleToRawLongBits(flote.asDouble(context)) & SIGN_MASK) == 0;
+            case RubyFixnum fixnum -> fixnum.asLong(context) >= 0;
+            case RubyBignum bignum -> bignum.signum(context) >= 0;
+            default -> true;
+        };
     }
 
     private static final long SIGN_MASK = 1L << 63;
@@ -1948,20 +1919,20 @@ public class Sprintf {
     private static final byte[] HEX_DIGITS = new byte[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
     private static final byte[] HEX_DIGITS_UPPER_CASE = new byte[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 
-    private static byte[] getMantissaBytes(IRubyObject value) {
+    private static byte[] getMantissaBytes(ThreadContext context, IRubyObject value) {
         BigInteger bi;
         if (value instanceof RubyFloat) {
-            final long bits = Double.doubleToRawLongBits(((RubyFloat) value).getDoubleValue());
+            final long bits = Double.doubleToRawLongBits(((RubyFloat) value).asDouble(context));
             long biasedExp = ((bits & BIASED_EXP_MASK) >> 52);
             long mantissaBits = bits & MANTISSA_MASK;
             if (biasedExp > 0) {
                 mantissaBits = mantissaBits | 0x10000000000000L;
             }
             bi = BigInteger.valueOf(mantissaBits);
-        } else if (value instanceof RubyFixnum) {
-            bi = BigInteger.valueOf(((RubyFixnum) value).getLongValue());
-        } else if (value instanceof RubyBignum) {
-            bi = ((RubyBignum) value).getValue();
+        } else if (value instanceof RubyFixnum fixnum) {
+            bi = BigInteger.valueOf(fixnum.asLong(context));
+        } else if (value instanceof RubyBignum bignum) {
+            bi = bignum.getValue();
         } else {
             bi = BigInteger.ZERO;
         }
@@ -1981,14 +1952,14 @@ public class Sprintf {
         return bi.toByteArray();
     }
 
-    private static long getExponent(IRubyObject value) {
-        if (value instanceof RubyBignum) {
-            return ((RubyBignum) value).getValue().abs().bitLength() - 1;
-        } else if (value instanceof RubyFixnum) {
-            long lval = ((RubyFixnum) value).getLongValue();
+    private static long getExponent(ThreadContext context, IRubyObject value) {
+        if (value instanceof RubyBignum bignum) {
+            return bignum.getValue().abs().bitLength() - 1;
+        } else if (value instanceof RubyFixnum fixnum) {
+            long lval = fixnum.asLong(context);
             return lval == Long.MIN_VALUE ? 63 : 63 - Long.numberOfLeadingZeros(Math.abs(lval));
-        } else if (value instanceof RubyFloat) {
-            final long bits = Double.doubleToRawLongBits(((RubyFloat) value).getDoubleValue());
+        } else if (value instanceof RubyFloat flote) {
+            final long bits = Double.doubleToRawLongBits(flote.asDouble(context));
             long biasedExp = ((bits & BIASED_EXP_MASK) >> 52);
             long mantissaBits = bits & MANTISSA_MASK;
             if (biasedExp == 0) {

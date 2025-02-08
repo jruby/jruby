@@ -11,7 +11,7 @@ public class CommonByteLists {
     public static final ByteList AMPERSAND_AMPERSAND = new ByteList(new byte[] {'&', '&'});
     public static final ByteList AREF_METHOD = new ByteList(new byte[] {'[', ']'});
     public static final ByteList ASET_METHOD = new ByteList(new byte[] {'[', ']', '='});
-    public static final ByteList BACKTRACE_IN = new ByteList(new byte[] {':', 'i', 'n', ' ', '`'});
+    public static final ByteList BACKTRACE_IN = new ByteList(new byte[] {':', 'i', 'n', ' ', '\''});
     public static final ByteList CARET = new ByteList(new byte[] {'^'});
     public static final ByteList COLON = new ByteList(new byte[] {':'});
     public static final ByteList COLON_COLON = new ByteList(new byte[] {':', ':'});

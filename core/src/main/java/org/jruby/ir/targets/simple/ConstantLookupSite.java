@@ -10,6 +10,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.opto.ConstantCache;
 import org.jruby.runtime.opto.Invalidator;
 
+import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Error.typeError;
 
 public class ConstantLookupSite {
@@ -24,17 +25,16 @@ public class ConstantLookupSite {
 
     private IRubyObject cacheSearchConst(ThreadContext context, StaticScope staticScope, boolean publicOnly) {
         // Lexical lookup
-        Ruby runtime = context.runtime;
-        RubyModule object = runtime.getObject();
         String id = this.id;
-        IRubyObject constant = (staticScope == null) ? object.getConstant(id) : staticScope.getConstantInner(id);
+        IRubyObject constant = staticScope.getScopedConstant(context, id);
 
         // Inheritance lookup
         RubyModule module = null;
         if (constant == null) {
-            // SSS FIXME: Is this null check case correct?
-            module = staticScope == null ? object : staticScope.getModule();
-            constant = publicOnly ? module.getConstantFromNoConstMissing(id, false) : module.getConstantNoConstMissing(id);
+            module = staticScope.getModule();
+            constant = publicOnly ?
+                    module.getConstantFromNoConstMissing(context, id, false) :
+                    module.getConstantNoConstMissing(context, id);
         }
 
         // Call const_missing or cache
@@ -42,7 +42,7 @@ public class ConstantLookupSite {
             constant = module.callMethod(context, "const_missing", name);
         } else {
             // recache
-            Invalidator invalidator = runtime.getConstantInvalidator(id);
+            Invalidator invalidator = context.runtime.getConstantInvalidator(id);
             cache = new ConstantCache(constant, invalidator.getData(), invalidator);
         }
 
@@ -57,7 +57,7 @@ public class ConstantLookupSite {
     }
 
     private IRubyObject cacheLexicalSearchConst(ThreadContext context, StaticScope staticScope) {
-        IRubyObject constant = staticScope.getConstantDefined(id);
+        IRubyObject constant = staticScope.getConstantDefined(context, id);
 
         if (constant == null) {
             constant = UndefinedValue.UNDEFINED;
@@ -77,44 +77,45 @@ public class ConstantLookupSite {
         return cache.value;
     }
 
-    private IRubyObject cacheInheritanceSearchConst(Ruby runtime, RubyModule module) {
+    private IRubyObject cacheInheritanceSearchConst(ThreadContext context, RubyModule module) {
         String id = this.id;
-        IRubyObject constant = module.getConstantNoConstMissingSkipAutoload(id);
+        IRubyObject constant = module.getConstantNoConstMissingSkipAutoload(context, id);
         if (constant == null) {
             constant = UndefinedValue.UNDEFINED;
         } else {
             // recache
-            Invalidator invalidator = runtime.getConstantInvalidator(id);
+            Invalidator invalidator = context.runtime.getConstantInvalidator(id);
             cache = new ConstantCache(constant, invalidator.getData(), invalidator, module.hashCode());
         }
         return constant;
     }
 
     public IRubyObject inheritanceSearchConst(ThreadContext context, IRubyObject cmVal) {
-        if (!(cmVal instanceof RubyModule)) throw typeError(context, "", cmVal, " is not a class/module");
-        RubyModule module = (RubyModule) cmVal;
+        if (!(cmVal instanceof RubyModule module)) throw typeError(context, "", cmVal, " is not a class/module");
 
         ConstantCache cache = this.cache;
 
-        return !ConstantCache.isCachedFrom(module, cache) ? cacheInheritanceSearchConst(context.runtime, module) : cache.value;
+        return !ConstantCache.isCachedFrom(module, cache) ? cacheInheritanceSearchConst(context, module) : cache.value;
     }
 
-    private IRubyObject cacheSearchModuleForConst(Ruby runtime, RubyModule module, boolean publicOnly) {
+    private IRubyObject cacheSearchModuleForConst(ThreadContext context, RubyModule module, boolean publicOnly) {
         String id = this.id;
-        IRubyObject constant = publicOnly ? module.getConstantFromNoConstMissing(id, false) : module.getConstantNoConstMissing(id);
+        IRubyObject constant = publicOnly ?
+                module.getConstantFromNoConstMissing(context, id, false) :
+                module.getConstantNoConstMissing(context, id);
         if (constant != null) {
-            Invalidator invalidator = runtime.getConstantInvalidator(id);
+            Invalidator invalidator = context.runtime.getConstantInvalidator(id);
             cache = new ConstantCache(constant, invalidator.getData(), invalidator, module.hashCode());
         }
         return constant;
     }
 
     public IRubyObject searchModuleForConst(ThreadContext context, IRubyObject cmVal, boolean publicOnly, boolean callConstMissing) {
-        if (!(cmVal instanceof RubyModule)) throw typeError(context, "", cmVal, " is not a class/module");
-        RubyModule module = (RubyModule) cmVal;
+        if (!(cmVal instanceof RubyModule module)) throw typeError(context, "", cmVal, " is not a class/module");
 
         ConstantCache cache = this.cache;
-        IRubyObject result = !ConstantCache.isCachedFrom(module, cache) ? cacheSearchModuleForConst(context.runtime, module, publicOnly) : cache.value;
+        IRubyObject result = !ConstantCache.isCachedFrom(module, cache) ?
+                cacheSearchModuleForConst(context, module, publicOnly) : cache.value;
         if (result != null) return result;
 
         return callConstMissing ?

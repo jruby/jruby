@@ -38,7 +38,6 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.compiler.Constantizable;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
@@ -89,8 +88,7 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
         return true;
     }
 
-    @Override
-    public RubyClass getSingletonClass() {
+    public RubyClass singletonClass(ThreadContext context) {
         return metaClass;
     }
 
@@ -107,32 +105,18 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
         return constant;
     }
 
-    public static RubyClass createFalseClass(Ruby runtime) {
-        RubyClass falseClass = runtime.defineClass("FalseClass", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-
-        falseClass.setClassIndex(ClassIndex.FALSE);
-        falseClass.setReifiedClass(RubyBoolean.class);
-        
-        falseClass.defineAnnotatedMethods(False.class);
-        falseClass.defineAnnotatedMethods(RubyBoolean.class);
-
-        falseClass.getMetaClass().undefineMethod("new");
-
-        return falseClass;
+    public static void finishFalseClass(ThreadContext context, RubyClass False) {
+        False.reifiedClass(RubyBoolean.class).
+                classIndex(ClassIndex.FALSE).
+                defineMethods(context, False.class, RubyBoolean.class).
+                tap(c -> c.getMetaClass().undefMethods(context, "new"));
     }
     
-    public static RubyClass createTrueClass(Ruby runtime) {
-        RubyClass trueClass = runtime.defineClass("TrueClass", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-
-        trueClass.setClassIndex(ClassIndex.TRUE);
-        trueClass.setReifiedClass(RubyBoolean.class);
-        
-        trueClass.defineAnnotatedMethods(True.class);
-        trueClass.defineAnnotatedMethods(RubyBoolean.class);
-        
-        trueClass.getMetaClass().undefineMethod("new");
-
-        return trueClass;
+    public static void finishTrueClass(ThreadContext context, RubyClass True) {
+        True.reifiedClass(RubyBoolean.class).
+                classIndex(ClassIndex.TRUE).
+                defineMethods(context, True.class, RubyBoolean.class).
+                tap(c -> c.getMetaClass().undefMethods(context, "new"));
     }
 
     @Deprecated
@@ -174,14 +158,14 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
             return oth.isTrue() ? context.tru : fals;
         }
 
-        @JRubyMethod(name = "to_s", alias = "inspect")
+        @Deprecated
         public static RubyString false_to_s(ThreadContext context, IRubyObject fals) {
             return context.runtime.getFalseString();
         }
 
-        @Override
-        public RubyString inspect() {
-            return getRuntime().getFalseString();
+        @JRubyMethod(name = "to_s", alias = "inspect")
+        public RubyString inspect(ThreadContext context) {
+            return context.runtime.getFalseString();
         }
 
         @Override
@@ -217,14 +201,14 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
             return oth.isTrue() ? context.fals : tru;
         }
 
-        @JRubyMethod(name = "to_s", alias = "inspect")
+        @Deprecated(since = "10.0")
         public static RubyString true_to_s(ThreadContext context, IRubyObject tru) {
             return context.runtime.getTrueString();
         }
 
-        @Override
-        public RubyString inspect() {
-            return getRuntime().getTrueString();
+        @JRubyMethod(name = "to_s", alias = "inspect")
+        public RubyString inspect(ThreadContext context) {
+            return context.runtime.getTrueString();
         }
 
         @Override

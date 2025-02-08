@@ -1,7 +1,6 @@
 package org.jruby.util.io;
 
 import org.jcodings.Encoding;
-import org.jruby.Ruby;
 import org.jruby.RubyHash;
 import org.jruby.RubyString;
 import org.jruby.ast.util.ArgsUtil;
@@ -11,6 +10,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 
+import static org.jruby.api.Access.globalVariables;
+import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
@@ -224,7 +225,7 @@ public class Getline {
             if (enc_io != enc_rs &&
                     (rs_s.scanForCodeRange() != StringSupport.CR_7BIT ||
                             (rs_s.size() > 0 && !enc_io.isAsciiCompatible()))) {
-                if (rs == context.runtime.getGlobalVariables().getDefaultSeparator()) {
+                if (rs == globalVariables(context).getDefaultSeparator()) {
                     rs = RubyString.newStringLight(context.runtime, 2, enc_io).cat('\n', enc_io);
                 } else {
                     throw argumentError(context, "encoding mismatch: " + enc_io + " IO with " + enc_rs + " RS");
@@ -232,7 +233,7 @@ public class Getline {
             }
         }
 
-        limit = lim == nil ? -1 : lim.convertToInteger().getLongValue();
+        limit = lim == nil ? -1 : toLong(context, lim);
 
         return getline.getline(context, self, rs, (int) limit, chomp, block);
     }

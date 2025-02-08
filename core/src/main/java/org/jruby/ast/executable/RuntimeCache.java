@@ -117,9 +117,10 @@ public class RuntimeCache {
         return regexps[index];
     }
 
+    @Deprecated(since = "10.0")
     public final RubyRegexp cacheRegexp(int index, RubyString pattern, int options) {
         RubyRegexp regexp = regexps[index];
-        Ruby runtime = pattern.getRuntime();
+        Ruby runtime = pattern.getCurrentContext().runtime;
         if (regexp == null || runtime.getKCode() != regexp.getKCode()) {
             regexp = RubyRegexp.newRegexp(runtime, pattern.getByteList(), RegexpOptions.fromEmbeddedOptions(options));
             regexps[index] = regexp;
@@ -127,6 +128,7 @@ public class RuntimeCache {
         return regexp;
     }
 
+    @Deprecated(since = "10.0")
     public final RubyRegexp cacheRegexp(int index, RubyRegexp regexp) {
         regexps[index] = regexp;
         return regexp;
@@ -359,7 +361,7 @@ public class RuntimeCache {
     public IRubyObject reCache(ThreadContext context, StaticScope scope, String name, int index) {
         Invalidator invalidator = context.runtime.getConstantInvalidator(name);
         Object newGeneration = invalidator.getData();
-        IRubyObject value = scope.getConstant(name);
+        IRubyObject value = scope.getConstant(context, name);
         if (value != null) {
             constants[index] = new ConstantCache(value, newGeneration, invalidator);
         } else {
@@ -371,7 +373,7 @@ public class RuntimeCache {
     public final IRubyObject getConstantFrom(RubyModule target, ThreadContext context, String name, int index) {
         IRubyObject value = getValueFrom(target, context, name, index);
         // We can callsite cache const_missing if we want
-        return value != null ? value : target.getConstantFromConstMissing(name);
+        return value != null ? value : target.getConstantFromConstMissing(context, name);
     }
 
     public IRubyObject getValueFrom(RubyModule target, ThreadContext context, String name, int index) {
@@ -382,12 +384,11 @@ public class RuntimeCache {
     public IRubyObject reCacheFrom(RubyModule target, ThreadContext context, String name, int index) {
         Invalidator invalidator = context.runtime.getConstantInvalidator(name);
         Object newGeneration = invalidator.getData();
-        IRubyObject value = target.getConstantFromNoConstMissing(name, false);
-        if (value != null) {
-            constants[index] = new ConstantCache(value, newGeneration, invalidator, target.hashCode());
-        } else {
-            constants[index] = null;
-        }
+        IRubyObject value = target.getConstantFromNoConstMissing(context, name, false);
+
+        constants[index] = value != null ?
+                new ConstantCache(value, newGeneration, invalidator, target.hashCode()) : null;
+
         return value;
     }
 

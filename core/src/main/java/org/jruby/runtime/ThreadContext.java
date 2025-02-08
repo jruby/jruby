@@ -81,6 +81,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.jruby.RubyBasicObject.NEVER;
+import static org.jruby.api.Access.instanceConfig;
 import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Error.typeError;
 
@@ -238,9 +239,7 @@ public final class ThreadContext {
         this.fals = runtime.getFalse();
         this.savedExcInLambda = null;
 
-        if (runtime.getInstanceConfig().isProfilingEntireRun()) {
-            startProfiling();
-        }
+        if (instanceConfig(this).isProfilingEntireRun()) startProfiling();
 
         this.runtimeCache = runtime.getRuntimeCache();
         this.sites = runtime.sites;
@@ -641,21 +640,23 @@ public final class ThreadContext {
     /**
      * MRI: rb_reg_last_match
      */
+    @JIT
     public IRubyObject last_match() {
-        return RubyRegexp.nth_match(0, frameStack[frameIndex].getBackRef(nil));
+        return RubyRegexp.nth_match(this, 0, frameStack[frameIndex].getBackRef(nil));
     }
 
     /**
      * MRI: rb_reg_match_pre
      */
+    @JIT
     public IRubyObject match_pre() {
-        return RubyRegexp.match_pre(frameStack[frameIndex].getBackRef(nil));
+        return RubyRegexp.match_pre(this, frameStack[frameIndex].getBackRef(nil));
     }
-
 
     /**
      * MRI: rb_reg_match_post
      */
+    @JIT
     public IRubyObject match_post() {
         return RubyRegexp.match_post(frameStack[frameIndex].getBackRef(nil));
     }
@@ -663,8 +664,9 @@ public final class ThreadContext {
     /**
      * MRI: rb_reg_match_last
      */
+    @JIT
     public IRubyObject match_last() {
-        return RubyRegexp.match_last(frameStack[frameIndex].getBackRef(nil));
+        return RubyRegexp.match_last(this, frameStack[frameIndex].getBackRef(nil));
     }
 
     /**
@@ -850,7 +852,7 @@ public final class ThreadContext {
      */
     @Deprecated
     public IRubyObject getConstant(String internedName) {
-        return getCurrentStaticScope().getConstant(internedName);
+        return getCurrentStaticScope().getConstant(this, internedName);
     }
 
     /**
@@ -860,7 +862,7 @@ public final class ThreadContext {
      * @param sb the StringBuilder to which to render the backtrace
      */
     public void renderCurrentBacktrace(StringBuilder sb) {
-        TraceType traceType = runtime.getInstanceConfig().getTraceType();
+        TraceType traceType = instanceConfig(this).getTraceType();
         BacktraceData backtraceData = traceType.getBacktrace(this);
         traceType.getFormat().renderBacktrace(backtraceData.getBacktrace(runtime), sb, false);
     }
@@ -1375,9 +1377,7 @@ public final class ThreadContext {
     }
 
     public IRubyObject addThreadTraceFunction(IRubyObject trace_func, boolean useContextHook) {
-        if (!(trace_func instanceof RubyProc)) {
-            throw typeError(trace_func.getRuntime().getCurrentContext(), "trace_func needs to be Proc.");
-        }
+        if (!(trace_func instanceof RubyProc)) throw typeError(this, "trace_func needs to be Proc.");
 
         TraceEventManager.CallTraceFuncHook hook;
 

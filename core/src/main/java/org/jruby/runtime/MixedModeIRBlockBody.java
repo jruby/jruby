@@ -17,6 +17,8 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
+import static org.jruby.api.Access.instanceConfig;
+
 public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<CompiledIRBlockBody> {
     private static final Logger LOG = LoggerFactory.getLogger(MixedModeIRBlockBody.class);
 
@@ -52,7 +54,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
     }
 
     @Override
-    public void completeBuild(CompiledIRBlockBody blockBody) {
+    public void completeBuild(ThreadContext context, CompiledIRBlockBody blockBody) {
         setCallCount(-1);
         this.jittedBody = blockBody;
     }
@@ -139,36 +141,54 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
             postYield(context, ic, binding, oldVis, prevFrame);
 
             // trigger JIT on the trailing edge, so we make a best effort to not interpret again after jitting
-            if (callCount >= 0) promoteToFullBuild(context);
+            tryJIT(this, context);
         }
     }
 
-    private void promoteToFullBuild(ThreadContext context) {
-        final Ruby runtime = context.runtime;
-        if (runtime.isBooting() && !Options.JIT_KERNEL.load()) return; // don't JIT during runtime boot
+    // TODO: Duplicated in InterpretedIRBlockBody
+    private static void tryJIT(MixedModeIRBlockBody body, ThreadContext context) {
+        // don't JIT during runtime boot
+        if (body.callCount >= 0 && (!context.runtime.isBooting() || Options.JIT_KERNEL.load())) {
+            // we don't synchronize callCount++ it does not matter if count isn't accurate
+            if (body.callCount++ >= instanceConfig(context).getJitThreshold()) {
+                body.promoteToFullBuild(context, false);
+            }
+        }
+    }
 
-        if (this.callCount < 0) return;
-        // we don't synchronize callCount++ it does not matter if count isn't accurate
-        if (this.callCount++ >= runtime.getInstanceConfig().getJitThreshold()) {
-            synchronized (this) { // disable same jit tasks from entering queue twice
-                if (this.callCount >= 0) {
-                    this.callCount = Integer.MIN_VALUE; // so that callCount++ stays < 0
+    @Override
+    public boolean forceBuild(ThreadContext context) {
+        promoteToFullBuild(context, true);
 
-                    // ensure we've got code ready for JIT
-                    ensureInstrsReady();
-                    closure.getNearestTopLocalVariableScope().prepareForCompilation();
+        // Force = true should trigger jit to run synchronously, so we'll be optimistic
+        return true;
+    }
 
-                    FullInterpreterContext fic = closure.getFullInterpreterContext();
+    @Override
+    public boolean isBuildComplete() {
+        // Successful build and disabled build both set callCount to -1, indicating no further build is possible.
+        return callCount < 0;
+    }
 
-                    if (fic == null || !fic.hasExplicitCallProtocol()) {
-                        if (Options.JIT_LOGGING.load()) {
-                            LOG.info("JIT failed; no full IR or no call protocol found in block: " + closure);
-                        }
-                        return; // do not JIT if we don't have an explicit protocol
+    private void promoteToFullBuild(ThreadContext context, boolean force) {
+        synchronized (this) { // disable same jit tasks from entering queue twice
+            if (this.callCount >= 0) {
+                this.callCount = Integer.MIN_VALUE; // so that callCount++ stays < 0
+
+                // ensure we've got code ready for JIT
+                ensureInstrsReady();
+                closure.getNearestTopLocalVariableScope().prepareForCompilation();
+
+                FullInterpreterContext fic = closure.getFullInterpreterContext();
+
+                if (fic == null || !fic.hasExplicitCallProtocol()) {
+                    if (Options.JIT_LOGGING.load()) {
+                        LOG.info("JIT failed; no full IR or no call protocol found in block: " + closure);
                     }
-
-                    runtime.getJITCompiler().buildThresholdReached(context, this);
+                    return; // do not JIT if we don't have an explicit protocol
                 }
+
+                context.runtime.getJITCompiler().buildThresholdReached(context, this, force);
             }
         }
     }

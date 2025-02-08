@@ -43,9 +43,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.jruby.api.Access.hashClass;
+import static org.jruby.api.Access.ioClass;
+import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Convert.toInt;
+import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.runtimeError;
@@ -658,7 +663,8 @@ public class PopenExecutor {
             fd = pair[1];
         }
 
-        port = (RubyIO) runtime.getIO().allocate();
+        var IO = ioClass(context);
+        port = (RubyIO) IO.allocate(context);
         fptr = port.MakeOpenFile();
         fptr.setChannel(new NativeDeviceChannel(fd));
         fptr.setMode(fmode | (OpenFile.SYNC|OpenFile.DUPLEX));
@@ -685,7 +691,7 @@ public class PopenExecutor {
         fptr.setProcess(new POSIXProcess(runtime, finalPid));
 
         if (write_fd != -1) {
-            write_port = runtime.getIO().allocate();
+            write_port = IO.allocate(context);
             write_fptr = ((RubyIO)write_port).MakeOpenFile();
             write_fptr.setChannel(new NativeDeviceChannel(write_fd));
             write_fptr.setMode((fmode & ~OpenFile.READABLE)| OpenFile.SYNC|OpenFile.DUPLEX);
@@ -1120,8 +1126,6 @@ public class PopenExecutor {
     }
 
     static void execargParentStart1(ThreadContext context, ExecArg eargp) {
-        RubyClass hashClass = context.runtime.getHash();
-
         eargp.redirect_fds = checkExecFds(context, eargp);
 
         RubyArray<RubyArray> ary = eargp.fd_open;
@@ -1142,8 +1146,8 @@ public class PopenExecutor {
             if (unsetenv_others) {
                 envtbl = newHash(context);
             } else {
-                envtbl = context.runtime.getObject().getConstant("ENV");
-                envtbl = TypeConverter.convertToType(envtbl, hashClass, "to_hash").dup();
+                envtbl = objectClass(context).getConstant(context, "ENV");
+                envtbl = TypeConverter.convertToType(envtbl, hashClass(context), "to_hash").dup();
             }
             if (envopts != null) {
                 RubyHash stenv = (RubyHash)envtbl;
@@ -1164,8 +1168,8 @@ public class PopenExecutor {
         } else {
             // In MRI, they use the current env as the baseline because they fork+exec. We can't do that,
             // and posix_spawn needs a full env, so we pass even unmodified env through.
-            envtbl = context.runtime.getObject().getConstant("ENV");
-            envtbl = TypeConverter.convertToType(envtbl, hashClass, "to_hash");
+            envtbl = objectClass(context).getConstant(context, "ENV");
+            envtbl = TypeConverter.convertToType(envtbl, hashClass(context), "to_hash");
         }
         buildEnvp(context, eargp, (RubyHash) envtbl);
 //        RB_GC_GUARD(execarg_obj);
@@ -1246,8 +1250,8 @@ public class PopenExecutor {
                 int lastfd = oldfd;
                 IRubyObject val = h.fastARef(asFixnum(context, lastfd));
                 long depth = 0;
-                while (val instanceof RubyFixnum && 0 <= ((RubyFixnum)val).getIntValue()) {
-                    lastfd = RubyNumeric.fix2int(val);
+                while (val instanceof RubyFixnum fixnum && 0 <= fixnum.asInt(context)) {
+                    lastfd = fixnum.asInt(context);
                     val = h.fastARef(val);
                     if (ary.size() < depth) throw argumentError(context, "cyclic child fd redirection from " + oldfd);
                     depth++;
@@ -1289,7 +1293,7 @@ public class PopenExecutor {
                     } else if (val == context.tru) {
                         pgroup = 0; /* new process group. */
                     } else {
-                        pgroup = val.convertToInteger().getLongValue();
+                        pgroup = toLong(context, val);
                         if (pgroup < 0) {
                             throw argumentError(context, "negative process group symbol : " + pgroup);
                         }
@@ -1349,7 +1353,7 @@ public class PopenExecutor {
                     eargp.chdir_dir = valTmp.toString();
                 }
                 else if (id.equals("umask")) {
-                    int cmask = val.convertToInteger().getIntValue();
+                    int cmask = toInt(context, val);
                     if (eargp.umaskGiven) {
                         throw argumentError(context, "umask option specified twice");
                     }
@@ -1381,7 +1385,7 @@ public class PopenExecutor {
 //                    checkUidSwitch();
                     {
 //                        PREPARE_GETPWNAM;
-                        eargp.uid = val.convertToInteger().getIntValue();
+                        eargp.uid = toInt(context, val);
                         eargp.uidGiven = true;
                     }
 //                    #else
@@ -1395,7 +1399,7 @@ public class PopenExecutor {
 //                    checkGidSwitch();
                     {
 //                        PREPARE_GETGRNAM;
-                        eargp.gid = val.convertToInteger().getIntValue();
+                        eargp.gid = toInt(context, val);
                         eargp.gidGiven = true;
                     }
 //                    #else
@@ -1487,7 +1491,7 @@ public class PopenExecutor {
                     else if (flags instanceof RubyString)
                         intFlags = OpenFile.ioModestrOflags(context, flags.toString());
                     else
-                        intFlags = flags.convertToInteger().getIntValue();
+                        intFlags = toInt(context, flags);
                     flags = asFixnum(context, intFlags);
                     perm = ((RubyArray)val).entry(2);
                     perm = perm.isNil() ? asFixnum(context, 0644) : perm.convertToInteger();
@@ -1500,10 +1504,9 @@ public class PopenExecutor {
                 break;
 
             case STRING:
-                path = val;
-                path = RubyFile.get_path(context, path);
+                path = RubyFile.get_path(context, val);
                 if (key instanceof RubyIO) key = checkExecRedirectFd(context, key, true);
-                if (key instanceof RubyFixnum k && (k.getIntValue() == 1 || k.getIntValue() == 2)) {
+                if (key instanceof RubyFixnum k && (k.asInt(context) == 1 || k.asInt(context) == 2)) {
                     flags = asFixnum(context, OpenFlags.O_WRONLY.intValue()|OpenFlags.O_CREAT.intValue()|OpenFlags.O_TRUNC.intValue());
                 } else if (key instanceof RubyArray keyAry) {
                     boolean allOut = true;
@@ -1559,7 +1562,7 @@ public class PopenExecutor {
                 case "err" -> 2;
                 default -> throw argumentError(context, "wrong exec redirect");
             };
-        } else if (!(tmp = TypeConverter.convertToTypeWithCheck(v, context.runtime.getIO(), "to_io")).isNil()) {
+        } else if (!(tmp = TypeConverter.convertToTypeWithCheck(v, ioClass(context), "to_io")).isNil()) {
             OpenFile fptr = ((RubyIO) tmp).getOpenFileChecked();
             if (fptr.tiedIOForWriting != null) throw argumentError(context, "duplex IO redirection");
             fd = fptr.fd().bestFileno();
@@ -1944,7 +1947,7 @@ public class PopenExecutor {
     }
 
     private static String dlnFindExeR(ThreadContext context, String fname, IRubyObject path) {
-        File exePath = ShellLauncher.findPathExecutable(context.runtime, fname, path);
+        File exePath = ShellLauncher.findPathExecutable(context, fname, path);
         return exePath != null ? exePath.getAbsolutePath() : null;
     }
 

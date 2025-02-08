@@ -11,11 +11,12 @@ import org.jruby.RubyObject;
 import org.jruby.ext.ffi.AbstractInvoker;
 import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.Type;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 
 import java.util.Map;
 import java.util.WeakHashMap;
+
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
 
 /**
@@ -40,20 +41,15 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
     /**
      * Creates a Callback class for a ruby runtime
      *
-     * @param runtime The runtime to create the class for
-     * @param module The module to place the class in
+     * @param context the current thread context
+     * @param FFI The module to place the class in
      *
      * @return The newly created ruby class
      */
-    public static RubyClass createCallbackClass(Ruby runtime, RubyModule module) {
-
-        RubyClass cbClass = module.defineClassUnder("Callback", module.getClass("Pointer"),
-                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-
-        cbClass.defineAnnotatedMethods(AbstractInvoker.class);
-        cbClass.defineAnnotatedConstants(AbstractInvoker.class);
-
-        return cbClass;
+    public static RubyClass createCallbackClass(ThreadContext context, RubyModule FFI) {
+        return FFI.defineClassUnder(context, "Callback", FFI.getClass(context, "Pointer"), NOT_ALLOCATABLE_ALLOCATOR).
+                defineMethods(context, AbstractInvoker.class).
+                defineConstants(context, AbstractInvoker.class);
     }
     
     public final org.jruby.ext.ffi.Pointer getCallback(ThreadContext context, CallbackInfo cbInfo, Object proc) {

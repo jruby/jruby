@@ -23,7 +23,7 @@ namespace :spec do
   desc "Run fast specs that do not spawn many subprocesses"
   task :'ruby:fast' do
     mspec :compile_mode => "OFF",
-          :format => MSPEC_FORMAT,
+          :format => 'd',
           :spec_target => ":fast",
           :jruby_opts => "--dev",
           :spec_config => "spec/jruby.mspec"
@@ -146,13 +146,6 @@ namespace :spec do
   task :all_precompiled do
     mspec :compile_mode => "FORCE", :jit_threshold => 0,
        :format => 'd'
-  end
-
-  # Parameterized rubyspec runs for e.g. TravisCI
-  desc "Run RubySpec on Travis in interpreted mode"
-  task :ci_interpreted_travis do
-    mspec :compile_mode => 'OFF',
-     :format => 's'
   end
 
   # Complimentary tasks for running specs

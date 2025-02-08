@@ -29,6 +29,9 @@ package org.jruby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.SyntaxError;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Define.defineClass;
 
 /**
  * The Java representation of a Ruby SyntaxError.
@@ -41,12 +44,9 @@ public class RubySyntaxError extends RubyScriptError {
         super(runtime, exceptionClass);
     }
 
-    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass SyntaxErrorClass = runtime.defineClass("SyntaxError", exceptionClass, RubySyntaxError::new);
-
-        SyntaxErrorClass.addReadAttribute(runtime.getCurrentContext(), "path");
-
-        return SyntaxErrorClass;
+    static RubyClass define(ThreadContext context, RubyClass ScriptError) {
+        return defineClass(context, "SyntaxError", ScriptError, RubySyntaxError::new).
+                tap(c -> c.addReadAttribute(context, "path"));
     }
 
     @Override

@@ -63,7 +63,7 @@ public abstract class RubyArraySpecialized extends RubyArray {
         // CON: I believe most of the time we'll unpack because we need to grow, so give a bit of extra room.
         //      For example, <<, unshift, and push will all just add one to front or back.
         IRubyObject[] values = new IRubyObject[realLength + 2];
-        Helpers.fillNil(values, context.runtime);
+        Helpers.fillNil(context, values);
         copyInto(context, values, 1);
         this.values = values;
         this.begin = 1;

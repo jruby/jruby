@@ -30,7 +30,10 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ConcurrencyError;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import static org.jruby.api.Define.defineClass;
 
 /**
  * The Java representation of a Ruby ConcurrencyError.
@@ -43,10 +46,8 @@ public class RubyConcurrencyError extends RubyThreadError {
         super(runtime, exceptionClass);
     }
 
-    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass concurrencyErrorClass = runtime.defineClass("ConcurrencyError", exceptionClass, RubyConcurrencyError::new);
-
-        return concurrencyErrorClass;
+    static RubyClass define(ThreadContext context, RubyClass ThreadError) {
+        return defineClass(context, "ConcurrencyError", ThreadError, RubyConcurrencyError::new);
     }
 
     protected RaiseException constructThrowable(String message) {

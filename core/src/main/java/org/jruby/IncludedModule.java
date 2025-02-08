@@ -2,6 +2,7 @@ package org.jruby;
 
 import java.util.Map;
 
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class IncludedModule extends RubyClass implements DelegatedModule {
@@ -10,7 +11,7 @@ public class IncludedModule extends RubyClass implements DelegatedModule {
         this.origin = origin;
         this.metaClass = origin.metaClass;
         if (superClass != null) {
-            setClassIndex(superClass.getClassIndex()); // use same ClassIndex as metaclass, since we're technically still of that type
+            classIndex(superClass.getClassIndex()); // use same ClassIndex as metaclass, since we're technically still of that type
         }
     }
 
@@ -35,8 +36,8 @@ public class IncludedModule extends RubyClass implements DelegatedModule {
     }
 
     @Override
-    public String getName() {
-        return origin.getName();
+    public String getName(ThreadContext context) {
+        return origin.getName(context);
     }
 
     @Override

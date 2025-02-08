@@ -53,6 +53,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import static org.jruby.api.Warn.warning;
 import static org.jruby.ir.IRFlags.*;
 import static org.jruby.ir.builder.StringStyle.Frozen;
 import static org.jruby.ir.builder.StringStyle.Mutable;
@@ -2521,8 +2522,16 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         addInstr(new LabelInstr(caughtLabel));
         if (reference != null) {
             Variable exception = addResultInstr(new GetGlobalVariableInstr(temp(), symbol("$!")));
+
             buildAssignment(reference, exception);  // Prism does not desugar
         }
+
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            // Explicit line number here because we need a line number for trace before we process any nodes
+            addInstr(getManager().newLineNumber(scope.getLine() + 1));
+            addInstr(new TraceInstr(RubyEvent.RESCUE, getCurrentModuleVariable(), getName(), getFileName(), scope.getLine() + 1));
+        }
+
         Operand x = build(body);
         if (x != U_NIL) { // can be U_NIL if the rescue block has an explicit return
             // Set up node return value 'rv'
@@ -2830,8 +2839,9 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
         if (literal != null) {
             if (seenLiterals.contains(literal)) {
-                getManager().getRuntime().getWarnings().warning(IRubyWarnings.ID.MISCELLANEOUS, getFileName(), getLine(value),
-                        "duplicated 'when' clause with line " + (origLocs.get(literal) + 1) + " is ignored");
+                var context = manager.getRuntime().getCurrentContext();
+                warning(context, "'when' clause on line " + getLine(value) +
+                        " duplicates 'when' clause on line " + (origLocs.get(literal) + 1) + " and is ignored");
                 return false;
             } else {
                 seenLiterals.add(literal);

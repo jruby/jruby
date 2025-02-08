@@ -7,6 +7,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyBoolean;
+import org.jruby.api.Access;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.socket.Addrinfo;
 import org.jruby.runtime.ThreadContext;
@@ -42,7 +43,7 @@ public class Sockaddr {
             byte[] bs = ByteList.plain(s);
             return InetAddress.getByAddress(bs);
         } catch(Exception e) {
-            throw sockerr(runtime, "strtoaddr: " + e.toString());
+            throw sockerr(runtime.getCurrentContext(), "strtoaddr: " + e.toString());
         }
     }
 
@@ -50,7 +51,7 @@ public class Sockaddr {
         try {
             return new String(ByteList.plain(as.getAddress()));
         } catch(Exception e) {
-            throw sockerr(runtime, "addrtostr: " + e.toString());
+            throw sockerr(runtime.getCurrentContext(), "addrtostr: " + e.toString());
         }
     }
 
@@ -76,10 +77,9 @@ public class Sockaddr {
 
         IRubyObject addr = sockaddr.pop(context);
         IRubyObject _port = sockaddr.pop(context);
-        int port = SocketUtils.portToInt(_port);
 
         return new InetSocketAddress(
-                addr.convertToString().toString(), port);
+                addr.convertToString().toString(), SocketUtils.portToInt(context, _port));
     }
 
     public static SocketAddress addressFromSockaddr(ThreadContext context, IRubyObject arg) {
@@ -128,7 +128,7 @@ public class Sockaddr {
                 portNum = Integer.parseInt(portString);
             } catch (NumberFormatException e) {
                 Service service = Service.getServiceByName(portString, "tcp"); // FIXME: is tcp safe here?
-                if (service == null) throw sockerr(context.runtime, "getaddrinfo: Servname not supported for ai_socktype");
+                if (service == null) throw sockerr(context, "getaddrinfo: Servname not supported for ai_socktype");
                 portNum = service.getPort();
             }
         } else {
@@ -166,17 +166,16 @@ public class Sockaddr {
                 }
             }
             catch (UnknownHostException e) {
-                throw sockerr(context.runtime, "getaddrinfo: No address associated with nodename");
+                throw sockerr(context, "getaddrinfo: No address associated with nodename");
             }
 
             writeSockaddrFooter(ds);
         }
         catch (IOException e) {
-            throw sockerr(context.runtime, "pack_sockaddr_in: internal error");
+            throw sockerr(context, "pack_sockaddr_in: internal error");
         }
 
-        return context.runtime.newString(new ByteList(bufS.toByteArray(),
-                false));
+        return newString(context, new ByteList(bufS.toByteArray(), false));
     }
 
     public static IRubyObject pack_sockaddr_in(ThreadContext context, InetSocketAddress sock) {
@@ -207,12 +206,11 @@ public class Sockaddr {
             writeSockaddrFooter(ds);
 
         } catch (IOException e) {
-            throw sockerr(context.runtime, "pack_sockaddr_in: internal error");
+            throw sockerr(context, "pack_sockaddr_in: internal error");
 
         }
 
-        return context.runtime.newString(new ByteList(bufS.toByteArray(),
-                false));
+        return newString(context, new ByteList(bufS.toByteArray(), false));
     }
 
     public static RubyArray unpack_sockaddr_in(ThreadContext context, IRubyObject addr) {
@@ -333,8 +331,8 @@ public class Sockaddr {
         return getAddressFamilyFromSockaddr(runtime.getCurrentContext(), val);
     }
 
-    private static RuntimeException sockerr(Ruby runtime, String msg) {
-        return RaiseException.from(runtime, runtime.getClass("SocketError"), msg);
+    private static RuntimeException sockerr(ThreadContext context, String msg) {
+        return RaiseException.from(context.runtime, Access.getClass(context, "SocketError"), msg);
     }
 
     @Deprecated

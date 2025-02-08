@@ -150,7 +150,7 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
 
     @JRubyMethod(name = "parameters")
     public IRubyObject parameters(ThreadContext context) {
-        return Helpers.methodToParameters(context.runtime, this);
+        return Helpers.methodToParameters(context, this);
     }
 
     protected IRubyObject super_method(ThreadContext context, IRubyObject receiver, RubyModule superClass) {
@@ -181,7 +181,7 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
         RubyString str = newString(context, "#<");
         String sharp = "#";
 
-        str.catString(getType().getName()).catString(": ");
+        str.catString(getType().getName(context)).catString(": ");
 
         RubyModule definedClass;
         RubyModule mklass = originModule;
@@ -215,16 +215,16 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
         } else {
             if (receiver instanceof RubyClass) {
                 str.catString("#<");
-                str.cat(mklass.rubyName());
+                str.cat(mklass.rubyName(context));
                 str.catString(":");
-                str.cat(((RubyClass) receiver).rubyName());
+                str.cat(((RubyClass) receiver).rubyName(context));
                 str.catString(">");
             } else {
-                str.cat(mklass.rubyName());
+                str.cat(mklass.rubyName(context));
             }
             if (definedClass != mklass) {
                 str.catString("(");
-                str.cat(definedClass.rubyName());
+                str.cat(definedClass.rubyName(context));
                 str.catString(")");
             }
         }
@@ -240,7 +240,7 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
         }
 
         str.catString("(");
-        ArgumentDescriptor[] descriptors = Helpers.methodToArgumentDescriptors(method);
+        ArgumentDescriptor[] descriptors = Helpers.methodToArgumentDescriptors(context, method);
         if (descriptors.length > 0) {
             RubyString desc = descriptors[0].asParameterName(context);
 

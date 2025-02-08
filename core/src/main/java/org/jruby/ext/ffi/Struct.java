@@ -7,10 +7,14 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import org.jruby.*;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 
+import static org.jruby.api.Access.getModule;
+import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Error.*;
 import static org.jruby.runtime.Visibility.*;
@@ -24,24 +28,22 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
 
     /**
      * Registers the StructLayout class in the JRuby runtime.
-     * @param runtime The JRuby runtime to register the new class in.
+     * @param context the current thread context
+     * @param FFI reference to FFI module
      * @return The new class
      */
-    public static RubyClass createStructClass(Ruby runtime, RubyModule module) {
-        
-        RubyClass structClass = runtime.defineClassUnder("Struct", runtime.getObject(),
-                Options.REIFY_FFI.load() ? new ReifyingAllocator(Struct.class): Struct::new, module);
-        structClass.defineAnnotatedMethods(Struct.class);
-        structClass.defineAnnotatedConstants(Struct.class);
-        structClass.setReifiedClass(Struct.class);
-        structClass.kindOf = new RubyModule.KindOf() {
-            @Override
-            public boolean isKindOf(IRubyObject obj, RubyModule type) {
-                return obj instanceof Struct && super.isKindOf(obj, type);
-            }
-        };
-        
-        return structClass;
+    public static RubyClass createStructClass(ThreadContext context, RubyModule FFI) {
+        ObjectAllocator allocator = Options.REIFY_FFI.load() ? new ReifyingAllocator(Struct.class): Struct::new;
+        return FFI.defineClassUnder(context, "Struct", objectClass(context), allocator).
+                reifiedClass(Struct.class).
+                kindOf(new RubyModule.KindOf() {
+                    @Override
+                    public boolean isKindOf(IRubyObject obj, RubyModule type) {
+                        return obj instanceof Struct && super.isKindOf(obj, type);
+                    }
+                }).
+                defineMethods(context, Struct.class).
+                defineConstants(context, Struct.class);
     }
 
     /**
@@ -90,24 +92,23 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
     
     static final StructLayout getStructLayout(ThreadContext context, IRubyObject structClass) {
         try {
-            Object layout = ((RubyClass) structClass).getFFIHandle();
+            RubyClass klass = (RubyClass) structClass;
+            Object layout = klass.getFFIHandle();
             if (layout instanceof StructLayout sl) return sl;
 
-            RubyClass klass = (RubyClass) structClass;
-            while (klass != context.runtime.getObject() && !((layout = klass.getInstanceVariable("@layout")) instanceof StructLayout)) {
+            while (klass != objectClass(context) && !((layout = klass.getInstanceVariable("@layout")) instanceof StructLayout)) {
                 klass = klass.getSuperClass();
             }
 
             if (layout instanceof StructLayout sl) {
-                // Cache the layout on the Struct metaclass for faster retrieval next time
-                ((RubyClass) structClass).setFFIHandle(layout);
+                klass.setFFIHandle(layout); // Cache the layout for faster retrieval next time
                 return sl;
             }
-            throw runtimeError(context, "no valid struct layout for " + klass.getName());
+            throw runtimeError(context, "no valid struct layout for " + klass.getName(context));
         } catch (ClassCastException ex) {
             if (!(structClass instanceof RubyClass sc)) throw typeError(context, structClass, "subclass of Struct");
 
-            throw runtimeError(context, "invalid layout set for struct " + sc.getName());
+            throw runtimeError(context, "invalid layout set for struct " + sc.getName(context));
         }
     }
 
@@ -128,7 +129,7 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
         }
 
         if (((AbstractMemory) ptr).getSize() < layout.getSize()) {
-            throw argumentError(context, "memory object has insufficient space for " + getMetaClass().getName());
+            throw argumentError(context, "memory object has insufficient space for " + getMetaClass().getName(context));
         }
 
         memory = (AbstractMemory) ptr;
@@ -229,7 +230,7 @@ public class Struct extends MemoryObject implements StructLayout.Storage {
         RubyClass klass = castAsClass(context, structClass);
 
         if (!(layout instanceof StructLayout)) {
-            throw typeError(context, layout, context.runtime.getModule("FFI").getClass("StructLayout"));
+            throw typeError(context, layout, Access.getClass(context, "FFI", "StructLayout"));
         }
 
         klass.setFFIHandle(layout);

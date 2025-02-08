@@ -68,11 +68,9 @@ public class DefineMetaClassInstr extends OneOperandResultBaseInstr implements F
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        Ruby runtime = context.runtime;
-
         IRubyObject obj = (IRubyObject) getObject().retrieve(context, self, currScope, currDynScope, temp);
 
-        return IRRuntimeHelpers.newInterpretedMetaClass(runtime, metaClassBody, obj);
+        return IRRuntimeHelpers.newInterpretedMetaClass(context, metaClassBody, obj);
     }
 
     @Override

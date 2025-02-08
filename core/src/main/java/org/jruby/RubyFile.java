@@ -46,11 +46,11 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.API;
 import org.jruby.exceptions.NotImplementedError;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.*;
 import org.jruby.runtime.JavaSites.FileSites;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
-import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.*;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.IOEncodable;
@@ -81,9 +81,13 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import static org.jruby.RubyInteger.singleCharByteList;
+import static org.jruby.api.Access.fileClass;
+import static org.jruby.api.Access.hashClass;
+import static org.jruby.api.Access.timeClass;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.runtimeError;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
@@ -101,87 +105,66 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     static final ByteList SLASH = singleCharByteList((byte) '/');
     static final ByteList BACKSLASH = singleCharByteList((byte) '\\');
 
-    public static RubyClass createFileClass(Ruby runtime) {
-        ThreadContext context = runtime.getCurrentContext();
-
-        RubyClass fileClass = runtime.defineClass("File", runtime.getIO(), RubyFile::new);
-
-        fileClass.defineAnnotatedMethods(RubyFile.class);
-
-        fileClass.setClassIndex(ClassIndex.FILE);
-        fileClass.setReifiedClass(RubyFile.class);
-
-        fileClass.kindOf = new RubyModule.JavaClassKindOf(RubyFile.class);
-
+    public static RubyClass createFileClass(ThreadContext context, RubyClass IO) {
         // file separator constants
-        RubyString separator = newString(context, SLASH);
-        separator.freeze(context);
-        fileClass.defineConstant("SEPARATOR", separator);
-        fileClass.defineConstant("Separator", separator);
+        var separator = newString(context, SLASH).freeze(context);
+        var altSeparator = File.separatorChar == '\\' ? newString(context, BACKSLASH).freeze(context) : context.nil;
+        var pathSeparator = newString(context, singleCharByteList((byte) File.pathSeparatorChar)).freeze(context);
 
-        if (File.separatorChar == '\\') {
-            RubyString altSeparator = newString(context, BACKSLASH);
-            altSeparator.freeze(context);
-            fileClass.defineConstant("ALT_SEPARATOR", altSeparator);
-        } else {
-            fileClass.defineConstant("ALT_SEPARATOR", context.nil);
-        }
-
-        // path separator
-        RubyString pathSeparator = newString(context, singleCharByteList((byte) File.pathSeparatorChar));
-        pathSeparator.freeze(context);
-        fileClass.defineConstant("PATH_SEPARATOR", pathSeparator);
+        RubyClass File = defineClass(context, "File", IO, RubyFile::new).
+                reifiedClass(RubyFile.class).
+                kindOf(new RubyModule.JavaClassKindOf(RubyFile.class)).
+                classIndex(ClassIndex.FILE).
+                defineMethods(context, RubyFile.class).
+                defineConstant(context, "SEPARATOR", separator).
+                defineConstant(context, "Separator", separator).
+                defineConstant(context, "ALT_SEPARATOR", altSeparator).
+                defineConstant(context, "PATH_SEPARATOR", pathSeparator);
 
         // For JRUBY-5276, physically define FileTest methods on File's singleton
-        fileClass.getSingletonClass().defineAnnotatedMethods(RubyFileTest.FileTestFileMethods.class);
+        File.singletonClass(context).defineMethods(context, RubyFileTest.FileTestFileMethods.class);
 
-        // Create Constants class
-        RubyModule constants = fileClass.defineModuleUnder("Constants");
+        var FileConstants = File.defineModuleUnder(context, "Constants").
+                defineConstant(context, "RDONLY", asFixnum(context, OpenFlags.O_RDONLY.intValue())).
+                defineConstant(context, "WRONLY", asFixnum(context, OpenFlags.O_WRONLY.intValue())).
+                defineConstant(context, "RDWR", asFixnum(context, OpenFlags.O_RDWR.intValue())).
+                defineConstant(context, "APPEND", asFixnum(context, OpenFlags.O_APPEND.intValue())).
+                defineConstant(context, "CREAT", asFixnum(context, OpenFlags.O_CREAT.intValue())).
+                defineConstant(context, "EXCL", asFixnum(context, OpenFlags.O_EXCL.intValue())).
+                defineConstant(context, "NONBLOCK", asFixnum(context, OpenFlags.O_NONBLOCK.intValue())).
+                defineConstant(context, "TRUNC", asFixnum(context, OpenFlags.O_TRUNC.intValue())).
+                // FIXME: NOCTTY is showing up as undefined on Linux, but it should be defined.
+                defineConstant(context, "NOCTTY", asFixnum(context, OpenFlags.O_NOCTTY.intValue())).
+                defineConstant(context, "SHARE_DELETE", asFixnum(context, ModeFlags.SHARE_DELETE)).
+                defineConstant(context, "FNM_NOESCAPE", asFixnum(context, FNM_NOESCAPE)).
+                defineConstant(context, "FNM_CASEFOLD", asFixnum(context, FNM_CASEFOLD)).
+                defineConstant(context, "FNM_SYSCASE", asFixnum(context, FNM_SYSCASE)).
+                defineConstant(context, "FNM_DOTMATCH", asFixnum(context, FNM_DOTMATCH)).
+                defineConstant(context, "FNM_PATHNAME", asFixnum(context, FNM_PATHNAME)).
+                defineConstant(context, "FNM_EXTGLOB", asFixnum(context, FNM_EXTGLOB)).
+                defineConstant(context, "LOCK_SH", asFixnum(context, RubyFile.LOCK_SH)).
+                defineConstant(context, "LOCK_EX", asFixnum(context, RubyFile.LOCK_EX)).
+                defineConstant(context, "LOCK_NB", asFixnum(context, RubyFile.LOCK_NB)).
+                defineConstant(context, "LOCK_UN", asFixnum(context, RubyFile.LOCK_UN)).
+                defineConstant(context, "NULL", newString(context, getNullDevice()));
 
-        // open flags
-        /* open for reading only */
-        constants.setConstant("RDONLY", asFixnum(context, OpenFlags.O_RDONLY.intValue()));
-        /* open for writing only */
-        constants.setConstant("WRONLY", asFixnum(context, OpenFlags.O_WRONLY.intValue()));
-        /* open for reading and writing */
-        constants.setConstant("RDWR", asFixnum(context, OpenFlags.O_RDWR.intValue()));
-        /* append on each write */
-        constants.setConstant("APPEND", asFixnum(context, OpenFlags.O_APPEND.intValue()));
-        /* create file if it does not exist */
-        constants.setConstant("CREAT", asFixnum(context, OpenFlags.O_CREAT.intValue()));
-        /* error if CREAT and the file exists */
-        constants.setConstant("EXCL", asFixnum(context, OpenFlags.O_EXCL.intValue()));
-        if (    // O_NDELAY not defined in OpenFlags
-                //OpenFlags.O_NDELAY.defined() ||
-                OpenFlags.O_NONBLOCK.defined()) {
-            if (!OpenFlags.O_NONBLOCK.defined()) {
-//                #   define O_NONBLOCK O_NDELAY
-            }
-            /* do not block on open or for data to become available */
-            constants.setConstant("NONBLOCK", asFixnum(context, OpenFlags.O_NONBLOCK.intValue()));
+        // FIXME: Some comment about an O_DELAY not being defined in OpenFlags.  This might be missing constants.
+        // FIXME: Should NONBLOCK exist for Windows fcntl flags?
+        if (OpenFlags.O_NONBLOCK.defined()) {
+            FileConstants.defineConstant(context, "NONBLOCK", asFixnum(context, OpenFlags.O_NONBLOCK.intValue()));
         } else if (Platform.IS_WINDOWS) {
-            // FIXME: Should NONBLOCK exist for Windows fcntl flags?
-            constants.setConstant("NONBLOCK", asFixnum(context, 1));
+            FileConstants.defineConstant(context, "NONBLOCK", asFixnum(context, 1));
         }
-        /* truncate size to 0 */
-        constants.setConstant("TRUNC", asFixnum(context, OpenFlags.O_TRUNC.intValue()));
-        // FIXME: NOCTTY is showing up as undefined on Linux, but it should be defined.
-//        if (OpenFlags.O_NOCTTY.defined()) {
-            /* not to make opened IO the controlling terminal device */
-            constants.setConstant("NOCTTY", asFixnum(context, OpenFlags.O_NOCTTY.intValue()));
-//        }
+        
         if (!OpenFlags.O_BINARY.defined()) {
-            constants.setConstant("BINARY", asFixnum(context, 0));
+            FileConstants.defineConstant(context, "BINARY", asFixnum(context, 0));
         } else {
             /* disable line code conversion */
-            constants.setConstant("BINARY", asFixnum(context, OpenFlags.O_BINARY.intValue()));
+            FileConstants.defineConstant(context, "BINARY", asFixnum(context, OpenFlags.O_BINARY.intValue()));
         }
 
-        constants.setConstant("SHARE_DELETE", asFixnum(context, ModeFlags.SHARE_DELETE));
-
         if (OpenFlags.O_SYNC.defined()) {
-            /* any write operation perform synchronously */
-            constants.setConstant("SYNC", asFixnum(context, OpenFlags.O_SYNC.intValue()));
+            FileConstants.defineConstant(context, "SYNC", asFixnum(context, OpenFlags.O_SYNC.intValue()));
         }
         // O_DSYNC and O_RSYNC are not in OpenFlags
 //        #ifdef O_DSYNC
@@ -194,7 +177,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 //        #endif
         if (OpenFlags.O_NOFOLLOW.defined()) {
             /* do not follow symlinks */
-            constants.setConstant("NOFOLLOW", asFixnum(context, OpenFlags.O_NOFOLLOW.intValue()));     /* FreeBSD, Linux */
+            FileConstants.defineConstant(context, "NOFOLLOW", asFixnum(context, OpenFlags.O_NOFOLLOW.intValue()));     /* FreeBSD, Linux */
         }
         // O_NOATIME and O_DIRECT are not in OpenFlags
 //        #ifdef O_NOATIME
@@ -207,43 +190,26 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 //        #endif
         if (OpenFlags.O_TMPFILE.defined()) {
             /* Create an unnamed temporary file */
-            constants.setConstant("TMPFILE", asFixnum(context, OpenFlags.O_TMPFILE.intValue()));
+            FileConstants.defineConstant(context, "TMPFILE", asFixnum(context, OpenFlags.O_TMPFILE.intValue()));
         }
 
-        // case handling, escaping, path and dot matching
-        constants.setConstant("FNM_NOESCAPE", asFixnum(context, FNM_NOESCAPE));
-        constants.setConstant("FNM_CASEFOLD", asFixnum(context, FNM_CASEFOLD));
-        constants.setConstant("FNM_SYSCASE", asFixnum(context, FNM_SYSCASE));
-        constants.setConstant("FNM_DOTMATCH", asFixnum(context, FNM_DOTMATCH));
-        constants.setConstant("FNM_PATHNAME", asFixnum(context, FNM_PATHNAME));
-        constants.setConstant("FNM_EXTGLOB", asFixnum(context, FNM_EXTGLOB));
-
-        // flock operations
-        constants.setConstant("LOCK_SH", asFixnum(context, RubyFile.LOCK_SH));
-        constants.setConstant("LOCK_EX", asFixnum(context, RubyFile.LOCK_EX));
-        constants.setConstant("LOCK_NB", asFixnum(context, RubyFile.LOCK_NB));
-        constants.setConstant("LOCK_UN", asFixnum(context, RubyFile.LOCK_UN));
-
-        // NULL device
-        constants.setConstant("NULL", newString(context, getNullDevice()));
-
         // File::Constants module is included in IO.
-        runtime.getIO().includeModule(constants);
+        IO.include(context, FileConstants);
 
         if (Platform.IS_WINDOWS) {
             // readlink is not available on Windows. See below and jruby/jruby#3287.
             // TODO: MRI does not implement readlink on Windows, but perhaps we could?
-            fileClass.searchMethod("readlink").setNotImplemented(true);
-            fileClass.searchMethod("mkfifo").setNotImplemented(true);
+            File.searchMethod("readlink").setNotImplemented(true);
+            File.searchMethod("mkfifo").setNotImplemented(true);
         }
 
         if (!Platform.IS_BSD) {
             // lchmod appears to be mostly a BSD-ism, not supported on Linux.
             // See https://github.com/jruby/jruby/issues/5547
-            fileClass.getSingletonClass().searchMethod("lchmod").setNotImplemented(true);
+            File.singletonClass(context).searchMethod("lchmod").setNotImplemented(true);
         }
 
-        return fileClass;
+        return File;
     }
 
     private static String getNullDevice() {
@@ -332,9 +298,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     // rb_file_initialize
     @JRubyMethod(name = "initialize", required = 1, optional = 3, checkArity = false, visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
-        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
+        // capture callInfo for delegating to IO#initialize
+        int callInfo = context.callInfo;
+        IRubyObject keywords = IRRuntimeHelpers.receiveKeywords(context, args, false, true, false);
         // Mild hack. We want to arity-mismatch if extra arg is not really a kwarg but not if it is one.
-        int maxArgs = keywords ? 4 : 3;
+        int maxArgs = keywords instanceof RubyHash ? 4 : 3;
         int argc = Arity.checkArgumentCount(context, args, 1, maxArgs);
 
         if (openFile != null) throw runtimeError(context, "reinitializing File");
@@ -342,6 +310,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         if (argc > 0 && argc <= 3) {
             IRubyObject fd = TypeConverter.convertToTypeWithCheck(context, args[0], context.runtime.getFixnum(), sites(context).to_int_checked);
             if (!fd.isNil()) {
+                // restore callInfo for delegated call to IO#initialize
+                IRRuntimeHelpers.setCallInfo(context, callInfo);
                 if (argc == 1) return super.initialize(context, fd, block);
                 if (argc == 2) return super.initialize(context, fd, args[1], block);
                 return super.initialize(context, fd, args[1], args[2], block);
@@ -354,7 +324,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod
     public IRubyObject chmod(ThreadContext context, IRubyObject arg) {
         checkClosed(context);
-        int mode = (int) arg.convertToInteger().getLongValue();
+        int mode = toInt(context, arg);
         final String path = getPath();
         if (!new File(path).exists()) throw context.runtime.newErrnoENOENTError(path);
 
@@ -449,11 +419,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return asFixnum(context, 0);
     }
 
-    @Override
-    public final IRubyObject inspect() {
-        return inspect(metaClass.runtime.getCurrentContext());
-    }
-
     private static final byte[] CLOSED_MESSAGE = new byte[] {' ', '(', 'c', 'l', 'o', 's', 'e', 'd', ')'};
 
     @JRubyMethod
@@ -495,8 +460,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     private static RubyString basenameImpl(ThreadContext context, RubyClass klass, IRubyObject path, IRubyObject ext) {
-        final int separatorChar = getSeparatorChar(klass);
-        final int altSeparatorChar = getAltSeparatorChar(klass);
+        final int separatorChar = getSeparatorChar(context, klass);
+        final int altSeparatorChar = getAltSeparatorChar(context, klass);
 
         RubyString origString = get_path(context, path);
         Encoding origEncoding = origString.getEncoding();
@@ -568,13 +533,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return newString(context, RubyString.encodeBytelist(name, origEncoding));
     }
 
-    private static int getSeparatorChar(final RubyClass File) {
-        final RubyString sep = RubyString.stringValue(File.getConstant("SEPARATOR"));
+    private static int getSeparatorChar(ThreadContext context, final RubyClass File) {
+        final RubyString sep = RubyString.stringValue(File.getConstant(context, "SEPARATOR"));
         return sep.getByteList().get(0);
     }
 
-    private static int getAltSeparatorChar(final RubyClass File) {
-        final IRubyObject sep = File.getConstant("ALT_SEPARATOR");
+    private static int getAltSeparatorChar(ThreadContext context, final RubyClass File) {
+        final IRubyObject sep = File.getConstant(context, "ALT_SEPARATOR");
         return sep instanceof RubyString sepStr ? sepStr.getByteList().get(0) : NULL_CHAR;
     }
 
@@ -582,17 +547,15 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     public static IRubyObject chmod(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 2, -1);
         int count = 0;
-        RubyInteger mode = args[0].convertToInteger();
+        int mode = toInt(context, args[0]);
 
-        for (int i = 1; i < argc; i++) {
+        for (int i = 1; i < argc; i++, count++) {
             JRubyFile filename = file(args[i]);
 
             if (!filename.exists()) throw context.runtime.newErrnoENOENTError(filename.toString());
 
-            if (0 != context.runtime.getPosix().chmod(filename.getAbsolutePath(), (int) mode.getLongValue())) {
+            if (0 != context.runtime.getPosix().chmod(filename.getAbsolutePath(), mode)) {
                 throw context.runtime.newErrnoFromLastPOSIXErrno();
-            } else {
-                count++;
             }
         }
 
@@ -644,8 +607,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     public static String dirname(ThreadContext context, final String filename, int level) {
         if (level < 0) throw argumentError(context, "negative level: " + level);
 
-        final RubyClass File = context.runtime.getFile();
-        IRubyObject sep = File.getConstant("SEPARATOR");
+        final RubyClass File = fileClass(context);
+        IRubyObject sep = File.getConstant(context, "SEPARATOR");
         final String separator; final char separatorChar;
         if (sep instanceof RubyString && ((RubyString) sep).size() == 1) {
             separatorChar = ((RubyString) sep).getByteList().charAt(0);
@@ -656,7 +619,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
 
         String altSeparator = null; char altSeparatorChar = '\0';
-        final IRubyObject rbAltSeparator = File.getConstantNoConstMissing("ALT_SEPARATOR");
+        final IRubyObject rbAltSeparator = File.getConstantNoConstMissing(context, "ALT_SEPARATOR");
         if (rbAltSeparator != null && rbAltSeparator != context.nil) {
             altSeparator = rbAltSeparator.toString();
             if (!altSeparator.isEmpty()) altSeparatorChar = altSeparator.charAt(0);
@@ -988,14 +951,12 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     public static IRubyObject lchmod(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 1, -1);
         int count = 0;
-        RubyInteger mode = args[0].convertToInteger();
+        int mode = toInt(context, args[0]);
 
-        for (int i = 1; i < argc; i++) {
+        for (int i = 1; i < argc; i++, count++) {
             JRubyFile file = file(args[i]);
-            if (0 != context.runtime.getPosix().lchmod(file.toString(), (int) mode.getLongValue())) {
+            if (context.runtime.getPosix().lchmod(file.toString(), mode) != 0) {
                 throw context.runtime.newErrnoFromLastPOSIXErrno();
-            } else {
-                count++;
             }
         }
 
@@ -1158,7 +1119,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         int argc = Arity.checkArgumentCount(context, args, 0, 1);
         int oldMask = argc == 0 ?
                 PosixShim.umask(context.runtime.getPosix()) :
-                PosixShim.umask(context.runtime.getPosix(), (int) args[0].convertToInteger().getLongValue());
+                PosixShim.umask(context.runtime.getPosix(), toInt(context, args[0]));
 
         return asFixnum(context, oldMask);
     }
@@ -1259,7 +1220,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     public static IRubyObject unlink(ThreadContext context, IRubyObject... args) {
-        return unlink(context, context.runtime.getFile(), args);
+        return unlink(context, fileClass(context), args);
     }
 
     // rb_file_size but not using stat
@@ -1302,12 +1263,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return RubyFixnum.zero(runtime);
     }
 
-    // Moved to IO in 3.2
-    @Override
-    public String getPath() {
-        return super.getPath();
-    }
-
     @Override
     public Encoding getEncoding() {
         return null;
@@ -1347,7 +1302,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             }
             case 4:
                 if (!args[3].isNil()) {
-                    options = TypeConverter.convertToTypeWithCheck(context, args[3], context.runtime.getHash(), sites(context).to_hash_checked);
+                    options = TypeConverter.convertToTypeWithCheck(context, args[3], hashClass(context), sites(context).to_hash_checked);
                     if (options.isNil()) throw argumentError(context, 4, 1, 3);
                 }
                 vperm(pm, args[2]);
@@ -1617,22 +1572,19 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     private static long[] extractTimespec(ThreadContext context, IRubyObject value) {
         long[] timespec = new long[2];
 
-        if (value instanceof RubyFloat) {
-            timespec[0] = Platform.IS_32_BIT ? RubyNumeric.num2int(value) : numericToLong(context, value);
-            double fraction = ((RubyFloat) value).getDoubleValue() % 1.0;
+        if (value instanceof RubyFloat flote) {
+            timespec[0] = Platform.IS_32_BIT ? flote.asInt(context) : flote.asLong(context);
+            double fraction = flote.asDouble(context) % 1.0;
             timespec[1] = (long)(fraction * 1e9 + 0.5);
-        } else if (value instanceof RubyNumeric) {
-            timespec[0] = Platform.IS_32_BIT ? RubyNumeric.num2int(value) : numericToLong(context, value);
+        } else if (value instanceof RubyNumeric numeric) {
+            timespec[0] = Platform.IS_32_BIT ? numeric.asInt(context) : numeric.asLong(context);
             timespec[1] = 0;
         } else {
-            RubyTime time;
-            if (value instanceof RubyTime) {
-                time = ((RubyTime) value);
-            } else {
-                time = (RubyTime) TypeConverter.convertToType(context, value, context.runtime.getTime(), sites(context).to_time_checked, true);
-            }
-            timespec[0] = Platform.IS_32_BIT ? asInt(context, time.to_i(context)) : numericToLong(context, time.to_i(context));
-            timespec[1] = Platform.IS_32_BIT ? asInt(context, time.nsec(context)) : numericToLong(context, time.nsec(context));
+            RubyTime time = value instanceof RubyTime t ?
+                    t : (RubyTime) TypeConverter.convertToType(context, value, timeClass(context), sites(context).to_time_checked, true);
+
+            timespec[0] = Platform.IS_32_BIT ? time.to_i(context).asInt(context) : time.to_i(context).asLong(context);
+            timespec[1] = Platform.IS_32_BIT ? time.nsec(context).asInt(context) : time.nsec(context).asLong(context);
         }
 
         return timespec;
@@ -2191,7 +2143,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     private static RubyString checkHome(ThreadContext context) {
         IRubyObject home = context.runtime.getENV().fastARef(RubyString.newStringShared(context.runtime, RubyDir.HOME));
         if (home == null || home == context.nil || ((RubyString) home).size() == 0) {
-            throw argumentError(context, "couldn't find HOME environment -- expanding `~'");
+            throw argumentError(context, "couldn't find HOME environment -- expanding '~'");
         }
         return (RubyString) home;
     }
@@ -2210,14 +2162,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     private static RubyString doJoin(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        final Ruby runtime = context.runtime;
-        final String separator = runtime.getFile().getConstant("SEPARATOR").toString();
-        final RubyArray argsAry = RubyArray.newArrayMayCopy(runtime, args);
+        final String separator = fileClass(context).getConstant(context, "SEPARATOR").toString();
+        final RubyArray argsAry = RubyArray.newArrayMayCopy(context.runtime, args);
         final StringBuilder buffer = new StringBuilder(24);
 
         joinImpl(buffer, separator, context, recv, argsAry);
 
-        return new RubyString(runtime, runtime.getString(), buffer);
+        return newString(context, buffer.toString());
     }
 
     private static boolean joinImpl(final StringBuilder buffer, final String separator,
@@ -2308,14 +2259,14 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     private static IRubyObject truncateCommon(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
         RubyString filename = arg1.convertToString(); // TODO: SafeStringValue here
         Ruby runtime = context.runtime;
-        RubyInteger newLength = arg2.convertToInteger();
+        RubyInteger newLength = toInteger(context, arg2);
         File childFile = new File(filename.toString());
         String filenameString = Helpers.decodeByteList(runtime, filename.getByteList());
 
         File testFile = childFile.isAbsolute() ? childFile : new File(runtime.getCurrentDirectory(), filenameString);
 
         if (!testFile.exists()) throw runtime.newErrnoENOENTError(filenameString);
-        if (newLength.getLongValue() < 0) throw runtime.newErrnoEINVALError(filenameString);
+        if (newLength.asLong(context) < 0) throw runtime.newErrnoEINVALError(filenameString);
 
         IRubyObject[] args = new IRubyObject[] { filename, newString(context, "r+") };
         RubyFile file = (RubyFile) open(context, recv, args, Block.NULL_BLOCK);

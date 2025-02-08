@@ -41,7 +41,7 @@ import jnr.posix.Timeval;
 import jnr.posix.POSIX;
 import jnr.unixsocket.UnixSocketAddress;
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
@@ -52,8 +52,8 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
 import org.jruby.api.Convert;
-import org.jruby.api.Create;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.platform.Platform;
@@ -84,7 +84,9 @@ import static jnr.constants.platform.TCP.TCP_KEEPIDLE;
 import static jnr.constants.platform.TCP.TCP_KEEPINTVL;
 import static jnr.constants.platform.TCP.TCP_NODELAY;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.Helpers.extractExceptionOnlyArg;
 import static org.jruby.runtime.Helpers.throwErrorFromException;
@@ -95,11 +97,10 @@ import static com.headius.backport9.buffer.Buffers.flipBuffer;
  */
 @JRubyClass(name="BasicSocket", parent="IO")
 public class RubyBasicSocket extends RubyIO {
-    static void createBasicSocket(Ruby runtime) {
-        RubyClass rb_cBasicSocket = runtime.defineClass("BasicSocket", runtime.getIO(), RubyBasicSocket::new);
-
-        rb_cBasicSocket.defineAnnotatedMethods(RubyBasicSocket.class);
-        rb_cBasicSocket.undefineMethod("initialize");
+    static RubyClass createBasicSocket(ThreadContext context, RubyClass IO) {
+        return defineClass(context, "BasicSocket", IO, RubyBasicSocket::new).
+                defineMethods(context, RubyBasicSocket.class).
+                undefMethods(context, "initialize");
     }
 
     public RubyBasicSocket(Ruby runtime, RubyClass type) {
@@ -110,7 +111,7 @@ public class RubyBasicSocket extends RubyIO {
     @JRubyMethod(meta = true)
     public static IRubyObject for_fd(ThreadContext context, IRubyObject _klass, IRubyObject _fileno) {
         Ruby runtime = context.runtime;
-        int fileno = (int)_fileno.convertToInteger().getLongValue();
+        int fileno = toInt(context, _fileno);
         RubyClass klass = (RubyClass)_klass;
 
         ChannelFD fd = runtime.getFilenoUtil().getWrapperFromFileno(fileno);
@@ -401,10 +402,8 @@ public class RubyBasicSocket extends RubyIO {
 
     @JRubyMethod
     public IRubyObject getsockopt(ThreadContext context, IRubyObject _level, IRubyObject _opt) {
-        Ruby runtime = context.runtime;
-
-        SocketLevel level = SocketUtils.levelFromArg(_level);
-        SocketOption opt = SocketUtils.optionFromArg(_opt);
+        SocketLevel level = SocketUtils.levelFromArg(context, _level);
+        SocketOption opt = SocketUtils.optionFromArg(context, _opt);
 
         try {
             Channel channel = getOpenChannel();
@@ -413,7 +412,7 @@ public class RubyBasicSocket extends RubyIO {
 
             case SOL_SOCKET:
                 if (opt == SocketOption.__UNKNOWN_CONSTANT__) {
-                    throw runtime.newErrnoENOPROTOOPTError();
+                    throw context.runtime.newErrnoENOPROTOOPTError();
                 }
 
                 int value = SocketType.forChannel(channel).getSocketOption(channel, opt);
@@ -431,11 +430,11 @@ public class RubyBasicSocket extends RubyIO {
                     packedValue = Option.packInt(value);
                 }
 
-                return new Option(runtime, ProtocolFamily.PF_INET, level, opt, packedValue);
+                return new Option(context.runtime, ProtocolFamily.PF_INET, level, opt, packedValue);
 
             default:
-                int intLevel = _level.convertToInteger().getIntValue();
-                int intOpt = _opt.convertToInteger().getIntValue();
+                int intLevel = toInt(context, _level);
+                int intOpt = toInt(context, _opt);
                 ChannelFD fd = getOpenFile().fd();
                 IPProto proto = IPProto.valueOf(intLevel);
  
@@ -449,18 +448,18 @@ public class RubyBasicSocket extends RubyIO {
                             int ret = SOCKOPT.getsockopt(fd.realFileno, intLevel, intOpt, buf, len);
 
                             if (ret != 0) {
-                                throw runtime.newErrnoFromLastPOSIXErrno();
+                                throw context.runtime.newErrnoFromLastPOSIXErrno();
                             }
                             flipBuffer(buf);
                             ByteList bytes = new ByteList(buf.array(), buf.position(), len.getValue());
 
-                            return new Option(runtime, ProtocolFamily.PF_INET, level, opt, bytes);
+                            return new Option(context.runtime, ProtocolFamily.PF_INET, level, opt, bytes);
                         }
 
                         break;
                 }
 
-                throw runtime.newErrnoENOPROTOOPTError();
+                throw context.runtime.newErrnoENOPROTOOPTError();
             }
         } catch (Exception e) {
             throwErrorFromException(context.runtime, e);
@@ -479,8 +478,8 @@ public class RubyBasicSocket extends RubyIO {
     public IRubyObject setsockopt(ThreadContext context, IRubyObject _level, IRubyObject _opt, IRubyObject val) {
         Ruby runtime = context.runtime;
 
-        SocketLevel level = SocketUtils.levelFromArg(_level);
-        SocketOption opt = SocketUtils.optionFromArg(_opt);
+        SocketLevel level = SocketUtils.levelFromArg(context, _level);
+        SocketOption opt = SocketUtils.optionFromArg(context, _opt);
 
         try {
             Channel channel = getOpenChannel();
@@ -500,11 +499,11 @@ public class RubyBasicSocket extends RubyIO {
                     socketType.setSocketOption(channel, opt, asNumber(context, val));
                 }
 
-                return RubyFixnum.zero(runtime);
+                return asFixnum(context, 0);
 
             default:
-                int intLevel = _level.convertToInteger().getIntValue();
-                int intOpt = _opt.convertToInteger().getIntValue();
+                int intLevel = toInt(context, _level);
+                int intOpt = toInt(context, _opt);
                 ChannelFD fd = getOpenFile().fd();
                 IPProto proto = IPProto.valueOf(intLevel);
 
@@ -517,7 +516,7 @@ public class RubyBasicSocket extends RubyIO {
 
                             ByteBuffer buf = ByteBuffer.allocate(4);
                             buf.order(ByteOrder.nativeOrder());
-                            flipBuffer(buf.putInt(val.convertToInteger().getIntValue()));
+                            flipBuffer(buf.putInt(toInt(context, val)));
                             int ret = SOCKOPT.setsockopt(fd.realFileno, intLevel, intOpt, buf, buf.remaining());
 
                             if (ret != 0) {
@@ -579,13 +578,11 @@ public class RubyBasicSocket extends RubyIO {
 
     @JRubyMethod(name = "getpeername")
     public IRubyObject getpeername(ThreadContext context) {
-        Ruby runtime = context.runtime;
+        InetSocketAddress sock = getInetRemoteSocket(context);
 
-        InetSocketAddress sock = getInetRemoteSocket();
-
-        if (sock != null) return Sockaddr.pack_sockaddr_in(context, sock);
-        UnixSocketAddress unix = getUnixRemoteSocket();
-        return Sockaddr.pack_sockaddr_un(context, unix.path());
+        return sock != null ?
+                Sockaddr.pack_sockaddr_in(context, sock) :
+                Sockaddr.pack_sockaddr_un(context, getUnixRemoteSocket(context).path());
     }
 
     @JRubyMethod(name = "getpeereid", notImplemented = true)
@@ -595,37 +592,31 @@ public class RubyBasicSocket extends RubyIO {
 
     @JRubyMethod
     public IRubyObject local_address(ThreadContext context) {
-        Ruby runtime = context.runtime;
-
         InetSocketAddress address = getInetSocketAddress();
 
         if (address != null) {
             SocketType socketType = SocketType.forChannel(getChannel());
-            return new Addrinfo(runtime, runtime.getClass("Addrinfo"), address, socketType.getSocketType(), socketType);
+            return new Addrinfo(context.runtime, Access.getClass(context, "Addrinfo"), address, socketType.getSocketType(), socketType);
         }
 
         UnixSocketAddress unix = getUnixSocketAddress();
-        return Addrinfo.unix(context, runtime.getClass("Addrinfo"), newString(context, unix.path()));
+        return Addrinfo.unix(context, Access.getClass(context, "Addrinfo"), newString(context, unix.path()));
     }
 
     @JRubyMethod
     public IRubyObject remote_address(ThreadContext context) {
-        Ruby runtime = context.runtime;
-
-        InetSocketAddress address = getInetRemoteSocket();
+        InetSocketAddress address = getInetRemoteSocket(context);
 
         if (address != null) {
             SocketType socketType = SocketType.forChannel(getChannel());
-            return new Addrinfo(runtime, runtime.getClass("Addrinfo"), address, socketType.getSocketType(), socketType);
+            return new Addrinfo(context.runtime, Access.getClass(context, "Addrinfo"), address, socketType.getSocketType(), socketType);
         }
 
-        UnixSocketAddress unix = getUnixRemoteSocket();
+        UnixSocketAddress unix = getUnixRemoteSocket(context);
 
-         if (unix != null) {
-             return Addrinfo.unix(context, runtime.getClass("Addrinfo"), newString(context, unix.path()));
-         }
+         if (unix == null) throw context.runtime.newErrnoENOTCONNError();
 
-         throw runtime.newErrnoENOTCONNError();
+        return Addrinfo.unix(context, Access.getClass(context, "Addrinfo"), newString(context, unix.path()));
     }
 
     @JRubyMethod(optional = 1, checkArity = false)
@@ -651,7 +642,7 @@ public class RubyBasicSocket extends RubyIO {
                 } else if (howString.equals("RDWR") || howString.equals("SHUT_RDWR")) {
                     how = 2;
                 } else {
-                    throw SocketUtils.sockerr(context.runtime, "`how' should be either :SHUT_RD, :SHUT_WR, :SHUT_RDWR");
+                    throw SocketUtils.sockerr(context.runtime, "'how' should be either :SHUT_RD, :SHUT_WR, :SHUT_RDWR");
                 }
             } else {
                 how = RubyNumeric.fix2int(args[0]);
@@ -784,10 +775,14 @@ public class RubyBasicSocket extends RubyIO {
         return null;
     }
 
+    @Deprecated(since = "10.0")
     protected InetSocketAddress getInetRemoteSocket() {
-        SocketAddress socketAddress = getRemoteSocket();
-        if (socketAddress instanceof InetSocketAddress) return (InetSocketAddress) socketAddress;
-        return null;
+        return getInetRemoteSocket(getCurrentContext());
+    }
+
+    protected InetSocketAddress getInetRemoteSocket(ThreadContext context) {
+        SocketAddress socketAddress = getRemoteSocket(context);
+        return socketAddress instanceof InetSocketAddress sock ? sock : null;
     }
 
     protected UnixSocketAddress getUnixSocketAddress() {
@@ -796,10 +791,14 @@ public class RubyBasicSocket extends RubyIO {
         return null;
     }
 
+    @Deprecated(since = "10.0")
     protected UnixSocketAddress getUnixRemoteSocket() {
-        SocketAddress socketAddress = getRemoteSocket();
-        if (socketAddress instanceof UnixSocketAddress) return (UnixSocketAddress) socketAddress;
-        return null;
+        return getUnixRemoteSocket(getCurrentContext());
+    }
+
+    protected UnixSocketAddress getUnixRemoteSocket(ThreadContext context) {
+        SocketAddress socketAddress = getRemoteSocket(context);
+        return socketAddress instanceof UnixSocketAddress sock ? sock : null;
     }
 
     protected SocketAddress getSocketAddress() {
@@ -808,12 +807,17 @@ public class RubyBasicSocket extends RubyIO {
         return SocketType.forChannel(channel).getLocalSocketAddress(channel);
     }
 
+    @Deprecated(since = "10.0")
     protected SocketAddress getRemoteSocket() {
+        return getRemoteSocket(getCurrentContext());
+    }
+
+    protected SocketAddress getRemoteSocket(ThreadContext context) {
         Channel channel = getOpenChannel();
 
         SocketAddress address = SocketType.forChannel(channel).getRemoteSocketAddress(channel);
 
-        if (address == null) throw getRuntime().newErrnoENOTCONNError();
+        if (address == null) throw context.runtime.newErrnoENOTCONNError();
 
         return address;
     }
@@ -874,7 +878,7 @@ public class RubyBasicSocket extends RubyIO {
 
             return RubyFixnum.zero(context.runtime);
         default:
-            throw argumentError(context, "`how' should be either :SHUT_RD, :SHUT_WR, :SHUT_RDWR");
+            throw argumentError(context, "'how' should be either :SHUT_RD, :SHUT_WR, :SHUT_RDWR");
         }
     }
 
@@ -966,43 +970,48 @@ public class RubyBasicSocket extends RubyIO {
         return newArray(context, ret0, ret1, ret2, ret3);
     }
 
+    @Deprecated(since = "10.0")
     protected static String bindContextMessage(IRubyObject host, int port) {
-        return "bind(2) for " + host.inspect() + " port " + port;
+        return bindContextMessage(((RubyBasicObject) host).getCurrentContext(), host, port);
+    }
+
+    protected static String bindContextMessage(ThreadContext context, IRubyObject host, int port) {
+        return "bind(2) for " + host.inspect(context) + " port " + port;
     }
 
     @Deprecated
     public IRubyObject recv(IRubyObject[] args) {
-        return recv(getRuntime().getCurrentContext(), args);
+        return recv(getCurrentContext(), args);
     }
 
     @Deprecated
     public IRubyObject getsockopt(IRubyObject lev, IRubyObject optname) {
-        return getsockopt(getRuntime().getCurrentContext(), lev, optname);
+        return getsockopt(getCurrentContext(), lev, optname);
     }
 
     @Deprecated
     public IRubyObject setsockopt(IRubyObject lev, IRubyObject optname, IRubyObject val) {
-        return setsockopt(getRuntime().getCurrentContext(), lev, optname, val);
+        return setsockopt(getCurrentContext(), lev, optname, val);
     }
 
     @Deprecated
     public IRubyObject getsockname() {
-        return getsockname(getRuntime().getCurrentContext());
+        return getsockname(getCurrentContext());
     }
 
     @Deprecated
     public IRubyObject getpeername() {
-        return getpeername(getRuntime().getCurrentContext());
+        return getpeername(getCurrentContext());
     }
 
     @Deprecated
     public static IRubyObject do_not_reverse_lookup(IRubyObject recv) {
-        return do_not_reverse_lookup(recv.getRuntime().getCurrentContext(), recv);
+        return do_not_reverse_lookup(((RubyBasicObject) recv).getCurrentContext(), recv);
     }
 
     @Deprecated
     public static IRubyObject set_do_not_reverse_lookup(IRubyObject recv, IRubyObject flag) {
-        return set_do_not_reverse_lookup(recv.getRuntime().getCurrentContext(), recv, flag);
+        return set_do_not_reverse_lookup(((RubyBasicObject) recv).getCurrentContext(), recv, flag);
     }
 
     @Deprecated

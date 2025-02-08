@@ -18,7 +18,7 @@ class TestException < Test::Unit::TestCase
     begin
       rescue_an_error
     rescue RuntimeError => e
-      assert_match(/`raise_an_error'/, e.backtrace[0])
+      assert_match(/'raise_an_error'/, e.backtrace[0])
     end
   end
 
@@ -35,7 +35,7 @@ class TestException < Test::Unit::TestCase
     begin
       raise_circular_cause
     rescue => e
-      assert_match(/`raise_circular_cause'/, e.backtrace[0])
+      assert_match(/'raise_circular_cause'/, e.backtrace[0])
       assert_equal(e.message, "error 1")
       assert_equal(e.cause.message, "error 2")
       assert_equal(e.cause.cause.message, "error 1")

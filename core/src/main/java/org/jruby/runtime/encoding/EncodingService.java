@@ -13,6 +13,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
 import org.jruby.javasupport.Java;
 import org.jruby.platform.Platform;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
@@ -31,6 +32,7 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.io.EncodingUtils;
 
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Warn.warn;
 
 public final class EncodingService {
     private final CaseInsensitiveBytesHash<Entry> encodings;
@@ -205,23 +207,23 @@ public final class EncodingService {
         return loadEncodingEntry(entry);
     }
 
-    public void defineEncodings() {
+    public void defineEncodings(ThreadContext context) {
         HashEntryIterator hei = encodings.entryIterator();
         while (hei.hasNext()) {
             CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e =
                     ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)hei.next());
             Entry ee = e.value;
 
-            RubyEncoding encoding = RubyEncoding.newEncoding(runtime, e.bytes, e.p, e.end, ee.isDummy());
+            RubyEncoding encoding = RubyEncoding.newEncoding(context.runtime, e.bytes, e.p, e.end, ee.isDummy());
             encodingList[ee.getIndex()] = encoding;
 
             for (String constName : EncodingUtils.encodingNames(e.bytes, e.p, e.end)) {
-                defineEncodingConstant(runtime, (RubyEncoding) encodingList[ee.getIndex()], constName);
+                defineEncodingConstant(context, (RubyEncoding) encodingList[ee.getIndex()], constName);
             }
         }
     }
 
-    public void defineAliases() {
+    public void defineAliases(ThreadContext context) {
         HashEntryIterator i = aliases.entryIterator();
         while (i.hasNext()) {
             CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e =
@@ -230,13 +232,13 @@ public final class EncodingService {
 
             // The constant names must be treated by the the <code>encodingNames</code> helper.
             for (String constName : EncodingUtils.encodingNames(e.bytes, e.p, e.end)) {
-                defineEncodingConstant(runtime, (RubyEncoding) encodingList[entry.getIndex()], constName);
+                defineEncodingConstant(context, (RubyEncoding) encodingList[entry.getIndex()], constName);
             }
         }
     }
 
-    private void defineEncodingConstant(Ruby runtime, RubyEncoding encoding, String constName) {
-        runtime.getEncoding().defineConstant(constName, encoding);
+    private void defineEncodingConstant(ThreadContext context, RubyEncoding encoding, String constName) {
+        runtime.getEncoding().defineConstant(context, constName, encoding);
     }
 
     public IRubyObject getDefaultExternal() {
@@ -294,6 +296,7 @@ public final class EncodingService {
         return findEncodingCommon(((RubyString) arg).getByteList(), error);
     }
 
+    @Deprecated(since = "10.0")
     private Encoding getEncodingFromNKFName(final String name) {
         HashEntryIterator hei = encodings.entryIterator();
         while (hei.hasNext()) {
@@ -432,7 +435,12 @@ public final class EncodingService {
         }
     }
 
-    public Encoding getWindowsFilesystemEncoding(Ruby ruby) {
+    @Deprecated(since = "10.0")
+    public Encoding getWindowsFilesystemEncoding(Ruby runtime) {
+        return getWindowsFilesystemEncoding(runtime.getCurrentContext());
+    }
+
+    public Encoding getWindowsFilesystemEncoding(ThreadContext context) {
         String encoding = Options.WINDOWS_FILESYSTEM_ENCODING.load();
         Encoding filesystemEncoding = loadEncoding(ByteList.create(encoding));
 
@@ -440,15 +448,12 @@ public final class EncodingService {
         if (filesystemEncoding == null) {
             // if the encoding name matches /^MS[0-9]+/ we can assume it's a Windows code page and use CP### to look it up.
             Matcher match = MS_CP_PATTERN.matcher(encoding);
-            if (match.find()) {
-                String cpEncoding = "CP" + match.group(1);
-                filesystemEncoding = loadEncoding(ByteList.create(cpEncoding));
-            }
+            if (match.find()) filesystemEncoding = loadEncoding(ByteList.create("CP" + match.group(1)));
         }
 
         if (filesystemEncoding == null) {
-            ruby.getWarnings().warn("unrecognized system encoding \"" + encoding + "\", using default external");
-            filesystemEncoding = ruby.getDefaultExternalEncoding();
+            warn(context, "unrecognized system encoding \"" + encoding + "\", using default external");
+            filesystemEncoding = context.runtime.getDefaultExternalEncoding();
         }
 
         return filesystemEncoding;

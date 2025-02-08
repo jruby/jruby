@@ -39,6 +39,7 @@ package org.jruby.javasupport;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
@@ -53,6 +54,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.function.Supplier;
+
+import static org.jruby.api.Create.newString;
 
 /**
  * Java::JavaClass wrapping is no longer used with JRuby.
@@ -86,10 +89,12 @@ public class JavaClass extends JavaObject {
         return getValue().hashCode();
     }
 
+    @Deprecated(since = "10.0")
     public final RubyModule getProxyModule() {
-        return Java.getProxyClass(getRuntime(), javaClass());
+        return Java.getProxyClass(getRuntime().getCurrentContext(), javaClass());
     }
 
+    @Deprecated(since = "10.0")
     public final RubyClass getProxyClass() {
         return (RubyClass) getProxyModule();
     }
@@ -118,7 +123,7 @@ public class JavaClass extends JavaObject {
     }
 
     /**
-     * @see JavaUtil#getJavaClass(RubyModule)
+     * @see JavaUtil#getJavaClass(ThreadContext, RubyModule)
      */
     @Deprecated // no longer used
     public static Class<?> getJavaClass(final ThreadContext context, final RubyModule proxy) {
@@ -172,7 +177,7 @@ public class JavaClass extends JavaObject {
      */
     @Deprecated
     public static JavaClass resolveType(final ThreadContext context, final IRubyObject type) {
-        RubyModule proxyClass = Java.resolveType(context.runtime, type);
+        RubyModule proxyClass = Java.resolveType(context, type);
         return proxyClass == null ? null : get(context.runtime, JavaUtil.getJavaClass(proxyClass, null));
     }
 
@@ -198,16 +203,17 @@ public class JavaClass extends JavaObject {
     @Deprecated
     @JRubyMethod(name = "for_name", meta = true)
     public static JavaClass for_name(IRubyObject recv, IRubyObject name) {
-        return for_name(recv, name.asJavaString());
+        return forNameVerbose(((RubyBasicObject) recv).getCurrentContext().getRuntime(), name.asJavaString());
     }
 
+    @Deprecated(since = "10.0")
     static JavaClass for_name(IRubyObject recv, String name) {
-        return forNameVerbose(recv.getRuntime(), name);
+        return forNameVerbose(((RubyBasicObject) recv).getCurrentContext().getRuntime(), name);
     }
 
     @Override
-    public RubyString inspect() {
-        return getRuntime().newString("class " + javaClass().getName());
+    public RubyString inspect(ThreadContext context) {
+        return newString(context, "class " + javaClass().getName());
     }
 
     public static String getSimpleName(Class<?> clazz) {

@@ -31,8 +31,14 @@
 
 package org.jruby;
 
+import static org.jruby.api.Access.basicObjectClass;
+import static org.jruby.api.Access.classClass;
+import static org.jruby.api.Access.instanceConfig;
+import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Error.*;
+import static org.jruby.api.Warn.warn;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PUBLIC;
 import static org.jruby.util.CodegenUtils.ci;
@@ -60,6 +66,7 @@ import java.util.stream.Collectors;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Create;
+import org.jruby.api.JRubyAPI;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -114,25 +121,22 @@ public class RubyClass extends RubyModule {
     private static final Logger LOG = LoggerFactory.getLogger(RubyClass.class);
     private static final double SUBCLASSES_CLEAN_FACTOR = 0.25;
 
-    public static void createClassClass(Ruby runtime, RubyClass classClass) {
-        classClass.setClassIndex(ClassIndex.CLASS);
-        classClass.setReifiedClass(RubyClass.class);
-        classClass.kindOf = new RubyModule.JavaClassKindOf(RubyClass.class);
+    public static void finishClassClass(Ruby runtime, RubyClass Class) {
+        Class.reifiedClass(RubyClass.class).
+                kindOf(new RubyModule.JavaClassKindOf(RubyClass.class)).
+                classIndex(ClassIndex.CLASS);
+    }
 
-        classClass.undefineMethod("module_function");
-        classClass.undefineMethod("append_features");
-        classClass.undefineMethod("prepend_features");
-        classClass.undefineMethod("extend_object");
-        classClass.undefineMethod("refine");
+    public static void finishCreateClassClass(ThreadContext context, RubyClass Class) {
+        Class.defineMethods(context, RubyClass.class).
+                undefMethods(context, "module_function", "append_features", "prepend_features", "extend_object", "refine");
 
-        classClass.defineAnnotatedMethods(RubyClass.class);
-
-        runtime.setBaseNewMethod(classClass.searchMethod("new"));
+        context.runtime.setBaseNewMethod(Class.searchMethod("new"));
     }
 
     public static final ObjectAllocator CLASS_ALLOCATOR = (runtime, klass) -> {
         RubyClass clazz = new RubyClass(runtime);
-        clazz.allocator = ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR; // Class.allocate object is not allocatable before it is initialized
+        clazz.allocator = NOT_ALLOCATABLE_ALLOCATOR; // Class.allocate object is not allocatable before it is initialized
         return clazz;
     };
 
@@ -140,8 +144,48 @@ public class RubyClass extends RubyModule {
         return allocator;
     }
 
+    /**
+     * @param allocator
+     * @deprecated Use {@link org.jruby.RubyClass#allocator(ObjectAllocator)} instead.
+     */
+    @Deprecated(since = "10.0")
     public void setAllocator(ObjectAllocator allocator) {
+        allocator(allocator);
+    }
+
+    /**
+     * Define an allocator for this class (usually this is part of
+     * {@link org.jruby.api.Define#defineClass(ThreadContext, String, RubyClass, ObjectAllocator)}).
+     *
+     * @param allocator to use
+     * @return itself for a composable API
+     */
+    @JRubyAPI
+    public <T extends RubyClass> T allocator(ObjectAllocator allocator) {
         this.allocator = allocator;
+        return (T) this;
+    }
+
+    /**
+     * Set what marshaller we use or generally use this to specify the typw cannot Marshal data.
+     * @param marshal the marshaller
+     * @return itself for composable API
+     */
+    @JRubyAPI
+    public <T extends RubyClass> T marshalWith(ObjectMarshal marshal) {
+        this.marshal = marshal;
+        return (T) this;
+    }
+
+    /**
+     * Sets reified class to use.
+     * @param reifiedClass the java type to use
+     * @return itself for composable API
+     */
+    @JRubyAPI
+    public <T extends RubyClass> T reifiedClass(Class<? extends IRubyObject> reifiedClass) {
+        this.reifiedClass = (Class<? extends Reified>) reifiedClass; // Not always true
+        return (T) this;
     }
 
     /**
@@ -241,17 +285,18 @@ public class RubyClass extends RubyModule {
         return withException(createTypeError(runtime.getCurrentContext(), msg.toString()), e);
     }
 
-    @JRubyMethod(name = "allocate")
+    @Deprecated(since = "10.0")
     public IRubyObject allocate() {
-        if (superClass == null) {
-            if (this != runtime.getBasicObject()) {
-                throw typeError(runtime.getCurrentContext(), "can't instantiate uninitialized class");
-            }
+        return allocate(getCurrentContext());
+    }
+
+    @JRubyMethod(name = "allocate")
+    public IRubyObject allocate(ThreadContext context) {
+        if (superClass == null && this != basicObjectClass(context)) {
+            throw typeError(context, "can't instantiate uninitialized class");
         }
-        IRubyObject obj = allocator.allocate(runtime, this);
-        if (getMetaClass(obj).getRealClass() != getRealClass()) {
-            throw typeError(runtime.getCurrentContext(), "wrong instance allocation");
-        }
+        IRubyObject obj = allocator.allocate(context.runtime, this);
+        if (getMetaClass(obj).getRealClass() != getRealClass()) throw typeError(context, "wrong instance allocation");
         return obj;
     }
 
@@ -356,17 +401,10 @@ public class RubyClass extends RubyModule {
      * @return a half-baked meta class for object
      */
     public static RubyClass createBootstrapClass(Ruby runtime, String name, RubyClass superClass, ObjectAllocator allocator) {
-        RubyClass obj;
-
-        if (superClass == null ) {  // boot the Object class
-            obj = new RubyClass(runtime);
-            obj.marshal = DEFAULT_OBJECT_MARSHAL;
-        } else {                    // boot the Module and Class classes
-            obj = new RubyClass(runtime, superClass);
-        }
-        obj.setAllocator(allocator);
-        obj.setBaseName(name);
-        return obj;
+        RubyClass obj = superClass == null ?
+                new RubyClass(runtime).marshalWith(DEFAULT_OBJECT_MARSHAL) :
+                new RubyClass(runtime, superClass);
+        return obj.allocator(allocator).baseName(name);
     }
 
     /** separate path for MetaClass and IncludedModuleWrapper construction
@@ -392,7 +430,26 @@ public class RubyClass extends RubyModule {
             }
         }
 
-        setSuperClass(superClass); // this is the only case it might be null here (in MetaClass construction)
+        superClass(superClass); // this is the only case it might be null here (in MetaClass construction)
+    }
+
+    /**
+     *  This is an internal API only used by Ruby constructor before ThreadContext exists.
+     * @param runtime
+     * @param superClass
+     * @param Class
+     */
+    protected RubyClass(Ruby runtime, RubyClass superClass, RubyClass Class) {
+        super(runtime, Class, false);
+
+        this.runtime = runtime;
+        if ((this.realClass = superClass.realClass) != null) {
+            this.variableTableManager = realClass.variableTableManager;
+        } else {
+            this.variableTableManager = new VariableTableManager(this);
+        }
+
+        superClass(superClass);
     }
 
     /** used by CLASS_ALLOCATOR (any Class' class will be a Class!)
@@ -403,7 +460,7 @@ public class RubyClass extends RubyModule {
         this.runtime = runtime;
         this.realClass = this;
         this.variableTableManager = new VariableTableManager(this);
-        setClassIndex(ClassIndex.CLASS);
+        classIndex(ClassIndex.CLASS);
     }
 
     /** rb_class_boot (for plain Classes)
@@ -411,7 +468,7 @@ public class RubyClass extends RubyModule {
      */
     protected RubyClass(Ruby runtime, RubyClass superClazz) {
         this(runtime);
-        setSuperClass(superClazz);
+        superClass(superClazz);
         marshal = superClazz.marshal; // use parent's marshal
         superClazz.addSubclass(this);
         allocator = superClazz.allocator;
@@ -423,7 +480,7 @@ public class RubyClass extends RubyModule {
      */
     protected RubyClass(Ruby runtime, RubyClass superClazz, CallSite[] extraCallSites) {
         this(runtime);
-        setSuperClass(superClazz);
+        superClass(superClazz);
         this.marshal = superClazz.marshal; // use parent's marshal
         superClazz.addSubclass(this);
 
@@ -436,20 +493,26 @@ public class RubyClass extends RubyModule {
      * and with Object as its immediate superclass.
      * Corresponds to rb_class_new in MRI.
      */
+    @Deprecated(since = "10.0")
     public static RubyClass newClass(Ruby runtime, RubyClass superClass) {
         if (superClass == runtime.getClassClass()) throw typeError(runtime.getCurrentContext(), "can't make subclass of Class");
         if (superClass.isSingleton()) throw typeError(runtime.getCurrentContext(), "can't make subclass of virtual class");
         return new RubyClass(runtime, superClass);
     }
 
+    @Deprecated(since = "10.0")
+    public static RubyClass newClass(Ruby runtime, RubyClass superClass, CallSite[] extraCallSites) {
+        return newClass(runtime.getCurrentContext(), superClass, extraCallSites);
+    }
+
     /**
      * A variation on newClass that allow passing in an array of supplementary
      * call sites to improve dynamic invocation.
      */
-    public static RubyClass newClass(Ruby runtime, RubyClass superClass, CallSite[] extraCallSites) {
-        if (superClass == runtime.getClassClass()) throw typeError(runtime.getCurrentContext(), "can't make subclass of Class");
-        if (superClass.isSingleton()) throw typeError(runtime.getCurrentContext(), "can't make subclass of virtual class");
-        return new RubyClass(runtime, superClass, extraCallSites);
+    public static RubyClass newClass(ThreadContext context, RubyClass superClass, CallSite[] extraCallSites) {
+        if (superClass == classClass(context)) throw typeError(context, "can't make subclass of Class");
+        if (superClass.isSingleton()) throw typeError(context, "can't make subclass of virtual class");
+        return new RubyClass(context.runtime, superClass, extraCallSites);
     }
 
     /**
@@ -460,50 +523,90 @@ public class RubyClass extends RubyModule {
      * Corresponds to rb_class_new/rb_define_class_id/rb_name_class/rb_set_class_path
      * in MRI.
      */
+    @Deprecated(since = "10.0")
     public static RubyClass newClass(Ruby runtime, RubyClass superClass, String name, ObjectAllocator allocator, RubyModule parent, boolean setParent) {
-        RubyClass clazz = newClass(runtime, superClass);
-        clazz.setBaseName(name);
-        clazz.setAllocator(allocator);
-        clazz.makeMetaClass(superClass.getMetaClass());
+        var context = runtime.getCurrentContext();
+        RubyClass clazz = newClass(context, superClass, null).
+                allocator(allocator).
+                baseName(name);
+
+        clazz.makeMetaClass(context, superClass.getMetaClass());
         if (setParent) clazz.setParent(parent);
-        parent.setConstant(name, clazz);
-        clazz.inherit(superClass);
+        parent.defineConstant(context, name, clazz);
+        superClass.invokeInherited(context, superClass, clazz);
         return clazz;
     }
 
+    @Deprecated(since = "10.0")
     public static RubyClass newClass(Ruby runtime, RubyClass superClass, String name, ObjectAllocator allocator,
                                      RubyModule parent, boolean setParent, String file, int line) {
-        RubyClass clazz = newClass(runtime, superClass);
-        clazz.setBaseName(name);
-        clazz.setAllocator(allocator);
-        clazz.makeMetaClass(superClass.getMetaClass());
+        return newClass(runtime.getCurrentContext(), superClass, name, allocator, parent, setParent, file, line);
+    }
+
+    public static RubyClass newClass(ThreadContext context, RubyClass superClass, String name, ObjectAllocator allocator,
+                                     RubyModule parent, boolean setParent, String file, int line) {
+        assert superClass != null;
+        RubyClass clazz = newClass(context, superClass, null).
+                allocator(allocator).
+                baseName(name);
+        clazz.makeMetaClass(context, superClass.getMetaClass());
         if (setParent) clazz.setParent(parent);
-        parent.setConstant(name, clazz, file, line);
-        clazz.inherit(superClass);
+        parent.setConstant(context, name, clazz, file, line);
+        superClass.invokeInherited(context, superClass, clazz);
         return clazz;
+    }
+
+    @Deprecated(since = "10.0")
+    public static RubyClass newClass(Ruby runtime, RubyClass superClass, String name, ObjectAllocator allocator, RubyModule parent, boolean setParent, CallSite[] extraCallSites) {
+        return newClass(runtime.getCurrentContext(), superClass, name, allocator, parent, setParent, extraCallSites);
     }
 
     /**
      * A variation on newClass that allows passing in an array of supplementary
      * call sites to improve dynamic invocation performance.
      */
-    public static RubyClass newClass(Ruby runtime, RubyClass superClass, String name, ObjectAllocator allocator, RubyModule parent, boolean setParent, CallSite[] extraCallSites) {
-        RubyClass clazz = newClass(runtime, superClass, extraCallSites);
-        clazz.setBaseName(name);
-        clazz.setAllocator(allocator);
-        clazz.makeMetaClass(superClass.getMetaClass());
+    public static RubyClass newClass(ThreadContext context, RubyClass superClass, String name,
+                                     ObjectAllocator allocator, RubyModule parent, boolean setParent,
+                                     CallSite[] extraCallSites) {
+        RubyClass clazz = newClass(context, superClass, extraCallSites).
+                allocator(allocator).
+                baseName(name);
+        clazz.makeMetaClass(context, superClass.getMetaClass());
         if (setParent) clazz.setParent(parent);
-        parent.setConstant(name, clazz, BUILTIN_CONSTANT, -1);
-        clazz.inherit(superClass);
+        parent.setConstant(context, name, clazz, BUILTIN_CONSTANT, -1);
+        superClass.invokeInherited(context, superClass, clazz);
         return clazz;
     }
 
     /**
-     * @see #getSingletonClass()
+     * This is an internal API for bootstrapping a few classes before ThreadContext is available.  The API
+     * is intentionally limited/obtuse so no one is tempted to try and use it.
+     *
+     * @param runtime the runtime
+     * @param Object reference to Object which is superclass and parent for new type
+     * @param name the name of the new class
+     * @return the new class.
      */
+    public static RubyClass newClassBootstrap(Ruby runtime, RubyClass Object, RubyClass Class, String name) {
+        RubyClass clazz = new RubyClass(runtime, Object).
+                allocator(NOT_ALLOCATABLE_ALLOCATOR).
+                baseName(name);
+        clazz.makeMetaClassBootstrap(runtime, Object.getMetaClass(), Class);
+        Object.defineConstantBootstrap(name, clazz);
+        return clazz;
+    }
+
+    @Deprecated(since = "10.0")
     RubyClass toSingletonClass(RubyBasicObject target) {
+        return toSingletonClass(getCurrentContext(), target);
+    }
+
+    /**
+     * @see #singletonClass(ThreadContext)
+     */
+    RubyClass toSingletonClass(ThreadContext context, RubyBasicObject target) {
         // replaced after makeMetaClass with MetaClass's toSingletonClass
-        return target.makeMetaClass(this);
+        return target.makeMetaClass(context, this);
     }
 
     static boolean notVisibleAndNotMethodMissing(DynamicMethod method, String name, IRubyObject caller, CallType callType) {
@@ -845,7 +948,7 @@ public class RubyClass extends RubyModule {
         return method != null && method.isBuiltin();
     }
 
-    private void dumpReifiedClass(String dumpDir, String javaPath, byte[] classBytes) {
+    private void dumpReifiedClass(ThreadContext context, String dumpDir, String javaPath, byte[] classBytes) {
         if (dumpDir != null) {
             if (dumpDir.length() == 0) dumpDir = ".";
 
@@ -857,9 +960,8 @@ public class RubyClass extends RubyModule {
                 classStream.write(classBytes);
             }
             catch (IOException io) {
-                runtime.getWarnings().warn("unable to dump class file: " + io.getMessage());
-            }
-            finally {
+                warn(context, "unable to dump class file: " + io.getMessage());
+            } finally {
                 if (classStream != null) {
                     try { classStream.close(); }
                     catch (IOException ignored) { /* no-op */ }
@@ -910,41 +1012,41 @@ public class RubyClass extends RubyModule {
     */
     @JRubyMethod(name = "new", keywords = true)
     public IRubyObject newInstance(ThreadContext context, Block block) {
-        IRubyObject obj = allocate();
+        IRubyObject obj = allocate(context);
         baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, block);
         return obj;
     }
 
     @JRubyMethod(name = "new", keywords = true)
     public IRubyObject newInstance(ThreadContext context, IRubyObject arg0, Block block) {
-        IRubyObject obj = allocate();
+        IRubyObject obj = allocate(context);
         baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, arg0, block);
         return obj;
     }
 
     public IRubyObject newInstance(ThreadContext context, IRubyObject arg0) {
-        IRubyObject obj = allocate();
+        IRubyObject obj = allocate(context);
         baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, arg0);
         return obj;
     }
 
     @JRubyMethod(name = "new", keywords = true)
     public IRubyObject newInstance(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        IRubyObject obj = allocate();
+        IRubyObject obj = allocate(context);
         baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, arg0, arg1, block);
         return obj;
     }
 
     @JRubyMethod(name = "new", keywords = true)
     public IRubyObject newInstance(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        IRubyObject obj = allocate();
+        IRubyObject obj = allocate(context);
         baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, arg0, arg1, arg2, block);
         return obj;
     }
 
     @JRubyMethod(name = "new", rest = true, keywords = true)
     public IRubyObject newInstance(ThreadContext context, IRubyObject[] args, Block block) {
-        IRubyObject obj = allocate();
+        IRubyObject obj = allocate(context);
         baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, args, block);
         return obj;
     }
@@ -955,27 +1057,26 @@ public class RubyClass extends RubyModule {
     @Override
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, Block block) {
-        checkNotInitialized();
-        return initializeCommon(context, runtime.getObject(), block);
+        checkNotInitialized(context);
+        return initializeCommon(context, objectClass(context), block);
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject superObject, Block block) {
-        checkNotInitialized();
+        checkNotInitialized(context);
         checkInheritable(context, superObject);
         return initializeCommon(context, (RubyClass) superObject, block);
     }
 
     private RubyClass initializeCommon(ThreadContext context, RubyClass superClazz, Block block) {
-        setSuperClass(superClazz);
+        superClass(superClazz);
         allocator = superClazz.allocator;
-        makeMetaClass(superClazz.getMetaClass());
+        makeMetaClass(context, superClazz.getMetaClass());
+        superClazz.addSubclass(this);
 
         marshal = superClazz.marshal;
 
-        superClazz.addSubclass(this);
-
-        inherit(superClazz);
+        superClazz.invokeInherited(context, superClazz, this);
         super.initialize(context, block);
 
         return this;
@@ -985,12 +1086,12 @@ public class RubyClass extends RubyModule {
      *
      */
     @JRubyMethod(name = "initialize_copy", visibility = PRIVATE)
-    @Override
-    public IRubyObject initialize_copy(IRubyObject original) {
-        checkNotInitialized();
-        if (original instanceof MetaClass) throw typeError(runtime.getCurrentContext(), "can't copy singleton class");
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject original) {
+        checkNotInitialized(context);
+        if (original == context.runtime.getBasicObject()) throw typeError(context, "can't copy the root class");
+        if (original instanceof MetaClass) throw typeError(context, "can't copy singleton class");
 
-        super.initialize_copy(original);
+        super.initialize_copy(context, original);
         RubyClass originalClazz = (RubyClass) original;
         allocator = originalClazz.allocator;
 
@@ -1232,15 +1333,15 @@ public class RubyClass extends RubyModule {
      * global lock, which we would like to avoid.
      */
     @Override
-    public void invalidateCacheDescendants() {
-        super.invalidateCacheDescendants();
+    public void invalidateCacheDescendants(ThreadContext context) {
+        super.invalidateCacheDescendants(context);
 
         SubclassNode subclassNode = this.subclassNode;
         while (subclassNode != null) {
             WeakReference<RubyClass> ref = subclassNode.ref;
             RubyClass klass = ref.get();
             if (klass != null) {
-                klass.invalidateCacheDescendants();
+                klass.invalidateCacheDescendants(context);
             }
             subclassNode = subclassNode.next;
         }
@@ -1294,12 +1395,11 @@ public class RubyClass extends RubyModule {
     /** rb_class_inherited (reversed semantics!)
      *
      */
+    @Deprecated(since = "10.0")
     public void inherit(RubyClass superClazz) {
         if (superClazz == null) superClazz = runtime.getObject();
 
-        if (runtime.getNil() != null) {
-            superClazz.invokeInherited(runtime.getCurrentContext(), superClazz, this);
-        }
+        superClazz.invokeInherited(runtime.getCurrentContext(), superClazz, this);
     }
 
     /** Return the real super class of this class.
@@ -1312,8 +1412,8 @@ public class RubyClass extends RubyModule {
         RubyClass superClazz = superClass;
 
         if (superClazz == null) {
-            if (metaClass == runtime.getBasicObject().metaClass) return context.nil;
-            throw typeError(runtime.getCurrentContext(), "uninitialized class");
+            if (metaClass == basicObjectClass(context).metaClass) return context.nil;
+            throw typeError(context, "uninitialized class");
         }
 
         while (superClazz != null && (superClazz.isIncluded() || superClazz.isPrepended())) {
@@ -1325,20 +1425,18 @@ public class RubyClass extends RubyModule {
 
     @JRubyMethod
     public IRubyObject attached_object(ThreadContext context) {
-        throw typeError(runtime.getCurrentContext(), "'", this, "' is not a singleton class");
+        throw typeError(context, "'", this, "' is not a singleton class");
     }
 
-    private void checkNotInitialized() {
-        if (superClass != null || this == runtime.getBasicObject()) {
-            throw typeError(runtime.getCurrentContext(), "already initialized class");
-        }
+    private void checkNotInitialized(ThreadContext context) {
+        if (superClass != null || this == basicObjectClass(context)) throw typeError(context, "already initialized class");
     }
     /** rb_check_inheritable
      *
      */
     @Deprecated
     public static void checkInheritable(IRubyObject superClass) {
-        checkInheritable(superClass.getRuntime().getCurrentContext(), superClass);
+        checkInheritable(((RubyBasicObject) superClass).getCurrentContext(), superClass);
     }
 
     public static void checkInheritable(ThreadContext context, IRubyObject superClass) {
@@ -1346,15 +1444,20 @@ public class RubyClass extends RubyModule {
             throw typeError(context, "superclass must be a Class (" + superClass.getMetaClass() + " given)");
         }
         if (((RubyClass) superClass).isSingleton()) throw typeError(context, "can't make subclass of virtual class");
-        if (superClass == context.runtime.getClassClass()) throw typeError(context, "can't make subclass of Class");
+        if (superClass == classClass(context)) throw typeError(context, "can't make subclass of Class");
     }
 
     public final ObjectMarshal getMarshal() {
         return marshal;
     }
 
+    /**
+     * @param marshal
+     * @deprecated Use {@link org.jruby.RubyClass#marshalWith(ObjectMarshal)} instead.
+     */
+    @Deprecated(since = "10.0")
     public final void setMarshal(ObjectMarshal marshal) {
-        this.marshal = marshal;
+        marshalWith(marshal);
     }
 
     public final void marshal(Object obj, MarshalStream marshalStream) throws IOException {
@@ -1370,7 +1473,8 @@ public class RubyClass extends RubyModule {
     }
 
     public static void marshalTo(RubyClass clazz, MarshalStream output) throws java.io.IOException {
-        output.registerLinkTarget(clazz);
+        var context = clazz.getRuntime().getCurrentContext();
+        output.registerLinkTarget(context, clazz);
         output.writeString(MarshalStream.getPathFromClass(clazz));
     }
 
@@ -1388,8 +1492,9 @@ public class RubyClass extends RubyModule {
         @Override
         public void marshalTo(Ruby runtime, Object obj, RubyClass type, MarshalStream marshalStream) throws IOException {
             IRubyObject object = (IRubyObject) obj;
+            var context = object.getRuntime().getCurrentContext();
 
-            marshalStream.registerLinkTarget(object);
+            marshalStream.registerLinkTarget(context, object);
             marshalStream.dumpVariables(object.getMarshalVariableList());
         }
 
@@ -1403,7 +1508,7 @@ public class RubyClass extends RubyModule {
 
         @Override
         public Object unmarshalFrom(Ruby runtime, RubyClass type, UnmarshalStream input) throws IOException {
-            IRubyObject result = input.entry(type.allocate());
+            IRubyObject result = input.entry(type.allocate(runtime.getCurrentContext()));
 
             input.ivar(null, result, null);
 
@@ -1492,15 +1597,15 @@ public class RubyClass extends RubyModule {
      * @param classDumpDir Directory to save reified java class
      */
     public synchronized void reify(String classDumpDir, boolean useChildLoader) {
+        var context = runtime.getCurrentContext();
         boolean[] java_box = { false };
         // re-check reifiable in case another reify call has jumped in ahead of us
         if (!isReifiable(java_box)) return;
         final boolean concreteExt = java_box[0];
 
-        final Class<?> parentReified = superClass.getRealClass().getReifiedClass();
-        if (parentReified == null) {
-            throw typeError(getClassRuntime().getCurrentContext(), getName() + "'s parent class is not yet reified");
-        }
+        final Class<?> parentReified = superClass.getRealClass().reifiedClass();
+        if (parentReified == null) throw typeError(context, getName(context) + "'s parent class is not yet reified");
+
 
         ClassDefiningClassLoader classLoader; // usually parent's class-loader
         if (parentReified.getClassLoader() instanceof OneShotClassLoader) {
@@ -1508,16 +1613,16 @@ public class RubyClass extends RubyModule {
         } else {
             if (useChildLoader) {
                 MultiClassLoader parentLoader = new MultiClassLoader(runtime.getJRubyClassLoader());
-                for(Loader cLoader : runtime.getInstanceConfig().getExtraLoaders()) {
+                for(Loader cLoader : instanceConfig(context).getExtraLoaders()) {
                     parentLoader.addClassLoader(cLoader.getClassLoader());
                 }
                 classLoader = new OneShotClassLoader(parentLoader);
             } else {
-                classLoader = runtime.getJRubyClassLoader();
+                classLoader = context.runtime.getJRubyClassLoader();
             }
         }
 
-        String javaName = getReifiedJavaClassName();
+        String javaName = getReifiedJavaClassName(context);
         // *might* need to include a Class identifier in the Java class name, since a Ruby class might be dropped
         // (using remove_const) and re-created in which case using the same name would cause a conflict...
         if (classLoader.hasDefinedClass(javaName)) { // as Ruby class dropping is "unusual" - assume v0 to be the raw name
@@ -1545,7 +1650,7 @@ public class RubyClass extends RubyModule {
         // Attempt to load the name we plan to use; skip reification if it exists already (see #1229).
         try {
             Class result = classLoader.defineClass(javaName, classBytes);
-            dumpReifiedClass(classDumpDir, javaPath, classBytes);
+            dumpReifiedClass(context, classDumpDir, javaPath, classBytes);
 
             //Trigger initilization
             @SuppressWarnings("unchecked")
@@ -1557,7 +1662,7 @@ public class RubyClass extends RubyModule {
                 // setAllocator(ConcreteJavaProxy.ALLOCATOR); // this should be already set
                 // Allocator "set" via clinit {@link JavaProxyClass#setProxyClassReified()}
 
-                this.setInstanceVariable("@java_class", Java.wrapJavaObject(runtime, result));
+                this.setInstanceVariable("@java_class", Java.wrapJavaObject(context, result));
                 JavaProxy.setJavaClass(this, result);
                 reifiedClassJava = Boolean.TRUE;
             } else {
@@ -1575,16 +1680,16 @@ public class RubyClass extends RubyModule {
             JavaProxyClass.addStaticInitLookup((Object[]) null); // wipe any local values not retrieved
             final String msg = error.getMessage();
             if ( msg != null && msg.contains("duplicate class definition for name") ) {
-                logReifyException(error, false);
+                logReifyException(context, error, false);
             }
             else {
-                logReifyException(error, true);
+                logReifyException(context, error, true);
             }
         }
         catch (Exception ex) {
             if (nearEnd) Helpers.throwException(ex);
             JavaProxyClass.addStaticInitLookup((Object[]) null); // wipe any local values not retrieved
-            logReifyException(ex, true);
+            logReifyException(context, ex, true);
         }
 
         // If we get here, there's some other class in this classloader hierarchy with the same name. In order to
@@ -1596,12 +1701,12 @@ public class RubyClass extends RubyModule {
         }
     }
 
-    private String getReifiedJavaClassName() {
+    private String getReifiedJavaClassName(ThreadContext context) {
         final String basePackagePrefix = "rubyobj.";
         if (getBaseName() == null) { // anonymous Class instance: rubyobj.Class$0x1234abcd
-            return basePackagePrefix + anonymousMetaNameWithIdentifier().replace(':', '$');
+            return basePackagePrefix + anonymousMetaNameWithIdentifier(context).replace(':', '$');
         }
-        final CharSequence name = StringSupport.replaceAll(getName(), "::", ".");
+        final CharSequence name = StringSupport.replaceAll(getName(context), "::", ".");
         return basePackagePrefix + name; // TheFoo::Bar -> rubyobj.TheFoo.Bar
     }
 
@@ -1749,19 +1854,20 @@ public class RubyClass extends RubyModule {
 
         @Override
         public void customReify() {
+            var context = runtime.getCurrentContext();
             addClassAnnotations();
 
             // define fields
             defineFields();
 
             // gather a list of instance methods, so we don't accidentally make static ones that conflict
-            final Set<String> instanceMethods = new HashSet<String>(getMethods().size());
+            final Set<String> instanceMethods = new HashSet<>(getMethods().size());
 
             // define instance methods
-            defineInstanceMethods(instanceMethods);
+            defineInstanceMethods(context, instanceMethods);
 
             // define class/static methods
-            defineClassMethods(instanceMethods);
+            defineClassMethods(context, instanceMethods);
         }
 
         private void addClassAnnotations() {
@@ -1796,7 +1902,7 @@ public class RubyClass extends RubyModule {
             }
         }
 
-        private void defineClassMethods(Set<String> instanceMethods) {
+        private void defineClassMethods(ThreadContext context, Set<String> instanceMethods) {
             SkinnyMethodAdapter m;
 
             // define class/static methods
@@ -1866,14 +1972,14 @@ public class RubyClass extends RubyModule {
                     RealClassGenerator.coerceResultAndReturn(m, methodSignature[0]);
                 }
 
-                if (DEBUG_REIFY) LOG.debug("defining {}.{} as {}.{}", getName(), id, javaName, javaMethodName + signature);
+                if (DEBUG_REIFY) LOG.debug("defining {}.{} as {}.{}", getName(context), id, javaName, javaMethodName + signature);
 
                 m.end();
             }
         }
 
         //TODO: only generate that are overrideable (javaproxyclass)
-        protected void defineInstanceMethods(Set<String> instanceMethods) {
+        protected void defineInstanceMethods(ThreadContext context, Set<String> instanceMethods) {
             Set<String> defined = new HashSet<>();
             for (Map.Entry<String,DynamicMethod> methodEntry : getMethods().entrySet()) { // TODO: explicitly included but not-yet defined methods?
                 final String id = methodEntry.getKey();
@@ -1899,18 +2005,18 @@ public class RubyClass extends RubyModule {
                 if (methodSignature == null) {
                     // TODO: should inherited search for java mangledName?
                     for (Class<?>[] sig : searchInheritedSignatures(id, arity)) { // id (vs callid) here as this is searching in java
-                        String signature = defineInstanceMethod(id, callid, arity, position, sig);
+                        String signature = defineInstanceMethod(context, id, callid, arity, position, sig);
                         if (signature != null) instanceMethods.add(signature);
                     }
                 } else {
-                    String signature = defineInstanceMethod(id, callid, arity, position, methodSignature);
+                    String signature = defineInstanceMethod(context, id, callid, arity, position, methodSignature);
                     if (signature != null) instanceMethods.add(signature);
                 }
             }
         }
         
-        protected String defineInstanceMethod(final String id, final String callid, final Signature sig,
-                PositionAware position, Class<?>[] methodSignature) {
+        protected String defineInstanceMethod(ThreadContext context, final String id, final String callid,
+                                              final Signature sig, PositionAware position, Class<?>[] methodSignature) {
             String javaMethodName = JavaNameMangler.mangleMethodName(id);
 
             Map<Class<?>, Map<String, Object>> methodAnnos = getMethodAnnotations().get(callid); // ruby side, use callid
@@ -2021,7 +2127,7 @@ public class RubyClass extends RubyModule {
             }
             m.end();
 
-            if (DEBUG_REIFY) LOG.debug("defining {}#{} (calling #{}) as {}#{}", getName(), id, callid, javaName, javaMethodName + signature);
+            if (DEBUG_REIFY) LOG.debug("defining {}#{} (calling #{}) as {}#{}", getName(context), id, callid, javaName, javaMethodName + signature);
 
             return javaMethodName + signature;
         }
@@ -2179,6 +2285,7 @@ public class RubyClass extends RubyModule {
 
             // now create proxy class
             m.getstatic(javaPath, RUBY_FIELD, ci(Ruby.class));
+            m.invokevirtual("org/jruby/Ruby", "getCurrentContext", "()Lorg/jruby/runtime/ThreadContext;");
             m.getstatic(javaPath, RUBY_CLASS_FIELD, ci(RubyClass.class));
             m.ldc(org.objectweb.asm.Type.getType("L" + javaPath + ";"));
             // if (simpleAlloc) // if simple, don't init, if complex, do init
@@ -2187,7 +2294,7 @@ public class RubyClass extends RubyModule {
             m.iconst_1(); // true (as int)
 
             m.invokestatic(p(JavaProxyClass.class), "setProxyClassReified",
-                    sig(JavaProxyClass.class, Ruby.class, RubyClass.class, Class.class, boolean.class));
+                    sig(JavaProxyClass.class, ThreadContext.class, RubyClass.class, Class.class, boolean.class));
             m.dup();
             m.putstatic(javaPath, RUBY_PROXY_CLASS_FIELD, ci(JavaProxyClass.class));
 
@@ -2195,11 +2302,13 @@ public class RubyClass extends RubyModule {
 
                 for (String sig : sigs) {
                     m.dup();
+                    m.getstatic(javaPath, RUBY_FIELD, ci(Ruby.class));
+                    m.invokevirtual("org/jruby/Ruby", "getCurrentContext", "()Lorg/jruby/runtime/ThreadContext;");
                     m.ldc(name);
                     m.ldc(sig);
                     m.iconst_1();
                     m.invokevirtual(p(JavaProxyClass.class), "initMethod",
-                            sig(void.class, String.class, String.class, boolean.class));
+                            sig(void.class, ThreadContext.class, String.class, String.class, boolean.class));
                 }
             });
             m.pop();
@@ -2268,6 +2377,7 @@ public class RubyClass extends RubyModule {
 
         @Override
         protected void reifyConstructors() {
+            var context = runtime.getCurrentContext();
             Optional<Constructor<?>> zeroArg = Optional.empty();
             List<Constructor<?>> candidates = new ArrayList<>();
             for (Constructor<?> constructor : reifiedParent.getDeclaredConstructors()) {
@@ -2294,8 +2404,7 @@ public class RubyClass extends RubyModule {
             } else {
                 // TODO: copy validateArgs
                 // TODO: no ctors = error?
-                throw typeError(runtime.getCurrentContext(), "class " + reifiedParent.getName() +
-                        " doesn't have a public or protected constructor");
+                throw typeError(context, "class " + reifiedParent.getName() + " doesn't have a public or protected constructor");
             }
 
             if (zeroArg.isPresent()) {
@@ -2344,7 +2453,7 @@ public class RubyClass extends RubyModule {
                 RealClassGenerator.makeConcreteConstructorIROProxy(cw, position, this);
             } else if (generatedCtors.size() == 0) {
                 //TODO: Warn for static classe?
-                throw typeError(runtime.getCurrentContext(), "class " + getName() + " doesn't have any exposed java constructors");
+                throw typeError(context, "class " + getName(context) + " doesn't have any exposed java constructors");
             }
             
             // generate the real (IRubyObject) ctor. All other ctor generated proxy to this one
@@ -2390,22 +2499,36 @@ public class RubyClass extends RubyModule {
                methodSignature[ methodSignature.length - 1 ].isArray() ;
     }
 
-    private void logReifyException(final Throwable failure, final boolean error) {
+    private void logReifyException(ThreadContext context, final Throwable failure, final boolean error) {
         if (RubyInstanceConfig.REIFY_LOG_ERRORS) {
-            if ( error ) LOG.error("failed to reify class " + getName() + " due to: ", failure);
-            else LOG.info("failed to reify class " + getName() + " due to: ", failure);
+            if ( error ) LOG.error("failed to reify class " + getName(context) + " due to: ", failure);
+            else LOG.info("failed to reify class " + getName(context) + " due to: ", failure);
         }
     }
 
+    /**
+     * @param reifiedClass
+     * @deprecated Use {@link org.jruby.RubyClass#reifiedClass(Class)} instead.
+     */
+    @Deprecated(since = "10.0")
     public void setReifiedClass(Class<? extends IRubyObject> reifiedClass) {
         this.reifiedClass = (Class<? extends Reified>) reifiedClass; // Not always true
+    }
+
+    /**
+     * @return
+     * @deprecated Use {@link RubyClass#reifiedClass()} instead.
+     */
+    @Deprecated(since = "10.0")
+    public Class<? extends Reified> getReifiedClass() {
+        return reifiedClass();
     }
 
     /**
      * Gets a reified Ruby or Java class.
      * To ensure a specific type, see {@link #getReifiedRubyClass()} or  {@link #getReifiedJavaClass()}
      */
-    public Class<? extends Reified> getReifiedClass() {
+    public Class<? extends Reified> reifiedClass() {
         return reifiedClass;
     }
 
@@ -2439,7 +2562,7 @@ public class RubyClass extends RubyModule {
     public static Class<?> nearestReifiedClass(final RubyClass klass) {
         RubyClass current = klass;
         do {
-            Class<?> reified = current.getReifiedClass();
+            Class<?> reified = current.reifiedClass();
             if ( reified != null ) return reified;
             current = current.getSuperClass();
         }
@@ -2632,23 +2755,24 @@ public class RubyClass extends RubyModule {
          * @throws IOException If there is an IO error during dumping
          */
         public void dump(MarshalStream stream, IRubyObject object) throws IOException {
+            var context = object.getRuntime().getCurrentContext();
             switch (type) {
                 case DEFAULT:
-                    stream.writeDirectly(object);
+                    stream.writeDirectly(context, object);
                     return;
                 case NEW_USER:
-                    stream.userNewMarshal(object, entry);
+                    stream.userNewMarshal(context, object, entry);
                     return;
                 case OLD_USER:
-                    stream.userMarshal(object, entry);
+                    stream.userMarshal(context, object, entry);
                     return;
                 case DEFAULT_SLOW:
                     if (object.respondsTo("marshal_dump")) {
-                        stream.userNewMarshal(object);
+                        stream.userNewMarshal(context, object);
                     } else if (object.respondsTo("_dump")) {
-                        stream.userMarshal(object);
+                        stream.userMarshal(context, object);
                     } else {
-                        stream.writeDirectly(object);
+                        stream.writeDirectly(context, object);
                     }
             }
         }
@@ -2744,7 +2868,7 @@ public class RubyClass extends RubyModule {
             // recache
             CacheEntry entry = searchWithCache("respond_to?");
             DynamicMethod method = entry.method;
-            if (!method.equals(runtime.getRespondToMethod()) && !method.isUndefined()) {
+            if (!method.equals(context.runtime.getRespondToMethod()) && !method.isUndefined()) {
 
                 // custom respond_to?, always do slow default marshaling
                 tuple = (cachedDumpMarshal = new MarshalTuple(null, MarshalType.DEFAULT_SLOW, generation));
@@ -2803,7 +2927,7 @@ public class RubyClass extends RubyModule {
                     target.callMethod(context, "marshal_load", data);
                     return target;
                 } else {
-                    throw typeError(context, "class ", this, " needs to have method `marshal_load'");
+                    throw typeError(context, "class ", this, " needs to have method 'marshal_load'");
                 }
 
             } else if (!(cache = searchWithCache("marshal_load")).method.isUndefined()) {
@@ -2842,31 +2966,27 @@ public class RubyClass extends RubyModule {
      */
     public IRubyObject smartLoadOldUser(IRubyObject data) {
         ThreadContext context = runtime.getCurrentContext();
-        CacheEntry cache;
-        if ((cache = getSingletonClass().cachedLoad).token == getSingletonClass().generation) {
-            return cache.method.call(context, this, cache.sourceModule, "_load", data);
-        } else {
-            cache = getSingletonClass().searchWithCache("respond_to?");
-            DynamicMethod method = cache.method;
-            if (!method.equals(runtime.getRespondToMethod()) && !method.isUndefined()) {
+        var singleton = singletonClass(context);
+        CacheEntry cache = singleton.cachedLoad;
+        if (cache.token == singleton.generation) return cache.method.call(context, this, cache.sourceModule, "_load", data);
 
-                // custom respond_to?, cache nothing and use slow path
-                if (method.call(context, this, cache.sourceModule, "respond_to?", asSymbol(context, "_load")).isTrue()) {
-                    return callMethod(context, "_load", data);
-                } else {
-                    throw typeError(context, "class ", this, " needs to have method `_load'");
-                }
-
-            } else if (!(cache = getSingletonClass().searchWithCache("_load")).method.isUndefined()) {
-
-                // real _load defined, cache and call it
-                getSingletonClass().cachedLoad = cache;
-                return cache.method.call(context, this, cache.sourceModule, "_load", data);
-
+        cache = singleton.searchWithCache("respond_to?");
+        DynamicMethod method = cache.method;
+        if (!method.equals(runtime.getRespondToMethod()) && !method.isUndefined()) {
+            // custom respond_to?, cache nothing and use slow path
+            if (method.call(context, this, cache.sourceModule, "respond_to?", asSymbol(context, "_load")).isTrue()) {
+                return callMethod(context, "_load", data);
             } else {
-                // provide an error, since it doesn't exist
-                throw typeError(context, "class ", this, " needs to have method `_load'");
+                throw typeError(context, "class ", this, " needs to have method '_load'");
             }
+        } else if (!(cache = singleton.searchWithCache("_load")).method.isUndefined()) {
+            // real _load defined, cache and call it
+            singleton.cachedLoad = cache;
+            return cache.method.call(context, this, cache.sourceModule, "_load", data);
+
+        } else {
+            // provide an error, since it doesn't exist
+            throw typeError(context, "class ", this, " needs to have method '_load'");
         }
     }
 

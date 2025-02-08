@@ -77,7 +77,7 @@ public final class ArgsUtil {
     }
     
     public static RubyArray convertToRubyArrayWithCoerce(Ruby runtime, IRubyObject value) {
-        if (value instanceof RubyArray) return (RubyArray) value;
+        if (value instanceof RubyArray ary) return ary;
         
         IRubyObject newValue = TypeConverter.convertToType(value, runtime.getArray(), "to_ary", false);
 
@@ -137,12 +137,12 @@ public final class ArgsUtil {
     public static final RubyHash.VisitorWithState<RubySymbol> SINGLE_KEY_CHECK_VISITOR = new RubyHash.VisitorWithState<RubySymbol>() {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, RubySymbol testKey) {
-            if (!key.equals(testKey)) throw argumentError(context,"unknown keyword: " + key.inspect());
+            if (!key.equals(testKey)) throw argumentError(context,"unknown keyword: " + key.inspect(context));
         }
     };
     public static final RubyHash.VisitorWithState<Set<RubySymbol>> MULTI_KEY_CHECK_VISITOR = new RubyHash.VisitorWithState<Set<RubySymbol>>() {
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Set<RubySymbol> validKeySet) {
-            if (!validKeySet.contains(key)) throw argumentError(context, "unknown keyword: " + key.inspect());
+            if (!validKeySet.contains(key)) throw argumentError(context, "unknown keyword: " + key.inspect(context));
         }
     };
 

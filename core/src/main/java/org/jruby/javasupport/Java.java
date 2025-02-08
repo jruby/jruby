@@ -58,6 +58,7 @@ import com.headius.backport9.modules.Modules;
 import org.jcodings.Encoding;
 
 import org.jruby.*;
+import org.jruby.api.Access;
 import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.TypeError;
 import org.jruby.javasupport.binding.Initializer;
@@ -98,7 +99,9 @@ import org.jruby.util.*;
 import org.jruby.util.cli.Options;
 import org.jruby.util.collections.NonBlockingHashMapLong;
 
+import static org.jruby.api.Access.*;
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.*;
 import static org.jruby.runtime.Visibility.*;
 
@@ -109,102 +112,107 @@ public class Java implements Library {
 
     @Override
     public void load(Ruby runtime, boolean wrap) {
-        final RubyModule Java = createJavaModule(runtime);
+        var context = runtime.getCurrentContext();
+        var Module = moduleClass(context);
+        var Kernel = kernelModule(context);
+        var Enumerable = enumerableModule(context);
+        var Comparable = comparableModule(context);
+        var Object = objectClass(context);
+        final RubyModule Java = createJavaModule(context);
 
-        runtime.getJavaSupport().setJavaPackageClass(JavaPackage.createJavaPackageClass(runtime, Java));
+        runtime.getJavaSupport().setJavaPackageClass(JavaPackage.createJavaPackageClass(context, Java, Module, Kernel));
 
-        org.jruby.javasupport.ext.Kernel.define(runtime);
-        org.jruby.javasupport.ext.Module.define(runtime);
+        org.jruby.javasupport.ext.Kernel.define(context, Kernel);
+        org.jruby.javasupport.ext.Module.define(context, Module);
 
-        org.jruby.javasupport.ext.JavaLang.define(runtime);
-        org.jruby.javasupport.ext.JavaLangReflect.define(runtime);
-        org.jruby.javasupport.ext.JavaUtil.define(runtime);
-        org.jruby.javasupport.ext.JavaUtilRegex.define(runtime);
-        org.jruby.javasupport.ext.JavaIo.define(runtime);
-        org.jruby.javasupport.ext.JavaNio.define(runtime);
-        org.jruby.javasupport.ext.JavaNet.define(runtime);
-        org.jruby.javasupport.ext.JavaMath.define(runtime);
-        org.jruby.javasupport.ext.JavaTime.define(runtime);
+        org.jruby.javasupport.ext.JavaLang.define(context, Enumerable, Comparable);
+        org.jruby.javasupport.ext.JavaLangReflect.define(context);
+        org.jruby.javasupport.ext.JavaUtil.define(context, Enumerable);
+        org.jruby.javasupport.ext.JavaUtilRegex.define(context);
+        org.jruby.javasupport.ext.JavaIo.define(context);
+        org.jruby.javasupport.ext.JavaNio.define(context);
+        org.jruby.javasupport.ext.JavaNet.define(context);
+        org.jruby.javasupport.ext.JavaMath.define(context);
+        org.jruby.javasupport.ext.JavaTime.define(context);
 
         // initialize java.lang.Object proxy early
-        RubyClass objectClass = (RubyClass) getProxyClass(runtime, java.lang.Object.class);
+        RubyClass objectClass = (RubyClass) getProxyClass(context, java.lang.Object.class);
 
         // load Ruby parts of the 'java' library
-        runtime.getLoadService().load("jruby/java.rb", false);
+        loadService(context).load("jruby/java.rb", false);
 
         // rewire ArrayJavaProxy superclass to point at Object, so it inherits Object behaviors
-        final RubyClass ArrayJavaProxy = runtime.getClass("ArrayJavaProxy");
-        ArrayJavaProxy.setSuperClass(objectClass);
-        ArrayJavaProxy.includeModule(runtime.getEnumerable());
+        Access.getClass(context, "ArrayJavaProxy").
+                superClass(objectClass).
+                include(context, Enumerable);
 
-        RubyClassPathVariable.createClassPathVariable(runtime);
-
+        RubyClassPathVariable.createClassPathVariable(context, Enumerable, Object);
 
         // (legacy) JavaClass compatibility:
-        Java.setConstant("JavaClass", getProxyClass(runtime, java.lang.Class.class));
-        Java.deprecateConstant(runtime, "JavaClass");
-        Java.setConstant("JavaField", getProxyClass(runtime, java.lang.reflect.Field.class));
-        Java.deprecateConstant(runtime, "JavaField");
-        Java.setConstant("JavaMethod", getProxyClass(runtime, java.lang.reflect.Method.class));
-        Java.deprecateConstant(runtime, "JavaMethod");
-        Java.setConstant("JavaConstructor", getProxyClass(runtime, java.lang.reflect.Constructor.class));
-        Java.deprecateConstant(runtime, "JavaConstructor");
+        Java.defineConstant(context, "JavaClass", getProxyClass(context, java.lang.Class.class)).
+                defineConstant(context, "JavaField", getProxyClass(context, java.lang.reflect.Field.class)).
+                defineConstant(context, "JavaMethod", getProxyClass(context, java.lang.reflect.Method.class)).
+                defineConstant(context, "JavaConstructor", getProxyClass(context, java.lang.reflect.Constructor.class));
+        Java.deprecateConstant(context, "JavaClass");
+        Java.deprecateConstant(context, "JavaField");
+        Java.deprecateConstant(context, "JavaMethod");
+        Java.deprecateConstant(context, "JavaConstructor");
 
         // modify ENV_JAVA to be a read/write version
         final Map systemProperties = new SystemPropertiesMap();
-        RubyClass proxyClass = (RubyClass) getProxyClass(runtime, SystemPropertiesMap.class);
-        runtime.getObject().setConstantQuiet("ENV_JAVA", new MapJavaProxy(runtime, proxyClass, systemProperties));
+        RubyClass proxyClass = (RubyClass) getProxyClass(context, SystemPropertiesMap.class);
+        Object.setConstantQuiet(context, "ENV_JAVA", new MapJavaProxy(runtime, proxyClass, systemProperties));
     }
 
     @SuppressWarnings("deprecation")
-    public static RubyModule createJavaModule(final Ruby runtime) {
-        final ThreadContext context = runtime.getCurrentContext();
+    public static RubyModule createJavaModule(ThreadContext context) {
+        var Object = objectClass(context);
+        var Enumerable = enumerableModule(context);
 
-        final RubyModule Java = runtime.defineModule("Java");
-
-        Java.defineAnnotatedMethods(Java.class);
+        var Java = defineModule(context, "Java").
+                defineMethods(context, Java.class);
 
         //final RubyClass _JavaObject = JavaObject.createJavaObjectClass(runtime, Java);
         //JavaArray.createJavaArrayClass(runtime, Java, _JavaObject);
 
         // set of utility methods for Java-based proxy objects
-        JavaProxyMethods.createJavaProxyMethods(context);
+        var _JavaProxyMethods = JavaProxyMethods.createJavaProxyMethods(context);
 
         // the proxy (wrapper) type hierarchy
-        JavaProxy.createJavaProxy(context);
-        ArrayJavaProxyCreator.createArrayJavaProxyCreator(context);
-        RubyClass _ConcreteJavaProxy = ConcreteJavaProxy.createConcreteJavaProxy(context);
-        InterfaceJavaProxy.createInterfaceJavaProxy(context);
-        RubyClass _ArrayJavaProxy = ArrayJavaProxy.createArrayJavaProxy(context);
+        RubyClass javaProxyClass = JavaProxy.createJavaProxy(context, Object, _JavaProxyMethods);
+        ArrayJavaProxyCreator.createArrayJavaProxyCreator(context, Object);
+        RubyClass _ConcreteJavaProxy = ConcreteJavaProxy.createConcreteJavaProxy(context, javaProxyClass);
+        InterfaceJavaProxy.createInterfaceJavaProxy(context, Object, javaProxyClass);
+        RubyClass _ArrayJavaProxy = ArrayJavaProxy.createArrayJavaProxy(context, javaProxyClass, Enumerable);
 
         // creates ruby's hash methods' proxy for Map interface
-        MapJavaProxy.createMapJavaProxy(runtime);
+        MapJavaProxy.createMapJavaProxy(context, _ConcreteJavaProxy);
 
         // also create the JavaProxy* classes
-        JavaProxyClass.createJavaProxyClasses(runtime, Java);
+        JavaProxyClass.createJavaProxyClasses(context, Java, Object);
 
         // The template for interface modules
         JavaInterfaceTemplate.createJavaInterfaceTemplateModule(context);
 
-        runtime.defineModule("JavaUtilities").defineAnnotatedMethods(JavaUtilities.class);
+        defineModule(context, "JavaUtilities").defineMethods(context, JavaUtilities.class);
 
-        JavaArrayUtilities.createJavaArrayUtilitiesModule(runtime);
+        JavaArrayUtilities.createJavaArrayUtilitiesModule(context);
 
         // Now attach Java-related extras to core classes
-        runtime.getArray().defineAnnotatedMethods(ArrayJavaAddons.class);
-        runtime.getKernel().defineAnnotatedMethods(KernelJavaAddons.class);
-        runtime.getString().defineAnnotatedMethods(StringJavaAddons.class);
-        runtime.getIO().defineAnnotatedMethods(IOJavaAddons.class);
-        runtime.getClassClass().defineAnnotatedMethods(ClassJavaAddons.class);
+        arrayClass(context).defineMethods(context, ArrayJavaAddons.class);
+        kernelModule(context).defineMethods(context, KernelJavaAddons.class);
+        stringClass(context).defineMethods(context, StringJavaAddons.class);
+        ioClass(context).defineMethods(context, IOJavaAddons.class);
+        classClass(context).defineMethods(context, ClassJavaAddons.class);
 
-        if ( runtime.getObject().isConstantDefined("StringIO") ) {
-            ((RubyClass) runtime.getObject().getConstant("StringIO")).defineAnnotatedMethods(IOJavaAddons.AnyIO.class);
+        if (Object.isConstantDefined(context, "StringIO")) {
+            ((RubyClass) Object.getConstant(context, "StringIO")).defineMethods(context, IOJavaAddons.AnyIO.class);
         }
 
-        Java.defineConstant("JavaObject", _ConcreteJavaProxy); // obj.is_a?(Java::JavaObject) still works
-        Java.deprecateConstant(runtime, "JavaObject");
-        Java.defineConstant("JavaArray", _ArrayJavaProxy);
-        Java.deprecateConstant(runtime, "JavaArray"); // obj.is_a?(Java::JavaArray) still works
+        Java.defineConstant(context, "JavaObject", _ConcreteJavaProxy); // obj.is_a?(Java::JavaObject) still works
+        Java.deprecateConstant(context, "JavaObject");
+        Java.defineConstant(context, "JavaArray", _ArrayJavaProxy);
+        Java.deprecateConstant(context, "JavaArray"); // obj.is_a?(Java::JavaArray) still works
 
         return Java;
     }
@@ -212,7 +220,7 @@ public class Java implements Library {
     public static class OldStyleExtensionInherited {
         @Deprecated
         public static IRubyObject inherited(IRubyObject self, IRubyObject subclass) {
-            return inherited(self.getRuntime().getCurrentContext(), self, subclass);
+            return inherited(((RubyBasicObject) self).getCurrentContext(), self, subclass);
         }
 
         @JRubyMethod
@@ -224,7 +232,7 @@ public class Java implements Library {
     public static class NewStyleExtensionInherited {
         @Deprecated
         public static IRubyObject inherited(IRubyObject self, IRubyObject subclass) {
-            return inherited(self.getRuntime().getCurrentContext(), self, subclass);
+            return inherited(((RubyBasicObject) self).getCurrentContext(), self, subclass);
         }
 
         @JRubyMethod
@@ -234,40 +242,45 @@ public class Java implements Library {
         }
     }
 
-    @Deprecated
-    public static IRubyObject create_proxy_class(
-            IRubyObject self,
-            IRubyObject name,
-            IRubyObject javaClass,
-            IRubyObject mod) {
-        final Ruby runtime = self.getRuntime();
-        RubyModule module = castAsModule(runtime.getCurrentContext(), mod);
+    @Deprecated(since = "9.4")
+    public static IRubyObject create_proxy_class(IRubyObject self, IRubyObject name, IRubyObject javaClass, IRubyObject mod) {
+        var context = ((RubyBasicObject) self).getCurrentContext();
+        RubyModule module = castAsModule(context, mod);
 
-        return setProxyClass(runtime, module, name.asJavaString(), resolveJavaClassArgument(runtime, javaClass));
+        return setProxyClass(context, module, name.asJavaString(), resolveJavaClassArgument(context, javaClass));
     }
 
-    public static RubyModule setProxyClass(final Ruby runtime, final RubyModule target, final String constName, final Class<?> javaClass) throws NameError {
-        final RubyModule proxyClass = getProxyClass(runtime, javaClass);
-        setProxyClass(runtime, target, constName, proxyClass, true);
+    @Deprecated(since = "10.0")
+    public static RubyModule setProxyClass(final Ruby runtime, final RubyModule target, final String constName,
+                                           final Class<?> javaClass) throws NameError {
+        return setProxyClass(runtime.getCurrentContext(), target, constName, javaClass);
+    }
+
+        public static RubyModule setProxyClass(ThreadContext context, final RubyModule target, final String constName,
+                                           final Class<?> javaClass) throws NameError {
+        final RubyModule proxyClass = getProxyClass(context, javaClass);
+        setProxyClass(context, target, constName, proxyClass, true);
         return proxyClass;
     }
 
-    private static void setProxyClass(final Ruby runtime, final RubyModule target, final String constName, final RubyModule proxyClass, final boolean validateConstant) {
-        if (constantNotSetOrDifferent(target, constName, proxyClass)) {
+    private static void setProxyClass(ThreadContext context, final RubyModule target, final String constName, final RubyModule proxyClass, final boolean validateConstant) {
+        if (constantNotSetOrDifferent(context, target, constName, proxyClass)) {
             synchronized (target) { // synchronize to prevent "already initialized constant" warnings with multiple threads
-                if (constantNotSetOrDifferent(target, constName, proxyClass)) {
+                if (constantNotSetOrDifferent(context, target, constName, proxyClass)) {
                     if (validateConstant) {
-                        target.const_set(runtime.newSymbol(constName), proxyClass); // setConstant would not validate const-name
+                        target.defineConstant(context, constName, proxyClass); // setConstant would not validate const-name
                     } else {
-                        target.setConstant(constName, proxyClass);
+                        target.setConstant(context, constName, proxyClass);
                     }
                 }
             }
         }
     }
 
-    private static boolean constantNotSetOrDifferent(final RubyModule target, final String constName, final RubyModule proxyClass) {
-        return !target.constDefinedAt(constName) || !proxyClass.equals(target.getConstant(constName, false));
+    private static boolean constantNotSetOrDifferent(ThreadContext context, final RubyModule target,
+                                                     final String constName, final RubyModule proxyClass) {
+        return !target.constDefinedAt(context, constName) ||
+                !proxyClass.equals(target.getConstant(context, constName, false));
     }
 
     /**
@@ -292,7 +305,7 @@ public class Java implements Library {
      */
     public static IRubyObject getInstance(Ruby runtime, Object rawJavaObject, boolean forceCache) {
         if (rawJavaObject != null) {
-            RubyClass proxyClass = (RubyClass) getProxyClass(runtime, rawJavaObject.getClass());
+            RubyClass proxyClass = (RubyClass) getProxyClass(runtime.getCurrentContext(), rawJavaObject.getClass());
 
             if (OBJECT_PROXY_CACHE || forceCache || proxyClass.getCacheProxy()) {
                 return runtime.getJavaSupport().getObjectProxyCache().getOrCreate(rawJavaObject, proxyClass);
@@ -302,68 +315,88 @@ public class Java implements Library {
         return runtime.getNil();
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4-")
     public static RubyModule getInterfaceModule(final Ruby runtime, final JavaClass javaClass) {
-        return getInterfaceModule(runtime, javaClass.javaClass());
+        return getInterfaceModule(runtime.getCurrentContext(), javaClass.javaClass());
     }
 
+    @Deprecated(since = "10.0")
     public static RubyModule getInterfaceModule(final Ruby runtime, final Class javaClass) {
-        return Java.getProxyClass(runtime, javaClass);
+        return getInterfaceModule(runtime.getCurrentContext(), javaClass);
     }
 
+    public static RubyModule getInterfaceModule(ThreadContext context, final Class javaClass) {
+        return Java.getProxyClass(context, javaClass);
+    }
+
+    @Deprecated(since = "10.0")
     public static RubyModule get_interface_module(final Ruby runtime, final IRubyObject java_class) {
-        return getInterfaceModule(runtime, resolveJavaClassArgument(runtime, java_class));
+        return get_interface_module(runtime.getCurrentContext(), java_class);
     }
 
+    public static RubyModule get_interface_module(ThreadContext context, final IRubyObject java_class) {
+        return getInterfaceModule(context, resolveJavaClassArgument(context, java_class));
+    }
+
+    @Deprecated(since = "10.0")
     public static RubyModule get_proxy_class(final IRubyObject self, final IRubyObject java_class) {
-        final Ruby runtime = self.getRuntime();
-        return getProxyClass(runtime, resolveJavaClassArgument(runtime, java_class));
+        return get_proxy_class(((RubyBasicObject) self).getCurrentContext(), self, java_class);
+    }
+
+    public static RubyModule get_proxy_class(ThreadContext context, IRubyObject self, final IRubyObject java_class) {
+        return getProxyClass(context, resolveJavaClassArgument(context, java_class));
     }
 
     @SuppressWarnings("deprecation")
-    private static Class<?> resolveJavaClassArgument(final Ruby runtime, final IRubyObject java_class) {
-        if (java_class instanceof RubyString) {
-            return getJavaClass(runtime, java_class.asJavaString());
-        }
-        if (java_class instanceof JavaProxy) {
-            Object obj = ((JavaProxy) java_class).getObject();
-            if (obj instanceof Class) return (Class<?>) obj;
-            if (obj instanceof String) { // java.lang.String proxy
-                return getJavaClass(runtime, (String) obj);
-            }
-            throw argumentError(runtime.getCurrentContext(), "expected a Java class, got " + java_class.inspect());
+    private static Class<?> resolveJavaClassArgument(ThreadContext context, final IRubyObject java_class) {
+        if (java_class instanceof RubyString) return getJavaClass(context, java_class.asJavaString());
+
+        if (java_class instanceof JavaProxy proxy) {
+            Object obj = proxy.getObject();
+            if (obj instanceof Class cls) return cls;
+            if (obj instanceof String str) return getJavaClass(context, str); // j.l.String proxy
+
+            throw argumentError(context, "expected a Java class, got " + java_class.inspect(context));
         }
 
-        throw argumentError(runtime.getCurrentContext(), "expected a Java class (or String), got " + java_class.inspect());
+        throw argumentError(context, "expected a Java class (or String), got " + java_class.inspect(context));
     }
 
     public static Class<?> unwrapClassProxy(final IRubyObject self) {
         return (Class) ((JavaProxy) self).getObject();
     }
 
+    @Deprecated(since = "10.0")
     public static RubyClass getProxyClassForObject(Ruby runtime, Object object) {
-        return (RubyClass) getProxyClass(runtime, object.getClass());
+        return getProxyClassForObject(runtime.getCurrentContext(), object);
+    }
+
+    public static RubyClass getProxyClassForObject(ThreadContext context, Object object) {
+        return (RubyClass) getProxyClass(context, object.getClass());
     }
 
     public static Class<?> resolveClassType(final ThreadContext context, final IRubyObject type) throws TypeError {
-        RubyModule proxyClass = Java.resolveType(context.runtime, type);
+        RubyModule proxyClass = Java.resolveType(context, type);
         if (proxyClass == null) throw typeError(context, "unable to convert to type: " + type);
-        return JavaUtil.getJavaClass(proxyClass);
+        return JavaUtil.getJavaClass(context, proxyClass);
     }
 
+    @Deprecated(since = "10.0")
     public static RubyModule resolveType(final Ruby runtime, final IRubyObject type) {
+        return resolveType(runtime.getCurrentContext(), type);
+    }
+
+    public static RubyModule resolveType(ThreadContext context, final IRubyObject type) {
         Class<?> klass;
         if (type instanceof RubyString || type instanceof RubySymbol) {
             final String className = type.toString();
             klass = resolveShortClassName(className);
-            if (klass == null) klass = getJavaClass(runtime, className);
+            if (klass == null) klass = getJavaClass(context, className);
         } else {
             klass = resolveClassType(type);
-            if (klass == null) {
-                throw typeError(runtime.getCurrentContext(), "expected a Java class, got: " + type);
-            }
+            if (klass == null) throw typeError(context, "expected a Java class, got: " + type);
         }
-        return getProxyClass(runtime, klass);
+        return getProxyClass(context, klass);
     }
 
     // this should handle the type returned from Class#java_class
@@ -422,14 +455,20 @@ public class Java implements Library {
 
     @Deprecated
     public static RubyModule getProxyClass(Ruby runtime, JavaClass javaClass) {
-        return getProxyClass(runtime, javaClass.javaClass());
+        return getProxyClass(runtime.getCurrentContext(), javaClass.javaClass());
+    }
+
+    @Deprecated(since = "10.0")
+    public static RubyModule getProxyClass(final Ruby runtime, final Class<?> clazz) {
+        return getProxyClass(runtime.getCurrentContext(), clazz);
     }
 
     @SuppressWarnings("deprecation")
-    public static RubyModule getProxyClass(final Ruby runtime, final Class<?> clazz) {
-        RubyModule proxy = runtime.getJavaSupport().getUnfinishedProxy(clazz);
-        if (proxy != null) return proxy;
-        return runtime.getJavaSupport().getProxyClassFromCache(clazz);
+    public static RubyModule getProxyClass(ThreadContext context, final Class<?> clazz) {
+        var javaSupport = context.runtime.getJavaSupport();
+        RubyModule proxy = javaSupport.getUnfinishedProxy(clazz);
+
+        return proxy != null ? proxy : javaSupport.getProxyClassFromCache(clazz);
     }
 
     // expected to handle Java proxy (Ruby) sub-classes as well
@@ -440,6 +479,7 @@ public class Java implements Library {
     @SuppressWarnings("deprecation")
     // Only used by proxy ClassValue calculator in JavaSupport
     static RubyModule createProxyClassForClass(final Ruby runtime, final Class<?> clazz) {
+        var context = runtime.getCurrentContext();
         final JavaSupport javaSupport = runtime.getJavaSupport();
 
         RubyModule proxy;
@@ -456,18 +496,18 @@ public class Java implements Library {
                 superClass = javaSupport.getConcreteProxyClass();
             } else {
                 // other java proxy classes added under their superclass' java proxy
-                superClass = (RubyClass) getProxyClass(runtime, clazz.getSuperclass());
+                superClass = (RubyClass) getProxyClass(context, clazz.getSuperclass());
             }
-            proxy = RubyClass.newClass(runtime, superClass);
+            proxy = RubyClass.newClass(context, superClass, null);
         }
 
         // ensure proxy is visible down-thread
         javaSupport.beginProxy(clazz, proxy);
         try {
             if (clazz.isInterface()) {
-                generateInterfaceProxy(runtime, clazz, proxy);
+                generateInterfaceProxy(context, clazz, proxy);
             } else {
-                generateClassProxy(runtime, clazz, (RubyClass) proxy, superClass);
+                generateClassProxy(context, clazz, (RubyClass) proxy, superClass);
             }
         } finally {
             javaSupport.endProxy(clazz);
@@ -476,49 +516,50 @@ public class Java implements Library {
         return proxy;
     }
 
-    private static void generateInterfaceProxy(final Ruby runtime, final Class javaClass, final RubyModule proxy) {
+    private static void generateInterfaceProxy(ThreadContext context, final Class javaClass, final RubyModule proxy) {
         assert javaClass.isInterface();
 
         // include any interfaces we extend
         final Class<?>[] extended = javaClass.getInterfaces();
         for (int i = extended.length; --i >= 0; ) {
-            RubyModule extModule = getInterfaceModule(runtime, extended[i]);
-            proxy.includeModule(extModule);
+            proxy.include(context, getInterfaceModule(context, extended[i]));
         }
-        Initializer.setupProxyModule(runtime, javaClass, proxy);
-        addToJavaPackageModule(proxy);
+        Initializer.setupProxyModule(context, javaClass, proxy);
+        addToJavaPackageModule(context, proxy);
     }
 
-    private static void generateClassProxy(Ruby runtime, Class<?> clazz, RubyClass proxy, RubyClass superClass) {
+    private static void generateClassProxy(ThreadContext context, Class<?> clazz, RubyClass proxy, RubyClass superClass) {
         if ( clazz.isArray() ) {
-            createProxyClass(runtime, proxy, clazz, superClass, true);
+            createProxyClass(context, proxy, clazz, superClass, true);
 
             if ( clazz.getComponentType() == byte.class ) {
-                proxy.defineAnnotatedMethods( ByteArrayProxyMethods.class ); // to_s
+                proxy.defineMethods(context, ByteArrayProxyMethods.class ); // to_s
             }
         }
         else if ( clazz.isPrimitive() ) {
-            createProxyClass(runtime, proxy, clazz, superClass, true);
+            createProxyClass(context, proxy, clazz, superClass, true);
         }
         else if ( clazz == Object.class ) {
             // java.lang.Object is added at root of java proxy classes
-            createProxyClass(runtime, proxy, clazz, superClass, true);
+            createProxyClass(context, proxy, clazz, superClass, true);
             if (NEW_STYLE_EXTENSION) {
-                proxy.getMetaClass().defineAnnotatedMethods(NewStyleExtensionInherited.class);
+                proxy.getMetaClass().defineMethods(context, NewStyleExtensionInherited.class);
             } else {
-                proxy.getMetaClass().defineAnnotatedMethods(OldStyleExtensionInherited.class);
+                proxy.getMetaClass().defineMethods(context, OldStyleExtensionInherited.class);
             }
-            addToJavaPackageModule(proxy);
+            addToJavaPackageModule(context, proxy);
         }
         else {
-            createProxyClass(runtime, proxy, clazz, superClass, false);
+            createProxyClass(context, proxy, clazz, superClass, false);
             // include interface modules into the proxy class
             final Class<?>[] interfaces = clazz.getInterfaces();
             for ( int i = interfaces.length; --i >= 0; ) {
-                proxy.includeModule(getInterfaceModule(runtime, interfaces[i]));
+                proxy.include(context, getInterfaceModule(context, interfaces[i]));
             }
-            if ( Modifier.isPublic(clazz.getModifiers()) ) {
-                addToJavaPackageModule(proxy);
+            // we don't want to expose any synthetic classes into Ruby constants,
+            // JRuby generated classes such as interface impls (org.jruby.gen.InterfaceImpl) are marked synthetic
+            if (Modifier.isPublic(clazz.getModifiers()) && !clazz.isSynthetic()) {
+                addToJavaPackageModule(context, proxy);
             }
         }
 
@@ -526,7 +567,7 @@ public class Java implements Library {
         // solved here by adding an exception-throwing "inherited"
         if ( Modifier.isFinal(clazz.getModifiers()) ) {
             final String clazzName = clazz.getCanonicalName();
-            proxy.getMetaClass().addMethod("inherited", new org.jruby.internal.runtime.methods.JavaMethod(proxy, PUBLIC, "inherited") {
+            proxy.getMetaClass().addMethod(context, "inherited", new org.jruby.internal.runtime.methods.JavaMethod(proxy, PUBLIC, "inherited") {
                 @Override
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
                     throw typeError(context, "can not extend final Java class: " + clazzName);
@@ -535,25 +576,23 @@ public class Java implements Library {
         }
     }
 
-    private static RubyClass createProxyClass(final Ruby runtime,
-        final RubyClass proxyClass, final Class<?> javaClass,
-        final RubyClass superClass, boolean invokeInherited) {
+    private static RubyClass createProxyClass(ThreadContext context, final RubyClass proxyClass,
+                                              final Class<?> javaClass, final RubyClass superClass, boolean invokeInherited) {
 
-        proxyClass.makeMetaClass( superClass.getMetaClass() );
+        proxyClass.makeMetaClass(context, superClass.getMetaClass());
 
         if ( Map.class.isAssignableFrom( javaClass ) ) {
-            proxyClass.setAllocator( runtime.getJavaSupport().getMapJavaProxyClass().getAllocator() );
-            proxyClass.defineAnnotatedMethods( MapJavaProxy.class );
-            proxyClass.includeModule( runtime.getEnumerable() );
+            proxyClass.allocator(context.runtime.getJavaSupport().getMapJavaProxyClass().getAllocator()).
+                    defineMethods(context, MapJavaProxy.class).
+                    include(context, enumerableModule(context));
+        } else {
+            proxyClass.allocator(superClass.getAllocator());
         }
-        else {
-            proxyClass.setAllocator( superClass.getAllocator() );
-        }
-        proxyClass.defineAnnotatedMethods( JavaProxy.ClassMethods.class );
+        proxyClass.defineMethods(context, JavaProxy.ClassMethods.class);
 
-        if ( invokeInherited ) proxyClass.inherit(superClass);
+        if (invokeInherited) superClass.invokeInherited(context, superClass, proxyClass);
 
-        Initializer.setupProxyClass(runtime, javaClass, proxyClass);
+        Initializer.setupProxyClass(context, javaClass, proxyClass);
 
         return proxyClass;
     }
@@ -573,7 +612,7 @@ public class Java implements Library {
 
     @Deprecated
     public static IRubyObject concrete_proxy_inherited(final IRubyObject clazz, final IRubyObject subclazz) {
-        return invokeProxyClassInherited(clazz.getRuntime().getCurrentContext(), clazz, subclazz);
+        return invokeProxyClassInherited(((RubyBasicObject) clazz).getCurrentContext(), clazz, subclazz);
     }
 
     private static IRubyObject invokeProxyClassInherited(final ThreadContext context,
@@ -595,9 +634,9 @@ public class Java implements Library {
         // Subclasses of Java classes can safely use ivars, so we set this to silence warnings
         subclass.setCacheProxy(true);
 
-        final RubyClass subclassSingleton = subclass.getSingletonClass();
+        final RubyClass subclassSingleton = subclass.singletonClass(context);
         subclassSingleton.addReadAttribute(context, "java_proxy_class");
-        subclassSingleton.addMethod("java_interfaces", new JavaMethodZero(subclassSingleton, PUBLIC, "java_interfaces") {
+        subclassSingleton.addMethod(context, "java_interfaces", new JavaMethodZero(subclassSingleton, PUBLIC, "java_interfaces") {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
                 IRubyObject javaInterfaces = self.getInstanceVariables().getInstanceVariable("@java_interfaces");
@@ -607,7 +646,7 @@ public class Java implements Library {
         });
         ///TODO: investigate this, should jcreate! still exist?
 
-        subclass.addMethod("__jcreate!", new JCreateMethod(subclassSingleton));
+        subclass.addMethod(context, "__jcreate!", new JCreateMethod(subclassSingleton));
     }
 
     /**
@@ -667,7 +706,7 @@ public class Java implements Library {
             final RubyClass metaClass = self.getMetaClass();
             IRubyObject proxyClass = metaClass.getInstanceVariable("@java_proxy_class");
             if (proxyClass == null || proxyClass.isNil()) { // lazy (proxy) class generation ... on JavaSubClass.new
-                proxyClass = JavaProxyClass.getProxyClass(context.runtime, metaClass);
+                proxyClass = JavaProxyClass.getProxyClass(context, metaClass);
                 metaClass.setInstanceVariable("@java_proxy_class", proxyClass);
             }
             return (JavaProxyClass) proxyClass;
@@ -680,7 +719,7 @@ public class Java implements Library {
 
         @Override
         public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
-            final JavaProxyConstructor[] constructors = getProxyClass(context, self).getConstructors();
+            final JavaProxyConstructor[] constructors = getProxyClass(context, self).getConstructors(context);
 
             final JavaProxyConstructor matching;
             switch (constructors.length) {
@@ -697,7 +736,7 @@ public class Java implements Library {
         @Override
         public final IRubyObject call(final ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
             final int arity = args.length;
-            final JavaProxyConstructor[] constructors = getProxyClass(context, self).getConstructors();
+            final JavaProxyConstructor[] constructors = getProxyClass(context, self).getConstructors(context);
 
             final JavaProxyConstructor matching;
             switch (constructors.length) {
@@ -823,8 +862,7 @@ public class Java implements Library {
 
     // package scheme 2: separate module for each full package name, constructed
     // from the camel-cased package segments: Java::JavaLang::Object,
-    private static void addToJavaPackageModule(RubyModule proxyClass) {
-        final Ruby runtime = proxyClass.getRuntime();
+    private static void addToJavaPackageModule(ThreadContext context, RubyModule proxyClass) {
         final Class<?> clazz = (Class<?>)proxyClass.dataGetStruct();
         final String fullName;
         if ( ( fullName = clazz.getName() ) == null ) return;
@@ -842,22 +880,27 @@ public class Java implements Library {
         else {
             final int endPackage = fullName.lastIndexOf('.');
             String packageString = endPackage < 0 ? "" : fullName.substring(0, endPackage);
-            parentModule = getJavaPackageModule(runtime, packageString);
+            parentModule = getJavaPackageModule(context, packageString);
             className = parentModule == null ? fullName : fullName.substring(endPackage + 1);
         }
 
         if ( parentModule != null && // TODO a Java Ruby class should not validate (as well)
             ( IdUtil.isConstant(className) || parentModule instanceof JavaPackage ) ) {
             // setConstant without validation since Java class name might be lower-case
-            setProxyClass(runtime, parentModule, className, proxyClass, false);
+            setProxyClass(context, parentModule, className, proxyClass, false);
         }
     }
 
     public static RubyModule getJavaPackageModule(final Ruby runtime, final Package pkg) {
-        return getJavaPackageModule(runtime, pkg == null ? "" : pkg.getName());
+        return getJavaPackageModule(runtime.getCurrentContext(), pkg == null ? "" : pkg.getName());
     }
 
+    @Deprecated(since = "10.0")
     public static RubyModule getJavaPackageModule(final Ruby runtime, final String packageString) {
+        return getJavaPackageModule(runtime.getCurrentContext(), packageString);
+    }
+
+    public static RubyModule getJavaPackageModule(ThreadContext context, final String packageString) {
         final String packageName; final int length;
         if ( ( length = packageString.length() ) == 0 ) {
             packageName = "Default";
@@ -873,16 +916,12 @@ public class Java implements Library {
             packageName = name.toString();
         }
 
-        final RubyModule javaModule = runtime.getJavaSupport().getJavaModule();
-        final IRubyObject packageModule = javaModule.getConstantAt(packageName);
+        final RubyModule javaModule = context.runtime.getJavaSupport().getJavaModule(context);
+        final IRubyObject packageModule = javaModule.getConstantAt(context, packageName);
 
-        if ( packageModule == null ) {
-            return createPackageModule(runtime.getCurrentContext(), javaModule, packageName, packageString);
-        }
-        if ( packageModule instanceof RubyModule ) {
-            return (RubyModule) packageModule;
-        }
-        return null;
+        if (packageModule == null) return createPackageModule(context, javaModule, packageName, packageString);
+
+        return packageModule instanceof RubyModule pkg ? pkg : null;
     }
 
     private static RubyModule createPackageModule(ThreadContext context,
@@ -891,11 +930,10 @@ public class Java implements Library {
         final RubyModule packageModule = JavaPackage.newPackage(context.runtime, packageString, parentModule);
 
         synchronized (parentModule) { // guard initializing in multiple threads
-            final IRubyObject packageAlreadySet = parentModule.fetchConstant(name);
-            if ( packageAlreadySet != null ) {
-                return (RubyModule) packageAlreadySet;
-            }
-            parentModule.setConstant(name.intern(), packageModule);
+            final IRubyObject packageAlreadySet = parentModule.fetchConstant(context, name);
+            if (packageAlreadySet != null) return (RubyModule) packageAlreadySet;
+
+            parentModule.setConstant(context, name.intern(), packageModule);
             //MetaClass metaClass = (MetaClass) packageModule.getMetaClass();
             //metaClass.setAttached(packageModule);
         }
@@ -905,9 +943,9 @@ public class Java implements Library {
     private static final Pattern CAMEL_CASE_PACKAGE_SPLITTER = Pattern.compile("([a-z0-9_]+)([A-Z])");
 
     private static RubyModule getPackageModule(ThreadContext context, final String name) {
-        final RubyModule javaModule = context.runtime.getJavaSupport().getJavaModule();
-        final IRubyObject packageModule = javaModule.getConstantAt(name);
-        if ( packageModule instanceof RubyModule ) return (RubyModule) packageModule;
+        final RubyModule javaModule = context.runtime.getJavaSupport().getJavaModule(context);
+        final IRubyObject packageModule = javaModule.getConstantAt(context, name);
+        if ( packageModule instanceof RubyModule pkg) return pkg;
 
         final String packageName;
         if ( "Default".equals(name) ) packageName = "";
@@ -918,21 +956,23 @@ public class Java implements Library {
         return createPackageModule(context, javaModule, name, packageName);
     }
 
+    @Deprecated(since = "10.0")
     public static RubyModule get_package_module(final IRubyObject self, final IRubyObject name) {
-        return getPackageModule(self.getRuntime().getCurrentContext(), name.asJavaString());
+        return get_package_module(((RubyBasicObject) self).getCurrentContext(), self, name);
     }
 
-    public static IRubyObject get_package_module_dot_format(final IRubyObject self,
+    public static RubyModule get_package_module(ThreadContext context, final IRubyObject self, final IRubyObject name) {
+        return getPackageModule(context, name.asJavaString());
+    }
+
+    public static IRubyObject get_package_module_dot_format(ThreadContext context, final IRubyObject self,
         final IRubyObject dottedName) {
-        final Ruby runtime = self.getRuntime();
-        RubyModule module = getJavaPackageModule(runtime, dottedName.asJavaString());
-        return module == null ? runtime.getNil() : module;
+        RubyModule module = getJavaPackageModule(context, dottedName.asJavaString());
+        return module == null ? context.nil : module;
     }
 
     static RubyModule getProxyOrPackageUnderPackage(final ThreadContext context,
         final RubyModule parentPackage, final String name, final boolean cacheMethod) {
-        final Ruby runtime = context.runtime;
-
         if (name.isEmpty()) throw argumentError(context, "empty class or package name");
 
         final String fullName = JavaPackage.buildPackageName(parentPackage, name).toString();
@@ -946,10 +986,11 @@ public class Java implements Library {
             // fail 99.999% of the time). fortunately, we'll only do this once per
             // package name. (and seriously, folks, look into best practices...)
             RubyModule proxyClass = getProxyClassOrNull(context, fullName);
-            if ( proxyClass != null ) result = proxyClass; /* else not primitive or l-c class */
-            else {
+            if ( proxyClass != null ) {
+                result = proxyClass; /* else not primitive or l-c class */
+            } else {
                 // Haven't found a class, continue on as though it were a package
-                final RubyModule packageModule = getJavaPackageModule(runtime, fullName);
+                final RubyModule packageModule = getJavaPackageModule(context, fullName);
                 // TODO: decompose getJavaPackageModule so we don't parse fullName
                 if ( packageModule == null ) return null;
                 result = packageModule;
@@ -958,36 +999,30 @@ public class Java implements Library {
         else {
             try { // First char is upper case, so assume it's a class name
                 final RubyModule javaClass = getProxyClassOrNull(context, fullName);
-                if ( javaClass != null ) result = javaClass;
-                else {
-                    if ( allowUppercasePackageNames(runtime) ) {
-                        // for those not hip to conventions and best practices,
-                        // we'll try as a package
-                        result = getJavaPackageModule(runtime, fullName);
-                        // NOTE result = getPackageModule(runtime, name);
-                        if ( result == null ) {
-                            throw runtime.newNameError("missing class (or package) name " + fullName, fullName);
-                        }
-                    }
-                    else {
-                        throw runtime.newNameError("missing class name " + fullName, fullName);
-                    }
+                if ( javaClass != null ) {
+                    result = javaClass;
+                } else {
+                    if (!allowUppercasePackageNames(context)) throw nameError(context, "missing class name " + fullName, fullName);
+
+                    // for those not hip to conventions and best practices, we'll try as a package
+                    result = getJavaPackageModule(context, fullName); // NOTE result = getPackageModule(runtime, name);
+                    if (result == null) throw nameError(context, "missing class (or package) name " + fullName, fullName);
                 }
             }
             catch (RuntimeException e) {
                 if ( e instanceof RaiseException ) throw e;
-                throw initCause(runtime.newNameError("missing class or uppercase package name " + fullName + " (" + e + ')', fullName, e), e);
+                throw initCause(nameError(context, "missing class or uppercase package name " + fullName + " (" + e + ')', fullName, e), e);
             }
         }
 
         // saves class in singletonized parent, so we don't come back here :
-        if ( cacheMethod ) bindJavaPackageOrClassMethod(parentPackage, name, result);
+        if ( cacheMethod )  bindJavaPackageOrClassMethod(context, parentPackage, name, result);
 
         return result;
     }
 
-    private static boolean allowUppercasePackageNames(final Ruby runtime) {
-        return runtime.getInstanceConfig().getAllowUppercasePackageNames();
+    private static boolean allowUppercasePackageNames(ThreadContext context) {
+        return instanceConfig(context).getAllowUppercasePackageNames();
     }
 
     private static void checkJavaReservedNames(ThreadContext context, final String name, final boolean allowPrimitives) {
@@ -1001,20 +1036,35 @@ public class Java implements Library {
         return JavaUtil.getPrimitiveClass(name) != null;
     }
 
+    @Deprecated(since = "10.0")
     public static Class getJavaClass(final Ruby runtime, final String className) throws RaiseException {
-        return getJavaClass(runtime, className, true);
+        return getJavaClass(runtime.getCurrentContext(), className);
     }
 
+    public static Class getJavaClass(ThreadContext context, final String className) throws RaiseException {
+        return getJavaClass(context, className, true);
+    }
+
+    @Deprecated(since = "10.0")
     public static Class getJavaClass(final Ruby runtime, final String className, boolean initialize) throws RaiseException {
+        return getJavaClass(runtime.getCurrentContext(), className, initialize);
+    }
+
+    public static Class getJavaClass(ThreadContext context, final String className, boolean initialize) throws RaiseException {
         try {
-            return loadJavaClass(runtime, className, initialize);
+            return loadJavaClass(context.runtime, className, initialize);
         } catch (ClassNotFoundException ex) {
-            throw initCause(runtime.newNameError("Java class " + className + " not found", className, ex), ex);
+            throw initCause(nameError(context, "Java class " + className + " not found", className, ex), ex);
         }
     }
 
+    @Deprecated(since = "10.0")
     public static Class loadJavaClass(final Ruby runtime, final String className) throws ClassNotFoundException, RaiseException {
-        return loadJavaClass(runtime, className, true);
+        return loadJavaClass(runtime.getCurrentContext(), className);
+    }
+
+    public static Class loadJavaClass(ThreadContext context, final String className) throws ClassNotFoundException, RaiseException {
+        return loadJavaClass(context.runtime, className, true);
     }
 
     static Class loadJavaClass(final Ruby runtime, final String className, boolean initialize) throws ClassNotFoundException, RaiseException {
@@ -1028,13 +1078,13 @@ public class Java implements Library {
                 return runtime.getJavaSupport().loadJavaClass(className, initialize);
             }
         } catch (ExceptionInInitializerError ex) {
-            throw initCause(runtime.newNameError("cannot initialize Java class " + className + ' ' + '(' + ex + ')', className, ex), ex);
+            throw initCause(nameError(runtime.getCurrentContext(), "cannot initialize Java class " + className + ' ' + '(' + ex + ')', className, ex), ex);
         } catch (UnsupportedClassVersionError ex) { // LinkageError
             String msg = getJavaVersionErrorMessage(ex);
             // cannot link Java class com.sample.FooBar needs Java 8 (java.lang.UnsupportedClassVersionError: com/sample/FooBar : Unsupported major.minor version 52.0)
-            throw initCause(runtime.newNameError("cannot link Java class " + className + ' ' + msg, className, ex), ex);
+            throw initCause(nameError(runtime.getCurrentContext(), "cannot link Java class " + className + ' ' + msg, className, ex), ex);
         } catch (LinkageError ex) {
-            throw initCause(runtime.newNameError("cannot link Java class " + className + ' ' + '(' + ex + ')', className, ex), ex);
+            throw initCause(nameError(runtime.getCurrentContext(), "cannot link Java class " + className + ' ' + '(' + ex + ')', className, ex), ex);
         } catch (SecurityException ex) {
             throw initCause(runtime.newSecurityError(ex.getLocalizedMessage()), ex);
         }
@@ -1065,11 +1115,11 @@ public class Java implements Library {
     private static RubyModule getProxyClassOrNull(ThreadContext context, final String className) {
         final Class<?> clazz;
         try {
-            clazz = loadJavaClass(context.runtime, className);
+            clazz = loadJavaClass(context, className);
         } catch (ClassNotFoundException ex) { // used to catch NoClassDefFoundError for whatever reason
             return null;
         }
-        return getProxyClass(context.runtime, clazz);
+        return getProxyClass(context, clazz);
     }
 
     private static int mapMajorMinorClassVersionToJavaVersion(String msg, final int offset) {
@@ -1128,19 +1178,17 @@ public class Java implements Library {
 
     private static boolean bindJavaPackageOrClassMethod(ThreadContext context, final String name,
         final RubyModule packageOrClass) {
-        final RubyModule javaPackage = context.runtime.getJavaSupport().getJavaModule();
-        return bindJavaPackageOrClassMethod(javaPackage, name, packageOrClass);
+        final RubyModule javaPackage = context.runtime.getJavaSupport().getJavaModule(context);
+        return bindJavaPackageOrClassMethod(context, javaPackage, name, packageOrClass);
     }
 
-    private static boolean bindJavaPackageOrClassMethod(final RubyModule parentPackage,
+    private static boolean bindJavaPackageOrClassMethod(ThreadContext context, final RubyModule parentPackage,
         final String name, final RubyModule packageOrClass) {
 
-        if ( parentPackage.getMetaClass().isMethodBound(name, false) ) {
-            return false;
-        }
+        if (parentPackage.getMetaClass().isMethodBound(name, false)) return false;
 
-        final RubyClass singleton = parentPackage.getSingletonClass();
-        singleton.addMethod(name.intern(), new JavaAccessor(singleton, packageOrClass, parentPackage, name));
+        final RubyClass singleton = parentPackage.singletonClass(context);
+        singleton.addMethod(context, name.intern(), new JavaAccessor(singleton, packageOrClass, parentPackage, name));
         return true;
     }
 
@@ -1266,7 +1314,7 @@ public class Java implements Library {
         if ( innerClass == null ) {
             return Helpers.invokeSuper(context, self, name, Block.NULL_BLOCK);
         }
-        return cacheConstant(self, constName, innerClass, true); // hidden == true (private_constant)
+        return cacheConstant(context, self, constName, innerClass, true); // hidden == true (private_constant)
     }
 
     @JRubyMethod(meta = true)
@@ -1276,18 +1324,18 @@ public class Java implements Library {
         // constant access won't pay the "penalty" for adding dynamic methods ...
         final RubyModule packageOrClass = getTopLevelProxyOrPackage(context, constName, false);
         if ( packageOrClass == null ) return context.nil; // compatibility (with packages)
-        return cacheConstant((RubyModule) self, constName, packageOrClass, false);
+        return cacheConstant(context, (RubyModule) self, constName, packageOrClass, false);
     }
 
-    private static RubyModule cacheConstant(final RubyModule owner, // e.g. ::Java
+    private static RubyModule cacheConstant(ThreadContext context, final RubyModule owner, // e.g. ::Java
         final String constName, final RubyModule packageOrClass, final boolean hidden) {
         if ( packageOrClass != null ) {
             // NOTE: if it's a package createPackageModule already set the constant
             // ... but in case it's a (top-level) Java class name we still need to:
             synchronized (owner) {
-                final IRubyObject alreadySet = owner.fetchConstant(constName);
+                final IRubyObject alreadySet = owner.fetchConstant(context, constName);
                 if ( alreadySet != null ) return (RubyModule) alreadySet;
-                owner.setConstant(constName, packageOrClass, hidden);
+                owner.setConstant(context, constName, packageOrClass, hidden);
             }
             return packageOrClass;
         }
@@ -1331,12 +1379,13 @@ public class Java implements Library {
     @Deprecated
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject java_to_ruby(IRubyObject recv, IRubyObject object, Block unusedBlock) {
+        var context = ((RubyBasicObject) recv).getCurrentContext();
         try {
-            return JavaUtil.java_to_ruby(recv.getRuntime(), object);
+            return JavaUtil.java_to_ruby(context.runtime, object);
         } catch (RuntimeException e) {
-            recv.getRuntime().getJavaSupport().handleNativeException(e, null);
+            context.runtime.getJavaSupport().handleNativeException(e, null);
             // This point is only reached if there was an exception handler installed.
-            return recv.getRuntime().getNil();
+            return context.nil;
         }
     }
 
@@ -1366,7 +1415,7 @@ public class Java implements Library {
     @Deprecated(since = "10.0", forRemoval = true)
     public static IRubyObject new_proxy_instance2(IRubyObject recv, final IRubyObject wrapper,
                                                   final IRubyObject interfaces, Block block) {
-        return new_proxy_instance2(recv.getRuntime().getCurrentContext(), recv, wrapper, interfaces, block);
+        return new_proxy_instance2(((RubyBasicObject) recv).getCurrentContext(), recv, wrapper, interfaces, block);
     }
 
         // TODO: Formalize conversion mechanisms between Java and Ruby
@@ -1378,19 +1427,22 @@ public class Java implements Library {
         // Create list of interface names to proxy (and make sure they really are interfaces)
         Class[] unwrapped = new Class[javaClasses.length];
         for (int i = 0; i < javaClasses.length; i++) {
-            final Class<?> klass = JavaUtil.unwrapJava(javaClasses[i]); // TypeError if not a Java wrapper
+            final Class<?> klass = JavaUtil.unwrapJava(context, javaClasses[i]); // TypeError if not a Java wrapper
 
             if (!klass.isInterface()) throw argumentError(context, "Java interface expected, got: " + klass);
 
             unwrapped[i] = klass;
         }
 
-        return getInstance(context.runtime, newInterfaceImpl(wrapper, unwrapped));
+        return getInstance(context.runtime, newInterfaceImpl(context, wrapper, unwrapped));
     }
 
+    @Deprecated(since = "10.0")
     public static Object newInterfaceImpl(final IRubyObject wrapper, Class[] interfaces) {
-        final Ruby runtime = wrapper.getRuntime();
+        return newInterfaceImpl(((RubyBasicObject) wrapper).getCurrentContext(), wrapper, interfaces);
+    }
 
+    public static Object newInterfaceImpl(ThreadContext context, final IRubyObject wrapper, Class[] interfaces) {
         final int length = interfaces.length;
         switch ( length ) {
             case 1 :
@@ -1403,9 +1455,9 @@ public class Java implements Library {
         }
 
         final RubyClass wrapperClass = wrapper.getMetaClass();
-        final boolean isProc = wrapperClass.isSingleton() && wrapperClass.getRealClass() == runtime.getProc();
+        final boolean isProc = wrapperClass.isSingleton() && wrapperClass.getRealClass() == context.runtime.getProc();
 
-        final JRubyClassLoader jrubyClassLoader = runtime.getJRubyClassLoader();
+        final JRubyClassLoader jrubyClassLoader = context.runtime.getJRubyClassLoader();
 
         if ( RubyInstanceConfig.INTERFACES_USE_PROXY ) {
             return newProxyInterfaceImpl(wrapper, interfaces, jrubyClassLoader);
@@ -1417,7 +1469,7 @@ public class Java implements Library {
         // if it's a singleton class and the real class is proc, we're doing closure conversion
         // so just use Proc's hashcode
         if ( isProc ) {
-            interfacesHashCode = 31 * interfacesHashCode + runtime.getProc().hashCode();
+            interfacesHashCode = 31 * interfacesHashCode + context.runtime.getProc().hashCode();
             classLoader = jrubyClassLoader;
         }
         else { // normal new class implementing interfaces
@@ -1430,7 +1482,7 @@ public class Java implements Library {
             proxyImplClass = Class.forName(implClassName, true, jrubyClassLoader);
         }
         catch (ClassNotFoundException ex) {
-            proxyImplClass = RealClassGenerator.createOldStyleImplClass(interfaces, wrapperClass, runtime, implClassName, classLoader);
+            proxyImplClass = RealClassGenerator.createOldStyleImplClass(interfaces, wrapperClass, context.runtime, implClassName, classLoader);
         }
 
         try {
@@ -1438,10 +1490,10 @@ public class Java implements Library {
             return proxyConstructor.newInstance(wrapper);
         }
         catch (InvocationTargetException e) {
-            throw mapGeneratedProxyException(runtime, e);
+            throw mapGeneratedProxyException(context.runtime, e);
         }
         catch (ReflectiveOperationException e) {
-            throw mapGeneratedProxyException(runtime, e);
+            throw mapGeneratedProxyException(context.runtime, e);
         }
     }
 
@@ -1521,8 +1573,7 @@ public class Java implements Library {
             if ( otherProxy == null ) return false;
             if ( Proxy.isProxyClass(otherProxy.getClass()) ) {
                 InvocationHandler other = Proxy.getInvocationHandler(otherProxy);
-                if ( other instanceof InterfaceProxyHandler ) {
-                    InterfaceProxyHandler that = (InterfaceProxyHandler) other;
+                if ( other instanceof InterfaceProxyHandler that) {
                     if ( this.wrapper != that.wrapper ) return false;
                     return Arrays.equals(this.ifaceNames, that.ifaceNames);
                 }
@@ -1561,6 +1612,7 @@ public class Java implements Library {
     @SuppressWarnings("unchecked")
     public static Class generateRealClass(final RubyClass clazz) {
         final Ruby runtime = clazz.getRuntime();
+        var context = runtime.getCurrentContext();
         final Class[] interfaces = getInterfacesFromRubyClass(clazz);
 
         // hashcode is a combination of the interfaces and the Ruby class we're using
@@ -1574,7 +1626,7 @@ public class Java implements Library {
             // no-name class, generate a bogus name for it
             implClassName += "Class0x" + Integer.toHexString(System.identityHashCode(clazz)) + '_' + Math.abs(interfacesHashCode);
         } else {
-            implClassName += StringSupport.replaceAll(clazz.getName(), "::", "$$").toString() + '_' + Math.abs(interfacesHashCode);
+            implClassName += StringSupport.replaceAll(clazz.getName(context), "::", "$$").toString() + '_' + Math.abs(interfacesHashCode);
         }
         Class<? extends IRubyObject> proxyImplClass;
         try {
@@ -1583,18 +1635,17 @@ public class Java implements Library {
         catch (ClassNotFoundException ex) {
             // try to use super's reified class; otherwise, RubyObject (for now)
         	//TODO: test java reified?
-            Class<?> superClass = clazz.getSuperClass().getRealClass().getReifiedClass();
+            Class<?> superClass = clazz.getSuperClass().getRealClass().reifiedClass();
             if ( superClass == null ) superClass = RubyObject.class;
             proxyImplClass = RealClassGenerator.createRealImplClass(superClass, interfaces, clazz, runtime, implClassName);
 
             // add a default initialize if one does not already exist and this is a Java-hierarchy class
             if ( NEW_STYLE_EXTENSION &&
                 ! ( RubyBasicObject.class.isAssignableFrom(proxyImplClass) || clazz.getMethods().containsKey("initialize") ) ) {
-                clazz.addMethod("initialize", new DummyInitialize(clazz));
+                clazz.addMethod(context, "initialize", new DummyInitialize(clazz));
             }
         }
-        clazz.setReifiedClass(proxyImplClass);
-        clazz.setRubyClassAllocator(proxyImplClass);
+        clazz.reifiedClass(proxyImplClass).setRubyClassAllocator(proxyImplClass);
 
         return proxyImplClass;
     }
@@ -1642,24 +1693,30 @@ public class Java implements Library {
     }
 
     public static IRubyObject allocateProxy(Object javaObject, RubyClass clazz) {
-        final Ruby runtime = clazz.getRuntime();
+        var context = clazz.getRuntime().getCurrentContext();
         // Arrays are never stored in OPC
-        if ( clazz.getSuperClass() == runtime.getJavaSupport().getArrayProxyClass() ) {
-            return new ArrayJavaProxy(runtime, clazz, javaObject, JavaUtil.getJavaConverter(javaObject.getClass().getComponentType()));
+        if ( clazz.getSuperClass() == context.runtime.getJavaSupport().getArrayProxyClass() ) {
+            return new ArrayJavaProxy(context.runtime, clazz, javaObject, JavaUtil.getJavaConverter(javaObject.getClass().getComponentType()));
         }
 
-        final IRubyObject proxy = clazz.allocate();
-        if ( proxy instanceof JavaProxy ) {
-            ((JavaProxy) proxy).setObject(javaObject);
+        final IRubyObject proxy = clazz.allocate(context);
+
+        if ( proxy instanceof JavaProxy jproxy) {
+            jproxy.setObject(javaObject);
         } else {
             // TODO (JavaObject transition) is this really necessary?
-            proxy.dataWrapStruct(new JavaProxy(runtime, clazz, javaObject));
+            proxy.dataWrapStruct(new JavaProxy(context.runtime, clazz, javaObject));
         }
         return proxy;
     }
 
+    @Deprecated(since = "10.0")
     public static IRubyObject wrapJavaObject(Ruby runtime, Object object) {
-        return allocateProxy(object, getProxyClassForObject(runtime, object));
+        return wrapJavaObject(runtime.getCurrentContext(), object);
+    }
+
+    public static IRubyObject wrapJavaObject(ThreadContext context, Object object) {
+        return allocateProxy(object, getProxyClassForObject(context, object));
     }
 
     @SuppressWarnings("unchecked")

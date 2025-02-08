@@ -4,6 +4,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -41,12 +42,8 @@ public class Ifaddr extends RubyObject {
     private String flagStatus;
     private Addrinfo addr;
 
-    public static void createIfaddr(Ruby runtime) {
-        RubyClass ifaddr = runtime.getClass("Socket").defineClassUnder(
-                "Ifaddr",
-                runtime.getObject(),
-                Ifaddr::new);
-        ifaddr.defineAnnotatedMethods(Ifaddr.class);
+    public static void createIfaddr(ThreadContext context, RubyClass Object, RubyClass Socket) {
+        Socket.defineClassUnder(context, "Ifaddr", Object, Ifaddr::new).defineMethods(context, Ifaddr.class);
     }
 
     public Ifaddr(Ruby runtime, RubyClass metaClass) {
@@ -66,7 +63,7 @@ public class Ifaddr extends RubyObject {
         this.address = it.getAddress();
         this.broadcast = it.getBroadcast();
         this.interfaceAddress = it;
-        setAddr(runtime);
+        setAddr(runtime.getCurrentContext());
         setNetmask(it);
         setInspectString(ni);
         setInterfaceFlags(ni);
@@ -82,7 +79,7 @@ public class Ifaddr extends RubyObject {
         this.flags = 0;
         this.networkInterface = ni;
         this.isLink = true;
-        setAddr(runtime);
+        setAddr(runtime.getCurrentContext());
         setInspectString(ni);
         setInterfaceFlags(ni);
     }
@@ -105,11 +102,11 @@ public class Ifaddr extends RubyObject {
     @JRubyMethod
     public IRubyObject broadaddr(ThreadContext context) {
         if (broadcast != null && isLink == false) {
-          return new Addrinfo(context.runtime, context.runtime.getClass("Addrinfo"), broadcast);
+          return new Addrinfo(context.runtime, Access.getClass(context, "Addrinfo"), broadcast);
         }
         try {
           if (isLink == true && networkInterface.isLoopback() == false) {
-            return new Addrinfo(context.runtime, context.runtime.getClass("Addrinfo"), networkInterface, true);
+            return new Addrinfo(context.runtime, Access.getClass(context, "Addrinfo"), networkInterface, true);
           }
         } catch (SocketException e) {
         }
@@ -128,11 +125,10 @@ public class Ifaddr extends RubyObject {
 
     @JRubyMethod
     public IRubyObject netmask(ThreadContext context) {
-        if (netmask == null) {
-            return context.nil;
-        }
+        if (netmask == null) return context.nil;
+
         try {
-            return new Addrinfo(context.runtime, context.runtime.getClass("Addrinfo"), InetAddress.getByName(netmask));
+            return new Addrinfo(context.runtime, Access.getClass(context, "Addrinfo"), InetAddress.getByName(netmask));
         } catch (UnknownHostException uhe) {
             throw context.runtime.newIOErrorFromException(uhe);
         }
@@ -144,12 +140,12 @@ public class Ifaddr extends RubyObject {
         return context.nil;
     }
 
-    private void setAddr(Ruby runtime) {
+    private void setAddr(ThreadContext context) {
         if (address != null && isLink == false) {
-          addr = new Addrinfo(runtime, runtime.getClass("Addrinfo"), address);
+          addr = new Addrinfo(context.runtime, Access.getClass(context, "Addrinfo"), address);
         }
         if (isLink == true) {
-          addr = new Addrinfo(runtime, runtime.getClass("Addrinfo"), networkInterface, false);
+          addr = new Addrinfo(context.runtime, Access.getClass(context, "Addrinfo"), networkInterface, false);
         }
     }
 

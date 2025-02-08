@@ -12,7 +12,6 @@ import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -20,10 +19,13 @@ import org.jruby.util.ConvertBytes;
 import org.jruby.util.RubyStringBuilder;
 
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.indexError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.javasupport.ext.JavaLang.Character.inspectCharValue;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.util.Inspector.*;
 
 public final class ArrayJavaProxy extends JavaProxy {
@@ -39,36 +41,32 @@ public final class ArrayJavaProxy extends JavaProxy {
         this.converter = converter;
     }
 
-    public static RubyClass createArrayJavaProxy(ThreadContext context) {
-        Ruby runtime = context.runtime;
-
-        RubyClass arrayJavaProxy = runtime.defineClass("ArrayJavaProxy",
-                runtime.getJavaSupport().getJavaProxyClass(),
-                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-
-        RubyClass singleton = arrayJavaProxy.getSingletonClass();
-        singleton.addMethod("new", new ArrayNewMethod(singleton, Visibility.PUBLIC));
-
-        arrayJavaProxy.defineAnnotatedMethods(ArrayJavaProxy.class);
-        arrayJavaProxy.includeModule(runtime.getEnumerable());
-
-        return arrayJavaProxy;
+    public static RubyClass createArrayJavaProxy(ThreadContext context, RubyClass JavaProxy, RubyModule Enumerable) {
+        return defineClass(context, "ArrayJavaProxy", JavaProxy, NOT_ALLOCATABLE_ALLOCATOR).
+                defineMethods(context, ArrayJavaProxy.class).
+                include(context, Enumerable).
+                tap(c -> c.singletonClass(context).addMethod(context, "new", new ArrayNewMethod(c.singletonClass(context), Visibility.PUBLIC)));
     }
 
+    @Deprecated(since = "10.0")
     public static ArrayJavaProxy newArray(final Ruby runtime, final Class<?> elementType, final int... dimensions) {
+        return newArray(runtime.getCurrentContext(), elementType, dimensions);
+    }
+
+    public static ArrayJavaProxy newArray(ThreadContext context, final Class<?> elementType, final int... dimensions) {
         final Object array;
         try {
             array = Array.newInstance(elementType, dimensions);
         } catch (IllegalArgumentException e) {
-            throw argumentError(runtime.getCurrentContext(), "can not create " + dimensions.length + " dimensional array");
+            throw argumentError(context, "can not create " + dimensions.length + " dimensional array");
         }
-        return new ArrayJavaProxy(runtime, Java.getProxyClassForObject(runtime, array), array);
+        return new ArrayJavaProxy(context.runtime, Java.getProxyClassForObject(context, array), array);
     }
 
     @Override
     @Deprecated
     protected org.jruby.javasupport.JavaArray asJavaObject(final Object array) {
-        return new org.jruby.javasupport.JavaArray(getRuntime(), array);
+        return new org.jruby.javasupport.JavaArray(getCurrentContext().runtime, array);
     }
 
     @Deprecated
@@ -170,7 +168,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         final int len = array.length;
         if ( len == 0 ) return false;
         if ( obj instanceof RubyFixnum fix) {
-            final long objVal = fix.getLongValue();
+            final long objVal = fix.asLong(context);
             if ( objVal < Byte.MIN_VALUE || objVal > Byte.MAX_VALUE ) return false;
 
             for (byte b : array) {
@@ -188,7 +186,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         final int len = array.length;
         if ( len == 0 ) return false;
         if (obj instanceof RubyFixnum fix) {
-            final long objVal = fix.getLongValue();
+            final long objVal = fix.asLong(context);
             if ( objVal < Short.MIN_VALUE || objVal > Short.MAX_VALUE ) return false;
 
             for (short value : array) {
@@ -206,7 +204,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         final int len = array.length;
         if ( len == 0 ) return false;
         if (obj instanceof RubyFixnum fix) {
-            final long objVal = fix.getLongValue();
+            final long objVal = fix.asLong(context);
             if ( objVal < Integer.MIN_VALUE || objVal > Integer.MAX_VALUE ) return false;
 
             for (int j : array) {
@@ -224,7 +222,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         final int len = array.length;
         if ( len == 0 ) return false;
         if ( obj instanceof RubyFixnum fix) {
-            final long objVal = fix.getLongValue();
+            final long objVal = fix.asLong(context);
 
             for (long l : array) {
                 if (objVal == l) return true;
@@ -241,7 +239,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         final int len = array.length;
         if ( len == 0 ) return false;
         if (obj instanceof RubyFixnum fix) {
-            final long objVal = fix.getLongValue();
+            final long objVal = fix.asLong(context);
             if ( objVal < Character.MIN_VALUE || objVal > Character.MAX_VALUE ) return false;
 
             for (char c : array) {
@@ -274,9 +272,9 @@ public final class ArrayJavaProxy extends JavaProxy {
 
     private boolean includes(final ThreadContext context, final float[] array, final IRubyObject obj) {
         final int len = array.length;
-        if ( len == 0 ) return false;
-        if ( obj instanceof RubyFloat flote) {
-            final double objVal = flote.getDoubleValue();
+        if (len == 0) return false;
+        if (obj instanceof RubyFloat flote) {
+            final double objVal = flote.asDouble(context);
 
             for (float v : array) {
                 if ((float) objVal == v) return true;
@@ -291,9 +289,9 @@ public final class ArrayJavaProxy extends JavaProxy {
 
     private boolean includes(final ThreadContext context, final double[] array, final IRubyObject obj) {
         final int len = array.length;
-        if ( len == 0 ) return false;
+        if (len == 0) return false;
         if (obj instanceof RubyFloat flote) {
-            final double objVal = flote.getDoubleValue();
+            final double objVal = flote.asDouble(context);
 
             for (double v : array) {
                 if (objVal == v) return true;
@@ -317,7 +315,7 @@ public final class ArrayJavaProxy extends JavaProxy {
     @JRubyMethod(name = "first") // Enumerable override
     public IRubyObject first(ThreadContext context, IRubyObject count) {
         final Object array = getObject();
-        int len = count.convertToInteger().getIntValue();
+        int len = toInt(context, count);
         int size = Array.getLength(array); if ( len > size ) len = size;
 
         final Ruby runtime = context.runtime;
@@ -358,29 +356,27 @@ public final class ArrayJavaProxy extends JavaProxy {
 
     @JRubyMethod(name = "count") // @override Enumerable#count
     public IRubyObject count(final ThreadContext context, final Block block) {
-        final Ruby runtime = context.runtime;
-        if ( block.isGiven() ) {
-            final Object array = getObject(); int count = 0;
-            for ( int i = 0; i < Array.getLength(array); i++ ) {
-                IRubyObject next = JavaUtil.convertJavaArrayElementToRuby(runtime, converter, array, i);
-                if ( block.yield( context, next ).isTrue() ) count++;
-            }
-            return RubyFixnum.newFixnum(runtime, count);
+        if (!block.isGiven()) return asFixnum(context, length());
+
+        final Object array = getObject();
+        int count = 0;
+        for ( int i = 0; i < Array.getLength(array); i++ ) {
+            IRubyObject next = JavaUtil.convertJavaArrayElementToRuby(context.runtime, converter, array, i);
+            if (block.yield(context, next).isTrue()) count++;
         }
-        return RubyFixnum.newFixnum(runtime, length());
+        return asFixnum(context, count);
     }
 
     @JRubyMethod(name = "count") // @override Enumerable#count
     public IRubyObject count(final ThreadContext context, final IRubyObject obj, final Block unused) {
         // unused block due DescriptorInfo not (yet) supporting if a method receives block and an override doesn't
-        final Ruby runtime = context.runtime;
         final Object array = getObject(); int count = 0;
         for ( int i = 0; i < Array.getLength(array); i++ ) {
             // NOTE: could be former improved by special case handling primitive arrays and == ...
-            IRubyObject next = JavaUtil.convertJavaArrayElementToRuby(runtime, converter, array, i);
+            IRubyObject next = JavaUtil.convertJavaArrayElementToRuby(context.runtime, converter, array, i);
             if ( RubyObject.equalInternal(context, next, obj) ) count++;
         }
-        return RubyFixnum.newFixnum(runtime, count);
+        return asFixnum(context, count);
     }
 
     @JRubyMethod(name = "dig", required = 1, rest = true, checkArity = false)
@@ -486,7 +482,7 @@ public final class ArrayJavaProxy extends JavaProxy {
 
     @JRubyMethod(name = "component_type")
     public IRubyObject component_type(ThreadContext context) {
-        return Java.getProxyClass(context.runtime, getComponentType());
+        return Java.getProxyClass(context, getComponentType());
     }
 
     private static final byte[] END_BRACKET_COLON_SPACE = new byte[] { ']', ':', ' ' };
@@ -505,7 +501,7 @@ public final class ArrayJavaProxy extends JavaProxy {
 
         final Object[] ary = (Object[]) getObject();
 
-        RubyModule type = Java.getProxyClass(runtime, componentClass);
+        RubyModule type = Java.getProxyClass(context, componentClass);
         RubyString buf = inspectPrefixTypeOnly(context, type);
         RubyStringBuilder.cat(runtime, buf, BEG_BRACKET); // [
         RubyStringBuilder.cat(runtime, buf, ConvertBytes.intToCharBytes(ary.length));
@@ -702,10 +698,9 @@ public final class ArrayJavaProxy extends JavaProxy {
         return Arrays.equals((Object[]) thisArray, (Object[]) thatArray);
     }
 
-    @Override
     @JRubyMethod
-    public RubyFixnum hash() {
-        return RubyFixnum.newFixnum(getRuntime(), hashCode());
+    public RubyFixnum hash(ThreadContext context) {
+        return asFixnum(context, hashCode());
     }
 
     @Override
@@ -753,10 +748,10 @@ public final class ArrayJavaProxy extends JavaProxy {
     @Override
     @JRubyMethod(name = "clone")
     public IRubyObject rbClone() {
-        final Ruby runtime = getRuntime();
+        var context = getRuntime().getCurrentContext();
 
-        RubyObject clone = new ArrayJavaProxy(runtime, getMetaClass(), cloneObject(), converter);
-        clone.setMetaClass(getSingletonClassClone());
+        RubyObject clone = new ArrayJavaProxy(context.runtime, getMetaClass(), cloneObject(), converter);
+        clone.setMetaClass(getSingletonClassCloneAndAttach(context, null));
 
         initCopy(clone, this, "initialize_clone");
         if (isFrozen()) clone.setFrozen(true);
@@ -804,8 +799,8 @@ public final class ArrayJavaProxy extends JavaProxy {
     private IRubyObject arrayRange(final ThreadContext context, final RubyRange range) {
         final Object array = getObject();
         final int arrayLength = Array.getLength( array );
-        int first = castAsFixnum(context, range.first(context), "Only Integer ranges supported").getIntValue();
-        int last = castAsFixnum(context, range.last(context), "Only Integer ranges supported").getIntValue();
+        int first = castAsFixnum(context, range.first(context), "Only Integer ranges supported").asInt(context);
+        int last = castAsFixnum(context, range.last(context), "Only Integer ranges supported").asInt(context);
 
         first = first >= 0 ? first : arrayLength + first;
         if (first < 0 || first >= arrayLength) return context.nil;
@@ -829,10 +824,10 @@ public final class ArrayJavaProxy extends JavaProxy {
         final Object array = getObject();
         final int arrayLength = Array.getLength( array );
 
-        int first = castAsFixnum(context, rFirst, "Only Integer ranges supported").getIntValue();
-        int length = castAsFixnum(context, rLength, "Only Integer ranges supported").getIntValue();
+        int first = castAsFixnum(context, rFirst, "Only Integer ranges supported").asInt(context);
+        int length = castAsFixnum(context, rLength, "Only Integer ranges supported").asInt(context);
 
-        if (length > arrayLength) throw context.runtime.newIndexError("length specified is longer than array");
+        if (length > arrayLength) throw indexError(context, "length specified is longer than array");
         if (length < 0) return context.nil;
 
         first = first >= 0 ? first : arrayLength + first;
@@ -845,7 +840,7 @@ public final class ArrayJavaProxy extends JavaProxy {
     private IRubyObject subarrayProxy(ThreadContext context, Object ary, final int aryLength, int index, int size) {
         if (index + size > aryLength) size = aryLength - index;
 
-        ArrayJavaProxy proxy = ArrayUtils.newProxiedArray(context.runtime, ary.getClass().getComponentType(), converter, size);
+        ArrayJavaProxy proxy = ArrayUtils.newProxiedArray(context, ary.getClass().getComponentType(), converter, size);
         System.arraycopy(ary, index, proxy.getObject(), 0, size);
 
         return proxy;

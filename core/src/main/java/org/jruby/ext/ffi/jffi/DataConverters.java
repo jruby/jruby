@@ -2,6 +2,7 @@ package org.jruby.ext.ffi.jffi;
 
 import com.kenai.jffi.CallingConvention;
 import org.jruby.*;
+import org.jruby.api.Access;
 import org.jruby.ext.ffi.*;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -173,7 +174,7 @@ public class DataConverters {
         private synchronized IRubyObject lookupAndCacheValue(ThreadContext context, IRubyObject obj) {
             IRubyObject value = enums instanceof Enums ? ((Enums)enums).mapSymbol(context, obj) : ((RubyHash)enums).fastARef(obj);
             if (value.isNil() || !(value instanceof RubyInteger integer)) {
-                throw argumentError(context, "invalid enum value, " + obj.inspect());
+                throw argumentError(context, "invalid enum value, " + obj.inspect(context));
             }
 
             IdentityHashMap<RubySymbol, RubyInteger> s2v = new IdentityHashMap<RubySymbol, RubyInteger>(symbolToValue);
@@ -225,8 +226,7 @@ public class DataConverters {
             if (obj instanceof Pointer ptr) {
                 if (ptr.getAddress() == 0) return context.nil;
 
-                return new org.jruby.ext.ffi.jffi.Function(context.runtime,
-                        context.runtime.getModule("FFI").getClass("Function"),
+                return new org.jruby.ext.ffi.jffi.Function(context.runtime, Access.getClass(context, "FFI", "Function"),
                         new CodeMemoryIO(context.runtime, ptr), functionInfo, null);
             }
 

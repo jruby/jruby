@@ -41,7 +41,8 @@ public final class MonitorLibrary implements Library {
     }
 
     public static void load(Ruby runtime) {
-        Monitor.createMonitorClass(runtime);
+        var context = runtime.getCurrentContext();
+        Monitor.createMonitorClass(context);
     }
 
 }

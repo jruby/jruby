@@ -29,6 +29,9 @@ package org.jruby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Fatal;
+import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Define.defineClass;
 
 /**
  * The Java representation of a Ruby Fatal.
@@ -41,13 +44,12 @@ public class RubyFatal extends RubyException {
         super(runtime, exceptionClass);
     }
 
-    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass fatalClass = runtime.defineClass("Fatal", exceptionClass, RubyFatal::new);
+    static RubyClass define(ThreadContext context, RubyClass Exception, RubyClass Object) {
+        var Fatal = defineClass(context, "Fatal", Exception, RubyFatal::new);
 
-        // Remove the constant so it's not accessible (jruby/jruby#5648)
-        runtime.getObject().deleteConstant("Fatal");
+        Object.deleteConstant(context, "Fatal"); // Remove the constant so it's not accessible (jruby/jruby#5648)
 
-        return fatalClass;
+        return Fatal;
     }
 
     protected RaiseException constructThrowable(String message) {

@@ -43,7 +43,6 @@ package org.jruby;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.List;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
@@ -57,6 +56,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
 
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.invokedynamic;
@@ -65,7 +65,6 @@ import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 
-import org.jruby.specialized.RubyObjectSpecializer;
 import org.jruby.util.cli.Options;
 
 /**
@@ -131,7 +130,7 @@ public class RubyObject extends RubyBasicObject {
      */
     private static IRubyObject reifyAndAllocate(Ruby runtime, RubyClass klass) {
         klass.reifyWithAncestors();
-        return klass.allocate();
+        return klass.allocate(runtime.getCurrentContext());
     }
 
     /**
@@ -140,10 +139,8 @@ public class RubyObject extends RubyBasicObject {
      * argument because of the Object class' central part in runtime
      * initialization.
      */
-    public static RubyClass createObjectClass(Ruby runtime, RubyClass objectClass) {
-        objectClass.setClassIndex(ClassIndex.OBJECT);
-        objectClass.setReifiedClass(RubyObject.class);
-        return objectClass;
+    public static void finishObjectClass(RubyClass Object) {
+        Object.reifiedClass(RubyObject.class).classIndex(ClassIndex.OBJECT);
     }
 
     /**
@@ -184,7 +181,7 @@ public class RubyObject extends RubyBasicObject {
                         allocator = runtime.getObjectSpecializer().specializeForVariables(klass, foundVariables);
 
                         // invalidate metaclass so new allocator is picked up for specialized .new
-                        klass.metaClass.invalidateCacheDescendants();
+                        klass.metaClass.invalidateCacheDescendants(runtime.getCurrentContext());
                     }
                 }
             }
@@ -359,7 +356,7 @@ public class RubyObject extends RubyBasicObject {
         int line;
         if (args.length > 1) {
             file = args[1].convertToString().asJavaString();
-            line = args.length > 2 ? (int)(args[2].convertToInteger().getLongValue() - 1) : 0;
+            line = args.length > 2 ? toInt(context, args[2]) - 1 : 0;
         } else {
             file = "(eval at " + context.getFileAndLine() + ")";
             line = 0;

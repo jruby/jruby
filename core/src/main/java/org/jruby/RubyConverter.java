@@ -119,17 +119,13 @@ public class RubyConverter extends RubyObject {
                 EncodingDB.getEncodings().get("stateless-ISO-2022-JP-KDDI".getBytes()).getEncoding());
     }
 
-    public static RubyClass createConverterClass(Ruby runtime) {
-        RubyClass converterc = runtime.defineClassUnder("Converter", runtime.getObject(), RubyConverter::new, runtime.getEncoding());
-
-        converterc.setClassIndex(ClassIndex.CONVERTER);
-        converterc.setReifiedClass(RubyConverter.class);
-        converterc.kindOf = new RubyModule.JavaClassKindOf(RubyConverter.class);
-
-        converterc.defineAnnotatedMethods(RubyConverter.class);
-        converterc.defineAnnotatedConstants(RubyConverter.class);
-
-        return converterc;
+    public static RubyClass createConverterClass(ThreadContext context, RubyClass Object, RubyClass Encoding) {
+        return Encoding.defineClassUnder(context, "Converter", Object, RubyConverter::new).
+                reifiedClass(RubyConverter.class).
+                kindOf(new RubyModule.JavaClassKindOf(RubyConverter.class)).
+                classIndex(ClassIndex.CONVERTER).
+                defineMethods(context, RubyConverter.class).
+                defineConstants(context, RubyConverter.class);
     }
 
     public RubyConverter(Ruby runtime, RubyClass klass) {
@@ -240,7 +236,7 @@ public class RubyConverter extends RubyObject {
                 hashArg = 2;
             } else {
                 outputByteOffsetObj = args[2];
-                outputByteoffset = (int)args[2].convertToInteger().getLongValue();
+                outputByteoffset = toInt(context, args[2]);
             }
         }
         
@@ -249,7 +245,7 @@ public class RubyConverter extends RubyObject {
                 hashArg = 3;
             } else {
                 outputBytesizeObj = args[3];
-                outputBytesize = (int)args[3].convertToInteger().getLongValue();
+                outputBytesize = toInt(context, args[3]);
             }
         }
         
@@ -259,7 +255,7 @@ public class RubyConverter extends RubyObject {
             if (args[4] instanceof RubyHash) {
                 hashArg = 4;
             } else {
-                flags = (int)args[4].convertToInteger().getLongValue();
+                flags = toInt(context, args[4]);
             }
         }
         
@@ -363,7 +359,7 @@ public class RubyConverter extends RubyObject {
             if (retStr.equals(InvalidByteSequence.symbolicName()) ||
                     retStr.equals(UndefinedConversion.symbolicName()) ||
                     retStr.equals(IncompleteInput.symbolicName())) {
-                throw EncodingUtils.makeEconvException(context.runtime, ec);
+                throw EncodingUtils.makeEconvException(context, ec);
             }
 
             if (retStr.equals(Finished.symbolicName())) throw argumentError(context, "converter already finished");
@@ -377,26 +373,17 @@ public class RubyConverter extends RubyObject {
     
     @JRubyMethod
     public IRubyObject finish(ThreadContext context) {
-        IRubyObject dest;
+        IRubyObject dest = context.runtime.newString();
+        IRubyObject ret = primitive_convert(context,
+                new IRubyObject[] { context.nil, dest, context.nil, context.nil, asFixnum(context, 0) });
 
-        IRubyObject[] newArgs = {
-                context.nil,
-                dest = context.runtime.newString(),
-                context.nil,
-                context.nil,
-                asFixnum(context, 0)
-        };
-
-        IRubyObject ret = primitive_convert(context, newArgs);
-
-        if (ret instanceof RubySymbol) {
-            RubySymbol retSym = (RubySymbol)ret;
+        if (ret instanceof RubySymbol retSym) {
             String retStr = retSym.asJavaString(); // 7 bit comparison
 
             if (retStr.equals(InvalidByteSequence.symbolicName()) ||
                     retStr.equals(UndefinedConversion.symbolicName()) ||
                     retStr.equals(IncompleteInput.symbolicName())) {
-                throw EncodingUtils.makeEconvException(context.runtime, ec);
+                throw EncodingUtils.makeEconvException(context, ec);
             }
 
             if (!retStr.equals(EConvResult.Finished.symbolicName())) {
@@ -463,11 +450,9 @@ public class RubyConverter extends RubyObject {
     
     @JRubyMethod
     public IRubyObject last_error(ThreadContext context) {
-        RaiseException re = EncodingUtils.makeEconvException(context.runtime, ec);
+        RaiseException re = EncodingUtils.makeEconvException(context, ec);
 
-        if (re != null) return re.getException();
-        
-        return context.nil;
+        return re == null ? context.nil : re.getException();
     }
     
     @JRubyMethod
@@ -475,7 +460,7 @@ public class RubyConverter extends RubyObject {
         Ruby runtime = context.runtime;
 
         IRubyObject[] values = {
-                runtime.newSymbol(ec.lastError.getResult().symbolicName()),
+                asSymbol(context, ec.lastError.getResult().symbolicName()),
                 context.nil,
                 context.nil,
                 context.nil,
@@ -561,39 +546,17 @@ public class RubyConverter extends RubyObject {
 
     // econv_putback
     @JRubyMethod(optional = 1, checkArity = false)
-    public IRubyObject putback(ThreadContext context, IRubyObject[] argv)
-    {
+    public IRubyObject putback(ThreadContext context, IRubyObject[] argv) {
         int argc = Arity.checkArgumentCount(context, argv, 0, 1);
+        IRubyObject max = argc == 0 ? context.nil : argv[0];
+        int n = max.isNil() ? ec.putbackable() : Math.min(toInt(context, max), ec.putbackable());
+        RubyString str = RubyString.newStringLight(context.runtime, n);
+        ByteList strBL = str.getByteList();
 
-        Ruby runtime = context.runtime;
-        int n;
-        int putbackable;
-        IRubyObject str, max;
-
-        if (argc == 0) {
-            max = context.nil;
-        } else {
-            max = argv[0];
-        }
-
-        if (max.isNil()) {
-            n = ec.putbackable();
-        } else {
-            n = (int)max.convertToInteger().getLongValue();
-            putbackable = ec.putbackable();
-            if (putbackable < n) {
-                n = putbackable;
-            }
-        }
-
-        str = RubyString.newStringLight(runtime, n);
-        ByteList strBL = ((RubyString)str).getByteList();
         ec.putback(strBL.getUnsafeBytes(), strBL.getBegin(), n);
         strBL.setRealSize(n);
 
-        if (ec.sourceEncoding != null) {
-            ((RubyString)str).setEncoding(ec.sourceEncoding);
-        }
+        if (ec.sourceEncoding != null) ((RubyString)str).setEncoding(ec.sourceEncoding);
 
         return str;
     }

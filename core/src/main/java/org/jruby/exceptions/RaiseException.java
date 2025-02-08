@@ -35,9 +35,6 @@
 
 package org.jruby.exceptions;
 
-import java.lang.reflect.Member;
-import java.util.Arrays;
-
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -53,6 +50,11 @@ import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.lang.reflect.Member;
+import java.util.Arrays;
+
+import static org.jruby.api.Access.objectClass;
+import static org.jruby.api.Error.nameError;
 import static org.jruby.api.Error.typeError;
 
 public class RaiseException extends JumpException {
@@ -107,7 +109,7 @@ public class RaiseException extends JumpException {
      */
     public static RaiseException from(Ruby runtime, RubyClass exceptionClass, String msg, IRubyObject backtrace) {
         RubyException exception = RubyException.newException(runtime, exceptionClass, msg);
-        exception.setBacktrace(backtrace);
+        exception.setBacktrace(runtime.getCurrentContext(), backtrace);
         return exception.toThrowable();
     }
 
@@ -161,14 +163,15 @@ public class RaiseException extends JumpException {
     }
 
     private static RubyClass findExceptionClass(ThreadContext context, String exceptionPath) {
-        IRubyObject exceptionClass = context.runtime.getObject().getConstant(exceptionPath);
+        IRubyObject exceptionClass = objectClass(context).getConstant(context, exceptionPath);
 
-        if (exceptionClass == null) throw context.runtime.newNameError("exception class not found", exceptionPath);
+        if (exceptionClass == null) throw nameError(context, "exception class not found", exceptionPath);
 
-        if (!(exceptionClass instanceof RubyClass)) {
-            throw typeError(context, "expected to find exception class for " + exceptionPath + " but got " + exceptionClass.inspect());
+        if (!(exceptionClass instanceof RubyClass exception)) {
+            throw typeError(context, "expected to find exception class for " + exceptionPath +
+                    " but got " + exceptionClass.inspect(context));
         }
-        return (RubyClass) exceptionClass;
+        return exception;
     }
 
     @Override
@@ -217,7 +220,7 @@ public class RaiseException extends JumpException {
                 setStackTraceFromException();
             }
         } else {
-            exception.setBacktrace(backtrace);
+            exception.setBacktrace(context, backtrace);
             if (!backtrace.isNil() && !isEmptyArray(backtrace)) {
                 if (requiresBacktrace(context)) exception.captureBacktrace(context);
             }
@@ -338,10 +341,10 @@ public class RaiseException extends JumpException {
     @Deprecated
     public RaiseException(Ruby runtime, RubyClass exceptionClass, String msg, IRubyObject backtrace) {
         super(msg == null ? msg = "No message available" : msg);
-
-        providedMessage = '(' + exceptionClass.getName() + ") " + msg;
-
         final ThreadContext context = runtime.getCurrentContext();
+
+        providedMessage = '(' + exceptionClass.getName(context) + ") " + msg;
+
         setException(RubyException.newException(context, exceptionClass, RubyString.newUnicodeString(runtime, msg)));
         preRaise(context, backtrace, true);
     }

@@ -56,7 +56,6 @@ import org.jruby.runtime.ContextAwareBlockBody;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.MethodIndex;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -78,12 +77,17 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static org.jruby.api.Convert.*;
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.nameError;
 import static org.jruby.api.Error.typeError;
-import static org.jruby.util.RubyStringBuilder.str;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.util.RubyStringBuilder.ids;
+import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.StringSupport.CR_7BIT;
 import static org.jruby.util.StringSupport.CR_UNKNOWN;
 import static org.jruby.util.StringSupport.codeLength;
@@ -143,20 +147,14 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         this(runtime, internedSymbol, symbolBytesFromString(runtime, internedSymbol));
     }
 
-    public static RubyClass createSymbolClass(Ruby runtime) {
-        RubyClass symbolClass = runtime.defineClass("Symbol", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-
-        RubyClass symbolMetaClass = symbolClass.getMetaClass();
-        symbolClass.setClassIndex(ClassIndex.SYMBOL);
-        symbolClass.setReifiedClass(RubySymbol.class);
-        symbolClass.kindOf = new RubyModule.JavaClassKindOf(RubySymbol.class);
-
-        symbolClass.defineAnnotatedMethods(RubySymbol.class);
-        symbolMetaClass.undefineMethod("new");
-
-        symbolClass.includeModule(runtime.getComparable());
-
-        return symbolClass;
+    public static RubyClass createSymbolClass(ThreadContext context, RubyClass Object, RubyModule Comparable) {
+        return defineClass(context, "Symbol", Object, NOT_ALLOCATABLE_ALLOCATOR).
+                reifiedClass(RubySymbol.class).
+                classIndex(ClassIndex.SYMBOL).
+                defineMethods(context, RubySymbol.class).
+                kindOf(new RubyModule.JavaClassKindOf(RubySymbol.class)).
+                include(context, Comparable).
+                tap(c -> c.getMetaClass().undefMethods(context, "new"));
     }
 
     @Override
@@ -310,9 +308,8 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     	return true;
     }
 
-    @Override
-    public RubyClass getSingletonClass() {
-        throw typeError(getRuntime().getCurrentContext(), "can't define singleton");
+    public RubyClass singletonClass(ThreadContext context) {
+        throw typeError(context, "can't define singleton");
     }
 
     public static RubySymbol getSymbolLong(Ruby runtime, long id) {
@@ -409,25 +406,30 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return newHardSymbol(runtime, bytes, handler);
     }
 
+    @Deprecated(since = "10.0")
+    public static RubySymbol newConstantSymbol(Ruby runtime, IRubyObject fqn, ByteList bytes) {
+        return newConstantSymbol(runtime.getCurrentContext(), fqn, bytes);
+    }
+
     /**
      * Create a symbol whose intention is to be used as a constant.  This will not
      * only guarantee a symbol entry in the table but it will also verify the symbol
      * conforms as a valid constant identifier.
      *
-     * @param runtime of this Ruby instance.
+     * @param context the current thread context
      * @param fqn if this constant symbol is part of a broader chain this is used for full name error reporting.
      * @param bytes to be made into a symbol (or to help retreive existing symbol)
      * @return a new or existing symbol
      */
-    public static RubySymbol newConstantSymbol(Ruby runtime, IRubyObject fqn, ByteList bytes) {
-        if (bytes.length() == 0) {
-            throw runtime.newNameError(str(runtime, "wrong constant name ", ids(runtime, fqn)), runtime.newSymbol(""));
+    public static RubySymbol newConstantSymbol(ThreadContext context, IRubyObject fqn, ByteList bytes) {
+        if (bytes.isEmpty()) {
+            throw nameError(context, str(context.runtime, "wrong constant name ", ids(context.runtime, fqn)), asSymbol(context, ""));
         }
 
-        RubySymbol symbol = runtime.newSymbol(bytes);
+        RubySymbol symbol = asSymbol(context, bytes);
 
         if (!symbol.validConstantName()) {
-            throw runtime.newNameError(str(runtime, "wrong constant name ", ids(runtime, fqn)), symbol);
+            throw nameError(context, str(context.runtime, "wrong constant name ", ids(context.runtime, fqn)), symbol);
         }
 
         return symbol;
@@ -455,11 +457,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
                 constant;
     }
 
-    @Override
-    public IRubyObject inspect() {
-        return inspect(metaClass.runtime);
-    }
-
     @Deprecated
     final RubyString inspect(final Ruby runtime) {
         return (RubyString) inspect(runtime.getCurrentContext());
@@ -475,7 +472,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         if (!(isPrintable(context) && (resenc.equals(getBytes().getEncoding()) || str.isAsciiOnly()) &&
                 isSymbolName(symbol))) {
-            str = str.inspect(context.runtime);
+            str = (RubyString) str.inspect(context);
         }
 
         ByteList result = new ByteList(str.getByteList().getRealSize() + 1);
@@ -489,11 +486,11 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     @Override
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s(ThreadContext context) {
-        return RubyString.newStringShared(context.runtime, getBytes());
+        return RubyString.newStringShared(context.runtime, getBytes()).chill_symbol_string();
     }
 
     final RubyString to_s(Ruby runtime) {
-        return RubyString.newStringShared(runtime, getBytes());
+        return (RubyString) to_s(runtime.getCurrentContext());
     }
 
     @JRubyMethod(name = "name")
@@ -532,12 +529,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         return asBoolean(context, this == other);
-    }
-
-    @Deprecated
-    @Override
-    public RubyFixnum hash() {
-        return hash(getCurrentContext());
     }
 
     @JRubyMethod
@@ -1004,6 +995,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
             this.symbolTable = new SymbolEntry[DEFAULT_INITIAL_CAPACITY];
             this.encodingSymbolE = createSymbol(MarshalCommon.SYMBOL_ENCODING_SPECIAL, false);
             this.encodingSymbol = createSymbol(MarshalCommon.SYMBOL_ENCODING, false);
+            reset();
         }
 
         // note all fields are final -- rehash creates new entries when necessary.
@@ -1398,6 +1390,15 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
             return size;
         }
 
+        public void clear() {
+            reset();
+        }
+
+        private void reset() {
+            this.threshold = (int)(DEFAULT_INITIAL_CAPACITY * DEFAULT_LOAD_FACTOR);
+            this.symbolTable = new SymbolEntry[DEFAULT_INITIAL_CAPACITY];
+        }
+
         private SymbolEntry[] rehash() {
             SymbolEntry[] oldTable = symbolTable;
             int oldCapacity = oldTable.length;
@@ -1561,7 +1562,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         if (object instanceof RubySymbol || object instanceof RubyString) return object;
 
         IRubyObject tmp = TypeConverter.checkStringType(context, sites(context).to_str_checked, object);
-        if (tmp.isNil()) throw typeError(context, object.inspect().toString() + " is not a symbol nor a string");
+        if (tmp.isNil()) throw typeError(context, object.inspect(context).toString() + " is not a symbol nor a string");
 
         return tmp;
     }

@@ -36,7 +36,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.ObjectAllocator;
+import org.jruby.api.Access;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.ModeFlags;
@@ -56,7 +56,7 @@ public class FileDescriptorIO extends RubyIO {
     }
 
     public FileDescriptorIO(Ruby runtime, IRubyObject fd) {
-        super(runtime, runtime.getModule("FFI").getClass(CLASS_NAME));
+        super(runtime, Access.getClass(runtime.getCurrentContext(), "FFI", CLASS_NAME));
         MakeOpenFile();
         ModeFlags modes = newModeFlags(runtime, ModeFlags.RDWR);
         int fileno = RubyNumeric.fix2int(fd);
@@ -78,13 +78,10 @@ public class FileDescriptorIO extends RubyIO {
         openFile.setSync(true);
     }
 
-    public static RubyClass createFileDescriptorIOClass(Ruby runtime, RubyModule module) {
-        RubyClass result = runtime.defineClassUnder(CLASS_NAME, runtime.getClass("IO"),
-                FileDescriptorIO::new, module);
-        result.defineAnnotatedMethods(FileDescriptorIO.class);
-        result.defineAnnotatedConstants(FileDescriptorIO.class);
-
-        return result;
+    public static RubyClass createFileDescriptorIOClass(ThreadContext context, RubyModule FFI, RubyClass IO) {
+        return FFI.defineClassUnder(context, CLASS_NAME, IO, FileDescriptorIO::new).
+                defineMethods(context, FileDescriptorIO.class).
+                defineConstants(context, FileDescriptorIO.class);
     }
 
     @JRubyMethod(name = "new", meta = true)

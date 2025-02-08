@@ -72,12 +72,15 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
-import org.jruby.util.StringSupport;
 import org.jruby.util.collections.StringArraySet;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
+import static org.jruby.api.Access.loadService;
+import static org.jruby.api.Access.objectClass;
+import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.util.URLUtil.getPath;
 
 /**
@@ -209,7 +212,7 @@ public class LoadService {
     public void init(List<String> prependDirectories) {
         var context = runtime.getCurrentContext();
         loadPath = newArray(context);
-        loadPath.getMetaClass().defineAnnotatedMethods(LoadPathMethods.class);
+        loadPath.getMetaClass().defineMethods(context, LoadPathMethods.class);
 
         String jrubyHome = runtime.getJRubyHome();
 
@@ -221,7 +224,7 @@ public class LoadService {
         addPaths(prependDirectories);
 
         // add $RUBYLIB paths
-        RubyHash env = (RubyHash) runtime.getObject().getConstant("ENV");
+        RubyHash env = (RubyHash) objectClass(context).getConstant(context, "ENV");
         RubyString env_rubylib = newString(context, "RUBYLIB");
 
         if (env.has_key_p(context, env_rubylib).isTrue()) {
@@ -303,20 +306,20 @@ public class LoadService {
         public static IRubyObject resolve_feature_path(ThreadContext context, IRubyObject self, IRubyObject pathArg) {
             RubyString path = RubyFile.get_path(context, pathArg);
             LibrarySearcher.FoundLibrary[] libraryHolder = {null};
-            char extension = context.runtime.getLoadService().searchForRequire(path.toString(), libraryHolder);
+            char extension = loadService(context).searchForRequire(path.toString(), libraryHolder);
 
             if (extension == 0) return context.nil;
 
             RubySymbol ext = switch (extension) {
-                case 'r' -> Convert.asSymbol(context, "rb");
-                case 's' -> Convert.asSymbol(context, "so"); // FIXME: should this be so or jar?
-                default -> Convert.asSymbol(context, "unknown");
+                case 'r' -> asSymbol(context, "rb");
+                case 's' -> asSymbol(context, "so"); // FIXME: should this be so or jar?
+                default -> asSymbol(context, "unknown");
             };
 
             RubyString name;
             if (libraryHolder[0] == null) {
                 // FIXME: Our builtin libraries are returning 'r' is ext but has no loader.
-                ext = Convert.asSymbol(context, "so"); // FIXME: should this be so or jar?
+                ext = asSymbol(context, "so"); // FIXME: should this be so or jar?
                 name = path;
             } else {
                 name = newString(context, libraryHolder[0].getLoadName());
@@ -523,10 +526,11 @@ public class LoadService {
     }
 
     protected void warnCircularRequire(String requireName) {
+        var context = runtime.getCurrentContext();
         StringBuilder sb = new StringBuilder("loading in progress, circular require considered harmful - " + requireName);
 
-        runtime.getCurrentContext().renderCurrentBacktrace(sb);
-        runtime.getWarnings().warn(sb.toString());
+        context.renderCurrentBacktrace(sb);
+        warn(context, sb.toString());
     }
 
     private RequireState smartLoadInternal(String file, boolean circularRequireWarning) {
@@ -987,5 +991,10 @@ public class LoadService {
         }
 
         return filename;
+    }
+
+    public void tearDown() {
+        loadedFeatures.clear();
+        librarySearcher.tearDown();
     }
 }

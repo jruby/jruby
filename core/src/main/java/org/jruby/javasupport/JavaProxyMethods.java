@@ -29,7 +29,6 @@ package org.jruby.javasupport;
 import org.jruby.Ruby;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyBoolean;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
@@ -40,15 +39,14 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newEmptyString;
+import static org.jruby.api.Define.defineModule;
 
 public class JavaProxyMethods {
 
     private JavaProxyMethods() { /* no instances */ }
 
     public static RubyModule createJavaProxyMethods(ThreadContext context) {
-        RubyModule JavaProxyMethods = context.runtime.defineModule("JavaProxyMethods");
-        JavaProxyMethods.defineAnnotatedMethods(JavaProxyMethods.class);
-        return JavaProxyMethods;
+        return defineModule(context, "JavaProxyMethods").defineMethods(context, JavaProxyMethods.class);
     }
     
     @JRubyMethod
@@ -120,9 +118,19 @@ public class JavaProxyMethods {
         return to_s(runtime.getCurrentContext(), javaObject);
     }
 
-    @JRubyMethod
+    /**
+     * @param recv
+     * @return
+     * @deprecated Use {@link JavaProxyMethods#inspect(ThreadContext, IRubyObject)} instead
+     */
+    @Deprecated(since = "10.0")
     public static IRubyObject inspect(IRubyObject recv) {
-        return recv instanceof RubyBasicObject basic ? basic.hashyInspect() : recv.inspect();
+        return inspect(((RubyBasicObject) recv).getCurrentContext(), recv);
+    }
+
+    @JRubyMethod
+    public static IRubyObject inspect(ThreadContext context, IRubyObject recv) {
+        return recv instanceof RubyBasicObject basic ? basic.hashyInspect() : recv.inspect(context);
     }
     
     @JRubyMethod
@@ -131,7 +139,7 @@ public class JavaProxyMethods {
 
         // NOTE: only JavaProxy includes JavaProxyMethods these are only here for 'manual' JavaObject wrapping
         return recv.dataGetStruct() instanceof IRubyObject dataStruct ?
-                ((RubyBasicObject) dataStruct).hash() : ((RubyBasicObject) recv).hash();
+                ((RubyBasicObject) dataStruct).hash(context) : ((RubyBasicObject) recv).hash(context);
     }
     
     @JRubyMethod(name = "synchronized")

@@ -49,12 +49,12 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
 import org.jruby.api.Convert;
 import org.jruby.api.Create;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
@@ -64,6 +64,7 @@ import org.jruby.util.ByteList;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Error.*;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.runtime.Visibility.*;
 
 /**
@@ -98,59 +99,35 @@ public final class StructLayout extends Type {
 
     private final boolean isUnion;
 
-    /**
-     * Registers the StructLayout class in the JRuby runtime.
-     * @param runtime The JRuby runtime to register the new class in.
-     * @return The new class
-     */
-    public static RubyClass createStructLayoutClass(Ruby runtime, RubyModule module) {
-        RubyClass layoutClass = runtime.defineClassUnder(CLASS_NAME, module.getClass("Type"),
-                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR, module);
-        layoutClass.defineAnnotatedMethods(StructLayout.class);
-        layoutClass.defineAnnotatedConstants(StructLayout.class);
-        layoutClass.setReifiedClass(StructLayout.class);
+    public static RubyClass createStructLayoutClass(ThreadContext context, RubyModule FFI, RubyClass Object,
+                                                    RubyModule Enumerable, RubyClass Type, RubyClass Struct) {
+        RubyClass Layout = FFI.defineClassUnder(context, CLASS_NAME, Type, NOT_ALLOCATABLE_ALLOCATOR).
+                reifiedClass(StructLayout.class).
+                defineMethods(context, StructLayout.class).
+                defineConstants(context, StructLayout.class);
+        var InlineArray = Struct.defineClassUnder(context, "InlineArray", Object, NOT_ALLOCATABLE_ALLOCATOR);
+        RubyClass ArrayProxy = Layout.defineClassUnder(context, "ArrayProxy", InlineArray, NOT_ALLOCATABLE_ALLOCATOR).
+                include(context, Enumerable).
+                defineMethods(context, ArrayProxy.class);
 
-        RubyClass inlineArrayClass = module.getClass("Struct").defineClassUnder("InlineArray", 
-                runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        
-        RubyClass arrayClass = runtime.defineClassUnder("ArrayProxy", inlineArrayClass,
-                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR, layoutClass);
-        arrayClass.includeModule(runtime.getEnumerable());
-        arrayClass.defineAnnotatedMethods(ArrayProxy.class);
+        Layout.defineClassUnder(context, "CharArrayProxy", ArrayProxy, NOT_ALLOCATABLE_ALLOCATOR).
+                defineMethods(context, CharArrayProxy.class);
 
-        RubyClass charArrayClass = runtime.defineClassUnder("CharArrayProxy", arrayClass,
-                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR, layoutClass);
-        charArrayClass.defineAnnotatedMethods(CharArrayProxy.class);
+        RubyClass Field = Layout.defineClassUnder(context, "Field", Object, Field::new).
+                defineMethods(context, Field.class);
 
-        RubyClass fieldClass = runtime.defineClassUnder("Field", runtime.getObject(),
-                Field::new, layoutClass);
-        fieldClass.defineAnnotatedMethods(Field.class);
+        Layout.defineClassUnder(context, "Number", Field, NumberField::new);
+        Layout.defineClassUnder(context, "Enum", Field, EnumField::new);
+        Layout.defineClassUnder(context, "String", Field, StringField::new);
+        Layout.defineClassUnder(context, "Pointer", Field, PointerField::new);
+        Layout.defineClassUnder(context, "Function", Field, FunctionField::new).
+                defineMethods(context, FunctionField.class);
+        Layout.defineClassUnder(context, "InnerStruct", Field, InnerStructField::new).
+                defineMethods(context, InnerStructField.class);
+        Layout.defineClassUnder(context, "Array", Field, ArrayField::new).
+                defineMethods(context, ArrayField.class);
 
-        RubyClass numberFieldClass = runtime.defineClassUnder("Number", fieldClass,
-                NumberField::new, layoutClass);
-
-        RubyClass enumFieldClass = runtime.defineClassUnder("Enum", fieldClass,
-                EnumField::new, layoutClass);
-
-        RubyClass stringFieldClass = runtime.defineClassUnder("String", fieldClass,
-                StringField::new, layoutClass);
-
-        RubyClass pointerFieldClass = runtime.defineClassUnder("Pointer", fieldClass,
-                PointerField::new, layoutClass);
-
-        RubyClass functionFieldClass = runtime.defineClassUnder("Function", fieldClass,
-                FunctionField::new, layoutClass);
-        functionFieldClass.defineAnnotatedMethods(FunctionField.class);
-
-        RubyClass innerStructFieldClass = runtime.defineClassUnder("InnerStruct", fieldClass,
-                InnerStructField::new, layoutClass);
-        innerStructFieldClass.defineAnnotatedMethods(InnerStructField.class);
-
-        RubyClass arrayFieldClass = runtime.defineClassUnder("Array", fieldClass,
-                ArrayField::new, layoutClass);
-        arrayFieldClass.defineAnnotatedMethods(ArrayField.class);
-
-        return layoutClass;
+        return Layout;
     }
 
     
@@ -177,7 +154,7 @@ public final class StructLayout extends Type {
         for (IRubyObject obj : fields) {
             
             if (!(obj instanceof Field f)) {
-                throw typeError(context, obj, context.runtime.getModule("FFI").getClass("StructLayout").getClass("Field"));
+                throw typeError(context, obj, Access.getClass(context, "FFI", "StructLayout", "Field"));
             }
 
             if (!(f.name instanceof RubySymbol)) throw typeError(context, "fields list contains field with invalid name");
@@ -261,7 +238,7 @@ public final class StructLayout extends Type {
      */
     @JRubyMethod(name = "members")
     public IRubyObject members(ThreadContext context) {
-        return Create.constructArray(context, fieldNames, fieldNames.size(), StructLayout::memberPopulator);
+        return Create.newArray(context, fieldNames, fieldNames.size(), StructLayout::memberPopulator);
     }
 
     private static void memberPopulator(ThreadContext c, List<IRubyObject> f, RubyArray<IRubyObject> a) {
@@ -277,7 +254,7 @@ public final class StructLayout extends Type {
      */
     @JRubyMethod(name = "offsets")
     public IRubyObject offsets(ThreadContext context) {
-        return Create.constructArray(context, this, fieldNames.size(), StructLayout::offsetsPopulator);
+        return Create.newArray(context, this, fieldNames.size(), StructLayout::offsetsPopulator);
     }
 
     private static void offsetsPopulator(ThreadContext c, StructLayout s, RubyArray<IRubyObject> a) {
@@ -607,7 +584,7 @@ public final class StructLayout extends Type {
         }
 
         Field(Ruby runtime, RubyClass klass, FieldIO io) {
-            this(runtime, klass, (Type) runtime.getModule("FFI").getClass("Type").getConstant("VOID"),
+            this(runtime, klass, (Type) Access.getClass(runtime.getCurrentContext(), "FFI", "Type").getConstant(runtime.getCurrentContext(), "VOID"),
                     -1, io);
             
         }
@@ -650,7 +627,8 @@ public final class StructLayout extends Type {
         final Type checkType(IRubyObject type) {
             if (type instanceof Type ctype) return ctype;
 
-            throw typeError(getRuntime().getCurrentContext(), type, getRuntime().getModule("FFI").getClass("Type"));
+            var context = getRuntime().getCurrentContext();
+            throw typeError(context, type, Access.getClass(context, "FFI", "Type"));
         }
 
         public final int offset() {
@@ -820,7 +798,7 @@ public final class StructLayout extends Type {
             IRubyObject type = args[2];
 
             if (!(type instanceof CallbackInfo)) {
-                throw typeError(context, type, context.runtime.getModule("FFI").getClass("Type").getClass("Function"));
+                throw typeError(context, type, Access.getClass(context, "FFI", "Type", "Function"));
             }
             init(args, FunctionFieldIO.INSTANCE);
 
@@ -842,10 +820,10 @@ public final class StructLayout extends Type {
 
             IRubyObject type = args[2];
 
-            if (!(type instanceof StructByValue)) {
-                throw typeError(context, type, context.runtime.getModule("FFI").getClass("Type").getClass("Struct"));
+            if (!(type instanceof StructByValue structByValue)) {
+                throw typeError(context, type, Access.getClass(context, "FFI", "Type", "Struct"));
             }
-            init(args, new InnerStructFieldIO((StructByValue) type));
+            init(args, new InnerStructFieldIO(structByValue));
 
             return this;
         }
@@ -865,7 +843,7 @@ public final class StructLayout extends Type {
 
             IRubyObject type = args[2];
             if (!(type instanceof Type.Array)) {
-                throw typeError(context, type, context.runtime.getModule("FFI").getClass("Type").getClass("Array"));
+                throw typeError(context, type, Access.getClass(context, "FFI", "Type", "Array"));
             }
             init(args, new ArrayFieldIO((Type.Array) type));
 
@@ -894,7 +872,7 @@ public final class StructLayout extends Type {
         private IRubyObject[] valueCache;
 
         ArrayProxy(Ruby runtime, IRubyObject ptr, long offset, Type.Array type, MemoryOp aio) {
-            this(runtime, runtime.getModule("FFI").getClass(CLASS_NAME).getClass("ArrayProxy"),
+            this(runtime, Access.getClass(runtime.getCurrentContext(), "FFI", CLASS_NAME, "ArrayProxy"),
                     ptr, offset, type, aio);
         }
 
@@ -909,9 +887,9 @@ public final class StructLayout extends Type {
                     || type.getComponentType() instanceof StructByValue);
         }
 
-        private long getOffset(int index) {
+        private long getOffset(ThreadContext context, int index) {
             if (index < 0 || (index >= arrayType.length() && arrayType.length() > 0)) {
-                throw getRuntime().newIndexError("index " + index + " out of bounds");
+                throw indexError(context, "index " + index + " out of bounds");
             }
 
             return index * (long) arrayType.getComponentType().getNativeSize();
@@ -923,7 +901,7 @@ public final class StructLayout extends Type {
             if (valueCache != null && (obj = valueCache[index]) != null) {
                 return obj;
             }
-            putCachedValue(index, obj = aio.get(context, ptr, getOffset(index)));
+            putCachedValue(index, obj = aio.get(context, ptr, getOffset(context, index)));
             
             return obj;
         }
@@ -948,7 +926,7 @@ public final class StructLayout extends Type {
             
             putCachedValue(idx, value);
             
-            aio.put(context, ptr, getOffset(idx), value);
+            aio.put(context, ptr, getOffset(context, idx), value);
             
             return value;
         }
@@ -994,7 +972,7 @@ public final class StructLayout extends Type {
     @JRubyClass(name="FFI::StructLayout::CharArrayProxy", parent="FFI::StructLayout::ArrayProxy")
     public static final class CharArrayProxy extends ArrayProxy {
         CharArrayProxy(Ruby runtime, IRubyObject ptr, long offset, Type.Array type, MemoryOp aio) {
-            super(runtime, runtime.getModule("FFI").getClass("StructLayout").getClass("CharArrayProxy"),
+            super(runtime, Access.getClass(runtime.getCurrentContext(), "FFI", "StructLayout", "CharArrayProxy"),
                     ptr, offset, type, aio);
         }
 
@@ -1298,14 +1276,14 @@ public final class StructLayout extends Type {
                 } else if (valueLen == arrayLen) {
                     ptr.getMemoryIO().put(m.offset, bl.getUnsafeBytes(), bl.begin(), valueLen);
                 } else {
-                    throw context.runtime.newIndexError("String is longer (" + valueLen +
+                    throw indexError(context, "String is longer (" + valueLen +
                             " bytes) than the char array (" + arrayLen + " bytes)");
                 }
             } else if (false) {
                 RubyArray ary = value.convertToArray();
                 int count = ary.size();
                 if (count > arrayType.length()) {
-                    throw context.runtime.newIndexError("array too big");
+                    throw indexError(context, "array too big");
                 }
                 AbstractMemory memory = (AbstractMemory) ptr;
 

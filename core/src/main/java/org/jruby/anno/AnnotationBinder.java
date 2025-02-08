@@ -131,6 +131,7 @@ public class AnnotationBinder extends AbstractProcessor {
             out.println("import org.jruby.runtime.Arity;");
             out.println("import org.jruby.runtime.Visibility;");
             out.println("import org.jruby.runtime.MethodIndex;");
+            out.println("import org.jruby.runtime.ThreadContext;");
             out.println("import java.util.Arrays;");
             out.println("import java.util.List;");
             out.println("import jakarta.annotation.Generated;");
@@ -138,7 +139,12 @@ public class AnnotationBinder extends AbstractProcessor {
             out.println("@Generated(\"org.jruby.anno.AnnotationBinder\")");
             out.println("@SuppressWarnings(\"deprecation\")");
             out.println("public class " + qualifiedName + POPULATOR_SUFFIX + " extends TypePopulator {");
+            out.println("    @Deprecated(since = \"10.0\")");
             out.println("    public void populate(RubyModule cls, Class clazz) {");
+            out.println("        populate(cls.getCurrentContext(), cls, clazz);");
+            out.println("    }");
+            out.println("");
+            out.println("    public void populate(ThreadContext context, RubyModule cls, Class clazz) {");
             if (DEBUG) {
                 out.println("        System.out.println(\"Using pregenerated populator: \" + \"" + qualifiedName + POPULATOR_SUFFIX + "\");");
             }
@@ -161,8 +167,10 @@ public class AnnotationBinder extends AbstractProcessor {
 
             out.println("        JavaMethod javaMethod;");
             out.println("        DynamicMethod moduleMethod, aliasedMethod;");
-            if (hasMeta || hasModule) out.println("        RubyClass singletonClass = cls.getSingletonClass();");
-            out.println("        Ruby runtime = cls.getRuntime();");
+            out.println("        Ruby runtime = context.runtime;");
+            if (hasMeta || hasModule) {
+                out.println("        RubyClass singletonClass = cls.singletonClass(context);");
+            }
             out.println("        boolean core = runtime.isBootingCore();");
 
             Map<CharSequence, List<ExecutableElement>> annotatedMethods = new LinkedHashMap<>();
@@ -501,7 +509,7 @@ public class AnnotationBinder extends AbstractProcessor {
         } else {
             defineMethodOnClass("javaMethod", "cls", names, aliases, md);
             if (module) {
-                out.println("        moduleMethod = populateModuleMethod(cls, javaMethod);");
+                out.println("        moduleMethod = populateModuleMethod(cls, singletonClass, javaMethod);");
                 defineMethodOnClass("moduleMethod", "singletonClass", names, aliases, md);
             }
         }
@@ -511,11 +519,11 @@ public class AnnotationBinder extends AbstractProcessor {
         ExecutableElement md) {
         CharSequence baseName = getBaseName(names, md);
         // aliasedMethod = type.putMethod(runtime, baseName, method);
-        out.println("        aliasedMethod = " + classVar + ".putMethod(runtime, \"" + baseName + "\", " + methodVar + ");");
+        out.println("        aliasedMethod = " + classVar + ".putMethod(context, \"" + baseName + "\", " + methodVar + ");");
         if (names.length > 0) {
             for (String name : names) {
                 if (!name.contentEquals(baseName)) {
-                    out.println("        " + classVar + ".putMethod(runtime, \"" + name + "\", " + methodVar + ");");
+                    out.println("        " + classVar + ".putMethod(context, \"" + name + "\", " + methodVar + ");");
                 }
             }
         }
@@ -523,7 +531,7 @@ public class AnnotationBinder extends AbstractProcessor {
         if (aliases.length > 0) {
             for (String alias : aliases) {
                 // type.putAlias(alias, aliasedMethod, baseName); /* baseName == method.getId() */
-                out.println("        " + classVar + ".putAlias(\"" + alias + "\", aliasedMethod, \"" + baseName + "\");");
+                out.println("        " + classVar + ".putAlias(context, \"" + alias + "\", aliasedMethod, \"" + baseName + "\");");
             }
         }
     }

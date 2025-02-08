@@ -27,13 +27,8 @@ import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.typeError;
 
 public class Option extends RubyObject {
-    public static void createOption(Ruby runtime) {
-        RubyClass addrinfo = runtime.getClass("Socket").defineClassUnder(
-                "Option",
-                runtime.getObject(),
-                Option::new);
-
-        addrinfo.defineAnnotatedMethods(Option.class);
+    public static void createOption(ThreadContext context, RubyClass Object, RubyClass Socket) {
+        Socket.defineClassUnder(context, "Option", Object, Option::new).defineMethods(context, Option.class);
     }
 
     public Option(Ruby runtime, RubyClass klass) {
@@ -55,9 +50,9 @@ public class Option extends RubyObject {
 
     @JRubyMethod(required = 4, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
-        family = SocketUtils.protocolFamilyFromArg(args[0]);
-        level = SocketUtils.levelFromArg(args[1]);
-        option = SocketUtils.optionFromArg(args[2]);
+        family = SocketUtils.protocolFamilyFromArg(context, args[0]);
+        level = SocketUtils.levelFromArg(context, args[1]);
+        option = SocketUtils.optionFromArg(context, args[2]);
         data = args[3].convertToString().getByteList();
 
         return this;
@@ -90,7 +85,7 @@ public class Option extends RubyObject {
         buf.append("#<");
 
         buf
-            .append(metaClass.getRealClass().getName())
+            .append(metaClass.getRealClass().getName(context))
             .append(": ")
             .append(noPrefix(family));
 
@@ -173,9 +168,9 @@ public class Option extends RubyObject {
 
     @JRubyMethod(name = "int", required = 4, meta = true)
     public static IRubyObject rb_int(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        ProtocolFamily family = SocketUtils.protocolFamilyFromArg(args[0]);
-        SocketLevel level = SocketUtils.levelFromArg(args[1]);
-        SocketOption option = SocketUtils.optionFromArg(args[2]);
+        ProtocolFamily family = SocketUtils.protocolFamilyFromArg(context, args[0]);
+        SocketLevel level = SocketUtils.levelFromArg(context, args[1]);
+        SocketOption option = SocketUtils.optionFromArg(context, args[2]);
         ByteList data = packInt(RubyNumeric.fix2int(args[3]));
 
         return new Option(context.getRuntime(), family, level, option, data);
@@ -190,9 +185,9 @@ public class Option extends RubyObject {
 
     @JRubyMethod(required = 4, meta = true)
     public static IRubyObject bool(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        ProtocolFamily family = SocketUtils.protocolFamilyFromArg(args[0]);
-        SocketLevel level = SocketUtils.levelFromArg(args[1]);
-        SocketOption option = SocketUtils.optionFromArg(args[2]);
+        ProtocolFamily family = SocketUtils.protocolFamilyFromArg(context, args[0]);
+        SocketLevel level = SocketUtils.levelFromArg(context, args[1]);
+        SocketOption option = SocketUtils.optionFromArg(context, args[2]);
         ByteList data = packInt(args[3].isTrue() ? 1 : 0);
 
         return new Option(context.getRuntime(), family, level, option, data);
@@ -208,8 +203,8 @@ public class Option extends RubyObject {
     @JRubyMethod(meta = true)
     public static IRubyObject linger(ThreadContext context, IRubyObject self, IRubyObject vonoffArg, IRubyObject vsecs) {
         IRubyObject vonoff = checkToInteger(context, vonoffArg);
-        int coercedVonoff = !vonoff.isNil() ? Convert.asInt(context, (RubyInteger) vonoff) : (vonoffArg.isTrue() ? 1 : 0);
-        ByteList data = packLinger(coercedVonoff, vsecs.convertToInteger().getIntValue());
+        int coercedVonoff = !vonoff.isNil() ? ((RubyInteger) vonoff).asInt(context) : (vonoffArg.isTrue() ? 1 : 0);
+        ByteList data = packLinger(coercedVonoff, toInt(context, vsecs));
 
         return new Option(context.runtime, ProtocolFamily.PF_UNSPEC, SocketLevel.SOL_SOCKET, SocketOption.SO_LINGER, data);
      }

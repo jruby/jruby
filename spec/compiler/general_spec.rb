@@ -71,6 +71,7 @@ module PersistenceSpecUtils
 
     # interpret with test runtime
     runtime = JRuby.runtime
+    context = runtime.get_current_context
     manager = runtime.getIRManager()
     top_self = runtime.top_self
 
@@ -78,7 +79,7 @@ module PersistenceSpecUtils
     method = org.jruby.ir.persistence.IRReader.load(manager, reader)
 
     interpreter = org.jruby.ir.interpreter.Interpreter.new
-    interpreter.execute(runtime, method, top_self)
+    interpreter.execute(context, method, top_self)
   end
 end
 

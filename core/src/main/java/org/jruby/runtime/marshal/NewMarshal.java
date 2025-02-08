@@ -70,6 +70,7 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 
 import static org.jruby.RubyBasicObject.getMetaClass;
+import static org.jruby.api.Access.stringClass;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Error.*;
 import static org.jruby.runtime.marshal.MarshalCommon.TYPE_IVAR;
@@ -148,7 +149,7 @@ public class NewMarshal {
     }
 
     public void registerLinkTarget(IRubyObject newObject) {
-        if (shouldBeRegistered(newObject)) {
+        if (shouldBeRegistered(newObject.getRuntime().getCurrentContext(), newObject)) {
             cache.register(newObject);
         }
     }
@@ -157,19 +158,20 @@ public class NewMarshal {
         cache.registerSymbol(sym);
     }
 
-    static boolean shouldBeRegistered(IRubyObject value) {
+    static boolean shouldBeRegistered(ThreadContext context, IRubyObject value) {
         if (value.isNil()) {
             return false;
         } else if (value instanceof RubyBoolean) {
             return false;
         } else if (value instanceof RubyFixnum) {
-            return ! isMarshalFixnum((RubyFixnum)value);
+            return ! isMarshalFixnum(context, (RubyFixnum)value);
         }
         return true;
     }
 
-    private static boolean isMarshalFixnum(RubyFixnum fixnum) {
-        return fixnum.getLongValue() <= RubyFixnum.MAX_MARSHAL_FIXNUM && fixnum.getLongValue() >= RubyFixnum.MIN_MARSHAL_FIXNUM;
+    private static boolean isMarshalFixnum(ThreadContext context, RubyFixnum fixnum) {
+        var value = fixnum.asLong(context);
+        return value <= RubyFixnum.MAX_MARSHAL_FIXNUM && value >= RubyFixnum.MIN_MARSHAL_FIXNUM;
     }
 
     private void writeAndRegisterSymbol(RubyOutputStream out, RubySymbol sym) {
@@ -284,7 +286,7 @@ public class NewMarshal {
 
     public static RubySymbol getPathFromClass(ThreadContext context, RubyModule clazz) {
         Ruby runtime = context.runtime;
-        RubySymbol pathSym = clazz.symbolName();
+        RubySymbol pathSym = clazz.symbolName(context);
 
         if (pathSym == null) {
             String type = clazz.isClass() ? "class" : "module";
@@ -329,14 +331,13 @@ public class NewMarshal {
             case FIXNUM:
                 RubyFixnum fixnum = (RubyFixnum)value;
 
-                if (isMarshalFixnum(fixnum)) {
+                if (isMarshalFixnum(context, fixnum)) {
                     out.write('i');
-                    writeInt(out, (int) fixnum.getLongValue());
+                    writeInt(out, fixnum.asInt(context));
                     return;
                 }
                 // FIXME: inefficient; constructing a bignum just for dumping?
-                runtime = context.runtime;
-                value = RubyBignum.newBignum(runtime, fixnum.getLongValue());
+                value = RubyBignum.newBignum(context.runtime, fixnum.asLong(context));
 
                 // fall through
             case BIGNUM:
@@ -420,7 +421,7 @@ public class NewMarshal {
         registerLinkTarget(value);
         out.write(TYPE_USRMARSHAL);
         final RubyClass klass = getMetaClass(value);
-        writeAndRegisterSymbol(out, asSymbol(context, klass.getRealClass().getName()));
+        writeAndRegisterSymbol(out, asSymbol(context, klass.getRealClass().getName(context)));
 
         IRubyObject marshaled = entry != null ?
                 entry.method.call(context, value, entry.sourceModule, "marshal_dump") :
@@ -475,7 +476,7 @@ public class NewMarshal {
 
     private void dumpUserdefBase(RubyOutputStream out, ThreadContext context, RubyClass klass, RubyString marshaled) {
         out.write(TYPE_USERDEF);
-        writeAndRegisterSymbol(out, asSymbol(context, klass.getRealClass().getName()));
+        writeAndRegisterSymbol(out, asSymbol(context, klass.getRealClass().getName(context)));
         writeString(out, marshaled.getByteList());
     }
 
@@ -483,13 +484,13 @@ public class NewMarshal {
         out.write(TYPE_UCLASS);
 
         // w_unique
-        if (type.getName().charAt(0) == '#') {
+        if (type.getName(context).charAt(0) == '#') {
             Ruby runtime = context.runtime;
             throw typeError(context, str(runtime, "can't dump anonymous class ", types(runtime, type)));
         }
         
         // w_symbol
-        writeAndRegisterSymbol(out, asSymbol(context, type.getName()));
+        writeAndRegisterSymbol(out, asSymbol(context, type.getName(context)));
     }
 
     public void dumpVariables(ThreadContext context, RubyOutputStream out, IRubyObject value) {
@@ -542,16 +543,16 @@ public class NewMarshal {
     }
 
     public void writeEncoding(ThreadContext context, RubyOutputStream out, Encoding encoding) {
-        Ruby runtime = context.runtime;
+        var symbolTable = context.runtime.getSymbolTable();
         if (encoding == null || encoding == USASCIIEncoding.INSTANCE) {
-            writeAndRegisterSymbol(out, runtime.getSymbolTable().getEncodingSymbolE());
-            writeObjectData(context, out, runtime.getFalse());
+            writeAndRegisterSymbol(out, symbolTable.getEncodingSymbolE());
+            writeObjectData(context, out, context.fals);
         } else if (encoding == UTF8Encoding.INSTANCE) {
-            writeAndRegisterSymbol(out, runtime.getSymbolTable().getEncodingSymbolE());
-            writeObjectData(context, out, runtime.getTrue());
+            writeAndRegisterSymbol(out, symbolTable.getEncodingSymbolE());
+            writeObjectData(context, out, context.tru);
         } else {
-            writeAndRegisterSymbol(out, runtime.getSymbolTable().getEncodingSymbol());
-            RubyString encodingString = new RubyString(runtime, runtime.getString(), encoding.getName());
+            writeAndRegisterSymbol(out, symbolTable.getEncodingSymbol());
+            RubyString encodingString = new RubyString(context.runtime, stringClass(context), encoding.getName());
             writeObjectData(context, out, encodingString);
         }
     }
@@ -577,7 +578,7 @@ public class NewMarshal {
         }
         while(type.isIncluded()) {
             out.write('e');
-            writeAndRegisterSymbol(out, asSymbol(context, type.getOrigin().getName()));
+            writeAndRegisterSymbol(out, asSymbol(context, type.getOrigin().getName(context)));
             type = type.getSuperClass();
         }
         return type;

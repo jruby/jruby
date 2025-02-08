@@ -20,21 +20,18 @@ import static org.jruby.runtime.Visibility.PRIVATE;
 @JRubyClass(name = "FFI::MemoryPointer", parent = "FFI::Pointer")
 public class MemoryPointer extends Pointer {
     
-    public static RubyClass createMemoryPointerClass(Ruby runtime, RubyModule module) {
-        RubyClass memptrClass = module.defineClassUnder("MemoryPointer",
-                module.getClass("Pointer"),
-                Options.REIFY_FFI.load() ? new ReifyingAllocator(MemoryPointer.class) : MemoryPointer::new);
-        memptrClass.defineAnnotatedMethods(MemoryPointer.class);
-        memptrClass.defineAnnotatedConstants(MemoryPointer.class);
-        memptrClass.setReifiedClass(MemoryPointer.class);
-        memptrClass.kindOf = new RubyModule.KindOf() {
-            @Override
-            public boolean isKindOf(IRubyObject obj, RubyModule type) {
-                return obj instanceof MemoryPointer && super.isKindOf(obj, type);
-            }
-        };
-
-        return memptrClass;
+    public static RubyClass createMemoryPointerClass(ThreadContext context, RubyModule FFI, RubyClass Pointer) {
+        ObjectAllocator allocator = Options.REIFY_FFI.load() ? new ReifyingAllocator(MemoryPointer.class) : MemoryPointer::new;
+        return FFI.defineClassUnder(context, "MemoryPointer", Pointer, allocator).
+                reifiedClass(MemoryPointer.class).
+                kindOf(new RubyModule.KindOf() {
+                    @Override
+                    public boolean isKindOf(IRubyObject obj, RubyModule type) {
+                        return obj instanceof MemoryPointer && super.isKindOf(obj, type);
+                    }
+                }).
+                defineMethods(context, MemoryPointer.class).
+                defineConstants(context, MemoryPointer.class);
     }
 
     public MemoryPointer(Ruby runtime, RubyClass klass) {

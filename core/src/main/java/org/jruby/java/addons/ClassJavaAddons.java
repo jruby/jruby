@@ -91,7 +91,7 @@ public abstract class ClassJavaAddons {
 
         klass.reifyWithAncestors(dumpDir, useChildLoader);
 
-        Class<?> reifiedClass = klass.getReifiedClass();
+        Class<?> reifiedClass = klass.reifiedClass();
         if (reifiedClass == null) throw typeError(context, "requested class ", klass, " is not reifiable");
 
         generateFieldAccessors(context, klass, reifiedClass);
@@ -103,9 +103,8 @@ public abstract class ClassJavaAddons {
             Field field;
             try {
                 field = javaClass.getDeclaredField(name);
-            }
-            catch (NoSuchFieldException e) {
-                throw runtimeError(context, "no field: '" + name + "' in reified class for " + klass.getName());
+            } catch (NoSuchFieldException e) {
+                throw runtimeError(context, "no field: '" + name + "' in reified class for " + klass.getName(context));
             }
             JavaProxy.installField(context, name, field, klass);
         }

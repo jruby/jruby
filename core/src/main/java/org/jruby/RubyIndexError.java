@@ -29,6 +29,9 @@ package org.jruby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.IndexError;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Define.defineClass;
 
 /**
  * The Java representation of a Ruby IndexError.
@@ -45,10 +48,8 @@ public class RubyIndexError extends RubyStandardError {
         super(runtime, exceptionClass, message);
     }
 
-    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass IndexErrorClass = runtime.defineClass("IndexError", exceptionClass, RubyIndexError::new);
-
-        return IndexErrorClass;
+    static RubyClass define(ThreadContext context, RubyClass IndexError) {
+        return defineClass(context, "IndexError", IndexError, RubyIndexError::new);
     }
 
     @Override

@@ -51,7 +51,6 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.MethodBlockBody;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -60,7 +59,10 @@ import org.jruby.runtime.marshal.DataType;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Warn.warn;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.util.RubyStringBuilder.types;
 
@@ -99,15 +101,11 @@ public class RubyProc extends RubyObject implements DataType {
         this.block = block;
     }
 
-    public static RubyClass createProcClass(Ruby runtime) {
-        RubyClass procClass = runtime.defineClass("Proc", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-
-        procClass.setClassIndex(ClassIndex.PROC);
-        procClass.setReifiedClass(RubyProc.class);
-
-        procClass.defineAnnotatedMethods(RubyProc.class);
-
-        return procClass;
+    public static RubyClass createProcClass(ThreadContext context, RubyClass Object) {
+        return defineClass(context, "Proc", Object, NOT_ALLOCATABLE_ALLOCATOR).
+                reifiedClass(RubyProc.class).
+                classIndex(ClassIndex.PROC).
+                defineMethods(context, RubyProc.class);
     }
 
     public Block getBlock() {
@@ -262,7 +260,7 @@ public class RubyProc extends RubyObject implements DataType {
         checkFrozen();
 
         if (fromMethod) {
-            context.runtime.getWarnings().warn(IRubyWarnings.ID.MISCELLANEOUS, "Skipping set of ruby2_keywords flag for proc (proc created from method)");
+            warn(context, "Skipping set of ruby2_keywords flag for proc (proc created from method)");
             return this;
         }
 
@@ -272,11 +270,11 @@ public class RubyProc extends RubyObject implements DataType {
             if (signature.hasRest() && !signature.hasKwargs()) {
                 ((IRBlockBody) body).getScope().setRuby2Keywords();
             } else {
-                context.runtime.getWarnings().warn(IRubyWarnings.ID.MISCELLANEOUS, "Skipping set of ruby2_keywords flag for proc (proc accepts keywords or proc does not accept argument splat)");
+                warn(context, "Skipping set of ruby2_keywords flag for proc (proc accepts keywords or proc does not accept argument splat)");
             }
 
         } else {
-            context.runtime.getWarnings().warn(IRubyWarnings.ID.MISCELLANEOUS, "Skipping set of ruby2_keywords flag for proc (proc not defined in Ruby)");
+            warn(context, "Skipping set of ruby2_keywords flag for proc (proc not defined in Ruby)");
         }
         return this;
     }
@@ -316,7 +314,7 @@ public class RubyProc extends RubyObject implements DataType {
 
     private static IRubyObject[] checkArityForLambda(ThreadContext context, Block.Type type, BlockBody blockBody, IRubyObject... args) {
         if (type == Block.Type.LAMBDA) {
-            blockBody.getSignature().checkArity(context.runtime, args);
+            blockBody.getSignature().checkArity(context, args);
         }
 
         return args;
@@ -394,11 +392,11 @@ public class RubyProc extends RubyObject implements DataType {
     public RubyFixnum arity(ThreadContext context) {
         Signature signature = block.getSignature();
 
-        if (block.type == Block.Type.LAMBDA) return asFixnum(context, signature.arityValue());
+        int min = signature.min();
+        int max = signature.max();
+        boolean test = isLambda() ? min == max : max != -1; // specific value or unlimited
 
-        // FIXME: Consider min/max like MRI here instead of required + kwarg count.
-        return asFixnum(context, signature.hasRest() ?
-                signature.arityValue() : signature.required() + signature.getRequiredKeywordForArityCount());
+        return asFixnum(context, test ? min : -min-1);
     }
 
     @JRubyMethod(name = "to_proc")

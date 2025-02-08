@@ -30,15 +30,17 @@
 package org.jruby.ext.pathname;
 
 import static org.jruby.anno.FrameField.BACKREF;
+import static org.jruby.api.Access.*;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asSymbol;
-import static org.jruby.api.Create.newSmallHash;
-import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 
 import org.jruby.*;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
+import org.jruby.api.Define;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.runtime.*;
@@ -54,36 +56,34 @@ public class RubyPathname extends RubyObject {
         this.setInstanceVariable("@path", path);
     }
     
-    static void createPathnameClass(Ruby runtime) {
-        RubyClass cPathname = runtime.defineClass("Pathname", runtime.getObject(),
-                RubyPathname::new);
+    static void createPathnameClass(ThreadContext context) {
+        var Dir = dirClass(context);
+        var File = fileClass(context);
+        var FileTest = fileTestModule(context);
+        var IO = ioClass(context);
+        RubyClass Pathname = Define.defineClass(context, "Pathname", objectClass(context), RubyPathname::new).
+                defineMethods(context, RubyPathname.class);
 
-        cPathname.defineAnnotatedMethods(RubyPathname.class);
-
-        runtime.getKernel().defineAnnotatedMethods(PathnameKernelMethods.class);
+        kernelModule(context).defineMethods(context, PathnameKernelMethods.class);
 
         // FIXME: birthtime is provided separately in stat on some platforms (#2152)
-        defineDelegateMethods(cPathname, runtime.getFile(), "atime", "ctime", "birthtime", "mtime", "ftype",
-                "rename", "stat", "lstat", "truncate", "extname", "open");
-        defineDelegateMethodsAppendPath(cPathname, runtime.getFile(), "chmod", "lchmod", "chown",
-                "lchown", "utime");
-        defineDelegateMethodsSinglePath(cPathname, runtime.getFile(), "realpath", "realdirpath",
-                "basename", "dirname", "expand_path", "readlink");
-        defineDelegateMethodsArrayOfPaths(cPathname, runtime.getFile(), "split");
+        defineDelegateMethods(context, Pathname, File, "atime", "ctime", "birthtime", "mtime", "ftype", "rename", "stat",
+                "lstat", "truncate", "extname", "open");
+        defineDelegateMethodsAppendPath(context, Pathname, File, "chmod", "lchmod", "chown", "lchown", "utime");
+        defineDelegateMethodsSinglePath(context, Pathname, File, "realpath", "realdirpath", "basename", "dirname", "expand_path", "readlink");
+        defineDelegateMethodsArrayOfPaths(context, Pathname, File, "split");
 
-        defineDelegateMethods(cPathname, runtime.getIO(), "read", "binread", "write", "binwrite",
-                "readlines", "sysopen");
+        defineDelegateMethods(context, Pathname, IO, "read", "binread", "write", "binwrite", "readlines", "sysopen");
 
-        defineDelegateMethods(cPathname, runtime.getFileTest(), "blockdev?", "chardev?",
-                "executable?", "executable_real?", "exist?", "grpowned?", "directory?", "file?",
-                "pipe?", "socket?", "owned?", "readable?", "world_readable?", "readable_real?",
-                "setuid?", "setgid?", "size", "size?", "sticky?", "symlink?", "writable?",
+        defineDelegateMethods(context, Pathname, FileTest, "blockdev?", "chardev?", "executable?", "executable_real?", "exist?",
+                "grpowned?", "directory?", "file?", "pipe?", "socket?", "owned?", "readable?", "world_readable?",
+                "readable_real?", "setuid?", "setgid?", "size", "size?", "sticky?", "symlink?", "writable?",
                 "world_writable?", "writable_real?", "zero?");
 
-        defineDelegateMethods(cPathname, runtime.getDir(), "mkdir", "rmdir");
-        defineDelegateMethodsArrayOfPaths(cPathname, runtime.getDir(), "entries");
+        defineDelegateMethods(context, Pathname, Dir, "mkdir", "rmdir");
+        defineDelegateMethodsArrayOfPaths(context, Pathname, Dir, "entries");
 
-        cPathname.undefineMethod("=~");
+        Pathname.undefMethods(context, "=~");
     }
 
     static interface ReturnValueMapper {
@@ -104,10 +104,10 @@ public class RubyPathname extends RubyObject {
 
     private static final AddArg APPEND_PATH = (args, path) -> insert(args, args.length, path);
 
-    private static void defineDelegateMethodsGeneric(RubyClass cPathname, final RubyModule klass,
+    private static void defineDelegateMethodsGeneric(ThreadContext context, RubyClass cPathname, final RubyModule klass,
             final ReturnValueMapper mapper, final AddArg addArg, String... methods) {
         for (String method : methods) {
-            cPathname.addMethod(method, new JavaMethod.JavaMethodNBlock(cPathname, Visibility.PUBLIC, method) {
+            cPathname.addMethod(context, method, new JavaMethod.JavaMethodNBlock(cPathname, Visibility.PUBLIC, method) {
                 @Override
                 public IRubyObject call(ThreadContext context, IRubyObject _self, RubyModule clazz,
                         String name, IRubyObject[] args, Block block) {
@@ -119,32 +119,30 @@ public class RubyPathname extends RubyObject {
         }
     }
 
-    private static void defineDelegateMethods(RubyClass cPathname, final RubyModule klass,
+    private static void defineDelegateMethods(ThreadContext context, RubyClass cPathname, final RubyModule klass,
             String... methods) {
-        defineDelegateMethodsGeneric(cPathname, klass, IDENTITY_MAPPER, UNSHIFT_PATH, methods);
+        defineDelegateMethodsGeneric(context, cPathname, klass, IDENTITY_MAPPER, UNSHIFT_PATH, methods);
     }
 
-    private static void defineDelegateMethodsAppendPath(RubyClass cPathname,
+    private static void defineDelegateMethodsAppendPath(ThreadContext context, RubyClass cPathname,
             final RubyModule klass, String... methods) {
-        defineDelegateMethodsGeneric(cPathname, klass, IDENTITY_MAPPER, APPEND_PATH, methods);
+        defineDelegateMethodsGeneric(context, cPathname, klass, IDENTITY_MAPPER, APPEND_PATH, methods);
     }
 
-    private static void defineDelegateMethodsSinglePath(RubyClass cPathname,
+    private static void defineDelegateMethodsSinglePath(ThreadContext context, RubyClass cPathname,
             final RubyModule klass, String... methods) {
-        defineDelegateMethodsGeneric(cPathname, klass, SINGLE_PATH_MAPPER, UNSHIFT_PATH, methods);
+        defineDelegateMethodsGeneric(context, cPathname, klass, SINGLE_PATH_MAPPER, UNSHIFT_PATH, methods);
     }
 
-    private static void defineDelegateMethodsArrayOfPaths(RubyClass cPathname,
+    private static void defineDelegateMethodsArrayOfPaths(ThreadContext context, RubyClass cPathname,
             final RubyModule klass, String... methods) {
-        defineDelegateMethodsGeneric(cPathname, klass, ARRAY_OF_PATHS_MAPPER, UNSHIFT_PATH, methods);
+        defineDelegateMethodsGeneric(context, cPathname, klass, ARRAY_OF_PATHS_MAPPER, UNSHIFT_PATH, methods);
     }
 
     public static class PathnameKernelMethods {
         @JRubyMethod(name = "Pathname", module = true, visibility = Visibility.PRIVATE)
-        public static IRubyObject newPathname(IRubyObject recv, IRubyObject path) {
-            if (path instanceof RubyPathname) return path;
-
-            return RubyPathname.newInstance(recv.getRuntime().getCurrentContext(), path);
+        public static IRubyObject newPathname(ThreadContext context, IRubyObject recv, IRubyObject path) {
+            return path instanceof RubyPathname ? path : RubyPathname.newInstance(context, path);
         }
     }
 
@@ -158,7 +156,7 @@ public class RubyPathname extends RubyObject {
     }
 
     public static RubyPathname newInstance(ThreadContext context, IRubyObject path) {
-        return newInstance(context, context.runtime.getClass("Pathname"), path);
+        return newInstance(context, Access.getClass(context, "Pathname"), path);
     }
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
@@ -174,7 +172,7 @@ public class RubyPathname extends RubyObject {
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize_copy(ThreadContext context, IRubyObject pathname) {
-        super.initialize_copy(pathname);
+        super.initialize_copy(context, pathname);
         initialize(context, pathname);
         return this;
     }
@@ -237,7 +235,7 @@ public class RubyPathname extends RubyObject {
 
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
-        return getPath().hash();
+        return getPath().hash(context);
     }
 
     @Override
@@ -263,7 +261,7 @@ public class RubyPathname extends RubyObject {
 
     @JRubyMethod
     public IRubyObject sub_ext(ThreadContext context, IRubyObject newExt) {
-        IRubyObject ext = context.runtime.getFile().callMethod(context, "extname", getPath());
+        IRubyObject ext = fileClass(context).callMethod(context, "extname", getPath());
         IRubyObject newPath = getPath().chomp(context, ext).callMethod(context, "+", newExt);
         return newInstance(context, newPath);
     }
@@ -272,54 +270,48 @@ public class RubyPathname extends RubyObject {
 
     @JRubyMethod(name = {"fnmatch", "fnmatch?"})
     public IRubyObject fnmatch_p(ThreadContext context, IRubyObject arg0) {
-        RubyClass File = context.runtime.getFile();
+        RubyClass File = fileClass(context);
         return sites(context).fnmatch_p.call(context, File, File, arg0, getPath());
     }
 
     @JRubyMethod(name = {"fnmatch", "fnmatch?"})
     public IRubyObject fnmatch_p(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        RubyClass File = context.runtime.getFile();
+        RubyClass File = fileClass(context);
         return sites(context).fnmatch_p.call(context, File, File, arg0, getPath(), arg1);
     }
 
     @JRubyMethod
     public IRubyObject make_link(ThreadContext context, IRubyObject old) {
-        IRubyObject[] args = new IRubyObject[] { old, getPath()};
-        return context.runtime.getFile().callMethod(context, "link", args);
+        return fileClass(context).callMethod(context, "link", new IRubyObject[] { old, getPath() });
     }
 
     @JRubyMethod
     public IRubyObject make_symlink(ThreadContext context, IRubyObject old) {
-        IRubyObject[] args = new IRubyObject[] { old, getPath()};
-        return context.runtime.getFile().callMethod(context, "symlink", args);
+        return fileClass(context).callMethod(context, "symlink", new IRubyObject[] { old, getPath()});
     }
 
     /* Facade for IO */
 
     @JRubyMethod(optional = 3, checkArity = false)
     public IRubyObject each_line(ThreadContext context, IRubyObject[] args, Block block) {
-        return context.runtime.getIO().callMethod(context, "foreach", unshiftPath(args), block);
+        return ioClass(context).callMethod(context, "foreach", unshiftPath(args), block);
     }
 
     /* Facade for Dir */
 
     @JRubyMethod(alias = "pwd", meta = true)
     public static IRubyObject getwd(ThreadContext context, IRubyObject recv) {
-        return newInstance(context, context.runtime.getDir().callMethod("getwd"));
+        return newInstance(context, dirClass(context).callMethod("getwd"));
     }
 
     @JRubyMethod(required = 1, optional = 2, checkArity = false, meta = true)
-    public static IRubyObject glob(ThreadContext context, IRubyObject recv, IRubyObject[] args,
-            Block block) {
+    public static IRubyObject glob(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         // TODO: yield block while iterating
-        RubyArray files = mapToPathnames(context, (RubyClass) recv,
-                context.runtime.getDir().callMethod(context, "glob", args));
-        if (block.isGiven()) {
-            files.each(context, block);
-            return context.nil;
-        } else {
-            return files;
-        }
+        RubyArray files = mapToPathnames(context, (RubyClass) recv, dirClass(context).callMethod(context, "glob", args));
+        if (!block.isGiven()) return files;
+
+        files.each(context, block);
+        return context.nil;
     }
 
     @JRubyMethod(required = 1, optional = 1, checkArity = false)
@@ -329,25 +321,16 @@ public class RubyPathname extends RubyObject {
         boolean blockGiven = block.isGiven();
 
         args[0] = _args[0];
-        if (argc == 1) {
-            args[1] = asFixnum(context, 0);
-        } else {
-            args[1] = _args[1];
-        }
-
+        args[1] = argc == 1 ? asFixnum(context, 0) : _args[1];
         args[2] = newSmallHash(context);
         ((RubyHash) args[2]).fastASetSmall(asSymbol(context, "base"), getPath());
 
         JavaSites.PathnameSites sites = sites(context);
         CallSite glob = sites.glob;
-
-        RubyArray ary;
-        long i;
-        ary = glob.call(context, this, context.runtime.getDir(), args).convertToArray();
+        RubyArray ary = glob.call(context, this, dirClass(context), args).convertToArray();
         CallSite op_plus = sites.op_plus;
-        for (i = 0; i < ary.size(); i++) {
-            IRubyObject elt = ary.eltOk(i);
-            elt = op_plus.call(context, this, this, elt);
+        for (long i = 0; i < ary.size(); i++) {
+            IRubyObject elt = op_plus.call(context, this, this, ary.eltOk(i));
             ary.eltSetOk(i, elt);
             if (blockGiven) block.yield(context, elt);
         }
@@ -357,7 +340,7 @@ public class RubyPathname extends RubyObject {
 
     @JRubyMethod
     public IRubyObject opendir(ThreadContext context, Block block) {
-        return context.runtime.getDir().callMethod(context, "open", new IRubyObject[] { getPath()}, block);
+        return dirClass(context).callMethod(context, "open", new IRubyObject[] { getPath()}, block);
     }
 
     @JRubyMethod
@@ -368,7 +351,7 @@ public class RubyPathname extends RubyObject {
             entries.each(context, block);
             return context.nil;
         } else {
-            return context.runtime.getDir().callMethod(context, "foreach");
+            return dirClass(context).callMethod(context, "foreach");
         }
     }
 
@@ -376,26 +359,23 @@ public class RubyPathname extends RubyObject {
 
     @JRubyMethod(name = {"unlink", "delete"})
     public IRubyObject unlink(ThreadContext context) {
-        IRubyObject oldExc = context.runtime.getGlobalVariables().get("$!"); // Save $!
+        var globalVariables = globalVariables(context);
+        IRubyObject oldExc = globalVariables.get("$!"); // Save $!
         try {
-            return context.runtime.getDir().callMethod(context, "unlink", getPath());
+            return dirClass(context).callMethod(context, "unlink", getPath());
         } catch (RaiseException ex) {
-            if (!context.runtime.getErrno().getClass("ENOTDIR").isInstance(ex.getException())) {
-                throw ex;
-            }
-            context.runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
-            return context.runtime.getFile().callMethod(context, "unlink", getPath());
+            if (!errnoModule(context).getClass(context, "ENOTDIR").isInstance(ex.getException())) throw ex;
+            globalVariables.set("$!", oldExc); // Restore $!
+            return fileClass(context).callMethod(context, "unlink", getPath());
         }
     }
 
     @JRubyMethod(name = "empty?")
     public IRubyObject empty_p(ThreadContext context) {
-        RubyModule fileTest = context.runtime.getFileTest();
-        if (fileTest.callMethod(context, "directory?", getPath()).isTrue()) {
-            return context.runtime.getDir().callMethod(context, "empty?", getPath());
-        } else {
-            return fileTest.callMethod(context, "empty?", getPath());
-        }
+        RubyModule fileTest = fileTestModule(context);
+        return fileTest.callMethod(context, "directory?", getPath()).isTrue() ?
+                dirClass(context).callMethod(context, "empty?", getPath()) :
+                fileTest.callMethod(context, "empty?", getPath());
     }
 
     /* Helpers */
@@ -449,13 +429,10 @@ public class RubyPathname extends RubyObject {
 
     @Deprecated
     public IRubyObject fnmatch(ThreadContext context, IRubyObject[] args) {
-        switch (args.length) {
-            case 1:
-                return fnmatch_p(context, args[0]);
-            case 2:
-                return fnmatch_p(context, args[0], args[1]);
-            default:
-                throw context.runtime.newArgumentError(args.length, 1, 2);
-        }
+        return switch (args.length) {
+            case 1 -> fnmatch_p(context, args[0]);
+            case 2 -> fnmatch_p(context, args[0], args[1]);
+            default -> throw argumentError(context, args.length, 1, 2);
+        };
     }
 }

@@ -56,7 +56,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.RubyModule.undefinedMethodMessage;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.nameError;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.util.CodegenUtils.getBoxType;
 import static org.jruby.util.CodegenUtils.prettyParams;
 import static org.jruby.util.RubyStringBuilder.ids;
@@ -94,7 +96,7 @@ public class JavaMethod extends JavaCallable {
             } catch (SecurityException se) {
                 // we shouldn't get here if JavaClass.CAN_SET_ACCESSIBLE is doing
                 // what it should, so we warn.
-               runtime.getWarnings().warn("failed to setAccessible: " + method + ", exception follows: " + se.getMessage());
+               warn(runtime.getCurrentContext(), "failed to setAccessible: " + method + ", exception follows: " + se.getMessage());
             }
         }
 
@@ -111,7 +113,7 @@ public class JavaMethod extends JavaCallable {
             return create(runtime, javaClass.getMethod(methodName, argumentTypes));
         }
         catch (NoSuchMethodException e) {
-            throw runtime.newNameError(undefinedMethodMessage(runtime, ids(runtime, methodName), ids(runtime, javaClass.getName()), false), methodName);
+            throw nameError(runtime.getCurrentContext(), undefinedMethodMessage(runtime, ids(runtime, methodName), ids(runtime, javaClass.getName()), false), methodName);
         }
     }
 
@@ -121,7 +123,7 @@ public class JavaMethod extends JavaCallable {
             return create(runtime, javaClass.getDeclaredMethod(methodName, argumentTypes));
         }
         catch (NoSuchMethodException e) {
-            throw runtime.newNameError(undefinedMethodMessage(runtime, ids(runtime, methodName), ids(runtime, javaClass.getName()), false), methodName);
+            throw nameError(runtime.getCurrentContext(), undefinedMethodMessage(runtime, ids(runtime, methodName), ids(runtime, javaClass.getName()), false), methodName);
         }
     }
 
@@ -491,8 +493,13 @@ public class JavaMethod extends JavaCallable {
         }
     }
 
+    @Deprecated(since = "10.0")
     public static RaiseException newMethodNotFoundError(Ruby runtime, Class target, String prettyName, String simpleName) {
-        return runtime.newNameError("java method not found: " + target.getName() + "." + prettyName, simpleName);
+        return newMethodNotFoundError(runtime.getCurrentContext(), target, prettyName, simpleName);
+    }
+
+    public static RaiseException newMethodNotFoundError(ThreadContext context, Class target, String prettyName, String simpleName) {
+        return nameError(context, "java method not found: " + target.getName() + "." + prettyName, simpleName);
     }
 
     public static RaiseException newArgSizeMismatchError(Ruby runtime, Class ... argTypes) {

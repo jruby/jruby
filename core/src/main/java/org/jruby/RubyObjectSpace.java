@@ -48,10 +48,15 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 
+import static org.jruby.api.Access.classClass;
+import static org.jruby.api.Access.moduleClass;
+import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newArrayNoCopy;
+import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.*;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.Inspector.inspectPrefix;
 
@@ -68,15 +73,13 @@ public class RubyObjectSpace {
     /** Create the ObjectSpace module and add it to the Ruby runtime.
      *
      */
-    public static RubyModule createObjectSpaceModule(Ruby runtime) {
-        RubyModule objectSpaceModule = runtime.defineModule("ObjectSpace");
+    public static RubyModule createObjectSpaceModule(ThreadContext context, RubyClass Object) {
+        RubyModule ObjectSpace = defineModule(context, "ObjectSpace").defineMethods(context, RubyObjectSpace.class);
 
-        objectSpaceModule.defineAnnotatedMethods(RubyObjectSpace.class);
+        WeakMap.createWeakMap(context, Object, ObjectSpace);
+        WeakKeyMap.createWeakMap(context, Object, ObjectSpace);
 
-        WeakMap.createWeakMap(runtime, objectSpaceModule);
-        WeakKeyMap.createWeakMap(runtime, objectSpaceModule);
-
-        return objectSpaceModule;
+        return ObjectSpace;
     }
 
     @Deprecated
@@ -86,7 +89,6 @@ public class RubyObjectSpace {
 
     @JRubyMethod(required = 1, optional = 1, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject define_finalizer(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        var runtime = context.runtime;
         int argc = Arity.checkArgumentCount(context, args, 1, 2);
 
         IRubyObject finalizer;
@@ -97,21 +99,21 @@ public class RubyObjectSpace {
                 throw argumentError(context, "wrong type argument " + finalizer.getType() + " (should be callable)");
             }
             if (finalizer instanceof RubyMethod) {
-                if (((RubyMethod) finalizer).getReceiver() == obj) referenceWarning(runtime);
+                if (((RubyMethod) finalizer).getReceiver() == obj) referenceWarning(context);
             }
             if (finalizer instanceof RubyProc) {
-                if (((RubyProc) finalizer).getBlock().getBinding().getSelf() == obj) referenceWarning(runtime);
+                if (((RubyProc) finalizer).getBlock().getBinding().getSelf() == obj) referenceWarning(context);
             }
         } else {
-            if (blockReferencesObject(obj, block)) referenceWarning(runtime);
-            finalizer = runtime.newProc(Block.Type.PROC, block);
+            if (blockReferencesObject(obj, block)) referenceWarning(context);
+            finalizer = context.runtime.newProc(Block.Type.PROC, block);
         }
-        finalizer = runtime.getObjectSpace().addFinalizer(context, obj, finalizer);
-        return newArray(context, RubyFixnum.zero(runtime), finalizer);
+        finalizer = context.runtime.getObjectSpace().addFinalizer(context, obj, finalizer);
+        return newArray(context, asFixnum(context, 0), finalizer);
     }
 
-    private static void referenceWarning(Ruby runtime) {
-        runtime.getWarnings().warn("finalizer references object to be finalized");
+    private static void referenceWarning(ThreadContext context) {
+        warn(context, "finalizer references object to be finalized");
     }
 
     private static boolean blockReferencesObject(IRubyObject object, Block block) {
@@ -124,21 +126,19 @@ public class RubyObjectSpace {
         return recv;
     }
 
-    @JRubyMethod(name = "_id2ref", module = true, visibility = PRIVATE)
+    @Deprecated(since = "10.0")
     public static IRubyObject id2ref(IRubyObject recv, IRubyObject id) {
-        final Ruby runtime = id.getRuntime();
-        ThreadContext context = runtime.getCurrentContext();
-        long longId = castAsFixnum(context, id).getLongValue();
-        if (longId == 0) {
-            return context.fals;
-        } else if (longId == 20) {
-            return context.tru;
-        } else if (longId == 8) {
-            return context.nil;
-        } else if ((longId & 0b01) == 0b01) {
-            // fixnum
-            return asFixnum(context, (longId - 1) / 2);
-        } else if ((longId & 0b11) == 0b10) {
+        return id2ref(recv.getRuntime().getCurrentContext(), recv, id);
+    }
+
+    @JRubyMethod(name = "_id2ref", module = true, visibility = PRIVATE)
+    public static IRubyObject id2ref(ThreadContext context, IRubyObject recv, IRubyObject id) {
+        long longId = castAsFixnum(context, id).asLong(context);
+        if (longId == 0) return context.fals;
+        if (longId == 20) return context.tru;
+        if (longId == 8) return context.nil;
+        if ((longId & 0b01) == 0b01) return asFixnum(context, (longId - 1) / 2);  // fixnum
+        if ((longId & 0b11) == 0b10) {
             // flonum
             double d = 0.0;
             if (longId != 0x8000000000000002L) {
@@ -149,17 +149,17 @@ public class RubyObjectSpace {
                 long longBits = Numeric.rotr((2 - b63) | (longId & ~0x03), 3);
                 d = Double.longBitsToDouble(longBits);
             }
-            return runtime.newFloat(d);
+            return asFloat(context, d);
         } else {
-            if (runtime.isObjectSpaceEnabled()) {
-                IRubyObject object = runtime.getObjectSpace().id2ref(longId);
+            if (context.runtime.isObjectSpaceEnabled()) {
+                IRubyObject object = context.runtime.getObjectSpace().id2ref(longId);
                 if (object == null) {
                     return context.nil;
                 }
                 return object;
             } else {
-                runtime.getWarnings().warn("ObjectSpace is disabled; _id2ref only supports immediates, pass -X+O to enable");
-                throw runtime.newRangeError(String.format("0x%016x is not id value", longId));
+                warn(context, "ObjectSpace is disabled; _id2ref only supports immediates, pass -X+O to enable");
+                throw rangeError(context, String.format("0x%016x is not id value", longId));
             }
         }
     }
@@ -168,12 +168,12 @@ public class RubyObjectSpace {
         final Ruby runtime = context.runtime;
         final RubyModule rubyClass;
         if (args.length == 0) {
-            rubyClass = runtime.getObject();
+            rubyClass = objectClass(context);
         } else {
             if (!(args[0] instanceof RubyModule)) throw argumentError(context, "class or module required");
             rubyClass = (RubyModule) args[0];
         }
-        if (rubyClass == runtime.getClassClass() || rubyClass == runtime.getModule()) {
+        if (rubyClass == classClass(context) || rubyClass == moduleClass(context)) {
 
             final ArrayList<IRubyObject> modules = new ArrayList<>(96);
             runtime.eachModule((module) -> {
@@ -330,10 +330,9 @@ public class RubyObjectSpace {
     }
 
     public static class WeakMap extends AbstractWeakMap {
-        static void createWeakMap(Ruby runtime, RubyModule objectspaceModule) {
-            RubyClass weakMap = objectspaceModule.defineClassUnder("WeakMap", runtime.getObject(), WeakMap::new);
-
-            weakMap.defineAnnotatedMethods(AbstractWeakMap.class);
+        static void createWeakMap(ThreadContext context, RubyClass Object, RubyModule ObjectSpace) {
+            ObjectSpace.defineClassUnder(context, "WeakMap", Object, WeakMap::new).
+                    defineMethods(context, AbstractWeakMap.class);
         }
 
         public WeakMap(Ruby runtime, RubyClass cls) {
@@ -357,21 +356,14 @@ public class RubyObjectSpace {
         }
 
         public IRubyObject inspect(ThreadContext context) {
-            Ruby runtime = context.runtime;
-
-            RubyString part = inspectPrefix(runtime.getCurrentContext(), metaClass.getRealClass(), inspectHashCode());
+            RubyString part = inspectPrefix(context, metaClass.getRealClass(), inspectHashCode());
             int base = part.length();
 
             getEntryStream().forEach(entry -> {
-                if (part.length() == base) {
-                    part.cat(Inspector.COLON_SPACE);
-                } else {
-                    part.cat(Inspector.COMMA_SPACE);
-                }
-
-                part.cat(entry.getKey().inspect().convertToString());
+                part.cat(part.length() == base ? Inspector.COLON_SPACE : Inspector.COMMA_SPACE);
+                part.cat(entry.getKey().inspect(context).convertToString());
                 part.cat(Inspector.SPACE_HASHROCKET_SPACE);
-                part.cat(entry.getValue().inspect().convertToString());
+                part.cat(entry.getValue().inspect(context).convertToString());
             });
 
             part.cat(Inspector.GT);
@@ -384,11 +376,9 @@ public class RubyObjectSpace {
     }
 
     public static class WeakKeyMap extends AbstractWeakMap {
-        static void createWeakMap(Ruby runtime, RubyModule objectspaceModule) {
-            RubyClass weakMap = objectspaceModule.defineClassUnder("WeakKeyMap", runtime.getObject(), WeakKeyMap::new);
-
-            weakMap.defineAnnotatedMethods(AbstractWeakMap.class);
-            weakMap.defineAnnotatedMethods(WeakKeyMap.class);
+        static void createWeakMap(ThreadContext context, RubyClass Object, RubyModule ObjectSpace) {
+            ObjectSpace.defineClassUnder(context, "WeakKeyMap", Object, WeakKeyMap::new).
+                    defineMethods(context, AbstractWeakMap.class, WeakKeyMap.class);
         }
 
         public WeakKeyMap(Ruby runtime, RubyClass cls) {

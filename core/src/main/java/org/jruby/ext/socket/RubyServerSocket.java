@@ -34,6 +34,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -52,6 +53,8 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
@@ -61,10 +64,9 @@ import static org.jruby.api.Error.typeError;
  */
 @JRubyClass(name="Socket", parent="BasicSocket", include="Socket::Constants")
 public class RubyServerSocket extends RubySocket {
-    static void createServerSocket(Ruby runtime) {
-        RubyClass rb_cSocket = runtime.defineClass("ServerSocket", runtime.getClass("Socket"), RubyServerSocket::new);
-
-        rb_cSocket.defineAnnotatedMethods(RubyServerSocket.class);
+    static void createServerSocket(ThreadContext context, RubyClass Socket) {
+        defineClass(context, "ServerSocket", Socket, RubyServerSocket::new).
+                defineMethods(context, RubyServerSocket.class);
     }
 
     public RubyServerSocket(Ruby runtime, RubyClass type) {
@@ -185,20 +187,20 @@ public class RubyServerSocket extends RubySocket {
                     // This appears to be undocumented in JDK; null as a sentinel value
                     // for a nonblocking accept with nothing available. We raise for Ruby.
                     // indicates that no connection is available in non-blocking mode
-                    if (!ex) return runtime.newSymbol("wait_readable");
+                    if (!ex) return asSymbol(context, "wait_readable");
                     throw runtime.newErrnoEAGAINReadableError("accept(2) would block");
                 }
 
-                RubySocket rubySocket = new RubySocket(runtime, runtime.getClass("Socket"));
+                RubySocket rubySocket = new RubySocket(runtime, Access.getClass(context, "Socket"));
                 rubySocket.initFromServer(runtime, sock, socket);
 
-                return newArray(context, rubySocket, new Addrinfo(runtime, runtime.getClass("Addrinfo"), socket.getRemoteAddress()));
+                return newArray(context, rubySocket, new Addrinfo(runtime, Access.getClass(context, "Addrinfo"), socket.getRemoteAddress()));
             }
             throw runtime.newErrnoENOPROTOOPTError();
         }
         catch (IllegalBlockingModeException e) {
             // indicates that no connection is available in non-blocking mode
-            if (!ex) return runtime.newSymbol("wait_readable");
+            if (!ex) return asSymbol(context, "wait_readable");
             throw runtime.newErrnoEAGAINReadableError("accept(2) would block");
         }
         catch (IOException e) {

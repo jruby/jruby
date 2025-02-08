@@ -37,6 +37,7 @@ import java.nio.charset.StandardCharsets;
 
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB.Entry;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF16BEEncoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -46,7 +47,6 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.compiler.Constantizable;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
@@ -60,6 +60,8 @@ import static com.headius.backport9.buffer.Buffers.clearBuffer;
 import static com.headius.backport9.buffer.Buffers.flipBuffer;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineClass;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
 @JRubyClass(name="Encoding")
 public class RubyEncoding extends RubyObject implements Constantizable {
@@ -71,18 +73,15 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     public static final ByteList EXTERNAL = new ByteList(encodeISO("external"), false);
     public static final ByteList FILESYSTEM = new ByteList(encodeISO("filesystem"), false);
     public static final ByteList INTERNAL = new ByteList(encodeISO("internal"), false);
+    public static final ByteList BINARY_ASCII_NAME = new ByteList(encodeISO("BINARY (ASCII-8BIT)"), false);
 
-    public static RubyClass createEncodingClass(Ruby runtime) {
-        RubyClass encodingc = runtime.defineClass("Encoding", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-
-        encodingc.setClassIndex(ClassIndex.ENCODING);
-        encodingc.setReifiedClass(RubyEncoding.class);
-        encodingc.kindOf = new RubyModule.JavaClassKindOf(RubyEncoding.class);
-
-        encodingc.getSingletonClass().undefineMethod("allocate");
-        encodingc.defineAnnotatedMethods(RubyEncoding.class);
-
-        return encodingc;
+    public static RubyClass createEncodingClass(ThreadContext context, RubyClass Object) {
+        return defineClass(context, "Encoding", Object, NOT_ALLOCATABLE_ALLOCATOR).
+                reifiedClass(RubyEncoding.class).
+                kindOf(new RubyModule.JavaClassKindOf(RubyEncoding.class)).
+                classIndex(ClassIndex.ENCODING).
+                defineMethods(context, RubyEncoding.class).
+                tap(c -> c.singletonClass(context).undefMethods(context, "allocate"));
     }
 
     private Encoding encoding;
@@ -577,10 +576,17 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     public IRubyObject inspect(ThreadContext context) {
         ByteList bytes = new ByteList();
         bytes.append("#<Encoding:".getBytes());
-        bytes.append(name);
+        bytes.append(inspectName());
         if (isDummy) bytes.append(" (dummy)".getBytes());
         bytes.append('>');
         return RubyString.newUsAsciiStringNoCopy(context.runtime, bytes);
+    }
+
+    private ByteList inspectName() {
+        if (encoding == ASCIIEncoding.INSTANCE) {
+            return BINARY_ASCII_NAME;
+        }
+        return name;
     }
 
     @SuppressWarnings("unchecked")
@@ -619,10 +625,9 @@ public class RubyEncoding extends RubyObject implements Constantizable {
 
     @JRubyMethod(name = "compatible?", meta = true)
     public static IRubyObject compatible_p(ThreadContext context, IRubyObject self, IRubyObject first, IRubyObject second) {
-        Ruby runtime = context.runtime;
         Encoding enc = areCompatible(first, second);
 
-        return enc == null ? runtime.getNil() : runtime.getEncodingService().getEncoding(enc);
+        return enc == null ? context.nil : context.runtime.getEncodingService().getEncoding(enc);
     }
 
     @JRubyMethod(name = "default_external", meta = true)

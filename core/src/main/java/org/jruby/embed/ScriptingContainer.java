@@ -68,6 +68,9 @@ import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.cli.OutputStrings;
 import org.jruby.util.cli.Options;
 
+import static org.jruby.api.Access.globalVariables;
+import static org.jruby.api.Access.objectClass;
+
 /**
  * ScriptingContainer provides various methods and resources that are useful
  * for embedding Ruby in Java. Using this class, users can run Ruby scripts from
@@ -1658,23 +1661,20 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * @param reader is a reader to be set
      */
     public void setReader(Reader reader) {
-        if (reader == null) {
-            return;
-        }
+        if (reader == null) return;
+
         Map map = getAttributeMap();
         if (map.containsKey(AttributeName.READER)) {
             Reader old = (Reader) map.get(AttributeName.READER);
-            if (old == reader) {
-                return;
-            }
+            if (old == reader) return;
         }
         map.put(AttributeName.READER, reader);
         InputStream istream = new ReaderInputStream(reader);
-        Ruby runtime = provider.getRuntime();
-        RubyIO io = new RubyIO(runtime, istream);
+        var context = provider.getRuntime().getCurrentContext();
+        RubyIO io = new RubyIO(context.runtime, istream);
         io.getOpenFile().setSync(true);
-        runtime.defineVariable(new InputGlobalVariable(runtime, "$stdin", io), GlobalVariable.Scope.GLOBAL);
-        runtime.getObject().storeConstant("STDIN", io);
+        context.runtime.defineVariable(new InputGlobalVariable(context.runtime, "$stdin", io), GlobalVariable.Scope.GLOBAL);
+        objectClass(context).storeConstant(context, "STDIN", io);
     }
 
     /**
@@ -1725,16 +1725,14 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     }
 
     private void setOutputStream(PrintStream pstream) {
-        if (pstream == null) {
-            return;
-        }
-        Ruby runtime = provider.getRuntime();
-        RubyIO io = new RubyIO(runtime, pstream);
+        if (pstream == null) return;
+        var context = provider.getRuntime().getCurrentContext();
+        RubyIO io = new RubyIO(context.runtime, pstream);
         io.getOpenFile().setSync(true);
-        runtime.defineVariable(new OutputGlobalVariable(runtime, "$stdout", io), GlobalVariable.Scope.GLOBAL);
-        runtime.getObject().storeConstant("STDOUT", io);
-        runtime.getGlobalVariables().alias("$>", "$stdout");
-        runtime.getGlobalVariables().alias("$defout", "$stdout");
+        context.runtime.defineVariable(new OutputGlobalVariable(context.runtime, "$stdout", io), GlobalVariable.Scope.GLOBAL);
+        objectClass(context).storeConstant(context, "STDOUT", io);
+        globalVariables(context).alias("$>", "$stdout");
+        globalVariables(context).alias("$defout", "$stdout");
     }
 
     public void resetWriter() {
@@ -1790,15 +1788,14 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     }
 
     private void setErrorStream(PrintStream error) {
-        if (error == null) {
-            return;
-        }
-        Ruby runtime = provider.getRuntime();
-        RubyIO io = new RubyIO(runtime, error);
+        if (error == null) return;
+
+        var context = provider.getRuntime().getCurrentContext();
+        RubyIO io = new RubyIO(context.runtime, error);
         io.getOpenFile().setSync(true);
-        runtime.defineVariable(new OutputGlobalVariable(runtime, "$stderr", io), GlobalVariable.Scope.GLOBAL);
-        runtime.getObject().storeConstant("STDERR", io);
-        runtime.getGlobalVariables().alias("$deferr", "$stderr");
+        context.runtime.defineVariable(new OutputGlobalVariable(context.runtime, "$stderr", io), GlobalVariable.Scope.GLOBAL);
+        objectClass(context).storeConstant(context, "STDERR", io);
+        globalVariables(context).alias("$deferr", "$stderr");
     }
 
     public void resetErrorWriter() {
@@ -1843,7 +1840,6 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
         LocalContextProvider provider = getProvider();
         if (provider.isRuntimeInitialized()) {
             provider.getRuntime().tearDown(false);
-            provider.getRuntime().releaseClassLoader();
         }
         provider.terminate();
     }

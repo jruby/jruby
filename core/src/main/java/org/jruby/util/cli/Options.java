@@ -229,6 +229,8 @@ public class Options {
     public static final Option<String> CLI_PROFILING_SERVICE = string(CLI, "cli.profiling.service", "Profiling service class to use.");
     public static final Option<Boolean> CLI_RUBYGEMS_ENABLE = bool(CLI, "cli.rubygems.enable", true, "Enable/disable RubyGems.");
     public static final Option<Boolean> CLI_DID_YOU_MEAN_ENABLE = bool(CLI, "cli.did_you_mean.enable", true, "Enable/disable did_you_mean.");
+    public static final Option<Boolean> CLI_ERROR_HIGHLIGHT_ENABLE = bool(CLI, "cli.error_highlight.enable", true, "Enable/disable error_highlight.");
+    public static final Option<Boolean> CLI_SYNTAX_SUGGEST_ENABLE = bool(CLI, "cli.syntax_suggest.enable", true, "Enable/disable syntax_suggest.");
     public static final Option<Boolean> CLI_RUBYOPT_ENABLE = bool(CLI, "cli.rubyopt.enable", true, "Enable/disable RUBYOPT processing at start.");
     public static final Option<Boolean> CLI_STRIP_HEADER = bool(CLI, "cli.strip.header", false, "Strip text before shebang in script. Same as -x.");
     public static final Option<Boolean> CLI_LOAD_GEMFILE = bool(CLI, "cli.load.gemfile", false, "Load a bundler Gemfile in cwd before running. Same as -G.");
@@ -448,4 +450,7 @@ public class Options {
 
     @Deprecated
     public static final Option<Boolean> JAVA_HANDLES = bool(JAVA_INTEGRATION, "java.handles", false, "Use generated handles instead of reflection for calling Java.");
+
+    @Deprecated
+    public static final Option<Boolean> NAME_ERROR_INSPECT_OBJECT = bool(MISCELLANEOUS, "nameError.inspect.object", true, "Inspect the target object for display in NameError messages.");
 }

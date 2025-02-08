@@ -38,6 +38,9 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Access.objectClass;
+import static org.jruby.api.Create.newString;
+
 /**
  * 
  * @author jpetersen
@@ -51,55 +54,56 @@ public final class TopSelfFactory {
         super();
     }
 
+    @Deprecated(since = "10.0", forRemoval = true)
     public static IRubyObject createTopSelf(final Ruby runtime) {
-        return createTopSelf(runtime, false);
+        var Object = objectClass(runtime.getCurrentContext());
+        var topSelf = new RubyObject(runtime, Object);
+        return finishTopSelf(runtime.getCurrentContext(), topSelf, Object, false);
     }
     
-    public static IRubyObject createTopSelf(final Ruby runtime, final boolean wrapper) {
-        IRubyObject topSelf = new RubyObject(runtime, runtime.getObject());
+    public static IRubyObject finishTopSelf(ThreadContext context, IRubyObject topSelf, RubyClass Object, final boolean wrapper) {
+        final RubyClass singletonClass = topSelf.singletonClass(context);
 
-        final RubyClass singletonClass = topSelf.getSingletonClass();
-
-        singletonClass.addMethod("to_s", new JavaMethod.JavaMethodZero(singletonClass, Visibility.PUBLIC, "to_s") {
+        singletonClass.addMethod(context, "to_s", new JavaMethod.JavaMethodZero(singletonClass, Visibility.PUBLIC, "to_s") {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-                return runtime.newString("main");
+                return newString(context, "main");
             }
         });
-        singletonClass.defineAlias("inspect", "to_s");
+        singletonClass.defineAlias(context, "inspect", "to_s");
         
         // The following three methods must be defined fast, since they expect to modify the current frame
         // (i.e. they expect no frame will be allocated for them). JRUBY-1185.
-        singletonClass.addMethod("include", new JavaMethod.JavaMethodN(singletonClass, Visibility.PRIVATE, "include") {
+        singletonClass.addMethod(context, "include", new JavaMethod.JavaMethodN(singletonClass, Visibility.PRIVATE, "include") {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-                return context.runtime.getObject().include(context, args);
+                return Object.include(context, args);
             }
         });
         
-        singletonClass.addMethod("public", new JavaMethod.JavaMethodN(singletonClass, Visibility.PRIVATE, "public") {
+        singletonClass.addMethod(context, "public", new JavaMethod.JavaMethodN(singletonClass, Visibility.PRIVATE, "public") {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-                return context.runtime.getObject()._public(context, args);
+                return Object._public(context, args);
             }
         });
         
-        singletonClass.addMethod("private", new JavaMethod.JavaMethodN(singletonClass, Visibility.PRIVATE, "private") {
+        singletonClass.addMethod(context, "private", new JavaMethod.JavaMethodN(singletonClass, Visibility.PRIVATE, "private") {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-                return context.runtime.getObject()._private(context, args);
+                return Object._private(context, args);
             }
         });
 
-        singletonClass.addMethod("ruby2_keywords", new JavaMethod.JavaMethodN(singletonClass, Visibility.PRIVATE, "private") {
+        singletonClass.addMethod(context, "ruby2_keywords", new JavaMethod.JavaMethodN(singletonClass, Visibility.PRIVATE, "private") {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-                return context.runtime.getObject().ruby2_keywords(context, args);
+                return Object.ruby2_keywords(context, args);
             }
         });
 
-        final RubyClass klass = wrapper ? singletonClass : runtime.getObject();
-        singletonClass.addMethod("define_method", new JavaMethod.JavaMethodOneOrTwoBlock(singletonClass, Visibility.PRIVATE, "define_method") {
+        final RubyClass klass = wrapper ? singletonClass : Object;
+        singletonClass.addMethod(context, "define_method", new JavaMethod.JavaMethodOneOrTwoBlock(singletonClass, Visibility.PRIVATE, "define_method") {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
                 if (klass == singletonClass) warnWrapper(context);
@@ -113,7 +117,7 @@ public final class TopSelfFactory {
             }
         });
 
-        singletonClass.addMethod("using", new JavaMethod.JavaMethodN(singletonClass, Visibility.PRIVATE, "using") {
+        singletonClass.addMethod(context, "using", new JavaMethod.JavaMethodN(singletonClass, Visibility.PRIVATE, "using") {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
                 Arity.checkArgumentCount(context, args, 1, 1);

@@ -151,10 +151,10 @@ public class BSwitchInstr extends MultiBranchInstr {
         Object result = operand.retrieve(context, self, currScope, currDynScope, temp);
 
         int value;
-        if (result instanceof RubyFixnum && expectedClass == RubyFixnum.class) {
-            value = ((RubyFixnum) result).getIntValue();
-        } else if (result instanceof RubySymbol && expectedClass == RubySymbol.class) {
-            value = ((RubySymbol) result).getId();
+        if (result instanceof RubyFixnum fixnum && expectedClass == RubyFixnum.class) {
+            value = fixnum.asInt(context);
+        } else if (result instanceof RubySymbol symbol && expectedClass == RubySymbol.class) {
+            value = symbol.getId();
         } else {
             // not an optimizable value, fall back on old case logic
             return rubyCase.getTargetPC();
@@ -162,11 +162,9 @@ public class BSwitchInstr extends MultiBranchInstr {
 
         int index = Arrays.binarySearch(jumps, value);
 
-        if (index < 0) {
-            return elseTarget.getTargetPC();
-        }
-
-        return targets[index].getTargetPC();
+        return index < 0 ?
+                elseTarget.getTargetPC() :
+                targets[index].getTargetPC();
     }
 
     @Override

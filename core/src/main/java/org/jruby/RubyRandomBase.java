@@ -67,7 +67,7 @@ public class RubyRandomBase extends RubyObject {
 
         checkFrozen();
 
-        random = new RubyRandom.RandomType((argc == 0) ? RubyRandom.randomSeed(context.runtime) : args[0]);
+        random = new RubyRandom.RandomType(context, (argc == 0) ? RubyRandom.randomSeed(context.runtime) : args[0]);
 
         return this;
     }
@@ -113,7 +113,7 @@ public class RubyRandomBase extends RubyObject {
             }
             return randomUlongLimited(context, self, random, max - 1);
         } else {
-            BigInteger big = vmax.getBigIntegerValue();
+            BigInteger big = vmax.asBigInteger(context);
             if (big.equals(BigInteger.ZERO)) return context.nil;
 
             if (big.signum() < 0) {
@@ -311,7 +311,7 @@ public class RubyRandomBase extends RubyObject {
     }
 
     private static double floatValue(ThreadContext context, IRubyObject v) {
-        double value = v.convertToFloat().getDoubleValue();
+        double value = v.convertToFloat().asDouble(context);
         if (!Double.isFinite(value)) domainError(context);
         return value;
     }
@@ -475,7 +475,7 @@ public class RubyRandomBase extends RubyObject {
 
         if (rnd == null) {
             RubyInteger v = Helpers.invokePublic(context, obj, "rand", asFixnum(context, limit + 1)).convertToInteger();
-            long r = numericToLong(context, v);
+            long r = v.asLong(context);
             if (r < 0) throw rangeError(context, "random number too small " + r);
             if (r > limit) throw rangeError(context, "random number too big " + r);
 

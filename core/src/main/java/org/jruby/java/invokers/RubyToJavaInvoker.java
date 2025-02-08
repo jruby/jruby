@@ -56,6 +56,7 @@ import org.jruby.util.collections.IntHashMap;
 import org.jruby.util.collections.NonBlockingHashMapLong;
 
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.nameError;
 import static org.jruby.util.CodegenUtils.prettyParams;
 
 public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMethod {
@@ -689,7 +690,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
         }
 
         // TODO should have been ArgumentError - might break users to refactor at this point
-        return runtime.newNameError(error.toString(), (String) null);
+        return nameError(runtime.getCurrentContext(), error.toString(), (String) null);
     }
 
     private RaiseException newErrorDueNoMatchingCallable(final IRubyObject receiver, final String name) {
@@ -716,10 +717,9 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
     }
 
     private static String formatReceiver(final IRubyObject object) {
-        if ( object instanceof RubyModule ) {
-            return ((RubyModule) object).getName();
-        }
-        return object.getMetaClass().getRealClass().getName();
+        var context = object.getRuntime().getCurrentContext();
+        return object instanceof RubyModule mod ?
+                mod.getName(context) : object.getMetaClass().getRealClass().getName(context);
     }
 
     private static class NullHashMapLong<V> extends NonBlockingHashMapLong<V> {

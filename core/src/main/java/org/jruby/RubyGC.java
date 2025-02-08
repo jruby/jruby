@@ -41,6 +41,7 @@ import org.jruby.runtime.ThreadContext;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Define.defineModule;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -62,12 +63,8 @@ public class RubyGC {
     private static volatile boolean autoCompact = false;
     private static volatile boolean measureTotalTime = false;
 
-    public static RubyModule createGCModule(Ruby runtime) {
-        RubyModule result = runtime.defineModule("GC");
-        
-        result.defineAnnotatedMethods(RubyGC.class);
-        
-        return result;        
+    public static RubyModule createGCModule(ThreadContext context) {
+        return defineModule(context, "GC").defineMethods(context, RubyGC.class);
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE, optional = 1, checkArity = false)

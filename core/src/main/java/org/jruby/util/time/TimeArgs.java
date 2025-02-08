@@ -124,11 +124,11 @@ public class TimeArgs {
         if (usecObj.isNil()) {
             if (!secondObj.isNil()) {
                 if (secondObj instanceof RubyRational rat) {
-                    if (rat.isNegative()) throw argumentError(context, "argument out of range.");
+                    if (rat.isNegative(context)) throw argumentError(context, "argument out of range.");
 
                     RubyRational nsec = (RubyRational) rat.op_mul(context, asFixnum(context, 1_000_000_000));
 
-                    long fullNanos = nsec.getLongValue();
+                    long fullNanos = nsec.asLong(context);
                     long fullMillis = fullNanos / 1_000_000;
 
                     nanos = fullNanos - fullMillis * 1_000_000;
@@ -143,18 +143,18 @@ public class TimeArgs {
                 }
             }
         } else if (usecObj instanceof RubyRational rat) {
-            if (rat.isNegative()) throw argumentError(context, "argument out of range.");
+            if (rat.isNegative(context)) throw argumentError(context, "argument out of range.");
 
             RubyRational nsec = (RubyRational) rat.op_mul(context, asFixnum(context, 1000));
 
-            long tmpNanos = (long) nsec.getDoubleValue(context);
+            long tmpNanos = (long) nsec.asDouble(context);
 
             millis = tmpNanos / 1_000_000;
             nanos = tmpNanos % 1_000_000;
         } else if (usecObj instanceof RubyFloat flo) {
-            if (flo.isNegative()) throw argumentError(context, "argument out of range.");
+            if (flo.isNegative(context)) throw argumentError(context, "argument out of range.");
 
-            double micros = flo.getDoubleValue();
+            double micros = flo.asDouble(context);
 
             millis = (long) (micros / 1000);
             nanos = (long) Math.rint((micros * 1000) % 1_000_000);

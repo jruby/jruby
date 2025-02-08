@@ -46,17 +46,17 @@ import static org.jruby.runtime.Visibility.PUBLIC;
  */
 public abstract class JavaIo {
 
-    public static void define(final Ruby runtime) {
-        JavaExtensions.put(runtime, java.io.InputStream.class, (proxyClass) -> {
-            proxyClass.addMethodInternal("to_io", new InputStreamToIO(proxyClass));
+    public static void define(ThreadContext context) {
+        JavaExtensions.put(context.runtime, java.io.InputStream.class, (proxyClass) -> {
+            proxyClass.addMethodInternal(context, "to_io", new InputStreamToIO(proxyClass));
         });
 
-        JavaExtensions.put(runtime, java.io.OutputStream.class, (proxyClass) -> {
-            proxyClass.addMethodInternal("to_io", new OutputStreamToIO(proxyClass));
+        JavaExtensions.put(context.runtime, java.io.OutputStream.class, (proxyClass) -> {
+            proxyClass.addMethodInternal(context, "to_io", new OutputStreamToIO(proxyClass));
         });
 
-        JavaExtensions.put(runtime, java.nio.channels.Channel.class, (proxyClass) -> {
-            proxyClass.addMethodInternal("to_io", new ChannelToIO(proxyClass));
+        JavaExtensions.put(context.runtime, java.nio.channels.Channel.class, (proxyClass) -> {
+            proxyClass.addMethodInternal(context, "to_io", new ChannelToIO(proxyClass));
         });
     }
 

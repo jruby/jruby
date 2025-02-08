@@ -67,6 +67,8 @@ import static java.lang.invoke.MethodHandles.insertArguments;
 import static java.lang.invoke.MethodHandles.lookup;
 import static java.lang.invoke.MethodType.methodType;
 import static org.jruby.RubySymbol.newSymbol;
+import static org.jruby.api.Access.basicObjectClass;
+import static org.jruby.api.Access.kernelModule;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.runtime.Helpers.constructObjectArrayHandle;
@@ -782,7 +784,7 @@ public abstract class InvokeSite extends MutableCallSite {
                     entry.method instanceof Helpers.MethodMissingWrapper);
             mh = buildGenericHandle(entry);
         } else {
-            mh = getHandle(self, entry);
+            mh = getHandle(context, self, entry);
         }
 
         finishBinding(entry, mh, self, selfClass, switchPoint);
@@ -805,7 +807,7 @@ public abstract class InvokeSite extends MutableCallSite {
                     entry.method instanceof Helpers.MethodMissingWrapper);
             mh = buildGenericHandle(entry);
         } else {
-            mh = getHandle(self, entry);
+            mh = getHandle(context, self, entry);
         }
 
         finishBinding(entry, mh, self, selfClass, switchPoint);
@@ -1128,17 +1130,17 @@ public abstract class InvokeSite extends MutableCallSite {
         return binder.binder();
     }
 
-    protected MethodHandle getHandle(IRubyObject self, CacheEntry entry) throws Throwable {
+    protected MethodHandle getHandle(ThreadContext context, IRubyObject self, CacheEntry entry) throws Throwable {
         boolean blockGiven = signature.lastArgType() == Block.class;
 
         MethodHandle mh = buildNewInstanceHandle(entry, self);
-        if (mh == null) mh = buildNotEqualHandle(entry, self);
+        if (mh == null) mh = buildNotEqualHandle(context, entry, self);
         if (mh == null) mh = buildNativeHandle(entry, blockGiven);
         if (mh == null) mh = buildJavaFieldHandle(entry, self);
         if (mh == null) mh = buildIndyHandle(entry);
         if (mh == null) mh = buildJittedHandle(entry, blockGiven);
         if (mh == null) mh = buildAttrHandle(entry, self);
-        if (mh == null) mh = buildAliasHandle(entry, self);
+        if (mh == null) mh = buildAliasHandle(context, entry, self);
         if (mh == null) mh = buildStructHandle(entry);
         if (mh == null) mh = buildGenericHandle(entry);
 
@@ -1257,23 +1259,20 @@ public abstract class InvokeSite extends MutableCallSite {
         return mh;
     }
 
-    MethodHandle buildNotEqualHandle(CacheEntry entry, IRubyObject self) {
+    MethodHandle buildNotEqualHandle(ThreadContext context, CacheEntry entry, IRubyObject self) {
         MethodHandle mh = null;
         DynamicMethod method = entry.method;
 
-        Ruby runtime = self.getRuntime();
-
         if (method.isBuiltin()) {
-
-            CallSite equalSite = null;
+            CallSite equalSite;
 
             // FIXME: poor test for built-in != and !~
             MethodType type = type();
             if (!functional) type = type.dropParameterTypes(1, 2);
             String negatedCall;
-            if (method.getImplementationClass() == runtime.getBasicObject() && name().equals("!=")) {
+            if (method.getImplementationClass() == basicObjectClass(context) && name().equals("!=")) {
                 negatedCall = "callFunctional:==";
-            } else if (method.getImplementationClass() == runtime.getKernel() && name().equals("!~")) {
+            } else if (method.getImplementationClass() == kernelModule(context) && name().equals("!~")) {
                 negatedCall = "callFunctional:=~";
             } else {
                 // unknown negatable call for us
@@ -1286,7 +1285,7 @@ public abstract class InvokeSite extends MutableCallSite {
                 MethodHandle equalHandle = equalSite.dynamicInvoker();
                 if (!functional) equalHandle = MethodHandles.dropArguments(equalHandle, 1, IRubyObject.class);
 
-                MethodHandle filter = insertArguments(NEGATE, 1, runtime.getNil(), runtime.getTrue(), runtime.getFalse());
+                MethodHandle filter = insertArguments(NEGATE, 1, context.nil, context.tru, context.fals);
                 mh = MethodHandles.filterReturnValue(equalHandle, filter);
 
                 if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
@@ -1304,16 +1303,14 @@ public abstract class InvokeSite extends MutableCallSite {
         return object == nil || object == fals ? tru : fals;
     }
 
-    MethodHandle buildAliasHandle(CacheEntry entry, IRubyObject self) throws Throwable {
+    MethodHandle buildAliasHandle(ThreadContext context, CacheEntry entry, IRubyObject self) throws Throwable {
         MethodHandle mh = null;
         DynamicMethod method = entry.method;
 
-        if (method instanceof PartialDelegatingMethod) {
-            PartialDelegatingMethod delegate = (PartialDelegatingMethod) method;
+        if (method instanceof PartialDelegatingMethod delegate) {
             DynamicMethod innerMethod = delegate.getRealMethod();
-            mh = getHandle(self, new CacheEntry(innerMethod, entry.sourceModule, entry.token));
-        } else if (method instanceof AliasMethod) {
-            AliasMethod alias = (AliasMethod) method;
+            mh = getHandle(context, self, new CacheEntry(innerMethod, entry.sourceModule, entry.token));
+        } else if (method instanceof AliasMethod alias) {
             DynamicMethod innerMethod = alias.getRealMethod();
             String name = alias.getName();
 
@@ -1321,7 +1318,7 @@ public abstract class InvokeSite extends MutableCallSite {
             MethodType type = type();
             if (!functional) type = type.dropParameterTypes(1, 2);
             InvokeSite innerSite = (InvokeSite) SelfInvokeSite.bootstrap(LOOKUP, "callFunctional:" + name, type, literalClosure ? 1 : 0, flags, file, line);
-            mh = innerSite.getHandle(self, new CacheEntry(innerMethod, entry.sourceModule, entry.token));
+            mh = innerSite.getHandle(context, self, new CacheEntry(innerMethod, entry.sourceModule, entry.token));
             if (!functional) mh = MethodHandles.dropArguments(mh, 1, IRubyObject.class);
 
             alias.setHandle(mh);

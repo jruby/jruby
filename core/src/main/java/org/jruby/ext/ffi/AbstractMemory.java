@@ -43,7 +43,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Create;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -53,6 +52,7 @@ import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newEmptyString;
 import static org.jruby.api.Create.newRawArray;
 import static org.jruby.api.Error.*;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
 /**
  * A abstract memory object that defines operations common to both pointers and
@@ -68,31 +68,24 @@ abstract public class AbstractMemory extends MemoryObject {
     /** The size of each element of this memory area - e.g. :char is 1, :int is 4 */
     protected int typeSize;
 
-    public static RubyClass createAbstractMemoryClass(Ruby runtime, RubyModule module) {
-        RubyClass result = module.defineClassUnder(ABSTRACT_MEMORY_RUBY_CLASS,
-                runtime.getObject(),
-                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        
-        result.defineAnnotatedMethods(AbstractMemory.class);
-        result.defineAnnotatedConstants(AbstractMemory.class);
-
-        return result;
+    public static RubyClass createAbstractMemoryClass(ThreadContext context, RubyModule FFI, RubyClass Object) {
+        return FFI.defineClassUnder(context, ABSTRACT_MEMORY_RUBY_CLASS, Object, NOT_ALLOCATABLE_ALLOCATOR).
+                defineMethods(context, AbstractMemory.class).
+                defineConstants(context, AbstractMemory.class);
     }
     
     protected static final int calculateTypeSize(ThreadContext context, IRubyObject sizeArg) {
-        if (sizeArg instanceof RubyFixnum fix) return (int) fix.getLongValue();
-        if (sizeArg instanceof RubySymbol sym) return TypeSizeMapper.getTypeSize(context, sym);
-        if (sizeArg instanceof Type type) return type.getNativeSize();
-
-
-        if (sizeArg instanceof RubyClass && Struct.isStruct(context, (RubyClass) sizeArg)) {
-            return Struct.getStructSize(context, sizeArg);
-        }
-
-        DynamicMethod sizeMethod = sizeArg.getMetaClass().searchMethod("size");
-        if (sizeMethod.isUndefined()) throw argumentError(context, "Invalid size argument");
-
-        return (int) numericToLong(context, sizeMethod.call(context, sizeArg, sizeArg.getMetaClass(), "size"));
+        return switch (sizeArg) {
+            case RubyFixnum fix -> fix.asInt(context);
+            case RubySymbol sym -> TypeSizeMapper.getTypeSize(context, sym);
+            case Type type -> type.getNativeSize();
+            case RubyClass cls when Struct.isStruct(context, cls) -> Struct.getStructSize(context, sizeArg);
+            default -> {
+                DynamicMethod sizeMethod = sizeArg.getMetaClass().searchMethod("size");
+                if (sizeMethod.isUndefined()) throw argumentError(context, "Invalid size argument");
+                yield toInt(context, sizeMethod.call(context, sizeArg, sizeArg.getMetaClass(), "size"));
+            }
+        };
     }
 
     protected static final RubyArray checkArray(IRubyObject obj) {
@@ -101,12 +94,9 @@ abstract public class AbstractMemory extends MemoryObject {
         throw typeError(obj.getRuntime().getCurrentContext(), "Array expected");
     }
 
-    private static int checkArrayLength(IRubyObject val) {
+    private static int checkArrayLength(ThreadContext context, IRubyObject val) {
         int i = RubyNumeric.num2int(val);
-        if (i < 0) {
-            throw val.getRuntime().newIndexError("negative array length (" + i + ")");
-        }
-
+        if (i < 0) throw indexError(context, "negative array length (" + i + ")");
         return i;
     }
 
@@ -165,9 +155,8 @@ abstract public class AbstractMemory extends MemoryObject {
     public final IRubyObject aref(ThreadContext context, IRubyObject indexArg) {
         final int index = RubyNumeric.num2int(indexArg);
         final int offset = index * typeSize;
-        if (offset >= size) {
-            throw context.runtime.newIndexError(String.format("Index %d out of range", index));
-        }
+        if (offset >= size) throw indexError(context, String.format("Index %d out of range", index));
+
         return slice(context.runtime, offset);
     }
 
@@ -1769,7 +1758,7 @@ abstract public class AbstractMemory extends MemoryObject {
         MemoryOp op = MemoryOp.getMemoryOp(type);
         if (op == null) throw typeError(context, "cannot get memory reader for type " + type);
 
-        int len = checkArrayLength(lenArg);
+        int len = checkArrayLength(context, lenArg);
 
         var objArray = new IRubyObject[len];
         for (int i = 0, off = 0; i < len; i++, off += type.size) {
@@ -1784,7 +1773,7 @@ abstract public class AbstractMemory extends MemoryObject {
         Type type = context.runtime.getFFI().getTypeResolver().findType(context.runtime, typeArg);
         DynamicMethod method = getMetaClass().searchMethod(reader.asJavaString());
         
-        int len = checkArrayLength(lenArg);
+        int len = checkArrayLength(context, lenArg);
 
         var objArray = new IRubyObject[len];
         for (int i = 0, off = 0; i < len; i++, off += type.size) {
@@ -1919,7 +1908,7 @@ abstract public class AbstractMemory extends MemoryObject {
     @JRubyMethod(name = "write_string")
     public IRubyObject write_string(ThreadContext context, IRubyObject strArg, IRubyObject lenArg) {
         ByteList bl = strArg.convertToString().getByteList();
-        getMemoryIO().put(0, bl.getUnsafeBytes(), bl.begin(), Math.min(bl.length(), (int) numericToLong(context, lenArg)));
+        getMemoryIO().put(0, bl.getUnsafeBytes(), bl.begin(), Math.min(bl.length(), toInt(context, lenArg)));
         return this;
     }
 
@@ -2102,10 +2091,11 @@ abstract public class AbstractMemory extends MemoryObject {
     @JRubyMethod(name = "get")
     public final IRubyObject put(ThreadContext context, IRubyObject typeName, IRubyObject offset) {
         Type type = context.runtime.getFFI().getTypeResolver().findType(context.runtime, typeName);
-        MemoryOp op = MemoryOp.getMemoryOp(type);
-        if (op != null) return op.get(context, getMemoryIO(), numericToLong(context, offset));
 
-        throw argumentError(context, "undefined type " + typeName);
+        MemoryOp op = MemoryOp.getMemoryOp(type);
+        if (op == null) throw argumentError(context, "undefined type " + typeName);
+
+        return op.get(context, getMemoryIO(), toLong(context, offset));
     }
 
     @JRubyMethod(name = "put")
@@ -2113,7 +2103,7 @@ abstract public class AbstractMemory extends MemoryObject {
         Type type = context.runtime.getFFI().getTypeResolver().findType(context.runtime, typeName);
         MemoryOp op = MemoryOp.getMemoryOp(type);
         if (op != null) {
-            op.put(context, getMemoryIO(), numericToLong(context, offset), value);
+            op.put(context, getMemoryIO(), toLong(context, offset), value);
             return context.nil;
         }
 

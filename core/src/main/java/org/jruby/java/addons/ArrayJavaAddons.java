@@ -10,7 +10,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Convert.asInt;
 import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Error.typeError;
 
@@ -100,26 +99,25 @@ public class ArrayJavaAddons {
         assert dims instanceof RubyArray;
         assert index instanceof RubyFixnum;
 
-        return calcDimensions(context, (RubyArray<?>) rubyArray, (RubyArray<?>) dims, asInt(context, (RubyFixnum) index));
+        return calcDimensions(context, (RubyArray<?>) rubyArray, (RubyArray<?>) dims, ((RubyFixnum) index).asInt(context));
     }
 
     private static RubyArray<?> calcDimensions(ThreadContext context,
         final RubyArray<?> array, final RubyArray dims, final int index) {
 
+        var zero = asFixnum(context, 0);
         while ( dims.size() <= index ) {
-            dims.append(context, RubyFixnum.zero(context.runtime) );
+            dims.append(context, zero);
         }
 
-        final long dim = ((RubyFixnum) dims.eltInternal(index)).getLongValue();
+        final long dim = ((RubyFixnum) dims.eltInternal(index)).asLong(context);
         if ( array.size() > dim ) {
             dims.eltInternalSet(index, asFixnum(context, array.size()));
         }
 
         for ( int i = 0; i < array.size(); i++ ) {
             final IRubyObject element = array.eltInternal(i);
-            if ( element instanceof RubyArray ) {
-                calcDimensions(context, (RubyArray<?>) element, dims, 1);
-            }
+            if ( element instanceof RubyArray ary) calcDimensions(context, ary, dims, 1);
         }
 
         return dims;

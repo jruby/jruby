@@ -4,12 +4,13 @@ import org.jruby.Ruby;
 import org.jruby.RubyFrozenError;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.ArgumentError;
-import org.jruby.exceptions.FrozenError;
+import org.jruby.exceptions.NotImplementedError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Access.argumentErrorClass;
 import static org.jruby.api.Create.newString;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
@@ -25,7 +26,7 @@ public class Error {
      * @return the created exception
      */
     public static ArgumentError argumentError(ThreadContext context, String message) {
-        return (ArgumentError) context.runtime.newRaiseException(context.runtime.getArgumentError(), message);
+        return (ArgumentError) context.runtime.newRaiseException(argumentErrorClass(context), message);
     }
 
     /**
@@ -78,7 +79,44 @@ public class Error {
     }
 
     /**
-     * Create a runtime error with a simple ASCII String.
+     * Create a name error with a simple ASCII String and the failing name.
+     *
+     * @param context the current thread context
+     * @param message to be displayed in the error
+     * @param name involved in the error
+     * @return the error
+     */
+    public static RaiseException nameError(ThreadContext context, String message, String name) {
+        return context.runtime.newNameError(message, name, null, false);
+    }
+
+    /**
+     * Create a name error with a simple ASCII String and the failing name.
+     *
+     * @param context the current thread context
+     * @param message to be displayed in the error
+     * @param name involved in the error
+     * @return the error
+     */
+    public static RaiseException nameError(ThreadContext context, String message, IRubyObject name) {
+        return context.runtime.newNameError(message, name, (Throwable) null, false);
+    }
+
+    /**
+     * Create a name error with a simple ASCII String and the failing name.
+     *
+     * @param context the current thread context
+     * @param message to be displayed in the error
+     * @param name involved in the error
+     * @param throwable the exception which caused this name error
+     * @return the error
+     */
+    public static RaiseException nameError(ThreadContext context, String message, String name, Throwable throwable) {
+        return context.runtime.newNameError(message, name, throwable, false);
+    }
+
+    /**
+     * Create a range error with a simple ASCII String.
      *
      * @param context the current thread context
      * @param message to be displayed in the error
@@ -181,6 +219,10 @@ public class Error {
     public static RaiseException withException(RaiseException error, Exception exception) {
         error.initCause(exception);
         return error;
+    }
+
+    public static NotImplementedError notImplementedError(ThreadContext context, String message) {
+        return (NotImplementedError) context.runtime.newNotImplementedError(message);
     }
 
     private static IRubyObject typeFor(Ruby runtime, IRubyObject object) {

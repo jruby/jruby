@@ -41,20 +41,21 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.invokers.RubyToJavaInvoker;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.ParameterTypes;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ArraySupport;
 
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.javasupport.JavaCallable.inspectParameterTypes;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
 @JRubyClass(name="Java::JavaProxyConstructor")
 public class JavaProxyConstructor extends JavaProxyReflectionObject implements ParameterTypes {
@@ -66,14 +67,12 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
 
     private final JavaProxyClass declaringProxyClass;
 
-    public static RubyClass createJavaProxyConstructorClass(Ruby runtime, RubyModule Java) {
-        RubyClass JavaProxyConstructor = Java.defineClassUnder(
-                "JavaProxyConstructor",
-                runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR
-        );
+    public static RubyClass createJavaProxyConstructorClass(ThreadContext context, RubyClass Object, RubyModule Java) {
+        var JavaProxyConstructor = (RubyClass) Java.defineClassUnder(context, "JavaProxyConstructor", Object, NOT_ALLOCATABLE_ALLOCATOR).
+                defineMethods(context, JavaProxyConstructor.class);
 
-        JavaProxyReflectionObject.registerRubyMethods(runtime, JavaProxyConstructor);
-        JavaProxyConstructor.defineAnnotatedMethods(JavaProxyConstructor.class);
+        JavaProxyReflectionObject.registerRubyMethods(context, JavaProxyConstructor);
+
         return JavaProxyConstructor;
 
     }
@@ -142,9 +141,14 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         return proxyConstructor.newInstance(argsPlus1);
     }
 
-    @JRubyMethod
+    @Deprecated(since = "10.0")
     public RubyFixnum arity() {
-        return RubyFixnum.newFixnum(getRuntime(), getArity());
+        return arity(getCurrentContext());
+    }
+
+    @JRubyMethod
+    public RubyFixnum arity(ThreadContext context) {
+        return asFixnum(context, getArity());
     }
 
     public final int getArity() {
@@ -164,23 +168,28 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
 
     @Override
     @JRubyMethod
-    public RubyString inspect() {
-        StringBuilder str = new StringBuilder();
-        str.append("#<");
-        str.append( getDeclaringClass().nameOnInspection() );
-        inspectParameterTypes(str, this);
-        str.append('>');
-        return RubyString.newString(getRuntime(), str);
+    public RubyString inspect(ThreadContext context) {
+        return newString(context, toString());
     }
 
     @Override
     public String toString() {
-        return inspect().toString();
+        StringBuilder buf = new StringBuilder();
+        buf.append("#<");
+        buf.append( getDeclaringClass().nameOnInspection() );
+        inspectParameterTypes(buf, this);
+        buf.append('>');
+        return buf.toString();
+    }
+
+    @Deprecated(since = "10.0")
+    public final RubyArray argument_types() {
+        return argument_types(getCurrentContext());
     }
 
     @JRubyMethod
-    public final RubyArray argument_types() {
-        return toClassArray(getRuntime(), getParameterTypes());
+    public final RubyArray argument_types(ThreadContext context) {
+        return toClassArray(context, getParameterTypes());
     }
 
     @JRubyMethod(rest = true)
@@ -247,7 +256,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
 
     @Deprecated
     public IRubyObject new_instance(IRubyObject[] args, Block block) {
-        return new_instance2(getRuntime().getCurrentContext(), args, block);
+        return new_instance2(getCurrentContext(), args, block);
     }
 
     @JRubyMethod(required = 1, optional = 1, checkArity = false)

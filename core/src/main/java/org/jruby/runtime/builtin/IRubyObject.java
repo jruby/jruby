@@ -36,6 +36,7 @@
 package org.jruby.runtime.builtin;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -44,6 +45,7 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.RubyInteger;
 import org.jruby.RubyString;
+import org.jruby.api.JRubyAPI;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
@@ -130,6 +132,7 @@ public interface IRubyObject {
      * Retrieve <code>self.class</code>.
      * @return the Ruby (meta) class
      */
+    @JRubyAPI
     RubyClass getMetaClass();
     
     /**
@@ -137,6 +140,11 @@ public interface IRubyObject {
      * @return the Ruby singleton class
      */
     RubyClass getSingletonClass();
+
+    @JRubyAPI
+    default RubyClass singletonClass(ThreadContext context) {
+        return getSingletonClass();
+    }
     
     /**
      * RubyMethod getType.
@@ -271,6 +279,13 @@ public interface IRubyObject {
      * @return String
      */
     IRubyObject inspect();
+
+    default IRubyObject inspect(ThreadContext context) {
+        // This should only occur from newer code calling something which implements IRubyObject
+        // implemented object which is NOT a RubyBasicObject.  This should never happen but if it
+        // does the implementer should have an implementation of the old inspect().
+        return inspect();
+    }
     
     /**
      * RubyMethod clone.

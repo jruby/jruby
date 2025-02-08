@@ -17,7 +17,6 @@ begin
       $stderr.puts "* Thread: #{thread_r.native_thread.name}"
       $stderr.puts "* Stack:"
 
-      thread_r = JRuby.reference(thread)
       thread_context = thread_r.context
 
       unless thread_context
@@ -25,14 +24,7 @@ begin
         next
       end
 
-      ex = RuntimeError.new('thread dump')
-      ex_r = JRuby.reference(ex)  
-
-      gather = trace_type::Gather::NORMAL
-      format = trace_type::Format::JRUBY
-
-      ex_r.backtrace_data = gather.get_backtrace_data(thread_context, thread_r.native_thread.stack_trace, true)
-      $stderr.puts format.print_backtrace(ex, false)
+      $stderr.puts thread.backtrace
 
       $stderr.puts
     end

@@ -1,7 +1,7 @@
 #-*- mode: ruby -*-
 
 # default versions will be overwritten by pom.rb from root directory
-properties( 'jruby.plugins.version' => '3.0.2',
+properties( 'jruby.plugins.version' => '3.0.5',
             'project.build.sourceEncoding' => 'utf-8',
             'jruby.home' => '${basedir}/../../../../..' )
 

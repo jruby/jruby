@@ -46,25 +46,27 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.lexer.LexingCommon.*;
 
 public class RubyRipper extends RubyObject {
-    public static void initRipper(Ruby runtime) {
-        var context = runtime.getCurrentContext();
-        RubyClass ripper = runtime.defineClass("Ripper", runtime.getObject(), RubyRipper::new);
-        
-        ripper.defineConstant("SCANNER_EVENT_TABLE", createScannerEventTable(context));
-        ripper.defineConstant("PARSER_EVENT_TABLE", createParserEventTable(context));
-        defineLexStateConstants(context, ripper);
+    public static RubyClass initRipper(ThreadContext context) {
+        var Ripper = (RubyClass) defineClass(context, "Ripper", objectClass(context), RubyRipper::new).
+                defineMethods(context, RubyRipper.class).
+                defineConstant(context, "SCANNER_EVENT_TABLE", createScannerEventTable(context)).
+                defineConstant(context, "PARSER_EVENT_TABLE", createParserEventTable(context));
 
-        ripper.defineAnnotatedMethods(RubyRipper.class);
+        defineLexStateConstants(context, Ripper);
+
+        return Ripper;
     }
 
     private static void defineLexStateConstants(ThreadContext context, RubyClass ripper) {
         for (int i = 0; i < lexStateNames.length; i++) {
-            ripper.defineConstant("EXPR_" + lexStateNames[i], asFixnum(context, lexStateValues[i]));
+            ripper.defineConstant(context, "EXPR_" + lexStateNames[i], asFixnum(context, lexStateValues[i]));
         }
     }
     
@@ -368,7 +370,7 @@ public class RubyRipper extends RubyObject {
     @JRubyMethod(meta = true)
     public static IRubyObject dedent_string(ThreadContext context, IRubyObject self, IRubyObject _input, IRubyObject _width) {
         RubyString input = _input.convertToString();
-        int wid = _width.convertToInteger().getIntValue();
+        int wid = toInt(context, _width);
         input.modifyAndClearCodeRange();
         int col = LexingCommon.dedent_string(input.getByteList(), wid);
         return asFixnum(context, col);
@@ -381,7 +383,7 @@ public class RubyRipper extends RubyObject {
 
     @JRubyMethod(meta = true)
     public static IRubyObject lex_state_name(ThreadContext context, IRubyObject self, IRubyObject lexStateParam) {
-        int lexState = lexStateParam.convertToInteger().getIntValue();
+        int lexState = toInt(context, lexStateParam);
 
         boolean needsSeparator = false;
         RubyString name = null;

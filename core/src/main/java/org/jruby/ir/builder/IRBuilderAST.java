@@ -68,6 +68,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.jruby.api.Warn.warning;
 import static org.jruby.ir.builder.StringStyle.Frozen;
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 
@@ -1195,8 +1196,9 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
                 origTable.put((int) exprLong, whenNode);
                 nodeBodies.put(whenNode, bodyLabel);
             } else {
-                getManager().getRuntime().getWarnings().warning(IRubyWarnings.ID.MISCELLANEOUS, getFileName(), expr.getLine() + 1,
-                        "duplicated 'when' clause with line " + (origTable.get((int) exprLong).getLine() + 1) + " is ignored");
+                var context = getManager().getRuntime().getCurrentContext();
+                warning(context, "'when' clause on line " + (getLine(expr) + 1) +
+                        " duplicates 'when' clause on line " + (origTable.get((int) exprLong).getLine() + 1) + " and is ignored");
             }
         }
 

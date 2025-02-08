@@ -29,6 +29,9 @@ package org.jruby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RangeError;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Define.defineClass;
 
 /**
  * The Java representation of a Ruby RangeError.
@@ -41,10 +44,8 @@ public class RubyRangeError extends RubyStandardError {
         super(runtime, exceptionClass);
     }
 
-    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass rangeErrorClass = runtime.defineClass("RangeError", exceptionClass, RubyRangeError::new);
-
-        return rangeErrorClass;
+    static RubyClass define(ThreadContext context, RubyClass StandardError) {
+        return defineClass(context, "RangeError", StandardError, RubyRangeError::new);
     }
 
     protected RaiseException constructThrowable(String message) {

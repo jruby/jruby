@@ -32,9 +32,10 @@ import org.jruby.exceptions.NoMethodError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.Visibility;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.Visibility;
+
+import static org.jruby.api.Define.defineClass;
 
 /**
  * The Java representation of a Ruby NoMethodError.
@@ -47,14 +48,13 @@ public class RubyNoMethodError extends RubyNameError {
 
     private static final ObjectAllocator ALLOCATOR = RubyNoMethodError::new;
 
-    static RubyClass define(Ruby runtime, RubyClass nameErrorClass) {
-        RubyClass noMethodErrorClass = runtime.defineClass("NoMethodError", nameErrorClass, ALLOCATOR);
-        noMethodErrorClass.defineAnnotatedMethods(RubyNoMethodError.class);
-        return noMethodErrorClass;
+    static RubyClass define(ThreadContext context, RubyClass NameError) {
+        return defineClass(context, "NoMethodError", NameError, ALLOCATOR).
+                defineMethods(context, RubyNoMethodError.class);
     }
 
     protected RubyNoMethodError(Ruby runtime, RubyClass exceptionClass) {
-        super(runtime, exceptionClass, exceptionClass.getName());
+        super(runtime, exceptionClass, exceptionClass.getName(runtime.getCurrentContext()));
         this.args = runtime.getNil();
     }
     
@@ -69,9 +69,10 @@ public class RubyNoMethodError extends RubyNameError {
     }
 
     public static RubyException newNoMethodError(IRubyObject recv, IRubyObject message, IRubyObject name, IRubyObject args) {
+        var context = recv.getRuntime().getCurrentContext();
         RubyClass klass = (RubyClass)recv;
 
-        RubyException newError = (RubyException) klass.allocate();
+        RubyException newError = (RubyException) klass.allocate(context);
 
         newError.callInit(message, name, args, Block.NULL_BLOCK);
 
@@ -79,9 +80,10 @@ public class RubyNoMethodError extends RubyNameError {
     }
 
     public static RubyException newNoMethodError(IRubyObject recv, IRubyObject message, IRubyObject name, IRubyObject args, boolean privateCall) {
+        var context = recv.getRuntime().getCurrentContext();
         RubyClass klass = (RubyClass)recv;
 
-        RubyNoMethodError newError = (RubyNoMethodError) klass.allocate();
+        RubyNoMethodError newError = (RubyNoMethodError) klass.allocate(context);
 
         newError.callInit(message, name, args, Block.NULL_BLOCK);
 

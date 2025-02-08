@@ -45,7 +45,6 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.MethodBlockBody;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -54,7 +53,9 @@ import org.jruby.runtime.callsite.CacheEntry;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
 /** 
  * The RubyMethod class represents a RubyMethod object.
@@ -74,20 +75,11 @@ public class RubyMethod extends AbstractRubyMethod {
         super(runtime, rubyClass);
     }
 
-    /** Create the RubyMethod class and add it to the Ruby runtime.
-     * 
-     */
-    public static RubyClass createMethodClass(Ruby runtime) {
-        // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here. Confirm. JRUBY-415
-        RubyClass methodClass = runtime.defineClass("Method", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-
-        methodClass.setClassIndex(ClassIndex.METHOD);
-        methodClass.setReifiedClass(RubyMethod.class);
-
-        methodClass.defineAnnotatedMethods(AbstractRubyMethod.class);
-        methodClass.defineAnnotatedMethods(RubyMethod.class);
-        
-        return methodClass;
+    public static RubyClass createMethodClass(ThreadContext context, RubyClass Object) {
+        return defineClass(context, "Method", Object, NOT_ALLOCATABLE_ALLOCATOR).
+                reifiedClass(RubyMethod.class).
+                classIndex(ClassIndex.METHOD).
+                defineMethods(context, AbstractRubyMethod.class, RubyMethod.class);
     }
 
     public static RubyMethod newMethod(
@@ -233,23 +225,17 @@ public class RubyMethod extends AbstractRubyMethod {
      */
     @JRubyMethod
     public IRubyObject to_proc(ThreadContext context) {
-        Ruby runtime = context.runtime;
-
-        MethodBlockBody body;
         Signature signature = method.getSignature();
-        ArgumentDescriptor[] argsDesc;
-        if (method instanceof IRMethodArgs) {
-            argsDesc = ((IRMethodArgs) method).getArgumentDescriptors();
-        } else {
-            argsDesc = Helpers.methodToArgumentDescriptors(method);
-        }
+        ArgumentDescriptor[] argsDesc = method instanceof IRMethodArgs ?
+                ((IRMethodArgs) method).getArgumentDescriptors() :
+                Helpers.methodToArgumentDescriptors(context, method);
 
         int line = getLine(); // getLine adds 1 to 1-index but we need to reset to 0-index internally
-        body = new MethodBlockBody(runtime.getStaticScopeFactory().getDummyScope(), signature, entry, argsDesc,
+        MethodBlockBody body = new MethodBlockBody(context.runtime.getStaticScopeFactory().getDummyScope(), signature, entry, argsDesc,
                 receiver, originModule, originName, getFilename(), line == -1 ? -1 : line - 1);
         Block b = MethodBlockBody.createMethodBlock(body);
 
-        RubyProc proc = RubyProc.newProc(runtime, b, Block.Type.LAMBDA);
+        RubyProc proc = RubyProc.newProc(context.runtime, b, Block.Type.LAMBDA);
         proc.setFromMethod();
         return proc;
     }
@@ -263,8 +249,7 @@ public class RubyMethod extends AbstractRubyMethod {
     }
     
     @JRubyMethod(name = {"inspect", "to_s"})
-    @Override
-    public IRubyObject inspect() {
+    public IRubyObject inspect(ThreadContext context) {
         return inspect(receiver);
     }
 
@@ -282,7 +267,7 @@ public class RubyMethod extends AbstractRubyMethod {
 
     @JRubyMethod
     public IRubyObject parameters(ThreadContext context) {
-        return Helpers.methodToParameters(context.runtime, this);
+        return Helpers.methodToParameters(context, this);
     }
 
     @JRubyMethod

@@ -286,9 +286,6 @@ public abstract class RubyParserBase {
 
             if (currentScope.isBlockScope() && slot != -1) {
                 if (isNumParamId(id) && isNumParamNested()) return null;
-                if (name.getBytes().equals(lexer.getCurrentArg())) {
-                    compile_error(str(getRuntime(), "circular argument reference - ", name));
-                }
 
                 Node newNode = new DVarNode(node.getLine(), slot, name);
 
@@ -300,9 +297,6 @@ public abstract class RubyParserBase {
 
             StaticScope.Type type = currentScope.getType();
             if (type == StaticScope.Type.LOCAL) {
-                if (name.getBytes().equals(lexer.getCurrentArg())) {
-                    compile_error(str(getRuntime(), "circular argument reference - ", name));
-                }
 
                 Node newNode = new LocalVarNode(node.getLine(), slot, name);
 
@@ -388,9 +382,6 @@ public abstract class RubyParserBase {
 
     public Node declareIdentifier(ByteList byteName) {
         RubySymbol name = symbolID(byteName);
-        if (byteName.equals(lexer.getCurrentArg())) {
-            compile_error(str(getRuntime(), "circular argument reference - ", name));
-        }
 
         String id = name.idString();
         boolean isNumParam = isNumParamId(id);
@@ -588,6 +579,39 @@ public abstract class RubyParserBase {
         return call_bin_op(firstNode, CommonByteLists.EQUAL_TILDE, secondNode);
     }
 
+    private void aryset_check(Node args) {
+        Node block = null;
+        boolean keywords = false;
+        if (args instanceof BlockPassNode bp) {
+            block = bp.getBodyNode();
+            args = bp.getArgsNode();
+        }
+
+        if (args != null && args instanceof ArgsCatNode ac) {
+            args = ac.getSecondNode();
+        }
+
+        if (args != null && args instanceof ArgsPushNode ap) {
+            keywords = ap.getSecondNode() instanceof KeywordArgNode || ap.getSecondNode() instanceof KeywordRestArgNode;
+        } else {
+            if (args instanceof ListNode list) {
+                for (int i = 0; i < list.size(); i++) {
+                    Node next = list.get(i);
+                    if (next instanceof HashNode hash && !hash.isLiteral()) {
+                        keywords = true;
+                    }
+                }
+            }
+        }
+
+        if (keywords) {
+            yyerror("keyword arg given in index");
+        }
+        if (block != null) {
+            yyerror("block arg given in index");
+        }
+    }
+
     /**
      * Define an array set condition so we can return lhs
      * 
@@ -597,6 +621,7 @@ public abstract class RubyParserBase {
      */
     public Node aryset(Node receiver, Node index) {
         value_expr(receiver);
+        aryset_check(index);
 
         return new_attrassign(receiver.getLine(), receiver, CommonByteLists.ASET_METHOD, index, false);
     }
@@ -931,7 +956,7 @@ public abstract class RubyParserBase {
         if (node instanceof MultipleAsgnNode || node instanceof LocalAsgnNode || node instanceof DAsgnNode || node instanceof GlobalAsgnNode || node instanceof InstAsgnNode) {
             Node valueNode = ((AssignableNode) node).getValueNode();
             if (isStaticContent(valueNode)) {
-                warning(ID.ASSIGNMENT_IN_CONDITIONAL, lexer.getFile(), valueNode.getLine(), "found `= literal' in conditional, should be ==");
+                warning(ID.ASSIGNMENT_IN_CONDITIONAL, lexer.getFile(), valueNode.getLine(), "found '= literal' in conditional, should be ==");
             }
             return true;
         } 
@@ -1604,7 +1629,7 @@ public abstract class RubyParserBase {
             if (encounteredKeys.containsKey(key)) {
                 Ruby runtime = getRuntime();
                 IRubyObject value = ((LiteralValue) key).literalValue(runtime);
-                warning(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), hash.getLine(), str(runtime, "key ", value.inspect(),
+                warning(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), hash.getLine(), str(runtime, "key ", value.inspect(runtime.getCurrentContext()),
                         " is duplicated and overwritten on line " + (key.getLine() + 1)));
             }
             // even if the key was previously seen, we replace the value to properly remove multiple duplicates
@@ -2056,10 +2081,6 @@ public abstract class RubyParserBase {
         }
 
         return new HashPatternNode(line, restArg, keywordArgs == null ? new HashNode(line) : keywordArgs);
-    }
-
-    public void warn_experimental(int line, String message) {
-        ((RubyWarnings) getWarnings()).warnExperimental(lexer.getFile(), line, message);
     }
 
     public Node rescued_expr(int line, Node arg, Node rescue) {

@@ -39,7 +39,8 @@ jruby/test_higher_javasupport
 jruby/test_ifaddr
 jruby/test_include_order
 jruby/test_included_in_object_space
-jruby/test_integer_overflows
+# fails on both CRuby 3.4 and the new range step impl in JRuby 10 (https://github.com/jruby/jruby/issues/8536)
+#jruby/test_integer_overflows
 jruby/test_ivar_table_integrity
 jruby/test_io
 jruby/test_load

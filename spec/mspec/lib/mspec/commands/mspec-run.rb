@@ -32,6 +32,7 @@ class MSpecRun < MSpecScript
     options.chdir
     options.prefix
     options.configure { |f| load f }
+    options.env
     options.randomize
     options.repeat
     options.pretend
@@ -51,6 +52,9 @@ class MSpecRun < MSpecScript
 
     options.doc "\n When to perform it"
     options.action_filters
+
+    options.doc "\n Launchable"
+    options.launchable
 
     options.doc "\n Help!"
     options.debug

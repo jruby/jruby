@@ -43,6 +43,7 @@ import org.jruby.util.collections.WeakHashSet;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -56,19 +57,17 @@ public class RubyThreadGroup extends RubyObject {
     private final Set<RubyThread> rubyThreadList = Collections.synchronizedSet(new WeakHashSet<RubyThread>());
     private boolean enclosed = false;
 
-    public static RubyClass createThreadGroupClass(Ruby runtime) {
-        RubyClass threadGroupClass = runtime.defineClass("ThreadGroup", runtime.getObject(), RubyThreadGroup::new);
-
-        threadGroupClass.setClassIndex(ClassIndex.THREADGROUP);
-        
-        threadGroupClass.defineAnnotatedMethods(RubyThreadGroup.class);
+    public static RubyClass createThreadGroupClass(ThreadContext context, RubyClass Object) {
+        RubyClass ThreadGroup = defineClass(context, "ThreadGroup", Object, RubyThreadGroup::new).
+                classIndex(ClassIndex.THREADGROUP).
+                defineMethods(context, RubyThreadGroup.class);
         
         // create the default thread group
-        RubyThreadGroup defaultThreadGroup = new RubyThreadGroup(runtime, threadGroupClass);
-        runtime.setDefaultThreadGroup(defaultThreadGroup);
-        threadGroupClass.defineConstant("Default", defaultThreadGroup);
+        RubyThreadGroup defaultThreadGroup = new RubyThreadGroup(context.runtime, ThreadGroup);
+        context.runtime.setDefaultThreadGroup(defaultThreadGroup);
+        ThreadGroup.defineConstant(context, "Default", defaultThreadGroup);
 
-        return threadGroupClass;
+        return ThreadGroup;
     }
 
     @JRubyMethod(name = "add")
