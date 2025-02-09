@@ -17,9 +17,9 @@ end
 default_gems = [
     # treat RGs update special:
     # - we do not want bin/update_rubygems or bin/gem overrides
-    ['rubygems-update', '3.6.2', { bin: false, require_paths: ['lib'] }],
+    ['rubygems-update', '3.6.3', { bin: false, require_paths: ['lib'] }],
     ['benchmark', '0.4.0'],
-    ['bundler', '2.6.2'],
+    ['bundler', '2.6.3'],
     ['cgi', '0.4.1'],
     # Currently using a stub gem for JRuby until we can incorporate our code.
     # https://github.com/ruby/date/issues/48
@@ -46,7 +46,7 @@ default_gems = [
     ['io-wait', '0.3.1'],
     ['ipaddr', '1.2.7'],
     ['irb', '1.14.3'],
-    ['jar-dependencies', '0.4.1'],
+    ['jar-dependencies', '0.5.4'],
     ['jruby-readline', '1.3.7'],
     ['jruby-openssl', '0.15.3'],
     ['json', '2.9.1'],

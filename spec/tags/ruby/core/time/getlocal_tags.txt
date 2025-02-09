@@ -2,3 +2,4 @@ fails:Time#getlocal returns a Time with a UTC offset of the specified number of 
 fails:Time#getlocal raises ArgumentError if the String argument is not in an ASCII-compatible encoding
 fails:Time#getlocal with an argument that responds to #to_r coerces using #to_r
 fails(not implemented, jruby/jruby#6161):Time#getlocal raises ArgumentError if the String argument is not of the form (+|-)HH:MM
+fails:Time#getlocal raises ArgumentError if String argument and seconds greater than 59

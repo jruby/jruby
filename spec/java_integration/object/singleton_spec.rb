@@ -29,3 +29,14 @@ describe "A singleton method added to a Java object from Ruby" do
     expect(CachedInJava.last_instance.answer).to eq(42)
   end
 end
+
+describe "A class which has not been set persistent" do
+  it "warns when turned into a singleton object" do
+    warns = with_warn_captured {
+      class << java.lang.Object.new; end
+    }
+    warns.first.first.should =~ /singleton on non-persistent Java type/
+
+    java.lang.Object.__persistent__ = false
+  end
+end

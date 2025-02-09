@@ -17,3 +17,7 @@ fails:Marshal.dump with a Hash dumps a Hash subclass with compare_by_identity
 fails:Marshal.dump with an Object raises TypeError if an Object extends an anonymous module
 fails:Marshal.dump with a Time dumps a Time subclass with multibyte characters in name
 fails:Marshal.dump with a Time raises TypeError with an anonymous Time subclass
+fails:Marshal.dump with a Float uses object links for objects repeatedly dumped
+fails:Marshal.dump with a Time uses object links for objects repeatedly dumped
+fails:Marshal.dump with a Time adds instance variables before the object itself into the objects table
+fails:Marshal.dump with an Exception adds instance variables after the object itself into the objects table

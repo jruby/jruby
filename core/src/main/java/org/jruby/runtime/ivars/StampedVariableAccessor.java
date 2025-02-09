@@ -60,7 +60,7 @@ public class StampedVariableAccessor extends VariableAccessor {
      */
     public void set(Object object, Object value) {
         ((RubyBasicObject)object).ensureInstanceVariablesSettable();
-        setVariable((RubyBasicObject)object, realClass, index, value);
+        AtomicVariableTable.setVariableAtomic((RubyBasicObject)object, realClass, true, index, value);
     }
     
     /**
@@ -75,86 +75,6 @@ public class StampedVariableAccessor extends VariableAccessor {
      */
     public static void setVariableChecked(RubyBasicObject self, RubyClass realClass, int index, Object value) {
         self.ensureInstanceVariablesSettable();
-        setVariable(self, realClass, index, value);
-    }
-    
-    /**
-     * Set the given variable index into the specified object. The "real" class
-     * and index are pass in to provide functional access.
-     * 
-     * @param self the object into which to set the variable
-     * @param realClass the "real" class for the object
-     * @param index the index of the variable
-     * @param value the variable's value
-     */
-    public static void setVariable(RubyBasicObject self, RubyClass realClass, int index, Object value) {
-        while (true) {
-            int currentStamp = self.varTableStamp;
-            // spin-wait if odd
-            if((currentStamp & 0x01) != 0)
-               continue;
-
-            Object[] currentTable = (Object[]) VAR_TABLE_HANDLE.getVolatile(self);
-            
-            if (currentTable == null || index >= currentTable.length) {
-                if (!createTable(self, currentStamp, realClass, currentTable, index, value)) continue;
-            } else {
-                if (!updateTable(self, currentStamp, currentTable, index, value)) continue;
-            }
-            
-            break;
-        }
-    }
-
-    /**
-     * Create or expand a table for the given object, using VarHandle ordering operations to ensure visibility.
-     * 
-     * @param self the object into which to set the variable
-     * @param currentStamp the current variable table stamp
-     * @param realClass the "real" class for the object
-     * @param currentTable the current table
-     * @param index the index of the variable
-     * @param value the variable's value
-     * @return whether the update was successful, for CAS retrying
-     */
-    private static boolean createTable(RubyBasicObject self, int currentStamp, RubyClass realClass, Object[] currentTable, int index, Object value) {
-        // try to acquire exclusive access to the varTable field
-        if (!STAMP_HANDLE.compareAndSet(self, currentStamp, ++currentStamp)) {
-            return false;
-        }
-        
-        Object[] newTable = new Object[realClass.getVariableTableSizeWithExtras()];
-        
-        if (currentTable != null) {
-            ArraySupport.copy(currentTable, 0, newTable, 0, currentTable.length);
-        }
-        
-        newTable[index] = value;
-
-        VAR_TABLE_HANDLE.setRelease(self, newTable);
-        
-        // release exclusive access
-        self.varTableStamp = currentStamp + 1;
-        
-        return true;
-    }
-
-    /**
-     * Update the given table for the given object, using VarHandle.fullFence to ensure visibility.
-     * 
-     * @param self the object into which to set the variable
-     * @param currentStamp the current variable table stamp
-     * @param currentTable the current table
-     * @param index the index of the variable
-     * @param value the variable's value
-     * @return whether the update was successful, for CAS retrying
-     */
-    private static boolean updateTable(RubyBasicObject self, int currentStamp, Object[] currentTable, int index, Object value) {
-        // shared access to varTable field.
-        currentTable[index] = value;
-        VarHandle.fullFence();
-
-        // validate stamp. redo on concurrent modification
-        return self.varTableStamp == currentStamp;
+        AtomicVariableTable.setVariableAtomic(self, realClass, true, index, value);
     }
 }
