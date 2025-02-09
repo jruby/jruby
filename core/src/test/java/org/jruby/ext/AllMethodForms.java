@@ -16,9 +16,10 @@ public class AllMethodForms extends RubyObject {
         super(runtime, rubyClass);
     }
 
-    public static void define(Ruby runtime){
+    public static RubyClass define(Ruby runtime){
         RubyClass amf = runtime.defineClass("AllMethodForms", runtime.getObject(), AllMethodForms::new);
         amf.defineAnnotatedMethods(AllMethodForms.class);
+        return amf;
     }
 
     @JRubyMethod(rest = true, meta = true)
