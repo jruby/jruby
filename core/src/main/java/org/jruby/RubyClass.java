@@ -54,13 +54,14 @@ import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 import static org.objectweb.asm.Opcodes.ACC_VARARGS;
 
 import java.io.IOException;
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 import org.jruby.anno.JRubyClass;
@@ -95,7 +96,6 @@ import org.jruby.runtime.ivars.VariableTableManager;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.NewMarshal;
 import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.runtime.opto.Invalidator;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.CodegenUtils;
@@ -119,7 +119,6 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 public class RubyClass extends RubyModule {
 
     private static final Logger LOG = LoggerFactory.getLogger(RubyClass.class);
-    private static final double SUBCLASSES_CLEAN_FACTOR = 0.25;
 
     public static void finishClassClass(Ruby runtime, RubyClass Class) {
         Class.reifiedClass(RubyClass.class).
@@ -1111,8 +1110,8 @@ public class RubyClass extends RubyModule {
     @JRubyMethod
     public IRubyObject subclasses(ThreadContext context) {
         var subs = newConcreteSubclassesArray(context);
-        int clearedCount = concreteSubclasses(context, subs);
-        finishConcreteSubclasses(context, subs, clearedCount);
+        addVisibleSubclasses(context, subs);
+        finishConcreteSubclasses(context, subs);
 
         return subs;
     }
@@ -1124,135 +1123,78 @@ public class RubyClass extends RubyModule {
     }
 
     public Collection<RubyClass> subclasses(boolean includeDescendants) {
-        Collection<RubyClass> mine = newSubclassesList(includeDescendants);
-        int clearedCount = subclassesInner(mine, includeDescendants);
-        finishSubclasses(mine, clearedCount, includeDescendants);
+        SubclassList mine = newSubclassesList(includeDescendants);
+        addAllSubclasses(mine);
+        finishSubclasses(mine);
 
         return mine;
     }
 
-    private RubyArray<?> newConcreteSubclassesArray(ThreadContext context) {
-        var subs = Create.newRawArray(context, this.concreteSubclassesEstimate);
-        return subs;
+    private SubclassArray newConcreteSubclassesArray(ThreadContext context) {
+        return new SubclassArray(context.runtime, this.concreteSubclassesEstimate);
     }
 
-    private Collection<RubyClass> newSubclassesList(boolean includeDescendants) {
-        Collection<RubyClass> mine = new ArrayList<>(includeDescendants ? allDescendantsEstimate : allSubclassesEstimate);
-        return mine;
-    }
-
-    private int subclassesInner(Collection<RubyClass> mine, boolean includeDescendants) {
-        SubclassNode subclassNode = this.subclassNode;
-        int clearedCount = 0;
-        while (subclassNode != null) {
-            RubyClass klass = subclassNode.ref.get();
-            subclassNode = subclassNode.next;
-
-            if (klass == null) {
-                clearedCount++;
-                continue;
-            }
-
-            processSubclass(mine, includeDescendants, klass);
+    private static class SubclassArray extends RubyArray<RubyClass> implements BiConsumer<ThreadContext, RubyClass> {
+        public SubclassArray(Ruby runtime, int length) {
+            super(runtime, length);
         }
-        return clearedCount;
+
+        @Override
+        public void accept(ThreadContext context, RubyClass klass) {
+            processConcreteSubclass(context, this, klass);
+        }
     }
 
-    private static void processSubclass(Collection<RubyClass> mine, boolean includeDescendants, RubyClass klass) {
-        mine.add(klass);
-
-        if (includeDescendants) klass.subclassesInner(mine, includeDescendants);
+    private SubclassList newSubclassesList(boolean includeDescendants) {
+        return new SubclassList(includeDescendants, includeDescendants ? allDescendantsEstimate : allSubclassesEstimate);
     }
 
-    private void finishSubclasses(Collection<RubyClass> mine, int clearedCount, boolean includeDescendants) {
+    void addAllSubclasses(SubclassList mine) {
+        getSubclassesForRead().forEachClass(mine);
+    }
+
+    private RubyClassSet getSubclassesForRead() {
+        RubyClassSet result = this.subclasses;
+
+        if (result != null) {
+            return result;
+        }
+
+        return SUBCLASSES_UPDATER.updateAndGet(this, RubyClass::getOrDefaultSubclasses);
+    }
+
+    private void finishSubclasses(SubclassList mine) {
         int newSize = mine.size();
-        if (includeDescendants) {
+        if (mine.includeDescendants) {
             allDescendantsEstimate = newSize;
         } else {
             allSubclassesEstimate = newSize;
         }
-        cleanSubclasses(newSize, clearedCount);
     }
 
-    private int concreteSubclasses(ThreadContext context, RubyArray<?> subs) {
-        SubclassNode subclassNode = this.subclassNode;
-
-        if (subclassNode == null) return 0;
-
-        // skip first entry if not concrete
-        if (!subclassNode.concrete) subclassNode = subclassNode.nextConcrete;
-
-        int clearedCount = 0;
-        while (subclassNode != null) {
-            RubyClass klass = subclassNode.ref.get();
-            subclassNode = subclassNode.nextConcrete;
-
-            if (klass == null) {
-                clearedCount++;
-            } else {
-                processConcreteSubclass(context, subs, klass);
-            }
-
-        }
-        return clearedCount;
+    private void addVisibleSubclasses(ThreadContext context, SubclassArray subs) {
+        getVisibleSubclassesForRead().forEachClass(context, subs);
     }
 
-    private static void processConcreteSubclass(ThreadContext context, RubyArray<?> subs, RubyClass klass) {
+    private RubyClassSet getVisibleSubclassesForRead() {
+        RubyClassSet visibleSubclasses = VISIBLE_SUBCLASSES_UPDATER.updateAndGet(this, RubyClass::getOrDefaultSubclasses);
+        return visibleSubclasses;
+    }
+
+    private static void processConcreteSubclass(ThreadContext context, SubclassArray subs, RubyClass klass) {
         assert !klass.isSingleton();
 
         if (klass.isIncluded() || klass.isPrepended()) {
-            klass.concreteSubclasses(context, subs);
+            klass.addVisibleSubclasses(context, subs);
         } else {
             subs.append(context, klass);
         }
     }
 
-    private void finishConcreteSubclasses(ThreadContext context, RubyArray<?> subs, int clearedCount) {
+    private void finishConcreteSubclasses(ThreadContext context, RubyArray<RubyClass> subs) {
         subs.finishRawArray(context);
         int newSize = subs.size();
         concreteSubclassesEstimate = newSize;
-        cleanSubclasses(newSize, clearedCount);
-    }
-
-    private void cleanSubclasses(int size, int vacated) {
-        // tidy up if more than threshold of cleared references
-        if ((double) vacated / size > SUBCLASSES_CLEAN_FACTOR) {
-            SubclassNode subclassNode = this.subclassNode;
-            SubclassNode newTop = rebuildSubclasses(subclassNode);
-            while (!SUBCLASS_UPDATER.compareAndSet(this, subclassNode, newTop)) {
-                subclassNode = this.subclassNode;
-                newTop = rebuildSubclasses(subclassNode);
-            }
-        }
-    }
-
-    private static SubclassNode rebuildSubclasses(SubclassNode subclassNode) {
-        SubclassNode newTop = null;
-        while (subclassNode != null) {
-            WeakReference<RubyClass> ref = subclassNode.ref;
-            RubyClass klass = ref.get();
-            subclassNode = subclassNode.next;
-            if (klass == null) continue;
-            newTop = new SubclassNode(klass, ref, newTop);
-        }
-        return newTop;
-    }
-
-    // TODO: make into a Record
-    static class SubclassNode {
-        final SubclassNode next;
-        final SubclassNode nextConcrete;
-        final boolean concrete;
-        final WeakReference<RubyClass> ref;
-        SubclassNode(RubyClass klass, SubclassNode next) {
-            this(klass, new WeakReference<>(klass), next);
-        }
-        SubclassNode(RubyClass klass, WeakReference<RubyClass> ref, SubclassNode next) {
-            this.ref = ref;
-            this.next = next;
-            this.nextConcrete = next == null ? null : next.concrete ? next : next.nextConcrete;
-            this.concrete = !klass.isSingleton();
-        }
     }
 
     /**
@@ -1265,12 +1207,139 @@ public class RubyClass extends RubyModule {
      * @param subclass The subclass to add
      */
     public void addSubclass(RubyClass subclass) {
-        SubclassNode subclassNode = this.subclassNode;
-        SubclassNode newNode = new SubclassNode(subclass, subclassNode);
-        while (!SUBCLASS_UPDATER.compareAndSet(this, subclassNode, newNode)) {
-            subclassNode = this.subclassNode;
-            newNode = new SubclassNode(subclass, subclassNode);
+        RubyClassSet subclasses = getSubclassesForWrite();
+        subclasses.addClass(subclass);
+
+        if (!subclass.isSingleton()) {
+            RubyClassSet visibleSubclasses = getVisibleSubclassesForWrite();
+            visibleSubclasses.addClass(subclass);
         }
+    }
+
+    private RubyClassSet getVisibleSubclassesForWrite() {
+        RubyClassSet visibleSubclasses = this.visibleSubclasses;
+
+        if (visibleSubclasses != null && visibleSubclasses != EMPTY_RUBYCLASS_SET) {
+            return visibleSubclasses;
+        }
+
+        return VISIBLE_SUBCLASSES_UPDATER.updateAndGet(this, RubyClass::getOrCreateSubclasses);
+    }
+
+    private RubyClassSet getSubclassesForWrite() {
+        RubyClassSet subclasses = this.subclasses;
+
+        if (subclasses != null && subclasses != EMPTY_RUBYCLASS_SET) {
+            return subclasses;
+        }
+
+        return SUBCLASSES_UPDATER.updateAndGet(this, RubyClass::getOrCreateSubclasses);
+    }
+
+    private static RubyClassSet getOrCreateSubclasses(RubyClassSet subclasses) {
+        if (subclasses != null && subclasses != EMPTY_RUBYCLASS_SET) return subclasses;
+        return new WeakRubyClassSet();
+    }
+
+    interface RubyClassSet {
+        void addClass(RubyClass klass);
+        void forEachClass(BiConsumerIgnoresSecond<RubyClass> action);
+        void forEachClass(ThreadContext context, BiConsumer<ThreadContext, RubyClass> action);
+        void removeClass(RubyClass klass);
+        boolean isEmptyOfClasses();
+    }
+
+    interface BiConsumerIgnoresSecond<T> extends BiConsumer<T, Object> {
+        default void accept(T t, Object u) {
+            accept(t);
+        }
+        void accept(T t);
+    }
+
+    static RubyClassSet EMPTY_RUBYCLASS_SET = new RubyClassSet() {
+        public void addClass(RubyClass klass) {
+            throw new UnsupportedOperationException("EMPTY_RUBYCLASS_SET is unmodifiable");
+        }
+        public void forEachClass(BiConsumerIgnoresSecond<RubyClass> action) {}
+        public void forEachClass(ThreadContext context, BiConsumer<ThreadContext, RubyClass> action) {}
+        public void removeClass(RubyClass key) {
+            throw new UnsupportedOperationException("EMPTY_RUBYCLASS_SET is unmodifiable");
+        }
+        public boolean isEmptyOfClasses() {
+            return true;
+        }
+    };
+
+    static class WeakRubyClassSet extends WeakHashMap<RubyClass, Object> implements RubyClassSet {
+        final ReentrantLock lock = new ReentrantLock();
+
+        public WeakRubyClassSet() {
+            super();
+        }
+
+        public WeakRubyClassSet(int size) {
+            super(size);
+        }
+
+        @Override
+        public void addClass(RubyClass klass) {
+            ReentrantLock lock = this.lock;
+            lock.lock();
+            try {
+                super.put(klass, NEVER);
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        @Override
+        public void forEachClass(BiConsumerIgnoresSecond<RubyClass> action) {
+            ReentrantLock lock = this.lock;
+            lock.lock();
+            try {
+                super.forEach(action);
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        @Override
+        public void forEachClass(ThreadContext context, BiConsumer<ThreadContext, RubyClass> action) {
+            ReentrantLock lock = this.lock;
+            lock.lock();
+            try {
+                super.forEach((klass,v) -> action.accept(context, klass));
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        @Override
+        public void removeClass(RubyClass klass) {
+            ReentrantLock lock = this.lock;
+            lock.lock();
+            try {
+                super.remove(klass);
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        @Override
+        public boolean isEmptyOfClasses() {
+            ReentrantLock lock = this.lock;
+            lock.lock();
+            try {
+                return super.isEmpty();
+            } finally {
+                lock.unlock();
+            }
+        }
+    }
+
+    private static RubyClassSet getOrDefaultSubclasses(RubyClassSet subclasses) {
+        if (subclasses != null) return subclasses;
+        return EMPTY_RUBYCLASS_SET;
     }
 
     /**
@@ -1279,15 +1348,12 @@ public class RubyClass extends RubyModule {
      * @param subclass The subclass to remove
      */
     public void removeSubclass(RubyClass subclass) {
-        SubclassNode subclassNode = this.subclassNode;
-        while (subclassNode != null) {
-            WeakReference<RubyClass> ref = subclassNode.ref;
-            RubyClass klass = ref.get();
-            if (klass == subclass) {
-                ref.clear();
-                return;
-            }
-            subclassNode = subclassNode.next;
+        RubyClassSet subclasses = SUBCLASSES_UPDATER.updateAndGet(this, RubyClass::getOrCreateSubclasses);
+        subclasses.removeClass(subclass);
+
+        if (!subclass.isSingleton()) {
+            RubyClassSet visibleSubclasses = VISIBLE_SUBCLASSES_UPDATER.updateAndGet(this, RubyClass::getOrCreateSubclasses);
+            visibleSubclasses.removeClass(subclass);
         }
     }
 
@@ -1309,15 +1375,7 @@ public class RubyClass extends RubyModule {
     public void becomeSynchronized() {
         super.becomeSynchronized();
 
-        SubclassNode subclassNode = this.subclassNode;
-        while (subclassNode != null) {
-            WeakReference<RubyClass> ref = subclassNode.ref;
-            RubyClass klass = ref.get();
-            if (klass != null) {
-                klass.becomeSynchronized();
-            }
-            subclassNode = subclassNode.next;
-        }
+        getSubclassesForRead().forEachClass(RubyClass::becomeSynchronized);
     }
 
     /**
@@ -1336,33 +1394,17 @@ public class RubyClass extends RubyModule {
     public void invalidateCacheDescendants(ThreadContext context) {
         super.invalidateCacheDescendants(context);
 
-        SubclassNode subclassNode = this.subclassNode;
-        while (subclassNode != null) {
-            WeakReference<RubyClass> ref = subclassNode.ref;
-            RubyClass klass = ref.get();
-            if (klass != null) {
-                klass.invalidateCacheDescendants(context);
-            }
-            subclassNode = subclassNode.next;
-        }
+        getSubclassesForRead().forEachClass(RubyClass::invalidateCacheDescendants);
     }
 
-    public void addInvalidatorsAndFlush(List<Invalidator> invalidators) {
+    void addInvalidatorsAndFlush(InvalidatorList invalidators) {
         // add this class's invalidators to the aggregate
         invalidators.add(methodInvalidator);
 
         // if we're not at boot time, don't bother fully clearing caches
         if (!runtime.isBootingCore()) cachedMethods.clear();
 
-        SubclassNode subclassNode = this.subclassNode;
-        while (subclassNode != null) {
-            WeakReference<RubyClass> ref = subclassNode.ref;
-            RubyClass klass = ref.get();
-            if (klass != null) {
-                klass.addInvalidatorsAndFlush(invalidators);
-            }
-            subclassNode = subclassNode.next;
-        }
+        getSubclassesForRead().forEachClass(invalidators);
     }
 
     public final Ruby getClassRuntime() {
@@ -3350,8 +3392,10 @@ public class RubyClass extends RubyModule {
     protected final Ruby runtime;
     private ObjectAllocator allocator; // the default allocator
     protected ObjectMarshal marshal;
-    private volatile SubclassNode subclassNode;
-    private static final AtomicReferenceFieldUpdater SUBCLASS_UPDATER = AtomicReferenceFieldUpdater.newUpdater(RubyClass.class, SubclassNode.class, "subclassNode");
+    private volatile RubyClassSet subclasses;
+    private volatile RubyClassSet visibleSubclasses;
+    private static final AtomicReferenceFieldUpdater<RubyClass, RubyClassSet> SUBCLASSES_UPDATER = AtomicReferenceFieldUpdater.newUpdater(RubyClass.class, RubyClassSet.class, "subclasses");
+    private static final AtomicReferenceFieldUpdater<RubyClass, RubyClassSet> VISIBLE_SUBCLASSES_UPDATER = AtomicReferenceFieldUpdater.newUpdater(RubyClass.class, RubyClassSet.class, "visibleSubclasses");
     private int concreteSubclassesEstimate = 4;
     private int allDescendantsEstimate = 4;
     private int allSubclassesEstimate = 4;

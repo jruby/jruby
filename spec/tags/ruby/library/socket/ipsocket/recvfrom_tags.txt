@@ -2,3 +2,5 @@ hangs:Socket::IPSocket#recvfrom using IPv4 allows specifying of flags when recei
 hangs:Socket::IPSocket#recvfrom using IPv6 allows specifying of flags when receiving data
 fails:Socket::IPSocket#recvfrom using IPv6 returns an Array containing up to N bytes and address information
 fails:Socket::IPSocket#recvfrom using IPv6 using reverse lookups includes the hostname in the address Array
+hangs:Socket::IPSocket#recvfrom when recvfrom(2) returns 0 (if no messages are available to be received and the peer has performed an orderly shutdown) datagram socket using IPv4 returns an empty String as received data
+hangs:Socket::IPSocket#recvfrom when recvfrom(2) returns 0 (if no messages are available to be received and the peer has performed an orderly shutdown) datagram socket using IPv6 returns an empty String as received data

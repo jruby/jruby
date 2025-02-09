@@ -577,14 +577,18 @@ public class JavaProxy extends RubyObject {
 
     @Override
     public Object getVariable(int index) {
-        confirmCachedProxy(getRuntime().getCurrentContext(), NONPERSISTENT_IVAR_MESSAGE);
+        checkVariablesOnProxy();
         return super.getVariable(index);
     }
 
     @Override
     public void setVariable(int index, Object value) {
-        confirmCachedProxy(getRuntime().getCurrentContext(), NONPERSISTENT_IVAR_MESSAGE);
+        checkVariablesOnProxy();
         super.setVariable(index, value);
+    }
+
+    public void checkVariablesOnProxy() {
+        confirmCachedProxy(NONPERSISTENT_IVAR_MESSAGE);
     }
 
     /** rb_singleton_class
@@ -597,19 +601,20 @@ public class JavaProxy extends RubyObject {
      */
     @Override
     public RubyClass singletonClass(ThreadContext context) {
-        confirmCachedProxy(context, NONPERSISTENT_SINGLETON_MESSAGE);
+        confirmCachedProxy(NONPERSISTENT_SINGLETON_MESSAGE);
         return super.singletonClass(context);
     }
 
-    private void confirmCachedProxy(ThreadContext context, String message) {
+    private void confirmCachedProxy(String message) {
         final RubyClass realClass = metaClass.getRealClass();
         if ( ! realClass.getCacheProxy() ) {
+            Ruby runtime = getRuntime();
             if (Java.OBJECT_PROXY_CACHE) {
-                context.runtime.getWarnings().warnOnce(IRubyWarnings.ID.NON_PERSISTENT_JAVA_PROXY, MessageFormat.format(message, realClass));
+                runtime.getWarnings().warnOnce(IRubyWarnings.ID.NON_PERSISTENT_JAVA_PROXY, MessageFormat.format(message, realClass));
             } else {
-                warn(context, MessageFormat.format(message, realClass));
+                warn(runtime.getCurrentContext(), MessageFormat.format(message, realClass));
                 realClass.setCacheProxy(true);
-                context.runtime.getJavaSupport().getObjectProxyCache().put(getObject(), this);
+                runtime.getJavaSupport().getObjectProxyCache().put(getObject(), this);
             }
         }
     }

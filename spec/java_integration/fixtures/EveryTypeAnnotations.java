@@ -49,8 +49,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import jakarta.annotation.Resource;
-
 public class EveryTypeAnnotations {
 	@Retention(RUNTIME)
 	@Target({ TYPE, FIELD, METHOD, PARAMETER, CONSTRUCTOR, LOCAL_VARIABLE, ANNOTATION_TYPE, PACKAGE, TYPE_PARAMETER,
@@ -69,7 +67,14 @@ public class EveryTypeAnnotations {
 		char achar() default 0;
 		RetentionPolicy anenum() default RetentionPolicy.CLASS;
 		Class<?> aClass()  default java.lang.Object.class;
-		Resource[] Darray() default {};
+		StringHolder[] Darray() default {};
+	}
+
+	@Retention(RUNTIME)
+	@Target({ TYPE, FIELD, METHOD, PARAMETER, CONSTRUCTOR, LOCAL_VARIABLE, ANNOTATION_TYPE, PACKAGE, TYPE_PARAMETER,
+			TYPE_USE })
+	public @interface StringHolder {
+		String value() default "";
 	}
 
     public static Map<String, List<Object>> decodeAnnotatedMethods(Class cls) {
@@ -93,7 +98,7 @@ public class EveryTypeAnnotations {
     		char achar = annotation.achar();
     		RetentionPolicy anenum = annotation.anenum();
     		Class<?> aClass = annotation.aClass();
-    		Resource[] Darray = annotation.Darray();
+    		StringHolder[] Darray = annotation.Darray();
     		
     		
     		decoded.put(method.getName(), Arrays.asList(astr, abyte, ashort, anint, along, afloat, adouble, abool, anbool, achar, anenum, aClass, Darray));

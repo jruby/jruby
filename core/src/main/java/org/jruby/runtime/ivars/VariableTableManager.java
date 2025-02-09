@@ -153,7 +153,7 @@ public class VariableTableManager {
      * @param value the value
      */
     public void setVariableInternal(RubyBasicObject self, int index, Object value) {
-        StampedVariableAccessor.setVariable(self,realClass,index,value);
+        AtomicVariableTable.setVariableAtomic(self,realClass,true,index,value);
     }
 
     /**
@@ -165,7 +165,7 @@ public class VariableTableManager {
      * @param value the value of the variable
      */
     public static void setVariableInternal(RubyClass realClass, RubyBasicObject self, int index, Object value) {
-        StampedVariableAccessor.setVariable(self,realClass,index,value);
+        AtomicVariableTable.setVariableAtomic(self,realClass,true,index,value);
     }
 
     /**

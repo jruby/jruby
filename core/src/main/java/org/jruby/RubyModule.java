@@ -131,7 +131,6 @@ import org.jruby.util.ClassProvider;
 import org.jruby.util.IdUtil;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
-import org.jruby.util.collections.WeakHashSet;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -390,11 +389,11 @@ public class RubyModule extends RubyObject {
     @SuppressWarnings("unchecked")
     public void addIncludingHierarchy(IncludedModule hierarchy) {
         synchronized (getRuntime().getHierarchyLock()) {
-            Set<RubyClass> including = this.includingHierarchies;
-            if (including == Collections.EMPTY_SET) {
-                including = this.includingHierarchies = new WeakHashSet(4);
+            RubyClass.RubyClassSet including = this.includingHierarchies;
+            if (including == RubyClass.EMPTY_RUBYCLASS_SET) {
+                including = this.includingHierarchies = new RubyClass.WeakRubyClassSet(4);
             }
-            including.add(hierarchy);
+            including.addClass(hierarchy);
         }
     }
 
@@ -1275,21 +1274,24 @@ public class RubyModule extends RubyObject {
             doPrependModule(context, module);
 
             if (this.isModule()) {
-                boolean doPrepend = true;
-                synchronized (context.runtime.getHierarchyLock()) {
-                    for (RubyClass includeClass : includingHierarchies) {
-                        RubyClass checkClass = includeClass;
-                        while (checkClass != null) {
-                            if (checkClass instanceof IncludedModule && checkClass.getOrigin() == module) {
-                                doPrepend = false;
-                            }
-                            checkClass = checkClass.superClass;
-                        }
+                synchronized (getRuntime().getHierarchyLock()) {
+                    includingHierarchies.forEachClass(new RubyClass.BiConsumerIgnoresSecond<RubyClass>() {
+                        boolean doPrepend = true;
 
-                        if (doPrepend) {
-                            includeClass.doPrependModule(context, module);
+                        public void accept(RubyClass includeClass) {
+                            RubyClass checkClass = includeClass;
+                            while (checkClass != null) {
+                                if (checkClass instanceof IncludedModule && checkClass.getOrigin() == module) {
+                                    doPrepend = false;
+                                }
+                                checkClass = checkClass.superClass;
+                            }
+
+                            if (doPrepend) {
+                                includeClass.doPrependModule(context, module);
+                            }
                         }
-                    }
+                    });
                 }
             }
 
@@ -1332,21 +1334,24 @@ public class RubyModule extends RubyObject {
         doIncludeModule(context, module);
 
         if (this.isModule()) {
-            boolean doInclude = true;
-            synchronized (context.runtime.getHierarchyLock()) {
-                for (RubyClass includeClass : includingHierarchies) {
-                    RubyClass checkClass = includeClass;
-                    while (checkClass != null) {
-                        if (checkClass instanceof IncludedModule && checkClass.getOrigin() == module) {
-                            doInclude = false;
-                        }
-                        checkClass = checkClass.superClass;
-                    }
+            synchronized (getRuntime().getHierarchyLock()) {
+                includingHierarchies.forEachClass(new RubyClass.BiConsumerIgnoresSecond<RubyClass>() {
+                    boolean doInclude = true;
 
-                    if (doInclude) {
-                        includeClass.doIncludeModule(context, module);
+                    @Override
+                    public void accept(RubyClass includeClass) {
+                        RubyClass checkClass = includeClass;
+                        while (checkClass != null) {
+                            if (checkClass instanceof IncludedModule && checkClass.getOrigin() == module) {
+                                doInclude = false;
+                            }
+                            checkClass = checkClass.superClass;
+                        }
+                        if (doInclude) {
+                            includeClass.doIncludeModule(context, module);
+                        }
                     }
-                }
+                });
             }
         }
 
@@ -2324,24 +2329,54 @@ public class RubyModule extends RubyObject {
 
        context.runtime.getCaches().incrementMethodInvalidations();
 
-        if (includingHierarchies.isEmpty()) {
+        Invalidator methodInvalidator = this.methodInvalidator;
+        RubyClass.RubyClassSet includingHierarchies = this.includingHierarchies;
+
+        if (includingHierarchies.isEmptyOfClasses()) {
             // it's only us; just invalidate directly
             methodInvalidator.invalidate();
             return;
         }
 
-        List<Invalidator> invalidators = new ArrayList<>();
+        InvalidatorList invalidators = new InvalidatorList();
         invalidators.add(methodInvalidator);
 
-        synchronized (context.runtime.getHierarchyLock()) {
-            for (RubyClass includingHierarchy : includingHierarchies) {
-                includingHierarchy.addInvalidatorsAndFlush(invalidators);
-            }
+        synchronized (getRuntime().getHierarchyLock()) {
+            includingHierarchies.forEachClass(invalidators);
         }
 
         methodInvalidator.invalidateAll(invalidators);
     }
 
+    static class InvalidatorList<T> extends ArrayList<T> implements RubyClass.BiConsumerIgnoresSecond<RubyClass> {
+        public InvalidatorList() {
+            super();
+        }
+
+        @Override
+        public void accept(RubyClass rubyClass) {
+            rubyClass.addInvalidatorsAndFlush(this);
+        }
+    }
+
+    static class SubclassList extends ArrayList<RubyClass> implements RubyClass.BiConsumerIgnoresSecond<RubyClass> {
+        boolean includeDescendants;
+
+        public SubclassList(boolean includeDescendants, int i) {
+            super(i);
+
+            this.includeDescendants = includeDescendants;
+        }
+
+        @Override
+        public void accept(RubyClass klass) {
+            add(klass);
+
+            if (includeDescendants) klass.addAllSubclasses(this);
+        }
+    }
+
+    @SuppressWarnings("deprecation")
     @Deprecated(since = "10.0")
     protected void invalidateCoreClasses() {
         invalidateCoreClasses(getCurrentContext());
@@ -6805,7 +6840,7 @@ public class RubyModule extends RubyObject {
     protected int generation;
     protected Integer generationObject;
 
-    protected volatile Set<RubyClass> includingHierarchies = Collections.EMPTY_SET;
+    protected volatile RubyClass.RubyClassSet includingHierarchies = RubyClass.EMPTY_RUBYCLASS_SET;
 
     /**
      * Where are the methods of this module/class located?

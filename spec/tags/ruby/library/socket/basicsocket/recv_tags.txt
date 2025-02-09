@@ -9,3 +9,5 @@ hangs:BasicSocket#recv using IPv4 using a bound socket without any data availabl
 hangs:BasicSocket#recv using IPv6 using an unbound socket blocks the caller
 hangs:BasicSocket#recv using IPv6 using a bound socket without any data available blocks the caller
 fails:BasicSocket#recv preserves the encoding of the given buffer
+hangs:BasicSocket#recv when recvfrom(2) returns 0 (if no messages are available to be received and the peer has performed an orderly shutdown) datagram socket using IPv4 returns empty String
+hangs:BasicSocket#recv when recvfrom(2) returns 0 (if no messages are available to be received and the peer has performed an orderly shutdown) datagram socket using IPv6 returns empty String
