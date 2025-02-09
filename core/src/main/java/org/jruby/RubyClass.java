@@ -62,6 +62,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.jruby.anno.JRubyClass;
@@ -1128,6 +1129,13 @@ public class RubyClass extends RubyModule {
         finishSubclasses(mine);
 
         return mine;
+    }
+
+    public void eachDescendant(Consumer<? super RubyClass> consumer) {
+        getSubclassesForRead().forEachClass((k) -> {
+            consumer.accept(k);
+            k.eachDescendant(consumer);
+        });
     }
 
     private SubclassArray newConcreteSubclassesArray(ThreadContext context) {
