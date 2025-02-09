@@ -4,7 +4,6 @@ import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.util.ArraySupport;
-import org.jruby.util.unsafe.UnsafeHolder;
 
 import java.lang.invoke.VarHandle;
 
