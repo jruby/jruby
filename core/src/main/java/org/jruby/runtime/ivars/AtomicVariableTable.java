@@ -6,7 +6,6 @@ import org.jruby.java.proxies.JavaProxy;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.unsafe.UnsafeHolder;
 
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 
 /**
