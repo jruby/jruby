@@ -1,7 +1,8 @@
 # MRI core language and classes tests
 
 ruby/test_alias.rb
-ruby/test_argf.rb
+# lots of subprocess launching, moved to extra
+#ruby/test_argf.rb
 ruby/test_arithmetic_sequence.rb
 ruby/test_arity.rb
 ruby/test_array.rb
