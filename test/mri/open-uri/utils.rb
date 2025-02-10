@@ -1,5 +1,6 @@
 require 'socket'
 require 'net/http'
+require 'tmpdir'
 begin
   require 'openssl'
 rescue LoadError
@@ -28,7 +29,6 @@ class SimpleHTTPServer
 
   def shutdown
     @thread.kill
-    @server.close
   end
 
   private
@@ -181,7 +181,6 @@ class SimpleHTTPProxyServer
 
   def shutdown
     @thread.kill
-    @server.close
   end
 
   private
@@ -282,8 +281,9 @@ class SimpleHTTPSServer
   end
 
   def shutdown
-    @thread.kill
+    #@thread.kill
     @server.close
+    @thread.join
   end
 
   def handle_request(socket)
