@@ -1,0 +1,5 @@
+exclude :test_any_hash_fixable, "launches many subprocesses and does not test anything useful on JRuby"
+exclude :test_float_hash_random, "launches many subprocesses"
+exclude :test_integer_hash_random, "JRuby does not randomize hash calculation for integer keys, see https://bugs.ruby-lang.org/issues/13002"
+exclude :test_string_hash_random, "launches many subprocesses"
+exclude :test_symbol_hash_random, "launches many subprocesses"
