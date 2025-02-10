@@ -2460,14 +2460,25 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public IRubyObject singleton_method(IRubyObject name) {
         RubySymbol symbol = TypeConverter.checkID(name);
         final String methodName = symbol.idString();
-        final RubyClass klass = metaClass;
+        RubyModule klass = metaClass;
         if (klass.isSingleton()) {
-            CacheEntry entry = klass.searchWithCache(methodName);
-            if (klass == entry.method.getDefinedClass()) { // ! method.isUndefined()
-                AbstractRubyMethod newMethod = RubyMethod.newMethod(klass, methodName, klass, methodName, entry, this);
-                return newMethod;
+            RubyModule origin = klass.getMethodLocation();
+
+            while (klass != null && (klass.isSingleton() || klass.isIncluded())) {
+                if (klass != origin) {
+                    Map<String, CacheEntry> methods = klass.getCachedMethods();
+                    for (var entry : methods.entrySet()) {
+                        DynamicMethod method = entry.getValue().method;
+                        if (method.getVisibility() != PRIVATE && methodName.equals(entry.getKey())) {
+                            AbstractRubyMethod newMethod = RubyMethod.newMethod(entry.getValue().sourceModule, methodName, entry.getValue().sourceModule, methodName, entry.getValue(), this);
+                            return newMethod;
+                        }
+                    }
+                }
+                klass = klass.getSuperClass();
             }
         }
+
         var context = getRuntime().getCurrentContext();
         throw nameError(context, str(context.runtime, "undefined method '", symbol,  "' for '", inspect(context), "'"), symbol);
     }
