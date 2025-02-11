@@ -72,6 +72,7 @@ import org.jruby.util.SymbolNameType;
 import org.jruby.util.TypeConverter;
 
 import java.lang.ref.WeakReference;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.jruby.util.RubyStringBuilder.str;
@@ -94,7 +95,8 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     private final ByteList symbolBytes;
     private final int hashCode;
     private String decodedString;
-    private RubyString rubyString;
+    private volatile RubyString rubyString;
+    private static final AtomicReferenceFieldUpdater<RubySymbol, RubyString> RUBY_STRING_UPDATER = AtomicReferenceFieldUpdater.newUpdater(RubySymbol.class, RubyString.class, "rubyString");
     private transient Object constant;
     private SymbolNameType type;
 
@@ -473,7 +475,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s(ThreadContext context) {
-        return to_s(context.runtime);
+        return getNameString(context).strDup(context.runtime);
     }
 
     final RubyString to_s(Ruby runtime) {
@@ -482,22 +484,38 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @JRubyMethod(name = "name")
     public IRubyObject name(ThreadContext context) {
-      // FIXME: A race here where two in-flight to_s on same symbol can return a different instance.
-      if (rubyString == null) {
-        rubyString = RubyString.newStringShared(context.runtime, getBytes());
-        rubyString.setFrozen(true);
-      }
-
-      return rubyString;
+        return getNameString(context);
     }
 
+    private RubyString getNameString(ThreadContext context) {
+        RubyString currentString = rubyString;
+
+        if (currentString != null) {
+            return currentString;
+        }
+
+        return cacheNameString(context);
+    }
+
+    private RubyString cacheNameString(ThreadContext context) {
+        // atomically create and store an fstring for this symbol
+        Ruby runtime = context.runtime;
+        RubyString nameString = RubyString.newStringShared(runtime, getBytes());
+        nameString.scanForCodeRange();
+        nameString = runtime.freezeAndDedupString(nameString);
+        RUBY_STRING_UPDATER.compareAndSet(this, null, nameString);
+
+        return rubyString;
+    }
+
+    @Deprecated
     public IRubyObject id2name() {
-        return to_s(metaClass.runtime);
+        return name(getRuntime().getCurrentContext());
     }
 
     @JRubyMethod
     public IRubyObject id2name(ThreadContext context) {
-        return to_s(context);
+        return name(context);
     }
 
     @Override
