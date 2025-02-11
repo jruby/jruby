@@ -819,7 +819,7 @@ public class RubyProcess {
         return context.nil;
     }
 
-    private static int rlimitResourceValue(ThreadContext context, IRubyObject rval) {
+    private static long rlimitResourceValue(ThreadContext context, IRubyObject rval) {
         String name;
         IRubyObject v;
 
@@ -842,7 +842,7 @@ public class RubyProcess {
         /* fall through */
 
             case INTEGER:
-                return toInt(context, rval);
+                return toLong(context, rval);
         }
 
         if (RLIM.RLIM_INFINITY.defined()) {
