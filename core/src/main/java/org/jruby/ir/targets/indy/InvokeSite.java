@@ -44,6 +44,7 @@ import org.jruby.runtime.invokedynamic.InvocationLinker;
 import org.jruby.runtime.invokedynamic.JRubyCallSite;
 import org.jruby.runtime.ivars.FieldVariableAccessor;
 import org.jruby.runtime.ivars.VariableAccessor;
+import org.jruby.util.CodegenUtils;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -438,64 +439,72 @@ public abstract class InvokeSite extends MutableCallSite {
             NativeCallMethod nativeMethod = (NativeCallMethod)method;
             DynamicMethod.NativeCall nativeCall = nativeMethod.getNativeCall();
 
-            DynamicMethod.NativeCall nc = nativeCall;
-
-            if (nc.isJava()) {
+            if (nativeCall.isJava()) {
                 return JavaBootstrap.createJavaHandle(this, method);
             } else {
-                int nativeArgCount = getNativeArgCount(method, nativeCall);
-
-                if (nativeArgCount >= 0) { // native methods only support arity 3
-                    if (nativeArgCount == arity) {
-                        // nothing to do
-                        binder = SmartBinder.from(lookup(), signature);
-                    } else {
-                        // arity mismatch...leave null and use DynamicMethod.call below
-                        if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
-                            LOG.info(name() + "\tdid not match the primary arity for a native method " + Bootstrap.logMethod(method));
-                        }
-                    }
+                // always try to bind exact arg count; fallback to other paths
+                DynamicMethod.NativeCall exactNativeCall = buildExactNativeCall(nativeCall, arity);
+                if (exactNativeCall != null) {
+                    binder = SmartBinder.from(lookup(), signature);
+                    nativeCall = exactNativeCall;
                 } else {
-                    // varargs
-                    if (arity == -1) {
-                        // ok, already passing []
-                        binder = SmartBinder.from(lookup(), signature);
-                    } else if (arity == 0) {
-                        // no args, insert dummy
-                        binder = SmartBinder.from(lookup(), signature)
-                                .insert(argOffset, "args", IRubyObject.NULL_ARRAY);
+                    int nativeArgCount = getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic());
+
+                    if (nativeArgCount >= 0) { // native methods only support arity 3
+                        // if non-Java, must:
+                        // * exactly match arities or both are [] boxed
+                        // * 3 or fewer arguments
+                        if (nativeArgCount == arity) {
+                            // nothing to do
+                            binder = SmartBinder.from(lookup(), signature);
+                        } else {
+                            // arity mismatch...leave null and use DynamicMethod.call below
+                            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+                                LOG.info(name() + "\tdid not match the primary arity for a native method " + Bootstrap.logMethod(method));
+                            }
+                        }
                     } else {
-                        // 1 or more args, collect into []
-                        binder = SmartBinder.from(lookup(), signature)
-                                .collect("args", "arg.*", Helpers.constructObjectArrayHandle(arity));
+                        // varargs
+                        if (arity == -1) {
+                            // ok, already passing []
+                            binder = SmartBinder.from(lookup(), signature);
+                        } else if (arity == 0) {
+                            // no args, insert dummy
+                            binder = SmartBinder.from(lookup(), signature)
+                                    .insert(argOffset, "args", IRubyObject.NULL_ARRAY);
+                        } else {
+                            // 1 or more args, collect into []
+                            binder = SmartBinder.from(lookup(), signature)
+                                    .collect("args", "arg.*", Helpers.constructObjectArrayHandle(arity));
+                        }
                     }
                 }
 
                 if (binder != null) {
 
                     // clean up non-arguments, ordering, types
-                    if (!nc.hasContext()) {
+                    if (!nativeCall.hasContext()) {
                         binder = binder.drop("context");
                     }
 
-                    if (nc.hasBlock() && !blockGiven) {
+                    if (nativeCall.hasBlock() && !blockGiven) {
                         binder = binder.append("block", Block.NULL_BLOCK);
-                    } else if (!nc.hasBlock() && blockGiven) {
+                    } else if (!nativeCall.hasBlock() && blockGiven) {
                         binder = binder.drop("block");
                     }
 
-                    if (nc.isStatic()) {
+                    if (nativeCall.isStatic()) {
                         mh = binder
                                 .permute("context", "self", "arg.*", "block") // filter caller
-                                .cast(nc.getNativeReturn(), nc.getNativeSignature())
-                                .invokeStaticQuiet(LOOKUP, nc.getNativeTarget(), nc.getNativeName())
+                                .cast(nativeCall.getNativeReturn(), nativeCall.getNativeSignature())
+                                .invokeStaticQuiet(LOOKUP, nativeCall.getNativeTarget(), nativeCall.getNativeName())
                                 .handle();
                     } else {
                         mh = binder
                                 .permute("self", "context", "arg.*", "block") // filter caller, move self
-                                .castArg("self", nc.getNativeTarget())
-                                .castVirtual(nc.getNativeReturn(), nc.getNativeTarget(), nc.getNativeSignature())
-                                .invokeVirtualQuiet(LOOKUP, nc.getNativeName())
+                                .castArg("self", nativeCall.getNativeTarget())
+                                .castVirtual(nativeCall.getNativeReturn(), nativeCall.getNativeTarget(), nativeCall.getNativeSignature())
+                                .invokeVirtualQuiet(LOOKUP, nativeCall.getNativeName())
                                 .handle();
                     }
 
@@ -514,11 +523,133 @@ public abstract class InvokeSite extends MutableCallSite {
         return mh;
     }
 
-    public static int getNativeArgCount(DynamicMethod method, DynamicMethod.NativeCall nativeCall) {
-        // if non-Java, must:
-        // * exactly match arities or both are [] boxed
-        // * 3 or fewer arguments
-        return getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic());
+    private static DynamicMethod.NativeCall buildExactNativeCall(DynamicMethod.NativeCall nativeCall, int arity) {
+        Class[] args = nativeCall.getNativeSignature();
+
+        int rubyArgCount = args.length;
+        boolean hasContext = false;
+        boolean hasBlock = false;
+        if (nativeCall.isStatic()) {
+            if (args.length > 1 && args[0] == ThreadContext.class) {
+                rubyArgCount--;
+                hasContext = true;
+            }
+
+            // remove self object
+            assert args.length >= 1;
+            rubyArgCount--;
+
+            if (args.length > 1 && args[args.length - 1] == Block.class) {
+                rubyArgCount--;
+                hasBlock = true;
+            }
+
+            if (rubyArgCount == 1) {
+                if (hasContext && args[2] == IRubyObject[].class) {
+                    return null;
+                } else if (args[1] == IRubyObject[].class) {
+                    return null;
+                }
+            }
+        } else {
+            if (args.length > 0 && args[0] == ThreadContext.class) {
+                rubyArgCount--;
+                hasContext = true;
+            }
+
+            if (args.length > 0 && args[args.length - 1] == Block.class) {
+                rubyArgCount--;
+                hasBlock = true;
+            }
+
+            if (rubyArgCount == 1) {
+                if (hasContext && args[1] == IRubyObject[].class) {
+                    return null;
+                } else if (args[0] == IRubyObject[].class) {
+                    return null;
+                }
+            }
+        }
+
+        // rebuild with requested arity
+        Class[] params = null;
+
+        if (nativeCall.isStatic()) {
+            if (hasContext) {
+                if (hasBlock) {
+                    if (arity == -1) {
+                        params = CodegenUtils.params(ThreadContext.class, IRubyObject.class, IRubyObject[].class, Block.class);
+                    } else if (arity <= 3) {
+                        params = CodegenUtils.params(ThreadContext.class, IRubyObject.class, IRubyObject.class, arity, Block.class);
+                    }
+                } else {
+                    if (arity == -1) {
+                        params = CodegenUtils.params(ThreadContext.class, IRubyObject.class, IRubyObject[].class);
+                    } else if (arity <= 3) {
+                        params = CodegenUtils.params(ThreadContext.class, IRubyObject.class, IRubyObject.class, arity);
+                    }
+                }
+            } else {
+                if (hasBlock) {
+                    if (arity == -1) {
+                        params = CodegenUtils.params(IRubyObject.class, IRubyObject[].class, Block.class);
+                    } else if (arity <= 3) {
+                        params = CodegenUtils.params(IRubyObject.class, IRubyObject.class, arity, Block.class);
+                    }
+                } else {
+                    if (arity == -1) {
+                        params = CodegenUtils.params(IRubyObject.class, IRubyObject[].class);
+                    } else if (arity <= 3) {
+                        params = CodegenUtils.params(IRubyObject.class, IRubyObject.class, arity);
+                    }
+                }
+            }
+        } else {
+            if (hasContext) {
+                if (hasBlock) {
+                    if (arity == -1) {
+                        params = CodegenUtils.params(ThreadContext.class, IRubyObject[].class, Block.class);
+                    } else if (arity <= 3) {
+                        params = CodegenUtils.params(ThreadContext.class, IRubyObject.class, arity, Block.class);
+                    }
+                } else {
+                    if (arity == -1) {
+                        params = CodegenUtils.params(ThreadContext.class, IRubyObject[].class);
+                    } else if (arity <= 3) {
+                        params = CodegenUtils.params(ThreadContext.class, IRubyObject.class, arity);
+                    }
+                }
+            } else {
+                if (hasBlock) {
+                    if (arity == -1) {
+                        params = CodegenUtils.params(IRubyObject[].class, Block.class);
+                    } else if (arity <= 3) {
+                        params = CodegenUtils.params(IRubyObject.class, arity, Block.class);
+                    }
+                } else {
+                    if (arity == -1) {
+                        params = CodegenUtils.params(IRubyObject[].class);
+                    } else if (arity <= 3) {
+                        params = CodegenUtils.params(IRubyObject.class, arity);
+                    }
+                }
+            }
+        }
+
+        if (params != null) {
+            try {
+                if (nativeCall.isStatic()) {
+                    lookup().findStatic(nativeCall.getNativeTarget(), nativeCall.getNativeName(), methodType(nativeCall.getNativeReturn(), params));
+                } else {
+                    lookup().findVirtual(nativeCall.getNativeTarget(), nativeCall.getNativeName(), methodType(nativeCall.getNativeReturn(), params));
+                }
+
+                return new DynamicMethod.NativeCall(nativeCall.getNativeTarget(), nativeCall.getNativeName(), nativeCall.getNativeReturn(), params, nativeCall.isStatic(), false);
+            } catch (NoSuchMethodException | IllegalAccessException e) {
+            }
+        }
+
+        return null;
     }
 
     private static int getArgCount(Class[] args, boolean isStatic) {
