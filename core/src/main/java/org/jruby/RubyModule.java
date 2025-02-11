@@ -986,11 +986,10 @@ public class RubyModule extends RubyObject {
         if (block.isEscaped()) throw argumentError(context, "can't pass a Proc as a block to Module#refine");
         if (!(klass instanceof RubyModule)) throw typeError(context, klass, "Class or Module");
 
-        if (refinements == Collections.EMPTY_MAP) refinements = newRefinementsMap();
-        if (activatedRefinements == Collections.EMPTY_MAP) activatedRefinements = newActivatedRefinementsMap();
+        RefinementStore refinementStore = getRefinementStoreForWrite();
 
         RubyModule moduleToRefine = (RubyModule) klass;
-        RubyModule refinement = refinements.get(moduleToRefine);
+        RubyModule refinement = refinementStore.refinements.get(moduleToRefine);
         if (refinement == null) {
             refinement = createNewRefinedModule(context, moduleToRefine);
 
@@ -1004,6 +1003,16 @@ public class RubyModule extends RubyObject {
         return refinement;
     }
 
+    RefinementStore getRefinementStoreForWrite() {
+        RefinementStore refinementStore = this.refinementStore;
+        if (refinementStore == null) {
+            if (!REFINEMENT_STORE_HANDLE.compareAndSet(this, null, refinementStore = new RefinementStore())) {
+                refinementStore = this.refinementStore;
+            }
+        }
+        return refinementStore;
+    }
+
     private RubyModule createNewRefinedModule(ThreadContext context, RubyModule klass) {
         Ruby runtime = context.runtime;
 
@@ -1011,9 +1020,10 @@ public class RubyModule extends RubyObject {
                 superClass(refinementSuperclass(context, klass));
         newRefinement.setFlag(REFINED_MODULE_F, true);
         newRefinement.setFlag(NEEDSIMPL_F, false); // Refinement modules should not do implementer check
-        newRefinement.refinedClass = klass;
-        newRefinement.definedAt = this;
-        refinements.put(klass, newRefinement);
+        RefinementStore newRefinementStore = newRefinement.getRefinementStoreForWrite();
+        newRefinementStore.refinedClass = klass;
+        newRefinementStore.definedAt = this;
+        getRefinementStoreForWrite().refinements.put(klass, newRefinement);
 
         return newRefinement;
     }
@@ -1032,25 +1042,9 @@ public class RubyModule extends RubyObject {
         block.getBinding().setSelf(refinement);
 
         RubyModule overlayModule = block.getBody().getStaticScope().getOverlayModuleForWrite(context);
-        overlayModule.refinements = refinements;
+        overlayModule.getRefinementStoreForWrite().refinements = getRefinementStoreForWrite().refinements;
 
         block.yieldSpecific(context);
-    }
-
-    // This has three cases:
-    // 1. class being refined has never had any refines happen to it yet: return itself
-    // 2. class has been refined: return already existing refinementwrapper (chain of modules to call against)
-    // 3. refinement is already in the refinementwrapper so we do not need to add it to the wrapper again: return null
-    private RubyClass getAlreadyActivatedRefinementWrapper(RubyClass classWeAreRefining, RubyModule refinement) {
-        // We have already encountered at least one refine on this class.  Return that wrapper.
-        RubyClass moduleWrapperForRefinement = activatedRefinements.get(classWeAreRefining);
-        if (moduleWrapperForRefinement == null) return classWeAreRefining;
-
-        for (RubyModule c = moduleWrapperForRefinement; c != null && c.isIncluded(); c = c.getSuperClass()) {
-            if (c.getOrigin() == refinement) return null;
-        }
-
-        return moduleWrapperForRefinement;
     }
 
     /*
@@ -1064,7 +1058,8 @@ public class RubyModule extends RubyObject {
 //        RubyClass superClass = getAlreadyActivatedRefinementWrapper(classWeAreRefining, refinement);
 //        if (superClass == null) return; // already been refined and added to refinementwrapper
         RubyClass superClass = null;
-        RubyClass c = activatedRefinements.get(moduleToRefine);
+        RefinementStore myRefinementStore = getRefinementStoreForWrite();
+        RubyClass c = myRefinementStore.activatedRefinements.get(moduleToRefine);
         if (c != null) {
             superClass = c;
             while (c != null && c.isIncluded()) {
@@ -1078,14 +1073,15 @@ public class RubyModule extends RubyObject {
         refinement.setFlag(IS_OVERLAID_F, true);
         IncludedModuleWrapper iclass = new IncludedModuleWrapper(context.runtime, superClass, refinement);
         c = iclass;
-        c.refinedClass = moduleToRefine;
+        RefinementStore otherRefinementStore = c.getRefinementStoreForWrite();
+        otherRefinementStore.refinedClass = moduleToRefine;
         for (refinement = refinement.getSuperClass(); refinement != null; refinement = refinement.getSuperClass()) {
             refinement.setFlag(IS_OVERLAID_F, true);
             c.superClass(new IncludedModuleWrapper(context.runtime, c.getSuperClass(), refinement));
             c = c.getSuperClass();
-            c.refinedClass = moduleToRefine;
+            otherRefinementStore.refinedClass = moduleToRefine;
         }
-        activatedRefinements.put(moduleToRefine, iclass);
+        myRefinementStore.activatedRefinements.put(moduleToRefine, iclass);
     }
 
     @JRubyMethod(name = "using", visibility = PRIVATE, reads = {SELF, SCOPE})
@@ -1121,9 +1117,10 @@ public class RubyModule extends RubyObject {
             throw typeError(context, module, "Module");
         }
 
-        Map<RubyModule, RubyModule> refinements = module.refinements;
-        if (refinements == null) return; // No refinements registered for this module
+        RefinementStore refinementStore = module.refinementStore;
+        if (refinementStore == null) return; // No refinements registered for this module
 
+        Map<RubyModule, RubyModule> refinements = refinementStore.refinements;
         for (Map.Entry<RubyModule, RubyModule> entry: refinements.entrySet()) {
             usingRefinement(context, cref, entry.getKey(), entry.getValue());
         }
@@ -1140,29 +1137,26 @@ public class RubyModule extends RubyObject {
     private static void usingRefinement(ThreadContext context, RubyModule cref, RubyModule klass, RubyModule module) {
         RubyModule iclass, c, superclass = klass;
 
-        if (cref.refinements == Collections.EMPTY_MAP) {
-            cref.refinements = newRefinementsMap();
-        } else {
-            if (cref.getFlag(OMOD_SHARED)) {
-                cref.refinements = newRefinementsMap(cref.refinements);
-                cref.setFlag(OMOD_SHARED, false);
-            }
-            if ((c = cref.refinements.get(klass)) != null) {
-                superclass = c;
-                while (c != null && c instanceof IncludedModule) {
-                    if (c.getOrigin() == module) {
-                        /* already used refinement */
-                        return;
-                    }
-                    c = c.getSuperClass();
+        RefinementStore crefRefinementStore = cref.getRefinementStoreForWrite();
+        if (cref.getFlag(OMOD_SHARED)) {
+            crefRefinementStore.refinements = newRefinementsMap(crefRefinementStore.refinements);
+            cref.setFlag(OMOD_SHARED, false);
+        }
+        if ((c = crefRefinementStore.refinements.get(klass)) != null) {
+            superclass = c;
+            while (c != null && c instanceof IncludedModule) {
+                if (c.getOrigin() == module) {
+                    /* already used refinement */
+                    return;
                 }
+                c = c.getSuperClass();
             }
         }
 
         module.setFlag(IS_OVERLAID_F, true);
         superclass = refinementSuperclass(context, superclass);
         c = iclass = new IncludedModuleWrapper(context.runtime, (RubyClass) superclass, module);
-        c.refinedClass = klass;
+        c.getRefinementStoreForWrite().refinedClass = klass;
 
 //        RCLASS_M_TBL(OBJ_WB_UNPROTECT(c)) =
 //                RCLASS_M_TBL(OBJ_WB_UNPROTECT(module)); /* TODO: check unprotecting */
@@ -1172,11 +1166,11 @@ public class RubyModule extends RubyObject {
             module.setFlag(IS_OVERLAID_F, true);
             c.superClass(new IncludedModuleWrapper(context.runtime, c.getSuperClass(), module));
             c = c.getSuperClass();
-            c.refinedClass = klass;
+            c.getRefinementStoreForWrite().refinedClass = klass;
             module = module.getSuperClass();
         }
 
-        cref.refinements.put(klass, iclass);
+        crefRefinementStore.refinements.put(klass, iclass);
     }
 
     public static Map<RubyModule, RubyModule> newRefinementsMap(Map<RubyModule, RubyModule> refinements) {
@@ -1197,15 +1191,16 @@ public class RubyModule extends RubyObject {
         var ary = newArray(context);
         while (cref != null) {
             RubyModule overlay;
-            if ((overlay = cref.getOverlayModuleForRead()) != null &&
-                    !overlay.refinements.isEmpty()) {
-                overlay.refinements.entrySet().stream().forEach(entry -> {
-                    RubyModule mod = entry.getValue();
-                    while (mod != null && mod.getOrigin().isRefinement()) {
-                        ary.push(context, mod.getOrigin().definedAt);
-                        mod = mod.getSuperClass();
-                    }
-                });
+            if ((overlay = cref.getOverlayModuleForRead()) != null) {
+                RefinementStore overlayRefinementStore = overlay.refinementStore;
+                if (overlayRefinementStore != null && !overlayRefinementStore.refinements.isEmpty()) {
+                    overlayRefinementStore.refinements.forEach((mod, x) -> {
+                        while (mod != null && mod.getOrigin().isRefinement()) {
+                            ary.push(context, mod.getOrigin().getRefinementStoreForWrite().definedAt);
+                            mod = mod.getSuperClass();
+                        }
+                    });
+                }
             }
             cref = cref.getPreviousCRefScope();
         }
@@ -1286,7 +1281,8 @@ public class RubyModule extends RubyObject {
     public void prependModule(ThreadContext context, RubyModule module) {
         testFrozen("module");
 
-        if (module.refinedClass != null) throw typeError(context, "Cannot include refinement");
+        RefinementStore moduleRefinementStore = module.refinementStore;
+        if (moduleRefinementStore != null && moduleRefinementStore.refinedClass != null) throw typeError(context, "Cannot prepend refinement");
 
         // Make sure the module we include does not already exist
         checkForCyclicPrepend(context, module);
@@ -1913,6 +1909,7 @@ public class RubyModule extends RubyObject {
 
     // MRI: rb_add_refined_method_entry
     private void addRefinedMethodEntry(ThreadContext context, String id, DynamicMethod method) {
+        RubyModule refinedClass = refinementStore.refinedClass;
         RubyModule methodLocation = refinedClass.getMethodLocation();
         DynamicMethod orig = methodLocation.searchMethodCommon(id);
 
@@ -2039,7 +2036,7 @@ public class RubyModule extends RubyObject {
 
                 if (overlay == null) continue;
 
-                CacheEntry maybeEntry = resolveRefinedMethod(overlay.refinements, entry, id, cacheUndef);
+                CacheEntry maybeEntry = resolveRefinedMethod(overlay, entry, id, cacheUndef);
 
                 if (maybeEntry.method.isUndefined()) continue;
 
@@ -2054,7 +2051,7 @@ public class RubyModule extends RubyObject {
     }
 
     // MRI: refined_method_original_method_entry
-    private CacheEntry refinedMethodOriginalMethodEntry(Map<RubyModule, RubyModule> refinements, String id,
+    private CacheEntry refinedMethodOriginalMethodEntry(RubyModule overlay, String id,
                                                         boolean cacheUndef, CacheEntry entry) {
         RubyModule superClass;
 
@@ -2073,7 +2070,7 @@ public class RubyModule extends RubyObject {
             return CacheEntry.NULL_CACHE;
         } else {
             // marker with no scope available, find super method
-            return resolveRefinedMethod(refinements, superClass.searchWithCache(id, cacheUndef), id, cacheUndef);
+            return resolveRefinedMethod(overlay, superClass.searchWithCache(id, cacheUndef), id, cacheUndef);
         }
     }
 
@@ -2316,19 +2313,19 @@ public class RubyModule extends RubyObject {
     }
 
     // MRI: resolve_refined_method
-    public CacheEntry resolveRefinedMethod(Map<RubyModule, RubyModule> refinements, CacheEntry entry, String id, boolean cacheUndef) {
+    public CacheEntry resolveRefinedMethod(RubyModule overlay, CacheEntry entry, String id, boolean cacheUndef) {
         if (entry != null && entry.method.isRefined()) {
             // Check for refinements in the given scope
-            RubyModule refinement = findRefinement(refinements, entry.method.getDefinedClass());
+            RubyModule refinement = findRefinement(overlay, entry.method.getDefinedClass());
 
             if (refinement == null) {
-                return refinedMethodOriginalMethodEntry(refinements, id, cacheUndef, entry);
+                return refinedMethodOriginalMethodEntry(overlay, id, cacheUndef, entry);
             } else {
                 CacheEntry tmpEntry = refinement.searchWithCache(id);
                 if (!tmpEntry.method.isRefined()) {
                     return tmpEntry;
                 } else {
-                    return refinedMethodOriginalMethodEntry(refinements, id, cacheUndef, entry);
+                    return refinedMethodOriginalMethodEntry(overlay, id, cacheUndef, entry);
                 }
             }
         }
@@ -2337,10 +2334,11 @@ public class RubyModule extends RubyObject {
     }
 
     // MRI: find_refinement
-    private static RubyModule findRefinement(Map<RubyModule, RubyModule> refinements, RubyModule target) {
-        if (refinements == null) {
-            return null;
-        }
+    private static RubyModule findRefinement(RubyModule overlay, RubyModule target) {
+        RefinementStore refinementStore;
+        if (overlay == null || (refinementStore = overlay.refinementStore) == null) return null;
+
+        Map<RubyModule, RubyModule> refinements = refinementStore.refinements;
         return refinements.get(target);
     }
 
@@ -3243,13 +3241,14 @@ public class RubyModule extends RubyObject {
             return buffer;
         }
 
-        RubyModule refinedClass = this.refinedClass;
-        if (refinedClass != null) {
+        RefinementStore refinementStore = this.refinementStore;
+        RubyModule refinedClass;
+        if (refinementStore != null && (refinedClass = refinementStore.refinedClass) != null) {
             RubyString buffer = newString(context, "#<refinement:");
 
             buffer.catWithCodeRange(refinedClass.inspect(context).convertToString());
             buffer.cat('@', buffer.getEncoding());
-            buffer.catWithCodeRange((definedAt.inspect(context).convertToString()));
+            buffer.catWithCodeRange((refinementStore.definedAt.inspect(context).convertToString()));
             buffer.cat('>', buffer.getEncoding());
 
             return buffer;
@@ -5038,9 +5037,14 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "refinements")
     public IRubyObject refinements(ThreadContext context) {
-        var refinementModules = newRawArray(context, refinements.size());
+        RefinementStore refinementStore = this.refinementStore;
+        if (refinementStore == null ) {
+            return Create.newEmptyArray(context);
+        }
 
-        refinements.forEach((key, value) -> refinementModules.append(context, value));
+        var refinementModules = newRawArray(context, refinementStore.refinements.size());
+
+        refinementStore.refinements.forEach((key, value) -> refinementModules.append(context, value));
 
         return refinementModules.finishRawArray(context);
     }
@@ -5051,7 +5055,7 @@ public class RubyModule extends RubyObject {
     }
 
     private IRubyObject getRefinedClassOrThrow(ThreadContext context, boolean nameIsTarget) {
-        if (isRefinement()) return refinedClass;
+        if (isRefinement()) return refinementStore.refinedClass;
 
         String methodName = nameIsTarget ? "target" : "refined_class";
         String errMsg = RubyStringBuilder.str(context.runtime,
@@ -6776,16 +6780,20 @@ public class RubyModule extends RubyObject {
     }
 
     public Map<RubyModule, RubyModule> getRefinements() {
-        return refinements;
+        RefinementStore refinementStore = this.refinementStore;
+        if (refinementStore == null) {
+            return Collections.EMPTY_MAP;
+        }
+        return refinementStore.refinements;
     }
 
     public Map<RubyModule, RubyModule> getRefinementsForWrite() {
-        Map<RubyModule, RubyModule> refinements = this.refinements;
-        return !refinements.isEmpty() ? refinements : (this.refinements = newRefinementsMap());
+        RefinementStore refinementStore = this.getRefinementStoreForWrite();
+        return refinementStore.refinements;
     }
 
     public void setRefinements(Map<RubyModule, RubyModule> refinements) {
-        this.refinements = refinements;
+        this.getRefinementStoreForWrite().refinements = refinements;
     }
 
     public static void finishRefinementClass(ThreadContext context, RubyClass Refinement) {
@@ -6942,25 +6950,40 @@ public class RubyModule extends RubyObject {
 
     private volatile Map<String, IRubyObject> classVariables;
     private static final VarHandle CLASSVARS_HANDLE;
+
+    volatile RefinementStore refinementStore;
+    private static final VarHandle REFINEMENT_STORE_HANDLE;
+
     static {
         try {
             CLASSVARS_HANDLE = MethodHandles.lookup().findVarHandle(RubyModule.class, "classVariables", Map.class);
+            REFINEMENT_STORE_HANDLE = MethodHandles.lookup().findVarHandle(RubyModule.class, "refinementStore", RefinementStore.class);
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
     }
 
-    /** Refinements added to this module are stored here **/
-    private volatile Map<RubyModule, RubyModule> refinements = Collections.EMPTY_MAP;
+    private class RefinementStore {
+        /**
+         * Refinements added to this module are stored here
+         **/
+        private volatile Map<RubyModule, RubyModule> refinements = newRefinementsMap();
 
-    /** A list of refinement hosts for this refinement */
-    private volatile Map<RubyModule, IncludedModule> activatedRefinements = Collections.EMPTY_MAP;
+        /**
+         * A list of refinement hosts for this refinement
+         */
+        private final Map<RubyModule, IncludedModule> activatedRefinements = newActivatedRefinementsMap();
 
-    /** The class this refinement refines */
-    volatile RubyModule refinedClass = null;
+        /**
+         * The class this refinement refines
+         */
+        volatile RubyModule refinedClass;
 
-    /** The module where this refinement was defined */
-    private volatile RubyModule definedAt = null;
+        /**
+         * The module where this refinement was defined
+         */
+        private volatile RubyModule definedAt;
+    }
 
     // Invalidator used for method caches
     protected final Invalidator methodInvalidator;

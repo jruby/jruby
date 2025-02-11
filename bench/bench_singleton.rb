@@ -1,5 +1,6 @@
 require 'benchmark/ips'
 
+loop {
 Benchmark.ips do |bm|
   bm.warmup = 10
   bm.report("1000 class << Object.new") {
@@ -10,3 +11,4 @@ Benchmark.ips do |bm|
     end
   }
 end
+}
