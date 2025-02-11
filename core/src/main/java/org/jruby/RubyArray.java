@@ -906,7 +906,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             } else {
                 unpack();
                 if (index - realLength >= 1) {
-                    fillNil(values, begin + realLength, begin + realLength + index, getRuntime());
+                    int baseIndex = begin + realLength;
+                    fillNil(values, baseIndex, baseIndex + (index - realLength), getRuntime());
                 }
             }
             realLength = index + 1;
