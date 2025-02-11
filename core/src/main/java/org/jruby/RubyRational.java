@@ -852,8 +852,7 @@ public class RubyRational extends RubyNumeric {
             }
             return newInstance(context, getMetaClass(), num, den);
         } else if (other instanceof RubyBignum) {
-            warn(context, "in a**b, b may be too big");
-            return ((RubyFloat) to_f(context)).op_pow(context, other);
+            throw argumentError(context, "exponent is too large");
         } else if (other instanceof RubyFloat || other instanceof RubyRational) {
             return f_expt(context, r_to_f(context, this), other);
         }
