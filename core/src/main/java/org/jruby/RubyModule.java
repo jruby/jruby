@@ -5626,7 +5626,7 @@ public class RubyModule extends RubyObject {
                 storeConstant(context, name, value, hidden, file, line);
             }
         } else {
-            if (this instanceof RubyObject && name.equals("Ruby")) Warn.warnReservedName(context, "::Ruby", "3.5");
+            if (this == context.runtime.getObject() && name.equals("Ruby")) Warn.warnReservedName(context, "::Ruby", "3.5");
 
             storeConstant(context, name, value, hidden, file, line);
         }
