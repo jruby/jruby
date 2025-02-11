@@ -1344,15 +1344,16 @@ public final class Ruby implements Constantizable {
     public int allocModuleId() {
         return moduleLastId.incrementAndGet();
     }
+
+    @Deprecated
     public void addModule(RubyModule module) {
-        allModules.put(module, RubyBasicObject.NEVER);
+        // ignored
     }
 
+    @Deprecated
     public void eachModule(Consumer<RubyModule> func) {
-        Enumeration<RubyModule> e = allModules.keys();
-        while (e.hasMoreElements()) {
-            func.accept(e.nextElement());
-        }
+        // walk all subclasses starting from BasicObject
+        basicObjectClass.eachDescendant(func);
     }
 
     @Deprecated(since = "10.0")
@@ -3405,7 +3406,6 @@ public final class Ruby implements Constantizable {
 
         // Clear runtime tables to aid GC
         boundMethods.clear();
-        allModules.clear();
         constantNameInvalidators.clear();
         symbolTable.clear();
         javaSupport = loadJavaSupport();
@@ -5814,11 +5814,6 @@ public final class Ruby implements Constantizable {
     // Atomic integers for symbol and method IDs
     private final AtomicInteger symbolLastId = new AtomicInteger(128);
     private final AtomicInteger moduleLastId = new AtomicInteger(0);
-
-    // Weak map of all Modules in the system (and by extension, all Classes
-    // a ConcurrentMap<RubyModule, ?> is used to emulate WeakHashSet<RubyModule>
-    // NOTE: module/class instances are unique and we only addModule from <init> - could use a ConcurrentLinkedQueue
-    private final ConcurrentWeakHashMap<RubyModule, Object> allModules = new ConcurrentWeakHashMap<>(128);
 
     private final Map<String, DateTimeZone> timeZoneCache = new HashMap<>();
 

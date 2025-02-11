@@ -62,6 +62,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.jruby.anno.JRubyClass;
@@ -300,10 +301,15 @@ public class RubyClass extends RubyModule {
     }
 
     public CallSite getBaseCallSite(int idx) {
-        return baseCallSites[idx];
+        return getBaseCallSites()[idx];
     }
 
     public CallSite[] getBaseCallSites() {
+        CallSite[] baseCallSites = this.baseCallSites;
+        if (baseCallSites == null) {
+            // these hold no intereating state so duplicate create is unimportant
+            this.baseCallSites = baseCallSites = createCallSites();
+        }
         return baseCallSites;
     }
 
@@ -1012,41 +1018,41 @@ public class RubyClass extends RubyModule {
     @JRubyMethod(name = "new", keywords = true)
     public IRubyObject newInstance(ThreadContext context, Block block) {
         IRubyObject obj = allocate(context);
-        baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, block);
+        getBaseCallSites()[CS_IDX_INITIALIZE].call(context, obj, obj, block);
         return obj;
     }
 
     @JRubyMethod(name = "new", keywords = true)
     public IRubyObject newInstance(ThreadContext context, IRubyObject arg0, Block block) {
         IRubyObject obj = allocate(context);
-        baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, arg0, block);
+        getBaseCallSites()[CS_IDX_INITIALIZE].call(context, obj, obj, arg0, block);
         return obj;
     }
 
     public IRubyObject newInstance(ThreadContext context, IRubyObject arg0) {
         IRubyObject obj = allocate(context);
-        baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, arg0);
+        getBaseCallSites()[CS_IDX_INITIALIZE].call(context, obj, obj, arg0);
         return obj;
     }
 
     @JRubyMethod(name = "new", keywords = true)
     public IRubyObject newInstance(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         IRubyObject obj = allocate(context);
-        baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, arg0, arg1, block);
+        getBaseCallSites()[CS_IDX_INITIALIZE].call(context, obj, obj, arg0, arg1, block);
         return obj;
     }
 
     @JRubyMethod(name = "new", keywords = true)
     public IRubyObject newInstance(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         IRubyObject obj = allocate(context);
-        baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, arg0, arg1, arg2, block);
+        getBaseCallSites()[CS_IDX_INITIALIZE].call(context, obj, obj, arg0, arg1, arg2, block);
         return obj;
     }
 
     @JRubyMethod(name = "new", rest = true, keywords = true)
     public IRubyObject newInstance(ThreadContext context, IRubyObject[] args, Block block) {
         IRubyObject obj = allocate(context);
-        baseCallSites[CS_IDX_INITIALIZE].call(context, obj, obj, args, block);
+        getBaseCallSites()[CS_IDX_INITIALIZE].call(context, obj, obj, args, block);
         return obj;
     }
 
@@ -1128,6 +1134,13 @@ public class RubyClass extends RubyModule {
         finishSubclasses(mine);
 
         return mine;
+    }
+
+    public void eachDescendant(Consumer<? super RubyClass> consumer) {
+        getSubclassesForRead().forEachClass((k) -> {
+            consumer.accept(k);
+            k.eachDescendant(consumer);
+        });
     }
 
     private SubclassArray newConcreteSubclassesArray(ThreadContext context) {
@@ -1402,7 +1415,7 @@ public class RubyClass extends RubyModule {
         invalidators.add(methodInvalidator);
 
         // if we're not at boot time, don't bother fully clearing caches
-        if (!runtime.isBootingCore()) cachedMethods.clear();
+        if (!runtime.isBootingCore()) getCachedMethods().clear();
 
         getSubclassesForRead().forEachClass(invalidators);
     }
@@ -3420,11 +3433,13 @@ public class RubyClass extends RubyModule {
         public final String id;
     }
 
-    private final CallSite[] baseCallSites = new CallSite[CS_NAMES.length];
-    {
+    private volatile CallSite[] baseCallSites;
+    private CallSite[] createCallSites() {
+        CallSite[] baseCallSites = new CallSite[CS_NAMES.length];
         for(int i = 0; i < baseCallSites.length; i++) {
             baseCallSites[i] = MethodIndex.getFunctionalCallSite(CS_NAMES.fromOrdinal(i).id);
         }
+        return baseCallSites;
     }
 
     private CallSite[] extraCallSites;
