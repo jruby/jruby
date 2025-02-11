@@ -59,9 +59,11 @@ public class PrependedModule extends RubyClass implements DelegatedModule {
         if (superClass != null) {
             classIndex(superClass.getClassIndex()); // use same ClassIndex as metaclass, since we're technically still of that type
         }
-        this.methods = prependedClass.methods;
-        prependedClass.methods = Collections.EMPTY_MAP;
+        this.methods = prependedClass.getMethodsForWrite();
+        prependedClass.methods = null;
         prependedClass.methodLocation = this;
+
+        Map<String, DynamicMethod> methods = getMethods();
         for (Map.Entry<String, DynamicMethod> entry : methods.entrySet()) {
             DynamicMethod method = entry.getValue();
             if (moveRefinedMethod(entry.getKey(), method, prependedClass)) {

@@ -1415,7 +1415,7 @@ public class RubyClass extends RubyModule {
         invalidators.add(methodInvalidator);
 
         // if we're not at boot time, don't bother fully clearing caches
-        if (!runtime.isBootingCore()) cachedMethods.clear();
+        if (!runtime.isBootingCore()) getCachedMethods().clear();
 
         getSubclassesForRead().forEachClass(invalidators);
     }

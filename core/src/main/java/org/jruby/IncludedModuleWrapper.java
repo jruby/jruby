@@ -69,6 +69,7 @@ public class IncludedModuleWrapper extends IncludedModule {
     public IncludedModuleWrapper(Ruby runtime, RubyClass superClass, RubyModule origin, RubyModule methodsHolder) {
         super(runtime, superClass, origin);
         origin.addIncludingHierarchy(this);
+        // force writeable methods table so we see future updates
         methods = methodsHolder.getMethodsForWrite();
     }
 

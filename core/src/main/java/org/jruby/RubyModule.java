@@ -41,6 +41,7 @@ package org.jruby;
 import com.headius.invokebinder.Binder;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -57,7 +58,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
 
 import jnr.constants.Constant;
@@ -71,6 +72,7 @@ import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.anno.TypePopulator;
+import org.jruby.api.Create;
 import org.jruby.api.JRubyAPI;
 import org.jruby.api.Warn;
 import org.jruby.common.IRubyWarnings.ID;
@@ -348,17 +350,15 @@ public class RubyModule extends RubyObject {
     }
 
     public Map<String, ConstantEntry> getConstantMap() {
-        return getOrigin().constants;
+        Map<String, ConstantEntry> constants = getOrigin().constants;
+        return constants == null ? Collections.EMPTY_MAP : constants;
     }
 
     public Map<String, ConstantEntry> getConstantMapForWrite() {
         Map<String, ConstantEntry> constants = this.constants;
-        if (constants == Collections.EMPTY_MAP) {
-            synchronized (this) {
+        if (constants == null) {
+            if (!CONSTANTS_HANDLE.compareAndSet(this, null, constants = new ConcurrentHashMap<>(2, 0.9f, 1))) {
                 constants = this.constants;
-                if (constants == Collections.EMPTY_MAP) {
-                    constants = this.constants = new ConcurrentHashMap<>(2, 0.9f, 1);
-                }
             }
         }
         return constants;
@@ -370,31 +370,38 @@ public class RubyModule extends RubyObject {
      * For setting constant, update constantMap first and remove an Autoload object from autoloadMap.
      */
     protected Map<String, Autoload> getAutoloadMap() {
-        return autoloads;
+        Map<String, Autoload> autoloads = this.autoloads;
+        return autoloads == null ? Collections.EMPTY_MAP : autoloads;
     }
 
     protected Map<String, Autoload> getAutoloadMapForWrite() {
         Map<String, Autoload> autoloads = this.autoloads;
-        if (autoloads == Collections.EMPTY_MAP) {
-            synchronized (this) {
+        if (autoloads == null) {
+            if (!AUTOLOADS_HANDLE.compareAndSet(this, null, autoloads = new ConcurrentHashMap<>(2, 0.9f, 1))) {
                 autoloads = this.autoloads;
-                if (autoloads == Collections.EMPTY_MAP) {
-                    autoloads = this.autoloads = new ConcurrentHashMap<>(2, 0.9f, 1);
-                }
             }
         }
         return autoloads;
     }
 
+    private RubyClass.RubyClassSet getIncludingHierarchiesForRead() {
+        RubyClass.RubyClassSet includingHierarchies = this.includingHierarchies;
+        return includingHierarchies == null ? RubyClass.EMPTY_RUBYCLASS_SET : includingHierarchies;
+    }
+
+    protected RubyClass.RubyClassSet getIncludingHierarchiesForWrite() {
+        RubyClass.RubyClassSet includingHierarchies = this.includingHierarchies;
+        if (includingHierarchies == null) {
+            if (!INCLUDING_HIERARCHIES_HANDLE.compareAndSet(this, null, includingHierarchies = new RubyClass.WeakRubyClassSet(4))) {
+                includingHierarchies = this.includingHierarchies;
+            }
+        }
+        return includingHierarchies;
+    }
+
     @SuppressWarnings("unchecked")
     public void addIncludingHierarchy(IncludedModule hierarchy) {
-        synchronized (getRuntime().getHierarchyLock()) {
-            RubyClass.RubyClassSet including = this.includingHierarchies;
-            if (including == RubyClass.EMPTY_RUBYCLASS_SET) {
-                including = this.includingHierarchies = new RubyClass.WeakRubyClassSet(4);
-            }
-            including.addClass(hierarchy);
-        }
+        getIncludingHierarchiesForWrite().addClass(hierarchy);
     }
 
     public final MethodHandle getIdTest() {
@@ -493,22 +500,39 @@ public class RubyModule extends RubyObject {
         return module;
     }
 
+    /**
+     * Return the class providers set for read operations.
+     *
+     * @return the class provider set or an empty set if there are no class providers
+     */
+    private Set<ClassProvider> getClassProvidersForRead() {
+        Set<ClassProvider> classProviders = this.classProviders;
+        return classProviders == null ? Collections.EMPTY_SET : classProviders;
+    }
+
+    /**
+     * Return the class providers set for write operations.
+     *
+     * @return the class provider set suitable for updating
+     */
+    private Set<ClassProvider> getClassProvidersForWrite() {
+        Set<ClassProvider> classProviders = this.classProviders;
+        if (classProviders == null) {
+            if (!CLASS_PROVIDERS_HANDLE.compareAndSet(this, null, classProviders = new CopyOnWriteArraySet<ClassProvider>())) {
+                classProviders = this.classProviders;
+            }
+        }
+        return classProviders;
+    }
+
     // synchronized method per JRUBY-1173 (unsafe Double-Checked Locking)
     // FIXME: synchronization is still wrong in CP code
     public final synchronized void addClassProvider(ClassProvider provider) {
-        Set<ClassProvider> classProviders = this.classProviders;
-        if (!classProviders.contains(provider)) {
-            Set<ClassProvider> cp = new HashSet<>(classProviders.size() + 1);
-            cp.addAll(classProviders);
-            cp.add(provider);
-            this.classProviders = cp;
-        }
+        getClassProvidersForWrite().add(provider);
     }
 
     public final synchronized void removeClassProvider(ClassProvider provider) {
-        Set<ClassProvider> cp = new HashSet<>(classProviders);
-        cp.remove(provider);
-        this.classProviders = cp;
+        getClassProvidersForWrite().remove(provider);
     }
 
     private void checkForCyclicInclude(ThreadContext context, RubyModule m) throws RaiseException {
@@ -521,7 +545,7 @@ public class RubyModule extends RubyObject {
 
     private RubyClass searchProvidersForClass(ThreadContext context, String name, RubyClass superClazz) {
         Set<ClassProvider> classProviders = this.classProviders;
-        if (classProviders == Collections.EMPTY_SET) return null;
+        if (classProviders == null) return null;
 
         RubyClass clazz;
         for (ClassProvider classProvider: classProviders) {
@@ -534,7 +558,7 @@ public class RubyModule extends RubyObject {
 
     private RubyModule searchProvidersForModule(ThreadContext context, String name) {
         Set<ClassProvider> classProviders = this.classProviders;
-        if (classProviders == Collections.EMPTY_SET) return null;
+        if (classProviders == null) return null;
 
         RubyModule module;
         for (ClassProvider classProvider: classProviders) {
@@ -570,7 +594,8 @@ public class RubyModule extends RubyObject {
     }
 
     public RubyModule getMethodLocation() {
-        return methodLocation;
+        RubyModule methodLocation = this.methodLocation;
+        return methodLocation == null ? this : methodLocation;
     }
 
     public void setMethodLocation(RubyModule module){
@@ -578,19 +603,18 @@ public class RubyModule extends RubyObject {
     }
 
     public Map<String, DynamicMethod> getMethods() {
-        return this.methods;
+        Map<String, DynamicMethod> methods = this.methods;
+        return methods == null ? Collections.EMPTY_MAP : methods;
     }
 
     public Map<String, DynamicMethod> getMethodsForWrite() {
         Map<String, DynamicMethod> methods = this.methods;
-        if (methods != Collections.EMPTY_MAP) return methods;
-
-        synchronized (this) {
-            methods = this.methods;
-            return methods == Collections.EMPTY_MAP ?
-                this.methods = new ConcurrentHashMap<>(2, 0.9f, 1) : // CHM initial-size: 4
-                    methods;
+        if (methods == null) {
+            if (!METHODS_HANDLE.compareAndSet(this, null, methods = new ConcurrentHashMap<>(2, 0.9f, 1))) {
+                methods = this.methods;
+            }
         }
+        return methods;
     }
 
     @Deprecated(since = "10.0")
@@ -606,6 +630,8 @@ public class RubyModule extends RubyObject {
      * @return method
      */ // NOTE: used by AnnotationBinder
     public DynamicMethod putMethod(ThreadContext context, String id, DynamicMethod method) {
+        RubyModule methodLocation = getMethodLocation();
+
         if (hasPrepends()) {
             method = method.dup();
             method.setImplementationClass(methodLocation);
@@ -1275,7 +1301,7 @@ public class RubyModule extends RubyObject {
 
             if (this.isModule()) {
                 synchronized (getRuntime().getHierarchyLock()) {
-                    includingHierarchies.forEachClass(new RubyClass.BiConsumerIgnoresSecond<RubyClass>() {
+                    getIncludingHierarchiesForRead().forEachClass(new RubyClass.BiConsumerIgnoresSecond<RubyClass>() {
                         boolean doPrepend = true;
 
                         public void accept(RubyClass includeClass) {
@@ -1335,7 +1361,7 @@ public class RubyModule extends RubyObject {
 
         if (this.isModule()) {
             synchronized (getRuntime().getHierarchyLock()) {
-                includingHierarchies.forEachClass(new RubyClass.BiConsumerIgnoresSecond<RubyClass>() {
+                getIncludingHierarchiesForRead().forEachClass(new RubyClass.BiConsumerIgnoresSecond<RubyClass>() {
                     boolean doInclude = true;
 
                     @Override
@@ -1775,7 +1801,7 @@ public class RubyModule extends RubyObject {
     public <T extends RubyModule> T undefMethods(ThreadContext context, String... names) {
         // FIXME: context needs to feed down into undefineMethod so we are not getting runtime
         for (String name : names) {
-            methodLocation.addMethod(context, name, UndefinedMethod.getInstance());
+            getMethodLocation().addMethod(context, name, UndefinedMethod.getInstance());
         }
         return (T) this;
     }
@@ -1785,7 +1811,7 @@ public class RubyModule extends RubyObject {
      */
     @Deprecated(since = "10.0")
     public void undefineMethod(String name) {
-        methodLocation.addMethod(getCurrentContext(), name, UndefinedMethod.getInstance());
+        getMethodLocation().addMethod(getCurrentContext(), name, UndefinedMethod.getInstance());
     }
 
     /** rb_undef
@@ -1811,7 +1837,7 @@ public class RubyModule extends RubyObject {
 
         DynamicMethod method = searchMethod(name);
         if (method.isUndefined()) raiseUndefinedNameError(context, name);
-        methodLocation.addMethod(context, name, UndefinedMethod.getInstance());
+        getMethodLocation().addMethod(context, name, UndefinedMethod.getInstance());
 
         methodUndefined(context, asSymbol(context, name));
     }
@@ -1873,7 +1899,8 @@ public class RubyModule extends RubyObject {
             testFrozen(frozenType());
         }
 
-        if (methodLocation != this) {
+        RubyModule methodLocation = this.methodLocation;
+        if (methodLocation != null) {
             methodLocation.addMethod(context, id, method);
             return;
         }
@@ -1905,7 +1932,7 @@ public class RubyModule extends RubyObject {
     }
 
     public final void addMethodInternal(ThreadContext context, String name, DynamicMethod method) {
-        synchronized (methodLocation.getMethodsForWrite()) {
+        synchronized (getMethodLocation().getMethodsForWrite()) {
             putMethod(context, name, method);
             invalidateCoreClasses(context);
             invalidateCacheDescendants(context);
@@ -1924,7 +1951,7 @@ public class RubyModule extends RubyObject {
         RubySymbol name = asSymbol(context, id);
         // We can safely reference methods here instead of doing getMethods() since if we
         // are adding we are not using a IncludedModule.
-        Map<String, DynamicMethod> methodsForWrite = methodLocation.getMethodsForWrite();
+        Map<String, DynamicMethod> methodsForWrite = getMethodLocation().getMethodsForWrite();
         synchronized (methodsForWrite) {
             DynamicMethod method = methodsForWrite.get(id);
             if (method == null ||
@@ -2092,19 +2119,22 @@ public class RubyModule extends RubyObject {
         return generationObject;
     }
 
-    private final Map<String, CacheEntry> getCachedMethods() {
-        return this.cachedMethods;
+    protected final Map<String, CacheEntry> getCachedMethods() {
+        Map<String, CacheEntry> cachedMethods = this.cachedMethods;
+        return cachedMethods == null ? Collections.EMPTY_MAP : cachedMethods;
     }
 
     private final Map<String, CacheEntry> getCachedMethodsForWrite() {
         Map<String, CacheEntry> myCachedMethods = this.cachedMethods;
-        return myCachedMethods == Collections.EMPTY_MAP ?
-            this.cachedMethods = new ConcurrentHashMap<>(0, 0.75f, 1) :
-            myCachedMethods;
+        if (myCachedMethods == null) {
+            // concurrent creation of this map does not impact behavior
+            myCachedMethods = this.cachedMethods = new ConcurrentHashMap<>(0, 0.75f, 1);
+        }
+        return myCachedMethods;
     }
 
     private CacheEntry cacheHit(String name) {
-        CacheEntry cacheEntry = methodLocation.getCachedMethods().get(name);
+        CacheEntry cacheEntry = getMethodLocation().getCachedMethods().get(name);
 
         if (cacheEntry != null) {
             if (cacheEntry.token == getGeneration()) {
@@ -2234,13 +2264,13 @@ public class RubyModule extends RubyObject {
     protected CacheEntry addToCache(String id, DynamicMethod method, RubyModule sourceModule, int token) {
         CacheEntry entry = cacheEntryFactory.newCacheEntry(id, method, sourceModule, token);
 
-        methodLocation.getCachedMethodsForWrite().put(id, entry);
+        getMethodLocation().getCachedMethodsForWrite().put(id, entry);
 
         return entry;
     }
 
     protected CacheEntry addToCache(String id, CacheEntry entry) {
-        methodLocation.getCachedMethodsForWrite().put(id, entry);
+        getMethodLocation().getCachedMethodsForWrite().put(id, entry);
 
         return entry;
     }
@@ -2330,7 +2360,7 @@ public class RubyModule extends RubyObject {
        context.runtime.getCaches().incrementMethodInvalidations();
 
         Invalidator methodInvalidator = this.methodInvalidator;
-        RubyClass.RubyClassSet includingHierarchies = this.includingHierarchies;
+        RubyClass.RubyClassSet includingHierarchies = this.getIncludingHierarchiesForRead();
 
         if (includingHierarchies.isEmptyOfClasses()) {
             // it's only us; just invalidate directly
@@ -2706,12 +2736,12 @@ public class RubyModule extends RubyObject {
 
         final String variableName = identifier.asInstanceVariable().idString();
         if (readable) {
-            addMethod(context, internedIdentifier, new AttrReaderMethod(methodLocation, visibility, variableName));
+            addMethod(context, internedIdentifier, new AttrReaderMethod(getMethodLocation(), visibility, variableName));
             methodAdded(context, identifier);
         }
         if (writeable) {
             identifier = identifier.asWriter();
-            addMethod(context, identifier.idString(), new AttrWriterMethod(methodLocation, visibility, variableName));
+            addMethod(context, identifier.idString(), new AttrWriterMethod(getMethodLocation(), visibility, variableName));
             methodAdded(context, identifier);
         }
     }
@@ -2768,7 +2798,7 @@ public class RubyModule extends RubyObject {
      *
      */
     private void exportMethod(ThreadContext context, String name, Visibility visibility) {
-        CacheEntry entry = methodLocation.deepMethodSearch(context, name);
+        CacheEntry entry = getMethodLocation().deepMethodSearch(context, name);
         DynamicMethod method = entry.method;
 
         if (method.getVisibility() != visibility) {
@@ -2776,7 +2806,7 @@ public class RubyModule extends RubyObject {
                 method.setVisibility(visibility);
             } else {
                 DynamicMethod newMethod = new PartialDelegatingMethod(this, entry, visibility);
-                methodLocation.addMethod(context, name, newMethod);
+                getMethodLocation().addMethod(context, name, newMethod);
             }
 
             invalidateCoreClasses(context);
@@ -3119,7 +3149,7 @@ public class RubyModule extends RubyObject {
     }
 
     public boolean hasPrepends() {
-        return methodLocation != this;
+        return methodLocation != null;
     }
 
     /** rb_mod_ancestors
@@ -3145,7 +3175,7 @@ public class RubyModule extends RubyObject {
         for (RubyModule module = this; module != null; module = module.getSuperClass()) {
             // FIXME this is silly. figure out how to delegate the getNonIncludedClass()
             // call to drop the getDelegate().
-            if (module.methodLocation == module) list.add(module.getDelegate().getOrigin());
+            if (module.getMethodLocation() == module) list.add(module.getDelegate().getOrigin());
         }
 
         return list;
@@ -3155,7 +3185,7 @@ public class RubyModule extends RubyObject {
         RubyModule methodLocation = this.methodLocation;
 
         // only check if we have prepends, to allow include and prepend of same module
-        if (this == methodLocation) {
+        if (methodLocation == null) {
             return false;
         }
 
@@ -3167,6 +3197,7 @@ public class RubyModule extends RubyObject {
     }
 
     private RubyModule getPrependCeiling() {
+        RubyModule methodLocation = getMethodLocation();
         RubyClass mlSuper = methodLocation.getSuperClass();
         return mlSuper == null ? methodLocation : mlSuper.getRealClass();
     }
@@ -3580,7 +3611,8 @@ public class RubyModule extends RubyObject {
         RubyModule mod = this;
         boolean prepended = false;
 
-        if (!recur && methodLocation != this) {
+        RubyModule methodLocation = this.methodLocation;
+        if (!recur && methodLocation != null) {
             mod = methodLocation;
             prepended = true;
         }
@@ -3832,14 +3864,15 @@ public class RubyModule extends RubyObject {
     public IRubyObject mix(ThreadContext context, IRubyObject modArg) {
         var mod = castAsModule(context, modArg);
 
-        for (Map.Entry<String, DynamicMethod> entry : mod.methods.entrySet()) {
-            if (methodLocation.getMethods().containsKey(entry.getKey())) {
+        Map<String, DynamicMethod> methods = mod.getMethods();
+        for (Map.Entry<String, DynamicMethod> entry : methods.entrySet()) {
+            if (getMethodLocation().getMethods().containsKey(entry.getKey())) {
                 throw argumentError(context, "method would conflict - " + entry.getKey());
             }
         }
 
-        for (Map.Entry<String, DynamicMethod> entry : mod.methods.entrySet()) {
-            methodLocation.getMethodsForWrite().put(entry.getKey(), entry.getValue().dup());
+        for (Map.Entry<String, DynamicMethod> entry : methods.entrySet()) {
+            getMethodLocation().getMethodsForWrite().put(entry.getKey(), entry.getValue().dup());
         }
 
         return mod;
@@ -3853,16 +3886,16 @@ public class RubyModule extends RubyObject {
 
         for (Map.Entry<IRubyObject, IRubyObject> entry : (Set<Map.Entry<IRubyObject, IRubyObject>>)methodNames.directEntrySet()) {
             String name = entry.getValue().toString();
-            if (methods.containsKey(name)) throw argumentError(context, "constant would conflict - " + name);
+            if (getMethods().containsKey(name)) throw argumentError(context, "constant would conflict - " + name);
         }
 
-        for (Map.Entry<String, DynamicMethod> entry : mod.methods.entrySet()) {
-            if (methods.containsKey(entry.getKey())) {
+        for (Map.Entry<String, DynamicMethod> entry : mod.getMethods().entrySet()) {
+            if (getMethods().containsKey(entry.getKey())) {
                 throw argumentError(context, "method would conflict - " + entry.getKey());
             }
         }
 
-        for (Map.Entry<String, DynamicMethod> entry : mod.methods.entrySet()) {
+        for (Map.Entry<String, DynamicMethod> entry : mod.getMethods().entrySet()) {
             String id = entry.getKey();
             IRubyObject mapped = methodNames.fastARef(asSymbol(context, id));
             if (mapped == NEVER) {
@@ -3873,7 +3906,7 @@ public class RubyModule extends RubyObject {
             } else {
                 id = checkID(context, mapped).idString();
             }
-            methodLocation.getMethodsForWrite().put(id, entry.getValue().dup());
+            getMethodLocation().getMethodsForWrite().put(id, entry.getValue().dup());
         }
 
         return mod;
@@ -4267,7 +4300,7 @@ public class RubyModule extends RubyObject {
     void doIncludeModule(ThreadContext context, RubyModule baseModule) {
         List<RubyModule> modulesToInclude = gatherModules(baseModule);
 
-        RubyModule currentInclusionPoint = methodLocation;
+        RubyModule currentInclusionPoint = getMethodLocation();
         ModuleLoop: for (RubyModule nextModule : modulesToInclude) {
             checkForCyclicInclude(context, nextModule);
 
@@ -4321,7 +4354,7 @@ public class RubyModule extends RubyObject {
      */
     void doPrependModule(ThreadContext context, RubyModule baseModule) {
         List<RubyModule> modulesToInclude = gatherModules(baseModule);
-        RubyModule startOrigin = methodLocation;
+        RubyModule startOrigin = getMethodLocation();
 
         if (!hasPrepends()) { // Set up a new holder class to hold all this types original methods.
             RubyClass origin = new PrependedModule(context.runtime, getSuperClass(), this);
@@ -5640,6 +5673,7 @@ public class RubyModule extends RubyObject {
         checkAliasFrameAccesses(context, oldName, name, entry.method);
         putAlias(context, name, entry, oldName);
 
+        RubyModule methodLocation = getMethodLocation();
         methodLocation.invalidateCoreClasses(context);
         methodLocation.invalidateCacheDescendants(context);
 
@@ -5903,58 +5937,28 @@ public class RubyModule extends RubyObject {
     //
 
     protected Map<String, IRubyObject> getClassVariables() {
-        if (CLASSVARS_UPDATER == null) {
-            return getClassVariablesForWriteSynchronized();
-        }
-        return getClassVariablesForWriteAtomic();
+        return getClassVariablesForWrite();
     }
 
     /**
      * Get the class variables for write. If it is not set or not of the right size,
-     * synchronize against the object and prepare it accordingly.
+     * prepare it atomically.
      *
      * @return the class vars map, ready for assignment
      */
-    private Map<String,IRubyObject> getClassVariablesForWriteSynchronized() {
-        Map<String, IRubyObject> myClassVars = classVariables;
-        if ( myClassVars == Collections.EMPTY_MAP ) {
-            synchronized (this) {
-                myClassVars = classVariables;
-
-                if ( myClassVars == Collections.EMPTY_MAP ) {
-                    return classVariables = new ConcurrentHashMap<String, IRubyObject>(4, 0.75f, 2);
-                }
-                return myClassVars;
+    private Map<String,IRubyObject> getClassVariablesForWrite() {
+        Map<String, IRubyObject> classVariables = this.classVariables;
+        if ( classVariables == null ) {
+            if (!CLASSVARS_HANDLE.compareAndSet(this, null, classVariables = new ConcurrentHashMap<String, IRubyObject>(4, 0.75f, 2))) {
+                classVariables = this.classVariables;
             }
         }
-        return myClassVars;
-    }
-
-
-    /**
-     * Get the class variables for write. If it is not set or not of the right size,
-     * atomically update it with an appropriate value.
-     *
-     * @return the class vars map, ready for assignment
-     */
-    private Map<String,IRubyObject> getClassVariablesForWriteAtomic() {
-        while (true) {
-            Map<String, IRubyObject> myClassVars = classVariables;
-
-            if ( myClassVars != Collections.EMPTY_MAP ) return myClassVars;
-
-            Map<String, IRubyObject> newClassVars;
-            newClassVars = new ConcurrentHashMap<String, IRubyObject>(4, 0.75f, 2);
-
-            // proceed with atomic update of table, or retry
-            if (CLASSVARS_UPDATER.compareAndSet(this, myClassVars, newClassVars)) {
-                return newClassVars;
-            }
-        }
+        return classVariables;
     }
 
     protected Map<String, IRubyObject> getClassVariablesForRead() {
-        return classVariables;
+        Map<String, IRubyObject> classVariables = this.classVariables;
+        return classVariables == null ? Collections.EMPTY_MAP : classVariables;
     }
 
     // runtime-free
@@ -6541,7 +6545,8 @@ public class RubyModule extends RubyObject {
     private transient IRubyObject cachedSymbolName;
 
     @SuppressWarnings("unchecked")
-    private volatile Map<String, ConstantEntry> constants = Collections.EMPTY_MAP;
+    private volatile Map<String, ConstantEntry> constants;
+    private static final VarHandle CONSTANTS_HANDLE;
 
     public interface SourceLocation {
         String getFile();
@@ -6834,13 +6839,16 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    private volatile Map<String, Autoload> autoloads = Collections.EMPTY_MAP;
-    protected volatile Map<String, DynamicMethod> methods = Collections.EMPTY_MAP;
-    protected Map<String, CacheEntry> cachedMethods = Collections.EMPTY_MAP;
+    private volatile Map<String, Autoload> autoloads;
+    private static final VarHandle AUTOLOADS_HANDLE;
+    protected volatile Map<String, DynamicMethod> methods;
+    private static final VarHandle METHODS_HANDLE;
+    protected Map<String, CacheEntry> cachedMethods;
     protected int generation;
     protected Integer generationObject;
 
-    protected volatile RubyClass.RubyClassSet includingHierarchies = RubyClass.EMPTY_RUBYCLASS_SET;
+    protected volatile RubyClass.RubyClassSet includingHierarchies;
+    private static final VarHandle INCLUDING_HIERARCHIES_HANDLE;
 
     /**
      * Where are the methods of this module/class located?
@@ -6849,11 +6857,24 @@ public class RubyModule extends RubyObject {
      * moves all methods to a PrependedModule which will be beneath the actual
      * module which was prepended.
      */
-    protected volatile RubyModule methodLocation = this;
+    protected volatile RubyModule methodLocation;
 
     // ClassProviders return Java class/module (in #defineOrGetClassUnder and
     // #defineOrGetModuleUnder) when class/module is opened using colon syntax.
-    private transient volatile Set<ClassProvider> classProviders = Collections.EMPTY_SET;
+    private transient volatile Set<ClassProvider> classProviders;
+    private static final VarHandle CLASS_PROVIDERS_HANDLE;
+
+    static {
+        try {
+            CONSTANTS_HANDLE = MethodHandles.lookup().findVarHandle(RubyModule.class, "constants", Map.class);
+            AUTOLOADS_HANDLE = MethodHandles.lookup().findVarHandle(RubyModule.class, "autoloads", Map.class);
+            METHODS_HANDLE = MethodHandles.lookup().findVarHandle(RubyModule.class, "methods", Map.class);
+            INCLUDING_HIERARCHIES_HANDLE = MethodHandles.lookup().findVarHandle(RubyModule.class, "includingHierarchies", RubyClass.RubyClassSet.class);
+            CLASS_PROVIDERS_HANDLE = MethodHandles.lookup().findVarHandle(RubyModule.class, "classProviders", Set.class);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     // superClass may be null.
     protected RubyClass superClass;
@@ -6912,13 +6933,22 @@ public class RubyModule extends RubyObject {
             putAlias(context, name, entry, oldId);
         }
 
+        RubyModule methodLocation = getMethodLocation();
         methodLocation.invalidateCoreClasses(context);
         methodLocation.invalidateCacheDescendants(context);
     }
 
     protected ClassIndex classIndex = ClassIndex.NO_INDEX;
 
-    private volatile Map<String, IRubyObject> classVariables = Collections.EMPTY_MAP;
+    private volatile Map<String, IRubyObject> classVariables;
+    private static final VarHandle CLASSVARS_HANDLE;
+    static {
+        try {
+            CLASSVARS_HANDLE = MethodHandles.lookup().findVarHandle(RubyModule.class, "classVariables", Map.class);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     /** Refinements added to this module are stored here **/
     private volatile Map<RubyModule, RubyModule> refinements = Collections.EMPTY_MAP;
@@ -6931,24 +6961,6 @@ public class RubyModule extends RubyObject {
 
     /** The module where this refinement was defined */
     private volatile RubyModule definedAt = null;
-
-    private static final AtomicReferenceFieldUpdater<RubyModule, Map> CLASSVARS_UPDATER;
-
-    static {
-        AtomicReferenceFieldUpdater<RubyModule, Map> updater = null;
-        try {
-            updater = AtomicReferenceFieldUpdater.newUpdater(RubyModule.class, Map.class, "classVariables");
-        }
-        catch (final RuntimeException ex) {
-            if (ex.getCause() instanceof AccessControlException) {
-                // security prevented creation; fall back on synchronized assignment
-            }
-            else {
-                throw ex;
-            }
-        }
-        CLASSVARS_UPDATER = updater;
-    }
 
     // Invalidator used for method caches
     protected final Invalidator methodInvalidator;
