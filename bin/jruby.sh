@@ -610,6 +610,11 @@ do
             append java_args -XX:CRaCRestoreFrom="${1#--restore=}" ;;
         --restore)
             append java_args -XX:CRaCRestoreFrom=.jruby.checkpoint ;;
+        --cache)
+            echo "EXPERIMENTAL: Regenerating the JRuby AppCDS archive at $jruby_jsa_file"
+            regenerate_jsa_file=true
+            rm -f "$jruby_jsa_file"
+            append java_args -XX:ArchiveClassesAtExit="$jruby_jsa_file" ;;
         # Abort processing on the double dash
         --) break ;;
         # Other opts go to ruby
@@ -627,6 +632,11 @@ fi
 
 # The rest of the arguments are for ruby
 append ruby_args "$@"
+
+# If regenerating the JSA archive but no Ruby arguments were passed, do -e 1
+if $regenerate_jsa_file & [ \'"$ruby_args"\' = "' '" ]; then
+    assign ruby_args '-e' '1'
+fi
 
 JAVA_OPTS="$JAVA_OPTS $JAVA_MEM $JAVA_STACK"
 
