@@ -36,6 +36,7 @@ import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -109,59 +110,69 @@ public class RubyNameError extends RubyStandardError {
             return to_str(context);
         }
 
+        // MRI: name_err_mesg_to_str
         @JRubyMethod
         public IRubyObject to_str(ThreadContext context) {
             String message = this.message;
             if (message == null) return context.nil;
 
             final Ruby runtime = context.runtime;
-            final IRubyObject object = this.object;
+            final RubyBasicObject object = (RubyBasicObject) this.object;
 
             RubyString emptyFrozenString = runtime.getEmptyFrozenString();
             RubyString className, separator, description;
             className = separator = description = emptyFrozenString;
 
-            if (object == context.nil) {
-                description = runtime.getNilString(); // "nil"
-            } else if (object == context.tru) {
-                description = runtime.getTrueString(); // "true"
-            } else if (object == context.fals) {
-                description = runtime.getFalseString(); // "false"
-            } else {
+            switch (object.getNativeClassIndex()) {
+                case ClassIndex.NIL:
+                    description = runtime.getNilString(); // "nil"
+                    break;
+                case ClassIndex.TRUE:
+                    description = runtime.getTrueString(); // "true"
+                    break;
+                case ClassIndex.FALSE:
+                    description = runtime.getFalseString(); // "false"
+                    break;
+                default:
 
-                // set up description
-                if (message.contains("%2$s")) {
-                    description = getNameOrInspect(context, object);
-                }
-
-                // set up separator text and class name
-                IRubyObject classTmp = null;
-                if (!object.isSpecialConst()) {
-                    if (object instanceof RubyClass) {
-                        separator = RubyString.newString(runtime, "class ");
-                        classTmp = object;
-                    } else if (object instanceof RubyModule) {
-                        separator = RubyString.newString(runtime, "module ");
-                        classTmp = object;
+                    // set up description
+                    if (message.contains("%2$s")) {
+                        description = getNameOrInspect(context, object);
                     }
-                }
 
-                if (classTmp == null) {
-                    RubyClass klass = object.getMetaClass();
-                    if (klass.isSingleton()) {
-                        separator = RubyString.newString(runtime, "");
-                        if (object == runtime.getTopSelf()) {
-                            classTmp = RubyString.newString(runtime, "main");
-                        } else {
-                            classTmp = object.anyToString();
+                    // set up separator text and class name
+                    IRubyObject classTmp = null;
+                    if (!object.isSpecialConst()) {
+                        switch (object.getNativeClassIndex()) {
+                            case MODULE:
+                                separator = RubyString.newString(runtime, "module ");
+                                classTmp = object;
+                                break;
+                            case CLASS:
+                                separator = RubyString.newString(runtime, "class ");
+                                classTmp = object;
+                                break;
                         }
-                    } else {
-                        separator = RubyString.newString(runtime, "an instance of ");
-                        classTmp = klass.getRealClass();
                     }
-                }
 
-                className = getNameOrInspect(context, classTmp);
+                    if (classTmp == null) {
+                        RubyClass klass = object.getMetaClass();
+                        if (klass.isSingleton()) {
+                            separator = RubyString.newString(runtime, "");
+                            if (object == runtime.getTopSelf()) {
+                                className = RubyString.newString(runtime, "main");
+                            } else {
+                                className = (RubyString) object.anyToString();
+                            }
+                            // we have our string, break out to final composition
+                            break;
+                        } else {
+                            separator = RubyString.newString(runtime, "an instance of ");
+                            classTmp = klass.getRealClass();
+                        }
+                    }
+
+                    className = getNameOrInspect(context, classTmp);
             }
 
             RubyArray arr = RubyArray.newArray(runtime, this.name, description, separator, className);
