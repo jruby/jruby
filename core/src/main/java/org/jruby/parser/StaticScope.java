@@ -34,6 +34,7 @@ import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -49,7 +50,6 @@ import org.jruby.api.Convert;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.DAsgnNode;
 import org.jruby.ast.DVarNode;
-import org.jruby.ast.IScopedNode;
 import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.LocalVarNode;
 import org.jruby.ast.Node;
@@ -115,8 +115,6 @@ public class StaticScope implements Serializable, Cloneable {
     private boolean isBlockOrEval;
     private boolean isArgumentScope; // Is this block and argument scope of a define_method.
 
-    private int firstKeywordIndex;
-
     // Method/Closure that this static scope corresponds to.  This is used to tell whether this
     // scope refers to a method scope or to determined IRScope of the parent of a compiling eval.
     private IRScope irScope;
@@ -126,6 +124,18 @@ public class StaticScope implements Serializable, Cloneable {
     private volatile MethodHandle constructor;
 
     private volatile Collection<String> ivarNames;
+
+    private BitSet keywordIndices = null;
+
+    // This is set for Prism since it knows all names for a scope right after parse but does not know which
+    // ones are keywords until we are actually processing those keywords in builder.
+    public void setKeywordIndices(BitSet keywordIndices) {
+        this.keywordIndices = keywordIndices;
+    }
+
+    public BitSet getKeywordIndices() {
+        return keywordIndices == null ? new BitSet() : keywordIndices;
+    }
 
     public enum Type {
         LOCAL, BLOCK, EVAL;
@@ -175,7 +185,6 @@ public class StaticScope implements Serializable, Cloneable {
         if (enclosingScope != null) this.scopeType = enclosingScope.getScopeType();
         this.isBlockOrEval = (type != Type.LOCAL);
         this.isArgumentScope = !isBlockOrEval;
-        this.firstKeywordIndex = firstKeywordIndex;
         this.file = file;
     }
 
@@ -184,7 +193,7 @@ public class StaticScope implements Serializable, Cloneable {
     }
 
     public int getFirstKeywordIndex() {
-        return firstKeywordIndex;
+        return -1;
     }
 
     public DynamicScope construct(DynamicScope parent) {
@@ -417,20 +426,19 @@ public class StaticScope implements Serializable, Cloneable {
      * a kwarg or an ordinary variable during live execution (See keywordExists).
      */
     public AssignableNode assignKeyword(int line, RubySymbol symbolID, Node value) {
-        AssignableNode assignment = assign(line, symbolID, value, this, 0);
+        AssignableNode assignable = assign(line, symbolID, value, this, 0);
 
-        // register first keyword index encountered
-        if (firstKeywordIndex == -1) firstKeywordIndex = ((IScopedNode) assignment).getIndex();
+        if (keywordIndices == null) keywordIndices = new BitSet();
+        keywordIndices.set(isDefined(symbolID.idString()));
 
-        return assignment;
+        return assignable;
     }
 
     public boolean keywordExists(String name) {
         if (name.equals("_")) return true;
         int slot = exists(name);
 
-        return slot >= 0 && firstKeywordIndex != -1 &&
-                slot >= firstKeywordIndex  && slot < firstKeywordIndex + signature.kwargs();
+        return slot >= 0 && keywordIndices != null && keywordIndices.get(slot);
     }
 
     /**
@@ -709,7 +717,7 @@ public class StaticScope implements Serializable, Cloneable {
         dupe.setModule(cref);
         dupe.setFile(file);
         dupe.setSignature(signature);
-        dupe.firstKeywordIndex = firstKeywordIndex;
+        dupe.setKeywordIndices(keywordIndices);
 
         return dupe;
     }
