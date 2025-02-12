@@ -4732,6 +4732,9 @@ public class RubyModule extends RubyObject {
     }
 
     public static boolean isValidConstantName(ByteList bytelist, int start, int end) {
+        // empty string
+        if (start == end) return false;
+
         Encoding enc = bytelist.getEncoding();
         byte[] bytes = bytelist.unsafeBytes();
         int beg = bytelist.begin();
