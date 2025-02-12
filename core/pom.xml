@@ -611,6 +611,7 @@ DO NOT MODIFY - GENERATED CODE
                     <include>COPYING</include>
                     <include>LEGAL</include>
                     <include>LICENSE.RUBY</include>
+                    <include>VERSION</include>
                   </includes>
                   <targetPath>${project.build.sourceDirectory}/META-INF/</targetPath>
                 </resource>
