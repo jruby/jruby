@@ -1674,6 +1674,7 @@ public final class Ruby implements Constantizable {
         ifAllowed("RubyError",              (ruby) -> runtimeError = RubyRuntimeError.define(context, standardError));
         ifAllowed("FrozenError",            (ruby) -> frozenError = RubyFrozenError.define(context, runtimeError));
         ifAllowed("IOError",                (ruby) -> ioError = RubyIOError.define(context, standardError));
+        ifAllowed("IO::TimeoutError",       (ruby) -> ioTimeoutError = RubyIO.RubyIOTimeoutError.define(context, ioClass, ioError));
         ifAllowed("ScriptError",            (ruby) -> scriptError = RubyScriptError.define(context, exceptionClass));
         ifAllowed("RangeError",             (ruby) -> rangeError = RubyRangeError.define(context, standardError));
         ifAllowed("SignalException",        (ruby) -> signalException = RubySignalException.define(context, exceptionClass));
@@ -2413,6 +2414,10 @@ public final class Ruby implements Constantizable {
 
     public RubyClass getIOError() {
         return ioError;
+    }
+
+    public RubyClass getIOTimeoutError() {
+        return ioTimeoutError;
     }
 
     public RubyClass getLoadError() {
@@ -5674,6 +5679,7 @@ public final class Ruby implements Constantizable {
     private RubyClass runtimeError;
     private RubyClass frozenError;
     private RubyClass ioError;
+    private RubyClass ioTimeoutError;
     private RubyClass scriptError;
     private RubyClass nameError;
     private RubyClass nameErrorMessage;
