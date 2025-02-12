@@ -394,7 +394,7 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     public static ByteList singleCharByteList(final byte index) {
-        return SINGLE_CHAR_BYTELISTS[index & 0xFF];
+        return SINGLE_CHAR_BYTELISTS[Byte.toUnsignedInt(index)];
     }
 
     static final ByteList[] SINGLE_CHAR_UTF8_BYTELISTS;
@@ -416,7 +416,7 @@ public abstract class RubyInteger extends RubyNumeric {
      * @return a cached single-character ByteList
      */
     public static ByteList singleCharUTF8ByteList(final byte index) {
-        return SINGLE_CHAR_UTF8_BYTELISTS[index & 0xFF];
+        return SINGLE_CHAR_UTF8_BYTELISTS[Byte.toUnsignedInt(index)];
     }
 
     /**
@@ -429,13 +429,17 @@ public abstract class RubyInteger extends RubyNumeric {
      * @return a new single-character RubyString
      */
     public static RubyString singleCharString(Ruby runtime, byte b, RubyClass meta, Encoding enc) {
-        ByteList bytes;
-        if (enc == USASCIIEncoding.INSTANCE) {
+        ByteList bytes = null;
+        int ub = Byte.toUnsignedInt(b);
+        if (enc == USASCIIEncoding.INSTANCE || enc == ASCIIEncoding.INSTANCE) {
             bytes = singleCharByteList(b);
-        } else if (Byte.toUnsignedInt(b) < 0x80 && enc == RubyString.UTF8) {
+        } else if (enc == RubyString.UTF8 && ub < 0x80) {
             bytes = singleCharUTF8ByteList(b);
-        } else {
-            return RubyString.newStringShared(runtime, SINGLE_CHAR_BYTES[Byte.toUnsignedInt(b)], enc);
+        }
+
+        if (bytes == null) {
+            // just share byte array
+            return RubyString.newStringShared(runtime, SINGLE_CHAR_BYTES[ub], enc);
         }
 
         // use shared for cached bytelists
