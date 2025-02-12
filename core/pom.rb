@@ -289,7 +289,7 @@ project 'JRuby Base' do
                     },
                     {
                       directory: '..',
-                      includes: [ 'BSDL', 'COPYING', 'LEGAL', 'LICENSE.RUBY' ],
+                      includes: [ 'BSDL', 'COPYING', 'LEGAL', 'LICENSE.RUBY', 'VERSION' ],
                       target_path: '${project.build.sourceDirectory}/META-INF/'
                     }
                   ])

@@ -22,6 +22,7 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.NotDirectoryException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -2173,7 +2174,7 @@ public class Helpers {
                 Integer.toString(scope.getType().ordinal()) + ';'
                 + scope.getFile() + ';'
                 + Arrays.stream(scope.getVariables()).collect(Collectors.joining(",")) + ';'
-                + scope.getFirstKeywordIndex() + ';' +
+                + Arrays.toString(scope.getKeywordIndices().toByteArray()) + ';' +
                 + (signature == null ? Signature.NO_ARGUMENTS.encode() : signature.encode()) + ';'
                 + scope.getIRScope().getScopeType().ordinal() + ';'
                 + (instanceVariableNames.size() > 0
@@ -2190,13 +2191,20 @@ public class Helpers {
         String file = bits[1];
 
         String[] varNames = bits[2].split(",");
-        int kwIndex = Integer.parseInt(bits[3]);
         Signature signature = Signature.decode(Long.parseLong(bits[4]));
         IRScopeType scopeType = IRScopeType.fromOrdinal(Integer.parseInt(bits[5]));
         String encodedIvars = bits[6];
         Collection<String> ivarNames = encodedIvars.equals("NONE") ? Collections.EMPTY_LIST : Arrays.asList(encodedIvars.split(","));
 
-        StaticScope scope = StaticScopeFactory.newStaticScope(enclosingScope, type, file, varNames, kwIndex);
+        StaticScope scope = StaticScopeFactory.newStaticScope(enclosingScope, type, file, varNames, -1);
+
+        if (bits[3].length() > 0) {
+            BitSet keywordIndices = new BitSet();
+            for (int i = 0; i < bits[3].length(); i++) {
+                keywordIndices.set(i);
+            }
+            scope.setKeywordIndices(keywordIndices);
+        }
 
         scope.setSignature(signature);
         scope.setScopeType(scopeType);

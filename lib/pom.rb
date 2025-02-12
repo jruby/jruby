@@ -459,7 +459,7 @@ project 'JRuby Lib Setup' do
 
     resource do
       directory '${project.basedir}/..'
-      includes [ 'BSDL', 'COPYING', 'LEGAL', 'LICENSE.RUBY' ]
+      includes [ 'BSDL', 'COPYING', 'LEGAL', 'LICENSE.RUBY', 'VERSION' ]
       target_path '${project.build.outputDirectory}/META-INF/'
     end
   end
