@@ -67,10 +67,9 @@ import static org.jruby.api.Error.typeError;
  */
 @JRubyClass(name="TCPServer", parent="TCPSocket")
 public class RubyTCPServer extends RubyTCPSocket {
-    static void createTCPServer(ThreadContext context, RubyClass TCPSocket, RubyClass Object) {
-        Object.defineConstant(context, "TCPServer",
-                defineClass(context, "TCPServer", TCPSocket, RubyTCPServer::new).
-                        defineMethods(context, RubyTCPServer.class));
+    static void createTCPServer(ThreadContext context, RubyClass TCPSocket) {
+        defineClass(context, "TCPServer", TCPSocket, RubyTCPServer::new).
+                defineMethods(context, RubyTCPServer.class);
     }
 
     public RubyTCPServer(Ruby runtime, RubyClass type) {

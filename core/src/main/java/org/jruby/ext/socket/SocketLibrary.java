@@ -27,14 +27,14 @@ public class SocketLibrary implements Library {
         RubyServerSocket.createServerSocket(context, Socket);
 
         if (instanceConfig(context).isNativeEnabled() && !Platform.IS_WINDOWS) {
-            var UNIXSocket = RubyUNIXSocket.createUNIXSocket(context, BasicSocket, Object);
-            RubyUNIXServer.createUNIXServer(context, UNIXSocket, Object);
+            var UNIXSocket = RubyUNIXSocket.createUNIXSocket(context, BasicSocket);
+            RubyUNIXServer.createUNIXServer(context, UNIXSocket);
         }
 
         var IPSocket = RubyIPSocket.createIPSocket(context, BasicSocket);
-        var TCPSocket = RubyTCPSocket.createTCPSocket(context, IPSocket, Object);
-        RubyTCPServer.createTCPServer(context, TCPSocket, Object);
-        RubyUDPSocket.createUDPSocket(context, IPSocket, Socket, Object);
+        var TCPSocket = RubyTCPSocket.createTCPSocket(context, IPSocket);
+        RubyTCPServer.createTCPServer(context, TCPSocket);
+        RubyUDPSocket.createUDPSocket(context, IPSocket, Socket);
 
         Addrinfo.createAddrinfo(context, Object);
         Option.createOption(context, Object, Socket);

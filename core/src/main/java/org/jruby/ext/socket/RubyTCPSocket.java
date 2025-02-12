@@ -64,10 +64,9 @@ import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineClass;
 
 public class RubyTCPSocket extends RubyIPSocket {
-    static RubyClass createTCPSocket(ThreadContext context, RubyClass IPSocket, RubyClass Object) {
-        return (RubyClass) Object.setConstant(context, "TCPsocket",
-                defineClass(context, "TCPSocket", IPSocket, RubyTCPSocket::new).
-                        defineMethods(context, RubyTCPSocket.class));
+    static RubyClass createTCPSocket(ThreadContext context, RubyClass IPSocket) {
+        return defineClass(context, "TCPSocket", IPSocket, RubyTCPSocket::new).
+                defineMethods(context, RubyTCPSocket.class);
     }
 
     public RubyTCPSocket(Ruby runtime, RubyClass type) {

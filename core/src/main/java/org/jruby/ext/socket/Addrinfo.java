@@ -52,6 +52,7 @@ import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.ext.socket.SocketUtils.IP_V4_MAPPED_ADDRESS_PREFIX;
 import static org.jruby.ext.socket.SocketUtils.sockerr;
 
@@ -64,7 +65,7 @@ public class Addrinfo extends RubyObject {
     final byte  PACKET_HOST     =   0;  // host packet type (if_packet.h)
 
     public static void createAddrinfo(ThreadContext context, RubyClass Object) {
-        Define.defineClass(context, "Addrinfo", Object, Addrinfo::new).defineMethods(context, Addrinfo.class);
+        defineClass(context, "Addrinfo", Object, Addrinfo::new).defineMethods(context, Addrinfo.class);
     }
 
     public Addrinfo(Ruby runtime, RubyClass cls) {
