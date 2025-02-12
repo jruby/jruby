@@ -30,6 +30,7 @@
 
 package org.jruby.ext.socket;
 
+import jnr.constants.platform.Errno;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
@@ -113,7 +114,7 @@ public class RubyTCPSocket extends RubyIPSocket {
                     return channel;
                 }
 
-                throw context.runtime.newErrnoETIMEDOUTError();
+                throw RubyIOTimeoutError.newIOTimeoutError(context.runtime, Errno.ETIMEDOUT.description()).toThrowable();
             } catch (ConnectException e) {
                 // fall through and try next valid address for the host.
             }
