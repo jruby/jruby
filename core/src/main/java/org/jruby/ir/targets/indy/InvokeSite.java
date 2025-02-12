@@ -56,6 +56,7 @@ import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 import java.lang.invoke.SwitchPoint;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -493,14 +494,14 @@ public abstract class InvokeSite extends MutableCallSite {
                         mh = binder
                                 .permute("context", "self", "arg.*", "block") // filter caller
                                 .cast(nativeCall.getNativeReturn(), nativeCall.getNativeSignature())
-                                .invokeStaticQuiet(LOOKUP, nativeCall.getNativeTarget(), nativeCall.getNativeName())
+                                .invoke(nativeCall.getHandleQuiet(LOOKUP))
                                 .handle();
                     } else {
                         mh = binder
                                 .permute("self", "context", "arg.*", "block") // filter caller, move self
                                 .castArg("self", nativeCall.getNativeTarget())
                                 .castVirtual(nativeCall.getNativeReturn(), nativeCall.getNativeTarget(), nativeCall.getNativeSignature())
-                                .invokeVirtualQuiet(LOOKUP, nativeCall.getNativeName())
+                                .invoke(nativeCall.getHandleQuiet(LOOKUP))
                                 .handle();
                     }
 
@@ -519,7 +520,7 @@ public abstract class InvokeSite extends MutableCallSite {
         return mh;
     }
 
-    private static DynamicMethod.NativeCall buildExactNativeCall(DynamicMethod.NativeCall nativeCall, int arity) {
+    private static DynamicMethod.NativeCall buildExactNativeCall(final DynamicMethod.NativeCall nativeCall, int arity) {
         Class[] args = nativeCall.getNativeSignature();
 
         int rubyArgCount = args.length;
@@ -633,15 +634,11 @@ public abstract class InvokeSite extends MutableCallSite {
         }
 
         if (params != null) {
-            try {
-                if (nativeCall.isStatic()) {
-                    lookup().findStatic(nativeCall.getNativeTarget(), nativeCall.getNativeName(), methodType(nativeCall.getNativeReturn(), params));
-                } else {
-                    lookup().findVirtual(nativeCall.getNativeTarget(), nativeCall.getNativeName(), methodType(nativeCall.getNativeReturn(), params));
-                }
-
-                return new DynamicMethod.NativeCall(nativeCall.getNativeTarget(), nativeCall.getNativeName(), nativeCall.getNativeReturn(), params, nativeCall.isStatic(), false);
-            } catch (NoSuchMethodException | IllegalAccessException e) {
+            // method must be declared on the target class and annotated
+            DynamicMethod.NativeCall exactNativeCall = new DynamicMethod.NativeCall(nativeCall.getNativeTarget(), nativeCall.getNativeName(), nativeCall.getNativeReturn(), params, nativeCall.isStatic(), false);
+            Method method = exactNativeCall.getMethodQuiet();
+            if (method != null && method.getAnnotation(JRubyMethod.class) != null) {
+                return exactNativeCall;
             }
         }
 
