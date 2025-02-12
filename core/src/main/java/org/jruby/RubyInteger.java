@@ -383,28 +383,34 @@ public abstract class RubyInteger extends RubyNumeric {
         }
     }
 
-    static final ByteList[] SINGLE_CHAR_BYTELISTS;
+    static final ByteList[] SINGLE_CHAR_USASCII_BYTELISTS;
+    static final ByteList[] SINGLE_CHAR_ASCII8BIT_BYTELISTS;
+    static final ByteList[] SINGLE_CHAR_UTF8_BYTELISTS;
     static {
-        SINGLE_CHAR_BYTELISTS = new ByteList[256];
-        for (int i = 0; i < 256; i++) {
-            ByteList bytes = new ByteList(SINGLE_CHAR_BYTES[i], false);
-            SINGLE_CHAR_BYTELISTS[i] = bytes;
-            bytes.setEncoding(i < 0x80 ? USASCIIEncoding.INSTANCE : ASCIIEncoding.INSTANCE);
-        }
+        SINGLE_CHAR_USASCII_BYTELISTS = new ByteList[128];
+        for (int i = 0; i < 128; i++) SINGLE_CHAR_USASCII_BYTELISTS[i] = new ByteList(SINGLE_CHAR_BYTES[i], USASCIIEncoding.INSTANCE, false);
+
+        SINGLE_CHAR_ASCII8BIT_BYTELISTS = new ByteList[256];
+        for (int i = 0; i < 256; i++) SINGLE_CHAR_ASCII8BIT_BYTELISTS[i] = new ByteList(SINGLE_CHAR_BYTES[i], ASCIIEncoding.INSTANCE, false);
+
+        SINGLE_CHAR_UTF8_BYTELISTS = new ByteList[128];
+        for (int i = 0; i < 128; i++) SINGLE_CHAR_UTF8_BYTELISTS[i] = new ByteList(SINGLE_CHAR_BYTES[i], UTF8Encoding.INSTANCE, false);
     }
 
     public static ByteList singleCharByteList(final byte index) {
-        return SINGLE_CHAR_BYTELISTS[Byte.toUnsignedInt(index)];
+        if (index > 0) {
+            return SINGLE_CHAR_USASCII_BYTELISTS[index];
+        } else {
+            return SINGLE_CHAR_ASCII8BIT_BYTELISTS[Byte.toUnsignedInt(index)];
+        }
     }
 
-    static final ByteList[] SINGLE_CHAR_UTF8_BYTELISTS;
-    static {
-        SINGLE_CHAR_UTF8_BYTELISTS = new ByteList[128];
-        for (int i = 0; i < 128; i++) {
-            ByteList bytes = new ByteList(SINGLE_CHAR_BYTES[i], false);
-            SINGLE_CHAR_UTF8_BYTELISTS[i] = bytes;
-            bytes.setEncoding(UTF8Encoding.INSTANCE);
-        }
+    static ByteList singleCharUSASCIIByteList(final byte index) {
+        return SINGLE_CHAR_USASCII_BYTELISTS[index];
+    }
+
+    static ByteList singleCharASCII8BITByteList(final byte index) {
+        return SINGLE_CHAR_ASCII8BIT_BYTELISTS[Byte.toUnsignedInt(index)];
     }
 
     /**
@@ -431,11 +437,14 @@ public abstract class RubyInteger extends RubyNumeric {
     public static RubyString singleCharString(Ruby runtime, byte b, RubyClass meta, Encoding enc) {
         ByteList bytes = null;
         int ub = Byte.toUnsignedInt(b);
-        if (enc == USASCIIEncoding.INSTANCE || enc == ASCIIEncoding.INSTANCE) {
-            bytes = singleCharByteList(b);
-        } else if (enc == RubyString.UTF8 && ub < 0x80) {
-            bytes = singleCharUTF8ByteList(b);
-        }
+        if (enc == ASCIIEncoding.INSTANCE) {
+            bytes = singleCharASCII8BITByteList(b);
+        } else if (ub < 0x80)
+            if (enc == USASCIIEncoding.INSTANCE) {
+                bytes = singleCharUSASCIIByteList(b);
+            } else if (enc == RubyString.UTF8) {
+                bytes = singleCharUTF8ByteList(b);
+            }
 
         if (bytes == null) {
             // just share byte array
@@ -459,7 +468,7 @@ public abstract class RubyInteger extends RubyNumeric {
             return chrCommon(context, uint, enc);
         }
 
-        return RubyString.newStringShared(context.runtime, SINGLE_CHAR_BYTELISTS[(int) uint]);
+        return RubyString.newStringShared(context.runtime, singleCharByteList((byte) uint));
     }
 
     private long toUnsignedInteger(ThreadContext context) {
