@@ -612,9 +612,10 @@ do
             append java_args -XX:CRaCRestoreFrom=.jruby.checkpoint ;;
         --cache)
             echo "EXPERIMENTAL: Regenerating the JRuby AppCDS archive at $jruby_jsa_file"
+            echo "EXPERIMENTAL: Log output at ${jruby_jsa_file}.log"
             regenerate_jsa_file=true
             rm -f "$jruby_jsa_file"
-            append java_args -XX:ArchiveClassesAtExit="$jruby_jsa_file" ;;
+            append java_args -XX:ArchiveClassesAtExit="$jruby_jsa_file" -Xlog:cds=off -Xlog:cds=info:file="$jruby_jsa_file".log ;;
         # Abort processing on the double dash
         --) break ;;
         # Other opts go to ruby
