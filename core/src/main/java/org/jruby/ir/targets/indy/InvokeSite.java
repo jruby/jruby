@@ -306,26 +306,24 @@ public abstract class InvokeSite extends MutableCallSite {
     }
 
     private MethodHandle createAttrReaderHandle(IRubyObject self, RubyClass cls, VariableAccessor accessor) {
-        MethodHandle nativeTarget;
-
         MethodHandle filter = cls.getClassRuntime().getNullToNilHandle();
 
         MethodHandle getValue;
 
+        SmartBinder binder = SmartBinder.from(signature).permute("self");
+
         if (accessor instanceof FieldVariableAccessor) {
             MethodHandle getter = ((FieldVariableAccessor)accessor).getGetter();
-            getValue = Binder.from(type())
-                    .drop(0, argOffset - 1)
+            getValue = binder
                     .filterReturn(filter)
-                    .cast(methodType(Object.class, self.getClass()))
-                    .invoke(getter);
+                    .cast(Object.class, self.getClass())
+                    .invoke(getter).handle();
         } else {
-            getValue = Binder.from(type())
-                    .drop(0, argOffset - 1)
+            getValue = binder
                     .filterReturn(filter)
-                    .cast(methodType(Object.class, Object.class))
-                    .prepend(accessor)
-                    .invokeVirtualQuiet(LOOKUP, "get");
+                    .cast(Object.class, Object.class)
+                    .prepend("accessor", accessor)
+                    .invokeVirtualQuiet(LOOKUP, "get").handle();
         }
 
         // NOTE: Must not cache the fully-bound handle in the method, since it's specific to this class
@@ -334,8 +332,6 @@ public abstract class InvokeSite extends MutableCallSite {
     }
 
     private MethodHandle createAttrWriterHandle(IRubyObject self, RubyClass cls, VariableAccessor accessor) {
-        MethodHandle nativeTarget;
-
         MethodHandle filter = Binder
                 .from(IRubyObject.class, Object.class)
                 .drop(0)
@@ -343,20 +339,20 @@ public abstract class InvokeSite extends MutableCallSite {
 
         MethodHandle setValue;
 
+        SmartBinder binder = SmartBinder.from(signature).permute("self", "arg0");
+
         if (accessor instanceof FieldVariableAccessor) {
             MethodHandle setter = ((FieldVariableAccessor)accessor).getSetter();
-            setValue = Binder.from(type())
-                    .drop(0, argOffset - 1)
+            setValue = binder
                     .filterReturn(filter)
-                    .cast(methodType(void.class, self.getClass(), Object.class))
-                    .invoke(setter);
+                    .cast(void.class, self.getClass(), Object.class)
+                    .invoke(setter).handle();
         } else {
-            setValue = Binder.from(type())
-                    .drop(0, argOffset - 1)
+            setValue = binder
                     .filterReturn(filter)
-                    .cast(methodType(void.class, Object.class, Object.class))
-                    .prepend(accessor)
-                    .invokeVirtualQuiet(LOOKUP, "set");
+                    .cast(void.class, Object.class, Object.class)
+                    .prepend("accessor", accessor)
+                    .invokeVirtualQuiet(LOOKUP, "set").handle();
         }
 
         return setValue;
