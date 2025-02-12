@@ -32,6 +32,8 @@ package org.jruby.internal.runtime.methods;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Collections;
@@ -457,6 +459,8 @@ public abstract class DynamicMethod {
         private final boolean statik;
         private final boolean java;
         private Method reflected;
+        private MethodHandle handle;
+        private boolean notFound;
 
         public NativeCall(Class nativeTarget, String nativeName, Class nativeReturn, Class[] nativeSignature, boolean statik) {
             this(nativeTarget, nativeName, nativeReturn, nativeSignature, statik, false);
@@ -514,8 +518,47 @@ public abstract class DynamicMethod {
             try {
                 return this.reflected = nativeTarget.getDeclaredMethod(nativeName, nativeSignature);
             } catch (Exception e) {
+                this.notFound = true;
                 throw new RuntimeException(e);
             }
+        }
+
+        /**
+         * Get the java.lang.reflect.Method for this NativeCall quietly.
+         *
+         * If an error is raised, this method will return null;
+         *
+         * @return the reflected method corresponding to this NativeCall, or null if it could not be found
+         */
+        public Method getMethodQuiet() {
+            Method reflected = this.reflected;
+            if (reflected != null || notFound) return reflected;
+            try {
+                return this.reflected = nativeTarget.getDeclaredMethod(nativeName, nativeSignature);
+            } catch (Exception e) {
+                this.notFound = true;
+                return null;
+            }
+        }
+
+        /**
+         * Get the java.lang.reflect.Method for this NativeCall quietly.
+         *
+         * If an error is raised, this method will return null;
+         *
+         * @return the reflected method corresponding to this NativeCall, or null if it could not be found
+         */
+        public MethodHandle getHandleQuiet(MethodHandles.Lookup lookup) {
+            MethodHandle handle = this.handle;
+            if (handle != null || notFound) return null;
+
+            Method reflected = getMethodQuiet();
+            try {
+                if (reflected != null) return lookup.unreflect(reflected);
+            } catch (Exception e) {
+                this.notFound = true;
+            }
+            return null;
         }
 
         @Override
