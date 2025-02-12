@@ -687,14 +687,8 @@ if $use_modules; then
         JRUBY_JSA="$jruby_jsa_file"
     fi
 
-    # If we have a jruby.jsa file, enable AppCDS
-    if [ -f "$JRUBY_JSA" ]; then
-        add_log
-        add_log "Detected Class Data Sharing archive:"
-        add_log "  $JRUBY_JSA"
-
-        JAVA_OPTS="$JAVA_OPTS -XX:+UnlockDiagnosticVMOptions -XX:SharedArchiveFile=$JRUBY_JSA"
-    fi
+    # Auto-generate DynamicCDS archive
+    JAVA_OPTS="$JAVA_OPTS -XX:+AutoCreateSharedArchive -XX:SharedArchiveFile=$JRUBY_JSA -Xlog:cds=off -Xlog:cds=info:file="$jruby_jsa_file".log"
 fi
 
 # ----- Final prepration of the Java command line -----------------------------
