@@ -635,8 +635,11 @@ fi
 append ruby_args "$@"
 
 # If regenerating the JSA archive but no Ruby arguments were passed, do -e 1
-if $regenerate_jsa_file & [ \'"$ruby_args"\' = "' '" ]; then
-    assign ruby_args '-e' '1'
+if $regenerate_jsa_file; then
+    case $ruby_args in
+        (*[![:space:]]*) ;;  # If non-space character found, ruby_args isn't empty
+        (*) assign ruby_args -e 1 ;;  # ruby_args is empty
+    esac
 fi
 
 JAVA_OPTS="$JAVA_OPTS $JAVA_MEM $JAVA_STACK"
