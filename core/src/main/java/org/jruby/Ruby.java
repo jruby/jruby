@@ -1345,15 +1345,32 @@ public final class Ruby implements Constantizable {
         return moduleLastId.incrementAndGet();
     }
 
-    @Deprecated
+    /**
+     * A collection of all natural Module instances in the system.
+     *
+     * Instances of Module, which are themselves modules, do not have ancestors and can't be traversed by walking down
+     * from BasicObject. We track them separately here for purposes of ObjectSpace.each_object.
+     *
+     * @param module the true module to add to the allModules collection
+     */
     public void addModule(RubyModule module) {
-        // ignored
+        assert module.getMetaClass() == moduleClass;
+
+        allModules.put(module, RubyBasicObject.NEVER);
     }
 
-    @Deprecated
+    /**
+     * Walk all natural Module instances in the system.
+     *
+     * This will only include direct instances of Module, not instances of Class.
+     *
+     * @param func the consumer to call for each module
+     */
     public void eachModule(Consumer<RubyModule> func) {
-        // walk all subclasses starting from BasicObject
-        basicObjectClass.eachDescendant(func);
+        Enumeration<RubyModule> e = allModules.keys();
+        while (e.hasMoreElements()) {
+            func.accept(e.nextElement());
+        }
     }
 
     @Deprecated(since = "10.0")
@@ -3406,6 +3423,7 @@ public final class Ruby implements Constantizable {
 
         // Clear runtime tables to aid GC
         boundMethods.clear();
+        allModules.clear();
         constantNameInvalidators.clear();
         symbolTable.clear();
         javaSupport = loadJavaSupport();
@@ -5814,6 +5832,11 @@ public final class Ruby implements Constantizable {
     // Atomic integers for symbol and method IDs
     private final AtomicInteger symbolLastId = new AtomicInteger(128);
     private final AtomicInteger moduleLastId = new AtomicInteger(0);
+
+    // Weak map of all natural instances of Module in the system (not including Classes).
+    // a ConcurrentMap<RubyModule, ?> is used to emulate WeakHashSet<RubyModule>
+    // NOTE: module instances are unique and we only addModule from <init> - could use a ConcurrentLinkedQueue
+    private final ConcurrentWeakHashMap<RubyModule, Object> allModules = new ConcurrentWeakHashMap<>(128);
 
     private final Map<String, DateTimeZone> timeZoneCache = new HashMap<>();
 

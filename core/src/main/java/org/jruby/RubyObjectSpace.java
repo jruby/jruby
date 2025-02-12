@@ -32,9 +32,9 @@
 
 package org.jruby;
 
-import java.util.ArrayList;
 import static org.jruby.RubyEnumerator.enumeratorize;
 
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -175,23 +175,30 @@ public class RubyObjectSpace {
         }
         if (rubyClass == classClass(context) || rubyClass == moduleClass(context)) {
 
-            final ArrayList<IRubyObject> modules = new ArrayList<>(96);
-            runtime.eachModule((module) -> {
-                    if (rubyClass.isInstance(module)) {
-                        if (!(module instanceof IncludedModule || module instanceof PrependedModule 
-                                || module == runtime.getJavaSupport().getJavaPackageClass() || module instanceof JavaPackage
-                                || (module instanceof MetaClass && (((MetaClass)module).getAttached() instanceof JavaPackage)))) {
-                            // do nothing for included wrappers or singleton classes
-                            modules.add(module); // store the module to avoid concurrent modification exceptions
-                        }
+            // Use set in case there's any overlaps between eachModule and BasicObject descendants (should not be).
+            final HashSet<IRubyObject> modules = new HashSet<>(96);
+
+            // if Module is requested, iterate over true modules as well as all classes
+            if (rubyClass == moduleClass(context)) {
+                runtime.eachModule((module) -> {
+                    modules.add(module); // store the module to avoid concurrent modification exceptions
+                });
+            }
+
+            // Iterate over all classes
+            runtime.getBasicObject().subclasses(true).forEach((module) -> {
+                if (rubyClass.isInstance(module)) {
+                    if (!(module instanceof IncludedModule || module instanceof PrependedModule
+                            || module == runtime.getJavaSupport().getJavaPackageClass()
+                            || (module instanceof MetaClass && (((MetaClass) module).getAttached() instanceof JavaPackage)))) {
+                        // do nothing for included wrappers or singleton classes
+                        modules.add(module); // store the module to avoid concurrent modification exceptions
                     }
+                }
             });
 
-            final int count = modules.size();
-            for (int i = 0; i<count; i++) {
-                block.yield(context, modules.get(i));
-            }
-            return asFixnum(context, count);
+            modules.forEach((obj) -> block.yield(context, obj));
+            return asFixnum(context, modules.size());
         }
         if (rubyClass.getClass() == MetaClass.class) {
             // each_object(Cls.singleton_class) is basically a walk of Cls and all descendants of Cls.

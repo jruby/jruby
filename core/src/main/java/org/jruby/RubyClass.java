@@ -1136,13 +1136,6 @@ public class RubyClass extends RubyModule {
         return mine;
     }
 
-    public void eachDescendant(Consumer<? super RubyClass> consumer) {
-        getSubclassesForRead().forEachClass((k) -> {
-            consumer.accept(k);
-            k.eachDescendant(consumer);
-        });
-    }
-
     private SubclassArray newConcreteSubclassesArray(ThreadContext context) {
         return new SubclassArray(context.runtime, this.concreteSubclassesEstimate);
     }
@@ -1166,7 +1159,7 @@ public class RubyClass extends RubyModule {
         getSubclassesForRead().forEachClass(mine);
     }
 
-    private RubyClassSet getSubclassesForRead() {
+    public RubyClassSet getSubclassesForRead() {
         RubyClassSet result = this.subclasses;
 
         if (result != null) {

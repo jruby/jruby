@@ -424,7 +424,11 @@ public class RubyModule extends RubyObject {
 
         id = runtime.allocModuleId();
 
-        runtime.addModule(this);
+        // track module instances separately, since they don't descend from BasicObject
+        if (metaClass == runtime.getModule()) {
+            runtime.addModule(this);
+        }
+
         // if (parent == null) parent = runtime.getObject();
         setFlag(NEEDSIMPL_F, !isClass());
         updateGeneration(runtime);
