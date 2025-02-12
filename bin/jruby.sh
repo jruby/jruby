@@ -693,7 +693,7 @@ if $use_modules; then
         add_log "Detected Class Data Sharing archive:"
         add_log "  $JRUBY_JSA"
 
-        JAVA_OPTS="$JAVA_OPTS -XX:+UnlockDiagnosticVMOptions -XX:SharedArchiveFile=$JRUBY_JSA"
+        JAVA_OPTS="$JAVA_OPTS -XX:SharedArchiveFile=$JRUBY_JSA"
     fi
 fi
 
