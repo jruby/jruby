@@ -125,7 +125,7 @@ public class RubyNameError extends RubyStandardError {
 
             switch (object.getNativeClassIndex()) {
                 case ClassIndex.NIL:
-                    description = runtime.getNilString(); // "nil"
+                    description = runtime.getNilInspectString(); // "nil"
                     break;
                 case ClassIndex.TRUE:
                     description = runtime.getTrueString(); // "true"

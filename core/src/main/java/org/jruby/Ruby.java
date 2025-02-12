@@ -410,6 +410,8 @@ public final class Ruby implements Constantizable {
 
         nilString = newEmptyString(context);
         nilString.setFrozen(true);
+        nilInspectString = newString(RubyNil.nil);
+        nilInspectString.setFrozen(true);
         trueString = newString(TRUE_BYTES);
         trueString.setFrozen(true);
 
@@ -2076,6 +2078,9 @@ public final class Ruby implements Constantizable {
         return nilString;
     }
 
+    public RubyString getNilInspectString() {
+        return nilInspectString;
+    }
 
     /** Returns the "false" instance from the instance pool.
      * @return The "false" instance.
@@ -5585,6 +5590,7 @@ public final class Ruby implements Constantizable {
     private final RubyString trueString;
     private final RubyString falseString;
     private final RubyString nilString;
+    private final RubyString nilInspectString;
     final RubyFixnum[] fixnumCache = new RubyFixnum[2 * RubyFixnum.CACHE_OFFSET];
     final Object[] fixnumConstants = new Object[fixnumCache.length];
 
