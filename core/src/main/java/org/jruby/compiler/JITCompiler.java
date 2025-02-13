@@ -204,7 +204,7 @@ public class JITCompiler implements JITCompilerMBean {
         return new FullBuildTask(this, method);
     }
 
-    public void buildThresholdReached(ThreadContext context, final Compilable method) {
+    public void buildThresholdReached(ThreadContext context, final Compilable method, boolean force) {
         final RubyInstanceConfig config = instanceConfig(context);
 
         final Runnable task = getTaskFor(context, method);
@@ -217,7 +217,7 @@ public class JITCompiler implements JITCompilerMBean {
         }
 
         try {
-            if (config.getJitBackground() && config.getJitThreshold() > 0) {
+            if (!force && config.getJitBackground() && config.getJitThreshold() > 0) {
                 try {
                     executor.submit(task);
                 } catch (RejectedExecutionException ree) {

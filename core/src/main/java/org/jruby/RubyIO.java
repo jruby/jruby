@@ -73,6 +73,7 @@ import org.jruby.exceptions.EOFError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.internal.runtime.ThreadedRunnable;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -4278,7 +4279,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     // Enebo: annotation processing forced me to do pangea method here...
     @JRubyMethod(name = "read", meta = true, required = 1, optional = 3, checkArity = false, keywords = true)
     public static IRubyObject read(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
+        IRubyObject keywords = IRRuntimeHelpers.receiveKeywords(context, args, false, true, false);
         int argc = Arity.checkArgumentCount(context, args, 1, 4);
 
         IRubyObject path = args[0];
@@ -4287,20 +4288,20 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         { // rb_scan_args logic, basically
             if (argc > 3) {
-                if (!keywords) throw argumentError(context, args.length, 1, 4);
+                if (!(keywords instanceof RubyHash)) throw argumentError(context, args.length, 1, 4);
                 options = args[3];
                 offset = args[2];
                 length = args[1];
             } else if (argc > 2) {
-                if (args[2] instanceof RubyHash) {
-                    options = args[2];
+                if (keywords instanceof RubyHash) {
+                    options = keywords;
                 } else {
                     offset = args[2];
                 }
                 length = args[1];
             } else if (argc > 1) {
-                if (args[1] instanceof RubyHash) {
-                    options = args[1];
+                if (keywords instanceof RubyHash) {
+                    options = keywords;
                 } else {
                     length = args[1];
                 }
@@ -4344,20 +4345,24 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     // MRI: io_s_write
     public static IRubyObject ioStaticWrite(ThreadContext context, IRubyObject recv, IRubyObject[] argv, boolean binary) {
-        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
+        IRubyObject keywords = IRRuntimeHelpers.receiveKeywords(context, argv, false, true, false);
+        final Ruby runtime = context.runtime;
         IRubyObject string, offset, opt;
         string = offset = opt = context.nil;
 
         switch (argv.length) {
             case 4:
-                if (!keywords) throw argumentError(context, argv.length, 2, 3);
-                opt = argv[3].convertToHash();
+                if (!(keywords instanceof RubyHash)) throw runtime.newArgumentError(argv.length, 2, 3);
+                opt = keywords;
                 offset = argv[2];
                 string = argv[1];
                 break;
             case 3:
-                opt = TypeConverter.checkHashType(context.runtime, argv[2]);
-                if (opt.isNil()) offset = argv[2];
+                if (keywords instanceof RubyHash) {
+                    opt = keywords;
+                } else {
+                    offset = argv[2];
+                }
                 string = argv[1];
                 break;
             case 2:
@@ -5232,7 +5237,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 if (arg instanceof RubyString) { // Overrides all?
                     ioOptions = newIOOptions(runtime, arg.asJavaString());
                 } else if (arg instanceof RubyFixnum fixnum) {
-                    ioOptions = newIOOptions(runtime, fixnum.getValue());
+                    ioOptions = newIOOptions(runtime, fixnum.asLong(context));
                 } else if (arg instanceof RubyHash hash) {
                     ioOptions = updateIOOptionsFromOptions(context, hash, ioOptions);
                 }

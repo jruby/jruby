@@ -144,13 +144,13 @@ public class RubySystemCallError extends RubyStandardError {
         public void marshalTo(Ruby runtime, Object obj, RubyClass type,
                               MarshalStream marshalStream) throws IOException {
             RubySystemCallError exc = (RubySystemCallError) obj;
-            marshalStream.registerLinkTarget(exc);
+            var context = runtime.getCurrentContext();
+            marshalStream.registerLinkTarget(context, exc);
 
             List<Variable<Object>> attrs = exc.getMarshalVariableList();
-            attrs.add(new VariableEntry<Object>(
-                    "mesg", exc.message == null ? runtime.getNil() : exc.message));
-            attrs.add(new VariableEntry<Object>("errno", exc.errno));
-            attrs.add(new VariableEntry<Object>("bt", exc.getBacktrace()));
+            attrs.add(new VariableEntry<>("mesg", exc.message == null ? context.nil : exc.message));
+            attrs.add(new VariableEntry<>("errno", exc.errno));
+            attrs.add(new VariableEntry<>("bt", exc.getBacktrace()));
             marshalStream.dumpVariables(attrs);
         }
 

@@ -321,7 +321,7 @@ public class RubyBigDecimal extends RubyNumeric {
         IRubyObject old = limit(context, recv);
 
         if (arg == context.nil) return old;
-        if (castAsFixnum(context, arg).getValue() < 0) throw argumentError(context, "argument must be positive");
+        if (castAsFixnum(context, arg).asLong(context) < 0) throw argumentError(context, "argument must be positive");
 
         ((RubyModule) recv).setInternalModuleVariable("vpPrecLimit", arg);
 
@@ -367,7 +367,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
         args = Arity.scanArgs(context, args, 1, 1);
 
-        long mode = castAsFixnum(context, args[0]).getValue();
+        long mode = castAsFixnum(context, args[0]).asLong(context);
         IRubyObject value = args[1];
 
         if ((mode & EXCEPTION_ALL) != 0) {
@@ -414,7 +414,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     // The Fixnum cast should be fine because these are internal variables and user code cannot change them.
     private static long bigDecimalVar(ThreadContext context, String variableName) {
-        return ((RubyFixnum) Access.getClass(context, "BigDecimal").searchInternalModuleVariable(variableName)).getValue();
+        return ((RubyFixnum) Access.getClass(context, "BigDecimal").searchInternalModuleVariable(variableName)).asLong(context);
     }
 
     private static RoundingMode getRoundingMode(ThreadContext context) {
@@ -454,7 +454,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     private static BigDecimal toBigDecimal(ThreadContext context, final RubyInteger value) {
         return value instanceof RubyFixnum fixnum ?
-            BigDecimal.valueOf(fixnum.getValue()) : new BigDecimal(value.getBigIntegerValue());
+            BigDecimal.valueOf(fixnum.asLong(context)) : new BigDecimal(value.asBigInteger(context));
     }
 
     private static RubyBigDecimal getVpRubyObjectWithPrecInner(ThreadContext context, RubyRational value, RoundingMode mode) {
@@ -513,7 +513,7 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private static RubyBigDecimal newInstance(ThreadContext context, IRubyObject recv, RubyFixnum arg, MathContext mathContext) {
-        final long value = arg.getValue();
+        final long value = arg.asLong(context);
         return value == 0 ?
                 getZero(context, 1) :
                 new RubyBigDecimal(context.runtime, (RubyClass) recv, new BigDecimal(value, mathContext));
@@ -552,7 +552,7 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private static RubyBigDecimal newInstance(ThreadContext context, IRubyObject recv, RubyBignum arg, MathContext mathContext) {
-        final BigInteger value = arg.getBigIntegerValue();
+        final BigInteger value = arg.asBigInteger(context);
         if (value.equals(BigInteger.ZERO)) return getZero(context, 1);
         return new RubyBigDecimal(context.runtime, (RubyClass) recv, new BigDecimal(value, mathContext));
     }
@@ -1083,14 +1083,14 @@ public class RubyBigDecimal extends RubyNumeric {
             if (infinitySign >= 0) return getZero(context, 0);
 
             // (-Infinity) ** (-even_integer) -> +0 AND (-Infinity) ** (-odd_integer) -> -0
-            if (Numeric.f_integer_p(context, exp)) return getZero(context, isEven(exp) ? 1 : -1);
+            if (Numeric.f_integer_p(context, exp)) return getZero(context, isEven(context, exp) ? 1 : -1);
 
             return getZero(context, -1); // (-Infinity) ** (-non_integer) -> -0
         }
 
         if (infinitySign >= 0) return getInfinity(context, 1);
 
-        if (Numeric.f_integer_p(context, exp)) return getInfinity(context, isEven(exp) ? 1 : -1);
+        if (Numeric.f_integer_p(context, exp)) return getInfinity(context, isEven(context, exp) ? 1 : -1);
 
         throw context.runtime.newMathDomainError("a non-integral exponent for a negative base");
     }
@@ -1102,7 +1102,7 @@ public class RubyBigDecimal extends RubyNumeric {
             if (zeroSign >= 0) return getInfinity(context, 1);
 
             // (-0) ** (-even_integer) -> +Infinity  AND (-0) ** (-odd_integer) -> -Infinity
-            if (Numeric.f_integer_p(context, exp)) return getInfinity(context, isEven(exp) ? 1 : -1);
+            if (Numeric.f_integer_p(context, exp)) return getInfinity(context, isEven(context, exp) ? 1 : -1);
 
             return getInfinity(context, -1); // (-0) ** (-non_integer) -> Infinity
         }
@@ -1137,7 +1137,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
         if (exp instanceof RubyBignum || exp instanceof RubyFixnum) {
         } else if (exp instanceof RubyFloat floatExp) {
-            double d = floatExp.getValue();
+            double d = floatExp.asLong(context);
             if (d == Math.round(d)) {
                 exp = RubyNumeric.fixable(context.runtime, d) ?
                         asFixnum(context, (long) d) : RubyBignum.newBignorm(context.runtime, d);
@@ -1175,22 +1175,22 @@ public class RubyBigDecimal extends RubyNumeric {
         } else if ( exp instanceof RubyRational) {
             int ny = nx;
             return bigdecimal_power_by_bigdecimal(context, exp, prec.isNil() ? nx + ny : nx);
-        } else if (exp instanceof RubyBignum) {
+        } else if (exp instanceof RubyBignum bexp) {
             BigDecimal absValue = value.abs();
             if (absValue.equals(BigDecimal.ONE)) {
                 return new RubyBigDecimal(context.runtime, BigDecimal.ONE, 0, 1) ;
             } else if (absValue.compareTo(BigDecimal.ONE) == -1) {
                 if (Numeric.f_negative_p(context, exp)) {
-                    return getInfinity(context, (isEven((RubyBignum)exp) ? 1 : -1 ) * value.signum());
-                } else if (Numeric.f_negative_p(context, this) && isEven((RubyBignum)exp)) {
+                    return getInfinity(context, (isEven(context, bexp) ? 1 : -1 ) * value.signum());
+                } else if (Numeric.f_negative_p(context, this) && isEven(context, bexp)) {
                     return getZero(context, -1);
                 } else {
                     return getZero(context, 1);
                 }
             } else {
                 if (!Numeric.f_negative_p(context, exp)) {
-                    return getInfinity(context, (isEven((RubyBignum)exp) ? 1 : -1 ) * value.signum());
-                } else if(value.signum() == -1 && isEven((RubyBignum)exp)) {
+                    return getInfinity(context, (isEven(context, bexp) ? 1 : -1 ) * value.signum());
+                } else if (value.signum() == -1 && isEven(context, bexp)) {
                     return getZero(context, -1);
                 } else {
                     return getZero(context, 1);
@@ -1682,14 +1682,14 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @Override
     @JRubyAPI
-    public double asDouble(ThreadContext context) {
-        return SafeDoubleParser.doubleValue(value);
+    public BigInteger asBigInteger(ThreadContext context) {
+        return value.toBigInteger();
     }
 
     @Override
     @JRubyAPI
-    public long asLong(ThreadContext context) {
-        return value.longValue();
+    public double asDouble(ThreadContext context) {
+        return SafeDoubleParser.doubleValue(value);
     }
 
     @Override
@@ -1699,8 +1699,9 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     @Override
-    public BigInteger getBigIntegerValue() {
-        return value.toBigInteger();
+    @JRubyAPI
+    public long asLong(ThreadContext context) {
+        return value.longValue();
     }
 
     public BigDecimal getBigDecimalValue() {
@@ -2516,9 +2517,9 @@ public class RubyBigDecimal extends RubyNumeric {
         return infinitySign == -1 ? "-Infinity" : "Infinity";
     }
 
-    private static boolean isEven(final RubyNumeric x) {
-        if (x instanceof RubyFixnum fix) return (fix.getValue() & 1) == 0;
-        if (x instanceof RubyBignum bignum) return bignum.getBigIntegerValue().testBit(0) == false; // 0-th bit -> 0
+    private static boolean isEven(ThreadContext context, final RubyNumeric x) {
+        if (x instanceof RubyFixnum fix) return (fix.asLong(context) & 1) == 0;
+        if (x instanceof RubyBignum bignum) return bignum.asBigInteger(context).testBit(0) == false; // 0-th bit -> 0
 
         return false;
     }

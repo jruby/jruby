@@ -43,6 +43,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.Sprintf;
+import org.jruby.util.TypeConverter;
+import org.jruby.util.cli.Options;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Create.newEmptyString;
@@ -110,7 +112,6 @@ public class RubyNameError extends RubyStandardError {
         @JRubyMethod
         public IRubyObject to_str(ThreadContext context) {
             String message = this.message;
-
             if (message == null) return context.nil;
 
             final Ruby runtime = context.runtime;
@@ -137,10 +138,10 @@ public class RubyNameError extends RubyStandardError {
                 IRubyObject classTmp = null;
                 if (!object.isSpecialConst()) {
                     if (object instanceof RubyClass) {
-                        separator = newString(context, "class ");
+                        separator = RubyString.newString(runtime, "class ");
                         classTmp = object;
                     } else if (object instanceof RubyModule) {
-                        separator = newString(context, "module ");
+                        separator = RubyString.newString(runtime, "module ");
                         classTmp = object;
                     }
                 }
@@ -148,22 +149,19 @@ public class RubyNameError extends RubyStandardError {
                 if (classTmp == null) {
                     RubyClass klass = object.getMetaClass();
                     if (klass.isSingleton()) {
-                        separator = newString(context, "");
+                        separator = RubyString.newString(runtime, "");
                         if (object == runtime.getTopSelf()) {
-                            className = newString(context, "main");
+                            classTmp = RubyString.newString(runtime, "main");
                         } else {
-                            className = (RubyString) object.anyToString();
+                            classTmp = object.anyToString();
                         }
                     } else {
-                        separator = newString(context, "an instance of ");
+                        separator = RubyString.newString(runtime, "an instance of ");
                         classTmp = klass.getRealClass();
-                        className = getNameOrInspect(context, classTmp);
                     }
-                } else {
-                    className = getNameOrInspect(context, classTmp);
                 }
 
-
+                className = getNameOrInspect(context, classTmp);
             }
 
             RubyArray arr = RubyArray.newArray(runtime, this.name, description, separator, className);
@@ -171,19 +169,16 @@ public class RubyNameError extends RubyStandardError {
             ByteList msgBytes = new ByteList(message.length() + description.size() + separator.size() + className.size(), USASCIIEncoding.INSTANCE);
             Sprintf.sprintf(msgBytes, message, arr);
 
-            return newString(context, msgBytes);
+            return RubyString.newString(runtime, msgBytes);
         }
 
         // MRI: coercion dance for name error object inspection in name_err_mesg_to_str
         private static RubyString getNameOrInspect(ThreadContext context, IRubyObject object) {
             IRubyObject tmp = tryModuleName(context, object);
-
             if (tmp == UNDEF || tmp.isNil()) tmp = tryInspect(context, object);
             if (tmp == UNDEF) context.setErrorInfo(context.nil);
-
-            tmp = Convert.checkToString(context, tmp);
+            tmp = TypeConverter.checkStringType(context.runtime, tmp);
             if (tmp.isNil()) tmp = tmp.anyToString();
-
             return (RubyString) tmp;
         }
 
@@ -194,7 +189,6 @@ public class RubyNameError extends RubyStandardError {
             } catch (RaiseException e) {
                 // ignore
             }
-
             return UNDEF;
         }
 
@@ -207,7 +201,6 @@ public class RubyNameError extends RubyStandardError {
                     // ignore
                 }
             }
-
             return UNDEF;
         }
     }

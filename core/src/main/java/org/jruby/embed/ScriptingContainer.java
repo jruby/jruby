@@ -1840,7 +1840,6 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
         LocalContextProvider provider = getProvider();
         if (provider.isRuntimeInitialized()) {
             provider.getRuntime().tearDown(false);
-            provider.getRuntime().releaseClassLoader();
         }
         provider.terminate();
     }

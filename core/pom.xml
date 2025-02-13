@@ -149,12 +149,12 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>org.jruby.joni</groupId>
       <artifactId>joni</artifactId>
-      <version>2.2.2-SNAPSHOT</version>
+      <version>2.2.3</version>
     </dependency>
     <dependency>
       <groupId>org.jruby.jcodings</groupId>
       <artifactId>jcodings</artifactId>
-      <version>1.0.58</version>
+      <version>1.0.61</version>
     </dependency>
     <dependency>
       <groupId>org.jruby</groupId>
@@ -231,12 +231,6 @@ DO NOT MODIFY - GENERATED CODE
       <groupId>com.headius</groupId>
       <artifactId>backport9</artifactId>
       <version>1.13</version>
-    </dependency>
-    <dependency>
-      <groupId>jakarta.annotation</groupId>
-      <artifactId>jakarta.annotation-api</artifactId>
-      <version>2.0.0</version>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.crac</groupId>
@@ -616,6 +610,7 @@ DO NOT MODIFY - GENERATED CODE
                     <include>COPYING</include>
                     <include>LEGAL</include>
                     <include>LICENSE.RUBY</include>
+                    <include>VERSION</include>
                   </includes>
                   <targetPath>${project.build.sourceDirectory}/META-INF/</targetPath>
                 </resource>

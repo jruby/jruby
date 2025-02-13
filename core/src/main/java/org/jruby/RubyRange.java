@@ -425,7 +425,7 @@ public class RubyRange extends RubyObject {
         @Override
         public void doCall(ThreadContext context, IRubyObject arg) {
             if (iter instanceof RubyFixnum iterFixnum) {
-                iter = asFixnum(context, iterFixnum.getValue() - 1);
+                iter = asFixnum(context, iterFixnum.asLong(context) - 1);
             } else if (iter instanceof RubyInteger iterInteger) {
                 iter = iterInteger.op_minus(context, 1);
             } else {
@@ -624,7 +624,7 @@ public class RubyRange extends RubyObject {
 
         if (beg instanceof RubyFixnum && end instanceof RubyFixnum endFixnum) {
             if (excl) {
-                if (endFixnum.getValue() == RubyFixnum.MIN) return this;
+                if (endFixnum.asLong(context) == RubyFixnum.MIN) return this;
 
                 end = endFixnum.op_minus(context, 1);
             }
@@ -659,13 +659,13 @@ public class RubyRange extends RubyObject {
         assert (!end.isNil());
 
         if (!(beg instanceof RubyFixnum)) {
-            if (!beg.isNil() && bignumPositive(beg)) return;
+            if (!beg.isNil() && bignumPositive(context, beg)) return;
 
             beg = asFixnum(context, RubyFixnum.MIN);
         }
 
         if (!(end instanceof RubyFixnum)) {
-            if (bignumNegative(end)) return;
+            if (bignumNegative(context, end)) return;
 
             end = asFixnum(context, RubyFixnum.MAX);
         }
@@ -684,9 +684,9 @@ public class RubyRange extends RubyObject {
     private void reverseEachPositiveBignum(ThreadContext context, IRubyObject beg, RubyInteger end, Block block) {
         assert (!end.isNil());
 
-        if (end instanceof RubyFixnum || bignumNegative(end)) return;
+        if (end instanceof RubyFixnum || bignumNegative(context, end)) return;
 
-        if (beg.isNil() || beg instanceof RubyFixnum || bignumNegative(beg)) {
+        if (beg.isNil() || beg instanceof RubyFixnum || bignumNegative(context, beg)) {
             beg = RubyBignum.newBignum(context.runtime, RubyBignum.LONG_MAX_PLUS_ONE);
         }
 
@@ -697,7 +697,7 @@ public class RubyRange extends RubyObject {
     private void reverseEachNegativeBignum(ThreadContext context, IRubyObject beg, RubyInteger end, Block block) {
         assert (!end.isNil());
 
-        if (end instanceof RubyFixnum || bignumPositive(end)) {
+        if (end instanceof RubyFixnum || bignumPositive(context, end)) {
             end = RubyBignum.newBignum(context.runtime, RubyBignum.LONG_MIN_MINUS_ONE);
         }
 
@@ -705,18 +705,17 @@ public class RubyRange extends RubyObject {
             reverseEachBignumBeginless(context, end, block);
         }
 
-        if (beg instanceof RubyFixnum || bignumPositive(beg)) return;
+        if (beg instanceof RubyFixnum || bignumPositive(context, beg)) return;
 
         reverseEachBignum(context, (RubyInteger) beg, end, block);
     }
 
     // MRI: range_reverse_each_bignum
     private void reverseEachBignum(ThreadContext context, RubyInteger beg, RubyInteger end, Block block) {
-        assert (bignumPositive(beg) == bignumPositive(end));
+        assert (bignumPositive(context, beg) == bignumPositive(context, end));
 
-        Ruby runtime = context.runtime;
-        RubyFixnum one = RubyFixnum.one(runtime);
-        RubyFixnum zero = RubyFixnum.zero(runtime);
+        RubyFixnum one = asFixnum(context, 1);
+        RubyFixnum zero = asFixnum(context, 0);
 
         IRubyObject c;
         while (!(c = beg.op_cmp(context, end)).equals(one)) {
@@ -728,7 +727,7 @@ public class RubyRange extends RubyObject {
 
     // MRI: range_reverse_each_bignum_beginless
     private void reverseEachBignumBeginless(ThreadContext context, RubyInteger end, Block block) {
-        assert (bignumNegative(end));
+        assert (bignumNegative(context, end));
 
         for (; ; end = (RubyInteger) end.op_minus(context, 1)) {
             block.yieldSpecific(context, end);
@@ -736,17 +735,17 @@ public class RubyRange extends RubyObject {
     }
 
     // MRI: RBIGNUM_NEGATIVE
-    private static boolean bignumNegative(IRubyObject end) {
+    private static boolean bignumNegative(ThreadContext context, IRubyObject end) {
         assert (end instanceof RubyBignum);
         RubyBignum bigEnd = (RubyBignum) end;
-        return bigEnd.signum() == -1;
+        return bigEnd.signum(context) == -1;
     }
 
     // MRI: RBIGNUM_POSITIVE
-    private static boolean bignumPositive(IRubyObject num) {
+    private static boolean bignumPositive(ThreadContext context, IRubyObject num) {
         assert (num instanceof RubyBignum);
         RubyBignum bigNum = (RubyBignum) num;
-        return bigNum.signum() == 1;
+        return bigNum.signum(context) == 1;
     }
 
     @JRubyMethod(name = "step")
@@ -821,7 +820,7 @@ public class RubyRange extends RubyObject {
         if (begin instanceof RubyFixnum && end.isNil() && step instanceof RubyFixnum) {
             fixnumEndlessStep(context, step, block);
         } else if (begin instanceof RubyFixnum && end instanceof RubyFixnum && step instanceof RubyFixnum stepf) {
-            fixnumStep(context, stepf.getValue(), block);
+            fixnumStep(context, stepf.asLong(context), block);
         } else if (beginIsNumeric && endIsNumeric && floatStep(context, begin, end, step, isExclusive, isEndless, block)) {
             /* done */
         } else if (!strBegin.isNil() && step instanceof RubyFixnum) {
@@ -1100,7 +1099,7 @@ public class RubyRange extends RubyObject {
             if (!(begin instanceof RubyInteger)) throw typeError(context, "cannot exclude end value with non Integer begin value");
 
             return end instanceof RubyFixnum fixnum ?
-                    asFixnum(context, fixnum.getValue() - 1) :
+                    asFixnum(context, fixnum.asLong(context) - 1) :
                     end.callMethod(context, "-", RubyFixnum.one(context.runtime));
         }
 
@@ -1266,11 +1265,12 @@ public class RubyRange extends RubyObject {
         public void marshalTo(Ruby runtime, Object obj, RubyClass type,
                 MarshalStream marshalStream) throws IOException {
             RubyRange range = (RubyRange) obj;
+            var context = runtime.getCurrentContext();
 
-            marshalStream.registerLinkTarget(range);
+            marshalStream.registerLinkTarget(context, range);
             List<Variable<Object>> attrs = range.getMarshalVariableList();
 
-            attrs.add(new VariableEntry<>("excl", range.isExclusive ? runtime.getTrue() : runtime.getFalse()));
+            attrs.add(new VariableEntry<>("excl", range.isExclusive ? context.tru : context.fals));
             attrs.add(new VariableEntry<>("begin", range.begin));
             attrs.add(new VariableEntry<>("end", range.end));
 

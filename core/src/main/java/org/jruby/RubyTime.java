@@ -412,7 +412,7 @@ public class RubyTime extends RubyObject {
             case INTEGER: return (RubyInteger) v;
 
             case RATIONAL:
-                if (((RubyRational) v).getDenominator().isOne()) {
+                if (((RubyRational) v).getDenominator().isOne(context)) {
                     return ((RubyRational) v).getNumerator();
                 }
                 break;
@@ -1591,8 +1591,8 @@ public class RubyTime extends RubyObject {
                 nanosecs = nano % 1000000;
             } else if (arg instanceof RubyRational rational) {
                 // use Rational numerator and denominator to calculate nanos
-                BigInteger numerator = rational.getNumerator().getBigIntegerValue();
-                BigInteger denominator = rational.getDenominator().getBigIntegerValue();
+                BigInteger numerator = rational.getNumerator().asBigInteger(context);
+                BigInteger denominator = rational.getDenominator().asBigInteger(context);
 
                 BigDecimal nanosBD = new BigDecimal(numerator).divide(new BigDecimal(denominator), 50, RoundingMode.HALF_UP).multiply(ONE_BILLION_BD);
                 BigInteger millis = nanosBD.divide(ONE_MILLION_BD).toBigInteger();

@@ -58,6 +58,7 @@ import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Constants;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callsite.CacheEntry;
@@ -66,6 +67,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.encoding.MarshalEncoding;
 
 import static org.jruby.RubyBasicObject.getMetaClass;
+import static org.jruby.api.Access.stringClass;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.marshal.MarshalCommon.*;
@@ -106,29 +108,32 @@ public class MarshalStream extends FilterOutputStream {
         if (depth == 0) out.flush(); // flush afer whole dump is complete
     }
 
+    @Deprecated(since = "10.0")
     public void registerLinkTarget(IRubyObject newObject) {
-        if (shouldBeRegistered(newObject)) {
-            cache.register(newObject);
-        }
+        registerLinkTarget(((RubyBasicObject) newObject).getCurrentContext(), newObject);
+    }
+
+    public void registerLinkTarget(ThreadContext context, IRubyObject newObject) {
+        if (shouldBeRegistered(context, newObject)) cache.register(newObject);
     }
 
     public void registerSymbol(ByteList sym) {
         cache.registerSymbol(sym);
     }
 
-    static boolean shouldBeRegistered(IRubyObject value) {
+    static boolean shouldBeRegistered(ThreadContext context, IRubyObject value) {
         if (value.isNil()) {
             return false;
         } else if (value instanceof RubyBoolean) {
             return false;
-        } else if (value instanceof RubyFixnum) {
-            return ! isMarshalFixnum((RubyFixnum)value);
+        } else if (value instanceof RubyFixnum fixnum) {
+            return ! isMarshalFixnum(context, fixnum);
         }
         return true;
     }
 
-    private static boolean isMarshalFixnum(RubyFixnum fixnum) {
-        var value = fixnum.getValue();
+    private static boolean isMarshalFixnum(ThreadContext context, RubyFixnum fixnum) {
+        var value = fixnum.asLong(context);
         return value <= RubyFixnum.MAX_MARSHAL_FIXNUM && value >= RubyFixnum.MIN_MARSHAL_FIXNUM;
     }
 
@@ -198,9 +203,14 @@ public class MarshalStream extends FilterOutputStream {
         return ((MarshalEncoding) value).shouldMarshalEncoding();
     }
 
+    @Deprecated(since = "10.0")
     public void writeDirectly(IRubyObject value) throws IOException {
+        writeDirectly(value.getRuntime().getCurrentContext(), value);
+    }
+
+    public void writeDirectly(ThreadContext context, IRubyObject value) throws IOException {
         List<Variable<Object>> variables = getVariables(value);
-        writeObjectData(value);
+        writeObjectData(context, value);
         if (variables != null) {
             dumpVariablesWithEncoding(variables, value);
         }
@@ -228,22 +238,21 @@ public class MarshalStream extends FilterOutputStream {
         return path.asJavaString();
     }
     
-    private void writeObjectData(IRubyObject value) throws IOException {
+    private void writeObjectData(ThreadContext context, IRubyObject value) throws IOException {
         // switch on the object's *native type*. This allows use-defined
         // classes that have extended core native types to piggyback on their
         // marshalling logic.
         if (value instanceof CoreObjectType) {
             if (value instanceof DataType) {
-                Ruby runtime = value.getRuntime();
-
-                throw typeError(runtime.getCurrentContext(), str(runtime, "no _dump_data is defined for class ", types(runtime, getMetaClass(value))));
+                throw typeError(context, str(context.runtime, "no _dump_data is defined for class ",
+                        types(context.runtime, getMetaClass(value))));
             }
             ClassIndex nativeClassIndex = ((CoreObjectType)value).getNativeClassIndex();
 
             switch (nativeClassIndex) {
             case ARRAY:
                 write('[');
-                RubyArray.marshalTo((RubyArray<?>)value, this);
+                RubyArray.marshalTo(context, (RubyArray<?>)value, this);
                 return;
             case FALSE:
                 write('F');
@@ -251,13 +260,13 @@ public class MarshalStream extends FilterOutputStream {
             case FIXNUM:
                 RubyFixnum fixnum = (RubyFixnum)value;
 
-                if (isMarshalFixnum(fixnum)) {
+                if (isMarshalFixnum(context, fixnum)) {
                     write('i');
-                    writeInt((int) fixnum.getValue());
+                    writeInt(fixnum.asInt(context));
                     return;
                 }
                 // FIXME: inefficient; constructing a bignum just for dumping?
-                value = RubyBignum.newBignum(value.getRuntime(), fixnum.getValue());
+                value = RubyBignum.newBignum(context.runtime, fixnum.asLong(context));
 
                 // fall through
             case BIGNUM:
@@ -265,7 +274,7 @@ public class MarshalStream extends FilterOutputStream {
                 RubyBignum.marshalTo((RubyBignum)value, this);
                 return;
             case CLASS:
-                if (((RubyClass)value).isSingleton()) throw typeError(runtime.getCurrentContext(),"singleton class can't be dumped");
+                if (((RubyClass)value).isSingleton()) throw typeError(context, "singleton class can't be dumped");
                 write('c');
                 RubyClass.marshalTo((RubyClass)value, this);
                 return;
@@ -279,7 +288,7 @@ public class MarshalStream extends FilterOutputStream {
                 if(hash.getIfNone() == RubyBasicObject.UNDEF){
                     write('{');
                 } else if (hash.hasDefaultProc()) {
-                    throw typeError(runtime.getCurrentContext(), "can't dump hash with default proc");
+                    throw typeError(context, "can't dump hash with default proc");
                 } else {
                     write('}');
                 }
@@ -297,7 +306,7 @@ public class MarshalStream extends FilterOutputStream {
             case OBJECT:
             case BASICOBJECT:
                 final RubyClass type = getMetaClass(value);
-                dumpDefaultObjectHeader(type);
+                dumpDefaultObjectHeader(context, type);
                 type.getRealClass().marshal(value, this);
                 return;
             case REGEXP:
@@ -305,7 +314,7 @@ public class MarshalStream extends FilterOutputStream {
                 RubyRegexp.marshalTo((RubyRegexp)value, this);
                 return;
             case STRING:
-                registerLinkTarget(value);
+                registerLinkTarget(context, value);
                 write('"');
                 writeString(value.convertToString().getByteList());
                 return;
@@ -319,28 +328,38 @@ public class MarshalStream extends FilterOutputStream {
                 write('T');
                 return;
             default:
-                throw typeError(runtime.getCurrentContext(), str(runtime, "can't dump ", types(runtime, value.getMetaClass())));
+                throw typeError(context, str(context.runtime, "can't dump ", types(context.runtime, value.getMetaClass())));
             }
         } else {
-            dumpDefaultObjectHeader(value.getMetaClass());
-            value.getMetaClass().getRealClass().marshal(value, this);
+            var metaClass = value.getMetaClass();
+            dumpDefaultObjectHeader(context, metaClass);
+            metaClass.getRealClass().marshal(value, this);
         }
     }
 
+    @Deprecated(since = "10.0")
     public void userNewMarshal(IRubyObject value, CacheEntry entry) throws IOException {
-        userNewCommon(value, entry);
+        userNewMarshal(((RubyBasicObject) value).getCurrentContext(), value, entry);
     }
 
+    public void userNewMarshal(ThreadContext context, IRubyObject value, CacheEntry entry) throws IOException {
+        userNewCommon(context, value, entry);
+    }
+
+    @Deprecated(since = "10.0")
     public void userNewMarshal(IRubyObject value) throws IOException {
-        userNewCommon(value, null);
+        userNewMarshal(((RubyBasicObject) value).getCurrentContext(), value);
     }
 
-    private void userNewCommon(IRubyObject value, CacheEntry entry) throws IOException {
-        var context = runtime.getCurrentContext();
-        registerLinkTarget(value);
+    public void userNewMarshal(ThreadContext context, IRubyObject value) throws IOException {
+        userNewCommon(context, value, null);
+    }
+
+    private void userNewCommon(ThreadContext context, IRubyObject value, CacheEntry entry) throws IOException {
+        registerLinkTarget(context, value);
         write(TYPE_USRMARSHAL);
         final RubyClass klass = getMetaClass(value);
-        writeAndRegisterSymbol(RubySymbol.newSymbol(runtime, klass.getRealClass().getName(context)).getBytes());
+        writeAndRegisterSymbol(asSymbol(context, klass.getRealClass().getName(context)).getBytes());
 
         IRubyObject marshaled;
         if (entry != null) {
@@ -354,25 +373,30 @@ public class MarshalStream extends FilterOutputStream {
         dumpObject(marshaled);
     }
 
+    @Deprecated(since = "10.0")
     public void userMarshal(IRubyObject value, CacheEntry entry) throws IOException {
-        userCommon(value, entry);
+        userMarshal(((RubyBasicObject) value).getCurrentContext(), value, entry);
     }
 
+    public void userMarshal(ThreadContext context, IRubyObject value, CacheEntry entry) throws IOException {
+        userCommon(context, value, entry);
+    }
+
+    @Deprecated(since = "10.0")
     public void userMarshal(IRubyObject value) throws IOException {
-        userCommon(value, null);
+        userMarshal(((RubyBasicObject) value).getCurrentContext(), value);
     }
 
-    private void userCommon(IRubyObject value, CacheEntry entry) throws IOException {
-        var context = runtime.getCurrentContext();
+    public void userMarshal(ThreadContext context, IRubyObject value) throws IOException {
+        userCommon(context, value, null);
+    }
+
+    private void userCommon(ThreadContext context, IRubyObject value, CacheEntry entry) throws IOException {
         RubyFixnum depthLimitFixnum = asFixnum(context, depthLimit);
         final RubyClass klass = getMetaClass(value);
-        IRubyObject dumpResult;
-        if (entry != null) {
-            dumpResult = entry.method.call(context, value, entry.sourceModule, "_dump", depthLimitFixnum);
-        } else {
-            dumpResult = value.callMethod(context, "_dump", depthLimitFixnum);
-        }
-        
+        IRubyObject dumpResult = entry != null ?
+                entry.method.call(context, value, entry.sourceModule, "_dump", depthLimitFixnum) :
+                value.callMethod(context, "_dump", depthLimitFixnum);
         RubyString marshaled = castAsString(context, dumpResult);
 
         List<Variable<Object>> variables = null;
@@ -391,7 +415,7 @@ public class MarshalStream extends FilterOutputStream {
 
         if (variables != null) dumpVariables(variables);
 
-        registerLinkTarget(value);
+        registerLinkTarget(context, value);
     }
     
     public void writeUserClass(IRubyObject obj, RubyClass type) throws IOException {
@@ -433,16 +457,20 @@ public class MarshalStream extends FilterOutputStream {
     }
 
     public void writeEncoding(Encoding encoding) throws IOException {
+        writeEncoding(runtime.getCurrentContext(), encoding);
+    }
+
+    public void writeEncoding(ThreadContext context, Encoding encoding) throws IOException {
         if (encoding == null || encoding == USASCIIEncoding.INSTANCE) {
-            writeAndRegisterSymbol(RubySymbol.newSymbol(runtime, SYMBOL_ENCODING_SPECIAL).getBytes());
-            writeObjectData(runtime.getFalse());
+            writeAndRegisterSymbol(asSymbol(context, SYMBOL_ENCODING_SPECIAL).getBytes());
+            writeObjectData(context, context.fals);
         } else if (encoding == UTF8Encoding.INSTANCE) {
-            writeAndRegisterSymbol(RubySymbol.newSymbol(runtime, SYMBOL_ENCODING_SPECIAL).getBytes());
-            writeObjectData(runtime.getTrue());
+            writeAndRegisterSymbol(asSymbol(context, SYMBOL_ENCODING_SPECIAL).getBytes());
+            writeObjectData(context, context.tru);
         } else {
-            writeAndRegisterSymbol(RubySymbol.newSymbol(runtime, SYMBOL_ENCODING).getBytes());
-            RubyString encodingString = new RubyString(runtime, runtime.getString(), encoding.getName());
-            writeObjectData(encodingString);
+            writeAndRegisterSymbol(asSymbol(context, SYMBOL_ENCODING).getBytes());
+            RubyString encodingString = new RubyString(context.runtime, stringClass(context), encoding.getName());
+            writeObjectData(context, encodingString);
         }
     }
     
@@ -475,14 +503,24 @@ public class MarshalStream extends FilterOutputStream {
         return type;
     }
 
+    @Deprecated(since = "10.0")
     public void dumpDefaultObjectHeader(RubyClass type) throws IOException {
-        dumpDefaultObjectHeader('o',type);
+        dumpDefaultObjectHeader(runtime.getCurrentContext(), type);
     }
 
+    public void dumpDefaultObjectHeader(ThreadContext context, RubyClass type) throws IOException {
+        dumpDefaultObjectHeader(context, 'o',type);
+    }
+
+    @Deprecated(since = "10.0")
     public void dumpDefaultObjectHeader(char tp, RubyClass type) throws IOException {
+        dumpDefaultObjectHeader(type.getRuntime().getCurrentContext(), tp, type);
+    }
+
+    public void dumpDefaultObjectHeader(ThreadContext context, char tp, RubyClass type) throws IOException {
         dumpExtended(type);
         write(tp);
-        writeAndRegisterSymbol(RubySymbol.newSymbol(runtime, getPathFromClass(type.getRealClass())).getBytes());
+        writeAndRegisterSymbol(asSymbol(context, getPathFromClass(type.getRealClass())).getBytes());
     }
 
     public void writeString(String value) throws IOException {

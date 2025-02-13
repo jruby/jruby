@@ -393,6 +393,27 @@ public class RubyMatchData extends RubyObject {
     }
 
     @JRubyMethod
+    public IRubyObject bytebegin(ThreadContext context, IRubyObject group) {
+        int index = backrefNumber(context, group);
+        Region regs = this.regs;
+        backrefNumberCheck(context, index);
+
+        int start = regs.getBeg(index);
+        return start < 0 ? context.nil : asFixnum(context, start);
+
+    }
+
+    @JRubyMethod
+    public IRubyObject byteend(ThreadContext context, IRubyObject group) {
+        int index = backrefNumber(context, group);
+        Region regs = this.regs;
+
+        backrefNumberCheck(context, index);
+        int start = regs.getBeg(index);
+        return start < 0 ? context.nil : asFixnum(context, regs.getEnd(index));
+    }
+
+    @JRubyMethod
     @Override
     public RubyString inspect(ThreadContext context) {
         if (str == null) return (RubyString) anyToString();

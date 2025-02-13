@@ -1344,15 +1344,16 @@ public final class Ruby implements Constantizable {
     public int allocModuleId() {
         return moduleLastId.incrementAndGet();
     }
+
+    @Deprecated
     public void addModule(RubyModule module) {
-        allModules.put(module, RubyBasicObject.NEVER);
+        // ignored
     }
 
+    @Deprecated
     public void eachModule(Consumer<RubyModule> func) {
-        Enumeration<RubyModule> e = allModules.keys();
-        while (e.hasMoreElements()) {
-            func.accept(e.nextElement());
-        }
+        // walk all subclasses starting from BasicObject
+        basicObjectClass.eachDescendant(func);
     }
 
     @Deprecated(since = "10.0")
@@ -3397,6 +3398,17 @@ public final class Ruby implements Constantizable {
         threadService.teardown();
         threadService = new ThreadService(this);
 
+        // Release classloader resources
+        releaseClassLoader();
+
+        // Tear down LoadService
+        loadService.tearDown();
+
+        // Clear runtime tables to aid GC
+        boundMethods.clear();
+        constantNameInvalidators.clear();
+        symbolTable.clear();
+        javaSupport = loadJavaSupport();
     }
 
     private int userTeardown(ThreadContext context) {
@@ -3449,7 +3461,6 @@ public final class Ruby implements Constantizable {
     public void releaseClassLoader() {
         if (jrubyClassLoader != null) {
             jrubyClassLoader.close();
-            //jrubyClassLoader = null;
         }
     }
 
@@ -5735,7 +5746,7 @@ public final class Ruby implements Constantizable {
     private PrintStream err;
 
     // Java support
-    private final JavaSupport javaSupport;
+    private JavaSupport javaSupport;
     private final JRubyClassLoader jrubyClassLoader;
 
     // Object Specializer
@@ -5803,11 +5814,6 @@ public final class Ruby implements Constantizable {
     // Atomic integers for symbol and method IDs
     private final AtomicInteger symbolLastId = new AtomicInteger(128);
     private final AtomicInteger moduleLastId = new AtomicInteger(0);
-
-    // Weak map of all Modules in the system (and by extension, all Classes
-    // a ConcurrentMap<RubyModule, ?> is used to emulate WeakHashSet<RubyModule>
-    // NOTE: module/class instances are unique and we only addModule from <init> - could use a ConcurrentLinkedQueue
-    private final ConcurrentWeakHashMap<RubyModule, Object> allModules = new ConcurrentWeakHashMap<>(128);
 
     private final Map<String, DateTimeZone> timeZoneCache = new HashMap<>();
 

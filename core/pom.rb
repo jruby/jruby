@@ -51,8 +51,8 @@ project 'JRuby Base' do
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
-  jar 'org.jruby.joni:joni:2.2.2-SNAPSHOT'
-  jar 'org.jruby.jcodings:jcodings:1.0.58'
+  jar 'org.jruby.joni:joni:2.2.3'
+  jar 'org.jruby.jcodings:jcodings:1.0.61'
   jar 'org.jruby:dirgra:0.5'
 
   jar 'com.headius:invokebinder:1.14'
@@ -75,8 +75,6 @@ project 'JRuby Base' do
   jar 'me.qmx.jitescript:jitescript:0.4.1', :exclusions => ['org.ow2.asm:asm-all']
 
   jar 'com.headius:backport9:1.13'
-
-  jar 'jakarta.annotation:jakarta.annotation-api:2.0.0', scope: 'provided'
 
   jar 'org.crac:crac:1.5.0'
 
@@ -291,7 +289,7 @@ project 'JRuby Base' do
                     },
                     {
                       directory: '..',
-                      includes: [ 'BSDL', 'COPYING', 'LEGAL', 'LICENSE.RUBY' ],
+                      includes: [ 'BSDL', 'COPYING', 'LEGAL', 'LICENSE.RUBY', 'VERSION' ],
                       target_path: '${project.build.sourceDirectory}/META-INF/'
                     }
                   ])

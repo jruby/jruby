@@ -204,16 +204,20 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
     @Deprecated(since = "10.0")
     public void warnDeprecatedAlternate(String name, String alternate) {
-        if (runtime.getWarningCategories().contains(Category.DEPRECATED)) warn(ID.DEPRECATED_METHOD, name + " is deprecated; use " + alternate + " instead");
+        if (hasDeprecationWarningEnabled()) warn(ID.DEPRECATED_METHOD, name + " is deprecated; use " + alternate + " instead");
     }
 
     @Deprecated(since = "10.0")
     public void warnDeprecatedForRemoval(String name, String version) {
-        if (runtime.getWarningCategories().contains(Category.DEPRECATED)) warn(ID.MISCELLANEOUS, name + " is deprecated and will be removed in Ruby " + version);
+        if (hasDeprecationWarningEnabled()) warn(ID.MISCELLANEOUS, name + " is deprecated and will be removed in Ruby " + version);
     }
 
     public void warnDeprecatedForRemovalAlternate(String name, String version, String alternate) {
-        if (runtime.getWarningCategories().contains(Category.DEPRECATED)) warn(ID.MISCELLANEOUS, name + " is deprecated and will be removed in Ruby " + version + "; use " + alternate + " instead");
+        if (hasDeprecationWarningEnabled()) warn(ID.MISCELLANEOUS, name + " is deprecated and will be removed in Ruby " + version + "; use " + alternate + " instead");
+    }
+
+    public boolean hasDeprecationWarningEnabled() {
+        return runtime.getWarningCategories().contains(Category.DEPRECATED);
     }
 
     public void warnOnce(ID id, String message) {

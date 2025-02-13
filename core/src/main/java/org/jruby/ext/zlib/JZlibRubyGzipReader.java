@@ -761,6 +761,27 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         return context.nil;
     }
 
+    @JRubyMethod
+    public IRubyObject each_char(ThreadContext context, Block block) {
+        final Ruby runtime = context.runtime;
+        if (!block.isGiven()) return RubyEnumerator.enumeratorize(runtime, this, "each_char");
+
+        try {
+            int value = bufferedStream.read();
+            while(value != -1) {
+                position++;
+                // TODO: must handle encoding. Move encoding handling methods to util class from RubyIO and use it.
+                // TODO: StringIO needs a love, too.
+                block.yield(context, runtime.newString(String.valueOf((char) (value & 0xFF))));
+                value = bufferedStream.read();
+            }
+        } catch(IOException ioe) {
+            throw runtime.newIOErrorFromException(ioe);
+        }
+
+        return context.nil;
+    }
+
     /**
      * Document-method: Zlib::GzipReader.zcat
      *

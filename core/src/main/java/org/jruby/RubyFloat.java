@@ -164,16 +164,17 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return this.value;
     }
 
+
     @Override
     @JRubyAPI
-    public double asDouble(ThreadContext context) {
-        return value;
+    public BigInteger asBigInteger(ThreadContext context) {
+        return RubyBignum.toBigInteger(value);
     }
 
     @Override
     @JRubyAPI
-    public long asLong(ThreadContext context) {
-        return (long) value;
+    public double asDouble(ThreadContext context) {
+        return value;
     }
 
     @Override
@@ -183,8 +184,9 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     }
 
     @Override
-    public BigInteger getBigIntegerValue() {
-        return RubyBignum.toBigInteger(value);
+    @JRubyAPI
+    public long asLong(ThreadContext context) {
+        return (long) value;
     }
 
     @Override
@@ -202,7 +204,13 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return dbl2ival(runtime, Math.ceil(value));
     }
 
+    @Deprecated(since = "10.0")
     public int signum() {
+        return signum(getCurrentContext());
+    }
+
+    @JRubyAPI
+    public int signum(ThreadContext context) {
         return (int) Math.signum(value); // NOTE: (int) NaN ?
     }
 
@@ -220,12 +228,12 @@ public class RubyFloat extends RubyNumeric implements Appendable {
 
     @Override
     public boolean isNegative(ThreadContext context) {
-        return signum() < 0;
+        return signum(context) < 0;
     }
 
     @Override
     public boolean isPositive(ThreadContext context) {
-        return signum() > 0;
+        return signum(context) > 0;
     }
 
     public static RubyFloat newFloat(Ruby runtime, double value) {
@@ -1119,24 +1127,26 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return Double.isInfinite(value) || Double.isNaN(value) ? context.fals : context.tru;
     }
 
-    private ByteList marshalDump() {
+    private ByteList marshalDump(ThreadContext context) {
         if (Double.isInfinite(value)) return value < 0 ? NEGATIVE_INFINITY_BYTELIST : INFINITY_BYTELIST;
         if (Double.isNaN(value)) return NAN_BYTELIST;
 
         ByteList byteList = new ByteList();
         // Always use US locale, to ensure "." separator. JRUBY-5918
-        Sprintf.sprintf(byteList, Locale.US, "%.17g", RubyArray.newArray(getRuntime(), this));
+        Sprintf.sprintf(byteList, Locale.US, "%.17g", newArray(context, this));
         return byteList;
     }
 
     public static void marshalTo(RubyFloat aFloat, MarshalStream output) throws java.io.IOException {
-        output.registerLinkTarget(aFloat);
-        output.writeString(aFloat.marshalDump());
+        var context = aFloat.getRuntime().getCurrentContext();
+        output.registerLinkTarget(context, aFloat);
+        output.writeString(aFloat.marshalDump(context));
     }
 
     public static void marshalTo(RubyFloat aFloat, NewMarshal output, NewMarshal.RubyOutputStream out) {
+        var context = aFloat.getRuntime().getCurrentContext();
         output.registerLinkTarget(aFloat);
-        output.writeString(out, aFloat.marshalDump());
+        output.writeString(out, aFloat.marshalDump(context));
     }
 
     public static RubyFloat unmarshalFrom(UnmarshalStream input) throws java.io.IOException {

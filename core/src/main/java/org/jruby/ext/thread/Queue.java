@@ -452,7 +452,7 @@ public class Queue extends RubyObject implements DataType {
         if (_timeout.isNil()) return 0;
 
         return _timeout instanceof RubyFixnum fixnum ?
-                TimeUnit.NANOSECONDS.convert(fixnum.getValue(), TimeUnit.SECONDS) :
+                TimeUnit.NANOSECONDS.convert(fixnum.asLong(context), TimeUnit.SECONDS) :
                 (long) (RubyNumeric.num2dbl(context, _timeout) * 1_000_000_000);
     }
 

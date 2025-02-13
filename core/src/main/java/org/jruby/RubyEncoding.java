@@ -625,10 +625,9 @@ public class RubyEncoding extends RubyObject implements Constantizable {
 
     @JRubyMethod(name = "compatible?", meta = true)
     public static IRubyObject compatible_p(ThreadContext context, IRubyObject self, IRubyObject first, IRubyObject second) {
-        Ruby runtime = context.runtime;
         Encoding enc = areCompatible(first, second);
 
-        return enc == null ? runtime.getNil() : runtime.getEncodingService().getEncoding(enc);
+        return enc == null ? context.nil : context.runtime.getEncodingService().getEncoding(enc);
     }
 
     @JRubyMethod(name = "default_external", meta = true)

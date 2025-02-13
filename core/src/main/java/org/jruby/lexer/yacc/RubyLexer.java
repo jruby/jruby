@@ -494,12 +494,16 @@ public class RubyLexer extends LexingCommon {
 
             message += (addNewline ? "\n" : "") + pre + shortLine + post;
             addNewline = !message.endsWith("\n");
-            String highlightLine = new String(new char[pb + (pre.length() == 3 ? -4 : 0)]);
-            highlightLine = highlightLine.replace("\0", " ") + "^";
-            if (end_column - start_column > 1) {
-                String underscore = new String(new char[end_column - start_column - 1]);
-                underscore = underscore.replace("\0", "~");
-                highlightLine += underscore;
+            int highlightSize = pb + (pre.length() == 3 ? -4 : 0);
+            String highlightLine = "";
+            if (highlightSize >= 0) {
+                highlightLine = new String(new char[highlightSize]);
+                highlightLine = highlightLine.replace("\0", " ") + "^";
+                if (end_column - start_column > 1) {
+                    String underscore = new String(new char[end_column - start_column - 1]);
+                    underscore = underscore.replace("\0", "~");
+                    highlightLine += underscore;
+                }
             }
 
             message += (addNewline ? "\n" : "") + highlightLine;

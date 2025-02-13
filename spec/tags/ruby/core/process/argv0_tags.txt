@@ -1,5 +1,0 @@
-fails:Process.argv0 returns a String
-fails:Process.argv0 is the path given as the main script and the same as __FILE__
-fails:Process.argv0 returns a non frozen object
-fails:Process.argv0 returns every time the same object
-fails:Process.argv0 returns a frozen object

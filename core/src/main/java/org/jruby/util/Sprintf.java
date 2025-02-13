@@ -293,7 +293,7 @@ public class Sprintf {
 
             // basically just forcing a TypeError here to match MRI
             obj = TypeConverter.convertToType(obj, fixnumClass(context), "to_int", true);
-            return (int)((RubyFixnum)obj).getValue();
+            return ((RubyFixnum)obj).asInt(context);
         }
 
         byte getDecimalSeparator() {
@@ -744,7 +744,7 @@ public class Sprintf {
                     case INTEGER: // no-op
                         break;
                     case FLOAT:
-                        arg = RubyNumeric.dbl2ival(context.runtime, ((RubyFloat) arg).getValue());
+                        arg = RubyNumeric.dbl2ival(context.runtime, ((RubyFloat) arg).asLong(context));
                         break;
                     case STRING:
                         arg = ((RubyString) arg).stringToInum(0, true);
@@ -791,7 +791,7 @@ public class Sprintf {
                     // we'll use Java's numeric formatting code (and our own).
                     boolean zero;
                     if (arg instanceof RubyFixnum fixnum) {
-                        final long v = fixnum.getValue();
+                        final long v = fixnum.asLong(context);
                         negative = v < 0;
                         zero = v == 0;
                         if (negative && fchar == 'u') {
@@ -1905,15 +1905,12 @@ public class Sprintf {
     }
 
     private static boolean isPositive(ThreadContext context, Object value) {
-        if (value instanceof RubyFloat) {
-            final long bits = Double.doubleToRawLongBits(((RubyFloat) value).asDouble(context));
-            return (bits & SIGN_MASK) == 0;
-        } else if (value instanceof RubyFixnum) {
-            return ((RubyFixnum) value).getValue() >= 0;
-        } else if (value instanceof RubyBignum) {
-            return ((RubyBignum) value).signum() >= 0;
-        }
-        return true;
+        return switch (value) {
+            case RubyFloat flote -> (Double.doubleToRawLongBits(flote.asDouble(context)) & SIGN_MASK) == 0;
+            case RubyFixnum fixnum -> fixnum.asLong(context) >= 0;
+            case RubyBignum bignum -> bignum.signum(context) >= 0;
+            default -> true;
+        };
     }
 
     private static final long SIGN_MASK = 1L << 63;
@@ -1933,7 +1930,7 @@ public class Sprintf {
             }
             bi = BigInteger.valueOf(mantissaBits);
         } else if (value instanceof RubyFixnum fixnum) {
-            bi = BigInteger.valueOf(fixnum.getValue());
+            bi = BigInteger.valueOf(fixnum.asLong(context));
         } else if (value instanceof RubyBignum bignum) {
             bi = bignum.getValue();
         } else {
@@ -1959,7 +1956,7 @@ public class Sprintf {
         if (value instanceof RubyBignum bignum) {
             return bignum.getValue().abs().bitLength() - 1;
         } else if (value instanceof RubyFixnum fixnum) {
-            long lval = fixnum.getValue();
+            long lval = fixnum.asLong(context);
             return lval == Long.MIN_VALUE ? 63 : 63 - Long.numberOfLeadingZeros(Math.abs(lval));
         } else if (value instanceof RubyFloat flote) {
             final long bits = Double.doubleToRawLongBits(flote.asDouble(context));

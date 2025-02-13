@@ -2486,11 +2486,12 @@ public class RubyHash extends RubyObject implements Map {
     // FIXME:  Total hack to get flash in Rails marshalling/unmarshalling in session ok...We need
     // to totally change marshalling to work with overridden core classes.
     public static void marshalTo(final RubyHash hash, final MarshalStream output) throws IOException {
-        output.registerLinkTarget(hash);
+        var context = hash.getRuntime().getCurrentContext();
+        output.registerLinkTarget(context, hash);
        int hashSize = hash.size();
        output.writeInt(hashSize);
         try {
-            hash.visitLimited(hash.getRuntime().getCurrentContext(), MarshalDumpVisitor, hashSize, output);
+            hash.visitLimited(context, MarshalDumpVisitor, hashSize, output);
         } catch (VisitorIOException e) {
             throw (IOException)e.getCause();
         }

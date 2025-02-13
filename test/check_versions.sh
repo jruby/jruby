@@ -65,7 +65,7 @@ check lib/target/jruby-stdlib-$jar_version.jar 19
 check maven/jruby-jars/pkg/jruby-jars-$gem_version.gem 32
 check maven/jruby-jars/lib/jruby-core-$jar_version-complete.jar 17
 check maven/jruby-jars/lib/jruby-stdlib-$jar_version.jar 19
-check maven/jruby-complete/target/jruby-complete-$jar_version.jar 34
+check maven/jruby-complete/target/jruby-complete-$jar_version.jar 36
 check maven/jruby/target/jruby-$jar_version.jar 9
 check maven/jruby-dist/target/jruby-dist-$jar_version-bin.tar.gz 45 jruby-$jar_version
 check maven/jruby-dist/target/jruby-dist-$jar_version-src.zip 20 jruby-$jar_version

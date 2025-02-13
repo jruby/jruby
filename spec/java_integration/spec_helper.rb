@@ -81,3 +81,22 @@ def with_stderr_captured
   end
 end
 
+def with_warn_captured
+  warns = []
+  oldwarn = nil
+
+  Warning.singleton_class.class_eval do
+    oldwarn = instance_method(:warn)
+    define_method :warn do |message, category: nil|
+      warns << [message, category]
+    end
+  end
+
+  yield
+
+  Warning.singleton_class.class_eval do
+    define_method :warn, oldwarn
+  end
+
+  warns
+end

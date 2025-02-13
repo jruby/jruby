@@ -110,7 +110,7 @@ public class ArrayJavaAddons {
             dims.append(context, zero);
         }
 
-        final long dim = ((RubyFixnum) dims.eltInternal(index)).getValue();
+        final long dim = ((RubyFixnum) dims.eltInternal(index)).asLong(context);
         if ( array.size() > dim ) {
             dims.eltInternalSet(index, asFixnum(context, array.size()));
         }

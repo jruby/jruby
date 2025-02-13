@@ -38,6 +38,7 @@ import org.jruby.RubyTime;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
@@ -125,7 +126,15 @@ public class Mutex extends RubyObject implements DataType {
         this.lockingThread = thread;
 
         // always check for thread interrupts after acquiring lock
-        thread.pollThreadEvents(context);
+        try {
+            thread.pollThreadEvents(context);
+        } catch (Throwable t) {
+            // Thread poll triggered an exception event, release locked locks before propagating
+            if (lock.isHeldByCurrentThread()) {
+                thread.unlock(lock);
+            }
+            Helpers.throwException(t);
+        }
 
         return this;
     }
