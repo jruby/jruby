@@ -1,1 +1,0 @@
-fails:Range#bsearch raises TypeError when non-Numeric begin/end and block not passed

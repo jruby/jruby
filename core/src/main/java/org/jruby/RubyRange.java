@@ -613,7 +613,7 @@ public class RubyRange extends RubyObject {
     @JRubyMethod
     public IRubyObject reverse_each(ThreadContext context, Block block) {
         if (!block.isGiven()) {
-            return enumeratorizeWithSize(context, this, "reverse_each", RubyRange::size);
+            return enumeratorizeWithSize(context, this, "reverse_each", RubyRange::reverseSize);
         }
 
         IRubyObject beg = this.begin;
@@ -784,19 +784,22 @@ public class RubyRange extends RubyObject {
     }
 
     private IRubyObject stepCommon(ThreadContext context, IRubyObject stepArg, Block block) {
-        boolean beginIsNumeric = begin instanceof RubyNumeric;
-        boolean endIsNumeric = end instanceof RubyNumeric;
+        IRubyObject b = begin;
+        IRubyObject e = end;
+
+        boolean beginIsNumeric = b instanceof RubyNumeric;
+        boolean endIsNumeric = e instanceof RubyNumeric;
         // For backward compatibility reasons (conforming to behavior before 3.4), String/Symbol
         // supports both old behavior ('a'..).step(1) and new behavior ('a'..).step('a')
         // Hence the additional conversion/additional checks.
-        IRubyObject strBegin = begin.checkStringType();
-        IRubyObject symBegin = begin instanceof RubySymbol symbol ? symbol.to_s(context) : context.nil;
+        IRubyObject strBegin = b.checkStringType();
+        IRubyObject symBegin = b instanceof RubySymbol symbol ? symbol.to_s(context) : context.nil;
 
         IRubyObject step;
         if (stepArg != UNDEF) {
             step = stepArg;
         } else {
-            if (beginIsNumeric || !strBegin.isNil() || !symBegin.isNil() || (begin.isNil() && endIsNumeric)) {
+            if (beginIsNumeric || !strBegin.isNil() || !symBegin.isNil() || (b.isNil() && endIsNumeric)) {
                 step = asFixnum(context, 1);
             } else {
                 throw argumentError(context, "step is required for non-numeric ranges");
@@ -813,64 +816,64 @@ public class RubyRange extends RubyObject {
             return stepEnumeratorize(context, stepArg, step, "step");
         }
 
-        if (begin.isNil()) {
+        if (b.isNil()) {
             throw argumentError(context, "#step iteration for beginless ranges is meaningless");
         }
 
-        if (begin instanceof RubyFixnum && end.isNil() && step instanceof RubyFixnum) {
-            fixnumEndlessStep(context, step, block);
-        } else if (begin instanceof RubyFixnum && end instanceof RubyFixnum && step instanceof RubyFixnum stepf) {
-            fixnumStep(context, stepf.asLong(context), block);
-        } else if (beginIsNumeric && endIsNumeric && floatStep(context, begin, end, step, isExclusive, isEndless, block)) {
-            /* done */
-        } else if (!strBegin.isNil() && step instanceof RubyFixnum) {
-            // backwards compatibility behavior for String only, when no step/Integer step is passed
-            // See discussion in https://bugs.ruby-lang.org/issues/18368
-            stringStep(context, step, block, (RubyString) strBegin);
-        } else if (!symBegin.isNil() && step instanceof RubyFixnum) {
-            // same as above: backward compatibility for symbols
-            symbolStep(context, step, block, (RubyString) symBegin);
-        } else {
-            int c, dir;
-            IRubyObject v = begin;
-            if (!end.isNil()) {
-                if (beginIsNumeric && stepIsNumeric && rangeLess(context, step, asFixnum(context, 0)) < 0) {
-                    // iterate backwards, for consistency with ArithmeticSequence
-                    if (isExclusive) {
-                        for (; rangeLess(context, end, v) < 0; v = v.callMethod(context, "+", step)) {
-                            block.yield(context, v);
-                        }
-                    } else {
-                        for (; (c = rangeLess(context, end, v)) <= 0; v = v.callMethod(context, "+", step)) {
-                            block.yield(context, v);
-                            if (c == 0) break;
-                        }
-                    }
+        IRubyObject v = b;
+        int c, dir;
 
-                } else {
-                    // Direction of the comparison. We use it as a comparison operator in cycle:
-                    // if begin < end, the cycle performs while value < end (iterating forward)
-                    // if begin > end, the cycle performs while value > end (iterating backward with
-                    // a negative step)
-                    dir = rangeLess(context, begin, end);
-                    // One preliminary addition to check the step moves iteration in the same direction as
-                    // from begin to end; otherwise, the iteration should be empty.
-                    if (rangeLess(context, begin, begin.callMethod(context, "+", step)) == dir) {
-                        if (isExclusive) {
-                            for (; rangeLess(context, v, end) == dir; v = v.callMethod(context, "+", step)) {
-                                block.yield(context, v);
-                            }
-                        } else {
-                            for (; (c = rangeLess(context, v, end)) == dir || c == 0; v = v.callMethod(context, "+", step)) {
-                                block.yield(context, v);
-                                if (c == 0) break;
-                            }
-                        }
-                    }
-                }
-            } else {
+        if (b instanceof RubyFixnum && e.isNil() && step instanceof RubyFixnum) {
+            fixnumEndlessStep(context, step, block);
+        } else if (b instanceof RubyFixnum && e instanceof RubyFixnum && step instanceof RubyFixnum stepf) {
+            fixnumStep(context, stepf.asLong(context), block);
+        } else {
+            boolean excl = isExclusive;
+            if (beginIsNumeric && stepIsNumeric && floatStep(context, b, e, step, excl, isEndless, block)) {
+                /* done */
+            } else if (!strBegin.isNil() && step instanceof RubyFixnum) {
+                // backwards compatibility behavior for String only, when no step/Integer step is passed
+                // See discussion in https://bugs.ruby-lang.org/issues/18368
+                stringStep(context, step, block, (RubyString) strBegin);
+            } else if (!symBegin.isNil() && step instanceof RubyFixnum) {
+                // same as above: backward compatibility for symbols
+                symbolStep(context, step, block, (RubyString) symBegin);
+            } else if (e.isNil()) {
                 for (; ; v = v.callMethod(context, "+", step)) {
                     block.yield(context, v);
+                }
+            } else if (beginIsNumeric && stepIsNumeric && rangeLess(context, step, asFixnum(context, 0)) < 0) {
+                // iterate backwards, for consistency with ArithmeticSequence
+                if (excl) {
+                    for (; rangeLess(context, e, v) < 0; v = v.callMethod(context, "+", step)) {
+                        block.yield(context, v);
+                    }
+                } else {
+                    for (; (c = rangeLess(context, e, v)) <= 0; v = v.callMethod(context, "+", step)) {
+                        block.yield(context, v);
+                        if (c == 0) break;
+                    }
+                }
+            } else if ((dir = rangeLess(context, b, e)) == 0) {
+                if (!excl) {
+                    block.yield(context, v);
+                }
+            } else if (rangeLess(context, b, b.callMethod(context, "+", step)) == dir) {
+                // Direction of the comparison. We use it as a comparison operator in cycle:
+                // if begin < end, the cycle performs while value < end (iterating forward)
+                // if begin > end, the cycle performs while value > end (iterating backward with
+                // a negative step)
+                // One preliminary addition to check the step moves iteration in the same direction as
+                // from begin to end; otherwise, the iteration should be empty.
+                if (excl) {
+                    for (; rangeLess(context, v, e) == dir; v = v.callMethod(context, "+", step)) {
+                        block.yield(context, v);
+                    }
+                } else {
+                    for (; (c = rangeLess(context, v, e)) == dir || c == 0; v = v.callMethod(context, "+", step)) {
+                        block.yield(context, v);
+                        if (c == 0) break;
+                    }
                 }
             }
         }
@@ -947,6 +950,47 @@ public class RubyRange extends RubyObject {
     }
 
     /**
+     * A size method for reverse_each suitable for lambda method reference implementation of {@link SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])}
+     *
+     * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
+     */
+    private static IRubyObject reverseSize(ThreadContext context, RubyRange recv, IRubyObject[] args) {
+        IRubyObject e = recv.end;
+        if (e.isNil()) {
+            cantIterateFrom(context, e);
+        }
+
+        IRubyObject b = recv.begin;
+        if (b instanceof RubyInteger) {
+            if (e instanceof RubyNumeric) {
+                return intervalStepSize(context, b, e, asFixnum(context, 1), recv.isExclusive);
+            }
+            else {
+                cantIterateFrom(context, e);
+            }
+        }
+
+        if (b.isNil()) {
+            if (e instanceof RubyInteger) {
+                return asFloat(context, Double.POSITIVE_INFINITY);
+            }
+            else {
+                cantIterateFrom(context, e);
+            }
+        }
+
+        if (!discreteObject(context, b)) {
+            cantIterateFrom(context, e);
+        }
+
+        return context.nil;
+    }
+
+    private static void cantIterateFrom(ThreadContext context, IRubyObject e) {
+        throw typeError(context, "can't iterate from " + e);
+    }
+
+    /**
      * A step size method suitable for lambda method reference implementation of {@link SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])}
      *
      * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
@@ -1018,6 +1062,7 @@ public class RubyRange extends RubyObject {
         return UNDEF;
     }
 
+    // MRI: discrete_object_p
     private static boolean discreteObject(ThreadContext context, IRubyObject obj) {
         return sites(context).respond_to_succ.respondsTo(context, obj, obj, false);
     }
@@ -1238,7 +1283,7 @@ public class RubyRange extends RubyObject {
     public IRubyObject size(ThreadContext context) {
         if (begin instanceof RubyInteger) {
             if (end instanceof RubyNumeric) {
-                return RubyNumeric.intervalStepSize(context, begin, end, RubyFixnum.one(context.runtime), isExclusive);
+                return intervalStepSize(context, begin, end, RubyFixnum.one(context.runtime), isExclusive);
             }
             if (end.isNil()) {
                 return dbl2num(context.runtime, Double.POSITIVE_INFINITY);
