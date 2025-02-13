@@ -60,6 +60,7 @@ import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.api.Warn.warning;
+import static org.jruby.util.Numeric.int_pow;
 
 /**
  *
@@ -295,17 +296,13 @@ public class RubyBignum extends RubyInteger {
      */
     @Override
     public IRubyObject ceil(ThreadContext context, IRubyObject arg){
-        int ndigits = toInt(context, arg);
-        BigInteger self = value;
-        if (ndigits >= 0) return this;
+        RubyInteger num = this;
 
-        int posdigits = Math.abs(ndigits);
-        BigInteger exp = BigInteger.TEN.pow(posdigits);
-        BigInteger mod = self.mod(exp);
-        BigInteger res = self;
-        if (mod.signum() != 0) res = self.add( exp.subtract(mod) );// self + (exp - (mod));
+        long ndigits = toLong(context, arg);
+        if (ndigits >= 0) return num;
 
-        return newBignum(context.runtime, res);
+        RubyInteger f = (RubyInteger) int_pow(context, 10, -ndigits);
+        return integerCeil(context, f);
     }
 
     /** rb_big_floor

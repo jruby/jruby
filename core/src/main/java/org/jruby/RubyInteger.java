@@ -567,6 +567,19 @@ public abstract class RubyInteger extends RubyNumeric {
     @JRubyMethod(name = "ceil")
     public abstract IRubyObject ceil(ThreadContext context, IRubyObject arg);
 
+    protected RubyNumeric integerCeil(ThreadContext context, RubyNumeric f) {
+        RubyNumeric num;
+        boolean neg = signum(context) < 0;
+        if (neg) {
+            num = (RubyNumeric) op_uminus(context);
+        } else {
+            num = (RubyNumeric) op_plus(context, f.op_minus(context, asFixnum(context, 1)));
+        }
+        num = (RubyNumeric) ((RubyInteger) num.div(context, f)).op_mul(context, f);
+        if (neg) num = (RubyNumeric) num.op_uminus(context);
+        return num;
+    }
+
     @JRubyMethod(name = "floor")
     public IRubyObject floor(ThreadContext context){
         return this;

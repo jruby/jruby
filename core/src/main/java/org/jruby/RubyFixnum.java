@@ -56,7 +56,6 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
-import org.jruby.util.Numeric;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
@@ -70,6 +69,7 @@ import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.Numeric.f_odd_p;
+import static org.jruby.util.Numeric.int_pow;
 
 /**
  * Implementation of the Integer (Fixnum internal) class.
@@ -351,14 +351,18 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
         long ndigits = toLong(context, arg);
         if (ndigits >= 0) return this;
 
-        long self = this.value;
-        long posdigits = Math.abs(ndigits);
-        long exp = (long) Math.pow(10, posdigits);
-        long mod = (self % exp + exp) % exp;
-        long res = self;
-        if (mod != 0) res = self + (exp - (mod));
+        RubyNumeric f = int_pow(context, 10, -ndigits);
+        if (f instanceof RubyFixnum fixnum) {
+            long x = value, y = fixnum.value;
+            boolean neg = x < 0;
+            if (neg) x = -x;
+            else x += y - 1;
+            x = (x / y) * y;
+            if (neg) x = -x;
+            return asFixnum(context, x);
+        }
 
-        return asFixnum(context, res);
+        return integerCeil(context, f);
     }
 
     /** rb_fix_floor
@@ -906,7 +910,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
         if (a == -1) {
             return b % 2 == 0 ? RubyFixnum.one(runtime) : RubyFixnum.minus_one(runtime);
         }
-        return Numeric.int_pow(context, a, b);
+        return int_pow(context, a, b);
     }
 
     // MRI: int_pow_tmp1
