@@ -821,7 +821,7 @@ public class RubyRange extends RubyObject {
             fixnumEndlessStep(context, step, block);
         } else if (begin instanceof RubyFixnum && end instanceof RubyFixnum && step instanceof RubyFixnum stepf) {
             fixnumStep(context, stepf.asLong(context), block);
-        } else if (beginIsNumeric && endIsNumeric && floatStep(context, begin, end, step, isExclusive, isEndless, block)) {
+        } else if (beginIsNumeric && stepIsNumeric && floatStep(context, begin, end, step, isExclusive, isEndless, block)) {
             /* done */
         } else if (!strBegin.isNil() && step instanceof RubyFixnum) {
             // backwards compatibility behavior for String only, when no step/Integer step is passed
