@@ -424,7 +424,11 @@ public class RubyModule extends RubyObject {
 
         id = runtime.allocModuleId();
 
-        runtime.addModule(this);
+        // track module instances separately, since they don't descend from BasicObject
+        if (metaClass == runtime.getModule()) {
+            runtime.addModule(this);
+        }
+
         // if (parent == null) parent = runtime.getObject();
         setFlag(NEEDSIMPL_F, !isClass());
         updateGeneration(runtime);
@@ -4728,6 +4732,9 @@ public class RubyModule extends RubyObject {
     }
 
     public static boolean isValidConstantName(ByteList bytelist, int start, int end) {
+        // empty string
+        if (start == end) return false;
+
         Encoding enc = bytelist.getEncoding();
         byte[] bytes = bytelist.unsafeBytes();
         int beg = bytelist.begin();
@@ -5626,7 +5633,7 @@ public class RubyModule extends RubyObject {
                 storeConstant(context, name, value, hidden, file, line);
             }
         } else {
-            if (this instanceof RubyObject && name.equals("Ruby")) Warn.warnReservedName(context, "::Ruby", "3.5");
+            if (this == context.runtime.getObject() && name.equals("Ruby")) Warn.warnReservedName(context, "::Ruby", "3.5");
 
             storeConstant(context, name, value, hidden, file, line);
         }

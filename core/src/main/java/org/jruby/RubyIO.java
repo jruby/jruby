@@ -70,7 +70,9 @@ import org.jruby.ast.util.ArgsUtil;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.EOFError;
+import org.jruby.exceptions.IOError;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.StandardError;
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.internal.runtime.ThreadedRunnable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -351,6 +353,37 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         IO.defineModuleUnder(context, "WaitWritable");
 
         return IO;
+    }
+
+    /**
+     * Represents a Ruby IO::TimeoutErrorError as a throwable Java exception.
+     *
+     * @see RubyIOTimeoutError
+     */
+    public static class TimeoutError extends IOError {
+        public TimeoutError(String message, RubyIOTimeoutError exception) {
+            super(message, exception);
+        }
+    }
+
+    @JRubyClass(name="TimeoutError", parent="IOError")
+    public static class RubyIOTimeoutError extends RubyIOError {
+        protected RubyIOTimeoutError(Ruby runtime, RubyClass exceptionClass) {
+            super(runtime, exceptionClass);
+        }
+
+        static RubyClass define(ThreadContext context, RubyClass IO, RubyClass IOError) {
+            return IO.defineClassUnder(context, "TimeoutError", IOError, RubyIOTimeoutError::new);
+        }
+
+        @Override
+        protected TimeoutError constructThrowable(String message) {
+            return new TimeoutError(message, this);
+        }
+
+        public static RubyIOTimeoutError newIOTimeoutError(Ruby runtime, String message) {
+            return ((RubyIOTimeoutError) ((RubyClass) runtime.getClassFromPath("IO::TimeoutError")).newInstance(runtime.getCurrentContext(), RubyString.newString(runtime, message)));
+        }
     }
 
     public OutputStream getOutStream() {

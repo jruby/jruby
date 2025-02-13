@@ -92,6 +92,7 @@ import static org.jruby.api.Error.notImplementedError;
 import static org.jruby.api.Error.rangeError;
 import static org.jruby.api.Warn.warn;
 import static org.jruby.runtime.Helpers.invokedynamic;
+import static org.jruby.runtime.Helpers.nullToNil;
 import static org.jruby.runtime.Helpers.throwException;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.WindowsFFI.Kernel32.ERROR_INVALID_PARAMETER;
@@ -787,7 +788,7 @@ public class RubyProcess {
 
     @JRubyMethod(name = "last_status", module = true, visibility = PRIVATE)
     public static IRubyObject last_status(ThreadContext context, IRubyObject recv) {
-        return context.getLastExitStatus();
+        return nullToNil(context.getLastExitStatus(), context.nil);
     }
 
     @JRubyMethod(name = "setrlimit", module = true, visibility = PRIVATE)
@@ -819,7 +820,7 @@ public class RubyProcess {
         return context.nil;
     }
 
-    private static int rlimitResourceValue(ThreadContext context, IRubyObject rval) {
+    private static long rlimitResourceValue(ThreadContext context, IRubyObject rval) {
         String name;
         IRubyObject v;
 
@@ -842,7 +843,7 @@ public class RubyProcess {
         /* fall through */
 
             case INTEGER:
-                return toInt(context, rval);
+                return toLong(context, rval);
         }
 
         if (RLIM.RLIM_INFINITY.defined()) {

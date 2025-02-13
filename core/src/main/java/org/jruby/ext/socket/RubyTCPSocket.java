@@ -30,6 +30,7 @@
 
 package org.jruby.ext.socket;
 
+import jnr.constants.platform.Errno;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
@@ -63,10 +64,9 @@ import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineClass;
 
 public class RubyTCPSocket extends RubyIPSocket {
-    static RubyClass createTCPSocket(ThreadContext context, RubyClass IPSocket, RubyClass Object) {
-        return (RubyClass) Object.setConstant(context, "TCPsocket",
-                defineClass(context, "TCPSocket", IPSocket, RubyTCPSocket::new).
-                        defineMethods(context, RubyTCPSocket.class));
+    static RubyClass createTCPSocket(ThreadContext context, RubyClass IPSocket) {
+        return defineClass(context, "TCPSocket", IPSocket, RubyTCPSocket::new).
+                defineMethods(context, RubyTCPSocket.class);
     }
 
     public RubyTCPSocket(Ruby runtime, RubyClass type) {
@@ -113,7 +113,7 @@ public class RubyTCPSocket extends RubyIPSocket {
                     return channel;
                 }
 
-                throw context.runtime.newErrnoETIMEDOUTError();
+                throw RubyIOTimeoutError.newIOTimeoutError(context.runtime, Errno.ETIMEDOUT.description()).toThrowable();
             } catch (ConnectException e) {
                 // fall through and try next valid address for the host.
             }

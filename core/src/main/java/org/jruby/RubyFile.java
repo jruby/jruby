@@ -359,7 +359,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     public IRubyObject birthtime(ThreadContext context) {
         checkClosed(context);
 
-        if (Platform.IS_LINUX || Platform.IS_BSD) {
+        if (!(Platform.IS_WINDOWS || (Platform.IS_BSD && !Platform.IS_OPENBSD))) {
             throw context.runtime.newNotImplementedError("birthtime() function is unimplemented on this machine");
         }
 

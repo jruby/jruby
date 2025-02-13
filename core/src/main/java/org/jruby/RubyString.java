@@ -922,15 +922,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (len == 0) {
             shared = newEmptyString(runtime, meta, enc);
         } else if (len == 1) {
-            byte b = (byte) value.get(index);
-
-            // only use cache for low ASCII bytes
-            if ((b & 0xFF) < 0x80) {
-                shared = RubyInteger.singleCharString(runtime, b, meta, enc);
-            } else {
-                ByteList bytes = new ByteList(new byte[]{(byte) value.get(index)}, enc);
-                shared = new RubyString(runtime, meta, bytes);
-            }
+            shared = RubyInteger.singleCharString(runtime, (byte) value.get(index), meta, enc);
         } else {
             if (shareLevel == SHARE_LEVEL_NONE) shareLevel = SHARE_LEVEL_BUFFER;
             shared = new RubyString(runtime, meta, value.makeShared(index, len));

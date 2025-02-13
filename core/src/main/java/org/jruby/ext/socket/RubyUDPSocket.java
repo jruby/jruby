@@ -91,11 +91,10 @@ public class RubyUDPSocket extends RubyIPSocket {
 
     public static final double RECV_BUFFER_COPY_SCALE = 1.5;
 
-    static void createUDPSocket(ThreadContext context, RubyClass IPSocket, RubyClass Socket, RubyClass Object) {
-        Object.defineConstant(context, "UDPsocket",
-                defineClass(context, "UDPSocket", IPSocket, RubyUDPSocket::new).
-                        include(context, (RubyModule) Socket.getConstant(context, "Constants")).
-                        defineMethods(context, RubyUDPSocket.class));
+    static void createUDPSocket(ThreadContext context, RubyClass IPSocket, RubyClass Socket) {
+        defineClass(context, "UDPSocket", IPSocket, RubyUDPSocket::new).
+                include(context, (RubyModule) Socket.getConstant(context, "Constants")).
+                defineMethods(context, RubyUDPSocket.class);
     }
 
     public RubyUDPSocket(Ruby runtime, RubyClass type) {

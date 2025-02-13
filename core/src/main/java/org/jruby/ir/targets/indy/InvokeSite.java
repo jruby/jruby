@@ -56,6 +56,7 @@ import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 import java.lang.invoke.SwitchPoint;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -306,26 +307,24 @@ public abstract class InvokeSite extends MutableCallSite {
     }
 
     private MethodHandle createAttrReaderHandle(IRubyObject self, RubyClass cls, VariableAccessor accessor) {
-        MethodHandle nativeTarget;
-
         MethodHandle filter = cls.getClassRuntime().getNullToNilHandle();
 
         MethodHandle getValue;
 
+        SmartBinder binder = SmartBinder.from(signature).permute("self");
+
         if (accessor instanceof FieldVariableAccessor) {
             MethodHandle getter = ((FieldVariableAccessor)accessor).getGetter();
-            getValue = Binder.from(type())
-                    .drop(0, argOffset - 1)
+            getValue = binder
                     .filterReturn(filter)
-                    .cast(methodType(Object.class, self.getClass()))
-                    .invoke(getter);
+                    .cast(Object.class, self.getClass())
+                    .invoke(getter).handle();
         } else {
-            getValue = Binder.from(type())
-                    .drop(0, argOffset - 1)
+            getValue = binder
                     .filterReturn(filter)
-                    .cast(methodType(Object.class, Object.class))
-                    .prepend(accessor)
-                    .invokeVirtualQuiet(LOOKUP, "get");
+                    .cast(Object.class, Object.class)
+                    .prepend("accessor", accessor)
+                    .invokeVirtualQuiet(LOOKUP, "get").handle();
         }
 
         // NOTE: Must not cache the fully-bound handle in the method, since it's specific to this class
@@ -334,8 +333,6 @@ public abstract class InvokeSite extends MutableCallSite {
     }
 
     private MethodHandle createAttrWriterHandle(IRubyObject self, RubyClass cls, VariableAccessor accessor) {
-        MethodHandle nativeTarget;
-
         MethodHandle filter = Binder
                 .from(IRubyObject.class, Object.class)
                 .drop(0)
@@ -343,20 +340,20 @@ public abstract class InvokeSite extends MutableCallSite {
 
         MethodHandle setValue;
 
+        SmartBinder binder = SmartBinder.from(signature).permute("self", "arg0");
+
         if (accessor instanceof FieldVariableAccessor) {
             MethodHandle setter = ((FieldVariableAccessor)accessor).getSetter();
-            setValue = Binder.from(type())
-                    .drop(0, argOffset - 1)
+            setValue = binder
                     .filterReturn(filter)
-                    .cast(methodType(void.class, self.getClass(), Object.class))
-                    .invoke(setter);
+                    .cast(void.class, self.getClass(), Object.class)
+                    .invoke(setter).handle();
         } else {
-            setValue = Binder.from(type())
-                    .drop(0, argOffset - 1)
+            setValue = binder
                     .filterReturn(filter)
-                    .cast(methodType(void.class, Object.class, Object.class))
-                    .prepend(accessor)
-                    .invokeVirtualQuiet(LOOKUP, "set");
+                    .cast(void.class, Object.class, Object.class)
+                    .prepend("accessor", accessor)
+                    .invokeVirtualQuiet(LOOKUP, "set").handle();
         }
 
         return setValue;
@@ -497,14 +494,14 @@ public abstract class InvokeSite extends MutableCallSite {
                         mh = binder
                                 .permute("context", "self", "arg.*", "block") // filter caller
                                 .cast(nativeCall.getNativeReturn(), nativeCall.getNativeSignature())
-                                .invokeStaticQuiet(LOOKUP, nativeCall.getNativeTarget(), nativeCall.getNativeName())
+                                .invoke(nativeCall.getHandleQuiet(LOOKUP))
                                 .handle();
                     } else {
                         mh = binder
                                 .permute("self", "context", "arg.*", "block") // filter caller, move self
                                 .castArg("self", nativeCall.getNativeTarget())
                                 .castVirtual(nativeCall.getNativeReturn(), nativeCall.getNativeTarget(), nativeCall.getNativeSignature())
-                                .invokeVirtualQuiet(LOOKUP, nativeCall.getNativeName())
+                                .invoke(nativeCall.getHandleQuiet(LOOKUP))
                                 .handle();
                     }
 
@@ -523,7 +520,7 @@ public abstract class InvokeSite extends MutableCallSite {
         return mh;
     }
 
-    private static DynamicMethod.NativeCall buildExactNativeCall(DynamicMethod.NativeCall nativeCall, int arity) {
+    private static DynamicMethod.NativeCall buildExactNativeCall(final DynamicMethod.NativeCall nativeCall, int arity) {
         Class[] args = nativeCall.getNativeSignature();
 
         int rubyArgCount = args.length;
@@ -637,15 +634,11 @@ public abstract class InvokeSite extends MutableCallSite {
         }
 
         if (params != null) {
-            try {
-                if (nativeCall.isStatic()) {
-                    lookup().findStatic(nativeCall.getNativeTarget(), nativeCall.getNativeName(), methodType(nativeCall.getNativeReturn(), params));
-                } else {
-                    lookup().findVirtual(nativeCall.getNativeTarget(), nativeCall.getNativeName(), methodType(nativeCall.getNativeReturn(), params));
-                }
-
-                return new DynamicMethod.NativeCall(nativeCall.getNativeTarget(), nativeCall.getNativeName(), nativeCall.getNativeReturn(), params, nativeCall.isStatic(), false);
-            } catch (NoSuchMethodException | IllegalAccessException e) {
+            // method must be declared on the target class and annotated
+            DynamicMethod.NativeCall exactNativeCall = new DynamicMethod.NativeCall(nativeCall.getNativeTarget(), nativeCall.getNativeName(), nativeCall.getNativeReturn(), params, nativeCall.isStatic(), false);
+            Method method = exactNativeCall.getMethodQuiet();
+            if (method != null && method.getAnnotation(JRubyMethod.class) != null) {
+                return exactNativeCall;
             }
         }
 

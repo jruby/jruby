@@ -37,6 +37,7 @@ import org.jruby.RubyClass;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Access;
+import org.jruby.api.Define;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -54,10 +55,9 @@ import static org.jruby.api.Define.defineClass;
 
 @JRubyClass(name="UNIXServer", parent="UNIXSocket")
 public class RubyUNIXServer extends RubyUNIXSocket {
-    static void createUNIXServer(ThreadContext context, RubyClass UNIXSocket, RubyClass Object) {
-        Object.defineConstant(context, "UNIXserver",
-                defineClass(context, "UNIXServer", UNIXSocket, RubyUNIXServer::new).
-                        defineMethods(context, RubyUNIXServer.class));
+    static void createUNIXServer(ThreadContext context, RubyClass UNIXSocket) {
+        defineClass(context, "UNIXServer", UNIXSocket, RubyUNIXServer::new).
+                defineMethods(context, RubyUNIXServer.class);
     }
 
     public RubyUNIXServer(Ruby runtime, RubyClass type) {

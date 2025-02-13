@@ -497,8 +497,8 @@ public class RubyDir extends RubyObject implements Closeable {
     }
 
     @JRubyMethod(name = "chdir")
-    public IRubyObject chdir(ThreadContext context) {
-        return chdir(context, this.getMetaClass(), path, Block.NULL_BLOCK);
+    public IRubyObject chdir(ThreadContext context, Block block) {
+        return chdir(context, this.getMetaClass(), path, block);
     }
 
     @Deprecated(since = "10.0")
