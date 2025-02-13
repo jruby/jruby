@@ -618,7 +618,7 @@ do
             echo "EXPERIMENTAL: Log output at ${jruby_jsa_file}.log"
             use_jsa_file=false
             rm -f "$jruby_jsa_file"
-            append java_args -XX:ArchiveClassesAtExit="$jruby_jsa_file" -Xlog:cds=off
+            append java_args -XX:ArchiveClassesAtExit="$jruby_jsa_file" -Xlog:cds=off -Xlog:cds+dynamic=off
             ;;
         --nocache)
             use_jsa_file=false ;;
@@ -697,10 +697,10 @@ if $use_modules; then
 
     if $use_jsa_file; then
         # Auto-generate DynamicCDS archive
-        JAVA_OPTS="$JAVA_OPTS -XX:+AutoCreateSharedArchive -XX:SharedArchiveFile=$JRUBY_JSA -Xlog:cds=off"
+        JAVA_OPTS="$JAVA_OPTS -XX:+AutoCreateSharedArchive -XX:SharedArchiveFile=$JRUBY_JSA -Xlog:cds=off -Xlog:cds+dynamic=off"
         if $log_cds; then
             add_log "Logging CDS output to $JRUBY_JSA.log"
-            append java_args -Xlog:cds=info:file="$JRUBY_JSA".log
+            append java_args -Xlog:cds=info:file="$JRUBY_JSA".log -Xlog:cds+dynamic=info:file="$JRUBY_JSA".log
         fi
     fi
 fi
