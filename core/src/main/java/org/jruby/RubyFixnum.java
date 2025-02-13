@@ -373,12 +373,17 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
         long ndigits = toLong(context, arg);
         if (ndigits >= 0) return this;
 
-        long self = this.value;
-        long posdigits = Math.abs(ndigits);
-        long exp = (long) Math.pow(10, posdigits);
-        long mod = (self % exp + exp) % exp;
-        long res = self - mod;
-        return asFixnum(context, res);
+        RubyInteger f = (RubyInteger) int_pow(context, 10, -ndigits);
+        if (f instanceof RubyFixnum fixnum) {
+            long x = value, y = fixnum.value;
+            boolean neg = x < 0;
+            if (neg) x = -x + y - 1;
+            x = x / y * y;
+            if (neg) x = -x;
+            return asFixnum(context, x);
+        }
+
+        return integerFloor(context, f);
     }
 
     /** rb_fix_truncate

@@ -310,14 +310,11 @@ public class RubyBignum extends RubyInteger {
      */
     @Override
     public IRubyObject floor(ThreadContext context, IRubyObject arg){
-        int ndigits = toInt(context, arg);
-        BigInteger self = value;
+        long ndigits = toLong(context, arg);
         if (ndigits >= 0) return this;
 
-        int posdigits = Math.abs(ndigits);
-        BigInteger exp = BigInteger.TEN.pow(posdigits);
-        BigInteger res = self.subtract(self.mod(exp));
-        return newBignum(context.runtime, res);
+        RubyInteger f = (RubyInteger) int_pow(context, 10, -ndigits);
+        return integerFloor(context, f);
     }
 
     /** rb_big_truncate
