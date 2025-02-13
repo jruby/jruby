@@ -613,7 +613,7 @@ public class RubyRange extends RubyObject {
     @JRubyMethod
     public IRubyObject reverse_each(ThreadContext context, Block block) {
         if (!block.isGiven()) {
-            return enumeratorizeWithSize(context, this, "reverse_each", RubyRange::size);
+            return enumeratorizeWithSize(context, this, "reverse_each", RubyRange::reverseSize);
         }
 
         IRubyObject beg = this.begin;
@@ -947,6 +947,47 @@ public class RubyRange extends RubyObject {
     }
 
     /**
+     * A size method for reverse_each suitable for lambda method reference implementation of {@link SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])}
+     *
+     * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
+     */
+    private static IRubyObject reverseSize(ThreadContext context, RubyRange recv, IRubyObject[] args) {
+        IRubyObject e = recv.end;
+        if (e.isNil()) {
+            cantIterateFrom(context, e);
+        }
+
+        IRubyObject b = recv.begin;
+        if (b instanceof RubyInteger) {
+            if (e instanceof RubyNumeric) {
+                return intervalStepSize(context, b, e, asFixnum(context, 1), recv.isExclusive);
+            }
+            else {
+                cantIterateFrom(context, e);
+            }
+        }
+
+        if (b.isNil()) {
+            if (e instanceof RubyInteger) {
+                return asFloat(context, Double.POSITIVE_INFINITY);
+            }
+            else {
+                cantIterateFrom(context, e);
+            }
+        }
+
+        if (!discreteObject(context, b)) {
+            cantIterateFrom(context, e);
+        }
+
+        return context.nil;
+    }
+
+    private static void cantIterateFrom(ThreadContext context, IRubyObject e) {
+        throw typeError(context, "can't iterate from " + e);
+    }
+
+    /**
      * A step size method suitable for lambda method reference implementation of {@link SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])}
      *
      * @see SizeFn#size(ThreadContext, IRubyObject, IRubyObject[])
@@ -1018,6 +1059,7 @@ public class RubyRange extends RubyObject {
         return UNDEF;
     }
 
+    // MRI: discrete_object_p
     private static boolean discreteObject(ThreadContext context, IRubyObject obj) {
         return sites(context).respond_to_succ.respondsTo(context, obj, obj, false);
     }
@@ -1238,7 +1280,7 @@ public class RubyRange extends RubyObject {
     public IRubyObject size(ThreadContext context) {
         if (begin instanceof RubyInteger) {
             if (end instanceof RubyNumeric) {
-                return RubyNumeric.intervalStepSize(context, begin, end, RubyFixnum.one(context.runtime), isExclusive);
+                return intervalStepSize(context, begin, end, RubyFixnum.one(context.runtime), isExclusive);
             }
             if (end.isNil()) {
                 return dbl2num(context.runtime, Double.POSITIVE_INFINITY);
