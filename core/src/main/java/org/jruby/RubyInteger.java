@@ -398,7 +398,7 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     public static ByteList singleCharByteList(final byte index) {
-        if (index > 0) {
+        if (index >= 0) {
             return SINGLE_CHAR_USASCII_BYTELISTS[index];
         } else {
             return SINGLE_CHAR_ASCII8BIT_BYTELISTS[Byte.toUnsignedInt(index)];
