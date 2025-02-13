@@ -3,8 +3,6 @@ class Range
     b = self.begin
     e = self.end
 
-    return to_enum(:bsearch) unless block_given?
-
     if b.is_a?(Float) || e.is_a?(Float)
       BSearch.float_search(b, e, exclude_end?, &cond)
     else
@@ -14,6 +12,8 @@ class Range
 
   class BSearch
     def self.float_search(b, e, excl)
+      return to_enum(:bsearch) unless block_given?
+
       satisfied = nil
 
       low = double_as_long(b.nil? ? NEGATIVE_INFINITY : b)
@@ -90,10 +90,12 @@ class Range
         if e_int
           return binary_search(b, e, excl, &cond)
         elsif e.nil?
+          return to_enum(:bsearch) unless block_given?
           return integer_begin(b, &cond)
         end
       elsif e_int
         if b.nil?
+          return to_enum(:bsearch) unless block_given?
           return integer_end(e, &cond)
         end
       end
@@ -104,6 +106,8 @@ class Range
     private
 
     def self.binary_search(low, high, excl)
+      return to_enum(:bsearch) unless block_given?
+
       satisfied = nil
 
       high -= 1 if excl
