@@ -184,13 +184,11 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         }
 
         IRubyObject[] values = IRubyObject.array(validateBufferLength(runtime, len));
-        Helpers.fillNil(values, 0, len, runtime);
         return new RubyArray(runtime, values, 0, 0);
     }
 
     public static final RubyArray newArrayLight(final Ruby runtime, final int len) {
         IRubyObject[] values = IRubyObject.array(validateBufferLength(runtime, len));
-        Helpers.fillNil(values, 0, len, runtime);
         return new RubyArray(runtime, runtime.getArray(), values, 0, 0, false);
     }
 
@@ -899,7 +897,19 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
         if (index >= realLength) {
             int valuesLength = values.length - begin;
-            if (index >= valuesLength) storeRealloc(index, valuesLength);
+            if (index >= valuesLength) {
+                if (index - realLength >= 1) { // fill null values unassigned up to alloc'd capacity
+                    unpack();
+                    fillNil(values, begin + realLength, values.length, getRuntime());
+                }
+                storeRealloc(index, valuesLength);
+            } else {
+                unpack();
+                if (index - realLength >= 1) {
+                    int baseIndex = begin + realLength;
+                    fillNil(values, baseIndex, baseIndex + (index - realLength), getRuntime());
+                }
+            }
             realLength = index + 1;
         }
 
