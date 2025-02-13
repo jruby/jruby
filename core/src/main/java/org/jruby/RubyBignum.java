@@ -222,7 +222,7 @@ public class RubyBignum extends RubyInteger {
 
     public static long big2ulong(Ruby runtime, BigInteger big) {
         if (big.compareTo(BigInteger.ZERO) < 0 || big.compareTo(ULONG_MAX) > 0) {
-            throw runtime.newRangeError("bignum out of range for 'ulong'");
+            throw runtime.newRangeError("bignum out of range of unsigned long");
         }
 
         return big.longValue();
