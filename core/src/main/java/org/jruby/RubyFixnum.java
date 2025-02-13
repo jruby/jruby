@@ -57,7 +57,11 @@ import org.jruby.util.ConvertBytes;
 import org.jruby.util.Numeric;
 import org.jruby.util.cli.Options;
 
+import static org.jruby.util.Numeric.f_add;
+import static org.jruby.util.Numeric.f_div;
+import static org.jruby.util.Numeric.f_mul;
 import static org.jruby.util.Numeric.f_odd_p;
+import static org.jruby.util.Numeric.f_sub;
 
 /**
  * Implementation of the Integer (Fixnum internal) class.
@@ -321,18 +325,28 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     @Override
     public IRubyObject ceil(ThreadContext context, IRubyObject arg){
         long ndigits = arg.convertToInteger().getLongValue();
-        if (ndigits >= 0) {
-            return this;
+        RubyNumeric f;
+        f = Numeric.int_pow(context, 10, -ndigits);
+        if (f instanceof RubyFixnum) {
+            long x = this.value;
+            long y = RubyNumeric.fix2long(f);
+            boolean neg = x < 0;
+            if (neg) x = -x;
+            else x += y -1;
+            x = x / y * y;
+            if (neg) x = -x;
+            return newFixnum(context.runtime, x);
         } else {
-            long self = this.value;
-            long posdigits = Math.abs(ndigits);
-            long exp = (long) Math.pow(10, posdigits);
-            long mod = (self % exp + exp) % exp;
-            long res = self;
-            if (mod != 0) {
-                res = self + (exp - (mod));
+            boolean neg = isNegative();
+            IRubyObject num = this;
+            if (neg) {
+                num = op_uminus(context);
+            } else {
+                num = f_add(context, num, f_sub(context, f, one(context.runtime)));
             }
-            return newFixnum(context.runtime, res);
+            num = f_mul(context, f_div(context, num, f), f);
+            if (neg) num = ((RubyNumeric) num).op_uminus(context);
+            return num;
         }
     }
 
@@ -342,15 +356,23 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     @Override
     public IRubyObject floor(ThreadContext context, IRubyObject arg){
         long ndigits = (arg).convertToInteger().getLongValue();
-        if (ndigits >= 0) {
-            return this;
+        RubyNumeric f;
+        f = Numeric.int_pow(context, 10, -ndigits);
+        if (f instanceof RubyFixnum) {
+            long x = this.value;
+            long y = RubyNumeric.fix2long(f);
+            boolean neg = x < 0;
+            if (neg) x = -x + y - 1;
+            x = x / y * y;
+            if (neg) x = -x;
+            return newFixnum(context.runtime, x);
         } else {
-            long self = this.value;
-            long posdigits = Math.abs(ndigits);
-            long exp = (long) Math.pow(10, posdigits);
-            long mod = (self % exp + exp) % exp;
-            long res = self - mod;
-            return newFixnum(context.runtime, res);
+            boolean neg = isNegative();
+            IRubyObject num = this;
+            if (neg) num = f_sub(context, f_add(context, this.op_uminus(context), f), one(context.runtime));
+            num = f_mul(context, f_div(context, num, f), f);
+            if (neg) num = ((RubyNumeric) num).op_uminus(context);
+            return num;
         }
     }
 
