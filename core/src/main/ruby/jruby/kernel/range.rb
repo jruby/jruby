@@ -16,8 +16,8 @@ class Range
     def self.float_search(b, e, excl)
       satisfied = nil
 
-      low = double_as_long(b.nil? ? -(Float::INFINITY) : b)
-      high = double_as_long(e.nil? ? Float::INFINITY : e)
+      low = double_as_long(b.nil? ? NEGATIVE_INFINITY : b)
+      high = double_as_long(e.nil? ? INFINITY : e)
 
       high -= 1 if excl
 
