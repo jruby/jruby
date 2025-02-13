@@ -784,19 +784,22 @@ public class RubyRange extends RubyObject {
     }
 
     private IRubyObject stepCommon(ThreadContext context, IRubyObject stepArg, Block block) {
-        boolean beginIsNumeric = begin instanceof RubyNumeric;
-        boolean endIsNumeric = end instanceof RubyNumeric;
+        IRubyObject b = begin;
+        IRubyObject e = end;
+
+        boolean beginIsNumeric = b instanceof RubyNumeric;
+        boolean endIsNumeric = e instanceof RubyNumeric;
         // For backward compatibility reasons (conforming to behavior before 3.4), String/Symbol
         // supports both old behavior ('a'..).step(1) and new behavior ('a'..).step('a')
         // Hence the additional conversion/additional checks.
-        IRubyObject strBegin = begin.checkStringType();
-        IRubyObject symBegin = begin instanceof RubySymbol symbol ? symbol.to_s(context) : context.nil;
+        IRubyObject strBegin = b.checkStringType();
+        IRubyObject symBegin = b instanceof RubySymbol symbol ? symbol.to_s(context) : context.nil;
 
         IRubyObject step;
         if (stepArg != UNDEF) {
             step = stepArg;
         } else {
-            if (beginIsNumeric || !strBegin.isNil() || !symBegin.isNil() || (begin.isNil() && endIsNumeric)) {
+            if (beginIsNumeric || !strBegin.isNil() || !symBegin.isNil() || (b.isNil() && endIsNumeric)) {
                 step = asFixnum(context, 1);
             } else {
                 throw argumentError(context, "step is required for non-numeric ranges");
@@ -813,61 +816,64 @@ public class RubyRange extends RubyObject {
             return stepEnumeratorize(context, stepArg, step, "step");
         }
 
-        if (begin.isNil()) {
+        if (b.isNil()) {
             throw argumentError(context, "#step iteration for beginless ranges is meaningless");
         }
 
-        IRubyObject v = begin;
+        IRubyObject v = b;
         int c, dir;
 
-        if (begin instanceof RubyFixnum && end.isNil() && step instanceof RubyFixnum) {
+        if (b instanceof RubyFixnum && e.isNil() && step instanceof RubyFixnum) {
             fixnumEndlessStep(context, step, block);
-        } else if (begin instanceof RubyFixnum && end instanceof RubyFixnum && step instanceof RubyFixnum stepf) {
+        } else if (b instanceof RubyFixnum && e instanceof RubyFixnum && step instanceof RubyFixnum stepf) {
             fixnumStep(context, stepf.asLong(context), block);
-        } else if (beginIsNumeric && stepIsNumeric && floatStep(context, begin, end, step, isExclusive, isEndless, block)) {
-            /* done */
-        } else if (!strBegin.isNil() && step instanceof RubyFixnum) {
-            // backwards compatibility behavior for String only, when no step/Integer step is passed
-            // See discussion in https://bugs.ruby-lang.org/issues/18368
-            stringStep(context, step, block, (RubyString) strBegin);
-        } else if (!symBegin.isNil() && step instanceof RubyFixnum) {
-            // same as above: backward compatibility for symbols
-            symbolStep(context, step, block, (RubyString) symBegin);
-        } else if (end.isNil()) {
-            for (; ; v = v.callMethod(context, "+", step)) {
-                block.yield(context, v);
-            }
-        } else if (beginIsNumeric && stepIsNumeric && rangeLess(context, step, asFixnum(context, 0)) < 0) {
-            // iterate backwards, for consistency with ArithmeticSequence
-            if (isExclusive) {
-                for (; rangeLess(context, end, v) < 0; v = v.callMethod(context, "+", step)) {
+        } else {
+            boolean excl = isExclusive;
+            if (beginIsNumeric && stepIsNumeric && floatStep(context, b, e, step, excl, isEndless, block)) {
+                /* done */
+            } else if (!strBegin.isNil() && step instanceof RubyFixnum) {
+                // backwards compatibility behavior for String only, when no step/Integer step is passed
+                // See discussion in https://bugs.ruby-lang.org/issues/18368
+                stringStep(context, step, block, (RubyString) strBegin);
+            } else if (!symBegin.isNil() && step instanceof RubyFixnum) {
+                // same as above: backward compatibility for symbols
+                symbolStep(context, step, block, (RubyString) symBegin);
+            } else if (e.isNil()) {
+                for (; ; v = v.callMethod(context, "+", step)) {
                     block.yield(context, v);
                 }
-            } else {
-                for (; (c = rangeLess(context, end, v)) <= 0; v = v.callMethod(context, "+", step)) {
-                    block.yield(context, v);
-                    if (c == 0) break;
+            } else if (beginIsNumeric && stepIsNumeric && rangeLess(context, step, asFixnum(context, 0)) < 0) {
+                // iterate backwards, for consistency with ArithmeticSequence
+                if (excl) {
+                    for (; rangeLess(context, e, v) < 0; v = v.callMethod(context, "+", step)) {
+                        block.yield(context, v);
+                    }
+                } else {
+                    for (; (c = rangeLess(context, e, v)) <= 0; v = v.callMethod(context, "+", step)) {
+                        block.yield(context, v);
+                        if (c == 0) break;
+                    }
                 }
-            }
-        } else if ((dir = rangeLess(context, begin, end)) == 0) {
-            if (!isExclusive) {
-                block.yield(context, v);
-            }
-        } else if (rangeLess(context, begin, begin.callMethod(context, "+", step)) == dir) {
-            // Direction of the comparison. We use it as a comparison operator in cycle:
-            // if begin < end, the cycle performs while value < end (iterating forward)
-            // if begin > end, the cycle performs while value > end (iterating backward with
-            // a negative step)
-            // One preliminary addition to check the step moves iteration in the same direction as
-            // from begin to end; otherwise, the iteration should be empty.
-            if (isExclusive) {
-                for (; rangeLess(context, v, end) == dir; v = v.callMethod(context, "+", step)) {
+            } else if ((dir = rangeLess(context, b, e)) == 0) {
+                if (!excl) {
                     block.yield(context, v);
                 }
-            } else {
-                for (; (c = rangeLess(context, v, end)) == dir || c == 0; v = v.callMethod(context, "+", step)) {
-                    block.yield(context, v);
-                    if (c == 0) break;
+            } else if (rangeLess(context, b, b.callMethod(context, "+", step)) == dir) {
+                // Direction of the comparison. We use it as a comparison operator in cycle:
+                // if begin < end, the cycle performs while value < end (iterating forward)
+                // if begin > end, the cycle performs while value > end (iterating backward with
+                // a negative step)
+                // One preliminary addition to check the step moves iteration in the same direction as
+                // from begin to end; otherwise, the iteration should be empty.
+                if (excl) {
+                    for (; rangeLess(context, v, e) == dir; v = v.callMethod(context, "+", step)) {
+                        block.yield(context, v);
+                    }
+                } else {
+                    for (; (c = rangeLess(context, v, e)) == dir || c == 0; v = v.callMethod(context, "+", step)) {
+                        block.yield(context, v);
+                        if (c == 0) break;
+                    }
                 }
             }
         }
