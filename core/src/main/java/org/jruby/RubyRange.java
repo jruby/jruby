@@ -817,6 +817,9 @@ public class RubyRange extends RubyObject {
             throw argumentError(context, "#step iteration for beginless ranges is meaningless");
         }
 
+        IRubyObject v = begin;
+        int c, dir;
+
         if (begin instanceof RubyFixnum && end.isNil() && step instanceof RubyFixnum) {
             fixnumEndlessStep(context, step, block);
         } else if (begin instanceof RubyFixnum && end instanceof RubyFixnum && step instanceof RubyFixnum stepf) {
@@ -830,47 +833,41 @@ public class RubyRange extends RubyObject {
         } else if (!symBegin.isNil() && step instanceof RubyFixnum) {
             // same as above: backward compatibility for symbols
             symbolStep(context, step, block, (RubyString) symBegin);
-        } else {
-            int c, dir;
-            IRubyObject v = begin;
-            if (!end.isNil()) {
-                if (beginIsNumeric && stepIsNumeric && rangeLess(context, step, asFixnum(context, 0)) < 0) {
-                    // iterate backwards, for consistency with ArithmeticSequence
-                    if (isExclusive) {
-                        for (; rangeLess(context, end, v) < 0; v = v.callMethod(context, "+", step)) {
-                            block.yield(context, v);
-                        }
-                    } else {
-                        for (; (c = rangeLess(context, end, v)) <= 0; v = v.callMethod(context, "+", step)) {
-                            block.yield(context, v);
-                            if (c == 0) break;
-                        }
-                    }
-
-                } else {
-                    // Direction of the comparison. We use it as a comparison operator in cycle:
-                    // if begin < end, the cycle performs while value < end (iterating forward)
-                    // if begin > end, the cycle performs while value > end (iterating backward with
-                    // a negative step)
-                    dir = rangeLess(context, begin, end);
-                    // One preliminary addition to check the step moves iteration in the same direction as
-                    // from begin to end; otherwise, the iteration should be empty.
-                    if (rangeLess(context, begin, begin.callMethod(context, "+", step)) == dir) {
-                        if (isExclusive) {
-                            for (; rangeLess(context, v, end) == dir; v = v.callMethod(context, "+", step)) {
-                                block.yield(context, v);
-                            }
-                        } else {
-                            for (; (c = rangeLess(context, v, end)) == dir || c == 0; v = v.callMethod(context, "+", step)) {
-                                block.yield(context, v);
-                                if (c == 0) break;
-                            }
-                        }
-                    }
+        } else if (end.isNil()) {
+            for (; ; v = v.callMethod(context, "+", step)) {
+                block.yield(context, v);
+            }
+        } else if (beginIsNumeric && stepIsNumeric && rangeLess(context, step, asFixnum(context, 0)) < 0) {
+            // iterate backwards, for consistency with ArithmeticSequence
+            if (isExclusive) {
+                for (; rangeLess(context, end, v) < 0; v = v.callMethod(context, "+", step)) {
+                    block.yield(context, v);
                 }
             } else {
-                for (; ; v = v.callMethod(context, "+", step)) {
+                for (; (c = rangeLess(context, end, v)) <= 0; v = v.callMethod(context, "+", step)) {
                     block.yield(context, v);
+                    if (c == 0) break;
+                }
+            }
+        } else if ((dir = rangeLess(context, begin, end)) == 0) {
+            if (!isExclusive) {
+                block.yield(context, v);
+            }
+        } else if (rangeLess(context, begin, begin.callMethod(context, "+", step)) == dir) {
+            // Direction of the comparison. We use it as a comparison operator in cycle:
+            // if begin < end, the cycle performs while value < end (iterating forward)
+            // if begin > end, the cycle performs while value > end (iterating backward with
+            // a negative step)
+            // One preliminary addition to check the step moves iteration in the same direction as
+            // from begin to end; otherwise, the iteration should be empty.
+            if (isExclusive) {
+                for (; rangeLess(context, v, end) == dir; v = v.callMethod(context, "+", step)) {
+                    block.yield(context, v);
+                }
+            } else {
+                for (; (c = rangeLess(context, v, end)) == dir || c == 0; v = v.callMethod(context, "+", step)) {
+                    block.yield(context, v);
+                    if (c == 0) break;
                 }
             }
         }
