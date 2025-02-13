@@ -246,4 +246,30 @@ class Range
     end
   end
   private_constant :BSearch
+
+  def overlap?(other)
+    raise TypeError, "wrong argument type #{other.class} (expected Range)" unless other.is_a?(Range)
+
+    self_begin = self.begin || NEGATIVE_INFINITY
+    self_end = self.end || INFINITY
+    self_exclude = exclude_end?
+    other_begin = other.begin || NEGATIVE_INFINITY
+    other_end = other.end || INFINITY
+    other_exclude = other.exclude_end?
+
+    !!(__overlap(other_begin, self_end, self_exclude) &&
+      __overlap(self_begin, other_end, other_exclude) &&
+      __overlap(self_begin, self_end, self_exclude) &&
+      __overlap(other_begin, other_end, other_exclude))
+  end
+
+  private def __overlap(from, to, excl)
+    less = from <=> to
+    less = +1 if less == 0 && excl
+    less && less <= 0
+  end
+
+  INFINITY = Float::INFINITY
+  NEGATIVE_INFINITY = -Float::INFINITY
+  private_constant :NEGATIVE_INFINITY, :INFINITY
 end
