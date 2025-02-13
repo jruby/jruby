@@ -398,7 +398,7 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     public static ByteList singleCharByteList(final byte index) {
-        if (index > 0) {
+        if (index >= 0) {
             return SINGLE_CHAR_USASCII_BYTELISTS[index];
         } else {
             return SINGLE_CHAR_ASCII8BIT_BYTELISTS[Byte.toUnsignedInt(index)];
@@ -567,6 +567,19 @@ public abstract class RubyInteger extends RubyNumeric {
     @JRubyMethod(name = "ceil")
     public abstract IRubyObject ceil(ThreadContext context, IRubyObject arg);
 
+    protected RubyNumeric integerCeil(ThreadContext context, RubyNumeric f) {
+        RubyNumeric num;
+        boolean neg = signum(context) < 0;
+        if (neg) {
+            num = (RubyNumeric) op_uminus(context);
+        } else {
+            num = (RubyNumeric) op_plus(context, f.op_minus(context, asFixnum(context, 1)));
+        }
+        num = (RubyNumeric) ((RubyInteger) num.div(context, f)).op_mul(context, f);
+        if (neg) num = (RubyNumeric) num.op_uminus(context);
+        return num;
+    }
+
     @JRubyMethod(name = "floor")
     public IRubyObject floor(ThreadContext context){
         return this;
@@ -574,6 +587,17 @@ public abstract class RubyInteger extends RubyNumeric {
 
     @JRubyMethod(name = "floor")
     public abstract IRubyObject floor(ThreadContext context, IRubyObject arg);
+
+    protected RubyNumeric integerFloor(ThreadContext context, RubyInteger f) {
+        RubyNumeric num = this;
+        boolean neg = signum(context) < 0;
+        if (neg) {
+            num = (RubyNumeric) ((RubyInteger) ((RubyInteger) num.op_uminus(context)).op_plus(context, f)).op_minus(context, 1);
+        }
+        num = (RubyNumeric) ((RubyInteger) num.div(context, f)).op_mul(context, f);
+        if (neg) num = (RubyNumeric) num.op_uminus(context);
+        return num;
+    }
 
     @JRubyMethod(name = "truncate")
     public IRubyObject truncate(ThreadContext context){

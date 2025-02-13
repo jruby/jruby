@@ -41,6 +41,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Convert;
 import org.jruby.api.Create;
+import org.jruby.api.Error;
 import org.jruby.api.JRubyAPI;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
@@ -59,7 +60,8 @@ import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
-import static org.jruby.api.Warn.warn;
+import static org.jruby.api.Warn.warning;
+import static org.jruby.util.Numeric.int_pow;
 
 /**
  *
@@ -222,7 +224,7 @@ public class RubyBignum extends RubyInteger {
 
     public static long big2ulong(Ruby runtime, BigInteger big) {
         if (big.compareTo(BigInteger.ZERO) < 0 || big.compareTo(ULONG_MAX) > 0) {
-            throw runtime.newRangeError("bignum out of range for 'ulong'");
+            throw runtime.newRangeError("bignum out of range of unsigned long");
         }
 
         return big.longValue();
@@ -235,7 +237,7 @@ public class RubyBignum extends RubyInteger {
         BigInteger big = val.value;
         double dbl = convertToDouble(big);
         if (dbl == Double.NEGATIVE_INFINITY || dbl == Double.POSITIVE_INFINITY) {
-            warn(val.getRuntime().getCurrentContext(), "Bignum out of Float range");
+            warning(val.getRuntime().getCurrentContext(), "Integer out of Float range");
     }
         return dbl;
     }
@@ -295,17 +297,13 @@ public class RubyBignum extends RubyInteger {
      */
     @Override
     public IRubyObject ceil(ThreadContext context, IRubyObject arg){
-        int ndigits = toInt(context, arg);
-        BigInteger self = value;
-        if (ndigits >= 0) return this;
+        RubyInteger num = this;
 
-        int posdigits = Math.abs(ndigits);
-        BigInteger exp = BigInteger.TEN.pow(posdigits);
-        BigInteger mod = self.mod(exp);
-        BigInteger res = self;
-        if (mod.signum() != 0) res = self.add( exp.subtract(mod) );// self + (exp - (mod));
+        long ndigits = toLong(context, arg);
+        if (ndigits >= 0) return num;
 
-        return newBignum(context.runtime, res);
+        RubyInteger f = (RubyInteger) int_pow(context, 10, -ndigits);
+        return integerCeil(context, f);
     }
 
     /** rb_big_floor
@@ -313,14 +311,11 @@ public class RubyBignum extends RubyInteger {
      */
     @Override
     public IRubyObject floor(ThreadContext context, IRubyObject arg){
-        int ndigits = toInt(context, arg);
-        BigInteger self = value;
+        long ndigits = toLong(context, arg);
         if (ndigits >= 0) return this;
 
-        int posdigits = Math.abs(ndigits);
-        BigInteger exp = BigInteger.TEN.pow(posdigits);
-        BigInteger res = self.subtract(self.mod(exp));
-        return newBignum(context.runtime, res);
+        RubyInteger f = (RubyInteger) int_pow(context, 10, -ndigits);
+        return integerFloor(context, f);
     }
 
     /** rb_big_truncate
@@ -817,7 +812,7 @@ public class RubyBignum extends RubyInteger {
                 }
 
                 if (otherBignum.value.compareTo(INTEGER_MAX) > 0) {
-                    throw context.runtime.newRaiseException(context.runtime.getNoMemoryError(), "failed to allocate memory");
+                    throw Error.rangeError(context, "shift width too big");
                 }
 
                 shift = big2long(otherBignum);
@@ -836,7 +831,7 @@ public class RubyBignum extends RubyInteger {
         }
 
         if (shift > Integer.MAX_VALUE) {
-            throw context.runtime.newRaiseException(context.runtime.getNoMemoryError(), "failed to allocate memory");
+            throw Error.rangeError(context, "shift width too big");
         }
 
         return bignorm(context.runtime, value.shiftLeft((int) shift));
@@ -867,7 +862,7 @@ public class RubyBignum extends RubyInteger {
                 }
 
                 if (otherBignum.value.compareTo(INTEGER_MIN) < 0) {
-                    throw context.runtime.newRaiseException(context.runtime.getNoMemoryError(), "failed to allocate memory");
+                    throw Error.rangeError(context, "shift width too big");
                 }
 
                 shift = big2long(otherBignum);
@@ -886,7 +881,7 @@ public class RubyBignum extends RubyInteger {
         }
 
         if (shift < Integer.MIN_VALUE) {
-            throw context.runtime.newRaiseException(context.runtime.getNoMemoryError(), "failed to allocate memory");
+            throw Error.rangeError(context, "shift width too big");
         }
 
         return bignorm(context.runtime, value.shiftRight((int) shift));
