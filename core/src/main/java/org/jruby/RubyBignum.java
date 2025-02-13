@@ -59,7 +59,7 @@ import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
-import static org.jruby.api.Warn.warn;
+import static org.jruby.api.Warn.warning;
 
 /**
  *
@@ -235,7 +235,7 @@ public class RubyBignum extends RubyInteger {
         BigInteger big = val.value;
         double dbl = convertToDouble(big);
         if (dbl == Double.NEGATIVE_INFINITY || dbl == Double.POSITIVE_INFINITY) {
-            warn(val.getRuntime().getCurrentContext(), "Bignum out of Float range");
+            warning(val.getRuntime().getCurrentContext(), "Integer out of Float range");
     }
         return dbl;
     }
