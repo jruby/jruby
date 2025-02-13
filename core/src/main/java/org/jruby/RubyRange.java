@@ -750,7 +750,7 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(name = "step")
     public IRubyObject step(final ThreadContext context, final Block block) {
-        return block.isGiven() ? stepCommon(context, RubyFixnum.one(context.runtime), block) : step(context, context.runtime.getNil(), block);
+        return stepCommon(context, UNDEF, block);
     }
 
     @JRubyMethod(name = "step")
@@ -758,17 +758,16 @@ public class RubyRange extends RubyObject {
         return stepCommon(context, step, block);
     }
 
-    private IRubyObject stepEnumeratorize(ThreadContext context, IRubyObject step, String method) {
+    private IRubyObject stepEnumeratorize(ThreadContext context, IRubyObject stepArg, IRubyObject step, String method) {
+        IRubyObject[] argc;
+        if (stepArg == UNDEF) {
+            argc = IRubyObject.NULL_ARRAY;
+        } else {
+            argc = new IRubyObject[]{stepArg};
+        }
+
         if (step instanceof RubyNumeric && (begin instanceof RubyNumeric && (end.isNil() || end instanceof RubyNumeric)) || (begin.isNil() && end instanceof RubyNumeric)) {
-            return RubyArithmeticSequence.newArithmeticSequence(
-                    context,
-                    this,
-                    method,
-                    !step.isNil() ? new IRubyObject[]{step} : null,
-                    begin,
-                    end,
-                    !step.isNil() ? step : RubyFixnum.one(context.runtime),
-                    isExclusive ? context.tru : context.fals);
+            return RubyArithmeticSequence.newArithmeticSequence(context, this, method, argc, begin, end, step, isExclusive ? context.tru : context.fals);
         }
 
         // ...but generic Enumerator from beginless range is useless and probably an error.
@@ -776,17 +775,15 @@ public class RubyRange extends RubyObject {
             throw argumentError(context, "#step for non-numeric beginless ranges is meaningless");
         }
 
-        return !step.isNil() ?
-                enumeratorize(context.runtime, this, method, step) :
-                enumeratorize(context.runtime, this, method);
+        return enumeratorize(context.runtime, this, method, argc);
     }
 
     @JRubyMethod(name = "%")
     public IRubyObject op_mod(final ThreadContext context, IRubyObject step) {
-        return stepEnumeratorize(context, step, "%");
+        return stepEnumeratorize(context, step, step, "%");
     }
 
-    private IRubyObject stepCommon(ThreadContext context, IRubyObject step, Block block) {
+    private IRubyObject stepCommon(ThreadContext context, IRubyObject stepArg, Block block) {
         boolean beginIsNumeric = begin instanceof RubyNumeric;
         boolean endIsNumeric = end instanceof RubyNumeric;
         // For backward compatibility reasons (conforming to behavior before 3.4), String/Symbol
@@ -795,7 +792,10 @@ public class RubyRange extends RubyObject {
         IRubyObject strBegin = begin.checkStringType();
         IRubyObject symBegin = begin instanceof RubySymbol symbol ? symbol.to_s(context) : context.nil;
 
-        if (step.isNil()) {
+        IRubyObject step;
+        if (stepArg != UNDEF) {
+            step = stepArg;
+        } else {
             if (beginIsNumeric || !strBegin.isNil() || !symBegin.isNil() || (begin.isNil() && endIsNumeric)) {
                 step = asFixnum(context, 1);
             } else {
@@ -810,7 +810,7 @@ public class RubyRange extends RubyObject {
         }
 
         if (!block.isGiven()) {
-            return stepEnumeratorize(context, step, "step");
+            return stepEnumeratorize(context, stepArg, step, "step");
         }
 
         if (begin.isNil()) {
