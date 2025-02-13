@@ -413,8 +413,10 @@ java_is_modular() {
 }
 
 if java_is_modular; then
+    use_jsa_file=true
     use_modules=true
 else
+    use_jsa_file=false
     use_modules=false
 fi
 readonly use_modules
@@ -613,9 +615,11 @@ do
         --cache)
             echo "EXPERIMENTAL: Regenerating the JRuby AppCDS archive at $jruby_jsa_file"
             echo "EXPERIMENTAL: Log output at ${jruby_jsa_file}.log"
-            regenerate_jsa_file=true
+            use_jsa_file=false
             rm -f "$jruby_jsa_file"
             append java_args -XX:ArchiveClassesAtExit="$jruby_jsa_file" -Xlog:cds=off -Xlog:cds=info:file="$jruby_jsa_file".log ;;
+        --nocache)
+            use_jsa_file=false ;;
         # Abort processing on the double dash
         --) break ;;
         # Other opts go to ruby
@@ -687,8 +691,10 @@ if $use_modules; then
         JRUBY_JSA="$jruby_jsa_file"
     fi
 
-    # Auto-generate DynamicCDS archive
-    JAVA_OPTS="$JAVA_OPTS -XX:+AutoCreateSharedArchive -XX:SharedArchiveFile=$JRUBY_JSA -Xlog:cds=off -Xlog:cds=info:file="$jruby_jsa_file".log"
+    if $use_jsa_file; then
+        # Auto-generate DynamicCDS archive
+        JAVA_OPTS="$JAVA_OPTS -XX:+AutoCreateSharedArchive -XX:SharedArchiveFile=$JRUBY_JSA -Xlog:cds=off -Xlog:cds=info:file=$JRUBY_JSA.log"
+    fi
 fi
 
 # ----- Final prepration of the Java command line -----------------------------
