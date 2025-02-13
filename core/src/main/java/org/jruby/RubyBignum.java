@@ -41,6 +41,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Convert;
 import org.jruby.api.Create;
+import org.jruby.api.Error;
 import org.jruby.api.JRubyAPI;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
@@ -811,7 +812,7 @@ public class RubyBignum extends RubyInteger {
                 }
 
                 if (otherBignum.value.compareTo(INTEGER_MAX) > 0) {
-                    throw context.runtime.newRaiseException(context.runtime.getNoMemoryError(), "failed to allocate memory");
+                    throw Error.rangeError(context, "shift width too big");
                 }
 
                 shift = big2long(otherBignum);
@@ -830,7 +831,7 @@ public class RubyBignum extends RubyInteger {
         }
 
         if (shift > Integer.MAX_VALUE) {
-            throw context.runtime.newRaiseException(context.runtime.getNoMemoryError(), "failed to allocate memory");
+            throw Error.rangeError(context, "shift width too big");
         }
 
         return bignorm(context.runtime, value.shiftLeft((int) shift));
@@ -861,7 +862,7 @@ public class RubyBignum extends RubyInteger {
                 }
 
                 if (otherBignum.value.compareTo(INTEGER_MIN) < 0) {
-                    throw context.runtime.newRaiseException(context.runtime.getNoMemoryError(), "failed to allocate memory");
+                    throw Error.rangeError(context, "shift width too big");
                 }
 
                 shift = big2long(otherBignum);
@@ -880,7 +881,7 @@ public class RubyBignum extends RubyInteger {
         }
 
         if (shift < Integer.MIN_VALUE) {
-            throw context.runtime.newRaiseException(context.runtime.getNoMemoryError(), "failed to allocate memory");
+            throw Error.rangeError(context, "shift width too big");
         }
 
         return bignorm(context.runtime, value.shiftRight((int) shift));
