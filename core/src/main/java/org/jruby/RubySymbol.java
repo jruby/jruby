@@ -449,6 +449,15 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return newSymbol;
     }
 
+    // MRI: rb_to_symbol
+    public static RubySymbol toSymbol(ThreadContext context, IRubyObject name) {
+        name = prepareID(context, name);
+        if (name instanceof RubySymbol symbol) {
+            return symbol;
+        }
+        return ((RubyString) name).intern(context);
+    }
+
     /**
      * @see org.jruby.compiler.Constantizable
      */
@@ -1570,6 +1579,8 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     /**
      * Return the given object if it is a Symbol or String, or convert it to a String.
+     *
+     * MRI: string_for_symbol
      *
      * @param context the current context
      * @param object the object
