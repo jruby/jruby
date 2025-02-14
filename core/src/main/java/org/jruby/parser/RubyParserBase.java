@@ -501,13 +501,6 @@ public abstract class RubyParserBase {
         if (tail == null) return head;
         if (head == null) return tail;
 
-        switch (head.getNodeType()) {
-            case BIGNUMNODE: case FIXNUMNODE: case FLOATNODE: // NODE_LIT
-            case STRNODE: case SELFNODE: case TRUENODE: case FALSENODE: case NILNODE:
-                if (!(head instanceof InvisibleNode)) warning(ID.MISCELLANEOUS, lexer.getFile(), tail.getLine(), "unused literal ignored");
-                return tail;
-        }
-
         if (!(head instanceof BlockNode)) {
             head = new BlockNode(head.getLine()).add(head);
         }
