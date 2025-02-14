@@ -13,6 +13,7 @@ import org.jruby.RubySymbol;
 import org.jruby.RubyThread;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.exceptions.FiberKill;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ir.operands.IRException;
@@ -216,7 +217,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         }
 
         if (result.type == RequestType.RAISE) {
-            throw ((RubyException) result.data).toThrowable();
+            throw (RuntimeException) result.data;
         }
 
         return processResultData(context, result);
@@ -237,10 +238,10 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     }
 
     public static class FiberRequest {
-        final IRubyObject data;
+        final Object data;
         final RequestType type;
 
-        FiberRequest(IRubyObject data, RequestType type) {
+        FiberRequest(Object data, RequestType type) {
             this.data = data;
             this.type = type;
         }
@@ -375,7 +376,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         }
 
         if (result.type == RequestType.RAISE) {
-            throw ((RubyException) result.data).toThrowable();
+            throw (RuntimeException) result.data;
         }
 
         return processResultData(context, result);
@@ -396,7 +397,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
         if (data.parent != context.getFiberCurrentThread()) fiberCalledAcrossThreads(runtime);
 
-        FiberRequest val = new FiberRequest(exception, RequestType.RAISE);
+        FiberRequest val = new FiberRequest(((RubyException) exception).toThrowable(), RequestType.RAISE);
 
         data.prev = context.getFiber();
 
@@ -412,7 +413,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         }
 
         if (result.type == RequestType.RAISE) {
-            throw ((RubyException) result.data).toThrowable();
+            throw (RuntimeException) result.data;
         }
 
         return processResultData(context, result);
@@ -433,14 +434,14 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         FiberRequest result = exchangeWithFiber(context, currentFiberData, prevFiberData, new FiberRequest(value, RequestType.DATA));
 
         if (result.type == RequestType.RAISE) {
-            throw ((RubyException) result.data).toThrowable();
+            throw (RuntimeException) result.data;
         }
 
         return processResultData(context, result);
     }
 
     private static IRubyObject processResultData(ThreadContext context, FiberRequest result) {
-        IRubyObject data = result.data;
+        IRubyObject data = (IRubyObject) result.data;
 
         if (data == RubyBasicObject.NEVER) return context.nil;
 
@@ -462,7 +463,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         FiberRequest result = exchangeWithFiber(context, currentFiberData, prevFiberData, new FiberRequest(RubyArray.newArrayNoCopy(runtime, value), RequestType.DATA));
 
         if (result.type == RequestType.RAISE) {
-            throw ((RubyException) result.data).toThrowable();
+            throw (RuntimeException) result.data;
         }
 
         return processResultData(context, result);
@@ -533,7 +534,12 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                             if (init == NEVER) {
                                 result = new FiberRequest(block.yieldSpecific(ctxt), RequestType.DATA);
                             } else {
-                                result = new FiberRequest(block.yieldArray(ctxt, init.data, null), RequestType.DATA);
+                                // terminated before first resume
+                                if (init.type == RequestType.RAISE) {
+                                    throw (RuntimeException) init.data;
+                                }
+
+                                result = new FiberRequest(block.yieldArray(ctxt, (IRubyObject) init.data, null), RequestType.DATA);
                             }
 
                             // Clear ThreadFiber's thread since we're on the way out and need to appear non-alive?
@@ -549,6 +555,11 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                             context.runtime.getThreadService().unregisterCurrentThread(ctxt);
                             ThreadFiber tf = data.fiber.get();
                             if (tf != null) tf.thread = null;
+                        }
+                    } catch (FiberKill fk) {
+                        // push a final result and quietly die
+                        if (data.prev != null) {
+                            data.prev.data.queue.push(ctxt, new FiberRequest(ctxt.nil, RequestType.DATA));
                         }
                     } catch (JumpException.FlowControlException fce) {
                         if (data.prev != null) {
@@ -568,7 +579,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                         }
                     } catch (RaiseException re) {
                         if (data.prev != null) {
-                            data.prev.data.queue.push(ctxt, new FiberRequest(re.getException(), RequestType.RAISE));
+                            data.prev.data.queue.push(ctxt, new FiberRequest(re.getException().toThrowable(), RequestType.RAISE));
                         }
                     } catch (Throwable t) {
                         if (data.prev != null) {
@@ -798,6 +809,19 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         hash.visitAll(context, (ctx, self, key, value, index) -> {
             if (!(key instanceof RubySymbol)) throw typeError(context, key, "Symbol");
         });
+    }
+
+    @JRubyMethod
+    public IRubyObject kill(ThreadContext context) {
+        if (root) return this;
+
+        if (context.getFiber() == this) {
+            throw new FiberKill();
+        }
+
+        data.queue.push(context, new FiberRequest(new FiberKill(), RequestType.RAISE));
+
+        return context.nil;
     }
 
     public static class FiberSchedulerSupport {
