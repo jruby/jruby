@@ -381,11 +381,9 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
         return processResultData(context, result);
     }
+
     public IRubyObject raise(ThreadContext context, IRubyObject exception) {
         Ruby runtime = context.runtime;
-
-        final FiberData data = this.data;
-        if (data.prev != null) throw runtime.newFiberError("double resume");
 
         if (!alive()) throw runtime.newFiberError("dead fiber called");
 
@@ -394,6 +392,9 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         if (data == currentFiberData) {
             RubyKernel.raise(context, this, exception);
         }
+
+        final FiberData data = this.data;
+        if (data.prev != null) throw runtime.newFiberError("double resume");
 
         if (data.parent != context.getFiberCurrentThread()) fiberCalledAcrossThreads(runtime);
 
