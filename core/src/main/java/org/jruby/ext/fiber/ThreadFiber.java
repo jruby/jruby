@@ -729,7 +729,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "[]", meta = true)
     public static IRubyObject op_aref(ThreadContext context, IRubyObject recv, IRubyObject key) {
-        if (!(key instanceof RubySymbol)) throw typeError(context, key, "Symbol");
+        key = RubySymbol.toSymbol(context, key);
 
         RubyHash storage = context.getFiber().storage;
 
@@ -744,7 +744,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "[]=", meta = true)
     public static IRubyObject op_aset(ThreadContext context, IRubyObject recv, IRubyObject key, IRubyObject value) {
-        if (!(key instanceof RubySymbol)) throw typeError(context, key, "Symbol");
+        key = RubySymbol.toSymbol(context, key);
 
         ThreadFiber current = context.getFiber();
         boolean nil = value.isNil();
