@@ -128,7 +128,7 @@ class TestRubyOptions < Test::Unit::TestCase
     case RUBY_ENGINE
     when 'jruby'
       /^jruby #{q[RUBY_ENGINE_VERSION]} \(#{q[RUBY_VERSION]}\).*? \[#{
-        q[RbConfig::CONFIG["host_os"]]}-#{q[RbConfig::CONFIG["host_cpu"]]}\]$/
+        q[RbConfig::CONFIG["host_cpu"]]}-#{q[RbConfig::CONFIG["host_os"]]}\]$/
     else
       /^ruby #{q[RUBY_VERSION]}(?:[p ]|dev|rc).*? \[#{q[RUBY_PLATFORM]}\]$/
     end
@@ -224,6 +224,7 @@ class TestRubyOptions < Test::Unit::TestCase
 
     return if RbConfig::CONFIG["MJIT_SUPPORT"] == 'no'
     return if yjit_force_enabled?
+    return if RUBY_ENGINE != 'ruby'
 
     [
       %w(--version --mjit --disable=mjit),
