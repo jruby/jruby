@@ -98,7 +98,9 @@ public class JRubyFile extends JavaSecuredFile {
 
         if (pathname.indexOf(':') > 0) { // scheme-oriented resources
             if (pathname.startsWith("classpath:")) {
-                pathname = "uri:classloader:/" + pathname.substring(10);
+                String subpath = pathname.substring(10);
+                String slash = subpath.charAt(0) == '/' ? "" : "/";
+                pathname = "uri:classloader:" + slash + subpath;
             }
 
             if (pathname.startsWith("uri:file:")) {
