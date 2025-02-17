@@ -63,6 +63,14 @@ public class Config implements ConfigMBean {
         ruby.get().getInstanceConfig().setJitMaxSize(maxSize);
     }
 
+    public long getJitTimeDelta() {
+        return ruby.get().getInstanceConfig().getJitTimeDelta();
+    }
+
+    public void setJitTimeDelta(long timeDelta) {
+        ruby.get().getInstanceConfig().setJitTimeDelta(timeDelta);
+    }
+
     public boolean isRunRubyInProcess() {
         return ruby.get().getInstanceConfig().isRunRubyInProcess();
     }

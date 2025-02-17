@@ -57,6 +57,7 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
     protected final int line;
     protected final StaticScope staticScope;
     protected int callCount = 0;
+    protected volatile long time;
     protected transient InterpreterContext interpreterContext; // cached from method
     private transient MethodData methodData;
     private boolean ruby2Keywords;
@@ -92,6 +93,16 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
         // we don't synchronize callCount++ it does not matter if count isn't accurate
         if (self.callCount++ >= runtime.getInstanceConfig().getJitThreshold()) {
             synchronized (self) { // disable same jit tasks from entering queue twice
+                final long timeDelta;
+                if ((timeDelta = runtime.getInstanceConfig().getJitTimeDelta()) >= 0) {
+                    long newTime = System.nanoTime();
+                    if ((newTime - self.time) >= timeDelta) {
+                        self.callCount = 0;
+                        self.time = newTime;
+                        return;
+                    }
+                }
+
                 if (self.callCount >= 0) {
                     self.callCount = Integer.MIN_VALUE; // so that callCount++ stays < 0
 
