@@ -37,7 +37,7 @@ public class IRClosure extends IRScope {
 
     private boolean isEND;         // Does this represent and END { } closure?
 
-    private Signature signature;
+    protected Signature signature;
 
     // We allow closures who happen to be assigned to calls named 'defined_method' to save the original
     // AST so we can attempt to convert those blocks to full methods.
