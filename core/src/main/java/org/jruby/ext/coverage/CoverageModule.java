@@ -217,39 +217,32 @@ public class CoverageModule {
             final IntList val = entry.getValue();
             boolean oneshot = (mode & CoverageData.ONESHOT_LINES) != 0;
 
-            var ary = Create.newArray(context, val, val.size(),
-                    oneshot ?
-                            CoverageModule::convertCoverageOneshot :
-                            CoverageModule::convertCoverage
-            );
+            int size = val.size();
+            var ary = newArray(context, size);
+            for (int i = 0; i < size; i++) {
+                int integer = val.get(i);
+                if (oneshot) {
+                    ary.push(context, asFixnum(context, integer + 1));
+                } else {
+                    ary.store(i, integer == -1 ? context.nil : asFixnum(context, integer));
+                }
+            }
 
             RubyString key = newString(context, entry.getKey());
-            IRubyObject value = ary;
+            IRubyObject value;
 
             if (mode != 0) {
                 RubyHash oneshotHash = newSmallHash(context);
                 RubySymbol linesKey = asSymbol(context, oneshot ? "oneshot_lines" : "lines");
                 oneshotHash.fastASetSmall(linesKey, ary);
                 value = oneshotHash;
+            } else {
+                value = ary;
             }
 
             covHash.fastASetCheckString(context.runtime, key, value);
         }
 
         return covHash;
-    }
-
-    private static void convertCoverageOneshot(ThreadContext c, IntList v, RubyArray<IRubyObject> a) {
-        for (int i = 0; i < v.size(); i++) {
-            int integer = v.get(i);
-            a.push(c, asFixnum(c, integer + 1));
-        }
-    }
-
-    private static void convertCoverage(ThreadContext c, IntList v, RubyArray<IRubyObject> a) {
-        for (int i = 0; i < v.size(); i++) {
-            int integer = v.get(i);
-            a.store(i, integer == -1 ? c.nil : asFixnum(c, integer));
-        }
     }
 }

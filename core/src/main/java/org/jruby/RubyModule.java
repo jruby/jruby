@@ -5049,11 +5049,11 @@ public class RubyModule extends RubyObject {
             return Create.newEmptyArray(context);
         }
 
-        var refinementModules = newRawArray(context, refinementStore.refinements.size());
+        var refinementModules = newArray(context, refinementStore.refinements.size());
 
         refinementStore.refinements.forEach((key, value) -> refinementModules.append(context, value));
 
-        return refinementModules.finishRawArray(context);
+        return refinementModules;
     }
 
     @JRubyMethod(name = "target")

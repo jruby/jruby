@@ -238,13 +238,15 @@ public final class StructLayout extends Type {
      */
     @JRubyMethod(name = "members")
     public IRubyObject members(ThreadContext context) {
-        return Create.newArray(context, fieldNames, fieldNames.size(), StructLayout::memberPopulator);
+        int size = fields.size();
+        var result = newArray(context, size);
+        for (int i = 0; i < size; i++) {
+            result.append(context, fields.get(i));
+        }
+        return result;
     }
 
     private static void memberPopulator(ThreadContext c, List<IRubyObject> f, RubyArray<IRubyObject> a) {
-        for (int i = 0; i < f.size(); i++) {
-            a.append(c, f.get(i));
-        }
     }
 
     /**
@@ -254,15 +256,13 @@ public final class StructLayout extends Type {
      */
     @JRubyMethod(name = "offsets")
     public IRubyObject offsets(ThreadContext context) {
-        return Create.newArray(context, this, fieldNames.size(), StructLayout::offsetsPopulator);
-    }
-
-    private static void offsetsPopulator(ThreadContext c, StructLayout s, RubyArray<IRubyObject> a) {
-        var fieldNames = s.fieldNames;
+        int size = fieldNames.size();
+        var result = newArray(context, size);
         for (int i = 0; i < fieldNames.size(); i++) { // Assemble a [ :name, offset ] array
             var name = fieldNames.get(i);
-            a.append(c, newArray(c, name, asFixnum(c, s.getMember(c, name).offset)));
+            result.append(context, newArray(context, name, asFixnum(context, getMember(context, name).offset)));
         }
+        return result;
     }
 
     @JRubyMethod(name = "offset_of")

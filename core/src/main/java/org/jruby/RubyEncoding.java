@@ -494,18 +494,15 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     public static IRubyObject name_list(ThreadContext context, IRubyObject recv) {
         EncodingService service = context.runtime.getEncodingService();
 
-        var result = newRawArray(context, service.getEncodings().size() + service.getAliases().size());
-        HashEntryIterator i;
-        i = service.getEncodings().entryIterator();
+        var result = newArray(context, service.getEncodings().size() + service.getAliases().size() + 4);
+        var i = service.getEncodings().entryIterator();
         while (i.hasNext()) {
-            CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e =
-                ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)i.next());
+            var e = i.next();
             result.append(context, RubyString.newUsAsciiStringShared(context.runtime, e.bytes, e.p, e.end - e.p).freeze(context));
         }
         i = service.getAliases().entryIterator();
         while (i.hasNext()) {
-            CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e =
-                ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)i.next());
+            var e = i.next();
             result.append(context, RubyString.newUsAsciiStringShared(context.runtime, e.bytes, e.p, e.end - e.p).freeze(context));
         }
 
@@ -514,7 +511,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         result.append(context, newString(context, INTERNAL));
         result.append(context, newString(context, LOCALE));
 
-        return result.finishRawArray(context);
+        return result;
     }
 
     @SuppressWarnings("unchecked")

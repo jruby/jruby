@@ -911,7 +911,7 @@ public class RubyStruct extends RubyObject {
     @JRubyMethod(rest = true)
     public IRubyObject values_at(ThreadContext context, IRubyObject[] args) {
         final int olen = values.length;
-        var result = newRawArray(context, args.length);
+        var result = newArray(context, args.length);
 
         for (int i = 0; i < args.length; i++) {
             final IRubyObject arg = args[i];
@@ -930,7 +930,8 @@ public class RubyStruct extends RubyObject {
                     result.push(context, aref(context, j));
                 }
                 if ( beg + len > j ) {
-                    IRubyObject [] tmp = new IRubyObject[beg + len - j];
+                    // FIXME: This can be a commented storeInternl to beg + len
+                    IRubyObject[] tmp = new IRubyObject[beg + len - j];
                     Helpers.fillNil(context, tmp);
                     result.push(context, tmp);
                 }
@@ -939,7 +940,7 @@ public class RubyStruct extends RubyObject {
             result.push(context, aref(context, RubyNumeric.num2int(arg)));
         }
 
-        return result.finishRawArray(context);
+        return result;
     }
 
     @JRubyMethod(name = "dig")

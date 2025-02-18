@@ -99,7 +99,6 @@ import static org.jruby.api.Convert.castAsModule;
 import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newEmptyArray;
-import static org.jruby.api.Create.newRawArray;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.nameError;
 import static org.jruby.api.Error.typeError;
@@ -2863,9 +2862,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     Fred.new.instance_variables   #=&gt; [:"{@literal @}iv"]
      */
     public RubyArray instance_variables(ThreadContext context) {
-        var array = newRawArray(context, getMetaClass().getVariableAccessorsForRead().size());
+        var array = newArray(context, getMetaClass().getVariableAccessorsForRead().size());
         forEachInstanceVariableName(name -> array.append(context, asSymbol(context, name)));
-        return array.finishRawArray(context);
+        return array;
     }
 
     /**

@@ -351,15 +351,14 @@ public class RubyBignum extends RubyInteger {
         if (self.signum() <= 0) return newEmptyArray(context);
 
         // Bignum only kicks in > 0xFFFFFFFFFFFFFFFF so pick 16 digits for highest typical base 16
-        RubyArray res = Create.newRawArray(context, 16);
+        RubyArray res = Create.newArray(context, 16);
         do {
             BigInteger q = self.mod(bigBase);
             res.append(context, RubyBignum.newBignum(context.runtime, q));
             self = self.divide(bigBase);
         } while (self.signum() > 0);
-        res.finishRawArray(context);
-        return res;
 
+        return res;
     }
 
     /** rb_big_to_s

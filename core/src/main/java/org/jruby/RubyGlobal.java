@@ -96,7 +96,6 @@ import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newFrozenString;
-import static org.jruby.api.Create.newRawArray;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.nameError;
@@ -119,12 +118,11 @@ public class RubyGlobal {
         var objectClass = objectClass(context);
         // define ARGV and $* for this runtime
         String[] argv = instanceConfig(context).getArgv();
-        var argvArray = newRawArray(context, argv.length);
+        var argvArray = newArray(context, argv.length);
 
         for (String arg : argv) {
             argvArray.append(context, RubyString.newInternalFromJavaExternal(runtime, arg));
         }
-        argvArray.finishRawArray(context);
 
         if (objectClass.getConstantNoConstMissing(context, "ARGV") != null) {
             ((RubyArray<?>) objectClass.getConstant(context, "ARGV")).replace(context, argvArray);

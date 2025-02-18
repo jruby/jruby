@@ -941,11 +941,11 @@ public class RubyKernel {
     @JRubyMethod(name = "global_variables", module = true, visibility = PRIVATE)
     public static RubyArray global_variables(ThreadContext context, IRubyObject recv) {
         GlobalVariables globals = globalVariables(context);
-        var globalVariables = newRawArray(context, globals.size());
+        var globalVariables = newArray(context, globals.size());
 
         globals.eachName(context, globalVariables, (c, g, s) -> g.append(c, asSymbol(c, s)));
 
-        return globalVariables.finishRawArray(context);
+        return globalVariables;
     }
 
     /**

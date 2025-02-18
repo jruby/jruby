@@ -1198,7 +1198,6 @@ public class RubyClass extends RubyModule {
     }
 
     private void finishConcreteSubclasses(ThreadContext context, RubyArray<RubyClass> subs) {
-        subs.finishRawArray(context);
         int newSize = subs.size();
         concreteSubclassesEstimate = newSize;
     }

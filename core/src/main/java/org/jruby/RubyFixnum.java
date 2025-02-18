@@ -418,18 +418,11 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
 
         if (value == 0) return newArray(context, asFixnum(context, 0));
 
-        RubyArray<?> res;
-
-        if (value > 0) {
-            res = newArray(context, (int) (Math.log(value) / Math.log(longBase)) + 1);
-            do {
-                res.append(context, asFixnum(context, value % longBase));
-                value /= longBase;
-            } while (value > 0);
-            res.finishRawArray(context);
-        } else {
-            res = newEmptyArray(context);
-        }
+        RubyArray<?> res = newArray(context, (int) (Math.log(value) / Math.log(longBase)) + 1);
+        do {
+            res.append(context, asFixnum(context, value % longBase));
+            value /= longBase;
+        } while (value > 0);
 
         return res;
     }

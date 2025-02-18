@@ -1177,7 +1177,7 @@ public class RubyRange extends RubyObject {
         if (num < 0) throw argumentError(context, "negative array size (or size too big)");
 
         // TODO (CON): this could be packed if we know there are at least num elements in range
-        final var result = newRawArray(context, num);
+        final var result = newArray(context, num);
         try {
             RubyEnumerable.callEach(context, sites(context).each, this, Signature.ONE_ARGUMENT, new BlockCallback() {
                 int n = num;
@@ -1196,7 +1196,7 @@ public class RubyRange extends RubyObject {
             });
         } catch (JumpException.SpecialJump sj) {
         }
-        return result.finishRawArray(context);
+        return result;
     }
 
     @JRubyMethod
@@ -1268,7 +1268,7 @@ public class RubyRange extends RubyObject {
              n = toLong(context, nv);
         }
 
-        RubyArray<?> array = newRawArray(context, n);
+        RubyArray<?> array = newArray(context, n);
         RubyInteger b = (RubyInteger) e.op_minus(context, nv);
         while (n > 0) {
             b = (RubyInteger) b.op_plus(context, one);
@@ -1276,7 +1276,7 @@ public class RubyRange extends RubyObject {
             n--;
         }
 
-        return array.finishRawArray(context);
+        return array;
     }
 
     @JRubyMethod
