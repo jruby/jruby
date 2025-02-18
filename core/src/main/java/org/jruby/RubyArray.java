@@ -180,6 +180,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     @Deprecated(since = "10.0", forRemoval = true)
     public static final RubyArray newArray(final Ruby runtime, final long len) {
         ThreadContext context = runtime.getCurrentContext();
+
         // FIXME: This should be newBlankArray but things go very wrong in a tough to figure out where sort of way.
         return Create.newArray(context, checkLength(context, len));
     }
@@ -195,13 +196,13 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     public static final RubyArray<?> newArray(ThreadContext context, final int len) {
         if (len == 0) return newEmptyArray(context.runtime);
-        IRubyObject[] values = Helpers.nilledArray(validateBufferLength(context.runtime, len), context.runtime);
+        IRubyObject[] values = IRubyObject.array(validateBufferLength(context.runtime, len));
         return new RubyArray<>(context.runtime, values, 0, 0);
     }
 
     public static final RubyArray<?> newArrayLight(final Ruby runtime, final int len) {
         if (len == 0) return newEmptyArray(runtime);
-        IRubyObject[] values = Helpers.nilledArray(validateBufferLength(runtime, len), runtime);
+        IRubyObject[] values = IRubyObject.array(validateBufferLength(runtime, len));
         return new RubyArray<>(runtime, runtime.getArray(), values, 0, 0, false);
     }
 
@@ -941,12 +942,21 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return value;
     }
 
+    // note: packed arrays will unpack in overridden version of this
     protected void storeInternal(ThreadContext context, final int index, final IRubyObject value) {
         assert index >= 0;
 
         if (index >= realLength) {
             int valuesLength = values.length - begin;
-            if (index >= valuesLength) storeRealloc(context, index, valuesLength);
+            if (index >= valuesLength) {
+                if (index - realLength >= 1) { // fill null values unassigned up to alloc'd capacity
+                    fillNil(values, begin + realLength, values.length, getRuntime());
+                }
+                storeRealloc(context, index, valuesLength);
+            } else if (index - realLength >= 1) {
+                int baseIndex = begin + realLength;
+                fillNil(values, baseIndex, baseIndex + (index - realLength), getRuntime());
+            }
             realLength = index + 1;
         }
 
