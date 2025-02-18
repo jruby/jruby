@@ -143,6 +143,7 @@ jdb=false
 NO_BOOTCLASSPATH=false
 VERIFY_JRUBY=false
 print_environment_log=false
+regenerate_jsa_file=false
 log_cds=false
 
 if [ -z "$JRUBY_OPTS" ]; then
@@ -643,8 +644,11 @@ fi
 append ruby_args "$@"
 
 # If regenerating the JSA archive but no Ruby arguments were passed, do -e 1
-if $regenerate_jsa_file & [ \'"$ruby_args"\' = "' '" ]; then
-    assign ruby_args '-e' '1'
+if $regenerate_jsa_file; then
+    case $ruby_args in
+        (*[![:space:]]*) ;;  # If non-space character found, ruby_args isn't empty
+        (*) assign ruby_args -e 1 ;;  # ruby_args is empty
+    esac
 fi
 
 JAVA_OPTS="$JAVA_OPTS $JAVA_MEM $JAVA_STACK"
@@ -697,9 +701,13 @@ if $use_modules; then
 
     if $use_jsa_file; then
         # Auto-generate DynamicCDS archive
+        add_log
+        add_log "Generating and using CDS archve at:"
+        add_log "  $JRUBY_JSA"
         JAVA_OPTS="$JAVA_OPTS -XX:+AutoCreateSharedArchive -XX:SharedArchiveFile=$JRUBY_JSA -Xlog:cds=off -Xlog:cds+dynamic=off"
         if $log_cds; then
-            add_log "Logging CDS output to $JRUBY_JSA.log"
+            add_log "Logging CDS output to:"
+            add_log "  $JRUBY_JSA.log"
             append java_args -Xlog:cds=info:file="$JRUBY_JSA".log -Xlog:cds+dynamic=info:file="$JRUBY_JSA".log
         fi
     fi

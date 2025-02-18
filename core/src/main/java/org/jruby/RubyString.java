@@ -1729,6 +1729,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                     p += cl;
                 }
                 value.setUnsafeBytes(obytes);
+                value.setBegin(0);
             } else {
                 byte[] obytes = new byte[len];
                 cr = enc.isAsciiCompatible() ? CR_7BIT : CR_VALID;
@@ -1741,6 +1742,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                     p += cl;
                 }
                 value.setUnsafeBytes(obytes);
+                value.setBegin(0);
             }
 
             setCodeRange(cr);
