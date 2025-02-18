@@ -5002,11 +5002,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     public RubyClass singletonClass(ThreadContext context) {
-        if (isChilled()) {
-            mutateChilledString();
-        } else if (isFrozen()) {
-            throw typeError(context, "can't define singleton");
-        }
+        if (isFrozen()) throw typeError(context, "can't define singleton");
 
         return super.singletonClass(context);
     }
