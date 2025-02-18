@@ -994,9 +994,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return (flags & CHILLED_LITERAL_F) != 0;
     }
 
-    /** rb_str_modify
-     *
-     */
     @Override
     public final void modify() {
         modifyCheck();
@@ -1018,6 +1015,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         modifyAndClearCodeRange();
     }
 
+    // MRI: rb_str_modify
     public final void modifyAndClearCodeRange() {
         modify();
         clearCodeRange();
