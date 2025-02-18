@@ -947,20 +947,24 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         assert index >= 0;
 
         if (index >= realLength) {
-            int valuesLength = values.length - begin;
-            if (index >= valuesLength) {
-                if (index - realLength >= 1) { // fill null values unassigned up to alloc'd capacity
-                    fillNil(values, begin + realLength, values.length, getRuntime());
-                }
-                storeRealloc(context, index, valuesLength);
-            } else if (index - realLength >= 1) {
-                int baseIndex = begin + realLength;
-                fillNil(values, baseIndex, baseIndex + (index - realLength), getRuntime());
-            }
+            resizeAndFillBackingArray(context, index);
             realLength = index + 1;
         }
 
         safeArraySet(context, values, begin + index, value);
+    }
+
+    private void resizeAndFillBackingArray(ThreadContext context, int index) {
+        int valuesLength = values.length - begin;
+        if (index >= valuesLength) {
+            if (index - realLength >= 1) { // fill null values unassigned up to alloc'd capacity
+                fillNil(values, begin + realLength, values.length, getRuntime());
+            }
+            storeRealloc(context, index, valuesLength);
+        } else if (index - realLength >= 1) {
+            int baseIndex = begin + realLength;
+            fillNil(values, baseIndex, baseIndex + (index - realLength), getRuntime());
+        }
     }
 
     private void storeRealloc(ThreadContext context, final int index, final int valuesLength) {
@@ -2644,8 +2648,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
         int end = (int)(beg + len);
         if (end > realLength) {
-            int valuesLength = values.length - begin;
-            if (end >= valuesLength) realloc(context, end, valuesLength);
+            resizeAndFillBackingArray(context, end);
             realLength = end;
         }
 
@@ -2670,8 +2673,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
         int end = (int)(beg + len);
         if (end > realLength) {
-            int valuesLength = values.length - begin;
-            if (end >= valuesLength) realloc(context, end, valuesLength);
+            resizeAndFillBackingArray(context, end);
             realLength = end;
         }
 
