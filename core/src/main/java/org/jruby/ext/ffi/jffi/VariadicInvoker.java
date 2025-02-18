@@ -13,6 +13,7 @@ import org.jruby.RubyObject;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Convert;
+import org.jruby.api.Create;
 import org.jruby.ext.ffi.Enums;
 import org.jruby.ext.ffi.NativeType;
 import org.jruby.ext.ffi.Pointer;
@@ -110,7 +111,7 @@ public class VariadicInvoker extends RubyObject {
                 CallingConvention.STDCALL : CallingConvention.DEFAULT;
 
         int length = paramTypes.getLength();
-        var fixed = newArray(context, length);
+        var fixed = Create.allocArray(context, length);
         int fixedParamCount = 0;
         for (int i = 0; i < length; ++i) {
             Type type = (Type)paramTypes.entry(i);

@@ -28,12 +28,10 @@ package org.jruby.ext.coverage;
 
 import java.util.Map;
 
-import org.jruby.RubyArray;
 import org.jruby.RubyHash;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.api.Create;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
@@ -218,7 +216,7 @@ public class CoverageModule {
             boolean oneshot = (mode & CoverageData.ONESHOT_LINES) != 0;
 
             int size = val.size();
-            var ary = newArray(context, size);
+            var ary = allocArray(context, size);
             for (int i = 0; i < size; i++) {
                 int integer = val.get(i);
                 if (oneshot) {

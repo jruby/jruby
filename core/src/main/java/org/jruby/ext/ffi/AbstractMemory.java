@@ -1850,7 +1850,7 @@ abstract public class AbstractMemory extends MemoryObject {
     @JRubyMethod(name = { "get_array_of_string" })
     public IRubyObject get_array_of_string(ThreadContext context, IRubyObject rbOffset) {
         final int POINTER_SIZE = (Platform.getPlatform().addressSize() / 8);
-        final var arr = newArray(context, (size - POINTER_SIZE) / POINTER_SIZE);
+        final var arr = Create.allocArray(context, (size - POINTER_SIZE) / POINTER_SIZE);
 
         for (long off = getOffset(rbOffset); off <= size - POINTER_SIZE; off += POINTER_SIZE) {
             final MemoryIO mem = getMemoryIO().getMemoryIO(off);

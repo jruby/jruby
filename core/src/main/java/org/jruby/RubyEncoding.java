@@ -494,7 +494,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     public static IRubyObject name_list(ThreadContext context, IRubyObject recv) {
         EncodingService service = context.runtime.getEncodingService();
 
-        var result = newArray(context, service.getEncodings().size() + service.getAliases().size() + 4);
+        var result = allocArray(context, service.getEncodings().size() + service.getAliases().size() + 4);
         var i = service.getEncodings().entryIterator();
         while (i.hasNext()) {
             var e = i.next();

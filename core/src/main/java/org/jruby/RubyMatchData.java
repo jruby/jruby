@@ -43,6 +43,7 @@ import org.joni.exception.JOniException;
 import org.joni.exception.ValueException;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Create;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -319,7 +320,7 @@ public class RubyMatchData extends RubyObject {
         }
 
         int count = regs.getNumRegs() - start;
-        var arr = newArray(context, count);
+        var arr = Create.allocArray(context, count);
         for (int i=0; i < count; i++) {
             int beg = regs.getBeg(i+start);
             arr.storeInternal(context, i, beg == -1 ?
@@ -475,7 +476,7 @@ public class RubyMatchData extends RubyObject {
     public IRubyObject values_at(ThreadContext context, IRubyObject[] args) {
         check(context);
 
-        var result = newArray(context, args.length);
+        var result = Create.allocArray(context, args.length);
 
         for (IRubyObject arg : args) {
             if (arg instanceof RubyFixnum fix) {

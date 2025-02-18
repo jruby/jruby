@@ -6,10 +6,8 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.func.TriConsumer;
 
 import java.util.List;
-import java.util.function.Consumer;
 
 import static org.jruby.RubyArray.checkLength;
 import static org.jruby.api.Access.stringClass;
@@ -27,27 +25,44 @@ public class Create {
     }
 
     /**
-     * Create a new array with a specific allocation size.
+     * Create an empty array with a specific allocated size.  This should be used to
+     * make an array where you think you know how big the array will be and you plan on
+     * adding data after its construction.
+     *
+     * It is ok if you add more than this size (it will resize) or less than this size
+     * (it will waste a little more space).  The goal is to size in a way where we will not have
+     * to arraycopy data when the Array grows.
      *
      * @param context the current thread context
+     * @param length to allocate
      * @return the new array
      */
     // mri: rb_ary_new2
-    public static RubyArray<?> newArray(ThreadContext context, int length) {
+    public static RubyArray<?> allocArray(ThreadContext context, int length) {
         // note: this cannot be newBlankArray because packed arrays only exist fully populated.
         return RubyArray.newArray(context, length);
     }
 
     /**
-     * Create a new array with a specific allocation size.
+     * Create an empty array with a specific allocated size.  This should be used to
+     * make an array where you think you know how big the array will be and you plan on
+     * adding data after its construction.
+     *
+     * It is ok if you add more than this size (it will resize) or less than this size
+     * (it will waste a little more space).  The goal is to size in a way where we will not have
+     * to arraycopy data when the Array grows.
+     *
+     * This version differs from the int override in that it verifies your long value can
+     * fit into an int.  It will raise if it cannot.
      *
      * @param context the current thread context
+     * @param length to allocate
      * @return the new array
      */
     // mri: rb_ary_new2
-    public static RubyArray<?> newArray(ThreadContext context, long length) {
+    public static RubyArray<?> allocArray(ThreadContext context, long length) {
         // note: this cannot be newBlankArray because packed arrays only exist fully populated.
-        return newArray(context, checkLength(context, length));
+        return allocArray(context, checkLength(context, length));
     }
 
 

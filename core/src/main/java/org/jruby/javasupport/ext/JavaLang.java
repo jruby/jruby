@@ -533,7 +533,7 @@ public abstract class JavaLang {
             // quick count for accurate size
             int size = 0;
             for (java.lang.reflect.Method method : publicMethods) if (!Modifier.isStatic(method.getModifiers())) size++;
-            final var methods = newArray(context, size);
+            final var methods = allocArray(context, size);
 
             for (java.lang.reflect.Method method : publicMethods) {
                 if (!Modifier.isStatic(method.getModifiers())) methods.add(context, method);
@@ -549,7 +549,7 @@ public abstract class JavaLang {
             // quick count for accurate size
             int size = 0;
             for (java.lang.reflect.Method method : declaredMethods) if (!Modifier.isStatic(method.getModifiers())) size++;
-            final var methods = newArray(context, size);
+            final var methods = allocArray(context, size);
 
             for (java.lang.reflect.Method method : declaredMethods) {
                 if (!Modifier.isStatic(method.getModifiers())) methods.add(context, method);
@@ -565,7 +565,7 @@ public abstract class JavaLang {
             // quick count for accurate size
             int size = 0;
             for (java.lang.reflect.Method method : publicMethods) if (Modifier.isStatic(method.getModifiers())) size++;
-            final var methods = newArray(context, size);
+            final var methods = allocArray(context, size);
 
             for ( java.lang.reflect.Method method : publicMethods) {
                 if (Modifier.isStatic(method.getModifiers())) methods.add(method);
@@ -581,7 +581,7 @@ public abstract class JavaLang {
             // quick count for accurate size
             int size = 0;
             for (java.lang.reflect.Method method : declaredMethods) if (Modifier.isStatic(method.getModifiers())) size++;
-            final var methods = newArray(context, size);
+            final var methods = allocArray(context, size);
 
             for (java.lang.reflect.Method method : declaredMethods) {
                 if (Modifier.isStatic(method.getModifiers())) methods.add(method);

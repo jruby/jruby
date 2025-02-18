@@ -911,7 +911,7 @@ public class RubyStruct extends RubyObject {
     @JRubyMethod(rest = true)
     public IRubyObject values_at(ThreadContext context, IRubyObject[] args) {
         final int olen = values.length;
-        var result = newArray(context, args.length);
+        var result = allocArray(context, args.length);
 
         for (int i = 0; i < args.length; i++) {
             final IRubyObject arg = args[i];

@@ -47,6 +47,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 
 import org.jruby.api.Access;
+import org.jruby.api.Create;
 import org.jruby.exceptions.RaiseException;
 
 import org.jruby.runtime.Arity;
@@ -267,7 +268,7 @@ public class RubyZlib {
     @JRubyMethod(name = "crc_table", module = true, visibility = PRIVATE)
     public static IRubyObject crc_table(ThreadContext context, IRubyObject recv) {
         int[] table = com.jcraft.jzlib.CRC32.getCRC32Table();
-        var result = newArray(context, table.length);
+        var result = Create.allocArray(context, table.length);
         for (int j: table) result.append(context, asFixnum(context, j & 0xffffffffL));
         return result;
     }

@@ -118,7 +118,7 @@ public class RubyGlobal {
         var objectClass = objectClass(context);
         // define ARGV and $* for this runtime
         String[] argv = instanceConfig(context).getArgv();
-        var argvArray = newArray(context, argv.length);
+        var argvArray = Create.allocArray(context, argv.length);
 
         for (String arg : argv) {
             argvArray.append(context, RubyString.newInternalFromJavaExternal(runtime, arg));

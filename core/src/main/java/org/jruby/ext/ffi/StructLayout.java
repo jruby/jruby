@@ -239,7 +239,7 @@ public final class StructLayout extends Type {
     @JRubyMethod(name = "members")
     public IRubyObject members(ThreadContext context) {
         int size = fields.size();
-        var result = newArray(context, size);
+        var result = Create.allocArray(context, size);
         for (int i = 0; i < size; i++) {
             result.append(context, fields.get(i));
         }
@@ -257,7 +257,7 @@ public final class StructLayout extends Type {
     @JRubyMethod(name = "offsets")
     public IRubyObject offsets(ThreadContext context) {
         int size = fieldNames.size();
-        var result = newArray(context, size);
+        var result = Create.allocArray(context, size);
         for (int i = 0; i < fieldNames.size(); i++) { // Assemble a [ :name, offset ] array
             var name = fieldNames.get(i);
             result.append(context, newArray(context, name, asFixnum(context, getMember(context, name).offset)));

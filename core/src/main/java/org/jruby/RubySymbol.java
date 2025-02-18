@@ -1401,7 +1401,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         public RubyArray all_symbols(ThreadContext context) {
             SymbolEntry[] table = this.symbolTable;
-            var array = Create.newArray(context, size);
+            var array = Create.allocArray(context, size);
 
             for (int i = table.length; --i >= 0; ) {
                 for (SymbolEntry e = table[i]; e != null; e = e.next) {

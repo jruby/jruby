@@ -941,7 +941,7 @@ public class RubyKernel {
     @JRubyMethod(name = "global_variables", module = true, visibility = PRIVATE)
     public static RubyArray global_variables(ThreadContext context, IRubyObject recv) {
         GlobalVariables globals = globalVariables(context);
-        var globalVariables = newArray(context, globals.size());
+        var globalVariables = allocArray(context, globals.size());
 
         globals.eachName(context, globalVariables, (c, g, s) -> g.append(c, asSymbol(c, s)));
 

@@ -28,9 +28,7 @@
 
 package org.jruby.javasupport.ext;
 
-import org.jruby.Ruby;
 import org.jruby.RubyClass;
-import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.api.Access;

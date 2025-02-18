@@ -397,7 +397,7 @@ public class RubyDir extends RubyObject implements Closeable {
     }
 
     private static RubyArray newEntryArray(ThreadContext context, String[] files, Encoding encoding, boolean childrenOnly) {
-        var result = Create.newArray(context, files.length);
+        var result = Create.allocArray(context, files.length);
         for (String file : files) {
             if (childrenOnly) { // removeIf(f -> f.equals(".") || f.equals(".."));
                 final int len = file.length();

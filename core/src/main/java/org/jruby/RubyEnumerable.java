@@ -396,7 +396,7 @@ public class RubyEnumerable {
         if (firstCount == 0) return newEmptyArray(context);
         if (firstCount < 0) throw argumentError(context, "attempt to take negative size");
 
-        final RubyArray<?> result = newArray(context, firstCount);
+        final RubyArray<?> result = allocArray(context, firstCount);
 
         try {
             each(context, eachSite(context), self, new JavaInternalBlockBody(context.runtime, context, "Enumerable#first", Signature.OPTIONAL) {
@@ -1197,14 +1197,14 @@ public class RubyEnumerable {
         callEach(context, eachSite(context), self, Signature.OPTIONAL, (ctx, largs, blk) -> {
             RubyArray object = result.object;
             if (object == null) {
-                object = result.object = newArray(context, size);
+                object = result.object = allocArray(context, size);
             }
 
             object.append(ctx, packEnumValues(ctx, largs));
 
             if (object.size() == size) {
                 block.yield(ctx, object);
-                result.object = newArray(ctx, size);
+                result.object = allocArray(ctx, size);
             }
 
             return ctx.nil;
@@ -1240,7 +1240,7 @@ public class RubyEnumerable {
     }
 
     static IRubyObject each_consCommon(ThreadContext context, IRubyObject self, final int size, final Block block) {
-        final var result = newArray(context, size);
+        final var result = allocArray(context, size);
 
         callEach(context, eachSite(context), self, Signature.OPTIONAL, (ctx, largs, blk) -> {
             if (result.size() == size) result.shift(ctx);
