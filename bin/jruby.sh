@@ -143,6 +143,7 @@ jdb=false
 NO_BOOTCLASSPATH=false
 VERIFY_JRUBY=false
 print_environment_log=false
+regenerate_jsa_file=false
 
 if [ -z "$JRUBY_OPTS" ]; then
     JRUBY_OPTS=""
