@@ -2380,6 +2380,7 @@ public final class StringSupport {
                 t += tlen;
             }
             self.getByteList().setUnsafeBytes(buf);
+            self.getByteList().setBegin(0);
             self.getByteList().setRealSize(t);
         } else if (enc.isSingleByte() || (singlebyte && hash == null)) {
             while (s < send) {
@@ -2450,6 +2451,7 @@ public final class StringSupport {
                 t += tlen;
             }
             self.getByteList().setUnsafeBytes(buf);
+            self.getByteList().setBegin(0);
             self.getByteList().setRealSize(t);
         }
 
