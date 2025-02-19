@@ -45,7 +45,6 @@ import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -154,7 +153,6 @@ import static org.jruby.api.Access.globalVariables;
 import static org.jruby.api.Access.instanceConfig;
 import static org.jruby.api.Access.loadService;
 import static org.jruby.api.Access.objectClass;
-import static org.jruby.api.Access.symbolClass;
 import static org.jruby.api.Check.checkID;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
@@ -5049,11 +5047,11 @@ public class RubyModule extends RubyObject {
             return Create.newEmptyArray(context);
         }
 
-        var refinementModules = newRawArray(context, refinementStore.refinements.size());
+        var refinementModules = allocArray(context, refinementStore.refinements.size());
 
         refinementStore.refinements.forEach((key, value) -> refinementModules.append(context, value));
 
-        return refinementModules.finishRawArray(context);
+        return refinementModules;
     }
 
     @JRubyMethod(name = "target")

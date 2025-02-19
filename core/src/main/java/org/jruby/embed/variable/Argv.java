@@ -32,7 +32,7 @@ package org.jruby.embed.variable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import org.jruby.Ruby;
+
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.RubyNil;

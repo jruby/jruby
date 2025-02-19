@@ -158,7 +158,7 @@ public class SelectExecutor {
             readReady = newEmptyArray(context);
         } else {
             final int len = Math.min(n, maxReadReadySize());
-            readReady = Create.newRawArray(context, len);
+            readReady = Create.allocArray(context, len);
             for (i = 0; i < readAry.size(); i++) {
                 IRubyObject obj = readAry.eltOk(i);
                 RubyIO io = TypeConverter.ioGetIO(runtime, obj);
@@ -169,7 +169,6 @@ public class SelectExecutor {
                     readReady.append(context, obj);
                 }
             }
-            readReady.finishRawArray(context);
         }
 
         RubyArray<?> writeReady;
@@ -177,7 +176,7 @@ public class SelectExecutor {
             writeReady = newEmptyArray(context);
         } else {
             final int len = Math.min(n, maxWriteReadySize());
-            writeReady = Create.newRawArray(context, len);
+            writeReady = Create.allocArray(context, len);
             for (i = 0; i < writeAry.size(); i++) {
                 IRubyObject obj = writeAry.eltOk(i);
                 RubyIO io = TypeConverter.ioGetIO(runtime, obj);
@@ -188,14 +187,13 @@ public class SelectExecutor {
                     writeReady.push(context, obj);
                 }
             }
-            writeReady.finishRawArray(context);
         }
 
         RubyArray<?> error;
         if (errorKeyList == null) {
             error = newEmptyArray(context);
         } else {
-            error = Create.newRawArray(context, exceptAry.size());
+            error = Create.allocArray(context, exceptAry.size());
             for (i = 0; i < exceptAry.size(); i++) {
                 IRubyObject obj = exceptAry.eltOk(i);
                 RubyIO io = TypeConverter.ioGetIO(runtime, obj);
@@ -206,7 +204,6 @@ public class SelectExecutor {
                     error.push(context, obj);
                 }
             }
-            error.finishRawArray(context);
         }
 
         return newArray(context, readReady, writeReady, error);

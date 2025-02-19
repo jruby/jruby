@@ -13,6 +13,7 @@ import org.jruby.RubyObject;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Convert;
+import org.jruby.api.Create;
 import org.jruby.ext.ffi.Enums;
 import org.jruby.ext.ffi.NativeType;
 import org.jruby.ext.ffi.Pointer;
@@ -23,8 +24,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Create.newArray;
-import static org.jruby.api.Convert.asSymbol;
-import static org.jruby.api.Create.newRawArray;
 import static org.jruby.api.Error.typeError;
 
 @JRubyClass(name = "FFI::VariadicInvoker", parent = "Object")
@@ -112,7 +111,7 @@ public class VariadicInvoker extends RubyObject {
                 CallingConvention.STDCALL : CallingConvention.DEFAULT;
 
         int length = paramTypes.getLength();
-        var fixed = newRawArray(context, length);
+        var fixed = Create.allocArray(context, length);
         int fixedParamCount = 0;
         for (int i = 0; i < length; ++i) {
             Type type = (Type)paramTypes.entry(i);
@@ -121,7 +120,6 @@ public class VariadicInvoker extends RubyObject {
                 fixedParamCount++;
             }
         }
-        fixed.finishRawArray(context);
 
         FunctionInvoker functionInvoker = DefaultMethodFactory.getFunctionInvoker(returnType);
 

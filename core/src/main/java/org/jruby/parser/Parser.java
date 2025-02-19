@@ -46,6 +46,7 @@ import org.jruby.RubyFile;
 import org.jruby.RubyHash;
 import org.jruby.RubyIO;
 import org.jruby.RubySymbol;
+import org.jruby.api.Create;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.BlockNode;
 import org.jruby.ast.CallNode;
@@ -229,7 +230,7 @@ public class Parser {
         IRubyObject scriptLines = objectClass(context).getConstantAt(context, "SCRIPT_LINES__");
         if (!(scriptLines instanceof RubyHash hash)) return null;
 
-        var list = length == -1 ? newEmptyArray(context) : newArray(context, length);
+        var list = length == -1 ? newEmptyArray(context) : Create.allocArray(context, length);
         hash.op_aset(context, newString(context, file), list);
         return list;
     }

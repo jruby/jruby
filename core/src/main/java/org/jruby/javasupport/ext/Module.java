@@ -27,7 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport.ext;
 
-import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
@@ -51,7 +50,6 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 
-import static org.jruby.api.Access.moduleClass;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;

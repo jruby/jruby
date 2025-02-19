@@ -5042,13 +5042,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             while ((result = scanOnce(context, str, pat, startp)) != context.nil) {
                 last = prev;
                 prev = startp[0];
-                if (ary == null) {
-                    ary = newRawArray(context, 4);
-                }
+                if (ary == null) ary = allocArray(context, 4);
                 ary.append(context, result);
             }
             if (last >= 0) patternSearch(context, pat, str, last);
-            return ary == null ? newEmptyArray(context) : ary.finishRawArray(context);
+            return ary == null ? newEmptyArray(context) : ary;
         }
 
         final byte[] pBytes = value.unsafeBytes();
@@ -6426,7 +6424,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         RubyArray<?> ary;
         if (wantarray) {
             final int len = str.strLength(strByteList, enc);
-            ary = newRawArray(context, len);
+            ary = allocArray(context, len);
         } else {
             ary = null;
         }
@@ -6439,7 +6437,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             ptr += n;
         }
 
-        return wantarray ? ary.finishRawArray(context) : this;
+        return wantarray ? ary : this;
     }
 
     private IRubyObject enumerateBytes(ThreadContext context, String name, Block block, boolean wantarray) {
@@ -6522,7 +6520,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         RubyArray ary;
         if (wantarray) {
-            ary = newRawArray(context, end - ptr);
+            ary = allocArray(context, end - ptr);
         } else {
             ary = null;
         }
@@ -6536,7 +6534,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             ptr += len;
         }
 
-        return wantarray ? ary.finishRawArray(context) : this;
+        return wantarray ? ary : this;
     }
 
     @JRubyMethod

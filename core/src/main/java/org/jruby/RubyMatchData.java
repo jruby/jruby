@@ -43,6 +43,7 @@ import org.joni.exception.JOniException;
 import org.joni.exception.ValueException;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Create;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -66,7 +67,6 @@ import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Create.newEmptyString;
-import static org.jruby.api.Create.newRawArray;
 import static org.jruby.api.Create.newSmallHash;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineClass;
@@ -320,14 +320,14 @@ public class RubyMatchData extends RubyObject {
         }
 
         int count = regs.getNumRegs() - start;
-        var arr = newRawArray(context, count);
+        var arr = Create.allocArray(context, count);
         for (int i=0; i < count; i++) {
             int beg = regs.getBeg(i+start);
             arr.storeInternal(context, i, beg == -1 ?
                     context.nil :
                     str.makeSharedString(context.runtime, beg, regs.getEnd(i+start) - beg));
         }
-        return arr.finishRawArray(context);
+        return arr;
     }
 
     @Deprecated(since = "10.0")
@@ -476,7 +476,7 @@ public class RubyMatchData extends RubyObject {
     public IRubyObject values_at(ThreadContext context, IRubyObject[] args) {
         check(context);
 
-        var result = newRawArray(context, args.length);
+        var result = Create.allocArray(context, args.length);
 
         for (IRubyObject arg : args) {
             if (arg instanceof RubyFixnum fix) {
@@ -491,7 +491,7 @@ public class RubyMatchData extends RubyObject {
             }
         }
 
-        return result.finishRawArray(context);
+        return result;
     }
 
     @Deprecated(since = "10.0")

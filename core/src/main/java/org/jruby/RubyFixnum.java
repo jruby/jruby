@@ -41,6 +41,7 @@ import java.math.BigInteger;
 
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.api.Convert;
+import org.jruby.api.Create;
 import org.jruby.api.JRubyAPI;
 import org.jruby.compiler.Constantizable;
 import org.jruby.runtime.Block;
@@ -65,7 +66,6 @@ import static org.jruby.api.Convert.asFloat;
 import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Create.newArray;
-import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.Numeric.f_odd_p;
@@ -418,18 +418,11 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
 
         if (value == 0) return newArray(context, asFixnum(context, 0));
 
-        RubyArray<?> res;
-
-        if (value > 0) {
-            res = newArray(context, (int) (Math.log(value) / Math.log(longBase)) + 1);
-            do {
-                res.append(context, asFixnum(context, value % longBase));
-                value /= longBase;
-            } while (value > 0);
-            res.finishRawArray(context);
-        } else {
-            res = newEmptyArray(context);
-        }
+        RubyArray<?> res = Create.allocArray(context, (int) (Math.log(value) / Math.log(longBase)) + 1);
+        do {
+            res.append(context, asFixnum(context, value % longBase));
+            value /= longBase;
+        } while (value > 0);
 
         return res;
     }

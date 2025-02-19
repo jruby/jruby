@@ -49,7 +49,6 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.api.Check;
 import org.jruby.ast.util.ArgsUtil;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;

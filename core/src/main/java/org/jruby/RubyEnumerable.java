@@ -396,7 +396,7 @@ public class RubyEnumerable {
         if (firstCount == 0) return newEmptyArray(context);
         if (firstCount < 0) throw argumentError(context, "attempt to take negative size");
 
-        final RubyArray<?> result = newRawArray(context, firstCount);
+        final RubyArray<?> result = allocArray(context, firstCount);
 
         try {
             each(context, eachSite(context), self, new JavaInternalBlockBody(context.runtime, context, "Enumerable#first", Signature.OPTIONAL) {
@@ -414,7 +414,7 @@ public class RubyEnumerable {
             });
         } catch (JumpException.SpecialJump sj) {}
 
-        return result.finishRawArray(context);
+        return result;
     }
 
     @JRubyMethod
@@ -1197,20 +1197,20 @@ public class RubyEnumerable {
         callEach(context, eachSite(context), self, Signature.OPTIONAL, (ctx, largs, blk) -> {
             RubyArray object = result.object;
             if (object == null) {
-                object = result.object = newRawArray(context, size);
+                object = result.object = allocArray(context, size);
             }
 
             object.append(ctx, packEnumValues(ctx, largs));
 
             if (object.size() == size) {
-                block.yield(ctx, object.finishRawArray(ctx));
-                result.object = newRawArray(ctx, size);
+                block.yield(ctx, object);
+                result.object = allocArray(ctx, size);
             }
 
             return ctx.nil;
         });
 
-        if (result.object != null && result.object.size() > 0) block.yield(context, result.object.finishRawArray(context));
+        if (result.object != null && result.object.size() > 0) block.yield(context, result.object);
         return self;
     }
 
@@ -1240,12 +1240,12 @@ public class RubyEnumerable {
     }
 
     static IRubyObject each_consCommon(ThreadContext context, IRubyObject self, final int size, final Block block) {
-        final var result = newRawArray(context, size);
+        final var result = allocArray(context, size);
 
         callEach(context, eachSite(context), self, Signature.OPTIONAL, (ctx, largs, blk) -> {
             if (result.size() == size) result.shift(ctx);
             result.append(ctx, packEnumValues(ctx, largs));
-            if (result.size() == size) block.yield(ctx, result.finishRawArray(context).aryDup());
+            if (result.size() == size) block.yield(ctx, result.aryDup());
             return ctx.nil;
         });
 

@@ -34,7 +34,6 @@ import org.jruby.*;
 import org.jruby.RubyEnumerator.SizeFn;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Access;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;

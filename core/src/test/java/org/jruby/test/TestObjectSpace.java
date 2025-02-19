@@ -39,6 +39,7 @@ import junit.framework.TestCase;
 
 import org.jruby.Ruby;
 import org.jruby.RubyString;
+import org.jruby.api.Create;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -84,9 +85,9 @@ public class TestObjectSpace extends TestCase {
     }
 
     public void testObjectSpace() {
-        IRubyObject o1 = newArray(context, 10);
-        IRubyObject o2 = newArray(context, 20);
-        IRubyObject o3 = newArray(context, 30);
+        IRubyObject o1 = Create.allocArray(context, 10);
+        IRubyObject o2 = Create.allocArray(context, 20);
+        IRubyObject o3 = Create.allocArray(context, 30);
         IRubyObject o4 = newString(context, "hello");
 
         target.add(o1);
