@@ -508,6 +508,9 @@ public class ModeFlags implements Cloneable {
         if ((flags & APPEND) != 0) {
             fmodeFlags |= OpenFile.APPEND;
         }
+        if ((flags & TRUNC) != 0) {
+            fmodeFlags |= OpenFile.TRUNC;
+        }
         if ((flags & CREAT) != 0) {
             fmodeFlags |= OpenFile.CREATE;
         }
