@@ -702,7 +702,7 @@ if $use_modules; then
     if $use_jsa_file; then
         # Auto-generate DynamicCDS archive
         add_log
-        add_log "Generating and using CDS archve at:"
+        add_log "Generating and using CDS archive at:"
         add_log "  $JRUBY_JSA"
         JAVA_OPTS="$JAVA_OPTS -XX:+AutoCreateSharedArchive -XX:SharedArchiveFile=$JRUBY_JSA -Xlog:cds=off -Xlog:cds+dynamic=off"
         if $log_cds; then
