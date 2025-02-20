@@ -1,1 +1,0 @@
-fails(waiting on release of ruby/stringio#101):StringIO#set_encoding_by_bom raises FrozenError when io is frozen
