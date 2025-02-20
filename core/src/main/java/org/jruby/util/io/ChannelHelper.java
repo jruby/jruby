@@ -142,7 +142,7 @@ public abstract class ChannelHelper {
                                     : null;
 
                     // try to unwrap as a Drip stream
-                    if (!(tmpStream instanceof FilterOutputStream)) {
+                    if (tmpStream != null && !(tmpStream instanceof FilterOutputStream)) {
                         // try to get stream out of drip stream
                         OutputStream dripStream = unwrapDripStream(tmpStream);
 
