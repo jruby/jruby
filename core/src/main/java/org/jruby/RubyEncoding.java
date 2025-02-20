@@ -475,6 +475,24 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         return coder;
     }
 
+    /**
+     * Check whether the given encoding and the encoding from the given {@link CodeRangeable} are compatible.
+     *
+     * This version differs from {@link RubyString#checkEncoding(CodeRangeable)} in that the contents of the first
+     * encoding's string are not taken into consideration (e.g. blank first string does not skip compatibility check
+     * with second string's encoding).
+     *
+     * See rb_enc_check in CRuby and use from stringio that passes encoding instead of string for the first argument.
+     *
+     * See https://github.com/ruby/stringio/pull/116 for some discussion
+     *
+     * MRI: rb_enc_check with encoding for first parameter
+     *
+     * @param context the current thread context
+     * @param encoding the first encoding
+     * @param other the {@link CodeRangeable} from which to get bytes and the second encoding
+     * @return a negotiated encoding, if compatible; null otherwise
+     */
     public static Encoding checkEncoding(ThreadContext context, Encoding encoding, CodeRangeable other) {
         Encoding enc = StringSupport.areCompatible(encoding, other);
         if (enc == null) throw context.runtime.newEncodingCompatibilityError("incompatible character encodings: " +
