@@ -49,7 +49,10 @@ import org.jruby.util.ShellLauncher;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
+import static org.jruby.api.Access.encodingService;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toInt;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.runtimeError;
 import static org.jruby.util.StringSupport.*;
@@ -964,7 +967,7 @@ public class OpenFile implements Finalizable {
 
         if (!err.isNil() && !noraise) {
             if (err instanceof RubyFixnum || err instanceof RubyBignum) {
-                posix.setErrno(Errno.valueOf(RubyNumeric.num2int(err)));
+                posix.setErrno(Errno.valueOf(toInt(context, err)));
                 throw runtime.newErrnoFromErrno(posix.getErrno(), pathv);
             } else {
                 throw ((RubyException)err).toThrowable();
@@ -982,7 +985,7 @@ public class OpenFile implements Finalizable {
 
     // MRI: NEED_WRITECONV
     public boolean needsWriteConversion(ThreadContext context) {
-        Encoding ascii8bit = context.runtime.getEncodingService().getAscii8bitEncoding();
+        Encoding ascii8bit = encodingService(context).getAscii8bitEncoding();
 
         return Platform.IS_WINDOWS ?
                 ((encs.enc != null && encs.enc != ascii8bit) || (encs.ecflags & ((EConvFlags.DECORATOR_MASK & ~EConvFlags.CRLF_NEWLINE_DECORATOR)|EConvFlags.STATEFUL_DECORATOR_MASK)) != 0)
@@ -1034,7 +1037,7 @@ public class OpenFile implements Finalizable {
         ecflags = encs.ecflags & ~EConvFlags.NEWLINE_DECORATOR_READ_MASK;
         ecopts = encs.ecopts;
 
-        Encoding ascii8bit = context.runtime.getEncodingService().getAscii8bitEncoding();
+        Encoding ascii8bit = encodingService(context).getAscii8bitEncoding();
         if (encs.enc == null || (encs.enc == ascii8bit && encs.enc2 == null)) {
             /* no encoding conversion */
             writeconvPreEcflags = 0;
@@ -1811,7 +1814,6 @@ public class OpenFile implements Finalizable {
 
     // rb_io_getline_fast
     public IRubyObject getlineFast(ThreadContext context, Encoding enc, RubyIO io, boolean chomp) {
-        Ruby runtime = context.runtime;
         RubyString str = null;
         ByteList strByteList;
         int len = 0;
@@ -1835,7 +1837,7 @@ public class OpenFile implements Finalizable {
                         if (chomp) chomplen = ((pending > 1 && pBytes[e - 1] == '\r') ? 1 : 0) + 1;
                     }
                     if (str == null) {
-                        str = RubyString.newString(runtime, pBytes, p, pending - chomplen);
+                        str = newString(context, pBytes, p, pending - chomplen);
                         strByteList = str.getByteList();
                         rbuf.off += pending;
                         rbuf.len -= pending;
@@ -1858,9 +1860,9 @@ public class OpenFile implements Finalizable {
                 READ_CHECK(context);
             } while (fillbuf(context) >= 0);
             if (str == null) return context.nil;
-            str = (RubyString) EncodingUtils.ioEncStr(runtime, str, this);
+            str = EncodingUtils.ioEncStr(context.runtime, str, this);
             str.setCodeRange(cr);
-            incrementLineno(runtime, io);
+            incrementLineno(context.runtime, io);
         } finally {
             if (locked) unlock();
         }
@@ -2126,7 +2128,7 @@ public class OpenFile implements Finalizable {
                 return context.nil;
             }
             if (enc.isAsciiCompatible() && Encoding.isAscii(rbuf.ptr[rbuf.off])) {
-                str = RubyString.newString(runtime, rbuf.ptr, rbuf.off, 1);
+                str = newString(context, rbuf.ptr, rbuf.off, 1);
                 rbuf.off += 1;
                 rbuf.len -= 1;
                 cr = StringSupport.CR_7BIT;
@@ -2135,13 +2137,13 @@ public class OpenFile implements Finalizable {
                 r = preciseLength(enc, rbuf.ptr, rbuf.off, rbuf.off + rbuf.len);
                 if (StringSupport.MBCLEN_CHARFOUND_P(r) &&
                         (n = StringSupport.MBCLEN_CHARFOUND_LEN(r)) <= rbuf.len) {
-                    str = RubyString.newString(runtime, rbuf.ptr, rbuf.off, n);
+                    str = newString(context, rbuf.ptr, rbuf.off, n);
                     rbuf.off += n;
                     rbuf.len -= n;
                     cr = StringSupport.CR_VALID;
                 }
                 else if (StringSupport.MBCLEN_NEEDMORE_P(r)) {
-                    str = RubyString.newString(runtime, rbuf.ptr, rbuf.off, rbuf.len);
+                    str = newString(context, rbuf.ptr, rbuf.off, rbuf.len);
                     rbuf.len = 0;
                     getc_needmore: while (true) {
                         if (fillbuf(context) != -1) {
@@ -2161,7 +2163,7 @@ public class OpenFile implements Finalizable {
                     }
                 }
                 else {
-                    str = RubyString.newString(runtime, rbuf.ptr, rbuf.off, 1);
+                    str = newString(context, rbuf.ptr, rbuf.off, 1);
                     rbuf.off++;
                     rbuf.len--;
                 }
@@ -2354,7 +2356,7 @@ public class OpenFile implements Finalizable {
                 Encoding common_encoding = getCommonEncodingForWriteConv(context, str.getEncoding());
 
                 if (common_encoding != null) {
-                    str = (RubyString) EncodingUtils.rbStrEncode(context, str, runtime.getEncodingService().convertEncodingToRubyEncoding(common_encoding), writeconvPreEcflags, writeconvPreEcopts);
+                    str = (RubyString) EncodingUtils.rbStrEncode(context, str, encodingService(context).convertEncodingToRubyEncoding(common_encoding), writeconvPreEcflags, writeconvPreEcopts);
                 }
 
                 if (writeconv != null) {

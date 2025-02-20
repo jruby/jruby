@@ -748,7 +748,7 @@ public class RubyTime extends RubyObject {
         if (cmp.isBuiltin(self)) {
             cmpResult = self.cmp((RubyTime) other);
         } else {
-            cmpResult = RubyNumeric.fix2int(cmp.call(context, self, self, other));
+            cmpResult = toInt(context, cmp.call(context, self, self, other));
         }
         return cmpResult;
     }
@@ -877,7 +877,7 @@ public class RubyTime extends RubyObject {
     @Override
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
-            return asBoolean(context, RubyNumeric.fix2int(invokedynamic(context, this, OP_CMP, other)) == 0);
+            return asBoolean(context, toInt(context, invokedynamic(context, this, OP_CMP, other)) == 0);
         }
 
         return context.fals;
@@ -1406,7 +1406,7 @@ public class RubyTime extends RubyObject {
         nanosec /= 10;
         submicro[0] |= (byte)((nanosec % 10) << 4);
         if (submicro[1] == 0) len = 1;
-        string.setInternalVariable("submicro", RubyString.newString(context.runtime, submicro, 0, len));
+        string.setInternalVariable("submicro", newString(context, submicro, 0, len));
 
         // time zone
         final DateTimeZone zone = dt.getZone();
@@ -1466,7 +1466,7 @@ public class RubyTime extends RubyObject {
     }
 
     private int getNdigits(ThreadContext context, IRubyObject[] args) {
-        int ndigits = args.length == 0 ? 0 : RubyNumeric.num2int(args[0]);
+        int ndigits = args.length == 0 ? 0 : toInt(context, args[0]);
         // There are only 1_000_000_000 nanoseconds in 1 second,
         // so there is no need to keep more than 9 digits
         if (ndigits > 9) ndigits = 9;
@@ -1578,7 +1578,7 @@ public class RubyTime extends RubyObject {
             // However in the case of a single argument, any portion after the decimal point is honored.
             if (arg instanceof RubyFloat flote) {
                 // use integral and decimal forms to calculate nanos
-                long seconds = RubyNumeric.float2long(flote);
+                long seconds = flote.asLong(context);
                 double dbl = flote.value;
 
                 long nano = (long)((dbl - seconds) * 1000000000);

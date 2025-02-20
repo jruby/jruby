@@ -68,6 +68,8 @@ import static org.jruby.api.Access.stringClass;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Convert.toByte;
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newEmptyArray;
@@ -518,7 +520,7 @@ public class RubyArgsFile extends RubyObject {
             boolean cont = true;
             while (cont) {
                 cont = false;
-                byte c = (byte) RubyNumeric.fix2int(ch);
+                byte c = toByte(context, ch);
                 int n = runtime.getKCode().getEncoding().length(c);
                 IRubyObject file = data.currentFile;
                 RubyString str = runtime.newString();
@@ -534,7 +536,7 @@ public class RubyArgsFile extends RubyObject {
                         cont = true;
                         continue;
                     }
-                    c = (byte) RubyNumeric.fix2int(ch);
+                    c = toByte(context, ch);
                     str.cat(c);
                 }
                 block.yield(context, str);
@@ -678,7 +680,7 @@ public class RubyArgsFile extends RubyObject {
 
     @JRubyMethod(name = "lineno=")
     public static IRubyObject lineno_set(ThreadContext context, IRubyObject recv, IRubyObject line) {
-        context.runtime.setCurrentLine(RubyNumeric.fix2int(line));
+        context.runtime.setCurrentLine(toInt(context, line));
 
         return context.nil;
     }

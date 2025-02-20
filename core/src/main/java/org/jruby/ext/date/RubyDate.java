@@ -1930,7 +1930,7 @@ public class RubyDate extends RubyObject {
 
         RubyString d = (RubyString) match.at(context, 1);
         RubyString mon = (RubyString) match.at(context, 2);
-        mon = RubyString.newStringShared(context.runtime, ConvertBytes.byteToSharedByteList((short) mon_num(mon)));
+        mon = newSharedString(context, ConvertBytes.byteToSharedByteList((short) mon_num(mon)));
         RubyString b = matchOrNull(context, match, 3);
         RubyString y = matchOrNull(context, match, 4);
 
@@ -1962,7 +1962,7 @@ public class RubyDate extends RubyObject {
         if (!(sub instanceof RubyMatchData match)) return context.nil;
 
         RubyString mon = (RubyString) match.at(context, 1);
-        mon = RubyString.newStringShared(context.runtime, ConvertBytes.byteToSharedByteList((short) mon_num(mon)));
+        mon = newSharedString(context, ConvertBytes.byteToSharedByteList((short) mon_num(mon)));
         RubyString d = (RubyString) match.at(context, 2);
         RubyString b = matchOrNull(context, match, 3);
         RubyString y = matchOrNull(context, match, 4);
@@ -2106,7 +2106,7 @@ public class RubyDate extends RubyObject {
     private static final ByteList SPACE = new ByteList(new byte[] { ' ' }, false);
 
     private static IRubyObject subSpace(ThreadContext context, RubyString str, RubyRegexp reg) {
-        return str.subBangFast(context, reg, RubyString.newStringShared(context.runtime, SPACE));
+        return str.subBangFast(context, reg, newSharedString(context, SPACE));
     }
 
     // NOTE: still in .rb
@@ -2139,7 +2139,7 @@ public class RubyDate extends RubyObject {
     public static IRubyObject _parse_impl(ThreadContext context, IRubyObject self, IRubyObject s, IRubyObject h) {
         RubyString str = (RubyString) s; RubyHash hash = (RubyHash) h;
 
-        str = str.gsubFast(context, newRegexp(context.runtime, _parse_impl), RubyString.newStringShared(context.runtime, SPACE), Block.NULL_BLOCK);
+        str = str.gsubFast(context, newRegexp(context.runtime, _parse_impl), newSharedString(context, SPACE), Block.NULL_BLOCK);
 
         int flags = check_class(str);
         if ((flags & HAVE_ALPHA) == HAVE_ALPHA) {

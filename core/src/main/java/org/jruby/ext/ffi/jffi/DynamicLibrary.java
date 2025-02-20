@@ -29,6 +29,7 @@ import org.jruby.util.FileResource;
 import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.JRubyFile;
 
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.newString;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
@@ -52,8 +53,8 @@ public class DynamicLibrary extends RubyObject {
 
         return DynamicLibary;
     }
-    private static final int getNativeLibraryFlags(IRubyObject rbFlags) {
-        int f = 0, flags = RubyNumeric.fix2int(rbFlags);
+    private static final int getNativeLibraryFlags(ThreadContext context, IRubyObject rbFlags) {
+        int f = 0, flags = toInt(context, rbFlags);
         f |= (flags & RTLD_LAZY) != 0 ? Library.LAZY : 0;
         f |= (flags & RTLD_NOW) != 0 ? Library.NOW : 0;
         f |= (flags & RTLD_LOCAL) != 0 ? Library.LOCAL : 0;
@@ -89,7 +90,7 @@ public class DynamicLibrary extends RubyObject {
             loadName = libName; // not a uri, must be a file path
         }
         try {
-            Library library = Library.getCachedInstance(loadName, getNativeLibraryFlags(libraryFlags));
+            Library library = Library.getCachedInstance(loadName, getNativeLibraryFlags(context, libraryFlags));
             if (library == null) {
                 throw new UnsatisfiedLinkError(Library.getLastError());
             }

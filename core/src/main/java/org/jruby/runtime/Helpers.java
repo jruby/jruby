@@ -1863,8 +1863,7 @@ public class Helpers {
 
     @Deprecated // no-longer used + confusing argument order
     public static IRubyObject stringOrNil(ByteList value, ThreadContext context) {
-        if (value == null) return context.nil;
-        return RubyString.newStringShared(context.runtime, value);
+        return value == null ? context.nil : newSharedString(context, value);
     }
 
     @SuppressWarnings("deprecation")

@@ -68,12 +68,14 @@ import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyFile.filePathConvert;
 import static org.jruby.RubyString.UTF8;
 import static org.jruby.api.Access.dirClass;
+import static org.jruby.api.Access.encodingService;
 import static org.jruby.api.Access.globalVariables;
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.toInt;
+import static org.jruby.api.Create.newSharedString;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
@@ -161,11 +163,11 @@ public class RubyDir extends RubyObject implements Closeable {
             RubyHash opts = encOpts.convertToHash();
             IRubyObject encodingArg = ArgsUtil.extractKeywordArg(context, opts, "encoding");
             if (encodingArg != null && !encodingArg.isNil()) {
-                encoding = context.runtime.getEncodingService().getEncodingFromObject(encodingArg);
+                encoding = encodingService(context).getEncodingFromObject(encodingArg);
             }
         }
 
-        if (encoding == null) encoding = context.runtime.getEncodingService().getFileSystemEncoding();
+        if (encoding == null) encoding = encodingService(context).getFileSystemEncoding();
 
         RubyString newPath = checkEmbeddedNulls(context, RubyFile.get_path(context, pathArg));
         this.path = newPath;
@@ -236,12 +238,12 @@ public class RubyDir extends RubyObject implements Closeable {
             IRubyObject tmp = TypeConverter.checkHashType(runtime, args[args.length - 1]);
             boolean processFlags = keys == BASE_FLAGS_KEYWORDS;
             if (tmp == context.nil) {
-                if (processFlags) options.flags = RubyNumeric.num2int(args[1]);
+                if (processFlags) options.flags = toInt(context, args[1]);
             } else {
                 IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, (RubyHash) tmp, keys);
 
-                if (args.length == 3 && processFlags) options.flags = RubyNumeric.num2int(args[1]);
-                if (processFlags && rets[2] != null) options.flags |= RubyNumeric.num2int(rets[2]);
+                if (args.length == 3 && processFlags) options.flags = toInt(context, args[1]);
+                if (processFlags && rets[2] != null) options.flags |= toInt(context, rets[2]);
 
                 if (rets[1] != null) {
                     if (!(rets[1] instanceof RubyBoolean)) {
@@ -603,7 +605,7 @@ public class RubyDir extends RubyObject implements Closeable {
 
             IRubyObject encodingArg = ArgsUtil.extractKeywordArg(context, (RubyHash) opts, "encoding");
             if (encodingArg != null && !encodingArg.isNil()) {
-                encoding = context.runtime.getEncodingService().getEncodingFromObject(encodingArg);
+                encoding = encodingService(context).getEncodingFromObject(encodingArg);
             }
         }
 
@@ -871,13 +873,18 @@ public class RubyDir extends RubyObject implements Closeable {
     public IRubyObject seek(ThreadContext context, IRubyObject newPos) {
         checkDir(context);
 
-        set_pos(newPos);
+        set_pos(context, newPos);
         return this;
     }
 
-    @JRubyMethod(name = "pos=")
+    @Deprecated(since = "10.0")
     public IRubyObject set_pos(IRubyObject newPos) {
-        int pos2 = RubyNumeric.fix2int(newPos);
+        return set_pos(getCurrentContext(), newPos);
+    }
+
+    @JRubyMethod(name = "pos=")
+    public IRubyObject set_pos(ThreadContext context, IRubyObject newPos) {
+        int pos2 = toInt(context, newPos);
         if (pos2 >= 0) this.pos = pos2;
         return newPos;
     }
@@ -1120,14 +1127,14 @@ public class RubyDir extends RubyObject implements Closeable {
     static final ByteList HOME = new ByteList(new byte[] {'H','O','M','E'}, false);
 
     public static RubyString getHomeDirectoryPath(ThreadContext context) {
-        final RubyString homeKey = RubyString.newStringShared(context.runtime, HOME);
+        final RubyString homeKey = newSharedString(context, HOME);
         IRubyObject home = context.runtime.getENV().op_aref(context, homeKey);
 
         return getHomeDirectoryPath(context, home);
     }
 
     public static Optional<String> getHomeFromEnv(Ruby runtime) {
-        final RubyString homeKey = RubyString.newStringShared(runtime, HOME);
+        final RubyString homeKey = newSharedString(runtime.getCurrentContext(), HOME);
         final RubyHash env = runtime.getENV();
 
         return !env.hasKey(homeKey) ?

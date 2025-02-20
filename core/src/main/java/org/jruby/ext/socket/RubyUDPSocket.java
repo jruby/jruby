@@ -187,9 +187,9 @@ public class RubyUDPSocket extends RubyIPSocket {
     private InetSocketAddress getInetSocketAddress(ThreadContext context, IRubyObject host, int port) throws UnknownHostException {
         // Handle cases where we treat as INADDR_ANY
         if (host.isNil() || ((host instanceof RubyString) && ((RubyString) host).isEmpty())) return new InetSocketAddress(port);
-        if (host instanceof RubyFixnum) {
-            int intAddr = RubyNumeric.fix2int(host);
-            if (intAddr == RubyNumeric.fix2int(getModule(context, "Socket").getConstant(context, "INADDR_ANY"))) {
+        if (host instanceof RubyFixnum fixnum) {
+            int intAddr = toInt(context, fixnum);
+            if (intAddr == toInt(context, getModule(context, "Socket").getConstant(context, "INADDR_ANY"))) {
                 return new InetSocketAddress(InetAddress.getByName("0.0.0.0"), port);
             } else {
                 if (multicastStateManager == null) throw context.runtime.newNotImplementedError("bind with host: " + intAddr);
@@ -276,7 +276,7 @@ public class RubyUDPSocket extends RubyIPSocket {
     private static IRubyObject recvfrom_nonblock(RubyBasicSocket socket, ThreadContext context,
                                                  IRubyObject length, IRubyObject flags, IRubyObject str, boolean exception) {
         try {
-            ReceiveTuple tuple = doReceiveNonblockTuple(socket, context.runtime, RubyNumeric.fix2int(length));
+            ReceiveTuple tuple = doReceiveNonblockTuple(socket, context.runtime, toInt(context, length));
 
             if (tuple == null) {
                 if (!exception) return Convert.asSymbol(context, "wait_readable");
@@ -469,7 +469,7 @@ public class RubyUDPSocket extends RubyIPSocket {
         final Ruby runtime = context.runtime;
 
         try {
-            ReceiveTuple tuple = doReceiveTuple(socket, runtime, false, RubyNumeric.fix2int(length));
+            ReceiveTuple tuple = doReceiveTuple(socket, runtime, false, toInt(context, length));
 
             IRubyObject addressArray = socket.addrFor(context, tuple.sender, false);
 
@@ -561,7 +561,7 @@ public class RubyUDPSocket extends RubyIPSocket {
         final Ruby runtime = context.runtime;
 
         try {
-            return doReceive(this, runtime, false, RubyNumeric.fix2int(length), null);
+            return doReceive(this, runtime, false, toInt(context, length), null);
         }
         catch (PortUnreachableException e) {
             throw runtime.newErrnoECONNREFUSEDError();

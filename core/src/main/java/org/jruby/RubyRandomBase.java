@@ -104,8 +104,8 @@ public class RubyRandomBase extends RubyObject {
     // c: rand_int
     static IRubyObject randInt(ThreadContext context, IRubyObject self, RubyRandom.RandomType random, RubyInteger vmax,
                                boolean restrictive) {
-        if (vmax instanceof RubyFixnum) {
-            long max = RubyNumeric.fix2long(vmax);
+        if (vmax instanceof RubyFixnum fixnum) {
+            long max = fixnum.getValue();
             if (max == 0) return context.nil;
             if (max < 0) {
                 if (restrictive) return context.nil;
@@ -392,8 +392,8 @@ public class RubyRandomBase extends RubyObject {
             }
         }
 
-        if (beg instanceof RubyFixnum && v instanceof RubyFixnum) {
-            return asFixnum(context, RubyNumeric.fix2long(beg) + RubyNumeric.fix2long(v));
+        if (beg instanceof RubyFixnum begf && v instanceof RubyFixnum vv) {
+            return asFixnum(context, begf.getValue() + vv.getValue());
         }
         if (v == nil) return v;
         if (v instanceof RubyBignum big) return big.op_plus(context, beg);
@@ -437,7 +437,7 @@ public class RubyRandomBase extends RubyObject {
     }
 
     protected static IRubyObject bytesCommon(ThreadContext context, RubyRandom.RandomType random, IRubyObject arg) {
-        int n = RubyNumeric.num2int(arg);
+        int n = toInt(context, arg);
         return context.runtime.newString(new ByteList(getBytes(random, n)));
     }
 

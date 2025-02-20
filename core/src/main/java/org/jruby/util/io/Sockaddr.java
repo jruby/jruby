@@ -32,6 +32,7 @@ import org.jruby.ext.socket.SocketUtilsIPV6;
 import org.jruby.runtime.Helpers;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
@@ -132,7 +133,7 @@ public class Sockaddr {
                 portNum = service.getPort();
             }
         } else {
-            portNum = RubyNumeric.fix2int(port);
+            portNum = toInt(context, port);
         }
 
         final String hostStr = host.isNil() ? null : host.convertToString().toString();
@@ -375,7 +376,7 @@ public class Sockaddr {
             if (raw[end] == 0) break;
         }
 
-        return RubyString.newString(context.runtime, raw, 2, (end - 2));
+        return newString(context, raw, 2, (end - 2));
     }
 
     // sizeof(sockaddr_un) on Linux

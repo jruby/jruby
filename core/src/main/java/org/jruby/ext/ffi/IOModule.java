@@ -42,6 +42,7 @@ import org.jruby.util.io.OpenFile;
 
 import static com.headius.backport9.buffer.Buffers.limitBuffer;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Error.indexError;
 import static org.jruby.api.Error.typeError;
 
@@ -67,7 +68,7 @@ public class IOModule {
 
 
             ByteBuffer buffer = ((AbstractMemory) dst).getMemoryIO().asByteBuffer();
-            int count = RubyNumeric.num2int(rbLength);
+            int count = toInt(context, rbLength);
 
             if (count > buffer.remaining()) throw indexError(context, "read count too big for output buffer");
 

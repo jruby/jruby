@@ -61,6 +61,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import static org.jruby.api.Convert.toInt;
+
 /**
  * Class used to launch the interpreter.
  * This is the main class as defined in the jruby.mf manifest.
@@ -525,18 +527,13 @@ public class Main {
     protected static int handleRaiseException(final RaiseException ex) {
         RubyException raisedException = ex.getException();
         final Ruby runtime = raisedException.getRuntime();
+        var context = runtime.getCurrentContext();
         if ( runtime.getSystemExit().isInstance(raisedException) ) {
-            IRubyObject status = raisedException.callMethod(runtime.getCurrentContext(), "status");
-            if (status != null && ! status.isNil()) {
-                return RubyNumeric.fix2int(status);
-            }
-            return 0;
+            IRubyObject status = raisedException.callMethod(context, "status");
+            return status != null && ! status.isNil() ? toInt(context, status) : 0;
         } else if ( runtime.getSignalException().isInstance(raisedException) ) {
-            IRubyObject status = raisedException.callMethod(runtime.getCurrentContext(), "signo");
-            if (status != null && ! status.isNil()) {
-                return RubyNumeric.fix2int(status) + 128;
-            }
-            return 0;
+            IRubyObject status = raisedException.callMethod(context, "signo");
+            return status != null && ! status.isNil() ? toInt(context, status) + 128 : 0;
         }
 
         TraceType traceType = runtime.getInstanceConfig().getTraceType();

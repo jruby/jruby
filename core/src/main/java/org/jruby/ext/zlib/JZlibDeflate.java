@@ -41,6 +41,8 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.toInt;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.util.ByteList;
@@ -68,7 +70,7 @@ public class JZlibDeflate extends ZStream {
     public static IRubyObject s_deflate(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         args = Arity.scanArgs(context, args, 1, 1);
         int level = JZlib.Z_DEFAULT_COMPRESSION;
-        if (!args[1].isNil()) level = checkLevel(context, RubyNumeric.fix2int(args[1]));
+        if (!args[1].isNil()) level = checkLevel(context, toInt(context, args[1]));
 
         RubyClass klass = (RubyClass)(recv.isClass() ? recv : context.runtime.getClassFromPath("Zlib::Deflate"));
         JZlibDeflate deflate = (JZlibDeflate) klass.allocate(context);
@@ -95,10 +97,10 @@ public class JZlibDeflate extends ZStream {
     @JRubyMethod(name = "initialize", optional = 4, checkArity = false, visibility = PRIVATE)
     public IRubyObject _initialize(ThreadContext context, IRubyObject[] args) {
         args = Arity.scanArgs(context, args, 0, 4);
-        level = !args[0].isNil() ? checkLevel(context, RubyNumeric.fix2int(args[0])) : -1;
-        windowBits = !args[1].isNil() ? checkWindowBits(context, RubyNumeric.fix2int(args[1]), false) : JZlib.MAX_WBITS;
-        int memlevel = !args[2].isNil() ? RubyNumeric.fix2int(args[2]) : 8; // ignored. Memory setting means nothing on Java.
-        strategy = !args[3].isNil() ? RubyNumeric.fix2int(args[3]) : 0;
+        level = !args[0].isNil() ? checkLevel(context, toInt(context, args[0])) : -1;
+        windowBits = !args[1].isNil() ? checkWindowBits(context, toInt(context, args[1]), false) : JZlib.MAX_WBITS;
+        int memlevel = !args[2].isNil() ? toInt(context, args[2]) : 8; // ignored. Memory setting means nothing on Java.
+        strategy = !args[3].isNil() ? toInt(context, args[3]) : 0;
 
         init(context, level, windowBits, memlevel, strategy);
         return this;
@@ -158,10 +160,10 @@ public class JZlibDeflate extends ZStream {
 
     @JRubyMethod(name = "params")
     public IRubyObject params(ThreadContext context, IRubyObject level, IRubyObject strategy) {
-        int l = RubyNumeric.fix2int(level);
+        int l = toInt(context, level);
         checkLevel(context, l);
 
-        int s = RubyNumeric.fix2int(strategy);
+        int s = toInt(context, strategy);
         checkStrategy(context, s);
 
         if (flater.next_out == null) flater.setOutput(ByteList.NULL_ARRAY);
@@ -199,7 +201,7 @@ public class JZlibDeflate extends ZStream {
     public IRubyObject flush(ThreadContext context, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 1);
 
-        int flush = args.length == 1 && !args[0].isNil() ? RubyNumeric.fix2int(args[0]) : 2; // SYNC_FLUSH
+        int flush = args.length == 1 && !args[0].isNil() ? toInt(context, args[0]) : 2; // SYNC_FLUSH
 
         return flush(context, flush);
     }
@@ -215,7 +217,7 @@ public class JZlibDeflate extends ZStream {
         if (internalFinished()) throw RubyZlib.newStreamError(context, "stream error");
 
         ByteList data = !args[0].isNil() ? args[0].convertToString().getByteList() : null;
-        int flush = !args[1].isNil() ? RubyNumeric.fix2int(args[1]) : JZlib.Z_NO_FLUSH;
+        int flush = !args[1].isNil() ? toInt(context, args[1]) : JZlib.Z_NO_FLUSH;
 
         try {
             return deflate(context, data, flush);
@@ -276,7 +278,7 @@ public class JZlibDeflate extends ZStream {
 
         run(context);
         this.flush = last_flush;
-        IRubyObject obj = RubyString.newString(context.runtime, collected, 0, collectedIdx);
+        IRubyObject obj = newString(context, collected, 0, collectedIdx);
         collectedIdx = 0;
         flater.setOutput(collected);
         return obj;

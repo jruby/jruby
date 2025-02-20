@@ -262,7 +262,7 @@ public abstract class Type extends RubyObject {
         public static final IRubyObject newInstance(ThreadContext context, IRubyObject klass, IRubyObject componentType, IRubyObject length) {
             if (!(componentType instanceof Type)) throw typeError(context, componentType, getTypeClass(context.runtime));
 
-            return new Array(context.runtime, (RubyClass) klass, (Type) componentType, RubyNumeric.fix2int(length));
+            return new Array(context.runtime, (RubyClass) klass, (Type) componentType, toInt(context, length));
         }
 
         @JRubyMethod

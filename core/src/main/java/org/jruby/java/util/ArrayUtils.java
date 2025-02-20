@@ -14,6 +14,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
@@ -85,7 +86,7 @@ public class ArrayUtils {
 
     public static IRubyObject concatArraysDirect(ThreadContext context, Object original, IRubyObject additional) {
         final int oldLength = Array.getLength(original);
-        final int addLength = RubyFixnum.fix2int(Helpers.invoke(context, additional, "length"));
+        final int addLength = toInt(context, Helpers.invoke(context, additional, "length"));
 
         ArrayJavaProxy proxy = ArrayUtils.newProxiedArray(context, original.getClass().getComponentType(), oldLength + addLength);
 

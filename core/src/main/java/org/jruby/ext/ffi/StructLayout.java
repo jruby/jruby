@@ -43,7 +43,6 @@ import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
@@ -62,8 +61,12 @@ import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.util.ByteList;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.newArray;
-import static org.jruby.api.Error.*;
+import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.indexError;
+import static org.jruby.api.Error.runtimeError;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.runtime.Visibility.*;
 
@@ -193,16 +196,13 @@ public final class StructLayout extends Type {
     }
     
     @JRubyMethod(name = "new", meta = true, required = 3, optional = 1, checkArity = false)
-    public static final IRubyObject newStructLayout(ThreadContext context, IRubyObject klass, 
-            IRubyObject[] args) {
+    public static final IRubyObject newStructLayout(ThreadContext context, IRubyObject klass, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 3, 4);
 
         IRubyObject rbFields = args[0], size = args[1], alignment = args[2];
-
         List<IRubyObject> fields = Arrays.asList(Convert.castAsArray(context, rbFields).toJavaArrayMaybeUnsafe());
 
-        return new StructLayout(context, (RubyClass) klass, fields,
-                RubyNumeric.num2int(size), RubyNumeric.num2int(alignment));
+        return new StructLayout(context, (RubyClass) klass, fields, toInt(context, size), toInt(context, alignment));
     }
 
     /**
@@ -598,28 +598,28 @@ public final class StructLayout extends Type {
             this.memoryOp = MemoryOp.getMemoryOp(type);
         }
 
-        void init(IRubyObject name, IRubyObject type, IRubyObject offset) {
+        void init(ThreadContext context, IRubyObject name, IRubyObject type, IRubyObject offset) {
             this.name = name;
             Type realType = checkType(type);
             this.type = realType;
-            this.offset = RubyNumeric.num2int(offset);
+            this.offset = toInt(context, offset);
             this.memoryOp = MemoryOp.getMemoryOp(realType);
         }
 
-        void init(IRubyObject name, IRubyObject type, IRubyObject offset, FieldIO io) {
-            init(name, type, offset);
+        void init(ThreadContext context, IRubyObject name, IRubyObject type, IRubyObject offset, FieldIO io) {
+            init(context, name, type, offset);
             this.io = io;
         }
 
-        void init(IRubyObject[] args, FieldIO io) {
-            init(args[0], args[2], args[1], io);
+        void init(ThreadContext context, IRubyObject[] args, FieldIO io) {
+            init(context, args[0], args[2], args[1], io);
         }
 
         @JRubyMethod(name="initialize", visibility = PRIVATE, required = 3, optional = 1, checkArity = false)
         public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
             Arity.checkArgumentCount(context, args, 3, 4);
             
-            init(args[0], args[2], args[1]);
+            init(context, args[0], args[2], args[1]);
 
             return this;
         }
@@ -748,7 +748,7 @@ public final class StructLayout extends Type {
         @Override
         public final IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
 
-            init(args, new NumberFieldIO(checkType(args[2]), getByteOrderOption(context, args)));
+            init(context, args, new NumberFieldIO(checkType(args[2]), getByteOrderOption(context, args)));
 
             return this;
         }
@@ -762,8 +762,7 @@ public final class StructLayout extends Type {
 
         @Override
         public final IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
-
-            init(args, new EnumFieldIO(getByteOrderOption(context, args)));
+            init(context, args, new EnumFieldIO(getByteOrderOption(context, args)));
 
             return this;
         }
@@ -800,7 +799,7 @@ public final class StructLayout extends Type {
             if (!(type instanceof CallbackInfo)) {
                 throw typeError(context, type, Access.getClass(context, "FFI", "Type", "Function"));
             }
-            init(args, FunctionFieldIO.INSTANCE);
+            init(context, args, FunctionFieldIO.INSTANCE);
 
             return this;
         }
@@ -823,7 +822,7 @@ public final class StructLayout extends Type {
             if (!(type instanceof StructByValue structByValue)) {
                 throw typeError(context, type, Access.getClass(context, "FFI", "Type", "Struct"));
             }
-            init(args, new InnerStructFieldIO(structByValue));
+            init(context, args, new InnerStructFieldIO(structByValue));
 
             return this;
         }
@@ -845,7 +844,7 @@ public final class StructLayout extends Type {
             if (!(type instanceof Type.Array)) {
                 throw typeError(context, type, Access.getClass(context, "FFI", "Type", "Array"));
             }
-            init(args, new ArrayFieldIO((Type.Array) type));
+            init(context, args, new ArrayFieldIO((Type.Array) type));
 
             return this;
         }

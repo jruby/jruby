@@ -1666,7 +1666,7 @@ public class RubyProcess {
 
         if (Platform.IS_WINDOWS) {
             for (int i = 1; i < args.length; i++) {
-                int pid = RubyNumeric.num2int(args[i]);
+                int pid = toInt(context, args[i]);
                 if (signal == 0) {
                     jnr.ffi.Pointer ptr = kernel32().OpenProcess(PROCESS_QUERY_INFORMATION, 0, pid);
                     if(ptr != null && ptr.address() != -1) {
@@ -1722,7 +1722,7 @@ public class RubyProcess {
         } else {
             POSIX posix = context.runtime.getPosix();
             for (int i = 1; i < args.length; i++) {
-                int pid = RubyNumeric.num2int(args[i]);
+                int pid = toInt(context, args[i]);
 
                 // FIXME: It may be possible to killpg on systems which support it.  POSIX library
                 // needs to tell whether a particular method works or not

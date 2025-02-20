@@ -15,6 +15,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectMarshal;
 
 import static org.jruby.api.Access.errnoModule;
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.runtime.Visibility.*;
@@ -232,7 +233,7 @@ public class RubySystemCallError extends RubyStandardError {
 
         if (!err.isNil()) {
             errno = err.convertToInteger();
-            int errnoVal = RubyNumeric.num2int(errno);
+            int errnoVal = toInt(context, errno);
             if (Errno.valueOf(errnoVal) != Errno.__UNKNOWN_CONSTANT__) {
                 // we got a valid errno value
                 isErrnoClass = true;

@@ -8,10 +8,8 @@ import jnr.constants.platform.SocketOption;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyInteger;
-import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.api.Convert;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -22,8 +20,12 @@ import org.jruby.util.Sprintf;
 import java.nio.ByteBuffer;
 import java.util.Locale;
 
-import static org.jruby.api.Convert.*;
-import static org.jruby.api.Create.*;
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.checkToInteger;
+import static org.jruby.api.Convert.toInt;
+import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 
 public class Option extends RubyObject {
@@ -171,7 +173,7 @@ public class Option extends RubyObject {
         ProtocolFamily family = SocketUtils.protocolFamilyFromArg(context, args[0]);
         SocketLevel level = SocketUtils.levelFromArg(context, args[1]);
         SocketOption option = SocketUtils.optionFromArg(context, args[2]);
-        ByteList data = packInt(RubyNumeric.fix2int(args[3]));
+        ByteList data = packInt(toInt(context, args[3]));
 
         return new Option(context.getRuntime(), family, level, option, data);
     }

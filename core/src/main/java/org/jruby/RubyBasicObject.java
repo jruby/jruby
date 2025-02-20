@@ -89,6 +89,7 @@ import static org.jruby.anno.FrameField.SCOPE;
 import static org.jruby.anno.FrameField.SELF;
 import static org.jruby.anno.FrameField.VISIBILITY;
 import static org.jruby.api.Access.arrayClass;
+import static org.jruby.api.Access.encodingService;
 import static org.jruby.api.Access.globalVariables;
 import static org.jruby.api.Access.hashClass;
 import static org.jruby.api.Access.integerClass;
@@ -1196,7 +1197,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             if (!first) encStrBufCat(runtime, part, COMMA);
             encStrBufCat(runtime, part, SPACE);
             // FIXME: bytelist_love: EPICLY wrong but something in MRI gets around identifiers of arbitrary encoding.
-            encStrBufCat(runtime, part, symbol.asString().encode(context, runtime.getEncodingService().convertEncodingToRubyEncoding(part.getEncoding())).asString().getByteList());
+            encStrBufCat(runtime, part, symbol.asString().encode(context, encodingService(context).convertEncodingToRubyEncoding(part.getEncoding())).asString().getByteList());
             encStrBufCat(runtime, part, EQUALS);
             encStrBufCat(runtime, part, sites(context).inspect.call(context, obj, obj).convertToString().getByteList());
 
@@ -2899,7 +2900,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         ThreadContext context = metaClass.runtime.getCurrentContext();
         IRubyObject hashValue = invokeChecked(context, this, sites(context).hash_checked);
         if (hashValue == null) return super.hashCode();
-        if (hashValue instanceof RubyFixnum) return (int) RubyNumeric.fix2long(hashValue);
+        if (hashValue instanceof RubyFixnum fixnum) return (int) fixnum.getValue();
         return nonFixnumHashCode(hashValue);
     }
 

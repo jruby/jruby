@@ -54,8 +54,13 @@ import static com.headius.backport9.buffer.Buffers.markBuffer;
 import static com.headius.backport9.buffer.Buffers.positionBuffer;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asFloat;
-import static org.jruby.api.Create.*;
-import static org.jruby.api.Error.*;
+import static org.jruby.api.Convert.toInt;
+import static org.jruby.api.Convert.toLong;
+import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.rangeError;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.TypeConverter.toFloat;
 
@@ -90,13 +95,10 @@ public class Pack {
     public static final int[] b64_xtable = new int[256];
     private static final Converter[] converters = new Converter[512];
 
-    private static long num2quad(IRubyObject arg) {
+    private static long num2quad(ThreadContext context, IRubyObject arg) {
         if (arg.isNil()) return 0L;
-        if (arg instanceof RubyBignum) {
-            BigInteger big = ((RubyBignum) arg).getValue();
-            return big.longValue();
-        }
-        return RubyNumeric.num2long(arg);
+        if (arg instanceof RubyBignum bignum) return bignum.getValue().longValue();
+        return toLong(context, arg);
     }
 
     private static float obj2flt(ThreadContext context, IRubyObject o) {
@@ -209,7 +211,7 @@ public class Pack {
 
             @Override
             public void encode(ThreadContext context, IRubyObject o, ByteList result){
-                encodeShortLittleEndian(result, overflowQuad(num2quad(o)));
+                encodeShortLittleEndian(result, overflowQuad(num2quad(context, o)));
             }            
         };
         converters['v'] = tmp;
@@ -222,7 +224,7 @@ public class Pack {
 
             @Override
             public void encode(ThreadContext context, IRubyObject o, ByteList result) {
-                encodeShortBigEndian(result, overflowQuad(num2quad(o)));
+                encodeShortBigEndian(result, overflowQuad(num2quad(context, o)));
             }
         };
         converters['n'] = tmp;
@@ -236,7 +238,7 @@ public class Pack {
 
             @Override
             public void encode(ThreadContext context, IRubyObject o, ByteList result) {
-                encodeShortByByteOrder(result, overflowQuad(num2quad(o))); // XXX: 0xffff0000 on BE?
+                encodeShortByByteOrder(result, overflowQuad(num2quad(context, o))); // XXX: 0xffff0000 on BE?
             }
         };
         // unsigned short, native
@@ -248,7 +250,7 @@ public class Pack {
 
             @Override
             public void encode(ThreadContext context, IRubyObject o, ByteList result){
-                encodeShortByByteOrder(result, overflowQuad(num2quad(o)));
+                encodeShortByByteOrder(result, overflowQuad(num2quad(context, o)));
             }
         };
         // signed short, little endian
@@ -259,7 +261,7 @@ public class Pack {
 
             @Override
             public void encode(ThreadContext context, IRubyObject o, ByteList result) {
-                encodeShortLittleEndian(result, overflowQuad(num2quad(o))); // XXX: 0xffff0000 on BE?
+                encodeShortLittleEndian(result, overflowQuad(num2quad(context, o))); // XXX: 0xffff0000 on BE?
             }
         };
         // signed short, big endian
@@ -270,7 +272,7 @@ public class Pack {
 
             @Override
             public void encode(ThreadContext context, IRubyObject o, ByteList result) {
-                encodeShortBigEndian(result, overflowQuad(num2quad(o))); // XXX: 0xffff0000 on BE?
+                encodeShortBigEndian(result, overflowQuad(num2quad(context, o))); // XXX: 0xffff0000 on BE?
             }
         };
 
@@ -282,7 +284,7 @@ public class Pack {
             }
 
             public void encode(ThreadContext context, IRubyObject o, ByteList result) {
-                byte c = (byte) (num2quad(o) & 0xff);
+                byte c = (byte) (num2quad(context, o) & 0xff);
                 result.append(c);
             }
         };
@@ -293,7 +295,7 @@ public class Pack {
             }
 
             public void encode(ThreadContext context, IRubyObject o, ByteList result){
-                byte c = o == context.nil ? 0 : (byte) (num2quad(o) & 0xff);
+                byte c = o == context.nil ? 0 : (byte) (num2quad(context, o) & 0xff);
                 result.append(c);
             }
         };
@@ -305,7 +307,7 @@ public class Pack {
             }
             
             public void encode(ThreadContext context, IRubyObject o, ByteList result){
-                encodeIntLittleEndian(result, (int) RubyNumeric.num2long(o));
+                encodeIntLittleEndian(result, (int) toLong(context, o));
             }
         };
         converters['V'] = tmp;
@@ -320,7 +322,7 @@ public class Pack {
             }
             
             public void encode(ThreadContext context, IRubyObject o, ByteList result){
-                encodeIntBigEndian(result, (int) RubyNumeric.num2long(o));
+                encodeIntBigEndian(result, (int) toLong(context, o));
             }
         };
         converters['N'] = tmp;
@@ -335,7 +337,7 @@ public class Pack {
                         decodeIntUnsignedBigEndian(enc) : decodeIntUnsignedLittleEndian(enc));
             }
             public void encode(ThreadContext context, IRubyObject o, ByteList result){
-                int s = o == context.nil ? 0 : (int) RubyNumeric.num2long(o);
+                int s = o == context.nil ? 0 : (int) toLong(context, o);
                 packInt_i(result, s);
             }
         };
@@ -349,7 +351,7 @@ public class Pack {
                 return asFixnum(context, unpackInt_i(enc));
             }
             public void encode(ThreadContext context, IRubyObject o, ByteList result){
-                int s = o == context.nil ? 0 : (int)RubyNumeric.num2long(o);
+                int s = o == context.nil ? 0 : (int) toLong(context, o);
                 packInt_i(result, s);
             }
         };
@@ -363,7 +365,7 @@ public class Pack {
                 return asFixnum(context, decodeIntLittleEndian(enc));
             }
             public void encode(ThreadContext context, IRubyObject o, ByteList result){
-                int s = o == context.nil ? 0 : (int)RubyNumeric.num2long(o);
+                int s = o == context.nil ? 0 : (int) toLong(context, o);
                 encodeIntLittleEndian(result, s);
             }
         };
@@ -377,7 +379,7 @@ public class Pack {
                 return asFixnum(context, decodeIntBigEndian(enc));
             }
             public void encode(ThreadContext context, IRubyObject o, ByteList result){
-                int s = o == context.nil ? 0 : (int)RubyNumeric.num2long(o);
+                int s = o == context.nil ? 0 : (int) toLong(context, o);
                 encodeIntBigEndian(result, s);
             }
         };
@@ -395,7 +397,7 @@ public class Pack {
 
             @Override
             public void encode(ThreadContext context, IRubyObject o, ByteList result){
-                encodeLongByByteOrder(result, num2quad(o));
+                encodeLongByByteOrder(result, num2quad(context, o));
             }
         };
         converters['Q'] = tmp;
@@ -410,7 +412,7 @@ public class Pack {
 
             @Override
             public void encode(ThreadContext context, IRubyObject o, ByteList result){
-                encodeLongLittleEndian(result, num2quad(o));
+                encodeLongLittleEndian(result, num2quad(context, o));
             }
         };
         converters['Q' + LE] = tmp;
@@ -425,7 +427,7 @@ public class Pack {
 
             @Override
             public void encode(ThreadContext context, IRubyObject o, ByteList result){
-                encodeLongBigEndian(result, num2quad(o));
+                encodeLongBigEndian(result, num2quad(context, o));
             }
         };
         converters['Q' + BE] = tmp;
@@ -440,7 +442,7 @@ public class Pack {
 
             @Override
             public void encode(ThreadContext context, IRubyObject o, ByteList result){
-                encodeLongByByteOrder(result, num2quad(o));
+                encodeLongByByteOrder(result, num2quad(context, o));
             }
         };
         converters['q'] = tmp;
@@ -454,7 +456,7 @@ public class Pack {
 
             @Override
             public void encode(ThreadContext context, IRubyObject o, ByteList result){
-                encodeLongLittleEndian(result, num2quad(o));
+                encodeLongLittleEndian(result, num2quad(context, o));
             }
         };
         converters['q' + LE] = tmp;
@@ -468,7 +470,7 @@ public class Pack {
 
             @Override
             public void encode(ThreadContext context, IRubyObject o, ByteList result){
-                encodeLongBigEndian(result, num2quad(o));
+                encodeLongBigEndian(result, num2quad(context, o));
             }
         };
         converters['q' + BE] = tmp;
@@ -1140,10 +1142,10 @@ public class Pack {
                     IRubyObject mulResult = big.op_mul(context, big128);
                     IRubyObject v = mulResult.callMethod(context, "+",
                             RubyBignum.newBignum(context.runtime, encode.get(pos) & 0x7f));
-                    if(v instanceof RubyFixnum) {
-                        big = RubyBignum.newBignum(context.runtime, RubyNumeric.fix2long(v));
-                    } else if (v instanceof RubyBignum) {
-                        big = (RubyBignum)v;
+                    if(v instanceof RubyFixnum vv) {
+                        big = RubyBignum.newBignum(context.runtime, vv.getValue());
+                    } else if (v instanceof RubyBignum vv) {
+                        big = vv;
                     }
                     if((encode.get(pos++) & 0x80) == 0) {
                         IRubyObject value = RubyBignum.bignorm(context.runtime, big.getValue());
@@ -2087,14 +2089,14 @@ public class Pack {
 
             if (from instanceof RubyBignum) {
                 RubyBignum big128 = RubyBignum.newBignum(context.runtime, 128);
-                while (from instanceof RubyBignum) {
-                    RubyArray ary = (RubyArray) ((RubyBignum) from).divmod(context, big128);
-                    buf.append((byte) (RubyNumeric.fix2int(ary.eltInternal(1)) | 0x80) & 0xff);
+                while (from instanceof RubyBignum bignum) {
+                    var ary = (RubyArray) bignum.divmod(context, big128);
+                    buf.append((byte) (toInt(context, ary.eltInternal(1)) | 0x80) & 0xff);
                     from = ary.eltInternal(0);
                 }
             }
 
-            long l = RubyNumeric.num2long(from);
+            long l = toLong(context, from);
 
             // we don't deal with negatives.
             if (l >= 0) {
@@ -2134,7 +2136,7 @@ public class Pack {
             if (packInts.listSize-- <= 0) throw argumentError(context, sTooFew);
 
             IRubyObject from = list.eltInternal(packInts.idx++);
-            int code = from == context.nil ? 0 : RubyNumeric.num2int(from);
+            int code = from == context.nil ? 0 : toInt(context, from);
 
             if (code < 0) throw rangeError(context, "pack(U): value out of range");
 

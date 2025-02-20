@@ -78,9 +78,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static org.jruby.api.Access.encodingService;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Create.newSharedString;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
@@ -526,10 +528,9 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     private RubyString cacheNameString(ThreadContext context) {
         // atomically create and store an fstring for this symbol
-        Ruby runtime = context.runtime;
-        RubyString nameString = RubyString.newStringShared(runtime, getBytes());
+        RubyString nameString = newSharedString(context, getBytes());
         nameString.scanForCodeRange();
-        nameString = runtime.freezeAndDedupString(nameString);
+        nameString = context.runtime.freezeAndDedupString(nameString);
         RUBY_STRING_UPDATER.compareAndSet(this, null, nameString);
 
         return rubyString;
@@ -592,7 +593,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     public IRubyObject to_sym() { return this; }
 
     private RubyString newShared(ThreadContext context) {
-        return RubyString.newStringShared(context.runtime, symbolBytes);
+        return newSharedString(context, symbolBytes);
     }
 
     @JRubyMethod(name = {"succ", "next"})
@@ -778,7 +779,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @JRubyMethod
     public IRubyObject encoding(ThreadContext context) {
-        return context.runtime.getEncodingService().getEncoding(getEncoding());
+        return encodingService(context).getEncoding(getEncoding());
     }
 
     @JRubyMethod

@@ -65,9 +65,11 @@ import org.jruby.util.Sprintf;
 
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newSharedString;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.rangeError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.Numeric.f_abs;
 import static org.jruby.util.Numeric.f_add;
@@ -157,13 +159,18 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return double.class;
     }
 
-    /** Getter for property value.
+    /**
+     * Get the raw float value.  If you want to access this as other Java primitive types then
+     * you should use {@link #asLong(ThreadContext)}, {@link #asBigInteger(ThreadContext)}, or
+     * {@link #asInt(ThreadContext)}.  Those will ensure that the double will fit into the range and
+     * create the type if needed (e.g. make a BigInteger). If you KNOW the double is in the right range
+     * then you can just use this method and manually cast it.
      * @return Value of property value.
      */
+    @JRubyAPI
     public double getValue() {
         return this.value;
     }
-
 
     @Override
     @JRubyAPI
@@ -180,13 +187,25 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @Override
     @JRubyAPI
     public int asInt(ThreadContext context) {
+        final double aFloat = getValue();
+
+        if (aFloat > (double) Integer.MAX_VALUE || aFloat < (double) Integer.MIN_VALUE) {
+            throw rangeError(context, "float " + aFloat + " out of range of integer");
+        }
+
         return (int) value;
     }
 
     @Override
     @JRubyAPI
     public long asLong(ThreadContext context) {
-        return (long) value;
+        final double aFloat = getValue();
+
+        if (aFloat > (double) Long.MAX_VALUE || aFloat < (double) Long.MIN_VALUE) {
+            throw rangeError(context, "float " + aFloat + " out of range of long");
+        }
+
+        return (long) aFloat;
     }
 
     @Override
@@ -265,9 +284,9 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @Override
     public IRubyObject to_s(ThreadContext context) {
         if (Double.isInfinite(value)) {
-            return RubyString.newStringShared(context.runtime, value < 0 ? NEGATIVE_INFINITY_TO_S_BYTELIST : POSITIVE_INFINITY_TO_S_BYTELIST);
+            return newSharedString(context, value < 0 ? NEGATIVE_INFINITY_TO_S_BYTELIST : POSITIVE_INFINITY_TO_S_BYTELIST);
         }
-        if (Double.isNaN(value)) return RubyString.newStringShared(context.runtime, NAN_TO_S_BYTELIST);
+        if (Double.isNaN(value)) return newSharedString(context, NAN_TO_S_BYTELIST);
 
         ByteList buf = new ByteList();
         // Under 1.9, use full-precision float formatting (JRUBY-4846).
@@ -789,7 +808,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
             RubyInteger rf = RubyBignum.newBignorm(runtime, f);
             RubyFixnum rn = asFixnum(context, n);
 
-            if (rf.isZero(context) || fix2int(rn) >= 0) {
+            if (rf.isZero(context) || toInt(context, rn) >= 0) {
                 return RubyRational.newRationalRaw(runtime, rf.op_lshift(context, rn));
             }
 
@@ -824,7 +843,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
      */
     @JRubyMethod(name = "floor")
     public IRubyObject floor(ThreadContext context, IRubyObject digits) {
-        int ndigits = num2int(digits);
+        int ndigits = toInt(context, digits);
         double number = value;
 
         if (number == 0.0) return ndigits > 0 ? this : asFixnum(context, 0);
@@ -891,7 +910,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
      */
     @JRubyMethod(name = "ceil")
     public IRubyObject ceil(ThreadContext context, IRubyObject digits) {
-        int ndigits = num2int(digits);
+        int ndigits = toInt(context, digits);
         double number = value;
 
         if (number == 0.0) return ndigits > 0 ? this : asFixnum(context, 0);
@@ -927,7 +946,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @JRubyMethod(name = "round")
     public IRubyObject round(ThreadContext context, IRubyObject arg0) {
         IRubyObject opts = ArgsUtil.getOptionsArg(context, arg0);  // options (only "half" supported right now)
-        int digits = opts.isNil() ? num2int(arg0) : 0;
+        int digits = opts.isNil() ? toInt(context, arg0) : 0;
 
         return roundShared(context, digits, getRoundingMode(context, opts));
     }
@@ -938,7 +957,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @JRubyMethod(name = "round")
     public IRubyObject round(ThreadContext context, IRubyObject _digits, IRubyObject _opts) {
         IRubyObject opts = ArgsUtil.getOptionsArg(context, _opts);  // options (only "half" supported right now)
-        int digits = num2int(_digits);
+        int digits = toInt(context, _digits);
 
         return roundShared(context, digits, getRoundingMode(context, opts));
     }

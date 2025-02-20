@@ -233,7 +233,7 @@ public class RubyEtc {
         var globalVariables = globalVariables(context);
         IRubyObject oldExc = globalVariables.get("$!"); // Save $!
         try {
-            int uid = args.length == 0 ? posix.getuid() : RubyNumeric.fix2int(args[0]);
+            int uid = args.length == 0 ? posix.getuid() : toInt(context, args[0]);
             Passwd pwd = posix.getpwuid(uid);
             if (pwd == null) {
                 if (Platform.IS_WINDOWS) return context.nil;
@@ -437,7 +437,7 @@ public class RubyEtc {
         POSIX posix = context.runtime.getPosix();
 
         try {
-            int gid = argc == 0 ? posix.getgid() : RubyNumeric.fix2int(args[0]);
+            int gid = argc == 0 ? posix.getgid() : toInt(context, args[0]);
             Group gr = posix.getgrgid(gid);
             if(gr == null) {
                 if (Platform.IS_WINDOWS) return context.nil;

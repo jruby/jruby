@@ -601,7 +601,7 @@ public class Java implements Library {
 
         @JRubyMethod
         public static IRubyObject to_s(ThreadContext context, IRubyObject self) {
-            final Encoding ascii8bit = context.runtime.getEncodingService().getAscii8bitEncoding();
+            final Encoding ascii8bit = encodingService(context).getAscii8bitEncoding();
 
             // All bytes can be considered raw strings and forced to particular codings if not 8bitascii
             ByteList bytes = new ByteList((byte[]) ((ArrayJavaProxy) self).getObject(), ascii8bit);

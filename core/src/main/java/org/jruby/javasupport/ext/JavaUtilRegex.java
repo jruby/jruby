@@ -167,7 +167,7 @@ public abstract class JavaUtilRegex {
         @JRubyMethod // str[ 0..start(0) ]
         public static IRubyObject pre_match(final ThreadContext context, final IRubyObject self) {
             final java.util.regex.Matcher matcher = unwrapJavaObject(self);
-            return str(context, self).substr(context.runtime, 0, matcher.start(0));
+            return str(context, self).substr(context, 0, matcher.start(0));
         }
 
         @JRubyMethod // str[ end(0)..-1 ]
@@ -175,7 +175,7 @@ public abstract class JavaUtilRegex {
             final java.util.regex.Matcher matcher = unwrapJavaObject(self);
             final RubyString str = str(context, self);
             final int offset = matcher.end(0);
-            return str.substr(context.runtime, offset, str.size() - offset);
+            return str.substr(context, offset, str.size() - offset);
         }
 
         @JRubyMethod

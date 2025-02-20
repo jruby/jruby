@@ -39,7 +39,6 @@ import java.util.zip.Adler32;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
 import org.jruby.RubyException;
 
 import org.jruby.anno.JRubyClass;
@@ -58,8 +57,8 @@ import static org.jruby.api.Access.kernelModule;
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Access.standardErrorClass;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Convert.toLong;
-import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineModule;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
@@ -356,9 +355,7 @@ public class RubyZlib {
         return excn.toThrowable();
     }
 
-    static int FIXNUMARG(IRubyObject obj, int ifnil) {
-        if (obj.isNil()) return ifnil;
-
-        return RubyNumeric.fix2int(obj);
+    static int FIXNUMARG(ThreadContext context, IRubyObject obj, int ifnil) {
+        return obj.isNil() ? ifnil : toInt(context, obj);
     }
 }

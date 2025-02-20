@@ -219,14 +219,14 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
                 IRubyObject tmp = args[0].checkStringType();
                 if (tmp.isNil()) {
-                    limit = RubyNumeric.fix2int(args[0]);
+                    limit = toInt(context, args[0]);
                 } else {
                     sep = tmp.convertToString().getByteList();
                 }
                 break;
             case 2:
             default:
-                limit = RubyNumeric.fix2int(args[1]);
+                limit = toInt(context, args[1]);
                 if (args[0].isNil()) return readAll(context, limit);
 
                 sep = args[0].convertToString().getByteList();
@@ -325,7 +325,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         try {
             if (argc == 0 || args[0].isNil()) return readAll(context);
 
-            int len = RubyNumeric.fix2int(args[0]);
+            int len = toInt(context, args[0]);
             if (len < 0) throw argumentError(context, "negative length " + len + " given");
             if (len > 0) { // rb_gzfile_read
                 ByteList buf = readSize(len);
@@ -360,7 +360,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         int argc = Arity.checkArgumentCount(context, args, 1, 2);
 
         try {
-            int len = RubyNumeric.fix2int(args[0]);
+            int len = toInt(context, args[0]);
             if (len < 0) throw argumentError(context, "negative length " + len + " given");
 
             return argc > 1 && !args[1].isNil() ?
@@ -435,9 +435,14 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         return new ByteList(buffer, 0, length - toRead, false);
     }
 
-    @JRubyMethod(name = "lineno=")
+    @Deprecated(since = "10.0")
     public IRubyObject set_lineno(IRubyObject lineArg) {
-        line = RubyNumeric.fix2int(lineArg);
+        return set_lineno(getCurrentContext(), lineArg);
+    }
+
+    @JRubyMethod(name = "lineno=")
+    public IRubyObject set_lineno(ThreadContext context, IRubyObject lineArg) {
+        line = toInt(context, lineArg);
 
         return lineArg;
     }

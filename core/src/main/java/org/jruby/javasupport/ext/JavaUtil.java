@@ -137,7 +137,7 @@ public abstract class JavaUtil {
 
         @JRubyMethod(name = { "length", "size" })
         public static RubyNumeric length(final ThreadContext context, final IRubyObject self) {
-            return RubyFixnum.int2fix(context.runtime, ((java.util.Collection) unwrapIfJavaObject(self)).size());
+            return asFixnum(context, ((java.util.Collection) unwrapIfJavaObject(self)).size());
         }
 
         @JRubyMethod
@@ -581,7 +581,7 @@ public abstract class JavaUtil {
                 if ( o2 instanceof IRubyObject ) r2 = (IRubyObject) o2;
                 else r2 = convertJavaToUsableRubyObject(context.runtime, o2);
 
-                return RubyInteger.fix2int( compare(context, r1, r2) );
+                return toInt(context, compare(context, r1, r2));
             }
 
             // @JRubyMethod
@@ -615,7 +615,7 @@ public abstract class JavaUtil {
                 if ( o2 instanceof IRubyObject ) r2 = (IRubyObject) o2;
                 else r2 = convertJavaToUsableRubyObject(context.runtime, o2);
 
-                return RubyInteger.fix2int( compare(context, r1, r2) );
+                return toInt(context, compare(context, r1, r2));
             }
 
             // @JRubyMethod

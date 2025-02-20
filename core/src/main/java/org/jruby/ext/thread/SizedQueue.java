@@ -45,6 +45,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Error.argumentError;
 
 /**
@@ -71,14 +72,14 @@ public class SizedQueue extends Queue {
 
     @JRubyMethod
     public RubyNumeric max(ThreadContext context) {
-        return RubyNumeric.int2fix(context.runtime, capacity);
+        return asFixnum(context, capacity);
     }
 
     @JRubyMethod(name = "max=")
     public synchronized IRubyObject max_set(ThreadContext context, IRubyObject arg) {
         initializedCheck();
 
-        int max = RubyNumeric.num2int(arg), diff = 0;
+        int max = toInt(context, arg), diff = 0;
         if (max <= 0) throw argumentError(context, "queue size must be positive");
 
         fullyLock();

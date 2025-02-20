@@ -59,6 +59,7 @@ import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.rangeError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.api.Warn.warning;
 import static org.jruby.util.Numeric.int_pow;
@@ -154,13 +155,19 @@ public class RubyBignum extends RubyInteger {
     @Override
     @JRubyAPI
     public int asInt(ThreadContext context) {
-        return (int)big2long(this);
+        return (int) asLong(context);
     }
 
     @Override
     @JRubyAPI
     public long asLong(ThreadContext context) {
-        return big2long(this);
+        BigInteger big = getValue();
+
+        if (big.compareTo(LONG_MIN) < 0 || big.compareTo(LONG_MAX) > 0) {
+            throw rangeError(context, "bignum too big to convert into 'long'");
+        }
+
+        return big.longValue();
     }
 
     @Override
@@ -381,7 +388,7 @@ public class RubyBignum extends RubyInteger {
 
     @Override
     public RubyString to_s(ThreadContext context, IRubyObject arg0) {
-        int base = num2int(arg0);
+        int base = toInt(context, arg0);
         if (base < 2 || base > 36) throw argumentError(context, "illegal radix " + base);
 
         return RubyString.newUSASCIIString(context.runtime, value.toString(base));
@@ -811,10 +818,10 @@ public class RubyBignum extends RubyInteger {
                 }
 
                 if (otherBignum.value.compareTo(INTEGER_MAX) > 0) {
-                    throw Error.rangeError(context, "shift width too big");
+                    throw rangeError(context, "shift width too big");
                 }
 
-                shift = big2long(otherBignum);
+                shift = otherBignum.asLong(context);
                 break;
             }
             other = Convert.toInteger(context, other);
@@ -830,7 +837,7 @@ public class RubyBignum extends RubyInteger {
         }
 
         if (shift > Integer.MAX_VALUE) {
-            throw Error.rangeError(context, "shift width too big");
+            throw rangeError(context, "shift width too big");
         }
 
         return bignorm(context.runtime, value.shiftLeft((int) shift));
@@ -861,10 +868,10 @@ public class RubyBignum extends RubyInteger {
                 }
 
                 if (otherBignum.value.compareTo(INTEGER_MIN) < 0) {
-                    throw Error.rangeError(context, "shift width too big");
+                    throw rangeError(context, "shift width too big");
                 }
 
-                shift = big2long(otherBignum);
+                shift = otherBignum.asLong(context);
                 break;
             }
             other = Convert.toInteger(context, other);
@@ -880,7 +887,7 @@ public class RubyBignum extends RubyInteger {
         }
 
         if (shift < Integer.MIN_VALUE) {
-            throw Error.rangeError(context, "shift width too big");
+            throw rangeError(context, "shift width too big");
         }
 
         return bignorm(context.runtime, value.shiftRight((int) shift));
@@ -948,7 +955,7 @@ public class RubyBignum extends RubyInteger {
         }
 
         if (rel.isNil()) return context.fals;
-        int n = fix2int(rel);
+        int n = toInt(context, rel);
 
         IRubyObject ret = context.nil;
         switch (op) {

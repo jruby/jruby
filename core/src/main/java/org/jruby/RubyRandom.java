@@ -35,6 +35,7 @@ import org.jruby.runtime.ThreadContext;
 
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newEmptyString;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
@@ -349,7 +350,7 @@ public class RubyRandom extends RubyRandomBase {
     // c: random_left
     @JRubyMethod(name = "left", visibility = PRIVATE)
     public IRubyObject leftObj(ThreadContext context) {
-        return RubyNumeric.int2fix(context.runtime, random.getLeft());
+        return asFixnum(context, random.getLeft());
     }
 
     // c: random_s_state
@@ -361,7 +362,7 @@ public class RubyRandom extends RubyRandomBase {
     // c: random_s_left
     @JRubyMethod(name = "left", meta = true, visibility = PRIVATE)
     public static IRubyObject left(ThreadContext context, IRubyObject recv) {
-        return RubyNumeric.int2fix(context.runtime, getDefaultRand(context).getLeft());
+        return asFixnum(context, getDefaultRand(context).getLeft());
     }
 
     // c: random_dump
@@ -381,7 +382,7 @@ public class RubyRandom extends RubyRandomBase {
         if (load.size() != 3) throw argumentError(context, "wrong dump data");
 
         RubyBignum state = castAsBignum(context, load.eltInternal(0));
-        int left = RubyNumeric.num2int(load.eltInternal(1));
+        int left = toInt(context, load.eltInternal(1));
         IRubyObject seed = load.eltInternal(2);
 
         checkFrozen();
@@ -410,13 +411,12 @@ public class RubyRandom extends RubyRandomBase {
         int n = toInt(context, num);
 
         if (n < 0) throw argumentError(context, "negative string size (or size too big)");
-
-        if (n == 0) return context.runtime.newString();
+        if (n == 0) return newEmptyString(context);
 
         byte[] seed = new byte[n];
         context.runtime.random.nextBytes(seed);
 
-        return RubyString.newString(context.runtime, seed);
+        return newString(context, seed);
     }
 
     public static class RandomFormatter {

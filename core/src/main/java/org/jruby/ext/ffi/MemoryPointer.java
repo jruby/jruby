@@ -14,6 +14,7 @@ import org.jruby.util.cli.Options;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
@@ -86,21 +87,20 @@ public class MemoryPointer extends Pointer {
 
     @JRubyMethod(name = { "initialize" }, visibility = PRIVATE)
     public final IRubyObject initialize(ThreadContext context, IRubyObject sizeArg, Block block) {
-        return sizeArg instanceof RubyFixnum
-                ? init(context, RubyFixnum.one(context.runtime),
-                    RubyFixnum.fix2int(sizeArg), 1, true, block)
-                : init(context, sizeArg, 1, 1, true, block);
+        return sizeArg instanceof RubyFixnum fixnum ?
+                init(context, RubyFixnum.one(context.runtime), toInt(context, fixnum), 1, true, block) :
+                init(context, sizeArg, 1, 1, true, block);
     }
     
     @JRubyMethod(name = { "initialize" }, visibility = PRIVATE)
     public final IRubyObject initialize(ThreadContext context, IRubyObject sizeArg, IRubyObject count, Block block) {
-        return init(context, sizeArg, RubyNumeric.fix2int(count), 1, true, block);
+        return init(context, sizeArg, toInt(context, count), 1, true, block);
     }
     
     @JRubyMethod(name = { "initialize" }, visibility = PRIVATE)
     public final IRubyObject initialize(ThreadContext context,
             IRubyObject sizeArg, IRubyObject count, IRubyObject clear, Block block) {
-        return init(context, sizeArg, RubyNumeric.fix2int(count), 1, clear.isTrue(), block);
+        return init(context, sizeArg, toInt(context, count), 1, clear.isTrue(), block);
     }
     
     @Override

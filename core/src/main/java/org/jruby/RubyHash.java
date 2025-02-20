@@ -85,6 +85,7 @@ import static org.jruby.api.Access.hashClass;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newSharedString;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.*;
 import static org.jruby.api.Warn.warn;
@@ -958,7 +959,7 @@ public class RubyHash extends RubyObject implements Map {
 
             boolean keyIsSymbol = key instanceof RubySymbol;
 
-            str.catWithCodeRange(keyIsSymbol ? (RubyString) keyStr.substr(context.runtime, 1, keyStr.length() - 1) : keyStr);
+            str.catWithCodeRange(keyIsSymbol ? (RubyString) keyStr.substr(context, 1, keyStr.length() - 1) : keyStr);
             self.appendAssociation(keyIsSymbol, bytes);
             str.catWithCodeRange(valStr);
         }
@@ -985,8 +986,8 @@ public class RubyHash extends RubyObject implements Map {
     public IRubyObject inspect(ThreadContext context) {
         final Ruby runtime = context.runtime;
 
-        if (size() == 0) return RubyString.newStringShared(runtime, EMPTY_HASH_BL);
-        if (runtime.isInspecting(this)) return RubyString.newStringShared(runtime, RECURSIVE_HASH_BL);
+        if (size() == 0) return newSharedString(context, EMPTY_HASH_BL);
+        if (runtime.isInspecting(this)) return newSharedString(context, RECURSIVE_HASH_BL);
 
         try {
             runtime.registerInspecting(this);
