@@ -53,6 +53,7 @@ import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
+import org.jruby.util.CodeRangeable;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
 
@@ -472,6 +473,13 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         }
 
         return coder;
+    }
+
+    public static Encoding checkEncoding(ThreadContext context, Encoding encoding, CodeRangeable other) {
+        Encoding enc = StringSupport.areCompatible(encoding, other);
+        if (enc == null) throw context.runtime.newEncodingCompatibilityError("incompatible character encodings: " +
+                encoding + " and " + other.getByteList().getEncoding());
+        return enc;
     }
 
     @JRubyMethod(name = "list", meta = true)

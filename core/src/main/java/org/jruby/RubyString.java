@@ -887,7 +887,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return dup;
     }
 
-    /* rb_str_subseq */
+    /* MRI: rb_str_subseq */
     public final RubyString makeSharedString(Ruby runtime, int index, int len) {
         return makeShared(runtime, runtime.getString(), value, index, len);
     }
