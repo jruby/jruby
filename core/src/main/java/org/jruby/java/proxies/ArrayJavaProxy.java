@@ -101,7 +101,7 @@ public final class ArrayJavaProxy extends JavaProxy {
     @JRubyMethod(name = "[]")
     public final IRubyObject op_aref(ThreadContext context, IRubyObject arg) {
         if ( arg instanceof RubyRange ) return arrayRange(context, (RubyRange) arg);
-        final int i = convertArrayIndex(arg);
+        final int i = convertArrayIndex(context, arg);
         return ArrayUtils.arefDirect(context.runtime, getObject(), converter, i);
     }
 
@@ -115,7 +115,7 @@ public final class ArrayJavaProxy extends JavaProxy {
 
     @JRubyMethod(name = "[]=")
     public final IRubyObject op_aset(ThreadContext context, IRubyObject index, IRubyObject value) {
-        return setValue(context.runtime, convertArrayIndex(index), value);
+        return setValue(context.runtime, convertArrayIndex(context, index), value);
     }
 
     @JRubyMethod(name = { "include?", "member?" }) // Enumerable override
@@ -339,7 +339,7 @@ public final class ArrayJavaProxy extends JavaProxy {
     public IRubyObject last(ThreadContext context, IRubyObject count) {
         final Object array = getObject();
 
-        int len = RubyFixnum.fix2int(count);
+        int len = toInt(context, count);
         int size = Array.getLength(array);
         int start = size - len; if ( start < 0 ) start = 0;
         int end = start + len; if ( end > size ) end = size;
@@ -391,16 +391,15 @@ public final class ArrayJavaProxy extends JavaProxy {
         return idx == args.length ? val : RubyObject.dig(context, val, args, idx);
     }
 
-    private static int convertArrayIndex(final IRubyObject index) {
-        if ( index instanceof JavaProxy ) {
-            return (Integer) index.toJava(Integer.class);
-        }
-        return RubyNumeric.num2int(index);
+    private static int convertArrayIndex(ThreadContext context, final IRubyObject index) {
+        return index instanceof JavaProxy ?
+                index.toJava(Integer.class) :
+                toInt(context, index);
     }
 
     @JRubyMethod
     public IRubyObject at(ThreadContext context, IRubyObject index) {
-        return at(context, convertArrayIndex(index));
+        return at(context, convertArrayIndex(context, index));
     }
 
     private final IRubyObject at(ThreadContext context, int i) {

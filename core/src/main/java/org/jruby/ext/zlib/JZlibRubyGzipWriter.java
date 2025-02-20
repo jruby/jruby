@@ -57,6 +57,9 @@ import java.io.IOException;
 import static org.jruby.api.Access.fileClass;
 import static org.jruby.api.Access.globalVariables;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toByte;
+import static org.jruby.api.Convert.toInt;
+import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Create.dupString;
 import static org.jruby.api.Create.newString;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -118,7 +121,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         level = processLevel(context, argc, args);
         
         // unused; could not figure out how to get JZlib to take this right
-        /*int strategy = */processStrategy(argc, args);
+        /*int strategy = */processStrategy(context, argc, args);
         
         initializeCommon(context, args[0], level);
         
@@ -127,12 +130,12 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return this;
     }
 
-    private int processStrategy(int argc, IRubyObject[] args) {
-        return argc < 3 ? JZlib.Z_DEFAULT_STRATEGY : RubyZlib.FIXNUMARG(args[2], JZlib.Z_DEFAULT_STRATEGY);
+    private int processStrategy(ThreadContext context, int argc, IRubyObject[] args) {
+        return argc < 3 ? JZlib.Z_DEFAULT_STRATEGY : RubyZlib.FIXNUMARG(context, args[2], JZlib.Z_DEFAULT_STRATEGY);
     }
 
     private int processLevel(ThreadContext context, int argc, IRubyObject[] args) {
-        int level = argc < 2 ? JZlib.Z_DEFAULT_COMPRESSION : RubyZlib.FIXNUMARG(args[1], JZlib.Z_DEFAULT_COMPRESSION);
+        int level = argc < 2 ? JZlib.Z_DEFAULT_COMPRESSION : RubyZlib.FIXNUMARG(context, args[1], JZlib.Z_DEFAULT_COMPRESSION);
 
         checkLevel(context, level);
 
@@ -313,7 +316,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
     @JRubyMethod(name = "putc")
     public IRubyObject putc(ThreadContext context, IRubyObject p1) {
         try {
-            io.write(RubyNumeric.num2chr(p1));
+            io.write(toByte(context, p1));
             
             return p1;
         } catch (IOException ioe) {
@@ -349,14 +352,9 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
     @JRubyMethod(name = "flush", optional = 1, checkArity = false)
     public IRubyObject flush(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 0, 1);
-
-        int flush = JZlib.Z_SYNC_FLUSH;
-        
-        if (argc > 0 && !args[0].isNil()) {
-            flush = RubyNumeric.fix2int(args[0]);
-        }
-        
+        int flush = argc > 0 && !args[0].isNil() ? toInt(context, args[0]) : JZlib.Z_SYNC_FLUSH;
         boolean tmp = io.getSyncFlush();
+
         try {
             if (flush != 0 /*
                      * NO_FLUSH
@@ -383,7 +381,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         if (arg instanceof RubyTime timeArg) {
             this.mtime = timeArg;
         } else if (!arg.isNil()) {
-            this.mtime = RubyTime.newTime(context.runtime, RubyNumeric.fix2long(arg) * 1000);
+            this.mtime = RubyTime.newTime(context.runtime, toLong(context, arg) * 1000);
         }
         try {
             io.setModifiedTime(this.mtime.to_i(context).asLong(context));

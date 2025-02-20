@@ -224,7 +224,7 @@ public class RubyBasicSocket extends RubyIO {
     private IRubyObject recv(ThreadContext context, IRubyObject length,
                              RubyString str, IRubyObject flags) {
         // TODO: implement flags
-        final ByteBuffer buffer = ByteBuffer.allocate(RubyNumeric.fix2int(length));
+        final ByteBuffer buffer = ByteBuffer.allocate(toInt(context, length));
 
         ByteList bytes;
 
@@ -278,7 +278,7 @@ public class RubyBasicSocket extends RubyIO {
 
         // TODO: implement flags
 
-        final ByteBuffer buffer = ByteBuffer.allocate(RubyNumeric.fix2int(length));
+        final ByteBuffer buffer = ByteBuffer.allocate(toInt(context, length));
 
         ByteList bytes;
 
@@ -370,7 +370,7 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     private IRubyObject readNonblockCommon(ThreadContext context, DatagramChannel channel, IRubyObject length, IRubyObject str, boolean exception) {
-        final ByteBuffer buffer = ByteBuffer.allocate(RubyNumeric.fix2int(length));
+        final ByteBuffer buffer = ByteBuffer.allocate(toInt(context, length));
 
         ByteList bytes;
 
@@ -645,7 +645,7 @@ public class RubyBasicSocket extends RubyIO {
                     throw SocketUtils.sockerr(context.runtime, "'how' should be either :SHUT_RD, :SHUT_WR, :SHUT_RDWR");
                 }
             } else {
-                how = RubyNumeric.fix2int(args[0]);
+                how = toInt(context, args[0]);
             }
         }
 
@@ -924,7 +924,7 @@ public class RubyBasicSocket extends RubyIO {
 
     private static int asNumber(ThreadContext context, IRubyObject val) {
         if ( val instanceof RubyNumeric) {
-            return RubyNumeric.fix2int(val);
+            return toInt(context, val);
         }
         if ( val instanceof RubyBoolean) {
             return val.isTrue() ? 1 : 0;
@@ -937,16 +937,12 @@ public class RubyBasicSocket extends RubyIO {
 
         if (res == context.nil) throw context.runtime.newErrnoEINVALError();
 
-        return RubyNumeric.fix2int(res);
+        return toInt(context, res);
     }
 
     protected boolean asBoolean(ThreadContext context, IRubyObject val) {
-        if ( val instanceof RubyString) {
-            return stringAsNumber(context, val) != 0;
-        }
-        if ( val instanceof RubyNumeric) {
-            return RubyNumeric.fix2int(val) != 0;
-        }
+        if (val instanceof RubyString) return stringAsNumber(context, val) != 0;
+        if (val instanceof RubyNumeric) return toInt(context, val) != 0;
         return val.isTrue();
     }
 

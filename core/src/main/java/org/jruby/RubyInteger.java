@@ -62,10 +62,21 @@ import java.math.RoundingMode;
 
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
-import static org.jruby.api.Convert.*;
+import static org.jruby.api.Access.encodingService;
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asFloat;
+import static org.jruby.api.Convert.castAsInteger;
+import static org.jruby.api.Convert.checkToInteger;
+import static org.jruby.api.Convert.toInt;
+import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newSharedString;
 import static org.jruby.api.Define.defineClass;
-import static org.jruby.api.Error.*;
+import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.rangeError;
+import static org.jruby.api.Error.runtimeError;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.util.Numeric.f_gcd;
 import static org.jruby.util.Numeric.f_lcm;
@@ -468,7 +479,7 @@ public abstract class RubyInteger extends RubyNumeric {
             return chrCommon(context, uint, enc);
         }
 
-        return RubyString.newStringShared(context.runtime, singleCharByteList((byte) uint));
+        return newSharedString(context, singleCharByteList((byte) uint));
     }
 
     private long toUnsignedInteger(ThreadContext context) {
@@ -506,8 +517,8 @@ public abstract class RubyInteger extends RubyNumeric {
      * @return the value and result code, with the top four bytes being the result code (zero if no error)
      */
     public static long numToUint(ThreadContext context, IRubyObject val) {
-        if (val instanceof RubyFixnum) {
-            long v = fix2long(val);
+        if (val instanceof RubyFixnum fixnum) {
+            long v = fixnum.getValue();
             if (v > 0xFFFFFFFFL) return NUMERR_TOOLARGE;
             if (v < 0) return NUMERR_NEGATIVE;
             return v << 32;
@@ -526,7 +537,7 @@ public abstract class RubyInteger extends RubyNumeric {
         long uint = toUnsignedInteger(context);
 
         Encoding enc = arg instanceof RubyEncoding encArg ?
-                encArg.getEncoding() : context.runtime.getEncodingService().findEncoding(arg.convertToString());
+                encArg.getEncoding() : encodingService(context).findEncoding(arg.convertToString());
 
         return chrCommon(context, uint, enc);
     }
@@ -621,7 +632,7 @@ public abstract class RubyInteger extends RubyNumeric {
     @JRubyMethod(name = "round")
     public IRubyObject round(ThreadContext context, IRubyObject digits, IRubyObject _opts) {
         IRubyObject opts = ArgsUtil.getOptionsArg(context, _opts); // options (only "half" supported right now)
-        int ndigits = num2int(digits);
+        int ndigits = toInt(context, digits);
         RoundingMode roundingMode = getRoundingMode(context, opts);
         if (ndigits >= 0) return this;
 
@@ -639,8 +650,8 @@ public abstract class RubyInteger extends RubyNumeric {
         if (int_round_zero_p(context, ndigits)) return asFixnum(context, 0);
 
         RubyNumeric f = Numeric.int_pow(context, 10, -ndigits);
-        if (this instanceof RubyFixnum && f instanceof RubyFixnum) {
-            long x = fix2long(this), y = fix2long(f);
+        if (this instanceof RubyFixnum fixnum && f instanceof RubyFixnum ff) {
+            long x = fixnum.getValue(), y = ff.getValue();
             boolean neg = x < 0;
             if (neg) x = -x;
             x = doRound(context, roundingMode, x, y);

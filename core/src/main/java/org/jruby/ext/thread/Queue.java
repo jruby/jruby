@@ -349,7 +349,7 @@ public class Queue extends RubyObject implements DataType {
     @JRubyMethod(name = {"length", "size"})
     public RubyNumeric length(ThreadContext context) {
         initializedCheck(context);
-        return RubyNumeric.int2fix(context.runtime, count.get());
+        return asFixnum(context, count.get());
     }
 
     @JRubyMethod

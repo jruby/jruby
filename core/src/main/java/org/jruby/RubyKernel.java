@@ -122,8 +122,17 @@ import static org.jruby.api.Access.runtimeErrorClass;
 import static org.jruby.api.Access.stringClass;
 import static org.jruby.api.Access.symbolClass;
 import static org.jruby.api.Check.checkEmbeddedNulls;
-import static org.jruby.api.Convert.*;
-import static org.jruby.api.Create.*;
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asFloat;
+import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Convert.toInt;
+import static org.jruby.api.Create.allocArray;
+import static org.jruby.api.Create.dupString;
+import static org.jruby.api.Create.newEmptyString;
+import static org.jruby.api.Create.newHash;
+import static org.jruby.api.Create.newSharedString;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.api.Warn.warnDeprecatedForRemovalAlternate;
@@ -911,7 +920,7 @@ public class RubyKernel {
             if (argument instanceof RubyBoolean) {
                 status = argument.isFalse() ? 1 : 0;
             } else {
-                status = RubyNumeric.fix2int(argument);
+                status = toInt(context, argument);
             }
         }
 
@@ -1323,22 +1332,22 @@ public class RubyKernel {
         // Suitably large but no chance to overflow int when combined with level
         int len = 1 << 24;
         if (length != null) {
-            lev = RubyNumeric.fix2int(level);
-            len = RubyNumeric.fix2int(length);
+            lev = toInt(context, level);
+            len = toInt(context, length);
         } else if (level instanceof RubyRange) {
             RubyRange range = (RubyRange) level;
             IRubyObject first = range.begin(context);
-            lev = first.isNil() ? 0 : RubyNumeric.fix2int(first);
+            lev = first.isNil() ? 0 : toInt(context, first);
             IRubyObject last = range.end(context);
             if (last.isNil()) {
                 len = 1 << 24;
             } else {
-                len = RubyNumeric.fix2int(last) - lev;
+                len = toInt(context, last) - lev;
             }
             if (!range.isExcludeEnd()) len++;
             len = len < 0 ? 0 : len;
         } else if (level != null) {
-            lev = RubyNumeric.fix2int(level);
+            lev = toInt(context, level);
         } else {
             lev = defaultLevel;
         }
@@ -1369,10 +1378,9 @@ public class RubyKernel {
         return rbThrowInternal(context, tag, value);
     }
 
-    private static final byte[] uncaught_throw_p = { 'u','n','c','a','u','g','h','t',' ','t','h','r','o','w',' ','%','p' };
+    private static final ByteList uncaught_throw_p = new ByteList(new byte[] { 'u','n','c','a','u','g','h','t',' ','t','h','r','o','w',' ','%','p' });
 
     private static IRubyObject rbThrowInternal(ThreadContext context, IRubyObject tag, IRubyObject arg) {
-        final Ruby runtime = context.runtime;
         globalVariables(context).set("$!", context.nil);
 
         CatchThrow continuation = context.getActiveCatch(tag);
@@ -1384,7 +1392,7 @@ public class RubyKernel {
 
         // No catch active for this throw
         IRubyObject value = arg == null ? context.nil : arg;
-        throw uncaughtThrow(context, tag, value, RubyString.newStringShared(runtime, uncaught_throw_p));
+        throw uncaughtThrow(context, tag, value, newSharedString(context, uncaught_throw_p));
     }
 
     private static RaiseException uncaughtThrow(ThreadContext context, IRubyObject tag, IRubyObject value, RubyString message) {
@@ -1449,7 +1457,7 @@ public class RubyKernel {
                 IRubyObject[] ret = ArgsUtil.extractKeywordArgs(context, (RubyHash) opts, "uplevel", "category");
                 if (ret[0] != null) {
                     explicitUplevel = true;
-                    uplevel = RubyNumeric.num2int(ret[0]);
+                    uplevel = toInt(context, ret[0]);
                     if (uplevel < 0) throw argumentError(context, "negative level (" + uplevel + ")");
                 }
 

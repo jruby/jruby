@@ -67,6 +67,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.jruby.RubyString.scanForCodeRange;
+import static org.jruby.api.Access.encodingService;
 import static org.jruby.api.Access.globalVariables;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.newArray;
@@ -2266,8 +2267,8 @@ public final class StringSupport {
         }
 
         if (rs == defaultSep && !enc.isAsciiCompatible()) {
-            rs = RubyString.newString(context.runtime, rsbytes, rsptr, rslen);
-            rs = (RubyString) EncodingUtils.rbStrEncode(context, rs, context.runtime.getEncodingService().convertEncodingToRubyEncoding(enc), 0, context.nil);
+            rs = newString(context, rsbytes, rsptr, rslen);
+            rs = (RubyString) EncodingUtils.rbStrEncode(context, rs, encodingService(context).convertEncodingToRubyEncoding(enc), 0, context.nil);
             rsByteList = rs.getByteList();
             rsbytes = rsByteList.unsafeBytes();
             rsptr = rsByteList.begin();
@@ -2291,7 +2292,7 @@ public final class StringSupport {
                     subend -= rslen;
                 }
             }
-            line = str.substr(context.runtime, subptr - ptr, subend - subptr);
+            line = str.substr(context, subptr - ptr, subend - subptr);
             if (wantarray) ary.append(context, line);
             else {
                 block.yieldSpecific(context, line);
@@ -2309,7 +2310,7 @@ public final class StringSupport {
                     pend -= rslen;
                 }
             }
-            line = str.substr(context.runtime, subptr - ptr, pend - subptr);
+            line = str.substr(context, subptr - ptr, pend - subptr);
             if (wantarray) ary.append(context, line);
             else block.yieldSpecific(context, line);
         }

@@ -162,7 +162,7 @@ public class RubyNil extends RubyObject implements Constantizable {
     static final ByteList nil = new ByteList(nilBytes, USASCIIEncoding.INSTANCE);
 
     static RubyString inspect(Ruby runtime) {
-        return RubyString.newStringShared(runtime, runtime.getString(), nil);
+        return RubyString.newStringShared(runtime, nil);
     }
 
     @Override

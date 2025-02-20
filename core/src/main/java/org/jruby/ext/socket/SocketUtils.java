@@ -292,7 +292,7 @@ public class SocketUtils {
         int p = port.isNil() ? 0 : toInt(context, port);
 
         // TODO: implement flags
-        int flag = flags.isNil() ? 0 : RubyNumeric.fix2int(flags);
+        int flag = flags.isNil() ? 0 : toInt(context, flags);
 
         boolean displayCanonical = (flag & AI_CANONNAME) != 0;
 
@@ -324,12 +324,11 @@ public class SocketUtils {
     }
 
     public static IRubyObject getnameinfo(ThreadContext context, IRubyObject[] args) {
-        int flags = args.length == 2 ? RubyNumeric.num2int(args[1]) : 0;
+        int flags = args.length == 2 ? toInt(context, args[1]) : 0;
         IRubyObject arg0 = args[0];
         String host, port;
 
-        if (arg0 instanceof RubyArray) {
-            RubyArray ary = (RubyArray) arg0;
+        if (arg0 instanceof RubyArray ary) {
             final int len = ary.size();
 
             if (len < 3 || len > 4) {
@@ -340,8 +339,8 @@ public class SocketUtils {
             port = ary.eltInternal(1).toString();
             host = len == 3 ? ary.eltInternal(2).toString() : ary.eltInternal(3).toString();
 
-        } else if (arg0 instanceof RubyString) {
-            String arg = ((RubyString) arg0).toString();
+        } else if (arg0 instanceof RubyString argS) {
+            String arg = argS.toString();
             Matcher m = STRING_IPV4_ADDRESS_PATTERN.matcher(arg);
 
             if (!m.matches()) {
@@ -502,14 +501,14 @@ public class SocketUtils {
     public static int getPortFrom(ThreadContext context, IRubyObject _port) {
         int port;
         if (_port instanceof RubyInteger) {
-            port = RubyNumeric.fix2int(_port);
+            port = toInt(context, _port);
         } else {
             IRubyObject portString = _port.convertToString();
             IRubyObject portInteger = portString.convertToInteger( "to_i");
-            port = RubyNumeric.fix2int(portInteger);
+            port = toInt(context, portInteger);
 
             if (port <= 0) {
-                port = RubyNumeric.fix2int(RubySocket.getservbyname(context, objectClass(context), new IRubyObject[]{portString}));
+                port = toInt(context, RubySocket.getservbyname(context, objectClass(context), new IRubyObject[]{portString}));
             }
         }
 
@@ -556,7 +555,7 @@ public class SocketUtils {
                 return AddressFamily.valueOf("AF_" + domainString);
             }
 
-            int domainInt = RubyNumeric.fix2int(domain);
+            int domainInt = toInt(context, domain);
             return AddressFamily.valueOf(domainInt);
         } catch (IllegalArgumentException iae) {
             throw SocketUtils.sockerr(context.runtime, "invalid address family: " + domain);
@@ -577,7 +576,7 @@ public class SocketUtils {
                 return Sock.valueOf("SOCK_" + typeString);
             }
 
-            int typeInt = RubyNumeric.fix2int(type);
+            int typeInt = toInt(context, type);
             return Sock.valueOf(typeInt);
         } catch (IllegalArgumentException iae) {
             throw SocketUtils.sockerr(context.runtime, "invalid socket type: " + type);
@@ -600,7 +599,7 @@ public class SocketUtils {
                 return ProtocolFamily.valueOf("PF_" + protocolString);
             }
 
-            int protocolInt = RubyNumeric.fix2int(protocol);
+            int protocolInt = toInt(context, protocol);
             return ProtocolFamily.valueOf(protocolInt);
         } catch (IllegalArgumentException iae) {
             throw SocketUtils.sockerr(context.runtime, "invalid protocol family: " + protocol);
@@ -620,7 +619,7 @@ public class SocketUtils {
                 return Protocol.getProtocolByName(protocolString);
             }
 
-            int protocolInt = RubyNumeric.fix2int(protocol);
+            int protocolInt = toInt(context, protocol);
             return Protocol.getProtocolByNumber(protocolInt);
         } catch (IllegalArgumentException iae) {
             throw SocketUtils.sockerr(context.runtime, "invalid protocol: " + protocol);
@@ -641,7 +640,7 @@ public class SocketUtils {
                 return SocketLevel.valueOf("SOL_" + levelString);
             }
 
-            return SocketLevel.valueOf(RubyNumeric.fix2int(level));
+            return SocketLevel.valueOf(toInt(context, level));
         } catch (IllegalArgumentException iae) {
             throw SocketUtils.sockerr(context.runtime, "invalid socket level: " + level);
         }
@@ -659,7 +658,7 @@ public class SocketUtils {
                 return SocketOption.valueOf("SO_" + optString);
             }
 
-            return SocketOption.valueOf(RubyNumeric.fix2int(opt));
+            return SocketOption.valueOf(toInt(context, opt));
         } catch (IllegalArgumentException iae) {
             throw SocketUtils.sockerr(context.runtime, "invalid socket option: " + opt);
         }
@@ -682,6 +681,6 @@ public class SocketUtils {
 
             return ((RubyInteger) portStr.to_i(context)).asInt(context);
         }
-        return RubyNumeric.fix2int(port);
+        return toInt(context, port);
     }
 }

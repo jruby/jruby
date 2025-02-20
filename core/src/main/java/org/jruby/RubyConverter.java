@@ -58,6 +58,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.jcodings.transcode.EConvResult.*;
+import static org.jruby.api.Access.encodingService;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
@@ -191,9 +192,9 @@ public class RubyConverter extends RubyObject {
             Transcoder tr = ec.elements[i].transcoding.transcoder;
             IRubyObject v;
             if (EncodingUtils.DECORATOR_P(tr.getSource(), tr.getDestination())) {
-                v = RubyString.newString(context.runtime, tr.getDestination());
+                v = newString(context, tr.getDestination());
             } else {
-                var encodingService = context.runtime.getEncodingService();
+                var encodingService = encodingService(context);
                 v = newArray(context,
                         encodingService.convertEncodingToRubyEncoding(encodingService.findEncodingOrAliasEntry(tr.getSource()).getEncoding()),
                         encodingService.convertEncodingToRubyEncoding(encodingService.findEncodingOrAliasEntry(tr.getDestination()).getEncoding()));
@@ -208,14 +209,14 @@ public class RubyConverter extends RubyObject {
     public IRubyObject source_encoding(ThreadContext context) {
         if (ec.sourceEncoding == null) return context.nil;
         
-        return context.runtime.getEncodingService().convertEncodingToRubyEncoding(ec.sourceEncoding);
+        return encodingService(context).convertEncodingToRubyEncoding(ec.sourceEncoding);
     }
 
     @JRubyMethod
     public IRubyObject destination_encoding(ThreadContext context) {
         if (ec.destinationEncoding == null) return context.nil;
         
-        return context.runtime.getEncodingService().convertEncodingToRubyEncoding(ec.destinationEncoding);
+        return encodingService(context).convertEncodingToRubyEncoding(ec.destinationEncoding);
     }
 
     // econv_primitive_convert
@@ -406,7 +407,7 @@ public class RubyConverter extends RubyObject {
                 ec.replacementString,
                 0,
                 ec.replacementLength,
-                context.runtime.getEncodingService().findEncodingOrAliasEntry(ec.replacementEncoding).getEncoding(), true));
+                encodingService(context).findEncodingOrAliasEntry(ec.replacementEncoding).getEncoding(), true));
     }
 
     @JRubyMethod(name = "replacement=")
@@ -426,23 +427,14 @@ public class RubyConverter extends RubyObject {
     
     @JRubyMethod(meta = true)
     public static IRubyObject asciicompat_encoding(ThreadContext context, IRubyObject self, IRubyObject strOrEnc) {
-        Ruby runtime = context.runtime;
-        EncodingService encodingService = runtime.getEncodingService();
-        
+        EncodingService encodingService = encodingService(context);
         Encoding encoding = encodingService.getEncodingFromObjectNoError(strOrEnc);
         
-        if (encoding == null) {
-            return context.nil;
-        }
-        
-        if (encoding.isAsciiCompatible()) {
-            return context.nil;
-        }
-        
+        if (encoding == null || encoding.isAsciiCompatible()) return context.nil;
+
         Encoding asciiCompat = NONASCII_TO_ASCII.get(encoding);
-        
         if (asciiCompat == null) {
-            throw runtime.newConverterNotFoundError("no ASCII compatible encoding found for " + strOrEnc);
+            throw context.runtime.newConverterNotFoundError("no ASCII compatible encoding found for " + strOrEnc);
         }
         
         return encodingService.convertEncodingToRubyEncoding(asciiCompat);
@@ -457,32 +449,21 @@ public class RubyConverter extends RubyObject {
     
     @JRubyMethod
     public IRubyObject primitive_errinfo(ThreadContext context) {
-        Ruby runtime = context.runtime;
-
-        IRubyObject[] values = {
-                asSymbol(context, ec.lastError.getResult().symbolicName()),
-                context.nil,
-                context.nil,
-                context.nil,
-                context.nil
-        };
-
-        if (ec.lastError.getSource() != null) {
-            values[1] = RubyString.newString(runtime, ec.lastError.getSource());
-        }
-
-        if (ec.lastError.getDestination() != null) {
-            values[2] = RubyString.newString(runtime, ec.lastError.getDestination());
-        }
+        IRubyObject[] values = new IRubyObject[5];
+        var lastError = ec.lastError;
+        values[0] = asSymbol(context, lastError.getResult().symbolicName());
+        values[1] = lastError.getSource() != null ? newString(context, lastError.getSource()) : context.nil;
+        values[2] = lastError.getDestination() != null ? newString(context, lastError.getDestination()) : context.nil;
 
         if (ec.lastError.getErrorBytes() != null) {
-            values[3] = RubyString.newString(runtime, ec.lastError.getErrorBytes(), ec.lastError.getErrorBytesP(), ec.lastError.getErrorBytesLength());
-            values[4] = RubyString.newString(runtime, ec.lastError.getErrorBytes(), ec.lastError.getErrorBytesP() + ec.lastError.getErrorBytesLength(), ec.lastError.getReadAgainLength());
+            values[3] = newString(context, lastError.getErrorBytes(), lastError.getErrorBytesP(), lastError.getErrorBytesLength());
+            values[4] = newString(context, lastError.getErrorBytes(), lastError.getErrorBytesP() + lastError.getErrorBytesLength(), lastError.getReadAgainLength());
+        } else {
+            values[3] = context.nil;
+            values[4] = context.nil;
         }
         
-        RubyArray ary = RubyArray.newArrayMayCopy(context.runtime, values);
-
-        return ary;
+        return RubyArray.newArrayMayCopy(context.runtime, values);
     }
 
     @JRubyMethod(meta = true, required = 2, optional = 1, checkArity = false)
@@ -497,13 +478,13 @@ public class RubyConverter extends RubyObject {
         EncodingUtils.econvArgs(context, argv, encNames, encs, ecflags_p, ecopts_p);
 
         TranscoderDB.searchPath(encNames[0], encNames[1], new TranscoderDB.SearchPathCallback() {
-            final EncodingService es = context.runtime.getEncodingService();
+            final EncodingService es = encodingService(context);
 
             public void call(byte[] source, byte[] destination, int depth) {
                 if (convpath[0] == nil) convpath[0] = newArray(context);
 
                 IRubyObject v = EncodingUtils.DECORATOR_P(encNames[0], encNames[1]) ?
-                        RubyString.newString(context.runtime, encNames[2]) :
+                        newString(context, encNames[2]) :
                         newArray(context,
                                 es.convertEncodingToRubyEncoding(es.findEncodingOrAliasEntry(source).getEncoding()),
                                 es.convertEncodingToRubyEncoding(es.findEncodingOrAliasEntry(destination).getEncoding()));
@@ -524,21 +505,17 @@ public class RubyConverter extends RubyObject {
     // econv_insert_output
     @JRubyMethod
     public IRubyObject insert_output(ThreadContext context, IRubyObject string) {
-        byte[] insertEnc;
-
-        int ret;
-
         string = string.convertToString();
-        insertEnc = ec.encodingToInsertOutput();
+        byte[] insertEnc = ec.encodingToInsertOutput();
         string = EncodingUtils.rbStrEncode(
                 context,
                 string,
-                context.runtime.getEncodingService().findEncodingObject(insertEnc),
+                encodingService(context).findEncodingObject(insertEnc),
                 0,
                 context.nil);
 
         ByteList stringBL = ((RubyString)string).getByteList();
-        ret = ec.insertOutput(stringBL.getUnsafeBytes(), stringBL.getBegin(), stringBL.getRealSize(), insertEnc);
+        int ret = ec.insertOutput(stringBL.getUnsafeBytes(), stringBL.getBegin(), stringBL.getRealSize(), insertEnc);
         if (ret == -1) throw argumentError(context, "too big string");
 
         return context.nil;

@@ -144,7 +144,7 @@ public class RubyBigDecimal extends RubyNumeric {
                 reifiedClass(RubyBigDecimal.class).
                 defineMethods(context, RubyBigDecimal.class).
                 defineConstants(context, RubyBigDecimal.class).
-                defineConstant(context, "VERSION", RubyString.newStringShared(runtime, VERSION));
+                defineConstant(context, "VERSION", newSharedString(context, VERSION));
 
         kernelModule(context).defineMethods(context, BigDecimalKernelMethods.class);
 
@@ -1117,7 +1117,7 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private static int getPrecLimit(ThreadContext context) {
-        return RubyNumeric.fix2int(vpPrecLimit(context));
+        return toInt(context, vpPrecLimit(context));
     }
 
     @JRubyMethod(name = "**")
@@ -1149,7 +1149,7 @@ public class RubyBigDecimal extends RubyNumeric {
                 exp = Numeric.f_numerator(context, exp);
             }
         } else if (exp instanceof RubyBigDecimal bigExp) {
-            IRubyObject zero = RubyNumeric.int2fix(context.runtime, 0);
+            IRubyObject zero = asFixnum(context, 0);
             IRubyObject rounded = bigExp.round(context, new IRubyObject[]{zero});
             if (bigExp.eql_p(context, rounded).isTrue()) {
                 exp = bigExp.to_int();
@@ -1164,12 +1164,11 @@ public class RubyBigDecimal extends RubyNumeric {
 
         final int times;
         final double rem; // exp's decimal part
-        final int nx = prec.isNil() ? getPrec(context) * BASE_FIG : num2int(prec);
-        if (exp instanceof RubyBigDecimal) {
-            RubyBigDecimal bdExp = (RubyBigDecimal)exp;
+        final int nx = prec.isNil() ? getPrec(context) * BASE_FIG : toInt(context, prec);
+        if (exp instanceof RubyBigDecimal bdExp) {
             int ny = bdExp.getPrec(context) * BASE_FIG;
             return bigdecimal_power_by_bigdecimal(context, exp, prec.isNil() ? nx + ny : nx);
-        } else if ( exp instanceof RubyFloat ) {
+        } else if ( exp instanceof RubyFloat) {
             int ny = VP_DOUBLE_FIG;
             return bigdecimal_power_by_bigdecimal(context, exp, prec.isNil() ? nx + ny : nx);
         } else if ( exp instanceof RubyRational) {
@@ -1203,7 +1202,7 @@ public class RubyBigDecimal extends RubyNumeric {
             BigDecimal[] divAndRem = expVal.divideAndRemainder(BigDecimal.ONE);
             times = divAndRem[0].intValueExact(); rem = divAndRem[1].doubleValue();
         } else {
-            times = RubyNumeric.fix2int(exp); rem = 0;
+            times = toInt(context, exp); rem = 0;
         }
 
         BigDecimal pow;
@@ -1387,7 +1386,7 @@ public class RubyBigDecimal extends RubyNumeric {
      // mri : BigDecimal_quo
     @JRubyMethod(name = "quo")
     public IRubyObject op_quo(ThreadContext context, IRubyObject object, IRubyObject digits) {
-        int n = num2int(digits);
+        int n = toInt(context, digits);
         if (n > 0) {
             return op_div(context, object, digits);
         } else {
@@ -1514,7 +1513,7 @@ public class RubyBigDecimal extends RubyNumeric {
             return toInteger(context, this.value.divideToIntegralValue(val.value));
         }
 
-        final int scale = RubyNumeric.fix2int(digits);
+        final int scale = toInt(context, digits);
 
         // MRI behavior: "If digits is 0, the result is the same as the / operator."
         if (scale == 0) return op_divide(context, other);
@@ -1655,7 +1654,7 @@ public class RubyBigDecimal extends RubyNumeric {
     public IRubyObject ceil(ThreadContext context, IRubyObject arg) {
         checkFloatDomain();
 
-        int n = RubyNumeric.fix2int(arg);
+        int n = toInt(context, arg);
 
         if (value.scale() <= n) return this; // no rounding necessary
 
@@ -1668,8 +1667,8 @@ public class RubyBigDecimal extends RubyNumeric {
 
         BigInteger ceil = value.setScale(0, RoundingMode.CEILING).toBigInteger();
 
-        if (ceil.compareTo(BigInteger.valueOf((long) ceil.intValue())) == 0) { // It fits in Fixnum
-            return RubyInteger.int2fix(context.runtime, ceil.intValue());
+        if (ceil.compareTo(BigInteger.valueOf(ceil.intValue())) == 0) { // It fits in Fixnum
+            return asFixnum(context, ceil.intValue());
         }
 
         return RubyBignum.newBignum(context.runtime, ceil);
@@ -1792,7 +1791,7 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyMethod
     public IRubyObject floor(ThreadContext context, IRubyObject arg) {
         RubyBigDecimal res = floorNaNInfinityCheck(context);
-        return res != null ? res : floorImpl(context, RubyNumeric.fix2int(arg));
+        return res != null ? res : floorImpl(context, toInt(context, arg));
      }
 
     @JRubyMethod
@@ -1937,11 +1936,11 @@ public class RubyBigDecimal extends RubyNumeric {
         switch (argc) {
             case 2:
                 mode = javaRoundingModeFromRubyRoundingMode(context, args[1]);
-                scale = num2int(args[0]);
+                scale = toInt(context, args[0]);
                 break;
             case 1:
                 if (ArgsUtil.getOptionsArg(context, args[0]) == context.nil) {
-                    scale = num2int(args[0]);
+                    scale = toInt(context, args[0]);
                     if (scale < 1) roundToInt = true;
                 } else {
                     mode = javaRoundingModeFromRubyRoundingMode(context, args[0]);
@@ -2022,7 +2021,7 @@ public class RubyBigDecimal extends RubyNumeric {
                 default -> throw argumentError(context, "invalid rounding mode (" + roundingMode + ")");
             };
         } else {
-            return switch (num2int(arg)) {
+            return switch (toInt(context, arg)) {
                 case ROUND_UP -> RoundingMode.UP;
                 case ROUND_DOWN -> RoundingMode.DOWN;
                 case ROUND_HALF_UP -> RoundingMode.HALF_UP;
@@ -2103,14 +2102,14 @@ public class RubyBigDecimal extends RubyNumeric {
         }
         if (isInfinity() && infinitySign > 0) return getInfinity(context, 1);
 
-        int n = RubyNumeric.num2int(precision(context)) * (getPrecisionInt(context, arg) + 1);
+        int n = toInt(context, precision(context)) * (getPrecisionInt(context, arg) + 1);
 
         return new RubyBigDecimal(context.runtime, bigSqrt(value, new MathContext(n, RoundingMode.HALF_UP))).setResult(context);
     }
 
     // MRI: GetPrecisionInt(VALUE v)
     private static int getPrecisionInt(ThreadContext context, final IRubyObject v) {
-        int n = RubyNumeric.num2int(v);
+        int n = toInt(context, v);
         if (n < 0) throw argumentError(context, "negative precision");
         return n;
     }
@@ -2393,7 +2392,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod
     public IRubyObject truncate(ThreadContext context, IRubyObject arg) {
-        return truncateInternal(context, RubyNumeric.fix2int(arg));
+        return truncateInternal(context, toInt(context, arg));
     }
 
     @Override

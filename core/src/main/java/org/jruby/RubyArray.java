@@ -101,6 +101,7 @@ import static org.jruby.api.Access.randomClass;
 import static org.jruby.api.Access.stringClass;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newHash;
+import static org.jruby.api.Create.newSharedString;
 import static org.jruby.api.Create.newSmallHash;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineClass;
@@ -622,13 +623,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      *
      */
     private RubyArray makeSharedFirst(ThreadContext context, IRubyObject num, boolean last) {
-        int n = RubyNumeric.num2int(num);
+        int n = toInt(context, num);
 
-        if (n > realLength) {
-            n = realLength;
-        } else if (n < 0) {
-            throw argumentError(context, "negative array size");
-        }
+        if (n < 0) throw argumentError(context, "negative array size");
+        if (n > realLength) n = realLength;
 
         return makeShared(context, last ? begin + realLength - n : begin, n, arrayClass(context));
     }
@@ -1888,7 +1886,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     @JRubyMethod(name = "[]=")
     public IRubyObject aset(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         modifyCheck(context);
-        splice(context, RubyNumeric.num2int(arg0), RubyNumeric.num2int(arg1), arg2);
+        splice(context, toInt(context, arg0), toInt(context, arg1), arg2);
         return arg2;
     }
 
@@ -1992,8 +1990,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     @JRubyMethod(name = "inspect", alias = "to_s")
     public RubyString inspect(ThreadContext context) {
         final Ruby runtime = context.runtime;
-        if (realLength == 0) return RubyString.newStringShared(runtime, EMPTY_ARRAY_BL);
-        if (runtime.isInspecting(this)) return RubyString.newStringShared(runtime, RECURSIVE_ARRAY_BL);
+        if (realLength == 0) return newSharedString(context, EMPTY_ARRAY_BL);
+        if (runtime.isInspecting(this)) return newSharedString(context, RECURSIVE_ARRAY_BL);
 
         try {
             runtime.registerInspecting(this);
@@ -2159,9 +2157,11 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     @JRubyMethod
     public IRubyObject each_slice(ThreadContext context, IRubyObject arg, Block block) {
-        final int size = RubyNumeric.num2int(arg);
+        final int size = toInt(context, arg);
         if (size <= 0) throw argumentError(context, "invalid slice size");
-        return block.isGiven() ? eachSlice(context, size, block) : enumeratorizeWithSize(context, this, "each_slice", arg, arg);
+        return block.isGiven() ?
+                eachSlice(context, size, block) :
+                enumeratorizeWithSize(context, this, "each_slice", arg, arg);
     }
 
     /** rb_ary_each_index
@@ -2565,21 +2565,20 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             return fillCommon(context, beglen[0], beglen[1], block);
         }
 
-        int beg = fillBegin(arg);
+        int beg = fillBegin(context, arg);
         return fillCommon(context, beg, fillLen(context, beg, null),  block);
     }
 
     @JRubyMethod
     public IRubyObject fill(ThreadContext context, IRubyObject arg1, IRubyObject arg2, Block block) {
         if (block.isGiven()) {
-            int beg;
-            return fillCommon(context, beg = fillBegin(arg1), fillLen(context, beg, arg2), block);
+            int beg = fillBegin(context, arg1);
+            return fillCommon(context, beg, fillLen(context, beg, arg2), block);
+        } else if (arg2 instanceof RubyRange range) {
+            int[] beglen = range.begLenInt(context, realLength, 1);
+            return fillCommon(context, beglen[0], beglen[1], arg1);
         } else {
-            if (arg2 instanceof RubyRange) {
-                int[] beglen = ((RubyRange) arg2).begLenInt(context, realLength, 1);
-                return fillCommon(context, beglen[0], beglen[1], arg1);
-            }
-            int beg = fillBegin(arg2);
+            int beg = fillBegin(context, arg2);
             return fillCommon(context, beg, fillLen(context, beg, null), arg1);
         }
     }
@@ -2588,12 +2587,12 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     public IRubyObject fill(ThreadContext context, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
         if (block.isGiven()) throw argumentError(context, 3, 2);
 
-        int beg = fillBegin(arg2);
+        int beg = fillBegin(context, arg2);
         return fillCommon(context, beg, fillLen(context, beg, arg3), arg1);
     }
 
-    private int fillBegin(IRubyObject arg) {
-        int beg = arg.isNil() ? 0 : RubyNumeric.num2int(arg);
+    private int fillBegin(ThreadContext context, IRubyObject arg) {
+        int beg = arg.isNil() ? 0 : toInt(context, arg);
         if (beg < 0) {
             beg = realLength + beg;
             if (beg < 0) beg = 0;
@@ -3400,7 +3399,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             int len = checkInt(context, range.begLen1(context, realLength, pos));
             return slice_internal(context, pos, len);
         }
-        return delete_at(RubyNumeric.num2int(arg0));
+        return delete_at(toInt(context, arg0));
     }
 
     /**
@@ -3421,7 +3420,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     public IRubyObject slice_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         modifyCheck(context);
 
-        return slice_internal(context, RubyNumeric.num2int(arg0), RubyNumeric.num2int(arg1));
+        return slice_internal(context, toInt(context, arg0), toInt(context, arg1));
     }
 
     /** rb_ary_assoc
@@ -3550,7 +3549,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         unpack(context);
         modifyCheck(context);
 
-        int level = RubyNumeric.num2int(arg);
+        int level = toInt(context, arg);
         if (level == 0) return context.nil;
 
         RubyArray result = new RubyArray(context.runtime, getType(), realLength);
@@ -3566,17 +3565,17 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     @JRubyMethod(name = "flatten")
     public IRubyObject flatten(ThreadContext context) {
-        var result = new RubyArray(context.runtime, arrayClass(context), realLength);
+        var result = newArray(context, realLength);
         flatten(context, -1, result);
         return result;
     }
 
     @JRubyMethod(name = "flatten")
     public IRubyObject flatten(ThreadContext context, IRubyObject arg) {
-        int level = RubyNumeric.num2int(arg);
+        int level = toInt(context, arg);
         if (level == 0) return makeShared();
 
-        RubyArray result = new RubyArray(context.runtime, arrayClass(context), realLength);
+        RubyArray result = newArray(context, realLength);
         flatten(context, level, result);
         return result;
     }
@@ -4407,7 +4406,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     public IRubyObject combination(ThreadContext context, IRubyObject num, Block block) {
         if (!block.isGiven()) return enumeratorizeWithSize(context, this, "combination", new IRubyObject[]{num}, RubyArray::combinationSize);
 
-        int n = RubyNumeric.num2int(num);
+        int n = toInt(context, num);
 
         if (n == 0) {
             block.yield(context, Create.newEmptyArray(context));
@@ -4489,7 +4488,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     public IRubyObject repeatedCombination(ThreadContext context, IRubyObject num, Block block) {
         if (!block.isGiven()) return enumeratorizeWithSize(context, this, "repeated_combination", new IRubyObject[] { num }, RubyArray::repeatedCombinationSize);
 
-        int n = RubyNumeric.num2int(num);
+        int n = toInt(context, num);
 
         if (n < 0) {
             // yield nothing
@@ -4583,7 +4582,9 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     @JRubyMethod(name = "permutation")
     public IRubyObject permutation(ThreadContext context, IRubyObject num, Block block) {
-        return block.isGiven() ? permutationCommon(context, RubyNumeric.num2int(num), false, block) : enumeratorizeWithSize(context, this, "permutation", new IRubyObject[] { num }, RubyArray::permutationSize);
+        return block.isGiven() ?
+                permutationCommon(context, toInt(context, num), false, block) :
+                enumeratorizeWithSize(context, this, "permutation", new IRubyObject[] { num }, RubyArray::permutationSize);
     }
 
     @JRubyMethod(name = "permutation")
@@ -4593,7 +4594,9 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     @JRubyMethod(name = "repeated_permutation")
     public IRubyObject repeated_permutation(ThreadContext context, IRubyObject num, Block block) {
-        return block.isGiven() ? permutationCommon(context, RubyNumeric.num2int(num), true, block) : enumeratorizeWithSize(context, this, "repeated_permutation", new IRubyObject[]{num}, RubyArray::repeatedPermutationSize);
+        return block.isGiven() ?
+                permutationCommon(context, toInt(context, num), true, block) :
+                enumeratorizeWithSize(context, this, "repeated_permutation", new IRubyObject[]{num}, RubyArray::repeatedPermutationSize);
     }
 
     /**
@@ -4755,7 +4758,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      * Common sample logic when a sample size was specified.
      */
     private IRubyObject sampleCommon(ThreadContext context, IRubyObject sample, IRubyObject randgen) {
-        int n = RubyNumeric.num2int(sample);
+        int n = toInt(context, sample);
 
         try {
             if (n < 0) throw argumentError(context, "negative sample number");
@@ -4900,7 +4903,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     @JRubyMethod(name = "rotate!")
     public IRubyObject rotate_bang(ThreadContext context, IRubyObject cnt) {
-        internalRotateBang(context, RubyNumeric.fix2int(cnt));
+        internalRotateBang(context, toInt(context, cnt));
         return this;
     }
 
@@ -4911,7 +4914,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     @JRubyMethod(name = "rotate")
     public IRubyObject rotate(ThreadContext context, IRubyObject cnt) {
-        return internalRotate(context, RubyNumeric.fix2int(cnt));
+        return internalRotate(context, toInt(context, cnt));
     }
 
     @JRubyMethod(name = "all?")

@@ -12,6 +12,8 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Access.encodingService;
+
 public class GetEncodingInstr extends NoOperandResultBaseInstr implements FixedArityInstr {
     private final Encoding encoding;
 
@@ -37,7 +39,7 @@ public class GetEncodingInstr extends NoOperandResultBaseInstr implements FixedA
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        return context.runtime.getEncodingService().getEncoding(encoding);
+        return encodingService(context).getEncoding(encoding);
     }
 
     @Override

@@ -108,6 +108,7 @@ import static org.jruby.api.Access.runtimeErrorClass;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Define.defineClass;
@@ -1444,7 +1445,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "priority=")
     public IRubyObject priority_set(ThreadContext context, IRubyObject priority) {
-        int iPriority = RubyNumeric.fix2int(priority);
+        int iPriority = toInt(context, priority);
 
         if (iPriority < RUBY_MIN_THREAD_PRIORITY) {
             iPriority = RUBY_MIN_THREAD_PRIORITY;

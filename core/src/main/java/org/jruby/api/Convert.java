@@ -20,10 +20,9 @@ import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.TypeConverter;
 
-import static org.jruby.RubyBignum.big2long;
-import static org.jruby.RubyNumeric.num2int;
-import static org.jruby.RubyNumeric.num2long;
+import static org.jruby.api.Access.integerClass;
 import static org.jruby.api.Error.rangeError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.TypeConverter.convertToTypeWithCheck;
@@ -393,6 +392,7 @@ public class Convert {
      * @param value the long value
      * @return the Ruby Fixnum
      */
+    // mri: fix2int
     public static RubyFixnum asFixnum(ThreadContext context, long value) {
         return RubyFixnum.newFixnum(context.runtime, value);
     }
@@ -427,6 +427,15 @@ public class Convert {
         return RubyFloat.newFloat(context.runtime, value);
     }
 
+    public static byte toByte(ThreadContext context, IRubyObject arg) {
+        // weird wrinkle in old and this impl...empty strings error in toInt
+        if (arg instanceof RubyString str && !str.isEmpty()) {
+            return (byte) str.getByteList().get(0);
+        }
+
+        return (byte) toInt(context, arg);
+    }
+
     // MRI: rb_num2long and FIX2LONG (numeric.c)
     /**
      * Safely convert a Ruby Numeric into a java long value.  Raising if the value will not fit.
@@ -435,7 +444,19 @@ public class Convert {
      * @return the long value
      */
     public static long toLong(ThreadContext context, IRubyObject arg) {
-        return num2long(arg);
+        return switch (arg) {
+            case RubyFixnum fixnum -> fixnum.getValue();
+            case RubyFloat flote -> flote.asLong(context);
+            case RubyBignum bignum -> bignum.asLong(context);
+            default -> toLongOther(context, arg);
+        };
+    }
+
+    // toLong handles all known types and this is only called when we need to try to_int.
+    private static long toLongOther(ThreadContext context, IRubyObject arg) {
+        if (arg.isNil()) throw typeError(context, "no implicit conversion from nil to integer");
+
+        return ((RubyInteger) TypeConverter.convertToType(arg, integerClass(context), "to_int")).asLong(context);
     }
 
     /**
@@ -445,7 +466,15 @@ public class Convert {
      * @return the int value
      */
     public static int toInt(ThreadContext context, IRubyObject arg) {
-        return num2int(arg);
+        long value = toLong(context, arg);
+        checkInt(context, value);
+        return (int) value;
+    }
+
+    public static int toInt(ThreadContext context, RubyFixnum arg) {
+        long value = arg.getValue();
+        checkInt(context, value);
+        return (int) value;
     }
 
     /**

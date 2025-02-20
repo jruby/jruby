@@ -311,6 +311,24 @@ public class Access {
     }
 
     /**
+     * Retrieve the instance of the class Range
+     * @param context the current thread context
+     * @return the Class
+     */
+    public static RubyClass rangeClass(ThreadContext context) {
+        return context.runtime.getRange();
+    }
+
+    /**
+     * Retrieve the instance of the class Regexp
+     * @param context the current thread context
+     * @return the Class
+     */
+    public static RubyClass regexpClass(ThreadContext context) {
+        return context.runtime.getRegexp();
+    }
+
+    /**
      * Retrieve the instance of the class RuntimeError
      * @param context the current thread context
      * @return the Class

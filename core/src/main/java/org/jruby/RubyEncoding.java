@@ -58,6 +58,7 @@ import org.jruby.util.io.EncodingUtils;
 
 import static com.headius.backport9.buffer.Buffers.clearBuffer;
 import static com.headius.backport9.buffer.Buffers.flipBuffer;
+import static org.jruby.api.Access.encodingService;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineClass;
@@ -476,23 +477,20 @@ public class RubyEncoding extends RubyObject implements Constantizable {
 
     @JRubyMethod(name = "list", meta = true)
     public static IRubyObject list(ThreadContext context, IRubyObject recv) {
-        Ruby runtime = context.runtime;
-        return RubyArray.newArrayMayCopy(runtime, runtime.getEncodingService().getEncodingList());
+        return RubyArray.newArrayMayCopy(context.runtime, encodingService(context).getEncodingList());
     }
 
     @JRubyMethod(name = "locale_charmap", meta = true)
     public static IRubyObject locale_charmap(ThreadContext context, IRubyObject recv) {
-        Ruby runtime = context.runtime;
-        EncodingService service = runtime.getEncodingService();
-        ByteList name = new ByteList(service.getLocaleEncoding().getName());
+        ByteList name = new ByteList(encodingService(context).getLocaleEncoding().getName());
 
-        return RubyString.newUsAsciiStringNoCopy(runtime, name);
+        return RubyString.newUsAsciiStringNoCopy(context.runtime, name);
     }
 
     @SuppressWarnings("unchecked")
     @JRubyMethod(name = "name_list", meta = true)
     public static IRubyObject name_list(ThreadContext context, IRubyObject recv) {
-        EncodingService service = context.runtime.getEncodingService();
+        EncodingService service = encodingService(context);
 
         var result = allocArray(context, service.getEncodings().size() + service.getAliases().size() + 4);
         var i = service.getEncodings().entryIterator();
@@ -517,8 +515,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     @SuppressWarnings("unchecked")
     @JRubyMethod(name = "aliases", meta = true)
     public static IRubyObject aliases(ThreadContext context, IRubyObject recv) {
-        Ruby runtime = context.runtime;
-        EncodingService service = runtime.getEncodingService();
+        EncodingService service = encodingService(context);
         IRubyObject list[] = service.getEncodingList();
         HashEntryIterator i = service.getAliases().entryIterator();
         RubyHash result = newHash(context);
@@ -526,13 +523,13 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         while (i.hasNext()) {
             CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e =
                 ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)i.next());
-            IRubyObject alias = RubyString.newUsAsciiStringShared(runtime, e.bytes, e.p, e.end - e.p).freeze(context);
-            IRubyObject name = RubyString.newUsAsciiStringShared(runtime,
+            IRubyObject alias = RubyString.newUsAsciiStringShared(context.runtime, e.bytes, e.p, e.end - e.p).freeze(context);
+            IRubyObject name = RubyString.newUsAsciiStringShared(context.runtime,
                                 ((RubyEncoding)list[e.value.getIndex()]).name).freeze(context);
             result.fastASet(alias, name);
         }
 
-        result.fastASet(newString(context, EXTERNAL), newString(context, new ByteList(runtime.getDefaultExternalEncoding().getName())));
+        result.fastASet(newString(context, EXTERNAL), newString(context, new ByteList(context.runtime.getDefaultExternalEncoding().getName())));
         result.fastASet(newString(context, LOCALE), newString(context, new ByteList(service.getLocaleEncoding().getName())));
 
         return result;
@@ -540,12 +537,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
 
     @JRubyMethod(name = "find", meta = true)
     public static IRubyObject find(ThreadContext context, IRubyObject recv, IRubyObject str) {
-        Ruby runtime = context.runtime;
-
-        // Wacky but true...return arg if it is an encoding looking for itself
-        if (str instanceof RubyEncoding) return str;
-
-        return runtime.getEncodingService().rubyEncodingFromObject(str);
+        return str instanceof RubyEncoding ? str : encodingService(context).rubyEncodingFromObject(str);
     }
 
     @JRubyMethod(name = "_dump")
@@ -589,7 +581,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     @SuppressWarnings("unchecked")
     @JRubyMethod(name = "names")
     public IRubyObject names(ThreadContext context) {
-        EncodingService service = context.runtime.getEncodingService();
+        EncodingService service = encodingService(context);
         Entry entry = service.findEncodingOrAliasEntry(name);
         var result = newArray(context);
         HashEntryIterator i;
@@ -624,12 +616,12 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     public static IRubyObject compatible_p(ThreadContext context, IRubyObject self, IRubyObject first, IRubyObject second) {
         Encoding enc = areCompatible(first, second);
 
-        return enc == null ? context.nil : context.runtime.getEncodingService().getEncoding(enc);
+        return enc == null ? context.nil : encodingService(context).getEncoding(enc);
     }
 
     @JRubyMethod(name = "default_external", meta = true)
     public static IRubyObject getDefaultExternal(ThreadContext context, IRubyObject recv) {
-        return context.runtime.getEncodingService().getDefaultExternal();
+        return encodingService(context).getDefaultExternal();
     }
 
     @JRubyMethod(name = "default_external=", meta = true)
@@ -641,7 +633,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
 
     @JRubyMethod(name = "default_internal", meta = true)
     public static IRubyObject getDefaultInternal(ThreadContext context, IRubyObject recv) {
-        return context.runtime.getEncodingService().getDefaultInternal();
+        return encodingService(context).getDefaultInternal();
     }
 
     @Deprecated

@@ -40,6 +40,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.MethodIndex;
 
+import static org.jruby.api.Create.newSharedString;
+
 /**
  * This class wraps a IRubyObject in an OutputStream. Depending on which messages
  * the IRubyObject answers to, it will have different functionality.
@@ -138,7 +140,7 @@ public class IOOutputStream extends OutputStream {
             realIO.write(context, bite);
         } else {
             IRubyObject io = this.io;
-            writeAdapter.call(context, io, io, RubyString.newStringShared(runtime, new ByteList(new byte[]{(byte) bite}, encoding, false)));
+            writeAdapter.call(context, io, io, newSharedString(context, new ByteList(new byte[]{(byte) bite}, encoding, false)));
         }
     }
 

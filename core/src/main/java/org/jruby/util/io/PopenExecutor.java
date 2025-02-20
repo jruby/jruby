@@ -828,8 +828,8 @@ public class PopenExecutor {
         /* initialize oldfd and newfd: O(n) */
         for (i = 0; i < n; i++) {
             IRubyObject elt = ary.eltOk(i);
-            pairs[i].oldfd = RubyNumeric.fix2int(((RubyArray)elt).eltOk(1));
-            pairs[i].newfd = RubyNumeric.fix2int(((RubyArray)elt).eltOk(0)); /* unique */
+            pairs[i].oldfd = toInt(context, ((RubyArray)elt).eltOk(1));
+            pairs[i].newfd = toInt(context, ((RubyArray)elt).eltOk(0)); /* unique */
             pairs[i].older_index = -1;
         }
 
@@ -1039,7 +1039,7 @@ public class PopenExecutor {
         }
 
         obj = eargp.fd_close;
-        if (obj != null) run_exec_close((RubyArray)obj, eargp);
+        if (obj != null) run_exec_close(context, (RubyArray)obj, eargp);
 
         obj = eargp.fd_dup2_child;
         if (obj != null) {
@@ -1062,10 +1062,10 @@ public class PopenExecutor {
         return 0;
     }
 
-    static void run_exec_close(RubyArray ary, ExecArg eargp) {
+    static void run_exec_close(ThreadContext context, RubyArray ary, ExecArg eargp) {
         for (int i = 0; i < ary.size(); i++) {
             RubyArray elt = (RubyArray)ary.eltOk(i);
-            int fd = RubyNumeric.fix2int(elt.eltOk(0));
+            int fd = toInt(context, elt.eltOk(0));
             redirectClose(eargp, fd);
         }
     }
@@ -1073,18 +1073,18 @@ public class PopenExecutor {
     static void run_exec_open(ThreadContext context, RubyArray<RubyArray> ary, ExecArg eargp) {
         for (int i = 0; i < ary.size(); i++) {
             RubyArray<RubyArray> elt = ary.eltOk(i);
-            int fd = RubyNumeric.fix2int(elt.eltOk(0));
+            int fd = toInt(context, elt.eltOk(0));
             RubyArray param = elt.eltOk(1);
             IRubyObject vpath = param.eltOk(0);
-            int flags = RubyNumeric.num2int(param.eltOk(1));
-            int perm = RubyNumeric.num2int(param.eltOk(2));
+            int flags = toInt(context, param.eltOk(1));
+            int perm = toInt(context, param.eltOk(2));
             IRubyObject fd2v = param.entry(3);
 
             if (fd2v.isNil()) {
                 redirectOpen(eargp, fd, vpath.toString(), flags, perm);
                 param.store(3, elt.eltOk(0));
             } else {
-                redirectDup2(context, eargp, RubyNumeric.num2int(fd2v), fd);
+                redirectDup2(context, eargp, toInt(context, fd2v), fd);
             }
         }
     }
@@ -1095,8 +1095,8 @@ public class PopenExecutor {
     static void run_exec_dup2_child(ThreadContext context, RubyArray ary, ExecArg eargp) {
         for (int i = 0; i < ary.size(); i++) {
             RubyArray elt = (RubyArray)ary.eltOk(i);
-            int newfd = RubyNumeric.fix2int(elt.eltOk(0));
-            int oldfd = RubyNumeric.fix2int(elt.eltOk(1));
+            int newfd = toInt(context, elt.eltOk(0));
+            int oldfd = toInt(context, elt.eltOk(1));
 
             redirectDup2(context, eargp, oldfd, newfd);
         }
@@ -1211,7 +1211,7 @@ public class PopenExecutor {
         if (ary != null) {
             for (i = 0; i < ((RubyArray)ary).size(); i++) {
                 IRubyObject elt = ((RubyArray)ary).eltOk(i);
-                int fd = RubyNumeric.fix2int(((RubyArray)elt).eltOk(0));
+                int fd = toInt(context, ((RubyArray)elt).eltOk(0));
                 if (h.fastARef(asFixnum(context, fd)) != null) {
                     throw argumentError(context, "fd " + fd + " specified twice");
                 }
@@ -1224,7 +1224,7 @@ public class PopenExecutor {
                 if (maxhint < fd)
                     maxhint = fd;
                 if (ary == eargp.fd_dup2 || ary == eargp.fd_dup2_child) {
-                    fd = RubyNumeric.fix2int(((RubyArray)elt).eltOk(1));
+                    fd = toInt(context, ((RubyArray)elt).eltOk(1));
                     if (maxhint < fd)
                         maxhint = fd;
                 }
@@ -1245,8 +1245,8 @@ public class PopenExecutor {
             RubyArray ary = eargp.fd_dup2_child;
             for (int i = 0; i < ary.size(); i++) {
                 RubyArray elt = (RubyArray) ary.eltOk(i);
-                int newfd = RubyNumeric.fix2int(elt.eltOk(0));
-                int oldfd = RubyNumeric.fix2int(elt.eltOk(1));
+                int newfd = toInt(context, elt.eltOk(0));
+                int oldfd = toInt(context, elt.eltOk(1));
                 int lastfd = oldfd;
                 IRubyObject val = h.fastARef(asFixnum(context, lastfd));
                 long depth = 0;
@@ -1513,7 +1513,7 @@ public class PopenExecutor {
                     for (int i = 0; i < keyAry.size(); i++) {
                         IRubyObject v = keyAry.eltOk(i);
                         IRubyObject fd = checkExecRedirectFd(context, v, true);
-                        if (RubyNumeric.fix2int(fd) != 1 && RubyNumeric.fix2int(fd) != 2) {
+                        if (toInt(context, fd) != 1 && toInt(context, fd) != 2) {
                             allOut = false;
                             break;
                         }
@@ -1554,7 +1554,7 @@ public class PopenExecutor {
         IRubyObject tmp;
         int fd;
         if (v instanceof RubyFixnum) {
-            fd = RubyNumeric.fix2int(v);
+            fd = toInt(context, v);
         } else if (v instanceof RubySymbol) {
             fd = switch (v.toString()) {
                 case "in" -> 0;

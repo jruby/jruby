@@ -38,7 +38,9 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asFloat;
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Define.defineModule;
 
@@ -405,7 +407,7 @@ public class RubyMath {
             for (; mantissa >= 1.0; mantissa *= 0.5, exponent +=1) { }
         }
 	 
-        return newArray(context, asFloat(context, sign * mantissa), RubyNumeric.int2fix(context.runtime, exponent));
+        return newArray(context, asFloat(context, sign * mantissa), asFixnum(context, exponent));
     }
 
     /*
@@ -414,7 +416,7 @@ public class RubyMath {
     @JRubyMethod(name = "ldexp", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat ldexp(ThreadContext context, IRubyObject recv, IRubyObject mantissa, IRubyObject exponent) {
         double m = RubyNumeric.num2dbl(context, mantissa);
-        int e = RubyNumeric.num2int(exponent);
+        int e = toInt(context, exponent);
 
         return e > 1023 ? // avoid overflow. Math.power(2.0, 1024) is greater than Math.MAX_VALUE.
                 asFloat(context, m * Math.pow(2.0, e - 1023) * Math.pow(2.0, 1023)) :
@@ -654,7 +656,7 @@ public class RubyMath {
 
         NemesLogGamma l = new NemesLogGamma(value);
 
-        return newArray(context, asFloat(context, l.value), RubyInteger.int2fix(context.runtime, (int) l.sign));
+        return newArray(context, asFloat(context, l.value), asFixnum(context, (int) l.sign));
     }
 
     public static double nemes_gamma(double x) {
