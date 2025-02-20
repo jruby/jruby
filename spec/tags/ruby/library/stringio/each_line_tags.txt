@@ -1,2 +1,0 @@
-fails:An exception occurred during: stringio_each_separator
-fails(https://github.com/ruby/stringio/pull/61):StringIO#each_line when passed a separator yields each paragraph with all separation characters when passed an empty String as separator

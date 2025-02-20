@@ -1,5 +1,0 @@
-fails:StringIO#initialize when passed keyword arguments accepts a mode argument set to nil with a valid :mode option
-fails:StringIO#initialize when passed keyword arguments accepts a mode argument with a :mode option set to nil
-fails:StringIO#initialize when passed keyword arguments sets binmode from :binmode option
-fails:StringIO#initialize when passed keyword arguments does not set binmode from false :binmode
-fails:StringIO#initialize when passed keyword arguments sets the mode based on the passed :mode option
