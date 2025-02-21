@@ -26,6 +26,7 @@ import org.jruby.util.TypeConverter;
 
 import static org.jruby.api.Access.exceptionClass;
 import static org.jruby.api.Access.instanceConfig;
+import static org.jruby.api.Check.checkID;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.newEmptyString;
@@ -408,9 +409,9 @@ public class TraceType {
     private static boolean determineDirection(ThreadContext context, IRubyObject vOrder) {
         if (vOrder == null || vOrder.isNil()) return false;
 
-        IRubyObject id = TypeConverter.checkID(vOrder);
-        if (id == Convert.asSymbol(context, "bottom")) return true;
-        if (id == Convert.asSymbol(context, "top")) return false;
+        IRubyObject id = checkID(context, vOrder);
+        if (id == asSymbol(context, "bottom")) return true;
+        if (id == asSymbol(context, "top")) return false;
         throw argumentError(context, str(context.runtime, "expected :top or :bottom as order: ", vOrder));
     }
 

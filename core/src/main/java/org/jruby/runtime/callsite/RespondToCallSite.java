@@ -10,6 +10,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.util.TypeConverter;
 
 import static org.jruby.RubyBasicObject.getMetaClass;
+import static org.jruby.api.Check.checkID;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asSymbol;
 
@@ -65,7 +66,7 @@ public class RespondToCallSite extends MonomorphicCallSite {
         RubyClass klass = getMetaClass(self);
         RespondToTuple tuple = respondToTuple;
         if (tuple.cacheOk(klass)) {
-            String id = TypeConverter.checkID(name).idString();
+            String id = checkID(context, name).idString();
             if (id.equals(tuple.name) && tuple.checkVisibility) return tuple.respondsTo;
         }
         // go through normal call logic, which will hit overridden cacheAndCall
@@ -77,7 +78,7 @@ public class RespondToCallSite extends MonomorphicCallSite {
         RubyClass klass = getMetaClass(self);
         RespondToTuple tuple = respondToTuple;
         if (tuple.cacheOk(klass)) {
-            String id = TypeConverter.checkID(name).idString();
+            String id = checkID(context, name).idString();
             if (id.equals(tuple.name) && !bool.isTrue() == tuple.checkVisibility) return tuple.respondsTo;
         }
         // go through normal call logic, which will hit overridden cacheAndCall
@@ -124,7 +125,7 @@ public class RespondToCallSite extends MonomorphicCallSite {
 
         // alternate logic to cache the result of respond_to if it's the standard one
         if (method.isBuiltin()) {
-            IRubyObject tuple = fastRespondTo(arg, entry, selfType, true, context);
+            IRubyObject tuple = fastRespondTo(context, arg, entry, selfType, true);
             if (tuple != null) return tuple;
         }
 
@@ -145,7 +146,7 @@ public class RespondToCallSite extends MonomorphicCallSite {
 
         // alternate logic to cache the result of respond_to if it's the standard one
         if (method.equals(context.runtime.getRespondToMethod())) {
-            IRubyObject tuple = fastRespondTo(arg0, entry, selfType, !arg1.isTrue(), context);
+            IRubyObject tuple = fastRespondTo(context, arg0, entry, selfType, !arg1.isTrue());
             if (tuple != null) return tuple;
         }
 
@@ -154,8 +155,8 @@ public class RespondToCallSite extends MonomorphicCallSite {
         return method.call(context, self, entry.sourceModule, methodName, arg0, arg1);
     }
 
-    private IRubyObject fastRespondTo(IRubyObject arg, CacheEntry entry, RubyClass selfType, boolean checkVisibility, ThreadContext context) {
-        String id = TypeConverter.checkID(arg).idString();
+    private IRubyObject fastRespondTo(ThreadContext context, IRubyObject arg, CacheEntry entry, RubyClass selfType, boolean checkVisibility) {
+        String id = checkID(context, arg).idString();
         RespondToTuple tuple = recacheRespondsTo(entry, id, selfType, checkVisibility, context);
 
         // only cache if it does respond_to? OR there's no custom respond_to_missing? logic
