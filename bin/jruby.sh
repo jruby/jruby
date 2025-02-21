@@ -340,7 +340,11 @@ readonly jruby_module_opts_file="$JRUBY_HOME/bin/.jruby.module_opts"
 
 # Cascading .java_opts files for localized JVM flags
 readonly installed_jruby_java_opts_file="$JRUBY_HOME/bin/.jruby.java_opts"
-readonly home_jruby_java_opts_file="$HOME/.jruby.java_opts"
+if [ -z "${HOME-}" ]; then
+    readonly home_jruby_java_opts_file=""
+else
+    readonly home_jruby_java_opts_file="$HOME/.jruby.java_opts"
+fi
 readonly pwd_jruby_java_opts_file="$PWD/.jruby.java_opts"
 
 # Options from .dev_mode.java_opts for "--dev" mode, to reduce JRuby startup time
