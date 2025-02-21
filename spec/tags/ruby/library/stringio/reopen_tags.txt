@@ -1,7 +1,0 @@
-fails:StringIO#reopen when passed [Object, Integer] reopens self with the passed Object in the passed mode
-fails:StringIO#reopen when passed [Object, Integer] raises a FrozenError when trying to reopen self with a frozen String in truncate-mode
-fails:StringIO#reopen when passed [Object, Integer] does not raise IOError when passed a frozen String in read-mode
-fails:StringIO#reopen when passed [Object, Object] reopens self with the passed Object in the passed mode
-fails:StringIO#reopen when passed [Object, Object] tries to convert the passed mode Object to an Integer using #to_str
-fails:StringIO#reopen when passed [Object, Object] does not raise IOError if a frozen string is passed in read mode
-fails:StringIO#reopen reopens a stream when given a String argument
