@@ -76,7 +76,7 @@ public class SizedQueue extends Queue {
 
     @JRubyMethod(name = "max=")
     public synchronized IRubyObject max_set(ThreadContext context, IRubyObject arg) {
-        initializedCheck();
+        initializedCheck(context);
 
         int max = RubyNumeric.num2int(arg), diff = 0;
         if (max <= 0) throw argumentError(context, "queue size must be positive");
@@ -104,7 +104,7 @@ public class SizedQueue extends Queue {
 
     @JRubyMethod
     public RubyNumeric num_waiting(ThreadContext context) {
-        initializedCheck();
+        initializedCheck(context);
         final ReentrantLock takeLock = this.takeLock;
         final ReentrantLock putLock = this.putLock;
         try {
@@ -126,7 +126,7 @@ public class SizedQueue extends Queue {
 
     @JRubyMethod(name = {"push", "<<", "enq"})
     public IRubyObject push(ThreadContext context, final IRubyObject arg0) {
-        initializedCheck();
+        initializedCheck(context);
 
         try {
             return context.getThread().executeTaskBlocking(context, arg0, blockingPutTask);
@@ -137,7 +137,7 @@ public class SizedQueue extends Queue {
 
     @JRubyMethod(name = {"push", "<<", "enq"})
     public IRubyObject push(ThreadContext context, final IRubyObject arg0, final IRubyObject nonblockOrOpts) {
-        initializedCheck();
+        initializedCheck(context);
 
         boolean nonblock = false;
         long timeoutNS = 0;
@@ -163,7 +163,7 @@ public class SizedQueue extends Queue {
 
     @JRubyMethod(name = {"push", "<<", "enq"})
     public IRubyObject push(ThreadContext context, final IRubyObject arg0, final IRubyObject _nonblock, IRubyObject _opts) {
-        initializedCheck();
+        initializedCheck(context);
 
         boolean nonblock = _nonblock.isTrue();
         long timeoutNS = 0;

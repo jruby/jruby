@@ -94,7 +94,7 @@ public class ClassVariable extends AbstractVariable {
     public static void retrieve(final RubyObject receiver, final BiVariableMap vars) {
         if (vars.isLazy()) return;
 
-        ThreadContext context = receiver.getCurrentContext();
+        ThreadContext context = receiver.getRuntime().getCurrentContext();
         // trying to get variables from receiver;
         updateClassVar(context, receiver, vars);
         // trying to get variables from topself.
@@ -119,7 +119,7 @@ public class ClassVariable extends AbstractVariable {
      */
     public static void retrieveByKey(final RubyObject receiver, final BiVariableMap vars, final String name) {
         final RubyClass klazz = receiver.getMetaClass();
-        var context = receiver.getCurrentContext();
+        var context = receiver.getRuntime().getCurrentContext();
         IRubyObject value = null;
         if ( receiver == receiver.getRuntime().getTopSelf() &&
              klazz.getClassVariableNameList().contains(name) ) {
