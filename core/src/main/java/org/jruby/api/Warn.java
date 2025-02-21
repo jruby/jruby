@@ -23,6 +23,7 @@ public class Warn {
      * @param message to be displayed as a warning
      * @param version the version at which this deprecated feature will be removed
      */
+    @Deprecated(since = "10.0")
     public static void warnDeprecatedForRemoval(ThreadContext context, String message, String version) {
         context.runtime.getWarnings().warnDeprecatedForRemoval(message, version);
     }
