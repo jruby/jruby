@@ -359,6 +359,7 @@ public class RubyTime extends RubyObject {
      * @return ""
      * @deprecated Use {@link RubyTime#invalidUTCOffset(ThreadContext)} instead
      */
+    @Deprecated(since = "10.0")
     public static RaiseException invalidUTCOffset(Ruby runtime) {
         return invalidUTCOffset(runtime.getCurrentContext());
     }
@@ -372,6 +373,7 @@ public class RubyTime extends RubyObject {
      * @return ""
      * @deprecated Use {@link RubyTime#invalidUTCOffset(ThreadContext)} instead
      */
+    @Deprecated(since = "10.0")
     public static RaiseException invalidUTCOffset(Ruby runtime, IRubyObject value) {
         return invalidUTCOffset(runtime.getCurrentContext(), value);
     }
