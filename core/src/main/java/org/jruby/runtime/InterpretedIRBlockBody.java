@@ -84,7 +84,7 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
     }
 
     @Override
-    public String getOwnerName() {
+    public String getOwnerName(ThreadContext context) {
         return null;
     }
 

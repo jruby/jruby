@@ -235,6 +235,7 @@ public abstract class JavaLang {
             return RubyArray.newArrayMayCopy(runtime, backtrace);
         }
 
+        @Deprecated(since = "10.0")
         public static IRubyObject set_backtrace(final IRubyObject self, final IRubyObject backtrace) {
             return set_backtrace(((RubyBasicObject) self).getCurrentContext(), self, backtrace);
         }
@@ -793,7 +794,7 @@ public abstract class JavaLang {
             final java.lang.Class klass = unwrapJavaObject(self);
 
             if (length instanceof RubyInteger lenint) { // one-dimensional array
-                return ArrayJavaProxy.newArray(context.runtime, klass, lenint.asInt(context));
+                return ArrayJavaProxy.newArray(context, klass, lenint.asInt(context));
             }
             if (length instanceof RubyArray ary) { // n-dimensional array
                 IRubyObject[] aryLengths = ary.toJavaArrayMaybeUnsafe();

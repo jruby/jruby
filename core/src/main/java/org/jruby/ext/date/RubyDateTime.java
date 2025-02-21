@@ -95,12 +95,13 @@ public class RubyDateTime extends RubyDate {
         this.off = dt.getZone().getOffset(dt.getMillis()) / 1000;
     }
 
+    @Deprecated(since = "10.0")
     public RubyDateTime(Ruby runtime, DateTime dt) {
-        this(runtime, getDateTime(runtime), dt);
+        this(runtime, getDateTime(runtime.getCurrentContext()), dt);
     }
 
     public RubyDateTime(Ruby runtime, long millis, Chronology chronology) {
-        super(runtime, getDateTime(runtime), new DateTime(millis, chronology));
+        super(runtime, getDateTime(runtime.getCurrentContext()), new DateTime(millis, chronology));
     }
 
     RubyDateTime(ThreadContext context, RubyClass klass, IRubyObject ajd, int off, long start) {
