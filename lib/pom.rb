@@ -76,7 +76,7 @@ default_gems = [
     # ['set', '1.1.1'],
     ['shellwords', '0.2.2'],
     ['singleton', '0.3.0'],
-    ['stringio', '3.1.2'],
+    ['stringio', '3.1.5'],
     ['strscan', '3.1.2'],
     ['subspawn', '0.1.1'], # has 3 transitive deps:
       ['subspawn-posix', '0.1.1'],
