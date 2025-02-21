@@ -30,6 +30,7 @@ package org.jruby;
 
 import org.jcodings.Encoding;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
 import org.jruby.api.Create;
 import org.jruby.api.JRubyAPI;
 import org.jruby.ast.util.ArgsUtil;
@@ -2460,7 +2461,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     @Deprecated(since = "10.0")
     public IRubyObject singleton_method(IRubyObject name) {
-
+        return singleton_method(getCurrentContext(), name);
     }
 
     public IRubyObject singleton_method(ThreadContext context, IRubyObject name) {
