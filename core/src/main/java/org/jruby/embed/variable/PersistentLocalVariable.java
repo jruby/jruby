@@ -106,11 +106,10 @@ public class PersistentLocalVariable extends AbstractVariable {
      * @param vars map to save retrieved local variables.
      */
     public static void retrieve(RubyObject receiver, BiVariableMap vars) {
-        ManyVarsDynamicScope scope =
-            (ManyVarsDynamicScope) receiver.getRuntime().getCurrentContext().getCurrentScope();
-        if (scope == null) {
-            return;
-        }
+        var context = receiver.getRuntime().getCurrentContext();
+        ManyVarsDynamicScope scope = (ManyVarsDynamicScope) context.getCurrentScope();
+        if (scope == null) return;
+
         String[] names = scope.getAllNamesInScope();
         IRubyObject[] values = scope.getValues();
         if (names == null || values == null || names.length == 0 || values.length == 0) {
