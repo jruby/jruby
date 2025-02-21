@@ -218,6 +218,12 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
     }
 
     @Override
+    @JRubyAPI
+    public int asIntUnsafe(ThreadContext context) {
+        return (int) value;
+    }
+
+    @Override
     @Deprecated(since = "10.0")
     public double getDoubleValue() {
         return value;

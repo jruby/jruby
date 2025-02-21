@@ -201,11 +201,17 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     public long asLong(ThreadContext context) {
         final double aFloat = getValue();
 
-        if (aFloat > (double) Long.MAX_VALUE || aFloat < (double) Long.MIN_VALUE) {
-            throw rangeError(context, "float " + aFloat + " out of range of long");
+        if (aFloat <= (double) Long.MAX_VALUE && aFloat >= (double) Long.MIN_VALUE) {
+            return (long) aFloat;
         }
 
-        return (long) aFloat;
+        throw rangeError(context, "float " + aFloat + " out of range of integer");
+    }
+
+    @Override
+    @JRubyAPI
+    public int asIntUnsafe(ThreadContext context) {
+        return (int) value;
     }
 
     @Override

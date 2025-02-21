@@ -1703,6 +1703,12 @@ public class RubyBigDecimal extends RubyNumeric {
         return value.longValue();
     }
 
+    @Override
+    @JRubyAPI
+    public int asIntUnsafe(ThreadContext context) {
+        return asInt(context);
+    }
+
     public BigDecimal getBigDecimalValue() {
         return value;
     }

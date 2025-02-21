@@ -171,6 +171,12 @@ public class RubyBignum extends RubyInteger {
     }
 
     @Override
+    @JRubyAPI
+    public int asIntUnsafe(ThreadContext context) {
+        return getValue().intValue();
+    }
+
+    @Override
     public RubyClass singletonClass(ThreadContext context) {
         throw typeError(context, "can't define singleton");
     }

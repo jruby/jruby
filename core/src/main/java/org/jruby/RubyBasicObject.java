@@ -101,6 +101,7 @@ import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Convert.castAsModule;
 import static org.jruby.api.Convert.toInt;
+import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Error.argumentError;
@@ -2908,11 +2909,18 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         IRubyObject hashValue = invokeChecked(context, this, sites(context).hash_checked);
         if (hashValue == null) return super.hashCode();
         if (hashValue instanceof RubyFixnum fixnum) return (int) fixnum.getValue();
-        return nonFixnumHashCode(hashValue);
+        return nonFixnumHashCode(context, hashValue);
     }
 
+    @Deprecated(since = "10.0")
     protected static int nonFixnumHashCode(IRubyObject hashValue) {
-        return toInt(hashValue.getRuntime().getCurrentContext(), hashValue);
+        return nonFixnumHashCode(hashValue.getRuntime().getCurrentContext(), hashValue);
+    }
+
+    protected static int nonFixnumHashCode(ThreadContext context, IRubyObject hashValue) {
+        if (hashValue.isNil()) throw typeError(context, "no implicit conversion from nil to integer");
+
+        return ((RubyInteger) TypeConverter.convertToType(hashValue, integerClass(context), "to_int")).asIntUnsafe(context);
     }
 
     /**

@@ -1079,6 +1079,12 @@ public class RubyRational extends RubyNumeric {
         return convertToInteger().asLong(context);
     }
 
+    @Override
+    @JRubyAPI
+    public int asIntUnsafe(ThreadContext context) {
+        return convertToInteger().asIntUnsafe(context);
+    }
+
     /**
      * MRI: nurat_truncate
      */

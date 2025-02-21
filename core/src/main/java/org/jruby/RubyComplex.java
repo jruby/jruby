@@ -1054,9 +1054,11 @@ public class RubyComplex extends RubyNumeric {
 
     @Override
     public int hashCode() {
-        final IRubyObject hash = hash(getRuntime().getCurrentContext());
-        if (hash instanceof RubyFixnum fixnum) return (int) fixnum.getValue();
-        return nonFixnumHashCode(hash);
+        var context = getRuntime().getCurrentContext();
+        final IRubyObject hash = hash(context);
+        return hash instanceof RubyFixnum fixnum ?
+                fixnum.asIntUnsafe(context) :
+                nonFixnumHashCode(context, hash);
     }
 
     /** nucomp_eql_p

@@ -196,6 +196,18 @@ public class RubyNumeric extends RubyObject {
     }
 
     /**
+     * Return the long value without caring whether it fits within an int. This
+     * can lead to truncation or overflow.  We use this for hashing.
+     *
+     * @param context the current thread context
+     * @return the value
+     */
+    @JRubyAPI
+    public int asIntUnsafe(ThreadContext context) {
+        return 0;
+    }
+
+    /**
      * @return
      * @deprecated Use {@link org.jruby.RubyNumeric#asDouble(ThreadContext)} instead.
      */
