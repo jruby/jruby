@@ -1312,7 +1312,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @Override
     @JRubyMethod(name = "+@")
-    public IRubyObject op_uplus() {
+    public IRubyObject op_uplus(ThreadContext context) {
         return this;
     }
 
@@ -2039,6 +2039,7 @@ public class RubyBigDecimal extends RubyNumeric {
      * @return
      * @deprecated Use {@link org.jruby.ext.bigdecimal.RubyBigDecimal#sign(ThreadContext)} instead.
      */
+    @Deprecated(since = "10.0")
     public IRubyObject sign() {
         return sign(getCurrentContext());
     }

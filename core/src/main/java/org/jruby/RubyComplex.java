@@ -462,10 +462,7 @@ public class RubyComplex extends RubyNumeric {
         Ruby runtime = context.runtime;
 
         IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(runtime, kwargs, false);
-
-        if (maybeKwargs.isNil()) {
-            throw runtime.newArgumentError("convert", 3, 1, 2);
-        }
+        if (maybeKwargs.isNil()) throw argumentError(context, 3, 1, 2);
 
         IRubyObject exception = ArgsUtil.extractKeywordArg(context, "exception", (RubyHash) maybeKwargs);
         if (exception instanceof RubyBoolean) {
@@ -1252,10 +1249,7 @@ public class RubyComplex extends RubyNumeric {
 
     // MRI: f_finite_p
     public boolean checkFinite(ThreadContext context, IRubyObject value) {
-        if (value instanceof RubyInteger || value instanceof RubyRational) return true;
-
-        return value instanceof RubyFloat flote ?
-                flote.finite_p().isTrue() : sites(context).finite.call(context, value, value).isTrue();
+        return checkInfinite(context, value).isTrue();
     }
 
     @JRubyMethod(name = "infinite?")
@@ -1268,7 +1262,9 @@ public class RubyComplex extends RubyNumeric {
     public IRubyObject checkInfinite(ThreadContext context, IRubyObject value) {
         if (value instanceof RubyInteger || value instanceof RubyRational) return context.nil;
 
-        return value instanceof RubyFloat f ? f.infinite_p() : sites(context).infinite.call(context, value, value);
+        return value instanceof RubyFloat flote ?
+                flote.infinite_p(context) :
+                sites(context).infinite.call(context, value, value);
     }
 
     private static final ByteList SEP = RubyFile.SLASH;
