@@ -54,6 +54,7 @@ import org.jruby.lexer.yacc.LexContext;
 import org.jruby.lexer.yacc.LexContext.InRescue.*;
 import org.jruby.lexer.yacc.RubyLexer;
 import org.jruby.lexer.yacc.StackState;
+import org.jruby.parser.NodeExits;
 import org.jruby.parser.ProductionState;
 import org.jruby.parser.ParserState;
 import org.jruby.runtime.ThreadContext;
@@ -107,7 +108,7 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
     public RubyParser(Ruby runtime, LexerSource source, DynamicScope scope, org.jruby.parser.ParserType type) {
         super(runtime, source, scope, type);
     }
-					// line 111 "-"
+					// line 112 "-"
   // %token constants
   public static final int keyword_class = 257;
   public static final int keyword_module = 258;
@@ -2150,7 +2151,6 @@ states[23] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
 states[24] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                    yyVal = ((LexContext)yyVals[0+yyTop].value);
                    p.getLexContext().in_rescue = LexContext.InRescue.BEFORE_RESCUE;
-                   /*% ripper: get_value($:2); %*/
   return yyVal;
 };
 states[25] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -2370,7 +2370,9 @@ states[53] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
 };
 states[55] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.getLexContext().in_rescue = ((LexContext)yyVals[-1+yyTop].value).in_rescue;
+                    /*%%%*/
                     yyVal = p.rescued_expr(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-3+yyTop].value), ((Node)yyVals[0+yyTop].value));
+                    /*% %*/
                     /*% ripper: rescue_mod!($:1, $:4) %*/
   return yyVal;
 };
@@ -2569,9 +2571,10 @@ states[90] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
   return yyVal;
 };
 states[91] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-  /*set_embraced_location($5, &yyVals[yyTop - count + 4], &yyVals[yyTop - count + 6]);*/
+                    /*%%%*/
                     yyVal = p.new_call(((Node)yyVals[-5+yyTop].value), ((ByteList)yyVals[-3+yyTop].value), null, ((IterNode)yyVals[-1+yyTop].value));
-                    /*% ripper: method_add_block!(command_call!($:1, $:2, $:3, Qundef), $:5) %*/
+                    /*% %*/
+                    /*% ripper: method_add_block!(command_call!($:1, $:2, $:3, Qnil), $:5) %*/
   return yyVal;
 };
 states[92] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -3693,7 +3696,9 @@ states[285] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[287] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.getLexContext().in_rescue = ((LexContext)yyVals[-1+yyTop].value).in_rescue;
+                    /*%%%*/
                     yyVal = p.rescued_expr(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-3+yyTop].value), ((Node)yyVals[0+yyTop].value));
+                    /*% %*/
                     /*% ripper: rescue_mod!($:1, $:4) %*/
   return yyVal;
 };
@@ -3928,7 +3933,7 @@ states[327] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     /*%%%*/
                     yyVal = p.newSplatNode(((Node)yyVals[0+yyTop].value));
                     /*% %*/
-                    /*% ripper: args_add_star!(args_new!, $2) %*/
+                    /*% ripper: args_add_star!(args_new!, $1) %*/
   return yyVal;
 };
 states[328] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -3965,8 +3970,10 @@ states[330] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[331] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+                    /*%%%*/
                     p.forwarding_arg_check(FWD_REST, FWD_ALL, "rest");
                     yyVal = p.declareIdentifier(FWD_REST);
+                    /*% %*/
                     /*% ripper: Qnil %*/
   return yyVal;
 };
@@ -5257,9 +5264,11 @@ states[560] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[561] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    p.error_duplicate_pattern_variable(((ByteList)yyVals[0+yyTop].value));
+                    p.error_duplicate_pattern_variable(yyVals[yyTop - count + 2].id);
+                    /*%%%*/
                     yyVal = ((ByteList)yyVals[0+yyTop].value);
-                    /*% ripper: ripper_assignable(p, $2, var_field(p, get_value($:2))) %*/
+                    /*% %*/
+                    /*% p.assignable(yyVals[yyTop - count + 2].id, p.var_field(p.get_value($2))); %*/
   return yyVal;
 };
 states[562] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6715,7 +6724,9 @@ states[791] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[792] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.forwarding_arg_check(FWD_KWREST, FWD_ALL, "keyword rest");
+                    /*%%%*/
                     yyVal = p.createKeyValue(null, p.declareIdentifier(FWD_KWREST));
+                    /*% %*/
                     /*% ripper: assoc_splat!(Qnil) %*/
   return yyVal;
 };
@@ -6792,7 +6803,7 @@ states[822] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4811 "parse.y"
+					// line 4822 "parse.y"
 
 }
-					// line 14924 "-"
+					// line 14935 "-"
