@@ -7,7 +7,7 @@ permissions:
 jobs:
   publish:
     permissions:
-      contents: none
+      contents: read
     uses: jruby/jruby/.github/workflows/snapshot-publish.yml@ff01541350b9767a4b47e6b46181649d6a316fc6
     secrets:
       SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
