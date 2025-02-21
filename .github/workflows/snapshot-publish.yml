@@ -36,3 +36,10 @@ jobs:
         env:
           MAVEN_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+      - name: Archive non-Maven artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: jruby-jars gem
+          path: |
+            maven/jruby-jars/pkg/jruby-jars-*.SNAPSHOT.gem
+            
