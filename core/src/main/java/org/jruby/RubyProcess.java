@@ -608,6 +608,7 @@ public class RubyProcess {
             return RubyProcess.egid_set(runtime.getCurrentContext(), arg);
         }
 
+        @Deprecated(since = "10.0")
         public static IRubyObject grant_privilege(IRubyObject self, IRubyObject arg) {
             return grant_privilege(((RubyBasicObject) self).getCurrentContext(), self, arg);
         }
@@ -1942,13 +1943,23 @@ public class RubyProcess {
                 asFixnum(context, ShellLauncher.runExternalWithoutWait(context.runtime, args));
     }
 
-    @JRubyMethod(name = "exit", optional = 1, checkArity = false, module = true, visibility = PRIVATE)
+    @Deprecated(since = "10.0")
     public static IRubyObject exit(IRubyObject recv, IRubyObject[] args) {
-        return RubyKernel.exit(((RubyBasicObject) recv).getCurrentContext(), recv, args);
+        return exit(((RubyBasicObject) recv).getCurrentContext(), recv, args);
+    }
+
+    @JRubyMethod(name = "exit", optional = 1, checkArity = false, module = true, visibility = PRIVATE)
+    public static IRubyObject exit(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return RubyKernel.exit(context, recv, args);
+    }
+
+    @Deprecated(since = "10.0")
+    public static IRubyObject setproctitle(IRubyObject recv, IRubyObject name) {
+        return setproctitle(((RubyBasicObject) recv).getCurrentContext(), recv, name);
     }
 
     @JRubyMethod(name = "setproctitle", module = true, visibility = PRIVATE)
-    public static IRubyObject setproctitle(IRubyObject recv, IRubyObject name) {
+    public static IRubyObject setproctitle(ThreadContext context, IRubyObject recv, IRubyObject name) {
         // Not possible for us to implement on most platforms, so we just noop.
         name.convertToString();
 

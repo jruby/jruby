@@ -176,15 +176,13 @@ public class RubyUNIXServer extends RubyUNIXSocket {
     @Override
     protected UnixSocketAddress getUnixSocketAddress() {
         SocketAddress socketAddress = ((UnixServerSocketChannel)getChannel()).getLocalSocketAddress();
-        if (socketAddress instanceof UnixSocketAddress) return (UnixSocketAddress) socketAddress;
-        return null;
+        return socketAddress instanceof UnixSocketAddress address ? address : null;
     }
 
     @Override
-    protected UnixSocketAddress getUnixRemoteSocket() {
+    protected UnixSocketAddress getUnixRemoteSocket(ThreadContext context) {
         SocketAddress socketAddress = ((UnixServerSocketChannel)getChannel()).getLocalSocketAddress();
-        if (socketAddress instanceof UnixSocketAddress) return (UnixSocketAddress) socketAddress;
-        return null;
+        return socketAddress instanceof UnixSocketAddress address ? address : null;
     }
 
     private UnixServerSocketChannel asUnixServer() {

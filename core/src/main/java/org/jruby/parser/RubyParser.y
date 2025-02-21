@@ -129,6 +129,7 @@ import org.jruby.lexer.yacc.LexContext;
 import org.jruby.lexer.yacc.LexContext.InRescue.*;
 import @@lex_package@@.RubyLexer;
 import org.jruby.lexer.yacc.StackState;
+import org.jruby.parser.NodeExits;
 import org.jruby.parser.ProductionState;
 import org.jruby.parser.ParserState;
 import org.jruby.runtime.ThreadContext;
@@ -584,7 +585,6 @@ allow_exits     : {
 k_END           : keyword_END lex_ctxt {
                    $$ = $2;
                    p.getLexContext().in_rescue = LexContext.InRescue.BEFORE_RESCUE;
-                   /*% ripper: get_value($:2); %*/
                 };
 
 stmt            : keyword_alias fitem {
@@ -780,7 +780,9 @@ command_asgn    : lhs '=' lex_ctxt command_rhs {
 endless_command : command
                 | endless_command modifier_rescue after_rescue arg {
                     p.getLexContext().in_rescue = $3.in_rescue;
+                    /*%%%*/
                     $$ = p.rescued_expr(@1.start(), $1, $4);
+                    /*% %*/
                     /*% ripper: rescue_mod!($:1, $:4) %*/
                 }
                 | keyword_not opt_nl endless_command {
@@ -974,9 +976,10 @@ command        : fcall command_args %prec tLOWEST {
                     /*% ripper: method_add_block!(command_call!($1, ID2VAL(idCOLON2), $3, $4), $5) %*/
                 }
                 | primary_value tCOLON2 tCONSTANT '{' brace_body '}' {
-  //set_embraced_location($5, &@4, &@6);
+                    /*%%%*/
                     $$ = p.new_call($1, $3, null, $5);
-                    /*% ripper: method_add_block!(command_call!($:1, $:2, $:3, Qundef), $:5) %*/
+                    /*% %*/
+                    /*% ripper: method_add_block!(command_call!($:1, $:2, $:3, Qnil), $:5) %*/
                 }
                 | keyword_super command_args {
                     /*%%%*/
@@ -1933,7 +1936,9 @@ arg             : lhs '=' lex_ctxt arg_rhs {
 endless_arg     : arg %prec modifier_rescue
                 | endless_arg modifier_rescue after_rescue arg {
                     p.getLexContext().in_rescue = $3.in_rescue;
+                    /*%%%*/
                     $$ = p.rescued_expr(@1.start(), $1, $4);
+                    /*% %*/
                     /*% ripper: rescue_mod!($:1, $:4) %*/
                 }
                 | keyword_not opt_nl endless_arg {
@@ -2157,7 +2162,7 @@ args            : arg_value { // ArrayNode
                     /*%%%*/
                     $$ = p.newSplatNode($1);
                     /*% %*/
-                    /*% ripper: args_add_star!(args_new!, $2) %*/
+                    /*% ripper: args_add_star!(args_new!, $1) %*/
                 }
                 | args ',' arg_value { // ArgsCatNode, SplatNode, ArrayNode
                     /*%%%*/
@@ -2191,8 +2196,10 @@ arg_splat       : tSTAR arg_value {
                     /*% ripper: get_value($2); %*/
                 }
                 | tSTAR /* none */ {
+                    /*%%%*/
                     p.forwarding_arg_check(FWD_REST, FWD_ALL, "rest");
                     $$ = p.declareIdentifier(FWD_REST);
+                    /*% %*/
                     /*% ripper: Qnil %*/
                 };
 
@@ -2917,7 +2924,7 @@ lambda          : tLAMBDA {
                 } max_numparam numparam it_id allow_exits f_larglist {
                     p.getCmdArgumentState().push0();
                 } lambda_body {
-                    Node it_id = p.it_id();
+                    @@prod_type@@ it_id = p.it_id();
                     int max_numparam = p.restoreMaxNumParam($<Integer>3);
                     p.set_it_id($5);
                     p.getCmdArgumentState().pop();
@@ -3086,7 +3093,7 @@ brace_block     : '{' brace_body '}' {
 brace_body      : {
                     p.pushBlockScope();
                 } max_numparam numparam it_id allow_exits opt_block_param compstmt {
-                    Node it_id = p.it_id();
+                    @@prod_type@@ it_id = p.it_id();
                     int max_numparam = p.restoreMaxNumParam($<Integer>2);
                     p.set_it_id($4);
                     // Changed from MRI args_with_numbered put into parser codepath and not used by ripper (since it is just a passthrough method and types do not match).
@@ -3103,7 +3110,7 @@ do_body 	: {
                     p.pushBlockScope();
                     p.getCmdArgumentState().push0();
                 } max_numparam numparam it_id allow_exits opt_block_param bodystmt {
-                    Node it_id = p.it_id();
+                    @@prod_type@@ it_id = p.it_id();
                     int max_numparam = p.restoreMaxNumParam($<Integer>2);
                     p.set_it_id($4);
                     // Changed from MRI args_with_numbered put into parser codepath and not used by ripper (since it is just a passthrough method and types do not match).
@@ -3389,9 +3396,11 @@ p_find          : p_rest ',' p_args_post ',' p_rest {
 
 // ByteList
 p_rest          : tSTAR tIDENTIFIER {
-                    p.error_duplicate_pattern_variable($2);
+                    p.error_duplicate_pattern_variable(@2.id);
+                    /*%%%*/
                     $$ = $2;
-                    /*% ripper: ripper_assignable(p, $2, var_field(p, get_value($:2))) %*/
+                    /*% %*/
+                    /*% p.assignable(@2.id, p.var_field(p.get_value($2))); %*/
                 }
                 | tSTAR {
                     $$ = null;
@@ -4797,7 +4806,9 @@ assoc           : arg_value tASSOC arg_value {
                 }
                 | tDSTAR {
                     p.forwarding_arg_check(FWD_KWREST, FWD_ALL, "keyword rest");
+                    /*%%%*/
                     $$ = p.createKeyValue(null, p.declareIdentifier(FWD_KWREST));
+                    /*% %*/
                     /*% ripper: assoc_splat!(Qnil) %*/
                 };
 

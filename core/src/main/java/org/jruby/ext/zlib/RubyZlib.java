@@ -103,9 +103,9 @@ public class RubyZlib {
         var GZipFileError = GzipFile.defineClassUnder(context, "Error", ZlibError, errorAllocator);
         var fileErrorAllocator = ZlibError.getAllocator();
         GZipFileError.addReadAttribute(context, "input");
-        GzipFile.defineClassUnder("CRCError", GZipFileError, fileErrorAllocator);
-        GzipFile.defineClassUnder("NoFooter", GZipFileError, fileErrorAllocator);
-        GzipFile.defineClassUnder("LengthError", GZipFileError, fileErrorAllocator);
+        GzipFile.defineClassUnder(context, "CRCError", GZipFileError, fileErrorAllocator);
+        GzipFile.defineClassUnder(context, "NoFooter", GZipFileError, fileErrorAllocator);
+        GzipFile.defineClassUnder(context, "LengthError", GZipFileError, fileErrorAllocator);
 
         Zlib.defineClassUnder(context, "GzipReader", GzipFile, JZlibRubyGzipReader::new).
                 include(context, enumerableModule(context)).

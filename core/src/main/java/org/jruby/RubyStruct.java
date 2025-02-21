@@ -249,7 +249,7 @@ public class RubyStruct extends RubyObject {
         if (argc > 0) {
             IRubyObject firstArgAsString = args[0].checkStringType();
             if (!firstArgAsString.isNil()) {
-                RubySymbol nameSym = ((RubyString)firstArgAsString).intern();
+                RubySymbol nameSym = ((RubyString)firstArgAsString).intern(context);
                 if (!nameSym.validConstantName()) {
                     throw context.runtime.newNameError(IDENTIFIER_NEEDS_TO_BE_CONSTANT, recv, nameSym.toString());
                 }
@@ -472,6 +472,7 @@ public class RubyStruct extends RubyObject {
      * @return
      * @deprecated Use {@link org.jruby.api.Create#newStruct(ThreadContext, RubyClass, IRubyObject, IRubyObject, IRubyObject, Block)} instead.
      */
+    @Deprecated(since = "10.0")
     public static RubyStruct newStruct(IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         return Create.newStruct(((RubyBasicObject) recv).getCurrentContext(), (RubyClass) recv, arg0, arg1, arg2, block);
     }

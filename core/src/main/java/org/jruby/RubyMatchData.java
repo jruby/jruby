@@ -830,7 +830,7 @@ public class RubyMatchData extends RubyObject {
     @Override
     public IRubyObject to_s(ThreadContext context) {
         check(context);
-        IRubyObject ss = RubyRegexp.last_match(this);
+        IRubyObject ss = RubyRegexp.last_match(context, this);
         return ss.isNil() ? newEmptyString(context) : ss;
     }
 

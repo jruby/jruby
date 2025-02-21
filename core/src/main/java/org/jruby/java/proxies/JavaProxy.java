@@ -209,7 +209,7 @@ public class JavaProxy extends RubyObject {
     public static IRubyObject new_array(ThreadContext context, IRubyObject self, IRubyObject len) {
         final Class<?> componentType = JavaUtil.getJavaClass(context, (RubyModule) self);
         final int length = toInt(context, len);
-        return ArrayJavaProxy.newArray(context.runtime, componentType, length);
+        return ArrayJavaProxy.newArray(context, componentType, length);
     }
 
     @JRubyMethod(name = "__persistent__=", meta = true)

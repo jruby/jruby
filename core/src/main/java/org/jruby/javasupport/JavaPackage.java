@@ -48,8 +48,8 @@ import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ClassProvider;
-import org.jruby.util.TypeConverter;
 
+import static org.jruby.api.Check.checkID;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
@@ -195,7 +195,7 @@ public class JavaPackage extends RubyModule {
     }
 
     private IRubyObject respond_to(final ThreadContext context, IRubyObject mname, final boolean includePrivate) {
-        RubySymbol name = TypeConverter.checkID(mname);
+        RubySymbol name = checkID(context, mname);
 
         if (getMetaClass().respondsToMethod(name.idString(), !includePrivate)) return context.tru;
         /*
@@ -236,7 +236,7 @@ public class JavaPackage extends RubyModule {
     }
 
     private RubyBoolean respond_to_missing(final ThreadContext context, IRubyObject mname, final boolean includePrivate) {
-        return asBoolean(context, BlankSlateWrapper.handlesMethod(TypeConverter.checkID(mname).idString()) == null);
+        return asBoolean(context, BlankSlateWrapper.handlesMethod(checkID(context, mname).idString()) == null);
     }
 
     @JRubyMethod(name = "method_missing")

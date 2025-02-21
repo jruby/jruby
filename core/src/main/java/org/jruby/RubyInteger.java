@@ -118,6 +118,7 @@ public abstract class RubyInteger extends RubyNumeric {
         return asFloat(context, asDouble(context));
     }
 
+    @Deprecated(since = "10.0")
     public int signum() {
         return signum(getCurrentContext());
     }

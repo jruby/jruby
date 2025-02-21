@@ -306,7 +306,7 @@ public class Numeric {
             case RATIONAL:
                 return ((RubyNumeric) x).isReal(); // true
             case COMPLEX:
-                return f_zero_p(context, ((RubyComplex) x).image());
+                return f_zero_p(context, ((RubyComplex) x).image(context));
 
         }
         return sites(context).real.call(context, x, x).isTrue();

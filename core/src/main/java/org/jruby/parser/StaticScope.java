@@ -39,6 +39,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.IntFunction;
 
 import org.jruby.Ruby;
@@ -47,6 +48,7 @@ import org.jruby.RubyBasicObject;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
 import org.jruby.api.Convert;
+import org.jruby.api.Create;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.DAsgnNode;
 import org.jruby.ast.DVarNode;
@@ -66,6 +68,7 @@ import org.jruby.runtime.scope.DynamicScopeGenerator;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
 import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Create.allocArray;
 import static org.jruby.api.Define.defineModule;
 
 /**
@@ -451,6 +454,29 @@ public class StaticScope implements Serializable, Cloneable {
         return collectVariables(ArrayList::new, ArrayList::add).stream().toArray(String[]::new);
     }
 
+    public <T> T collectVariables(IntFunction<T> collectionFactory, BiConsumer<T, String> collectionPopulator) {
+        StaticScope current = this;
+
+        T collection = collectionFactory.apply(current.variableNamesLength);
+
+        HashMap<String, Object> dedup = new HashMap<>();
+
+        while (current.isBlockOrEval) {
+            for (String name : current.variableNames) {
+                dedup.computeIfAbsent(name, key -> {collectionPopulator.accept(collection, key); return key;});
+            }
+            current = current.enclosingScope;
+        }
+
+        // once more for method scope
+        for (String name : current.variableNames) {
+            dedup.computeIfAbsent(name, key -> {collectionPopulator.accept(collection, key); return key;});
+        }
+
+        return collection;
+
+    }
+
     /**
      * Populate a deduplicated collection of variable names in scope using the given functions.
      *
@@ -462,10 +488,10 @@ public class StaticScope implements Serializable, Cloneable {
      * @param <T> resulting collection type
      * @return populated collection
      */
-    public <T> T collectVariables(IntFunction<T> collectionFactory, BiConsumer<T, String> collectionPopulator) {
+    public <T> T collectVariables(ThreadContext context, BiFunction<ThreadContext, Integer, T> collectionFactory, BiConsumer<T, String> collectionPopulator) {
         StaticScope current = this;
 
-        T collection = collectionFactory.apply(current.variableNamesLength);
+        T collection = collectionFactory.apply(context, current.variableNamesLength);
 
         HashMap<String, Object> dedup = new HashMap<>();
 
@@ -495,14 +521,15 @@ public class StaticScope implements Serializable, Cloneable {
     }
 
     /**
-     * Convenience wrapper around {@link #collectVariables(IntFunction, BiConsumer)}.
+     * Get a Ruby Array of all local variables.
      *
      * @param context the current context
      * @return populated RubyArray
      */
     public RubyArray getLocalVariables(ThreadContext context) {
         return collectVariables(
-                context.runtime::newArray,
+                context,
+                (ctxt, length) -> allocArray(ctxt, length),
                 (array, id) -> {
                     RubySymbol symbol = Convert.asSymbol(context, id);
                     if (symbol.validLocalVariableName()) array.append(context, symbol);

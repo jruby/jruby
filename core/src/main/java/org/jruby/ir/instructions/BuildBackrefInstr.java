@@ -50,9 +50,9 @@ public class BuildBackrefInstr extends NoOperandResultBaseInstr {
         IRubyObject backref = context.getBackRef();
 
         switch (type) {
-        case '&' : return RubyRegexp.last_match(backref);
+        case '&' : return RubyRegexp.last_match(context, backref);
         case '`' : return RubyRegexp.match_pre(context, backref);
-        case '\'': return RubyRegexp.match_post(backref);
+        case '\'': return RubyRegexp.match_post(context, backref);
         case '+' : return RubyRegexp.match_last(context, backref);
         default:
             assert false: "backref with invalid type";

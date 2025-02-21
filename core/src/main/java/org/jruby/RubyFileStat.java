@@ -49,6 +49,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
 
+import static org.jruby.RubyTime.newTimeFromNanoseconds;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newString;
@@ -168,7 +169,7 @@ public class RubyFileStat extends RubyObject {
     public IRubyObject atime(ThreadContext context) {
         checkInitialized(context);
         return stat instanceof NanosecondFileStat nanoStat ?
-                RubyTime.newTimeFromNanoseconds(context, stat.atime() * BILLION + nanoStat.aTimeNanoSecs()) :
+                newTimeFromNanoseconds(context, stat.atime() * BILLION + nanoStat.aTimeNanoSecs()) :
                 context.runtime.newTime(stat.atime() * 1000);
     }
 
@@ -250,8 +251,8 @@ public class RubyFileStat extends RubyObject {
     @JRubyMethod(name = "ctime")
     public IRubyObject ctime(ThreadContext context) {
         checkInitialized(context);
-        if (stat instanceof NanosecondFileStat) {
-            return RubyTime.newTimeFromNanoseconds(context.runtime, stat.ctime() * BILLION + ((NanosecondFileStat) stat).cTimeNanoSecs());
+        if (stat instanceof NanosecondFileStat nfs) {
+            return newTimeFromNanoseconds(context, stat.ctime() * BILLION + nfs.cTimeNanoSecs());
         }
         return context.runtime.newTime(stat.ctime() * 1000);
     }
@@ -482,7 +483,7 @@ public class RubyFileStat extends RubyObject {
     public IRubyObject mtime(ThreadContext context) {
         checkInitialized(context);
         return stat instanceof NanosecondFileStat ?
-                RubyTime.newTimeFromNanoseconds(context, stat.mtime() * BILLION + ((NanosecondFileStat) stat).mTimeNanoSecs()) :
+                newTimeFromNanoseconds(context, stat.mtime() * BILLION + ((NanosecondFileStat) stat).mTimeNanoSecs()) :
                 context.runtime.newTime(stat.mtime() * 1000);
     }
 

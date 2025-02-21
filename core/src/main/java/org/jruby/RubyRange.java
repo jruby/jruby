@@ -460,7 +460,7 @@ public class RubyRange extends RubyObject {
         }
 
         protected void doYield(ThreadContext context, IRubyObject arg) {
-            block.yield(context, ((RubyString) arg).intern());
+            block.yield(context, ((RubyString) arg).intern(context));
         }
     }
 

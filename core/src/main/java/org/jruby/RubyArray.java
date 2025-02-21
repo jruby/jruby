@@ -930,12 +930,12 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         int valuesLength = values.length - begin;
         if (index >= valuesLength) {
             if (index - realLength >= 1) { // fill null values unassigned up to alloc'd capacity
-                fillNil(values, begin + realLength, values.length, getRuntime());
+                fillNil(context, values, begin + realLength, values.length);
             }
             storeRealloc(context, index, valuesLength);
         } else if (index - realLength >= 1) {
             int baseIndex = begin + realLength;
-            fillNil(values, baseIndex, baseIndex + (index - realLength), getRuntime());
+            fillNil(context, values, baseIndex, baseIndex + (index - realLength));
         }
     }
 
