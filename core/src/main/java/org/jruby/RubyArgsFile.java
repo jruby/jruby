@@ -209,7 +209,7 @@ public class RubyArgsFile extends RubyObject {
                                 inplaceEdit(context, filename.asJavaString(), extension);
                             }
                         }
-                        if (binmode) ((RubyIO) currentFile).binmode();
+                        if (binmode) ((RubyIO) currentFile).binmode(context);
                     }
                     next_p = Next.SameFile;
                 } else {
@@ -663,7 +663,7 @@ public class RubyArgsFile extends RubyObject {
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
 
         data.binmode = true;
-        if (data.currentFile != context.nil) ((RubyIO) data.currentFile).binmode();
+        if (data.currentFile != context.nil) ((RubyIO) data.currentFile).binmode(context);
 
         return recv;
     }

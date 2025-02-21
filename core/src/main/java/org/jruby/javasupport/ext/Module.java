@@ -145,8 +145,8 @@ public class Module {
     @JRubyMethod(visibility = PRIVATE)
     public static IRubyObject java_alias(final ThreadContext context, final IRubyObject self, IRubyObject new_id, IRubyObject old_id) {
         final IncludedPackages includedPackages = getIncludedPackages(context, (RubyModule) self);
-        if (!(new_id instanceof RubySymbol)) new_id = new_id.convertToString().intern();
-        if (!(old_id instanceof RubySymbol)) old_id = old_id.convertToString().intern();
+        if (!(new_id instanceof RubySymbol)) new_id = new_id.convertToString().intern(context);
+        if (!(old_id instanceof RubySymbol)) old_id = old_id.convertToString().intern(context);
 
         includedPackages.javaAliases.put(((RubySymbol) new_id).idString(), ((RubySymbol) old_id).idString());
         return old_id;

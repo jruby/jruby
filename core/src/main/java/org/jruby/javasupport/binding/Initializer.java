@@ -49,11 +49,10 @@ public abstract class Initializer {
 
         if ( javaClass.isPrimitive() ) {
             final RubyClass proxySingleton = proxy.singletonClass(context);
-            proxySingleton.undefineMethod("new"); // remove ConcreteJavaProxy class method 'new'
+            proxySingleton.undefMethods(context, "new"); // remove ConcreteJavaProxy class method 'new'
             if ( javaClass == Void.TYPE ) {
                 // special treatment ... while Java::int[4] is OK Java::void[2] is NOT!
-                proxySingleton.undefineMethod("[]"); // from JavaProxy
-                proxySingleton.undefineMethod("new_array"); // from JavaProxy
+                proxySingleton.undefMethods(context, "[]", "new_array"); // from JavaProxy
             }
             flagAsJavaProxy(context, proxy); return proxy;
         }
@@ -72,7 +71,7 @@ public abstract class Initializer {
 
         assert javaClass.isInterface();
 
-        proxy = new InterfaceInitializer(context.runtime, javaClass).initialize(proxy);
+        proxy = new InterfaceInitializer(context.runtime, javaClass).initialize(context, proxy);
         flagAsJavaProxy(context, proxy);
         return proxy;
     }
@@ -88,6 +87,7 @@ public abstract class Initializer {
         proxy.dataWrapStruct(javaClass);
     }
 
+    @Deprecated(since = "10.0")
     public RubyModule initialize(RubyModule proxy) {
         return initialize(proxy.getCurrentContext(), proxy);
     }

@@ -2297,9 +2297,14 @@ public class RubyKernel {
         return ((RubyBasicObject)self).singleton_methods(context, args);
     }
 
-    @JRubyMethod(name = "singleton_method")
+    @Deprecated(since = "10.0")
     public static IRubyObject singleton_method(IRubyObject self, IRubyObject symbol) {
-        return ((RubyBasicObject)self).singleton_method(symbol);
+        return singleton_method(((RubyBasicObject) self).getCurrentContext(), self, symbol);
+    }
+
+    @JRubyMethod(name = "singleton_method")
+    public static IRubyObject singleton_method(ThreadContext context, IRubyObject self, IRubyObject symbol) {
+        return ((RubyBasicObject)self).singleton_method(context, symbol);
     }
 
     @JRubyMethod(name = "method", required = 1, reads = SCOPE)

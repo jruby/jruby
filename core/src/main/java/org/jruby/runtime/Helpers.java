@@ -2328,6 +2328,7 @@ public class Helpers {
         }
     }
 
+    @Deprecated(since = "10.0")
     public static RubyModule checkIsModule(IRubyObject maybeModule) {
         if (maybeModule instanceof RubyModule mod) return mod;
 

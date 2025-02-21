@@ -238,15 +238,12 @@ public final class StructLayout extends Type {
      */
     @JRubyMethod(name = "members")
     public IRubyObject members(ThreadContext context) {
-        int size = fields.size();
+        int size = fieldNames.size();
         var result = Create.allocArray(context, size);
         for (int i = 0; i < size; i++) {
-            result.append(context, fields.get(i));
+            result.append(context, fieldNames.get(i));
         }
         return result;
-    }
-
-    private static void memberPopulator(ThreadContext c, List<IRubyObject> f, RubyArray<IRubyObject> a) {
     }
 
     /**

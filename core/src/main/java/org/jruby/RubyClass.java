@@ -1399,7 +1399,7 @@ public class RubyClass extends RubyModule {
     public void invalidateCacheDescendants(ThreadContext context) {
         super.invalidateCacheDescendants(context);
 
-        getSubclassesForRead().forEachClass(RubyClass::invalidateCacheDescendants);
+        getSubclassesForRead().forEachClass(context, (ctx, cls) -> cls.invalidateCacheDescendants(ctx));
     }
 
     void addInvalidatorsAndFlush(InvalidatorList invalidators) {
@@ -3256,17 +3256,17 @@ public class RubyClass extends RubyModule {
         return method.call(context, self, entry.sourceModule, name, arg0, arg1, arg2);
     }
 
-    @Deprecated(since = "9.4-", forRemoval = true)
+    @Deprecated(since = "9.4-")
     public VariableAccessorField getObjectIdAccessorField() {
         return variableTableManager.getObjectIdAccessorField();
     }
 
-    @Deprecated(since = "9.4-", forRemoval = true)
+    @Deprecated(since = "9.4-")
     public VariableAccessorField getFFIHandleAccessorField() {
         return variableTableManager.getFFIHandleAccessorField();
     }
 
-    @Deprecated(since = "9.4-", forRemoval = true)
+    @Deprecated(since = "9.4-")
     public VariableAccessorField getObjectGroupAccessorField() {
         return variableTableManager.getObjectGroupAccessorField();
     }

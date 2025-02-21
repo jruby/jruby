@@ -108,10 +108,10 @@ public class RubyArithmeticSequence extends RubyObject {
         ThreadContext context = runtime.getCurrentContext();
         setInstanceVariable(OBJECT, generatedBy);
         setInstanceVariable(METHOD, newString(context, method));
-        setInstanceVariable(ARGS, args != null ? RubyArray.newArrayMayCopy(runtime, args) : RubyArray.newEmptyArray(runtime));
+        setInstanceVariable(ARGS, args != null ? RubyArray.newArrayMayCopy(runtime, args) : newEmptyArray(context));
         setInstanceVariable(GENERATOR, context.nil);
         setInstanceVariable(LOOKAHEAD, newArray(context, context.nil, context.nil, context.nil, context.nil));
-        setInstanceVariable(FEEDVALUE, new RubyEnumerator.FeedValue(runtime));
+        setInstanceVariable(FEEDVALUE, new RubyEnumerator.FeedValue(context));
     }
 
     public static RubyArithmeticSequence newArithmeticSequence(ThreadContext context, IRubyObject generatedBy, String method, IRubyObject [] args, IRubyObject begin, IRubyObject end, IRubyObject step, IRubyObject excludeEnd) {

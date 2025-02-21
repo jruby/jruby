@@ -1335,6 +1335,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
     }
 
     @Override
+    @Deprecated(since = "10.0")
     public IRubyObject to_f() {
         return RubyFloat.newFloat(metaClass.runtime, (double) value);
     }

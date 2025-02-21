@@ -658,7 +658,7 @@ public final class ThreadContext {
      */
     @JIT
     public IRubyObject match_post() {
-        return RubyRegexp.match_post(frameStack[frameIndex].getBackRef(nil));
+        return RubyRegexp.match_post(this, frameStack[frameIndex].getBackRef(nil));
     }
 
     /**

@@ -1532,7 +1532,7 @@ public class RubyNumeric extends RubyObject {
 
     @Override
     public <T> T toJava(Class<T> target) {
-        return JavaUtil.getNumericConverter(target).coerce(this, target);
+        return JavaUtil.getNumericConverter(target).coerce(getRuntime().getCurrentContext(), this, target);
     }
 
     @Deprecated // not-used

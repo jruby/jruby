@@ -21,6 +21,7 @@ $__5__ = '$5'
 $__6__ = '$6'
 $__7__ = '$7'
 $__8__ = '$8'
+$__9__ = '$9'
 
 class DSL
   def initialize(code, options, type: "IRubyObject", supports_overloads: false)
@@ -46,7 +47,7 @@ class DSL
     @type = type
     @supports_overloads = supports_overloads
 
-    code.gsub!(/\$(\d+)/, '$__\1__')
+    code.gsub!(/\$:?(\d+)/, '$__\1__')
 
     @last_value = eval(code)
 #    $stderr.puts("LAST VALUE: #{@last_value}")
@@ -93,6 +94,8 @@ class DSL
       '"call"'
     elsif value == "idUMinus"
       '"-@"'
+    elsif value == "idNOT"
+      '"!"'
     else
       raise ArgumentError "Unknown id value: #{value}"
     end
@@ -115,9 +118,9 @@ class DSL
     elsif arg =~ /^rb_ary_new3\(1, ([^\)]+)\)/
       "p.new_array(#{translate_arg($1)})"
     elsif arg =~ /^rb_ary_push\($1, ([^\)]+)\)/
-      "$1.push(#{translate_arg($1)});"
+      "$1.push(p.getContext(), #{translate_arg($1)});"
     elsif arg =~ /^rb_ary_concat\($1, ([^\)]+)\)/
-      "$1.push(#{translate_arg($1)});"
+      "$1.push(p.getContext(), #{translate_arg($1)});"
     elsif arg =~ /^rb_ary_new_from_args\(1, ([^\)]+)\)/
       "p.new_array(#{translate_arg($1)})"
     elsif arg =~ /^rb_ary_new_from_args\(2, ([^,]+), ([^\)]+)\)/
@@ -196,7 +199,7 @@ class DSL
     elsif event == 'rb_ary_new3'
       "p.new_array(#{translate_arg(args[1])})"
     elsif event == 'rb_ary_push' || event == 'rb_ary_concat'
-      "#{args[0]}.push(#{translate_arg(args[1])});"
+      "#{args[0]}.push(p.getContext(), #{translate_arg(args[1])});"
     elsif event == 'rb_assoc_new'
       two = args[1]
       two = "null" if two == "0"

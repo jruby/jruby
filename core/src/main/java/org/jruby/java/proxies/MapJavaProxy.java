@@ -83,7 +83,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
      */
     public static RubyClass createMapJavaProxy(ThreadContext context, RubyClass _ConcreteJavaProxy) {
         var MapJavaProxy = defineClass(context, "MapJavaProxy", _ConcreteJavaProxy, MapJavaProxy::new);
-        ConcreteJavaProxy.initialize(MapJavaProxy);
+        ConcreteJavaProxy.initialize(context, MapJavaProxy);
         return MapJavaProxy;
     }
 

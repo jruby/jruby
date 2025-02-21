@@ -1160,7 +1160,7 @@ public class RubyBignum extends RubyInteger {
     }
 
     public static void marshalTo(RubyBignum bignum, MarshalStream output) throws IOException {
-        var context = bignum.getCurrentContext();
+        var context = bignum.getRuntime().getCurrentContext();
         output.registerLinkTarget(context, bignum);
 
         output.write(bignum.value.signum() >= 0 ? '+' : '-');

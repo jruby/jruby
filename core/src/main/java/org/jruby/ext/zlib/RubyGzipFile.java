@@ -309,6 +309,7 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return asFixnum(context, level);
     }
 
+    @Deprecated(since = "10.0")
     public IRubyObject set_sync(IRubyObject arg) {
         return set_sync(getCurrentContext(), arg);
     }

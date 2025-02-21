@@ -2100,6 +2100,15 @@ public final class StringSupport {
         str2.scanForCodeRange();
         return encCompatibleLatter(str1, str2, enc1, enc2);
     }
+
+    public static Encoding areCompatible(Encoding enc1, CodeRangeable str2) {
+        Encoding enc2 = str2.getByteList().getEncoding();
+
+        if (enc1 == enc2) return enc1;
+
+        str2.scanForCodeRange();
+        return encCompatibleLatter(null, str2, enc1, enc2);
+    }
     
     private static Encoding encCompatibleLatter(CodeRangeable str1, CodeRangeable str2, Encoding enc1, Encoding enc2) {
         boolean isstr1, isstr2;
@@ -2126,9 +2135,9 @@ public final class StringSupport {
 
         if (!isstr1) {
             CodeRangeable tmp = str1;
-            Encoding enc0 = enc1;
             str1 = str2;
             str2 = tmp;
+            Encoding enc0 = enc1;
             enc1 = enc2;
             enc2 = enc0;
             boolean tmp2 = isstr1;

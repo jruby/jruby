@@ -3371,6 +3371,7 @@ public class RubyModule extends RubyObject {
         return castAsModule(context, obj, "compared with non class/module").op_le(context, this);
     }
 
+    @Deprecated(since = "10.0")
     public IRubyObject op_gt(IRubyObject obj) {
         return op_gt(getCurrentContext(), obj);
     }
