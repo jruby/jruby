@@ -618,6 +618,7 @@ do
             echo "EXPERIMENTAL: Regenerating the JRuby AppCDS archive at $jruby_jsa_file"
             echo "EXPERIMENTAL: Log output at ${jruby_jsa_file}.log"
             use_jsa_file=false
+            regenerate_jsa_file=true
             rm -f "$jruby_jsa_file"
             append java_args -XX:ArchiveClassesAtExit="$jruby_jsa_file" -Xlog:cds=off -Xlog:cds+dynamic=off
             ;;
