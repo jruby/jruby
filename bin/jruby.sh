@@ -2,7 +2,7 @@
 set -u
 # shellcheck disable=1007
 # -----------------------------------------------------------------------------
-# jruby.bash - Start Script for the JRuby interpreter
+# jruby.sh - Start Script for the JRuby interpreter
 # -----------------------------------------------------------------------------
 
 # ----- Guarantee local variables are available -------------------------------
@@ -145,6 +145,7 @@ NO_BOOTCLASSPATH=false
 VERIFY_JRUBY=false
 print_environment_log=false
 regenerate_jsa_file=false
+log_cds=false
 
 if [ -z "${JRUBY_OPTS-}" ]; then
     JRUBY_OPTS=""
@@ -425,8 +426,10 @@ java_is_modular() {
 }
 
 if java_is_modular; then
+    use_jsa_file=true
     use_modules=true
 else
+    use_jsa_file=false
     use_modules=false
 fi
 readonly use_modules
@@ -629,9 +632,15 @@ do
         --cache)
             echo "EXPERIMENTAL: Regenerating the JRuby AppCDS archive at $jruby_jsa_file"
             echo "EXPERIMENTAL: Log output at ${jruby_jsa_file}.log"
+            use_jsa_file=false
             regenerate_jsa_file=true
             rm -f "$jruby_jsa_file"
-            append java_args -XX:ArchiveClassesAtExit="$jruby_jsa_file" -Xlog:cds=off -Xlog:cds=info:file="$jruby_jsa_file".log ;;
+            append java_args -XX:ArchiveClassesAtExit="$jruby_jsa_file" -Xlog:cds=off -Xlog:cds+dynamic=off
+            ;;
+        --nocache)
+            use_jsa_file=false ;;
+        --logcache)
+            log_cds=true ;;
         # Abort processing on the double dash
         --) break ;;
         # Other opts go to ruby
@@ -707,12 +716,16 @@ if $use_modules; then
     fi
 
     # If we have a jruby.jsa file, enable AppCDS
-    if [ -f "$JRUBY_JSA" ]; then
+    if $use_jsa_file; then
         add_log
         add_log "Detected Class Data Sharing archive:"
         add_log "  $JRUBY_JSA"
-
-        JAVA_OPTS="$JAVA_OPTS -XX:SharedArchiveFile=$JRUBY_JSA"
+        JAVA_OPTS="$JAVA_OPTS -XX:SharedArchiveFile=$JRUBY_JSA -Xlog:cds=off"
+        if $log_cds; then
+            add_log "Logging CDS output to:"
+            add_log "  $JRUBY_JSA.log"
+            append java_args -Xlog:cds=info:file="$JRUBY_JSA".log
+        fi
     fi
 fi
 
