@@ -380,23 +380,29 @@ if [ -z "${JAVACMD-}" ]; then
             && [ ! -d "$java_home_command" ]
         then
             # use java_home command when none is set (on MacOS)
-            JAVA_HOME="$("$java_home_command")"
+            JAVA_HOME="$("$java_home_command")" &&
             JAVACMD="$JAVA_HOME"/bin/java
         else
             # Linux and others have a chain of symlinks
-            resolve "$(command -v java)"
+            JAVACMD="$(command -v java)" &&
+            resolve "$JAVACMD" &&
             JAVACMD="$REPLY"
         fi
     elif $cygwin; then
         JAVACMD="$(cygpath -u "$JAVA_HOME")/bin/java"
     else
-        resolve "$JAVA_HOME/bin/java"
+        resolve "$JAVA_HOME/bin/java" &&
         JAVACMD="$REPLY"
     fi
 else
-    resolve "$(command -v "$JAVACMD")"
+    JAVACMD="$(command -v "$JAVACMD")" &&
+    resolve "$JAVACMD" &&
     JAVACMD="$REPLY"
-fi
+fi || {
+    # Something went wrong when looking for java
+    echo >&2 "${0##*/}: Error: Java executable not found!"
+    exit 2
+}
 
 # export separately from command execution
 dir_name "$JAVACMD"
