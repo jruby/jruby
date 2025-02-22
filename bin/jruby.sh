@@ -1,4 +1,5 @@
 #!/bin/sh
+set -u
 # shellcheck disable=1007
 # -----------------------------------------------------------------------------
 # jruby.sh - Start Script for the JRuby interpreter
@@ -11,7 +12,7 @@ elif command -v typeset >/dev/null; then
     # ksh93 and older have typeset but not local, and expand aliases at parse
     # time so require re-sourcing the script
     alias local=typeset
-    if [ -z "$KSH_VERSION" ] || (eval : '"${.sh.version}"' >/dev/null 2>&1); then
+    if [ -z "${KSH_VERSION-}" ] || (eval : '"${.sh.version}"' >/dev/null 2>&1); then
         # shellcheck source=/dev/null
         . "$0"
         exit
@@ -146,11 +147,11 @@ print_environment_log=false
 regenerate_jsa_file=false
 log_cds=false
 
-if [ -z "$JRUBY_OPTS" ]; then
+if [ -z "${JRUBY_OPTS-}" ]; then
     JRUBY_OPTS=""
 fi
 
-if [ -z "$JAVA_STACK" ]; then
+if [ -z "${JAVA_STACK-}" ]; then
     JAVA_STACK=-Xss2048k
 fi
 
@@ -173,7 +174,7 @@ readonly cr='
 '
 environment_log="JRuby Environment$cr================="
 add_log() {
-    environment_log="${environment_log}${cr}${*}"
+    environment_log="${environment_log}${cr}${*-}"
 }
 
 # Logic to process "arguments files" on both Java 8 and Java 9+
@@ -319,9 +320,9 @@ resolve() {
 # ----- Determine JRUBY_HOME based on this executable's path ------------------
 
 # get the absolute path of the executable
-if [ "$BASH" ]; then
+if [ "${BASH-}" ]; then
     # shellcheck disable=2128,3028
-    script_src="$BASH_SOURCE"
+    script_src="${BASH_SOURCE-}"
 else
     script_src="$0"
 fi
@@ -340,7 +341,11 @@ readonly jruby_module_opts_file="$JRUBY_HOME/bin/.jruby.module_opts"
 
 # Cascading .java_opts files for localized JVM flags
 readonly installed_jruby_java_opts_file="$JRUBY_HOME/bin/.jruby.java_opts"
-readonly home_jruby_java_opts_file="$HOME/.jruby.java_opts"
+if [ -z "${HOME-}" ]; then
+    readonly home_jruby_java_opts_file=""
+else
+    readonly home_jruby_java_opts_file="$HOME/.jruby.java_opts"
+fi
 readonly pwd_jruby_java_opts_file="$PWD/.jruby.java_opts"
 
 # Options from .dev_mode.java_opts for "--dev" mode, to reduce JRuby startup time
@@ -363,13 +368,13 @@ add_log
 add_log "Environment:"
 add_log "  JRUBY_HOME: $JRUBY_HOME"
 add_log "  JRUBY_OPTS: $JRUBY_OPTS"
-add_log "  JAVA_OPTS: $JAVA_OPTS"
+add_log "  JAVA_OPTS: ${JAVA_OPTS-}"
 
 # ----- Discover JVM and prep environment to run it ---------------------------
 
 # Determine where the java command is and ensure we have a good JAVA_HOME
-if [ -z "$JAVACMD" ]; then
-    if [ -z "$JAVA_HOME" ]; then
+if [ -z "${JAVACMD-}" ]; then
+    if [ -z "${JAVA_HOME-}" ]; then
         readonly java_home_command="/usr/libexec/java_home"
         if [ -r "$java_home_command" ] \
             && [ -x "$java_home_command" ] \
@@ -450,7 +455,7 @@ process_java_opts "$pwd_jruby_java_opts_file"
 
 # Capture some Java options to be passed separately
 JAVA_OPTS_TEMP=""
-for opt in $JAVA_OPTS; do
+for opt in ${JAVA_OPTS-}; do
     case $opt in
         -Xmx*) JAVA_MEM="$opt" ;;
         -Xss*) JAVA_STACK="$opt" ;;
@@ -470,7 +475,7 @@ for j in "$JRUBY_HOME"/lib/jruby.jar "$JRUBY_HOME"/lib/jruby-complete.jar; do
     if [ ! -e "$j" ]; then
         continue
     fi
-    if [ "$JRUBY_CP" ]; then
+    if [ "${JRUBY_CP-}" ]; then
         JRUBY_CP="$JRUBY_CP$CP_DELIMITER$j"
     else
         JRUBY_CP="$j"
@@ -487,7 +492,7 @@ fi
 
 # ----- Add additional jars from lib to classpath -----------------------------
 
-if [ "$JRUBY_PARENT_CLASSPATH" ]; then
+if [ "${JRUBY_PARENT_CLASSPATH-}" ]; then
     # Use same classpath propagated from parent jruby
     CP="$JRUBY_PARENT_CLASSPATH"
 else
@@ -503,7 +508,7 @@ else
         fi
     done
 
-    if [ "$CP" ] && $cygwin; then
+    if [ "${CP-}" ] && $cygwin; then
         CP="$(cygpath -p -w "$CP")"
     fi
 fi
@@ -539,7 +544,11 @@ do
             exit
             ;;
         -J-classpath|-J-cp)
-            CP="$CP$CP_DELIMITER$2"
+            if [ -z "${CP-}" ]; then
+                CP="$2"
+            else
+              CP="$CP$CP_DELIMITER$2"
+            fi
             CLASSPATH=""
             shift
             ;;
@@ -637,7 +646,7 @@ do
 done
 
 # Force JDK to use specified java.security.egd rand source
-if [ -n "$JAVA_SECURITY_EGD" ]; then
+if [ -n "${JAVA_SECURITY_EGD-}" ]; then
     append java_args "-Djava.security.egd=$JAVA_SECURITY_EGD"
 fi
 
@@ -652,11 +661,11 @@ if $regenerate_jsa_file; then
     esac
 fi
 
-JAVA_OPTS="$JAVA_OPTS $JAVA_MEM $JAVA_STACK"
+JAVA_OPTS="$JAVA_OPTS ${JAVA_MEM-} ${JAVA_STACK-}"
 
 JFFI_OPTS="-Djffi.boot.library.path=$JRUBY_HOME/lib/jni"
 
-CLASSPATH="${CP}${CP_DELIMITER}${CLASSPATH}"
+CLASSPATH="${CP-}${CP_DELIMITER}${CLASSPATH-}"
 
 # ----- Tweak console environment for cygwin ----------------------------------
 
@@ -696,7 +705,7 @@ if $use_modules; then
     process_java_opts "$jruby_module_opts_file"
 
     # Allow overriding default JSA file location
-    if [ -z "$JRUBY_JSA" ]; then
+    if [ -z "${JRUBY_JSA-}" ]; then
         JRUBY_JSA="$jruby_jsa_file"
     fi
 
