@@ -213,6 +213,18 @@ class TestDir < Test::Unit::TestCase
     FileUtils.rm_r("testDir_3") rescue nil
   end
 
+  def test_glob_dir
+    Dir.mkdir('testDir_4')
+    Dir.mkdir('testDir_4/a')
+    Dir.mkdir('testDir_4/b')
+    FileUtils.touch('testDir_4/file.txt')
+    assert_equal(Dir.glob('testDir_4/*/'), ['testDir_4/a/', 'testDir_4/b/'])
+    Dir.chdir("testDir_4") do
+      assert_equal(Dir.glob('*/'), ['a/', 'b/'])
+    end
+    FileUtils.rm_r("testDir_4") rescue nil
+  end
+
   def test_dir_dot_does_not_throw_exception
     # just makes sure this doesn't throw a Java exception
     Dir['.']

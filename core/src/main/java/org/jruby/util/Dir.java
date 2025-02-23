@@ -973,16 +973,24 @@ public class Dir {
                         }
                         if ( fnmatch(magic, 0, magic.length, fileBytes, 0, fileBytes.length, flags) == 0 ) {
                             buf.length(0);
-                            if (scheme != null && SLASH_INDEX == -1) buf.append(scheme);
                             buf.append(base);
                             buf.append( isRoot(base) ? EMPTY : SLASH );
                             buf.append( getBytesInUTF8(file) );
-                            if ( SLASH_INDEX == -1 ) {
+                            resource = JRubyFile.createResource(runtime, cwd, RubyString.byteListToString(buf));
+                            boolean dirMatch = SLASH_INDEX == end-1 && resource.isDirectory();
+                            if ( dirMatch || SLASH_INDEX == -1 ) {
+                                if (scheme != null) {
+                                    byte[] bufBytes = buf.bytes();
+                                    buf.length(0);
+                                    buf.append(scheme);
+                                    buf.append(bufBytes);
+                                }
+                                if (dirMatch) buf.append(SLASH);
                                 status = func.call(buf.getUnsafeBytes(), 0, buf.getRealSize(), enc, arg);
                                 if ( status != 0 ) break;
                                 continue;
                             }
-                            links.add(new DirGlobber(buf));
+                            if (resource.isDirectory()) links.add(new DirGlobber(buf));
                             buf = new ByteList(20);
                             buf.setEncoding(enc);
                         }
@@ -993,14 +1001,11 @@ public class Dir {
                     for ( DirGlobber globber : links ) {
                         final ByteList link = globber.link;
                         if ( status == 0 ) {
-                            resource = JRubyFile.createResource(runtime, cwd, RubyString.byteListToString(link));
-                            if ( resource.isDirectory() ) {
-                                final int len = link.getRealSize();
-                                buf.length(0);
-                                buf.append(link);
-                                buf.append(path, SLASH_INDEX, end - SLASH_INDEX);
-                                status = glob_helper(runtime, cwd, scheme, buf, buf.getBegin() + len, flags, func, arg);
-                            }
+                            final int len = link.getRealSize();
+                            buf.length(0);
+                            buf.append(link);
+                            buf.append(path, SLASH_INDEX, end - SLASH_INDEX);
+                            status = glob_helper(runtime, cwd, scheme, buf, buf.getBegin() + len, flags, func, arg);
                         }
                     }
                     break mainLoop;
