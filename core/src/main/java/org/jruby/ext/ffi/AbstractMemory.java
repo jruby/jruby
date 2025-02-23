@@ -951,7 +951,7 @@ abstract public class AbstractMemory extends MemoryObject {
      */
     @JRubyMethod(name = { "write_float" })
     public IRubyObject write_float(ThreadContext context, IRubyObject value) {
-        getMemoryIO().putFloat(0, Util.floatValue(value));
+        getMemoryIO().putFloat(0, Util.floatValue(context, value));
 
         return this;
     }
@@ -964,7 +964,7 @@ abstract public class AbstractMemory extends MemoryObject {
      */
     @JRubyMethod(name = { "put_float32", "put_float" })
     public IRubyObject put_float32(ThreadContext context, IRubyObject value) {
-        getMemoryIO().putFloat(0, Util.floatValue(value));
+        getMemoryIO().putFloat(0, Util.floatValue(context, value));
 
         return this;
     }
@@ -978,7 +978,7 @@ abstract public class AbstractMemory extends MemoryObject {
      */
     @JRubyMethod(name = { "put_float32", "put_float" })
     public IRubyObject put_float32(ThreadContext context, IRubyObject offset, IRubyObject value) {
-        getMemoryIO().putFloat(getOffset(offset), Util.floatValue(value));
+        getMemoryIO().putFloat(getOffset(offset), Util.floatValue(context, value));
 
         return this;
     }
@@ -1022,7 +1022,7 @@ abstract public class AbstractMemory extends MemoryObject {
      */
     @JRubyMethod(name = { "write_double" })
     public IRubyObject write_double(ThreadContext context, IRubyObject value) {
-        getMemoryIO().putDouble(0, Util.doubleValue(value));
+        getMemoryIO().putDouble(0, Util.doubleValue(context, value));
 
         return this;
     }
@@ -1035,7 +1035,7 @@ abstract public class AbstractMemory extends MemoryObject {
      */
     @JRubyMethod(name = { "put_float64", "put_double" })
     public IRubyObject put_float64(ThreadContext context, IRubyObject value) {
-        getMemoryIO().putDouble(0, Util.doubleValue(value));
+        getMemoryIO().putDouble(0, Util.doubleValue(context, value));
 
         return this;
     }
@@ -1049,7 +1049,7 @@ abstract public class AbstractMemory extends MemoryObject {
      */
     @JRubyMethod(name = { "put_float64", "put_double" })
     public IRubyObject put_float64(ThreadContext context, IRubyObject offset, IRubyObject value) {
-        getMemoryIO().putDouble(getOffset(offset), Util.doubleValue(value));
+        getMemoryIO().putDouble(getOffset(offset), Util.doubleValue(context, value));
 
         return this;
     }
@@ -1398,7 +1398,7 @@ abstract public class AbstractMemory extends MemoryObject {
     @JRubyMethod(name = { "put_array_of_float32", "put_array_of_float" })
     public IRubyObject put_array_of_float(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
 
-        MemoryUtil.putArrayOfFloat32(getMemoryIO(), getOffset(offset), checkArray(arrParam));
+        MemoryUtil.putArrayOfFloat32(context, getMemoryIO(), getOffset(offset), checkArray(arrParam));
 
         return this;
     }
@@ -1426,7 +1426,7 @@ abstract public class AbstractMemory extends MemoryObject {
      */
     @JRubyMethod(name = { "put_array_of_float64", "put_array_of_double" })
     public IRubyObject put_array_of_float64(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
-        MemoryUtil.putArrayOfFloat64(getMemoryIO(), getOffset(offset), checkArray(arrParam));
+        MemoryUtil.putArrayOfFloat64(context, getMemoryIO(), getOffset(offset), checkArray(arrParam));
 
         return this;
     }
@@ -1726,7 +1726,7 @@ abstract public class AbstractMemory extends MemoryObject {
     @JRubyMethod(name = { "write_array_of_float32", "write_array_of_float" })
     public IRubyObject write_array_of_float(ThreadContext context, IRubyObject ary) {
 
-        MemoryUtil.putArrayOfFloat32(getMemoryIO(), 0, checkArray(ary));
+        MemoryUtil.putArrayOfFloat32(context, getMemoryIO(), 0, checkArray(ary));
 
         return this;
     }
@@ -1752,7 +1752,7 @@ abstract public class AbstractMemory extends MemoryObject {
      */
     @JRubyMethod(name = { "write_array_of_float64", "write_array_of_double" })
     public IRubyObject write_array_of_float64(ThreadContext context, IRubyObject ary) {
-        MemoryUtil.putArrayOfFloat64(getMemoryIO(), 0, checkArray(ary));
+        MemoryUtil.putArrayOfFloat64(context, getMemoryIO(), 0, checkArray(ary));
 
         return this;
     }

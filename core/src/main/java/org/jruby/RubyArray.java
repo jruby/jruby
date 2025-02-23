@@ -119,6 +119,15 @@ import static org.jruby.util.Inspector.*;
  * Concurrency: no synchronization is required among readers, but
  * all users must synchronize externally with writers.
  *
+ * Note: elt(long) is based on notion if we exceed precision by passing in a long larger
+ * than int (actually Integer.MAX - 8) then it will just return nil.  Anything using eltOk
+ * must know this already to avoid an AIOOBE.  We do catch that in eltOk but only as an
+ * attempt at detecting concurrent modifications to the length.  So if you improperly
+ * use eltOk you will get a conc error and not AIOOBE.
+ *
+ * Guidance for elt(long) is that if the Ruby method should raise if it is too large
+ * then you need to do that before you call this (toLong vs getValue/asLong).
+ *
  */
 @JRubyClass(name="Array", include = { "Enumerable" },
         overrides = {RubyArrayOneObject.class, RubyArrayTwoObject.class, StringArraySet.class})
@@ -195,7 +204,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     public static final RubyArray<?> newArray(ThreadContext context, final int len) {
         if (len == 0) return newEmptyArray(context.runtime);
-        IRubyObject[] values = IRubyObject.array(validateBufferLength(context.runtime, len));
+        IRubyObject[] values = IRubyObject.array(validateBufferLength(context, len));
         return new RubyArray<>(context.runtime, values, 0, 0);
     }
 
@@ -749,7 +758,9 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         } else {
             try {
                 if (arg1 == null) {
-                    Helpers.fillNil(context, values, begin, begin + ilen);
+                    //System.out.println("VAL.l: " + values.length + ", B: " + begin +"ilen: " + ilen);
+                    //Helpers.fillNil(context, values, begin, begin + ilen);
+                    Arrays.fill(values, begin, begin + ilen, context.nil);
                 } else {
                     Arrays.fill(values, begin, begin + ilen, arg1);
                 }
@@ -1337,7 +1348,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         for (int i = 0; i < args.length; i++) {
             final IRubyObject arg = args[i];
             if (arg instanceof RubyFixnum fix) {
-                result.append(context, entry(fix.asLong(context)));
+                result.append(context, entry(fix.getValue()));
                 continue;
             }
 
@@ -1775,7 +1786,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (arg0 instanceof RubyArithmeticSequence) {
             return subseq_step(context, (RubyArithmeticSequence) arg0);
         } else {
-            return arg0 instanceof RubyFixnum ? entry(((RubyFixnum) arg0).value) : arefCommon(context, arg0);
+            return arg0 instanceof RubyFixnum fixnum ? entry(fixnum.getValue()) : arefCommon(context, arg0);
         }
     }
 
@@ -2720,7 +2731,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             v = block.yieldSpecific(context, eltOk(mid));
 
             if (v instanceof RubyFixnum fixnum) {
-                long fixValue = fixnum.asLong(context);
+                long fixValue = fixnum.getValue();
                 if (fixValue == 0) return mid;
                 smaller = fixValue < 0;
             } else if (v == context.tru) {
@@ -3326,7 +3337,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             for (int i = 0; i < len; i++) {
                 IRubyObject elt = elt(i);
                 IRubyObject v = cmp.call(context, elt, elt, ary2.elt(i));
-                if (!(v instanceof RubyFixnum fixnum) || fixnum.asLong(context) != 0) return v;
+                if (!(v instanceof RubyFixnum fixnum) || fixnum.getValue() != 0) return v;
             }
         } finally {
             context.runtime.unregisterInspecting(this);
@@ -5418,12 +5429,12 @@ float_loop:
         return newArray(context, size);
     }
 
-    // when caller is sure to set all elements (avoids nil elements initialization)
+    // when caller is sure to set all elements
     static RubyArray newBlankArrayInternal(Ruby runtime, int size) {
         return newBlankArrayInternal(runtime, runtime.getArray(), size);
     }
 
-    // when caller is sure to set all elements (avoids nil elements initialization)
+    // when caller is sure to set all elements
     static RubyArray newBlankArrayInternal(Ruby runtime, RubyClass metaClass, int size) {
         switch (size) {
             case 0:
@@ -5627,7 +5638,7 @@ float_loop:
     private static final int optimizedCmp(ThreadContext context, IRubyObject a, IRubyObject b, int token,
                                           CachingCallSite op_cmp, CallSite op_gt, CallSite op_lt) {
         if (token == ((RubyBasicObject) a).metaClass.generation) {
-            if (a instanceof RubyFixnum aa && b instanceof RubyFixnum bb) return Long.compare(aa.asLong(context), bb.asLong(context));
+            if (a instanceof RubyFixnum aa && b instanceof RubyFixnum bb) return Long.compare(aa.getValue(), bb.getValue());
             if (a instanceof RubyString aa && b instanceof RubyString bb) return aa.op_cmp(bb);
         }
 

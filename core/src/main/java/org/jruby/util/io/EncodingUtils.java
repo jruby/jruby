@@ -1743,11 +1743,11 @@ public class EncodingUtils {
         if (b1Arg.isNil()) return null;
         RubyFixnum b1 = (RubyFixnum) b1Arg;
 
-        switch (b1.asInt(context)) {
+        switch ((int) b1.getValue()) {
             case 0xEF:
                 if ((b2 = io.getbyte(context)).isNil()) break;
-                if (b2 instanceof RubyFixnum b2fix && b2fix.asLong(context) == 0xBB && !(b3 = io.getbyte(context)).isNil()) {
-                    if (((RubyFixnum)b3).asLong(context) == 0xBF) {
+                if (((RubyFixnum) b2).getValue() == 0xBB && !(b3 = io.getbyte(context)).isNil()) {
+                    if (((RubyFixnum) b3).getValue() == 0xBF) {
                         return UTF8Encoding.INSTANCE;
                     }
                     io.ungetbyte(context, b3);
@@ -1756,17 +1756,17 @@ public class EncodingUtils {
                 break;
             case 0xFE:
                 if ((b2 = io.getbyte(context)).isNil()) break;
-                if (b2 instanceof RubyFixnum b2fix && b2fix.asLong(context) == 0xFF) {
+                if (((RubyFixnum) b2).asLong(context) == 0xFF) {
                     return UTF16BEEncoding.INSTANCE;
                 }
                 io.ungetbyte(context, b2);
                 break;
             case 0xFF:
                 if ((b2 = io.getbyte(context)).isNil()) break;
-                if (b2 instanceof RubyFixnum b2fix && b2fix.asLong(context) == 0xFE) {
+                if (((RubyFixnum) b2).asLong(context) == 0xFE) {
                     b3 = io.getbyte(context);
                     if (b3 instanceof RubyFixnum b3fix && b3fix.asLong(context) == 0 && !(b4 = io.getbyte(context)).isNil()) {
-                        if (((RubyFixnum)b4).asLong(context) == 0) {
+                        if (((RubyFixnum)b4).getValue() == 0) {
                             return UTF32LEEncoding.INSTANCE;
                         }
                         io.ungetbyte(context, b4);
@@ -1780,9 +1780,9 @@ public class EncodingUtils {
                 break;
             case 0:
                 if ((b2 = io.getbyte(context)).isNil()) break;
-                if (b2 instanceof RubyFixnum b2fix && b2fix.asLong(context) == 0 && !(b3 = io.getbyte(context)).isNil()) {
-                    if (b3 instanceof RubyFixnum b3fix && b3fix.asLong(context) == 0xFE && !(b4 = io.getbyte(context)).isNil()) {
-                        if (b4 instanceof RubyFixnum b4fix && b4fix.asLong(context) == 0xFF) {
+                if (((RubyFixnum) b2).getValue() == 0 && !(b3 = io.getbyte(context)).isNil()) {
+                    if (((RubyFixnum) b3).getValue() == 0xFE && !(b4 = io.getbyte(context)).isNil()) {
+                        if (((RubyFixnum) b4).getValue() == 0xFF) {
                             return UTF32BEEncoding.INSTANCE;
                         }
                         io.ungetbyte(context, b4);

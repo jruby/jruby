@@ -133,7 +133,7 @@ public class MarshalStream extends FilterOutputStream {
     }
 
     private static boolean isMarshalFixnum(ThreadContext context, RubyFixnum fixnum) {
-        var value = fixnum.asLong(context);
+        var value = fixnum.getValue();
         return value <= RubyFixnum.MAX_MARSHAL_FIXNUM && value >= RubyFixnum.MIN_MARSHAL_FIXNUM;
     }
 
@@ -266,7 +266,7 @@ public class MarshalStream extends FilterOutputStream {
                     return;
                 }
                 // FIXME: inefficient; constructing a bignum just for dumping?
-                value = RubyBignum.newBignum(context.runtime, fixnum.asLong(context));
+                value = RubyBignum.newBignum(context.runtime, fixnum.getValue());
 
                 // fall through
             case BIGNUM:

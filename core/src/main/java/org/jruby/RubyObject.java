@@ -433,7 +433,7 @@ public class RubyObject extends RubyBasicObject {
         IRubyObject hashValue = invokedynamic(context, this, HASH);
 
         return hashValue instanceof RubyFixnum fixnum ?
-                fixnum.asIntUnsafe(context) :
+                (int) fixnum.getValue() :
                 nonFixnumHashCode(context, hashValue);
     }
 

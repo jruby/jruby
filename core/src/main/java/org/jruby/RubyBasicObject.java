@@ -2920,7 +2920,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     protected static int nonFixnumHashCode(ThreadContext context, IRubyObject hashValue) {
         if (hashValue.isNil()) throw typeError(context, "no implicit conversion from nil to integer");
 
-        return ((RubyInteger) TypeConverter.convertToType(hashValue, integerClass(context), "to_int")).asIntUnsafe(context);
+        return ((RubyInteger) TypeConverter.convertToType(hashValue, integerClass(context), "to_int")).asInt(context);
     }
 
     /**

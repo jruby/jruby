@@ -10,6 +10,7 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
+import org.jruby.RubyNil;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
 import org.jruby.RubyRange;
@@ -22,7 +23,16 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.TypeConverter;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
+import static org.jruby.RubyBignum.LONG_MAX;
+import static org.jruby.RubyBignum.LONG_MIN;
+import static org.jruby.RubyNumeric.negFixable;
+import static org.jruby.RubyNumeric.posFixable;
+import static org.jruby.api.Access.floatClass;
 import static org.jruby.api.Access.integerClass;
+import static org.jruby.api.Error.floatDomainError;
 import static org.jruby.api.Error.rangeError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.TypeConverter.convertToTypeWithCheck;
@@ -30,18 +40,19 @@ import static org.jruby.util.TypeConverter.sites;
 
 /**
  * Conversion utilities.
- * <p>
- * By convention if a method has `As` in it then it implies it is already the thing and it may error
- * if wrong.  If it has `To` in it then it implies it is converting to that thing and it might not
- * be that thing.  For example, `integerAsInt` implies the value is already an int and will error if
- * it is not.  `checkToInteger` implies the value might not be an integer and that it may try and convert
- * it to one.
- * <p>
- * Methods where the parameter to `As` methods will omit the type from in front of as.  For example,
- * `longAsInteger` will be `asInteger(context, long)`.  Additionally, naming is terse but in cases where
- * something is ambiguous (asFloat() return a Ruby float but if we need a Java equivalent it will take
- * the extra naming asJavaFloat()).  Luckily for Java primitives as Ruby types there are not too many
- * conflicts.
+ * <p/>
+ * By convention if a method has `As` in it then it implies it is already the thing but it may potentially
+ * have range problems (asInt() on a Fixnum means a long will get truncated via cast to an int).  If it
+ * has `To` in it then it implies it is converting to that thing and it might not be that thing.  It additionally
+ * means it will be verifying the range of the thing being made (e.g. an int from a Fixnum will not just
+ * cast but check against MIN and MAX).
+ * <p/>
+ * For example, `Numeric.asInt` implies the value has an int representation but it may truncate or lose information.
+ * `ToInt` implies the value might not be an integer and that it may try and convert it to one.  It also makes sure
+ * it can actually fit into Java's int.
+ * <p/>
+ *
+ * // FIXME: More on naming conventions.
  */
 public class Convert {
     /**
@@ -417,6 +428,7 @@ public class Convert {
         return RubyFloat.newFloat(context.runtime, value);
     }
 
+    // MRI: macro DBL2NUM
     /**
      * Create a Ruby Float from a java long.
      * @param context the current thread context
@@ -425,6 +437,29 @@ public class Convert {
      */
     public static RubyFloat asFloat(ThreadContext context, long value) {
         return RubyFloat.newFloat(context.runtime, value);
+    }
+
+    // MRI: macro DBL2IVAL
+    /**
+     * Create some type of Ruby Integer from a java double
+     * @param context the current thread context
+     * @param value the double value
+     * @return the result
+     */
+    public static RubyInteger asInteger(ThreadContext context, double value) {
+        // MRI: macro FIXABLE, RB_FIXABLE (inlined + adjusted) :
+        if (Double.isNaN(value) || Double.isInfinite(value))  {
+            throw floatDomainError(context, Double.toString(value));
+        }
+
+        final long fix = (long) value;
+        if (fix == RubyFixnum.MIN || fix == RubyFixnum.MAX) {
+            BigInteger big = BigDecimal.valueOf(value).toBigInteger();
+            if (posFixable(big) && negFixable(big)) return asFixnum(context, fix);
+        } else if (posFixable(value) && negFixable(value)) {
+            return asFixnum(context, fix);
+        }
+        return RubyBignum.newBignorm(context.runtime, value);
     }
 
     public static byte toByte(ThreadContext context, IRubyObject arg) {
@@ -436,27 +471,68 @@ public class Convert {
         return (byte) toInt(context, arg);
     }
 
+    // MRI: rb_num2dbl and NUM2DBL
+    /**
+     * Safely convert a Ruby Numeric into a java double value.  Raising if the value will not fit.
+     * @param context the current thread context
+     * @param arg the Object to convert
+     * @return the value
+     */
+    public static double toDouble(ThreadContext context, IRubyObject arg) {
+        var sites = context.sites;
+        return switch (arg) {
+            case RubyFloat flote -> flote.getValue();
+            case RubyFixnum fixnum when sites.Fixnum.to_f.isBuiltin(fixnum) -> fixnum.asDouble(context);
+            case RubyBignum bignum when sites.Bignum.to_f.isBuiltin(bignum) -> bignum.asDouble(context);
+            case RubyRational rational when sites.Rational.to_f.isBuiltin(rational) -> rational.asDouble(context);
+            case RubyString a -> throw typeError(context, "no implicit conversion to float from string");
+            case RubyNil a -> throw typeError(context, "no implicit conversion to float from nil");
+            case RubyBoolean a -> throw typeError(context, "no implicit conversion to float from " + (arg.isTrue() ? "true" : "false"));
+            default -> ((RubyFloat) TypeConverter.convertToType(arg, floatClass(context), "to_f")).getValue();
+        };
+    }
+
     // MRI: rb_num2long and FIX2LONG (numeric.c)
     /**
      * Safely convert a Ruby Numeric into a java long value.  Raising if the value will not fit.
      * @param context the current thread context
      * @param arg the RubyNumeric to convert
-     * @return the long value
+     * @return the value
      */
     public static long toLong(ThreadContext context, IRubyObject arg) {
         return switch (arg) {
             case RubyFixnum fixnum -> fixnum.getValue();
-            case RubyFloat flote -> flote.asLong(context);
-            case RubyBignum bignum -> bignum.asLong(context);
+            case RubyFloat flote -> toLong(context, flote);
+            case RubyBignum bignum -> toLong(context, bignum);
             default -> toLongOther(context, arg);
         };
+    }
+
+    public static long toLong(ThreadContext context, RubyBignum value) {
+        BigInteger big = value.getValue();
+
+        if (big.compareTo(LONG_MIN) < 0 || big.compareTo(LONG_MAX) > 0) {
+            throw rangeError(context, "bignum too big to convert into 'long'");
+        }
+
+        return big.longValue();
+    }
+
+    public static long toLong(ThreadContext context, RubyFloat value) {
+        final double aFloat = value.getValue();
+
+        if (aFloat <= (double) Long.MAX_VALUE && aFloat >= (double) Long.MIN_VALUE) {
+            return (long) aFloat;
+        }
+
+        throw rangeError(context, "float " + aFloat + " out of range of integer");
     }
 
     // toLong handles all known types and this is only called when we need to try to_int.
     private static long toLongOther(ThreadContext context, IRubyObject arg) {
         if (arg.isNil()) throw typeError(context, "no implicit conversion from nil to integer");
 
-        return ((RubyInteger) TypeConverter.convertToType(arg, integerClass(context), "to_int")).asLong(context);
+        return toLong(context, TypeConverter.convertToType(arg, integerClass(context), "to_int"));
     }
 
     /**
@@ -466,9 +542,24 @@ public class Convert {
      * @return the int value
      */
     public static int toInt(ThreadContext context, IRubyObject arg) {
-        long value = toLong(context, arg);
+        long value = switch (arg) {
+            case RubyFixnum fixnum -> fixnum.getValue();
+            case RubyFloat flote -> toInt(context, flote);
+            case RubyBignum bignum -> toLong(context, bignum);
+            default -> toIntOther(context, arg);
+        };
         checkInt(context, value);
         return (int) value;
+    }
+
+    public static long toInt(ThreadContext context, RubyFloat value) {
+        final double aFloat = value.getValue();
+
+        if (aFloat <= (double) Long.MAX_VALUE && aFloat >= (double) Long.MIN_VALUE) {
+            return (long) aFloat;
+        }
+
+        throw rangeError(context, "float " + aFloat + " out of range of integer");
     }
 
     public static int toInt(ThreadContext context, RubyFixnum arg) {
@@ -476,6 +567,13 @@ public class Convert {
         checkInt(context, value);
         return (int) value;
     }
+
+    private static long toIntOther(ThreadContext context, IRubyObject arg) {
+        if (arg.isNil()) throw typeError(context, "no implicit conversion from nil to integer");
+
+        return ((RubyInteger) TypeConverter.convertToType(arg, integerClass(context), "to_int")).asLong(context);
+    }
+
 
     /**
      * Safely convert a Ruby Numeric into a java long value.  Raising if the value will not fit.

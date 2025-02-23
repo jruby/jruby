@@ -187,31 +187,13 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @Override
     @JRubyAPI
     public int asInt(ThreadContext context) {
-        final double aFloat = getValue();
-
-        if (aFloat > (double) Integer.MAX_VALUE || aFloat < (double) Integer.MIN_VALUE) {
-            throw rangeError(context, "float " + aFloat + " out of range of integer");
-        }
-
         return (int) value;
     }
 
     @Override
     @JRubyAPI
     public long asLong(ThreadContext context) {
-        final double aFloat = getValue();
-
-        if (aFloat <= (double) Long.MAX_VALUE && aFloat >= (double) Long.MIN_VALUE) {
-            return (long) aFloat;
-        }
-
-        throw rangeError(context, "float " + aFloat + " out of range of integer");
-    }
-
-    @Override
-    @JRubyAPI
-    public int asIntUnsafe(ThreadContext context) {
-        return (int) value;
+        return (long) value;
     }
 
     @Override
@@ -221,12 +203,11 @@ public class RubyFloat extends RubyNumeric implements Appendable {
 
     @Override
     public RubyInteger convertToInteger() {
-        return toInteger(metaClass.runtime);
+        return toInteger(metaClass.runtime.getCurrentContext());
     }
 
-    private RubyInteger toInteger(final Ruby runtime) {
-        if (value > 0.0) return dbl2ival(runtime, Math.floor(value));
-        return dbl2ival(runtime, Math.ceil(value));
+    private RubyInteger toInteger(ThreadContext context) {
+        return asInteger(context, value > 0.0 ? Math.floor(value) : Math.ceil(value));
     }
 
     @Deprecated(since = "10.0")
@@ -463,9 +444,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
 
             if (y * mod < 0) mod += y;
 
-            RubyInteger car = dbl2ival(context.runtime, div);
-            RubyFloat cdr = asFloat(context, mod);
-            return newArray(context, car, cdr);
+            return newArray(context, asInteger(context, div), asFloat(context, mod));
         default:
             return coerceBin(context, sites(context).divmod, other);
         }
@@ -732,7 +711,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @JRubyMethod(name = {"truncate", "to_i", "to_int"})
     @Override
     public IRubyObject truncate(ThreadContext context) {
-        return toInteger(context.runtime);
+        return toInteger(context);
     }
 
     /**
@@ -774,15 +753,10 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @JRubyMethod(name = "to_r")
     public IRubyObject to_r(ThreadContext context) {
         long[] exp = new long[1];
-        double f = frexp(value, exp);
-        f = ldexp(f, DBL_MANT_DIG);
-        long n = exp[0] - DBL_MANT_DIG;
+        RubyInteger rf = asInteger(context, ldexp(frexp(value, exp), DBL_MANT_DIG));
+        RubyFixnum rn = asFixnum(context, exp[0] - DBL_MANT_DIG);
 
-        Ruby runtime = context.runtime;
-
-        RubyInteger rf = RubyNumeric.dbl2ival(runtime, f);
-        RubyFixnum rn = asFixnum(context, n);
-        return f_mul(context, rf, f_expt(context, RubyFixnum.two(runtime), rn));
+        return f_mul(context, rf, f_expt(context, asFixnum(context, 2), rn));
     }
 
     /** float_rationalize
@@ -841,7 +815,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @Override
     @JRubyMethod(name = "floor")
     public IRubyObject floor(ThreadContext context) {
-        return dbl2ival(context.runtime, Math.floor(value));
+        return asInteger(context, Math.floor(value));
     }
 
     /**
@@ -867,7 +841,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
             if (res > number) res = mul / f;
             return asFloat(context, res);
         } else {
-            RubyInteger num = dbl2ival(context.runtime, Math.floor(number));
+            RubyInteger num = asInteger(context, Math.floor(number));
             if (ndigits < 0) num = (RubyInteger) num.floor(context, digits);
             return num;
         }
@@ -908,7 +882,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @JRubyMethod(name = "ceil")
     @Override
     public IRubyObject ceil(ThreadContext context) {
-        return dbl2ival(context.runtime, Math.ceil(value));
+        return asInteger(context, Math.ceil(value));
     }
 
     /**
@@ -931,7 +905,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
             f = Math.ceil(number * f) / f;
             return asFloat(context, f);
         } else {
-            IRubyObject num = dbl2ival(context.runtime, Math.ceil(number));
+            IRubyObject num = asInteger(context, Math.ceil(number));
             if (ndigits < 0) num = ((RubyInteger) num).ceil(context, digits);
             return num;
         }
@@ -977,7 +951,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
 
         if (number == 0.0) return ndigits > 0 ? this : asFixnum(context, 0);
         if (ndigits < 0) return ((RubyInteger) to_int(context)).roundShared(context, ndigits, mode);
-        if (ndigits == 0) return dbl2ival(context.runtime, doRound(context, mode, number, 1.0));
+        if (ndigits == 0) return asInteger(context, doRound(context, mode, number, 1.0));
         if (Double.isFinite(value)) {
             long[] binexp = {0};
             frexp(number, binexp);

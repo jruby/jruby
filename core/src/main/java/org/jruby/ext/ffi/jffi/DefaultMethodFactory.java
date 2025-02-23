@@ -31,6 +31,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Convert.asFloat;
+import static org.jruby.api.Convert.toDouble;
 import static org.jruby.api.Create.dupString;
 import static org.jruby.api.Error.*;
 
@@ -602,7 +603,7 @@ public final class DefaultMethodFactory extends MethodFactory {
     static final class Float32Marshaller extends NonSessionMarshaller {
         public static final ParameterMarshaller INSTANCE = new Float32Marshaller();
         public final void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
-            buffer.putFloat((float) RubyNumeric.num2dbl(parameter));
+            buffer.putFloat((float) toDouble(context, parameter));
         }
     }
 
@@ -612,7 +613,7 @@ public final class DefaultMethodFactory extends MethodFactory {
     static final class Float64Marshaller extends NonSessionMarshaller {
         public static final ParameterMarshaller INSTANCE = new Float64Marshaller();
         public final void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
-            buffer.putDouble(RubyNumeric.num2dbl(parameter));
+            buffer.putDouble(toDouble(context, parameter));
         }
     }
     

@@ -748,7 +748,7 @@ public class RubyComplex extends RubyNumeric {
                     f_mul(context, otherImage, RubyMath.log(context, r)));
             return f_complex_polar(context, getMetaClass(), nr, ntheta);
         } else if (other instanceof RubyFixnum otherFixnum) {
-            long n = otherFixnum.asLong(context);
+            long n = otherFixnum.getValue();
             if (n == 0) return newInstance(context, getMetaClass(), asFixnum(context, 1), asFixnum(context, 0));
 
             RubyComplex self = this;
@@ -1057,7 +1057,7 @@ public class RubyComplex extends RubyNumeric {
         var context = getRuntime().getCurrentContext();
         final IRubyObject hash = hash(context);
         return hash instanceof RubyFixnum fixnum ?
-                fixnum.asIntUnsafe(context) :
+                (int) fixnum.getValue() :
                 nonFixnumHashCode(context, hash);
     }
 
@@ -1254,7 +1254,11 @@ public class RubyComplex extends RubyNumeric {
 
     // MRI: f_finite_p
     public boolean checkFinite(ThreadContext context, IRubyObject value) {
-        return checkInfinite(context, value).isTrue();
+        if (value instanceof RubyInteger || value instanceof RubyRational) return true;
+
+        return value instanceof RubyFloat flote ?
+                flote.finite_p().isTrue() :
+                sites(context).finite.call(context, value, value).isTrue();
     }
 
     @JRubyMethod(name = "infinite?")

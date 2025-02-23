@@ -205,8 +205,8 @@ public class RubyProcess {
             var pstatus = (RubyFixnum) status.removeInternalVariable("status");
             var pid = (RubyFixnum) status.removeInternalVariable("pid");
 
-            status.status = pstatus.asLong(context);
-            status.pid = pid.asLong(context);
+            status.status = pstatus.getValue();
+            status.pid = pid.getValue();
 
             return status;
         }

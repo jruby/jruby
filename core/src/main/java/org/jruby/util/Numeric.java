@@ -80,7 +80,7 @@ public class Numeric {
     }
 
     private static boolean fixnumOne(ThreadContext context, IRubyObject y) {
-        return y instanceof RubyFixnum fix && fix.asLong(context) == 1;
+        return y instanceof RubyFixnum fixnum && fixnum.getValue() == 1;
     }
 
     public static RubyInteger f_add(ThreadContext context, RubyInteger x, RubyInteger y) {
@@ -99,7 +99,7 @@ public class Numeric {
 
     public static RubyFixnum f_cmp(ThreadContext context, RubyInteger x, RubyInteger y) {
         final int cmp = x instanceof RubyFixnum fixx && y instanceof RubyFixnum fixy ?
-                Long.compare(fixx.asLong(context), fixy.asLong(context)) :
+                Long.compare(fixx.getValue(), fixy.getValue()) :
                 x.asBigInteger(context).compareTo(y.asBigInteger(context));
 
         return asFixnum(context, cmp);
@@ -107,7 +107,7 @@ public class Numeric {
 
     public static RubyFixnum f_cmp(ThreadContext context, RubyInteger x, long y) {
         final int cmp = x instanceof RubyFixnum xx ?
-                Long.compare(xx.asLong(context), y) :
+                Long.compare(xx.getValue(), y) :
                 x.asBigInteger(context).compareTo(BigInteger.valueOf(y));
 
         return asFixnum(context, cmp);
@@ -117,7 +117,7 @@ public class Numeric {
      *
      */
     public static IRubyObject f_div(ThreadContext context, IRubyObject x, IRubyObject y) {
-        return y instanceof RubyFixnum yy && yy.asLong(context) == 1 ?
+        return y instanceof RubyFixnum yy && yy.getValue() == 1 ?
                 x : sites(context).op_quo.call(context, x, x, y);
     }
 
@@ -126,13 +126,13 @@ public class Numeric {
      */
     public static boolean f_gt_p(ThreadContext context, IRubyObject x, IRubyObject y) {
         return x instanceof RubyFixnum fixx && y instanceof RubyFixnum fixy ?
-                fixx.asLong(context) > fixy.asLong(context) :
+                fixx.getValue() > fixy.getValue() :
                 sites(context).op_gt.call(context, x, x, y).isTrue();
     }
 
     public static boolean f_gt_p(ThreadContext context, RubyInteger x, RubyInteger y) {
         return x instanceof RubyFixnum fixx && y instanceof RubyFixnum fixy ?
-                fixx.asLong(context) > fixy.asLong(context) :
+                fixx.getValue() > fixy.getValue() :
                 x.asBigInteger(context).compareTo(y.asBigInteger(context)) > 0;
     }
 
@@ -141,13 +141,13 @@ public class Numeric {
      */
     public static boolean f_lt_p(ThreadContext context, IRubyObject x, IRubyObject y) {
         return x instanceof RubyFixnum fixx && y instanceof RubyFixnum fixy ?
-                fixx.asLong(context) < fixy.asLong(context) :
+                fixx.getValue() < fixy.getValue() :
                 sites(context).op_lt.call(context, x, x, y).isTrue();
     }
 
     public static boolean f_lt_p(ThreadContext context, RubyInteger x, RubyInteger y) {
         return x instanceof RubyFixnum fixx && y instanceof RubyFixnum fixy ?
-                fixx.asLong(context) < fixy.asLong(context) :
+                fixx.getValue() < fixy.getValue() :
                 x.asBigInteger(context).compareTo(y.asBigInteger(context)) < 0;
     }
 
@@ -415,7 +415,7 @@ public class Numeric {
      */
     public static IRubyObject f_equal(ThreadContext context, IRubyObject a, IRubyObject b) {
         return a instanceof RubyFixnum x && b instanceof RubyFixnum y ?
-                asBoolean(context, x.asLong(context) == y.asLong(context)) :
+                asBoolean(context, x.getValue() == y.getValue()) :
                 sites(context).op_equals.call(context, a, a, b);
     }
 
@@ -511,7 +511,7 @@ public class Numeric {
      */
     public static boolean f_one_p(ThreadContext context, IRubyObject x) {
         return x instanceof RubyFixnum fixx ?
-                fixx.asLong(context) == 1 :
+                fixx.getValue() == 1 :
                 sites(context).op_equals.call(context, x, x, asFixnum(context, 1)).isTrue();
     }
 
@@ -520,7 +520,7 @@ public class Numeric {
     */
     public static boolean f_minus_one_p(ThreadContext context, IRubyObject x) {
         return x instanceof RubyFixnum fixx ?
-                fixx.asLong(context) == -1 :
+                fixx.getValue() == -1 :
                 sites(context).op_equals.call(context, x, x, asFixnum(context, -1)).isTrue();
     }
 
@@ -529,7 +529,7 @@ public class Numeric {
     */
     public static boolean f_odd_p(ThreadContext context, IRubyObject i) {
         return i instanceof RubyFixnum fixx ?
-                fixx.asLong(context) % 2 != 0 :
+                fixx.getValue() % 2 != 0 :
                 !((RubyFixnum) sites(context).op_mod.call(context, i, i, asFixnum(context, 2))).isZero(context);
     }
 
@@ -585,7 +585,7 @@ public class Numeric {
      */
     public static IRubyObject f_gcd(ThreadContext context, IRubyObject x, IRubyObject y) {
         if (x instanceof RubyFixnum xx && y instanceof RubyFixnum yy && isLongMinValue(context, xx)) {
-            return asFixnum(context, i_gcd(xx.asLong(context), yy.asLong(context)));
+            return asFixnum(context, i_gcd(xx.getValue(), yy.getValue()));
         }
 
         if (f_negative_p(context, x)) x = f_negate(context, x);
@@ -596,7 +596,7 @@ public class Numeric {
 
         for (;;) {
             if (x instanceof RubyFixnum xx && y instanceof RubyFixnum yy && isLongMinValue(context, xx)) {
-                return asFixnum(context, i_gcd(xx.asLong(context), yy.asLong(context)));
+                return asFixnum(context, i_gcd(xx.getValue(), yy.getValue()));
             }
             IRubyObject z = x;
             x = f_mod(context, y, x);
@@ -607,7 +607,7 @@ public class Numeric {
     // 'fast' gcd version
     public static RubyInteger f_gcd(ThreadContext context, RubyInteger x, RubyInteger y) {
         if (x instanceof RubyFixnum xx && y instanceof RubyFixnum yy && isLongMinValue(context, xx)) {
-            return asFixnum(context, i_gcd(xx.asLong(context), yy.asLong(context)));
+            return asFixnum(context, i_gcd(xx.getValue(), yy.getValue()));
         }
 
         BigInteger gcd = x.asBigInteger(context).gcd(y.asBigInteger(context));
@@ -623,7 +623,7 @@ public class Numeric {
      * @return true if it is equal to Long.MAX_VALUE, false otherwise.
      */
     protected static boolean isLongMinValue(ThreadContext context, RubyFixnum x) {
-        return x.asLong(context) != Long.MIN_VALUE;
+        return x.getValue() != Long.MIN_VALUE;
     }
 
     /** f_lcm
@@ -917,9 +917,9 @@ public class Numeric {
 
     public static boolean f_eqeq_p(ThreadContext context, IRubyObject x, IRubyObject y) {
         if (x instanceof RubyFixnum fixx && y instanceof RubyFixnum fixy) {
-            return fixx.asLong(context) == fixy.asLong(context);
+            return fixx.getValue() == fixy.getValue();
         } else if (x instanceof RubyFloat || y instanceof RubyFloat) {
-            return RubyNumeric.num2dbl(context, x) == RubyNumeric.num2dbl(context, y);
+            return toDouble(context, x) == toDouble(context, y);
         }
 
         return x.op_eqq(context, y).isTrue();

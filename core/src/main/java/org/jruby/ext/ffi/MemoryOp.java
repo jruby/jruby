@@ -115,7 +115,7 @@ abstract class MemoryOp {
             return get(context.runtime, io, offset);
         }
         void put(ThreadContext context, MemoryIO io, long offset, IRubyObject value) {
-            put(context.runtime, io, offset, value);
+            put(context, io, offset, value);
         }
     }
     static final class BooleanOp extends PrimitiveOp {
@@ -270,7 +270,11 @@ abstract class MemoryOp {
     
     static final class Float32 extends PrimitiveOp {
         public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
-            io.putFloat(offset, Util.floatValue(value));
+            put(runtime.getCurrentContext(), io, offset, value);
+        }
+
+        public final void put(ThreadContext context, MemoryIO io, long offset, IRubyObject value) {
+            io.putFloat(offset, Util.floatValue(context, value));
         }
 
         public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
@@ -280,8 +284,13 @@ abstract class MemoryOp {
     
     static final class Float64 extends PrimitiveOp {
         public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
-            io.putDouble(offset, Util.doubleValue(value));
+            put(runtime.getCurrentContext(), io, offset, value);
         }
+
+        public final void put(ThreadContext context, MemoryIO io, long offset, IRubyObject value) {
+            io.putDouble(offset, Util.doubleValue(context, value));
+        }
+
 
         public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
             return runtime.newFloat(io.getDouble(offset));

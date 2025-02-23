@@ -16,6 +16,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.RubyTime.TIME_SCALE;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toDouble;
 import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Error.argumentError;
 
@@ -135,7 +136,7 @@ public class TimeArgs {
                     nanos = fullNanos - fullMillis * 1_000_000;
                     millis = fullMillis % 1000;
                 } else {
-                    double secs = RubyFloat.num2dbl(context, secondObj);
+                    double secs = toDouble(context, secondObj);
 
                     if (secs < 0 || secs >= TIME_SCALE) throw argumentError(context, "argument out of range.");
 

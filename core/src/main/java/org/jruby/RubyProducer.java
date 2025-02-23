@@ -34,6 +34,8 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.asFloat;
+
 /**
  * Implements Enumerator::Producer
  */
@@ -66,7 +68,7 @@ public class RubyProducer extends RubyObject {
     /** MRI: producer_size
      */
     public static IRubyObject size(ThreadContext context, RubyProducer self, IRubyObject[] args) {
-        return RubyNumeric.dbl2num(context.runtime, Double.POSITIVE_INFINITY);
+        return asFloat(context, Double.POSITIVE_INFINITY);
     }
 
     @JRubyMethod(rest = true)

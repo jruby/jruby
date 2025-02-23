@@ -49,6 +49,7 @@ import static org.jruby.api.Access.fixnumClass;
 import static org.jruby.api.Access.integerClass;
 import static org.jruby.api.Access.stringClass;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asInteger;
 import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
@@ -744,7 +745,7 @@ public class Sprintf {
                     case INTEGER: // no-op
                         break;
                     case FLOAT:
-                        arg = RubyNumeric.dbl2ival(context.runtime, ((RubyFloat) arg).asLong(context));
+                        arg = asInteger(context, ((RubyFloat) arg).asLong(context));
                         break;
                     case STRING:
                         arg = ((RubyString) arg).stringToInum(0, true);
@@ -791,7 +792,7 @@ public class Sprintf {
                     // we'll use Java's numeric formatting code (and our own).
                     boolean zero;
                     if (arg instanceof RubyFixnum fixnum) {
-                        final long v = fixnum.asLong(context);
+                        final long v = fixnum.getValue();
                         negative = v < 0;
                         zero = v == 0;
                         if (negative && fchar == 'u') {
@@ -944,7 +945,7 @@ public class Sprintf {
                             sign = -1;
                         }
 
-                        if (!(den instanceof RubyFixnum) || den.asLong(context) != 1) {
+                        if (!(den instanceof RubyFixnum fixnum) || fixnum.getValue() != 1) {
                             num = (RubyInteger) num.op_mul(context, Numeric.int_pow(context, 10, precision));
                             num = (RubyInteger) num.op_plus(context, den.idiv(context, 2));
                             num = (RubyInteger) num.idiv(context, den);
@@ -1907,7 +1908,7 @@ public class Sprintf {
     private static boolean isPositive(ThreadContext context, Object value) {
         return switch (value) {
             case RubyFloat flote -> (Double.doubleToRawLongBits(flote.asDouble(context)) & SIGN_MASK) == 0;
-            case RubyFixnum fixnum -> fixnum.asLong(context) >= 0;
+            case RubyFixnum fixnum -> fixnum.getValue() >= 0;
             case RubyBignum bignum -> bignum.signum(context) >= 0;
             default -> true;
         };
@@ -1930,7 +1931,7 @@ public class Sprintf {
             }
             bi = BigInteger.valueOf(mantissaBits);
         } else if (value instanceof RubyFixnum fixnum) {
-            bi = BigInteger.valueOf(fixnum.asLong(context));
+            bi = BigInteger.valueOf(fixnum.getValue());
         } else if (value instanceof RubyBignum bignum) {
             bi = bignum.getValue();
         } else {
@@ -1956,10 +1957,10 @@ public class Sprintf {
         if (value instanceof RubyBignum bignum) {
             return bignum.getValue().abs().bitLength() - 1;
         } else if (value instanceof RubyFixnum fixnum) {
-            long lval = fixnum.asLong(context);
+            long lval = fixnum.getValue();
             return lval == Long.MIN_VALUE ? 63 : 63 - Long.numberOfLeadingZeros(Math.abs(lval));
         } else if (value instanceof RubyFloat flote) {
-            final long bits = Double.doubleToRawLongBits(flote.asDouble(context));
+            final long bits = Double.doubleToRawLongBits(flote.getValue());
             long biasedExp = ((bits & BIASED_EXP_MASK) >> 52);
             long mantissaBits = bits & MANTISSA_MASK;
             if (biasedExp == 0) {

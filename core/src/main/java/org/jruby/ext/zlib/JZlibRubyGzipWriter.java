@@ -384,7 +384,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
             this.mtime = RubyTime.newTime(context.runtime, toLong(context, arg) * 1000);
         }
         try {
-            io.setModifiedTime(this.mtime.to_i(context).asLong(context));
+            io.setModifiedTime(mtime.to_i_long());
         } catch (GZIPException e) {
             throw RubyZlib.newGzipFileError(context, "header is already written");
         }

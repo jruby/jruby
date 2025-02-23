@@ -45,11 +45,11 @@ import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyNumeric.fixable;
 import static org.jruby.RubyNumeric.floatStep;
 import static org.jruby.RubyNumeric.floatStepSize;
-import static org.jruby.RubyNumeric.dbl2num;
-import static org.jruby.RubyNumeric.num2dbl;
 
+import static org.jruby.api.Access.enumeratorClass;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asFloat;
+import static org.jruby.api.Convert.toDouble;
 import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Convert.toInteger;
 import static org.jruby.api.Convert.toLong;
@@ -250,9 +250,9 @@ public class RubyArithmeticSequence extends RubyObject {
         } else if (b instanceof RubyFloat || e instanceof RubyFloat || s instanceof RubyFloat) {
             /* generate values like ruby_float_step */
 
-            double unit = num2dbl(s);
-            double beg = num2dbl(b);
-            double end = e.isNil() ? (unit < 0 ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY) : num2dbl(e);
+            double unit = toDouble(context, s);
+            double beg = toDouble(context, b);
+            double end = e.isNil() ? (unit < 0 ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY) : toDouble(context, e);
             double len = floatStepSize(beg, end, unit, x);
             long i;
 
@@ -280,7 +280,7 @@ public class RubyArithmeticSequence extends RubyObject {
             return ary;
         }
 
-        return Helpers.invokeSuper(context, this, context.runtime.getEnumerator(), "first", num, Block.NULL_BLOCK);
+        return Helpers.invokeSuper(context, this, enumeratorClass(context), "first", num, Block.NULL_BLOCK);
     }
 
     private IRubyObject firstNoNum(ThreadContext context, IRubyObject b, IRubyObject e, IRubyObject s) {
@@ -301,44 +301,23 @@ public class RubyArithmeticSequence extends RubyObject {
     @JRubyMethod(name = {"==", "eql?"})
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
-        if (!(other instanceof RubyArithmeticSequence)) {
-            return context.fals;
-        }
+        if (!(other instanceof RubyArithmeticSequence aseqOther)) return context.fals;
 
-        RubyArithmeticSequence aseqOther = (RubyArithmeticSequence)other;
-
-        if (!Helpers.rbEqual(context, this.begin, aseqOther.begin).isTrue()) {
-            return context.fals;
-        }
-
-        if (!Helpers.rbEqual(context, this.end, aseqOther.end).isTrue()) {
-            return context.fals;
-        }
-
-        if (!Helpers.rbEqual(context, this.step, aseqOther.step).isTrue()) {
-            return context.fals;
-        }
-
-        if (!Helpers.rbEqual(context, this.excludeEnd, aseqOther.excludeEnd).isTrue()) {
-            return context.fals;
-        }
+        if (!Helpers.rbEqual(context, this.begin, aseqOther.begin).isTrue()) return context.fals;
+        if (!Helpers.rbEqual(context, this.end, aseqOther.end).isTrue()) return context.fals;
+        if (!Helpers.rbEqual(context, this.step, aseqOther.step).isTrue()) return context.fals;
+        if (!Helpers.rbEqual(context, this.excludeEnd, aseqOther.excludeEnd).isTrue()) return context.fals;
 
         return context.tru;
     }
 
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
-        var v = safeHash(context, excludeEnd);
-        long hash = hashStart(context.runtime, v.asLong(context));
+        long hash = hashStart(context.runtime, safeHash(context, excludeEnd).getValue());
 
-        v = safeHash(context, begin);
-        hash = murmurCombine(hash, v.asLong(context));
-
-        v = safeHash(context, end);
-        hash = murmurCombine(hash, v.asLong(context));
-
-        v = safeHash(context, step);
-        hash = murmurCombine(hash, v.asLong(context));
+        hash = murmurCombine(hash, safeHash(context, begin).getValue());
+        hash = murmurCombine(hash, safeHash(context, end).getValue());
+        hash = murmurCombine(hash, safeHash(context, step).getValue());
         hash = hashEnd(hash);
 
         return asFixnum(context, hash);
@@ -474,44 +453,32 @@ public class RubyArithmeticSequence extends RubyObject {
 
     @JRubyMethod
     public IRubyObject size(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        IRubyObject len_1, len, last;
-
         if (begin instanceof RubyFloat || end instanceof RubyFloat || step instanceof RubyFloat) {
-            double ee, n;
+            double ee = end.isNil() ?
+                    (Numeric.f_negative_p(context, step) ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY) :
+                    toDouble(context, end);
 
-            if (end.isNil()) {
-                ee = Numeric.f_negative_p(context, step) ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
-            } else {
-                ee = num2dbl(end);
-            }
-
-            n = floatStepSize(num2dbl(begin), ee, num2dbl(step), excludeEnd.isTrue());
-            if (Double.isInfinite(n)) return dbl2num(context.runtime, n);
+            double n = floatStepSize(toDouble(context, begin), ee, toDouble(context, step), excludeEnd.isTrue());
+            if (Double.isInfinite(n)) return asFloat(context, n);
             if (RubyNumeric.posFixable(n)) return asFixnum(context, (long)n);
 
             return RubyBignum.newBignorm(context.runtime, n);
         }
 
-        if (end.isNil()) {
-            return dbl2num(runtime, Double.POSITIVE_INFINITY);
-        }
+        if (end.isNil()) return asFloat(context, Double.POSITIVE_INFINITY);
 
         if (!(step instanceof RubyNumeric)) step = toInteger(context, step);
 
         if (Helpers.rbEqual(context, step, asFixnum(context, 0)).isTrue()) {
-            return dbl2num(runtime, Double.POSITIVE_INFINITY);
+            return asFloat(context, Double.POSITIVE_INFINITY);
         }
 
-        len_1 = ((RubyNumeric)((RubyNumeric)end).op_minus(context, begin)).idiv(context, step);
+        IRubyObject len_1 = ((RubyNumeric)((RubyNumeric)end).op_minus(context, begin)).idiv(context, step);
         if (Numeric.f_negative_p(context, len_1)) return asFixnum(context, 0);
 
-        last = ((RubyNumeric)begin).op_plus(context, Numeric.f_mul(context, step, len_1));
-        if (excludeEnd.isTrue() && Helpers.rbEqual(context, last, end).isTrue()) {
-            len = len_1;
-        } else {
-            len = ((RubyNumeric)len_1).op_plus(context, asFixnum(context, 1));
-        }
+        IRubyObject last = ((RubyNumeric)begin).op_plus(context, Numeric.f_mul(context, step, len_1));
+        IRubyObject len = excludeEnd.isTrue() && Helpers.rbEqual(context, last, end).isTrue() ?
+                len_1 : ((RubyNumeric)len_1).op_plus(context, asFixnum(context, 1));
 
         return len;
     }
@@ -534,7 +501,8 @@ public class RubyArithmeticSequence extends RubyObject {
     public IRubyObject each_cons(ThreadContext context, IRubyObject arg, final Block block) {
         int size = (int) toLong(context, arg);
         if (size <= 0) throw argumentError(context, "invalid size");
-        return block.isGiven() ? RubyEnumerable.each_consCommon(context, this, size, block) :
+        return block.isGiven() ?
+                RubyEnumerable.each_consCommon(context, this, size, block) :
                 enumeratorize(context.runtime, this, "each_cons", arg);
     }
 
@@ -543,13 +511,15 @@ public class RubyArithmeticSequence extends RubyObject {
         int size = (int) toLong(context, arg);
         if (size <= 0) throw argumentError(context, "invalid size");
 
-        return block.isGiven() ? RubyEnumerable.each_sliceCommon(context, this, size, block) :
+        return block.isGiven() ?
+                RubyEnumerable.each_sliceCommon(context, this, size, block) :
                 enumeratorizeWithSize(context, this, "each_slice", new IRubyObject[]{arg}, RubyArithmeticSequence::size);
     }
 
     @JRubyMethod
     public IRubyObject each_with_object(final ThreadContext context, IRubyObject arg, Block block) {
-        return block.isGiven() ? RubyEnumerable.each_with_objectCommon(context, this, block, arg) :
+        return block.isGiven() ?
+                RubyEnumerable.each_with_objectCommon(context, this, block, arg) :
                 enumeratorizeWithSize(context, this, "each_with_object", new IRubyObject[]{arg}, RubyArithmeticSequence::size);
     }
 

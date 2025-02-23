@@ -459,7 +459,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                     ThreadContext context = runtime.getCurrentContext();
                     long size = ((RubyFile) RubyIO.this).getSize(context);
                     if (size == 0) return 0;
-                    if (size >= 0) return (int) (size - pos(context).asLong(context));
+                    if (size >= 0) return (int) (size - pos(context).getValue());
                 }
                 return 0;
             }
@@ -5275,7 +5275,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 if (arg instanceof RubyString) { // Overrides all?
                     ioOptions = newIOOptions(runtime, arg.asJavaString());
                 } else if (arg instanceof RubyFixnum fixnum) {
-                    ioOptions = newIOOptions(runtime, fixnum.asLong(context));
+                    ioOptions = newIOOptions(runtime, fixnum.getValue());
                 } else if (arg instanceof RubyHash hash) {
                     ioOptions = updateIOOptionsFromOptions(context, hash, ioOptions);
                 }

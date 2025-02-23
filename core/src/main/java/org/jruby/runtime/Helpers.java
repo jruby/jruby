@@ -580,9 +580,10 @@ public class Helpers {
         throw argumentError(context, "argument too big");
     }
 
-    // FIXME: We need to deprecate this one RubyArray no longer needs it
+    // This still exists because we have some array construction methods which still use it.  Should be deprecated later.
     public static int validateBufferLength(Ruby runtime, long length) {
-        return validateBufferLength(runtime.getCurrentContext(), length);
+        if (length < 0 || length > MAX_ARRAY_SIZE) validateBufferLength(runtime.getCurrentContext(), length);
+        return (int) length;
     }
 
     /**
@@ -2013,7 +2014,7 @@ public class Helpers {
     @Deprecated // not used
     public static IRubyObject aValueSplat(IRubyObject value) {
         var context = ((RubyBasicObject) value).getCurrentContext();
-        if (!(value instanceof RubyArray array) || array.length().asLong(context) == 0) return context.nil;
+        if (!(value instanceof RubyArray array) || array.length().getValue() == 0) return context.nil;
 
         return array.getLength() == 1 ? array.first(context) : array;
     }

@@ -1014,7 +1014,7 @@ public class JavaUtil {
         return numeric;  // just return as-is, since we can't do any coercion
     };
     private static final NumericConverter<Object> NUMERIC_TO_OBJECT = (context, numeric, target) -> switch (numeric) {
-        case RubyFixnum fixnum -> Long.valueOf(fixnum.asLong(context));
+        case RubyFixnum fixnum -> Long.valueOf(fixnum.getValue());
         case RubyFloat flote-> Double.valueOf(flote.asDouble(context));
         case RubyBignum bignum -> bignum.getValue();
         case RubyBigDecimal bigdec -> bigdec.asLong(context);
@@ -1509,7 +1509,7 @@ public class JavaUtil {
             break;
         case INTEGER:
             if (object instanceof RubyFixnum fix) {
-                javaObject = Long.valueOf(fix.asLong(context));
+                javaObject = Long.valueOf(fix.getValue());
             } else {
                 javaObject = ((RubyBignum) object).asLong(context);
             }

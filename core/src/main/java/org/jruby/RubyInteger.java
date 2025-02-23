@@ -364,7 +364,7 @@ public abstract class RubyInteger extends RubyNumeric {
      */
     protected static IRubyObject timesSize(ThreadContext context, RubyInteger recv, IRubyObject[] args) {
         RubyFixnum zero = RubyFixnum.zero(context.runtime);
-        if ((recv instanceof RubyFixnum && recv.asLong(context) < 0)
+        if ((recv instanceof RubyFixnum fixnum && fixnum.getValue() < 0)
                 || sites(context).op_lt.call(context, recv, recv, zero).isTrue()) {
             return zero;
         }
@@ -759,7 +759,7 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     private static long op_mod_two(ThreadContext context, RubyInteger self) {
-        return ((RubyInteger) sites(context).op_mod.call(context, self, self, RubyFixnum.two(context.runtime))).asLong(context);
+        return ((RubyInteger) sites(context).op_mod.call(context, self, self, asFixnum(context, 2))).asLong(context);
     }
 
     @JRubyMethod(name = "allbits?")

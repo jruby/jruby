@@ -62,6 +62,7 @@ import org.jruby.util.cli.Options;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asFloat;
+import static org.jruby.api.Convert.asInteger;
 import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Create.newArray;
@@ -215,12 +216,6 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
     @JRubyAPI
     public long asLong(ThreadContext context) {
         return value;
-    }
-
-    @Override
-    @JRubyAPI
-    public int asIntUnsafe(ThreadContext context) {
-        return (int) value;
     }
 
     @Override
@@ -884,16 +879,15 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
     }
 
     private RubyNumeric powerFixnum(ThreadContext context, RubyFixnum other) {
-        Ruby runtime = context.runtime;
         long a = value;
         long b = other.value;
         if (b < 0) {
-            RubyRational rational = RubyRational.newRationalRaw(runtime, this);
+            RubyRational rational = RubyRational.newRationalRaw(context.runtime, this);
             return (RubyNumeric) numFuncall(context, rational, sites(context).op_exp_rational, other);
         }
         if (b == 0) return asFixnum(context, 1);
         if (b == 1) return this;
-        if (a == 0) return b > 0 ? asFixnum(context, 0) : RubyNumeric.dbl2ival(runtime, 1.0 / 0.0);
+        if (a == 0) return b > 0 ? asFixnum(context, 0) : asInteger(context, 1.0 / 0.0);
         if (a == 1) return asFixnum(context, 1);
         if (a == -1) return asFixnum(context, b % 2 == 0 ? 1 : -1);
 

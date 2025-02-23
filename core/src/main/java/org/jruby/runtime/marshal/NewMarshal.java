@@ -163,14 +163,14 @@ public class NewMarshal {
             return false;
         } else if (value instanceof RubyBoolean) {
             return false;
-        } else if (value instanceof RubyFixnum) {
-            return ! isMarshalFixnum(context, (RubyFixnum)value);
+        } else if (value instanceof RubyFixnum fixnum) {
+            return !isMarshalFixnum(fixnum);
         }
         return true;
     }
 
-    private static boolean isMarshalFixnum(ThreadContext context, RubyFixnum fixnum) {
-        var value = fixnum.asLong(context);
+    private static boolean isMarshalFixnum(RubyFixnum fixnum) {
+        var value = fixnum.getValue();
         return value <= RubyFixnum.MAX_MARSHAL_FIXNUM && value >= RubyFixnum.MIN_MARSHAL_FIXNUM;
     }
 
@@ -331,13 +331,13 @@ public class NewMarshal {
             case FIXNUM:
                 RubyFixnum fixnum = (RubyFixnum)value;
 
-                if (isMarshalFixnum(context, fixnum)) {
+                if (isMarshalFixnum(fixnum)) {
                     out.write('i');
                     writeInt(out, fixnum.asInt(context));
                     return;
                 }
                 // FIXME: inefficient; constructing a bignum just for dumping?
-                value = RubyBignum.newBignum(context.runtime, fixnum.asLong(context));
+                value = RubyBignum.newBignum(context.runtime, fixnum.getValue());
 
                 // fall through
             case BIGNUM:

@@ -68,7 +68,7 @@ public class RubyRandom extends RubyRandomBase {
         RandomType(ThreadContext context, IRubyObject seed) {
             this.seed = toInteger(context, seed);
             if (this.seed instanceof RubyFixnum fixnum) {
-                this.impl = randomFromFixnum(context, fixnum);
+                this.impl = randomFromFixnum(fixnum);
             } else if (this.seed instanceof RubyBignum bignum) {
                 this.impl = randomFromBignum(bignum);
             } else {
@@ -76,13 +76,8 @@ public class RubyRandom extends RubyRandomBase {
             }
         }
 
-        @Deprecated(since = "10.0")
         public static Random randomFromFixnum(RubyFixnum seed) {
-            return randomFromFixnum(seed.getCurrentContext(), seed);
-        }
-
-        public static Random randomFromFixnum(ThreadContext context, RubyFixnum seed) {
-            return randomFromLong(seed.asLong(context));
+            return randomFromLong(seed.getValue());
         }
 
         public static Random randomFromLong(long seed) {
