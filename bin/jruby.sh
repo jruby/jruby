@@ -1,8 +1,25 @@
 #!/bin/sh
-set -u
+
 # -----------------------------------------------------------------------------
 # jruby.sh - Start Script for the JRuby interpreter
+#
+# This script is intended to be compatible with POSIX shell as much as possible
+# modulo a few small features known to be nonstandard but present in nearly all
+# POSIX shell implementations. We tell shellcheck to treat this source as dash,
+# a version of ash that adds those features and which has been the standard
+# Debian /bin/sh since 2011.
+#
+# shellcheck shell=dash
+#
+# See https://en.wikipedia.org/wiki/Almquist_shell#Adoption_in_Debian_and_Ubuntu
+#
+# There are a number of utility functions defined here to cope with the lack of
+# arrays in shell. These functions simulate arrays through other mechanism and
+# ensure we do not damage quoting during argument processing.
 # -----------------------------------------------------------------------------
+
+# Enable uninitialized variable warnings
+set -u
 
 # ----- Guarantee local variables are available -------------------------------
 if command -v local >/dev/null; then
