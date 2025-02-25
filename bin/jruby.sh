@@ -138,7 +138,6 @@ esac
 readonly cygwin
 
 use_exec=true
-java_opts_from_files=""
 jdb=false
 
 NO_BOOTCLASSPATH=false
@@ -157,6 +156,11 @@ fi
 
 java_args=""
 ruby_args=""
+
+# Remaining variables are only read in eval, so we disable warning
+# shellcheck disable=SC2034
+java_opts_from_files=""
+# shellcheck disable=SC2034
 jdb_args=""
 
 # Force OpenJDK-based JVMs to use /dev/urandom for random number generation
