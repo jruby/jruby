@@ -1,4 +1,6 @@
 #!/bin/sh
+# shellcheck shell=dash   # local variable support
+# shellcheck disable=1007 # spurious warnings when initializing multiple vars
 
 # -----------------------------------------------------------------------------
 # jruby.sh - Start Script for the JRuby interpreter
@@ -8,8 +10,6 @@
 # POSIX shell implementations. We tell shellcheck to treat this source as dash,
 # a version of ash that adds those features and which has been the standard
 # Debian /bin/sh since 2011.
-#
-# shellcheck shell=dash
 #
 # See https://en.wikipedia.org/wiki/Almquist_shell#Adoption_in_Debian_and_Ubuntu
 #
@@ -48,7 +48,6 @@ fi
 # https://github.com/mentalisttraceur/esceval
 esceval()
 {
-    # shellcheck disable=1007
     local escaped= unescaped= output=
     REPLY=
 
@@ -174,10 +173,9 @@ fi
 java_args=""
 ruby_args=""
 
-# Remaining variables are only read in eval, so we disable warning
-# shellcheck disable=SC2034
+# shellcheck disable=2034 # variable is only read in an eval
 java_opts_from_files=""
-# shellcheck disable=SC2034
+# shellcheck disable=2034 # variable is only read in an eval
 jdb_args=""
 
 # Force OpenJDK-based JVMs to use /dev/urandom for random number generation
