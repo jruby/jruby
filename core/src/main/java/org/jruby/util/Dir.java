@@ -976,8 +976,11 @@ public class Dir {
                             buf.append(base);
                             buf.append( isRoot(base) ? EMPTY : SLASH );
                             buf.append( getBytesInUTF8(file) );
-                            resource = JRubyFile.createResource(runtime, cwd, new String(buf.unsafeBytes(), buf.begin(), buf.length(), enc.getCharset()));
-                            boolean dirMatch = SLASH_INDEX == end-1 && resource.isDirectory();
+                            boolean dirMatch = false;
+                            if (SLASH_INDEX == end - 1) {
+                                resource = JRubyFile.createResource(runtime, cwd, new String(buf.unsafeBytes(), buf.begin(), buf.length(), enc.getCharset()));
+                                dirMatch = resource.isDirectory();
+                            }
                             if ( dirMatch || SLASH_INDEX == -1 ) {
                                 if (scheme != null) {
                                     byte[] bufBytes = buf.bytes();
@@ -990,7 +993,7 @@ public class Dir {
                                 if ( status != 0 ) break;
                                 continue;
                             }
-                            if (resource.isDirectory()) links.add(new DirGlobber(buf));
+                            links.add(new DirGlobber(buf));
                             buf = new ByteList(20);
                             buf.setEncoding(enc);
                         }
@@ -1001,11 +1004,14 @@ public class Dir {
                     for ( DirGlobber globber : links ) {
                         final ByteList link = globber.link;
                         if ( status == 0 ) {
-                            final int len = link.getRealSize();
-                            buf.length(0);
-                            buf.append(link);
-                            buf.append(path, SLASH_INDEX, end - SLASH_INDEX);
-                            status = glob_helper(runtime, cwd, scheme, buf, buf.getBegin() + len, flags, func, arg);
+                            resource = JRubyFile.createResource(runtime, cwd, new String(link.unsafeBytes(), link.begin(), link.length(), enc.getCharset()));
+                            if ( resource.isDirectory() ) {
+                                final int len = link.getRealSize();
+                                buf.length(0);
+                                buf.append(link);
+                                buf.append(path, SLASH_INDEX, end - SLASH_INDEX);
+                                status = glob_helper(runtime, cwd, scheme, buf, buf.getBegin() + len, flags, func, arg);
+                            }
                         }
                     }
                     break mainLoop;
