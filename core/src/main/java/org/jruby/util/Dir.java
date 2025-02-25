@@ -976,7 +976,7 @@ public class Dir {
                             buf.append(base);
                             buf.append( isRoot(base) ? EMPTY : SLASH );
                             buf.append( getBytesInUTF8(file) );
-                            resource = JRubyFile.createResource(runtime, cwd, RubyString.byteListToString(buf));
+                            resource = JRubyFile.createResource(runtime, cwd, new String(buf.unsafeBytes(), buf.begin(), buf.length(), enc.getCharset()));
                             boolean dirMatch = SLASH_INDEX == end-1 && resource.isDirectory();
                             if ( dirMatch || SLASH_INDEX == -1 ) {
                                 if (scheme != null) {
