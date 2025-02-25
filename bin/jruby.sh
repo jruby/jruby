@@ -5,6 +5,17 @@
 # -----------------------------------------------------------------------------
 # jruby.sh - Start Script for the JRuby interpreter
 #
+# This script handles all Ruby and JRuby command-line arguments, detects the
+# location of the `java` command and JRuby standard library, and launches JRuby
+# using appropriate flags and configuration. A few flags provide additional
+# information:
+#
+# * `jruby --help` for standard options, most based on Ruby flags.
+# * `jruby --properties` to list all JRuby JVM properties for finer-grained
+#   configuration.
+# * `jruby --environment` to show the `java` command line that will be run and
+#   log output explaining how we got there.
+#
 # This script is intended to be compatible with POSIX shell as much as possible
 # modulo a few small features known to be nonstandard but present in nearly all
 # POSIX shell implementations. We tell shellcheck to treat this source as dash,
