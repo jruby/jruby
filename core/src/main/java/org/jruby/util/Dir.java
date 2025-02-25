@@ -973,11 +973,22 @@ public class Dir {
                         }
                         if ( fnmatch(magic, 0, magic.length, fileBytes, 0, fileBytes.length, flags) == 0 ) {
                             buf.length(0);
-                            if (scheme != null && SLASH_INDEX == -1) buf.append(scheme);
                             buf.append(base);
                             buf.append( isRoot(base) ? EMPTY : SLASH );
                             buf.append( getBytesInUTF8(file) );
-                            if ( SLASH_INDEX == -1 ) {
+                            boolean dirMatch = false;
+                            if (SLASH_INDEX == end - 1) {
+                                resource = JRubyFile.createResource(runtime, cwd, new String(buf.unsafeBytes(), buf.begin(), buf.length(), enc.getCharset()));
+                                dirMatch = resource.isDirectory();
+                            }
+                            if ( dirMatch || SLASH_INDEX == -1 ) {
+                                if (scheme != null) {
+                                    byte[] bufBytes = buf.bytes();
+                                    buf.length(0);
+                                    buf.append(scheme);
+                                    buf.append(bufBytes);
+                                }
+                                if (dirMatch) buf.append(SLASH);
                                 status = func.call(buf.getUnsafeBytes(), 0, buf.getRealSize(), enc, arg);
                                 if ( status != 0 ) break;
                                 continue;
@@ -993,7 +1004,7 @@ public class Dir {
                     for ( DirGlobber globber : links ) {
                         final ByteList link = globber.link;
                         if ( status == 0 ) {
-                            resource = JRubyFile.createResource(runtime, cwd, RubyString.byteListToString(link));
+                            resource = JRubyFile.createResource(runtime, cwd, new String(link.unsafeBytes(), link.begin(), link.length(), enc.getCharset()));
                             if ( resource.isDirectory() ) {
                                 final int len = link.getRealSize();
                                 buf.length(0);
