@@ -507,10 +507,10 @@ else
         case "${j#"$JRUBY_HOME/lib/"}" in
             jruby.jar|jruby-complete.jar) continue
         esac
-        if [ "$CP" ]; then
-            CP="$CP$CP_DELIMITER$j"
-        else
+        if [ -z "${CP-}" ]; then
             CP="$j"
+        else
+            CP="$CP$CP_DELIMITER$2"
         fi
     done
 
