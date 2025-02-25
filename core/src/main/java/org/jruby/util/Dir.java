@@ -945,22 +945,12 @@ public class Dir {
                             }
                         }
                         if (recursive) {
-                            if ( fnmatch(STAR, 0, 1, fileBytes, 0, fileBytes.length, flags) != 0) {
-                                continue;
-                            }
-                            buf.length(0);
-                            buf.append(base);
-                            buf.append( isRoot(base) ? EMPTY : SLASH );
-                            buf.append( getBytesInUTF8(file) );
-                            byte [] bufBytes = buf.unsafeBytes();
-                            int bufBegin = buf.begin();
-                            int bufLen = buf.length();
-                            if (scheme != null) {
-                                bufBytes = prependScheme(scheme, bufBytes, bufBegin, bufBegin + bufLen);
-                                bufBegin = 0;
-                                bufLen = bufBytes.length;
-                            }
-                            resource = JRubyFile.createResource(runtime, cwd, new String(bufBytes, bufBegin, bufLen, enc.getCharset()));
+                            if ( fnmatch(STAR, 0, 1, fileBytes, 0, fileBytes.length, flags) != 0) continue;
+
+                            constructNewPath(buf, base, file);
+                            if (scheme != null) prependScheme(scheme, buf);
+
+                            resource = JRubyFile.createResource(runtime, cwd, new String(buf.unsafeBytes(), buf.begin(), buf.length(), enc.getCharset()));
                             if ( !resource.isSymLink() && resource.isDirectory() && !".".equals(file) && !"..".equals(file) ) {
                                 final int len = buf.getRealSize();
                                 buf.append(SLASH);
@@ -972,22 +962,16 @@ public class Dir {
                             continue;
                         }
                         if ( fnmatch(magic, 0, magic.length, fileBytes, 0, fileBytes.length, flags) == 0 ) {
-                            buf.length(0);
-                            buf.append(base);
-                            buf.append( isRoot(base) ? EMPTY : SLASH );
-                            buf.append( getBytesInUTF8(file) );
+                            constructNewPath(buf, base, file);
+
                             boolean dirMatch = false;
                             if (SLASH_INDEX == end - 1) {
                                 resource = JRubyFile.createResource(runtime, cwd, new String(buf.unsafeBytes(), buf.begin(), buf.length(), enc.getCharset()));
                                 dirMatch = resource.isDirectory();
                             }
                             if ( dirMatch || SLASH_INDEX == -1 ) {
-                                if (scheme != null) {
-                                    byte[] bufBytes = buf.bytes();
-                                    buf.length(0);
-                                    buf.append(scheme);
-                                    buf.append(bufBytes);
-                                }
+                                if (scheme != null) prependScheme(scheme, buf);
+
                                 if (dirMatch) buf.append(SLASH);
                                 status = func.call(buf.getUnsafeBytes(), 0, buf.getRealSize(), enc, arg);
                                 if ( status != 0 ) break;
@@ -1021,6 +1005,20 @@ public class Dir {
         }
 
         return status;
+    }
+
+    private static void prependScheme(byte[] scheme, ByteList buf) {
+        byte[] bufBytes = buf.bytes();
+        buf.length(0);
+        buf.append(scheme);
+        buf.append(bufBytes);
+    }
+
+    private static void constructNewPath(ByteList buf, byte[] base, String file) {
+        buf.length(0);
+        buf.append(base);
+        buf.append(isRoot(base) ? EMPTY : SLASH);
+        buf.append(getBytesInUTF8(file));
     }
 
     private static byte[] getBytesInUTF8(final String str) {
