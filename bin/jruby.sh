@@ -1,6 +1,5 @@
 #!/bin/sh
 set -u
-# shellcheck disable=1007
 # -----------------------------------------------------------------------------
 # jruby.sh - Start Script for the JRuby interpreter
 # -----------------------------------------------------------------------------
@@ -32,6 +31,7 @@ fi
 # https://github.com/mentalisttraceur/esceval
 esceval()
 {
+    # shellcheck disable=1007
     local escaped= unescaped= output=
     REPLY=
 
