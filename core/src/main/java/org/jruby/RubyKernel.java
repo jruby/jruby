@@ -541,6 +541,7 @@ public class RubyKernel {
         if (object instanceof RubyInteger)return new_float(context, (RubyInteger) object);
         if (object instanceof RubyFloat) return object;
         if (object instanceof RubyString str) {
+            str.verifyAsciiCompatible();
             ByteList bytes = str.getByteList();
             if (bytes.isEmpty()) { // rb_cstr_to_dbl case
                 if (!exception) return context.nil;
