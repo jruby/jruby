@@ -4127,14 +4127,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 timeout = context.nil;
         }
 
-        if (timeout.isNil()) {
-            tv = -1;
-        }
-        else {
-            tv = (long)(RubyTime.convertTimeInterval(context, timeout) * 1000);
-            if (tv < 0) throw argumentError(context, "time interval must be positive");
-        }
-        return tv;
+        return RubyThread.prepareTimeout(context, timeout);
     }
 
     // MRI: rb_io_advise
@@ -5184,6 +5177,23 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         fptr.checkClosed();
         if (ready) return io;
         return context.nil;
+    }
+
+    @JRubyMethod(name = "timeout")
+    public IRubyObject timeout(ThreadContext context) {
+        return getOpenFile().timeout();
+    }
+
+    @JRubyMethod(name = "timeout=")
+    public IRubyObject setTimeout(ThreadContext context, IRubyObject timeout) {
+        // validate timeout
+        if (timeout.isTrue()) {
+            RubyTime.convertTimeInterval(context, timeout);
+        }
+
+        getOpenFile().timeout(timeout);
+
+        return timeout;
     }
 
     @JRubyMethod(name = {"path", "to_path"})
