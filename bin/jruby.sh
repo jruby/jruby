@@ -1,9 +1,36 @@
 #!/bin/sh
-set -u
-# shellcheck disable=1007
+# shellcheck shell=dash   # local variable support
+# shellcheck disable=1007 # spurious warnings when initializing multiple vars
+
 # -----------------------------------------------------------------------------
 # jruby.sh - Start Script for the JRuby interpreter
+#
+# This script handles all Ruby and JRuby command-line arguments, detects the
+# location of the `java` command and JRuby standard library, and launches JRuby
+# using appropriate flags and configuration. A few flags provide additional
+# information:
+#
+# * `jruby --help` for standard options, most based on Ruby flags.
+# * `jruby --properties` to list all JRuby JVM properties for finer-grained
+#   configuration.
+# * `jruby --environment` to show the `java` command line that will be run and
+#   log output explaining how we got there.
+#
+# This script is intended to be compatible with POSIX shell as much as possible
+# modulo a few small features known to be nonstandard but present in nearly all
+# POSIX shell implementations. We tell shellcheck to treat this source as dash,
+# a version of ash that adds those features and which has been the standard
+# Debian /bin/sh since 2011.
+#
+# See https://en.wikipedia.org/wiki/Almquist_shell#Adoption_in_Debian_and_Ubuntu
+#
+# There are a number of utility functions defined here to cope with the lack of
+# arrays in shell. These functions simulate arrays through other mechanism and
+# ensure we do not damage quoting during argument processing.
 # -----------------------------------------------------------------------------
+
+# Enable uninitialized variable warnings
+set -u
 
 # ----- Guarantee local variables are available -------------------------------
 if command -v local >/dev/null; then
@@ -138,7 +165,6 @@ esac
 readonly cygwin
 
 use_exec=true
-java_opts_from_files=""
 jdb=false
 
 NO_BOOTCLASSPATH=false
@@ -157,6 +183,10 @@ fi
 
 java_args=""
 ruby_args=""
+
+# shellcheck disable=2034 # variable is only read in an eval
+java_opts_from_files=""
+# shellcheck disable=2034 # variable is only read in an eval
 jdb_args=""
 
 # Force OpenJDK-based JVMs to use /dev/urandom for random number generation
@@ -507,10 +537,10 @@ else
         case "${j#"$JRUBY_HOME/lib/"}" in
             jruby.jar|jruby-complete.jar) continue
         esac
-        if [ "$CP" ]; then
-            CP="$CP$CP_DELIMITER$j"
-        else
+        if [ -z "${CP-}" ]; then
             CP="$j"
+        else
+            CP="$CP$CP_DELIMITER$2"
         fi
     done
 
