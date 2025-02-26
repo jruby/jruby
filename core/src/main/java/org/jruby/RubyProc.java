@@ -430,9 +430,16 @@ public class RubyProc extends RubyObject implements DataType {
     @JRubyMethod(keywords = true)
     public IRubyObject parameters(ThreadContext context, IRubyObject opts) {
         int callInfo = resetCallInfo(context);
-        boolean isLambda = (callInfo & ThreadContext.CALL_KEYWORD) != 0 ?
-                ArgsUtil.extractKeywordArg(context, (RubyHash) opts, "lambda").isTrue() :
-                isLambda();
+        boolean isLambda = isLambda();
+
+        IRubyObject lambdaOpt = ArgsUtil.extractKeywordArg(context, (RubyHash) opts, "lambda");
+
+        // ignore option if nil
+        if (!lambdaOpt.isNil()) {
+            isLambda = (callInfo & ThreadContext.CALL_KEYWORD) != 0 ?
+                    lambdaOpt.isTrue() :
+                    isLambda();
+        }
 
         return parametersCommon(context, isLambda);
     }
