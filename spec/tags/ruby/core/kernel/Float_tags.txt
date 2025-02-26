@@ -1,0 +1,2 @@
+fails(https://github.com/jruby/jruby/issues/8659):Kernel.Float allows String representation without a fractional part
+fails(https://github.com/jruby/jruby/issues/8659):Kernel#Float allows String representation without a fractional part
