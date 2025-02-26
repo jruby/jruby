@@ -51,6 +51,7 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
+import org.jruby.RubyThread;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Access;
@@ -539,7 +540,11 @@ public class RubySocket extends RubyBasicSocket {
 
                         if (!blocking || result) return result;
 
-                        while (!context.getThread().select(channel, this, SelectionKey.OP_CONNECT)) {
+                        while (true) {
+                            boolean selected = context.getThread().selectFor(context, channel, this, SelectionKey.OP_CONNECT);
+
+                            if (selected) break;
+
                             context.blockingThreadPoll();
                         }
                     }
