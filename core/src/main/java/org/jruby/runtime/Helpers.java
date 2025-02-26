@@ -99,6 +99,7 @@ import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.nameError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.api.Warn.warn;
+import static org.jruby.api.Warn.warnPerformance;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_EMPTY;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
@@ -2221,12 +2222,15 @@ public class Helpers {
 
     public static Visibility performNormalMethodChecksAndDetermineVisibility(ThreadContext context, RubyModule clazz,
                                                                              RubySymbol symbol, Visibility visibility) throws RaiseException {
-        if (clazz == context.runtime.getDummy()) throw typeError(context, "no class/module to add method");
+        Ruby runtime = context.runtime;
 
-        switch(symbol.idString()) {
+        if (clazz == runtime.getDummy()) throw typeError(context, "no class/module to add method");
+
+        String name = symbol.idString();
+        switch(name) {
             case "__id__":
             case "__send__":
-                warn(context, str(context.runtime, "redefining '", ids(context.runtime, symbol), "' may cause serious problem"));
+                warn(context, str(runtime, "redefining '", ids(runtime, symbol), "' may cause serious problem"));
                 break;
             case "initialize":
                 if (clazz == objectClass(context)) {
@@ -2238,6 +2242,11 @@ public class Helpers {
             case "respond_to_missing?":
                 visibility = Visibility.PRIVATE;
                 break;
+            default:
+                if ((clazz == runtime.getInteger() && MethodIndex.getFastFixnumOpsMethod(name) != null)
+                        || (clazz == runtime.getFloat() && MethodIndex.getFastFloatOpsMethod(name) != null)) {
+                    warnPerformance(context, "Redefining '" + clazz.getBaseName() + "#" + name + "' disables interpreter and JIT optimizations");
+                }
         }
 
         if (visibility == Visibility.MODULE_FUNCTION) {
