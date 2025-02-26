@@ -248,7 +248,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
     public void warningDeprecated(ID id, String message) {
         if (!isVerbose() && !runtime.getWarningCategories().contains(Category.DEPRECATED)) return;
-        warn(id, message);
+        warning(id, message);
     }
 
     /**

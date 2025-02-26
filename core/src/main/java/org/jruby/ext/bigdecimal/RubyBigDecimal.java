@@ -66,7 +66,7 @@ import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
-import static org.jruby.api.Warn.warningDeprecated;
+import static org.jruby.api.Warn.warnDeprecated;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
 /**
@@ -1903,7 +1903,7 @@ public class RubyBigDecimal extends RubyNumeric {
     @Deprecated
     @JRubyMethod
     public IRubyObject precs(ThreadContext context) {
-        warningDeprecated(context, "BigDecimal#precs is deprecated and will be removed in the future; use BigDecimal#precision instead.");
+        warnDeprecated(context, "BigDecimal#precs is deprecated and will be removed in the future; use BigDecimal#precision instead.");
         return newArray(context,
                 asFixnum(context, getSignificantDigits().length()),
                 asFixnum(context, ((getAllDigits().length() / 4) + 1) * 4));

@@ -54,6 +54,7 @@ import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Warn.warn;
+import static org.jruby.api.Warn.warnDeprecated;
 import static org.jruby.api.Warn.warningDeprecated;
 import static org.jruby.util.URLUtil.getPath;
 
@@ -432,7 +433,7 @@ public class JRubyUtilLibrary implements Library {
     @JRubyMethod(module = true)
     @Deprecated(since = "9.4-", forRemoval = true)
     public static RubyArray internal_libraries(ThreadContext context, IRubyObject self) {
-        warningDeprecated(context, "JRuby::Util.internal_libraries is deprecated");
+        warnDeprecated(context, "JRuby::Util.internal_libraries is deprecated");
         return newEmptyArray(context);
     }
 
