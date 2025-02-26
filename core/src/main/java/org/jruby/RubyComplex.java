@@ -1249,7 +1249,11 @@ public class RubyComplex extends RubyNumeric {
 
     // MRI: f_finite_p
     public boolean checkFinite(ThreadContext context, IRubyObject value) {
-        return checkInfinite(context, value).isTrue();
+        if (value instanceof RubyInteger || value instanceof RubyRational) return true;
+
+        return value instanceof RubyFloat flote ?
+                flote.finite_p(context).isTrue() :
+                sites(context).finite.call(context, value, value).isTrue();
     }
 
     @JRubyMethod(name = "infinite?")
