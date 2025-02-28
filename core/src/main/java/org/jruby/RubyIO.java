@@ -2558,7 +2558,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         if (fptr == null || (fd = fptr.fd().realFileno) == -1
                 || !posix.isNative() || Platform.IS_WINDOWS ) {
-            runtime.getWarnings().warningDeprecated("close_on_exec is not implemented on this platform for this stream type: " + fptr.fd().ch.getClass().getSimpleName());
+            runtime.getWarnings().warningDeprecated("close_on_exec may not be implemented on this platform for this stream type: " + fptr.fd().ch.getClass().getSimpleName());
             return context.nil;
         }
 
@@ -4261,7 +4261,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         IRubyObject cmd;
         if ((recv == ioClass(context)) && (cmd = PopenExecutor.checkPipeCommand(context, filename)) != context.nil) {
-            warningDeprecated(context, "IO process creation with a leading '|' is deprecated and will be removed in Ruby 4.0; use IO.popen instead");
+            warnDeprecated(context, "IO process creation with a leading '|' is deprecated and will be removed in Ruby 4.0; use IO.popen instead");
             if (PopenExecutor.nativePopenAvailable(context.runtime)) {
                 return (RubyIO) PopenExecutor.pipeOpen(context, cmd, OpenFile.ioOflagsModestr(context, oflags), fmode, convconfig);
             } else {

@@ -1257,7 +1257,7 @@ public class RubyComplex extends RubyNumeric {
         if (value instanceof RubyInteger || value instanceof RubyRational) return true;
 
         return value instanceof RubyFloat flote ?
-                flote.finite_p().isTrue() :
+                flote.finite_p(context).isTrue() :
                 sites(context).finite.call(context, value, value).isTrue();
     }
 

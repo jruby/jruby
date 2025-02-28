@@ -129,7 +129,6 @@ import static org.jruby.api.Error.indexError;
 import static org.jruby.api.Error.rangeError;
 import static org.jruby.api.Error.runtimeError;
 import static org.jruby.api.Error.typeError;
-import static org.jruby.api.Warn.warningDeprecated;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
@@ -4757,7 +4756,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
             if (splitPattern.isNil()) return context.nil;
 
-            warningDeprecated(context, "$; is set to non-nil value");
+            warnDeprecated(context, "$; is set to non-nil value");
 
             pattern = splitPattern;
         }

@@ -419,6 +419,19 @@ jobs:
         env:
           PHASE: 'package -Ptest'
 
+  jruby-shell-check:
+    runs-on: ubuntu-latest
+
+    name: shellcheck jruby.sh
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: install shellcheck
+        run: sudo apt install shellcheck
+      - name: run shellcheck
+        run: shellcheck bin/jruby.sh
+
   rake-test-wip-21:
     runs-on: ubuntu-latest
 

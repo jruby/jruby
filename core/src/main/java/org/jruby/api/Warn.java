@@ -68,11 +68,20 @@ public class Warn {
     }
 
     /**
-     * Produce a warning id deprecated is set (e.g. Warning[:deprecated] = true)
+     * Produce a warning if experimental is set (e.g. Warning[:experimental] = true)
      * @param context the current context
      * @param message to be displayed as a warning
      */
     public static void warnExperimental(ThreadContext context, String message) {
         context.runtime.getWarnings().warnExperimental(message);
+    }
+
+    /**
+     * Produce a warning if performance is set (e.g. Warning[:performance] = true)
+     * @param context the current context
+     * @param message to be displayed as a warning
+     */
+    public static void warnPerformance(ThreadContext context, String message) {
+        context.runtime.getWarnings().warnPerformance(message);
     }
 }
