@@ -41,18 +41,25 @@ import static org.jruby.util.TypeConverter.sites;
 /**
  * Conversion utilities.
  * <p/>
- * By convention if a method has `As` in it then it implies it is already the thing but it may potentially
- * have range problems (asInt() on a Fixnum means a long will get truncated via cast to an int).  If it
- * has `To` in it then it implies it is converting to that thing and it might not be that thing.  It additionally
- * means it will be verifying the range of the thing being made (e.g. an int from a Fixnum will not just
- * cast but check against MIN and MAX).
+ * There are 3 mechanisms for converting between types:
+ * </p>
+ * <ul>
+ *     <li>type#getValue() where we know exactly what it is and we will be responsible for how it is used</li>
+ *     <li>`as` where we know it is the thing but we will not care about truncation or range issues</li>
+ *     <li>`to` where we do not know but hope it is the thing OR we know but need to check range</li>
+ * </ul>
  * <p/>
- * For example, `Numeric.asInt` implies the value has an int representation but it may truncate or lose information.
- * `ToInt` implies the value might not be an integer and that it may try and convert it to one.  It also makes sure
- * it can actually fit into Java's int.
+ * For example, I have a RubyFixnum and I know I need a long I can just call `getValue()`.  If I need an
+ * int and I know enough about it to not care about range I can call `asInt`.  If I do need check range I can
+ * call `toInt(context, (RubyFixnum) value)` and it will make sure it is a valid int value.   If I don't know
+ * for sure if it is even capable of being an int I will call `toInt(context, (IRubyObject) value)`.
  * <p/>
- *
- * // FIXME: More on naming conventions.
+ * The naming conventions will tend to be {resolvedType}?[As|To}{returnedType} where {resolvedType} is ommitted
+ * when the convention is obvious (`long toLong(ThreadContext context, IRubyObject)`).  Right now we have
+ * `RubyInteger toInteger(ThreadContext, IRubyObject)` which means making a Ruby Integer vs a Java boxed Integer.
+ * If we ever needed a Java Integer (narrator: we won't) we would have to break this convention and make
+ * `Integer toJavaInteger(ThreadContext, IRubyObject)`.  There are no example of {resolvedType} in any
+ * conversion methods but this is reserved in case we have more naming conflicts due to overlapping names.
  */
 public class Convert {
     /**
