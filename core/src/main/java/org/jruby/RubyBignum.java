@@ -162,7 +162,7 @@ public class RubyBignum extends RubyInteger {
     @Override
     @JRubyAPI
     public long asLong(ThreadContext context) {
-        return getValue().longValue();
+        return value.longValue();
     }
 
     @Override
