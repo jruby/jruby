@@ -129,6 +129,7 @@ import static org.jruby.api.Error.indexError;
 import static org.jruby.api.Error.rangeError;
 import static org.jruby.api.Error.runtimeError;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Warn.warnDeprecated;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
