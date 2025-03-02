@@ -735,7 +735,7 @@ public class EncodingUtils {
             } else if (v.toString().equals("cr")) {
                 ecflags |= EConvFlags.CR_NEWLINE_DECORATOR;
             } else if (v.toString().equals("lf")) {
-//                ecflags |= ECONV_LF_NEWLINE_DECORATOR;
+                ecflags |= EConvFlags.LF_NEWLINE_DECORATOR;
             } else if (v instanceof RubySymbol sym) {
                 throw argumentError(context, "unexpected value for newline option: " + sym.to_s(context).toString());
             } else {
@@ -763,6 +763,12 @@ public class EncodingUtils {
             setflags |= EConvFlags.CR_NEWLINE_DECORATOR;
         }
         newlineflag |= !v.isNil();
+
+        v = ((RubyHash)opt).op_aref(context, Convert.asSymbol(context, "lf_newline"));
+        if (v.isTrue()) {
+            setflags |= EConvFlags.LF_NEWLINE_DECORATOR;
+        }
+        newlineflag |= !v.isNil();        
 
         if (newlineflag) {
             ecflags &= ~EConvFlags.NEWLINE_DECORATOR_MASK;

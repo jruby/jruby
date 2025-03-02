@@ -1,1 +1,0 @@
-fails(https://github.com/jruby/jruby/issues/8661):RbConfig::CONFIG['UNICODE_VERSION'] is 15.0.0

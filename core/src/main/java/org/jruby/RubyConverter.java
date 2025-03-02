@@ -89,6 +89,8 @@ public class RubyConverter extends RubyObject {
     @JRubyConstant
     public static final int CR_NEWLINE_DECORATOR = EConvFlags.CR_NEWLINE_DECORATOR;
     @JRubyConstant
+    public static final int LF_NEWLINE_DECORATOR = EConvFlags.LF_NEWLINE_DECORATOR;
+    @JRubyConstant
     public static final int XML_TEXT_DECORATOR = EConvFlags.XML_TEXT_DECORATOR;
     @JRubyConstant
     public static final int XML_ATTR_CONTENT_DECORATOR = EConvFlags.XML_ATTR_CONTENT_DECORATOR;
