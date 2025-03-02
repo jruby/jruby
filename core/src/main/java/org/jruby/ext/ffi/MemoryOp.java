@@ -115,7 +115,7 @@ abstract class MemoryOp {
             return get(context.runtime, io, offset);
         }
         void put(ThreadContext context, MemoryIO io, long offset, IRubyObject value) {
-            put(context, io, offset, value);
+            put(context.runtime, io, offset, value);
         }
     }
     static final class BooleanOp extends PrimitiveOp {
