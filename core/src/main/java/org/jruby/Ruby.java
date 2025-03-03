@@ -1763,6 +1763,8 @@ public final class Ruby implements Constantizable {
                 createSysErr(context, Errno.EAGAIN.intValue(), Errno.EAGAIN.name());
 
                 for (Errno e : Errno.values()) {
+                    if (e == Errno.EAGAIN) continue; // already defined above
+
                     if (Character.isUpperCase(e.name().charAt(0))) createSysErr(context, e.intValue(), e.name());
                 }
 

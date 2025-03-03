@@ -131,7 +131,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 defineConstant(context, "APPEND", asFixnum(context, OpenFlags.O_APPEND.intValue())).
                 defineConstant(context, "CREAT", asFixnum(context, OpenFlags.O_CREAT.intValue())).
                 defineConstant(context, "EXCL", asFixnum(context, OpenFlags.O_EXCL.intValue())).
-                defineConstant(context, "NONBLOCK", asFixnum(context, OpenFlags.O_NONBLOCK.intValue())).
                 defineConstant(context, "TRUNC", asFixnum(context, OpenFlags.O_TRUNC.intValue())).
                 // FIXME: NOCTTY is showing up as undefined on Linux, but it should be defined.
                 defineConstant(context, "NOCTTY", asFixnum(context, OpenFlags.O_NOCTTY.intValue())).
