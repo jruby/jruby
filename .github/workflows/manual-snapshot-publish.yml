@@ -5,10 +5,24 @@ permissions:
   contents: read
 
 jobs:
-  publish:
+  publish-9.4:
     permissions:
       contents: read
-    uses: jruby/jruby/.github/workflows/snapshot-publish.yml@f5b000d735c993bd3d3af27e6241f6c83565bbaa
+    if: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/heads/jruby-9.4' }}
+    uses: jruby/jruby/.github/workflows/snapshot-publish.yml@6e8a7c652c75755032d344e4ac2b236ec37c77b0
+    with:
+      javaLevel: 8
+    secrets:
+      SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+      SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+
+  publish-10:
+    permissions:
+      contents: read
+    if: ${{ github.ref == 'refs/heads/10-dev' }}
+    uses: jruby/jruby/.github/workflows/snapshot-publish.yml@6e8a7c652c75755032d344e4ac2b236ec37c77b0
+    with:
+      javaLevel: 21
     secrets:
       SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
       SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
