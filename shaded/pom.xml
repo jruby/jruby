@@ -163,6 +163,12 @@ DO NOT MODIFY - GENERATED CODE
               </execution>
             </executions>
           </plugin>
+          <plugin>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <configuration>
+              <failOnError>false</failOnError>
+            </configuration>
+          </plugin>
         </plugins>
       </build>
     </profile>
@@ -217,6 +223,12 @@ DO NOT MODIFY - GENERATED CODE
                 </configuration>
               </execution>
             </executions>
+          </plugin>
+          <plugin>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <configuration>
+              <failOnError>false</failOnError>
+            </configuration>
           </plugin>
         </plugins>
       </build>
@@ -273,6 +285,12 @@ DO NOT MODIFY - GENERATED CODE
               </execution>
             </executions>
           </plugin>
+          <plugin>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <configuration>
+              <failOnError>false</failOnError>
+            </configuration>
+          </plugin>
         </plugins>
       </build>
     </profile>
@@ -327,6 +345,12 @@ DO NOT MODIFY - GENERATED CODE
                 </configuration>
               </execution>
             </executions>
+          </plugin>
+          <plugin>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <configuration>
+              <failOnError>false</failOnError>
+            </configuration>
           </plugin>
         </plugins>
       </build>
@@ -383,6 +407,12 @@ DO NOT MODIFY - GENERATED CODE
               </execution>
             </executions>
           </plugin>
+          <plugin>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <configuration>
+              <failOnError>false</failOnError>
+            </configuration>
+          </plugin>
         </plugins>
       </build>
     </profile>
@@ -437,6 +467,12 @@ DO NOT MODIFY - GENERATED CODE
                 </configuration>
               </execution>
             </executions>
+          </plugin>
+          <plugin>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <configuration>
+              <failOnError>false</failOnError>
+            </configuration>
           </plugin>
         </plugins>
       </build>
@@ -493,6 +529,12 @@ DO NOT MODIFY - GENERATED CODE
               </execution>
             </executions>
           </plugin>
+          <plugin>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <configuration>
+              <failOnError>false</failOnError>
+            </configuration>
+          </plugin>
         </plugins>
       </build>
     </profile>
@@ -548,6 +590,12 @@ DO NOT MODIFY - GENERATED CODE
               </execution>
             </executions>
           </plugin>
+          <plugin>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <configuration>
+              <failOnError>false</failOnError>
+            </configuration>
+          </plugin>
         </plugins>
       </build>
     </profile>
@@ -602,6 +650,12 @@ DO NOT MODIFY - GENERATED CODE
                 </configuration>
               </execution>
             </executions>
+          </plugin>
+          <plugin>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <configuration>
+              <failOnError>false</failOnError>
+            </configuration>
           </plugin>
         </plugins>
       </build>

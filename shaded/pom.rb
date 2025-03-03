@@ -87,6 +87,8 @@ project 'JRuby Core' do
                        compress: true
         )
       end
+
+      plugin( :javadoc, failOnError: false )
     end
   end
 end
