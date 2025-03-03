@@ -10,7 +10,7 @@ jobs:
       contents: read
     uses: jruby/jruby/.github/workflows/snapshot-publish.yml@6e8a7c652c75755032d344e4ac2b236ec37c77b0
     with:
-      javaLevel: 8
+      javaLevel: 21
     secrets:
       SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
       SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
