@@ -1,4 +1,4 @@
-name: JRuby snapshot using Java 8
+name: JRuby snapshot using Java 21
 
 on: workflow_dispatch
 permissions:
@@ -10,7 +10,7 @@ jobs:
       contents: read
     uses: jruby/jruby/.github/workflows/snapshot-publish.yml@d8369e218d4878b79d394a90483f109a2096a820
     with:
-      javaLevel: 8
+      javaLevel: 21
     secrets:
       SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
       SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
