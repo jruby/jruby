@@ -1,4 +1,4 @@
-name: Nightly Snapshots
+name: Nightly Snapshots using Java 21
 
 on:
   schedule:

@@ -1,4 +1,4 @@
-name: JRuby snapshot deploy
+name: JRuby snapshot using Java 21
 
 on: workflow_dispatch
 permissions:
