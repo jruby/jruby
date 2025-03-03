@@ -5,6 +5,7 @@ on:
     inputs:
       javaLevel:
         description: "Java version level"
+        type: string
         required: false
         default: "8"
     secrets:
