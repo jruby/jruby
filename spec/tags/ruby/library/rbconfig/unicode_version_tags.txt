@@ -1,1 +1,0 @@
-fails(JRuby 9.4 updated Unicode to 15.0):RbConfig::CONFIG['UNICODE_VERSION'] is 13.0.0
