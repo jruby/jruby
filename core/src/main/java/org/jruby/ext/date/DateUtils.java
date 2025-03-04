@@ -238,7 +238,7 @@ abstract class DateUtils {
                 vs = sites(context).zone_to_diff.call(context, date, date, of);
 
                 if (!(vs instanceof RubyFixnum fixnum)) return INVALID_OFFSET;
-                n = fixnum.asLong(context);
+                n = fixnum.getValue();
                 if (n < -DAY_IN_SECONDS || n > DAY_IN_SECONDS) return INVALID_OFFSET;
                 return (int) n;
 //            default:
@@ -254,7 +254,7 @@ abstract class DateUtils {
 
                 if (!(vs instanceof RubyRational)) {
                     if (!(vs instanceof RubyFixnum vsf)) return INVALID_OFFSET;
-                    n = vsf.asLong(context);
+                    n = vsf.getValue();
                     if (n < -DAY_IN_SECONDS || n > DAY_IN_SECONDS) return INVALID_OFFSET;
 		            return (int) n;
                 }
@@ -262,13 +262,13 @@ abstract class DateUtils {
                 RubyInteger vn = ((RubyRational) vs).getNumerator();
                 RubyInteger vd = ((RubyRational) vs).getDenominator();
 
-                if (vn instanceof RubyFixnum vnf && vd instanceof RubyFixnum vdf && vdf.asLong(context) == 1)
-                    n = vnf.asLong(context);
+                if (vn instanceof RubyFixnum vnf && vd instanceof RubyFixnum vdf && vdf.getValue() == 1)
+                    n = vnf.getValue();
                 else {
                     vn = (RubyInteger) ((RubyRational) vs).round(context);
                     //if (!f_eqeq_p(vn, vs)) rb_warning("fraction of offset is ignored");
                     if (!(vn instanceof RubyFixnum vnf)) return INVALID_OFFSET;
-                    n = vnf.asLong(context);
+                    n = vnf.getValue();
                     if (n < -DAY_IN_SECONDS || n > DAY_IN_SECONDS) return INVALID_OFFSET;
                 }
 	            return (int) n;
@@ -401,7 +401,7 @@ abstract class DateUtils {
     static int decode_year(ThreadContext context, IRubyObject y, final int style, RubyInteger[] nth) {
         final long period = style < 0 ? CM_PERIOD_GCY : CM_PERIOD_JCY;
         if (y instanceof RubyFixnum yf) {
-            long iy = yf.asLong(context);
+            long iy = yf.getValue();
             if (iy < RubyFixnum.MAX - 4712) {
                 long it = iy + 4712; /* shift */
                 long inth = it / period;

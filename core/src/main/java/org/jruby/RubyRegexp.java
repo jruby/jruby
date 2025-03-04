@@ -76,17 +76,19 @@ import org.jruby.util.io.EncodingUtils;
 
 import java.util.Iterator;
 
-import static org.jruby.RubyNumeric.fix2int;
 import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.anno.FrameField.LASTLINE;
+import static org.jruby.api.Access.encodingService;
 import static org.jruby.api.Access.instanceConfig;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asFloat;
 import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.dupString;
 import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Create.newHash;
+import static org.jruby.api.Create.newSharedString;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
@@ -661,8 +663,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
      */
     @JRubyMethod(name = {"quote", "escape"}, meta = true)
     public static RubyString quote(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        final RubyString str = operandCheck(context, arg);
-        return RubyString.newStringShared(context.runtime, quote(str));
+        return newSharedString(context, quote(operandCheck(context, arg)));
     }
 
     static ByteList quote(final RubyString str) {
@@ -917,7 +918,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     private static int objectAsJoniOptions(ThreadContext context, IRubyObject arg) {
-        if (arg instanceof RubyFixnum) return fix2int(arg);
+        if (arg instanceof RubyFixnum fixnum) return toInt(context, fixnum);
         if (arg instanceof RubyString str) return RegexpOptions.fromByteList(context, str.getByteList()).toJoniOptions();
         if (arg instanceof RubyBoolean) return arg.isTrue() ? RE_OPTION_IGNORECASE : 0;
         if (arg.isNil()) return 0;
@@ -1150,7 +1151,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     @JRubyMethod(name = "match", writes = BACKREF)
     public IRubyObject match_m(ThreadContext context, IRubyObject str, IRubyObject pos, Block block) {
-        return matchCommon(context, str, RubyNumeric.num2int(pos), true, block);
+        return matchCommon(context, str, toInt(context, pos), true, block);
     }
 
     public final IRubyObject match_m(ThreadContext context, IRubyObject str, boolean useBackref) {
@@ -1164,7 +1165,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     @JRubyMethod(name = "match?")
     public IRubyObject match_p(ThreadContext context, IRubyObject str, IRubyObject pos) {
-        return matchP(context, str, RubyNumeric.num2int(pos));
+        return matchP(context, str, toInt(context, pos));
     }
 
     private IRubyObject matchCommon(ThreadContext context, IRubyObject str, int pos, boolean setBackref, Block block) {
@@ -1601,8 +1602,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     @JRubyMethod
     public IRubyObject encoding(ThreadContext context) {
-        Encoding enc = (pattern == null) ? str.getEncoding() : pattern.getEncoding();
-        return context.runtime.getEncodingService().getEncoding(enc);
+        Encoding enc = pattern == null ? str.getEncoding() : pattern.getEncoding();
+        return encodingService(context).getEncoding(enc);
     }
 
     @JRubyMethod(name = "fixed_encoding?")

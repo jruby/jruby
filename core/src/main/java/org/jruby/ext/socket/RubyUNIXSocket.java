@@ -130,7 +130,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         int argc = Arity.checkArgumentCount(context, args, 1, 2);
         IRubyObject _length = args[0];
         IRubyObject _flags = argc == 2 ? args[1] : context.nil;
-        int flags = _flags.isNil() ? 0 : RubyNumeric.fix2int(_flags); // TODO
+        int flags = _flags.isNil() ? 0 : toInt(context, _flags); // TODO
 
         return newArray(context, recv(context, _length), peeraddr(context));
     }

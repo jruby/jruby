@@ -108,6 +108,8 @@ import static org.jruby.api.Access.runtimeErrorClass;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toDouble;
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Define.defineClass;
@@ -292,7 +294,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 if (err == UNDEF) {
                     // no error
                 } else if (err instanceof RubyFixnum fix && 
-                        (fix.asLong(context) == 0 || fix.asLong(context) == 1 || fix.asLong(context) == 2)) {
+                        (fix.getValue() == 0 || fix.getValue() == 1 || fix.getValue() == 2)) {
                     toKill();
                 } else {
                     if (getStatus() == Status.SLEEP) exitSleep();
@@ -1260,7 +1262,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (!timeout.isNil()) {
             // MRI behavior: value given in seconds; converted to Float; less
             // than or equal to zero returns immediately; returns nil
-            timeoutMillis = (long) (1000 * RubyNumeric.num2dbl(timeout));
+            timeoutMillis = (long) (1000 * toDouble(context, timeout));
             if (timeoutMillis <= 0) {
                 // TODO: not sure that we should skip calling join() altogether.
                 // Thread.join() has some implications for Java Memory Model, etc.
@@ -1444,7 +1446,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "priority=")
     public IRubyObject priority_set(ThreadContext context, IRubyObject priority) {
-        int iPriority = RubyNumeric.fix2int(priority);
+        int iPriority = toInt(context, priority);
 
         if (iPriority < RUBY_MIN_THREAD_PRIORITY) {
             iPriority = RUBY_MIN_THREAD_PRIORITY;

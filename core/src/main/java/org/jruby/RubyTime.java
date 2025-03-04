@@ -81,10 +81,20 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.jruby.RubyComparable.invcmp;
-import static org.jruby.api.Convert.*;
-import static org.jruby.api.Create.*;
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asFloat;
+import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Convert.checkToInteger;
+import static org.jruby.api.Convert.toDouble;
+import static org.jruby.api.Convert.toInt;
+import static org.jruby.api.Convert.toLong;
+import static org.jruby.api.Create.newArrayNoCopy;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineClass;
-import static org.jruby.api.Error.*;
+import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.rangeError;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -750,7 +760,7 @@ public class RubyTime extends RubyObject {
         if (cmp.isBuiltin(self)) {
             cmpResult = self.cmp((RubyTime) other);
         } else {
-            cmpResult = RubyNumeric.fix2int(cmp.call(context, self, self, other));
+            cmpResult = toInt(context, cmp.call(context, self, self, other));
         }
         return cmpResult;
     }
@@ -808,7 +818,7 @@ public class RubyTime extends RubyObject {
     public IRubyObject op_plus(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) throw typeError(context, "time + time?");
 
-        double adjustMillis = RubyNumeric.num2dbl(context, numExact(context, other)) * 1000;
+        double adjustMillis = toDouble(context, numExact(context, other)) * 1000;
         return opPlusMillis(context.runtime, adjustMillis);
     }
 
@@ -846,9 +856,9 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = "-")
     public IRubyObject op_minus(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyTime) return opMinus(context, (RubyTime) other);
+        if (other instanceof RubyTime time) return opMinus(context, time);
 
-        return opMinus(context, RubyNumeric.num2dbl(context, numExact(context, other)));
+        return opMinus(context, toDouble(context, numExact(context, other)));
     }
 
     private RubyTime opMinus(ThreadContext context, double other) {
@@ -879,7 +889,7 @@ public class RubyTime extends RubyObject {
     @Override
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
-            return asBoolean(context, RubyNumeric.fix2int(invokedynamic(context, this, OP_CMP, other)) == 0);
+            return asBoolean(context, toInt(context, invokedynamic(context, this, OP_CMP, other)) == 0);
         }
 
         return context.fals;
@@ -983,7 +993,11 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = {"to_i", "tv_sec"})
     public RubyInteger to_i(ThreadContext context) {
-        return asFixnum(context, Math.floorDiv(getTimeInMillis(), (long) 1000));
+        return asFixnum(context, to_i_long());
+    }
+
+    public long to_i_long() {
+        return Math.floorDiv(getTimeInMillis(), (long) 1000);
     }
 
     @Deprecated(since = "9.4-", forRemoval = true)
@@ -1408,7 +1422,7 @@ public class RubyTime extends RubyObject {
         nanosec /= 10;
         submicro[0] |= (byte)((nanosec % 10) << 4);
         if (submicro[1] == 0) len = 1;
-        string.setInternalVariable("submicro", RubyString.newString(context.runtime, submicro, 0, len));
+        string.setInternalVariable("submicro", newString(context, submicro, 0, len));
 
         // time zone
         final DateTimeZone zone = dt.getZone();
@@ -1468,7 +1482,7 @@ public class RubyTime extends RubyObject {
     }
 
     private int getNdigits(ThreadContext context, IRubyObject[] args) {
-        int ndigits = args.length == 0 ? 0 : RubyNumeric.num2int(args[0]);
+        int ndigits = args.length == 0 ? 0 : toInt(context, args[0]);
         // There are only 1_000_000_000 nanoseconds in 1 second,
         // so there is no need to keep more than 9 digits
         if (ndigits > 9) ndigits = 9;
@@ -1580,7 +1594,7 @@ public class RubyTime extends RubyObject {
             // However in the case of a single argument, any portion after the decimal point is honored.
             if (arg instanceof RubyFloat flote) {
                 // use integral and decimal forms to calculate nanos
-                long seconds = RubyNumeric.float2long(flote);
+                long seconds = flote.asLong(context);
                 double dbl = flote.value;
 
                 long nano = (long)((dbl - seconds) * 1000000000);
@@ -1629,7 +1643,7 @@ public class RubyTime extends RubyObject {
         arg2 = numExact(context, arg2);
 
         if (arg1 instanceof RubyFloat || arg1 instanceof RubyRational) {
-            double dbl = RubyNumeric.num2dbl(context, arg1);
+            double dbl = toDouble(context, arg1);
             millisecs = (long) (dbl * 1000);
             nanosecs = ((long) (dbl * 1000000000)) % 1000000;
         } else {
@@ -1640,12 +1654,12 @@ public class RubyTime extends RubyObject {
 
         if (arg2 instanceof RubyFloat || arg2 instanceof RubyRational) {
             if (asSymbol(context, "microsecond").eql(unit) || asSymbol(context, "usec").eql(unit)) {
-                double micros = RubyNumeric.num2dbl(context, arg2);
+                double micros = toDouble(context, arg2);
                 double nanos = micros * 1000;
                 millisecs += (long) (nanos / 1000000);
                 nanosecs += (long) (nanos % 1000000);
             } else if (asSymbol(context, "millisecond").eql(unit)) {
-                double millis = RubyNumeric.num2dbl(context, arg2);
+                double millis = toDouble(context, arg2);
                 double nanos = millis * 1000000;
                 millisecs += (long) (nanos / 1000000);
                 nanosecs += (long) (nanos % 1000000);

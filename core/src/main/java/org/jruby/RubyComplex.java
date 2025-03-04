@@ -56,8 +56,11 @@ import java.util.function.BiFunction;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asFloat;
+import static org.jruby.api.Convert.toInt;
+import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newRational;
+import static org.jruby.api.Create.newSharedString;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.*;
 import static org.jruby.api.Warn.warn;
@@ -745,7 +748,7 @@ public class RubyComplex extends RubyNumeric {
                     f_mul(context, otherImage, RubyMath.log(context, r)));
             return f_complex_polar(context, getMetaClass(), nr, ntheta);
         } else if (other instanceof RubyFixnum otherFixnum) {
-            long n = otherFixnum.asLong(context);
+            long n = otherFixnum.getValue();
             if (n == 0) return newInstance(context, getMetaClass(), asFixnum(context, 1), asFixnum(context, 0));
 
             RubyComplex self = this;
@@ -865,7 +868,7 @@ public class RubyComplex extends RubyNumeric {
         int dirs[][] = {
             {1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}, {-1, -1}, {0, -1}, {1, -1}
         };
-        int z_dir = fix2int(asFixnum(context, dir).modulo(context, 8));
+        int z_dir = toInt(context, asFixnum(context, dir).modulo(context, 8));
 
         IRubyObject zr = context.fals, zi = context.fals;
         switch (dirs[z_dir][0]) {
@@ -1043,17 +1046,19 @@ public class RubyComplex extends RubyNumeric {
      */
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
-        long realHash = RubyNumeric.fix2long(invokedynamic(context, real, HASH));
-        long imageHash = RubyNumeric.fix2long(invokedynamic(context, image, HASH));
+        long realHash = toLong(context, invokedynamic(context, real, HASH));
+        long imageHash = toLong(context, invokedynamic(context, image, HASH));
         byte [] bytes = ByteBuffer.allocate(16).putLong(realHash).putLong(imageHash).array();
         return asFixnum(context, Helpers.multAndMix(context.runtime.getHashSeedK0(), Arrays.hashCode(bytes)));
     }
 
     @Override
     public int hashCode() {
-        final IRubyObject hash = hash(getRuntime().getCurrentContext());
-        if (hash instanceof RubyFixnum) return (int) RubyNumeric.fix2long(hash);
-        return nonFixnumHashCode(hash);
+        var context = getRuntime().getCurrentContext();
+        final IRubyObject hash = hash(context);
+        return hash instanceof RubyFixnum fixnum ?
+                (int) fixnum.getValue() :
+                nonFixnumHashCode(context, hash);
     }
 
     /** nucomp_eql_p
@@ -1344,10 +1349,10 @@ public class RubyComplex extends RubyNumeric {
     private static RubyNumeric convertString(ThreadContext context, final IRubyObject s, RubyFixnum zero) {
         if (s == context.nil) return zero;
 
-        if (s.callMethod(context, "include?", RubyString.newStringShared(context.runtime, SEP)).isTrue()) {
+        if (s.callMethod(context, "include?", newSharedString(context, SEP)).isTrue()) {
             return (RubyNumeric) f_to_r(context, s);
         }
-        if (f_gt_p(context, s.callMethod(context, "count", RubyString.newStringShared(context.runtime, _eE)), zero)) {
+        if (f_gt_p(context, s.callMethod(context, "count", newSharedString(context, _eE)), zero)) {
             return (RubyNumeric) f_to_f(context, s);
         }
         return (RubyNumeric) ((RubyString) s).stringToInum(10, true);

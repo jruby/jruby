@@ -37,6 +37,8 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toInt;
+import static org.jruby.api.Create.newString;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -79,7 +81,7 @@ public class JZlibInflate extends ZStream {
         int argc = Arity.checkArgumentCount(context, args, 0, 1);
 
         windowBits = argc > 0 && !args[0].isNil() ?
-                checkWindowBits(context, RubyNumeric.fix2int(args[0]), true) : JZlib.DEF_WBITS;
+                checkWindowBits(context, toInt(context, args[0]), true) : JZlib.DEF_WBITS;
 
         init(windowBits);
         return this;
@@ -101,7 +103,7 @@ public class JZlibInflate extends ZStream {
 
     private IRubyObject flushOutput(ThreadContext context, Block block) {
         if (collectedIdx > 0) {
-            RubyString res = RubyString.newString(context.runtime, collected, 0, collectedIdx);
+            RubyString res = newString(context, collected, 0, collectedIdx);
             collectedIdx = 0;
             flater.setOutput(collected);
 

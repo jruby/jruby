@@ -54,6 +54,7 @@ import java.nio.channels.SocketChannel;
 
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Error.argumentError;
@@ -107,9 +108,9 @@ public class RubyServerSocket extends RubySocket {
         } else {
             iaddr = Sockaddr.addressFromSockaddr_in(context, addr);
         }
-        doBind(context, getChannel(), iaddr, RubyFixnum.fix2int(backlog));
+        doBind(context, getChannel(), iaddr, toInt(context, backlog));
 
-        return RubyFixnum.zero(context.runtime);
+        return asFixnum(context, 0);
     }
 
     @JRubyMethod()

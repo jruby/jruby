@@ -86,6 +86,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.jruby.api.Access.argsFile;
+import static org.jruby.api.Access.encodingService;
 import static org.jruby.api.Access.enumerableModule;
 import static org.jruby.api.Access.exceptionClass;
 import static org.jruby.api.Access.globalVariables;
@@ -96,6 +97,7 @@ import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newFrozenString;
+import static org.jruby.api.Create.newSharedString;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.nameError;
@@ -652,7 +654,7 @@ public class RubyGlobal {
         @Override
         @JRubyMethod(name = "to_s")
         public RubyString to_s(ThreadContext context) {
-            return RubyString.newStringShared(context.runtime, ENV);
+            return newSharedString(context, ENV);
         }
 
         @Deprecated
@@ -837,7 +839,7 @@ public class RubyGlobal {
 
         // MRI: env_str_new
         protected static IRubyObject newString(ThreadContext context, RubyString value) {
-            return newString(context, value, context.runtime.getEncodingService().getEnvEncoding());
+            return newString(context, value, encodingService(context).getEnvEncoding());
         }
 
         // MRI: env_str_new2

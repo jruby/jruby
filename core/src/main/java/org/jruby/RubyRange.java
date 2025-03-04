@@ -249,8 +249,8 @@ public class RubyRange extends RubyObject {
 
     // MRI: rb_range_component_beg_len
     final int[] begLenInt(ThreadContext context, int len, final int err) {
-        int beg = isBeginless ? 0 : RubyNumeric.num2int(this.begin);
-        int end = isEndless ? -1 : RubyNumeric.num2int(this.end);
+        int beg = isBeginless ? 0 : toInt(context, this.begin);
+        int end = isEndless ? -1 : toInt(context, this.end);
 
         if (beg < 0) {
             beg += len;
@@ -325,10 +325,8 @@ public class RubyRange extends RubyObject {
         long hash = exclusiveBit;
 
         hash = hashStart(context.runtime, hash);
-        RubyFixnum v = safeHash(context, begin);
-        hash = murmurCombine(hash, v.asLong(context));
-        v = safeHash(context, end);
-        hash = murmurCombine(hash, v.asLong(context));
+        hash = murmurCombine(hash, safeHash(context, begin).getValue());
+        hash = murmurCombine(hash, safeHash(context, end).getValue());
         hash = murmurCombine(hash, exclusiveBit << 24);
         hash = hashEnd(hash);
 
@@ -425,7 +423,7 @@ public class RubyRange extends RubyObject {
         @Override
         public void doCall(ThreadContext context, IRubyObject arg) {
             if (iter instanceof RubyFixnum iterFixnum) {
-                iter = asFixnum(context, iterFixnum.asLong(context) - 1);
+                iter = asFixnum(context, iterFixnum.getValue() - 1);
             } else if (iter instanceof RubyInteger iterInteger) {
                 iter = iterInteger.op_minus(context, 1);
             } else {
@@ -624,7 +622,7 @@ public class RubyRange extends RubyObject {
 
         if (beg instanceof RubyFixnum && end instanceof RubyFixnum endFixnum) {
             if (excl) {
-                if (endFixnum.asLong(context) == RubyFixnum.MIN) return this;
+                if (endFixnum.getValue() == RubyFixnum.MIN) return this;
 
                 end = endFixnum.op_minus(context, 1);
             }
@@ -670,8 +668,8 @@ public class RubyRange extends RubyObject {
             end = asFixnum(context, RubyFixnum.MAX);
         }
 
-        long b = fix2long(beg);
-        long e = fix2long(end);
+        long b = ((RubyFixnum) beg).getValue();
+        long e = ((RubyFixnum) end).getValue();
 
         for (long i = e; i >= b; --i) {
             block.yieldSpecific(context, asFixnum(context, i));
@@ -825,8 +823,8 @@ public class RubyRange extends RubyObject {
 
         if (b instanceof RubyFixnum && e.isNil() && step instanceof RubyFixnum) {
             fixnumEndlessStep(context, step, block);
-        } else if (b instanceof RubyFixnum && e instanceof RubyFixnum && step instanceof RubyFixnum stepf) {
-            fixnumStep(context, stepf.asLong(context), block);
+        } else if (b instanceof RubyFixnum bb && e instanceof RubyFixnum ee && step instanceof RubyFixnum ss) {
+            fixnumStep(context, bb, ee, ss, block);
         } else {
             boolean excl = isExclusive;
             if (beginIsNumeric && stepIsNumeric && floatStep(context, b, e, step, excl, isEndless, block)) {
@@ -894,13 +892,13 @@ public class RubyRange extends RubyObject {
         }
     }
 
-    private void fixnumStep(ThreadContext context, long step, Block block) {
-        long end = fix2long(this.end);
-        long i, unit = step;
+    private void fixnumStep(ThreadContext context, RubyFixnum b, RubyFixnum e, RubyFixnum s, Block block) {
+        long end = e.getValue();
+        long unit = s.getValue();
         // avoid overflow
         long shortEnd = end - unit;
         if (unit < 0) {
-            i = fix2long(begin);
+            long i = b.getValue();
             if (i > end) block.yield(context, asFixnum(context, i));
             while (i > shortEnd) {
                 i += unit;
@@ -909,7 +907,7 @@ public class RubyRange extends RubyObject {
             if (!isExclusive && i == shortEnd)
                 block.yield(context, asFixnum(context, i + unit));
         } else {
-            i = fix2long(begin);
+            long i = b.getValue();
             if (i < end) block.yield(context, asFixnum(context, i));
             while (i < shortEnd) {
                 i += unit;
@@ -1144,7 +1142,7 @@ public class RubyRange extends RubyObject {
             if (!(begin instanceof RubyInteger)) throw typeError(context, "cannot exclude end value with non Integer begin value");
 
             return end instanceof RubyFixnum fixnum ?
-                    asFixnum(context, fixnum.asLong(context) - 1) :
+                    asFixnum(context, fixnum.getValue() - 1) :
                     end.callMethod(context, "-", RubyFixnum.one(context.runtime));
         }
 
@@ -1173,7 +1171,7 @@ public class RubyRange extends RubyObject {
 
         if (arg == null) return begin;
 
-        final int num = RubyNumeric.num2int(arg);
+        final int num = toInt(context, arg);
         if (num < 0) throw argumentError(context, "negative array size (or size too big)");
 
         // TODO (CON): this could be packed if we know there are at least num elements in range
@@ -1285,9 +1283,7 @@ public class RubyRange extends RubyObject {
             if (end instanceof RubyNumeric) {
                 return intervalStepSize(context, begin, end, RubyFixnum.one(context.runtime), isExclusive);
             }
-            if (end.isNil()) {
-                return dbl2num(context.runtime, Double.POSITIVE_INFINITY);
-            }
+            if (end.isNil()) return asFloat(context, Double.POSITIVE_INFINITY);
         }
 
         if (!discreteObject(begin)) {
@@ -1491,7 +1487,7 @@ public class RubyRange extends RubyObject {
 
         @JRubyMethod(meta = true)
         public static IRubyObject long_bits_to_double(ThreadContext context, IRubyObject bsearch, IRubyObject fixnum) {
-            return asFloat(context, Double.longBitsToDouble(((RubyFixnum) fixnum).asLong(context)));
+            return asFloat(context, Double.longBitsToDouble(((RubyFixnum) fixnum).getValue()));
         }
 
         @JRubyMethod(meta = true)

@@ -154,10 +154,22 @@ import static org.jruby.api.Access.instanceConfig;
 import static org.jruby.api.Access.loadService;
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Check.checkID;
-import static org.jruby.api.Convert.*;
-import static org.jruby.api.Create.*;
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Convert.castAsHash;
+import static org.jruby.api.Convert.castAsModule;
+import static org.jruby.api.Create.allocArray;
+import static org.jruby.api.Create.dupString;
+import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newEmptyArray;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineModule;
-import static org.jruby.api.Error.*;
+import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.frozenError;
+import static org.jruby.api.Error.nameError;
+import static org.jruby.api.Error.runtimeError;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.api.Warn.warn;
 import static org.jruby.api.Warn.warnDeprecated;
 import static org.jruby.api.Warn.warning;
@@ -1435,9 +1447,9 @@ public class RubyModule extends RubyObject {
 
         try {
             if(tp == Integer.class || tp == Integer.TYPE || tp == Short.class || tp == Short.TYPE || tp == Byte.class || tp == Byte.TYPE) {
-                realVal = RubyNumeric.int2fix(context.runtime, field.getInt(null));
+                realVal = asFixnum(context, field.getInt(null));
             } else if(tp == Boolean.class || tp == Boolean.TYPE) {
-                realVal = field.getBoolean(null) ? context.tru : context.fals;
+                realVal = asBoolean(context, field.getBoolean(null));
             } else {
                 realVal = context.nil;
             }
@@ -5045,7 +5057,7 @@ public class RubyModule extends RubyObject {
     public IRubyObject refinements(ThreadContext context) {
         RefinementStore refinementStore = this.refinementStore;
         if (refinementStore == null ) {
-            return Create.newEmptyArray(context);
+            return newEmptyArray(context);
         }
 
         var refinementModules = allocArray(context, refinementStore.refinements.size());

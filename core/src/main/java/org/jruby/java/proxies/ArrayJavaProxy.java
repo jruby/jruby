@@ -101,7 +101,7 @@ public final class ArrayJavaProxy extends JavaProxy {
     @JRubyMethod(name = "[]")
     public final IRubyObject op_aref(ThreadContext context, IRubyObject arg) {
         if ( arg instanceof RubyRange ) return arrayRange(context, (RubyRange) arg);
-        final int i = convertArrayIndex(arg);
+        final int i = convertArrayIndex(context, arg);
         return ArrayUtils.arefDirect(context.runtime, getObject(), converter, i);
     }
 
@@ -115,7 +115,7 @@ public final class ArrayJavaProxy extends JavaProxy {
 
     @JRubyMethod(name = "[]=")
     public final IRubyObject op_aset(ThreadContext context, IRubyObject index, IRubyObject value) {
-        return setValue(context.runtime, convertArrayIndex(index), value);
+        return setValue(context.runtime, convertArrayIndex(context, index), value);
     }
 
     @JRubyMethod(name = { "include?", "member?" }) // Enumerable override
@@ -168,7 +168,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         final int len = array.length;
         if ( len == 0 ) return false;
         if ( obj instanceof RubyFixnum fix) {
-            final long objVal = fix.asLong(context);
+            final long objVal = fix.getValue();
             if ( objVal < Byte.MIN_VALUE || objVal > Byte.MAX_VALUE ) return false;
 
             for (byte b : array) {
@@ -186,7 +186,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         final int len = array.length;
         if ( len == 0 ) return false;
         if (obj instanceof RubyFixnum fix) {
-            final long objVal = fix.asLong(context);
+            final long objVal = fix.getValue();
             if ( objVal < Short.MIN_VALUE || objVal > Short.MAX_VALUE ) return false;
 
             for (short value : array) {
@@ -204,7 +204,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         final int len = array.length;
         if ( len == 0 ) return false;
         if (obj instanceof RubyFixnum fix) {
-            final long objVal = fix.asLong(context);
+            final long objVal = fix.getValue();
             if ( objVal < Integer.MIN_VALUE || objVal > Integer.MAX_VALUE ) return false;
 
             for (int j : array) {
@@ -222,7 +222,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         final int len = array.length;
         if ( len == 0 ) return false;
         if ( obj instanceof RubyFixnum fix) {
-            final long objVal = fix.asLong(context);
+            final long objVal = fix.getValue();
 
             for (long l : array) {
                 if (objVal == l) return true;
@@ -239,7 +239,7 @@ public final class ArrayJavaProxy extends JavaProxy {
         final int len = array.length;
         if ( len == 0 ) return false;
         if (obj instanceof RubyFixnum fix) {
-            final long objVal = fix.asLong(context);
+            final long objVal = fix.getValue();
             if ( objVal < Character.MIN_VALUE || objVal > Character.MAX_VALUE ) return false;
 
             for (char c : array) {
@@ -339,7 +339,7 @@ public final class ArrayJavaProxy extends JavaProxy {
     public IRubyObject last(ThreadContext context, IRubyObject count) {
         final Object array = getObject();
 
-        int len = RubyFixnum.fix2int(count);
+        int len = toInt(context, count);
         int size = Array.getLength(array);
         int start = size - len; if ( start < 0 ) start = 0;
         int end = start + len; if ( end > size ) end = size;
@@ -391,16 +391,15 @@ public final class ArrayJavaProxy extends JavaProxy {
         return idx == args.length ? val : RubyObject.dig(context, val, args, idx);
     }
 
-    private static int convertArrayIndex(final IRubyObject index) {
-        if ( index instanceof JavaProxy ) {
-            return (Integer) index.toJava(Integer.class);
-        }
-        return RubyNumeric.num2int(index);
+    private static int convertArrayIndex(ThreadContext context, final IRubyObject index) {
+        return index instanceof JavaProxy ?
+                index.toJava(Integer.class) :
+                toInt(context, index);
     }
 
     @JRubyMethod
     public IRubyObject at(ThreadContext context, IRubyObject index) {
-        return at(context, convertArrayIndex(index));
+        return at(context, convertArrayIndex(context, index));
     }
 
     private final IRubyObject at(ThreadContext context, int i) {

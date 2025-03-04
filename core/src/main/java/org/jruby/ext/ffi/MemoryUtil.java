@@ -2,6 +2,7 @@ package org.jruby.ext.ffi;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyFloat;
 import org.jruby.RubyString;
 import org.jruby.api.Create;
@@ -227,10 +228,15 @@ public final class MemoryUtil {
         return Create.newArrayNoCopy(context, objArray);
     }
 
+    @Deprecated(since = "10.0")
     public static void putArrayOfFloat32(MemoryIO io, long offset, RubyArray ary) {
+        putArrayOfFloat32(((RubyBasicObject) ary).getCurrentContext(), io, offset, ary);
+    }
+
+    public static void putArrayOfFloat32(ThreadContext context, MemoryIO io, long offset, RubyArray ary) {
         float[] array = new float[ary.size()];
         for (int i = 0; i < array.length; ++i) {
-            array[i] = Util.floatValue(ary.entry(i));
+            array[i] = Util.floatValue(context, ary.entry(i));
         }
 
         if (array.length > 0) {
@@ -252,10 +258,15 @@ public final class MemoryUtil {
         return Create.newArrayNoCopy(context, objArray);
     }
 
+    @Deprecated(since = "10.0")
     public static void putArrayOfFloat64(MemoryIO io, long offset, RubyArray ary) {
+        putArrayOfFloat64(ary.getCurrentContext(), io, offset, ary);
+    }
+
+    public static void putArrayOfFloat64(ThreadContext context, MemoryIO io, long offset, RubyArray ary) {
         double[] array = new double[ary.size()];
         for (int i = 0; i < array.length; ++i) {
-            array[i] = Util.doubleValue(ary.entry(i));
+            array[i] = Util.doubleValue(context, ary.entry(i));
         }
 
         if (array.length > 0) {

@@ -51,6 +51,7 @@ import static java.lang.Character.toLowerCase;
 import static java.lang.Character.toUpperCase;
 import static org.jruby.api.Access.procClass;
 import static org.jruby.api.Access.stringClass;
+import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Create.newArrayNoCopy;
 import static org.jruby.api.Error.rangeError;
 import static org.jruby.api.Error.typeError;
@@ -75,6 +76,7 @@ import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
+import org.jruby.api.Convert;
 import org.jruby.exceptions.TypeError;
 import org.jruby.ext.bigdecimal.RubyBigDecimal;
 import org.jruby.RubyBignum;
@@ -984,7 +986,7 @@ public class JavaUtil {
     }
 
     private static long processLongConvert(ThreadContext context, Predicate<Long> pred, RubyNumeric numeric, String type) {
-        final long value = numeric.asLong(context);
+        final long value = toLong(context, numeric);
         if (!pred.test(value)) throw rangeError(context, "too big for " + type + ": " + numeric);
         return value;
     }
@@ -997,7 +999,7 @@ public class JavaUtil {
             (context, numeric, target) -> (char) processLongConvert(context, JavaUtil::isLongCharable, numeric, "char");
     private static final NumericConverter<Integer> NUMERIC_TO_INTEGER =
             (context, numeric, target) -> (int) processLongConvert(context, JavaUtil::isLongIntable, numeric, "int");
-    private static final NumericConverter<Long> NUMERIC_TO_LONG = (context, numeric, target) -> numeric.asLong(context);
+    private static final NumericConverter<Long> NUMERIC_TO_LONG = (context, numeric, target) -> toLong(context, numeric);
     private static final NumericConverter<Float> NUMERIC_TO_FLOAT = (context, numeric, target) -> {
         final double value = numeric.asDouble(context);
         // many cases are ok to convert to float; if not one of these, error
@@ -1014,7 +1016,7 @@ public class JavaUtil {
         return numeric;  // just return as-is, since we can't do any coercion
     };
     private static final NumericConverter<Object> NUMERIC_TO_OBJECT = (context, numeric, target) -> switch (numeric) {
-        case RubyFixnum fixnum -> Long.valueOf(fixnum.asLong(context));
+        case RubyFixnum fixnum -> Long.valueOf(fixnum.getValue());
         case RubyFloat flote-> Double.valueOf(flote.asDouble(context));
         case RubyBignum bignum -> bignum.getValue();
         case RubyBigDecimal bigdec -> bigdec.asLong(context);
@@ -1509,7 +1511,7 @@ public class JavaUtil {
             break;
         case INTEGER:
             if (object instanceof RubyFixnum fix) {
-                javaObject = Long.valueOf(fix.asLong(context));
+                javaObject = Long.valueOf(fix.getValue());
             } else {
                 javaObject = ((RubyBignum) object).asLong(context);
             }

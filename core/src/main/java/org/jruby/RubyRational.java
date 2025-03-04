@@ -52,16 +52,50 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 import org.jruby.util.TypeConverter;
 
-import static org.jruby.api.Convert.*;
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asFloat;
+import static org.jruby.api.Convert.checkToInteger;
+import static org.jruby.api.Convert.toDouble;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineClass;
-import static org.jruby.api.Error.*;
+import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.runtimeError;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.api.Warn.warn;
 import static org.jruby.ast.util.ArgsUtil.hasExceptionOption;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
-import static org.jruby.util.Numeric.*;
+import static org.jruby.util.Numeric.f_abs;
+import static org.jruby.util.Numeric.f_add;
+import static org.jruby.util.Numeric.f_cmp;
+import static org.jruby.util.Numeric.f_div;
+import static org.jruby.util.Numeric.f_equal;
+import static org.jruby.util.Numeric.f_expt;
+import static org.jruby.util.Numeric.f_floor;
+import static org.jruby.util.Numeric.f_gcd;
+import static org.jruby.util.Numeric.f_idiv;
+import static org.jruby.util.Numeric.f_integer_p;
+import static org.jruby.util.Numeric.f_minus_one_p;
+import static org.jruby.util.Numeric.f_mul;
+import static org.jruby.util.Numeric.f_negate;
+import static org.jruby.util.Numeric.f_negative_p;
+import static org.jruby.util.Numeric.f_odd_p;
+import static org.jruby.util.Numeric.f_one_p;
+import static org.jruby.util.Numeric.f_sub;
+import static org.jruby.util.Numeric.f_to_i;
+import static org.jruby.util.Numeric.f_to_r;
+import static org.jruby.util.Numeric.f_truncate;
+import static org.jruby.util.Numeric.f_xor;
+import static org.jruby.util.Numeric.f_zero_p;
+import static org.jruby.util.Numeric.i_gcd;
+import static org.jruby.util.Numeric.i_ilog2;
+import static org.jruby.util.Numeric.k_exact_p;
+import static org.jruby.util.Numeric.k_integer_p;
+import static org.jruby.util.Numeric.k_numeric_p;
+import static org.jruby.util.Numeric.ldexp;
+import static org.jruby.util.Numeric.nurat_rationalize_internal;
 import static org.jruby.util.RubyStringBuilder.str;
 
 /**
@@ -633,10 +667,10 @@ public class RubyRational extends RubyNumeric {
         RubyInteger newNum, newDen, g, a, b;
         if (anum instanceof RubyFixnum anumf && aden instanceof RubyFixnum adenf &&
             bnum instanceof RubyFixnum bnumf && bden instanceof RubyFixnum bdenf) {
-            long an = anumf.asLong(context);
-            long ad = adenf.asLong(context);
-            long bn = bnumf.asLong(context);
-            long bd = bdenf.asLong(context);
+            long an = anumf.getValue();
+            long ad = adenf.getValue();
+            long bn = bnumf.getValue();
+            long bd = bdenf.getValue();
             long ig = i_gcd(ad, bd);
 
             g = asFixnum(context, ig);
@@ -726,10 +760,10 @@ public class RubyRational extends RubyNumeric {
         final RubyInteger newNum, newDen;
         if (anum instanceof RubyFixnum anumf && aden instanceof RubyFixnum adenf &&
             bnum instanceof RubyFixnum bnumf && bden instanceof RubyFixnum bdenf) {
-            long an = anumf.asLong(context);
-            long ad = adenf.asLong(context);
-            long bn = bnumf.asLong(context);
-            long bd = bdenf.asLong(context);
+            long an = anumf.getValue();
+            long ad = adenf.getValue();
+            long bn = bnumf.getValue();
+            long bd = bdenf.getValue();
             long g1 = i_gcd(an, bd);
             long g2 = i_gcd(ad, bn);
             
@@ -843,7 +877,7 @@ public class RubyRational extends RubyNumeric {
                 num = den = asFixnum(context, 1);
             }
             if (num instanceof RubyFloat) { /* infinity due to overflow */
-                return den instanceof RubyFloat ? dbl2num(context.runtime, Double.NaN) : num;
+                return den instanceof RubyFloat ? asFloat(context, Double.NaN) : num;
             } else if (den instanceof RubyFloat) { /* infinity due to overflow */
                 num = asFixnum(context, 0);
                 den = asFixnum(context, 1);
@@ -940,7 +974,7 @@ public class RubyRational extends RubyNumeric {
 
     public final IRubyObject op_equal(ThreadContext context, RubyInteger other) {
         if (num.isZero(context)) return asBoolean(context, other.isZero(context));
-        if (!(den instanceof RubyFixnum) || den.asLong(context) != 1) return context.fals;
+        if (!(den instanceof RubyFixnum fixnum) || fixnum.getValue() != 1) return context.fals;
         return f_equal(context, num, other);
     }
 
@@ -980,13 +1014,13 @@ public class RubyRational extends RubyNumeric {
 
     @Override
     public IRubyObject idiv(ThreadContext context, IRubyObject other) {
-        if (num2dbl(context, other) == 0.0) throw context.runtime.newZeroDivisionError();
+        if (toDouble(context, other) == 0.0) throw context.runtime.newZeroDivisionError();
 
         return f_floor(context, f_div(context, this, other));
     }
 
     public IRubyObject op_mod(ThreadContext context, IRubyObject other) {
-        if (num2dbl(context, other) == 0.0) throw context.runtime.newZeroDivisionError();
+        if (toDouble(context, other) == 0.0) throw context.runtime.newZeroDivisionError();
 
         return f_sub(context, this, f_mul(context, other, f_floor(context, f_div(context, this, other))));
     }
@@ -996,7 +1030,7 @@ public class RubyRational extends RubyNumeric {
      */
     @JRubyMethod(name = "divmod")
     public IRubyObject op_divmod(ThreadContext context, IRubyObject other) {
-        if (num2dbl(context, other) == 0.0) throw context.runtime.newZeroDivisionError();
+        if (toDouble(context, other) == 0.0) throw context.runtime.newZeroDivisionError();
 
         IRubyObject val = f_floor(context, f_div(context, this, other));
         return newArray(context, val, f_sub(context, this, f_mul(context, other, val)));
@@ -1247,7 +1281,7 @@ public class RubyRational extends RubyNumeric {
             return e > 0 ? Double.MAX_VALUE : 0;
         }
 
-        double f = RubyNumeric.num2dbl(context, myNum) / RubyNumeric.num2dbl(context, myDen);
+        double f = toDouble(context, myNum) / toDouble(context, myDen);
 
         if (minus) f = -f;
 

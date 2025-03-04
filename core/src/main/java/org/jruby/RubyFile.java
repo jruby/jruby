@@ -81,6 +81,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import static org.jruby.RubyInteger.singleCharByteList;
+import static org.jruby.api.Access.encodingService;
 import static org.jruby.api.Access.fileClass;
 import static org.jruby.api.Access.hashClass;
 import static org.jruby.api.Access.timeClass;
@@ -263,7 +264,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 //        int[] op = {0,0};
 //        struct timeval time;
 //        rb_secure(2);
-        int op1 = RubyNumeric.num2int(operation);
+        int op1 = toInt(context, operation);
         OpenFile fptr = getOpenFileChecked();
 
         if (fptr.isWritable()) flushRaw(context, false);
@@ -333,8 +334,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod
     public IRubyObject chown(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
         checkClosed(context);
-        int owner = !arg1.isNil() ? RubyNumeric.num2int(arg1) : -1;
-        int group = !arg2.isNil() ? RubyNumeric.num2int(arg2) : -1;
+        int owner = !arg1.isNil() ? toInt(context, arg1) : -1;
+        int group = !arg2.isNil() ? toInt(context, arg2) : -1;
 
         final String path = getPath();
         if (!new File(path).exists()) throw context.runtime.newErrnoENOENTError(path);
@@ -403,7 +404,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @JRubyMethod
     public IRubyObject truncate(ThreadContext context, IRubyObject len) {
-        long pos = RubyNumeric.num2int(len);
+        long pos = toInt(context, len);
         OpenFile fptr = getOpenFileChecked();
         if (!fptr.isWritable()) throw context.runtime.newIOError("not opened for writing");
 
@@ -565,8 +566,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     public static IRubyObject chown(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 2, -1);
         int count = 0;
-        int owner = !args[0].isNil() ? RubyNumeric.num2int(args[0]) : -1;
-        int group = !args[1].isNil() ? RubyNumeric.num2int(args[1]) : -1;
+        int owner = !args[0].isNil() ? toInt(context, args[0]) : -1;
+        int group = !args[1].isNil() ? toInt(context, args[1]) : -1;
 
         for (int i = 2; i < argc; i++) {
             JRubyFile filename = file(args[i]);
@@ -590,7 +591,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @JRubyMethod(meta = true)
     public static IRubyObject dirname(ThreadContext context, IRubyObject recv, IRubyObject path, IRubyObject arg1) {
-        return dirnameCommon(context, get_path(context, path), RubyNumeric.num2int(arg1));
+        return dirnameCommon(context, get_path(context, path), toInt(context, arg1));
     }
 
     private static RubyString dirnameCommon(ThreadContext context, RubyString filename, int level) {
@@ -877,7 +878,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @JRubyMethod(name = {"fnmatch", "fnmatch?"}, meta = true)
     public static IRubyObject fnmatch(ThreadContext context, IRubyObject recv, IRubyObject _pattern, IRubyObject _path, IRubyObject _flags) {
-        return fnmatchCommon(context, _pattern, _path, RubyNumeric.num2int(_flags));
+        return fnmatchCommon(context, _pattern, _path, toInt(context, _flags));
     }
 
     private static RubyBoolean fnmatchCommon(ThreadContext context, IRubyObject _path, IRubyObject _pattern, int flags) {
@@ -965,8 +966,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod(required = 2, rest = true, checkArity = false, meta = true)
     public static IRubyObject lchown(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 2, -1);
-        int owner = !args[0].isNil() ? RubyNumeric.num2int(args[0]) : -1;
-        int group = !args[1].isNil() ? RubyNumeric.num2int(args[1]) : -1;
+        int owner = !args[0].isNil() ? toInt(context, args[0]) : -1;
+        int group = !args[1].isNil() ? toInt(context, args[1]) : -1;
         int count = 0;
 
         for (int i = 2; i < argc; i++) {
@@ -1096,7 +1097,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 throw runtime.newErrnoFromLastPOSIXErrno();
             }
 
-            return RubyString.newString(runtime, realPath, runtime.getEncodingService().getFileSystemEncoding());
+            return RubyString.newString(runtime, realPath, encodingService(context).getFileSystemEncoding());
         } catch (IOException e) {
             throw runtime.newIOError(e.getMessage());
         }
@@ -1249,7 +1250,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     public static IRubyObject mkfifo(ThreadContext context, IRubyObject recv, IRubyObject path, IRubyObject mode) {
         if (Platform.IS_WINDOWS) throw context.runtime.newNotImplementedError("mkfifo");
 
-        return mkfifo(context, get_path(context, path), RubyNumeric.num2int(mode));
+        return mkfifo(context, get_path(context, path), toInt(context, mode));
     }
 
     public static IRubyObject mkfifo(ThreadContext context, RubyString path, int mode) {
@@ -1313,7 +1314,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         IOEncodable convconfig = new ConvConfig();
         EncodingUtils.extractModeEncoding(context, convconfig, pm, options, oflags_p, fmode_p);
         int perm = (vperm(pm) != null && !vperm(pm).isNil()) ?
-                RubyNumeric.num2int(vperm(pm)) : 0666;
+                toInt(context, vperm(pm)) : 0666;
 
         return fileOpenGeneric(context, args[0], oflags_p[0], fmode_p[0], convconfig, perm);
     }
@@ -1375,7 +1376,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         checkEmbeddedNulls(context, path);
 
         if (!Platform.IS_WINDOWS) {
-            var encodingService = context.runtime.getEncodingService();
+            var encodingService = encodingService(context);
             Encoding pathEncoding = path.getEncoding();
 
             // If we are not ascii and do not match fs encoding then transcode to fs.
@@ -1687,7 +1688,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         // See dac9850 and jruby/jruby#3849.
 
         // for special paths like ~
-        Encoding fsenc = runtime.getEncodingService().getFileSystemEncoding();
+        Encoding fsenc = encodingService(context).getFileSystemEncoding();
 
         // Special /dev/null of windows
         if (Platform.IS_WINDOWS && ("NUL:".equalsIgnoreCase(relativePath) || "NUL".equalsIgnoreCase(relativePath))) {
@@ -2140,7 +2141,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      * @param context
      */
     private static RubyString checkHome(ThreadContext context) {
-        IRubyObject home = context.runtime.getENV().fastARef(RubyString.newStringShared(context.runtime, RubyDir.HOME));
+        IRubyObject home = context.runtime.getENV().fastARef(newSharedString(context, RubyDir.HOME));
         if (home == null || home == context.nil || ((RubyString) home).size() == 0) {
             throw argumentError(context, "couldn't find HOME environment -- expanding '~'");
         }

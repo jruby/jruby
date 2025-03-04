@@ -47,10 +47,16 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
-import static org.jruby.api.Convert.*;
-import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Convert.toInt;
+import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Create.newEmptyString;
-import static org.jruby.api.Error.*;
+import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.indexError;
+import static org.jruby.api.Error.rangeError;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
 /**
@@ -94,7 +100,7 @@ abstract public class AbstractMemory extends MemoryObject {
     }
 
     private static int checkArrayLength(ThreadContext context, IRubyObject val) {
-        int i = RubyNumeric.num2int(val);
+        int i = toInt(context, val);
         if (i < 0) throw indexError(context, "negative array length (" + i + ")");
         return i;
     }
@@ -152,7 +158,7 @@ abstract public class AbstractMemory extends MemoryObject {
 
     @JRubyMethod(name = "[]")
     public final IRubyObject aref(ThreadContext context, IRubyObject indexArg) {
-        final int index = RubyNumeric.num2int(indexArg);
+        final int index = toInt(context, indexArg);
         final int offset = index * typeSize;
         if (offset >= size) throw indexError(context, String.format("Index %d out of range", index));
 
@@ -945,7 +951,7 @@ abstract public class AbstractMemory extends MemoryObject {
      */
     @JRubyMethod(name = { "write_float" })
     public IRubyObject write_float(ThreadContext context, IRubyObject value) {
-        getMemoryIO().putFloat(0, Util.floatValue(value));
+        getMemoryIO().putFloat(0, Util.floatValue(context, value));
 
         return this;
     }
@@ -958,7 +964,7 @@ abstract public class AbstractMemory extends MemoryObject {
      */
     @JRubyMethod(name = { "put_float32", "put_float" })
     public IRubyObject put_float32(ThreadContext context, IRubyObject value) {
-        getMemoryIO().putFloat(0, Util.floatValue(value));
+        getMemoryIO().putFloat(0, Util.floatValue(context, value));
 
         return this;
     }
@@ -972,7 +978,7 @@ abstract public class AbstractMemory extends MemoryObject {
      */
     @JRubyMethod(name = { "put_float32", "put_float" })
     public IRubyObject put_float32(ThreadContext context, IRubyObject offset, IRubyObject value) {
-        getMemoryIO().putFloat(getOffset(offset), Util.floatValue(value));
+        getMemoryIO().putFloat(getOffset(offset), Util.floatValue(context, value));
 
         return this;
     }
@@ -1016,7 +1022,7 @@ abstract public class AbstractMemory extends MemoryObject {
      */
     @JRubyMethod(name = { "write_double" })
     public IRubyObject write_double(ThreadContext context, IRubyObject value) {
-        getMemoryIO().putDouble(0, Util.doubleValue(value));
+        getMemoryIO().putDouble(0, Util.doubleValue(context, value));
 
         return this;
     }
@@ -1029,7 +1035,7 @@ abstract public class AbstractMemory extends MemoryObject {
      */
     @JRubyMethod(name = { "put_float64", "put_double" })
     public IRubyObject put_float64(ThreadContext context, IRubyObject value) {
-        getMemoryIO().putDouble(0, Util.doubleValue(value));
+        getMemoryIO().putDouble(0, Util.doubleValue(context, value));
 
         return this;
     }
@@ -1043,7 +1049,7 @@ abstract public class AbstractMemory extends MemoryObject {
      */
     @JRubyMethod(name = { "put_float64", "put_double" })
     public IRubyObject put_float64(ThreadContext context, IRubyObject offset, IRubyObject value) {
-        getMemoryIO().putDouble(getOffset(offset), Util.doubleValue(value));
+        getMemoryIO().putDouble(getOffset(offset), Util.doubleValue(context, value));
 
         return this;
     }
@@ -1392,7 +1398,7 @@ abstract public class AbstractMemory extends MemoryObject {
     @JRubyMethod(name = { "put_array_of_float32", "put_array_of_float" })
     public IRubyObject put_array_of_float(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
 
-        MemoryUtil.putArrayOfFloat32(getMemoryIO(), getOffset(offset), checkArray(arrParam));
+        MemoryUtil.putArrayOfFloat32(context, getMemoryIO(), getOffset(offset), checkArray(arrParam));
 
         return this;
     }
@@ -1420,7 +1426,7 @@ abstract public class AbstractMemory extends MemoryObject {
      */
     @JRubyMethod(name = { "put_array_of_float64", "put_array_of_double" })
     public IRubyObject put_array_of_float64(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
-        MemoryUtil.putArrayOfFloat64(getMemoryIO(), getOffset(offset), checkArray(arrParam));
+        MemoryUtil.putArrayOfFloat64(context, getMemoryIO(), getOffset(offset), checkArray(arrParam));
 
         return this;
     }
@@ -1720,7 +1726,7 @@ abstract public class AbstractMemory extends MemoryObject {
     @JRubyMethod(name = { "write_array_of_float32", "write_array_of_float" })
     public IRubyObject write_array_of_float(ThreadContext context, IRubyObject ary) {
 
-        MemoryUtil.putArrayOfFloat32(getMemoryIO(), 0, checkArray(ary));
+        MemoryUtil.putArrayOfFloat32(context, getMemoryIO(), 0, checkArray(ary));
 
         return this;
     }
@@ -1746,7 +1752,7 @@ abstract public class AbstractMemory extends MemoryObject {
      */
     @JRubyMethod(name = { "write_array_of_float64", "write_array_of_double" })
     public IRubyObject write_array_of_float64(ThreadContext context, IRubyObject ary) {
-        MemoryUtil.putArrayOfFloat64(getMemoryIO(), 0, checkArray(ary));
+        MemoryUtil.putArrayOfFloat64(context, getMemoryIO(), 0, checkArray(ary));
 
         return this;
     }
@@ -2063,7 +2069,7 @@ abstract public class AbstractMemory extends MemoryObject {
     
     @JRubyMethod(name = "+")
     public IRubyObject op_plus(ThreadContext context, IRubyObject value) {
-        return slice(context.runtime, RubyNumeric.fix2long(value));
+        return slice(context.runtime, toLong(context, value));
     }
 
     @JRubyMethod(name = "order")
@@ -2084,7 +2090,7 @@ abstract public class AbstractMemory extends MemoryObject {
     
     @JRubyMethod(name = "slice")
     public final IRubyObject slice(ThreadContext context, IRubyObject offset, IRubyObject size) {
-        return slice(context.getRuntime(), RubyNumeric.num2int(offset), RubyNumeric.num2int(size));
+        return slice(context.getRuntime(), toInt(context, offset), toInt(context, size));
     }
 
     @JRubyMethod(name = "get")

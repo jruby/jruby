@@ -54,6 +54,10 @@ public class Error {
         return (ArgumentError) context.runtime.newArgumentError(length, min, max);
     }
 
+    public static RaiseException floatDomainError(ThreadContext context, String message){
+        return context.runtime.newRaiseException(context.runtime.getFloatDomainError(), message);
+    }
+
     /**
      * Create a frozen error with a simple ASCII String.
      *
@@ -183,6 +187,16 @@ public class Error {
     public static TypeError typeError(ThreadContext context, String message) {
         return createTypeError(context, message);
     }
+
+    /**
+     * Create a TypeError with the given message.
+     *
+     * @param context the current thread context
+     */
+    public static RaiseException zeroDivisionError(ThreadContext context) {
+        return context.runtime.newRaiseException(context.runtime.getZeroDivisionError(), "divided by 0");
+    }
+
 
     /**
      * Create an instance of TypeError with the given message.

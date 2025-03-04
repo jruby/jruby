@@ -429,9 +429,12 @@ public class RubyObject extends RubyBasicObject {
      */
     @Override
     public int hashCode() {
-        IRubyObject hashValue = invokedynamic(metaClass.runtime.getCurrentContext(), this, HASH);
-        if (hashValue instanceof RubyFixnum) return (int) RubyNumeric.fix2long(hashValue);
-        return nonFixnumHashCode(hashValue);
+        var context = getRuntime().getCurrentContext();
+        IRubyObject hashValue = invokedynamic(context, this, HASH);
+
+        return hashValue instanceof RubyFixnum fixnum ?
+                (int) fixnum.getValue() :
+                nonFixnumHashCode(context, hashValue);
     }
 
     /** rb_inspect

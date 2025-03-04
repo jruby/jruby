@@ -38,7 +38,6 @@ import java.util.stream.Collectors;
 import com.headius.invokebinder.Binder;
 import jnr.constants.platform.Errno;
 import org.jruby.*;
-import org.jruby.api.Convert;
 import org.jruby.api.Create;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;
@@ -48,7 +47,6 @@ import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.RequiredKeywordArgumentValueNode;
 import org.jruby.ast.util.ArgsUtil;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.NoMethodError;
 import org.jruby.exceptions.RaiseException;
@@ -93,7 +91,9 @@ import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Convert.toInteger;
-import static org.jruby.api.Create.*;
+import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newEmptyArray;
+import static org.jruby.api.Create.newSharedString;
 import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.nameError;
@@ -581,9 +581,10 @@ public class Helpers {
         throw argumentError(context, "argument too big");
     }
 
-    // FIXME: We need to deprecate this one RubyArray no longer needs it
+    // This still exists because we have some array construction methods which still use it.  Should be deprecated later.
     public static int validateBufferLength(Ruby runtime, long length) {
-        return validateBufferLength(runtime.getCurrentContext(), length);
+        if (length < 0 || length > MAX_ARRAY_SIZE) validateBufferLength(runtime.getCurrentContext(), length);
+        return (int) length;
     }
 
     /**
@@ -1864,8 +1865,7 @@ public class Helpers {
 
     @Deprecated // no-longer used + confusing argument order
     public static IRubyObject stringOrNil(ByteList value, ThreadContext context) {
-        if (value == null) return context.nil;
-        return RubyString.newStringShared(context.runtime, value);
+        return value == null ? context.nil : newSharedString(context, value);
     }
 
     @SuppressWarnings("deprecation")
@@ -2015,7 +2015,7 @@ public class Helpers {
     @Deprecated // not used
     public static IRubyObject aValueSplat(IRubyObject value) {
         var context = ((RubyBasicObject) value).getCurrentContext();
-        if (!(value instanceof RubyArray array) || array.length().asLong(context) == 0) return context.nil;
+        if (!(value instanceof RubyArray array) || array.length().getValue() == 0) return context.nil;
 
         return array.getLength() == 1 ? array.first(context) : array;
     }

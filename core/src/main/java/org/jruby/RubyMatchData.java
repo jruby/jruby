@@ -67,6 +67,7 @@ import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Create.newEmptyString;
+import static org.jruby.api.Create.newSharedString;
 import static org.jruby.api.Create.newSmallHash;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineClass;
@@ -552,7 +553,7 @@ public class RubyMatchData extends RubyObject {
     public static int backrefNumber(ThreadContext context, Regex pattern, Region regs, IRubyObject obj) {
         if (obj instanceof RubySymbol sym) return nameToBackrefNumber(context, pattern, regs, (RubyString) sym.to_s(context));
         if (obj instanceof RubyString str) return nameToBackrefNumber(context, pattern, regs, str);
-        return RubyNumeric.num2int(obj);
+        return toInt(context, obj);
     }
 
     // MRI: namev_to_backref_number
@@ -646,8 +647,8 @@ public class RubyMatchData extends RubyObject {
     }
 
     private IRubyObject op_arefCommon(ThreadContext context, IRubyObject idx) {
-        if (idx instanceof RubyFixnum) {
-            int num = RubyNumeric.fix2int(idx);
+        if (idx instanceof RubyFixnum fixnum) {
+            int num = toInt(context, fixnum);
             if (num >= 0) return RubyRegexp.nth_match(context, num, this);
         } else if (idx instanceof RubySymbol index) {
             return RubyRegexp.nth_match(context, nameToBackrefNumber(context, (RubyString) index.to_s(context)), this);
@@ -982,7 +983,7 @@ public class RubyMatchData extends RubyObject {
     }
 
     private RubyString stringFromNameEntry(ThreadContext context, NameEntry entry) {
-        return RubyString.newStringShared(context.runtime, byteListFromNameEntry(context, entry, regexp.getEncoding()));
+        return newSharedString(context, byteListFromNameEntry(context, entry, regexp.getEncoding()));
     }
 
     /**

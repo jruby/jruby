@@ -12,6 +12,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.newString;
 import static org.jruby.runtime.Visibility.*;
 
@@ -50,8 +51,8 @@ public final class Buffer extends AbstractMemory {
         this.inout = inout;
     }
     
-    private static final int getCount(IRubyObject countArg) {
-        return countArg instanceof RubyFixnum ? RubyFixnum.fix2int(countArg) : 1;
+    private static final int getCount(ThreadContext context, IRubyObject countArg) {
+        return countArg instanceof RubyFixnum fixnum ? toInt(context, fixnum) : 1;
     }
     
     private static Buffer allocate(ThreadContext context, IRubyObject recv, 
@@ -77,21 +78,20 @@ public final class Buffer extends AbstractMemory {
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject sizeArg, Block block) {
-        return sizeArg instanceof RubyFixnum
-                ? init(context, RubyFixnum.one(context.runtime),
-                    RubyFixnum.fix2int(sizeArg), (IN | OUT), block)
-                : init(context, sizeArg, 1, (IN | OUT), block);
+        return sizeArg instanceof RubyFixnum fixnum ?
+                init(context, RubyFixnum.one(context.runtime), toInt(context, fixnum), (IN | OUT), block) :
+                init(context, sizeArg, 1, (IN | OUT), block);
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject sizeArg, IRubyObject arg2, Block block) {
-        return init(context, sizeArg, getCount(arg2), (IN | OUT), block);
+        return init(context, sizeArg, getCount(context, arg2), (IN | OUT), block);
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject sizeArg,
             IRubyObject countArg, IRubyObject clearArg, Block block) {
-        return init(context, sizeArg, RubyFixnum.fix2int(countArg), (IN | OUT), block);
+        return init(context, sizeArg, toInt(context, countArg), (IN | OUT), block);
     }
     
     /**
@@ -119,13 +119,13 @@ public final class Buffer extends AbstractMemory {
     @JRubyMethod(name = { "alloc_inout", "__alloc_inout" }, meta = true)
     public static Buffer allocateInOut(ThreadContext context, IRubyObject recv,
             IRubyObject sizeArg, IRubyObject arg2) {
-        return allocate(context, recv, sizeArg, getCount(arg2), IN | OUT);
+        return allocate(context, recv, sizeArg, getCount(context, arg2), IN | OUT);
     }
 
     @JRubyMethod(name = { "alloc_inout", "__alloc_inout" }, meta = true)
     public static Buffer allocateInOut(ThreadContext context, IRubyObject recv, 
             IRubyObject sizeArg, IRubyObject countArg, IRubyObject clearArg) {
-        return allocate(context, recv, sizeArg, RubyFixnum.fix2int(countArg), IN | OUT);
+        return allocate(context, recv, sizeArg, toInt(context, countArg), IN | OUT);
     }
 
     @JRubyMethod(name = { "new_in", "alloc_in", "__alloc_in" }, meta = true)
@@ -135,13 +135,13 @@ public final class Buffer extends AbstractMemory {
 
     @JRubyMethod(name = { "new_in", "alloc_in", "__alloc_in" }, meta = true)
     public static Buffer allocateInput(ThreadContext context, IRubyObject recv, IRubyObject sizeArg, IRubyObject arg2) {
-        return allocate(context, recv, sizeArg, getCount(arg2), IN);
+        return allocate(context, recv, sizeArg, getCount(context, arg2), IN);
     }
 
     @JRubyMethod(name = { "new_in", "alloc_in", "__alloc_in" }, meta = true)
     public static Buffer allocateInput(ThreadContext context, IRubyObject recv,
             IRubyObject sizeArg, IRubyObject countArg, IRubyObject clearArg) {
-        return allocate(context, recv, sizeArg, RubyFixnum.fix2int(countArg), IN);
+        return allocate(context, recv, sizeArg, toInt(context, countArg), IN);
     }
 
     @JRubyMethod(name = {  "new_out", "alloc_out", "__alloc_out" }, meta = true)
@@ -151,13 +151,13 @@ public final class Buffer extends AbstractMemory {
 
     @JRubyMethod(name = {  "new_out", "alloc_out", "__alloc_out" }, meta = true)
     public static Buffer allocateOutput(ThreadContext context, IRubyObject recv, IRubyObject sizeArg, IRubyObject arg2) {
-        return allocate(context, recv, sizeArg, getCount(arg2), OUT);
+        return allocate(context, recv, sizeArg, getCount(context, arg2), OUT);
     }
 
     @JRubyMethod(name = {  "new_out", "alloc_out", "__alloc_out" }, meta = true)
     public static Buffer allocateOutput(ThreadContext context, IRubyObject recv,
             IRubyObject sizeArg, IRubyObject countArg, IRubyObject clearArg) {
-        return allocate(context, recv, sizeArg, RubyFixnum.fix2int(countArg), OUT);
+        return allocate(context, recv, sizeArg, toInt(context, countArg), OUT);
     }
 
     @JRubyMethod(name = "inspect")

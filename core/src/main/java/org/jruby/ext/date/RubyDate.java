@@ -282,7 +282,7 @@ public class RubyDate extends RubyObject {
             val = DAY_MS(context).op_mul(context, val);
         }
 
-        if (val instanceof RubyFixnum fix) return fix.asLong(context);
+        if (val instanceof RubyFixnum fix) return fix.getValue();
 
         // fallback
         val = ((RubyNumeric) val).divmod(context, RubyFixnum.one(context.runtime));
@@ -295,7 +295,7 @@ public class RubyDate extends RubyObject {
         this.subMillisNum = toLong(context, subMillis.numerator(context));
         this.subMillisDen = toLong(context, subMillis.denominator(context));
 
-        return ms.asLong(context);
+        return ms.getValue();
     }
 
     private RubyFixnum DAY_MS(final ThreadContext context) {
@@ -547,7 +547,7 @@ public class RubyDate extends RubyObject {
 
     private static long normIntValue(ThreadContext context, IRubyObject val, final int negOffset) {
         long v = val instanceof RubyFixnum fixnum ?
-                fixnum.asLong(context) : toLong(context, val);
+                fixnum.getValue() : toLong(context, val);
 
         return (v < 0) ? v + negOffset : v;
     }
@@ -1930,7 +1930,7 @@ public class RubyDate extends RubyObject {
 
         RubyString d = (RubyString) match.at(context, 1);
         RubyString mon = (RubyString) match.at(context, 2);
-        mon = RubyString.newStringShared(context.runtime, ConvertBytes.byteToSharedByteList((short) mon_num(mon)));
+        mon = newSharedString(context, ConvertBytes.byteToSharedByteList((short) mon_num(mon)));
         RubyString b = matchOrNull(context, match, 3);
         RubyString y = matchOrNull(context, match, 4);
 
@@ -1962,7 +1962,7 @@ public class RubyDate extends RubyObject {
         if (!(sub instanceof RubyMatchData match)) return context.nil;
 
         RubyString mon = (RubyString) match.at(context, 1);
-        mon = RubyString.newStringShared(context.runtime, ConvertBytes.byteToSharedByteList((short) mon_num(mon)));
+        mon = newSharedString(context, ConvertBytes.byteToSharedByteList((short) mon_num(mon)));
         RubyString d = (RubyString) match.at(context, 2);
         RubyString b = matchOrNull(context, match, 3);
         RubyString y = matchOrNull(context, match, 4);
@@ -2106,7 +2106,7 @@ public class RubyDate extends RubyObject {
     private static final ByteList SPACE = new ByteList(new byte[] { ' ' }, false);
 
     private static IRubyObject subSpace(ThreadContext context, RubyString str, RubyRegexp reg) {
-        return str.subBangFast(context, reg, RubyString.newStringShared(context.runtime, SPACE));
+        return str.subBangFast(context, reg, newSharedString(context, SPACE));
     }
 
     // NOTE: still in .rb
@@ -2139,7 +2139,7 @@ public class RubyDate extends RubyObject {
     public static IRubyObject _parse_impl(ThreadContext context, IRubyObject self, IRubyObject s, IRubyObject h) {
         RubyString str = (RubyString) s; RubyHash hash = (RubyHash) h;
 
-        str = str.gsubFast(context, newRegexp(context.runtime, _parse_impl), RubyString.newStringShared(context.runtime, SPACE), Block.NULL_BLOCK);
+        str = str.gsubFast(context, newRegexp(context.runtime, _parse_impl), newSharedString(context, SPACE), Block.NULL_BLOCK);
 
         int flags = check_class(str);
         if ((flags & HAVE_ALPHA) == HAVE_ALPHA) {

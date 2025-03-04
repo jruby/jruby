@@ -100,7 +100,7 @@ public class RubyStruct extends RubyObject {
     public RubyStruct(ThreadContext context, RubyClass rubyClass) {
         super(context.runtime, rubyClass);
 
-        int size = RubyNumeric.fix2int(getInternalVariable(context, rubyClass, SIZE_VAR));
+        int size = toInt(context, getInternalVariable(context, rubyClass, SIZE_VAR));
 
         values = new IRubyObject[size];
 
@@ -852,7 +852,7 @@ public class RubyStruct extends RubyObject {
             }
             return value;
         }
-        return aref(context, RubyNumeric.fix2int(key));
+        return aref(context, toInt(context, key));
     }
 
     @Deprecated(since = "10.0")
@@ -887,7 +887,7 @@ public class RubyStruct extends RubyObject {
             return value;
         }
 
-        return aset(context, RubyNumeric.fix2int(key), value);
+        return aset(context, toInt(context, key), value);
     }
 
     private IRubyObject aset(ThreadContext context, int originalIndex, IRubyObject value) {
@@ -938,7 +938,7 @@ public class RubyStruct extends RubyObject {
                 }
                 continue;
             }
-            result.push(context, aref(context, RubyNumeric.num2int(arg)));
+            result.push(context, aref(context, toInt(context, arg)));
         }
 
         return result;

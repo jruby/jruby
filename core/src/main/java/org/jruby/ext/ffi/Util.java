@@ -37,6 +37,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static com.headius.backport9.buffer.Buffers.positionBuffer;
+import static org.jruby.api.Convert.toDouble;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
@@ -80,12 +81,22 @@ public final class Util {
         return value;
     }
 
+    @Deprecated(since = "10.0")
     public static final float floatValue(IRubyObject parameter) {
-        return (float) RubyNumeric.num2dbl(parameter);
+        return floatValue(((RubyBasicObject) parameter).getCurrentContext(), parameter);
     }
 
+    public static final float floatValue(ThreadContext context, IRubyObject parameter) {
+        return (float) toDouble(context, parameter);
+    }
+
+    @Deprecated(since = "10.0")
     public static final double doubleValue(IRubyObject parameter) {
-        return RubyNumeric.num2dbl(parameter);
+        return doubleValue(((RubyBasicObject) parameter).getCurrentContext(), parameter);
+    }
+
+    public static final double doubleValue(ThreadContext context, IRubyObject parameter) {
+        return toDouble(context, parameter);
     }
 
     /**

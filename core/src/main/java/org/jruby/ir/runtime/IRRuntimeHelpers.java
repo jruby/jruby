@@ -90,6 +90,7 @@ import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.Type;
 
 import static org.jruby.api.Access.arrayClass;
+import static org.jruby.api.Access.encodingService;
 import static org.jruby.api.Access.globalVariables;
 import static org.jruby.api.Access.hashClass;
 import static org.jruby.api.Access.instanceConfig;
@@ -1625,12 +1626,12 @@ public class IRRuntimeHelpers {
 
     @JIT
     public static RubyEncoding retrieveEncoding(ThreadContext context, String name) {
-        return context.runtime.getEncodingService().getEncoding(retrieveJCodingsEncoding(context, name));
+        return encodingService(context).getEncoding(retrieveJCodingsEncoding(context, name));
     }
 
     @JIT
     public static Encoding retrieveJCodingsEncoding(ThreadContext context, String name) {
-        return context.runtime.getEncodingService().findEncodingOrAliasEntry(name.getBytes()).getEncoding();
+        return encodingService(context).findEncodingOrAliasEntry(name.getBytes()).getEncoding();
     }
 
     @JIT

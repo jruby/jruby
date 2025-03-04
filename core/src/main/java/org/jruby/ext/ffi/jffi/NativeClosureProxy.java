@@ -15,6 +15,7 @@ import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import java.lang.ref.WeakReference;
 
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.toDouble;
 import static org.jruby.api.Error.runtimeError;
 import static org.jruby.api.Error.typeError;
 
@@ -73,12 +74,7 @@ final class NativeClosureProxy implements Closure {
      * @return a java long value.
      */
     private static final long longValue(ThreadContext context, IRubyObject value) {
-        if (value instanceof RubyNumeric num) {
-            return num.asLong(context);
-        } else if (value.isNil()) {
-            return 0L;
-        }
-        return 0;
+        return value instanceof RubyNumeric num ? num.asLong(context) : 0L;
     }
 
     /**
@@ -94,8 +90,6 @@ final class NativeClosureProxy implements Closure {
             return num.asLong(context);
         } else if (value instanceof Pointer) {
             return ((Pointer) value).getAddress();
-        } else if (value.isNil()) {
-            return 0L;
         }
         return 0;
     }
@@ -132,9 +126,9 @@ final class NativeClosureProxy implements Closure {
                     }
                     break;
                 case FLOAT:
-                    buffer.setFloatReturn((float) RubyNumeric.num2dbl(value)); break;
+                    buffer.setFloatReturn((float) toDouble(context, value)); break;
                 case DOUBLE:
-                    buffer.setDoubleReturn(RubyNumeric.num2dbl(value)); break;
+                    buffer.setDoubleReturn(toDouble(context, value)); break;
 //                case LONGDOUBLE:
 //                    break; // not implemented
                 case POINTER:

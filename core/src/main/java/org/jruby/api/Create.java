@@ -171,6 +171,31 @@ public class Create {
     }
 
     /**
+     * Creates a new RubyString from the provided bytes.
+     *
+     * @param context the current thread context
+     * @param bytes the bytes to become a string
+     * @return the new RubyString
+     */
+    public static RubyString newString(ThreadContext context, byte[] bytes) {
+        return RubyString.newString(context.runtime, bytes);
+    }
+
+    /**
+     * Creates a new RubyString from the provided bytes.
+     *
+     * @param context the current thread context
+     * @param bytes the bytes to become a string
+     * @param start start index in source bytes
+     * @param length the length from start index in source bytes
+     * @return the new RubyString
+     */
+    public static RubyString newString(ThreadContext context, byte[] bytes, int start, int length) {
+        return RubyString.newString(context.runtime, bytes, start, length);
+    }
+
+
+    /**
      * Creates a new RubyString from the provided bytelist.
      *
      * @param context the current thread context
@@ -192,6 +217,33 @@ public class Create {
     public static RubyString newString(ThreadContext context, ByteList bytes, Encoding encoding) {
         return RubyString.newString(context.runtime, bytes, encoding);
     }
+
+    /**
+     * Creates a new RubyString from the provided bytelist but use the supplied
+     * encoding if possible.  This bytelist may be from a shared source.
+     *
+     * @param context the current thread context
+     * @param bytes the bytes to become a string
+     * @return the new RubyString
+     */
+    public static RubyString newSharedString(ThreadContext context, ByteList bytes) {
+        return RubyString.newStringShared(context.runtime, bytes);
+    }
+
+
+    /**
+     * Creates a new RubyString from the provided bytelist but use the supplied
+     * encoding if possible.  This bytelist may be from a shared source.
+     *
+     * @param context the current thread context
+     * @param bytes the bytes to become a string
+     * @param encoding to be used (ignoring encoding of bytelist)
+     * @return the new RubyString
+     */
+    public static RubyString newSharedString(ThreadContext context, ByteList bytes, Encoding encoding) {
+        return RubyString.newStringShared(context.runtime, bytes, encoding);
+    }
+
 
     /**
      * Creates a new RubyString from the provided java String.

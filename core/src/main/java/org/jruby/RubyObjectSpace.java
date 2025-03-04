@@ -120,20 +120,25 @@ public class RubyObjectSpace {
         return block.getBinding().getSelf() == object;
     }
 
-    @JRubyMethod(module = true, visibility = PRIVATE)
+    @Deprecated(since = "10.0")
     public static IRubyObject undefine_finalizer(IRubyObject recv, IRubyObject obj, Block block) {
-        recv.getRuntime().getObjectSpace().removeFinalizers(RubyNumeric.fix2long(obj.id()));
+        return undefine_finalizer(((RubyBasicObject) recv).getCurrentContext(), recv, obj, block);
+    }
+
+    @JRubyMethod(module = true, visibility = PRIVATE)
+    public static IRubyObject undefine_finalizer(ThreadContext context, IRubyObject recv, IRubyObject obj, Block block) {
+        context.runtime.getObjectSpace().removeFinalizers(toLong(context, obj.id()));
         return recv;
     }
 
     @Deprecated(since = "10.0")
     public static IRubyObject id2ref(IRubyObject recv, IRubyObject id) {
-        return id2ref(recv.getRuntime().getCurrentContext(), recv, id);
+        return id2ref(((RubyBasicObject) recv).getCurrentContext(), recv, id);
     }
 
     @JRubyMethod(name = "_id2ref", module = true, visibility = PRIVATE)
     public static IRubyObject id2ref(ThreadContext context, IRubyObject recv, IRubyObject id) {
-        long longId = castAsFixnum(context, id).asLong(context);
+        long longId = castAsFixnum(context, id).getValue();
         if (longId == 0) return context.fals;
         if (longId == 20) return context.tru;
         if (longId == 8) return context.nil;

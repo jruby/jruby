@@ -16,6 +16,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.RubyTime.TIME_SCALE;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toDouble;
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Error.argumentError;
 
 public class TimeArgs {
@@ -134,7 +136,7 @@ public class TimeArgs {
                     nanos = fullNanos - fullMillis * 1_000_000;
                     millis = fullMillis % 1000;
                 } else {
-                    double secs = RubyFloat.num2dbl(context, secondObj);
+                    double secs = toDouble(context, secondObj);
 
                     if (secs < 0 || secs >= TIME_SCALE) throw argumentError(context, "argument out of range.");
 
@@ -159,7 +161,7 @@ public class TimeArgs {
             millis = (long) (micros / 1000);
             nanos = (long) Math.rint((micros * 1000) % 1_000_000);
         } else {
-            int usec = parseIntArg(context, usecObj).isNil() ? 0 : RubyNumeric.num2int(usecObj);
+            int usec = parseIntArg(context, usecObj).isNil() ? 0 : toInt(context, usecObj);
 
             if (usec < 0 || usec >= TIME_SCALE / 1000) throw argumentError(context, "argument out of range.");
 
@@ -194,10 +196,10 @@ public class TimeArgs {
             if (!yr.getEncoding().isAsciiCompatible()) {
                 throw argumentError(context, "time string should have ASCII compatible encoding");
             }
-            _year = RubyNumeric.str2inum(context.runtime, yr, 10, false);
+            _year = RubyNumeric.str2inum(context.runtime, yr, 10, false, true);
         }
 
-        return RubyNumeric.num2int(_year);
+        return toInt(context, _year);
     }
 
     private static int parseMonth(ThreadContext context, IRubyObject _month) {
@@ -232,7 +234,7 @@ public class TimeArgs {
                 throw argumentError(context, "argument out of range.");
             }
         } else {
-            month = RubyNumeric.num2int(_month);
+            month = toInt(context, _month);
         }
 
         if (month < 1 || month > 12) {
@@ -271,7 +273,8 @@ public class TimeArgs {
     }
 
     private static int parseIntOrDefault(ThreadContext context, IRubyObject obj, int def) {
-        return (obj = parseIntArg(context, obj)).isNil() ? def : RubyNumeric.num2int(obj);
+        obj = parseIntArg(context, obj);
+        return obj.isNil() ? def : toInt(context, obj);
     }
 
     private static DateTime adjustZoneOffset(DateTimeZone dtz, DateTime dt, boolean dst) {

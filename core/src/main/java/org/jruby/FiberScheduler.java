@@ -9,6 +9,8 @@ import org.jruby.util.io.OpenFile;
 import java.nio.ByteBuffer;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toInt;
+import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Error.argumentError;
 
 public class FiberScheduler {
@@ -194,11 +196,11 @@ public class FiberScheduler {
     // MRI: rb_fiber_scheduler_io_result_apply
     public static int resultApply(ThreadContext context, IRubyObject result) {
         int resultInt;
-        if (result instanceof RubyFixnum && (resultInt = RubyNumeric.num2int(result)) < 0) {
+        if (result instanceof RubyFixnum fixnum && (resultInt = fixnum.asInt(context)) < 0) {
             context.runtime.getPosix().errno(-resultInt);
             return -1;
         } else {
-            return RubyNumeric.num2int(result);
+            return toInt(context, result);
         }
     }
 

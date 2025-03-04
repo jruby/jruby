@@ -40,6 +40,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.api.Access.stringClass;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.castAsString;
+import static org.jruby.api.Convert.toInt;
 
 /**
  * Native part for `require 'jruby/core_ext.rb'`.
@@ -66,7 +67,7 @@ public abstract class CoreExt {
 
         @JRubyMethod(name = "alloc", meta = true)
         public static RubyString alloc(ThreadContext context, IRubyObject recv, IRubyObject size) {
-            return RubyString.newStringLight(context.runtime, RubyInteger.fix2int(size));
+            return RubyString.newStringLight(context.runtime, toInt(context, size));
         }
 
     }

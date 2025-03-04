@@ -56,6 +56,7 @@ import static org.jruby.api.Access.arrayClass;
 import static org.jruby.api.Access.hashClass;
 import static org.jruby.api.Access.integerClass;
 import static org.jruby.api.Access.stringClass;
+import static org.jruby.api.Convert.asInteger;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.newString;
@@ -407,11 +408,8 @@ public class TypeConverter {
 
     // rb_convert_to_integer
     public static IRubyObject convertToInteger(ThreadContext context, IRubyObject val, int base, boolean exception) {
-        final Ruby runtime = context.runtime;
-        IRubyObject tmp;
-
         if (base != 0) {
-            tmp = TypeConverter.checkStringType(context.runtime, val);
+            IRubyObject tmp = TypeConverter.checkStringType(context.runtime, val);
 
             if (!tmp.isNil()) {
                 val = tmp;
@@ -425,7 +423,7 @@ public class TypeConverter {
 
         if (val instanceof RubyFloat f) {
             if (!exception && !Double.isFinite(f.asDouble(context))) return context.nil;
-            return RubyNumeric.dbl2ival(context.runtime, f.getValue());
+            return asInteger(context, f.getValue());
         } else if (val instanceof RubyInteger) {
             return val;
         } else if (val instanceof RubyString str) {
@@ -436,7 +434,7 @@ public class TypeConverter {
         }
 
         try {
-            tmp = TypeConverter.convertToType(context, val, integerClass(context), sites(context).to_int_checked, false);
+            IRubyObject tmp = TypeConverter.convertToType(context, val, integerClass(context), sites(context).to_int_checked, false);
             if (tmp instanceof RubyInteger) return tmp;
         } catch (RaiseException re) {
             if (!exception) return context.nil;

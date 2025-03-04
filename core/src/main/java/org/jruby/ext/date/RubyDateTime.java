@@ -302,7 +302,7 @@ public class RubyDateTime extends RubyDate {
     private static boolean isSecondAWholeNumber(ThreadContext context, IRubyObject val) {
         if (val instanceof RubyRational rat) {
             RubyInteger den = rat.getDenominator();
-            return den instanceof RubyFixnum denf && denf.asLong(context) == 1;
+            return den instanceof RubyFixnum denf && denf.getValue() == 1;
         } else if (val instanceof RubyFloat flote) {
             double v = flote.asDouble(context);
             return v == (double) Math.round(v);
