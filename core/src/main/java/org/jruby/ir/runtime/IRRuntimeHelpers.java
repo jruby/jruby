@@ -826,7 +826,8 @@ public class IRRuntimeHelpers {
         return (callInfo & CALL_KEYWORD_EMPTY) == 0 && args.length >= 1 && args[args.length - 1] instanceof RubyHash;
     }
 
-    private static IRubyObject receiveKeywordsHash(ThreadContext context, IRubyObject[] args, boolean hasRestArgs, boolean acceptsKeywords, boolean ruby2_keywords_method, int callInfo) {
+    private static IRubyObject receiveKeywordsHash(ThreadContext context, IRubyObject[] args, boolean hasRestArgs,
+                                                   boolean acceptsKeywords, boolean ruby2_keywords_method, int callInfo) {
         RubyHash hash = (RubyHash) args[args.length - 1];
 
         // We record before funging last arg because we may unmark and replace last arg.
@@ -844,13 +845,8 @@ public class IRRuntimeHelpers {
         boolean callSplats = (callInfo & CALL_SPLATS) != 0;
         boolean callSplatsWithRuby2KeywordsHash = callSplats && ruby2_keywords_hash;
 
-        // if we're splatting a ruby2_keywords hash
-        //    AND the hash is non-empty
-        //    AND keywords are accepted OR there's no rest args,
-        // clear the ruby2_keywords flag from the hash
-        if (callSplatsWithRuby2KeywordsHash
-                && !hash.isEmpty()
-                && (acceptsKeywords || !hasRestArgs)) {
+        // conditional above handles properly receiving ruby2 keywords from non ruby2 keywords method
+        if (!ruby2_keywords_method && ruby2_keywords_hash) {
             clearTrailingHashRuby2Keywords(context, args, hash);
         }
 
