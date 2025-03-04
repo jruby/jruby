@@ -4820,10 +4820,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                     throw argumentError(context, "cannot specify src_offset for non-IO");
                 }
 
-                if (sites.respond_to_readpartial.respondsTo(context, arg1, arg1, true)) {
-                    channel1 = new IOChannel.IOReadableByteChannel(arg1, "readpartial");
-                } else if (sites.respond_to_read.respondsTo(context, arg1, arg1, true)) {
+                if (sites.respond_to_read.respondsTo(context, arg1, arg1, true)) {
                     channel1 = new IOChannel.IOReadableByteChannel(arg1);
+                } else if (sites.respond_to_readpartial.respondsTo(context, arg1, arg1, true)) {
+                    channel1 = new IOChannel.IOReadableByteChannel(arg1, "readpartial");
                 }
             } else {
                 IRubyObject tmpIO = TypeConverter.ioCheckIO(runtime, arg1);
