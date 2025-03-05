@@ -2155,6 +2155,15 @@ public final class Ruby implements Constantizable {
         return marshalModule;
     }
 
+    /**
+     * @return
+     * @deprecated Use {@link org.jruby.api.Access#integerClass(ThreadContext)} instead.
+     */
+    @Deprecated(since = "10.0")
+    public RubyClass getBignum() {
+        return integerClass;
+    }
+
     public RubyClass getDateError() {
         return this.dateErrorClass;
     }
