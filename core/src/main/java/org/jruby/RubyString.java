@@ -1681,7 +1681,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     @Deprecated
-    public IRubyObject replace19(IRubyObject other) {
+    public RubyString replace19(IRubyObject other) {
         return replace(getCurrentContext(), other);
     }
 
