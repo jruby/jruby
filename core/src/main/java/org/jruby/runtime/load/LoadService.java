@@ -376,7 +376,7 @@ public class LoadService {
                 library.load(runtime, wrap);
             } catch (IOException e) {
                 debugLoadException(runtime, e);
-                throw newLoadErrorFromThrowable(runtime, file, e);
+                throw newRubyErrorFromThrowable(runtime, file, e);
             }
         } finally {
             runtime.setCurrentLine(currentLine);
@@ -404,7 +404,7 @@ public class LoadService {
                 library.load(runtime, wrap);
             } catch (IOException e) {
                 debugLoadException(runtime, e);
-                throw newLoadErrorFromThrowable(runtime, file, e);
+                throw newRubyErrorFromThrowable(runtime, file, e);
             }
         } finally {
             runtime.setCurrentLine(currentLine);
@@ -689,16 +689,16 @@ public class LoadService {
 
             debugLoadException(runtime, ex);
 
-            RaiseException re = newLoadErrorFromThrowable(runtime, searchFile, ex);
+            RaiseException re = newRubyErrorFromThrowable(runtime, searchFile, ex);
             re.initCause(ex);
             throw re;
         }
     }
 
-    private static RaiseException newLoadErrorFromThrowable(Ruby runtime, String file, Throwable t) {
+    private static RaiseException newRubyErrorFromThrowable(Ruby runtime, String file, Throwable t) {
         if (RubyInstanceConfig.DEBUG_PARSER || RubyInstanceConfig.IR_READING_DEBUG) t.printStackTrace();
 
-        return runtime.newLoadError(String.format("load error: %s -- %s: %s", file, t.getClass().getName(), t.getMessage()), file);
+        return runtime.newRuntimeError(String.format("Java exception during load: " + file + " -- " + t.getClass().getName() + " : " + t.getMessage()));
     }
 
     protected void checkEmptyLoad(String file) throws RaiseException {
