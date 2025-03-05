@@ -298,11 +298,7 @@ public class RubyProcess {
             return exited(getCurrentContext());
         }
 
-        /**
-         * @return ""
-         * @deprecated Use {@link RubyStatus#stopsig(ThreadContext)} instead.
-         */
-        @Deprecated(since = "10.0", forRemoval = true)
+        @Deprecated(since = "10.0")
         public IRubyObject stopsig() {
             return stopsig(getCurrentContext());
         }
@@ -313,11 +309,7 @@ public class RubyProcess {
                     asFixnum(context, PosixShim.WAIT_MACROS.WSTOPSIG(status)) : context.nil;
         }
 
-        /**
-         * @return ""
-         * @deprecated Use {@link RubyStatus#termsig(ThreadContext)} instead.
-         */
-        @Deprecated(since = "10.0", forRemoval = true)
+        @Deprecated(since = "10.0")
         public IRubyObject termsig() {
             return termsig(getCurrentContext());
         }
@@ -1244,12 +1236,7 @@ public class RubyProcess {
         return waitall(context);
     }
 
-    /**
-     * @param runtime
-     * @return ""
-     * @deprecated Use {@link RubyProcess#waitall(ThreadContext)}
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static IRubyObject waitall(Ruby runtime) {
         return waitall(runtime.getCurrentContext());
     }
@@ -1307,13 +1294,7 @@ public class RubyProcess {
         return egid_set(context, arg);
     }
 
-    /**
-     * @param runtime
-     * @param arg
-     * @return ""
-     * @deprecated Use {@link RubyProcess#egid_set(ThreadContext, IRubyObject)}
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static IRubyObject egid_set(Ruby runtime, IRubyObject arg) {
         return egid_set(runtime.getCurrentContext(), arg);
     }
@@ -1498,13 +1479,7 @@ public class RubyProcess {
         return euid_set(context, arg);
     }
 
-    /**
-     * @param runtime
-     * @param arg
-     * @return ""
-     * @deprecated Use {@link RubyProcess#egid_set(ThreadContext, IRubyObject)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static IRubyObject euid_set(Ruby runtime, IRubyObject arg) {
         return euid_set(runtime.getCurrentContext(), arg);
     }
@@ -1584,13 +1559,7 @@ public class RubyProcess {
         return getrlimit(context, arg);
     }
 
-    /**
-     * @param runtime
-     * @param arg
-     * @return ""
-     * @deprecated Use {@link RubyProcess#getrlimit(ThreadContext, IRubyObject)}
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static IRubyObject getrlimit(Ruby runtime, IRubyObject arg) {
         return getrlimit(runtime.getCurrentContext(), arg);
     }

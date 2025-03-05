@@ -442,12 +442,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return enc;
     }
 
-    /**
-     * @param str
-     * @return ""
-     * @deprecated Use {@link RubyRegexp#preparePattern(ThreadContext, RubyString)} instead
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public final Regex preparePattern(RubyString str) {
         return preparePattern(getCurrentContext(), str);
     }
@@ -967,14 +962,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return regexpInitializeString(context, arg0.convertToString(), regexpOptions, timeout);
     }
 
-    /**
-     * @param arg0
-     * @param arg1
-     * @param arg2
-     * @return ""
-     * @deprecated Use {@link RubyRegexp#initialize_m(ThreadContext, IRubyObject, IRubyObject, IRubyObject)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public IRubyObject initialize_m(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         return initialize_m(getCurrentContext(), arg0, arg1, arg2);
     }

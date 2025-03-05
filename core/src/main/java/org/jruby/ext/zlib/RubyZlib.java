@@ -248,13 +248,7 @@ public class RubyZlib {
         return JZlibInflate.s_inflate(context, recv, string);
     }
 
-    /**
-     * @param recv
-     * @param args
-     * @return ""
-     * @deprecated Use {@link RubyZlib#deflate(ThreadContext, IRubyObject, IRubyObject[])} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static IRubyObject deflate(IRubyObject recv, IRubyObject[] args) {
         return deflate(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }

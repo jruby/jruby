@@ -10,7 +10,6 @@ import java.nio.ByteBuffer;
 
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.toInt;
-import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Error.argumentError;
 
 public class FiberScheduler {
@@ -204,14 +203,7 @@ public class FiberScheduler {
         }
     }
 
-    /**
-     * @param runtime
-     * @param result
-     * @param error
-     * @return ""
-     * @deprecated Use {@link FiberScheduler#result(ThreadContext, int, Errno)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static IRubyObject result(Ruby runtime, int result, Errno error) {
         return result(runtime.getCurrentContext(), result, error);
     }

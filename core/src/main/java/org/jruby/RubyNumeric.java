@@ -1429,11 +1429,7 @@ public class RubyNumeric extends RubyObject {
         return sites(context).denominator.call(context, rational, rational);
     }
 
-    /**
-     * @return ""
-     * @deprecated Use {@link RubyNumeric#convertToRational(ThreadContext)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public RubyRational convertToRational() {
         return convertToRational(getCurrentContext());
     }

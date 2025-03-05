@@ -426,14 +426,14 @@ public class RubyKernel {
         return  exObj.isTrue();
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static RubyFloat new_float(IRubyObject recv, IRubyObject object) {
         return (RubyFloat) new_float(((RubyBasicObject) recv).getCurrentContext(), object, true);
     }
 
     private static final ByteList ZEROx = new ByteList(new byte[] { '0','x' }, false);
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static RubyFloat new_float(final Ruby runtime, IRubyObject object) {
         return (RubyFloat) new_float(runtime.getCurrentContext(), object, true);
     }
@@ -449,7 +449,7 @@ public class RubyKernel {
         throw argumentError(context, str(context.runtime, "invalid value for Float(): ", newString(context, string)));
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static double parseHexidecimalExponentString2(Ruby runtime, ByteList str) {
         return parseHexidecimalExponentString2(runtime.getCurrentContext(), str);
     }
@@ -2313,12 +2313,7 @@ public class RubyKernel {
         return ((RubyBasicObject)self).method(context, symbol, context.getCurrentStaticScope());
     }
 
-    /**
-     * @param self
-     * @return ""
-     * @deprecated Use {@link RubyKernel#to_s(ThreadContext, IRubyObject)}
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static IRubyObject to_s(IRubyObject self) {
         return to_s(((RubyBasicObject) self).getCurrentContext(), self);
     }

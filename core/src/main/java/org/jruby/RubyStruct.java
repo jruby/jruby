@@ -899,12 +899,7 @@ public class RubyStruct extends RubyObject {
         return values[index] = value;
     }
 
-    /**
-     * @param args
-     * @return ""
-     * @deprecated Use {@link RubyStruct#values_at(ThreadContext, IRubyObject[])} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public IRubyObject values_at(IRubyObject[] args) {
         return values_at(getCurrentContext(), args);
     }

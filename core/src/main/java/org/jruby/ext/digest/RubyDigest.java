@@ -164,13 +164,7 @@ public class RubyDigest {
         return RubyString.newStringNoCopy(context.runtime, new ByteList(ByteList.plain(toHex(val)), USASCIIEncoding.INSTANCE));
     }
 
-    /**
-     * @param self
-     * @param arg
-     * @return ""
-     * @deprecated Use {@link RubyDigest#hexencode(ThreadContext, IRubyObject, IRubyObject)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static RubyString hexencode(IRubyObject self, IRubyObject arg) {
         return hexencode(((RubyBasicObject) self).getCurrentContext(), self, arg);
     }
@@ -568,11 +562,7 @@ public class RubyDigest {
             return digest;
         }
 
-        /**
-         * @return ""
-         * @deprecated Use {@link DigestBase#digest_length(ThreadContext)} instead.
-         */
-        @Deprecated(since = "10.0", forRemoval = true)
+        @Deprecated(since = "10.0")
         public IRubyObject digest_length() {
             return digest_length(getCurrentContext());
         }
@@ -582,11 +572,7 @@ public class RubyDigest {
             return asFixnum(context, algo.getDigestLength());
         }
 
-        /**
-         * @return ""
-         * @deprecated Use {@link DigestBase#block_length(ThreadContext)} instead.
-         */
-        @Deprecated(since = "10.0", forRemoval = true)
+        @Deprecated(since = "10.0")
         public IRubyObject block_length() {
             return block_length(getCurrentContext());
         }

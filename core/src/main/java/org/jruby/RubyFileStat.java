@@ -148,13 +148,7 @@ public class RubyFileStat extends RubyObject {
         return initialize(fname, unusedBlock);
     }
 
-    /**
-     * @param fname
-     * @param unusedBlock
-     * @return ""
-     * @deprecated Use {@link RubyFileStat#initialize(ThreadContext, IRubyObject, Block)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public IRubyObject initialize(IRubyObject fname, Block unusedBlock) {
         return initialize(getCurrentContext(), fname, unusedBlock);
     }

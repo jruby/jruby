@@ -1411,7 +1411,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      *
      * @param pathOrFile the string or IO to use for the path
      */
-    @Deprecated(since = "9.4-", forRemoval = true)
+    @Deprecated(since = "9.4-") // since 2020
     public static FileResource fileResource(IRubyObject pathOrFile) {
         return fileResource(((RubyBasicObject)pathOrFile).getCurrentContext(), pathOrFile);
     }

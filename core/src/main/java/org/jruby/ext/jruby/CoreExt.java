@@ -31,7 +31,6 @@ package org.jruby.ext.jruby;
 
 import org.jruby.Ruby;
 import org.jruby.RubyFixnum;
-import org.jruby.RubyInteger;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ThreadContext;
@@ -48,8 +47,7 @@ import static org.jruby.api.Convert.toInt;
  * @author kares
  */
 public abstract class CoreExt {
-
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static void loadStringExtensions(Ruby runtime) {
         loadStringExtensions(runtime.getCurrentContext());
     }
@@ -59,7 +57,6 @@ public abstract class CoreExt {
     }
 
     public static class String {
-
         @JRubyMethod
         public static RubyFixnum unseeded_hash(ThreadContext context, IRubyObject recv) {
             return asFixnum(context, castAsString(context, recv).unseededStrHashCode(context.runtime));
@@ -69,7 +66,5 @@ public abstract class CoreExt {
         public static RubyString alloc(ThreadContext context, IRubyObject recv, IRubyObject size) {
             return RubyString.newStringLight(context.runtime, toInt(context, size));
         }
-
     }
-
 }

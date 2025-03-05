@@ -280,13 +280,7 @@ public class RubyEtc {
         }
     }
 
-    /**
-     * @param recv
-     * @param block
-     * @return ""
-     * @deprecated Use {@link RubyEtc#passwd(ThreadContext, IRubyObject, Block)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static synchronized IRubyObject passwd(IRubyObject recv, Block block) {
         return passwd(((RubyBasicObject) recv).getCurrentContext(), recv, block);
     }
@@ -395,13 +389,7 @@ public class RubyEtc {
         }
     }
 
-    /**
-     * @param recv
-     * @param name
-     * @return ""
-     * @deprecated Use {@link RubyEtc#getgrnam(ThreadContext, IRubyObject, IRubyObject)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static synchronized IRubyObject getgrnam(IRubyObject recv, IRubyObject name) {
         return getgrnam(((RubyBasicObject) recv).getCurrentContext(), recv, name);
     }
@@ -488,13 +476,7 @@ public class RubyEtc {
         return context.nil;
     }
 
-    /**
-     * @param recv
-     * @param block
-     * @return ""
-     * @deprecated Use {@link RubyEtc#group(ThreadContext, IRubyObject, Block)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static synchronized IRubyObject group(IRubyObject recv, Block block) {
         return group(((RubyBasicObject) recv).getCurrentContext(), recv, block);
     }
@@ -536,12 +518,7 @@ public class RubyEtc {
         return context.nil;
     }
 
-    /**
-     * @param recv
-     * @return ""
-     * @deprecated Use {@link RubyEtc#getgrent(ThreadContext, IRubyObject)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static synchronized IRubyObject getgrent(IRubyObject recv) {
         return getgrent(((RubyBasicObject) recv).getCurrentContext(), recv);
     }

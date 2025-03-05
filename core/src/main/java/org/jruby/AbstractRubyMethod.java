@@ -91,6 +91,11 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
         return arity(getCurrentContext());
     }
 
+    @Deprecated(since = "9.4-") // since 2017
+    public final IRubyObject op_eql19(ThreadContext context, IRubyObject other) {
+        return op_eql(context, other);
+    }
+
     @JRubyMethod(name = "eql?")
     public IRubyObject op_eql(ThreadContext context, IRubyObject other) {
         return asBoolean(context,  equals(other) );
@@ -130,6 +135,21 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
         return filename != null ?
                 newArray(context, newString(context, filename), asFixnum(context, getLine())) :
                 context.nil;
+    }
+
+    @Deprecated(since = "10.0")
+    public RubyBoolean public_p(ThreadContext context) {
+        return context.runtime.newBoolean(method.getVisibility().isPublic());
+    }
+
+    @Deprecated(since = "10.0")
+    public RubyBoolean protected_p(ThreadContext context) {
+        return context.runtime.newBoolean(method.getVisibility().isProtected());
+    }
+
+    @Deprecated(since = "10.0")
+    public RubyBoolean private_p(ThreadContext context) {
+        return context.runtime.newBoolean(method.getVisibility().isPrivate());
     }
 
     public String getFilename() {

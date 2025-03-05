@@ -1404,15 +1404,7 @@ public class Java implements Library {
         return JavaUtil.java_to_primitive(recv, object, unusedBlock);
     }
 
-    /**
-     * @param recv
-     * @param wrapper
-     * @param interfaces
-     * @param block
-     * @return ""
-     * @deprecated Use
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static IRubyObject new_proxy_instance2(IRubyObject recv, final IRubyObject wrapper,
                                                   final IRubyObject interfaces, Block block) {
         return new_proxy_instance2(((RubyBasicObject) recv).getCurrentContext(), recv, wrapper, interfaces, block);

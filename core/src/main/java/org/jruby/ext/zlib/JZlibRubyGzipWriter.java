@@ -251,12 +251,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return asFixnum(context, io.getTotalIn());
     }
 
-    /**
-     * @param obj
-     * @return ""
-     * @deprecated Use {@link JZlibRubyGzipWriter#set_orig_name(ThreadContext, IRubyObject)} instead
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public IRubyObject set_orig_name(IRubyObject obj) {
         return set_orig_name(getCurrentContext(), obj);
     }
@@ -274,12 +269,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return obj;
     }
 
-    /**
-     * @param obj
-     * @return ""
-     * @deprecated Use {@link JZlibRubyGzipWriter#set_comment(ThreadContext, IRubyObject)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public IRubyObject set_comment(IRubyObject obj) {
         return set_comment(getCurrentContext(), obj);
     }

@@ -510,12 +510,7 @@ public class StaticScope implements Serializable, Cloneable {
         return collection;
     }
 
-    /**
-     * @param runtime
-     * @return ""
-     * @deprecated Use {@link StaticScope#getLocalVariables(ThreadContext)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public RubyArray getLocalVariables(Ruby runtime) {
         return getLocalVariables(runtime.getCurrentContext());
     }

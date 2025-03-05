@@ -3766,19 +3766,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return obj;
     }
 
-    @Deprecated(since = "9.4", forRemoval = true)
+    @Deprecated(since = "9.4")
     public final IRubyObject substr19(Ruby runtime, int beg, int len) {
         return substrEnc(getCurrentContext(), beg, len);
     }
 
-    /**
-     * @param runtime
-     * @param beg
-     * @param len
-     * @return ""
-     * @deprecated Use {@link RubyString#substrEnc(ThreadContext, int, int)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public final IRubyObject substrEnc(Ruby runtime, int beg, int len) {
         return substrEnc(getCurrentContext(), beg, len);
     }
@@ -3890,7 +3883,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return this;
     }
 
-    @Deprecated(since = "9.4", forRemoval = true)
+    @Deprecated(since = "9.4")
     private void replaceInternal19(Ruby runtime, int beg, int len, RubyString repl) {
         strUpdate(getCurrentContext(), beg, len, this, repl);
     }
@@ -4286,11 +4279,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 Create.newEmptyString(context, value.getEncoding());
     }
 
-    /**
-     * @return ""
-     * @deprecated Use {@link RubyString#succ_bang(ThreadContext)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public IRubyObject succ_bang() {
         return succ_bang(getCurrentContext());
     }
@@ -4512,12 +4501,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return stringToInum(10);
     }
 
-    /**
-     * @param arg0
-     * @return ""
-     * @deprecated Use {@link RubyString#to_i(ThreadContext, IRubyObject)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public IRubyObject to_i(IRubyObject arg0) {
         return to_i(getCurrentContext(), arg0);
     }
@@ -5470,12 +5454,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return result;
     }
 
-    /**
-     * @param arg0
-     * @return ""
-     * @deprecated Use {@link RubyString#ljust(ThreadContext, IRubyObject)}
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public IRubyObject ljust(IRubyObject arg0) {
         return ljust(getCurrentContext(), arg0);
     }
@@ -5488,14 +5467,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return justify(context, arg0, 'l');
     }
 
-    /**
-     *
-     * @param arg0
-     * @param arg1
-     * @return ""
-     * @deprecated Use {@link RubyString#ljust(ThreadContext, IRubyObject, IRubyObject)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public IRubyObject ljust(IRubyObject arg0, IRubyObject arg1) {
         return ljust(getCurrentContext(), arg0, arg1);
     }
@@ -5505,12 +5477,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return justify(context, arg0, arg1, 'l');
     }
 
-    /**
-     * @param arg0
-     * @return ""
-     * @deprecated Use {@link RubyString#rjust(ThreadContext, IRubyObject)}
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public IRubyObject rjust(IRubyObject arg0) {
         return rjust(getCurrentContext(), arg0);
     }
@@ -5523,14 +5490,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return justify(context, arg0, 'r');
     }
 
-    /**
-     *
-     * @param arg0
-     * @param arg1
-     * @return ""
-     * @deprecated Use {@link RubyString#rjust(ThreadContext, IRubyObject, IRubyObject)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public IRubyObject rjust(IRubyObject arg0, IRubyObject arg1) {
         return rjust(getCurrentContext(), arg0, arg1);
     }
@@ -5540,12 +5500,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return justify(context, arg0, arg1, 'r');
     }
 
-    /**
-     * @param arg0
-     * @return ""
-     * @deprecated Use {@link RubyString#center(ThreadContext, IRubyObject)}
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public IRubyObject center(IRubyObject arg0) {
         return center(getCurrentContext(), arg0);
     }
@@ -5558,14 +5513,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return justify(context, arg0, 'c');
     }
 
-    /**
-     *
-     * @param arg0
-     * @param arg1
-     * @return ""
-     * @deprecated Use {@link RubyString#center(ThreadContext, IRubyObject, IRubyObject)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+
+    @Deprecated(since = "10.0")
     public IRubyObject center(IRubyObject arg0, IRubyObject arg1) {
         return center(getCurrentContext(), arg0, arg1);
     }
@@ -6879,12 +6828,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return this;
     }
 
-    /**
-     * Mutator for internal string representation.
-     *
-     * @param value The new java.lang.String this RubyString should encapsulate
-     * @deprecated
-     */
     @Deprecated(since = "10.0")
     public void setValue(CharSequence value) {
         view(ByteList.plain(value), false);
@@ -7319,12 +7262,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         }
     }
 
-    /**
-     *
-     * @param runtime
-     * @return ""
-     * @deprecated Use {@link RubyString#isBare(ThreadContext)} instead.
-     */
     @Deprecated(since = "10.0")
     public boolean isBare(Ruby runtime) {
         return isBare(getCurrentContext());

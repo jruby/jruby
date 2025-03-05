@@ -148,12 +148,7 @@ public class RubyTime extends RubyObject {
         return ClassIndex.TIME;
     }
 
-    /**
-     * @param runtime
-     * @return ""
-     * @deprecated Use {@link RubyTime#getEnvTimeZone(ThreadContext)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static String getEnvTimeZone(Ruby runtime) {
         return getEnvTimeZone(runtime.getCurrentContext());
     }
@@ -174,12 +169,7 @@ public class RubyTime extends RubyObject {
         return (entry.value instanceof RubyString) ? entry.value.asJavaString() : null;
     }
 
-    /**
-     * @param runtime
-     * @return ""
-     * @deprecated Use {@link RubyTime#getLocalTimeZone(ThreadContext)} instead
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static DateTimeZone getLocalTimeZone(Ruby runtime) {
         return getLocalTimeZone(runtime.getCurrentContext());
     }
@@ -189,13 +179,7 @@ public class RubyTime extends RubyObject {
         return tz == null ? DateTimeZone.getDefault() : getTimeZoneFromTZString(context, tz);
     }
 
-    /**
-     * @param runtime
-     * @param zone
-     * @return ""
-     * @deprecated Use {@link RubyTime#getTimeZoneFromTZString(ThreadContext, String)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static DateTimeZone getTimeZoneFromTZString(Ruby runtime, String zone) {
         return getTimeZoneFromTZString(runtime.getCurrentContext(), zone);
     }
@@ -451,13 +435,7 @@ public class RubyTime extends RubyObject {
         return timeZoneWithOffset(name, offset);
     }
 
-    /**
-     * @param runtime
-     * @param seconds
-     * @return ""
-     * @deprecated Use {@link RubyTime#getTimeZone(ThreadContext, long)} instead
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static DateTimeZone getTimeZone(Ruby runtime, long seconds) {
         return getTimeZone(runtime.getCurrentContext(), seconds);
     }
@@ -468,14 +446,7 @@ public class RubyTime extends RubyObject {
         return getTimeZoneWithOffset(context, "", (int) (seconds * 1000));
     }
 
-    /**
-     * @param runtime
-     * @param zoneName
-     * @param offset
-     * @return ""
-     * @deprecated Use {@link RubyTime#getTimeZoneWithOffset(ThreadContext, String, int)} instead
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static DateTimeZone getTimeZoneWithOffset(Ruby runtime, String zoneName, int offset) {
         return getTimeZoneWithOffset(runtime.getCurrentContext(), zoneName, offset);
     }
@@ -586,13 +557,7 @@ public class RubyTime extends RubyObject {
         return newTime(runtime, new DateTime(milliseconds));
     }
 
-    /**
-     * @param runtime
-     * @param nanoseconds
-     * @return ""
-     * @deprecated Use {@link RubyTime#newTimeFromNanoseconds(ThreadContext, long)} instead
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static RubyTime newTimeFromNanoseconds(Ruby runtime, long nanoseconds) {
         return newTimeFromNanoseconds(runtime.getCurrentContext(), nanoseconds);
     }
@@ -641,11 +606,7 @@ public class RubyTime extends RubyObject {
         return this;
     }
 
-    /**
-     * @return ""
-     * @deprecated Use {@link RubyTime#gmtime(ThreadContext)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public RubyTime gmtime() {
         return gmtime(getCurrentContext());
     }
@@ -1000,7 +961,7 @@ public class RubyTime extends RubyObject {
         return Math.floorDiv(getTimeInMillis(), (long) 1000);
     }
 
-    @Deprecated(since = "9.4-", forRemoval = true)
+    @Deprecated(since = "9.4-")
     public RubyInteger to_i() {
         return to_i(getCurrentContext());
     }
@@ -1018,7 +979,7 @@ public class RubyTime extends RubyObject {
         return asFixnum(context, getNanos());
     }
 
-    @Deprecated(since = "9.4-", forRemoval = true)
+    @Deprecated(since = "9.4-")
     public RubyInteger nsec() {
         return nsec(getCurrentContext());
     }
@@ -1075,13 +1036,13 @@ public class RubyTime extends RubyObject {
     /**
      * @deprecated use {@link #setMicros(int)} instead
      */
-    @Deprecated(since = "9.4-", forRemoval = true)
+    @Deprecated(since = "9.4-") // since 2018
     public void setMicroseconds(long micros) { setMicros((int) micros); }
 
     /**
      * @deprecated use {@link #getMicros()} instead
      */
-    @Deprecated(since = "9.4-", forRemoval = true)
+    @Deprecated(since = "9.4-") // since 2018
     public long microseconds() {
     	return getMicros();
     }
@@ -1111,7 +1072,7 @@ public class RubyTime extends RubyObject {
         return asFixnum(context, dt.getSecondOfMinute());
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public RubyInteger sec() {
         return sec(getCurrentContext());
     }
@@ -1121,7 +1082,7 @@ public class RubyTime extends RubyObject {
         return asFixnum(context, dt.getMinuteOfHour());
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public RubyInteger min() {
         return min(getCurrentContext());
     }
@@ -1131,7 +1092,7 @@ public class RubyTime extends RubyObject {
         return asFixnum(context, dt.getHourOfDay());
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public RubyInteger hour() {
         return hour(getCurrentContext());
     }
@@ -1141,7 +1102,7 @@ public class RubyTime extends RubyObject {
         return asFixnum(context, dt.getDayOfMonth());
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public RubyInteger mday() {
         return mday(getCurrentContext());
     }
@@ -1151,7 +1112,7 @@ public class RubyTime extends RubyObject {
         return asFixnum(context, dt.getMonthOfYear());
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public RubyInteger month() {
         return month(getCurrentContext());
     }
@@ -1161,7 +1122,7 @@ public class RubyTime extends RubyObject {
         return asFixnum(context, dt.getYear());
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public RubyInteger year() {
         return year(getCurrentContext());
     }
@@ -1171,7 +1132,7 @@ public class RubyTime extends RubyObject {
         return asFixnum(context, (dt.getDayOfWeek() % 7));
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public RubyInteger wday() {
         return wday(getCurrentContext());
     }
@@ -1181,7 +1142,7 @@ public class RubyTime extends RubyObject {
         return asFixnum(context, dt.getDayOfYear());
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public RubyInteger yday() {
         return yday(getCurrentContext());
     }
@@ -1241,7 +1202,7 @@ public class RubyTime extends RubyObject {
         return asFixnum(context, offset / 1000);
     }
 
-    @Deprecated(since = "9.4-", forRemoval = true)
+    @Deprecated(since = "9.4-")
     public RubyInteger gmt_offset() {
         return gmt_offset(getCurrentContext());
     }
@@ -1260,7 +1221,7 @@ public class RubyTime extends RubyObject {
      * @return ""
      * @deprecated Use {@link RubyTime#zone(ThreadContext)} instead.
      */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public IRubyObject zone() {
         return zone(getCurrentContext());
     }
@@ -1279,7 +1240,7 @@ public class RubyTime extends RubyObject {
         return zone;
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public String getZoneName() {
         return getRubyTimeZoneName(getCurrentContext(), dt);
     }
@@ -1290,7 +1251,7 @@ public class RubyTime extends RubyObject {
      * @return ""
      * @deprecated Use {@link RubyTime#getRubyTimeZoneName(ThreadContext, DateTime)} instead.
      */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static String getRubyTimeZoneName(Ruby runtime, DateTime dt) {
         return getRubyTimeZoneName(runtime.getCurrentContext(), dt);
     }

@@ -2695,7 +2695,7 @@ public class RubyModule extends RubyObject {
     /** this method should be used only by interpreter or compiler
      *
      */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public RubyModule defineOrGetModuleUnder(String name) {
         return defineOrGetModuleUnder(getCurrentContext(), name, null, -1);
     }
@@ -3172,11 +3172,7 @@ public class RubyModule extends RubyObject {
         return newArray(context, getAncestorList());
     }
 
-    /**
-     * @return ""
-     * @deprecated Use {@link RubyModule#ancestors(ThreadContext)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public RubyArray ancestors() {
         return ancestors(getCurrentContext());
     }
@@ -3640,15 +3636,7 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    /**
-     * @param runtime
-     * @param seen
-     * @param ary
-     * @param not
-     * @param visibility
-     * @deprecated Use {@link RubyModule#addMethodSymbols(ThreadContext, Set, RubyArray, boolean, Visibility)} instead
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     protected void addMethodSymbols(Ruby runtime, Set<String> seen, RubyArray ary, boolean not, Visibility visibility) {
         addMethodSymbols(getCurrentContext(), seen, ary, not, visibility);
     }
@@ -3804,12 +3792,8 @@ public class RubyModule extends RubyObject {
         return mod;
     }
 
-    /**
-     * @param obj
-     * @return ""
-     * @deprecated Use {@link RubyModule#extend_object(ThreadContext, IRubyObject)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+
+    @Deprecated(since = "10.0")
     public IRubyObject extend_object(IRubyObject obj) {
         return extend_object(getCurrentContext(), obj);
     }
@@ -5325,14 +5309,7 @@ public class RubyModule extends RubyObject {
         return location;
     }
 
-    /**
-     * @param name
-     * @param inherit
-     * @param includeObject
-     * @return ""
-     * @deprecated Use {@link RubyModule#getConstant(ThreadContext, String, boolean, boolean)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public IRubyObject getConstant(String name, boolean inherit, boolean includeObject) {
         return getConstant(getCurrentContext(), name, inherit, includeObject);
     }
@@ -6378,12 +6355,7 @@ public class RubyModule extends RubyObject {
         return entry.value;
     }
 
-    /**
-     * @param symbol
-     * @param path
-     * @deprecated Use {@link RubyModule#defineAutoload(ThreadContext, String, RubyString)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     protected final void defineAutoload(String symbol, RubyString path) {
         defineAutoload(getCurrentContext(), symbol, path);
     }

@@ -61,7 +61,7 @@ public class JZlibDeflate extends ZStream {
     private com.jcraft.jzlib.Deflater flater = null;
     private int flush = JZlib.Z_NO_FLUSH;
 
-    @Deprecated(since = "9.4", forRemoval = true)
+    @Deprecated(since = "9.4")
     public static IRubyObject s_deflate(IRubyObject recv, IRubyObject[] args) {
         return s_deflate(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }

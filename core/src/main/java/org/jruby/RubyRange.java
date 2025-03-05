@@ -242,7 +242,7 @@ public class RubyRange extends RubyObject {
         return len;
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     final int[] begLenInt(int len, final int err) {
         return begLenInt(getCurrentContext(), len, err);
     }

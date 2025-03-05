@@ -3446,13 +3446,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return str;
     }
 
-    /**
-     *
-     * @param args
-     * @return ""
-     * @deprecated Use {@link RubyIO#read(ThreadContext, IRubyObject[])} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public IRubyObject read(IRubyObject[] args) {
         return read(getCurrentContext(), args);
     }

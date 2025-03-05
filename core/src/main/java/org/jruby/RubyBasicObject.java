@@ -2536,7 +2536,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @return ""
      * @deprecated Use {@link RubyBasicObject#to_s(ThreadContext)} instead.
      */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public IRubyObject to_s() {
         return to_s(getCurrentContext());
     }

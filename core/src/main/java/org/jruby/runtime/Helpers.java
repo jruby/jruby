@@ -518,14 +518,7 @@ public class Helpers {
         return newLength;
     }
 
-    /**
-     * @param runtime
-     * @param base
-     * @param multiplier
-     * @return ""
-     * @deprecated Use {@link Helpers#multiplyBufferLength(ThreadContext, int, int)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static int multiplyBufferLength(Ruby runtime, int base, int multiplier) {
         return multiplyBufferLength(runtime.getCurrentContext(), base, multiplier);
     }
@@ -2737,14 +2730,7 @@ public class Helpers {
         return parms;
     }
 
-    /**
-     * @param runtime
-     * @param argsDesc
-     * @param isLambda
-     * @return ""
-     * @deprecated Use {@link Helpers#argumentDescriptorsToParameters(ThreadContext, ArgumentDescriptor[], boolean)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static RubyArray argumentDescriptorsToParameters(Ruby runtime, ArgumentDescriptor[] argsDesc, boolean isLambda) {
         return argumentDescriptorsToParameters(runtime.getCurrentContext(), argsDesc, isLambda);
     }
@@ -3207,7 +3193,7 @@ public class Helpers {
      *
      * @deprecated Use finvoke if you do not want visibility-checking or invokeFrom if you do.
      */
-    @Deprecated(since = "9.4-", forRemoval = true)
+    @Deprecated(since = "9.4-")
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject[] args, CallType callType, Block block) {
         return self.getMetaClass().invoke(context, self, name, args, callType, block);
     }
@@ -3220,7 +3206,7 @@ public class Helpers {
      *
      * @deprecated Use finvoke if you do not want visibility-checking or invokeFrom if you do.
      */
-    @Deprecated(since = "9.4-", forRemoval = true)
+    @Deprecated(since = "9.4-")
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject arg, CallType callType, Block block) {
         return self.getMetaClass().invoke(context, self, name, arg, callType, block);
     }
@@ -3233,7 +3219,7 @@ public class Helpers {
      *
      * @deprecated Use finvoke if you do not want visibility-checking or invokeFrom if you do.
      */
-    @Deprecated(since = "9.4-", forRemoval = true)
+    @Deprecated(since = "9.4-")
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, CallType callType) {
         return Helpers.invoke(context, self, name, IRubyObject.NULL_ARRAY, callType, Block.NULL_BLOCK);
     }

@@ -168,13 +168,7 @@ public class JavaObject extends RubyObject {
         return JavaProxyMethods.to_s(context, dataGetStruct());
     }
 
-    /**
-     * @param runtime
-     * @param dataStruct
-     * @return ""
-     * @deprecated Use {@link
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static IRubyObject to_s(Ruby runtime, Object dataStruct) {
         return JavaProxyMethods.to_s(runtime.getCurrentContext(), dataStruct);
     }

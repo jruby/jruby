@@ -511,7 +511,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return getNameString(context);
     }
 
-    @Deprecated(since = "9.4-", forRemoval = true)
+    @Deprecated(since = "9.4-")
     public IRubyObject id2name() {
         return to_s(getCurrentContext());
     }
@@ -662,7 +662,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
      * @return ""
      * @deprecated Use {@link RubySymbol#length(ThreadContext)} instead.
      */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public IRubyObject length() {
         return length(getCurrentContext());
     }
@@ -1391,11 +1391,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
             return null;
         }
 
-        /**
-         * @return ""
-         * @deprecated Use {@link RubySymbol#all_symbols(ThreadContext, IRubyObject)} instead.
-         */
-        @Deprecated(since = "10.0", forRemoval = true)
+        @Deprecated(since = "10.0")
         public RubyArray all_symbols() {
             return all_symbols(runtime.getCurrentContext());
         }
