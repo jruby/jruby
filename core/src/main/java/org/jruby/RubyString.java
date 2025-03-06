@@ -101,6 +101,7 @@ import java.util.function.Function;
 
 import static org.jruby.ObjectFlags.CHILLED_LITERAL_F;
 import static org.jruby.ObjectFlags.CHILLED_SYMBOL_TO_S_F;
+import static org.jruby.ObjectFlags.FSTRING;
 import static org.jruby.RubyComparable.invcmp;
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorize;
@@ -442,6 +443,14 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     private RubyString(Ruby runtime, RubyClass rubyClass, String value, Encoding enc) {
         super(runtime, rubyClass);
+        assert value != null;
+        assert enc != null;
+
+        this.value = encodeBytelist(value, enc);
+    }
+
+    private RubyString(Ruby runtime, RubyClass rubyClass, String value, Encoding enc, boolean objectspace) {
+        super(runtime, rubyClass, objectspace);
         assert value != null;
         assert enc != null;
 
@@ -927,11 +936,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return dup;
     }
 
-    public FString dupAsFString(Ruby runtime, RubyClass clazz) {
+    public FString dupAsFString(Ruby runtime) {
         shareLevel = SHARE_LEVEL_BYTELIST;
-        FString dup = new FString(runtime, clazz, value, getCodeRange());
+        FString dup = new FString(runtime, value, getCodeRange());
         dup.shareLevel = SHARE_LEVEL_BYTELIST;
-        dup.flags |= ObjectFlags.FSTRING | FROZEN_F | (flags & CR_MASK);
+        dup.flags |= FSTRING | FROZEN_F | (flags & CR_MASK);
 
         return dup;
     }
@@ -1139,7 +1148,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      * @return a frozen, deduplicated RubyString hosting the given content
      */
     public static RubyString newFString(Ruby runtime, String content) {
-        return runtime.freezeAndDedupString(newString(runtime, content));
+        return runtime.freezeAndDedupString(new FString(runtime, content));
     }
 
     // MRI: rb_str_new_frozen, at least in spirit
@@ -1198,11 +1207,18 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     public static class FString extends RubyString {
         private IRubyObject converted;
 
-        protected FString(Ruby runtime, RubyClass rubyClass, ByteList value, int cr) {
-            super(runtime, rubyClass, value, cr, false);
+        protected FString(Ruby runtime, ByteList value, int cr) {
+            super(runtime, runtime.getString(), value, cr, false);
 
-            // set flag for code that does not use isFrozen
-            setFrozen(true);
+            this.shareLevel = SHARE_LEVEL_BYTELIST;
+            this.flags |= FSTRING | FROZEN_F;
+        }
+
+        protected FString(Ruby runtime, String string) {
+            super(runtime, runtime.getString(), string, UTF8, false);
+
+            this.shareLevel = SHARE_LEVEL_BYTELIST;
+            this.flags |= FSTRING | FROZEN_F;
         }
 
         @Override
@@ -1243,6 +1259,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
             return flote instanceof RubyFloat ?
                     flote : super.to_f(context);
+        }
+
+        @Override
+        public FString dupAsFString(Ruby runtime) {
+            return this;
         }
     }
 
