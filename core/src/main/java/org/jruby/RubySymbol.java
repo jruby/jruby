@@ -114,7 +114,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     private volatile RubyString rubyString;
     private static final AtomicReferenceFieldUpdater<RubySymbol, RubyString> RUBY_STRING_UPDATER = AtomicReferenceFieldUpdater.newUpdater(RubySymbol.class, RubyString.class, "rubyString");
     private transient Object constant;
-    private SymbolNameType type;
+    private final SymbolNameType type;
 
     /**
      *
@@ -1010,7 +1010,9 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     @Override
     public void setEncoding(Encoding e) {
         getBytes().setEncoding(e);
-        type = IdUtil.determineSymbolNameType(getRuntime(), getBytes());
+        if (this.type != IdUtil.determineSymbolNameType(getRuntime(), getBytes())) {
+            // this should warn or raise or something; symbol types should not change (nor should encoding)
+        };
     }
 
     public static final class SymbolTable {
