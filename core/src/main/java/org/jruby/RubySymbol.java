@@ -284,24 +284,31 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     }
 
     /**
-     * Is the string this constant represents a valid constant identifier name.
+     * Is the string this symbol represents a valid constant identifier name.
      */
     public boolean validConstantName() {
         return type == SymbolNameType.CONST;
     }
 
     /**
-     * Is the string this constant represents a valid constant identifier name.
+     * Is the string this symbol represents a valid constant identifier name.
      */
     public boolean validInstanceVariableName() {
         return type == SymbolNameType.INSTANCE;
     }
 
     /**
-     * Is the string this constant represents a valid constant identifier name.
+     * Is the string this symbol represents a valid constant identifier name.
      */
     public boolean validClassVariableName() {
         return type == SymbolNameType.CLASS;
+    }
+
+    /**
+     * Is the string this symbol represents a valid attribute setter name.
+     */
+    public boolean validAttrsetName() {
+        return type == SymbolNameType.ATTRSET;
     }
 
 
