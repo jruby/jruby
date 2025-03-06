@@ -67,7 +67,6 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.platform.Platform;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.FileResource;
@@ -81,6 +80,7 @@ import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Warn.warn;
+import static org.jruby.runtime.Helpers.throwException;
 import static org.jruby.util.URLUtil.getPath;
 
 /**
@@ -374,9 +374,8 @@ public class LoadService {
 
             try {
                 library.load(runtime, wrap);
-            } catch (IOException e) {
-                debugLoadException(runtime, e);
-                throw newLoadErrorFromThrowable(runtime, file, e);
+            } catch (IOException ex) {
+                throw runtime.newIOErrorFromException(ex);
             }
         } finally {
             runtime.setCurrentLine(currentLine);
@@ -403,8 +402,7 @@ public class LoadService {
             try {
                 library.load(runtime, wrap);
             } catch (IOException e) {
-                debugLoadException(runtime, e);
-                throw newLoadErrorFromThrowable(runtime, file, e);
+                throw runtime.newIOErrorFromException(e);
             }
         } finally {
             runtime.setCurrentLine(currentLine);
@@ -668,37 +666,22 @@ public class LoadService {
             library.load(runtime, false);
             return true;
         }
-        catch (MainExitException ex) {
-            // allow MainExitException to propagate out for exec and friends
-            throw ex;
-        }
         catch (RaiseException ex) {
-            if ( ex instanceof Unrescuable ) Helpers.throwException(ex);
-            if ( isJarfileLibrary(library, searchFile) ) return true;
-            throw ex;
+            if ( ex instanceof Unrescuable || !isJarfileLibrary(library, searchFile) ) throw ex;
+
+            return true;
         }
         catch (JumpException ex) {
             throw ex;
         }
-        catch (CatchThrow ex) {
-            throw ex;
+        catch (IOException ex) {
+            throw runtime.newIOErrorFromException(ex);
         }
         catch (Throwable ex) {
-            if ( ex instanceof Unrescuable ) Helpers.throwException(ex);
-            if ( isJarfileLibrary(library, searchFile) ) return true;
+            if ( ex instanceof Unrescuable || !isJarfileLibrary(library, searchFile) ) throwException(ex);
 
-            debugLoadException(runtime, ex);
-
-            RaiseException re = newLoadErrorFromThrowable(runtime, searchFile, ex);
-            re.initCause(ex);
-            throw re;
+            return true;
         }
-    }
-
-    private static RaiseException newLoadErrorFromThrowable(Ruby runtime, String file, Throwable t) {
-        if (RubyInstanceConfig.DEBUG_PARSER || RubyInstanceConfig.IR_READING_DEBUG) t.printStackTrace();
-
-        return runtime.newLoadError(String.format("load error: %s -- %s: %s", file, t.getClass().getName(), t.getMessage()), file);
     }
 
     protected void checkEmptyLoad(String file) throws RaiseException {
