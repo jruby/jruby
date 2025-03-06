@@ -620,9 +620,21 @@ public class Convert {
      *
      * @param context the current thread context
      * @param string the contents to become a symbol
-     * @return the new RubyString
+     * @return the new RubySymbol
      */
     public static RubySymbol asSymbol(ThreadContext context, RubyString string) {
         return context.runtime.newSymbol(string.getByteList());
+    }
+
+    /**
+     * Convert the given object to a Symbol, possibly calling to_str in the process.
+     *
+     * MRI: rb_to_symbol
+     * @param context the current thread context
+     * @param arg the object to convert to a symbol
+     * @return the new RubySymbol
+     */
+    public static RubySymbol toSymbol(ThreadContext context, IRubyObject arg) {
+        return RubySymbol.toSymbol(context, arg);
     }
 }

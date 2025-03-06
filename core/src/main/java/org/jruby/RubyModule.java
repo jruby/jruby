@@ -71,7 +71,6 @@ import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.anno.TypePopulator;
-import org.jruby.api.Create;
 import org.jruby.api.JRubyAPI;
 import org.jruby.api.Warn;
 import org.jruby.common.IRubyWarnings.ID;
