@@ -321,10 +321,10 @@ public final class IdUtil {
 
                     type = SymbolNameType.JUNK;
                     m++;
-                    if (m + 1 < e || (m < e && data.get(m) != '=')) break;
+                    if (m + 1 < e || m >= e || data.get(m) != '=') break;
                     // fall through
                 case '=':
-                    return SymbolNameType.OTHER;
+                    return SymbolNameType.ATTRSET;
             }
         }
 
