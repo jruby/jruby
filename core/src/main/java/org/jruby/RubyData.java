@@ -5,12 +5,15 @@ import org.jruby.internal.runtime.methods.AttrReaderMethod;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.ivars.VariableTableManager;
+import org.jruby.runtime.marshal.NewMarshal;
+import org.jruby.runtime.marshal.UnmarshalStream;
 
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -18,6 +21,7 @@ import java.util.stream.Collectors;
 
 import static org.jruby.RubyBasicObject.rbInspect;
 import static org.jruby.RubyHash.newSmallHash;
+import static org.jruby.api.Access.structClass;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Convert.toSymbol;
@@ -38,6 +42,7 @@ import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
+import static org.jruby.util.RubyStringBuilder.str;
 
 public class RubyData {
 
@@ -46,6 +51,7 @@ public class RubyData {
 
     public static RubyClass createDataClass(ThreadContext context, RubyClass Object) {
         RubyClass Data = defineClass(context, "Data", Object, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR)
+                .classIndex(ClassIndex.DATA)
                 .defineMethods(context, RubyData.class);
 
         Data.getSingletonClass().undefMethods(context, "new");
@@ -256,14 +262,14 @@ public class RubyData {
             if (maybeKwargs instanceof RubyHash) {
                 init = (RubyHash) maybeKwargs;
             } else {
-                RubyArray members = (RubyArray) klass.getInternalVariable(MEMBERS_KEY);
+                RubyArray<RubySymbol> members = getMembersFromClass(klass);
 
                 checkArgumentCount(context, values.length, 0, members.size());
 
                 init = newSmallHash(context.runtime);
 
                 for (int i = 0; i < values.length; i++) {
-                    RubySymbol sym = (RubySymbol) members.eltOk(i);
+                    RubySymbol sym = members.eltOk(i);
                     init.fastASetSmall(sym, values[i]);
                 }
             }
@@ -292,13 +298,13 @@ public class RubyData {
 
                 init = (RubyHash) hashOrElt;
             } else {
-                RubyArray members = (RubyArray) klass.getInternalVariable(MEMBERS_KEY);
+                RubyArray<RubySymbol> members = getMembersFromClass(klass);
 
                 checkArgumentCount(context, 1, 0, members.size());
 
                 init = newSmallHash(context.runtime);
 
-                RubySymbol sym = (RubySymbol) members.eltOk(0);
+                RubySymbol sym = members.eltOk(0);
                 init.fastASetSmall(sym, hashOrElt);
             }
 
@@ -316,7 +322,7 @@ public class RubyData {
 
         @JRubyMethod(name = "members")
         public static IRubyObject members(ThreadContext context, IRubyObject self) {
-            return ((RubyArray) ((RubyBasicObject) self).getInternalVariable(MEMBERS_KEY)).aryDup();
+            return getMembersFromClass((RubyClass) self).aryDup();
         }
 
         @JRubyMethod(name = "inspect")
@@ -328,6 +334,47 @@ public class RubyData {
 //            }
             return inspect;
         }
+    }
+
+    // TODO: Mostly copied from RubyStruct; unify.
+    public static void marshalTo(IRubyObject data, NewMarshal output, ThreadContext context, NewMarshal.RubyOutputStream out) {
+        output.registerLinkTarget(data);
+        output.dumpDefaultObjectHeader(context, out, 'S', data.getMetaClass());
+
+        RubyArray<RubySymbol> members = getStructMembers(data);
+        VariableAccessor[] accessors = getStructAccessors(data);
+        int size = members.size();
+        output.writeInt(out, size);
+
+        for (int i = 0; i < size; i++) {
+            RubySymbol name = members.eltInternal(i);
+            output.dumpObject(context, out, name);
+            output.dumpObject(context, out, (IRubyObject) accessors[i].get(data));
+        }
+    }
+
+    // TODO: Mostly copied from RubyStruct; unify.
+    public static IRubyObject unmarshalFrom(ThreadContext context, UnmarshalStream input, RubyClass rbClass) throws java.io.IOException {
+        final RubyArray<RubySymbol> members = getMembersFromClass(rbClass);
+        final VariableAccessor[] accessors = getAccessorsFromClass(rbClass);
+
+        final int len = input.unmarshalInt();
+
+        final IRubyObject result = input.entry(rbClass.allocate(context));
+
+        for (int i = 0; i < len; i++) {
+            RubySymbol slot = input.symbol();
+            RubySymbol elem = members.eltInternal(i);
+            if (!elem.equals(slot)) {
+                throw typeError(context, str(context.runtime, "struct ", rbClass,
+                        " not compatible (:", slot, " for :", elem, ")").toString());
+            }
+            accessors[i].set(result, input.unmarshalObject());
+        }
+
+        result.setFrozen(true);
+
+        return result;
     }
 
     private static RubyClass newDataStruct(ThreadContext context, RubyClass superClass, LinkedHashSet<RubySymbol> keySet) {
@@ -422,11 +469,37 @@ public class RubyData {
     }
 
     private static RubyArray<RubySymbol> getStructMembers(IRubyObject s) {
-        return (RubyArray<RubySymbol>) s.getMetaClass().getInternalVariable(MEMBERS_KEY);
+        RubyClass metaClass = s.getMetaClass();
+        return getMembersFromClass(metaClass);
+    }
+
+    private static RubyArray<RubySymbol> getMembersFromClass(RubyClass metaClass) {
+        while (metaClass != null) {
+            RubyArray<RubySymbol> members = (RubyArray<RubySymbol>) metaClass.getInternalVariable(MEMBERS_KEY);
+
+            if (members != null) return members;
+
+            metaClass = metaClass.getSuperClass();
+        }
+
+        throw new RuntimeException("non-Data attempted to access Data members");
     }
 
     private static VariableAccessor[] getStructAccessors(IRubyObject s) {
-        return (VariableAccessor[]) s.getMetaClass().getInternalVariable(ACCESSORS_KEY);
+        RubyClass metaClass = s.getMetaClass();
+        return getAccessorsFromClass(metaClass);
+    }
+
+    private static VariableAccessor[] getAccessorsFromClass(RubyClass metaClass) {
+        while (metaClass != null) {
+            VariableAccessor[] accessors = (VariableAccessor[]) metaClass.getInternalVariable(ACCESSORS_KEY);
+
+            if (accessors != null) return accessors;
+
+            metaClass = metaClass.getSuperClass();
+        }
+
+        throw new RuntimeException("non-Data attempted to access Data accessors");
     }
 
     private static IRubyObject hashData(ThreadContext ctx, RubyBasicObject state, IRubyObject obj, boolean recur) {

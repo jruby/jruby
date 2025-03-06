@@ -44,6 +44,7 @@ import org.jruby.RubyBasicObject;
 import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
+import org.jruby.RubyData;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
@@ -277,6 +278,7 @@ public class NewMarshal {
 
         if (nativeClassIndex != meta.getClassIndex() &&
                 nativeClassIndex != ClassIndex.STRUCT &&
+                nativeClassIndex != ClassIndex.DATA &&
                 nativeClassIndex != ClassIndex.FIXNUM &&
                 nativeClassIndex != ClassIndex.BIGNUM) {
             // object is a custom class that extended one of the native types other than Object
@@ -317,90 +319,101 @@ public class NewMarshal {
 
                 throw typeError(context, str(runtime, "no _dump_data is defined for class ", types(runtime, getMetaClass(value))));
             }
-            ClassIndex nativeClassIndex = ((CoreObjectType)value).getNativeClassIndex();
+            ClassIndex nativeClassIndex = ((CoreObjectType) value).getNativeClassIndex();
             Ruby runtime;
 
             switch (nativeClassIndex) {
-            case ARRAY:
-                out.write('[');
-                RubyArray.marshalTo((RubyArray)value, this, context, out);
-                return;
-            case FALSE:
-                out.write('F');
-                return;
-            case FIXNUM:
-                RubyFixnum fixnum = (RubyFixnum)value;
+                case ARRAY:
+                    out.write('[');
+                    RubyArray.marshalTo((RubyArray) value, this, context, out);
+                    return;
+                case FALSE:
+                    out.write('F');
+                    return;
+                case FIXNUM:
+                    RubyFixnum fixnum = (RubyFixnum) value;
 
-                if (isMarshalFixnum(fixnum)) {
-                    out.write('i');
-                    writeInt(out, fixnum.asInt(context));
+                    if (isMarshalFixnum(fixnum)) {
+                        out.write('i');
+                        writeInt(out, fixnum.asInt(context));
+                        return;
+                    }
+                    // FIXME: inefficient; constructing a bignum just for dumping?
+                    value = RubyBignum.newBignum(context.runtime, fixnum.getValue());
+
+                    // fall through
+                case BIGNUM:
+                    out.write('l');
+                    RubyBignum.marshalTo((RubyBignum) value, this, out);
+                    return;
+                case CLASS:
+                    if (((RubyClass) value).isSingleton()) throw typeError(context, "singleton class can't be dumped");
+                    out.write('c');
+                    RubyClass.marshalTo((RubyClass) value, this, out);
+                    return;
+                case FLOAT:
+                    out.write('f');
+                    RubyFloat.marshalTo((RubyFloat) value, this, out);
+                    return;
+                case HASH: {
+                    RubyHash hash = (RubyHash) value;
+
+                    if (hash.getIfNone() == RubyBasicObject.UNDEF) {
+                        out.write('{');
+                    } else if (hash.hasDefaultProc()) {
+                        throw typeError(context, "can't dump hash with default proc");
+                    } else {
+                        out.write('}');
+                    }
+
+                    RubyHash.marshalTo(hash, this, context, out);
                     return;
                 }
-                // FIXME: inefficient; constructing a bignum just for dumping?
-                value = RubyBignum.newBignum(context.runtime, fixnum.getValue());
+                case MODULE:
+                    out.write('m');
+                    RubyModule.marshalTo((RubyModule) value, this, context, out);
+                    return;
+                case NIL:
+                    out.write('0');
+                    return;
+                case OBJECT:
+                case BASICOBJECT:
+                    final RubyClass type = getMetaClass(value);
 
-                // fall through
-            case BIGNUM:
-                out.write('l');
-                RubyBignum.marshalTo((RubyBignum)value, this, out);
-                return;
-            case CLASS:
-                if (((RubyClass)value).isSingleton()) throw typeError(context,"singleton class can't be dumped");
-                out.write('c');
-                RubyClass.marshalTo((RubyClass)value, this, out);
-                return;
-            case FLOAT:
-                out.write('f');
-                RubyFloat.marshalTo((RubyFloat)value, this, out);
-                return;
-            case HASH: {
-                RubyHash hash = (RubyHash)value;
+                    /*
+                     Data is supposed to look like Struct, but does not actually extend it. That prevents us from
+                     overriding CodeDataType.getNativeClassIndex to return a different ClassIndex, so we have to check
+                     for Data using kind_of.
+                     */
+                    if (type.isKindOfModule(context.runtime.getData())) {
+                        RubyData.marshalTo(value, this, context, out);
+                        return;
+                    }
 
-                if(hash.getIfNone() == RubyBasicObject.UNDEF){
-                    out.write('{');
-                } else if (hash.hasDefaultProc()) {
-                    throw typeError(context, "can't dump hash with default proc");
-                } else {
-                    out.write('}');
-                }
-
-                RubyHash.marshalTo(hash, this, context, out);
-                return;
-            }
-            case MODULE:
-                out.write('m');
-                RubyModule.marshalTo((RubyModule)value, this, context, out);
-                return;
-            case NIL:
-                out.write('0');
-                return;
-            case OBJECT:
-            case BASICOBJECT:
-                final RubyClass type = getMetaClass(value);
-                dumpDefaultObjectHeader(context, out, type);
-                type.getRealClass().marshal(value, this, context, out);
-                return;
-            case REGEXP:
-                out.write('/');
-                RubyRegexp.marshalTo((RubyRegexp)value, this, out);
-                return;
-            case STRING:
-                registerLinkTarget(value);
-                out.write('"');
-                writeString(out, value.convertToString().getByteList());
-                return;
-            case STRUCT:
-                RubyStruct.marshalTo((RubyStruct)value, this, context, out);
-                return;
-            case SYMBOL:
-                writeAndRegisterSymbol(out, ((RubySymbol) value));
-                return;
-            case TRUE:
-                out.write('T');
-                return;
-            default:
-                runtime = context.runtime;
-                throw typeError(context, str(runtime, "can't dump ", types(runtime, getMetaClass(value))));
+                    dumpDefaultObjectHeader(context, out, type);
+                    type.getRealClass().marshal(value, this, context, out);
+                    return;
+                case REGEXP:
+                    out.write('/');
+                    RubyRegexp.marshalTo((RubyRegexp) value, this, out);
+                    return;
+                case STRING:
+                    registerLinkTarget(value);
+                    out.write('"');
+                    writeString(out, value.convertToString().getByteList());
+                    return;
+                case STRUCT:
+                    RubyStruct.marshalTo((RubyStruct) value, this, context, out);
+                    return;
+                case SYMBOL:
+                    writeAndRegisterSymbol(out, ((RubySymbol) value));
+                    return;
+                case TRUE:
+                    out.write('T');
+                    return;
+                default:
+                    runtime = context.runtime;
+                    throw typeError(context, str(runtime, "can't dump ", types(runtime, getMetaClass(value))));
             }
         } else {
             RubyClass metaClass = getMetaClass(value);
