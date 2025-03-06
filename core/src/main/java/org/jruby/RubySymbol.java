@@ -108,6 +108,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     private final String symbol;
     private final int id;
     private final ByteList symbolBytes;
+    private final RubyString fstring;
     private final int hashCode;
     private String decodedString;
     private volatile RubyString rubyString;
@@ -134,6 +135,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
             symbolBytes.setEncoding(USASCIIEncoding.INSTANCE);
         }
         this.symbolBytes = symbolBytes;
+        this.fstring = runtime.freezeAndDedupString(symbolBytes);
         this.id = runtime.allocSymbolId();
 
         long k0 = Helpers.hashStart(runtime, id);
@@ -544,6 +546,10 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     @Override
     public RubyString asString() {
         return (RubyString) to_s(metaClass.runtime.getCurrentContext());
+    }
+
+    public RubyString fstring() {
+        return fstring;
     }
 
     @JRubyMethod(name = "===")
