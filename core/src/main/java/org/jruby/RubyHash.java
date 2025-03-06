@@ -2144,6 +2144,12 @@ public class RubyHash extends RubyObject implements Map {
         return this;
     }
 
+    public void addAll(ThreadContext context, RubyHash otherHash) {
+        if (!otherHash.empty_p().isTrue()) {
+            otherHash.visitAll(context, (ctxt, self, key, value, index) -> op_aset(ctxt, key, value));
+        }
+    }
+
     @Deprecated
     public RubyHash merge(ThreadContext context, IRubyObject other, Block block) {
         return merge(context, new IRubyObject[]{other}, block);
