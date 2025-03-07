@@ -82,9 +82,14 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return instance;
     }
 
-    @Deprecated
-    public static IRubyObject wrap19(ThreadContext context, IRubyObject recv, IRubyObject io, Block block) {
+    @Deprecated(since = "10.0")
+    public static IRubyObject wrap(ThreadContext context, IRubyObject recv, IRubyObject io, Block block) {
         return wrap(context, recv, new IRubyObject[]{io}, block);
+    }
+
+    @Deprecated(since = "10.0")
+    public static IRubyObject wrap19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        return wrap(context, recv, args, block);
     }
     
     @JRubyMethod(meta = true, name = "wrap", required = 1, optional = 1, checkArity = false)

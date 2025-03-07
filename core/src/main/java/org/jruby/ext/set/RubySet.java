@@ -611,7 +611,7 @@ public class RubySet extends RubyObject implements Set {
         return this;
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     protected void addImpl(final Ruby runtime, final IRubyObject obj) {
         addImpl(runtime.getCurrentContext(), obj);
     }

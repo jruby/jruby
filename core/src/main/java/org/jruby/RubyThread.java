@@ -602,14 +602,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return startThread(recv, args, true, block);
     }
 
-    /**
-     * @param recv
-     * @param args
-     * @param block
-     * @return ""
-     * @deprecated Use {@link RubyThread#start(ThreadContext, IRubyObject, IRubyObject[], Block)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static RubyThread start(IRubyObject recv, IRubyObject[] args, Block block) {
         return start(recv.getRuntime().getCurrentContext(), recv, args, block);
     }
@@ -935,12 +928,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return false;
     }
 
-    /**
-     * @param name
-     * @return ""
-     * @deprecated Use {@link RubyThread#setName(ThreadContext, IRubyObject)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public IRubyObject setName(IRubyObject name) {
         return setName(getCurrentContext(), name);
     }
@@ -960,11 +948,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return name;
     }
 
-    /**
-     * @return ""
-     * @deprecated Use {@link RubyThread#getName(ThreadContext)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public IRubyObject getName() {
         return getName(getCurrentContext());
     }
@@ -2622,6 +2606,11 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 RubyHash.newHash(context.runtime, objectClass(context), asSymbol(context, "never")),
                 state,
                 f);
+    }
+
+    @Deprecated(since = "10.0")
+    public IRubyObject setFiberScheduler(IRubyObject scheduler) {
+        return setFiberScheduler(getCurrentContext(), scheduler);
     }
 
     /**

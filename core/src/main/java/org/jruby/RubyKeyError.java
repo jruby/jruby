@@ -114,11 +114,7 @@ public class RubyKeyError extends RubyIndexError {
         return context.nil;
     }
 
-    /**
-     * @return ""
-     * @deprecated Use {@link RubyKeyError#receiver(ThreadContext)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public IRubyObject receiver() {
         return receiver(getCurrentContext());
     }
@@ -129,11 +125,7 @@ public class RubyKeyError extends RubyIndexError {
         return receiver;
     }
 
-    /**
-     * @return ""
-     * @deprecated Use {@link RubyKeyError#key(ThreadContext)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public IRubyObject key() {
         return key(getCurrentContext());
     }

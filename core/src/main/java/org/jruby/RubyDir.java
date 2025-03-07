@@ -536,6 +536,11 @@ public class RubyDir extends RubyObject implements Closeable {
         return dir.children(context);
     }
 
+    @Deprecated(since = "10.0")
+    public static IRubyObject rmdir(IRubyObject recv, IRubyObject path) {
+        return rmdir(recv.getRuntime().getCurrentContext(), recv, path);
+    }
+
     @Deprecated
     public static IRubyObject rmdir19(IRubyObject recv, IRubyObject path) {
         return rmdir(((RubyBasicObject) recv).getCurrentContext(), recv, path);
@@ -957,6 +962,16 @@ public class RubyDir extends RubyObject implements Closeable {
             return context.fals;
         }
     }
+
+    @Deprecated(since = "10.0")
+    public static IRubyObject exists_p(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        if (context.runtime.warningsEnabled()) {
+            context.runtime.getWarnings().warnDeprecatedAlternate("Dir.exists?", "Dir.exist?");
+        }
+
+        return exist(context, recv, arg);
+    }
+
 
     @JRubyMethod(name = "fileno", notImplemented = true)
     public IRubyObject fileno(ThreadContext context) {

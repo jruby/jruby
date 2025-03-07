@@ -302,6 +302,11 @@ public class RubyException extends RubyObject {
         return getBacktrace();
     }
 
+    @Deprecated(since = "10.0")
+    public IRubyObject set_backtrace(IRubyObject obj) {
+        return set_backtrace(getCurrentContext(), obj);
+    }
+
     @JRubyMethod
     public IRubyObject set_backtrace(ThreadContext context, IRubyObject obj) {
         setBacktrace(context, obj);

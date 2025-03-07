@@ -211,6 +211,11 @@ public class JavaClass extends JavaObject {
         return forNameVerbose(((RubyBasicObject) recv).getCurrentContext().getRuntime(), name);
     }
 
+    @Deprecated(since = "10.0")
+    public RubyString inspect() {
+        return inspect(getCurrentContext());
+    }
+
     @Override
     public RubyString inspect(ThreadContext context) {
         return newString(context, "class " + javaClass().getName());

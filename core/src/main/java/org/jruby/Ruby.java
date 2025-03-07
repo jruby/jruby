@@ -1329,7 +1329,7 @@ public final class Ruby implements Constantizable {
     /**
      * @deprecated use #newInstance()
      */
-    @Deprecated(since = "9.4-", forRemoval = true)
+    @Deprecated(since = "9.4-")
     public static Ruby getDefaultInstance() {
         return newInstance();
     }
@@ -2158,6 +2158,15 @@ public final class Ruby implements Constantizable {
         return marshalModule;
     }
 
+    /**
+     * @return
+     * @deprecated Use {@link org.jruby.api.Access#integerClass(ThreadContext)} instead.
+     */
+    @Deprecated(since = "10.0")
+    public RubyClass getBignum() {
+        return integerClass;
+    }
+
     public RubyClass getDateError() {
         return this.dateErrorClass;
     }
@@ -2540,10 +2549,15 @@ public final class Ruby implements Constantizable {
         this.defaultRand = random.getRandomType();
     }
 
+    @Deprecated(since = "9.4-")
+    public RubyRandom.RandomType getDefaultRand() {
+        return getDefaultRandom().getRandomType();
+    }
+
     /**
      * @deprecated the modified field is now unused and deprecated and the set is ignored
      */
-    @Deprecated(since = "9.4-", forRemoval = true)
+    @Deprecated(since = "9.4-")
     public void setDefaultRand(RubyRandom.RandomType defaultRand) {
     }
 
@@ -5027,7 +5041,7 @@ public final class Ruby implements Constantizable {
     /**
      * @deprecated internal API, to be removed
      */
-    @Deprecated(since = "9.4-", forRemoval = true)
+    @Deprecated(since = "9.4-")
     public Random getRandom() {
         return random;
     }

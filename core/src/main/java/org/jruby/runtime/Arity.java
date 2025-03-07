@@ -269,6 +269,11 @@ public final class Arity implements Serializable {
         }
     }
 
+    @Deprecated(since = "10.0")
+    public static IRubyObject[] scanArgs(Ruby runtime, IRubyObject[] args, int required, int optional) {
+        return scanArgs(runtime.getCurrentContext(), args, required, optional);
+    }
+
     /**
      */
     public static IRubyObject[] scanArgs(ThreadContext context, IRubyObject[] args, int required, int optional) {

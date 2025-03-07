@@ -152,7 +152,7 @@ public class ConvertBytes {
 
     /**
      * Return a cached ByteList for values -256..255. Any values outside this range are not cached and use of this
-     * method should be guarded appropriately. A short parameter is used to accomodate unsigned byte values 128..255.
+     * method should be guarded appropriately. A short parameter is used to accommodate unsigned byte values 128..255.
      * @param i
      * @return
      */

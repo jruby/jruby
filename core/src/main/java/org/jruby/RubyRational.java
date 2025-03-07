@@ -616,22 +616,22 @@ public class RubyRational extends RubyNumeric {
     }
 
     @Override
-    public IRubyObject negative_p(ThreadContext context) {
-        return asBoolean(context, signum(context) < 0);
+    public IRubyObject isNegative(ThreadContext context) {
+        return asBoolean(context, isNegativeNumber(context));
     }
 
     @Override
-    public IRubyObject positive_p(ThreadContext context) {
-        return asBoolean(context, signum(context) > 0);
+    public IRubyObject isPositive(ThreadContext context) {
+        return asBoolean(context, isPositiveNumber(context));
     }
 
     @Override
-    public boolean isNegative(ThreadContext context) {
+    public boolean isNegativeNumber(ThreadContext context) {
         return signum(context) < 0;
     }
 
     @Override
-    public boolean isPositive(ThreadContext context) {
+    public boolean isPositiveNumber(ThreadContext context) {
         return signum(context) > 0;
     }
 
@@ -866,10 +866,10 @@ public class RubyRational extends RubyNumeric {
         if (other instanceof RubyFixnum otherFixnum) {
             RubyNumeric num, den;
 
-            if (otherFixnum.isPositive(context)) {
+            if (otherFixnum.isPositiveNumber(context)) {
                 num = (RubyNumeric) this.num.pow(context, other);
                 den = (RubyNumeric) this.den.pow(context, other);
-            } else if (otherFixnum.isNegative(context)) {
+            } else if (otherFixnum.isNegativeNumber(context)) {
                 var negate = otherFixnum.negate(context);
                 num = (RubyNumeric) this.den.pow(context, negate);
                 den = (RubyNumeric) this.num.pow(context, negate);
@@ -1127,7 +1127,7 @@ public class RubyRational extends RubyNumeric {
     }
 
     private RubyInteger mriTruncate(ThreadContext context) {
-        if (num.isNegative(context)) {
+        if (num.isNegativeNumber(context)) {
             return ((RubyInteger) num.negate(context).idiv(context, den)).negate(context);
         }
         return (RubyInteger) num.idiv(context, den);
@@ -1186,7 +1186,7 @@ public class RubyRational extends RubyNumeric {
     // MRI: nurat_round_half_down
     private RubyInteger roundHalfDown(ThreadContext context) {
         RubyInteger num = this.num, den = this.den;
-        final boolean neg = num.isNegative(context);
+        final boolean neg = num.isNegativeNumber(context);
 
         if (neg) num = (RubyInteger) num.op_uminus(context);
 
@@ -1204,7 +1204,7 @@ public class RubyRational extends RubyNumeric {
     private RubyInteger roundHalfEven(ThreadContext context) {
         var num = this.num;
         var den = this.den;
-        final boolean neg = num.isNegative(context);
+        final boolean neg = num.isNegativeNumber(context);
 
         if (neg) num = (RubyInteger) num.op_uminus(context);
 
@@ -1223,7 +1223,7 @@ public class RubyRational extends RubyNumeric {
     private RubyInteger roundHalfUp(ThreadContext context) {
         RubyInteger num = this.num, den = this.den;
 
-        final boolean neg = num.isNegative(context);
+        final boolean neg = num.isNegativeNumber(context);
 
         if (neg) num = (RubyInteger) num.op_uminus(context);
 

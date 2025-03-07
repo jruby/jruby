@@ -59,6 +59,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.api.Warn;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.common.RubyWarnings;
 import org.jruby.exceptions.CatchThrow;
 import org.jruby.exceptions.MainExitException;
@@ -334,6 +335,13 @@ public class RubyKernel {
         return RubyIO.open(context, fileClass(context), args, block);
     }
 
+    @Deprecated(since = "10.0")
+    public static IRubyObject getc(ThreadContext context, IRubyObject recv) {
+        Warn.warn(context, "getc is obsolete; use STDIN.getc instead");
+        IRubyObject defin = globalVariables(context).get("$stdin");
+        return sites(context).getc.call(context, defin, defin);
+    }
+
     // MRI: rb_f_gets
     @JRubyMethod(optional = 1, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject gets(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
@@ -426,14 +434,14 @@ public class RubyKernel {
         return  exObj.isTrue();
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static RubyFloat new_float(IRubyObject recv, IRubyObject object) {
         return (RubyFloat) new_float(((RubyBasicObject) recv).getCurrentContext(), object, true);
     }
 
     private static final ByteList ZEROx = new ByteList(new byte[] { '0','x' }, false);
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static RubyFloat new_float(final Ruby runtime, IRubyObject object) {
         return (RubyFloat) new_float(runtime.getCurrentContext(), object, true);
     }
@@ -449,7 +457,7 @@ public class RubyKernel {
         throw argumentError(context, str(context.runtime, "invalid value for Float(): ", newString(context, string)));
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static double parseHexidecimalExponentString2(Ruby runtime, ByteList str) {
         return parseHexidecimalExponentString2(runtime.getCurrentContext(), str);
     }
@@ -1192,6 +1200,11 @@ public class RubyKernel {
     @JRubyMethod(name = "load", module = true, visibility = PRIVATE)
     public static IRubyObject load(ThreadContext context, IRubyObject recv, IRubyObject path, IRubyObject wrap, Block block) {
         return loadCommon(context, RubyFile.get_path(context, path), wrap);
+    }
+
+    @Deprecated(since = "9.4-")
+    public static IRubyObject load(IRubyObject recv, IRubyObject[] args, Block block) {
+        return load(((RubyBasicObject) recv).getCurrentContext(), recv, args, block);
     }
 
     public static IRubyObject load(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
@@ -2191,6 +2204,11 @@ public class RubyKernel {
         return ((RubyBasicObject) self).respond_to_p(context, name, includePrivate.isTrue());
     }
 
+    @Deprecated(since = "10.0")
+    public static RubyFixnum hash(IRubyObject self) {
+        return ((RubyBasicObject) self).hash(((RubyBasicObject) self).getCurrentContext());
+    }
+
     @JRubyMethod
     public static RubyFixnum hash(ThreadContext context, IRubyObject self) {
         return ((RubyBasicObject) self).hash(context);
@@ -2313,12 +2331,7 @@ public class RubyKernel {
         return ((RubyBasicObject)self).method(context, symbol, context.getCurrentStaticScope());
     }
 
-    /**
-     * @param self
-     * @return ""
-     * @deprecated Use {@link RubyKernel#to_s(ThreadContext, IRubyObject)}
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static IRubyObject to_s(IRubyObject self) {
         return to_s(((RubyBasicObject) self).getCurrentContext(), self);
     }

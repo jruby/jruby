@@ -110,13 +110,7 @@ public final class ArgsUtil {
         return runtime.getNil();
     }
 
-    /**
-     * @param runtime
-     * @param arg
-     * @return ""
-     * @deprecated Use {@link ArgsUtil#getOptionsArg(ThreadContext, IRubyObject)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static IRubyObject getOptionsArg(Ruby runtime, IRubyObject arg) {
         return getOptionsArg(runtime, arg, true);
     }

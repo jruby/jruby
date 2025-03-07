@@ -115,7 +115,7 @@ public abstract class JavaLangReflect {
             return isPublic(context, self, thiz.getModifiers());
         }
 
-        @Deprecated(since = "9.4", forRemoval = true)
+        @Deprecated(since = "9.4")
         public static IRubyObject public_p(final IRubyObject self) {
             return public_p(((RubyBasicObject) self).getCurrentContext(), self);
         }

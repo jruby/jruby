@@ -132,12 +132,7 @@ public class RubyThreadGroup extends RubyObject {
         return enclosed_p(getRuntime().getCurrentContext(), block);
     }
 
-    /**
-     * @param block
-     * @return ""
-     * @deprecated Use {@link RubyThreadGroup#list(ThreadContext, Block)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public IRubyObject list(Block block) {
         return list(getCurrentContext(), block);
     }

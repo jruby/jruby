@@ -3446,13 +3446,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return str;
     }
 
-    /**
-     *
-     * @param args
-     * @return ""
-     * @deprecated Use {@link RubyIO#read(ThreadContext, IRubyObject[])} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public IRubyObject read(IRubyObject[] args) {
         return read(getCurrentContext(), args);
     }
@@ -3660,6 +3654,12 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return block.isGiven() ? each_byteInternal(context, block) : enumeratorize(context.runtime, this, "each_byte");
     }
 
+    @Deprecated(since = "10.0")
+    public IRubyObject bytes(ThreadContext context, Block block) {
+        context.runtime.getWarnings().warn("IO#bytes is deprecated; use #each_byte instead");
+        return each_byte(context, block);
+    }
+
     // rb_io_each_char
     public IRubyObject each_charInternal(ThreadContext context, Block block) {
         Ruby runtime = context.runtime;
@@ -3689,6 +3689,18 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     @JRubyMethod(name = "each_char")
     public IRubyObject each_char(ThreadContext context, Block block) {
         return each_charInternal(context, block);
+    }
+
+    @Deprecated(since = "10.0")
+    public IRubyObject chars(ThreadContext context, Block block) {
+        context.runtime.getWarnings().warn("IO#chars is deprecated; use #each_char instead");
+        return each_charInternal(context, block);
+    }
+
+    @Deprecated(since = "10.0")
+    public IRubyObject codepoints(ThreadContext context, Block block) {
+        context.runtime.getWarnings().warn("IO#codepoints is deprecated; use #each_codepoint instead");
+        return eachCodePointCommon(context, block, "each_codepoint");
     }
 
     @JRubyMethod
@@ -3887,6 +3899,13 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 throw new AssertionError("BUG");
         }
     }
+
+    @Deprecated(since = "10.0")
+    public IRubyObject lines(final ThreadContext context, Block block) {
+        context.runtime.getWarnings().warn("IO#lines is deprecated; use #each_line instead");
+        return each_line(context, block);
+    }
+
 
     @JRubyMethod(name = "readlines")
     public RubyArray readlines(ThreadContext context) {

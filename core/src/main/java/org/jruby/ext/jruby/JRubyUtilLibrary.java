@@ -428,10 +428,10 @@ public class JRubyUtilLibrary implements Library {
      * Return a list of files and extensions that JRuby treats as internal (or "built-in"),
      * skipping load path and filesystem search.
      *
-     * This was added for Bootsnap in https://github.com/Shopify/bootsnap/issues/162
+     * This was added for <a href="https://github.com/Shopify/bootsnap/issues/162">Bootsnap</a>
      */
     @JRubyMethod(module = true)
-    @Deprecated(since = "9.4-", forRemoval = true)
+    @Deprecated(since = "9.4-")
     public static RubyArray internal_libraries(ThreadContext context, IRubyObject self) {
         warnDeprecated(context, "JRuby::Util.internal_libraries is deprecated");
         return newEmptyArray(context);

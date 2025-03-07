@@ -427,7 +427,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         ByteList str = new ByteList((path == null ? 4 : path.length()) + 8);
 
         str.append('#').append('<');
-        str.append(getMetaClass().getRealClass().to_s(context).getByteList());
+        str.append(((RubyString) getMetaClass().getRealClass().to_s(context)).getByteList());
         str.append(':').append(path == null ? RubyNil.nilBytes : RubyEncoding.encodeUTF8(path));
         if (!openFile.isOpen()) str.append(CLOSED_MESSAGE);
         str.append('>');
@@ -1411,7 +1411,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      *
      * @param pathOrFile the string or IO to use for the path
      */
-    @Deprecated(since = "9.4-", forRemoval = true)
+    @Deprecated(since = "9.4-") // since 2020
     public static FileResource fileResource(IRubyObject pathOrFile) {
         return fileResource(((RubyBasicObject)pathOrFile).getCurrentContext(), pathOrFile);
     }

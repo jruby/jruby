@@ -214,6 +214,11 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
         return this;
     }
 
+    @Deprecated
+    protected void storeInternal(final int index, final IRubyObject value) {
+        storeInternal(getCurrentContext(), index, value);
+    }
+
     @Override
     protected void storeInternal(ThreadContext context, final int index, final IRubyObject value) {
         if (index == 0 && packed()) {

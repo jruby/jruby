@@ -584,7 +584,7 @@ public class Numeric {
      *
      */
     public static IRubyObject f_gcd(ThreadContext context, IRubyObject x, IRubyObject y) {
-        if (x instanceof RubyFixnum xx && y instanceof RubyFixnum yy && isLongMinValue(context, xx)) {
+        if (x instanceof RubyFixnum xx && y instanceof RubyFixnum yy && isLongMinValue(xx)) {
             return asFixnum(context, i_gcd(xx.getValue(), yy.getValue()));
         }
 
@@ -595,7 +595,7 @@ public class Numeric {
         if (f_zero_p(context, y)) return x;
 
         for (;;) {
-            if (x instanceof RubyFixnum xx && y instanceof RubyFixnum yy && isLongMinValue(context, xx)) {
+            if (x instanceof RubyFixnum xx && y instanceof RubyFixnum yy && isLongMinValue(xx)) {
                 return asFixnum(context, i_gcd(xx.getValue(), yy.getValue()));
             }
             IRubyObject z = x;
@@ -606,7 +606,7 @@ public class Numeric {
 
     // 'fast' gcd version
     public static RubyInteger f_gcd(ThreadContext context, RubyInteger x, RubyInteger y) {
-        if (x instanceof RubyFixnum xx && y instanceof RubyFixnum yy && isLongMinValue(context, xx)) {
+        if (x instanceof RubyFixnum xx && y instanceof RubyFixnum yy && isLongMinValue(xx)) {
             return asFixnum(context, i_gcd(xx.getValue(), yy.getValue()));
         }
 
@@ -622,7 +622,7 @@ public class Numeric {
      * @param x the Fixnum to compare
      * @return true if it is equal to Long.MAX_VALUE, false otherwise.
      */
-    protected static boolean isLongMinValue(ThreadContext context, RubyFixnum x) {
+    protected static boolean isLongMinValue(RubyFixnum x) {
         return x.getValue() != Long.MIN_VALUE;
     }
 

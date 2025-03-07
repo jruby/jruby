@@ -163,6 +163,11 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
             return context.runtime.getFalseString();
         }
 
+        @Deprecated(since = "10.0")
+        public RubyString inspect() {
+            return getRuntime().getFalseString();
+        }
+
         @JRubyMethod(name = "to_s", alias = "inspect")
         public RubyString inspect(ThreadContext context) {
             return context.runtime.getFalseString();
@@ -204,6 +209,11 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
         @Deprecated(since = "10.0")
         public static RubyString true_to_s(ThreadContext context, IRubyObject tru) {
             return context.runtime.getTrueString();
+        }
+
+        @Deprecated(since = "10.0")
+        public RubyString inspect() {
+            return getRuntime().getTrueString();
         }
 
         @JRubyMethod(name = "to_s", alias = "inspect")

@@ -149,22 +149,22 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     @Override
-    public IRubyObject negative_p(ThreadContext context) {
-        return asBoolean(context, isNegative(context));
+    public IRubyObject isNegative(ThreadContext context) {
+        return asBoolean(context, isNegativeNumber(context));
     }
 
     @Override
-    public IRubyObject positive_p(ThreadContext context) {
-        return asBoolean(context, isPositive(context));
+    public IRubyObject isPositive(ThreadContext context) {
+        return asBoolean(context, isPositiveNumber(context));
     }
 
     @Override
-    public boolean isNegative(ThreadContext context) {
+    public boolean isNegativeNumber(ThreadContext context) {
         return signum(context) < 0;
     }
 
     @Override
-    public boolean isPositive(ThreadContext context) {
+    public boolean isPositiveNumber(ThreadContext context) {
         return signum(context) > 0;
     }
 
@@ -526,7 +526,7 @@ public abstract class RubyInteger extends RubyNumeric {
         }
 
         if (val instanceof RubyBignum bignum) {
-            if (bignum.isNegative(context)) return NUMERR_NEGATIVE;
+            if (bignum.isNegativeNumber(context)) return NUMERR_NEGATIVE;
             /* long is 64bit */
             return NUMERR_TOOLARGE;
         }
@@ -667,7 +667,7 @@ public abstract class RubyInteger extends RubyNumeric {
         RubyNumeric n = (RubyNumeric) this.op_minus(context, r);
         r = (RubyNumeric) r.op_cmp(context, h);
 
-        if (r.isPositive(context) ||
+        if (r.isPositiveNumber(context) ||
                 (r.isZero(context) && doRoundCheck(context, roundingMode, this, n, f))) {
             n = (RubyNumeric) n.op_plus(context, f);
         }
@@ -722,11 +722,11 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     protected static boolean int_half_p_half_up(ThreadContext context, RubyInteger num, RubyNumeric n, IRubyObject f) {
-        return num.isPositive(context);
+        return num.isPositiveNumber(context);
     }
 
     protected static boolean int_half_p_half_down(ThreadContext context, RubyInteger num, RubyNumeric n, IRubyObject f) {
-        return num.isNegative(context);
+        return num.isNegativeNumber(context);
     }
 
     /** integer_to_r
@@ -862,10 +862,17 @@ public abstract class RubyInteger extends RubyNumeric {
         return RubyFixnum.one(context.runtime);
     }
 
+    @Deprecated(since = "10.0")
+    public RubyString to_s() {
+        return to_s(getCurrentContext());
+    }
+
+    // Note: to not change interface by adding abstract method I made a base impl.
     @Override
     @JRubyMethod(name = {"to_s", "inspect"})
-    public abstract RubyString to_s(ThreadContext context);
-
+    public RubyString to_s(ThreadContext context) {
+        throw new RuntimeException("all numeric types must override this method");
+    }
 
     @Deprecated(since = "10.0")
     public RubyString to_s(IRubyObject x) {
@@ -935,18 +942,18 @@ public abstract class RubyInteger extends RubyNumeric {
     public IRubyObject pow(ThreadContext context, IRubyObject b, IRubyObject m) {
         boolean negaFlg = false;
         RubyInteger base = castAsInteger(context, b, "Integer#pow() 2nd argument not allowed unless a 1st argument is integer");
-        if (base.isNegative(context)) {
+        if (base.isNegativeNumber(context)) {
             throw rangeError(context, "Integer#pow() 1st argument cannot be negative when 2nd argument specified");
         }
 
         RubyInteger pow = castAsInteger(context, m, "Integer#pow() 2nd argument not allowed unless all arguments are integers");
 
-        if (pow.isNegative(context)) {
+        if (pow.isNegativeNumber(context)) {
             pow = pow.negate(context);
             negaFlg = true;
         }
 
-        if (!pow.isPositive(context)) throw context.runtime.newZeroDivisionError();
+        if (!pow.isPositiveNumber(context)) throw context.runtime.newZeroDivisionError();
 
         if (pow instanceof RubyFixnum fixpow) {
             long mm = fixpow.value;

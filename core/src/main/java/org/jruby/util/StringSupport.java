@@ -578,7 +578,7 @@ public final class StringSupport {
         return enc.mbcToCode(bytes, p, end);
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static int codePoint(Ruby runtime, Encoding enc, byte[] bytes, int p, int end) {
         return codePoint(runtime.getCurrentContext(), enc, bytes, p, end);
     }
@@ -591,13 +591,7 @@ public final class StringSupport {
         }
     }
 
-    /**
-     * @param runtime
-     * @param value
-     * @return ""
-     * @deprecated Use {@link StringSupport#codePoint(ThreadContext, ByteList)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static int codePoint(final Ruby runtime, final ByteList value) {
         return codePoint(runtime.getCurrentContext(), value);
     }
@@ -921,7 +915,7 @@ public final class StringSupport {
     }
 
     // MRI: StringValueCStr, rb_string_value_cstr without trailing null addition
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static RubyString checkEmbeddedNulls(Ruby runtime, IRubyObject ptr) {
         return Check.checkEmbeddedNulls(runtime.getCurrentContext(), ptr);
     }
@@ -1169,16 +1163,7 @@ public final class StringSupport {
         return count;
     }
 
-    /**
-     * @param str
-     * @param runtime
-     * @param table
-     * @param tables
-     * @param enc
-     * @return ""
-     * @deprecated Use {@link StringSupport#strCount(ThreadContext, ByteList, boolean[], TrTables, Encoding)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static int strCount(ByteList str, Ruby runtime, boolean[] table, TrTables tables, Encoding enc) {
         return strCount(runtime.getCurrentContext(), str, table, tables, enc);
     }
@@ -1424,17 +1409,7 @@ public final class StringSupport {
         return tables;
     }
 
-    /**
-     * @param str
-     * @param runtime
-     * @param stable
-     * @param tables
-     * @param first
-     * @param enc
-     * @return ""
-     * @deprecated Use {@link StringSupport#trSetupTable(ThreadContext, ByteList, boolean[], TrTables, boolean, Encoding)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static TrTables trSetupTable(final ByteList str, final Ruby runtime,
                                         final boolean[] stable, TrTables tables, final boolean first, final Encoding enc) {
         return trSetupTable(runtime.getCurrentContext(), str, stable, tables, first, enc);
@@ -1601,13 +1576,7 @@ public final class StringSupport {
         return valueCopy;
     }
 
-    /**
-     * @param runtime
-     * @param original
-     * @return ""
-     * @deprecated Use {@link StringSupport#succCommon(ThreadContext, ByteList)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static ByteList succCommon(Ruby runtime, ByteList original) {
         return succCommon(runtime.getCurrentContext(), original);
     }
@@ -1929,12 +1898,12 @@ public final class StringSupport {
         return source.getByteList();
     }
 
-    @Deprecated(since = "9.4", forRemoval = true)
+    @Deprecated(since = "9.4")
     public static void replaceInternal19(int beg, int len, CodeRangeable source, CodeRangeable repl) {
         strUpdate(beg, len, source, repl);
     }
 
-    @Deprecated(since = "9.4", forRemoval = true)
+    @Deprecated(since = "9.4")
     public static void replaceInternal19(Ruby runtime, int beg, int len, RubyString source, RubyString repl) {
         strUpdate(runtime.getCurrentContext(), beg, len, source, repl);
     }
@@ -1963,15 +1932,7 @@ public final class StringSupport {
         if (cr != source.getCodeRange()) source.setCodeRange(cr);
     }
 
-    /**
-     * @param runtime
-     * @param beg
-     * @param len
-     * @param source
-     * @param repl
-     * @deprecated Use {@link StringSupport#strUpdate(ThreadContext, int, int, RubyString, RubyString)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static void strUpdate(Ruby runtime, int beg, int len, RubyString source, RubyString repl) {
         strUpdate(runtime.getCurrentContext(), beg, len, source, repl);
     }
@@ -2045,16 +2006,7 @@ public final class StringSupport {
         return modify ? rubyString : null;
     }
 
-    /**
-     * @param rubyString
-     * @param runtime
-     * @param squeeze
-     * @param tables
-     * @param enc
-     * @return ""
-     * @deprecated Use {@link StringSupport#strDeleteBang(ThreadContext, CodeRangeable, boolean[], TrTables, Encoding)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static CodeRangeable strDeleteBang(CodeRangeable rubyString, Ruby runtime, boolean[] squeeze, TrTables tables, Encoding enc) {
         return strDeleteBang(runtime.getCurrentContext(), rubyString, squeeze, tables, enc);
     }
@@ -2622,7 +2574,7 @@ public final class StringSupport {
         return null;
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static CodeRangeable trTransHelper(Ruby runtime, CodeRangeable self, CodeRangeable srcStr, CodeRangeable replStr, boolean sflag) {
         try {
             return trTransHelper(self, srcStr, replStr, sflag);
@@ -2744,17 +2696,7 @@ public final class StringSupport {
         return false;
     }
 
-    /**
-     * @param runtime
-     * @param value
-     * @param squeeze
-     * @param tables
-     * @param enc
-     * @param isArg
-     * @return ""
-     * @deprecated Use {@link StringSupport#multiByteSqueeze(ThreadContext, ByteList, boolean[], TrTables, Encoding, boolean)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static boolean multiByteSqueeze(Ruby runtime, ByteList value, boolean squeeze[], TrTables tables, Encoding enc, boolean isArg) {
         return multiByteSqueeze(runtime.getCurrentContext(), value, squeeze, tables, enc, isArg);
     }
@@ -2879,15 +2821,7 @@ public final class StringSupport {
         return -1;
     }
 
-    /**
-     * @param runtime
-     * @param arg0
-     * @param arg1
-     * @param flags
-     * @return ""
-     * @deprecated Use {@link StringSupport#checkCaseMapOptions(ThreadContext, IRubyObject, IRubyObject, int)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static int checkCaseMapOptions(Ruby runtime, IRubyObject arg0, IRubyObject arg1, int flags) {
         return checkCaseMapOptions(runtime.getCurrentContext(), arg0, arg1, flags);
     }
@@ -2916,14 +2850,7 @@ public final class StringSupport {
         return flags;
     }
 
-    /**
-     * @param runtime
-     * @param arg0
-     * @param flags
-     * @return ""
-     * @deprecated Use {@link StringSupport#checkCaseMapOptions(ThreadContext, IRubyObject, IRubyObject, int)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static int checkCaseMapOptions(Ruby runtime, IRubyObject arg0, int flags) {
         return checkCaseMapOptions(runtime.getCurrentContext(), arg0, arg0, flags);
     }
@@ -2963,15 +2890,7 @@ public final class StringSupport {
 
     private static final int CASE_MAPPING_ADDITIONAL_LENGTH = 20;
 
-    /**
-     * @param runtime
-     * @param src
-     * @param flags
-     * @param enc
-     * @return ""
-     * @deprecated Use {@link StringSupport#caseMap(ThreadContext, ByteList, IntHolder, Encoding)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static ByteList caseMap(Ruby runtime, ByteList src, IntHolder flags, Encoding enc) {
         return caseMap(runtime.getCurrentContext(), src, flags, enc);
     }
@@ -3013,14 +2932,7 @@ public final class StringSupport {
         return tgt;
     }
 
-    /**
-     * @param runtime
-     * @param value
-     * @param flags
-     * @param enc
-     * @deprecated Use {@link StringSupport#asciiOnlyCaseMap(ThreadContext, ByteList, IntHolder)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static void asciiOnlyCaseMap(Ruby runtime, ByteList value, IntHolder flags, Encoding enc) {
         asciiOnlyCaseMap(runtime.getCurrentContext(), value, flags);
     }

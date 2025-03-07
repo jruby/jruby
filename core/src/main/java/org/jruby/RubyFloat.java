@@ -69,7 +69,6 @@ import static org.jruby.api.Create.newSharedString;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
-import static org.jruby.api.Error.rangeError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.Numeric.f_abs;
 import static org.jruby.util.Numeric.f_add;
@@ -222,23 +221,23 @@ public class RubyFloat extends RubyNumeric implements Appendable {
 
     @Override
     @JRubyMethod(name = "negative?")
-    public IRubyObject negative_p(ThreadContext context) {
-        return asBoolean(context, isNegative(context));
+    public IRubyObject isNegative(ThreadContext context) {
+        return asBoolean(context, isNegativeNumber(context));
     }
 
     @Override
     @JRubyMethod(name = "positive?")
-    public IRubyObject positive_p(ThreadContext context) {
-        return asBoolean(context, isPositive(context));
+    public IRubyObject isPositive(ThreadContext context) {
+        return asBoolean(context, isPositiveNumber(context));
     }
 
     @Override
-    public boolean isNegative(ThreadContext context) {
+    public boolean isNegativeNumber(ThreadContext context) {
         return signum(context) < 0;
     }
 
     @Override
-    public boolean isPositive(ThreadContext context) {
+    public boolean isPositiveNumber(ThreadContext context) {
         return signum(context) > 0;
     }
 

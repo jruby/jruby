@@ -347,6 +347,11 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             return asFixnum(context, getArity());
         }
 
+        @Deprecated(since = "10.0")
+        public RubyString inspect() {
+            return inspect(getCurrentContext());
+        }
+
         @Override
         @JRubyMethod
         public RubyString inspect(ThreadContext context) {

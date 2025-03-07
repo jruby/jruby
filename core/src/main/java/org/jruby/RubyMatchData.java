@@ -414,6 +414,11 @@ public class RubyMatchData extends RubyObject {
         return start < 0 ? context.nil : asFixnum(context, regs.getEnd(index));
     }
 
+    @Deprecated(since = "10.0")
+    public RubyString inspect() {
+        return inspect(getCurrentContext());
+    }
+
     @JRubyMethod
     @Override
     public RubyString inspect(ThreadContext context) {
@@ -890,6 +895,11 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod
     public RubyFixnum hash(ThreadContext context) {
         return asFixnum(context, hashCode());
+    }
+
+    @Deprecated(since = "10.0")
+    public RubyHash named_captures(ThreadContext context) {
+        return named_captures(context, NULL_ARRAY);
     }
 
     @JRubyMethod(keywords = true, optional = 1)

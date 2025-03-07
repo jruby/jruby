@@ -566,6 +566,11 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         return str instanceof RubyEncoding ? str : encodingService(context).rubyEncodingFromObject(str);
     }
 
+    @Deprecated(since = "10.0")
+    public IRubyObject replicate(ThreadContext context, IRubyObject arg) {
+        return new RubyEncoding(context.runtime, arg.convertToString().getBytes(), getEncoding(), isDummy);
+    }
+
     @JRubyMethod(name = "_dump")
     public IRubyObject _dump(ThreadContext context, IRubyObject arg) {
         return to_s(context);
