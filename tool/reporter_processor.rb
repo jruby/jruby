@@ -2,7 +2,7 @@ require 'optparse'
 require 'errors'                      # Generated from revapi
 require_relative 'acceptable_errors'  # Our list of removals and unimportant errors
 
-old_name_search = filter = version = nil
+new_name_search = old_name_search = filter = version = nil
 
 opts = OptionParser.new do |o|
   o.banner = 'Usage: #$0 [options]'
@@ -25,18 +25,23 @@ EOS
   o.on('-o', '--old-name {str}', 'regexp match against old_name') do |arg|
     old_name_search = Regexp.new(arg)
   end
+  o.on('-n', '--new-name {str}', 'regexp match against new_name') do |arg|
+    new_name_search = Regexp.new(arg)
+  end
 end
 
 opts.parse!(ARGV)
 
-
+# Generic Rules
 NOT = ->(f1) { ->(a) {!f1.call(a) } }
 AND = ->(*fns) { ->(a) { fns.all? { |f| f.call(a) } } }
 OR = ->(*fns) { ->(a) { fns.any? { |f| f.call(a) } } }
-
 FALSE = ->(a) { false }
 TRUE = ->(a) { true }
 NOOP = TRUE
+
+# FIXME: to make this a generic tool move specific rules and skip list
+#  to its own require so this script can be used by other Java projects.
 INVOKER = ->(a) { !!a.old_name.match(/\$INVOKER/) }
 POPULATOR = ->(a) { !!a.old_name.match(/\$POPULATOR/) }
 INTERP_ANNO = ->(a) { !!a.desc.match(/org\.jruby\.ir\.Interp/) }
@@ -62,6 +67,16 @@ SKIPS = {
  'java.annotation.attributeAdded' => NOOP
 }
 
+SUBSTITUTIONS = {
+  'org.jruby.runtime.builtin.IRubyObject' => 'IRubyObject',
+  'org.jruby.runtime.ThreadContext' => 'ThreadContext',
+  'org.jruby.Ruby' => 'Ruby',   # This is doing a lot of heavy lifting
+  'org.jruby.RubySymbol' => 'RubySymbol',
+  'java.lang.String' => 'String',
+  'org.jruby.runtime.Block' => 'Block',
+  'org.jruby.parser.StaticScope' => 'StaticScope',
+}
+
 class Action
   attr_reader :old_name, :new_name, :type, :desc, :categories
   
@@ -79,6 +94,13 @@ class Action
     end
   end
 
+  def sanitize(str)
+    SUBSTITUTIONS.each do |pattern, replace|
+      str.gsub!(pattern, replace)
+    end
+    str
+  end
+
   def acceptable_key
     if removed?
       "#{old_name}|#{type}"
@@ -92,14 +114,16 @@ class Action
   end
 
   def added?
-    !!type.match(/java\.(method|class|field)\.[^.]+[Aa]dded/)
+    !!type.match(/java\.(method|class|field)\.[^.]*[Aa]dded/)
   end
 
   def to_s
     str = "type: #{type} - #{desc}\n"
-    str += "\n    #{old_name}" if added?
-    str += " ->\n    #{new_name}" if !removed? && !annotation_change?
-    str += "\n  #{categories_to_s}"
+    if !added?
+      str += "\n    #{sanitize(old_name)}"
+    end
+    str += " #{!added? ? "->" : "  "}\n    #{sanitize(new_name)}" if !removed? && !annotation_change?
+    str += "\n    #{categories_to_s}"
     str
   end
 
@@ -118,6 +142,7 @@ REPORT[:report].each do |item|
     next if filter && type != filter
     action = Action.new(item[:old], item[:new], type, desc, categories)
     next if old_name_search && !action.old_name.match?(old_name_search)
+    next if new_name_search && !action.new_name.match?(new_name_search)
     fn = SKIPS[type] || FALSE
     next if fn.call(action) || ACCEPTABLE[action.acceptable_key]
     unless action.breaking?
