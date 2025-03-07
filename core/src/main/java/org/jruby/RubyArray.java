@@ -634,6 +634,11 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return makeShared(context, last ? begin + realLength - n : begin, n, arrayClass(context));
     }
 
+    @Deprecated(since = "10.0")
+    protected final void modifyCheck() {
+        modifyCheck(getCurrentContext());
+    }
+
     /** rb_ary_modify_check
      *
      */
@@ -642,6 +647,11 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             if ((flags & FROZEN_F) != 0) throw context.runtime.newFrozenError(this);
             if ((flags & TMPLOCK_ARR_F) != 0) throw typeError(context, "can't modify array during iteration");
         }
+    }
+
+    @Deprecated(since = "10.0")
+    protected void modify() {
+        modify(getCurrentContext());
     }
 
     /** rb_ary_modify

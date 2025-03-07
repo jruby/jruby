@@ -1202,6 +1202,11 @@ public class RubyKernel {
         return loadCommon(context, RubyFile.get_path(context, path), wrap);
     }
 
+    @Deprecated(since = "9.4-")
+    public static IRubyObject load(IRubyObject recv, IRubyObject[] args, Block block) {
+        return load(((RubyBasicObject) recv).getCurrentContext(), recv, args, block);
+    }
+
     public static IRubyObject load(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         switch (args.length) {
             case 1: return load(context, recv, args[0], block);

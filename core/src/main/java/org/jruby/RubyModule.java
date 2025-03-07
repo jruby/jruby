@@ -5067,6 +5067,11 @@ public class RubyModule extends RubyObject {
         return refinementModules;
     }
 
+    @Deprecated(since = "10.0")
+    public IRubyObject refined_class(ThreadContext context) {
+        return getRefinedClassOrThrow(context, false);
+    }
+
     @JRubyMethod(name = "target")
     public IRubyObject target(ThreadContext context) {
         return getRefinedClassOrThrow(context, true);
