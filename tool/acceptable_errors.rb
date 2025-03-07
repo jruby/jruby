@@ -934,4 +934,11 @@ ACCEPTABLE = {
 'method org.jruby.RubyArray<?> org.jruby.RubyArray<T extends org.jruby.runtime.builtin.IRubyObject>::newArray(org.jruby.runtime.ThreadContext, int)|java.method.numberOfParametersChanged' => '10.0',
 'method org.jruby.RubyArray<?> org.jruby.RubyArray<T extends org.jruby.runtime.builtin.IRubyObject>::newArrayLight(org.jruby.RubyClass, org.jruby.runtime.builtin.IRubyObject)|java.method.numberOfParametersChanged' => '10.0',
 'method void org.jruby.RubyArray<T extends org.jruby.runtime.builtin.IRubyObject>::storeInternal(org.jruby.runtime.ThreadContext, int, org.jruby.runtime.builtin.IRubyObject)|java.method.numberOfParametersChanged' => '10.0',
+'method org.jruby.runtime.builtin.IRubyObject org.jruby.RubyClass::subclasses(org.jruby.runtime.ThreadContext, org.jruby.runtime.builtin.IRubyObject)|java.method.removed' => '10.0',
+'method org.jruby.RubyFixnum org.jruby.RubyComplex::hash(org.jruby.runtime.ThreadContext)|java.method.returnTypeChangedCovariantly' => '10.0',
+'method org.jruby.RubyFixnum org.jruby.RubyRational::hash(org.jruby.runtime.ThreadContext)|java.method.returnTypeChangedCovariantly' => '10.0',
+'method void org.jruby.RubyArray<T extends org.jruby.runtime.builtin.IRubyObject>::finishRawArray(org.jruby.runtime.ThreadContext)|java.method.removed' => '10.0',
+'method org.jruby.runtime.builtin.IRubyObject org.jruby.RubyArray<T extends org.jruby.runtime.builtin.IRubyObject>::choice(org.jruby.runtime.ThreadContext)|java.method.removed' => '10.0',
+'method void org.jruby.RubyArray<T extends org.jruby.runtime.builtin.IRubyObject>::modifyCheck(org.jruby.runtime.ThreadContext)|java.method.finalMethodAddedToNonFinalClass' => '10.0',
+'method java.lang.Boolean org.jruby.RubyInstanceConfig::isFrozenStringLiteral()|java.method.returnTypeChanged' => '10.0',
 }

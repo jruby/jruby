@@ -1889,7 +1889,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     }
 
     @Deprecated(since = "10.0")
-    public RubyArray aryAppend(RubyArray<?> y) {
+    public RubyArray aryAppend(RubyArray y) {
         return aryAppend(getCurrentContext(), y);
     }
 

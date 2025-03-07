@@ -2542,6 +2542,11 @@ public final class Ruby implements Constantizable {
         this.defaultRand = random.getRandomType();
     }
 
+    @Deprecated(since = "9.4-")
+    public RubyRandom.RandomType getDefaultRand() {
+        return getDefaultRandom().getRandomType();
+    }
+
     /**
      * @deprecated the modified field is now unused and deprecated and the set is ignored
      */

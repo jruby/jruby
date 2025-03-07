@@ -897,6 +897,11 @@ public class RubyMatchData extends RubyObject {
         return asFixnum(context, hashCode());
     }
 
+    @Deprecated(since = "10.0")
+    public RubyHash named_captures(ThreadContext context) {
+        return named_captures(context, NULL_ARRAY);
+    }
+
     @JRubyMethod(keywords = true, optional = 1)
     public RubyHash named_captures(ThreadContext context, IRubyObject[] args) {
         check(context);
