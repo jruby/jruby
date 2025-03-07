@@ -1722,6 +1722,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return RubyKernel.methodMissingDirect(context, recv, sym, lastVis, lastCallType, args);
     }
 
+    @Deprecated
+    public IRubyObject send(ThreadContext context, Block block) {
+        throw context.runtime.newArgumentError(0, 1);
+    }
+
     @JRubyMethod(name = "__send__", omit = true, keywords = true)
     public IRubyObject send(ThreadContext context, IRubyObject arg0, Block block) {
         String name = RubySymbol.idStringFromObject(context, arg0);

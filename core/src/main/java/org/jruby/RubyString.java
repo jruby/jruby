@@ -1680,13 +1680,18 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return replace(getCurrentContext(), other);
     }
 
+    @Deprecated(since = "10.0")
+    public RubyString initialize_copy(IRubyObject other) {
+        return initialize_copy(getCurrentContext(), other);
+    }
+
     @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
     public RubyString initialize_copy(ThreadContext context, IRubyObject other) {
         return replace(context, other);
     }
 
     @Deprecated(since = "10.0")
-    public RubyString replace(IRubyObject other) {
+    public IRubyObject replace(IRubyObject other) {
         return replace(getCurrentContext(), other);
     }
 

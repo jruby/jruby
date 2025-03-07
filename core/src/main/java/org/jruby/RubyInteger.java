@@ -154,8 +154,8 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     @Override
-    public IRubyObject positive_p(ThreadContext context) {
-        return asBoolean(context, isPositive(context));
+    public IRubyObject isPositive(ThreadContext context) {
+        return asBoolean(context, isPositiveNumber(context));
     }
 
     @Override
@@ -164,7 +164,7 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     @Override
-    public boolean isPositive(ThreadContext context) {
+    public boolean isPositiveNumber(ThreadContext context) {
         return signum(context) > 0;
     }
 
@@ -667,7 +667,7 @@ public abstract class RubyInteger extends RubyNumeric {
         RubyNumeric n = (RubyNumeric) this.op_minus(context, r);
         r = (RubyNumeric) r.op_cmp(context, h);
 
-        if (r.isPositive(context) ||
+        if (r.isPositiveNumber(context) ||
                 (r.isZero(context) && doRoundCheck(context, roundingMode, this, n, f))) {
             n = (RubyNumeric) n.op_plus(context, f);
         }
@@ -722,7 +722,7 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     protected static boolean int_half_p_half_up(ThreadContext context, RubyInteger num, RubyNumeric n, IRubyObject f) {
-        return num.isPositive(context);
+        return num.isPositiveNumber(context);
     }
 
     protected static boolean int_half_p_half_down(ThreadContext context, RubyInteger num, RubyNumeric n, IRubyObject f) {
@@ -953,7 +953,7 @@ public abstract class RubyInteger extends RubyNumeric {
             negaFlg = true;
         }
 
-        if (!pow.isPositive(context)) throw context.runtime.newZeroDivisionError();
+        if (!pow.isPositiveNumber(context)) throw context.runtime.newZeroDivisionError();
 
         if (pow instanceof RubyFixnum fixpow) {
             long mm = fixpow.value;

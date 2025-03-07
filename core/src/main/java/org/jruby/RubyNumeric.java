@@ -919,7 +919,7 @@ public class RubyNumeric extends RubyObject {
 
         if ((!Helpers.rbEqual(context, z, asFixnum(context, 0), sites.op_equal).isTrue()) &&
                 ((x.isNegative(context) && RubyNumeric.positiveInt(context, y)) ||
-                        (x.isPositive(context) && RubyNumeric.negativeInt(context, y)))) {
+                        (x.isPositiveNumber(context) && RubyNumeric.negativeInt(context, y)))) {
             if (y instanceof RubyFloat && Double.isInfinite(((RubyFloat)y).value)) {
                 return x;
             }
@@ -930,7 +930,7 @@ public class RubyNumeric extends RubyObject {
 
     public static boolean positiveInt(ThreadContext context, IRubyObject num) {
         return num instanceof RubyNumeric numeric ?
-                numeric.isPositive(context) :
+                numeric.isPositiveNumber(context) :
                 compareWithZero(context, num, sites(context).op_gt_checked).isTrue();
     }
 
@@ -1555,7 +1555,7 @@ public class RubyNumeric extends RubyObject {
      *
      */
     @JRubyMethod(name = "positive?")
-    public IRubyObject positive_p(ThreadContext context) {
+    public IRubyObject isPositive(ThreadContext context) {
         return compareWithZero(context, this, sites(context).op_gt_checked);
     }
 
@@ -1574,15 +1574,15 @@ public class RubyNumeric extends RubyObject {
 
     /**
      * @return
-     * @deprecated Use {@link org.jruby.RubyNumeric#isPositive(ThreadContext)} instead.
+     * @deprecated Use {@link org.jruby.RubyNumeric#isPositiveNumber(ThreadContext)} instead.
      */
     @Deprecated(since = "10.0")
     public boolean isPositive() {
-        return isPositive(getCurrentContext());
+        return isPositiveNumber(getCurrentContext());
     }
 
-    public boolean isPositive(ThreadContext context) {
-        return positive_p(context).isTrue();
+    public boolean isPositiveNumber(ThreadContext context) {
+        return isPositive(context).isTrue();
     }
 
     protected static IRubyObject compareWithZero(ThreadContext context, IRubyObject num, JavaSites.CheckedSites site) {

@@ -621,8 +621,8 @@ public class RubyRational extends RubyNumeric {
     }
 
     @Override
-    public IRubyObject positive_p(ThreadContext context) {
-        return asBoolean(context, signum(context) > 0);
+    public IRubyObject isPositive(ThreadContext context) {
+        return asBoolean(context, isPositiveNumber(context));
     }
 
     @Override
@@ -631,7 +631,7 @@ public class RubyRational extends RubyNumeric {
     }
 
     @Override
-    public boolean isPositive(ThreadContext context) {
+    public boolean isPositiveNumber(ThreadContext context) {
         return signum(context) > 0;
     }
 
@@ -866,7 +866,7 @@ public class RubyRational extends RubyNumeric {
         if (other instanceof RubyFixnum otherFixnum) {
             RubyNumeric num, den;
 
-            if (otherFixnum.isPositive(context)) {
+            if (otherFixnum.isPositiveNumber(context)) {
                 num = (RubyNumeric) this.num.pow(context, other);
                 den = (RubyNumeric) this.den.pow(context, other);
             } else if (otherFixnum.isNegative(context)) {
