@@ -1,5 +1,27 @@
 # MRI core language and classes tests
 
+ruby/enc/test_big5.rb
+ruby/enc/test_case_comprehensive.rb
+ruby/enc/test_case_mapping.rb
+ruby/enc/test_case_options.rb
+ruby/enc/test_cesu8.rb
+ruby/enc/test_cp949.rb
+ruby/enc/test_emoji.rb
+ruby/enc/test_emoji_breaks.rb
+ruby/enc/test_euc_jp.rb
+ruby/enc/test_euc_kr.rb
+ruby/enc/test_euc_tw.rb
+ruby/enc/test_gb18030.rb
+ruby/enc/test_gbk.rb
+ruby/enc/test_grapheme_breaks.rb
+ruby/enc/test_iso_8859.rb
+ruby/enc/test_koi8.rb
+ruby/enc/test_regex_casefold.rb
+ruby/enc/test_shift_jis.rb
+ruby/enc/test_utf16.rb
+ruby/enc/test_utf32.rb
+ruby/enc/test_windows_1251.rb
+ruby/enc/test_windows_1252.rb
 ruby/test_alias.rb
 # lots of subprocess launching, moved to extra
 #ruby/test_argf.rb
@@ -7,6 +29,8 @@ ruby/test_arithmetic_sequence.rb
 ruby/test_arity.rb
 ruby/test_array.rb
 ruby/test_assignment.rb
+# accesses RubyVM during load
+#ruby/test_ast.rb
 ruby/test_autoload.rb
 ruby/test_backtrace.rb
 ruby/test_basicinstructions.rb
@@ -43,15 +67,24 @@ ruby/test_float.rb
 ruby/test_fnmatch.rb
 ruby/test_frozen_error.rb
 ruby/test_gc.rb
+# accesses RubyVM during load, CRuby-specific
+#ruby/test_gc_compact.rb
 ruby/test_hash.rb
 ruby/test_ifunless.rb
 ruby/test_inlinecache.rb
+# accesses RubyVM during load
+#ruby/test_insns_leaf.rb
 ruby/test_integer.rb
 ruby/test_integer_comb.rb
 ruby/test_io.rb
 ruby/test_io_buffer.rb
 ruby/test_io_m17n.rb
+# CRuby-specific
+#ruby/test_iseq.rb
 ruby/test_iterator.rb
+# not relevant to JRuby
+#ruby/test_jit.rb
+#ruby/test_jit_debug.rb
 ruby/test_key_error.rb
 ruby/test_keyword.rb
 ruby/test_lambda.rb
@@ -73,6 +106,8 @@ ruby/test_not.rb
 ruby/test_numeric.rb
 ruby/test_object.rb
 ruby/test_objectspace.rb
+# accesses RubyVM during load
+#ruby/test_optimization.rb
 ruby/test_pack.rb
 ruby/test_parse.rb
 ruby/test_path.rb
@@ -80,7 +115,10 @@ ruby/test_pattern_matching.rb
 ruby/test_pipe.rb
 ruby/test_primitive.rb
 ruby/test_proc.rb
+# launces many subprocesses, moved to extra
+#ruby/test_process.rb
 ruby/test_rand.rb
+ruby/test_random_formatter.rb
 ruby/test_range.rb
 ruby/test_rational.rb
 ruby/test_rational2.rb
@@ -90,6 +128,13 @@ ruby/test_regexp.rb
 ruby/test_require.rb
 ruby/test_require_lib.rb
 ruby/test_rubyoptions.rb
+# accesses RubyVM during load
+#ruby/test_rubyvm.rb
+#ruby/test_rubyvm_jit.rb
+#ruby/test_rubyvm_mjit.rb
+# launches many subprocesses, moved to extra
+#ruby/test_settracefunc.rb
+#ruby/test_signal.rb
 ruby/test_sleep.rb
 ruby/test_sprintf.rb
 ruby/test_sprintf_comb.rb
@@ -99,6 +144,8 @@ ruby/test_stringchar.rb
 ruby/test_struct.rb
 ruby/test_super.rb
 ruby/test_symbol.rb
+# launches many subprocesses, moved to extra
+#ruby/test_syntax.rb
 ruby/test_system.rb
 ruby/test_thread.rb
 ruby/test_thread_cv.rb
@@ -114,22 +161,7 @@ ruby/test_variable.rb
 ruby/test_vm_dump.rb
 ruby/test_weakmap.rb
 ruby/test_whileuntil.rb
-
-# Tests below are disabled for various reasons
-
-# accesses RubyVM during load
-#ruby/test_ast.rb # This is also currently experimental (3.0.2)
-#ruby/test_iseq.rb
-#ruby/test_gc_compact.rb # also we don't support explicit compaction as API
-#ruby/test_jit.rb
-#ruby/test_jit_debug.rb
-#ruby/test_optimization.rb
-#ruby/test_rubyvm.rb
-#ruby/test_rubyvm_mjit.rb
-
-# Heavy subprocess tests, moved to mri.extra.index
-#ruby/test_settracefunc.rb
-#ruby/test_syntax.rb
-#ruby/test_process.rb
-#ruby/test_signal.rb
+# launches many subprocesses, moved to extra
 #ruby/test_yield.rb
+# not relevant to JRuby
+#ruby/test_yjit.rb
