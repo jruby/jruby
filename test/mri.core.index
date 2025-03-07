@@ -1,5 +1,3 @@
-# MRI core language and classes tests
-
 ruby/enc/test_big5.rb
 ruby/enc/test_case_comprehensive.rb
 ruby/enc/test_case_mapping.rb
@@ -22,7 +20,11 @@ ruby/enc/test_utf16.rb
 ruby/enc/test_utf32.rb
 ruby/enc/test_windows_1251.rb
 ruby/enc/test_windows_1252.rb
+# not relevant to JRuby
+#ruby/rjit/test_assembler.rb
 ruby/test_alias.rb
+# every test depends on ObjectSpace.count_objects, which we cannot implement
+#ruby/test_allocation.rb
 # lots of subprocess launching, moved to extra
 #ruby/test_argf.rb
 ruby/test_arithmetic_sequence.rb
@@ -41,16 +43,20 @@ ruby/test_case.rb
 ruby/test_class.rb
 ruby/test_clone.rb
 ruby/test_comparable.rb
+# nearly every test uses RubyVM
+#ruby/test_compile_prism.rb
 ruby/test_complex.rb
 ruby/test_complex2.rb
 ruby/test_complexrational.rb
 ruby/test_condition.rb
 ruby/test_const.rb
 ruby/test_continuation.rb
+ruby/test_data.rb
 ruby/test_default_gems.rb
 ruby/test_defined.rb
 ruby/test_dir.rb
 ruby/test_dir_m17n.rb
+ruby/test_dup.rb
 ruby/test_econv.rb
 ruby/test_encoding.rb
 ruby/test_enum.rb
@@ -65,6 +71,7 @@ ruby/test_fixnum.rb
 ruby/test_flip.rb
 ruby/test_float.rb
 ruby/test_fnmatch.rb
+ruby/test_frozen.rb
 ruby/test_frozen_error.rb
 ruby/test_gc.rb
 # accesses RubyVM during load, CRuby-specific
@@ -79,12 +86,10 @@ ruby/test_integer_comb.rb
 ruby/test_io.rb
 ruby/test_io_buffer.rb
 ruby/test_io_m17n.rb
+ruby/test_io_timeout.rb
 # CRuby-specific
 #ruby/test_iseq.rb
 ruby/test_iterator.rb
-# not relevant to JRuby
-#ruby/test_jit.rb
-#ruby/test_jit_debug.rb
 ruby/test_key_error.rb
 ruby/test_keyword.rb
 ruby/test_lambda.rb
@@ -130,16 +135,19 @@ ruby/test_require_lib.rb
 ruby/test_rubyoptions.rb
 # accesses RubyVM during load
 #ruby/test_rubyvm.rb
-#ruby/test_rubyvm_jit.rb
-#ruby/test_rubyvm_mjit.rb
 # launches many subprocesses, moved to extra
 #ruby/test_settracefunc.rb
+# depends on RubyVM::Shape
+#ruby/test_shapes.rb
+# launches many subprocesses, moved to extra
 #ruby/test_signal.rb
 ruby/test_sleep.rb
 ruby/test_sprintf.rb
 ruby/test_sprintf_comb.rb
 ruby/test_stack.rb
 ruby/test_string.rb
+# depends on EnvUtil.without_gc which we cannot support
+#ruby/test_string_memory.rb
 ruby/test_stringchar.rb
 ruby/test_struct.rb
 ruby/test_super.rb
@@ -159,9 +167,12 @@ ruby/test_undef.rb
 ruby/test_unicode_escape.rb
 ruby/test_variable.rb
 ruby/test_vm_dump.rb
+ruby/test_warning.rb
+ruby/test_weakkeymap.rb
 ruby/test_weakmap.rb
 ruby/test_whileuntil.rb
 # launches many subprocesses, moved to extra
 #ruby/test_yield.rb
 # not relevant to JRuby
 #ruby/test_yjit.rb
+#ruby/test_yjit_exit_locations.rb
