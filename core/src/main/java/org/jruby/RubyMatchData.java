@@ -414,6 +414,11 @@ public class RubyMatchData extends RubyObject {
         return start < 0 ? context.nil : asFixnum(context, regs.getEnd(index));
     }
 
+    @Deprecated(since = "10.0")
+    public RubyString inspect() {
+        return inspect(getCurrentContext());
+    }
+
     @JRubyMethod
     @Override
     public RubyString inspect(ThreadContext context) {

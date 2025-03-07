@@ -166,6 +166,11 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         return proxyConstructor.hashCode();
     }
 
+    @Deprecated(since = "10.0")
+    public RubyString inspect() {
+        return inspect(getCurrentContext());
+    }
+
     @Override
     @JRubyMethod
     public RubyString inspect(ThreadContext context) {
