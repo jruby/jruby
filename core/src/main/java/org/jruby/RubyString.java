@@ -1037,9 +1037,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     private void mutateChilledString() {
         if ((flags & CHILLED_LITERAL_F) != 0) {
-            getRuntime().getWarnings().warn("literal string will be frozen in the future");
+            getRuntime().getWarnings().warnDeprecated("literal string will be frozen in the future");
         } else if ((flags & CHILLED_SYMBOL_TO_S_F) != 0) {
-            getRuntime().getWarnings().warn("string returned by :" + value + ".to_s will be frozen in the future");
+            getRuntime().getWarnings().warnDeprecated("string returned by :" + value + ".to_s will be frozen in the future");
         }
         flags &= ~(CHILLED_LITERAL_F|CHILLED_SYMBOL_TO_S_F);
     }
