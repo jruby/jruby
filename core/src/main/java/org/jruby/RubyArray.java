@@ -59,6 +59,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Create;
 import org.jruby.api.JRubyAPI;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.java.util.ArrayUtils;
 import org.jruby.javasupport.JavaUtil;
@@ -2740,6 +2741,29 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         }
 
         return context.nil;
+    }
+
+    @Deprecated
+    public IRubyObject indexes(IRubyObject[] args) {
+        return indexes(getCurrentContext(), args);
+    }
+
+    @Deprecated(since = "10.0")
+    public IRubyObject indexes(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 1, -1);
+
+        warn(context, "Array#indexes is deprecated; use Array#values_at");
+
+        if (argc == 1) return Create.newArray(context, args[0]);
+
+        RubyArray ary = newBlankArrayInternal(context.runtime, argc);
+
+        for (int i = 0; i < argc; i++) {
+            ary.storeInternal(context, i, aref(context, args[i]));
+        }
+        ary.realLength = argc;
+
+        return ary;
     }
 
     @Deprecated(since = "10.0")

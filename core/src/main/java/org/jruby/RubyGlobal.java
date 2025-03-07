@@ -45,6 +45,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Create;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ValueAccessor;
@@ -103,6 +104,7 @@ import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.nameError;
 import static org.jruby.api.Error.runtimeError;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.api.Warn.warnDeprecated;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.FRAME;
 import static org.jruby.internal.runtime.GlobalVariable.Scope.GLOBAL;
@@ -567,6 +569,13 @@ public class RubyGlobal {
             EnvStringValidation.ensureValidEnvString(context, expected, "value");
             
             return super.has_value_p(context, expected.convertToString());
+        }
+
+        @Deprecated(since = "10.0")
+        public IRubyObject index(ThreadContext context, IRubyObject expected) {
+            warn(context, "ENV#index is deprecated; use ENV#key");
+
+            return key(context, expected);
         }
 
         @JRubyMethod(name = "keys")
