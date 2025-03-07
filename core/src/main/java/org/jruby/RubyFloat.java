@@ -221,8 +221,8 @@ public class RubyFloat extends RubyNumeric implements Appendable {
 
     @Override
     @JRubyMethod(name = "negative?")
-    public IRubyObject negative_p(ThreadContext context) {
-        return asBoolean(context, isNegative(context));
+    public IRubyObject isNegative(ThreadContext context) {
+        return asBoolean(context, isNegativeNumber(context));
     }
 
     @Override
@@ -232,7 +232,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     }
 
     @Override
-    public boolean isNegative(ThreadContext context) {
+    public boolean isNegativeNumber(ThreadContext context) {
         return signum(context) < 0;
     }
 

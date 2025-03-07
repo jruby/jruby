@@ -918,7 +918,7 @@ public class RubyNumeric extends RubyObject {
         IRubyObject z = sites.op_mod.call(context, this, this, y);
 
         if ((!Helpers.rbEqual(context, z, asFixnum(context, 0), sites.op_equal).isTrue()) &&
-                ((x.isNegative(context) && RubyNumeric.positiveInt(context, y)) ||
+                ((x.isNegativeNumber(context) && RubyNumeric.positiveInt(context, y)) ||
                         (x.isPositiveNumber(context) && RubyNumeric.negativeInt(context, y)))) {
             if (y instanceof RubyFloat && Double.isInfinite(((RubyFloat)y).value)) {
                 return x;
@@ -936,7 +936,7 @@ public class RubyNumeric extends RubyObject {
 
     public static boolean negativeInt(ThreadContext context, IRubyObject num) {
         return num instanceof RubyNumeric numeric ?
-                numeric.isNegative(context) :
+                numeric.isNegativeNumber(context) :
                 compareWithZero(context, num, sites(context).op_lt_checked).isTrue();
     }
 
@@ -1156,7 +1156,7 @@ public class RubyNumeric extends RubyObject {
 
     // MRI: num_step_negative_p
     private static boolean numStepNegative(ThreadContext context, IRubyObject num) {
-        if (num instanceof RubyInteger in && context.sites.Integer.op_lt.isBuiltin(num)) return in.isNegative(context);
+        if (num instanceof RubyInteger in && context.sites.Integer.op_lt.isBuiltin(num)) return in.isNegativeNumber(context);
 
         RubyFixnum zero = asFixnum(context, 0);
         IRubyObject r = getMetaClass(num).finvokeChecked(context, num, sites(context).op_gt_checked, zero);
@@ -1547,7 +1547,7 @@ public class RubyNumeric extends RubyObject {
      *
      */
     @JRubyMethod(name = "negative?")
-    public IRubyObject negative_p(ThreadContext context) {
+    public IRubyObject isNegative(ThreadContext context) {
         return compareWithZero(context, this, sites(context).op_lt_checked);
     }
 
@@ -1561,15 +1561,15 @@ public class RubyNumeric extends RubyObject {
 
     /**
      * @return
-     * @deprecated Use {@link org.jruby.RubyNumeric#isNegative(ThreadContext)} instead.
+     * @deprecated Use {@link org.jruby.RubyNumeric#isNegativeNumber(ThreadContext)} instead.
      */
     @Deprecated(since = "10.0")
     public boolean isNegative() {
-        return isNegative(getCurrentContext());
+        return isNegativeNumber(getCurrentContext());
     }
 
-    public boolean isNegative(ThreadContext context) {
-        return negative_p(context).isTrue();
+    public boolean isNegativeNumber(ThreadContext context) {
+        return isNegative(context).isTrue();
     }
 
     /**
