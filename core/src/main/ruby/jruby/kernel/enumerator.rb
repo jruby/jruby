@@ -158,7 +158,7 @@ class Enumerator
     alias_method :enum_for, :to_enum
 
     def inspect
-      suff = ''
+      suff = +''
       suff << ":#{@method}" unless @method.nil? || @method == :each
       suff << "(#{@args.inspect[1...-1]})" if @args && !@args.empty?
       "#<#{self.class}: #{@receiver.inspect}#{suff}>"
