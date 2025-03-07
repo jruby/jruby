@@ -82,6 +82,9 @@ public interface IRubyObject {
     
     /**
      * Check whether this object is nil.
+     *
+     * MRI: NIL_P macro
+     *
      * @return true for <code>nil</code> only
      */
     boolean isNil();

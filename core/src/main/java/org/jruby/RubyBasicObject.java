@@ -57,6 +57,7 @@ import org.jruby.runtime.builtin.InternalVariables;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.component.VariableEntry;
+import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.ivars.VariableTableManager;
 import org.jruby.runtime.marshal.CoreObjectType;
@@ -933,16 +934,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public void copySpecialInstanceVariables(IRubyObject clone) {
     }
 
-    /** rb_inspect
-     *
-     * The internal helper that ensures a RubyString instance is returned
-     * so dangerous casting can be omitted
-     * Preferred over callMethod(context, "inspect")
-     */
-    static RubyString inspect(ThreadContext context, IRubyObject object) {
-        return RubyString.objAsString(context, invokedynamic(context, object, INSPECT));
-    }
-
     @Override
     public IRubyObject rbClone() {
         var context = getRuntime().getCurrentContext();
@@ -1168,6 +1159,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
         return str;
     }
+
     /**
      * For most objects, the hash used in the default #inspect is just the
      * identity hashcode of the actual object.
@@ -1284,6 +1276,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     protected static boolean equalInternal(final ThreadContext context, final IRubyObject that, final IRubyObject other){
         return that == other || invokedynamic(context, that, OP_EQUAL, other).isTrue();
+    }
+
+    /**
+     * Helper method for checking equality, first using Java identity
+     * equality, and then calling the "eql?" method.
+     */
+    protected static boolean eqlInternal(final ThreadContext context, final IRubyObject that, final IRubyObject other){
+        return that == other || invokedynamic(context, that, EQL, other).isTrue();
     }
 
     /** method used for Hash key comparison (specialized for String, Symbol and Fixnum)

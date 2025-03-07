@@ -1,6 +1,7 @@
 package org.jruby.api;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyFrozenError;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.ArgumentError;
@@ -237,6 +238,26 @@ public class Error {
 
     public static NotImplementedError notImplementedError(ThreadContext context, String message) {
         return (NotImplementedError) context.runtime.newNotImplementedError(message);
+    }
+
+    public static ArgumentError keywordError(ThreadContext context, String error, RubyArray keys) {
+        long i = 0, len = keys.size();
+        StringBuilder message = new StringBuilder(error).append(" keyword");
+        if (len > 1) {
+            message.append('s');
+        }
+
+        if (len > 0) {
+            message.append(": ");
+            while (true) {
+                IRubyObject key = keys.eltOk(i);
+                message.append(key.inspect(context).toString());
+                if (++i >= len) break;
+                message.append(", ");
+            }
+        }
+
+        return argumentError(context, message.toString());
     }
 
     private static IRubyObject typeFor(Ruby runtime, IRubyObject object) {

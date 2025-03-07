@@ -519,6 +519,8 @@ public final class Ruby implements Constantizable {
 
         fiberClass = new ThreadFiberLibrary().createFiberClass(context, objectClass);
 
+        dataClass = RubyData.createDataClass(context, objectClass);
+
         // everything booted, so SizedQueue should be available; set up root fiber
         ThreadFiber.initRootFiber(context, context.getThread());
 
@@ -2517,6 +2519,10 @@ public final class Ruby implements Constantizable {
 
     public RubyClass getBufferMaskError() {
         return bufferMaskError;
+    }
+
+    public RubyClass getData() {
+        return dataClass;
     }
 
     @Deprecated
@@ -5589,11 +5595,6 @@ public final class Ruby implements Constantizable {
     void setException(RubyClass exceptionClass) {
     }
 
-    @Deprecated
-    public RubyClass getData() {
-        return null;
-    }
-
     private final ConcurrentHashMap<String, Invalidator> constantNameInvalidators =
         new ConcurrentHashMap<String, Invalidator>(
             16    /* default initial capacity */,
@@ -5709,6 +5710,7 @@ public final class Ruby implements Constantizable {
     private final RubyClass queueClass;
     private final RubyClass closedQueueError;
     private final RubyClass sizedQueueClass;
+    private final RubyClass dataClass;
 
     private RubyClass tmsStruct;
     private RubyClass passwdStruct;
