@@ -115,8 +115,13 @@ public class JavaPackage extends RubyModule {
         return newString(context, packageName);
     }
 
+    @Deprecated(since = "10.0")
+    public RubyString to_s() {
+        return (RubyString) to_s(getCurrentContext());
+    }
+
     @Override
-    public RubyString to_s(ThreadContext context) { return package_name(); }
+    public IRubyObject to_s(ThreadContext context) { return package_name(); }
 
     @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {

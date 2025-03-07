@@ -1327,15 +1327,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return str.checkStringType();
     }
 
-    @Deprecated(since = "10.0")
-    public RubyString to_s() {
-        return (RubyString) to_s(getCurrentContext());
-    }
-
     @SuppressWarnings("ReferenceEquality")
     @JRubyMethod(name = {"to_s", "to_str"})
     @Override
-    public IRubyObject to_s(ThreadContext context) {
+    public RubyString to_s(ThreadContext context) {
         return metaClass.getRealClass() != stringClass(context) ? dupString(context, this) : this;
     }
 

@@ -862,10 +862,17 @@ public abstract class RubyInteger extends RubyNumeric {
         return RubyFixnum.one(context.runtime);
     }
 
+    @Deprecated(since = "10.0")
+    public RubyString to_s() {
+        return to_s(getCurrentContext());
+    }
+
+    // Note: to not change interface by adding abstract method I made a base impl.
     @Override
     @JRubyMethod(name = {"to_s", "inspect"})
-    public abstract RubyString to_s(ThreadContext context);
-
+    public RubyString to_s(ThreadContext context) {
+        throw new RuntimeException("all numeric types must override this method");
+    }
 
     @Deprecated(since = "10.0")
     public RubyString to_s(IRubyObject x) {

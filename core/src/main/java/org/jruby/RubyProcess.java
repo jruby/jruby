@@ -395,6 +395,11 @@ public class RubyProcess {
             return runtime.newFixnum(status);
         }
 
+        @Deprecated(since = "10.0")
+        public IRubyObject to_s(Ruby runtime) {
+            return to_s(getCurrentContext());
+        }
+
         @Override
         @JRubyMethod
         public IRubyObject to_s(ThreadContext context) {

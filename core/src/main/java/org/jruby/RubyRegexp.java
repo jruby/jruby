@@ -848,7 +848,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                     } else {
                         hasAsciiOnly = true;
                     }
-                    re = regex.to_s(context).getByteList();
+                    re = ((RubyString) regex.to_s(context)).getByteList();
                 } else {
                     RubyString str = e.convertToString();
                     enc = str.getEncoding();
@@ -1440,6 +1440,11 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     private final static int EMBEDDABLE = RE_OPTION_MULTILINE|RE_OPTION_IGNORECASE|RE_OPTION_EXTENDED;
+
+    @Deprecated(since = "10.0")
+    public RubyString to_s() {
+        return to_s(getCurrentContext());
+    }
 
     @Override
     @JRubyMethod

@@ -3243,11 +3243,16 @@ public class RubyModule extends RubyObject {
         return asFixnum(context, id);
     }
 
+    @Override
+    public RubyString to_s() {
+        return (RubyString) to_s(getCurrentContext());
+    }
+
     /** rb_mod_to_s
      *
      */
     @JRubyMethod(name = "to_s", alias = "inspect")
-    public RubyString to_s(ThreadContext context) {
+    public IRubyObject to_s(ThreadContext context) {
         if (isSingleton()) {
             IRubyObject attached = ((MetaClass) this).getAttached();
             RubyString buffer = newString(context, "#<Class:");
