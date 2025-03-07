@@ -1,3 +1,7 @@
+# processing request from generation of this:
+# ~/Applications/revapi/revapi.sh --extensions=org.revapi:revapi-java:0.28.1,org.revapi:revapi-reporter-text:0.15.0 --old=../jruby/lib/jruby.jar --new=lib/jruby.jar -c tool/revapi.config
+# This should become part of maven task but between revapi docs and ruby pom syntax I gave up
+
 require 'optparse'
 require 'errors'                      # Generated from revapi
 require_relative 'acceptable_errors'  # Our list of removals and unimportant errors
