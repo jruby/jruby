@@ -7,6 +7,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
+import java.util.Collection;
 import java.util.List;
 
 import static org.jruby.RubyArray.checkLength;
@@ -137,6 +138,17 @@ public class Create {
     }
 
     /**
+     * Create a new array with elements from the given Collection.
+     *
+     * @param context the current thread context
+     * @param elements the elements of the array
+     * @return the new array
+     */
+    public static RubyArray<?> newArray(ThreadContext context, Collection<? extends IRubyObject> elements) {
+        return RubyArray.newArray(context.runtime, elements);
+    }
+
+    /**
      * Create a new Hash instance.
      * @param context the current thread context
      * @return a new hash
@@ -147,7 +159,25 @@ public class Create {
     }
 
     /**
+     * Create a new empty Hash instance.
+     *
+     * The expectation is that it will remain empty, so we minimize allocation.
+     *
+     * TODO: make this actually avoid allocating buckets by fixing RubyHash support for zero buckets.
+     *
+     * @param context the current thread context
+     * @return a new hash
+     */
+    // MRI: rb_hash_new
+    public static RubyHash newEmptyHash(ThreadContext context) {
+        return newSmallHash(context);
+    }
+
+    /**
      * Create a new Hash instance.  Use this when you expect very few pairs.
+     *
+     * TODO: provide a way to allocate a sized small hash
+     *
      * @param context the current thread context
      * @return a new hash
      */

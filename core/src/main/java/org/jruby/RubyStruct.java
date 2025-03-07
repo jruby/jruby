@@ -993,7 +993,7 @@ public class RubyStruct extends RubyObject {
         }
     }
 
-    public static RubyStruct unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
+    public static IRubyObject unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         final Ruby runtime = input.getRuntime();
         var context = runtime.getCurrentContext();
 
@@ -1001,6 +1001,10 @@ public class RubyStruct extends RubyObject {
         RubyClass rbClass = pathToClass(context, className.asJavaString());
         if (rbClass == null) {
             throw runtime.newNameError(UNINITIALIZED_CONSTANT, structClass(context), className);
+        }
+
+        if (rbClass.isKindOfModule(runtime.getData())) {
+            return RubyData.unmarshalFrom(context, input, rbClass);
         }
 
         final RubyArray member = __member__(context, rbClass);
@@ -1023,7 +1027,7 @@ public class RubyStruct extends RubyObject {
         return result;
     }
 
-    private static RubyClass pathToClass(ThreadContext context, String path) {
+    static RubyClass pathToClass(ThreadContext context, String path) {
         // FIXME: Throw the right ArgumentError's if the class is missing or if it's a module.
         return (RubyClass) context.runtime.getClassFromPath(path);
     }

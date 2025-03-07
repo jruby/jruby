@@ -1176,6 +1176,22 @@ public class RubyHash extends RubyObject implements Map {
         internalPutSmall(key, value);
     }
 
+    // MRI: rb_hash_set_pair, fast/small version
+    public final void fastASetSmallPair(ThreadContext context, IRubyObject _pair) {
+        IRubyObject pair;
+
+        pair = TypeConverter.checkArrayType(context, _pair);
+        if (pair.isNil()) {
+            throw typeError(context, "wrong element type " + _pair.getType() + " (expected array)");
+        }
+        RubyArray pairAry = (RubyArray) pair;
+        int len = pairAry.size();
+        if (len != 2) {
+            throw argumentError(context, "element has wrong array length (expected 2, was " + len + ")");
+        }
+        fastASetSmall(pairAry.eltOk(0), pairAry.eltOk(1));
+    }
+
     public final void fastASetCheckString(Ruby runtime, IRubyObject key, IRubyObject value) {
       if (key instanceof RubyString strKey && !isComparedByIdentity()) {
           op_asetForString(runtime, strKey, value);
@@ -2126,6 +2142,12 @@ public class RubyHash extends RubyObject implements Map {
         }
 
         return this;
+    }
+
+    public void addAll(ThreadContext context, RubyHash otherHash) {
+        if (!otherHash.empty_p().isTrue()) {
+            otherHash.visitAll(context, (ctxt, self, key, value, index) -> op_aset(ctxt, key, value));
+        }
     }
 
     @Deprecated

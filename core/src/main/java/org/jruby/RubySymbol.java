@@ -108,12 +108,13 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     private final String symbol;
     private final int id;
     private final ByteList symbolBytes;
+    private final RubyString fstring;
     private final int hashCode;
     private String decodedString;
     private volatile RubyString rubyString;
     private static final AtomicReferenceFieldUpdater<RubySymbol, RubyString> RUBY_STRING_UPDATER = AtomicReferenceFieldUpdater.newUpdater(RubySymbol.class, RubyString.class, "rubyString");
     private transient Object constant;
-    private SymbolNameType type;
+    private final SymbolNameType type;
 
     /**
      *
@@ -134,6 +135,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
             symbolBytes.setEncoding(USASCIIEncoding.INSTANCE);
         }
         this.symbolBytes = symbolBytes;
+        this.fstring = runtime.freezeAndDedupString(symbolBytes);
         this.id = runtime.allocSymbolId();
 
         long k0 = Helpers.hashStart(runtime, id);
@@ -282,24 +284,31 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     }
 
     /**
-     * Is the string this constant represents a valid constant identifier name.
+     * Is the string this symbol represents a valid constant identifier name.
      */
     public boolean validConstantName() {
         return type == SymbolNameType.CONST;
     }
 
     /**
-     * Is the string this constant represents a valid constant identifier name.
+     * Is the string this symbol represents a valid constant identifier name.
      */
     public boolean validInstanceVariableName() {
         return type == SymbolNameType.INSTANCE;
     }
 
     /**
-     * Is the string this constant represents a valid constant identifier name.
+     * Is the string this symbol represents a valid constant identifier name.
      */
     public boolean validClassVariableName() {
         return type == SymbolNameType.CLASS;
+    }
+
+    /**
+     * Is the string this symbol represents a valid attribute setter name.
+     */
+    public boolean validAttrsetName() {
+        return type == SymbolNameType.ATTRSET;
     }
 
 
@@ -544,6 +553,10 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     @Override
     public RubyString asString() {
         return (RubyString) to_s(metaClass.runtime.getCurrentContext());
+    }
+
+    public RubyString fstring() {
+        return fstring;
     }
 
     @JRubyMethod(name = "===")
@@ -997,7 +1010,9 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     @Override
     public void setEncoding(Encoding e) {
         getBytes().setEncoding(e);
-        type = IdUtil.determineSymbolNameType(getRuntime(), getBytes());
+        if (this.type != IdUtil.determineSymbolNameType(getRuntime(), getBytes())) {
+            // this should warn or raise or something; symbol types should not change (nor should encoding)
+        };
     }
 
     public static final class SymbolTable {
