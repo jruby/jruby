@@ -215,7 +215,7 @@ public class MRI {
     }
 
     public static RubyString rb_str_escape(ThreadContext context, RubyString str) {
-        return EncodingUtils.rbStrEscape(context, str);
+        return (RubyString) RubyString.rbStrEscape(context, str);
     }
 
     public static int rb_str_buf_cat_escaped_char(RubyString result, long c, boolean unicode_p) {

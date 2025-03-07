@@ -2628,6 +2628,12 @@ public class RubyModule extends RubyObject {
         return defineClassUnder(getCurrentContext(), name, superClazz, allocator, null, -1);
     }
 
+    @Deprecated(since = "10.0")
+    public RubyClass defineOrGetClassUnder(String name, RubyClass superClazz, ObjectAllocator allocator,
+                                           String file, int line) {
+        return defineClassUnder(getCurrentContext(), name, superClazz, allocator, file, line);
+    }
+
     /**
      * Internal API only used by our IR runtime helpers in setting up Ruby-defined classes or re-accessing them
      * if they already exist.  Look at
@@ -2698,6 +2704,11 @@ public class RubyModule extends RubyObject {
     @Deprecated(since = "10.0")
     public RubyModule defineOrGetModuleUnder(String name) {
         return defineOrGetModuleUnder(getCurrentContext(), name, null, -1);
+    }
+
+    @Deprecated(since = "10.0")
+    public RubyModule defineOrGetModuleUnder(String name, String file, int line) {
+        return defineOrGetModuleUnder(getCurrentContext(), name, file, line);
     }
 
     @Interp

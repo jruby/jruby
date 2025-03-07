@@ -2341,8 +2341,9 @@ public class EncodingUtils {
         return getEncoding(str.getByteList());
     }
 
-    public static RubyString rbStrEscape(ThreadContext context, RubyString str) {
-        return (RubyString) RubyString.rbStrEscape(context, str);
+    @Deprecated(since = "10.0")
+    public static RubyString rbStrEscape(Ruby runtime, RubyString str) {
+        return (RubyString) RubyString.rbStrEscape(runtime.getCurrentContext(), str);
     }
 
     // MRI: ISPRINT
