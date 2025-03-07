@@ -2608,6 +2608,11 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 f);
     }
 
+    @Deprecated(since = "10.0")
+    public IRubyObject setFiberScheduler(IRubyObject scheduler) {
+        return setFiberScheduler(getCurrentContext(), scheduler);
+    }
+
     /**
      * Set the scheduler for the current thread.
      *

@@ -59,6 +59,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.api.Warn;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.common.RubyWarnings;
 import org.jruby.exceptions.CatchThrow;
 import org.jruby.exceptions.MainExitException;
@@ -332,6 +333,13 @@ public class RubyKernel {
         // We had to save callInfo from original call because kwargs needs to still pass through to IO#open
         context.callInfo = callInfo;
         return RubyIO.open(context, fileClass(context), args, block);
+    }
+
+    @Deprecated(since = "10.0")
+    public static IRubyObject getc(ThreadContext context, IRubyObject recv) {
+        Warn.warn(context, "getc is obsolete; use STDIN.getc instead");
+        IRubyObject defin = globalVariables(context).get("$stdin");
+        return sites(context).getc.call(context, defin, defin);
     }
 
     // MRI: rb_f_gets
@@ -2189,6 +2197,11 @@ public class RubyKernel {
     @JRubyMethod(name = "respond_to?")
     public static IRubyObject respond_to_p(ThreadContext context, IRubyObject self, IRubyObject name, IRubyObject includePrivate) {
         return ((RubyBasicObject) self).respond_to_p(context, name, includePrivate.isTrue());
+    }
+
+    @Deprecated(since = "10.0")
+    public static RubyFixnum hash(IRubyObject self) {
+        return ((RubyBasicObject) self).hash(((RubyBasicObject) self).getCurrentContext());
     }
 
     @JRubyMethod

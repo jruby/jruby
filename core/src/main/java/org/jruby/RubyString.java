@@ -1910,6 +1910,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      * @param pattern Regexp or String
      */
 
+    @Deprecated(since = "10.0")
+    public IRubyObject match(ThreadContext context, IRubyObject pattern) {
+        return match(context, pattern, Block.NULL_BLOCK);
+    }
+
     @JRubyMethod(name = "match", writes = BACKREF)
     public IRubyObject match(ThreadContext context, IRubyObject pattern, Block block) {
         RubyRegexp coercedPattern = getPattern(context, pattern);
