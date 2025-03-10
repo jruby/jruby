@@ -59,7 +59,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Create;
 import org.jruby.api.JRubyAPI;
 import org.jruby.ast.util.ArgsUtil;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.java.util.ArrayUtils;
 import org.jruby.javasupport.JavaUtil;
@@ -5295,12 +5294,12 @@ float_loop:
         }
     }
 
-    public static void marshalTo(RubyArray array, NewMarshal output, ThreadContext context, NewMarshal.RubyOutputStream out) {
+    public static void marshalTo(ThreadContext context, NewMarshal.RubyOutputStream out, RubyArray array, NewMarshal output) {
         output.registerLinkTarget(array);
 
         int length = array.realLength;
 
-        output.writeInt(out, length);
+        output.writeInt(context, out, length);
         try {
             for (int i = 0; i < length; i++) {
                 output.dumpObject(context, out, array.eltInternal(i));

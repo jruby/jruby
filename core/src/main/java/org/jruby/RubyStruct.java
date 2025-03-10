@@ -979,12 +979,12 @@ public class RubyStruct extends RubyObject {
         }
     }
 
-    public static void marshalTo(RubyStruct struct, NewMarshal output, ThreadContext context, NewMarshal.RubyOutputStream out) {
+    public static void marshalTo(ThreadContext context, NewMarshal.RubyOutputStream out, RubyStruct struct, NewMarshal output) {
         output.registerLinkTarget(struct);
         output.dumpDefaultObjectHeader(context, out, 'S', struct.getMetaClass());
 
         RubyArray member = __member__(context, struct.classOf());
-        output.writeInt(out, member.size());
+        output.writeInt(context, out, member.size());
 
         for (int i = 0; i < member.size(); i++) {
             RubySymbol name = (RubySymbol) member.eltInternal(i);

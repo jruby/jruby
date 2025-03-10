@@ -2521,10 +2521,10 @@ public class RubyHash extends RubyObject implements Map {
         if (hash.ifNone != UNDEF) output.dumpObject(hash.ifNone);
     }
 
-    public static void marshalTo(final RubyHash hash, final NewMarshal output, ThreadContext context, NewMarshal.RubyOutputStream out) {
+    public static void marshalTo(ThreadContext context, NewMarshal.RubyOutputStream out, final RubyHash hash, final NewMarshal output) {
         output.registerLinkTarget(hash);
         int hashSize = hash.size();
-        output.writeInt(out, hashSize);
+        output.writeInt(context, out, hashSize);
         try {
             hash.visitLimited(context, new VisitorWithState<NewMarshal>() {
                 @Override
@@ -2534,7 +2534,7 @@ public class RubyHash extends RubyObject implements Map {
                 }
             }, hashSize, output);
         } catch (VisitorIOException e) {
-            out.handle((IOException) e.getCause());
+            out.handle(context, (IOException) e.getCause());
         }
 
         if (hash.ifNone != UNDEF) output.dumpObject(context, out, hash.ifNone);

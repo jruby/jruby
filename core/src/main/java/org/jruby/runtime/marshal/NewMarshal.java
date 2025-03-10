@@ -53,7 +53,7 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
-import org.jruby.api.Convert;
+import org.jruby.api.Error;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Constants;
@@ -96,47 +96,45 @@ public class NewMarshal {
         this.depthLimit = depthLimit >= 0 ? depthLimit : Integer.MAX_VALUE;
     }
 
-    public static class RubyOutputStream extends OutputStream {
+    public static class RubyOutputStream {
         private final OutputStream wrap;
-        private final ThreadContext context;
 
-        public RubyOutputStream(OutputStream wrap, ThreadContext context) {
+        public RubyOutputStream(OutputStream wrap) {
             this.wrap = wrap;
-            this.context = context;
         }
 
-        public void write(int b) {
+        public void write(ThreadContext context, int b) {
             try {
                 wrap.write(b);
             } catch (IOException ioe) {
-                handle(ioe);
+                handle(context, ioe);
             }
         }
 
-        public void write(byte[] b, int off, int len) {
+        public void write(ThreadContext context, byte[] b, int off, int len) {
             try {
                 wrap.write(b, off, len);
             } catch (IOException ioe) {
-                handle(ioe);
+                handle(context, ioe);
             }
         }
 
-        public void write(byte[] b) {
+        public void write(ThreadContext context, byte[] b) {
             try {
                 wrap.write(b);
             } catch (IOException ioe) {
-                handle(ioe);
+                handle(context, ioe);
             }
         }
 
-        public void handle(IOException ioe) {
-            throw context.runtime.newIOErrorFromException(ioe);
+        public void handle(ThreadContext context, IOException ioe) {
+            throw Error.toRubyException(context, ioe);
         }
     }
 
-    public void start(RubyOutputStream out) {
-        out.write(Constants.MARSHAL_MAJOR);
-        out.write(Constants.MARSHAL_MINOR);
+    public void start(ThreadContext context, RubyOutputStream out) {
+        out.write(context, Constants.MARSHAL_MAJOR);
+        out.write(context, Constants.MARSHAL_MINOR);
     }
 
     public void dumpObject(ThreadContext context, RubyOutputStream out, IRubyObject value) {
@@ -150,7 +148,7 @@ public class NewMarshal {
     }
 
     public void registerLinkTarget(IRubyObject newObject) {
-        if (shouldBeRegistered(newObject.getRuntime().getCurrentContext(), newObject)) {
+        if (shouldBeRegistered(newObject)) {
             cache.register(newObject);
         }
     }
@@ -159,7 +157,7 @@ public class NewMarshal {
         cache.registerSymbol(sym);
     }
 
-    static boolean shouldBeRegistered(ThreadContext context, IRubyObject value) {
+    static boolean shouldBeRegistered(IRubyObject value) {
         if (value.isNil()) {
             return false;
         } else if (value instanceof RubyBoolean) {
@@ -175,20 +173,20 @@ public class NewMarshal {
         return value <= RubyFixnum.MAX_MARSHAL_FIXNUM && value >= RubyFixnum.MIN_MARSHAL_FIXNUM;
     }
 
-    private void writeAndRegisterSymbol(RubyOutputStream out, RubySymbol sym) {
+    private void writeAndRegisterSymbol(ThreadContext context, RubyOutputStream out, RubySymbol sym) {
         if (cache.isSymbolRegistered(sym)) {
-            cache.writeSymbolLink(this, out, sym);
+            cache.writeSymbolLink(context, out, this, sym);
         } else {
             registerSymbol(sym);
-            dumpSymbol(out, sym.getBytes());
+            dumpSymbol(context, out, sym.getBytes());
         }
     }
 
     private void writeAndRegister(ThreadContext context, RubyOutputStream out, IRubyObject value) {
         if (!(value instanceof RubySymbol) && cache.isRegistered(value)) {
-            cache.writeLink(this, out, value);
+            cache.writeLink(context, out, this, value);
         } else {
-            getMetaClass(value).smartDump(this, context, out, value);
+            getMetaClass(value).smartDump(context, out, this, value);
         }
     }
 
@@ -225,14 +223,14 @@ public class NewMarshal {
                 // and output the ivar header here
 
                 // write `I' instance var signet if class is NOT a direct subclass of Object
-                out.write(TYPE_IVAR);
+                out.write(context, TYPE_IVAR);
                 dumpBaseObject(context, out, value, nativeClassIndex);
 
                 if (shouldMarshalEncoding) {
-                    writeInt(out, size + 1); // vars preceded by encoding
+                    writeInt(context, out, size + 1); // vars preceded by encoding
                     writeEncoding(context, out, ((MarshalEncoding) value).getMarshalEncoding());
                 } else {
-                    writeInt(out, size);
+                    writeInt(context, out, size);
                 }
 
                 ivarAccessors.forEach(new VariableDumper(context, out, value));
@@ -324,18 +322,18 @@ public class NewMarshal {
 
             switch (nativeClassIndex) {
                 case ARRAY:
-                    out.write('[');
-                    RubyArray.marshalTo((RubyArray) value, this, context, out);
+                    out.write(context, '[');
+                    RubyArray.marshalTo(context, out, (RubyArray) value, this);
                     return;
                 case FALSE:
-                    out.write('F');
+                    out.write(context, 'F');
                     return;
                 case FIXNUM:
                     RubyFixnum fixnum = (RubyFixnum) value;
 
                     if (isMarshalFixnum(fixnum)) {
-                        out.write('i');
-                        writeInt(out, fixnum.asInt(context));
+                        out.write(context, 'i');
+                        writeInt(context, out, fixnum.asInt(context));
                         return;
                     }
                     // FIXME: inefficient; constructing a bignum just for dumping?
@@ -343,38 +341,38 @@ public class NewMarshal {
 
                     // fall through
                 case BIGNUM:
-                    out.write('l');
-                    RubyBignum.marshalTo((RubyBignum) value, this, out);
+                    out.write(context, 'l');
+                    RubyBignum.marshalTo(context, out, (RubyBignum) value, this);
                     return;
                 case CLASS:
                     if (((RubyClass) value).isSingleton()) throw typeError(context, "singleton class can't be dumped");
-                    out.write('c');
-                    RubyClass.marshalTo((RubyClass) value, this, out);
+                    out.write(context, 'c');
+                    RubyClass.marshalTo(context, out, (RubyClass) value, this);
                     return;
                 case FLOAT:
-                    out.write('f');
-                    RubyFloat.marshalTo((RubyFloat) value, this, out);
+                    out.write(context, 'f');
+                    RubyFloat.marshalTo(context, out, (RubyFloat) value, this);
                     return;
                 case HASH: {
                     RubyHash hash = (RubyHash) value;
 
                     if (hash.getIfNone() == RubyBasicObject.UNDEF) {
-                        out.write('{');
+                        out.write(context, '{');
                     } else if (hash.hasDefaultProc()) {
                         throw typeError(context, "can't dump hash with default proc");
                     } else {
-                        out.write('}');
+                        out.write(context, '}');
                     }
 
-                    RubyHash.marshalTo(hash, this, context, out);
+                    RubyHash.marshalTo(context, out, hash, this);
                     return;
                 }
                 case MODULE:
-                    out.write('m');
-                    RubyModule.marshalTo((RubyModule) value, this, context, out);
+                    out.write(context, 'm');
+                    RubyModule.marshalTo(context, out, (RubyModule) value, this);
                     return;
                 case NIL:
-                    out.write('0');
+                    out.write(context, '0');
                     return;
                 case OBJECT:
                 case BASICOBJECT:
@@ -386,30 +384,30 @@ public class NewMarshal {
                      for Data using kind_of.
                      */
                     if (type.isKindOfModule(context.runtime.getData())) {
-                        RubyData.marshalTo(value, this, context, out);
+                        RubyData.marshalTo(context, out, value, this);
                         return;
                     }
 
                     dumpDefaultObjectHeader(context, out, type);
-                    type.getRealClass().marshal(value, this, context, out);
+                    type.getRealClass().marshal(context, out, value, this);
                     return;
                 case REGEXP:
-                    out.write('/');
-                    RubyRegexp.marshalTo((RubyRegexp) value, this, out);
+                    out.write(context, '/');
+                    RubyRegexp.marshalTo(context, (RubyRegexp) value, this, out);
                     return;
                 case STRING:
                     registerLinkTarget(value);
-                    out.write('"');
-                    writeString(out, value.convertToString().getByteList());
+                    out.write(context, '"');
+                    writeString(context, out, value.convertToString().getByteList());
                     return;
                 case STRUCT:
-                    RubyStruct.marshalTo((RubyStruct) value, this, context, out);
+                    RubyStruct.marshalTo(context, out, (RubyStruct) value, this);
                     return;
                 case SYMBOL:
-                    writeAndRegisterSymbol(out, ((RubySymbol) value));
+                    writeAndRegisterSymbol(context, out, ((RubySymbol) value));
                     return;
                 case TRUE:
-                    out.write('T');
+                    out.write(context, 'T');
                     return;
                 default:
                     runtime = context.runtime;
@@ -418,7 +416,7 @@ public class NewMarshal {
         } else {
             RubyClass metaClass = getMetaClass(value);
             dumpDefaultObjectHeader(context, out, metaClass);
-            metaClass.getRealClass().marshal(value, this, context, out);
+            metaClass.getRealClass().marshal(context, out, value, this);
         }
     }
 
@@ -432,9 +430,9 @@ public class NewMarshal {
 
     private void userNewCommon(ThreadContext context, RubyOutputStream out, IRubyObject value, CacheEntry entry) {
         registerLinkTarget(value);
-        out.write(TYPE_USRMARSHAL);
+        out.write(context, TYPE_USRMARSHAL);
         final RubyClass klass = getMetaClass(value);
-        writeAndRegisterSymbol(out, asSymbol(context, klass.getRealClass().getName(context)));
+        writeAndRegisterSymbol(context, out, asSymbol(context, klass.getRealClass().getName(context)));
 
         IRubyObject marshaled = entry != null ?
                 entry.method.call(context, value, entry.sourceModule, "marshal_dump") :
@@ -471,30 +469,30 @@ public class NewMarshal {
             clearVariableState();
 
             if (size > 0) {
-                out.write(TYPE_IVAR);
-                dumpUserdefBase(out, context, klass, marshaled);
+                out.write(context, TYPE_IVAR);
+                dumpUserdefBase(context, out, klass, marshaled);
 
-                writeInt(out, size);
+                writeInt(context, out, size);
 
                 ivarAccessors.forEach(new VariableDumper(context, out, marshaled));
             } else {
-                dumpUserdefBase(out, context, klass, marshaled);
+                dumpUserdefBase(context, out, klass, marshaled);
             }
         } else {
-            dumpUserdefBase(out, context, klass, marshaled);
+            dumpUserdefBase(context, out, klass, marshaled);
         }
 
         registerLinkTarget(value);
     }
 
-    private void dumpUserdefBase(RubyOutputStream out, ThreadContext context, RubyClass klass, RubyString marshaled) {
-        out.write(TYPE_USERDEF);
-        writeAndRegisterSymbol(out, asSymbol(context, klass.getRealClass().getName(context)));
-        writeString(out, marshaled.getByteList());
+    private void dumpUserdefBase(ThreadContext context, RubyOutputStream out, RubyClass klass, RubyString marshaled) {
+        out.write(context, TYPE_USERDEF);
+        writeAndRegisterSymbol(context, out, asSymbol(context, klass.getRealClass().getName(context)));
+        writeString(context, out, marshaled.getByteList());
     }
 
     public void writeUserClass(ThreadContext context, RubyOutputStream out, RubyClass type) {
-        out.write(TYPE_UCLASS);
+        out.write(context, TYPE_UCLASS);
 
         // w_unique
         if (type.getName(context).charAt(0) == '#') {
@@ -503,7 +501,7 @@ public class NewMarshal {
         }
         
         // w_symbol
-        writeAndRegisterSymbol(out, asSymbol(context, type.getName(context)));
+        writeAndRegisterSymbol(context, out, asSymbol(context, type.getName(context)));
     }
 
     public void dumpVariables(ThreadContext context, RubyOutputStream out, IRubyObject value) {
@@ -515,7 +513,7 @@ public class NewMarshal {
         int size = variableCount;
         clearVariableState();
 
-        writeInt(out, size);
+        writeInt(context, out, size);
 
         ivarAccessors.forEach(new VariableDumper(context, out, value));
     }
@@ -545,12 +543,12 @@ public class NewMarshal {
 
     public <T extends IRubyObject> void dumpVariables(ThreadContext context, RubyOutputStream out, T value, int extraSize, VariableSupplier<T> extra) {
         dumpVariables(context, out, value, extraSize);
-        extra.forEach(this, context, out, value, (m, c, o, name, v) -> dumpVariable(m, c, o, name, v));
+        extra.forEach(this, context, out, value, (m, c, o, name, v) -> dumpVariable(c, o, m, name, v));
     }
 
-    private static void dumpVariable(NewMarshal marshal, ThreadContext context, RubyOutputStream out, String name, Object value) {
+    private static void dumpVariable(ThreadContext context, RubyOutputStream out, NewMarshal marshal, String name, Object value) {
         if (value instanceof IRubyObject) {
-            marshal.writeAndRegisterSymbol(out, asSymbol(context, name));
+            marshal.writeAndRegisterSymbol(context, out, asSymbol(context, name));
             marshal.dumpObject(context, out, (IRubyObject) value);
         }
     }
@@ -558,13 +556,13 @@ public class NewMarshal {
     public void writeEncoding(ThreadContext context, RubyOutputStream out, Encoding encoding) {
         var symbolTable = context.runtime.getSymbolTable();
         if (encoding == null || encoding == USASCIIEncoding.INSTANCE) {
-            writeAndRegisterSymbol(out, symbolTable.getEncodingSymbolE());
+            writeAndRegisterSymbol(context, out, symbolTable.getEncodingSymbolE());
             writeObjectData(context, out, context.fals);
         } else if (encoding == UTF8Encoding.INSTANCE) {
-            writeAndRegisterSymbol(out, symbolTable.getEncodingSymbolE());
+            writeAndRegisterSymbol(context, out, symbolTable.getEncodingSymbolE());
             writeObjectData(context, out, context.tru);
         } else {
-            writeAndRegisterSymbol(out, symbolTable.getEncodingSymbol());
+            writeAndRegisterSymbol(context, out, symbolTable.getEncodingSymbol());
             RubyString encodingString = new RubyString(context.runtime, stringClass(context), encoding.getName());
             writeObjectData(context, out, encodingString);
         }
@@ -590,8 +588,8 @@ public class NewMarshal {
             type = type.getSuperClass();
         }
         while(type.isIncluded()) {
-            out.write('e');
-            writeAndRegisterSymbol(out, asSymbol(context, type.getOrigin().getName(context)));
+            out.write(context, 'e');
+            writeAndRegisterSymbol(context, out, asSymbol(context, type.getOrigin().getName(context)));
             type = type.getSuperClass();
         }
         return type;
@@ -603,36 +601,36 @@ public class NewMarshal {
 
     public void dumpDefaultObjectHeader(ThreadContext context, RubyOutputStream out, char tp, RubyClass type) {
         dumpExtended(context, out, type);
-        out.write(tp);
-        writeAndRegisterSymbol(out, getPathFromClass(context, type.getRealClass()));
+        out.write(context, tp);
+        writeAndRegisterSymbol(context, out, getPathFromClass(context, type.getRealClass()));
     }
 
-    public void writeString(RubyOutputStream out, String value) {
-        writeInt(out, value.length());
+    public void writeString(ThreadContext context, RubyOutputStream out, String value) {
+        writeInt(context, out, value.length());
         // FIXME: should preserve unicode?
-        out.write(RubyString.stringToBytes(value));
+        out.write(context, RubyString.stringToBytes(value));
     }
 
-    public void writeString(RubyOutputStream out, ByteList value) {
+    public void writeString(ThreadContext context, RubyOutputStream out, ByteList value) {
         int len = value.length();
-        writeInt(out, len);
-        out.write(value.getUnsafeBytes(), value.begin(), len);
+        writeInt(context, out, len);
+        out.write(context, value.getUnsafeBytes(), value.begin(), len);
     }
 
-    public void dumpSymbol(RubyOutputStream out, ByteList value) {
-        out.write(':');
+    public void dumpSymbol(ThreadContext context, RubyOutputStream out, ByteList value) {
+        out.write(context, ':');
         int len = value.length();
-        writeInt(out, len);
-        out.write(value.getUnsafeBytes(), value.begin(), len);
+        writeInt(context, out, len);
+        out.write(context, value.getUnsafeBytes(), value.begin(), len);
     }
 
-    public void writeInt(RubyOutputStream out, int value) {
+    public void writeInt(ThreadContext context, RubyOutputStream out, int value) {
         if (value == 0) {
-            out.write(0);
+            out.write(context, 0);
         } else if (0 < value && value < 123) {
-            out.write(value + 5);
+            out.write(context, value + 5);
         } else if (-124 < value && value < 0) {
-            out.write((value - 5) & 0xff);
+            out.write(context, (value - 5) & 0xff);
         } else {
             byte[] buf = new byte[4];
             int i = 0;
@@ -645,13 +643,14 @@ public class NewMarshal {
                 }
             }
             int len = i + 1;
-            out.write(value < 0 ? -len : len);
-            out.write(buf, 0, i + 1);
+            int b = value < 0 ? -len : len;
+            out.write(context, b);
+            out.write(context, buf, 0, i + 1);
         }
     }
 
-    public void writeByte(RubyOutputStream out, int value) {
-        out.write(value);
+    public void writeByte(ThreadContext context, RubyOutputStream out, int value) {
+        out.write(context, value);
     }
 
     private void checkVariablesForMarshal(String name, VariableAccessor accessor) {
@@ -682,7 +681,7 @@ public class NewMarshal {
         public void accept(String name, VariableAccessor accessor) {
             Object varValue = accessor.get(value);
             if (!(varValue instanceof Serializable)) return;
-            dumpVariable(NewMarshal.this, context, out, name, varValue);
+            dumpVariable(context, out, NewMarshal.this, name, varValue);
         }
     }
 }

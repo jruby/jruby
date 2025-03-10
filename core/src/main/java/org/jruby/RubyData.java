@@ -21,7 +21,6 @@ import java.util.stream.Collectors;
 
 import static org.jruby.RubyBasicObject.rbInspect;
 import static org.jruby.RubyHash.newSmallHash;
-import static org.jruby.api.Access.structClass;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Convert.toSymbol;
@@ -337,14 +336,14 @@ public class RubyData {
     }
 
     // TODO: Mostly copied from RubyStruct; unify.
-    public static void marshalTo(IRubyObject data, NewMarshal output, ThreadContext context, NewMarshal.RubyOutputStream out) {
+    public static void marshalTo(ThreadContext context, NewMarshal.RubyOutputStream out, IRubyObject data, NewMarshal output) {
         output.registerLinkTarget(data);
         output.dumpDefaultObjectHeader(context, out, 'S', data.getMetaClass());
 
         RubyArray<RubySymbol> members = getStructMembers(data);
         VariableAccessor[] accessors = getStructAccessors(data);
         int size = members.size();
-        output.writeInt(out, size);
+        output.writeInt(context, out, size);
 
         for (int i = 0; i < size; i++) {
             RubySymbol name = members.eltInternal(i);
