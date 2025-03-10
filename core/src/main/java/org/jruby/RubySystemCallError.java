@@ -156,8 +156,8 @@ public class RubySystemCallError extends RubyStandardError {
         }
 
         @Override
-        public void marshalTo(Object obj, RubyClass type,
-                              NewMarshal marshalStream, ThreadContext context, NewMarshal.RubyOutputStream out) {
+        public void marshalTo(ThreadContext context, NewMarshal.RubyOutputStream out, Object obj, RubyClass type,
+                              NewMarshal marshalStream) {
             RubySystemCallError exc = (RubySystemCallError) obj;
             marshalStream.registerLinkTarget(exc);
 

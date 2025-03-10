@@ -95,8 +95,8 @@ public class RubySet extends RubyObject implements Set {
             defaultMarshal.marshalTo(runtime, obj, type, marshalStream);
         }
 
-        public void marshalTo(Object obj, RubyClass type, NewMarshal marshalStream, ThreadContext context, NewMarshal.RubyOutputStream out) {
-            defaultMarshal.marshalTo(obj, type, marshalStream, context, out);
+        public void marshalTo(ThreadContext context, NewMarshal.RubyOutputStream out, Object obj, RubyClass type, NewMarshal marshalStream) {
+            defaultMarshal.marshalTo(context, out, obj, type, marshalStream);
         }
 
         public Object unmarshalFrom(Ruby runtime, RubyClass type, UnmarshalStream unmarshalStream) throws IOException {

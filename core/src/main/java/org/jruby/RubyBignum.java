@@ -41,7 +41,6 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Convert;
 import org.jruby.api.Create;
-import org.jruby.api.Error;
 import org.jruby.api.JRubyAPI;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
@@ -1177,10 +1176,11 @@ public class RubyBignum extends RubyInteger {
         }
     }
 
-    public static void marshalTo(RubyBignum bignum, NewMarshal output, NewMarshal.RubyOutputStream out) {
+    public static void marshalTo(ThreadContext context, NewMarshal.RubyOutputStream out, RubyBignum bignum, NewMarshal output) {
         output.registerLinkTarget(bignum);
 
-        out.write(bignum.value.signum() >= 0 ? '+' : '-');
+        int b = bignum.value.signum() >= 0 ? '+' : '-';
+        out.write(context, b);
 
         BigInteger absValue = bignum.value.abs();
 
@@ -1191,15 +1191,15 @@ public class RubyBignum extends RubyInteger {
         if (oddLengthNonzeroStart) {
             shortLength++;
         }
-        output.writeInt(out, shortLength);
+        output.writeInt(context, out, shortLength);
 
         for (int i = 1; i <= shortLength * 2 && i <= digits.length; i++) {
-            out.write(digits[digits.length - i]);
+            out.write(context, digits[digits.length - i]);
         }
 
         if (oddLengthNonzeroStart) {
             // Pad with a 0
-            out.write(0);
+            out.write(context, 0);
         }
     }
 

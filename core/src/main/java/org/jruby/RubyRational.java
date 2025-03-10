@@ -1418,7 +1418,7 @@ public class RubyRational extends RubyNumeric {
             throw typeError(runtime.getCurrentContext(), "marshal_dump should be used instead for Rational");
         }
         @Override
-        public void marshalTo(Object obj, RubyClass type, NewMarshal marshalStream, ThreadContext context, NewMarshal.RubyOutputStream out) {
+        public void marshalTo(ThreadContext context, NewMarshal.RubyOutputStream out, Object obj, RubyClass type, NewMarshal marshalStream) {
             throw typeError(context, "marshal_dump should be used instead for Rational");
         }
 

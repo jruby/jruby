@@ -32,11 +32,9 @@
 package org.jruby.runtime.marshal;
 
 import org.jruby.RubySymbol;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 import org.jruby.util.collections.HashMapInt;
-
-import java.io.IOException;
 
 public class NewMarshalCache {
     private final HashMapInt<IRubyObject> linkCache = new HashMapInt<>(true);
@@ -62,16 +60,16 @@ public class NewMarshalCache {
         symbolCache.put(sym, symbolCache.size());
     }
 
-    public void writeLink(NewMarshal output, NewMarshal.RubyOutputStream out, IRubyObject value) {
+    public void writeLink(ThreadContext context, NewMarshal.RubyOutputStream out, NewMarshal output, IRubyObject value) {
         assert !(value instanceof RubySymbol) : "Use writeSymbolLink for symbols";
 
-        out.write('@');
-        output.writeInt(out, registeredIndex(value));
+        out.write(context, '@');
+        output.writeInt(context, out, registeredIndex(value));
     }
 
-    public void writeSymbolLink(NewMarshal output, NewMarshal.RubyOutputStream out, RubySymbol sym) {
-        out.write(';');
-        output.writeInt(out, registeredSymbolIndex(sym));
+    public void writeSymbolLink(ThreadContext context, NewMarshal.RubyOutputStream out, NewMarshal output, RubySymbol sym) {
+        out.write(context, ';');
+        output.writeInt(context, out, registeredSymbolIndex(sym));
     }
 
     private int registeredIndex(IRubyObject value) {
