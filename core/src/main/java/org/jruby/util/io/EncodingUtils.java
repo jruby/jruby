@@ -972,7 +972,22 @@ public class EncodingUtils {
         return strTranscode1(context, to, (RubyString) str, ecflags, ecopt, EncodingUtils::encodedDup);
     }
 
-    // rb_str_encode
+    /**
+     * A version of rbStrEncode that works directly with bytes.
+     *
+     * MRI: rb_str_encode but consuming only a byte array range and producing a ByteList.
+     *
+     * @param context
+     * @param bytes
+     * @param start
+     * @param length
+     * @param encoding
+     * @param cr
+     * @param to
+     * @param ecflags
+     * @param ecopt
+     * @return
+     */
     public static ByteList rbByteEncode(ThreadContext context, byte[] bytes, int start, int length, Encoding encoding, int cr, Encoding to, int ecflags, IRubyObject ecopt) {
         byte[] sname, dname;
 
@@ -980,10 +995,8 @@ public class EncodingUtils {
         dname = to.getName();
 
         if (noDecorators(ecflags)) {
-            if (encoding.isAsciiCompatible() && to.isAsciiCompatible()) {
-                if (cr == StringSupport.CR_7BIT) {
-                    return null;
-                }
+            if (is7BitCompat(cr, encoding, to)) {
+                return null;
             } else if (encodingEqual(sname, dname)) {
                 return null;
             }
@@ -1134,6 +1147,12 @@ public class EncodingUtils {
         return senc != null && denc != null
                 && senc.isAsciiCompatible() && denc.isAsciiCompatible()
                 && str.scanForCodeRange() == StringSupport.CR_7BIT;
+    }
+
+    private static boolean is7BitCompat(int cr, Encoding denc, Encoding senc) {
+        return senc != null && denc != null
+                && senc.isAsciiCompatible() && denc.isAsciiCompatible()
+                && cr == StringSupport.CR_7BIT;
     }
 
     private static RubyString strTranscodeScrub(ThreadContext context, IRubyObject forceEncoding, RubyString str, int ecflags, IRubyObject ecopts, TranscodeResult result, boolean explicitlyInvalidReplace, Encoding denc, Encoding senc) {
