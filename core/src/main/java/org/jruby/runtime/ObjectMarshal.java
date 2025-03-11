@@ -31,8 +31,9 @@ package org.jruby.runtime;
 import java.io.IOException;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
-import org.jruby.runtime.marshal.NewMarshal;
+import org.jruby.runtime.marshal.Dumper;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.util.io.RubyOutputStream;
 
 import static org.jruby.api.Error.typeError;
 
@@ -49,7 +50,7 @@ public interface ObjectMarshal<T> {
             throw typeError(context, "no marshal_dump is defined for class " + type.getName(context));
         }
 
-        public void marshalTo(ThreadContext context, NewMarshal.RubyOutputStream out, Object obj, RubyClass type, NewMarshal marshalStream) {
+        public void marshalTo(ThreadContext context, RubyOutputStream out, Object obj, RubyClass type, Dumper marshalStream) {
             throw typeError(context, "no marshal_dump is defined for class " + type.getName(context));
         }
 
@@ -62,6 +63,6 @@ public interface ObjectMarshal<T> {
     @Deprecated(since = "10.0", forRemoval = true)
     @SuppressWarnings("removal")
     void marshalTo(Ruby runtime, T obj, RubyClass type, org.jruby.runtime.marshal.MarshalStream marshalStream) throws IOException;
-    void marshalTo(ThreadContext context, NewMarshal.RubyOutputStream out, T obj, RubyClass type, NewMarshal marshalStream);
+    void marshalTo(ThreadContext context, RubyOutputStream out, T obj, RubyClass type, Dumper marshalStream);
     T unmarshalFrom(Ruby runtime, RubyClass type, UnmarshalStream unmarshalStream) throws IOException;
 }

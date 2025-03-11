@@ -61,7 +61,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.MarshalEncoding;
-import org.jruby.runtime.marshal.NewMarshal;
+import org.jruby.runtime.marshal.Dumper;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
@@ -72,6 +72,7 @@ import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
 import org.jruby.util.collections.WeakValuedMap;
 import org.jruby.util.io.EncodingUtils;
+import org.jruby.util.io.RubyOutputStream;
 
 import java.util.Iterator;
 
@@ -1928,7 +1929,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         output.writeByte(options);
     }
 
-    public static void marshalTo(ThreadContext context, RubyRegexp regexp, NewMarshal output, NewMarshal.RubyOutputStream out) {
+    public static void marshalTo(ThreadContext context, RubyRegexp regexp, Dumper output, RubyOutputStream out) {
         output.registerLinkTarget(regexp);
         output.writeString(context, out, regexp.str);
 

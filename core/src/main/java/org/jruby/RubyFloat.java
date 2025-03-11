@@ -55,12 +55,13 @@ import org.jruby.runtime.JavaSites.FloatSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.marshal.NewMarshal;
+import org.jruby.runtime.marshal.Dumper;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertDouble;
 import org.jruby.util.Numeric;
 import org.jruby.util.Sprintf;
+import org.jruby.util.io.RubyOutputStream;
 
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
@@ -1142,7 +1143,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         output.writeString(aFloat.marshalDump(context));
     }
 
-    public static void marshalTo(ThreadContext context, NewMarshal.RubyOutputStream out, RubyFloat aFloat, NewMarshal output) {
+    public static void marshalTo(ThreadContext context, RubyOutputStream out, RubyFloat aFloat, Dumper output) {
         output.registerLinkTarget(aFloat);
         output.writeString(context, out, aFloat.marshalDump(context));
     }

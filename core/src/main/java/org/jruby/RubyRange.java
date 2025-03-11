@@ -76,10 +76,11 @@ import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callsite.RespondToCallSite;
 import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.invokedynamic.MethodNames;
-import org.jruby.runtime.marshal.NewMarshal;
+import org.jruby.runtime.marshal.Dumper;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.Numeric;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.io.RubyOutputStream;
 
 import static org.jruby.RubyEnumerator.SizeFn;
 
@@ -1320,8 +1321,8 @@ public class RubyRange extends RubyObject {
         }
 
         @Override
-        public void marshalTo(ThreadContext context, NewMarshal.RubyOutputStream out, Object obj, RubyClass type,
-                              NewMarshal marshalStream) {
+        public void marshalTo(ThreadContext context, RubyOutputStream out, Object obj, RubyClass type,
+                              Dumper marshalStream) {
             RubyRange range = (RubyRange) obj;
 
             marshalStream.registerLinkTarget(range);

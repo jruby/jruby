@@ -92,7 +92,7 @@ import org.jruby.runtime.callsite.RespondToCallSite;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.ivars.VariableAccessorField;
 import org.jruby.runtime.ivars.VariableTableManager;
-import org.jruby.runtime.marshal.NewMarshal;
+import org.jruby.runtime.marshal.Dumper;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ClassDefiningClassLoader;
@@ -101,6 +101,7 @@ import org.jruby.util.JavaNameMangler;
 import org.jruby.util.Loader;
 import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.StringSupport;
+import org.jruby.util.io.RubyOutputStream;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.AnnotationVisitor;
@@ -1510,7 +1511,7 @@ public class RubyClass extends RubyModule {
         getMarshal().marshalTo(runtime, obj, this, marshalStream);
     }
 
-    public final void marshal(ThreadContext context, NewMarshal.RubyOutputStream out, Object obj, NewMarshal marshalStream) {
+    public final void marshal(ThreadContext context, RubyOutputStream out, Object obj, Dumper marshalStream) {
         getMarshal().marshalTo(context, out, obj, this, marshalStream);
     }
 
@@ -1526,9 +1527,9 @@ public class RubyClass extends RubyModule {
         output.writeString(org.jruby.runtime.marshal.MarshalStream.getPathFromClass(clazz));
     }
 
-    public static void marshalTo(ThreadContext context, NewMarshal.RubyOutputStream out, RubyClass clazz, NewMarshal output) {
+    public static void marshalTo(ThreadContext context, RubyOutputStream out, RubyClass clazz, Dumper output) {
         output.registerLinkTarget(clazz);
-        output.writeString(context, out, NewMarshal.getPathFromClass(context, clazz).idString());
+        output.writeString(context, out, Dumper.getPathFromClass(context, clazz).idString());
     }
 
     public static RubyClass unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
@@ -1549,7 +1550,7 @@ public class RubyClass extends RubyModule {
         }
 
         @Override
-        public void marshalTo(ThreadContext context, NewMarshal.RubyOutputStream out, Object obj, RubyClass type, NewMarshal marshalStream) {
+        public void marshalTo(ThreadContext context, RubyOutputStream out, Object obj, RubyClass type, Dumper marshalStream) {
             IRubyObject object = (IRubyObject) obj;
 
             marshalStream.registerLinkTarget(object);
@@ -2829,7 +2830,7 @@ public class RubyClass extends RubyModule {
             }
         }
 
-        public void dump(NewMarshal stream, ThreadContext context, NewMarshal.RubyOutputStream out, IRubyObject object) {
+        public void dump(Dumper stream, ThreadContext context, RubyOutputStream out, IRubyObject object) {
             switch (type) {
                 case DEFAULT:
                     stream.writeDirectly(context, out, object);
@@ -2915,7 +2916,7 @@ public class RubyClass extends RubyModule {
         tuple.dump(stream, target);
     }
 
-    public void smartDump(ThreadContext context, NewMarshal.RubyOutputStream out, NewMarshal stream, IRubyObject target) {
+    public void smartDump(ThreadContext context, RubyOutputStream out, Dumper stream, IRubyObject target) {
         MarshalTuple tuple;
         if ((tuple = cachedDumpMarshal).generation == generation) {
         } else {

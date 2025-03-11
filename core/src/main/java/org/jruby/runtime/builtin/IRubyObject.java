@@ -49,7 +49,8 @@ import org.jruby.api.JRubyAPI;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.marshal.NewMarshal;
+import org.jruby.runtime.marshal.Dumper;
+import org.jruby.util.io.RubyOutputStream;
 
 /**
  * Object is the parent class of all classes in Ruby. Its methods are
@@ -402,7 +403,7 @@ public interface IRubyObject {
         return getVariableList();
     }
 
-    default void marshalLiveVariables(NewMarshal stream, ThreadContext context, NewMarshal.RubyOutputStream out) {
+    default void marshalLiveVariables(Dumper stream, ThreadContext context, RubyOutputStream out) {
 
     }
 

@@ -119,7 +119,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.load.LoadService;
-import org.jruby.runtime.marshal.NewMarshal;
+import org.jruby.runtime.marshal.Dumper;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.runtime.opto.OptoFactory;
@@ -130,6 +130,7 @@ import org.jruby.util.ClassProvider;
 import org.jruby.util.IdUtil;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
+import org.jruby.util.io.RubyOutputStream;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -4274,9 +4275,9 @@ public class RubyModule extends RubyObject {
         output.writeString(org.jruby.runtime.marshal.MarshalStream.getPathFromClass(module));
     }
 
-    public static void marshalTo(ThreadContext context, NewMarshal.RubyOutputStream out, RubyModule module, NewMarshal output) {
+    public static void marshalTo(ThreadContext context, RubyOutputStream out, RubyModule module, Dumper output) {
         output.registerLinkTarget(module);
-        output.writeString(context, out, NewMarshal.getPathFromClass(context, module).idString());
+        output.writeString(context, out, Dumper.getPathFromClass(context, module).idString());
     }
 
     public static RubyModule unmarshalFrom(UnmarshalStream input) throws java.io.IOException {

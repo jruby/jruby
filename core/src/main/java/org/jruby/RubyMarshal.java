@@ -44,12 +44,13 @@ import org.jruby.anno.JRubyModule;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.marshal.NewMarshal;
+import org.jruby.runtime.marshal.Dumper;
 import org.jruby.runtime.marshal.UnmarshalStream;
 
 import org.jruby.util.ByteList;
 import org.jruby.util.IOInputStream;
 import org.jruby.util.IOOutputStream;
+import org.jruby.util.io.RubyOutputStream;
 import org.jruby.util.io.TransparentByteArrayOutputStream;
 
 import static org.jruby.api.Convert.asFixnum;
@@ -178,8 +179,8 @@ public class RubyMarshal {
     }
 
     private static void dumpToStream(ThreadContext context, IRubyObject object, OutputStream rawOutput, int depthLimit) {
-        NewMarshal output = new NewMarshal(depthLimit);
-        NewMarshal.RubyOutputStream out = new NewMarshal.RubyOutputStream(rawOutput);
+        Dumper output = new Dumper(depthLimit);
+        RubyOutputStream out = new RubyOutputStream(context.runtime, rawOutput);
 
         output.start(context, out);
         output.dumpObject(context, out, object);

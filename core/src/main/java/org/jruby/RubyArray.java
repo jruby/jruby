@@ -75,7 +75,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.encoding.EncodingCapable;
-import org.jruby.runtime.marshal.NewMarshal;
+import org.jruby.runtime.marshal.Dumper;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.specialized.RubyArrayOneObject;
 import org.jruby.specialized.RubyArraySpecialized;
@@ -88,6 +88,7 @@ import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
 import org.jruby.util.collections.StringArraySet;
 import org.jruby.util.io.EncodingUtils;
+import org.jruby.util.io.RubyOutputStream;
 
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorize;
@@ -5296,7 +5297,7 @@ float_loop:
         }
     }
 
-    public static void marshalTo(ThreadContext context, NewMarshal.RubyOutputStream out, RubyArray array, NewMarshal output) {
+    public static void marshalTo(ThreadContext context, RubyOutputStream out, RubyArray array, Dumper output) {
         output.registerLinkTarget(array);
 
         int length = array.realLength;

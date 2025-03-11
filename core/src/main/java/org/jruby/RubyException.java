@@ -50,8 +50,9 @@ import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.component.VariableEntry;
-import org.jruby.runtime.marshal.NewMarshal;
+import org.jruby.runtime.marshal.Dumper;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.util.io.RubyOutputStream;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -185,8 +186,8 @@ public class RubyException extends RubyObject {
         }
 
         @Override
-        public void marshalTo(ThreadContext context, NewMarshal.RubyOutputStream out, RubyException exc, RubyClass type,
-                              NewMarshal marshalStream) {
+        public void marshalTo(ThreadContext context, RubyOutputStream out, RubyException exc, RubyClass type,
+                              Dumper marshalStream) {
             marshalStream.registerLinkTarget(exc);
             marshalStream.dumpVariables(context, out, exc, 2, (marshal, c, o, v, receiver) -> {
                 receiver.receive(marshal, c, o, "mesg", v.getMessage());

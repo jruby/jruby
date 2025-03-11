@@ -24,10 +24,11 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.component.VariableEntry;
-import org.jruby.runtime.marshal.NewMarshal;
+import org.jruby.runtime.marshal.Dumper;
 import org.jruby.runtime.marshal.UnmarshalStream;
 
 import jnr.constants.platform.Errno;
+import org.jruby.util.io.RubyOutputStream;
 
 /**
  * The Java representation of a Ruby SystemCallError.
@@ -157,8 +158,8 @@ public class RubySystemCallError extends RubyStandardError {
         }
 
         @Override
-        public void marshalTo(ThreadContext context, NewMarshal.RubyOutputStream out, Object obj, RubyClass type,
-                              NewMarshal marshalStream) {
+        public void marshalTo(ThreadContext context, RubyOutputStream out, Object obj, RubyClass type,
+                              Dumper marshalStream) {
             RubySystemCallError exc = (RubySystemCallError) obj;
             marshalStream.registerLinkTarget(exc);
 
