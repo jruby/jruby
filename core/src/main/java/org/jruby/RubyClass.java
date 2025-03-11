@@ -1092,7 +1092,7 @@ public class RubyClass extends RubyModule {
     @JRubyMethod(name = "initialize_copy", visibility = PRIVATE)
     public IRubyObject initialize_copy(ThreadContext context, IRubyObject original) {
         checkNotInitialized(context);
-        if (original == context.runtime.getBasicObject()) throw typeError(context, "can't copy the root class");
+        if (original == basicObjectClass(context)) throw typeError(context, "can't copy the root class");
         if (original instanceof MetaClass) throw typeError(context, "can't copy singleton class");
 
         super.initialize_copy(context, original);

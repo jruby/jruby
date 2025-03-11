@@ -48,6 +48,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 
+import static org.jruby.api.Access.basicObjectClass;
 import static org.jruby.api.Access.classClass;
 import static org.jruby.api.Access.moduleClass;
 import static org.jruby.api.Access.objectClass;
@@ -191,7 +192,7 @@ public class RubyObjectSpace {
             }
 
             // Iterate over all classes
-            runtime.getBasicObject().subclasses(true).forEach((module) -> {
+            basicObjectClass(context).subclasses(true).forEach((module) -> {
                 if (rubyClass.isInstance(module)) {
                     if (!(module instanceof IncludedModule || module instanceof PrependedModule
                             || module == runtime.getJavaSupport().getJavaPackageClass()
