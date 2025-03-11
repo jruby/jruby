@@ -42,7 +42,7 @@ import org.jruby.anno.JRubyModule;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.marshal.Dumper;
+import org.jruby.runtime.marshal.MarshalDumper;
 import org.jruby.runtime.marshal.MarshalLoader;
 
 import org.jruby.util.ByteList;
@@ -173,7 +173,7 @@ public class RubyMarshal {
     }
 
     private static void dumpToStream(ThreadContext context, IRubyObject object, OutputStream rawOutput, int depthLimit) {
-        Dumper output = new Dumper(depthLimit);
+        MarshalDumper output = new MarshalDumper(depthLimit);
         RubyOutputStream out = new RubyOutputStream(context.runtime, rawOutput);
 
         output.start(out);

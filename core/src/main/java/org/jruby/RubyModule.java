@@ -119,7 +119,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.load.LoadService;
-import org.jruby.runtime.marshal.Dumper;
+import org.jruby.runtime.marshal.MarshalDumper;
 import org.jruby.runtime.marshal.MarshalLoader;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.runtime.opto.OptoFactory;
@@ -4276,9 +4276,9 @@ public class RubyModule extends RubyObject {
         output.writeString(org.jruby.runtime.marshal.MarshalStream.getPathFromClass(module));
     }
 
-    public static void marshalTo(ThreadContext context, RubyOutputStream out, RubyModule module, Dumper output) {
+    public static void marshalTo(ThreadContext context, RubyOutputStream out, RubyModule module, MarshalDumper output) {
         output.registerLinkTarget(module);
-        output.writeString(out, Dumper.getPathFromClass(context, module).idString());
+        output.writeString(out, MarshalDumper.getPathFromClass(context, module).idString());
     }
 
     @Deprecated(since = "10.0", forRemoval = true)

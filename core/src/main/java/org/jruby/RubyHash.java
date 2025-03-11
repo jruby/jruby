@@ -59,7 +59,7 @@ import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
-import org.jruby.runtime.marshal.Dumper;
+import org.jruby.runtime.marshal.MarshalDumper;
 import org.jruby.runtime.marshal.MarshalLoader;
 import org.jruby.util.ByteList;
 import org.jruby.util.RecursiveComparator;
@@ -2525,14 +2525,14 @@ public class RubyHash extends RubyObject implements Map {
         if (hash.ifNone != UNDEF) output.dumpObject(hash.ifNone);
     }
 
-    public static void marshalTo(ThreadContext context, RubyOutputStream out, final RubyHash hash, final Dumper output) {
+    public static void marshalTo(ThreadContext context, RubyOutputStream out, final RubyHash hash, final MarshalDumper output) {
         output.registerLinkTarget(hash);
         int hashSize = hash.size();
         output.writeInt(out, hashSize);
         try {
-            hash.visitLimited(context, new VisitorWithState<Dumper>() {
+            hash.visitLimited(context, new VisitorWithState<MarshalDumper>() {
                 @Override
-                public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Dumper state) {
+                public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, MarshalDumper state) {
                     state.dumpObject(context, out, key);
                     state.dumpObject(context, out, value);
                 }

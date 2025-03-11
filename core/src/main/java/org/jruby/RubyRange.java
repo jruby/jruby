@@ -76,7 +76,7 @@ import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callsite.RespondToCallSite;
 import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.invokedynamic.MethodNames;
-import org.jruby.runtime.marshal.Dumper;
+import org.jruby.runtime.marshal.MarshalDumper;
 import org.jruby.runtime.marshal.MarshalLoader;
 import org.jruby.util.Numeric;
 import org.jruby.util.TypeConverter;
@@ -1323,7 +1323,7 @@ public class RubyRange extends RubyObject {
 
         @Override
         public void marshalTo(ThreadContext context, RubyOutputStream out, Object obj, RubyClass type,
-                              Dumper marshalStream) {
+                              MarshalDumper marshalStream) {
             RubyRange range = (RubyRange) obj;
 
             marshalStream.registerLinkTarget(range);

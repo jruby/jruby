@@ -61,7 +61,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.MarshalEncoding;
-import org.jruby.runtime.marshal.Dumper;
+import org.jruby.runtime.marshal.MarshalDumper;
 import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
 import org.jruby.util.RegexpOptions;
@@ -1929,7 +1929,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         output.writeByte(options);
     }
 
-    public static void marshalTo(ThreadContext context, RubyRegexp regexp, Dumper output, RubyOutputStream out) {
+    public static void marshalTo(ThreadContext context, RubyRegexp regexp, MarshalDumper output, RubyOutputStream out) {
         output.registerLinkTarget(regexp);
         output.writeString(out, regexp.str);
 

@@ -49,7 +49,7 @@ import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
-import org.jruby.runtime.marshal.Dumper;
+import org.jruby.runtime.marshal.MarshalDumper;
 import org.jruby.runtime.marshal.MarshalLoader;
 import org.jruby.util.io.RubyInputStream;
 import org.jruby.util.io.RubyOutputStream;
@@ -1179,7 +1179,7 @@ public class RubyBignum extends RubyInteger {
         }
     }
 
-    public static void marshalTo(ThreadContext context, RubyOutputStream out, RubyBignum bignum, Dumper output) {
+    public static void marshalTo(ThreadContext context, RubyOutputStream out, RubyBignum bignum, MarshalDumper output) {
         output.registerLinkTarget(bignum);
 
         int b = bignum.value.signum() >= 0 ? '+' : '-';

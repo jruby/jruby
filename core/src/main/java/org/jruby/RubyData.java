@@ -12,7 +12,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.ivars.VariableTableManager;
-import org.jruby.runtime.marshal.Dumper;
+import org.jruby.runtime.marshal.MarshalDumper;
 import org.jruby.runtime.marshal.MarshalLoader;
 import org.jruby.util.io.RubyInputStream;
 import org.jruby.util.io.RubyOutputStream;
@@ -338,7 +338,7 @@ public class RubyData {
     }
 
     // TODO: Mostly copied from RubyStruct; unify.
-    public static void marshalTo(ThreadContext context, RubyOutputStream out, IRubyObject data, Dumper output) {
+    public static void marshalTo(ThreadContext context, RubyOutputStream out, IRubyObject data, MarshalDumper output) {
         output.registerLinkTarget(data);
         output.dumpDefaultObjectHeader(context, out, 'S', data.getMetaClass());
 

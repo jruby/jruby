@@ -52,7 +52,7 @@ import org.jruby.runtime.JavaSites.StructSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.marshal.Dumper;
+import org.jruby.runtime.marshal.MarshalDumper;
 import org.jruby.runtime.marshal.MarshalLoader;
 import org.jruby.util.ByteList;
 import org.jruby.util.RecursiveComparator;
@@ -982,7 +982,7 @@ public class RubyStruct extends RubyObject {
         }
     }
 
-    public static void marshalTo(ThreadContext context, RubyOutputStream out, RubyStruct struct, Dumper output) {
+    public static void marshalTo(ThreadContext context, RubyOutputStream out, RubyStruct struct, MarshalDumper output) {
         output.registerLinkTarget(struct);
         output.dumpDefaultObjectHeader(context, out, 'S', struct.getMetaClass());
 
