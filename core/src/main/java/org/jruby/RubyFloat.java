@@ -56,11 +56,12 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.Dumper;
-import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.runtime.marshal.MarshalLoader;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertDouble;
 import org.jruby.util.Numeric;
 import org.jruby.util.Sprintf;
+import org.jruby.util.io.RubyInputStream;
 import org.jruby.util.io.RubyOutputStream;
 
 import static org.jruby.api.Convert.*;
@@ -1148,7 +1149,9 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         output.writeString(out, aFloat.marshalDump(context));
     }
 
-    public static RubyFloat unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
+    @Deprecated(since = "10.0", forRemoval = true)
+    @SuppressWarnings("removal")
+    public static RubyFloat unmarshalFrom(org.jruby.runtime.marshal.UnmarshalStream input) throws java.io.IOException {
         ByteList value = input.unmarshalString();
 
         if (value.equals(NAN_BYTELIST)) {
@@ -1159,6 +1162,20 @@ public class RubyFloat extends RubyNumeric implements Appendable {
             return RubyFloat.newFloat(input.getRuntime(), Double.POSITIVE_INFINITY);
         } else {
             return RubyFloat.newFloat(input.getRuntime(), ConvertDouble.byteListToDouble(value, false));
+        }
+    }
+
+    public static RubyFloat unmarshalFrom(ThreadContext context, RubyInputStream in, MarshalLoader input) {
+        ByteList value = input.unmarshalString(context, in);
+
+        if (value.equals(NAN_BYTELIST)) {
+            return RubyFloat.newFloat(context.runtime, RubyFloat.NAN);
+        } else if (value.equals(NEGATIVE_INFINITY_BYTELIST)) {
+            return RubyFloat.newFloat(context.runtime, Double.NEGATIVE_INFINITY);
+        } else if (value.equals(INFINITY_BYTELIST)) {
+            return RubyFloat.newFloat(context.runtime, Double.POSITIVE_INFINITY);
+        } else {
+            return RubyFloat.newFloat(context.runtime, ConvertDouble.byteListToDouble(value, false));
         }
     }
 

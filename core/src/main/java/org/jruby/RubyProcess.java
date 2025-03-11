@@ -60,12 +60,13 @@ import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.runtime.marshal.CoreObjectType;
 import org.jruby.runtime.marshal.Dumper;
-import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.runtime.marshal.MarshalLoader;
 import org.jruby.util.ShellLauncher;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
 import org.jruby.util.io.PopenExecutor;
 import org.jruby.util.io.PosixShim;
+import org.jruby.util.io.RubyInputStream;
 import org.jruby.util.io.RubyOutputStream;
 
 import java.io.IOException;
@@ -198,11 +199,28 @@ public class RubyProcess {
         }
 
         @Override
-        public Object unmarshalFrom(Ruby runtime, RubyClass type, UnmarshalStream input) throws IOException {
+        @Deprecated(since = "10.0", forRemoval = true)
+        @SuppressWarnings("removal")
+        public Object unmarshalFrom(Ruby runtime, RubyClass type, org.jruby.runtime.marshal.UnmarshalStream input) throws IOException {
             var context = runtime.getCurrentContext();
             RubyStatus status = (RubyStatus) input.entry(type.allocate(context));
 
             input.ivar(null, status, null);
+
+            var pstatus = (RubyFixnum) status.removeInternalVariable("status");
+            var pid = (RubyFixnum) status.removeInternalVariable("pid");
+
+            status.status = pstatus.getValue();
+            status.pid = pid.getValue();
+
+            return status;
+        }
+
+        @Override
+        public Object unmarshalFrom(ThreadContext context, RubyInputStream in, RubyClass type, MarshalLoader input) {
+            RubyStatus status = (RubyStatus) input.entry(type.allocate(context));
+
+            input.ivar(context, in, null, status, null);
 
             var pstatus = (RubyFixnum) status.removeInternalVariable("status");
             var pid = (RubyFixnum) status.removeInternalVariable("pid");

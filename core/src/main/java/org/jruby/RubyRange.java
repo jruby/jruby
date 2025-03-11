@@ -77,9 +77,10 @@ import org.jruby.runtime.callsite.RespondToCallSite;
 import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.runtime.marshal.Dumper;
-import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.runtime.marshal.MarshalLoader;
 import org.jruby.util.Numeric;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.io.RubyInputStream;
 import org.jruby.util.io.RubyOutputStream;
 
 import static org.jruby.RubyEnumerator.SizeFn;
@@ -1335,11 +1336,33 @@ public class RubyRange extends RubyObject {
         }
 
         @Override
-        public Object unmarshalFrom(Ruby runtime, RubyClass type, UnmarshalStream input) throws IOException {
+        @Deprecated(since = "10.0", forRemoval = true)
+        @SuppressWarnings("removal")
+        public Object unmarshalFrom(Ruby runtime, RubyClass type, org.jruby.runtime.marshal.UnmarshalStream input) throws IOException {
             var context = runtime.getCurrentContext();
             RubyRange range = (RubyRange) input.entry(type.allocate(context));
 
             input.ivar(null, range, null);
+
+            IRubyObject excl = (IRubyObject) range.removeInternalVariable("excl");
+            IRubyObject begin = (IRubyObject) range.removeInternalVariable("begin");
+            IRubyObject end = (IRubyObject) range.removeInternalVariable("end");
+
+            // try old names as well
+            if (begin == null) begin = (IRubyObject) range.removeInternalVariable("begini");
+            if (end == null) end = (IRubyObject) range.removeInternalVariable("endi");
+
+            if (begin == null || end == null || excl == null) throw argumentError(context, "bad value for range");
+
+            range.init(context, begin, end, excl.isTrue());
+            return range;
+        }
+
+        @Override
+        public Object unmarshalFrom(ThreadContext context, RubyInputStream in, RubyClass type, MarshalLoader input) {
+            RubyRange range = (RubyRange) input.entry(type.allocate(context));
+
+            input.ivar(context, in, null, range, null);
 
             IRubyObject excl = (IRubyObject) range.removeInternalVariable("excl");
             IRubyObject begin = (IRubyObject) range.removeInternalVariable("begin");

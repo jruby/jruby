@@ -51,7 +51,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.marshal.Dumper;
-import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.runtime.marshal.MarshalLoader;
+import org.jruby.util.io.RubyInputStream;
 import org.jruby.util.io.RubyOutputStream;
 
 import java.io.IOException;
@@ -196,11 +197,25 @@ public class RubyException extends RubyObject {
         }
 
         @Override
-        public RubyException unmarshalFrom(Ruby runtime, RubyClass type, UnmarshalStream input) throws IOException {
+        @Deprecated(since = "10.0", forRemoval = true)
+        @SuppressWarnings("removal")
+        public RubyException unmarshalFrom(Ruby runtime, RubyClass type, org.jruby.runtime.marshal.UnmarshalStream input) throws IOException {
             var context = runtime.getCurrentContext();
             RubyException exc = (RubyException) input.entry(type.allocate(context));
 
             input.ivar(null, exc, null);
+
+            exc.setMessage((IRubyObject) exc.removeInternalVariable("mesg"));
+            exc.set_backtrace(context, (IRubyObject) exc.removeInternalVariable("bt"));
+
+            return exc;
+        }
+
+        @Override
+        public RubyException unmarshalFrom(ThreadContext context, RubyInputStream in, RubyClass type, MarshalLoader input) {
+            RubyException exc = (RubyException) input.entry(type.allocate(context));
+
+            input.ivar(context, in, null, exc, null);
 
             exc.setMessage((IRubyObject) exc.removeInternalVariable("mesg"));
             exc.set_backtrace(context, (IRubyObject) exc.removeInternalVariable("bt"));

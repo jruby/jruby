@@ -93,7 +93,7 @@ import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.ivars.VariableAccessorField;
 import org.jruby.runtime.ivars.VariableTableManager;
 import org.jruby.runtime.marshal.Dumper;
-import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.runtime.marshal.MarshalLoader;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.CodegenUtils;
@@ -101,6 +101,7 @@ import org.jruby.util.JavaNameMangler;
 import org.jruby.util.Loader;
 import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.StringSupport;
+import org.jruby.util.io.RubyInputStream;
 import org.jruby.util.io.RubyOutputStream;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -1515,8 +1516,14 @@ public class RubyClass extends RubyModule {
         getMarshal().marshalTo(context, out, obj, this, marshalStream);
     }
 
-    public final Object unmarshal(UnmarshalStream unmarshalStream) throws IOException {
+    @Deprecated(since = "10.0", forRemoval = true)
+    @SuppressWarnings("removal")
+    public final Object unmarshal(org.jruby.runtime.marshal.UnmarshalStream unmarshalStream) throws IOException {
         return getMarshal().unmarshalFrom(runtime, this, unmarshalStream);
+    }
+
+    public final Object unmarshal(ThreadContext context, RubyInputStream in, MarshalLoader loader) {
+        return getMarshal().unmarshalFrom(context, in, this, loader);
     }
 
     @Deprecated(since = "10.0", forRemoval = true)
@@ -1532,9 +1539,16 @@ public class RubyClass extends RubyModule {
         output.writeString(out, Dumper.getPathFromClass(context, clazz).idString());
     }
 
-    public static RubyClass unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
+    @Deprecated(since = "10.0", forRemoval = true)
+    @SuppressWarnings("removal")
+    public static RubyClass unmarshalFrom(org.jruby.runtime.marshal.UnmarshalStream input) throws java.io.IOException {
         String name = RubyString.byteListToString(input.unmarshalString());
-        return UnmarshalStream.getClassFromPath(input.getRuntime(), name);
+        return org.jruby.runtime.marshal.UnmarshalStream.getClassFromPath(input.getRuntime(), name);
+    }
+
+    public static RubyClass unmarshalFrom(ThreadContext context, RubyInputStream in, MarshalLoader input) {
+        String name = RubyString.byteListToString(input.unmarshalString(context, in));
+        return MarshalLoader.getClassFromPath(context, name);
     }
 
     protected static final ObjectMarshal DEFAULT_OBJECT_MARSHAL = new ObjectMarshal() {
@@ -1558,10 +1572,21 @@ public class RubyClass extends RubyModule {
         }
 
         @Override
-        public Object unmarshalFrom(Ruby runtime, RubyClass type, UnmarshalStream input) throws IOException {
+        @Deprecated(since = "10.0", forRemoval = true)
+        @SuppressWarnings("removal")
+        public Object unmarshalFrom(Ruby runtime, RubyClass type, org.jruby.runtime.marshal.UnmarshalStream input) throws IOException {
             IRubyObject result = input.entry(type.allocate(runtime.getCurrentContext()));
 
             input.ivar(null, result, null);
+
+            return result;
+        }
+
+        @Override
+        public Object unmarshalFrom(ThreadContext context, RubyInputStream in, RubyClass type, MarshalLoader input) {
+            IRubyObject result = input.entry(type.allocate(context));
+
+            input.ivar(context, in, null, result, null);
 
             return result;
         }

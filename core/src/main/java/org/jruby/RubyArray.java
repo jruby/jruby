@@ -76,7 +76,7 @@ import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.marshal.Dumper;
-import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.runtime.marshal.MarshalLoader;
 import org.jruby.specialized.RubyArrayOneObject;
 import org.jruby.specialized.RubyArraySpecialized;
 import org.jruby.specialized.RubyArrayTwoObject;
@@ -88,6 +88,7 @@ import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
 import org.jruby.util.collections.StringArraySet;
 import org.jruby.util.io.EncodingUtils;
+import org.jruby.util.io.RubyInputStream;
 import org.jruby.util.io.RubyOutputStream;
 
 import static org.jruby.RubyEnumerator.SizeFn;
@@ -5312,7 +5313,9 @@ float_loop:
         }
     }
 
-    public static RubyArray unmarshalFrom(UnmarshalStream input) throws IOException {
+    @Deprecated(since = "10.0", forRemoval = true)
+    @SuppressWarnings("removal")
+    public static RubyArray unmarshalFrom(org.jruby.runtime.marshal.UnmarshalStream input) throws IOException {
         int size = input.unmarshalInt();
         var context = input.getRuntime().getCurrentContext();
 
@@ -5322,6 +5325,20 @@ float_loop:
 
         for (int i = 0; i < size; i++) {
             result.append(context, input.unmarshalObject());
+        }
+
+        return result;
+    }
+
+    public static RubyArray unmarshalFrom(ThreadContext context, RubyInputStream in, MarshalLoader input) {
+        int size = input.unmarshalInt(context, in);
+
+        // FIXME: We used to use newArrayBlankInternal but this will not hash into a HashSet without an NPE.
+        // we create this now with an empty, nulled array so it's available for links in the marshal data
+        var result = (RubyArray<?>) input.entry(Create.allocArray(context, size));
+
+        for (int i = 0; i < size; i++) {
+            result.append(context, input.unmarshalObject(context, in));
         }
 
         return result;

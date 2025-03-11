@@ -60,10 +60,11 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.marshal.Dumper;
-import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.runtime.marshal.MarshalLoader;
 import org.jruby.util.ByteList;
 import org.jruby.util.RecursiveComparator;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.io.RubyInputStream;
 import org.jruby.util.io.RubyOutputStream;
 
 import java.io.IOException;
@@ -2557,7 +2558,9 @@ public class RubyHash extends RubyObject implements Map {
         }
     };
 
-    public static RubyHash unmarshalFrom(UnmarshalStream input, boolean defaultValue) throws IOException {
+    @Deprecated(since = "10.0", forRemoval = true)
+    @SuppressWarnings("removal")
+    public static RubyHash unmarshalFrom(org.jruby.runtime.marshal.UnmarshalStream input, boolean defaultValue) throws IOException {
         RubyHash result = (RubyHash) input.entry(newHash(input.getRuntime()));
         int size = input.unmarshalInt();
 
@@ -2566,6 +2569,18 @@ public class RubyHash extends RubyObject implements Map {
         }
 
         if (defaultValue) result.default_value_set(input.unmarshalObject());
+        return result;
+    }
+
+    public static RubyHash unmarshalFrom(ThreadContext context, RubyInputStream in, MarshalLoader input, boolean defaultValue) {
+        RubyHash result = (RubyHash) input.entry(Create.newHash(context));
+        int size = input.unmarshalInt(context, in);
+
+        for (int i = 0; i < size; i++) {
+            result.fastASetCheckString(context.runtime, input.unmarshalObject(context, in), input.unmarshalObject(context, in));
+        }
+
+        if (defaultValue) result.default_value_set(input.unmarshalObject(context, in));
         return result;
     }
 

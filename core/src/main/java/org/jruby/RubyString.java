@@ -79,7 +79,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.MarshalEncoding;
-import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.runtime.marshal.MarshalLoader;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeSupport;
 import org.jruby.util.CodeRangeable;
@@ -93,6 +93,7 @@ import org.jruby.util.Sprintf;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.EncodingUtils;
+import org.jruby.util.io.RubyInputStream;
 
 import java.nio.charset.Charset;
 import java.util.Arrays;
@@ -124,6 +125,7 @@ import static org.jruby.api.Create.dupString;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newArrayNoCopy;
 import static org.jruby.api.Create.newEmptyArray;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.indexError;
@@ -6663,8 +6665,14 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 first : RubyRational.newRationalNoReduce(context, asFixnum(context, 0), asFixnum(context, 1));
     }
 
-    public static RubyString unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
+    @Deprecated(since = "10.0", forRemoval = true)
+    @SuppressWarnings("removal")
+    public static RubyString unmarshalFrom(org.jruby.runtime.marshal.UnmarshalStream input) throws java.io.IOException {
         return newString(input.getRuntime(), input.unmarshalString());
+    }
+
+    public static RubyString unmarshalFrom(ThreadContext context, RubyInputStream in, MarshalLoader input) {
+        return Create.newString(context, input.unmarshalString(context, in));
     }
 
     /**

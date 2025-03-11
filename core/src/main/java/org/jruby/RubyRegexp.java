@@ -62,7 +62,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.MarshalEncoding;
 import org.jruby.runtime.marshal.Dumper;
-import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
 import org.jruby.util.RegexpOptions;
@@ -1910,8 +1909,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return check ? str.convertToString() : str.checkStringType();
     }
 
-    @Deprecated
-    public static RubyRegexp unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
+    @Deprecated(forRemoval = true)
+    @SuppressWarnings("removal")
+    public static RubyRegexp unmarshalFrom(org.jruby.runtime.marshal.UnmarshalStream input) throws java.io.IOException {
         return newRegexp(input.getRuntime(), input.unmarshalString(), RegexpOptions.fromJoniOptions(input.readSignedByte()));
     }
 

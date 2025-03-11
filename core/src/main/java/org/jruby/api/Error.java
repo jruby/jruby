@@ -5,6 +5,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyFrozenError;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.EOFError;
 import org.jruby.exceptions.IOError;
 import org.jruby.exceptions.NotImplementedError;
 import org.jruby.exceptions.RaiseException;
@@ -270,5 +271,9 @@ public class Error {
 
     private static IRubyObject typeFor(Ruby runtime, IRubyObject object) {
         return object instanceof RubyModule ? types(runtime, (RubyModule) object) : object.getMetaClass().getRealClass();
+    }
+
+    public static EOFError eofError(ThreadContext context, String message) {
+        return (EOFError) context.runtime.newEOFError(message);
     }
 }

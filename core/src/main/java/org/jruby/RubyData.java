@@ -13,7 +13,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.ivars.VariableTableManager;
 import org.jruby.runtime.marshal.Dumper;
-import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.runtime.marshal.MarshalLoader;
+import org.jruby.util.io.RubyInputStream;
 import org.jruby.util.io.RubyOutputStream;
 
 import java.util.LinkedHashSet;
@@ -354,22 +355,22 @@ public class RubyData {
     }
 
     // TODO: Mostly copied from RubyStruct; unify.
-    public static IRubyObject unmarshalFrom(ThreadContext context, UnmarshalStream input, RubyClass rbClass) throws java.io.IOException {
+    public static IRubyObject unmarshalFrom(ThreadContext context, RubyInputStream in, MarshalLoader input, RubyClass rbClass) {
         final RubyArray<RubySymbol> members = getMembersFromClass(rbClass);
         final VariableAccessor[] accessors = getAccessorsFromClass(rbClass);
 
-        final int len = input.unmarshalInt();
+        final int len = input.unmarshalInt(context, in);
 
         final IRubyObject result = input.entry(rbClass.allocate(context));
 
         for (int i = 0; i < len; i++) {
-            RubySymbol slot = input.symbol();
+            RubySymbol slot = input.symbol(context, in);
             RubySymbol elem = members.eltInternal(i);
             if (!elem.equals(slot)) {
                 throw typeError(context, str(context.runtime, "struct ", rbClass,
                         " not compatible (:", slot, " for :", elem, ")").toString());
             }
-            accessors[i].set(result, input.unmarshalObject());
+            accessors[i].set(result, input.unmarshalObject(context, in));
         }
 
         result.setFrozen(true);

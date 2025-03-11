@@ -50,7 +50,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.marshal.Dumper;
-import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.runtime.marshal.MarshalLoader;
+import org.jruby.util.io.RubyInputStream;
 import org.jruby.util.io.RubyOutputStream;
 
 import static org.jruby.RubyFixnum.zero;
@@ -1205,7 +1206,9 @@ public class RubyBignum extends RubyInteger {
         }
     }
 
-    public static RubyNumeric unmarshalFrom(UnmarshalStream input) throws IOException {
+    @Deprecated(since = "10.0", forRemoval = true)
+    @SuppressWarnings("removal")
+    public static RubyNumeric unmarshalFrom(org.jruby.runtime.marshal.UnmarshalStream input) throws IOException {
         boolean positive = input.readUnsignedByte() == '+';
         int shortLength = input.unmarshalInt();
 
@@ -1220,6 +1223,23 @@ public class RubyBignum extends RubyInteger {
         if (!positive) value = value.negate();
 
         return bignorm(input.getRuntime(), value);
+    }
+
+    public static RubyNumeric unmarshalFrom(ThreadContext context, RubyInputStream in, MarshalLoader input) {
+        boolean positive = input.readUnsignedByte(context, in) == '+';
+        int shortLength = input.unmarshalInt(context, in);
+
+        // BigInteger required a sign byte in incoming array
+        byte[] digits = new byte[shortLength * 2 + 1];
+
+        for (int i = digits.length - 1; i >= 1; i--) {
+            digits[i] = input.readSignedByte(context, in);
+        }
+
+        BigInteger value = new BigInteger(digits);
+        if (!positive) value = value.negate();
+
+        return bignorm(context.runtime, value);
     }
 
     // MRI: rb_big_fdiv_double
