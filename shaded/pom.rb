@@ -33,7 +33,7 @@ project 'JRuby Core' do
     )
   end
 
-  plugin :'com.coderplus.maven.plugins:copy-rename-maven-plugin' do
+  plugin :'com.coderplus.maven.plugins:copy-rename-maven-plugin', '1.0' do
     execute_goals 'copy',
                   id: 'copy to lib/jruby.jar',
                   phase: 'package',
