@@ -5308,7 +5308,7 @@ float_loop:
                 output.dumpObject(context, out, array.eltInternal(i));
             }
         } catch (ArrayIndexOutOfBoundsException ex) {
-            throw concurrentModification(array.getRuntime().getCurrentContext(), ex);
+            throw concurrentModification(context, ex);
         }
     }
 
