@@ -94,7 +94,7 @@ public class Dumper {
         this.depthLimit = depthLimit >= 0 ? depthLimit : Integer.MAX_VALUE;
     }
 
-    public void start(ThreadContext context, RubyOutputStream out) {
+    public void start(RubyOutputStream out) {
         out.write(Constants.MARSHAL_MAJOR);
         out.write(Constants.MARSHAL_MINOR);
     }
@@ -124,18 +124,18 @@ public class Dumper {
         return value <= RubyFixnum.MAX_MARSHAL_FIXNUM && value >= RubyFixnum.MIN_MARSHAL_FIXNUM;
     }
 
-    private void writeAndRegisterSymbol(ThreadContext context, RubyOutputStream out, RubySymbol sym) {
+    private void writeAndRegisterSymbol(RubyOutputStream out, RubySymbol sym) {
         if (isSymbolRegistered(sym)) {
-            writeSymbolLink(context, out, this, sym);
+            writeSymbolLink(out, this, sym);
         } else {
             registerSymbol(sym);
-            dumpSymbol(context, out, sym.getBytes());
+            dumpSymbol(out, sym.getBytes());
         }
     }
 
     private void writeAndRegister(ThreadContext context, RubyOutputStream out, IRubyObject value) {
         if (!(value instanceof RubySymbol) && isRegistered(value)) {
-            writeLink(context, out, this, value);
+            writeLink(out, this, value);
         } else {
             getMetaClass(value).smartDump(context, out, this, value);
         }
@@ -178,10 +178,10 @@ public class Dumper {
                 dumpBaseObject(context, out, value, nativeClassIndex);
 
                 if (shouldMarshalEncoding) {
-                    writeInt(context, out, size + 1); // vars preceded by encoding
+                    writeInt(out, size + 1); // vars preceded by encoding
                     writeEncoding(context, out, ((MarshalEncoding) value).getMarshalEncoding());
                 } else {
-                    writeInt(context, out, size);
+                    writeInt(out, size);
                 }
 
                 ivarAccessors.forEach(new VariableDumper(context, out, value));
@@ -284,7 +284,7 @@ public class Dumper {
 
                     if (isMarshalFixnum(fixnum)) {
                         out.write('i');
-                        writeInt(context, out, fixnum.asInt(context));
+                        writeInt(out, fixnum.asInt(context));
                         return;
                     }
                     // FIXME: inefficient; constructing a bignum just for dumping?
@@ -349,13 +349,13 @@ public class Dumper {
                 case STRING:
                     registerLinkTarget(value);
                     out.write('"');
-                    writeString(context, out, value.convertToString().getByteList());
+                    writeString(out, value.convertToString().getByteList());
                     return;
                 case STRUCT:
                     RubyStruct.marshalTo(context, out, (RubyStruct) value, this);
                     return;
                 case SYMBOL:
-                    writeAndRegisterSymbol(context, out, ((RubySymbol) value));
+                    writeAndRegisterSymbol(out, ((RubySymbol) value));
                     return;
                 case TRUE:
                     out.write('T');
@@ -383,7 +383,7 @@ public class Dumper {
         registerLinkTarget(value);
         out.write(TYPE_USRMARSHAL);
         final RubyClass klass = getMetaClass(value);
-        writeAndRegisterSymbol(context, out, asSymbol(context, klass.getRealClass().getName(context)));
+        writeAndRegisterSymbol(out, asSymbol(context, klass.getRealClass().getName(context)));
 
         IRubyObject marshaled = entry != null ?
                 entry.method.call(context, value, entry.sourceModule, "marshal_dump") :
@@ -423,7 +423,7 @@ public class Dumper {
                 out.write(TYPE_IVAR);
                 dumpUserdefBase(context, out, klass, marshaled);
 
-                writeInt(context, out, size);
+                writeInt(out, size);
 
                 ivarAccessors.forEach(new VariableDumper(context, out, marshaled));
             } else {
@@ -438,8 +438,8 @@ public class Dumper {
 
     private void dumpUserdefBase(ThreadContext context, RubyOutputStream out, RubyClass klass, RubyString marshaled) {
         out.write(TYPE_USERDEF);
-        writeAndRegisterSymbol(context, out, asSymbol(context, klass.getRealClass().getName(context)));
-        writeString(context, out, marshaled.getByteList());
+        writeAndRegisterSymbol(out, asSymbol(context, klass.getRealClass().getName(context)));
+        writeString(out, marshaled.getByteList());
     }
 
     public void writeUserClass(ThreadContext context, RubyOutputStream out, RubyClass type) {
@@ -452,7 +452,7 @@ public class Dumper {
         }
         
         // w_symbol
-        writeAndRegisterSymbol(context, out, asSymbol(context, type.getName(context)));
+        writeAndRegisterSymbol(out, asSymbol(context, type.getName(context)));
     }
 
     public void dumpVariables(ThreadContext context, RubyOutputStream out, IRubyObject value) {
@@ -464,7 +464,7 @@ public class Dumper {
         int size = variableCount;
         clearVariableState();
 
-        writeInt(context, out, size);
+        writeInt(out, size);
 
         ivarAccessors.forEach(new VariableDumper(context, out, value));
     }
@@ -499,7 +499,7 @@ public class Dumper {
 
     private static void dumpVariable(ThreadContext context, RubyOutputStream out, Dumper marshal, String name, Object value) {
         if (value instanceof IRubyObject) {
-            marshal.writeAndRegisterSymbol(context, out, asSymbol(context, name));
+            marshal.writeAndRegisterSymbol(out, asSymbol(context, name));
             marshal.dumpObject(context, out, (IRubyObject) value);
         }
     }
@@ -507,13 +507,13 @@ public class Dumper {
     public void writeEncoding(ThreadContext context, RubyOutputStream out, Encoding encoding) {
         var symbolTable = context.runtime.getSymbolTable();
         if (encoding == null || encoding == USASCIIEncoding.INSTANCE) {
-            writeAndRegisterSymbol(context, out, symbolTable.getEncodingSymbolE());
+            writeAndRegisterSymbol(out, symbolTable.getEncodingSymbolE());
             writeObjectData(context, out, context.fals);
         } else if (encoding == UTF8Encoding.INSTANCE) {
-            writeAndRegisterSymbol(context, out, symbolTable.getEncodingSymbolE());
+            writeAndRegisterSymbol(out, symbolTable.getEncodingSymbolE());
             writeObjectData(context, out, context.tru);
         } else {
-            writeAndRegisterSymbol(context, out, symbolTable.getEncodingSymbol());
+            writeAndRegisterSymbol(out, symbolTable.getEncodingSymbol());
             RubyString encodingString = new RubyString(context.runtime, stringClass(context), encoding.getName());
             writeObjectData(context, out, encodingString);
         }
@@ -540,7 +540,7 @@ public class Dumper {
         }
         while(type.isIncluded()) {
             out.write('e');
-            writeAndRegisterSymbol(context, out, asSymbol(context, type.getOrigin().getName(context)));
+            writeAndRegisterSymbol(out, asSymbol(context, type.getOrigin().getName(context)));
             type = type.getSuperClass();
         }
         return type;
@@ -553,29 +553,29 @@ public class Dumper {
     public void dumpDefaultObjectHeader(ThreadContext context, RubyOutputStream out, char tp, RubyClass type) {
         dumpExtended(context, out, type);
         out.write(tp);
-        writeAndRegisterSymbol(context, out, getPathFromClass(context, type.getRealClass()));
+        writeAndRegisterSymbol(out, getPathFromClass(context, type.getRealClass()));
     }
 
-    public void writeString(ThreadContext context, RubyOutputStream out, String value) {
-        writeInt(context, out, value.length());
+    public void writeString(RubyOutputStream out, String value) {
+        writeInt(out, value.length());
         // FIXME: should preserve unicode?
         out.write(RubyString.stringToBytes(value));
     }
 
-    public void writeString(ThreadContext context, RubyOutputStream out, ByteList value) {
+    public void writeString(RubyOutputStream out, ByteList value) {
         int len = value.length();
-        writeInt(context, out, len);
+        writeInt(out, len);
         out.write(value.getUnsafeBytes(), value.begin(), len);
     }
 
-    public void dumpSymbol(ThreadContext context, RubyOutputStream out, ByteList value) {
+    public void dumpSymbol(RubyOutputStream out, ByteList value) {
         out.write(':');
         int len = value.length();
-        writeInt(context, out, len);
+        writeInt(out, len);
         out.write(value.getUnsafeBytes(), value.begin(), len);
     }
 
-    public void writeInt(ThreadContext context, RubyOutputStream out, int value) {
+    public void writeInt(RubyOutputStream out, int value) {
         if (value == 0) {
             out.write(0);
         } else if (0 < value && value < 123) {
@@ -600,7 +600,7 @@ public class Dumper {
         }
     }
 
-    public void writeByte(ThreadContext context, RubyOutputStream out, int value) {
+    public void writeByte(RubyOutputStream out, int value) {
         out.write(value);
     }
 
@@ -638,23 +638,23 @@ public class Dumper {
     private void register(IRubyObject value) {
         assert !(value instanceof RubySymbol) : "Use registeredSymbolIndex for symbols";
 
-        linkCache.put(value, Integer.valueOf(linkCache.size()));
+        linkCache.put(value, linkCache.size());
     }
 
     private void registerSymbol(RubySymbol sym) {
         getSymbolCache().put(sym, getSymbolCache().size());
     }
 
-    private void writeLink(ThreadContext context, RubyOutputStream out, Dumper output, IRubyObject value) {
+    private void writeLink(RubyOutputStream out, Dumper output, IRubyObject value) {
         assert !(value instanceof RubySymbol) : "Use writeSymbolLink for symbols";
 
         out.write('@');
-        output.writeInt(context, out, registeredIndex(value));
+        output.writeInt(out, registeredIndex(value));
     }
 
-    private void writeSymbolLink(ThreadContext context, RubyOutputStream out, Dumper output, RubySymbol sym) {
+    private void writeSymbolLink(RubyOutputStream out, Dumper output, RubySymbol sym) {
         out.write(';');
-        output.writeInt(context, out, registeredSymbolIndex(sym));
+        output.writeInt(out, registeredSymbolIndex(sym));
     }
 
     private int registeredIndex(IRubyObject value) {

@@ -182,7 +182,7 @@ public class RubyMarshal {
         Dumper output = new Dumper(depthLimit);
         RubyOutputStream out = new RubyOutputStream(context.runtime, rawOutput);
 
-        output.start(context, out);
+        output.start(out);
         output.dumpObject(context, out, object);
     }
 

@@ -986,7 +986,7 @@ public class RubyStruct extends RubyObject {
         output.dumpDefaultObjectHeader(context, out, 'S', struct.getMetaClass());
 
         RubyArray member = __member__(context, struct.classOf());
-        output.writeInt(context, out, member.size());
+        output.writeInt(out, member.size());
 
         for (int i = 0; i < member.size(); i++) {
             RubySymbol name = (RubySymbol) member.eltInternal(i);

@@ -4277,7 +4277,7 @@ public class RubyModule extends RubyObject {
 
     public static void marshalTo(ThreadContext context, RubyOutputStream out, RubyModule module, Dumper output) {
         output.registerLinkTarget(module);
-        output.writeString(context, out, Dumper.getPathFromClass(context, module).idString());
+        output.writeString(out, Dumper.getPathFromClass(context, module).idString());
     }
 
     public static RubyModule unmarshalFrom(UnmarshalStream input) throws java.io.IOException {

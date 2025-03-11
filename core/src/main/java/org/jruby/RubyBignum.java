@@ -1193,7 +1193,7 @@ public class RubyBignum extends RubyInteger {
         if (oddLengthNonzeroStart) {
             shortLength++;
         }
-        output.writeInt(context, out, shortLength);
+        output.writeInt(out, shortLength);
 
         for (int i = 1; i <= shortLength * 2 && i <= digits.length; i++) {
             out.write(digits[digits.length - i]);

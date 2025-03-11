@@ -5302,7 +5302,7 @@ float_loop:
 
         int length = array.realLength;
 
-        output.writeInt(context, out, length);
+        output.writeInt(out, length);
         try {
             for (int i = 0; i < length; i++) {
                 output.dumpObject(context, out, array.eltInternal(i));

@@ -1529,7 +1529,7 @@ public class RubyClass extends RubyModule {
 
     public static void marshalTo(ThreadContext context, RubyOutputStream out, RubyClass clazz, Dumper output) {
         output.registerLinkTarget(clazz);
-        output.writeString(context, out, Dumper.getPathFromClass(context, clazz).idString());
+        output.writeString(out, Dumper.getPathFromClass(context, clazz).idString());
     }
 
     public static RubyClass unmarshalFrom(UnmarshalStream input) throws java.io.IOException {

@@ -344,7 +344,7 @@ public class RubyData {
         RubyArray<RubySymbol> members = getStructMembers(data);
         VariableAccessor[] accessors = getStructAccessors(data);
         int size = members.size();
-        output.writeInt(context, out, size);
+        output.writeInt(out, size);
 
         for (int i = 0; i < size; i++) {
             RubySymbol name = members.eltInternal(i);

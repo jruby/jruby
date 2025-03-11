@@ -1931,13 +1931,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     public static void marshalTo(ThreadContext context, RubyRegexp regexp, Dumper output, RubyOutputStream out) {
         output.registerLinkTarget(regexp);
-        output.writeString(context, out, regexp.str);
+        output.writeString(out, regexp.str);
 
         int options = regexp.pattern.getOptions() & EMBEDDABLE;
 
         if (regexp.getOptions(context).isFixed()) options |= RE_FIXED;
 
-        output.writeByte(context, out, options);
+        output.writeByte(out, options);
     }
 
     @Deprecated

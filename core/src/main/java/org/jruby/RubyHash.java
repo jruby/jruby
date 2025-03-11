@@ -2527,7 +2527,7 @@ public class RubyHash extends RubyObject implements Map {
     public static void marshalTo(ThreadContext context, RubyOutputStream out, final RubyHash hash, final Dumper output) {
         output.registerLinkTarget(hash);
         int hashSize = hash.size();
-        output.writeInt(context, out, hashSize);
+        output.writeInt(out, hashSize);
         try {
             hash.visitLimited(context, new VisitorWithState<Dumper>() {
                 @Override
