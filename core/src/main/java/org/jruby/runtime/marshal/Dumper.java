@@ -215,15 +215,10 @@ public class Dumper {
 
     private void dumpType(ThreadContext context, RubyOutputStream out, IRubyObject value, ClassIndex nativeClassIndex) {
         final RubyClass meta = getMetaClass(value);
-        RubyClass type = meta;
-        switch(nativeClassIndex) {
-        case STRING:
-        case REGEXP:
-        case ARRAY:
-        case HASH:
-            type = dumpExtended(context, out, meta);
-            break;
-        }
+        RubyClass type = switch (nativeClassIndex) {
+            case STRING, REGEXP, ARRAY, HASH -> dumpExtended(context, out, meta);
+            default -> meta;
+        };
 
         if (nativeClassIndex != meta.getClassIndex() &&
                 nativeClassIndex != ClassIndex.STRUCT &&
@@ -274,7 +269,7 @@ public class Dumper {
             switch (nativeClassIndex) {
                 case ARRAY:
                     out.write('[');
-                    RubyArray.marshalTo(context, out, (RubyArray) value, this);
+                    RubyArray.marshalTo(context, out, (RubyArray<?>) value, this);
                     return;
                 case FALSE:
                     out.write('F');
