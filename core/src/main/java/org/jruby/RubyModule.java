@@ -119,7 +119,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.load.LoadService;
-import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.NewMarshal;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.Invalidator;
@@ -4267,10 +4266,12 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
-    public static void marshalTo(RubyModule module, MarshalStream output) throws java.io.IOException {
+    @Deprecated(since = "10.0", forRemoval = true)
+    @SuppressWarnings("removal")
+    public static void marshalTo(RubyModule module, org.jruby.runtime.marshal.MarshalStream output) throws java.io.IOException {
         var context = module.getRuntime().getCurrentContext();
         output.registerLinkTarget(context, module);
-        output.writeString(MarshalStream.getPathFromClass(module));
+        output.writeString(org.jruby.runtime.marshal.MarshalStream.getPathFromClass(module));
     }
 
     public static void marshalTo(ThreadContext context, NewMarshal.RubyOutputStream out, RubyModule module, NewMarshal output) {

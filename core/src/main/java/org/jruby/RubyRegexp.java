@@ -61,7 +61,6 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.MarshalEncoding;
-import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.NewMarshal;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
@@ -1915,7 +1914,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return newRegexp(input.getRuntime(), input.unmarshalString(), RegexpOptions.fromJoniOptions(input.readSignedByte()));
     }
 
-    public static void marshalTo(RubyRegexp regexp, MarshalStream output) throws java.io.IOException {
+    @Deprecated(since = "10.0", forRemoval = true)
+    @SuppressWarnings("removal")
+    public static void marshalTo(RubyRegexp regexp, org.jruby.runtime.marshal.MarshalStream output) throws java.io.IOException {
         var context = regexp.getRuntime().getCurrentContext();
         output.registerLinkTarget(context, regexp);
         output.writeString(regexp.str);

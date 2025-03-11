@@ -76,7 +76,6 @@ import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callsite.RespondToCallSite;
 import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.invokedynamic.MethodNames;
-import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.NewMarshal;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.Numeric;
@@ -1303,8 +1302,10 @@ public class RubyRange extends RubyObject {
 
     private static final ObjectMarshal RANGE_MARSHAL = new ObjectMarshal() {
         @Override
+        @Deprecated(since = "10.0", forRemoval = true)
+        @SuppressWarnings("removal")
         public void marshalTo(Ruby runtime, Object obj, RubyClass type,
-                MarshalStream marshalStream) throws IOException {
+                              org.jruby.runtime.marshal.MarshalStream marshalStream) throws IOException {
             RubyRange range = (RubyRange) obj;
             var context = runtime.getCurrentContext();
 

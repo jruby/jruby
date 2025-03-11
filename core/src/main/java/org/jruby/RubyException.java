@@ -50,7 +50,6 @@ import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.component.VariableEntry;
-import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.NewMarshal;
 import org.jruby.runtime.marshal.UnmarshalStream;
 
@@ -173,8 +172,10 @@ public class RubyException extends RubyObject {
 
     private static final ObjectMarshal<RubyException> EXCEPTION_MARSHAL = new ObjectMarshal<RubyException>() {
         @Override
+        @Deprecated(since = "10.0", forRemoval = true)
+        @SuppressWarnings("removal")
         public void marshalTo(Ruby runtime, RubyException exc, RubyClass type,
-                              MarshalStream marshalStream) throws IOException {
+                              org.jruby.runtime.marshal.MarshalStream marshalStream) throws IOException {
             var context = runtime.getCurrentContext();
             marshalStream.registerLinkTarget(context, exc);
             List<Variable<Object>> attrs = exc.getMarshalVariableList();

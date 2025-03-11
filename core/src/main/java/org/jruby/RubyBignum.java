@@ -49,7 +49,6 @@ import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
-import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.NewMarshal;
 import org.jruby.runtime.marshal.UnmarshalStream;
 
@@ -1149,7 +1148,9 @@ public class RubyBignum extends RubyInteger {
         return isZero(context) ? context.nil : this;
     }
 
-    public static void marshalTo(RubyBignum bignum, MarshalStream output) throws IOException {
+    @Deprecated(since = "10.0", forRemoval = true)
+    @SuppressWarnings("removal")
+    public static void marshalTo(RubyBignum bignum, org.jruby.runtime.marshal.MarshalStream output) throws IOException {
         var context = bignum.getRuntime().getCurrentContext();
         output.registerLinkTarget(context, bignum);
 

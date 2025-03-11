@@ -58,7 +58,6 @@ import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
-import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.NewMarshal;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
@@ -2507,7 +2506,9 @@ public class RubyHash extends RubyObject implements Map {
 
     // FIXME:  Total hack to get flash in Rails marshalling/unmarshalling in session ok...We need
     // to totally change marshalling to work with overridden core classes.
-    public static void marshalTo(final RubyHash hash, final MarshalStream output) throws IOException {
+    @Deprecated(since = "10.0", forRemoval = true)
+    @SuppressWarnings("removal")
+    public static void marshalTo(final RubyHash hash, final org.jruby.runtime.marshal.MarshalStream output) throws IOException {
         var context = hash.getRuntime().getCurrentContext();
         output.registerLinkTarget(context, hash);
        int hashSize = hash.size();
@@ -2540,9 +2541,11 @@ public class RubyHash extends RubyObject implements Map {
         if (hash.ifNone != UNDEF) output.dumpObject(context, out, hash.ifNone);
     }
 
-    private static final VisitorWithState<MarshalStream> MarshalDumpVisitor = new VisitorWithState<MarshalStream>() {
+    @Deprecated(since = "10.0", forRemoval = true)
+    @SuppressWarnings("removal")
+    private static final VisitorWithState<org.jruby.runtime.marshal.MarshalStream> MarshalDumpVisitor = new VisitorWithState<org.jruby.runtime.marshal.MarshalStream>() {
         @Override
-        public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, MarshalStream output) {
+        public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, org.jruby.runtime.marshal.MarshalStream output) {
             try {
                 output.dumpObject(key);
                 output.dumpObject(value);
