@@ -83,14 +83,14 @@ import static org.jruby.util.RubyStringBuilder.types;
 /**
  * Marshals objects into Ruby's binary marshal format.
  */
-public class Dumper {
+public class MarshalDumper {
     private final int depthLimit;
     private int depth = 0;
     private final HashMapInt<IRubyObject> linkCache = new HashMapInt<>(true);
     // lazy for simple cases that encounter no symbols
     private HashMapInt<RubySymbol> symbolCache;
 
-    public Dumper(int depthLimit) {
+    public MarshalDumper(int depthLimit) {
         this.depthLimit = depthLimit >= 0 ? depthLimit : Integer.MAX_VALUE;
     }
 
@@ -480,11 +480,11 @@ public class Dumper {
     }
 
     public interface VariableReceiver {
-        void receive(Dumper marshal, ThreadContext context, RubyOutputStream out, String name, IRubyObject value);
+        void receive(MarshalDumper marshal, ThreadContext context, RubyOutputStream out, String name, IRubyObject value);
     }
 
     public interface VariableSupplier<T> {
-        void forEach(Dumper marshal, ThreadContext context, RubyOutputStream out, T value, VariableReceiver receiver);
+        void forEach(MarshalDumper marshal, ThreadContext context, RubyOutputStream out, T value, VariableReceiver receiver);
     }
 
     public <T extends IRubyObject> void dumpVariables(ThreadContext context, RubyOutputStream out, T value, int extraSize, VariableSupplier<T> extra) {
@@ -492,7 +492,7 @@ public class Dumper {
         extra.forEach(this, context, out, value, (m, c, o, name, v) -> dumpVariable(c, o, m, name, v));
     }
 
-    private static void dumpVariable(ThreadContext context, RubyOutputStream out, Dumper marshal, String name, Object value) {
+    private static void dumpVariable(ThreadContext context, RubyOutputStream out, MarshalDumper marshal, String name, Object value) {
         if (value instanceof IRubyObject) {
             marshal.writeAndRegisterSymbol(out, asSymbol(context, name));
             marshal.dumpObject(context, out, (IRubyObject) value);
@@ -640,14 +640,14 @@ public class Dumper {
         getSymbolCache().put(sym, getSymbolCache().size());
     }
 
-    private void writeLink(RubyOutputStream out, Dumper output, IRubyObject value) {
+    private void writeLink(RubyOutputStream out, MarshalDumper output, IRubyObject value) {
         assert !(value instanceof RubySymbol) : "Use writeSymbolLink for symbols";
 
         out.write('@');
         output.writeInt(out, registeredIndex(value));
     }
 
-    private void writeSymbolLink(RubyOutputStream out, Dumper output, RubySymbol sym) {
+    private void writeSymbolLink(RubyOutputStream out, MarshalDumper output, RubySymbol sym) {
         out.write(';');
         output.writeInt(out, registeredSymbolIndex(sym));
     }
@@ -675,7 +675,7 @@ public class Dumper {
         public void accept(String name, VariableAccessor accessor) {
             Object varValue = accessor.get(value);
             if (!(varValue instanceof Serializable)) return;
-            dumpVariable(context, out, Dumper.this, name, varValue);
+            dumpVariable(context, out, MarshalDumper.this, name, varValue);
         }
     }
 

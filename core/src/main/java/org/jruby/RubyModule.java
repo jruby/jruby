@@ -119,8 +119,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.load.LoadService;
-import org.jruby.runtime.marshal.Dumper;
-import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.runtime.marshal.MarshalDumper;
+import org.jruby.runtime.marshal.MarshalLoader;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.runtime.profile.MethodEnhancer;
@@ -130,6 +130,7 @@ import org.jruby.util.ClassProvider;
 import org.jruby.util.IdUtil;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
+import org.jruby.util.io.RubyInputStream;
 import org.jruby.util.io.RubyOutputStream;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -4275,15 +4276,23 @@ public class RubyModule extends RubyObject {
         output.writeString(org.jruby.runtime.marshal.MarshalStream.getPathFromClass(module));
     }
 
-    public static void marshalTo(ThreadContext context, RubyOutputStream out, RubyModule module, Dumper output) {
+    public static void marshalTo(ThreadContext context, RubyOutputStream out, RubyModule module, MarshalDumper output) {
         output.registerLinkTarget(module);
-        output.writeString(out, Dumper.getPathFromClass(context, module).idString());
+        output.writeString(out, MarshalDumper.getPathFromClass(context, module).idString());
     }
 
-    public static RubyModule unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
+    @Deprecated(since = "10.0", forRemoval = true)
+    @SuppressWarnings("removal")
+    public static RubyModule unmarshalFrom(org.jruby.runtime.marshal.UnmarshalStream input) throws java.io.IOException {
         String name = RubyString.byteListToString(input.unmarshalString());
 
-        return UnmarshalStream.getModuleFromPath(input.getRuntime(), name);
+        return org.jruby.runtime.marshal.UnmarshalStream.getModuleFromPath(input.getRuntime(), name);
+    }
+
+    public static RubyModule unmarshalFrom(ThreadContext context, RubyInputStream in, MarshalLoader input) {
+        String name = RubyString.byteListToString(input.unmarshalString(context, in));
+
+        return MarshalLoader.getModuleFromPath(context, name);
     }
 
     /* Module class methods */

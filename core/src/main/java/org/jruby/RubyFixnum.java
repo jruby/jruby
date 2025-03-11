@@ -53,11 +53,12 @@ import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
-import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.runtime.marshal.MarshalLoader;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
+import org.jruby.util.io.RubyInputStream;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
@@ -1406,8 +1407,14 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
         throw typeError(getRuntime().getCurrentContext(), "", this, " is not a symbol");
     }
 
-    public static RubyFixnum unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
+    @Deprecated(since = "10.0", forRemoval = true)
+    @SuppressWarnings("removal")
+    public static RubyFixnum unmarshalFrom(org.jruby.runtime.marshal.UnmarshalStream input) throws java.io.IOException {
         return input.getRuntime().newFixnum(input.unmarshalInt());
+    }
+
+    public static RubyFixnum unmarshalFrom(ThreadContext context, RubyInputStream in, MarshalLoader input) {
+        return asFixnum(context, input.unmarshalInt(context, in));
     }
 
     private void checkZeroDivisionError(ThreadContext context, IRubyObject other) {

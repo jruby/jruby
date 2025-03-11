@@ -41,11 +41,12 @@ import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.marshal.Dumper;
-import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.runtime.marshal.MarshalDumper;
+import org.jruby.runtime.marshal.MarshalLoader;
 import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.io.RubyInputStream;
 import org.jruby.util.io.RubyOutputStream;
 
 import java.io.IOException;
@@ -1174,14 +1175,26 @@ public class RubyComplex extends RubyNumeric {
         }
 
         @Override
-        public void marshalTo(ThreadContext context, RubyOutputStream out, Object obj, RubyClass type, Dumper marshalStream) {
+        public void marshalTo(ThreadContext context, RubyOutputStream out, Object obj, RubyClass type, MarshalDumper marshalStream) {
             //do nothing
         }
 
         @Override
+        @Deprecated(since = "10.0", forRemoval = true)
+        @SuppressWarnings("removal")
         public Object unmarshalFrom(Ruby runtime, RubyClass type,
-                                    UnmarshalStream unmarshalStream) throws IOException {
+                                    org.jruby.runtime.marshal.UnmarshalStream unmarshalStream) throws IOException {
             RubyComplex c = (RubyComplex)RubyClass.DEFAULT_OBJECT_MARSHAL.unmarshalFrom(runtime, type, unmarshalStream);
+            c.real = c.removeInstanceVariable("@real");
+            c.image = c.removeInstanceVariable("@image");
+            c.setFrozen(true);
+
+            return c;
+        }
+
+        @Override
+        public Object unmarshalFrom(ThreadContext context, RubyInputStream in, RubyClass type, MarshalLoader loader) {
+            RubyComplex c = (RubyComplex)RubyClass.DEFAULT_OBJECT_MARSHAL.unmarshalFrom(context, in, type, loader);
             c.real = c.removeInstanceVariable("@real");
             c.image = c.removeInstanceVariable("@image");
             c.setFrozen(true);

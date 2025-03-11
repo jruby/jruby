@@ -37,9 +37,10 @@ import org.jruby.api.Access;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.marshal.Dumper;
-import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.runtime.marshal.MarshalDumper;
+import org.jruby.runtime.marshal.MarshalLoader;
 import org.jruby.util.ArraySupport;
+import org.jruby.util.io.RubyInputStream;
 import org.jruby.util.io.RubyOutputStream;
 
 import java.io.IOException;
@@ -97,12 +98,20 @@ public class RubySet extends RubyObject implements Set {
             defaultMarshal.marshalTo(runtime, obj, type, marshalStream);
         }
 
-        public void marshalTo(ThreadContext context, RubyOutputStream out, Object obj, RubyClass type, Dumper marshalStream) {
+        public void marshalTo(ThreadContext context, RubyOutputStream out, Object obj, RubyClass type, MarshalDumper marshalStream) {
             defaultMarshal.marshalTo(context, out, obj, type, marshalStream);
         }
 
-        public Object unmarshalFrom(Ruby runtime, RubyClass type, UnmarshalStream unmarshalStream) throws IOException {
+        @Deprecated(since = "10.0", forRemoval = true)
+        @SuppressWarnings("removal")
+        public Object unmarshalFrom(Ruby runtime, RubyClass type, org.jruby.runtime.marshal.UnmarshalStream unmarshalStream) throws IOException {
             Object result = defaultMarshal.unmarshalFrom(runtime, type, unmarshalStream);
+            ((RubySet) result).unmarshal();
+            return result;
+        }
+
+        public Object unmarshalFrom(ThreadContext context, RubyInputStream in, RubyClass type, MarshalLoader loader) {
+            Object result = defaultMarshal.unmarshalFrom(context, in, type, loader);
             ((RubySet) result).unmarshal();
             return result;
         }

@@ -45,11 +45,12 @@ import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.marshal.Dumper;
-import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.runtime.marshal.MarshalDumper;
+import org.jruby.runtime.marshal.MarshalLoader;
 import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.io.RubyInputStream;
 import org.jruby.util.io.RubyOutputStream;
 
 import static org.jruby.api.Convert.asBoolean;
@@ -1420,16 +1421,37 @@ public class RubyRational extends RubyNumeric {
             throw typeError(runtime.getCurrentContext(), "marshal_dump should be used instead for Rational");
         }
         @Override
-        public void marshalTo(ThreadContext context, RubyOutputStream out, Object obj, RubyClass type, Dumper marshalStream) {
+        public void marshalTo(ThreadContext context, RubyOutputStream out, Object obj, RubyClass type, MarshalDumper marshalStream) {
             throw typeError(context, "marshal_dump should be used instead for Rational");
         }
 
         @Override
+        @Deprecated(since = "10.0", forRemoval = true)
+        @SuppressWarnings("removal")
         public Object unmarshalFrom(Ruby runtime, RubyClass type,
-                                    UnmarshalStream unmarshalStream) throws IOException {
+                                    org.jruby.runtime.marshal.UnmarshalStream unmarshalStream) throws IOException {
             ThreadContext context = runtime.getCurrentContext();
 
             RubyRational r = (RubyRational) RubyClass.DEFAULT_OBJECT_MARSHAL.unmarshalFrom(runtime, type, unmarshalStream);
+
+            RubyInteger num = intCheck(context, r.removeInstanceVariable("@numerator"));
+            RubyInteger den = intCheck(context, r.removeInstanceVariable("@denominator"));
+
+            // MRI: nurat_canonicalize, negation part
+            if (canonicalizeShouldNegate(context, den)) {
+                num = num.negate(context);
+                den = den.negate(context);
+            }
+
+            r.num = num;
+            r.den = den;
+
+            return r;
+        }
+
+        @Override
+        public Object unmarshalFrom(ThreadContext context, RubyInputStream in, RubyClass type, MarshalLoader loader) {
+            RubyRational r = (RubyRational) RubyClass.DEFAULT_OBJECT_MARSHAL.unmarshalFrom(context, in, type, loader);
 
             RubyInteger num = intCheck(context, r.removeInstanceVariable("@numerator"));
             RubyInteger den = intCheck(context, r.removeInstanceVariable("@denominator"));

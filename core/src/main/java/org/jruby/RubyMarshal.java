@@ -34,8 +34,6 @@
 package org.jruby;
 
 import java.io.ByteArrayInputStream;
-import java.io.EOFException;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import org.jruby.anno.JRubyMethod;
@@ -44,12 +42,13 @@ import org.jruby.anno.JRubyModule;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.marshal.Dumper;
-import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.runtime.marshal.MarshalDumper;
+import org.jruby.runtime.marshal.MarshalLoader;
 
 import org.jruby.util.ByteList;
 import org.jruby.util.IOInputStream;
 import org.jruby.util.IOOutputStream;
+import org.jruby.util.io.RubyInputStream;
 import org.jruby.util.io.RubyOutputStream;
 import org.jruby.util.io.TransparentByteArrayOutputStream;
 
@@ -146,26 +145,21 @@ public class RubyMarshal {
         }
 
         final IRubyObject str = in.checkStringType();
-        try {
-            InputStream rawInput;
-            if (str != context.nil) {
-                ByteList bytes = ((RubyString) str).getByteList();
-                rawInput = new ByteArrayInputStream(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
-            } else if (sites(context).respond_to_getc.respondsTo(context, in, in) &&
-                        sites(context).respond_to_read.respondsTo(context, in, in)) {
-                rawInput = inputStream(context, in);
-            } else {
-                throw typeError(context, "instance of IO needed");
-            }
-
-            return new UnmarshalStream(context.runtime, rawInput, freeze, proc).unmarshalObject();
-        } catch (EOFException e) {
-            if (str != context.nil) throw argumentError(context, "marshal data too short");
-
-            throw context.runtime.newEOFError();
-        } catch (IOException ioe) {
-            throw context.runtime.newIOErrorFromException(ioe);
+        InputStream rawInput;
+        if (str != context.nil) {
+            ByteList bytes = ((RubyString) str).getByteList();
+            rawInput = new ByteArrayInputStream(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
+        } else if (sites(context).respond_to_getc.respondsTo(context, in, in) &&
+                    sites(context).respond_to_read.respondsTo(context, in, in)) {
+            rawInput = inputStream(context, in);
+        } else {
+            throw typeError(context, "instance of IO needed");
         }
+
+        MarshalLoader loader = new MarshalLoader(context, freeze, proc);
+        RubyInputStream rubyIn = new RubyInputStream(context.runtime, rawInput);
+        loader.start(context, rubyIn);
+        return loader.unmarshalObject(context, rubyIn);
     }
 
     private static InputStream inputStream(ThreadContext context, IRubyObject in) {
@@ -179,7 +173,7 @@ public class RubyMarshal {
     }
 
     private static void dumpToStream(ThreadContext context, IRubyObject object, OutputStream rawOutput, int depthLimit) {
-        Dumper output = new Dumper(depthLimit);
+        MarshalDumper output = new MarshalDumper(depthLimit);
         RubyOutputStream out = new RubyOutputStream(context.runtime, rawOutput);
 
         output.start(out);

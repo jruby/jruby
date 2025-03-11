@@ -52,10 +52,11 @@ import org.jruby.runtime.JavaSites.StructSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.marshal.Dumper;
-import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.runtime.marshal.MarshalDumper;
+import org.jruby.runtime.marshal.MarshalLoader;
 import org.jruby.util.ByteList;
 import org.jruby.util.RecursiveComparator;
+import org.jruby.util.io.RubyInputStream;
 import org.jruby.util.io.RubyOutputStream;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
@@ -981,7 +982,7 @@ public class RubyStruct extends RubyObject {
         }
     }
 
-    public static void marshalTo(ThreadContext context, RubyOutputStream out, RubyStruct struct, Dumper output) {
+    public static void marshalTo(ThreadContext context, RubyOutputStream out, RubyStruct struct, MarshalDumper output) {
         output.registerLinkTarget(struct);
         output.dumpDefaultObjectHeader(context, out, 'S', struct.getMetaClass());
 
@@ -995,7 +996,9 @@ public class RubyStruct extends RubyObject {
         }
     }
 
-    public static IRubyObject unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
+    @Deprecated(since = "10.0", forRemoval = true)
+    @SuppressWarnings("removal")
+    public static IRubyObject unmarshalFrom(org.jruby.runtime.marshal.UnmarshalStream input) throws java.io.IOException {
         final Ruby runtime = input.getRuntime();
         var context = runtime.getCurrentContext();
 
@@ -1003,10 +1006,6 @@ public class RubyStruct extends RubyObject {
         RubyClass rbClass = pathToClass(context, className.asJavaString());
         if (rbClass == null) {
             throw runtime.newNameError(UNINITIALIZED_CONSTANT, structClass(context), className);
-        }
-
-        if (rbClass.isKindOfModule(runtime.getData())) {
-            return RubyData.unmarshalFrom(context, input, rbClass);
         }
 
         final RubyArray member = __member__(context, rbClass);
@@ -1025,6 +1024,39 @@ public class RubyStruct extends RubyObject {
                         " not compatible (:", slot, " for :", elem, ")").toString());
             }
             result.aset(context, i, input.unmarshalObject());
+        }
+        return result;
+    }
+
+    public static IRubyObject unmarshalFrom(ThreadContext context, RubyInputStream in, MarshalLoader input) {
+        Ruby runtime = context.runtime;
+
+        RubySymbol className = input.unique(context, in);
+        RubyClass rbClass = pathToClass(context, className.asJavaString());
+        if (rbClass == null) {
+            throw runtime.newNameError(UNINITIALIZED_CONSTANT, structClass(context), className);
+        }
+
+        if (rbClass.isKindOfModule(runtime.getData())) {
+            return RubyData.unmarshalFrom(context, in, input, rbClass);
+        }
+
+        final RubyArray member = __member__(context, rbClass);
+
+        final int len = input.unmarshalInt(context, in);
+
+        // FIXME: This could all be more efficient, but it's how struct works
+        // 1.9 does not appear to call initialize (JRUBY-5875)
+        final RubyStruct result = (RubyStruct) input.entry(new RubyStruct(context, rbClass));
+
+        for (int i = 0; i < len; i++) {
+            RubySymbol slot = input.symbol(context, in);
+            RubySymbol elem = (RubySymbol) member.eltInternal(i);
+            if (!elem.equals(slot)) {
+                throw typeError(context, str(runtime, "struct ", rbClass,
+                        " not compatible (:", slot, " for :", elem, ")").toString());
+            }
+            result.aset(context, i, input.unmarshalObject(context, in));
         }
         return result;
     }

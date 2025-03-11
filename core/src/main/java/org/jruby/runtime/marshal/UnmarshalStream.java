@@ -84,6 +84,8 @@ import static org.jruby.util.RubyStringBuilder.str;
  *
  * @author Anders
  */
+@Deprecated(since = "10.0", forRemoval = true)
+@SuppressWarnings("removal")
 public class UnmarshalStream extends InputStream {
 
     protected final Ruby runtime;
