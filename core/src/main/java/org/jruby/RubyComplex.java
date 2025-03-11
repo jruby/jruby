@@ -41,12 +41,12 @@ import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.marshal.MarshalStream;
-import org.jruby.runtime.marshal.NewMarshal;
+import org.jruby.runtime.marshal.Dumper;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.io.RubyOutputStream;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -1167,12 +1167,14 @@ public class RubyComplex extends RubyNumeric {
 
     private static final ObjectMarshal COMPLEX_MARSHAL = new ObjectMarshal() {
         @Override
-        public void marshalTo(Ruby runtime, Object obj, RubyClass type, MarshalStream marshalStream) {
+        @Deprecated(since = "10.0", forRemoval = true)
+        @SuppressWarnings("removal")
+        public void marshalTo(Ruby runtime, Object obj, RubyClass type, org.jruby.runtime.marshal.MarshalStream marshalStream) {
             //do nothing
         }
 
         @Override
-        public void marshalTo(Object obj, RubyClass type, NewMarshal marshalStream, ThreadContext context, NewMarshal.RubyOutputStream out) {
+        public void marshalTo(ThreadContext context, RubyOutputStream out, Object obj, RubyClass type, Dumper marshalStream) {
             //do nothing
         }
 

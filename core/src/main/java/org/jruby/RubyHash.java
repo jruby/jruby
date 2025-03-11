@@ -44,6 +44,7 @@ import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Create;
+import org.jruby.api.Error;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ir.runtime.IRBreakJump;
@@ -58,12 +59,12 @@ import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
-import org.jruby.runtime.marshal.MarshalStream;
-import org.jruby.runtime.marshal.NewMarshal;
+import org.jruby.runtime.marshal.Dumper;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.RecursiveComparator;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.io.RubyOutputStream;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -2507,7 +2508,9 @@ public class RubyHash extends RubyObject implements Map {
 
     // FIXME:  Total hack to get flash in Rails marshalling/unmarshalling in session ok...We need
     // to totally change marshalling to work with overridden core classes.
-    public static void marshalTo(final RubyHash hash, final MarshalStream output) throws IOException {
+    @Deprecated(since = "10.0", forRemoval = true)
+    @SuppressWarnings("removal")
+    public static void marshalTo(final RubyHash hash, final org.jruby.runtime.marshal.MarshalStream output) throws IOException {
         var context = hash.getRuntime().getCurrentContext();
         output.registerLinkTarget(context, hash);
        int hashSize = hash.size();
@@ -2521,28 +2524,30 @@ public class RubyHash extends RubyObject implements Map {
         if (hash.ifNone != UNDEF) output.dumpObject(hash.ifNone);
     }
 
-    public static void marshalTo(final RubyHash hash, final NewMarshal output, ThreadContext context, NewMarshal.RubyOutputStream out) {
+    public static void marshalTo(ThreadContext context, RubyOutputStream out, final RubyHash hash, final Dumper output) {
         output.registerLinkTarget(hash);
         int hashSize = hash.size();
         output.writeInt(out, hashSize);
         try {
-            hash.visitLimited(context, new VisitorWithState<NewMarshal>() {
+            hash.visitLimited(context, new VisitorWithState<Dumper>() {
                 @Override
-                public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, NewMarshal state) {
+                public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, Dumper state) {
                     state.dumpObject(context, out, key);
                     state.dumpObject(context, out, value);
                 }
             }, hashSize, output);
         } catch (VisitorIOException e) {
-            out.handle((IOException) e.getCause());
+            throw Error.toRubyException(context, (IOException) e.getCause());
         }
 
         if (hash.ifNone != UNDEF) output.dumpObject(context, out, hash.ifNone);
     }
 
-    private static final VisitorWithState<MarshalStream> MarshalDumpVisitor = new VisitorWithState<MarshalStream>() {
+    @Deprecated(since = "10.0", forRemoval = true)
+    @SuppressWarnings("removal")
+    private static final VisitorWithState<org.jruby.runtime.marshal.MarshalStream> MarshalDumpVisitor = new VisitorWithState<>() {
         @Override
-        public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, MarshalStream output) {
+        public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, org.jruby.runtime.marshal.MarshalStream output) {
             try {
                 output.dumpObject(key);
                 output.dumpObject(value);

@@ -41,7 +41,6 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Convert;
 import org.jruby.api.Create;
-import org.jruby.api.Error;
 import org.jruby.api.JRubyAPI;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
@@ -50,9 +49,9 @@ import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
-import org.jruby.runtime.marshal.MarshalStream;
-import org.jruby.runtime.marshal.NewMarshal;
+import org.jruby.runtime.marshal.Dumper;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.util.io.RubyOutputStream;
 
 import static org.jruby.RubyFixnum.zero;
 import static org.jruby.api.Convert.*;
@@ -1150,7 +1149,9 @@ public class RubyBignum extends RubyInteger {
         return isZero(context) ? context.nil : this;
     }
 
-    public static void marshalTo(RubyBignum bignum, MarshalStream output) throws IOException {
+    @Deprecated(since = "10.0", forRemoval = true)
+    @SuppressWarnings("removal")
+    public static void marshalTo(RubyBignum bignum, org.jruby.runtime.marshal.MarshalStream output) throws IOException {
         var context = bignum.getRuntime().getCurrentContext();
         output.registerLinkTarget(context, bignum);
 
@@ -1177,10 +1178,11 @@ public class RubyBignum extends RubyInteger {
         }
     }
 
-    public static void marshalTo(RubyBignum bignum, NewMarshal output, NewMarshal.RubyOutputStream out) {
+    public static void marshalTo(ThreadContext context, RubyOutputStream out, RubyBignum bignum, Dumper output) {
         output.registerLinkTarget(bignum);
 
-        out.write(bignum.value.signum() >= 0 ? '+' : '-');
+        int b = bignum.value.signum() >= 0 ? '+' : '-';
+        out.write(b);
 
         BigInteger absValue = bignum.value.abs();
 

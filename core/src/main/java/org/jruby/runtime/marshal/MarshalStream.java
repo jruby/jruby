@@ -79,6 +79,8 @@ import static org.jruby.util.RubyStringBuilder.types;
  *
  * @author Anders
  */
+@Deprecated(since = "10.0", forRemoval = true)
+@SuppressWarnings("removal")
 public class MarshalStream extends FilterOutputStream {
     private final Ruby runtime;
     private final MarshalCache cache;

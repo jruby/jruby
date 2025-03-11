@@ -12,8 +12,9 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.ivars.VariableTableManager;
-import org.jruby.runtime.marshal.NewMarshal;
+import org.jruby.runtime.marshal.Dumper;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.util.io.RubyOutputStream;
 
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -21,7 +22,6 @@ import java.util.stream.Collectors;
 
 import static org.jruby.RubyBasicObject.rbInspect;
 import static org.jruby.RubyHash.newSmallHash;
-import static org.jruby.api.Access.structClass;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Convert.toSymbol;
@@ -337,7 +337,7 @@ public class RubyData {
     }
 
     // TODO: Mostly copied from RubyStruct; unify.
-    public static void marshalTo(IRubyObject data, NewMarshal output, ThreadContext context, NewMarshal.RubyOutputStream out) {
+    public static void marshalTo(ThreadContext context, RubyOutputStream out, IRubyObject data, Dumper output) {
         output.registerLinkTarget(data);
         output.dumpDefaultObjectHeader(context, out, 'S', data.getMetaClass());
 

@@ -62,12 +62,10 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.api.Create;
 import org.jruby.api.JRubyAPI;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.RaiseException;
@@ -94,8 +92,7 @@ import org.jruby.runtime.callsite.RespondToCallSite;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.ivars.VariableAccessorField;
 import org.jruby.runtime.ivars.VariableTableManager;
-import org.jruby.runtime.marshal.MarshalStream;
-import org.jruby.runtime.marshal.NewMarshal;
+import org.jruby.runtime.marshal.Dumper;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ClassDefiningClassLoader;
@@ -104,6 +101,7 @@ import org.jruby.util.JavaNameMangler;
 import org.jruby.util.Loader;
 import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.StringSupport;
+import org.jruby.util.io.RubyOutputStream;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.AnnotationVisitor;
@@ -1507,27 +1505,31 @@ public class RubyClass extends RubyModule {
         marshalWith(marshal);
     }
 
-    public final void marshal(Object obj, MarshalStream marshalStream) throws IOException {
+    @Deprecated(since = "10.0", forRemoval = true)
+    @SuppressWarnings("removal")
+    public final void marshal(Object obj, org.jruby.runtime.marshal.MarshalStream marshalStream) throws IOException {
         getMarshal().marshalTo(runtime, obj, this, marshalStream);
     }
 
-    public final void marshal(Object obj, NewMarshal marshalStream, ThreadContext context, NewMarshal.RubyOutputStream out) {
-        getMarshal().marshalTo(obj, this, marshalStream, context, out);
+    public final void marshal(ThreadContext context, RubyOutputStream out, Object obj, Dumper marshalStream) {
+        getMarshal().marshalTo(context, out, obj, this, marshalStream);
     }
 
     public final Object unmarshal(UnmarshalStream unmarshalStream) throws IOException {
         return getMarshal().unmarshalFrom(runtime, this, unmarshalStream);
     }
 
-    public static void marshalTo(RubyClass clazz, MarshalStream output) throws java.io.IOException {
+    @Deprecated(since = "10.0", forRemoval = true)
+    @SuppressWarnings("removal")
+    public static void marshalTo(RubyClass clazz, org.jruby.runtime.marshal.MarshalStream output) throws java.io.IOException {
         var context = clazz.getRuntime().getCurrentContext();
         output.registerLinkTarget(context, clazz);
-        output.writeString(MarshalStream.getPathFromClass(clazz));
+        output.writeString(org.jruby.runtime.marshal.MarshalStream.getPathFromClass(clazz));
     }
 
-    public static void marshalTo(RubyClass clazz, NewMarshal output, NewMarshal.RubyOutputStream out) {
+    public static void marshalTo(ThreadContext context, RubyOutputStream out, RubyClass clazz, Dumper output) {
         output.registerLinkTarget(clazz);
-        output.writeString(out, MarshalStream.getPathFromClass(clazz));
+        output.writeString(out, Dumper.getPathFromClass(context, clazz).idString());
     }
 
     public static RubyClass unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
@@ -1537,7 +1539,9 @@ public class RubyClass extends RubyModule {
 
     protected static final ObjectMarshal DEFAULT_OBJECT_MARSHAL = new ObjectMarshal() {
         @Override
-        public void marshalTo(Ruby runtime, Object obj, RubyClass type, MarshalStream marshalStream) throws IOException {
+        @Deprecated(since = "10.0", forRemoval = true)
+        @SuppressWarnings("removal")
+        public void marshalTo(Ruby runtime, Object obj, RubyClass type, org.jruby.runtime.marshal.MarshalStream marshalStream) throws IOException {
             IRubyObject object = (IRubyObject) obj;
             var context = object.getRuntime().getCurrentContext();
 
@@ -1546,7 +1550,7 @@ public class RubyClass extends RubyModule {
         }
 
         @Override
-        public void marshalTo(Object obj, RubyClass type, NewMarshal marshalStream, ThreadContext context, NewMarshal.RubyOutputStream out) {
+        public void marshalTo(ThreadContext context, RubyOutputStream out, Object obj, RubyClass type, Dumper marshalStream) {
             IRubyObject object = (IRubyObject) obj;
 
             marshalStream.registerLinkTarget(object);
@@ -2801,7 +2805,9 @@ public class RubyClass extends RubyModule {
          * @param object The object to dump
          * @throws IOException If there is an IO error during dumping
          */
-        public void dump(MarshalStream stream, IRubyObject object) throws IOException {
+        @Deprecated(since = "10.0", forRemoval = true)
+        @SuppressWarnings("removal")
+        public void dump(org.jruby.runtime.marshal.MarshalStream stream, IRubyObject object) throws IOException {
             var context = object.getRuntime().getCurrentContext();
             switch (type) {
                 case DEFAULT:
@@ -2824,7 +2830,7 @@ public class RubyClass extends RubyModule {
             }
         }
 
-        public void dump(NewMarshal stream, ThreadContext context, NewMarshal.RubyOutputStream out, IRubyObject object) {
+        public void dump(Dumper stream, ThreadContext context, RubyOutputStream out, IRubyObject object) {
             switch (type) {
                 case DEFAULT:
                     stream.writeDirectly(context, out, object);
@@ -2876,7 +2882,9 @@ public class RubyClass extends RubyModule {
      * @throws IOException If there is an IO exception while writing to the
      * stream.
      */
-    public void smartDump(MarshalStream stream, IRubyObject target) throws IOException {
+    @Deprecated(since = "10.0", forRemoval = true)
+    @SuppressWarnings("removal")
+    public void smartDump(org.jruby.runtime.marshal.MarshalStream stream, IRubyObject target) throws IOException {
         MarshalTuple tuple;
         if ((tuple = cachedDumpMarshal).generation == generation) {
         } else {
@@ -2908,7 +2916,7 @@ public class RubyClass extends RubyModule {
         tuple.dump(stream, target);
     }
 
-    public void smartDump(NewMarshal stream, ThreadContext context, NewMarshal.RubyOutputStream out, IRubyObject target) {
+    public void smartDump(ThreadContext context, RubyOutputStream out, Dumper stream, IRubyObject target) {
         MarshalTuple tuple;
         if ((tuple = cachedDumpMarshal).generation == generation) {
         } else {

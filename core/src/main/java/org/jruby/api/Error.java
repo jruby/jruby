@@ -5,11 +5,15 @@ import org.jruby.RubyArray;
 import org.jruby.RubyFrozenError;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.IOError;
 import org.jruby.exceptions.NotImplementedError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.TypeError;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.io.IOException;
 
 import static org.jruby.api.Access.argumentErrorClass;
 import static org.jruby.api.Create.newString;
@@ -258,6 +262,10 @@ public class Error {
         }
 
         return argumentError(context, message.toString());
+    }
+
+    public static org.jruby.exceptions.Exception toRubyException(ThreadContext context, IOException ioe) {
+        return (org.jruby.exceptions.Exception) Helpers.newIOErrorFromException(context.runtime, ioe);
     }
 
     private static IRubyObject typeFor(Ruby runtime, IRubyObject object) {

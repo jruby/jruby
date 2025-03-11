@@ -40,7 +40,6 @@ import org.jruby.compiler.Constantizable;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
 
@@ -249,7 +248,9 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
         }
     }
 
-    public void marshalTo(MarshalStream output) throws java.io.IOException {
+    @Deprecated(since = "10.0", forRemoval = true)
+    @SuppressWarnings("removal")
+    public void marshalTo(org.jruby.runtime.marshal.MarshalStream output) throws java.io.IOException {
         output.write(isTrue() ? 'T' : 'F');
     }
 

@@ -76,11 +76,11 @@ import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callsite.RespondToCallSite;
 import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.invokedynamic.MethodNames;
-import org.jruby.runtime.marshal.MarshalStream;
-import org.jruby.runtime.marshal.NewMarshal;
+import org.jruby.runtime.marshal.Dumper;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.Numeric;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.io.RubyOutputStream;
 
 import static org.jruby.RubyEnumerator.SizeFn;
 
@@ -1303,8 +1303,10 @@ public class RubyRange extends RubyObject {
 
     private static final ObjectMarshal RANGE_MARSHAL = new ObjectMarshal() {
         @Override
+        @Deprecated(since = "10.0", forRemoval = true)
+        @SuppressWarnings("removal")
         public void marshalTo(Ruby runtime, Object obj, RubyClass type,
-                MarshalStream marshalStream) throws IOException {
+                              org.jruby.runtime.marshal.MarshalStream marshalStream) throws IOException {
             RubyRange range = (RubyRange) obj;
             var context = runtime.getCurrentContext();
 
@@ -1319,8 +1321,8 @@ public class RubyRange extends RubyObject {
         }
 
         @Override
-        public void marshalTo(Object obj, RubyClass type,
-                              NewMarshal marshalStream, ThreadContext context, NewMarshal.RubyOutputStream out) {
+        public void marshalTo(ThreadContext context, RubyOutputStream out, Object obj, RubyClass type,
+                              Dumper marshalStream) {
             RubyRange range = (RubyRange) obj;
 
             marshalStream.registerLinkTarget(range);

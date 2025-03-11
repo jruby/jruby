@@ -52,11 +52,11 @@ import org.jruby.runtime.JavaSites.StructSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.marshal.MarshalStream;
-import org.jruby.runtime.marshal.NewMarshal;
+import org.jruby.runtime.marshal.Dumper;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.RecursiveComparator;
+import org.jruby.util.io.RubyOutputStream;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.api.Access.structClass;
@@ -964,7 +964,9 @@ public class RubyStruct extends RubyObject {
         return argc == 1 ? val : RubyObject.dig(context, val, args, 1);
     }
 
-    public static void marshalTo(RubyStruct struct, MarshalStream output) throws java.io.IOException {
+    @Deprecated(since = "10.0", forRemoval = true)
+    @SuppressWarnings("removal")
+    public static void marshalTo(RubyStruct struct, org.jruby.runtime.marshal.MarshalStream output) throws java.io.IOException {
         var context = struct.getRuntime().getCurrentContext();
         output.registerLinkTarget(context, struct);
         output.dumpDefaultObjectHeader(context, 'S', struct.getMetaClass());
@@ -979,7 +981,7 @@ public class RubyStruct extends RubyObject {
         }
     }
 
-    public static void marshalTo(RubyStruct struct, NewMarshal output, ThreadContext context, NewMarshal.RubyOutputStream out) {
+    public static void marshalTo(ThreadContext context, RubyOutputStream out, RubyStruct struct, Dumper output) {
         output.registerLinkTarget(struct);
         output.dumpDefaultObjectHeader(context, out, 'S', struct.getMetaClass());
 

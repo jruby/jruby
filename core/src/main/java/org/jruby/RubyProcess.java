@@ -59,14 +59,14 @@ import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.runtime.marshal.CoreObjectType;
-import org.jruby.runtime.marshal.MarshalStream;
-import org.jruby.runtime.marshal.NewMarshal;
+import org.jruby.runtime.marshal.Dumper;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ShellLauncher;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
 import org.jruby.util.io.PopenExecutor;
 import org.jruby.util.io.PosixShim;
+import org.jruby.util.io.RubyOutputStream;
 
 import java.io.IOException;
 import java.lang.invoke.MethodHandle;
@@ -167,8 +167,10 @@ public class RubyProcess {
 
     private static final ObjectMarshal PROCESS_STATUS_MARSHAL = new ObjectMarshal() {
         @Override
+        @Deprecated(since = "10.0", forRemoval = true)
+        @SuppressWarnings("removal")
         public void marshalTo(Ruby runtime, Object obj, RubyClass type,
-                              MarshalStream marshalStream) throws IOException {
+                              org.jruby.runtime.marshal.MarshalStream marshalStream) throws IOException {
             RubyStatus status = (RubyStatus) obj;
             var context = runtime.getCurrentContext();
 
@@ -182,8 +184,8 @@ public class RubyProcess {
         }
 
         @Override
-        public void marshalTo(Object obj, RubyClass type,
-                              NewMarshal marshalStream, ThreadContext context, NewMarshal.RubyOutputStream out) {
+        public void marshalTo(ThreadContext context, RubyOutputStream out, Object obj, RubyClass type,
+                              Dumper marshalStream) {
             RubyStatus status = (RubyStatus) obj;
 
             marshalStream.registerLinkTarget(status);

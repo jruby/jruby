@@ -55,13 +55,13 @@ import org.jruby.runtime.JavaSites.FloatSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.marshal.MarshalStream;
-import org.jruby.runtime.marshal.NewMarshal;
+import org.jruby.runtime.marshal.Dumper;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertDouble;
 import org.jruby.util.Numeric;
 import org.jruby.util.Sprintf;
+import org.jruby.util.io.RubyOutputStream;
 
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
@@ -1135,14 +1135,15 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return byteList;
     }
 
-    public static void marshalTo(RubyFloat aFloat, MarshalStream output) throws java.io.IOException {
+    @Deprecated(since = "10.0", forRemoval = true)
+    @SuppressWarnings("removal")
+    public static void marshalTo(RubyFloat aFloat, org.jruby.runtime.marshal.MarshalStream output) throws java.io.IOException {
         var context = aFloat.getRuntime().getCurrentContext();
         output.registerLinkTarget(context, aFloat);
         output.writeString(aFloat.marshalDump(context));
     }
 
-    public static void marshalTo(RubyFloat aFloat, NewMarshal output, NewMarshal.RubyOutputStream out) {
-        var context = aFloat.getRuntime().getCurrentContext();
+    public static void marshalTo(ThreadContext context, RubyOutputStream out, RubyFloat aFloat, Dumper output) {
         output.registerLinkTarget(aFloat);
         output.writeString(out, aFloat.marshalDump(context));
     }

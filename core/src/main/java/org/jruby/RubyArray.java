@@ -59,7 +59,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Create;
 import org.jruby.api.JRubyAPI;
 import org.jruby.ast.util.ArgsUtil;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.java.util.ArrayUtils;
 import org.jruby.javasupport.JavaUtil;
@@ -76,8 +75,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.encoding.EncodingCapable;
-import org.jruby.runtime.marshal.MarshalStream;
-import org.jruby.runtime.marshal.NewMarshal;
+import org.jruby.runtime.marshal.Dumper;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.specialized.RubyArrayOneObject;
 import org.jruby.specialized.RubyArraySpecialized;
@@ -90,6 +88,7 @@ import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
 import org.jruby.util.collections.StringArraySet;
 import org.jruby.util.io.EncodingUtils;
+import org.jruby.util.io.RubyOutputStream;
 
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorize;
@@ -5275,12 +5274,15 @@ float_loop:
         return ifnone != null && !ifnone.isNil() ? sites(context).call.call(context, ifnone, ifnone) : context.nil;
     }
 
-    @Deprecated(since = "10.0")
-    public static void marshalTo(RubyArray array, MarshalStream output) throws IOException {
+    @Deprecated(since = "10.0", forRemoval = true)
+    @SuppressWarnings("removal")
+    public static void marshalTo(RubyArray array, org.jruby.runtime.marshal.MarshalStream output) throws IOException {
         marshalTo(((RubyBasicObject) array).getCurrentContext(), array, output);
     }
 
-    public static void marshalTo(ThreadContext context, RubyArray array, MarshalStream output) throws IOException {
+    @Deprecated(since = "10.0", forRemoval = true)
+    @SuppressWarnings("removal")
+    public static void marshalTo(ThreadContext context, RubyArray array, org.jruby.runtime.marshal.MarshalStream output) throws IOException {
         output.registerLinkTarget(context, array);
 
         int length = array.realLength;
@@ -5295,7 +5297,7 @@ float_loop:
         }
     }
 
-    public static void marshalTo(RubyArray array, NewMarshal output, ThreadContext context, NewMarshal.RubyOutputStream out) {
+    public static void marshalTo(ThreadContext context, RubyOutputStream out, RubyArray array, Dumper output) {
         output.registerLinkTarget(array);
 
         int length = array.realLength;
@@ -5306,7 +5308,7 @@ float_loop:
                 output.dumpObject(context, out, array.eltInternal(i));
             }
         } catch (ArrayIndexOutOfBoundsException ex) {
-            throw concurrentModification(array.getRuntime().getCurrentContext(), ex);
+            throw concurrentModification(context, ex);
         }
     }
 
