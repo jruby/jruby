@@ -20,6 +20,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
 
+import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.util.RubyStringBuilder.str;
 
 public class TracePoint extends RubyObject {
@@ -85,6 +86,8 @@ public class TracePoint extends RubyObject {
             public void event(ThreadContext context, RubyEvent event, String file, int line, String name, IRubyObject type) {
                 if (!enabled || context.isWithinTrace()) return;
 
+                int savedCallInfo = resetCallInfo(context);
+
                 synchronized (this) {
                     inside = true;
 
@@ -109,6 +112,7 @@ public class TracePoint extends RubyObject {
                         update(null, null, line, null, context.nil, context.nil, context.nil, context.nil);
                         context.postTrace();
                         inside = false;
+                        context.callInfo = savedCallInfo;
                     }
                 }
             }
