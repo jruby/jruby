@@ -57,7 +57,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
-public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
+public class JRubyEngine implements AutoCloseable, Compilable, Invocable, ScriptEngine {
 
     final ScriptingContainer container;
     private final JRubyEngineFactory factory;
@@ -249,6 +249,11 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
         } finally {
             Utils.postEval(container, context);
         }
+    }
+
+    @Override
+    public void close() {
+        container.terminate();
     }
 
     public <T> T getInterface(Class<T> returnType) {
