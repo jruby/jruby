@@ -5,6 +5,7 @@ exclude :test_each_object_no_gabage, "we don't run this suite with ObjectSpace o
 exclude :test_each_object_no_garbage, "work in progress"
 exclude :test_exception_in_finalizer, "work in progress"
 exclude :test_finalizer, "we don't run this suite with ObjectSpace on"
+exclude :test_finalizer_thread_raise, "no GC.stat_heap method"
 exclude :test_id2ref_18, "we don't run this suite with ObjectSpace on"
 exclude :test_id2ref_28, "we don't run this suite with ObjectSpace on"
 exclude :test_id2ref_29, "we don't run this suite with ObjectSpace on"

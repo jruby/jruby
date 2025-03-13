@@ -3,6 +3,7 @@ exclude :test_compare_by_id_memory_leak, "no working assert_no_memory_leak metho
 exclude :test_exception_in_rehash_memory_leak, "no working assert_no_memory_leak method"
 exclude :test_float_hash_random, "launches many subprocesses"
 exclude :test_integer_hash_random, "JRuby does not randomize hash calculation for integer keys, see https://bugs.ruby-lang.org/issues/13002"
+exclude :test_memory_size_after_delete, "uses ObjectSpace.memsize_of"
 exclude :test_rehash_memory_leak, "no working assert_no_memory_leak method"
 exclude :test_replace_memory_leak, "no working assert_no_memory_leak method"
 exclude :test_st_literal_memory_leak, "no working assert_no_memory_leak method"
