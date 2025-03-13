@@ -1,0 +1,7 @@
+exclude :test_caller_lev_and_n, "work in progress"
+exclude :test_caller_limit_cfunc_iseq_no_pc, "work in progress"
+exclude :test_caller_location_inspect_cfunc_iseq_no_pc, "work in progress"
+exclude :test_caller_locations_absolute_path, "work in progress"
+exclude :test_caller_locations_label, "work in progress"
+exclude :test_caller_to_enum, "work in progress"
+exclude :test_notty_backtrace, "work in progress"

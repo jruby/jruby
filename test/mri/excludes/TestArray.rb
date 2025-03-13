@@ -1,3 +1,4 @@
+exclude :"test_freeze_inside_sort!", "test bug: test expects sort to take at least 6 iterations"
 exclude :test_combination_with_callcc, "Continuations are not supported"
 exclude :test_flatten_with_callcc, "Continuations are not supported"
 exclude :test_permutation_with_callcc, "Continuations are not supported"

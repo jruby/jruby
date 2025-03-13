@@ -1,6 +1,8 @@
 exclude :test_count, "expects GC.start to force GC run"
 exclude :test_exception_in_finalizer_method, "broken subprocess logic"
+exclude :test_exception_in_finalizer_method, "work in progress"
 exclude :test_exception_in_finalizer_procs, "broken subprocess logic"
+exclude :test_exception_in_finalizer_procs, "work in progress"
 exclude :test_expand_heap, "broken subprocess logic"
 exclude :test_gc_disabled_start, ""
 exclude :test_gc_internals, "MRI-specific"

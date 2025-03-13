@@ -1,3 +1,4 @@
+exclude :"test_freeze_inside_sort!", "test bug: test expects sort to take at least 6 iterations"
 exclude :test_collect, "breaks in full interp and JIT due to differences in lambda args processing (#6165)"
 exclude :test_combination_with_callcc, "Continuations are not supported"
 exclude :test_flatten_with_callcc, "Continuations are not supported"

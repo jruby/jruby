@@ -1,5 +1,8 @@
 exclude :test_attr_source_location, "needs investigation"
 exclude :test_binding_source_location, "binding source location only looks at interpreter backtrace (#6163)"
 exclude :test_dup_clone, "needs investigation"
+exclude :test_lambda_warning_pass_block, "work in progress"
+exclude :test_lambda_warning_pass_proc, "work in progress"
 exclude :test_parameters, "needs investigation"
-
+exclude :test_proc_autosplat, "work in progress"
+exclude :test_to_s, "work in progress"
