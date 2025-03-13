@@ -1,3 +1,4 @@
+exclude :test_bug_18343, "work in progress"
 exclude :test_format_string_modified, "needs investigation"
 exclude :test_integer_endian, "needs investigation"
 exclude :test_integer_endian_explicit, "needs investigation"

@@ -1,8 +1,0 @@
-exclude :"test_change_struct", "work in progress"
-exclude :"test_hash_compared_by_identity", "work in progress"
-exclude :"test_hash_default_compared_by_identity", "work in progress"
-exclude :"test_hash_subclass_extend", "work in progress, may only happen in JIT"
-exclude :"test_marshal_dump_adding_instance_variable", "work in progress"
-exclude :"test_marshal_dump_removing_instance_variable", "work in progress"
-exclude :"test_marshal_nameerror", "work in progress"
-exclude :"test_marshal_with_ruby2_keywords_hash", "work in progress"

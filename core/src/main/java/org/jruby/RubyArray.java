@@ -2684,8 +2684,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                 var zero = asFixnum(context, 0);
                 switch (RubyComparable.cmpint(context, op_cmp.call(context, v, v, zero), v, zero)) {
                     case 0: return mid;
-                    case 1: smaller = true; break;
-                    case -1: smaller = false;
+                    case 1: smaller = false; break;
+                    case -1: smaller = true;
                 }
             } else {
                 throw typeError(context, "wrong argument type ", v, " (must be numeric, true, false or nil");
@@ -3382,12 +3382,9 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     @JRubyMethod(name = "assoc")
     public IRubyObject assoc(ThreadContext context, IRubyObject key) {
-        Ruby runtime = context.runtime;
-
         for (int i = 0; i < realLength; i++) {
-            IRubyObject v = eltOk(i);
-            if (v instanceof RubyArray) {
-                RubyArray arr = (RubyArray)v;
+            IRubyObject v = TypeConverter.checkArrayType(context, sites(context).to_ary_checked, eltOk(i));
+            if (v instanceof RubyArray arr && arr.size() > 0) {
                 if (arr.realLength > 0 && equalInternal(context, arr.elt(0), key)) return arr;
             }
         }

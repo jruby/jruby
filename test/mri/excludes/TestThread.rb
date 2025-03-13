@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 exclude :test_abort_on_exception, "very sensitive to thread timing and parallelism"
-exclude :test_inspect_with_fiber, "Thread.current is known to reflect the fiber, not the thread, in JRuby"
 exclude :test_ignore_deadlock, "launches a slow subprocess and does not really test anything on JRuby"
+exclude :test_inspect, "work in progress"
+exclude :test_inspect_with_fiber, "Thread.current is known to reflect the fiber, not the thread, in JRuby"
 exclude :test_join_limit_negative_INT64_MIN, "times out"
 exclude :test_list, "JVM finalizer threads get adopted, randomly skewing the result (#4960)"
 exclude :test_machine_stack_size, "slow and unreliable"

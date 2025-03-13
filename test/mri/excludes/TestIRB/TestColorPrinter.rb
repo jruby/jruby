@@ -1,1 +1,1 @@
-exclude :"test_color_printer", "work in progress"
+exclude :test_color_printer, "work in progress"
