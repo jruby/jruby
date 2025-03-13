@@ -12,5 +12,4 @@ exclude :test_start_full_mark, ""
 exclude :test_start_immediate_sweep, ""
 exclude :test_stat, "tests count_objects"
 exclude :test_stat_constraints, ""
-exclude :test_verify_internal_consistency, ""
- 
+exclude :test_verify_internal_consistency, "no GC.verify_internal_consistency method"

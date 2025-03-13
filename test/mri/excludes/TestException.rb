@@ -6,3 +6,5 @@ recover from such situation.
 ]
 
 exclude %r[test_machine_stackoverflow], reason
+
+exclude :test_warning_warn_super, "GC is not configurable in JRuby"
