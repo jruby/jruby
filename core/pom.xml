@@ -55,9 +55,9 @@ DO NOT MODIFY - GENERATED CODE
     <test.results.dir>${build.dir}/test-results</test.results.dir>
     <tzdata.scope>provided</tzdata.scope>
     <tzdata.version>2019c</tzdata.version>
-    <version.ruby>3.4.0</version.ruby>
+    <version.ruby>3.4.2</version.ruby>
     <version.ruby.major>3.4</version.ruby.major>
-    <version.ruby.minor>0</version.ruby.minor>
+    <version.ruby.minor>2</version.ruby.minor>
   </properties>
   <dependencies>
     <dependency>
