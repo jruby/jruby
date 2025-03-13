@@ -2684,8 +2684,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                 var zero = asFixnum(context, 0);
                 switch (RubyComparable.cmpint(context, op_cmp.call(context, v, v, zero), v, zero)) {
                     case 0: return mid;
-                    case 1: smaller = true; break;
-                    case -1: smaller = false;
+                    case 1: smaller = false; break;
+                    case -1: smaller = true;
                 }
             } else {
                 throw typeError(context, "wrong argument type ", v, " (must be numeric, true, false or nil");
