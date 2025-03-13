@@ -3382,12 +3382,9 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     @JRubyMethod(name = "assoc")
     public IRubyObject assoc(ThreadContext context, IRubyObject key) {
-        Ruby runtime = context.runtime;
-
         for (int i = 0; i < realLength; i++) {
-            IRubyObject v = eltOk(i);
-            if (v instanceof RubyArray) {
-                RubyArray arr = (RubyArray)v;
+            IRubyObject v = TypeConverter.checkArrayType(context, sites(context).to_ary_checked, eltOk(i));
+            if (v instanceof RubyArray arr && arr.size() > 0) {
                 if (arr.realLength > 0 && equalInternal(context, arr.elt(0), key)) return arr;
             }
         }
