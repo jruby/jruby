@@ -55,6 +55,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Access;
 import org.jruby.api.Convert;
+import org.jruby.api.Create;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Helpers;
@@ -98,6 +99,8 @@ public class RubySocket extends RubyBasicSocket {
     static RubyClass createSocket(ThreadContext context, RubyClass BasicSocket) {
         RubyClass Socket = defineClass(context, "Socket", BasicSocket, RubySocket::new).
                 defineMethods(context, RubySocket.class);
+
+        Socket.setInternalVariable("tcp_fast_fallback", getFastFallbackDefault(context));
 
         RubyModule SocketConstants = Socket.defineModuleUnder(context, "Constants").
                 defineConstantsFrom(context, Sock.class).
@@ -677,6 +680,27 @@ public class RubySocket extends RubyBasicSocket {
             return rbIoClose(context);
         }
         return context.nil;
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject tcp_fast_fallback(ThreadContext context, IRubyObject self) {
+        return (IRubyObject) Access.getClass(context, "Socket").getInternalVariable("tcp_fast_fallback");
+    }
+
+    @JRubyMethod(name = "tcp_fast_fallback=", meta = true)
+    public static IRubyObject tcp_fast_fallback_set(ThreadContext context, IRubyObject self, IRubyObject value) {
+        Access.getClass(context, "Socket").setInternalVariable("tcp_fast_fallback", value);
+        return value;
+    }
+
+    private static RubyBoolean getFastFallbackDefault(ThreadContext context) {
+        IRubyObject tcpNoFastFallbackConfig = context.runtime.getENV().fastARef(Create.newString(context, "RUBY_TCP_NO_FAST_FALLBACK"));
+        if (tcpNoFastFallbackConfig == null || tcpNoFastFallbackConfig.isNil()
+                || tcpNoFastFallbackConfig.toString().equals("0")) {
+            return context.tru;
+        } else {
+            return context.fals;
+        }
     }
 
     @Override

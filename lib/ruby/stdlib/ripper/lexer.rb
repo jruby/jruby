@@ -53,6 +53,7 @@ class Ripper
   end
 
   class Lexer < ::Ripper   #:nodoc: internal use only
+    # :stopdoc:
     class State
       attr_reader :to_int, :to_s
 
@@ -242,7 +243,12 @@ class Ripper
     end
 
     def on_error2(mesg, elem)
-      @errors.push Elem.new(elem.pos, __callee__, elem.tok, elem.state, mesg)
+      if elem
+        elem = Elem.new(elem.pos, __callee__, elem.tok, elem.state, mesg)
+      else
+        elem = Elem.new([lineno(), column()], __callee__, token(), state(), mesg)
+      end
+      @errors.push elem
     end
     PARSER_EVENTS.grep(/_error\z/) do |e|
       arity = PARSER_EVENT_TABLE.fetch(e)
@@ -253,6 +259,7 @@ class Ripper
     (SCANNER_EVENTS.map {|event|:"on_#{event}"} - private_instance_methods(false)).each do |event|
       alias_method event, :_push_token
     end
+    # :startdoc:
   end
 
   # [EXPERIMENTAL]
