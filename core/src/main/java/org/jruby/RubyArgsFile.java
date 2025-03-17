@@ -937,12 +937,105 @@ public class RubyArgsFile extends RubyObject {
         return newString(context, "ARGF");
     }
 
+    @JRubyMethod(name = "write", rest = true)
+    public static IRubyObject write(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return RubyIO.writev(context, argfWriteIO(context), args);
+    }
+
+    @JRubyMethod(name = "write")
+    public static IRubyObject write(ThreadContext context, IRubyObject recv) {
+        return RubyIO.writev(context, argfWriteIO(context));
+    }
+
+    @JRubyMethod(name = "write")
+    public static IRubyObject write(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
+        return RubyIO.writev(context, argfWriteIO(context), arg0);
+    }
+
+    @JRubyMethod(name = "write")
+    public static IRubyObject write(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
+        return RubyIO.writev(context, argfWriteIO(context), arg0, arg1);
+    }
+
+    @JRubyMethod(name = "write")
+    public static IRubyObject write(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        return RubyIO.writev(context, argfWriteIO(context), arg0, arg1, arg2);
+    }
+
+    @JRubyMethod(name = "print", rest = true)
+    public static IRubyObject print(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return RubyIO.print(context, recv, args);
+    }
+
+    @JRubyMethod(name = "print")
+    public static IRubyObject print(ThreadContext context, IRubyObject recv) {
+        return RubyIO.print0(context, recv);
+    }
+
+    @JRubyMethod(name = "print")
+    public static IRubyObject print(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
+        return RubyIO.print1(context, recv, arg0);
+    }
+
+    @JRubyMethod(name = "print")
+    public static IRubyObject print(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
+        return RubyIO.print2(context, recv, arg0, arg1);
+    }
+
+    @JRubyMethod(name = "print")
+    public static IRubyObject print(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        return RubyIO.print3(context, recv, arg0, arg1, arg2);
+    }
+
+    @JRubyMethod(name = "printf", rest = true)
+    public static IRubyObject printf(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return RubyIO.printf(context, recv, args);
+    }
+
+    @JRubyMethod(name = "putc")
+    public static IRubyObject putc(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
+        return RubyIO.putc(context, recv, arg0);
+    }
+
+    @JRubyMethod(name = "puts", rest = true)
+    public static IRubyObject puts(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return RubyIO.puts(context, recv, args);
+    }
+
+    @JRubyMethod(name = "puts")
+    public static IRubyObject puts(ThreadContext context, IRubyObject recv) {
+        return RubyIO.puts0(context, recv);
+    }
+
+    @JRubyMethod(name = "puts")
+    public static IRubyObject puts(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
+        return RubyIO.puts1(context, recv, arg0);
+    }
+
+    @JRubyMethod(name = "puts")
+    public static IRubyObject puts(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
+        return RubyIO.puts2(context, recv, arg0, arg1);
+    }
+
+    @JRubyMethod(name = "puts")
+    public static IRubyObject puts(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        return RubyIO.puts3(context, recv, arg0, arg1, arg2);
+    }
+
     private static RubyIO getCurrentDataFile(ThreadContext context, String errorMessage) {
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
 
         if (!data.next_argv(context)) throw argumentError(context, errorMessage);
 
         return (RubyIO) data.currentFile;
+    }
+
+    private static RubyIO argfWriteIO(ThreadContext context) {
+        ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
+
+        if (!data.next_argv(context)) throw argumentError(context, "not opened for writing");
+
+        return ((RubyIO) data.currentFile).GetWriteIO();
     }
 
     private static JavaSites.ArgfSites sites(ThreadContext context) {

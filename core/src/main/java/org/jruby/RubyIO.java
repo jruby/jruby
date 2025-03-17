@@ -82,6 +82,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.IOSites;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -2011,7 +2012,11 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @JRubyMethod(required = 1, rest = true, checkArity = false)
     public IRubyObject printf(ThreadContext context, IRubyObject[] args) {
-        write(context, this, RubyKernel.sprintf(context, this, args));
+        return printf(context, this, args);
+    }
+
+    public static IRubyObject printf(ThreadContext context, IRubyObject out, IRubyObject[] args) {
+        write(context, out, RubyKernel.sprintf(context, out, args));
         return context.nil;
     }
 
@@ -3010,16 +3015,90 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return write.call(context, maybeIO, maybeIO, arg0, arg1);
     }
 
-    private static void warnWrite(ThreadContext context, IRubyObject maybeIO) {
-        IRubyObject klass = maybeIO.getMetaClass();
-        char sep;
-        if (((RubyClass) klass).isSingleton()) {
-            klass = maybeIO;
-            sep = '.';
-        } else {
-            sep = '#';
+    // MRI: rb_io_writev
+    public static IRubyObject writev(ThreadContext context, IRubyObject io, IRubyObject[] args) {
+        switch (args.length) {
+            case 0:
+                return writev(context, io);
+            case 1:
+                return writev(context, io, args[0]);
+            case 2:
+                return writev(context, io, args[0], args[1]);
+            case 3:
+                return writev(context, io, args[0], args[1], args[2]);
         }
-        warningDeprecated(context, klass.toString() + sep + "write is outdated interface which accepts just one argument");
+
+        CachingCallSite write = sites(context).write;
+
+        if (args.length > 1 && write.retrieveCache(io).method.getSignature() == Signature.ONE_ARGUMENT) {
+            warnWrite(context, io);
+
+            for (IRubyObject arg : args) {
+                write.call(context, io, io, arg);
+            }
+
+            return context.nil;
+        }
+
+        return write.call(context, io, io, args);
+    }
+
+    // MRI: rb_io_writev
+    public static IRubyObject writev(ThreadContext context, IRubyObject io) {
+        return sites(context).write.call(context, io, io);
+    }
+
+    // MRI: rb_io_writev
+    public static IRubyObject writev(ThreadContext context, IRubyObject io, IRubyObject arg0) {
+        return sites(context).write.call(context, io, io, arg0);
+    }
+
+    // MRI: rb_io_writev
+    public static IRubyObject writev(ThreadContext context, IRubyObject io, IRubyObject arg0, IRubyObject arg1) {
+        CachingCallSite write = sites(context).write;
+
+        if (write.retrieveCache(io).method.getSignature() == Signature.ONE_ARGUMENT) {
+            warnWrite(context, io);
+
+            write.call(context, io, io, arg0);
+            write.call(context, io, io, arg1);
+
+            return context.nil;
+        }
+
+        return write.call(context, io, io, arg0, arg1);
+    }
+
+    // MRI: rb_io_writev
+    public static IRubyObject writev(ThreadContext context, IRubyObject io, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        CachingCallSite write = sites(context).write;
+
+        if (write.retrieveCache(io).method.getSignature() == Signature.ONE_ARGUMENT) {
+            warnWrite(context, io);
+
+            write.call(context, io, io, arg0);
+            write.call(context, io, io, arg1);
+            write.call(context, io, io, arg2);
+
+            return context.nil;
+        }
+
+        return write.call(context, io, io, arg0, arg1, arg2);
+    }
+
+    private static void warnWrite(ThreadContext context, IRubyObject maybeIO) {
+        // CRuby checks ractor stderr here
+        if (maybeIO != globalVariables(context).get("$stderr") && context.runtime.isVerbose()) {
+            IRubyObject klass = maybeIO.getMetaClass();
+            char sep;
+            if (((RubyClass) klass).isSingleton()) {
+                klass = maybeIO;
+                sep = '.';
+            } else {
+                sep = '#';
+            }
+            warningDeprecated(context, klass.toString() + sep + "write is outdated interface which accepts just one argument");
+        }
     }
 
     @JRubyMethod
