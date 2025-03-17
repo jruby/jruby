@@ -199,18 +199,21 @@ public class RubyArgsFile extends RubyObject {
                     if (filenameEqlDash(filename)) {
                         currentFile = globalVariables.get("$stdin");
                     } else {
-                        currentFile = RubyFile.open(context, fileClass(context), new IRubyObject[]{ filename }, Block.NULL_BLOCK);
+                        RubyIO currentFileIO = (RubyIO) RubyFile.open(context, fileClass(context), new IRubyObject[]{ filename }, Block.NULL_BLOCK);
+                        currentFile = currentFileIO;
                         String extension = null;
                         if (inPlace.isTrue()) extension = inPlace.asJavaString();
                         if (extension == null) extension = instanceConfig(context).getInPlaceBackupExtension();
                         if (extension != null) {
                             if (Platform.IS_WINDOWS) {
-                                inplaceEditWindows(context, filename.asJavaString(), extension);
+                                inplaceEditWindows(context, currentFileIO, filename.asJavaString(), extension);
                             } else {
-                                inplaceEdit(context, filename.asJavaString(), extension);
+                                inplaceEdit(context, currentFileIO, filename.asJavaString(), extension);
                             }
                         }
-                        if (binmode) ((RubyIO) currentFile).binmode(context);
+                        if (binmode) {
+                            currentFileIO.binmode(context);
+                        }
                     }
                     next_p = Next.SameFile;
                 } else {
@@ -249,7 +252,7 @@ public class RubyArgsFile extends RubyObject {
             }
         }
 
-        private void inplaceEditWindows(ThreadContext context, String filename, String extension) throws RaiseException {
+        private void inplaceEditWindows(ThreadContext context, RubyIO argfIO, String filename, String extension) throws RaiseException {
             File file = new File(filename);
 
             if (!extension.isEmpty()) {
@@ -267,11 +270,13 @@ public class RubyArgsFile extends RubyObject {
 
             createNewFile(file);
 
-            globalVariables(context).set("$stdout", RubyFile.open(context, fileClass(context),
-                    new IRubyObject[]{newString(context, filename), newString(context, "w")}, Block.NULL_BLOCK));
+            IRubyObject writeIO = RubyFile.open(context, fileClass(context),
+                    new IRubyObject[]{newString(context, filename), newString(context, "w")}, Block.NULL_BLOCK);
+            argfIO.getOpenFile().tiedIOForWriting = (RubyIO) writeIO;
+            globalVariables(context).set("$stdout", writeIO);
         }
 
-        private void inplaceEdit(ThreadContext context, String filename, String extension) throws RaiseException {
+        private void inplaceEdit(ThreadContext context, RubyIO argfIO, String filename, String extension) throws RaiseException {
             File file = new File(filename);
             var posix = context.runtime.getPosix();
             FileStat stat = posix.stat(filename);
@@ -286,8 +291,10 @@ public class RubyArgsFile extends RubyObject {
 
             posix.chmod(filename, stat.mode());
             posix.chown(filename, stat.uid(), stat.gid());
-            globalVariables(context).set("$stdout", (RubyIO) RubyFile.open(context, fileClass(context),
-                    new IRubyObject[]{newString(context, filename), newString(context, "w")}, Block.NULL_BLOCK));
+            IRubyObject writeIO = RubyFile.open(context, fileClass(context),
+                    new IRubyObject[]{newString(context, filename), newString(context, "w")}, Block.NULL_BLOCK);
+            argfIO.getOpenFile().tiedIOForWriting = (RubyIO) writeIO;
+            globalVariables(context).set("$stdout", (RubyIO) writeIO);
         }
 
         public boolean isCurrentFile(RubyIO io) {
