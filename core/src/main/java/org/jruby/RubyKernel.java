@@ -343,7 +343,7 @@ public class RubyKernel {
     }
 
     // MRI: rb_f_gets
-    @JRubyMethod(optional = 1, checkArity = false, module = true, visibility = PRIVATE)
+    @JRubyMethod(optional = 1, keywords = true, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject gets(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         var ArgsFile = argsFile(context);
 
@@ -806,7 +806,7 @@ public class RubyKernel {
         return context.nil;
     }
 
-    @JRubyMethod(optional = 1, checkArity = false, module = true, visibility = PRIVATE)
+    @JRubyMethod(optional = 1, keywords = true, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject readline(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         IRubyObject line = gets(context, recv, args);
 
@@ -817,7 +817,7 @@ public class RubyKernel {
         return line;
     }
 
-    @JRubyMethod(optional = 1, checkArity = false, module = true, visibility = PRIVATE)
+    @JRubyMethod(optional = 1, keywords = true, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject readlines(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return RubyArgsFile.readlines(context, argsFile(context), args);
     }
