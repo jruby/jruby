@@ -1038,12 +1038,13 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private void mutateChilledString() {
-        if ((flags & CHILLED_LITERAL_F) != 0) {
+        int savedFlags = flags;
+        flags &= ~(CHILLED_LITERAL_F|CHILLED_SYMBOL_TO_S_F);
+        if ((savedFlags & CHILLED_LITERAL_F) != 0) {
             getRuntime().getWarnings().warnDeprecated("literal string will be frozen in the future");
-        } else if ((flags & CHILLED_SYMBOL_TO_S_F) != 0) {
+        } else if ((savedFlags & CHILLED_SYMBOL_TO_S_F) != 0) {
             getRuntime().getWarnings().warnDeprecated("string returned by :" + value + ".to_s will be frozen in the future");
         }
-        flags &= ~(CHILLED_LITERAL_F|CHILLED_SYMBOL_TO_S_F);
     }
 
     protected boolean isChilled() {
