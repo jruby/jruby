@@ -5190,7 +5190,6 @@ float_loop:
                 }
 
                 if (!(value instanceof RubyFloat || value instanceof RubyFixnum || value instanceof RubyBignum || value instanceof RubyRational)) {
-                    result = asFloat(context, f);
                     break float_loop;
                 }
 
