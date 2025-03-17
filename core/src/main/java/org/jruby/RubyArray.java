@@ -5189,8 +5189,12 @@ float_loop:
                     }
                 }
 
-                if (!(value instanceof RubyNumeric num)) break;
-                x = num.asDouble(context);
+                if (!(value instanceof RubyFloat || value instanceof RubyFixnum || value instanceof RubyBignum || value instanceof RubyRational)) {
+                    result = asFloat(context, f);
+                    break float_loop;
+                }
+
+                x = ((RubyNumeric) value).asDouble(context);
 
                 if (Double.isNaN(f)) continue;
                 if (Double.isNaN(x)) {
