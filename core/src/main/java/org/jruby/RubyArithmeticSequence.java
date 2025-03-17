@@ -39,6 +39,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 
+import static org.jruby.RubyEnumerator.ARGS;
+import static org.jruby.RubyEnumerator.FEEDVALUE;
+import static org.jruby.RubyEnumerator.GENERATOR;
+import static org.jruby.RubyEnumerator.LOOKAHEAD;
+import static org.jruby.RubyEnumerator.METHOD;
+import static org.jruby.RubyEnumerator.OBJECT;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 
@@ -70,13 +76,6 @@ import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
  */
 @JRubyClass(name = "Enumerator::ArithmeticSequence", parent = "Enumerator")
 public class RubyArithmeticSequence extends RubyObject {
-
-    public static final String GENERATOR = "@__generator__";
-    public static final String LOOKAHEAD = "@__lookahead__";
-    public static final String FEEDVALUE = "@__feedvalue__";
-    public static final String OBJECT = "@__object__";
-    public static final String METHOD = "@__method__";
-    public static final String ARGS = "@__args__";
     private IRubyObject begin;
     private IRubyObject end;
     private IRubyObject step;
@@ -110,7 +109,7 @@ public class RubyArithmeticSequence extends RubyObject {
         setInstanceVariable(METHOD, newString(context, method));
         setInstanceVariable(ARGS, args != null ? RubyArray.newArrayMayCopy(runtime, args) : newEmptyArray(context));
         setInstanceVariable(GENERATOR, context.nil);
-        setInstanceVariable(LOOKAHEAD, newArray(context, context.nil, context.nil, context.nil, context.nil));
+        setInstanceVariable(LOOKAHEAD, allocArray(context, 4));
         setInstanceVariable(FEEDVALUE, new RubyEnumerator.FeedValue(context));
     }
 
