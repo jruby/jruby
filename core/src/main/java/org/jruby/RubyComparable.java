@@ -231,7 +231,7 @@ public class RubyComparable {
         CallSite op_cmp = sites.op_cmp;
 
         if (!min.isNil() && !max.isNil() && cmpAndCmpint(context, op_cmp, op_gt, op_lt, min, max) > 0) {
-            throw argumentError(context, "min argument must be smaller than max argument");
+            throw argumentError(context, "min argument must be less than or equal to max argument");
         }
 
         if (!min.isNil()) {
