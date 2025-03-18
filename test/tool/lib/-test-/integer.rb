@@ -18,5 +18,13 @@ module Bug
     def self.to_bignum(i)
       org.jruby.RubyBignum.newBignum(JRuby.runtime, i);
     end
+
+    def self.fixnum?(i)
+      JRuby.ref(i).getClass == org.jruby.RubyFixnum.java_class
+    end
+
+    def self.bignum?(i)
+      JRuby.ref(i).getClass == org.jruby.RubyBignum.java_class
+    end
   end
 end
