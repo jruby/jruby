@@ -413,7 +413,9 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
         if (value < 0) throw context.runtime.newMathDomainError("out of domain");
 
         var base = Convert.toInteger(context, baseArg);
-        if (base instanceof RubyBignum) return newArray(context, asFixnum(context, value));
+        if (base instanceof RubyBignum bigBase) {
+            return RubyBignum.newBignum(context.runtime, value).digits(context, bigBase);
+        }
 
         long longBase = ((RubyFixnum) base).value;
         if (longBase < 0) throw argumentError(context, "negative radix");
