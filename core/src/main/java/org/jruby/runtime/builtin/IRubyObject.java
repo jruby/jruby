@@ -272,6 +272,7 @@ public interface IRubyObject {
     /**
      * RubyMethod dup.
      * @return a dup-ed object
+     * @since 10.0
      */
     default IRubyObject dup(ThreadContext context) {
         return dup();
