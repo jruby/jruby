@@ -1076,7 +1076,7 @@ public class RubyBignum extends RubyInteger {
             otherValue = bignum.value;
         } else if (other instanceof RubyFloat flote) {
             double a = flote.value;
-            if (Double.isNaN(a)) return context.fals;
+            if (Double.isNaN(a) || Double.isInfinite(a)) return context.fals;
             return asBoolean(context, a == big2dbl(this));
         } else {
             return other.op_eqq(context, this);
