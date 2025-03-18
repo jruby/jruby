@@ -1564,13 +1564,13 @@ public class RubyRational extends RubyNumeric {
      */
     public static IRubyObject numericQuo(ThreadContext context, IRubyObject x, IRubyObject y) {
         if (x instanceof RubyComplex c) {
-            return c.div(context, y);
+            return c.op_div(context, y);
         }
 
         if (y instanceof RubyFloat) return ((RubyNumeric)x).fdiv(context, y);
 
         x = TypeConverter.convertToType(x, context.runtime.getRational(), "to_r");
-        return ((RubyRational) x).div(context, y);
+        return ((RubyRational) x).op_div(context, y);
     }
 
     @Deprecated

@@ -435,6 +435,7 @@ public class JavaSites {
         public final CallSite infinite = new FunctionalCachingCallSite("infinite?");
         public final CallSite fdiv = new FunctionalCachingCallSite("fdiv");
         public final CheckedSites to_c_checked = new CheckedSites("to_c");
+        public final CallSite op_cmp = new FunctionalCachingCallSite("<=>");
     }
 
     public static class RationalSites {

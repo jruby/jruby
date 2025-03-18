@@ -547,13 +547,24 @@ public class RubyComplex extends RubyNumeric {
         return f_zero_p(context, image);
     }
 
+    // MRI: nucomp_cmp
     @JRubyMethod(name="<=>")
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
-        if (nucomp_real_p(context) && k_numeric_p(other)) {
-            if (other instanceof RubyComplex && ((RubyComplex) other).nucomp_real_p(context)) {
+        if (!k_numeric_p(other)) {
+            return coerceCmp(context, sites(context).op_cmp, other);
+        }
+        if (!nucomp_real_p(context)) {
+            return context.nil;
+        }
+        if (other instanceof RubyComplex) {
+            if (((RubyComplex) other).nucomp_real_p(context)) {
                 return real.callMethod(context, "<=>", ((RubyComplex) other).real);
-            } else if (f_real_p(context, other)) {
+            }
+        } else {
+            if (f_real_p(context, other)) {
                 return real.callMethod(context, "<=>", other);
+            } else {
+                return coerceCmp(context, sites(context).op_cmp, other);
             }
         }
 
@@ -651,7 +662,7 @@ public class RubyComplex extends RubyNumeric {
         return coerceBin(context, sites(context).op_times, other);
     }
     
-    /** nucomp_div / nucomp_quo
+    /** nucomp_div / nucomp_quo / rb_complex_div
      * 
      */
     @JRubyMethod(name = {"/", "quo"})
@@ -711,7 +722,7 @@ public class RubyComplex extends RubyNumeric {
     }
 
     /**
-     * MRI: nucomp_expt
+     * MRI: nucomp_expt, rb_complex_pow
      */
     @JRubyMethod(name = "**")
     public IRubyObject op_expt(ThreadContext context, IRubyObject other) {

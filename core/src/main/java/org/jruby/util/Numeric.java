@@ -449,7 +449,12 @@ public class Numeric {
      *
      */
     public static IRubyObject f_quo(ThreadContext context, IRubyObject x, IRubyObject y) {
-        return sites(context).quo.call(context, x, x, y);
+        return switch (x) {
+            case RubyInteger integer -> integer.quo(context, y);
+            case RubyFloat flo -> flo.op_div(context, y);
+            case RubyRational rat -> rat.quo(context, y);
+            default -> sites(context).quo.call(context, x, x, y);
+        };
     }
 
     public static IRubyObject f_quo(ThreadContext context, RubyFloat x, RubyFloat y) {
