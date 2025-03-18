@@ -69,6 +69,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock;
 import org.jruby.ir.interpreter.Interpreter;
+import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.platform.Platform;
@@ -95,6 +96,7 @@ import org.jruby.util.func.ObjectIntIntFunction;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.PopenExecutor;
 
+import static org.jruby.RubyBasicObject.UNDEF;
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyFile.fileResource;
@@ -138,6 +140,7 @@ import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.api.Warn.warnDeprecatedForRemovalAlternate;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
+import static org.jruby.ir.runtime.IRRuntimeHelpers.receiveKeywords;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PROTECTED;
@@ -372,25 +375,38 @@ public class RubyKernel {
         return TypeConverter.rb_Array(context, object);
     }
 
-    @JRubyMethod(name = "Complex", module = true, visibility = PRIVATE)
-    public static IRubyObject new_complex(ThreadContext context, IRubyObject recv) {
-        RubyClass complex = context.runtime.getComplex();
-        return sites(context).convert_complex.call(context, complex, complex);
-    }
-    @JRubyMethod(name = "Complex", module = true, visibility = PRIVATE)
-    public static IRubyObject new_complex(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
-        RubyClass complex = context.runtime.getComplex();
-        return sites(context).convert_complex.call(context, complex, complex, arg0);
-    }
-    @JRubyMethod(name = "Complex", module = true, visibility = PRIVATE)
-    public static IRubyObject new_complex(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
-        RubyClass complex = context.runtime.getComplex();
-        return sites(context).convert_complex.call(context, complex, complex, arg0, arg1);
-    }
-    @JRubyMethod(name = "Complex", module = true, visibility = PRIVATE)
-    public static IRubyObject new_complex(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        RubyClass complex = context.runtime.getComplex();
-        return sites(context).convert_complex.call(context, complex, complex, arg0, arg1, arg2);
+    @JRubyMethod(name = "Complex", required = 1, optional = 1, keywords = true, checkArity = false, module = true, visibility = PRIVATE)
+    public static IRubyObject new_complex(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        IRubyObject a1, a2;
+        boolean raise = true;
+
+        int argc = args.length;
+        IRubyObject opts = receiveKeywords(context, args, false, true, false);
+        if (opts instanceof RubyHash) argc--;
+
+        switch (argc) {
+            case 1 -> {
+                a1 = args[0];
+                a2 = null;
+            }
+            case 2 -> {
+                a1 = args[0];
+                a2 = args[1];
+            }
+            default -> {
+                Arity.raiseArgumentError(context, argc, 1, 2);
+                return null; // not reached
+            }
+        }
+
+        if (opts instanceof RubyHash kwargs) {
+            raise = ArgsUtil.hasExceptionOption(context, kwargs, raise);
+        }
+        RubyClass Complex = context.runtime.getComplex();
+        if (args.length > 0 && a1.getMetaClass() == Complex && a2 == null) {
+            return a1;
+        }
+        return RubyComplex.convertCommon(context, Complex, a1, a2, raise);
     }
 
     @JRubyMethod(name = "Rational", module = true, visibility = PRIVATE)

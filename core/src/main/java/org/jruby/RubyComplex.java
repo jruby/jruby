@@ -480,13 +480,13 @@ public class RubyComplex extends RubyNumeric {
         throw argumentError(context, "'Complex': expected true or false as exception: " + exception);
     }
 
-    // MRI: nucomp_s_convert
-    private static IRubyObject convertCommon(ThreadContext context, IRubyObject recv, IRubyObject a1, IRubyObject a2, boolean raise) {
+    // MRI: nucomp_convert
+    public static IRubyObject convertCommon(ThreadContext context, IRubyObject recv, IRubyObject a1, IRubyObject a2, boolean raise) {
         final boolean singleArg = a2 == null;
 
         if (a1 == context.nil || a2 == context.nil) {
-            if (raise) throw typeError(context, "can't convert nil into Complex");
-            return context.nil;
+            if (!raise) return context.nil;
+            throw typeError(context, "can't convert nil into Complex");
         }
 
         if (a1 instanceof RubyString) {
@@ -523,6 +523,7 @@ public class RubyComplex extends RubyNumeric {
                     return TypeConverter.convertToType(context, a1, context.runtime.getComplex(), sites(context).to_c_checked, raise);
                 } catch (RaiseException re) {
                     if (raise) throw re;
+                    context.clearErrorInfo();
                     return context.nil;
                 }
             }

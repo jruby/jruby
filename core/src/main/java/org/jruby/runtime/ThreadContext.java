@@ -294,6 +294,10 @@ public final class ThreadContext {
         return errorInfo;
     }
 
+    public void clearErrorInfo() {
+        thread.setErrorInfo(nil);
+    }
+
     public Throwable getSavedExceptionInLambda() {
         return savedExcInLambda;
     }
