@@ -654,20 +654,14 @@ public class RubyBignum extends RubyInteger {
         return bignorm(context.runtime, value.remainder(otherValue));
     }
 
-    /** rb_big_quo
+    /**
+     * MRI: rb_big_quo, formerly
      *
+     * Deprecated since 10.0 since CRuby no longer has Bignum-specific quo logic.
      */
-    @Override
-    @JRubyMethod(name = "quo")
+    @Deprecated(since = "10.0")
     public IRubyObject quo(ThreadContext context, IRubyObject otherArg) {
-        if (otherArg instanceof RubyNumeric num) {
-            double other = num.asDouble(context);
-            if (other == 0) throw context.runtime.newZeroDivisionError();
-
-            return asFloat(context, big2dbl(this) / other);
-        } else {
-            return coerceBin(context, sites(context).quo, otherArg);
-        }
+        return super.quo(context, otherArg);
     }
 
     /** rb_big_pow

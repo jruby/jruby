@@ -34,6 +34,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Convert;
 import org.jruby.api.JRubyAPI;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
@@ -1559,16 +1560,17 @@ public class RubyRational extends RubyNumeric {
     }
 
     /**
-     * numeric_quo
+     * rb_numeric_quo
      */
     public static IRubyObject numericQuo(ThreadContext context, IRubyObject x, IRubyObject y) {
+        if (x instanceof RubyComplex c) {
+            return c.div(context, y);
+        }
+
         if (y instanceof RubyFloat) return ((RubyNumeric)x).fdiv(context, y);
 
-        x = Numeric.CANON && canonicalization ?
-                newRationalRaw(context.runtime, x) :
-                TypeConverter.convertToType(context, x, context.runtime.getRational(), sites(context).to_r_checked);
-
-        return sites(context).op_quo.call(context, x, x, y);
+        x = TypeConverter.convertToType(x, context.runtime.getRational(), "to_r");
+        return ((RubyRational) x).div(context, y);
     }
 
     @Deprecated
