@@ -432,38 +432,6 @@ jobs:
       - name: run shellcheck
         run: shellcheck bin/jruby.sh
 
-  rake-test-wip-21:
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        target: ['test:mri:core_wip', 'test:mri:stdlib_wip']
-      fail-fast: false
-
-    name: rake ${{ matrix.target }} (Java 21)
-
-    steps:
-      - name: checkout
-        uses: actions/checkout@v3
-      - name: remove default java except 21
-        run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
-      - name: set up java 21
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'zulu'
-          java-version: '21'
-          cache: 'maven'
-      - name: bootstrap
-        run: mvn -ntp -Pbootstrap clean package
-      - name: generate appcds
-        run: "bin/jruby -S gem install jruby-startup && bin/jruby -S generate-appcds"
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
-      - name: rake ${{ matrix.target }}
-        continue-on-error: true
-        run: "bin/jruby -S rake ${{ matrix.target }}"
-      - run: true
-
   publish-snapshot:
     permissions:
       contents: none
