@@ -4625,7 +4625,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         int len = i;
         try {
             while (i > 0) {
-                int r = (int) RubyRandom.randomLongLimited(context, randgen, i - 1);
+                int r = (int) randUpto(context, randgen, i);
                 if (len != realLength) { // || ptr != RARRAY_CONST_PTR(ary)
                     throw runtimeError(context, "modified during shuffle");
                 }
@@ -4687,27 +4687,46 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     private IRubyObject sampleCommon(ThreadContext context, IRubyObject randgen) {
         if (realLength == 0) return context.nil;
 
-        return eltOk(realLength == 1 ? 0 : RubyRandom.randomLongLimited(context, randgen, realLength - 1));
+        if (realLength == 1) return eltOk(0);
+
+        long rand = randUpto(context, randgen, realLength);
+
+        if (rand < 0 || realLength <= rand) {
+            return context.nil;
+        }
+
+        return eltOk(rand);
     }
 
     /**
      * Common sample logic when a sample size was specified.
      */
     private IRubyObject sampleCommon(ThreadContext context, IRubyObject sample, IRubyObject randgen) {
+        int len = realLength;
         int n = toInt(context, sample);
 
         try {
             if (n < 0) throw argumentError(context, "negative sample number");
-            if (n > realLength) n = realLength;
+            if (n > len) n = len;
 
             long[] rnds = new long[SORTED_THRESHOLD];
             if (n <= SORTED_THRESHOLD) {
-                for (int idx = 0; idx < n; ++idx) {
-                    rnds[idx] = RubyRandom.randomLongLimited(context, randgen, realLength - idx - 1);
+                for (int i = 0; i < n; ++i) {
+                    rnds[i] = randUpto(context, randgen, len - i);
                 }
             }
 
             int i, j, k;
+            k = len;
+            len = realLength;
+            if (len < k && n <= SORTED_THRESHOLD) {
+                for (i = 0; i < n; ++i) {
+                    if (rnds[i] >= len) return Create.newEmptyArray(context);
+                }
+            }
+
+            if (n > len) n = len;
+
             switch (n) {
             case 0:
                 return Create.newEmptyArray(context);
@@ -4737,17 +4756,16 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
                 return Create.newArray(context, eltOk(i), eltOk(j), eltOk(k));
             }
 
-            int len = realLength;
-
             if (n > len) n = len;
-            if (n < SORTED_THRESHOLD) {
+            if (n <= SORTED_THRESHOLD) {
                 int idx[] = new int[SORTED_THRESHOLD];
                 int sorted[] = new int[SORTED_THRESHOLD];
                 sorted[0] = idx[0] = (int) rnds[0];
                 for (i = 1; i < n; i++) {
                     k = (int) rnds[i];
-                    for (j = 0; j < i; j++, k++) {
+                    for (j = 0; j < i; j++) {
                         if (k < sorted[j]) break;
+                        k++;
                     }
                     System.arraycopy(sorted, j, sorted, j + 1, i - j);
                     sorted[j] = idx[i] = k;
@@ -4773,6 +4791,10 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         } catch (ArrayIndexOutOfBoundsException ex) {
             throw concurrentModification(context, ex);
         }
+    }
+
+    private static long randUpto(ThreadContext context, IRubyObject randgen, int max) {
+        return RubyRandom.randomLongLimited(context, randgen, max - 1);
     }
 
     private static void aryReverse(IRubyObject[] _p1, int p1, IRubyObject[] _p2, int p2) {
