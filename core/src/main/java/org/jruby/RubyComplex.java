@@ -77,6 +77,10 @@ import static org.jruby.util.RubyStringBuilder.types;
 @JRubyClass(name = "Complex", parent = "Numeric")
 public class RubyComplex extends RubyNumeric {
 
+    private static final int[][] DIRS = new int[][]{
+        {1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}, {-1, -1}, {0, -1}, {1, -1}
+    };
+
     public static RubyClass createComplexClass(ThreadContext context, RubyClass Numeric) {
         return defineClass(context, "Complex", Numeric, RubyComplex::new).
                 reifiedClass(RubyComplex.class).
@@ -870,25 +874,22 @@ public class RubyComplex extends RubyNumeric {
         else {
             RubyFixnum two = RubyFixnum.two(context.runtime);
             zx = num_pow(context,
-                    sites(context).op_times.call(context, two.op_mul(context, x), x),
-                    integer.div(context, two)
+                    sites(context).op_times.call(context, this, two.op_mul(context, x), x),
+                    integer.op_div(context, two)
             );
             if (f_odd_p(context, other)) {
-                zx = sites(context).op_times.call(context, zx, x);
+                zx = sites(context).op_times.call(context, this, zx, x);
             }
         }
-        int dirs[][] = {
-            {1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}, {-1, -1}, {0, -1}, {1, -1}
-        };
-        int z_dir = toInt(context, asFixnum(context, dir).modulo(context, 8));
+        int z_dir = toInt(context, ((RubyInteger) asFixnum(context, dir).op_mul(context, other)).modulo(context, 8));
 
         IRubyObject zr = context.fals, zi = context.fals;
-        switch (dirs[z_dir][0]) {
+        switch (DIRS[z_dir][0]) {
             case 0: zr = zero_for(context, zx); break;
             case 1: zr = zx; break;
             case -1: zr = f_negate(context, zx); break;
         }
-        switch (dirs[z_dir][1]) {
+        switch (DIRS[z_dir][1]) {
             case 0: zi = zero_for(context, zx); break;
             case 1: zi = zx; break;
             case -1: zi = f_negate(context, zx); break;
