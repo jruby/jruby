@@ -144,7 +144,11 @@ public class RubyMethod extends AbstractRubyMethod {
      */
     @JRubyMethod
     public RubyFixnum arity(ThreadContext context) {
-        return asFixnum(context, method.getSignature().arityValue());
+        Signature signature = method.getSignature();
+        int min = signature.min();
+        int max = signature.max();
+
+        return asFixnum(context, min == max ? min : -min-1);
     }
 
     @JRubyMethod(name = "eql?")
