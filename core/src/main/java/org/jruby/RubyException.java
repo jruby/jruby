@@ -39,6 +39,7 @@ package org.jruby;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Create;
 import org.jruby.exceptions.Exception;
 import org.jruby.exceptions.JumpException.FlowControlException;
 import org.jruby.exceptions.RaiseException;
@@ -52,6 +53,8 @@ import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.marshal.MarshalDumper;
 import org.jruby.runtime.marshal.MarshalLoader;
+import org.jruby.util.CommonByteLists;
+import org.jruby.util.Sprintf;
 import org.jruby.util.io.RubyInputStream;
 import org.jruby.util.io.RubyOutputStream;
 
@@ -422,13 +425,27 @@ public class RubyException extends RubyObject {
      */
     @JRubyMethod(name = "inspect")
     public RubyString inspect(ThreadContext context) {
-        // rb_class_name skips intermediate classes (JRUBY-6786)
-        RubyString rubyClass = getMetaClass().getRealClass().rubyName(context);
-        RubyString exception = RubyString.objAsString(context, this);
+        RubyClass klass = getMetaClass();
 
-        if (exception.isEmpty()) return rubyClass;
+        RubyString exc = asString();
+        if (exc.size() == 0) {
+            return klass.rubyName(context);
+        }
 
-        return newString(context, str(context.runtime, "#<", rubyClass, ": ", exception, ">"));
+        RubyString str = Create.newString(context, "#<");
+        str.append(klass.rubyName(context));
+
+        if (exc.include_p(context, RubyString.newStringShared(context.runtime, CommonByteLists.NEWLINE)).isTrue()) {
+            str.cat(Sprintf.sprintf(exc.getEncoding(), ":%p", exc));
+        }
+        else {
+            str.catString(": ");
+            str.append(exc);
+        }
+
+        str.cat('>');
+
+        return str;
     }
 
     @Override

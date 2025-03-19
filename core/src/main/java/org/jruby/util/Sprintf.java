@@ -322,6 +322,12 @@ public class Sprintf {
         return false;
     }
 
+    public static ByteList sprintf(Encoding encoding, CharSequence format, IRubyObject args) {
+        ByteList to = new ByteList(16, encoding);
+        rubySprintfToBuffer(to, format, new Args(args), false);
+        return to;
+    }
+
     public static boolean sprintf(Ruby runtime, ByteList to, CharSequence format, int arg) {
         rubySprintf(to, format, new Args(runtime, (long)arg));
         return false;
