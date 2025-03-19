@@ -1,11 +1,13 @@
 class Enumerator
 
   def next
+    raise FrozenError if frozen?
     vals = next_values
     vals.size <= 1 ? vals[0] : vals
   end
 
   def next_values
+    raise FrozenError if frozen?
     return @__lookahead__.shift unless @__lookahead__.empty?
 
     unless @__generator__
@@ -31,11 +33,13 @@ class Enumerator
   end
 
   def peek
+    raise FrozenError if frozen?
     vals = peek_values
     vals.size <= 1 ? vals[0] : vals
   end
 
   def peek_values
+    raise FrozenError if frozen?
     return @__lookahead__.first unless @__lookahead__.empty?
     vals = self.next_values
     @__lookahead__ << vals
@@ -43,6 +47,7 @@ class Enumerator
   end
 
   def rewind
+    raise FrozenError if frozen?
     @__object__.rewind if @__object__.respond_to? :rewind
     @__generator__.rewind if @__generator__
     @__lookahead__.clear
@@ -51,6 +56,7 @@ class Enumerator
   end
 
   def feed(val)
+    raise FrozenError if frozen?
     raise TypeError, 'Feed value already set' unless @__feedvalue__.value.nil?
     @__feedvalue__.value = val
     nil
