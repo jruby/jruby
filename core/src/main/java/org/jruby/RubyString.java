@@ -525,11 +525,19 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     public static RubyString newStringLight(Ruby runtime, int size) {
+        checkNegativeSize(runtime, size);
         return new RubyString(runtime, runtime.getString(), new ByteList(size), false);
     }
 
     public static RubyString newStringLight(Ruby runtime, int size, Encoding encoding) {
+        checkNegativeSize(runtime, size);
         return new RubyString(runtime, runtime.getString(), new ByteList(size), encoding, false);
+    }
+
+    private static void checkNegativeSize(Ruby runtime, int size) {
+        if (size < 0) {
+            throw runtime.newArgumentError("negative string size (or size too big)");
+        }
     }
 
     public static RubyString newString(Ruby runtime, CharSequence str) {
