@@ -514,6 +514,9 @@ public class RubyException extends RubyObject {
                 t.initCause(((RubyException) cause).toThrowable());
             } else if (cause instanceof ConcreteJavaProxy && (javaCause = ((ConcreteJavaProxy) cause).getObject()) instanceof Throwable) {
                 t.initCause((Throwable) javaCause);
+            } else {
+                Ruby runtime = getRuntime();
+                throw typeError(runtime.getCurrentContext(), "exception object expected");
             }
         }
     }
