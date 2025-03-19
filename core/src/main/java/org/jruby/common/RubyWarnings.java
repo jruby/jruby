@@ -52,6 +52,8 @@ import static org.jruby.api.Access.kernelModule;
 import static org.jruby.api.Access.stringClass;
 import static org.jruby.api.Access.symbolClass;
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Create.newArrayFrom;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.argumentError;
@@ -318,6 +320,11 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         str.verifyAsciiCompatible();
         writeWarningToError(context, str);
         return context.nil;
+    }
+
+    @JRubyMethod
+    public static IRubyObject categories(ThreadContext context, IRubyObject recv) {
+        return newArrayFrom(context, Category.values(), (ctx, c) -> asSymbol(ctx, c.id));
     }
 
     private static JavaSites.WarningSites sites(ThreadContext context) {

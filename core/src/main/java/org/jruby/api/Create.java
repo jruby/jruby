@@ -9,6 +9,7 @@ import org.jruby.util.ByteList;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.function.BiFunction;
 
 import static org.jruby.RubyArray.checkLength;
 import static org.jruby.api.Access.stringClass;
@@ -100,6 +101,46 @@ public class Create {
      */
     public static RubyArray<?> newArray(ThreadContext context, IRubyObject... elements) {
         return RubyArray.newArray(context.runtime, elements);
+    }
+
+    /**
+     * Create a new Array by applying the given function to the given elements.
+     *
+     * The resulting Array will be constructed with a minimum amount of allocation.
+     *
+     * @param context  the current thread context
+     * @param elements the elements to transform
+     * @param func the transformation function
+     * @return the new array
+     */
+    public static <T> RubyArray<?> newArrayFrom(ThreadContext context, T[] elements, BiFunction<ThreadContext, T, IRubyObject> func) {
+        boolean direct = true;
+        IRubyObject elt0, elt1 = null;
+        int length = elements.length;
+        switch (length) {
+            case 0:
+                return newEmptyArray(context);
+            default:
+                direct = false;
+            case 2:
+                elt1 = func.apply(context, elements[1]);
+            case 1:
+                elt0 = func.apply(context, elements[0]);
+        }
+
+        if (direct) {
+            if (elt1 == null) return newArray(context, elt0);
+            return newArray(context, elt0, elt1);
+        }
+
+        IRubyObject[] ary = new IRubyObject[length];
+        ary[0] = elt0;
+        ary[1] = elt1;
+        for (int i = 2; i < length; i++) {
+            ary[i] = func.apply(context, elements[i]);
+        }
+
+        return RubyArray.newArrayNoCopy(context.runtime, ary);
     }
 
     /**
