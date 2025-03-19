@@ -132,6 +132,7 @@ public class JavaSites {
         public final CallSite op_gt_sort = new FunctionalCachingCallSite(">");
         public final CallSite op_lt_sort = new FunctionalCachingCallSite("<");
         public final CachingCallSite self_each = new FunctionalCachingCallSite("each");
+        public final CachingCallSite initialize_copy = new FunctionalCachingCallSite("initialize_copy");
     }
 
     public static class Array2Sites {

@@ -792,7 +792,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      */
     @Override
     public IRubyObject dup() {
-        if (metaClass.getClassIndex() != ClassIndex.ARRAY) return super.dup();
+        CachingCallSite initCopy = sites(getRuntime().getCurrentContext()).initialize_copy;
+        if (metaClass.getClassIndex() != ClassIndex.ARRAY || !initCopy.retrieveCache(this).method.isBuiltin()) return super.dup();
 
         Ruby runtime = metaClass.runtime;
         RubyArray dup = dupImpl(runtime, runtime.getArray());
