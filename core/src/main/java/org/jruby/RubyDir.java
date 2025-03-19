@@ -439,7 +439,7 @@ public class RubyDir extends RubyObject implements Closeable {
     /** Changes the current directory to <code>path</code> */
     @JRubyMethod(meta = true)
     public static IRubyObject chdir(ThreadContext context, IRubyObject recv, IRubyObject path, Block block) {
-        return chdirCommon(context, block, checkEmbeddedNulls(context, RubyFile.get_path(context, path)));
+        return chdirCommon(context, block, checkEmbeddedNulls(context, RubyFile.get_path(context, path)), true);
     }
 
     /** Changes the current directory to <code>path</code> */
@@ -454,10 +454,10 @@ public class RubyDir extends RubyObject implements Closeable {
 
         RubyString path = getHomeDirectoryPath(context);
 
-        return chdirCommon(context, block, path);
+        return chdirCommon(context, block, path, true);
     }
 
-    private static IRubyObject chdirCommon(ThreadContext context, Block block, RubyString path) {
+    private static IRubyObject chdirCommon(ThreadContext context, Block block, RubyString path, boolean yieldPath) {
         Ruby runtime = context.runtime;
         String adjustedPath = RubyFile.adjustRootPathOnWindows(runtime, path.asJavaString(), null);
         checkDirIsTwoSlashesOnWindows(runtime, adjustedPath);
@@ -470,11 +470,8 @@ public class RubyDir extends RubyObject implements Closeable {
 
         if(!block.isGiven() && runtime.getChdirThread() != null) {
             RubyStackTraceElement location = runtime.getChdirLocation();
-            warn(context, "conflicting chdir during another chdir block");
-            warn(context, location.getFileName(), location.getLineNumber(), "note: previous chdir was here");
+            warn(context, "conflicting chdir during another chdir block\n" + location.getFileName() + ":" + location.getLineNumber() + ": note: previous chdir was here");
         }
-
-        IRubyObject result;
 
         if (block.isGiven()) {
             runtime.setChdirThread(context.getThread());
@@ -482,18 +479,16 @@ public class RubyDir extends RubyObject implements Closeable {
 
             runtime.setCurrentDirectory(adjustedPath);
             try {
-                result = block.yield(context, path);
+                return yieldPath ? block.yield(context, path) : block.yieldSpecific(context);
             } finally {
                 runtime.setChdirThread(null);
                 getExistingDir(runtime, oldCwd); // needed in case the block deleted the oldCwd
                 runtime.setCurrentDirectory(oldCwd);
             }
-        } else {
-            runtime.setCurrentDirectory(adjustedPath);
-            result = asFixnum(context, 0);
         }
 
-        return result;
+        runtime.setCurrentDirectory(adjustedPath);
+        return asFixnum(context, 0);
     }
 
     @JRubyMethod(name = "fchdir", meta = true, notImplemented = true)
@@ -503,7 +498,7 @@ public class RubyDir extends RubyObject implements Closeable {
 
     @JRubyMethod(name = "chdir")
     public IRubyObject chdir(ThreadContext context, Block block) {
-        return chdir(context, this.getMetaClass(), path, block);
+        return chdirCommon(context, block, checkEmbeddedNulls(context, RubyFile.get_path(context, path)), false);
     }
 
     @Deprecated(since = "10.0")
