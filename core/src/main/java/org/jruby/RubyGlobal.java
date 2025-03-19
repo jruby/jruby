@@ -689,7 +689,7 @@ public class RubyGlobal {
             if (opts.isNil()) throw argumentError(context, 1, 0);
 
             IRubyObject freeze = ArgsUtil.getFreezeOpt(context, opts);
-            if (freeze != null && freeze.isTrue()) throw typeError(context, "cannot clone ENV");
+            if (freeze != null && freeze.isTrue()) throw typeError(context, "Cannot clone ENV");
 
             return rbClone(context);
         }
