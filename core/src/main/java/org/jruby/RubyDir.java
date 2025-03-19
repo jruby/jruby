@@ -981,6 +981,11 @@ public class RubyDir extends RubyObject implements Closeable {
         throw context.runtime.newNotImplementedError("Dir#fileno");
     }
 
+    @JRubyMethod(name = "for_fd", meta = true, notImplemented = true)
+    public static IRubyObject for_fd(ThreadContext context, IRubyObject recv, IRubyObject ignored) {
+        throw context.runtime.newNotImplementedError("Dir#for_fd");
+    }
+
 // ----- Helper Methods --------------------------------------------------------
     /** Returns a Java <code>File</code> object for the specified path.  If
      * <code>path</code> is not a directory, throws <code>IOError</code>.
