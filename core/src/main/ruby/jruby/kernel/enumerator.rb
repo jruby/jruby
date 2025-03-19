@@ -528,7 +528,7 @@ class Enumerator::Product < Enumerator
     @__enums.each do |enum|
       return nil unless enum.respond_to?(:size)
       size = enum.size
-      return size if size == nil || size == Float::INFINITY || size == -Float::INFINITY
+      return size if size == 0 || size == nil || size == Float::INFINITY || size == -Float::INFINITY
       return nil unless size.kind_of?(Integer)
       total_size *= size
     end
