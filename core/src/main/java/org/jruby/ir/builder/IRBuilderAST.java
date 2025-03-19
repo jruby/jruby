@@ -1664,8 +1664,49 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             // Try verifying definition, and if we get an JumpException exception, process it with the rescue block above
             return protectCodeWithRescue(protectedCode, rescueBlock);
         }
-            case OPASGNCONSTDECLNODE:
-                return new FrozenString("assignment");
+        case OPASGNCONSTDECLNODE:
+            return new FrozenString("assignment");
+
+        case SPLATNODE: {
+            SplatNode splat = (SplatNode) node;
+            Label undefLabel = getNewLabel();
+            Label doneLabel = getNewLabel();
+
+            Variable tmpVar = temp();
+            Operand result = buildGetDefinition(splat.getValue());
+
+            addInstr(createBranch(result, nil(), undefLabel));
+
+            addInstr(new CopyInstr(tmpVar, new FrozenString(DefinedMessage.EXPRESSION.getText())));
+            addInstr(new JumpInstr(doneLabel));
+            addInstr(new LabelInstr(undefLabel));
+            addInstr(new CopyInstr(tmpVar, nil()));
+            addInstr(new LabelInstr(doneLabel));
+
+            return tmpVar;
+        }
+
+        case HASHNODE: { // If all elts of hash are defined the array is as well
+            HashNode hash = (HashNode) node;
+            Label undefLabel = getNewLabel();
+            Label doneLabel = getNewLabel();
+
+            Variable tmpVar = temp();
+            for (Node elt: hash.childNodes()) {
+                Operand result = buildGetDefinition(elt);
+
+                addInstr(createBranch(result, nil(), undefLabel));
+            }
+
+            addInstr(new CopyInstr(tmpVar, new FrozenString(DefinedMessage.EXPRESSION.getText())));
+            addInstr(new JumpInstr(doneLabel));
+            addInstr(new LabelInstr(undefLabel));
+            addInstr(new CopyInstr(tmpVar, nil()));
+            addInstr(new LabelInstr(doneLabel));
+
+            return tmpVar;
+        }
+
         default:
             return new FrozenString("expression");
         }
