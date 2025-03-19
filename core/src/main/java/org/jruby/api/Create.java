@@ -227,6 +227,20 @@ public class Create {
         return new RubyHash(context.runtime, 1);
     }
 
+    /**
+     * Create a new Hash instance with the given pair, optimized for space.
+     *
+     * @param context the current thread context
+     * @param key the key
+     * @param value the value
+     * @return a new hash
+     */
+    // MRI: rb_hash_new
+    public static RubyHash newSmallHash(ThreadContext context, IRubyObject key, IRubyObject value) {
+        RubyHash hash = new RubyHash(context.runtime, 1);
+        hash.fastASetSmall(context.runtime, key, value, true);
+        return hash;
+    }
 
     /**
      * Create a new array which is intended to be empty for its entire lifetime.

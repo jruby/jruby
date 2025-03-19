@@ -472,7 +472,7 @@ public class JavaSites {
     }
 
     public static class WarningSites {
-        public final CallSite warn = new FunctionalCachingCallSite("warn");
+        public final CachingCallSite warn = new FunctionalCachingCallSite("warn");
         public final CallSite write = new FunctionalCachingCallSite("write");
     }
 
