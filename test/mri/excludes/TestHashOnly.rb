@@ -1,3 +1,4 @@
+exclude :test_AREF_fstring_key, "depends on ObjectSpace.count_objects"
 exclude :test_any_hash_fixable, "launches many subprocesses and does not test anything useful on JRuby"
 exclude :test_compare_by_id_memory_leak, "no working assert_no_memory_leak method"
 exclude :test_exception_in_rehash_memory_leak, "no working assert_no_memory_leak method"
