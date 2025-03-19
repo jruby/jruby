@@ -60,6 +60,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.*;
 import org.jruby.ast.util.ArgsUtil;
@@ -468,7 +469,9 @@ public class RubyDir extends RubyObject implements Closeable {
         }
 
         if(!block.isGiven() && runtime.getChdirThread() != null) {
+            RubyStackTraceElement location = runtime.getChdirLocation();
             warn(context, "conflicting chdir during another chdir block");
+            warn(context, location.getFileName(), location.getLineNumber(), "note: previous chdir was here");
         }
 
         IRubyObject result;

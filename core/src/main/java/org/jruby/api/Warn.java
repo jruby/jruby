@@ -84,4 +84,16 @@ public class Warn {
     public static void warnPerformance(ThreadContext context, String message) {
         context.runtime.getWarnings().warnPerformance(message);
     }
+
+    /**
+     * Produce a non-verbose warning with the specified file, line, and message.
+     *
+     * @param context the current context
+     * @param fileName the filename for the warning
+     * @param lineNumber the line number for the warning
+     * @param message to be displayed as a warning
+     */
+    public static void warn(ThreadContext context, String fileName, int lineNumber, String message) {
+        context.runtime.getWarnings().warn(fileName, lineNumber, message);
+    }
 }

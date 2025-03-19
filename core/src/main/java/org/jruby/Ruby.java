@@ -69,6 +69,7 @@ import org.jruby.parser.ParserManager;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.TraceEventManager;
+import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.specialized.RubyObjectSpecializer;
 import org.jruby.util.JavaNameMangler;
@@ -5199,9 +5200,14 @@ public final class Ruby implements Constantizable {
         return regexpTimeoutError;
     }
 
-    public void setChdirThread(RubyThread thread) { this.chdirCurrentThread = thread; }
+    public void setChdirThread(RubyThread thread) {
+        this.chdirCurrentThread = thread;
+        this.chdirLocation = thread == null ? null : thread.getContext().getSingleBacktrace();
+    }
 
     public RubyThread getChdirThread() { return this.chdirCurrentThread; }
+
+    public RubyStackTraceElement getChdirLocation() { return this.chdirLocation; }
 
     /**
      * Because RubyString.equals does not consider encoding, and MRI's logic for deduplication does need to consider
@@ -5805,6 +5811,7 @@ public final class Ruby implements Constantizable {
     private RubyModule errnoModule;
 
     private  RubyThread chdirCurrentThread;
+    private  RubyStackTraceElement chdirLocation;
 
     private DynamicMethod privateMethodMissing, protectedMethodMissing, variableMethodMissing,
             superMethodMissing, normalMethodMissing, defaultMethodMissing, defaultModuleMethodMissing,
