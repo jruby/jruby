@@ -39,6 +39,7 @@ import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock;
 import org.jruby.runtime.CallBlock19;
 import org.jruby.runtime.CallSite;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaInternalBlockBody;
 import org.jruby.runtime.JavaSites.EnumerableSites;
@@ -948,6 +949,19 @@ public class RubyEnumerable {
     /* FIXME: optimise for special types (e.g. Integer)? */
     /* NB: MRI says "Enumerable#sum method may not respect method redefinition of "+" methods such as Integer#+." */
     public static IRubyObject sumAdd(final ThreadContext context, IRubyObject lhs, IRubyObject rhs, final SingleDouble c) {
+        switch (lhs.getType().classIndex) {
+            default: return sites(context).sum_op_plus.call(context, lhs, lhs, rhs);
+            case ClassIndex.FLOAT:
+            case ClassIndex.INTEGER:
+            case ClassIndex.RATIONAL:
+                switch (rhs.getType().classIndex) {
+                    default: return sites(context).sum_op_plus.call(context, lhs, lhs, rhs);
+                    case ClassIndex.INTEGER:
+                    case ClassIndex.RATIONAL:
+                    case ClassIndex.FLOAT:
+                }
+        }
+
         boolean floats = false;
         double f = 0.0;
         /*
