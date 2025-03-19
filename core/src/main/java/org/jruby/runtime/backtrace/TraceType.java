@@ -329,7 +329,7 @@ public class TraceType {
             }
 
             public void renderBacktrace(RubyStackTraceElement[] elts, StringBuilder buffer, boolean color) {
-                renderBacktraceMRI(elts, buffer, color);
+                renderBacktraceMRI(elts, "\tfrom ", buffer, color);
             }
         },
 
@@ -710,10 +710,6 @@ public class TraceType {
             String suppressedLines = String.valueOf(frames.length - maxBacktraceLines);
             buffer.append("... " + suppressedLines + " levels...\n");
         }
-    }
-
-    private static void renderBacktraceMRI(RubyStackTraceElement[] trace, StringBuilder buffer, boolean color) {
-        renderBacktraceMRI(trace, "", buffer, color);
     }
 
     private static void renderBacktraceMRI(RubyStackTraceElement[] trace, String linePrefix, StringBuilder buffer, boolean color) {

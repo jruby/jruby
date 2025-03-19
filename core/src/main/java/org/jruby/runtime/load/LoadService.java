@@ -526,6 +526,7 @@ public class LoadService {
     protected void warnCircularRequire(String requireName) {
         var context = runtime.getCurrentContext();
         StringBuilder sb = new StringBuilder("loading in progress, circular require considered harmful - " + requireName);
+        sb.append("\n");
 
         context.renderCurrentBacktrace(sb);
         warn(context, sb.toString());
