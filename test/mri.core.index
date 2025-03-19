@@ -54,7 +54,8 @@ ruby/test_condition.rb
 ruby/test_const.rb
 ruby/test_continuation.rb
 ruby/test_data.rb
-ruby/test_default_gems.rb
+# expects CRuby's layout for default gems with .gemspec files
+#ruby/test_default_gems.rb
 ruby/test_defined.rb
 ruby/test_dir.rb
 ruby/test_dir_m17n.rb
