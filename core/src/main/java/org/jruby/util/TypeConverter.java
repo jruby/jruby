@@ -433,12 +433,16 @@ public class TypeConverter {
             throw typeError(context, "can't convert nil into Integer");
         }
 
+        IRubyObject tmp;
         try {
-            IRubyObject tmp = TypeConverter.convertToType(context, val, integerClass(context), sites(context).to_int_checked, false);
+            tmp = TypeConverter.convertToType(context, val, integerClass(context), sites(context).to_int_checked, false);
             if (tmp instanceof RubyInteger) return tmp;
         } catch (RaiseException re) {
-            if (!exception) return context.nil;
-            throw re;
+            context.clearErrorInfo();
+        }
+
+        if (!(tmp = TypeConverter.checkStringType(context.runtime, val)).isNil()) {
+            return ConvertBytes.byteListToInum(context.runtime, ((RubyString) tmp).getByteList(), base, exception);
         }
 
         if (!exception) {

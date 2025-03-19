@@ -361,10 +361,12 @@ public class ConvertBytes {
         return new ConvertBytes(runtime, str, base, badcheck).byteListToInum(exception);
     }
 
+    // MRI: rb_str_convert_to_inum
     public static RubyInteger byteListToInum(Ruby runtime, ByteList str, int base, boolean badcheck) {
         return (RubyInteger) byteListToInum(runtime, str, base, badcheck, true);
     }
 
+    // MRI: rb_str_convert_to_inum
     public static RubyInteger byteListToInum(Ruby runtime, ByteList str, int off, int end, int base, boolean badcheck) {
         return (RubyInteger) new ConvertBytes(runtime, str, off, end, base, badcheck).byteListToInum(true);
     }
