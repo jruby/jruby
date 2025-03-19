@@ -138,6 +138,11 @@ module GC
         @profiler.clear
       end
 
+      def self.raw_data
+        __setup__
+        @profiler.raw_data
+      end
+
       def self.result
         __setup__
         @profiler.result
@@ -210,6 +215,10 @@ module GC
             @gc_listener.clear if @gc_listener
           end
 
+          def raw_data
+            @gc_listener.lines.dup
+          end
+
           def report
             result($stderr)
           end
@@ -217,7 +226,7 @@ module GC
           def result(out = "")
             return nil unless @gc_listener
             
-            lines = @gc_listener.lines.dup
+            lines = raw_data
 
             counts = Hash.new(0)
             report_lines = []
