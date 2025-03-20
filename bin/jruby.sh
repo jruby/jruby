@@ -505,8 +505,8 @@ JAVA_OPTS="$JAVA_OPTS_TEMP"
 
 CP_DELIMITER=":"
 
-# add main jruby jar to the classpath
-JRUBY_ALREADY_ADDED=false
+# Find main jruby jar and add it to the classpath
+jruby_jar=
 for j in "$JRUBY_HOME"/lib/jruby.jar "$JRUBY_HOME"/lib/jruby-complete.jar; do
     if [ ! -e "$j" ]; then
         continue
@@ -516,11 +516,12 @@ for j in "$JRUBY_HOME"/lib/jruby.jar "$JRUBY_HOME"/lib/jruby-complete.jar; do
     else
         JRUBY_CP="$j"
     fi
-    if $JRUBY_ALREADY_ADDED; then
+    if [ -n "$jruby_jar" ]; then
         echo "WARNING: more than one JRuby JAR found in lib directory" 1>&2
     fi
-    JRUBY_ALREADY_ADDED=true
+    jruby_jar="$j"
 done
+readonly jruby_jar
 
 if $cygwin; then
     JRUBY_CP="$(cygpath -p -w "$JRUBY_CP")"
