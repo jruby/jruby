@@ -184,6 +184,7 @@ NO_BOOTCLASSPATH=false
 VERIFY_JRUBY=false
 print_environment_log=false
 regenerate_jsa_file=false
+remove_jsa_files=false
 log_cds=false
 
 if [ -z "${JRUBY_OPTS-}" ]; then
@@ -700,6 +701,7 @@ do
             fi
             ;;
         --nocache) use_jsa_file=false ;;
+        --rmcache) remove_jsa_files=true ;;
         --logcache) log_cds=true ;;
         # Abort processing on the double dash
         --) break ;;
@@ -737,6 +739,11 @@ fi
 
 # Default JVM Class Data Sharing Archive (jsa) file for JVMs that support it
 readonly jruby_jsa_file="$JRUBY_HOME/lib/jruby-java$java_version.jsa"
+
+# Find JSAs for all Java versions
+assign jruby_jsa_files "$JRUBY_HOME"/lib/jruby-java*.jsa
+readonly jruby_jsa_files
+
 
 if $use_jsa_file; then
     # Allow overriding default JSA file location
@@ -870,8 +877,11 @@ if $print_environment_log; then
 fi
 
 # ----- Perform final mutations after logging ---------------------------------
-# Delete AppCDS file if requested or if it's outdated
-if $regenerate_jsa_file && [ -e "$jruby_jsa_file" ]; then
+if $remove_jsa_files; then
+    # Delete All AppCDS files if requested
+    eval rm -f -- "$jruby_jsa_files"
+elif $regenerate_jsa_file && [ -e "$jruby_jsa_file" ]; then
+    # Delete AppCDS file if requested or if it's outdated
     rm -f -- "$jruby_jsa_file"
 fi
 
