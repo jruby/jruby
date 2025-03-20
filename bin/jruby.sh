@@ -703,34 +703,6 @@ JFFI_OPTS="-Djffi.boot.library.path=$JRUBY_HOME/lib/jni"
 
 CLASSPATH="${CP-}${CP_DELIMITER}${CLASSPATH-}"
 
-# ----- Tweak console environment for cygwin ----------------------------------
-
-if $cygwin; then
-    use_exec=false
-    JRUBY_HOME="$(cygpath --mixed "$JRUBY_HOME")"
-    JRUBY_SHELL="$(cygpath --mixed "$JRUBY_SHELL")"
-
-    eval set -- "$ruby_args"
-
-    case $1 in
-        /*)
-            if [ -f "$1" ] || [ -d "$1" ]; then
-                # replace first element of ruby_args with cygwin form
-                win_arg="$(cygpath -w "$1")"
-                shift
-                set -- "$win_arg" "$@"
-                assign ruby_args "$@"
-            fi
-            ;;
-    esac
-
-    # fix JLine to use UnixTerminal
-    if stty -icanon min 1 -echo > /dev/null 2>&1; then
-        JAVA_OPTS="$JAVA_OPTS -Djline.terminal=jline.UnixTerminal"
-    fi
-
-fi
-
 # ----- Module and Class Data Sharing flags for Java 9+ -----------------------
 
 if $use_modules; then
@@ -757,6 +729,34 @@ if $use_modules; then
             append java_args -Xlog:cds=info:file="$JRUBY_JSA".log -Xlog:cds+dynamic=info:file="$JRUBY_JSA".log
         fi
     fi
+fi
+
+# ----- Tweak console environment for cygwin ----------------------------------
+
+if $cygwin; then
+    use_exec=false
+    JRUBY_HOME="$(cygpath --mixed "$JRUBY_HOME")"
+    JRUBY_SHELL="$(cygpath --mixed "$JRUBY_SHELL")"
+
+    eval set -- "$ruby_args"
+
+    case $1 in
+        /*)
+            if [ -f "$1" ] || [ -d "$1" ]; then
+                # replace first element of ruby_args with cygwin form
+                win_arg="$(cygpath -w "$1")"
+                shift
+                set -- "$win_arg" "$@"
+                assign ruby_args "$@"
+            fi
+            ;;
+    esac
+
+    # fix JLine to use UnixTerminal
+    if stty -icanon min 1 -echo > /dev/null 2>&1; then
+        JAVA_OPTS="$JAVA_OPTS -Djline.terminal=jline.UnixTerminal"
+    fi
+
 fi
 
 # ----- Final prepration of the Java command line -----------------------------
