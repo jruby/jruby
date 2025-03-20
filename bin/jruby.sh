@@ -656,10 +656,8 @@ do
             java_class=org.jruby.main.CheckpointMain
             append java_args -XX:CRaCCheckpointTo=.jruby.checkpoint ;;
         # restore from checkpoint
-        --restore=*)
-            append java_args -XX:CRaCRestoreFrom="${1#--restore=}" ;;
-        --restore)
-            append java_args -XX:CRaCRestoreFrom=.jruby.checkpoint ;;
+        --restore=*) append java_args -XX:CRaCRestoreFrom="${1#--restore=}" ;;
+        --restore) append java_args -XX:CRaCRestoreFrom=.jruby.checkpoint ;;
         --cache)
             echo "EXPERIMENTAL: Regenerating the JRuby AppCDS archive at $jruby_jsa_file"
             echo "EXPERIMENTAL: Log output at ${jruby_jsa_file}.log"
@@ -668,10 +666,8 @@ do
             rm -f "$jruby_jsa_file"
             append java_args -XX:ArchiveClassesAtExit="$jruby_jsa_file" -Xlog:cds=off -Xlog:cds+dynamic=off
             ;;
-        --nocache)
-            use_jsa_file=false ;;
-        --logcache)
-            log_cds=true ;;
+        --nocache) use_jsa_file=false ;;
+        --logcache) log_cds=true ;;
         # Abort processing on the double dash
         --) break ;;
         # Other opts go to ruby
