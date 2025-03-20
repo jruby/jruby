@@ -135,6 +135,19 @@ preextend() {
     eval "$1=\"\${$2} \${$1}\""
 }
 
+# is_newer FILE OTHER...
+#
+# Returns 0 if FILE is newer than all OTHER files. If FILE doesn't exist,
+# return error. If OTHER files don't exist, pretend they're older than FILE.
+is_newer() {
+    local output master
+    master="$1"
+    shift
+
+    # Find any other files that are newer, negate outside find in case any don't exist
+    [ -e "$master" ] && ! find "$@" -newer "$master" 2>/dev/null | read -r _
+}
+
 # echo [STRING...]
 #
 # Dumb echo, i.e. print arguments joined by spaces with no further processing
