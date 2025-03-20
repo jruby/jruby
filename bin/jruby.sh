@@ -695,12 +695,12 @@ do
         --restore=*) append java_args -XX:CRaCRestoreFrom="${1#--restore=}" ;;
         --restore) append java_args -XX:CRaCRestoreFrom=.jruby.checkpoint ;;
         --cache)
-            echo "EXPERIMENTAL: Regenerating the JRuby AppCDS archive at $jruby_jsa_file"
-            echo "EXPERIMENTAL: Log output at ${jruby_jsa_file}.log"
-            use_jsa_file=false
-            regenerate_jsa_file=true
-            rm -f "$jruby_jsa_file"
-            append java_args -XX:ArchiveClassesAtExit="$jruby_jsa_file" -Xlog:cds=off -Xlog:cds+dynamic=off
+            if $java_has_appcds; then
+                use_jsa_file=true
+                regenerate_jsa_file=true
+            else
+                echo "Warning: Java $java_major doesn't support AppCDS, ignoring --cache" >&2
+            fi
             ;;
         --nocache) use_jsa_file=false ;;
         --logcache) log_cds=true ;;
@@ -722,14 +722,6 @@ fi
 # The rest of the arguments are for ruby
 append ruby_args "$@"
 
-# If regenerating the JSA archive but no Ruby arguments were passed, do -e 1
-if $regenerate_jsa_file; then
-    case $ruby_args in
-        (*[![:space:]]*) ;;  # If non-space character found, ruby_args isn't empty
-        (*) assign ruby_args -e 1 ;;  # ruby_args is empty
-    esac
-fi
-
 JAVA_OPTS="$JAVA_OPTS ${JAVA_MEM-} ${JAVA_STACK-}"
 
 JFFI_OPTS="-Djffi.boot.library.path=$JRUBY_HOME/lib/jni"
@@ -744,23 +736,62 @@ if $use_modules; then
 
     # Add base opens we need for Ruby compatibility
     process_java_opts "$jruby_module_opts_file"
+fi
 
+if $use_jsa_file; then
     # Allow overriding default JSA file location
-    if [ -z "${JRUBY_JSA-}" ]; then
-        JRUBY_JSA="$jruby_jsa_file"
+    if [ -n "${JRUBY_JSA-}" ]; then
+        jruby_jsa_file="$JRUBY_JSA"
     fi
 
-    if $use_jsa_file; then
-        # Auto-generate DynamicCDS archive
+    if $regenerate_jsa_file; then
+        # Run no-op script if AppCDS caching was requested
+        case $ruby_args in
+            (*[![:space:]]*) append ruby_args -e 1 ;;
+        esac
+    fi
+
+
+    # Archive should be regenerated manually if requested or it's outdated relative to JRuby
+    if ! $regenerate_jsa_file && is_newer "$jruby_jar" "$jruby_jsa_file"; then
+        regenerate_jsa_file=true
+    fi
+
+    # Defer generation to Java if flag is available
+    if $java_has_appcds_autogenerate; then
+        append java_args -XX:+AutoCreateSharedArchive
+
         add_log
-        add_log "Generating and using CDS archive at:"
-        add_log "  $JRUBY_JSA"
-        JAVA_OPTS="$JAVA_OPTS -XX:+AutoCreateSharedArchive -XX:SharedArchiveFile=$JRUBY_JSA -Xlog:cds=off -Xlog:cds+dynamic=off"
-        if $log_cds; then
-            add_log "Logging CDS output to:"
-            add_log "  $JRUBY_JSA.log"
-            append java_args -Xlog:cds=info:file="$JRUBY_JSA".log -Xlog:cds+dynamic=info:file="$JRUBY_JSA".log
+        add_log "Automatically generating and using CDS archive at:"
+        add_log "  $jruby_jsa_file"
+    fi
+
+    # Determine if we should read or explicitly write the archive
+    if $regenerate_jsa_file && ! $java_has_appcds_autogenerate; then
+        # Explicitly create archive if outdated
+        append java_args -XX:ArchiveClassesAtExit="$jruby_jsa_file"
+
+        add_log
+        add_log "Regenerating CDS archive at:"
+        add_log "  $jruby_jsa_file"
+    else
+        # Read archive if not explicitly regenerating
+        append java_args -XX:SharedArchiveFile="$jruby_jsa_file"
+
+        if ! $java_has_appcds_autogenerate; then
+            add_log
+            add_log "Using CDS archive at:"
+            add_log "  $jruby_jsa_file"
         fi
+    fi
+
+    if $log_cds; then
+        add_log "Logging CDS output to:"
+        add_log "  $jruby_jsa_file.log"
+        append java_args -Xlog:cds=info:file="$jruby_jsa_file".log
+        append java_args -Xlog:cds+dynamic=info:file="$jruby_jsa_file".log
+    else
+        append java_args -Xlog:cds=off -Xlog:cds+dynamic=off
     fi
 fi
 
@@ -836,6 +867,12 @@ add_log "  $*"
 if $print_environment_log; then
     echo "$environment_log"
     exit 0
+fi
+
+# ----- Perform final mutations after logging ---------------------------------
+# Delete AppCDS file if requested or if it's outdated
+if $regenerate_jsa_file && [ -e "$jruby_jsa_file" ]; then
+    rm -f "$jruby_jsa_file"
 fi
 
 # ----- Run JRuby! ------------------------------------------------------------
