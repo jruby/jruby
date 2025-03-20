@@ -394,9 +394,6 @@ readonly pwd_jruby_java_opts_file="$PWD/.jruby.java_opts"
 # Options from .dev_mode.java_opts for "--dev" mode, to reduce JRuby startup time
 readonly dev_mode_opts_file="$JRUBY_HOME/bin/.dev_mode.java_opts"
 
-# Default JVM Class Data Sharing Archive (jsa) file for JVMs that support it
-readonly jruby_jsa_file="$JRUBY_HOME/lib/jruby.jsa"
-
 # ----- Initialize environment log --------------------------------------------
 
 add_log
@@ -737,6 +734,9 @@ if $use_modules; then
     # Add base opens we need for Ruby compatibility
     process_java_opts "$jruby_module_opts_file"
 fi
+
+# Default JVM Class Data Sharing Archive (jsa) file for JVMs that support it
+readonly jruby_jsa_file="$JRUBY_HOME/lib/jruby-java$java_version.jsa"
 
 if $use_jsa_file; then
     # Allow overriding default JSA file location
