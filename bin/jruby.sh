@@ -485,6 +485,29 @@ if $use_modules; then
     add_log "Detected Java modules at $JAVA_HOME"
 fi
 
+# ----- Detect Java version and determine available features ------------------
+# shellcheck source=/dev/null
+java_version=$(. "$JAVA_HOME/release" && echo "${JAVA_VERSION-}")
+
+# Split version out for integer comparisons
+java_major=${java_version%%.*}
+
+# AppCDS support
+if [ "$java_major" -ge 10 ]; then
+    java_has_appcds=true
+else
+    java_has_appcds=false
+fi
+readonly java_has_appcds
+
+# AppCDS autogeneration
+if [ "$java_major" -ge 19 ]; then
+    java_has_appcds_autogenerate=true
+else
+    java_has_appcds_autogenerate=false
+fi
+readonly java_has_appcds_autogenerate
+
 # ----- Process .java_opts files ----------------------------------------------
 
 # We include options on the java command line in the following order:
