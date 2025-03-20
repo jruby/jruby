@@ -872,7 +872,7 @@ fi
 # ----- Perform final mutations after logging ---------------------------------
 # Delete AppCDS file if requested or if it's outdated
 if $regenerate_jsa_file && [ -e "$jruby_jsa_file" ]; then
-    rm -f "$jruby_jsa_file"
+    rm -f -- "$jruby_jsa_file"
 fi
 
 # ----- Run JRuby! ------------------------------------------------------------
