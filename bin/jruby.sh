@@ -744,7 +744,6 @@ readonly jruby_jsa_file="$JRUBY_HOME/lib/jruby-java$java_version.jsa"
 assign jruby_jsa_files "$JRUBY_HOME"/lib/jruby-java*.jsa
 readonly jruby_jsa_files
 
-
 if $use_jsa_file; then
     # Allow overriding default JSA file location
     if [ -n "${JRUBY_JSA-}" ]; then
@@ -877,11 +876,14 @@ if $print_environment_log; then
 fi
 
 # ----- Perform final mutations after logging ---------------------------------
+# Delete All AppCDS files and exit if requested
 if $remove_jsa_files; then
-    # Delete All AppCDS files if requested
     eval rm -f -- "$jruby_jsa_files"
-elif $regenerate_jsa_file && [ -e "$jruby_jsa_file" ]; then
-    # Delete AppCDS file if requested or if it's outdated
+    exit
+fi
+
+if $regenerate_jsa_file && [ -e "$jruby_jsa_file" ]; then
+    # Delete selected AppCDS file if requested or if it's outdated
     rm -f -- "$jruby_jsa_file"
 fi
 
