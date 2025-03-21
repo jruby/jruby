@@ -135,6 +135,16 @@ preextend() {
     eval "$1=\"\${$2} \${$1}\""
 }
 
+# a_isempty
+#
+# Return 0 if an array is empty, otherwise return 1
+a_isempty() {
+    case $ruby_args in
+        (*[![:space:]]*) return 1 ;;  # If any nonblank, not empty
+    esac
+    return 0
+}
+
 # is_newer FILE OTHER...
 #
 # Returns 0 if FILE is newer than all OTHER files. If FILE doesn't exist,
@@ -751,11 +761,8 @@ if $use_jsa_file; then
     fi
 
     # Default to no-op script when explicitly generating
-    if $regenerate_jsa_file; then
-        case $ruby_args in
-            (*[![:space:]]*) ;;
-            (*) append ruby_args -e 1 ;;
-        esac
+    if $regenerate_jsa_file && a_isempty "$ruby_args"; then
+        append ruby_args -e 1
     fi
 
     # Archive should be regenerated manually if requested or it's outdated relative to JRuby
