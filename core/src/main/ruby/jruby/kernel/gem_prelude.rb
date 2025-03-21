@@ -8,11 +8,12 @@ else
   require 'bundled_gems'
 end if defined?(Gem)
 
-begin
-  require 'error_highlight'
-rescue LoadError
-  warn "`error_highlight' was not loaded."
-end if defined?(ErrorHighlight)
+# error_highlight is currently CRuby-specific and should not be used on JRuby
+# begin
+#   require 'error_highlight'
+# rescue LoadError
+#   warn "`error_highlight' was not loaded."
+# end if defined?(ErrorHighlight)
 
 begin
   require 'did_you_mean'

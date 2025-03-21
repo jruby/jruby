@@ -229,7 +229,7 @@ public class Options {
     public static final Option<String> CLI_PROFILING_SERVICE = string(CLI, "cli.profiling.service", "Profiling service class to use.");
     public static final Option<Boolean> CLI_RUBYGEMS_ENABLE = bool(CLI, "cli.rubygems.enable", true, "Enable/disable RubyGems.");
     public static final Option<Boolean> CLI_DID_YOU_MEAN_ENABLE = bool(CLI, "cli.did_you_mean.enable", true, "Enable/disable did_you_mean.");
-    public static final Option<Boolean> CLI_ERROR_HIGHLIGHT_ENABLE = bool(CLI, "cli.error_highlight.enable", true, "Enable/disable error_highlight.");
+    public static final Option<Boolean> CLI_ERROR_HIGHLIGHT_ENABLE = bool(CLI, "cli.error_highlight.enable", false, "Ignored. ErrorHighlight does not currently support JRuby.");
     public static final Option<Boolean> CLI_SYNTAX_SUGGEST_ENABLE = bool(CLI, "cli.syntax_suggest.enable", true, "Enable/disable syntax_suggest.");
     public static final Option<Boolean> CLI_RUBYOPT_ENABLE = bool(CLI, "cli.rubyopt.enable", true, "Enable/disable RUBYOPT processing at start.");
     public static final Option<Boolean> CLI_STRIP_HEADER = bool(CLI, "cli.strip.header", false, "Strip text before shebang in script. Same as -x.");

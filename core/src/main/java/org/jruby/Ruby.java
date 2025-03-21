@@ -594,7 +594,9 @@ public final class Ruby implements Constantizable {
         // Define blank modules for feature detection in preludes
         if (!this.config.isDisableGems()) {
             Define.defineModule(context, "Gem");
-            if (!this.config.isDisableErrorHighlight()) Define.defineModule(context, "ErrorHighlight");
+            if (!this.config.isDisableErrorHighlight()) {
+                warnings.warn("ErrorHighlight does not currently support JRuby and will not be loaded");
+            }
             if (!this.config.isDisableDidYouMean()) Define.defineModule(context, "DidYouMean");
             if (!this.config.isDisableSyntaxSuggest()) Define.defineModule(context, "SyntaxSuggest");
         }
