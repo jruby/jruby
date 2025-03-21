@@ -750,13 +750,13 @@ if $use_jsa_file; then
         jruby_jsa_file="$JRUBY_JSA"
     fi
 
+    # Default to no-op script when explicitly generating
     if $regenerate_jsa_file; then
-        # Run no-op script if AppCDS caching was requested
         case $ruby_args in
-            (*[![:space:]]*) append ruby_args -e 1 ;;
+            (*[![:space:]]*) ;;
+            (*) append ruby_args -e 1 ;;
         esac
     fi
-
 
     # Archive should be regenerated manually if requested or it's outdated relative to JRuby
     if ! $regenerate_jsa_file && is_newer "$jruby_jar" "$jruby_jsa_file"; then
