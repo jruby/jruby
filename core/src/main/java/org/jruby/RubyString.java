@@ -1649,7 +1649,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     public final RubyString catString(String str) {
         ByteList other = encodeBytelist(str, UTF8);
-        catWithCodeRange(other, CR_VALID);
+        // if byte string is same size, assume all 7-bit; otherwise, unknown
+        catWithCodeRange(other, other.realSize() == str.length() ? CR_7BIT : CR_UNKNOWN);
         return this;
     }
 
