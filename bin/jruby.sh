@@ -501,7 +501,7 @@ java_version=$(. "$JAVA_HOME/release" && echo "${JAVA_VERSION-}")
 java_major=${java_version%%.*}
 
 # AppCDS support
-if [ "$java_major" -ge 10 ]; then
+if [ "$java_major" -ge 13 ]; then
     java_has_appcds=true
 else
     java_has_appcds=false
@@ -707,7 +707,7 @@ do
                 use_jsa_file=true
                 regenerate_jsa_file=true
             else
-                echo "Warning: Java $java_major doesn't support AppCDS, ignoring --cache" >&2
+                echo "Warning: Java $java_major doesn't support automatic AppCDS, ignoring --cache" >&2
             fi
             ;;
         --nocache) use_jsa_file=false ;;
