@@ -477,10 +477,8 @@ java_is_modular() {
 }
 
 if java_is_modular; then
-    use_jsa_file=true
     use_modules=true
 else
-    use_jsa_file=false
     use_modules=false
 fi
 readonly use_modules
@@ -507,6 +505,9 @@ else
     java_has_appcds=false
 fi
 readonly java_has_appcds
+
+# Default to using AppCDS if available
+use_jsa_file="$java_has_appcds"
 
 # AppCDS autogeneration
 if [ "$java_major" -ge 19 ]; then
