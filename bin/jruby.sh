@@ -494,6 +494,7 @@ fi
 # ----- Detect Java version and determine available features ------------------
 # shellcheck source=/dev/null
 java_version=$(. "$JAVA_HOME/release" && echo "${JAVA_VERSION-}")
+add_log "Detected Java version: $java_version"
 
 # Split version out for integer comparisons
 java_major=${java_version%%.*}
