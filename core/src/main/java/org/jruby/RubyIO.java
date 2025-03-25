@@ -4545,17 +4545,23 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     // rb_io_s_readlines
-    @JRubyMethod(name = "readlines", required = 1, optional = 3, checkArity = false, meta = true, keywords = true)
+    @JRubyMethod(name = "readlines", required = 1, optional = 2, checkArity = false, meta = true, keywords = true)
     public static IRubyObject readlines(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         // FIXME: readlines and friends all look at kwargs deep in IO code but we also do it at beginning of methods
         // as well.  Any internal dyndispatch will reset callInfo like in the next few lines.  I save callInfo here
         // to be restored to save it for the deeper kwargs code.
         int callInfo = context.callInfo;
         IRubyObject opt = ArgsUtil.getOptionsArg(context.runtime, args);
+
+        int argc = args.length;
+        if (!opt.isNil()) {
+            argc--;
+        }
+
         final RubyIO io = openKeyArgs(context, recv, args, opt);
         context.callInfo = callInfo;
         try {
-            switch (args.length) {
+            switch (argc) {
                 case 1:
                     return io.readlines(context);
                 case 2:
@@ -4565,10 +4571,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 case 3:
                     if (opt != context.nil) return io.readlines(context, args[1], opt);
                     return io.readlines(context, args[1], args[2]);
-                case 4:
-                    return io.readlines(context, args[1], args[2], args[3]);
                 default:
-                    Arity.raiseArgumentError(context, args.length, 1, 3);
+                    Arity.raiseArgumentError(context, args.length, 1, 2);
                     throw new AssertionError("BUG");
             }
         } finally { io.close(); }
