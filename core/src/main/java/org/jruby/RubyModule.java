@@ -3128,7 +3128,7 @@ public class RubyModule extends RubyObject {
 
         originalModule.cloneMethods(context, this);
         
-        this.javaProxy = originalModule.javaProxy; 
+        this.javaProxy = originalModule.javaProxy;
 
         return this;
     }
