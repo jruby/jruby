@@ -124,7 +124,7 @@ ruby/test_pattern_matching.rb
 ruby/test_pipe.rb
 ruby/test_primitive.rb
 ruby/test_proc.rb
-# launces many subprocesses, moved to extra
+# launches many subprocesses, moved to extra
 #ruby/test_process.rb
 ruby/test_rand.rb
 ruby/test_random_formatter.rb
