@@ -717,12 +717,11 @@ do
         --restore=*) append java_args -XX:CRaCRestoreFrom="${1#--restore=}" ;;
         --restore) append java_args -XX:CRaCRestoreFrom=.jruby.checkpoint ;;
         --cache)
-            if $java_has_appcds; then
-                #use_jsa_file=true  # Currently this defaults to true
-                regenerate_jsa_file=true
-            else
-                echo "Warning: Java $java_major doesn't support automatic AppCDS, ignoring --cache" >&2
+            if ! $java_has_appcds; then
+                echo "Error: Java $java_major doesn't support automatic AppCDS" >&2
+                exit 2
             fi
+            regenerate_jsa_file=true  # Force regeneration of archive
             ;;
         --nocache) use_jsa_file=false ;;
         --rmcache) remove_jsa_files=true ;;
