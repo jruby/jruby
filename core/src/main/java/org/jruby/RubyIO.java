@@ -2928,6 +2928,16 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return line;
     }
 
+    @JRubyMethod(name = "readline", writes = LASTLINE)
+    public IRubyObject readline(ThreadContext context, IRubyObject separator, IRubyObject options) {
+        IRubyObject line = gets(context, separator, options);
+
+        if (line == context.nil) throw context.runtime.newEOFError();
+
+        return line;
+    }
+
+
     @Deprecated
     public IRubyObject getc() {
         return getbyte(getRuntime().getCurrentContext());
