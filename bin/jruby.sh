@@ -145,6 +145,18 @@ a_isempty() {
     return 0
 }
 
+# exists [FILE...]
+#
+# Returns 0 if all FILEs exist or none provided, otherwise returns 1
+exists() {
+    while [ "$#" -gt 0 ]; do
+        [ -e "$1" ] || return
+        shift
+    done
+
+    return 0
+}
+
 # is_newer FILE OTHER...
 #
 # Returns 0 if FILE is newer than all OTHER files. If FILE doesn't exist,
@@ -500,7 +512,7 @@ add_log "Detected Java version: $java_version"
 java_major=${java_version%%.*}
 
 # AppCDS support
-if [ "$java_major" -ge 13 ]; then
+if [ "$java_major" -ge 13 ] && exists "$JAVA_HOME"/lib/server/*.jsa; then
     java_has_appcds=true
 else
     java_has_appcds=false
