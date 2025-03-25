@@ -187,7 +187,7 @@ public class RubyNameError extends RubyStandardError {
         private static RubyString getNameOrInspect(ThreadContext context, IRubyObject object) {
             IRubyObject tmp = tryModuleName(context, object);
             if (tmp == UNDEF || tmp.isNil()) tmp = tryInspect(context, object);
-            if (tmp == UNDEF) context.setErrorInfo(context.nil);
+            if (tmp == UNDEF) context.clearErrorInfo();
             tmp = TypeConverter.checkStringType(context.runtime, tmp);
             if (tmp.isNil()) tmp = object.anyToString();
             return (RubyString) tmp;
