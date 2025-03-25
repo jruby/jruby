@@ -2836,27 +2836,27 @@ public final class Ruby implements Constantizable {
      * @return null or encoding
      */
     public Encoding getDefaultInternalEncoding() {
-        return defaultInternalEncoding;
+        return encodingService.getDefaultInternalEncoding();
     }
 
     public void setDefaultInternalEncoding(Encoding defaultInternalEncoding) {
-        this.defaultInternalEncoding = defaultInternalEncoding;
+        encodingService.setDefaultInternalEncoding(defaultInternalEncoding);
     }
 
     public Encoding getDefaultExternalEncoding() {
-        return defaultExternalEncoding;
+        return encodingService.getDefaultExternalEncoding();
     }
 
     public void setDefaultExternalEncoding(Encoding defaultExternalEncoding) {
-        this.defaultExternalEncoding = defaultExternalEncoding;
+        encodingService.setDefaultExternalEncoding(defaultExternalEncoding);
     }
 
     public Encoding getDefaultFilesystemEncoding() {
-        return defaultFilesystemEncoding;
+        return encodingService.getDefaultFilesystemEncoding();
     }
 
     public void setDefaultFilesystemEncoding(Encoding defaultFilesystemEncoding) {
-        this.defaultFilesystemEncoding = defaultFilesystemEncoding;
+        encodingService.setDefaultFilesystemEncoding(defaultFilesystemEncoding);
     }
 
     /**
@@ -5880,7 +5880,6 @@ public final class Ruby implements Constantizable {
 
     private final LoadService loadService;
 
-    private Encoding defaultInternalEncoding, defaultExternalEncoding, defaultFilesystemEncoding;
     private final EncodingService encodingService;
 
     private final GlobalVariables globalVariables = new GlobalVariables(this);

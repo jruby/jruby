@@ -555,7 +555,9 @@ public class RubyEncoding extends RubyObject implements Constantizable {
             result.fastASet(alias, name);
         }
 
-        result.fastASet(newString(context, EXTERNAL), newString(context, new ByteList(context.runtime.getDefaultExternalEncoding().getName())));
+        result.fastASet(newString(context, EXTERNAL), newString(context, new ByteList(service.getDefaultExternalEncoding().getName())));
+        result.fastASet(newString(context, INTERNAL), newString(context, new ByteList(service.getDefaultInternalEncoding().getName())));
+        result.fastASet(newString(context, FILESYSTEM), newString(context, new ByteList(service.getDefaultFilesystemEncoding().getName())));
         result.fastASet(newString(context, LOCALE), newString(context, new ByteList(service.getLocaleEncoding().getName())));
 
         return result;
@@ -617,11 +619,12 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         var result = newArray(context);
         HashEntryIterator i;
         i = service.getEncodings().entryIterator();
+        Ruby runtime = context.runtime;
         while (i.hasNext()) {
             CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e =
                 ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)i.next());
             if (e.value == entry) {
-                result.append(context, RubyString.newUsAsciiStringShared(context.runtime, e.bytes, e.p, e.end - e.p).freeze(context));
+                result.append(context, RubyString.newUsAsciiStringShared(runtime, e.bytes, e.p, e.end - e.p).freeze(context));
             }
         }
         i = service.getAliases().entryIterator();
@@ -629,11 +632,12 @@ public class RubyEncoding extends RubyObject implements Constantizable {
             CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e =
                 ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry>)i.next());
             if (e.value == entry) {
-                result.append(context, RubyString.newUsAsciiStringShared(context.runtime, e.bytes, e.p, e.end - e.p).freeze(context));
+                result.append(context, RubyString.newUsAsciiStringShared(runtime, e.bytes, e.p, e.end - e.p).freeze(context));
             }
         }
-        result.append(context, newString(context, EXTERNAL));
-        result.append(context, newString(context, LOCALE));
+        if (encoding == service.getDefaultExternalEncoding()) result.append(context, newString(context, EXTERNAL));
+        if (encoding == service.getDefaultInternalEncoding()) result.append(context, newString(context, INTERNAL));
+        if (encoding == service.getLocaleEncoding()) result.append(context, newString(context, LOCALE));
 
         return result;
     }

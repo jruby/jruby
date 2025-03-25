@@ -47,6 +47,9 @@ public final class EncodingService {
 
     private final Encoding ascii8bit;
     private final Encoding javaDefault;
+    private Encoding defaultInternalEncoding;
+    private Encoding defaultExternalEncoding;
+    private Encoding defaultFilesystemEncoding;
 
     private static final ByteList LOCALE_BL = ByteList.create("locale");
     private static final ByteList EXTERNAL_BL = ByteList.create("external");
@@ -54,6 +57,7 @@ public final class EncodingService {
     private static final ByteList FILESYSTEM_BL = ByteList.create("filesystem");
     private static final Pattern MS_CP_PATTERN = Pattern.compile("^MS([0-9]+)$");
     private Encoding consoleEncoding;
+    private Encoding localeEncoding;
 
     public EncodingService(Ruby runtime) {
         this.runtime = runtime;
@@ -120,6 +124,30 @@ public final class EncodingService {
         return SpecialEncoding.FILESYSTEM.toEncoding(runtime);
     }
 
+    public Encoding getDefaultInternalEncoding() {
+        return defaultInternalEncoding;
+    }
+
+    public void setDefaultInternalEncoding(Encoding defaultInternalEncoding) {
+        this.defaultInternalEncoding = defaultInternalEncoding;
+    }
+
+    public Encoding getDefaultExternalEncoding() {
+        return defaultExternalEncoding;
+    }
+
+    public void setDefaultExternalEncoding(Encoding defaultExternalEncoding) {
+        this.defaultExternalEncoding = defaultExternalEncoding;
+    }
+
+    public Encoding getDefaultFilesystemEncoding() {
+        return defaultFilesystemEncoding;
+    }
+
+    public void setDefaultFilesystemEncoding(Encoding defaultFilesystemEncoding) {
+        this.defaultFilesystemEncoding = defaultFilesystemEncoding;
+    }
+
     public CaseInsensitiveBytesHash<Entry> getEncodings() {
         return encodings;
     }
@@ -158,6 +186,10 @@ public final class EncodingService {
 
     // rb_locale_charmap...mostly
     public Encoding getLocaleEncoding() {
+        final Encoding localeEncoding = this.localeEncoding;
+
+        if (localeEncoding != null) return localeEncoding;
+
         final Encoding consoleEncoding = getConsoleEncoding();
 
         if (consoleEncoding != null) {
@@ -171,7 +203,7 @@ public final class EncodingService {
         }
 
         final Entry entry = findEncodingOrAliasEntry(encName);
-        return entry == null ? ASCIIEncoding.INSTANCE : entry.getEncoding();
+        return this.localeEncoding = entry == null ? ASCIIEncoding.INSTANCE : entry.getEncoding();
     }
 
     public IRubyObject[] getEncodingList() {
