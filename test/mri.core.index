@@ -102,7 +102,8 @@ ruby/test_m17n.rb
 ruby/test_m17n_comb.rb
 ruby/test_marshal.rb
 ruby/test_math.rb
-ruby/test_memory_view.rb
+# Depends on CRuby internals via memory_view test extension (MemoryViewTestUtils)
+#ruby/test_memory_view.rb
 ruby/test_metaclass.rb
 ruby/test_method.rb
 ruby/test_method_cache.rb
