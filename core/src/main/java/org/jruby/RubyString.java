@@ -183,6 +183,13 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     private static final byte[] SCRUB_REPL_UTF32LE = new byte[]{(byte)0xFD, (byte)0xFF, (byte)0x00, (byte)0x00};
     private static final byte[] FORCE_ENCODING_BYTES = ".force_encoding(\"".getBytes();
 
+    // This mimicks STR_BUF_MIN_SIZE (although MRI currently uses 16) but as we use ByteList we have paths
+    // which use private DEFAULT_SIZE in ByteList (which happens to be 4).  MRI now has a lot of logic
+    // around capacity and optimizes for single byte strings as well as having a much more liberal default.
+    // Follow-up work should reevaluate this value (Currently only explicit capacity to initialize is using
+    // this value).
+    private static final int STRING_MINIMUM_SIZE = 4;
+
     public static RubyString[] NULL_ARRAY = {};
 
     protected volatile int shareLevel = SHARE_LEVEL_NONE;
@@ -1869,7 +1876,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             IRubyObject encoding = opts.fastARef(asSymbol(context, "encoding"));
             IRubyObject capacity = opts.fastARef(asSymbol(context, "capacity"));
 
-            if (capacity != null && !capacity.isNil()) modify(toInt(context, capacity));
+            if (capacity != null && !capacity.isNil()) {
+                int capa = toInt(context, capacity);
+                if (capa < STRING_MINIMUM_SIZE) capa = STRING_MINIMUM_SIZE;
+                modify(capa);
+            }
             if (encoding != null && !encoding.isNil()) {
                 modify();
                 setEncodingAndCodeRange(encodingService(context).getEncodingFromObject(encoding), CR_UNKNOWN);
