@@ -59,8 +59,41 @@ class Reline::LineEditor
     end
   end
 
+  class CursorPositionTest < Reline::TestCase
+    def setup
+      @line_editor = Reline::LineEditor.new(nil)
+      @line_editor.instance_variable_set(:@config, Reline::Config.new)
+    end
+
+    def test_cursor_position_with_escaped_input
+      @line_editor.instance_variable_set(:@screen_size, [4, 16])
+      @line_editor.instance_variable_set(:@prompt, "\e[1mprompt\e[0m> ")
+      @line_editor.instance_variable_set(:@buffer_of_lines, ["\e[1m\0\1\2\3\4\5\6\7abcd"])
+      @line_editor.instance_variable_set(:@line_index, 0)
+      # prompt> ^[[1m^@^
+      # A^B^C^D^E^F^Gabc
+      # d
+      @line_editor.instance_variable_set(:@byte_pointer, 0)
+      assert_equal [8, 0], @line_editor.wrapped_cursor_position
+      @line_editor.instance_variable_set(:@byte_pointer, 5)
+      assert_equal [15, 0], @line_editor.wrapped_cursor_position
+      @line_editor.instance_variable_set(:@byte_pointer, 6)
+      assert_equal [1, 1], @line_editor.wrapped_cursor_position
+      @line_editor.instance_variable_set(:@byte_pointer, 14)
+      assert_equal [15, 1], @line_editor.wrapped_cursor_position
+      @line_editor.instance_variable_set(:@byte_pointer, 15)
+      assert_equal [0, 2], @line_editor.wrapped_cursor_position
+      @line_editor.instance_variable_set(:@byte_pointer, 16)
+      assert_equal [1, 2], @line_editor.wrapped_cursor_position
+    end
+  end
+
   class RenderLineDifferentialTest < Reline::TestCase
     class TestIO < Reline::IO
+      def write(string)
+        @output << string
+      end
+
       def move_cursor_column(col)
         @output << "[COL_#{col}]"
       end
@@ -76,7 +109,6 @@ class Reline::LineEditor
       @original_iogate = Reline::IOGate
       @output = StringIO.new
       @line_editor.instance_variable_set(:@screen_size, [24, 80])
-      @line_editor.instance_variable_set(:@output, @output)
       Reline.send(:remove_const, :IOGate)
       Reline.const_set(:IOGate, TestIO.new)
       Reline::IOGate.instance_variable_set(:@output, @output)
