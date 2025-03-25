@@ -4069,21 +4069,27 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         if (io == nil) return io;
 
-        // replace arg with coerced opts
-        if (opt != nil) args[args.length - 1] = opt;
+        int argc = args.length;
+        if (!opt.isNil()) {
+            argc--;
+        }
 
         // io_s_foreach, roughly
         try {
-            switch (args.length) {
+            switch (argc) {
                 case 1:
                     Getline.getlineCall(context, GETLINE_YIELD, io, io.getReadEncoding(context), block);
                     break;
                 case 2:
+                    if (opt != context.nil) return io.readlines(context, opt);
                     Getline.getlineCall(context, GETLINE_YIELD, io, io.getReadEncoding(context), args[1], block, keywords);
                     break;
-                case 3, 4:
+                case 3:
+                    if (opt != context.nil) return io.readlines(context, args[1], opt);
                     Getline.getlineCall(context, GETLINE_YIELD, io, io.getReadEncoding(context), args[1], args[2], block, keywords);
                     break;
+                default:
+                    Arity.checkArgumentCount(context, argc, 1, 3);
             }
         } finally {
             io.close();
