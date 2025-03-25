@@ -1450,6 +1450,8 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "set_string")
     public IRubyObject set_string(ThreadContext context, IRubyObject _string) {
+        checkFrozen();
+
         RubyString string = _string.convertToString();
 
         return copy(context, string, 0, string.size(), 0);
@@ -1457,6 +1459,8 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "set_string")
     public IRubyObject set_string(ThreadContext context, IRubyObject _string, IRubyObject _offset) {
+        checkFrozen();
+
         RubyString string = _string.convertToString();
         int offset = extractOffset(context, _offset);
 
