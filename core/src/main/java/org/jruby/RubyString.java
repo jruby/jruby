@@ -532,11 +532,19 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     public static RubyString newStringLight(Ruby runtime, int size) {
+        checkNegativeSize(runtime, size);
         return new RubyString(runtime, runtime.getString(), new ByteList(size), false);
     }
 
     public static RubyString newStringLight(Ruby runtime, int size, Encoding encoding) {
+        checkNegativeSize(runtime, size);
         return new RubyString(runtime, runtime.getString(), new ByteList(size), encoding, false);
+    }
+
+    private static void checkNegativeSize(Ruby runtime, int size) {
+        if (size < 0) {
+            throw runtime.newArgumentError("negative string size (or size too big)");
+        }
     }
 
     public static RubyString newString(Ruby runtime, CharSequence str) {
@@ -1648,7 +1656,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     public final RubyString catString(String str) {
         ByteList other = encodeBytelist(str, UTF8);
-        catWithCodeRange(other, CR_VALID);
+        // if byte string is same size, assume all 7-bit; otherwise, it must be at least valid
+        catWithCodeRange(other, other.realSize() == str.length() ? CR_7BIT : CR_VALID);
         return this;
     }
 
