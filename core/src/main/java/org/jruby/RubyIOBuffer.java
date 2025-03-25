@@ -1399,28 +1399,13 @@ public class RubyIOBuffer extends RubyObject {
     private void bufferCopy(ThreadContext context, int offset, ByteBuffer sourceBuffer, int sourceOffset, int sourceSize, int length) {
         ByteBuffer destBuffer = getBufferForWriting(context);
 
-        sourceBuffer.position(sourceOffset);
-        sourceBuffer.limit(sourceOffset + length);
-        if (offset == 0) {
-            destBuffer.put(sourceBuffer);
-        } else {
-            destBuffer.position(offset);
-            destBuffer.put(sourceBuffer);
-        }
-        destBuffer.clear();
-        sourceBuffer.clear();
+        destBuffer.put(offset, sourceBuffer, sourceOffset, length);
     }
 
     private void bufferCopy(ThreadContext context, int offset, ByteList sourceBuffer, int sourceOffset, int sourceSize, int length) {
         ByteBuffer destBuffer = getBufferForWriting(context);
 
-        if (offset == 0) {
-            destBuffer.put(sourceBuffer.getUnsafeBytes(), sourceBuffer.begin() + sourceOffset, length);
-        } else {
-            destBuffer.position(offset);
-            destBuffer.put(sourceBuffer.getUnsafeBytes(), sourceBuffer.begin() + sourceOffset, length);
-        }
-        destBuffer.clear();
+        destBuffer.put(offset, sourceBuffer.getUnsafeBytes(), sourceBuffer.begin() + sourceOffset, length);
     }
 
     @JRubyMethod(name = "get_string")
@@ -1458,15 +1443,9 @@ public class RubyIOBuffer extends RubyObject {
         validateRange(context, offset, length);
 
         byte[] bytes = new byte[length];
-        if (offset == 0) {
-            buffer.get(bytes, 0, length);
-        } else {
-            buffer.position(offset);
-            buffer.get(bytes, 0, length);
-            buffer.clear();
-        }
+        buffer.get(offset, bytes, 0, length);
 
-        return RubyString.newString(context.runtime, bytes, 0, length, encoding);
+        return RubyString.newStringNoCopy(context.runtime, bytes, 0, length, encoding);
     }
 
     @JRubyMethod(name = "set_string")
