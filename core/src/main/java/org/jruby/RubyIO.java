@@ -4583,7 +4583,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 case 1:
                     return io.readlines(context);
                 case 2:
-                    // replace with coerced, so we don't coerce again later
                     if (opt != context.nil) return io.readlines(context, opt);
                     return io.readlines(context, args[1]);
                 case 3:
