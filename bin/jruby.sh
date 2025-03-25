@@ -767,12 +767,23 @@ readonly jruby_jsa_file="$JRUBY_HOME/lib/jruby-java$java_version.jsa"
 assign jruby_jsa_files "$JRUBY_HOME"/lib/jruby-java*.jsa
 readonly jruby_jsa_files
 
-if $use_jsa_file; then
-    # Allow overriding default JSA file location
-    if [ -n "${JRUBY_JSA-}" ]; then
-        jruby_jsa_file="$JRUBY_JSA"
-    fi
+# Allow overriding default JSA file location
+if [ -n "${JRUBY_JSA-}" ]; then
+    jruby_jsa_file="$JRUBY_JSA"
+fi
 
+# Ensure the AppCDS parent directory is actually writable
+if dir_name "$jruby_jsa_file" && ! [ -w "$REPLY" ]; then
+    if $use_jsa_file || $regenerate_jsa_file || $remove_jsa_files; then
+        echo "Warning: AppCDS archive directory is not writable, disabling AppCDS operations" >&2
+    fi
+    regenerate_jsa_file=false
+    remove_jsa_files=false
+    use_jsa_file=false
+fi
+
+# Initialize AppCDS
+if $use_jsa_file; then
     # Default to no-op script when explicitly generating
     if $regenerate_jsa_file && a_isempty "$ruby_args"; then
         append ruby_args -e 1
