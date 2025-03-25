@@ -189,7 +189,7 @@ public class RubyNameError extends RubyStandardError {
             if (tmp == UNDEF || tmp.isNil()) tmp = tryInspect(context, object);
             if (tmp == UNDEF) context.setErrorInfo(context.nil);
             tmp = TypeConverter.checkStringType(context.runtime, tmp);
-            if (tmp.isNil()) tmp = tmp.anyToString();
+            if (tmp.isNil()) tmp = object.anyToString();
             return (RubyString) tmp;
         }
 
