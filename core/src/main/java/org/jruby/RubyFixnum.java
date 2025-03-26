@@ -71,6 +71,7 @@ import static org.jruby.api.Create.newSharedString;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Error.zeroDivisionError;
 import static org.jruby.util.Numeric.f_odd_p;
 import static org.jruby.util.Numeric.int_pow;
 
@@ -881,20 +882,34 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
         return coerceBin(context, sites(context).op_exp, other);
     }
 
+    // MRI: fix_pow
     private RubyNumeric powerFixnum(ThreadContext context, RubyFixnum other) {
         long a = value;
         long b = other.value;
-        if (b < 0) {
-            RubyRational rational = RubyRational.newRationalRaw(context.runtime, this);
-            return (RubyNumeric) numFuncall(context, rational, sites(context).op_exp_rational, other);
-        }
+
+        if (a == 1) return asFixnum(context, 1);
+        if (a == -1) return asFixnum(context, (b % 2) != 0 ? -1 : 1);
+        if (b <  0) return fixPowInverted(context, -b);
         if (b == 0) return asFixnum(context, 1);
         if (b == 1) return this;
-        if (a == 0) return b > 0 ? asFixnum(context, 0) : asInteger(context, 1.0 / 0.0);
-        if (a == 1) return asFixnum(context, 1);
-        if (a == -1) return asFixnum(context, b % 2 == 0 ? 1 : -1);
-
+        if (a == 0) return asFixnum(context, 0);
         return int_pow(context, a, b);
+    }
+
+    // MRI: fix_pow_inverted
+    private RubyNumeric fixPowInverted(ThreadContext context, long minusb) {
+        if (value == 0) {
+            throw zeroDivisionError(context);
+        } else {
+            IRubyObject y = op_pow(context, minusb); // rb_int_pow but we know we are a fixnum
+
+            if (y instanceof RubyFloat flote) {
+                double d = Math.pow((double) value, flote.value);
+                return asFloat(context, 1.0 / d);
+            } else {
+                return RubyRational.newRationalRaw(context.runtime, asFixnum(context, 1), y);
+            }
+        }
     }
 
     // MRI: int_pow_tmp1

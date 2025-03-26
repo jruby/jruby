@@ -694,7 +694,7 @@ public class RubyBignum extends RubyInteger {
                 asFloat(context, pow) : asInteger(context, pow);
     }
 
-    private static final int BIGLEN_LIMIT = 32 * 1024 * 1024;
+    private static final long BIGLEN_LIMIT = 1L << 34;
 
     public final IRubyObject op_pow(final ThreadContext context, final long other) {
         if (other < 0) {
@@ -705,7 +705,8 @@ public class RubyBignum extends RubyInteger {
                 return asFloat(context, 1.0 / toDouble(context, x));
             }
         }
-        final int xbits = value.bitLength();
+        // number of words, not number of bits
+        final int xbits = value.bitLength() / 8;
         if ((xbits > BIGLEN_LIMIT) || (xbits * other > BIGLEN_LIMIT)) {
             throw argumentError(context, "exponent is too large");
         } else {

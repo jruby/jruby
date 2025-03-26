@@ -694,10 +694,13 @@ public class Numeric {
         return n < SQRT_LONG_MAX && n >= -SQRT_LONG_MAX;
     }
 
-    // MRI: rb_int_pow
+    // MRI: int_pow
     public static RubyNumeric int_pow(ThreadContext context, long x, long y) {
         boolean neg = x < 0;
         long z = 1;
+
+        if (y == 0) return asFixnum(context, 1);
+        if (y == 1) return asFixnum(context, x);
         if (neg) x = -x;
         if ((y & 1) != 0) {
             z = x;
@@ -711,23 +714,28 @@ public class Numeric {
         do {
             while (y % 2 == 0) {
                 if (!fitSqrtLong(x)) {
-                    IRubyObject v = RubyBignum.newBignum(runtime, x).op_pow(context, y);
-                    if (z != 1) v = RubyBignum.newBignum(runtime, neg ? -z : z).op_mul(context, v);
-                    return (RubyNumeric) v;
+                    return bignumIntPow(context, x, y, runtime, z, neg);
                 }
-                x *= x;
+                x = x * x;
                 y >>= 1;
             }
 
             if (multiplyOverflows(x, z)) {
-                IRubyObject v = RubyBignum.newBignum(runtime, x).op_pow(context, y);
-                if (z != 1) v = RubyBignum.newBignum(runtime, neg ? -z : z).op_mul(context, v);
-                return (RubyNumeric) v;
+                return bignumIntPow(context, x, y, runtime, z, neg);
             }
             z = x * z;
         } while(--y != 0);
         if (neg) z = -z;
         return asFixnum(context, z);
+    }
+
+    private static RubyNumeric bignumIntPow(ThreadContext context, long x, long y, Ruby runtime, long z, boolean neg) {
+        IRubyObject v = RubyBignum.newBignum(runtime, x).op_pow(context, y);
+        if (v instanceof RubyFloat flote) { /* infinity due to overflow */
+            return flote;
+        }
+        if (z != 1) v = RubyBignum.newBignum(runtime, neg ? -z : z).op_mul(context, v);
+        return (RubyNumeric) v;
     }
 
     // MRI: rb_num_pow
