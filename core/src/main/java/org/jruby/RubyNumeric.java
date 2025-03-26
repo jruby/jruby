@@ -590,6 +590,9 @@ public class RubyNumeric extends RubyObject {
             }
             return null;
         }
+        if (!err && ary.isNil()) {
+            return null;
+        }
         final IRubyObject $ex = context.getErrorInfo();
 
         return coerceResult(context, ary, err);
@@ -908,18 +911,18 @@ public class RubyNumeric extends RubyObject {
     }
 
     public IRubyObject numRemainder(ThreadContext context, IRubyObject y) {
-        RubyNumeric x = this;
+        IRubyObject x = this;
         if (!(y instanceof RubyNumeric)) {
             RubyArray coerced = doCoerce(context, y, true);
             y = coerced.eltOk(1);
-            x = (RubyNumeric) coerced.eltOk(0);
+            x = coerced.eltOk(0);
         }
         JavaSites.NumericSites sites = sites(context);
-        IRubyObject z = sites.op_mod.call(context, this, this, y);
+        IRubyObject z = sites.op_mod.call(context, this, x, y);
 
         if ((!Helpers.rbEqual(context, z, asFixnum(context, 0), sites.op_equal).isTrue()) &&
-                ((x.isNegativeNumber(context) && RubyNumeric.positiveInt(context, y)) ||
-                        (x.isPositiveNumber(context) && RubyNumeric.negativeInt(context, y)))) {
+                ((RubyNumeric.negativeInt(context, x) && RubyNumeric.positiveInt(context, y)) ||
+                        (RubyNumeric.positiveInt(context, x) && RubyNumeric.negativeInt(context, y)))) {
             if (y instanceof RubyFloat && Double.isInfinite(((RubyFloat)y).value)) {
                 return x;
             }
@@ -928,16 +931,48 @@ public class RubyNumeric extends RubyObject {
         return z;
     }
 
+    // MRI: rb_num_positive_int_p
     public static boolean positiveInt(ThreadContext context, IRubyObject num) {
-        return num instanceof RubyNumeric numeric ?
-                numeric.isPositiveNumber(context) :
-                compareWithZero(context, num, sites(context).op_gt_checked).isTrue();
+        JavaSites.CheckedSites gt = sites(context).op_gt_checked;
+
+        if (num instanceof RubyFixnum) {
+            if (gt.site.retrieveCache(num).method.isBuiltin()) {
+                return ((RubyFixnum) num).signum(context) == 1;
+            }
+        }
+        else if (num instanceof RubyBignum) {
+            if (gt.site.retrieveCache(num).method.isBuiltin()) {
+                return ((RubyBignum) num).signum() == 1;
+            }
+        }
+        return compareNumberWithZero(context, num, gt).isTrue();
     }
 
+    // MRI: rb_num_negative_int_p
     public static boolean negativeInt(ThreadContext context, IRubyObject num) {
-        return num instanceof RubyNumeric numeric ?
-                numeric.isNegativeNumber(context) :
-                compareWithZero(context, num, sites(context).op_lt_checked).isTrue();
+        JavaSites.CheckedSites lt = sites(context).op_lt_checked;
+
+        if (num instanceof RubyFixnum) {
+            if (lt.site.retrieveCache(num).method.isBuiltin()) {
+                return ((RubyFixnum) num).signum(context) == -1;
+            }
+        }
+        else if (num instanceof RubyBignum) {
+            if (lt.site.retrieveCache(num).method.isBuiltin()) {
+                return ((RubyBignum) num).signum() == -1;
+            }
+        }
+        return compareNumberWithZero(context, num, lt).isTrue();
+    }
+
+    // MRI: rb_num_compare_with_zero
+    static IRubyObject compareNumberWithZero(ThreadContext context, IRubyObject num, JavaSites.CheckedSites sites) {
+        RubyFixnum zero = RubyFixnum.zero(context.runtime);
+        IRubyObject r = Helpers.invokeChecked(context, num, sites, zero);
+        if (r == null) {
+            RubyComparable.cmperr(context, num, zero);
+        }
+        return r;
     }
 
     /** num_abs
