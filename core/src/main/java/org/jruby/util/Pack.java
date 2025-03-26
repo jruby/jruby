@@ -1743,7 +1743,7 @@ public class Pack {
     public static int getDirective(ThreadContext context, String mode, ByteList formatString, ByteBuffer encode) {
         if (!encode.hasRemaining()) return 0;
 
-        int got = encode.get() & 0xff;
+        int got = Byte.toUnsignedInt(encode.get());
 
         if (got == 0) unknownDirective(context, mode, 0, formatString);
 
@@ -1923,7 +1923,6 @@ public class Pack {
 
     private static RubyString packCommon(ThreadContext context, RubyArray list, ByteList formatString,
                                          ConverterExecutor executor, RubyString buffer) {
-        Ruby runtime = context.runtime;
         ByteBuffer format = ByteBuffer.wrap(formatString.getUnsafeBytes(), formatString.begin(), formatString.length());
 
         buffer.modify();
