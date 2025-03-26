@@ -530,6 +530,22 @@ else
 fi
 readonly java_has_appcds_autogenerate
 
+# Native access
+if [ "$java_major" -ge 22 ]; then
+    enable_native_access=true
+else
+    enable_native_access=false
+fi
+readonly enable_native_access
+
+# Unsafe memory access
+if [ "$java_major" -ge 23 ]; then
+    enable_unsafe_memory=true
+else
+    enable_unsafe_memory=false
+fi
+readonly enable_unsafe_memory
+
 # ----- Process .java_opts files ----------------------------------------------
 
 # We include options on the java command line in the following order:
@@ -831,6 +847,18 @@ if $use_jsa_file; then
         append java_args -Xlog:cds=off -Xlog:cds+dynamic=off
     fi
 fi
+
+# Enable access to native libraries
+if $enable_native_access; then
+    append java_args --enable-native-access=org.jruby.dist
+fi
+
+# Enable access to Unsafe memory functions
+if $enable_unsafe_memory; then
+    append java_args --sun-misc-unsafe-memory-access=allow
+fi
+
+# Enable access to Unsafe memory functions
 
 # ----- Tweak console environment for cygwin ----------------------------------
 
