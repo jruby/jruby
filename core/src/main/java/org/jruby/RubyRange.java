@@ -473,7 +473,7 @@ public class RubyRange extends RubyObject {
 
     // MRI: r_less
     private static int rangeLess(ThreadContext context, IRubyObject a, IRubyObject b) {
-        IRubyObject result = invokedynamic(context, a, MethodNames.OP_CMP, b);
+        IRubyObject result = sites(context).op_cmp.call(context, a, a, b);
 
         if (result.isNil()) {
             return Integer.MAX_VALUE;
@@ -514,15 +514,18 @@ public class RubyRange extends RubyObject {
         }
     }
 
+    // MRI: r_cover_p
     private boolean coverRangeP(ThreadContext context, IRubyObject val) {
         if (begin.isNil() || rangeLess(context, begin, val) <= 0) {
             int excl = isExclusive ? 1 : 0;
-            return end.isNil() || rangeLess(context, end, val) <= -excl;
+            if (end.isNil() || rangeLess(context, val, end) <= -excl)
+                return true;
         }
 
         return false;
     }
 
+    // MRI: r_cover_range_p
     private boolean coverRange(ThreadContext context, RubyRange val) {
         int cmp;
 
@@ -534,10 +537,17 @@ public class RubyRange extends RubyObject {
 
         if (!end.isNil() && valEnd.isNil()) return false;
         if (!begin.isNil() && valBeg.isNil()) return false;
-        if (!valBeg.isNil() && !valEnd.isNil() && rangeLess(context, valBeg, valEnd) > -valExcl) return false;
-        if (!valBeg.isNil() && !cover_p(context, valBeg).isTrue()) return false;
+        if (!valBeg.isNil() && !valEnd.isNil() && rangeLess(context, valBeg, valEnd) > (val.isExclusive ? -1 : 0)) return false;
+        if (!valBeg.isNil() && !coverRangeP(context, valBeg)) return false;
 
-        cmp = rangeLess(context, end, valEnd);
+        if (!valEnd.isNil() && !end.isNil()) {
+            IRubyObject rCmpEnd = sites(context).op_cmp.call(context, end, end, valEnd);
+            if (rCmpEnd.isNil()) return false;
+            cmp = RubyComparable.cmpint(context, sites(context).op_gt, sites(context).op_lt, rCmpEnd, end, valEnd);
+        } else {
+            cmp = rangeLess(context, end, valEnd);
+        }
+
         if (excl == valExcl) {
             return cmp >= 0;
         } else if (excl != 0) {
@@ -1029,36 +1039,45 @@ public class RubyRange extends RubyObject {
     private IRubyObject includeCommon(ThreadContext context, final IRubyObject val, boolean useStringCover) {
         final Ruby runtime = context.runtime;
 
-        boolean iterable = begin instanceof RubyNumeric || end instanceof RubyNumeric ||
+        boolean iterable = begin instanceof RubyFixnum || end instanceof RubyFixnum ||
                 linearObject(context, begin) || linearObject(context, end);
 
         JavaSites.RangeSites sites = sites(context);
         JavaSites.CheckedSites to_int_checked = sites.to_int_checked;
-        if (iterable
-                || !TypeConverter.convertToTypeWithCheck(context, begin, runtime.getInteger(), to_int_checked).isNil()
-                || !TypeConverter.convertToTypeWithCheck(context, end, runtime.getInteger(), to_int_checked).isNil()) {
+        if (iterable || rangeIntegerEdge(context, runtime.getInteger(), to_int_checked)) {
             return asBoolean(context, rangeIncludes(context, val));
-        } else if (begin instanceof RubyString || end instanceof RubyString) {
-            if (begin instanceof RubyString && end instanceof RubyString) {
-                if (useStringCover) {
-                    return cover_p(context, val);
-                } else {
-                    return RubyString.includeRange(context, (RubyString) begin, (RubyString) end, val, isExclusive);
-                }
-            } else if (begin.isNil()) {
-                IRubyObject r = sites.op_cmp.call(context, val, val, end);
-                if (r.isNil()) return context.fals;
-                if (RubyComparable.cmpint(context, sites.op_gt, sites.op_lt, r, val, end) <= 0) return context.tru;
-                return context.fals;
-            } else if (end.isNil()) {
-                IRubyObject r = sites.op_cmp.call(context, begin, begin, val);
-                if (r.isNil()) return context.fals;
-                if (RubyComparable.cmpint(context, sites.op_gt, sites.op_lt, r, begin, val) <= 0) return context.tru;
-                return context.fals;
-            }
+        } else if (rangeString()) {
+            return RubyString.includeRange(context, (RubyString) begin, (RubyString) end, val, isExclusive);
+        }
+
+        return rangeIncludeFallback(context, val);
+    }
+
+    // MRI: range_include_fallback
+    private IRubyObject rangeIncludeFallback(ThreadContext context, IRubyObject val) {
+        boolean beginless = begin.isNil();
+        boolean endless = end.isNil();
+
+        if (beginless && endless) {
+            if (linearObject(context, val)) return context.tru;
+        }
+
+        if (beginless || endless) {
+            throw typeError(context, "cannot determine inclusion in beginless/endless ranges");
         }
 
         return UNDEF;
+    }
+
+    // MRI: range_string_p
+    private boolean rangeString() {
+        return begin instanceof RubyString && end instanceof RubyString;
+    }
+
+    // MRI: range_integer_edge_p
+    private boolean rangeIntegerEdge(ThreadContext context, RubyClass Integer, JavaSites.CheckedSites to_int_checked) {
+        return !TypeConverter.convertToTypeWithCheck(context, begin, Integer, to_int_checked).isNil()
+                || !TypeConverter.convertToTypeWithCheck(context, end, Integer, to_int_checked).isNil();
     }
 
     // MRI: discrete_object_p
@@ -1077,15 +1096,13 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(name = "===")
     public IRubyObject eqq_p(ThreadContext context, IRubyObject obj) {
-        IRubyObject result = includeCommon(context, obj, true);
-        if (result != UNDEF) return result;
-        return asBoolean(context, rangeIncludes(context, obj));
+        return asBoolean(context, coverRangeP(context, obj));
     }
 
     @JRubyMethod(name = "cover?")
     public RubyBoolean cover_p(ThreadContext context, IRubyObject obj) {
         return asBoolean(context,
-                obj instanceof RubyRange range ? coverRange(context, range) : rangeIncludes(context, obj));
+                obj instanceof RubyRange range ? coverRange(context, range) : coverRangeP(context, obj));
     }
 
     // MRI: r_cover_p
