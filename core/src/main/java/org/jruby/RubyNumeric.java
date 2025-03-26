@@ -1320,12 +1320,12 @@ public class RubyNumeric extends RubyObject {
         CallSite cmpSite = op_gt;
 
         RubyFixnum zero = asFixnum(context, 0);
-        IRubyObject comparison = zero.coerceCmp(context, sites.op_cmp, step);
+        IRubyObject comparison = ((RubyNumeric) step).coerceCmp(context, sites.op_cmp, zero);
 
         switch (RubyComparable.cmpint(context, op_gt, op_lt, comparison, step, zero)) {
             case 0:
                 return asFloat(context, Float.POSITIVE_INFINITY);
-            case 1:
+            case -1:
                 cmpSite = op_lt;
                 break;
         }
@@ -1335,7 +1335,7 @@ public class RubyNumeric extends RubyObject {
         IRubyObject deltaObj = sites.op_minus.call(context, to, to, from);
         IRubyObject result = sites.div.call(context, deltaObj, deltaObj, step);
         IRubyObject timesPlus = sites.op_plus.call(context, from, from, sites.op_times.call(context, result, result, step));
-        if (!excl || cmpSite.call(context, timesPlus, timesPlus, to).isTrue()) {
+        if (!excl || cmpSite.call(context, to, to, timesPlus).isTrue()) {
             result = sites.op_plus.call(context, result, result, asFixnum(context, 1));
         }
         return (RubyNumeric) result;
