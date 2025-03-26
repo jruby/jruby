@@ -128,6 +128,12 @@ public final class EncodingService {
         return defaultInternalEncoding;
     }
 
+    public Encoding getDefaultInternalEncodingOrDefault() {
+        Encoding defaultInternalEncoding = this.defaultInternalEncoding;
+        if (defaultInternalEncoding != null) return defaultInternalEncoding;
+        return javaDefault;
+    }
+
     public void setDefaultInternalEncoding(Encoding defaultInternalEncoding) {
         this.defaultInternalEncoding = defaultInternalEncoding;
     }
