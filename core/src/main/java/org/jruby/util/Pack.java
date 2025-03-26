@@ -986,12 +986,11 @@ public class Pack {
             next = getDirective(context, "unpack", formatString, format);
 
             if (isSpace(type)) continue;
-
             if (type == '#') {
-                for (type = safeGet(format); type != '\n' && type != 0; type = safeGet(format)) {}
-                type = safeGet(format);
-                if (type == 0) break;
+                type = skipToEOL(format);
+                if (type == 0) break; // exit on EOF
                 next = getDirective(context, "unpack", formatString, format);
+                continue; // continue after newline
             }
 
             // Next indicates to decode using native encoding format
@@ -1107,13 +1106,17 @@ public class Pack {
         return result;
     }
 
+    private static int skipToEOL(ByteBuffer format) {
+        int type;
+        for (type = safeGet(format); type != '\n' && type != 0; type = safeGet(format));
+        return type;
+    }
+
     private static boolean isSpace(int type) {
-        boolean isSpace = switch (type) {
+        return switch (type) {
             case ' ', '\011', '\n', '\013', '\014', '\015' -> true;
             default -> false;
         };
-        if (isSpace) return true;
-        return false;
     }
 
     private static IRubyObject unpack_w(ThreadContext context, Block block, RubyArray result, ByteBuffer encode, int occurrences, int mode) {
