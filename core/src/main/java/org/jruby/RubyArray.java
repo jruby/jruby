@@ -4460,7 +4460,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     private static void permute(ThreadContext context, int n, int r, int[] p, boolean[] used, RubyArray values, Block block) {
         int i = 0, index = 0;
         for (;;) {
-            int unused = Helpers.memchr(used, i, n - i, false);
+            int unused = memchr(used, i, false, n - i);
             if (unused == -1) {
                 if (index == 0) break;
                 i = p[--index];

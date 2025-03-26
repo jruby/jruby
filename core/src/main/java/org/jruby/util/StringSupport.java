@@ -907,11 +907,9 @@ public final class StringSupport {
         return 0;
     }
 
+    @Deprecated(since = "10.0")
     public static int memchr(byte[] ptr, int start, final int find, int len) {
-        for (int i = start; i < start + len; i++) {
-            if ( ptr[i] == find ) return i;
-        }
-        return -1;
+        return Helpers.memchr(ptr, start, find, len);
     }
 
     // MRI: StringValueCStr, rb_string_value_cstr without trailing null addition
@@ -939,7 +937,7 @@ public final class StringSupport {
             return new Object[] {strFillTerm(s, sBytes, beg, len, minlen), true};
         }
 
-        if (memchr(sBytes, beg, '\0', len) != -1) {
+        if (Helpers.memchr(sBytes, beg, '\0', len) != -1) {
             return new Object[] {null, false};
         }
 
@@ -2336,7 +2334,7 @@ public final class StringSupport {
             return 0;
         }
         else if (m == 1) {
-            int ys = memchr(yBytes, y, xBytes[x], n);
+            int ys = Helpers.memchr(yBytes, y, xBytes[x], n);
 
             if (ys != -1)
                 return ys - y;

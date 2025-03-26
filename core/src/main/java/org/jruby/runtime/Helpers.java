@@ -3052,11 +3052,41 @@ public class Helpers {
         return ary;
     }
 
-    public static int memchr(boolean[] ary, int start, int len, boolean find) {
+    /**
+     * Equivalent to C memchr with byte*.
+     *
+     * @param ptr the byte[] to search
+     * @param start starting position for search
+     * @param find byte to find
+     * @param len length to search
+     * @return the index of the requested byte or -1 if not found
+     */
+    public static int memchr(byte[] ptr, int start, final int find, int len) {
+        for (int i = start; i < start + len; i++) {
+            if (Byte.toUnsignedInt(ptr[i]) == find) return i;
+        }
+        return -1;
+    }
+
+    /**
+     * Equivalent to C memchr with bool*.
+     *
+     * @param ary the boolean[] to search
+     * @param start starting position for search
+     * @param find boolean to find
+     * @param len length to search
+     * @return the index of the requested boolean or -1 if not found
+     */
+    public static int memchr(boolean[] ary, int start, boolean find, int len) {
         for (int i = 0; i < len; i++) {
             if (ary[i + start] == find) return i + start;
         }
         return -1;
+    }
+
+    @Deprecated(since = "10.0")
+    public static int memchr(boolean[] ary, int start, int len, boolean find) {
+        return memchr(ary, start, find, len);
     }
 
     public static boolean isRequiredKeywordArgumentValueNode(Node asgnNode) {
