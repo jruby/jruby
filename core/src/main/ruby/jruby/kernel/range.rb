@@ -1,5 +1,7 @@
 class Range
   def bsearch(&cond)
+    return to_enum(:bsearch) unless block_given?
+
     b = self.begin
     e = self.end
 
@@ -12,8 +14,6 @@ class Range
 
   class BSearch
     def self.float_search(b, e, excl)
-      return to_enum(:bsearch) unless block_given?
-
       satisfied = nil
 
       low = double_as_long(b.nil? ? NEGATIVE_INFINITY : b)
