@@ -613,10 +613,6 @@ public final class Ruby implements Constantizable {
         initRubyPreludes();
     }
 
-    private void initKernelGsub(RubyModule kernel) {
-
-    }
-
     private ObjectSpacer initObjectSpacer(RubyInstanceConfig config) {
         ObjectSpacer objectSpacer;
         if (config.isObjectSpaceEnabled()) {
