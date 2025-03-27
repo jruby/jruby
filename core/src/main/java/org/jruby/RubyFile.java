@@ -312,9 +312,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             if (!fd.isNil()) {
                 // restore callInfo for delegated call to IO#initialize
                 IRRuntimeHelpers.setCallInfo(context, callInfo);
-                if (argc == 1) return super.initialize(context, fd, block);
-                if (argc == 2) return super.initialize(context, fd, args[1], block);
-                return super.initialize(context, fd, args[1], args[2], block);
+                return switch (argc) {
+                    case 1 -> super.initialize(context, fd, block);
+                    case 2 -> super.initialize(context, fd, args[1], block);
+                    default -> super.initialize(context, fd, args[1], args[2], block);
+                };
             }
         }
 
