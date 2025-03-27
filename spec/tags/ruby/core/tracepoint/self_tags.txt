@@ -1,1 +1,2 @@
 debug:TracePoint#self return the trace object from event
+fails:TracePoint#self return the trace object from event

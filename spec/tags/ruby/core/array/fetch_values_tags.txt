@@ -1,0 +1,1 @@
+fails:Array#fetch_values with matched indexes returns the values for indexes

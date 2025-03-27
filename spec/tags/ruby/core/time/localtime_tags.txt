@@ -5,3 +5,4 @@ fails:Time#localtime does nothing if already in a local time zone
 fails(not implemented, jruby/jruby#6161):Time#localtime raises ArgumentError if the String argument is not of the form (+|-)HH:MM
 fails:Time#localtime raises ArgumentError if String argument and minutes greater than 59
 fails:Time#localtime raises ArgumentError if String argument and seconds greater than 59
+fails:Time#localtime with an argument that responds to #utc_to_local coerces using #utc_to_local

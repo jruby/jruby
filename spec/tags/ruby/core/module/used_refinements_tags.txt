@@ -1,0 +1,2 @@
+fails:Module.used_refinements returns list of all refinements imported in the current scope
+fails:Module.used_refinements returns refinements even not defined directly in a module refinements are imported from

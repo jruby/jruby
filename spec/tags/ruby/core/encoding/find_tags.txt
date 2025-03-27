@@ -1,0 +1,2 @@
+fails:Encoding.find returns the corresponding Encoding object if given a valid encoding name
+fails:Encoding.find returns the corresponding Encoding object if given a valid alias name

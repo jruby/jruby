@@ -1,1 +1,2 @@
 debug:TracePoint#disable returns true if trace was enabled
+fails:TracePoint#disable returns true if trace was enabled
