@@ -1,4 +1,5 @@
 exclude :test_inspect, "needs investigation"
+exclude :test_inspect_under_gc_compact_stress, "no working assert_no_memory_leak method"
 exclude :test_symbol_encoding, "needs investigation"
 exclude :test_symbol_fstr_memory_leak, "no working assert_no_memory_leak method"
 exclude :test_to_proc_arg, "we have plans to do different caching here, see 69662ab8cd1616a2ee076488226a473648fc6267"
