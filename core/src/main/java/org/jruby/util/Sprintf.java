@@ -760,7 +760,7 @@ public class Sprintf {
                     case INTEGER: // no-op
                         break;
                     case FLOAT:
-                        arg = asInteger(context, ((RubyFloat) arg).asLong(context));
+                        arg = asInteger(context, ((RubyFloat) arg).asDouble(context));
                         break;
                     case STRING:
                         arg = ((RubyString) arg).stringToInum(0, true);
