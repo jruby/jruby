@@ -483,7 +483,7 @@ public class ArgumentProcessor {
                         final int len = argument.length();
                         if (len == "--encoding".length()) {
                             characterIndex = len;
-                            encodingValue = grabValue(getArgumentError("unknown encoding name"));
+                            encodingValue = grabValue(getArgumentError("missing argument for --encoding"), false);
                         } else {
                             int splitIndex = argument.indexOf('=');
                             if (splitIndex == -1 || len == (splitIndex + 1)) {
@@ -587,8 +587,7 @@ public class ArgumentProcessor {
                         break FOR;
                     } else if (argument.equals("--dump")) {
                         characterIndex = argument.length();
-                        String error = "--dump only supports [version, copyright, usage, yydebug, syntax, insns] on JRuby";
-                        String dumpArg = grabValue(getArgumentError(error));
+                        String dumpArg = grabValue("missing argument for --dump", false);
                         if (dumpArg.equals("version")) {
                             config.setShowVersion(true);
                             config.setShouldRunInterpreter(false);
@@ -609,7 +608,7 @@ public class ArgumentProcessor {
                         } else if (dumpArg.equals("insns")) {
                             config.setShowBytecode(true);
                         } else {
-                            MainExitException mee = new MainExitException(1, error);
+                            MainExitException mee = new MainExitException(1, "--dump only supports [version, copyright, usage, yydebug, syntax, insns] on JRuby");
                             mee.setUsageError(true);
                             throw mee;
                         }
@@ -641,7 +640,7 @@ public class ArgumentProcessor {
                         break FOR;
                     } else if (argument.startsWith("--external-encoding")) {
                         characterIndex = argument.length();
-                        String externalEncoding = grabValue(getArgumentError("invalid encoding"));
+                        String externalEncoding = grabValue("missing argument for --external-encoding", false);
                         config.setExternalEncoding(externalEncoding);
                         break FOR;
                     } else if (argument.startsWith("--internal-encoding=")) {
@@ -650,7 +649,7 @@ public class ArgumentProcessor {
                         break FOR;
                     } else if (argument.startsWith("--internal-encoding")) {
                         characterIndex = argument.length();
-                        String internalEncoding = grabValue(getArgumentError("invalid encoding"));
+                        String internalEncoding = grabValue("missing argument for --internal-encoding", false);
                         config.setInternalEncoding(internalEncoding);
                         break FOR;
                     } else {
