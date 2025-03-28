@@ -355,7 +355,7 @@ public class Sprintf {
                                                final Args args, final boolean usePrefixForZero) {
         ThreadContext context = args.runtime.getCurrentContext();
         final byte[] format;
-        final Encoding encoding;
+        Encoding encoding;
 
         int offset, length;
 
@@ -595,13 +595,22 @@ public class Sprintf {
                         }
                     } else {
                         c = (int) toLong(context, arg) & 0xFFFFFFFF;
-                        try {
-                            n = StringSupport.codeLength(encoding, c);
-                        } catch (EncodingException e) {
+                        if (c >= 0) {
+                            try {
+                                n = StringSupport.codeLength(encoding, c);
+                            } catch (EncodingException e) {
+                                n = -1;
+                            }
+                        } else {
                             n = -1;
                         }
                     }
-                    if (n < 0) throw argumentError(context, "invalid character");
+                    if (n <= 0) throw argumentError(context, "invalid character");
+                    Encoding appendableEncoding = EncodingUtils.rbAscii8bitAppendableEncodingIndex(context, encoding, c);
+                    if (appendableEncoding != null && appendableEncoding != encoding) {
+                        buf.setEncoding(appendableEncoding);
+                        encoding = appendableEncoding;
+                    }
 
                     if ((flags & FLAG_WIDTH) == 0) {
                         buf.ensure(buf.length() + n);
