@@ -1637,6 +1637,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         RubyRegexp regexp = args[0] instanceof RubyRegexp reg ?
                 reg : newRegexpFromStr(context.runtime, regexpArgs.string, regexpArgs.options);
 
+        regexp.check(context);
+
         Regex pattern = regexp.pattern;
 
         // Regexp.allocate will make a regexp instance with no pattern.
