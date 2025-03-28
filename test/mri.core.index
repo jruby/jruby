@@ -135,7 +135,8 @@ ruby/test_readpartial.rb
 ruby/test_refinement.rb
 ruby/test_regexp.rb
 ruby/test_require.rb
-ruby/test_require_lib.rb
+# launches many subprocesses, moved to extra
+#ruby/test_require_lib.rb
 ruby/test_rubyoptions.rb
 # accesses RubyVM during load
 #ruby/test_rubyvm.rb

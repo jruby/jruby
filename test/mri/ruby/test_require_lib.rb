@@ -2,7 +2,8 @@
 require 'test/unit'
 
 class TestRequireLib < Test::Unit::TestCase
-  libdir = __dir__ + '/../../lib'
+  # path adjusted to match JRuby's lib location
+  libdir = __dir__ + '/../../../lib/ruby/stdlib'
 
   # .rb files at lib
   scripts = Dir.glob('*.rb', base: libdir).map {|f| f.chomp('.rb')}
@@ -14,6 +15,9 @@ class TestRequireLib < Test::Unit::TestCase
 
   # skip some problems
   scripts -= %w[bundler bundled_gems rubygems mkmf]
+
+  # additional problems for JRuby
+  scripts -= %w[win32/resolv win32/registry jars/lock_down_pom psych_jars jars/output_jars_pom win32api win32ole rake/ant jars/post_install_hook jar_install_post_install_hook ant jars/gemspec_pom]
 
   scripts.each do |lib|
     define_method "test_thread_size:#{lib}" do
