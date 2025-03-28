@@ -744,7 +744,7 @@ public class IRRuntimeHelpers {
 
             // We pass empty kwrest through so kwrest does not try and slurp it up as normal argument.
             // This complicates check_arity but empty ** is special case.
-            RubyHash hash = (RubyHash) last;
+            RubyHash hash = (RubyHash) last.dup(context);
             return hash;
         } else if (!isKwarg) {
             // This is just an ordinary hash as last argument
@@ -813,6 +813,8 @@ public class IRRuntimeHelpers {
             clearTrailingHashRuby2Keywords(context, args, hash);
         }
 
+        args[args.length - 1] = hash.dup(context);
+
         return UNDEFINED;
     }
 
@@ -840,11 +842,7 @@ public class IRRuntimeHelpers {
             return hash.dupFast(context);
         }
 
-        // FIXME: This is a bit gross.  a real kwarg callsite if passed to a non-kwarg method but it
-        // has a rest arg will dup the original kwarg (presumably so you cannot modify the original
-        // kwarg hash).  This should be handled during  recv_rest_arg but we no longer have the info so
-        // it happening here.
-        if (hasRestArgs) args[args.length - 1] = hash.dup(context);
+        args[args.length - 1] = hash.dup(context);
 
         // All other situations no-op
         return UNDEFINED;
