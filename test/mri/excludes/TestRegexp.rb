@@ -7,6 +7,7 @@ exclude :test_dup_warn, "temporary failure due to disabling a warning jruby/joni
 exclude :test_inspect_under_gc_compact_stress, "GC is not configurable"
 exclude :test_invalid_escape_error, "needs investigation"
 exclude :test_invalid_fragment, "needs investigation"
+exclude :test_linear_performance, "needs DFA or caching to support linear-time matches (https://github.com/jruby/jruby/issues/8724)"
 exclude :test_match_cache_atomic, "times out without error on JRuby, adds 10s for no value"
 exclude :test_match_cache_atomic_complex, "times out without error on JRuby, adds 10s for no value"
 exclude :test_match_cache_exponential, "times out without error on JRuby, adds 10s for no value"
