@@ -652,6 +652,24 @@ public class ArgumentProcessor {
                         String internalEncoding = grabValue("missing argument for --internal-encoding", false);
                         config.setInternalEncoding(internalEncoding);
                         break FOR;
+                    } else if (argument.startsWith("--backtrace-limit=")) {
+                        String backtraceLimit = valueListFor(argument, "backtrace-limit")[0];
+                        try {
+                            int limit = Integer.parseInt(backtraceLimit);
+                            config.setBacktraceLimit(limit);
+                        } catch (NumberFormatException nfe) {
+                            throw new MainExitException(1, "jruby: wrong limit for backtrace length");
+                        }
+                    } else if (argument.startsWith("--backtrace-limit")) {
+                        characterIndex = argument.length();
+                        String backtraceLimit = grabValue("missing argument for --backtrace-limit", false);
+                        try {
+                            int limit = Integer.parseInt(backtraceLimit);
+                            config.setBacktraceLimit(limit);
+                        } catch (NumberFormatException nfe) {
+                            throw new MainExitException(1, "jruby: wrong limit for backtrace length");
+                        }
+                        break FOR;
                     } else {
                         if (argument.equals("--")) {
                             // ruby interpreter compatibilty
