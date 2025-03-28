@@ -391,7 +391,7 @@ public abstract class RubyParserBase {
         } else if ("**".equals(id)) {
             slot = currentScope.addVariable(id);
             node = new LocalVarNode(lexer.tokline, slot, name);
-        } else if (id.equals("it") && !this.scopedParserState.hasDefinedVariables()) {
+        } else if (currentScope.isBlockScope() && id.equals("it") && currentScope.getNumberOfVariables() == 0) {
             slot = currentScope.addVariable(id);
             node = new DVarNode(lexer.tokline, slot, name);
             set_it_id(node);
