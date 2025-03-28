@@ -259,9 +259,6 @@ public class RegexpOptions implements Cloneable {
                 case 'm':
                     options.setMultiline(true);
                     break;
-                case 'o':
-                    options.setOnce(true);
-                    break;
                 default:
                     throw argumentError(context, str(context.runtime, "unknown regexp option: ", newString(context, string)));
             }
