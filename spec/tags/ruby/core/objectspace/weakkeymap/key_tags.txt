@@ -1,0 +1,1 @@
+fails:ObjectSpace::WeakKeyMap#key? returns false when a key cannot be garbage collected

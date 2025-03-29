@@ -18,3 +18,23 @@ objectspace:ObjectSpace.each_object finds an object stored in a thread local
 objectspace:ObjectSpace.each_object finds an object stored in a fiber local
 objectspace:ObjectSpace.each_object finds an object captured in an at_exit handler
 objectspace:ObjectSpace.each_object finds an object captured in finalizer
+fails:ObjectSpace.each_object calls the block once for each living, non-immediate object in the Ruby process
+fails:ObjectSpace.each_object returns an enumerator if not given a block
+fails:ObjectSpace.each_object finds an object stored in a global variable
+fails:ObjectSpace.each_object finds an object stored in a top-level constant
+fails:ObjectSpace.each_object finds an object stored in a second-level constant
+fails:ObjectSpace.each_object finds an object stored in a local variable
+fails:ObjectSpace.each_object finds an object stored in a local variable captured in a block explicitly
+fails:ObjectSpace.each_object finds an object stored in a local variable captured in a block implicitly
+fails:ObjectSpace.each_object finds an object stored in a local variable captured in by a method defined with a block
+fails:ObjectSpace.each_object finds an object stored in a local variable captured in a Proc#binding
+fails:ObjectSpace.each_object finds an object stored in a local variable captured in a Kernel#binding
+fails:ObjectSpace.each_object finds an object stored in a local variable set in a binding manually
+fails:ObjectSpace.each_object finds an object stored in an array
+fails:ObjectSpace.each_object finds an object stored in a hash key
+fails:ObjectSpace.each_object finds an object stored in a hash value
+fails:ObjectSpace.each_object finds an object stored in an instance variable
+fails:ObjectSpace.each_object finds an object stored in a thread local
+fails:ObjectSpace.each_object finds an object stored in a fiber local
+fails:ObjectSpace.each_object finds an object captured in an at_exit handler
+fails:ObjectSpace.each_object finds an object captured in finalizer

@@ -1,0 +1,3 @@
+fails:Fiber#transfer transfers control from one Fiber to another when called from a Fiber
+fails:Fiber#transfer can be invoked from the same Fiber it transfers control to
+fails:Fiber#transfer can not transfer control to a Fiber that has suspended by Fiber.yield

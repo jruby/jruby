@@ -21,3 +21,5 @@ fails:Marshal.dump with a Float uses object links for objects repeatedly dumped
 fails:Marshal.dump with a Time uses object links for objects repeatedly dumped
 fails:Marshal.dump with a Time adds instance variables before the object itself into the objects table
 fails:Marshal.dump with an Exception adds instance variables after the object itself into the objects table
+fails:Marshal.dump with a Data dumps an extended Data
+fails:Marshal.dump with a Data ignores overridden name method

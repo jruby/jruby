@@ -12,3 +12,7 @@ fails:Marshal.restore for a Hash preserves compare_by_identity behaviour
 fails:Marshal.restore for a Hash preserves compare_by_identity behaviour for a Hash subclass
 fails:Marshal.restore for a Rational loads
 fails:Marshal.restore for a Complex loads
+fails:Marshal.restore raises an ArgumentError when the dumped data is truncated
+fails:Marshal.restore raises an ArgumentError when the argument is empty String
+fails:Marshal.restore for a Data loads an extended Data
+fails:Marshal.restore for an Integer raises ArgumentError if the input is too short

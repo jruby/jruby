@@ -48,3 +48,4 @@ fails:Marshal.dump with an Exception adds instance variables after the object it
 fails:BasicSocket#recvmsg when recvfrom(2) returns 0 (if no messages are available to be received and the peer has performed an orderly shutdown) datagram socket using IPv6 returns an empty String as received data
 fails:BasicSocket#recvmsg when recvfrom(2) returns 0 (if no messages are available to be received and the peer has performed an orderly shutdown) stream socket returns an empty String as received data on a closed stream socket
 fails:BasicSocket#recvmsg when recvfrom(2) returns 0 (if no messages are available to be received and the peer has performed an orderly shutdown) datagram socket using IPv4 returns an empty String as received data
+fails:BasicSocket#recvmsg when recvfrom(2) returns 0 (if no messages are available to be received and the peer has performed an orderly shutdown) stream socket returns nil on a closed stream socket
