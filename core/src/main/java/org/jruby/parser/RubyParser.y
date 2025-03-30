@@ -864,6 +864,7 @@ def_name        : fname {
                     %*/
                     ctxt.in_def = true;
                     ctxt.in_rescue = LexContext.InRescue.BEFORE_RESCUE;
+                    ctxt.cant_return = false;
                     p.setCurrentArg(null);
                 };
 
@@ -2450,6 +2451,7 @@ primary         : literal
                     LexContext ctxt = p.getLexContext();
                     p.popCurrentScope();
                     ctxt.in_class = $1.in_class;
+                    ctxt.cant_return = $1.cant_return;
                     ctxt.shareable_constant_value = $1.shareable_constant_value;
                 }
                 | k_class tLSHFT expr_value {
@@ -2464,6 +2466,7 @@ primary         : literal
                     LexContext ctxt = p.getLexContext();
                     ctxt.in_def = $1.in_def;
                     ctxt.in_class = $1.in_class;
+                    ctxt.cant_return = $1.cant_return;
                     ctxt.shareable_constant_value = $1.shareable_constant_value;
                     p.popCurrentScope();
                 }
@@ -2479,6 +2482,7 @@ primary         : literal
                     p.popCurrentScope();
                     LexContext ctxt = p.getLexContext();
                     ctxt.in_class = $1.in_class;
+                    ctxt.cant_return = $1.cant_return;
                     ctxt.shareable_constant_value = $1.shareable_constant_value;
                 }
                 | defn_head f_arglist {
@@ -2642,7 +2646,7 @@ k_end           : keyword_end {
 
 k_return        : keyword_return {
                     LexContext ctxt = p.getLexContext();
-                    if (ctxt.in_class && !ctxt.in_def && !p.getCurrentScope().isBlockScope()) {
+                    if (ctxt.cant_return && !p.dyna_in_block()) {
                         p.compile_error("Invalid return in class/module body");
                     }
                 };

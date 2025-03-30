@@ -1028,6 +1028,10 @@ public class RipperParserBase {
         return context.nil;
     }
 
+    protected boolean dyna_in_block() {
+        return currentScope.isBlockScope() && !isEval();
+    }
+
     protected IRubyObject ripper;
     protected ThreadContext context;
     protected RubyLexer lexer;
