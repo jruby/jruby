@@ -1987,6 +1987,8 @@ public abstract class RubyParserBase {
             ctxt.in_def = false;
         } else if (ctxt.in_def) {
             yyerror((name != null ? (name + " ") : "") + "definition in method body");
+        } else {
+            ctxt.cant_return = true;
         }
         pushLocalScope();
     }
