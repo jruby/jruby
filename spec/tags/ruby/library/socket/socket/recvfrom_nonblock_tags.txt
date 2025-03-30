@@ -2,3 +2,4 @@ fails:Socket#recvfrom_nonblock using IPv4 using a bound socket with data availab
 fails:Socket#recvfrom_nonblock using IPv6 using a bound socket with data available the returned Addrinfo uses 0 as the protocol
 fails:Socket#recvfrom_nonblock using IPv4 using a bound socket with data available preserves the encoding of the given buffer
 fails:Socket#recvfrom_nonblock using IPv6 using a bound socket with data available preserves the encoding of the given buffer
+fails:Socket#recvfrom_nonblock when recvfrom(2) returns 0 (if no messages are available to be received and the peer has performed an orderly shutdown) stream socket returns nil on a closed stream socket

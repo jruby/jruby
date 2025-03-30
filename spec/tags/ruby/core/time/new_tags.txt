@@ -8,3 +8,13 @@ fails(not implemented, jruby/jruby#6161):Time.new with a timezone argument #name
 fails(not implemented, jruby/jruby#6161):Time.new with a timezone argument #name method cannot marshal Time if #name method isn't implemented
 fails(not implemented, jruby/jruby#6161):Time.new with a timezone argument subject's class implements .find_timezone method calls .find_timezone to build a time object at loading marshaled data
 fails(only during full spec run):Time.new with a utc_offset argument raises ArgumentError if the String argument is not of the form (+|-)HH:MM
+fails:Time.new with a timezone argument returned value by #utc_to_local and #local_to_utc methods cannot have arbitrary #utc_offset if it is an instance of Time
+fails:Time.new with a timezone argument :in keyword argument allows omitting minor arguments
+fails:Time.new with a timezone argument Time.new with a String argument parses an ISO-8601 like format
+fails:Time.new with a timezone argument Time.new with a String argument accepts precision keyword argument and truncates specified digits of sub-second part
+fails:Time.new with a timezone argument Time.new with a String argument converts precision keyword argument into Integer if is not nil
+fails:Time.new with a timezone argument Time.new with a String argument raises ArgumentError if date/time parts values are not valid
+fails:Time.new with a timezone argument Time.new with a String argument raises ArgumentError if utc offset parts are not valid
+fails:Time.new with a timezone argument Time.new with a String argument raises ArgumentError if string doesn't start with year
+fails:Time.new with a timezone argument Time.new with a String argument raises ArgumentError when there are leading space characters
+fails:Time.new with a timezone argument Time.new with a String argument raises ArgumentError when there are trailing whitespaces

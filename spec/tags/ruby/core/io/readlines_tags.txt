@@ -5,3 +5,10 @@ windows:IO#readlines when passed a separator updates self's position based on th
 fails:IO.readlines when passed a string that starts with a | gets data from a fork when passed -
 critical(hangs):IO.readlines when passed name, object when the object is an Integer when passed limit raises ArgumentError when passed 0 as a limit
 critical(hangs):IO#readlines when passed limit raises ArgumentError when passed 0 as a limit
+fails:IO.readlines yields a sequence of lines without trailing newline characters when chomp is passed
+fails:IO.readlines when passed name, object when the object is an options Hash raises TypeError exception
+fails:IO.readlines when passed name, object, keyword arguments when the first object is not a String or Integer uses the keyword arguments as options
+fails:IO.readlines when passed name, separator, limit, keyword arguments calls #to_path to convert the name object
+fails:IO.readlines when passed name, separator, limit, keyword arguments calls #to_str to convert the separator object
+fails:IO.readlines when passed name, separator, limit, keyword arguments calls #to_int to convert the limit argument
+fails:IO.readlines when passed name, separator, limit, keyword arguments when passed chomp, nil as a separator, and a limit yields each line of limit size without truncating trailing new line character

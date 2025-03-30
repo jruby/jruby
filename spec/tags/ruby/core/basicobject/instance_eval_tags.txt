@@ -1,3 +1,4 @@
 fails:BasicObject#instance_eval raises ArgumentError if returned value is not Integer
 fails:BasicObject#instance_eval raises TypeError for frozen objects when tries to set receiver's instance variables
 fails:BasicObject#instance_eval constants lookup when a String given looks in the receiver class next
+fails:Array#fetch_values with matched indexes returns the values for indexes

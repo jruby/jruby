@@ -286,8 +286,21 @@ describe "Marshal.dump" do
       ].should be_computed_by(:dump)
     end
 
-    it "uses object links for objects repeatedly dumped" do
-      Marshal.dump([0.0, 0.0]).should == "\x04\b[\af\x060@\x06" # @\x06 is a link to the float value
+    it "may or may not use object links for objects repeatedly dumped" do
+      # it's an MRI implementation detail - on x86 architecture object links
+      # aren't used for Float values but on amd64 - object links are used
+
+      dump = Marshal.dump([0.0, 0.0])
+      ["\x04\b[\af\x060@\x06", "\x04\b[\af\x060f\x060"].should.include?(dump)
+
+      # if object links aren't used - entries in the objects table are still
+      # occupied by Float values
+      if dump == "\x04\b[\af\x060f\x060"
+        s = "string"
+        # an index of "string" ("@\b") in the object table equals 3 (`"\b".ord - 5`),
+        # so `0.0, 0,0` elements occupied indices 1 and 2
+        Marshal.dump([0.0, 0.0, s, s]).should == "\x04\b[\tf\x060f\x060\"\vstring@\b"
+      end
     end
   end
 
@@ -586,20 +599,18 @@ describe "Marshal.dump" do
       Marshal.dump(Hash.new(1)).should == "\004\b}\000i\006"
     end
 
-    ruby_version_is "3.1" do
-      it "dumps a Hash with compare_by_identity" do
-        h = {}
-        h.compare_by_identity
+    it "dumps a Hash with compare_by_identity" do
+      h = {}
+      h.compare_by_identity
 
-        Marshal.dump(h).should == "\004\bC:\tHash{\x00"
-      end
+      Marshal.dump(h).should == "\004\bC:\tHash{\x00"
+    end
 
-      it "dumps a Hash subclass with compare_by_identity" do
-        h = UserHash.new
-        h.compare_by_identity
+    it "dumps a Hash subclass with compare_by_identity" do
+      h = UserHash.new
+      h.compare_by_identity
 
-        Marshal.dump(h).should == "\x04\bC:\rUserHashC:\tHash{\x00"
-      end
+      Marshal.dump(h).should == "\x04\bC:\rUserHashC:\tHash{\x00"
     end
 
     it "raises a TypeError with hash having default proc" do

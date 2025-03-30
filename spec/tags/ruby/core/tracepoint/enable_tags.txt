@@ -29,3 +29,9 @@ debug:TracePoint#enable with a block enables the trace object within a block
 debug:TracePoint#enable with a block enables the trace object for any thread
 debug:TracePoint#enable with a block can accept arguments within a block but it should not yield arguments
 debug:TracePoint#enable with a block disables the trace object outside the block
+fails:TracePoint#enable without a block returns false if trace was disabled
+fails:TracePoint#enable without a block returns true if trace was already enabled
+fails:TracePoint#enable with a block enables the trace object within a block
+fails:TracePoint#enable with a block enables the trace object only for the current thread
+fails:TracePoint#enable with a block can accept arguments within a block but it should not yield arguments
+fails:TracePoint#enable with a block disables the trace object outside the block

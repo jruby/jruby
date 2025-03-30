@@ -1,0 +1,2 @@
+fails:ObjectSpace::WeakKeyMap#clear removes all the entries
+fails:ObjectSpace::WeakKeyMap#clear returns self

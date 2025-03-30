@@ -11,3 +11,4 @@ fails:Kernel#require (path resolution) loads c-extension file when passed absolu
 fails:Kernel.require (path resolution) loads c-extension file when passed absolute path without extension when no .rb is present
 fails:Kernel#require (path resolution) loads .bundle file when passed absolute path with .so
 fails:Kernel.require (path resolution) loads .bundle file when passed absolute path with .so
+fails:Kernel#require complex, enumerator, fiber, rational, thread, ruby2_keywords are already required
