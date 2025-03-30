@@ -860,7 +860,7 @@ public abstract class RubyParserBase {
                 String id2 = name.idString();
                 int slot = currentScope.isDefined(id2);
 
-                if (dyna_in_block() && slot != -1) {
+                if (currentScope.isBlockScope() && slot != -1) {
                     if (isNumParamId(id2) && (isNumParamNested() || isItUsed())) return null;
                     if (name.getBytes().equals(lexer.getCurrentArg())) {
                         compile_error(str(getRuntime(), "circular argument reference - ", name));
