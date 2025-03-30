@@ -401,10 +401,18 @@ public abstract class RubyParserBase {
         } else if ("**".equals(id)) {
             slot = currentScope.addVariable(id);
             node = new LocalVarNode(lexer.tokline, slot, name);
-        } else if (dyna_in_block() && id.equals("it") && !hasArguments()) {
-            slot = currentScope.addVariable(id);
-            node = new DVarNode(lexer.tokline, slot, name);
-            set_it_id(node);
+        } else if (dyna_in_block() && id.equals("it")) {
+            if (!hasArguments()) {
+                slot = currentScope.addVariable(id);
+                node = new DVarNode(lexer.tokline, slot, name);
+                set_it_id(node);
+            } else {
+                slot = currentScope.isDefined(id);
+                // A special it cannot exist without being marked as a special it.
+                if (it_id() == null && slot == -1) compile_error("`it` is not allowed when an ordinary parameter is defined");
+
+                node = currentScope.declare(lexer.tokline, name);
+            }
         }  else {
             node = currentScope.declare(lexer.tokline, name);
             slot = currentScope.isDefined(id); // FIXME: we should not do this extra call.
