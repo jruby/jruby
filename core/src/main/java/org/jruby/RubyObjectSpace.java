@@ -338,8 +338,8 @@ public class RubyObjectSpace {
             return context.nil;
         }
 
-        private final WeakValuedIdentityMap<IRubyObject, IRubyObject> identityMap = new WeakValuedIdentityMap<>();
-        private final WeakValuedMap<IRubyObject, IRubyObject> valueMap = new WeakValuedMap<>();
+        @JRubyMethod(name = "clear")
+        public abstract IRubyObject clear(ThreadContext context);
     }
 
     public static class WeakMap extends AbstractWeakMap {
@@ -382,6 +382,14 @@ public class RubyObjectSpace {
             part.cat(Inspector.GT);
 
             return part;
+        }
+
+        @Override
+        public IRubyObject clear(ThreadContext context) {
+            identityMap.clear();
+            valueMap.clear();
+
+            return this;
         }
 
         private final WeakValuedIdentityMap<IRubyObject, IRubyObject> identityMap = new WeakValuedIdentityMap<>();
@@ -451,6 +459,13 @@ public class RubyObjectSpace {
             }
 
             return result;
+        }
+
+        @Override
+        public IRubyObject clear(ThreadContext context) {
+            weakMap.clear();
+
+            return this;
         }
 
         private final WeakHashMap<IRubyObject, IRubyObject> weakMap = new WeakHashMap();

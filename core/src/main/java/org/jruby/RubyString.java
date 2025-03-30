@@ -2938,6 +2938,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         int cl;
 
         try {
+            // TODO: much of this encoding promotion logic is duplicated in rbAscii8bitAppendableEncodingIndex
             cl = codeLength(enc, c);
 
             if (cl <= 0) throw rangeError(context, c + " out of char range or invalid code point");

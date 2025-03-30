@@ -2429,6 +2429,22 @@ public class EncodingUtils {
         return n;
     }
 
+    // MRI: rb_ascii8bit_appendable_encoding_index
+    public static Encoding rbAscii8bitAppendableEncodingIndex(ThreadContext context, Encoding enc, int code) {
+        if (enc == ASCIIEncoding.INSTANCE || enc == USASCIIEncoding.INSTANCE) {
+            /* US-ASCII automatically extended to ASCII-8BIT */
+            if (code > 0xFF) {
+                throw rangeError(context, code + " out of char range");
+            }
+            if (enc == USASCIIEncoding.INSTANCE && code > 127) {
+                return ASCIIEncoding.INSTANCE;
+            }
+            return enc;
+        } else {
+            return null;
+        }
+    }
+
     @Deprecated
     public static Encoding ioStripBOM(RubyIO io) {
         return ioStripBOM(io.getRuntime().getCurrentContext(), io);
