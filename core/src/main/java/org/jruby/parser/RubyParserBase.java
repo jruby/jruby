@@ -113,6 +113,7 @@ public abstract class RubyParserBase {
     private Node numParamCurrent = null;
     private Node numParamInner = null;
     private Node numParamOuter = null;
+    protected static final int ORDINAL_PARAM = -1;
 
     private Ruby runtime;
 
@@ -203,28 +204,13 @@ public abstract class RubyParserBase {
     }
 
     public ArgsNode args_with_numbered(ArgsNode args, int paramCount, Node itNode) {
-        if (args.isEmpty()) {
-            if (paramCount > 0) {
-                ListNode pre = makePreNumArgs(paramCount);
-                args = new_args(lexer.getRubySourceline(), pre, null, null, null, null);
-            } else if (itNode != null) {
-                DVarNode dvar = (DVarNode) itNode;
-                Node arg = new ArgumentNode(dvar.getLine(), dvar.getName(), dvar.getDepth());
-                args = new_args(lexer.getRubySourceline(), newArrayNode(arg.getLine(), arg), null, null, null, null);
-            }
-        } else {
-            if (itNode != null) {
-                boolean hasNormalIt = false;
-                for (Node arg : args.getArgs()) {
-                    if (arg instanceof INameNode && "it".equals(((INameNode) arg).getName().idString())) {
-                        hasNormalIt = true;
-                        break;
-                    }
-                }
-
-                if (!hasNormalIt) yyerror("ordinary parameter is defined");
-            }
-            // FIXME: multiple mismatch errors need to be defined.
+        if (paramCount > 0) {
+            ListNode pre = makePreNumArgs(paramCount);
+            args = new_args(lexer.getRubySourceline(), pre, null, null, null, null);
+        } else if (itNode != null) {
+            DVarNode dvar = (DVarNode) itNode;
+            Node arg = new ArgumentNode(dvar.getLine(), dvar.getName(), dvar.getDepth());
+            args = new_args(lexer.getRubySourceline(), newArrayNode(arg.getLine(), arg), null, null, null, null);
         }
         return args;
     }
@@ -363,6 +349,15 @@ public abstract class RubyParserBase {
         return true;
     }
 
+    private boolean isItUsed() {
+        if (it_id() != null) {
+            compile_error("'it' is already used in\n" + lexer.getFile() + ":" + it_id().getLine() + ": " +
+                    (numParamOuter != null ? "outer" : "inner") + " block here");
+            // FIXME: Show error line
+        }
+        return false;
+    }
+
     private boolean isNumParamId(String id) {
         if (id.length() != 2 || id.charAt(0) != '_') return false;
 
@@ -404,10 +399,18 @@ public abstract class RubyParserBase {
         } else if ("**".equals(id)) {
             slot = currentScope.addVariable(id);
             node = new LocalVarNode(lexer.tokline, slot, name);
-        } else if (id.equals("it") && !this.scopedParserState.hasDefinedVariables()) {
-            slot = currentScope.addVariable(id);
-            node = new DVarNode(lexer.tokline, slot, name);
-            set_it_id(node);
+        } else if (dyna_in_block() && id.equals("it")) {
+            if (!hasArguments()) {
+                slot = currentScope.addVariable(id);
+                node = new DVarNode(lexer.tokline, slot, name);
+                set_it_id(node);
+            } else {
+                slot = currentScope.isDefined(id);
+                // A special it cannot exist without being marked as a special it.
+                if (it_id() == null && slot == -1) compile_error("`it` is not allowed when an ordinary parameter is defined");
+
+                node = currentScope.declare(lexer.tokline, name);
+            }
         }  else {
             node = currentScope.declare(lexer.tokline, name);
             slot = currentScope.isDefined(id); // FIXME: we should not do this extra call.
@@ -864,7 +867,7 @@ public abstract class RubyParserBase {
                 int slot = currentScope.isDefined(id2);
 
                 if (currentScope.isBlockScope() && slot != -1) {
-                    if (isNumParamId(id2) && isNumParamNested()) return null;
+                    if (isNumParamId(id2) && (isNumParamNested() || isItUsed())) return null;
                     if (name.getBytes().equals(lexer.getCurrentArg())) {
                         compile_error(str(getRuntime(), "circular argument reference - ", name));
                     }
@@ -891,16 +894,16 @@ public abstract class RubyParserBase {
 
                     return newNode;
                 }
-                if (type == StaticScope.Type.BLOCK && isNumParamId(id2) && numberedParam(id2)) {
-                    if (isNumParamNested()) return null;
+                if (dyna_in_block() && isNumParamId(id2) && numberedParam(id2)) {
+                    if (isNumParamNested() || isItUsed()) return null;
 
                     Node newNode = new DVarNode(loc, slot, name);
                     if (numParamCurrent == null) numParamCurrent = newNode;
                     return newNode;
                 }
-                if (type == StaticScope.Type.BLOCK && id.equals("it") && !this.scopedParserState.hasDefinedVariables()) {
+                if (dyna_in_block() && id.equals("it") && !hasArguments()) {
                     if (hasNumParam()) return null;
-                    if (maxNumParam == -1) {
+                    if (maxNumParam == ORDINAL_PARAM) {
                         compile_error("ordinary parameter is defined");
                         return null;
                     }
@@ -1978,12 +1981,16 @@ public abstract class RubyParserBase {
         LexContext ctxt = getLexContext();
         ctxt.in_class = name != null;
         if (!ctxt.in_class) {
+            ctxt.cant_return = !ctxt.in_def;
             ctxt.in_def = false;
         } else if (ctxt.in_def) {
             yyerror((name != null ? (name + " ") : "") + "definition in method body");
+        } else {
+            ctxt.cant_return = true;
         }
         pushLocalScope();
     }
+
     public Set<ByteList> push_pvtbl() {
         Set<ByteList> currentTable = variableTable;
 
@@ -2475,5 +2482,13 @@ public abstract class RubyParserBase {
 
     protected void WARN_EOL(String name) {
         // FIXME: IMpl
+    }
+
+    protected boolean dyna_in_block() {
+        return currentScope.isBlockScope() && !isEval();
+    }
+
+    private boolean hasArguments() {
+        return !currentScope.getSignature().isNoArguments();
     }
 }
