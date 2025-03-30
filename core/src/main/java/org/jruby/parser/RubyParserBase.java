@@ -204,15 +204,13 @@ public abstract class RubyParserBase {
     }
 
     public ArgsNode args_with_numbered(ArgsNode args, int paramCount, Node itNode) {
-        if (paramCount > 0 || itNode != null) {
-            if (args.isEmpty()) {
-                ListNode pre = makePreNumArgs(paramCount);
-                args = new_args(lexer.getRubySourceline(), pre, null, null, null, null);
-            } else if (itNode != null) {
-                DVarNode dvar = (DVarNode) itNode;
-                Node arg = new ArgumentNode(dvar.getLine(), dvar.getName(), dvar.getDepth());
-                args = new_args(lexer.getRubySourceline(), newArrayNode(arg.getLine(), arg), null, null, null, null);
-            }
+        if (paramCount > 0) {
+            ListNode pre = makePreNumArgs(paramCount);
+            args = new_args(lexer.getRubySourceline(), pre, null, null, null, null);
+        } else if (itNode != null) {
+            DVarNode dvar = (DVarNode) itNode;
+            Node arg = new ArgumentNode(dvar.getLine(), dvar.getName(), dvar.getDepth());
+            args = new_args(lexer.getRubySourceline(), newArrayNode(arg.getLine(), arg), null, null, null, null);
         }
         return args;
     }
