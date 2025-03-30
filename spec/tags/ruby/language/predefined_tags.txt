@@ -1,4 +1,3 @@
-fails:Global variable $0 raises a TypeError when not given an object that can be coerced to a String
 fails:Global variable $0 actually sets the program name
 windows:The predefined global constant ARGV contains Strings encoded in locale Encoding
 fails:Predefined global $! in bodies without ensure should be cleared when an exception is rescued even when a non-local return is present
