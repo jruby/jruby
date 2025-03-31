@@ -473,6 +473,11 @@ dir_name "$JAVACMD"
 dir_name "$REPLY"
 JAVA_HOME="$REPLY"
 
+if ! [ -e "$JAVA_HOME/release" ]; then
+    echo >&2 "${0##*/}: Error: JAVA_HOME not found!"
+    exit 1
+fi
+
 # Detect modularized Java
 java_is_modular() {
     # check that modules file is present
@@ -676,6 +681,10 @@ do
         -X*.*) append java_args -Djruby."${1#-X}" ;;
         # Match switches that take an argument
         -[CeIS])
+            if [ "$#" -eq 1 ]; then
+                echo "Error: Missing argument to $1" >&2
+                exit 2
+            fi
             append ruby_args "$1" "$2"
             shift
             ;;
