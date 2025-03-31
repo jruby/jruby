@@ -402,6 +402,15 @@ JRUBY_HOME="${SELF_PATH%/*/*}"
 
 # ----- File paths for various options and files we'll process later ----------
 
+# Find HOME of current user if empty
+if [ -z "${HOME-}" ]; then
+    username=$(id -un)
+    case $username in
+        (*[!_[:alnum]]*) ;;
+        (*) eval HOME="~$username"; export HOME ;;
+    esac
+fi
+
 # Module options to open up packages we need to reflect
 readonly jruby_module_opts_file="$JRUBY_HOME/bin/.jruby.module_opts"
 
