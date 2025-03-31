@@ -2725,9 +2725,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     protected Operand buildSuper(Variable aResult, U iterNode, U argsNode, int line, boolean isNewline) {
         Variable result = aResult == null ? temp() : aResult;
-        Operand tempBlock = setupCallClosure(argsNode, iterNode);
-        if (tempBlock == NullBlock.INSTANCE) tempBlock = getYieldClosureVariable();
-        Operand block = tempBlock;
+        Operand block = setupCallClosure(argsNode, iterNode);
 
         boolean inClassBody = scope instanceof IRMethod && scope.getLexicalParent() instanceof IRClassBody;
         boolean isInstanceMethod = inClassBody && ((IRMethod) scope).isInstanceMethod;
