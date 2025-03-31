@@ -188,9 +188,6 @@ public class RubySet extends RubyObject implements Set {
      */
     @JRubyMethod(visibility = Visibility.PRIVATE) // def initialize(enum = nil, &block)
     public IRubyObject initialize(ThreadContext context, Block block) {
-        if ( block.isGiven() && context.runtime.isVerbose() ) {
-            context.runtime.getWarnings().warning(IRubyWarnings.ID.BLOCK_UNUSED, "given block not used");
-        }
         allocHash(context.runtime);
         return this;
     }
