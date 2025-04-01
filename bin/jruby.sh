@@ -615,7 +615,7 @@ else
         if [ -z "${CP-}" ]; then
             CP="$j"
         else
-            CP="$CP$CP_DELIMITER$2"
+            CP="$CP$CP_DELIMITER$j"
         fi
     done
 
