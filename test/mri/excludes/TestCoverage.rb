@@ -2,7 +2,7 @@ exclude :test_branch_coverage_for_case_statement, "no support for coverage optio
 exclude :test_branch_coverage_for_if_statement, "no support for coverage options yet (#5147)"
 exclude :test_branch_coverage_for_pattern_matching, "no support for branches yet"
 exclude :test_branch_coverage_for_safe_method_invocation, "no support for coverage options yet (#5147)"
-exclude :test_branch_coverage_for_while_statement, "no support for coverage opit
+exclude :test_branch_coverage_for_while_statement, "no support for coverage opit"
 exclude :test_branch_coverage_in_ensure_clause, "no support for branches yet"
 exclude :test_clear_with_branches, "no support for coverage options yet (#5147, #6149)"
 exclude :test_clear_with_methods, "no support for coverage options yet (#5147, #6149)"
