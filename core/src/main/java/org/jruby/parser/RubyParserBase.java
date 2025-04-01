@@ -60,6 +60,7 @@ import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.common.RubyWarnings;
 import org.jruby.ext.coverage.CoverageData;
+import org.jruby.ir.IRScopeType;
 import org.jruby.ir.builder.StringStyle;
 import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.yacc.LexContext;
@@ -2485,7 +2486,7 @@ public abstract class RubyParserBase {
     }
 
     protected boolean dyna_in_block() {
-        return currentScope.isBlockScope() && !isEval();
+        return currentScope.isBlockScope() && currentScope.scopeType != IRScopeType.EVAL_SCRIPT;
     }
 
     private boolean hasArguments() {
