@@ -1385,8 +1385,6 @@ q.pop
           p :never_reached
           success = true
         rescue StandardError => ex
-          puts ex
-          puts ex.backtrace
           ex = ex.class
           p [:rescue, ex]
           reason = ex

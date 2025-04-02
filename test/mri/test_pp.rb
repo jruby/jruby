@@ -34,6 +34,10 @@ class PPTest < Test::Unit::TestCase
     assert_equal("0...1\n", PP.pp(0...1, "".dup))
     assert_equal("0...\n", PP.pp(0..., "".dup))
     assert_equal("...1\n", PP.pp(...1, "".dup))
+    assert_equal("..false\n", PP.pp(..false, "".dup))
+    assert_equal("false..\n", PP.pp(false.., "".dup))
+    assert_equal("false..false\n", PP.pp(false..false, "".dup))
+    assert_equal("nil..nil\n", PP.pp(nil..nil, "".dup))
   end
 end
 
@@ -125,6 +129,11 @@ class PPInspectTest < Test::Unit::TestCase
     result = PP.pp(a, ''.dup)
     assert_equal("#{a.inspect}\n", result)
   end
+
+  def test_basic_object
+    a = BasicObject.new
+    assert_match(/\A#<BasicObject:0x[\da-f]+>\n\z/, PP.pp(a, ''.dup))
+  end
 end
 
 class PPCycleTest < Test::Unit::TestCase
@@ -158,6 +167,22 @@ class PPCycleTest < Test::Unit::TestCase
 
       b = Data.define(:a).new(42)
       assert_equal("#{b.inspect}\n", PP.pp(b, ''.dup))
+    end
+
+    D2 = Data.define(:aaa, :bbb) do
+      private :aaa
+    end
+    def test_data_private_member
+      a = D2.new("aaa", "bbb")
+      assert_equal("#<data PPTestModule::PPCycleTest::D2\n aaa=\"aaa\",\n bbb=\"bbb\">\n", PP.pp(a, ''.dup, 20))
+    end
+
+    D3 = Data.define(:aaa, :bbb) do
+      remove_method :aaa
+    end
+    def test_data_removed_member
+      a = D3.new("aaa", "bbb")
+      assert_equal("#<data PPTestModule::PPCycleTest::D3\n bbb=\"bbb\">\n", PP.pp(a, ''.dup, 20))
     end
   end
 

@@ -784,6 +784,18 @@ class TestModule < Test::Unit::TestCase
     assert_equal([:m1, :m0, :m, :sc, :m1, :m0, :c], sc.new.m)
   end
 
+  def test_include_into_module_after_prepend_bug_20871
+    bar = Module.new{def bar; 'bar'; end}
+    foo = Module.new{def foo; 'foo'; end}
+    m = Module.new
+    c = Class.new{include m}
+    m.prepend bar
+    Class.new{include m}
+    m.include foo
+    assert_include c.ancestors, foo
+    assert_equal "foo", c.new.foo
+  end
+
   def test_protected_include_into_included_module
     m1 = Module.new do
       def other_foo(other)
@@ -1476,7 +1488,7 @@ class TestModule < Test::Unit::TestCase
       class << o; self; end.instance_eval { undef_method(:foo) }
     end
 
-    %w(object_id __send__ initialize).each do |n|
+    %w(object_id __id__ __send__ initialize).each do |n|
       assert_in_out_err([], <<-INPUT, [], %r"warning: undefining '#{n}' may cause serious problems$")
         $VERBOSE = false
         Class.new.instance_eval { undef_method(:#{n}) }
@@ -2148,9 +2160,8 @@ class TestModule < Test::Unit::TestCase
       Warning[:deprecated] = false
       Class.new(c)::FOO
     end
-    assert_warn('') do
-      Warning[:deprecated] = false
-      c.class_eval "FOO"
+    assert_warn(/deprecated/) do
+      c.class_eval {remove_const "FOO"}
     end
   end
 
