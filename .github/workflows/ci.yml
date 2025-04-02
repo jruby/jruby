@@ -34,8 +34,6 @@ jobs:
           cache: 'maven'
       - name: bootstrap
         run: mvn -ntp -Pbootstrap clean package
-      - name: generate appcds
-        run: "bin/jruby -S gem install jruby-startup && bin/jruby -S generate-appcds"
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake ${{ matrix.target }}
@@ -63,8 +61,6 @@ jobs:
           cache: 'maven'
       - name: bootstrap
         run: mvn -ntp -Pbootstrap clean package
-      - name: generate appcds
-        run: "bin/jruby -S gem install jruby-startup && bin/jruby -S generate-appcds"
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake test:jruby
@@ -97,8 +93,6 @@ jobs:
           cache: 'maven'
       - name: bootstrap
         run: mvn -ntp -Pbootstrap clean package
-      - name: generate appcds
-        run: "bin/jruby -S gem install jruby-startup && bin/jruby -S generate-appcds"
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake ${{ matrix.target }}
@@ -217,8 +211,6 @@ jobs:
           cache: 'maven'
       - name: bootstrap
         run: mvn -ntp -Pbootstrap clean package
-      - name: generate appcds
-        run: "bin/jruby -S gem install jruby-startup && bin/jruby -S generate-appcds"
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake test:jruby
@@ -306,8 +298,6 @@ jobs:
           cache: 'maven'
       - name: bootstrap
         run: mvn -ntp -Pbootstrap clean package
-      - name: generate appcds
-        run: "bin/jruby -S gem install jruby-startup && bin/jruby -S generate-appcds"
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: sequel
@@ -332,8 +322,6 @@ jobs:
           cache: 'maven'
       - name: bootstrap
         run: mvn -ntp -Pbootstrap clean package
-      - name: generate appcds
-        run: "bin/jruby -S gem install jruby-startup && bin/jruby -S generate-appcds"
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: concurrent-ruby
