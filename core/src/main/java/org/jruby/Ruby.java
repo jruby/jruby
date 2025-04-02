@@ -4988,7 +4988,18 @@ public final class Ruby implements Constantizable {
     }
 
     public CoverageData getCoverageData() {
-        return coverageData;
+        CoverageData coverageData = this.coverageData;
+        if (coverageData != null) return coverageData;
+
+        COVERAGE_DATA.compareAndSet(this, null, new CoverageData());
+
+        return this.coverageData;
+    }
+
+    public boolean isCoverageEnabled() {
+        CoverageData coverageData = this.coverageData;
+
+        return coverageData != null && coverageData.isCoverageEnabled();
     }
 
     /**
@@ -5941,6 +5952,7 @@ public final class Ruby implements Constantizable {
             BACKTRACE_COUNT = lookup().findVarHandle(Ruby.class, "backtraceCount", int.class);
             CALLER_COUNT = lookup().findVarHandle(Ruby.class, "callerCount", int.class);
             WARNING_COUNT = lookup().findVarHandle(Ruby.class, "warningCount", int.class);
+            COVERAGE_DATA = lookup().findVarHandle(Ruby.class, "coverageData", CoverageData.class);
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
@@ -5951,7 +5963,9 @@ public final class Ruby implements Constantizable {
 
     private final RubyHash envObject;
 
-    private final CoverageData coverageData = new CoverageData();
+    private volatile CoverageData coverageData;
+
+    private static final VarHandle COVERAGE_DATA;
 
     /** The "global" runtime. Set to the first runtime created, normally. */
     private static volatile Ruby globalRuntime;

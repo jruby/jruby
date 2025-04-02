@@ -660,7 +660,11 @@ public class IRRuntimeHelpers {
      * @param line
      */
     public static void updateCoverage(ThreadContext context, String filename, int line) {
-        CoverageData data = context.runtime.getCoverageData();
+        Ruby runtime = context.runtime;
+
+        if (!runtime.isCoverageEnabled()) return;
+
+        CoverageData data = runtime.getCoverageData();
 
         if (data.isRunning()) data.coverLine(filename, line);
     }
