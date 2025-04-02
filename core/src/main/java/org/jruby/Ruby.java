@@ -4979,56 +4979,6 @@ public final class Ruby implements Constantizable {
         return callerCount;
     }
 
-    /**
-     * Mark Fixnum as reopened
-     */
-    @Deprecated
-    public void reopenFixnum() {
-        fixnumInvalidator.invalidate();
-        fixnumReopened = true;
-    }
-
-    /**
-     * Retrieve the invalidator for Fixnum reopening
-     */
-    @Deprecated
-    public Invalidator getFixnumInvalidator() {
-        return fixnumInvalidator;
-    }
-
-    /**
-     * Whether the Float class has been reopened and modified
-     */
-    @Deprecated
-    public boolean isFixnumReopened() {
-        return fixnumReopened;
-    }
-
-    /**
-     * Mark Float as reopened
-     */
-    @Deprecated
-    public void reopenFloat() {
-        floatInvalidator.invalidate();
-        floatReopened = true;
-    }
-
-    /**
-     * Retrieve the invalidator for Float reopening
-     */
-    @Deprecated
-    public Invalidator getFloatInvalidator() {
-        return floatInvalidator;
-    }
-
-    /**
-     * Whether the Float class has been reopened and modified
-     */
-    @Deprecated
-    public boolean isFloatReopened() {
-        return floatReopened;
-    }
-
     public boolean isBootingCore() {
         return !coreIsBooted;
     }
@@ -6000,11 +5950,6 @@ public final class Ruby implements Constantizable {
             throw new RuntimeException(e);
         }
     }
-
-    private final Invalidator
-            fixnumInvalidator = OptoFactory.newGlobalInvalidator(0),
-            floatInvalidator = OptoFactory.newGlobalInvalidator(0);
-    private boolean fixnumReopened, floatReopened;
 
     private final boolean coreIsBooted;
     private final boolean runtimeIsBooted;
