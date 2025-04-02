@@ -1,1 +1,2 @@
 fails:String#to_c ignores trailing garbage
+fails(low priority excluded from JRuby 10):String#to_c treats a sequence of underscores as an end of Complex string
