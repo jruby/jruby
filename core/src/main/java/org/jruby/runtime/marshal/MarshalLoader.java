@@ -599,7 +599,7 @@ public class MarshalLoader {
 
     public int readUnsignedByte(ThreadContext context, RubyInputStream in) {
         int result = in.read();
-        if (result == -1) throw eofError(context, "marshal data too short");
+        if (result == -1) throw argumentError(context, "marshal data too short");
         return result;
     }
 
