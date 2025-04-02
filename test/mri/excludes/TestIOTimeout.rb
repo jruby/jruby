@@ -1,0 +1,5 @@
+exclude :test_timeout_attribute, "IO#timeout is not implemented yet (https://github.com/jruby/jruby/pull/8662)"
+exclude :test_timeout_gets_exception, "IO#timeout is not implemented yet (https://github.com/jruby/jruby/pull/8662)"
+exclude :test_timeout_puts, "IO#timeout is not implemented yet (https://github.com/jruby/jruby/pull/8662)"
+exclude :test_timeout_read_exception, "IO#timeout is not implemented yet (https://github.com/jruby/jruby/pull/8662)"
+exclude :test_timeout_read_exception, "IO#timeout is not implemented yet (https://github.com/jruby/jruby/pull/8662)"
