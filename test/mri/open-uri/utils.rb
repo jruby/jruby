@@ -287,9 +287,7 @@ class SimpleHTTPSServer
 
   # NOTE: patched by JRuby
   def shutdown
-    #@thread.kill
     @server.close
-    @thread.join
   end
 
   def handle_request(socket)
