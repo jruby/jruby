@@ -960,6 +960,7 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      */
     @Override
     public boolean equals(Object other) {
+        if (other == this) return true;
         if (other instanceof ByteList) return equal((ByteList)other);
         return false;
     }
@@ -972,26 +973,30 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      */
     public boolean equal(ByteList other) {
         if (other == this) return true;
-        if (hash != 0 && other.hash != 0 && hash != other.hash) return false;
+        int hash = this.hash;
+        int otherHash = other.hash;
+        if (hash != 0 && otherHash != 0 && hash != otherHash) return false;
+        int realSize = this.realSize;
+        if (realSize != other.realSize) return false;
 
-        int first, last;
-        if ((last = realSize) == other.realSize) {
-            byte buf[] = bytes;
-            byte otherBuf[] = other.bytes;
-            // scanning from front and back simultaneously, meeting in
-            // the middle. the object is to get a mismatch as quickly as
-            // possible. alternatives might be: scan from the middle outward
-            // (not great because it won't pick up common variations at the
-            // ends until late) or sample odd bytes forward and even bytes
-            // backward (I like this one, but it's more expensive for
-            // strings that are equal; see sample_equals below).
+        int first;
+        int last = realSize;
+        byte buf[] = bytes;
+        byte otherBuf[] = other.bytes;
 
-            for (first = -1;
-                 --last > first && buf[begin + last] == otherBuf[other.begin + last] &&
-                         ++first < last && buf[begin + first] == otherBuf[other.begin + first] ; ) ;
-            return first >= last;
-        }
-        return false;
+        // scanning from front and back simultaneously, meeting in
+        // the middle. the object is to get a mismatch as quickly as
+        // possible. alternatives might be: scan from the middle outward
+        // (not great because it won't pick up common variations at the
+        // ends until late) or sample odd bytes forward and even bytes
+        // backward (I like this one, but it's more expensive for
+        // strings that are equal; see sample_equals below).
+        int begin = this.begin;
+        int otherBegin = other.begin;
+        for (first = -1;
+             --last > first && buf[begin + last] == otherBuf[otherBegin + last] &&
+                     ++first < last && buf[begin + first] == otherBuf[otherBegin + first] ; ) ;
+        return first >= last;
     }
 
     /**
