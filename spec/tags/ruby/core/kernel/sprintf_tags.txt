@@ -1,0 +1,2 @@
+fails(https://github.com/jruby/jruby/issues/8739):Kernel#sprintf other formats c displays no characters if argument is an empty string
+fails(https://github.com/jruby/jruby/issues/8739):Kernel.sprintf other formats c displays no characters if argument is an empty string
