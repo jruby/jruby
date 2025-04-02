@@ -5832,12 +5832,7 @@ public final class Ruby implements Constantizable {
 
     private final GlobalVariables globalVariables = new GlobalVariables(this);
     private final RubyWarnings warnings = new RubyWarnings(this);
-    private final WarnCallback regexpWarnings = new WarnCallback() {
-        @Override
-        public void warn(String message) {
-            getWarnings().warn(message);
-        }
-    };
+    private final WarnCallback regexpWarnings = message -> getWarnings().warn(message);
 
     /**
      * Reserved for userland at_exit logic that runs before internal services start shutting down.
@@ -5989,17 +5984,11 @@ public final class Ruby implements Constantizable {
         void addToObjectSpace(Ruby runtime, boolean useObjectSpace, IRubyObject object);
     }
 
-    private static final ObjectSpacer DISABLED_OBJECTSPACE = new ObjectSpacer() {
-        @Override
-        public void addToObjectSpace(Ruby runtime, boolean useObjectSpace, IRubyObject object) {
-        }
+    private static final ObjectSpacer DISABLED_OBJECTSPACE = (runtime, useObjectSpace, object) -> {
     };
 
-    private static final ObjectSpacer ENABLED_OBJECTSPACE = new ObjectSpacer() {
-        @Override
-        public void addToObjectSpace(Ruby runtime, boolean useObjectSpace, IRubyObject object) {
-            if (useObjectSpace) runtime.objectSpace.add(object);
-        }
+    private static final ObjectSpacer ENABLED_OBJECTSPACE = (runtime, useObjectSpace, object) -> {
+        if (useObjectSpace) runtime.objectSpace.add(object);
     };
 
     private final ObjectSpacer objectSpacer;
