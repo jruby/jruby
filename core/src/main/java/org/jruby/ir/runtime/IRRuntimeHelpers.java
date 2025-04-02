@@ -2427,11 +2427,6 @@ public class IRRuntimeHelpers {
         return runtime.freezeAndDedupString(RubyString.newString(runtime, bytelist, coderange));
     }
 
-
-    public static RubyString newChilledString(ThreadContext context, ByteList bytelist, int coderange, String file, int line) {
-        return RubyString.newString(context.runtime, bytelist, coderange).chill();
-    }
-
     @JIT @Interp
     public static RubyString freezeLiteralString(RubyString string) {
         string.setFrozen(true);

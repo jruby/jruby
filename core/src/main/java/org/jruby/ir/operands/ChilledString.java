@@ -1,5 +1,6 @@
 package org.jruby.ir.operands;
 
+import org.jruby.api.Access;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.parser.StaticScope;
@@ -7,8 +8,6 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-
-import static org.jruby.api.Create.dupString;
 
 public class ChilledString extends MutableString implements Stringable, StringLiteral {
     /**
@@ -34,7 +33,7 @@ public class ChilledString extends MutableString implements Stringable, StringLi
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
-        return dupString(context, frozenString.retrieve(context, self, currScope, currDynScope, temp)).chill();
+        return frozenString.retrieve(context, self, currScope, currDynScope, temp).dupAsChilled(context.runtime, Access.stringClass(context), frozenString.file, frozenString.line);
     }
 
     @Override

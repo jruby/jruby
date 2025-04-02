@@ -232,7 +232,7 @@ public interface ValueCompiler {
      */
     void pushBufferString(Encoding encoding, int size);
 
-    void pushChilledString(ByteList byteList, int codeRange);
+    void pushChilledString(ByteList byteList, int codeRange, String file, int line);
 
     void pushFixnumArray(List<Long> values);
 
