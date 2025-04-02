@@ -1974,11 +1974,6 @@ public class RubyInstanceConfig {
     @Deprecated public static final String JIT_CODE_CACHE = "";
 
     @Deprecated
-    public boolean getIPv4Preferred() {
-        return Options.PREFER_IPV4.load();
-    }
-
-    @Deprecated
     public boolean isJitDumping() {
         return jitDumping;
     }
