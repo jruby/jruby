@@ -1,0 +1,1 @@
+exclude :test_condition_variable, "hangs on macos M1"
