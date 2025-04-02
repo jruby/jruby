@@ -694,7 +694,8 @@ public class RubyBignum extends RubyInteger {
                 asFloat(context, pow) : asInteger(context, pow);
     }
 
-    private static final long BIGLEN_LIMIT = 1L << 34;
+    // adjusted for JDK BigInteger limits
+    private static final long BIGLEN_LIMIT = 1L << 31;
 
     public final IRubyObject op_pow(final ThreadContext context, final long other) {
         if (other < 0) {
