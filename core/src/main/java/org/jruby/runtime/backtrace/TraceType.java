@@ -24,6 +24,7 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.jruby.util.TypeConverter;
 
+import static java.lang.System.lineSeparator;
 import static org.jruby.api.Access.exceptionClass;
 import static org.jruby.api.Access.instanceConfig;
 import static org.jruby.api.Check.checkID;
@@ -106,7 +107,7 @@ public class TraceType {
 
     public static void dumpBacktrace(RubyException exception) {
         Ruby runtime = exception.getRuntime();
-        System.err.println("Backtrace generated:\n" + printBacktraceJRuby(exception, runtime.getPosix().isatty(FileDescriptor.err)));
+        System.err.println("Backtrace generated:" + lineSeparator() + printBacktraceJRuby(exception, runtime.getPosix().isatty(FileDescriptor.err)));
     }
 
     public static void logCaller(RubyArray trace) {
@@ -116,7 +117,7 @@ public class TraceType {
 
         for (int i = 0; i < trace.size(); i++) {
             // elements are already rendered as its an Array<RubyString>
-            buffer.append("  ").append(trace.eltInternal(i)).append('\n');
+            buffer.append("  ").append(trace.eltInternal(i)).append(lineSeparator());
         }
 
         LOG.info(buffer.toString());
@@ -133,7 +134,7 @@ public class TraceType {
     public static void logCaller(RubyStackTraceElement[] trace) {
         if (trace == null) trace = RubyStackTraceElement.EMPTY_ARRAY;
 
-        LOG.info( formatWithMRIBacktrace("Caller backtrace generated:\n", trace).toString() );
+        LOG.info( formatWithMRIBacktrace("Caller backtrace generated:" + lineSeparator(), trace).toString() );
     }
 
     private static StringBuilder formatWithMRIBacktrace(final String message, RubyStackTraceElement[] trace) {
@@ -157,7 +158,7 @@ public class TraceType {
     public static void logWarning(RubyStackTraceElement[] trace) {
         if (trace == null) trace = RubyStackTraceElement.EMPTY_ARRAY;
 
-        LOG.info( formatWithMRIBacktrace("Warning backtrace generated:\n", trace).toString() );
+        LOG.info( formatWithMRIBacktrace("Warning backtrace generated:"+ lineSeparator(), trace).toString() );
     }
 
     /**
@@ -422,7 +423,7 @@ public class TraceType {
             if (highlight) errorStream.catString(BOLD);
             errorStream.catString("Traceback");
             if (highlight) errorStream.catString(RESET);
-            errorStream.catString(" (most recent call last):\n");
+            errorStream.catString(" (most recent call last):" + lineSeparator());
         }
 
         final Set<Object> shownCauses = new HashSet<>();
@@ -573,7 +574,7 @@ public class TraceType {
                 }
 
                 if (tail != null && tail.length() > 0) {
-                    errorStream.cat('\n');
+                    errorStream.catString(lineSeparator());
                     if (!highlight) {
                         errorStream.catString(tail);
                     } else {
@@ -582,7 +583,7 @@ public class TraceType {
                             errorStream.catString(BOLD);
                             errorStream.catString(tail.substring(start, end));
                             errorStream.catString(RESET);
-                            errorStream.cat('\n');
+                            errorStream.catString(lineSeparator());
                             start = end + 1;
                             end = tail.indexOf('\n', start);
                         }
@@ -703,12 +704,12 @@ public class TraceType {
                 buffer.append(CLEAR_COLOR);
             }
 
-            buffer.append('\n');
+            buffer.append(lineSeparator());
         }
 
         if (runtime != null && (frames.length > maxBacktraceLines)) {
             String suppressedLines = String.valueOf(frames.length - maxBacktraceLines);
-            buffer.append("... " + suppressedLines + " levels...\n");
+            buffer.append("... " + suppressedLines + " levels..." + lineSeparator());
         }
     }
 
@@ -766,7 +767,7 @@ public class TraceType {
                 }
                 if (stackTraceLine instanceof RubyString) {
                     errorStream.catString("from " + stackTraceLine);
-                    errorStream.cat('\n');
+                    errorStream.catString(lineSeparator());
                 }
                 else {
                     errorStream.append(stackTraceLine);
@@ -775,7 +776,7 @@ public class TraceType {
 
             if ((elements.length > i)) {
                 String suppressedLines = String.valueOf(elements.length - (i));
-                errorStream.catString("\t ... " + suppressedLines + " levels...\n");
+                errorStream.catString("\t ... " + suppressedLines + " levels..." + lineSeparator());
             }
         }
     }
