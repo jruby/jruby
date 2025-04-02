@@ -20,6 +20,7 @@ describe "NameError created internally using a format string" do
       io.rewind
       expect(io.read).to eq ""
     ensure
+      io.close rescue nil
       $VERBOSE = old_verbose
       $stderr.reopen(old_stderr)
     end
@@ -43,7 +44,8 @@ describe "NameError created internally using a format string" do
       io.rewind
       expect(io.read).to eq ""
     ensure
-      $VERBOSE = old_debug
+      io.close rescue nil
+      $DEBUG = old_debug
       $stderr.reopen(old_stderr)
     end
   end
