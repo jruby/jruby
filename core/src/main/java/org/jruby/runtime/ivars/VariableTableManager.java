@@ -32,6 +32,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -103,6 +104,27 @@ public class VariableTableManager {
      */
     public VariableTableManager(RubyClass realClass) {
         this.realClass = realClass;
+    }
+
+    /**
+     * Copy constructor with deep cloning.
+     *
+     * @param original VariableTableManager to copy
+     */
+    VariableTableManager(VariableTableManager original) {
+        synchronized (original) {
+            this.realClass = original.realClass;
+            this.variableAccessors = copyVariableAccessors(original.variableAccessors);
+            this.variableNames = original.variableNames.clone();
+            this.hasObjectID = original.hasObjectID;
+            this.hasFFI = original.hasFFI;
+            this.hasObjectspaceGroup = original.hasObjectspaceGroup;
+            this.fieldVariables = original.fieldVariables;
+        }
+    }
+
+    public RubyClass getRealClass() {
+        return realClass;
     }
 
     /**
@@ -253,16 +275,22 @@ public class VariableTableManager {
                 if (ivarAccessor == null) {
                     // allocate a new accessor and populate a new table
                     ivarAccessor = allocateVariableAccessors(name, defaultAccessorBuilder);
-                    Map<String, VariableAccessor> newVariableAccessors = new LinkedHashMap<>(myVariableAccessors.size() + 1);
-
-                    newVariableAccessors.putAll(myVariableAccessors);
-                    newVariableAccessors.put(name, ivarAccessor);
-
-                    variableAccessors = newVariableAccessors;
+                    variableAccessors = copyVariableAccessors(myVariableAccessors, name, ivarAccessor);
                 }
             }
         }
         return ivarAccessor;
+    }
+
+    private static Map<String, VariableAccessor> copyVariableAccessors(Map<String, VariableAccessor> myVariableAccessors) {
+        return new LinkedHashMap<>(myVariableAccessors);
+    }
+
+    private static Map<String, VariableAccessor> copyVariableAccessors(Map<String, VariableAccessor> myVariableAccessors, String name, VariableAccessor ivarAccessor) {
+        LinkedHashMap<String, VariableAccessor> newVariableAccessors = new LinkedHashMap<>(myVariableAccessors.size() + 1);
+        newVariableAccessors.putAll(myVariableAccessors);
+        newVariableAccessors.put(name, ivarAccessor);
+        return newVariableAccessors;
     }
 
     /**
@@ -512,6 +540,10 @@ public class VariableTableManager {
 
             return value;
         }
+    }
+
+    public VariableTableManager duplicate() {
+        return new VariableTableManager(this);
     }
 
     /**
