@@ -377,6 +377,12 @@ public class ArgumentProcessor {
                                     case ":no-experimental":
                                         config.getWarningCategories().remove(RubyWarnings.Category.EXPERIMENTAL);
                                         break;
+                                    case ":performance":
+                                        config.getWarningCategories().add(RubyWarnings.Category.PERFORMANCE);
+                                        break;
+                                    case ":no-performance":
+                                        config.getWarningCategories().remove(RubyWarnings.Category.PERFORMANCE);
+                                        break;
                                     default:
                                         if (temp.charAt(0) == ':') {
                                             config.getError().println("warning: unknown warning category: " + temp.substring(1));
