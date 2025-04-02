@@ -1,15 +1,21 @@
 class Range
   def bsearch(&cond)
-    return to_enum(:bsearch) unless block_given?
-
     b = self.begin
     e = self.end
 
     if b.is_a?(Float) || e.is_a?(Float)
-      BSearch.float_search(b, e, exclude_end?, &cond)
+      return to_enum(:bsearch) if !cond
+      return BSearch.float_search(b, e, exclude_end?, &cond)
     else
-      BSearch.integer_search(b, e, exclude_end?, &cond)
+      b_int = b.is_a?(Integer)
+      e_int = e.is_a?(Integer)
+      if b_int || e_int
+        return to_enum(:bsearch) if !cond
+        return BSearch.integer_search(b, b_int, e, e_int, exclude_end?, &cond)
+      end
     end
+
+    raise TypeError, "can't do binary search for #{b.class}"
   end
 
   class BSearch
@@ -82,10 +88,7 @@ class Range
       satisfied
     end
 
-    def self.integer_search(b, e, excl, &cond)
-      b_int = b.is_a?(Integer)
-      e_int = e.is_a?(Integer)
-
+    def self.integer_search(b, b_int, e, e_int, excl, &cond)
       if b_int
         if e_int
           return binary_search(b, e, excl, &cond)
