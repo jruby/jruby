@@ -1,0 +1,4 @@
+fails(https://github.com/jruby/jruby/issues/8738):Module#set_temporary_name discards a temporary name when an outer anonymous module gets a permanent name
+fails(https://github.com/jruby/jruby/issues/8738):Module#set_temporary_name does not affect a name of a module nested into an anonymous module with a temporary name
+fails(https://github.com/jruby/jruby/issues/8738):Module#set_temporary_name keeps temporary name when assigned in an anonymous module
+fails(https://github.com/jruby/jruby/issues/8738):Module#set_temporary_name keeps temporary name when assigned in an anonymous module and nested before
