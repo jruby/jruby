@@ -556,7 +556,10 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         }
 
         result.fastASet(newString(context, EXTERNAL), newString(context, new ByteList(service.getDefaultExternalEncoding().getName())));
-        result.fastASet(newString(context, INTERNAL), newString(context, new ByteList(service.getDefaultInternalEncodingOrDefault().getName())));
+        Encoding internal = service.getDefaultInternalEncoding();
+        if (internal != null) {
+            result.fastASet(newString(context, INTERNAL), newString(context, new ByteList(internal.getName())));
+        }
         result.fastASet(newString(context, FILESYSTEM), newString(context, new ByteList(service.getDefaultFilesystemEncoding().getName())));
         result.fastASet(newString(context, LOCALE), newString(context, new ByteList(service.getLocaleEncoding().getName())));
 
