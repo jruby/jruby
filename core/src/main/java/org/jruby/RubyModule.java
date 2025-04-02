@@ -1331,7 +1331,6 @@ public class RubyModule extends RubyObject {
                 }
             }
 
-            invalidateCoreClasses(context);
             invalidateCacheDescendants(context);
             invalidateConstantCacheForModuleInclusion(context, module);
         }
@@ -1391,7 +1390,6 @@ public class RubyModule extends RubyObject {
             }
         }
 
-        invalidateCoreClasses(context);
         invalidateCacheDescendants(context);
         invalidateConstantCacheForModuleInclusion(context, module);
     }
@@ -1945,7 +1943,6 @@ public class RubyModule extends RubyObject {
     public final void addMethodInternal(ThreadContext context, String name, DynamicMethod method) {
         synchronized (getMethodLocation().getMethodsForWrite()) {
             putMethod(context, name, method);
-            invalidateCoreClasses(context);
             invalidateCacheDescendants(context);
         }
     }
@@ -1977,7 +1974,6 @@ public class RubyModule extends RubyObject {
                 methodsForWrite.put(id, new RefinedMarker(method.getImplementationClass(), method.getVisibility(), id));
             }
 
-            invalidateCoreClasses(context);
             invalidateCacheDescendants(context);
         }
 
@@ -2418,21 +2414,8 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Deprecated(since = "10.0")
     protected void invalidateCoreClasses() {
-        invalidateCoreClasses(getCurrentContext());
-    }
-
-    @SuppressWarnings("deprecation")
-    protected void invalidateCoreClasses(ThreadContext context) {
-        if (!context.runtime.isBootingCore()) {
-            if (this == fixnumClass(context)) {
-                context.runtime.reopenFixnum();
-            } else if (this == floatClass(context)) {
-                context.runtime.reopenFloat();
-            }
-        }
     }
 
     public Invalidator getInvalidator() {
@@ -2445,11 +2428,6 @@ public class RubyModule extends RubyObject {
 
     private void updateGeneration(final Ruby runtime) {
         generationObject = generation = runtime.getNextModuleGeneration();
-    }
-
-    @Deprecated
-    protected void invalidateCacheDescendantsInner() {
-        methodInvalidator.invalidate();
     }
 
     @Deprecated(since = "10.0")
@@ -2832,7 +2810,6 @@ public class RubyModule extends RubyObject {
                 getMethodLocation().addMethod(context, name, newMethod);
             }
 
-            invalidateCoreClasses(context);
             invalidateCacheDescendants(context);
         }
     }
@@ -5704,7 +5681,6 @@ public class RubyModule extends RubyObject {
         putAlias(context, name, entry, oldName);
 
         RubyModule methodLocation = getMethodLocation();
-        methodLocation.invalidateCoreClasses(context);
         methodLocation.invalidateCacheDescendants(context);
 
         return (T) this;
@@ -6963,7 +6939,6 @@ public class RubyModule extends RubyObject {
         }
 
         RubyModule methodLocation = getMethodLocation();
-        methodLocation.invalidateCoreClasses(context);
         methodLocation.invalidateCacheDescendants(context);
     }
 

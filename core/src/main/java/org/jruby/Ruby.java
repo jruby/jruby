@@ -56,7 +56,6 @@ import org.jruby.ext.thread.Queue;
 import org.jruby.ext.thread.SizedQueue;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
-import org.jruby.ir.builder.IRBuilderFactory;
 import org.jruby.ir.runtime.IRReturnJump;
 import org.jruby.java.util.ClassUtils;
 import org.jruby.javasupport.Java;
@@ -73,8 +72,6 @@ import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.specialized.RubyObjectSpecializer;
 import org.jruby.util.JavaNameMangler;
-import org.jruby.util.MRIRecursionGuard;
-import org.jruby.util.StringSupport;
 import org.jruby.util.StrptimeParser;
 import org.jruby.util.StrptimeToken;
 import org.jruby.util.WeakIdentityHashMap;
@@ -144,7 +141,6 @@ import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.runtime.profile.ProfileCollection;
 import org.jruby.runtime.profile.ProfilingService;
 import org.jruby.runtime.profile.ProfilingServiceLookup;
-import org.jruby.runtime.profile.builtin.ProfiledMethods;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.threading.DaemonThreadFactory;
 import org.jruby.util.ByteList;
@@ -175,6 +171,7 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.VarHandle;
 import java.lang.ref.WeakReference;
 import java.net.BindException;
 import java.nio.ByteBuffer;
@@ -196,7 +193,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.SynchronousQueue;
@@ -211,6 +207,7 @@ import java.util.regex.Pattern;
 
 import static java.lang.invoke.MethodHandles.explicitCastArguments;
 import static java.lang.invoke.MethodHandles.insertArguments;
+import static java.lang.invoke.MethodHandles.lookup;
 import static java.lang.invoke.MethodType.methodType;
 import static org.jruby.RubyBoolean.FALSE_BYTES;
 import static org.jruby.RubyBoolean.TRUE_BYTES;
@@ -219,9 +216,7 @@ import static org.jruby.RubyRandom.randomSeed;
 import static org.jruby.api.Access.errnoModule;
 import static org.jruby.api.Access.loadService;
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Convert.toInt;
-import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Create.newEmptyString;
 import static org.jruby.api.Create.newFrozenString;
 import static org.jruby.api.Error.*;
@@ -560,8 +555,6 @@ public final class Ruby implements Constantizable {
         if (this.config.getLoadGemfile()) {
             loadBundler();
         }
-
-        deprecatedNetworkStackProperty();
 
         // Done booting JRuby runtime
         runtimeIsBooted = true;
@@ -1051,25 +1044,6 @@ public final class Ruby implements Constantizable {
      * bytecode before executing.
      * @return The result of executing the specified script
      */
-    @Deprecated
-    public IRubyObject runWithGetsLoop(Node scriptNode, boolean printing, boolean processLineEnds, boolean split, boolean unused) {
-        return runWithGetsLoop((RootNode) scriptNode, printing, processLineEnds, split);
-    }
-
-    /**
-     * Run the given script with a "while gets; end" loop wrapped around it.
-     * This is primarily used for the -n command-line flag, to allow writing
-     * a short script that processes input lines using the specified code.
-     *
-     * @param scriptNode The root node of the script to execute
-     * @param printing Whether $_ should be printed after each loop (as in the
-     * -p command-line flag)
-     * @param processLineEnds Whether line endings should be processed by
-     * setting $\ to $/ and <code>chop!</code>ing every line read
-     * @param split Whether to split each line read using <code>String#split</code>
-     * bytecode before executing.
-     * @return The result of executing the specified script
-     */
     public IRubyObject runWithGetsLoop(ParseResult scriptNode, boolean printing, boolean processLineEnds, boolean split) {
         ThreadContext context = getCurrentContext();
 
@@ -1327,23 +1301,6 @@ public final class Ruby implements Constantizable {
         return caches;
     }
 
-    /**
-     * @deprecated use #newInstance()
-     */
-    @Deprecated(since = "9.4-")
-    public static Ruby getDefaultInstance() {
-        return newInstance();
-    }
-
-    @Deprecated
-    public static Ruby getCurrentInstance() {
-        return null;
-    }
-
-    @Deprecated
-    public static void setCurrentInstance(Ruby runtime) {
-    }
-
     public int allocSymbolId() {
         return symbolLastId.incrementAndGet();
     }
@@ -1382,11 +1339,6 @@ public final class Ruby implements Constantizable {
     @Deprecated(since = "10.0")
     public RubyModule getModule(String name) {
         return Access.getModule(getCurrentContext(), name);
-    }
-
-    @Deprecated
-    public RubyModule fastGetModule(String internedName) {
-        return Access.getModule(getCurrentContext(), internedName);
     }
 
     /**
@@ -2535,9 +2487,6 @@ public final class Ruby implements Constantizable {
         return dataClass;
     }
 
-    @Deprecated
-    RubyRandom.RandomType defaultRand;
-
     /** The default Ruby Random object for this runtime */
     private RubyRandom defaultRandom;
 
@@ -2547,26 +2496,6 @@ public final class Ruby implements Constantizable {
 
     public void setDefaultRandom(RubyRandom random) {
         this.defaultRandom = random;
-        this.defaultRand = random.getRandomType();
-    }
-
-    @Deprecated(since = "9.4-")
-    public RubyRandom.RandomType getDefaultRand() {
-        return getDefaultRandom().getRandomType();
-    }
-
-    /**
-     * @deprecated the modified field is now unused and deprecated and the set is ignored
-     */
-    @Deprecated(since = "9.4-")
-    public void setDefaultRand(RubyRandom.RandomType defaultRand) {
-    }
-
-    private RubyHash charsetMap;
-    @Deprecated // no longer used (internal API)
-    public RubyHash getCharsetMap() {
-        if (charsetMap == null) charsetMap = new RubyHash(this);
-        return charsetMap;
     }
 
     /**
@@ -2780,18 +2709,6 @@ public final class Ruby implements Constantizable {
         Charset charset = getDefaultCharset();
 
         return charset == null ? string.getBytes() : string.getBytes(charset);
-    }
-
-    @Deprecated
-    public Node parse(String content, String file, DynamicScope scope, int lineNumber, boolean extraPositionInformation) {
-        InputStream in = new ByteArrayInputStream(encodeToBytes(content));
-        Encoding encoding = setupSourceEncoding(getEncodingService().getLocaleEncoding());
-        if (extraPositionInformation) {
-            return (Node) getParserManager().parseMainFile(file, lineNumber, in, encoding, scope, INLINE).getAST();
-        } else {
-            return (Node) getParserManager().parseFile(file, lineNumber, in, encoding).getAST();
-        }
-
     }
 
     @Deprecated
@@ -3071,8 +2988,6 @@ public final class Ruby implements Constantizable {
     }
 
     static final String ROOT_FRAME_NAME = "(root)";
-    static long yarpTime = 0;
-    static boolean loaded = false;
 
     public void loadFile(String scriptName, InputStream in, boolean wrap) {
         IRubyObject self = wrap ? getTopSelf().rbClone() : getTopSelf();
@@ -3216,22 +3131,6 @@ public final class Ruby implements Constantizable {
         }
     }
 
-    @Deprecated // no longer used -> except for IndyBinder
-    public void addBoundMethodsPacked(String className, String packedTuples) {
-        List<String> names = StringSupport.split(packedTuples, ';');
-        for (int i = 0; i < names.size(); i += 2) {
-            addBoundMethod(className, names.get(i), names.get(i+1));
-        }
-    }
-
-    @Deprecated // no longer used -> except for IndyBinder
-    public void addSimpleBoundMethodsPacked(String className, String packedNames) {
-        List<String> names = StringSupport.split(packedNames, ';');
-        for (String name : names) {
-            addBoundMethod(className, name, name);
-        }
-    }
-
     public Map<String, Map<String, String>> getBoundMethods() {
         return boundMethods;
     }
@@ -3244,10 +3143,6 @@ public final class Ruby implements Constantizable {
 
     public GlobalVariables getGlobalVariables() {
         return globalVariables;
-    }
-
-    @Deprecated
-    public void setGlobalVariables(GlobalVariables globalVariables) {
     }
 
     /**
@@ -3426,9 +3321,6 @@ public final class Ruby implements Constantizable {
         }
 
         if (Options.PARSER_SUMMARY.load()) parserManager.getParserStats().printParserStatistics();
-
-        // clear out old style recursion guards so they don't leak
-        mriRecursionGuard = null;
 
         // shut down executors
         getJITCompiler().shutdown();
@@ -3675,11 +3567,6 @@ public final class Ruby implements Constantizable {
 
     public RubyString newString(ByteList byteList) {
         return RubyString.newString(this, byteList);
-    }
-
-    @Deprecated
-    public RubyString newStringShared(ByteList byteList) {
-        return RubyString.newStringShared(this, byteList);
     }
 
     /**
@@ -4595,11 +4482,6 @@ public final class Ruby implements Constantizable {
         return ex.toThrowable();
     }
 
-    @Deprecated
-    public RaiseException newLightweightStopIterationError(String message) {
-        return newStopIteration(null, message);
-    }
-
     private IRubyObject disabledBacktrace() {
         return RubyArray.newEmptyArray(this);
     }
@@ -4722,27 +4604,6 @@ public final class Ruby implements Constantizable {
         return config;
     }
 
-    @Deprecated
-    public boolean is2_0() {
-        return true;
-    }
-
-    /** GET_VM_STATE_VERSION */
-    @Deprecated // not used
-    public long getGlobalState() {
-        synchronized(this) {
-            return globalState;
-        }
-    }
-
-    /** INC_VM_STATE_VERSION */
-    @Deprecated // not used
-    public void incGlobalState() {
-        synchronized(this) {
-            globalState = (globalState+1) & 0x8fffffff;
-        }
-    }
-
     public static boolean isSecurityRestricted() {
         return securityRestricted;
     }
@@ -4788,11 +4649,6 @@ public final class Ruby implements Constantizable {
 
     public Map<String, DateTimeZone> getTimezoneCache() {
         return timeZoneCache;
-    }
-
-    @Deprecated
-    public int getConstantGeneration() {
-        return -1;
     }
 
     public Invalidator getConstantInvalidator(String constantName) {
@@ -4860,7 +4716,7 @@ public final class Ruby implements Constantizable {
      * @return a new generation number
      */
     public int getNextModuleGeneration() {
-        return moduleGeneration.incrementAndGet();
+        return (int) MODULE_GENERATION.getAndAdd(this, 1);
     }
 
     /**
@@ -4917,7 +4773,7 @@ public final class Ruby implements Constantizable {
      * Increment the count of exceptions generated by code in this runtime.
      */
     public void incrementExceptionCount() {
-        exceptionCount.incrementAndGet();
+        int ignored = (int) EXCEPTION_COUNT.getAndAdd(this, 1);
     }
 
     /**
@@ -4926,14 +4782,14 @@ public final class Ruby implements Constantizable {
      * @return he current exception count
      */
     public int getExceptionCount() {
-        return exceptionCount.get();
+        return exceptionCount;
     }
 
     /**
      * Increment the count of backtraces generated by code in this runtime.
      */
     public void incrementBacktraceCount() {
-        backtraceCount.incrementAndGet();
+        int ignored = (int) BACKTRACE_COUNT.getAndAdd(this, 1);
     }
 
     /**
@@ -4942,14 +4798,14 @@ public final class Ruby implements Constantizable {
      * @return the current backtrace count
      */
     public int getBacktraceCount() {
-        return backtraceCount.get();
+        return backtraceCount;
     }
 
     /**
      * Increment the count of backtraces generated for warnings in this runtime.
      */
     public void incrementWarningCount() {
-        warningCount.incrementAndGet();
+        int ignored = (int) WARNING_COUNT.getAndAdd(this, 1);
     }
 
     /**
@@ -4958,14 +4814,14 @@ public final class Ruby implements Constantizable {
      * @return the current backtrace count
      */
     public int getWarningCount() {
-        return warningCount.get();
+        return warningCount;
     }
 
     /**
      * Increment the count of backtraces generated by code in this runtime.
      */
     public void incrementCallerCount() {
-        callerCount.incrementAndGet();
+        int ignored = (int) CALLER_COUNT.getAndAdd(this, 1);
     }
 
     /**
@@ -4974,57 +4830,7 @@ public final class Ruby implements Constantizable {
      * @return the current backtrace count
      */
     public int getCallerCount() {
-        return callerCount.get();
-    }
-
-    /**
-     * Mark Fixnum as reopened
-     */
-    @Deprecated
-    public void reopenFixnum() {
-        fixnumInvalidator.invalidate();
-        fixnumReopened = true;
-    }
-
-    /**
-     * Retrieve the invalidator for Fixnum reopening
-     */
-    @Deprecated
-    public Invalidator getFixnumInvalidator() {
-        return fixnumInvalidator;
-    }
-
-    /**
-     * Whether the Float class has been reopened and modified
-     */
-    @Deprecated
-    public boolean isFixnumReopened() {
-        return fixnumReopened;
-    }
-
-    /**
-     * Mark Float as reopened
-     */
-    @Deprecated
-    public void reopenFloat() {
-        floatInvalidator.invalidate();
-        floatReopened = true;
-    }
-
-    /**
-     * Retrieve the invalidator for Float reopening
-     */
-    @Deprecated
-    public Invalidator getFloatInvalidator() {
-        return floatInvalidator;
-    }
-
-    /**
-     * Whether the Float class has been reopened and modified
-     */
-    @Deprecated
-    public boolean isFloatReopened() {
-        return floatReopened;
+        return callerCount;
     }
 
     public boolean isBootingCore() {
@@ -5036,15 +4842,18 @@ public final class Ruby implements Constantizable {
     }
 
     public CoverageData getCoverageData() {
-        return coverageData;
+        CoverageData coverageData = this.coverageData;
+        if (coverageData != null) return coverageData;
+
+        COVERAGE_DATA.compareAndSet(this, null, new CoverageData());
+
+        return this.coverageData;
     }
 
-    /**
-     * @deprecated internal API, to be removed
-     */
-    @Deprecated(since = "9.4-")
-    public Random getRandom() {
-        return random;
+    public boolean isCoverageEnabled() {
+        CoverageData coverageData = this.coverageData;
+
+        return coverageData != null && coverageData.isCoverageEnabled();
     }
 
     public long getHashSeedK0() {
@@ -5326,293 +5135,8 @@ public final class Ruby implements Constantizable {
      */
     public Map<Class, Consumer<RubyModule>> getJavaExtensionDefinitions() { return javaExtensionDefinitions; }
 
-    @Deprecated
-    private static final RecursiveFunctionEx<RecursiveFunction> LEGACY_RECURSE = new RecursiveFunctionEx<RecursiveFunction>() {
-        @Override
-        public IRubyObject call(ThreadContext context, RecursiveFunction func, IRubyObject obj, boolean recur) {
-            return func.call(obj, recur);
-        }
-    };
-
-    @Deprecated
-    public int getSafeLevel() {
-        return 0;
-    }
-
-    @Deprecated
-    public void setSafeLevel(int safeLevel) {
-    }
-
-    @Deprecated
-    public void checkSafeString(IRubyObject object) {
-    }
-
-    @Deprecated
-    public void secure(int level) {
-    }
-
-    @Deprecated
-    public RaiseException newNameErrorObject(String message, IRubyObject name) {
-        RubyException error = new RubyNameError(this, getNameError(), message, name);
-
-        return error.toThrowable();
-    }
-
-    @Deprecated
-    public boolean is1_8() {
-        return false;
-    }
-
-    @Deprecated
-    public boolean is1_9() {
-        return true;
-    }
-
-    @Deprecated
-    public IRubyObject safeRecurse(RecursiveFunction func, IRubyObject obj, String name, boolean outer) {
-        return safeRecurse(LEGACY_RECURSE, getCurrentContext(), func, obj, name, outer);
-    }
-
-    @Deprecated
-    public ProfiledMethods getProfiledMethods() {
-        return new ProfiledMethods(this);
-    }
-
     public interface RecursiveFunctionEx<T> extends ThreadContext.RecursiveFunctionEx<T> {
         IRubyObject call(ThreadContext context, T state, IRubyObject obj, boolean recur);
-    }
-
-    @Deprecated
-    public interface RecursiveFunction extends MRIRecursionGuard.RecursiveFunction {}
-
-    /**
-     * @deprecated Use {@link ThreadContext#safeRecurse(ThreadContext.RecursiveFunctionEx, Object, IRubyObject, String, boolean)}
-     */
-    @Deprecated
-    public <T> IRubyObject safeRecurse(RecursiveFunctionEx<T> func, ThreadContext context, T state, IRubyObject obj, String name, boolean outer) {
-        return context.safeRecurse(func, state, obj, name, outer);
-    }
-
-    /**
-     * Perform a recursive walk on the given object using the given function.
-     *
-     * Do not call this method directly unless you know you're within a call
-     * to {@link Ruby#recursiveListOperation(java.util.concurrent.Callable) recursiveListOperation},
-     * which will ensure the thread-local recursion tracking data structs are
-     * cleared.
-     *
-     * MRI: rb_exec_recursive
-     *
-     * Calls func(obj, arg, recursive), where recursive is non-zero if the
-     * current method is called recursively on obj
-     *
-     * @param func
-     * @param obj
-     * @return
-     */
-    @Deprecated
-    public IRubyObject execRecursive(RecursiveFunction func, IRubyObject obj) {
-        return oldRecursionGuard().execRecursive(func, obj);
-    }
-
-    /**
-     * Perform a recursive walk on the given object using the given function.
-     * Treat this as the outermost call, cleaning up recursive structures.
-     *
-     * MRI: rb_exec_recursive_outer
-     *
-     * If recursion is detected on the current method and obj, the outermost
-     * func will be called with (obj, arg, Qtrue). All inner func will be
-     * short-circuited using throw.
-     *
-     * @deprecated Use ThreadContext.safeRecurse.
-     *
-     * @param func
-     * @param obj
-     * @return
-     */
-    @Deprecated
-    public IRubyObject execRecursiveOuter(RecursiveFunction func, IRubyObject obj) {
-        return oldRecursionGuard().execRecursiveOuter(func, obj);
-    }
-
-    /**
-     * Begin a recursive walk that may make one or more calls to
-     * {@link Ruby#execRecursive(org.jruby.Ruby.RecursiveFunction, org.jruby.runtime.builtin.IRubyObject) execRecursive}.
-     * Clean up recursive structures once complete.
-     *
-     * @param body
-     * @param <T>
-     * @return
-     */
-    @Deprecated
-    public <T extends IRubyObject> T recursiveListOperation(Callable<T> body) {
-        return oldRecursionGuard().recursiveListOperation(body);
-    }
-
-    @Deprecated
-    private MRIRecursionGuard oldRecursionGuard() {
-        MRIRecursionGuard mriRecursionGuard = this.mriRecursionGuard;
-        if (mriRecursionGuard != null) return mriRecursionGuard;
-
-        synchronized (this) {
-            mriRecursionGuard = this.mriRecursionGuard;
-            if (mriRecursionGuard != null) return mriRecursionGuard;
-            return this.mriRecursionGuard = new MRIRecursionGuard(this);
-        }
-    }
-
-    @Deprecated
-    public IRubyObject getRootFiber() {
-        return rootFiber;
-    }
-    @Deprecated
-    public void setRootFiber(IRubyObject fiber) {
-        rootFiber = fiber;
-    }
-    @Deprecated
-    void setKernel(RubyModule kernelModule) {
-    }
-    @Deprecated
-    void setComparable(RubyModule comparableModule) {
-    }
-    @Deprecated
-    void setNumeric(RubyClass numericClass) {
-    }
-    @Deprecated
-    void setFloat(RubyClass floatClass) {
-    }
-    @Deprecated
-    void setInteger(RubyClass integerClass) {
-    }
-    @Deprecated
-    void setFixnum(RubyClass fixnumClass) {
-    }
-    @Deprecated
-    void setComplex(RubyClass complexClass) {
-    }
-    @Deprecated
-    void setRational(RubyClass rationalClass) {
-    }
-    @Deprecated
-    void setEnumerable(RubyModule enumerableModule) {
-    }
-    @Deprecated
-    void setEnumerator(RubyClass enumeratorClass) {
-    }
-    @Deprecated
-    void setYielder(RubyClass yielderClass) {
-    }
-    @Deprecated
-    public void setGenerator(RubyClass generatorClass) {
-    }
-    @Deprecated
-    public void setFiber(RubyClass fiberClass) {
-    }
-    @Deprecated
-    void setString(RubyClass stringClass) {
-    }
-    @Deprecated
-    void setEncoding(RubyClass encodingClass) {
-    }
-    @Deprecated
-    void setConverter(RubyClass converterClass) {
-    }
-    @Deprecated
-    void setSymbol(RubyClass symbolClass) {
-    }
-    @Deprecated
-    void setArray(RubyClass arrayClass) {
-    }
-    @Deprecated
-    void setHash(RubyClass hashClass) {
-    }
-    @Deprecated
-    void setRange(RubyClass rangeClass) {
-    }
-    @Deprecated
-    void setNilClass(RubyClass nilClass) {
-    }
-    @Deprecated
-    void setTrueClass(RubyClass trueClass) {
-    }
-    @Deprecated
-    void setFalseClass(RubyClass falseClass) {
-    }
-    @Deprecated
-    void setProc(RubyClass procClass) {
-    }
-    @Deprecated
-    void setBinding(RubyClass bindingClass) {
-    }
-    @Deprecated
-    void setMethod(RubyClass methodClass) {
-    }
-    @Deprecated
-    void setUnboundMethod(RubyClass unboundMethodClass) {
-    }
-    @Deprecated
-    void setMatchData(RubyClass matchDataClass) {
-    }
-    @Deprecated
-    void setRegexp(RubyClass regexpClass) {
-    }
-    @Deprecated
-    void setTime(RubyClass timeClass) {
-    }
-    @Deprecated
-    void setMath(RubyModule mathModule) {
-    }
-    @Deprecated
-    void setMarshal(RubyModule marshalModule) {
-    }
-    @Deprecated
-    void setBignum(RubyClass bignumClass) {
-    }
-    @Deprecated
-    void setDir(RubyClass dirClass) {
-    }
-    @Deprecated
-    void setFile(RubyClass fileClass) {
-    }
-    @Deprecated
-    void setFileStat(RubyClass fileStatClass) {
-    }
-    @Deprecated
-    void setFileTest(RubyModule fileTestModule) {
-    }
-    @Deprecated
-    void setIO(RubyClass ioClass) {
-    }
-    @Deprecated
-    void setThread(RubyClass threadClass) {
-    }
-    @Deprecated
-    void setThreadGroup(RubyClass threadGroupClass) {
-    }
-    @Deprecated
-    void setContinuation(RubyClass continuationClass) {
-    }
-    @Deprecated
-    void setStructClass(RubyClass structClass) {
-    }
-    @Deprecated
-    void setRandomClass(RubyClass randomClass) {
-    }
-    @Deprecated
-    void setGC(RubyModule gcModule) {
-    }
-    @Deprecated
-    void setObjectSpaceModule(RubyModule objectSpaceModule) {
-    }
-    @Deprecated
-    void setProcess(RubyModule processModule) {
-    }
-    @Deprecated
-    public void setWarning(RubyModule warningModule) {
-    }
-    @Deprecated
-    void setException(RubyClass exceptionClass) {
     }
 
     private final ConcurrentHashMap<String, Invalidator> constantNameInvalidators =
@@ -5641,9 +5165,6 @@ public final class Ruby implements Constantizable {
     private IRubyObject regexpTimeout;
     private RubyClass regexpTimeoutError;
 
-    @Deprecated
-    private long globalState = 1;
-
     // Default objects
     private final IRubyObject topSelf;
     private RubyBinding topLevelBinding;
@@ -5657,9 +5178,6 @@ public final class Ruby implements Constantizable {
     private final RubyString nilInspectString;
     final RubyFixnum[] fixnumCache = new RubyFixnum[2 * RubyFixnum.CACHE_OFFSET];
     final Object[] fixnumConstants = new Object[fixnumCache.length];
-
-    @Deprecated
-    private IRubyObject rootFiber;
 
     private boolean warningsEnabled = true; // global flag to be able to disable warnings regardless of $VERBOSE
     private boolean verboseWarnings; // whether warnings are enabled based on $VERBOSE
@@ -5880,12 +5398,7 @@ public final class Ruby implements Constantizable {
 
     private final GlobalVariables globalVariables = new GlobalVariables(this);
     private final RubyWarnings warnings = new RubyWarnings(this);
-    private final WarnCallback regexpWarnings = new WarnCallback() {
-        @Override
-        public void warn(String message) {
-            getWarnings().warn(message);
-        }
-    };
+    private final WarnCallback regexpWarnings = message -> getWarnings().warn(message);
 
     /**
      * Reserved for userland at_exit logic that runs before internal services start shutting down.
@@ -5943,7 +5456,10 @@ public final class Ruby implements Constantizable {
     private final AtomicLong dynamicMethodSerial = new AtomicLong(1);
 
     // An atomic int for generating class generation numbers
-    private final AtomicInteger moduleGeneration = new AtomicInteger(1);
+    private volatile int moduleGeneration = 1;
+
+    // VarHandle for moduleGeneration
+    private static final VarHandle MODULE_GENERATION;
 
     // A list of Java class+method names to include in backtraces
     private final Map<String, Map<String, String>> boundMethods = new ConcurrentHashMap<>();
@@ -5961,34 +5477,56 @@ public final class Ruby implements Constantizable {
     public static final String STOPIERATION_BACKTRACE_MESSAGE = "StopIteration backtraces disabled; run with -Xstop_iteration.backtrace=true to enable";
 
     // Count of RaiseExceptions generated by code running in this runtime
-    private final AtomicInteger exceptionCount = new AtomicInteger();
+    private volatile int exceptionCount;
+
+    // VarHandle for exceptionCount;
+    private static final VarHandle EXCEPTION_COUNT;
 
     // Count of exception backtraces generated by code running in this runtime
-    private final AtomicInteger backtraceCount = new AtomicInteger();
+    private volatile int backtraceCount;
+
+    // VarHandle for backtraceCount
+    private static final VarHandle BACKTRACE_COUNT;
 
     // Count of Kernel#caller backtraces generated by code running in this runtime
-    private final AtomicInteger callerCount = new AtomicInteger();
+    private volatile int callerCount;
+
+    // VarHandle for callerCount
+    private static final VarHandle CALLER_COUNT;
 
     // Count of built-in warning backtraces generated by code running in this runtime
-    private final AtomicInteger warningCount = new AtomicInteger();
+    private volatile int warningCount;
 
-    private final Invalidator
-            fixnumInvalidator = OptoFactory.newGlobalInvalidator(0),
-            floatInvalidator = OptoFactory.newGlobalInvalidator(0);
-    private boolean fixnumReopened, floatReopened;
+    // VarHandle for warningCount
+    private static final VarHandle WARNING_COUNT;
+
+    static {
+        try {
+            MODULE_GENERATION = lookup().findVarHandle(Ruby.class, "moduleGeneration", int.class);
+            EXCEPTION_COUNT = lookup().findVarHandle(Ruby.class, "exceptionCount", int.class);
+            BACKTRACE_COUNT = lookup().findVarHandle(Ruby.class, "backtraceCount", int.class);
+            CALLER_COUNT = lookup().findVarHandle(Ruby.class, "callerCount", int.class);
+            WARNING_COUNT = lookup().findVarHandle(Ruby.class, "warningCount", int.class);
+            COVERAGE_DATA = lookup().findVarHandle(Ruby.class, "coverageData", CoverageData.class);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     private final boolean coreIsBooted;
     private final boolean runtimeIsBooted;
 
     private final RubyHash envObject;
 
-    private final CoverageData coverageData = new CoverageData();
+    private volatile CoverageData coverageData;
+
+    private static final VarHandle COVERAGE_DATA;
 
     /** The "global" runtime. Set to the first runtime created, normally. */
     private static volatile Ruby globalRuntime;
 
     /** The "thread local" runtime. Set to the global runtime if unset. */
-    private static final ThreadLocal<Ruby> threadLocalRuntime = new ThreadLocal<Ruby>();
+    private static final ThreadLocal<Ruby> threadLocalRuntime = new ThreadLocal<>();
 
     /** The runtime-local random number generator. Uses SecureRandom if permissions allow. */
     final Random random;
@@ -6015,17 +5553,11 @@ public final class Ruby implements Constantizable {
         void addToObjectSpace(Ruby runtime, boolean useObjectSpace, IRubyObject object);
     }
 
-    private static final ObjectSpacer DISABLED_OBJECTSPACE = new ObjectSpacer() {
-        @Override
-        public void addToObjectSpace(Ruby runtime, boolean useObjectSpace, IRubyObject object) {
-        }
+    private static final ObjectSpacer DISABLED_OBJECTSPACE = (runtime, useObjectSpace, object) -> {
     };
 
-    private static final ObjectSpacer ENABLED_OBJECTSPACE = new ObjectSpacer() {
-        @Override
-        public void addToObjectSpace(Ruby runtime, boolean useObjectSpace, IRubyObject object) {
-            if (useObjectSpace) runtime.objectSpace.add(object);
-        }
+    private static final ObjectSpacer ENABLED_OBJECTSPACE = (runtime, useObjectSpace, object) -> {
+        if (useObjectSpace) runtime.objectSpace.add(object);
     };
 
     private final ObjectSpacer objectSpacer;
@@ -6128,7 +5660,7 @@ public final class Ruby implements Constantizable {
     private MethodHandle nullToNil;
     private MethodHandle nullToUndefined;
 
-    public final ClassValue<TypePopulator> POPULATORS = new ClassValue<TypePopulator>() {
+    public final ClassValue<TypePopulator> POPULATORS = new ClassValue<>() {
         @Override
         protected TypePopulator computeValue(Class<?> type) {
             return RubyModule.loadPopulatorFor(type);
@@ -6136,8 +5668,6 @@ public final class Ruby implements Constantizable {
     };
 
     public final JavaSites sites = new JavaSites();
-
-    private volatile MRIRecursionGuard mriRecursionGuard;
 
     private final Map<Class, Consumer<RubyModule>> javaExtensionDefinitions = new WeakHashMap<>(); // caller-syncs
 
@@ -6149,22 +5679,6 @@ public final class Ruby implements Constantizable {
     transient RubyString tzVar;
 
     ParserManager parserManager;
-
-    private IRBuilderFactory builderFactory;
-
-    @Deprecated
-    private void setNetworkStack() {
-        deprecatedNetworkStackProperty();
-    }
-
-    @SuppressWarnings("deprecation")
-    private void deprecatedNetworkStackProperty() {
-        if (Options.PREFER_IPV4.load()) {
-            LOG.warn("Warning: not setting network stack system property because socket subsystem may already be booted."
-                    + "If you need this option please set it manually as a JVM property.\n"
-                    + "Use JAVA_OPTS=-Djava.net.preferIPv4Stack=true OR prepend -J as a JRuby option.");
-        }
-    }
 
     @Deprecated
     public RaiseException newErrnoEADDRFromBindException(BindException be) {
