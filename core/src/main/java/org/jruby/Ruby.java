@@ -5957,7 +5957,7 @@ public final class Ruby implements Constantizable {
     private static volatile Ruby globalRuntime;
 
     /** The "thread local" runtime. Set to the global runtime if unset. */
-    private static final ThreadLocal<Ruby> threadLocalRuntime = new ThreadLocal<Ruby>();
+    private static final ThreadLocal<Ruby> threadLocalRuntime = new ThreadLocal<>();
 
     /** The runtime-local random number generator. Uses SecureRandom if permissions allow. */
     final Random random;
@@ -6091,7 +6091,7 @@ public final class Ruby implements Constantizable {
     private MethodHandle nullToNil;
     private MethodHandle nullToUndefined;
 
-    public final ClassValue<TypePopulator> POPULATORS = new ClassValue<TypePopulator>() {
+    public final ClassValue<TypePopulator> POPULATORS = new ClassValue<>() {
         @Override
         protected TypePopulator computeValue(Class<?> type) {
             return RubyModule.loadPopulatorFor(type);
