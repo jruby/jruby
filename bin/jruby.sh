@@ -522,6 +522,13 @@ readonly java_has_appcds
 # Default to using AppCDS if available
 use_jsa_file="$java_has_appcds"
 
+# Present a useful error if running JRuby 10 on Java 20 or lower
+if [ "$java_major" -le 20 ]; then
+    echo "JRuby 10 requires Java 21+. Make sure JAVA_HOME points at JDK 21 or higher"
+    echo "Current JAVA_HOME: $JAVA_HOME"
+    exit 1
+fi
+
 # AppCDS autogeneration
 if [ "$java_major" -ge 19 ]; then
     java_has_appcds_autogenerate=true
