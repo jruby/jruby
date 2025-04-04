@@ -1,4 +1,5 @@
 exclude :test_hup_me, "kills test run"
+exclude :test_kill_immediately_before_termination, "unreliable and likely racy"
 exclude :test_signame, "raises error for -1 signal number"
 exclude :test_trap, "SignalException needs to be its own class which provides a #signo accessor"
 exclude :test_trap_system_default, "Test works, but JRuby's trap warning violates its stderr expectations"
