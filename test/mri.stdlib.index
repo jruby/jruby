@@ -3,7 +3,8 @@
 benchmark
 cgi
 digest
-dtrace
+# only runs as root and we don't support most of this anyway
+#dtrace
 erb
 etc
 fiber
