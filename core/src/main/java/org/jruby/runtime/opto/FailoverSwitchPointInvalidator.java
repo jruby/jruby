@@ -65,6 +65,8 @@ public class FailoverSwitchPointInvalidator implements Invalidator {
     }
 
     public void invalidateAll(List<Invalidator> invalidators) {
+        if (invalidators.isEmpty()) return;
+
         SwitchPoint[] switchPoints = new SwitchPoint[invalidators.size()];
         
         for (int i = 0; i < invalidators.size(); i++) {
