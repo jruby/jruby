@@ -29,6 +29,7 @@ package org.jruby.runtime.opto;
 
 import java.util.List;
 
+@Deprecated(since = "10.0", forRemoval = true)
 public class ObjectIdentityInvalidator implements Invalidator {
     private volatile Object generation;
     
@@ -41,9 +42,7 @@ public class ObjectIdentityInvalidator implements Invalidator {
     }
     
     public void invalidateAll(List<Invalidator> invalidators) {
-        for (Invalidator invalidator : invalidators) {
-            invalidator.invalidate();
-        }
+        invalidators.forEach(Invalidator::invalidate);
     }
 
     public Object getData() {

@@ -14,13 +14,11 @@ public class GenerationInvalidator implements Invalidator {
     }
     
     public void invalidateAll(List<Invalidator> invalidators) {
-        for (Invalidator invalidator : invalidators) {
-            invalidator.invalidate();
-        }
+        invalidators.forEach(Invalidator::invalidate);
     }
 
     public Object getData() {
-        return module.getGenerationObject();
+        throw new RuntimeException("generation object should not be used");
     }
     
 }

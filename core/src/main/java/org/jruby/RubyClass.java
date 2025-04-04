@@ -1413,7 +1413,7 @@ public class RubyClass extends RubyModule {
 
     void addInvalidatorsAndFlush(InvalidatorList invalidators) {
         // add this class's invalidators to the aggregate
-        invalidators.add(methodInvalidator);
+        methodInvalidator.addIfUsed(invalidators);
 
         // if we're not at boot time, don't bother fully clearing caches
         if (!runtime.isBootingCore()) getCachedMethods().clear();
