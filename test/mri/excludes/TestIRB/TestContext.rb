@@ -1,7 +1,0 @@
-exclude :test_default_config, "needs investigation"
-exclude :test_eval_input, "work in progress"
-exclude :test_eval_input_raise2x, "work in progress"
-exclude :test_eval_input_with_exception, "work in progress"
-exclude :test_eval_input_with_invalid_byte_sequence_exception, "work in progress"
-exclude :test_evaluate_with_encoding_error_without_lineno, "work in progress"
-exclude :test_evaluate_with_onigmo_warning, "work in progress"

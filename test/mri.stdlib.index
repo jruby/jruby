@@ -10,7 +10,7 @@ etc
 fiber
 fileutils
 io
-#irb
+irb
 json
 logger
 monitor
