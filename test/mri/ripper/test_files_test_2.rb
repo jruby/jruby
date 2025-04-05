@@ -1,6 +1,7 @@
 require_relative 'assert_parse_files.rb'
 class TestRipper::Generic
-  Dir["#{SRCDIR}/test/[o-z]*/"].each do |dir|
+  # Modified for JRuby's copy of CRuby tests
+  Dir["#{SRCDIR}/test/mri/[o-z]*/"].each do |dir|
     dir = dir[(SRCDIR.length+1)..-2]
     define_method("test_parse_files:#{dir}") do
       assert_parse_files(dir)
