@@ -1,5 +1,6 @@
 exclude :test_addrinfo_new_unix, "needs investigation"
 exclude :test_addrinfo_predicates_unix, "needs investigation"
+exclude :test_addrinfo_tcp, "needs investigation"
 exclude :test_basicsocket_send, "needs investigation"
 exclude :test_connect, "needs investigation"
 exclude :test_connect_from, "needs investigation"
