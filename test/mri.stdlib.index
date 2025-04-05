@@ -33,11 +33,13 @@ win32ole
 yaml
 zlib
 
+test_bundled_gems.rb
 test_delegate.rb
 test_extlibs.rb
 test_find.rb
 test_forwardable.rb
 test_ipaddr.rb
+test_open3.rb
 test_pp.rb
 test_prettyprint.rb
 test_pstore.rb
@@ -50,6 +52,7 @@ test_tempfile.rb
 test_time.rb
 test_timeout.rb
 test_tmpdir.rb
+test_trick.rb
 test_tsort.rb
 test_unicode_normalize.rb
 test_weakref.rb
