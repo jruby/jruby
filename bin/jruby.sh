@@ -402,6 +402,15 @@ JRUBY_HOME="${SELF_PATH%/*/*}"
 
 # ----- File paths for various options and files we'll process later ----------
 
+# Find HOME of current user if empty
+if [ -z "${HOME-}" ]; then
+    username=$(id -un)
+    case $username in
+        (*[!_[:alnum]]*) ;;
+        (*) eval HOME="~$username"; export HOME ;;
+    esac
+fi
+
 # Module options to open up packages we need to reflect
 readonly jruby_module_opts_file="$JRUBY_HOME/bin/.jruby.module_opts"
 
@@ -472,6 +481,11 @@ fi || {
 dir_name "$JAVACMD"
 dir_name "$REPLY"
 JAVA_HOME="$REPLY"
+
+if ! [ -e "$JAVA_HOME/release" ]; then
+    echo >&2 "${0##*/}: Error: JAVA_HOME not found!"
+    exit 1
+fi
 
 # Detect modularized Java
 java_is_modular() {
@@ -683,6 +697,10 @@ do
         -X*.*) append java_args -Djruby."${1#-X}" ;;
         # Match switches that take an argument
         -[CeIS])
+            if [ "$#" -eq 1 ]; then
+                echo "Error: Missing argument to $1" >&2
+                exit 2
+            fi
             append ruby_args "$1" "$2"
             shift
             ;;
