@@ -1,1 +1,1 @@
-exclude :test_path_tmpfile, "work in progress"
+exclude :test_path_tmpfile, "fails on Linux"
