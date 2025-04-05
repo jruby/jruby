@@ -2376,19 +2376,21 @@ public class RubyModule extends RubyObject {
             return;
         }
 
-        InvalidatorList invalidators = new InvalidatorList();
-        invalidators.add(methodInvalidator);
+        InvalidatorList invalidators = new InvalidatorList((int) (lastInvalidatorSize * 1.25));
+        methodInvalidator.addIfUsed(invalidators);
 
         synchronized (getRuntime().getHierarchyLock()) {
             includingHierarchies.forEachClass(invalidators);
         }
 
+        lastInvalidatorSize = invalidators.size();
+
         methodInvalidator.invalidateAll(invalidators);
     }
 
-    static class InvalidatorList<T> extends ArrayList<T> implements RubyClass.BiConsumerIgnoresSecond<RubyClass> {
-        public InvalidatorList() {
-            super();
+    public static class InvalidatorList<T> extends ArrayList<T> implements RubyClass.BiConsumerIgnoresSecond<RubyClass> {
+        public InvalidatorList(int size) {
+            super(size);
         }
 
         @Override
@@ -6983,6 +6985,9 @@ public class RubyModule extends RubyObject {
 
     // Invalidator used for method caches
     protected final Invalidator methodInvalidator;
+
+    // track last size to avoid thrashing
+    private int lastInvalidatorSize = 4;
 
     /** Whether this class proxies a normal Java class */
     private boolean javaProxy = false;
