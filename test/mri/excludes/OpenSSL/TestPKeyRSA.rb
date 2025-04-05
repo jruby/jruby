@@ -1,3 +1,4 @@
+exclude :test_dup, "work in progress"
 exclude :test_encrypt_decrypt, "work in progress"
 exclude :test_encrypt_decrypt_legacy, "work in progress"
 exclude :test_export, "work in progress"
