@@ -1,1 +1,1 @@
-exclude :test_hash_in_array, "work in progress"
+exclude :test_hash_symbol_colon_key, "work in progress"
