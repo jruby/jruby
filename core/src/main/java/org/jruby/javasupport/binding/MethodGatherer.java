@@ -218,6 +218,11 @@ public class MethodGatherer {
     }
 
     private static boolean methodsAreEquivalent(Method child, Method parent) {
+        if (child.getDeclaringClass().isAssignableFrom(parent.getDeclaringClass()) && child.getDeclaringClass() != parent.getDeclaringClass()) {
+            final Method temp = parent; // swap them since child is actually the parent in terms of class hierarchy
+            parent = child; child = temp;
+        }
+
         if (parent.getDeclaringClass().isAssignableFrom(child.getDeclaringClass())) {
             return sameTypesAndAccessModifier(child, parent); // most cases will end here
         }
@@ -264,7 +269,7 @@ public class MethodGatherer {
                 // we have seen other methods; check if we already have an equivalent one
                 for (int i = 0; i < childMethods.size(); i++) {
                     final Method current = childMethods.get(i);
-                    if ( methodsAreEquivalent(current, method) ) {
+                    if (methodsAreEquivalent(current, method)) {
                         if (removeDuplicate) {
                             // Replace the existing method, since the super call is more general
                             // and virtual dispatch will call the subclass impl anyway.
