@@ -28,6 +28,7 @@ package org.jruby;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Error;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.FrozenError;
@@ -101,7 +102,7 @@ public class RubyFrozenError extends RubyRuntimeError {
     public IRubyObject receiver(ThreadContext context) {
         IRubyObject receiver = this.receiver;
 
-        if (receiver == null) return context.nil;
+        if (receiver == null) throw Error.argumentError(context, "no receiver is available");
 
         return receiver;
     }
