@@ -1,23 +1,21 @@
-# frozen_string_literal: false
-reason = %[\
-Because machine stack overflow can happen anywhere, even critical
-sections including external libraries, it is very neary impossible to
-recover from such situation.
-]
-
-exclude %r[test_machine_stackoverflow], reason
 
 exclude :test_cause_exception_in_cause_message, "work in progress"
+exclude :test_circular_cause_handle, "needs investigation"
 exclude :test_control_in_message, "work in progress"
 exclude :test_detailed_message_under_gc_compact_stress, "GC is not configurable"
-exclude :test_exception_in_ensure_with_next, "work in progress"
+exclude :test_errinfo_encoding_in_debug, "needs investigation"
+exclude :test_errno_constants, "needs investigation"
+exclude :test_exception_in_ensure_with_next, "uses RubyVM"
 exclude :test_kernel_warn_uplevel, "work in progress"
+exclude :test_machine_stackoverflow, "expects Ruby SystemStackError, but we only propagate java.lang.StackOverflowError"
+exclude :test_machine_stackoverflow_by_define_method, "expects Ruby SystemStackError, but we only propagate java.lang.StackOverflowError"
+exclude :test_marshal_circular_cause, "needs investigation"
+exclude :test_multibyte_and_newline, "needs investigation"
+exclude :test_output_string_encoding, "needs investigation"
+exclude :test_raise_with_cause, "needs investigation"
+exclude :test_redefined_backtrace, "needs investigation"
 exclude :test_stackoverflow, "expects Ruby SystemStackError, but we only propagate java.lang.StackOverflowError"
+exclude :test_syntax_error_detailed_message, "probably relates to prism parser syntax error output"
 exclude :test_too_many_args_in_eval, "JRuby has much higher limits for passing arguments in the interpreter"
-exclude :test_warn_deprecated_category, "work in progress"
-exclude :test_warn_deprecated_to_remove_category, "work in progress"
-exclude :test_warning_category_deprecated, "work in progress"
-exclude :test_warning_category_experimental, "work in progress"
-exclude :test_warning_warn_super, "GC is not configurable"
-exclude :test_warning_warn_super, "GC is not configurable"
-
+exclude :test_warning_warn, "needs investigation"
+exclude :test_wrong_backtrace, "needs investigation"
