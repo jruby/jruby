@@ -10,7 +10,7 @@ describe "IO#syswrite" do
 
       expect(str.frozen?).not_to eq(true)
     ensure
-      w.close
+      w.close(true)
     end
   end
 end
