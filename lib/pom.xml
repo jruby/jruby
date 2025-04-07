@@ -1254,7 +1254,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/timeout-0.4.3*/**/*</include>
           <include>gems/tsort-0.2.0*/**/*</include>
           <include>gems/un-0.3.0*/**/*</include>
-          <include>gems/uri-1.0.2*/**/*</include>
+          <include>gems/uri-1.0.3*/**/*</include>
           <include>gems/weakref-0.1.3*/**/*</include>
           <include>gems/yaml-0.4.0*/**/*</include>
           <include>gems/abbrev-0.1.2*/**/*</include>
