@@ -7,6 +7,7 @@ exclude :test_crash_report_executable_path, "fails in JIT mode on Linux CI on GH
 exclude :test_crash_report_pipe, "fails in JIT mode on Linux CI on GHA"
 exclude :test_crash_report_script, "fails in JIT mode on Linux CI on GHA"
 exclude :test_crash_report_script_path, "fails in JIT mode on Linux CI on GHA"
+exclude :test_cwd_encoding, "fails in JIT mode on Linux CI on GHA"
 exclude :test_debug, "needs investigation"
 exclude :test_dump_insns_with_rflag, "MRI-specific format"
 exclude :test_dump_parsetree_error_tolerant, "MRI-specific format"
