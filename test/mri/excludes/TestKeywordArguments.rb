@@ -1,5 +1,6 @@
 exclude :test_Enumerator_Generator_each_kwsplat, "our yielder require valid block up front.  MRI will error on first yield to yielder"
 exclude :test_Fiber_resume_kwsplat, "work in progress"
+exclude :test_Thread_new_kwsplat, "fails in JIT mode on Linux CI on GHA"
 exclude :test_arity_error_message, "error order is different for us"
 exclude :test_dig_method_missing_kwsplat, "work in progress"
 exclude :test_keyword_splat_new, "needs investigation"

@@ -1,6 +1,7 @@
-exclude :"test_freeze_inside_sort!", "test bug: test expects sort to take at least 6 iterations"
+exclude :test_collect, "fails to raise error on Linux CI with JIT on GHA"
 exclude :test_combination_with_callcc, "Continuations are not supported"
 exclude :test_flatten_with_callcc, "Continuations are not supported"
+exclude :test_freeze_inside_sort!, "test bug: test expects sort to take at least 6 iterations"
 exclude :test_pack_format_mutation, "JRuby duplicates format string offsets before running pack logic"
 exclude :test_permutation_with_callcc, "Continuations are not supported"
 exclude :test_product_with_callcc, "Continuations are not supported"

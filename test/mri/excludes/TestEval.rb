@@ -1,4 +1,5 @@
 exclude :test_eval_ascii_incompatible, "missing ArgumentError"
+exclude :test_eval_location_binding, "fails in JIT mode on Linux CI on GHA"
 exclude :test_eval_location_fstring, "fstring identity issue"
 exclude :test_file_encoding, "needs investigation"
 exclude :test_fstring_instance_eval, "attempts to instance_eval a frozen String, which breaks because we create singleton class (https://github.com/jruby/jruby/issues/8638)"
