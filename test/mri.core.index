@@ -116,8 +116,7 @@ ruby/test_numeric.rb
 ruby/test_object.rb
 # should be run with ObjectSpace enabled
 #ruby/test_objectspace.rb
-# accesses RubyVM during load
-#ruby/test_optimization.rb
+ruby/test_optimization.rb
 ruby/test_pack.rb
 ruby/test_parse.rb
 ruby/test_path.rb
