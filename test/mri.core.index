@@ -114,7 +114,8 @@ ruby/test_nomethod_error.rb
 ruby/test_not.rb
 ruby/test_numeric.rb
 ruby/test_object.rb
-ruby/test_objectspace.rb
+# should be run with ObjectSpace enabled
+#ruby/test_objectspace.rb
 # accesses RubyVM during load
 #ruby/test_optimization.rb
 ruby/test_pack.rb

@@ -6,6 +6,7 @@ test_open3.rb
 ruby/test_argf.rb
 ruby/test_process.rb
 ruby/test_require_lib.rb
+ruby/test_objectspace.rb
 ruby/test_settracefunc.rb
 ruby/test_signal.rb
 ruby/test_syntax.rb
