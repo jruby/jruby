@@ -530,7 +530,8 @@ use_jsa_file="$java_has_appcds"
 
 # Present a useful error if running a Java version lower than bin/.java-version
 if [ "$java_major" -lt "$minimum_java_version" ]; then
-    echo "JRuby 10 requires Java ${minimum_java_version}+. Make sure JAVA_HOME points at JDK ${minimum_java_version} or higher"
+    echo "This version of JRuby requires Java ${minimum_java_version}+."
+    echo "Make sure JAVA_HOME points at JDK ${minimum_java_version} or higher"
     echo "Current JAVA_HOME: $JAVA_HOME"
     exit 1
 fi
