@@ -523,6 +523,11 @@ if $use_modules; then
 fi
 
 # ----- Detect Java version and determine available features ------------------
+
+# assume Java 8 if no release file
+java_version=1.8
+java_major=8
+
 # shellcheck source=/dev/null
 if [ -f "$JAVA_HOME/release" ]; then
     # Get java version from JAVA_HOME/release file
@@ -550,11 +555,10 @@ if [ -f "$JAVA_HOME/release" ]; then
         1.8 | 1.8.*) java_major=8 ;;
         *)           java_major=${java_version%%.*} ;;
     esac
-else
-    # assume Java 8 if no release file
-    java_version=1.8
-    java_major=8
 fi
+
+# Default java_runtime_version to $java_version
+: "${java_runtime_version:=$java_version}"
 
 # shellcheck source=/dev/null
 if [ -f "$JRUBY_HOME/bin/.java-version" ] && . "$JRUBY_HOME/bin/.java-version" && [ "${JRUBY_MINIMUM_JAVA_VERSION-}" ]; then
