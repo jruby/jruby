@@ -507,18 +507,35 @@ fi
 # shellcheck source=/dev/null
 if [ -f "$JAVA_HOME/release" ]; then
     java_version=$(. "$JAVA_HOME/release" && echo "${JAVA_VERSION-}")
-    if [ "$java_version" \< "2." ] && echo "${java_version}" | grep -q "1.8.\\.*"; then
-        java_version=8
-    fi
+
+    # convert version to major, considering 1.8 as 8
+    case $java_version in
+        1.8 | 1.8.*) java_major=8 ;;
+        *)           java_major=${java_version%%.*} ;;
+    esac
 else
-    java_version=8
+    # assume Java 8 if no release file
+    java_version=1.8
+    java_major=8
 fi
+
 # shellcheck source=/dev/null
-minimum_java_version=$(. "$JRUBY_HOME/bin/.java-version" && echo "${JRUBY_MINIMUM_JAVA_VERSION-}")
+if [ -f "$JRUBY_HOME/bin/.java-version" ] && . "$JRUBY_HOME/bin/.java-version" && [ "${JRUBY_MINIMUM_JAVA_VERSION-}" ]; then
+    minimum_java_version=$JRUBY_MINIMUM_JAVA_VERSION
+else
+    # Only 9.4.12.0 and earlier will have shipped without a .java-version file, so fall back on minimum of 8
+    minimum_java_version=8
+fi
 add_log "Detected Java version: $java_version"
 
-# Split version out for integer comparisons
-java_major=${java_version%%.*}
+# Present a useful error if running a Java version lower than bin/.java-version
+if [ "$java_major" -lt "$minimum_java_version" ]; then
+    echo "This version of JRuby requires Java ${minimum_java_version}+."
+    echo "Make sure JAVA_HOME points at JDK ${minimum_java_version} or higher"
+    echo "Detected Java version: $java_version"
+    echo "Detected JAVA_HOME: $JAVA_HOME"
+    exit 1
+fi
 
 # AppCDS support
 if [ "$java_major" -ge 13 ] && exists "$JAVA_HOME"/lib/server/*.jsa; then
@@ -530,14 +547,6 @@ readonly java_has_appcds
 
 # Default to using AppCDS if available
 use_jsa_file="$java_has_appcds"
-
-# Present a useful error if running a Java version lower than bin/.java-version
-if [ "$java_major" -lt "$minimum_java_version" ]; then
-    echo "This version of JRuby requires Java ${minimum_java_version}+."
-    echo "Make sure JAVA_HOME points at JDK ${minimum_java_version} or higher"
-    echo "Current JAVA_HOME: $JAVA_HOME"
-    exit 1
-fi
 
 # AppCDS autogeneration
 if [ "$java_major" -ge 19 ]; then
