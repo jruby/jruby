@@ -702,6 +702,10 @@ do
         -X*.*) append java_args -Djruby."${1#-X}" ;;
         # Match switches that take an argument
         -[CeIS])
+            if [ "$#" -eq 1 ]; then
+                echo "Error: Missing argument to $1" >&2
+                exit 2
+            fi
             append ruby_args "$1" "$2"
             shift
             ;;
