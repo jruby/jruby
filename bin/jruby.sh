@@ -507,7 +507,7 @@ fi
 # shellcheck source=/dev/null
 if [ -f "$JAVA_HOME/release" ]; then
     java_version=$(. "$JAVA_HOME/release" && echo "${JAVA_VERSION-}")
-    if [ "$java_version" \< "2." ] && $( echo "${java_version}" | grep -q "1.8.\\.*"); then
+    if [ "$java_version" \< "2." ] && echo "${java_version}" | grep -q "1.8.\\.*"; then
         java_version=8
     fi
 else
