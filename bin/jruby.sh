@@ -520,8 +520,8 @@ else
 fi
 
 # shellcheck source=/dev/null
-if [ -f "$JRUBY_HOME/bin/.java-version" ]; then
-    minimum_java_version=$(. "$JRUBY_HOME/bin/.java-version" && echo "${JRUBY_MINIMUM_JAVA_VERSION-}")
+if [ -f "$JRUBY_HOME/bin/.java-version" ] && . "$JRUBY_HOME/bin/.java-version" && [ "${JRUBY_MINIMUM_JAVA_VERSION-}" ]; then
+    minimum_java_version=$JRUBY_MINIMUM_JAVA_VERSION
 else
     # Only 9.4.12.0 and earlier will have shipped without a .java-version file, so fall back on minimum of 8
     minimum_java_version=8
