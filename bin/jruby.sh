@@ -135,6 +135,41 @@ preextend() {
     eval "$1=\"\${$2} \${$1}\""
 }
 
+# a_isempty
+#
+# Return 0 if an array is empty, otherwise return 1
+a_isempty() {
+    case $ruby_args in
+        (*[![:space:]]*) return 1 ;;  # If any nonblank, not empty
+    esac
+    return 0
+}
+
+# exists [FILE...]
+#
+# Returns 0 if all FILEs exist or none provided, otherwise returns 1
+exists() {
+    while [ "$#" -gt 0 ]; do
+        [ -e "$1" ] || return
+        shift
+    done
+
+    return 0
+}
+
+# is_newer FILE OTHER...
+#
+# Returns 0 if FILE is newer than all OTHER files. If FILE doesn't exist,
+# return error. If OTHER files don't exist, pretend they're older than FILE.
+is_newer() {
+    local output master
+    master="$1"
+    shift
+
+    # Find any other files that are newer, negate outside find in case any don't exist
+    [ -e "$master" ] && ! find "$@" -newer "$master" 2>/dev/null | read -r _
+}
+
 # echo [STRING...]
 #
 # Dumb echo, i.e. print arguments joined by spaces with no further processing
@@ -171,6 +206,7 @@ NO_BOOTCLASSPATH=false
 VERIFY_JRUBY=false
 print_environment_log=false
 regenerate_jsa_file=false
+remove_jsa_files=false
 log_cds=false
 
 if [ -z "${JRUBY_OPTS-}" ]; then
@@ -381,9 +417,6 @@ readonly pwd_jruby_java_opts_file="$PWD/.jruby.java_opts"
 # Options from .dev_mode.java_opts for "--dev" mode, to reduce JRuby startup time
 readonly dev_mode_opts_file="$JRUBY_HOME/bin/.dev_mode.java_opts"
 
-# Default JVM Class Data Sharing Archive (jsa) file for JVMs that support it
-readonly jruby_jsa_file="$JRUBY_HOME/lib/jruby.jsa"
-
 # ----- Initialize environment log --------------------------------------------
 
 add_log
@@ -456,10 +489,8 @@ java_is_modular() {
 }
 
 if java_is_modular; then
-    use_jsa_file=true
     use_modules=true
 else
-    use_jsa_file=false
     use_modules=false
 fi
 readonly use_modules
@@ -471,6 +502,75 @@ if $use_modules; then
     add_log
     add_log "Detected Java modules at $JAVA_HOME"
 fi
+
+# ----- Detect Java version and determine available features ------------------
+# shellcheck source=/dev/null
+if [ -f "$JAVA_HOME/release" ]; then
+    java_version=$(. "$JAVA_HOME/release" && echo "${JAVA_VERSION-}")
+
+    # convert version to major, considering 1.8 as 8
+    case $java_version in
+        1.8 | 1.8.*) java_major=8 ;;
+        *)           java_major=${java_version%%.*} ;;
+    esac
+else
+    # assume Java 8 if no release file
+    java_version=1.8
+    java_major=8
+fi
+
+# shellcheck source=/dev/null
+if [ -f "$JRUBY_HOME/bin/.java-version" ] && . "$JRUBY_HOME/bin/.java-version" && [ "${JRUBY_MINIMUM_JAVA_VERSION-}" ]; then
+    minimum_java_version=$JRUBY_MINIMUM_JAVA_VERSION
+else
+    # Only 9.4.12.0 and earlier will have shipped without a .java-version file, so fall back on minimum of 8
+    minimum_java_version=8
+fi
+add_log "Detected Java version: $java_version"
+
+# Present a useful error if running a Java version lower than bin/.java-version
+if [ "$java_major" -lt "$minimum_java_version" ]; then
+    echo "This version of JRuby requires Java ${minimum_java_version}+."
+    echo "Make sure JAVA_HOME points at JDK ${minimum_java_version} or higher"
+    echo "Detected Java version: $java_version"
+    echo "Detected JAVA_HOME: $JAVA_HOME"
+    exit 1
+fi
+
+# AppCDS support
+if [ "$java_major" -ge 13 ] && exists "$JAVA_HOME"/lib/server/*.jsa; then
+    java_has_appcds=true
+else
+    java_has_appcds=false
+fi
+readonly java_has_appcds
+
+# Default to using AppCDS if available
+use_jsa_file="$java_has_appcds"
+
+# AppCDS autogeneration
+if [ "$java_major" -ge 19 ]; then
+    java_has_appcds_autogenerate=true
+else
+    java_has_appcds_autogenerate=false
+fi
+readonly java_has_appcds_autogenerate
+
+# Native access
+if [ "$java_major" -ge 22 ]; then
+    enable_native_access=true
+else
+    enable_native_access=false
+fi
+readonly enable_native_access
+
+# Unsafe memory access
+if [ "$java_major" -ge 23 ]; then
+    enable_unsafe_memory=true
+else
+    enable_unsafe_memory=false
+fi
+readonly enable_unsafe_memory
 
 # ----- Process .java_opts files ----------------------------------------------
 
@@ -505,8 +605,8 @@ JAVA_OPTS="$JAVA_OPTS_TEMP"
 
 CP_DELIMITER=":"
 
-# add main jruby jar to the classpath
-JRUBY_ALREADY_ADDED=false
+# Find main jruby jar and add it to the classpath
+jruby_jar=
 for j in "$JRUBY_HOME"/lib/jruby.jar "$JRUBY_HOME"/lib/jruby-complete.jar; do
     if [ ! -e "$j" ]; then
         continue
@@ -516,11 +616,12 @@ for j in "$JRUBY_HOME"/lib/jruby.jar "$JRUBY_HOME"/lib/jruby-complete.jar; do
     else
         JRUBY_CP="$j"
     fi
-    if $JRUBY_ALREADY_ADDED; then
+    if [ -n "$jruby_jar" ]; then
         echo "WARNING: more than one JRuby JAR found in lib directory" 1>&2
     fi
-    JRUBY_ALREADY_ADDED=true
+    jruby_jar="$j"
 done
+readonly jruby_jar
 
 if $cygwin; then
     JRUBY_CP="$(cygpath -p -w "$JRUBY_CP")"
@@ -540,7 +641,7 @@ else
         if [ -z "${CP-}" ]; then
             CP="$j"
         else
-            CP="$CP$CP_DELIMITER$2"
+            CP="$CP$CP_DELIMITER$j"
         fi
     done
 
@@ -655,22 +756,18 @@ do
             java_class=org.jruby.main.CheckpointMain
             append java_args -XX:CRaCCheckpointTo=.jruby.checkpoint ;;
         # restore from checkpoint
-        --restore=*)
-            append java_args -XX:CRaCRestoreFrom="${1#--restore=}" ;;
-        --restore)
-            append java_args -XX:CRaCRestoreFrom=.jruby.checkpoint ;;
+        --restore=*) append java_args -XX:CRaCRestoreFrom="${1#--restore=}" ;;
+        --restore) append java_args -XX:CRaCRestoreFrom=.jruby.checkpoint ;;
         --cache)
-            echo "EXPERIMENTAL: Regenerating the JRuby AppCDS archive at $jruby_jsa_file"
-            echo "EXPERIMENTAL: Log output at ${jruby_jsa_file}.log"
-            use_jsa_file=false
-            regenerate_jsa_file=true
-            rm -f "$jruby_jsa_file"
-            append java_args -XX:ArchiveClassesAtExit="$jruby_jsa_file" -Xlog:cds=off -Xlog:cds+dynamic=off
+            if ! $java_has_appcds; then
+                echo "Error: Java $java_major doesn't support automatic AppCDS" >&2
+                exit 2
+            fi
+            regenerate_jsa_file=true  # Force regeneration of archive
             ;;
-        --nocache)
-            use_jsa_file=false ;;
-        --logcache)
-            log_cds=true ;;
+        --nocache) use_jsa_file=false ;;
+        --rmcache) remove_jsa_files=true ;;
+        --logcache) log_cds=true ;;
         # Abort processing on the double dash
         --) break ;;
         # Other opts go to ruby
@@ -689,19 +786,105 @@ fi
 # The rest of the arguments are for ruby
 append ruby_args "$@"
 
-# If regenerating the JSA archive but no Ruby arguments were passed, do -e 1
-if $regenerate_jsa_file; then
-    case $ruby_args in
-        (*[![:space:]]*) ;;  # If non-space character found, ruby_args isn't empty
-        (*) assign ruby_args -e 1 ;;  # ruby_args is empty
-    esac
-fi
-
 JAVA_OPTS="$JAVA_OPTS ${JAVA_MEM-} ${JAVA_STACK-}"
 
 JFFI_OPTS="-Djffi.boot.library.path=$JRUBY_HOME/lib/jni"
 
 CLASSPATH="${CP-}${CP_DELIMITER}${CLASSPATH-}"
+
+# ----- Module and Class Data Sharing flags for Java 9+ -----------------------
+
+if $use_modules; then
+    # Switch to non-boot path since we can't use bootclasspath on 9+
+    NO_BOOTCLASSPATH=true
+
+    # Add base opens we need for Ruby compatibility
+    process_java_opts "$jruby_module_opts_file"
+fi
+
+# Default JVM Class Data Sharing Archive (jsa) file for JVMs that support it
+readonly jruby_jsa_file="$JRUBY_HOME/lib/jruby-java$java_version.jsa"
+
+# Find JSAs for all Java versions
+assign jruby_jsa_files "$JRUBY_HOME"/lib/jruby-java*.jsa
+readonly jruby_jsa_files
+
+# Allow overriding default JSA file location
+if [ -n "${JRUBY_JSA-}" ]; then
+    jruby_jsa_file="$JRUBY_JSA"
+fi
+
+# Ensure the AppCDS parent directory is actually writable
+if dir_name "$jruby_jsa_file" && ! [ -w "$REPLY" ]; then
+    if $use_jsa_file || $regenerate_jsa_file || $remove_jsa_files; then
+        echo "Warning: AppCDS archive directory is not writable, disabling AppCDS operations" >&2
+    fi
+    regenerate_jsa_file=false
+    remove_jsa_files=false
+    use_jsa_file=false
+fi
+
+# Initialize AppCDS
+if $use_jsa_file; then
+    # Default to no-op script when explicitly generating
+    if $regenerate_jsa_file && a_isempty "$ruby_args"; then
+        append ruby_args -e 1
+    fi
+
+    # Archive should be regenerated manually if requested or it's outdated relative to JRuby
+    if ! $regenerate_jsa_file && is_newer "$jruby_jar" "$jruby_jsa_file"; then
+        regenerate_jsa_file=true
+    fi
+
+    # Defer generation to Java if flag is available
+    if $java_has_appcds_autogenerate; then
+        append java_args -XX:+AutoCreateSharedArchive
+
+        add_log
+        add_log "Automatically generating and using CDS archive at:"
+        add_log "  $jruby_jsa_file"
+    fi
+
+    # Determine if we should read or explicitly write the archive
+    if $regenerate_jsa_file && ! $java_has_appcds_autogenerate; then
+        # Explicitly create archive if outdated
+        append java_args -XX:ArchiveClassesAtExit="$jruby_jsa_file"
+
+        add_log
+        add_log "Regenerating CDS archive at:"
+        add_log "  $jruby_jsa_file"
+    else
+        # Read archive if not explicitly regenerating
+        append java_args -XX:SharedArchiveFile="$jruby_jsa_file"
+
+        if ! $java_has_appcds_autogenerate; then
+            add_log
+            add_log "Using CDS archive at:"
+            add_log "  $jruby_jsa_file"
+        fi
+    fi
+
+    if $log_cds; then
+        add_log "Logging CDS output to:"
+        add_log "  $jruby_jsa_file.log"
+        append java_args -Xlog:cds=info:file="$jruby_jsa_file".log
+        append java_args -Xlog:cds+dynamic=info:file="$jruby_jsa_file".log
+    else
+        append java_args -Xlog:cds=off -Xlog:cds+dynamic=off
+    fi
+fi
+
+# Enable access to native libraries
+if $enable_native_access; then
+    append java_args --enable-native-access=org.jruby.dist
+fi
+
+# Enable access to Unsafe memory functions
+if $enable_unsafe_memory; then
+    append java_args --sun-misc-unsafe-memory-access=allow
+fi
+
+# Enable access to Unsafe memory functions
 
 # ----- Tweak console environment for cygwin ----------------------------------
 
@@ -729,34 +912,6 @@ if $cygwin; then
         JAVA_OPTS="$JAVA_OPTS -Djline.terminal=jline.UnixTerminal"
     fi
 
-fi
-
-# ----- Module and Class Data Sharing flags for Java 9+ -----------------------
-
-if $use_modules; then
-    # Switch to non-boot path since we can't use bootclasspath on 9+
-    NO_BOOTCLASSPATH=true
-
-    # Add base opens we need for Ruby compatibility
-    process_java_opts "$jruby_module_opts_file"
-
-    # Allow overriding default JSA file location
-    if [ -z "${JRUBY_JSA-}" ]; then
-        JRUBY_JSA="$jruby_jsa_file"
-    fi
-
-    # If we have a jruby.jsa file, enable AppCDS
-    if $use_jsa_file; then
-        add_log
-        add_log "Detected Class Data Sharing archive:"
-        add_log "  $JRUBY_JSA"
-        JAVA_OPTS="$JAVA_OPTS -XX:SharedArchiveFile=$JRUBY_JSA -Xlog:cds=off"
-        if $log_cds; then
-            add_log "Logging CDS output to:"
-            add_log "  $JRUBY_JSA.log"
-            append java_args -Xlog:cds=info:file="$JRUBY_JSA".log
-        fi
-    fi
 fi
 
 # ----- Final prepration of the Java command line -----------------------------
@@ -803,6 +958,18 @@ add_log "  $*"
 if $print_environment_log; then
     echo "$environment_log"
     exit 0
+fi
+
+# ----- Perform final mutations after logging ---------------------------------
+# Delete All AppCDS files and exit if requested
+if $remove_jsa_files; then
+    eval rm -f -- "$jruby_jsa_files"
+    exit
+fi
+
+if $regenerate_jsa_file && [ -e "$jruby_jsa_file" ]; then
+    # Delete selected AppCDS file if requested or if it's outdated
+    rm -f -- "$jruby_jsa_file"
 fi
 
 # ----- Run JRuby! ------------------------------------------------------------
