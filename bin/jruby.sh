@@ -170,6 +170,16 @@ is_newer() {
     [ -e "$master" ] && ! find "$@" -newer "$master" 2>/dev/null | read -r _
 }
 
+# unquote STRING
+#
+# Remove single/double quotes from beginning and end of a string
+unquote() {
+    REPLY=$1
+    case $REPLY in
+        (\"*\" | \'*\') REPLY=${REPLY#?}; REPLY=${REPLY%?} ;;
+    esac
+}
+
 # echo [STRING...]
 #
 # Dumb echo, i.e. print arguments joined by spaces with no further processing
@@ -515,7 +525,24 @@ fi
 # ----- Detect Java version and determine available features ------------------
 # shellcheck source=/dev/null
 if [ -f "$JAVA_HOME/release" ]; then
-    java_version=$(. "$JAVA_HOME/release" && echo "${JAVA_VERSION-}")
+    # Get java version from JAVA_HOME/release file
+    while IFS= read -r line; do
+        case $line in
+            (\#*) continue ;;
+        esac
+
+        name=${line%%=*}
+
+        # I think the values are JSON encoded but the ones we care about don't
+        # require any special parsing
+        unquote "${line#*=}"
+        value=$REPLY
+
+        case $name in
+            (JAVA_VERSION) java_version=$value ;;
+        esac
+    done < "$JAVA_HOME"/release
+    unset line name value
 
     # convert version to major, considering 1.8 as 8
     case $java_version in
