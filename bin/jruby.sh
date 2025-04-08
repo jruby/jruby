@@ -540,6 +540,7 @@ if [ -f "$JAVA_HOME/release" ]; then
 
         case $name in
             (JAVA_VERSION) java_version=$value ;;
+            (JAVA_RELEASE_VERSION) java_runtime_version=$value ;;
         esac
     done < "$JAVA_HOME"/release
     unset line name value
@@ -563,6 +564,7 @@ else
     minimum_java_version=8
 fi
 add_log "Detected Java version: $java_version"
+add_log "Detected Java runtime version: $java_runtime_version"
 
 # Present a useful error if running a Java version lower than bin/.java-version
 if [ "$java_major" -lt "$minimum_java_version" ]; then
@@ -843,7 +845,7 @@ if $use_modules; then
 fi
 
 # Default JVM Class Data Sharing Archive (jsa) file for JVMs that support it
-readonly jruby_jsa_file="$JRUBY_HOME/lib/jruby-java$java_version.jsa"
+readonly jruby_jsa_file="$JRUBY_HOME/lib/jruby-java$java_runtime_version.jsa"
 
 # Find JSAs for all Java versions
 assign jruby_jsa_files "$JRUBY_HOME"/lib/jruby-java*.jsa
