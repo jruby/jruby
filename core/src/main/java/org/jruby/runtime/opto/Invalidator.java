@@ -27,6 +27,8 @@
 
 package org.jruby.runtime.opto;
 
+import org.jruby.RubyModule;
+
 import java.util.List;
 
 /**
@@ -43,4 +45,7 @@ public interface Invalidator {
     public void invalidate();
     public void invalidateAll(List<Invalidator> invalidators);
     public Object getData();
+    default void addIfUsed(RubyModule.InvalidatorList invalidators) {
+        invalidators.add(this);
+    }
 }
