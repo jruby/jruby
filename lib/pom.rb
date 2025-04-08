@@ -113,7 +113,7 @@ default_gems = [
     # ['tmpdir', '0.1.2'],
     ['tsort', '0.1.0'],
     ['un', '0.2.0'],
-    ['uri', '0.12.2'],
+    ['uri', '0.12.3'],
     ['weakref', '0.1.1'],
     # https://github.com/ruby/win32ole/issues/12
     # ['win32ole', '1.8.8'],
