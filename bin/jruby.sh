@@ -507,14 +507,19 @@ fi
 # shellcheck source=/dev/null
 if [ -f "$JAVA_HOME/release" ]; then
     java_version=$(. "$JAVA_HOME/release" && echo "${JAVA_VERSION-}")
-    if [ "$java_version" \< "2." ] && echo "${java_version}" | grep -q "1.8.\\.*"; then
+    if echo "${java_version}" | grep -q "1.8.\\.*"; then
         java_version=8
     fi
 else
     java_version=8
 fi
 # shellcheck source=/dev/null
-minimum_java_version=$(. "$JRUBY_HOME/bin/.java-version" && echo "${JRUBY_MINIMUM_JAVA_VERSION-}")
+if [ -f "$JRUBY_HOME/bin/.java-version" ]; then
+    minimum_java_version=$(. "$JRUBY_HOME/bin/.java-version" && echo "${JRUBY_MINIMUM_JAVA_VERSION-}")
+else
+    # Only 9.4.12.0 and earlier will have shipped without a .java-version file, so fall back on minimum of 8
+    minimum_java_version=8
+fi
 add_log "Detected Java version: $java_version"
 
 # Split version out for integer comparisons
