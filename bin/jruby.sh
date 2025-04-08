@@ -510,6 +510,7 @@ if [ -f "$JAVA_HOME/release" ]; then
 else
     java_version=8
 fi
+# shellcheck source=/dev/null
 minimum_java_version=$(. "$JRUBY_HOME/bin/.java-version" && echo "${JRUBY_MINIMUM_JAVA_VERSION-}")
 add_log "Detected Java version: $java_version"
 
@@ -528,7 +529,7 @@ readonly java_has_appcds
 use_jsa_file="$java_has_appcds"
 
 # Present a useful error if running a Java version lower than bin/.java-version
-if [ "$java_major" -lt $minimum_java_version ]; then
+if [ "$java_major" -lt "$minimum_java_version" ]; then
     echo "JRuby 10 requires Java ${minimum_java_version}+. Make sure JAVA_HOME points at JDK ${minimum_java_version} or higher"
     echo "Current JAVA_HOME: $JAVA_HOME"
     exit 1
