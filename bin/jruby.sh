@@ -506,6 +506,7 @@ fi
 # ----- Detect Java version and determine available features ------------------
 # shellcheck source=/dev/null
 java_version=$(. "$JAVA_HOME/release" && echo "${JAVA_VERSION-}")
+minimum_java_version=$(. "$JRUBY_HOME/bin/.java-version" && echo "${JRUBY_MINIMUM_JAVA_VERSION-}")
 add_log "Detected Java version: $java_version"
 
 # Split version out for integer comparisons
@@ -522,9 +523,9 @@ readonly java_has_appcds
 # Default to using AppCDS if available
 use_jsa_file="$java_has_appcds"
 
-# Present a useful error if running JRuby 10 on Java 20 or lower
-if [ "$java_major" -le 20 ]; then
-    echo "JRuby 10 requires Java 21+. Make sure JAVA_HOME points at JDK 21 or higher"
+# Present a useful error if running a Java version lower than bin/.java-version
+if [ "$java_major" -lt $minimum_java_version ]; then
+    echo "JRuby 10 requires Java ${minimum_java_version}+. Make sure JAVA_HOME points at JDK ${minimum_java_version} or higher"
     echo "Current JAVA_HOME: $JAVA_HOME"
     exit 1
 fi
