@@ -505,7 +505,11 @@ fi
 
 # ----- Detect Java version and determine available features ------------------
 # shellcheck source=/dev/null
-java_version=$(. "$JAVA_HOME/release" && echo "${JAVA_VERSION-}")
+if [ -f "$JAVA_HOME/release" ]; then
+    java_version=$(. "$JAVA_HOME/release" && echo "${JAVA_VERSION-}")
+else
+    java_version=8
+fi
 minimum_java_version=$(. "$JRUBY_HOME/bin/.java-version" && echo "${JRUBY_MINIMUM_JAVA_VERSION-}")
 add_log "Detected Java version: $java_version"
 
