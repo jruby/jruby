@@ -7,10 +7,6 @@ package org.jruby.ast;
 import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
 
-/**
- *
- * @author enebo
- */
 public class KeywordArgNode extends Node {
     private final AssignableNode assignable;
 

@@ -71,10 +71,6 @@ import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
 import static org.jruby.embed.internal.EmbedEvalUnitImpl.isSharingVariables;
 
-/**
- *
- * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
- */
 public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
 
     private final RubyRuntimeAdapter adapter = JavaEmbedUtils.newRuntimeAdapter();

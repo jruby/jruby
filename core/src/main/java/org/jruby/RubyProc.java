@@ -66,9 +66,6 @@ import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.util.RubyStringBuilder.types;
 
-/**
- * @author  jpetersen
- */
 @JRubyClass(name="Proc")
 public class RubyProc extends RubyObject implements DataType {
     private Block block = Block.NULL_BLOCK;

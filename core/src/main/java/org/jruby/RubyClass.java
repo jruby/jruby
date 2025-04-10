@@ -113,7 +113,6 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 
 /**
  *
- * @author  jpetersen
  */
 @JRubyClass(name="Class", parent="Module")
 public class RubyClass extends RubyModule {

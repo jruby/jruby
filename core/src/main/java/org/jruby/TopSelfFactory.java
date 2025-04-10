@@ -41,10 +41,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Create.newString;
 
-/**
- * 
- * @author jpetersen
- */
 public final class TopSelfFactory {
 
     /**

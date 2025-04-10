@@ -38,7 +38,8 @@ import org.jruby.ast.*;
  * Visitor interface to be implemented by visitors of the jRuby AST.
  * each node will call the visit method appropriate to its type.
  * @see org.jruby.ast.Node
-  *
+ *
+ * @param <T> the return value of visit
  * @author Benoit Cerrina
  **/
 public interface NodeVisitor<T> {

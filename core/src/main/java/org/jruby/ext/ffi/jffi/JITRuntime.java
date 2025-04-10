@@ -13,9 +13,6 @@ import java.math.BigInteger;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Error.*;
 
-/**
- *
- */
 public final class JITRuntime {
     private JITRuntime() {}
     

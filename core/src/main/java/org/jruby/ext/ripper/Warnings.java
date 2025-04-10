@@ -34,8 +34,6 @@ package org.jruby.ext.ripper;
 import org.jruby.Ruby;
 
 // FIXME: Document difference between warn and warning (or rename one better)
-/**
- */
 public interface Warnings {
     public enum ID {
         AMBIGUOUS_ARGUMENT,

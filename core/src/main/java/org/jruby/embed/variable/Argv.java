@@ -43,10 +43,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Create.newArray;
 
-/**
- *
- * @author yoko
- */
 public class Argv extends AbstractVariable {
 
     private static final String VALID_NAME = "ARGV";

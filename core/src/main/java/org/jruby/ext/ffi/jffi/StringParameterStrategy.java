@@ -7,9 +7,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
-/**
- *
- */
 public final class StringParameterStrategy extends PointerParameterStrategy {
     private final boolean checkStringSafety;
 

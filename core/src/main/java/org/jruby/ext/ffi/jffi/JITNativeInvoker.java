@@ -18,9 +18,6 @@ import java.util.Arrays;
 
 import static org.jruby.api.Error.argumentError;
 
-/**
- *
- */
 abstract public class JITNativeInvoker extends NativeInvoker {
     protected static final Invoker invoker = Invoker.getInstance();
     protected final com.kenai.jffi.Function function;

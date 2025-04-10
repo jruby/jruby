@@ -83,9 +83,6 @@ import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.runtime.Helpers.extractExceptionOnlyArg;
 
-/**
- * @author <a href="mailto:pldms@mac.com">Damian Steer</a>
- */
 @JRubyClass(name="UDPSocket", parent="IPSocket")
 public class RubyUDPSocket extends RubyIPSocket {
 

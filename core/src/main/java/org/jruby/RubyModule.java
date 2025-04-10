@@ -188,7 +188,6 @@ import static org.jruby.util.RubyStringBuilder.types;
 
 /**
  *
- * @author  jpetersen
  */
 @JRubyClass(name="Module")
 public class RubyModule extends RubyObject {

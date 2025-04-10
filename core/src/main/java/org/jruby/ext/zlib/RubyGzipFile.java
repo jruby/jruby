@@ -52,9 +52,6 @@ import org.jruby.util.io.IOEncodable;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newString;
 
-/**
- *
- */
 @JRubyClass(name = "Zlib::GzipFile")
 public class RubyGzipFile extends RubyObject implements IOEncodable {
     @JRubyClass(name = "Zlib::GzipFile::Error", parent = "Zlib::Error")

@@ -65,9 +65,6 @@ import static org.jruby.util.CommonByteLists.*;
 import static org.jruby.util.RubyStringBuilder.inspectIdentifierByteList;
 import static org.jruby.util.RubyStringBuilder.str;
 
-/**
- *
- */
 public class RipperParserBase {
     public RipperParserBase(ThreadContext context, IRubyObject ripper, LexerSource source) {
         this.context = context;

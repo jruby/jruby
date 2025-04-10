@@ -12,6 +12,7 @@ import static org.jruby.api.Access.classClass;
 
 /**
  * Blocks and methods both share same full build mechanism so they implement this to be buildable.
+ * @param <T> result value to compile
  */
 public interface Compilable<T> {
     void setCallCount(int count);

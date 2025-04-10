@@ -8,9 +8,6 @@ package org.jruby.ext.ffi;
 import java.nio.ByteOrder;
 import org.jruby.Ruby;
 
-/**
- *
- */
 public final class SwappedMemoryIO extends MemoryIO {
     protected static final int LONG_SIZE = Platform.getPlatform().longSize();
     protected static final int ADDRESS_SIZE = Platform.getPlatform().addressSize();

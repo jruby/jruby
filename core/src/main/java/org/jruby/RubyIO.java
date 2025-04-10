@@ -144,10 +144,6 @@ import static org.jruby.util.io.ChannelHelper.*;
 import static org.jruby.util.io.EncodingUtils.encCodepointLength;
 import static org.jruby.util.io.EncodingUtils.vperm;
 
-/**
- *
- * @author jpetersen
- */
 @JRubyClass(name="IO", include="Enumerable")
 public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flushable {
 

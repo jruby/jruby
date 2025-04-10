@@ -129,6 +129,8 @@ import static org.jruby.util.Inspector.*;
  * Guidance for elt(long) is that if the Ruby method should raise if it is too large
  * then you need to do that before you call this (toLong vs getValue/asLong).
  *
+ * @param <T> What array holds
+ *
  */
 @JRubyClass(name="Array", include = { "Enumerable" },
         overrides = {RubyArrayOneObject.class, RubyArrayTwoObject.class, StringArraySet.class})

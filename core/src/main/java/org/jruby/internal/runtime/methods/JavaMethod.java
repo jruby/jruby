@@ -41,8 +41,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 import static org.jruby.util.StringSupport.split;
 
-/**
- */
 public abstract class JavaMethod extends DynamicMethod implements Cloneable, MethodArgs2, NativeCallMethod {
     protected Signature signature = Signature.OPTIONAL;
     private String javaName;

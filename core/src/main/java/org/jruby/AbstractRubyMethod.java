@@ -56,6 +56,8 @@ import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
 
 /**
+ * Base type for the two Ruby Method types.
+ *
  * @see RubyMethod
  * @see RubyUnboundMethod
  */

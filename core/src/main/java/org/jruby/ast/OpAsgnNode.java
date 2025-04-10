@@ -39,9 +39,6 @@ import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
 
-/**
- *
- */
 public class OpAsgnNode extends Node {
     private final Node receiverNode;
     private final Node valueNode;

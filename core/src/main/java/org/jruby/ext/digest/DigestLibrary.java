@@ -33,9 +33,6 @@ import java.io.IOException;
 import org.jruby.Ruby;
 import org.jruby.runtime.load.Library;
 
-/**
- * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
- */
 public class DigestLibrary implements Library {
     public void load(final Ruby runtime, boolean wrap) throws IOException {
         var context = runtime.getCurrentContext();

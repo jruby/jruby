@@ -45,10 +45,6 @@ import org.jruby.util.ByteList;
 
 import static org.jruby.api.Convert.asFixnum;
 
-/**
- *
- * @author  jpetersen
- */
 @JRubyClass(name={"TrueClass", "FalseClass"})
 public class RubyBoolean extends RubyObject implements Constantizable, Appendable {
 
