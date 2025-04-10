@@ -63,11 +63,13 @@ public interface InstanceVariables {
     IRubyObject removeInstanceVariable(String name);
 
     /**
+     * list of instance variables
      * @return instance variables
      */
     List<Variable<IRubyObject>> getInstanceVariableList();
 
     /**
+     * list of instance variables as Strings
      * @return instance variable names
      */
     List<String> getInstanceVariableNameList();

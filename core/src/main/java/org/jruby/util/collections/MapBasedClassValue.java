@@ -4,6 +4,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A simple Map-based cache of proxies.
+ * @param <T> type
  */
 public final class MapBasedClassValue<T> extends ClassValue<T> {
     

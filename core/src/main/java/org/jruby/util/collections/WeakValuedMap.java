@@ -44,6 +44,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Map-like that holds its values weakly (backed by a concurrent hash map).
+ * @param <Key> key
+ * @param <Value> value
  */
 public class WeakValuedMap<Key, Value> implements Map<Key, Value>, Serializable {
 

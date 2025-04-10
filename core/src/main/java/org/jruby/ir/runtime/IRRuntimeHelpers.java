@@ -761,9 +761,9 @@ public class IRRuntimeHelpers {
 
     /**
      * Simplified receiveKeywords when:
-     * <li>receiver is not a ruby2_keywords method</li>
-     * <li>receiver does not accept keywords</li>
-     * <li>there's no rest argument</li>
+     * receiver is not a ruby2_keywords method.
+     * receiver does not accept keywords.
+     * there's no rest argument.
      *
      * @param context
      * @param args

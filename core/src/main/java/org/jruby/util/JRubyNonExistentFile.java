@@ -34,9 +34,6 @@ import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
 import java.io.IOException;
 
-/**
- * @author nicksieger
- */
 @Deprecated // Replaced now with EmptyFileResource
 public class JRubyNonExistentFile extends JRubyFile {
     static final JRubyNonExistentFile NOT_EXIST = new JRubyNonExistentFile();

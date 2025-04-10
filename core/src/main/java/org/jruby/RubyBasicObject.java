@@ -234,6 +234,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /**
      * Will create the Ruby class BasicObject in the runtime specified. This method needs to take the
      * actual class as an argument because of the Object class' central part in runtime initialization.
+     * @param context the thread context
+     * @param BasicObject reference to BasicObject
      */
     public static void finishBasicObjectClass(ThreadContext context, RubyClass BasicObject) {
         BasicObject.classIndex(ClassIndex.OBJECT).
@@ -255,6 +257,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /**
      * Standard path for object creation. Objects are entered into ObjectSpace
      * only if ObjectSpace is enabled.
+     * @param runtime the runtime
+     * @param metaClass the meta class
      */
     public RubyBasicObject(Ruby runtime, RubyClass metaClass) {
         this.metaClass = metaClass;
@@ -273,6 +277,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * Path for objects who want to decide whether they don't want to be in
      * ObjectSpace even when it is on. (notably used by objects being
      * considered immediate, they'll always pass false here)
+     * @param runtime the runtime
+     * @param metaClass the meta class
+     * @param useObjectSpace should object space be enabled
      */
     protected RubyBasicObject(Ruby runtime, RubyClass metaClass, boolean useObjectSpace) {
         this.metaClass = metaClass;
@@ -284,6 +291,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      * Helper to test whether this object is frozen, and if it is will
      * throw an exception based on the message.
+     * @param message is frozen
      */
    protected final void testFrozen(String message) {
        if (isFrozen()) {
@@ -417,6 +425,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     /**
      * Is this value a truthy value or not? Based on the {@link #FALSE_F} flag.
+     * @return true it truthy
      */
     @Override
     public final boolean isTrue() {
@@ -425,6 +434,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     /**
      * Is this value a falsey value or not? Based on the {@link #FALSE_F} flag.
+     * @return true is false
      */
     public final boolean isFalse() {
         return (flags & FALSE_F) != 0;
@@ -523,6 +533,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * Will create a new meta class, insert this in the chain of
      * classes for this specific object, and return the generated meta
      * class.
+     * @param context the thread context
+     * @param superClass the super class
+     * @return the new meta class
      */
     public RubyClass makeMetaClass(ThreadContext context, RubyClass superClass) {
         MetaClass klass = new MetaClass(context.runtime, superClass, this); // rb_class_boot
@@ -537,6 +550,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * This will create a new metaclass.  This is only used during bootstrapping before
      * the initial ThreadContext is defined.  Normal needs of making a metaclass should use
      * {@link RubyBasicObject#makeMetaClass(ThreadContext, RubyClass)}
+     * @param runtime the runtime
      * @param superClass of the metaclass
      * @param Class a reference to Ruby Class
      * @return the new metaclass
@@ -556,6 +570,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * that it doesn't work when we're dealing with subclasses. In
      * practice it's used to change the singleton/meta class used,
      * without changing the "real" inheritance chain.
+     * @param metaClass the meta class to set
      */
     public void setMetaClass(RubyClass metaClass) {
         this.metaClass = metaClass;
@@ -796,6 +811,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /**
      * raw (id) strings are not properly encoded but in an iso_8859_1 form.  This method will lookup
      * properly encoded string from the symbol table.
+     * @param id the id of the string
+     * @return the string of the symbol found from id
      */
     public RubyString decode(String id) {
         var context = getRuntime().getCurrentContext();
@@ -1015,6 +1032,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * Will make sure that if the current objects class is a
      * singleton, it will get cloned.
      *
+     * @param context the thread context
+     * @param attach object ot attach
      * @return either a real class, or a clone of the current singleton class
      */
     protected RubyClass getSingletonClassCloneAndAttach(ThreadContext context, RubyBasicObject attach) {
@@ -1101,6 +1120,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * objectId slot is managed separately from the "normal" vars so it
      * does not marshal, clone/dup, or refuse to be initially set when the
      * object is frozen.
+     * @return object id
      */
     protected long getObjectId() {
         return metaClass.getRealClass().getVariableTableManager().getObjectId(this);
@@ -1273,6 +1293,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /**
      * Helper method for checking equality, first using Java identity
      * equality, and then calling the "==" method.
+     * @param context the thread context
+     * @param that first comparator
+     * @param other the second comparator
+     * @return are they equal
      */
     protected static boolean equalInternal(final ThreadContext context, final IRubyObject that, final IRubyObject other){
         return that == other || invokedynamic(context, that, OP_EQUAL, other).isTrue();
@@ -1281,6 +1305,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /**
      * Helper method for checking equality, first using Java identity
      * equality, and then calling the "eql?" method.
+     * @param context the thread context
+     * @param that first comparator
+     * @param other the second comparator
+     * @return are they equal
      */
     protected static boolean eqlInternal(final ThreadContext context, final IRubyObject that, final IRubyObject other){
         return that == other || invokedynamic(context, that, EQL, other).isTrue();
@@ -1288,7 +1316,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     /** method used for Hash key comparison (specialized for String, Symbol and Fixnum)
      *
-     * Will by default just call the Ruby method "eql?"
+     * @return Will by default just call the Ruby method "eql?"
      */
     @Override
     public boolean eql(IRubyObject other) {

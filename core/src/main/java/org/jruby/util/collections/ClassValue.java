@@ -5,6 +5,7 @@ import org.jruby.util.cli.Options;
 /**
  * Represents a cache or other mechanism for getting the Ruby-level proxy classes
  * for a given Java class.
+ * @param <T> value
  */
 @SuppressWarnings("unchecked")
 public abstract class ClassValue<T> {

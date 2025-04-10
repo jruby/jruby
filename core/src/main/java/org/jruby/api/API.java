@@ -12,7 +12,7 @@ import static org.jruby.api.Error.typeError;
 
 public class API {
     /**
-     * Equivalent to {@link MRI#rb_sys_fail_path(ThreadContext, String)}.
+     * Equivalent to rb_sys_fail_path(ThreadContext, String).
      *
      * @param context
      * @param path
@@ -55,7 +55,7 @@ public class API {
     }
 
     /**
-     * Equivalent to {@link MRI#rb_maygvl_fd_fix_cloexec(ThreadContext, int)}.
+     * Equivalent to MRI#rb_maygvl_fd_fix_cloexec(ThreadContext, int).
      *
      * @param context
      * @param fd
@@ -66,7 +66,7 @@ public class API {
     }
 
     /**
-     * Equivalent to {@link MRI#rb_rescue_typeerror(ThreadContext, Object, Supplier)}.
+     * Equivalent to MRI#rb_rescue_typeerror(ThreadContext, Object, Supplier).
      *
      * @param context
      * @param dflt

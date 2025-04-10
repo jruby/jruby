@@ -4,10 +4,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-/**
- *
- * @author nicksieger
- */
 public class LoadServiceResourceInputStream extends ByteArrayInputStream {
 
     private static final byte[] NULL_BYTE_ARRAY = new byte[0];

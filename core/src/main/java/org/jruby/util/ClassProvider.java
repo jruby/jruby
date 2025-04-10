@@ -32,10 +32,6 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.runtime.ThreadContext;
 
-/**
- * @author Bill Dortch
- *
- */
 public interface ClassProvider {
     @Deprecated(since = "10.0")
     default RubyClass defineClassUnder(RubyModule module, String name, RubyClass superClazz) {
