@@ -400,6 +400,7 @@ public class RubyObject extends RubyBasicObject {
      * @param context the thread context
      * @param a first comparator
      * @param b second comparator
+     * @return true if equal
      */
     public static boolean equalInternal(final ThreadContext context, final IRubyObject a, final IRubyObject b) {
         if (a == b) return true;
@@ -433,6 +434,7 @@ public class RubyObject extends RubyBasicObject {
      * @param context the thread context
      * @param a first comparator
      * @param b second comparator
+     * @return true if eql
      */
     protected static boolean eqlInternal(final ThreadContext context, final IRubyObject a, final IRubyObject b){
         if (a == b) return true;
@@ -467,6 +469,7 @@ public class RubyObject extends RubyBasicObject {
      * Preferred over callMethod(context, "inspect")
      * @param context the thread context
      * @param object the object to inspect
+     * @return the string
      */
     public static RubyString inspect(ThreadContext context, IRubyObject object) {
         return (RubyString)rbInspect(context, object);

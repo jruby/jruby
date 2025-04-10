@@ -60,7 +60,10 @@ public abstract class AbstractInvoker extends Pointer {
     
     /**
      * Creates a new <code>AbstractInvoker</code> instance.
-     * @param arity
+     * @param runtime the runtime
+     * @param klass the class
+     * @param arity the arity
+     * @param io the memory
      */
     protected AbstractInvoker(Ruby runtime, RubyClass klass, int arity, MemoryIO io) {
         super(runtime, klass, io, 0);
@@ -73,6 +76,7 @@ public abstract class AbstractInvoker extends Pointer {
      * @param context The thread context.
      * @param obj The module or class to attach the function to.
      * @param methodName The ruby name to attach the function as.
+     * @return itself
      */
     @JRubyMethod(name="attach")
     public IRubyObject attach(ThreadContext context, IRubyObject obj, IRubyObject methodName) {
@@ -86,6 +90,12 @@ public abstract class AbstractInvoker extends Pointer {
         
         return this;
     }
+
+    /**
+     * Create a method
+     * @param module for which module
+     * @return a method
+     */
     protected abstract DynamicMethod createDynamicMethod(RubyModule module);
 
     /**
