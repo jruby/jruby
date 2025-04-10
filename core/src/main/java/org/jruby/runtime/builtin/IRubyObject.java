@@ -120,13 +120,13 @@ public interface IRubyObject {
     void setUntrusted(boolean b);
     
     /**
-     *
+     * Is this an immediate object
      * @return boolean
      */
     boolean isImmediate();
 
     /**
-     *
+     * Is this a special constant
      * @return boolean
      */
     boolean isSpecialConst();
@@ -240,19 +240,19 @@ public interface IRubyObject {
     RubyString convertToString();
     
     /**
-     *
+     * make this object into a string (hopefully)
      * @return a string value
      */
     IRubyObject anyToString();
     
     /**
-     *
+     * is this a string if so return it otherwise nil
      * @return nil if type check failed
      */
     IRubyObject checkStringType();
     
     /**
-     *
+     * is this an array if so return it otherwise nil
      * @return nil if type check failed
      */
     IRubyObject checkArrayType();
@@ -429,6 +429,7 @@ public interface IRubyObject {
     InternalVariables getInternalVariables();
 
     /**
+     * list of all variable names
      * @return a list of all variable names (ivar/cvar/constant/internal)
      */
     List<String> getVariableNameList();
@@ -449,6 +450,7 @@ public interface IRubyObject {
     }
 
     /**
+     * convert this object to an integer
      * @param convertMethod conversion method name
      * @param convertMethodIndex index
      * @see #convertToInteger(String)
