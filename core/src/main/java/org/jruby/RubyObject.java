@@ -75,7 +75,6 @@ import org.jruby.util.cli.Options;
  * Methods that are implemented here, such as "initialize" should be implemented
  * with care; reification of Ruby classes into Java classes can produce
  * conflicting method names in rare cases. See JRUBY-5906 for an example.
- * @author headius
  */
 @JRubyClass(name="Object", include="Kernel")
 public class RubyObject extends RubyBasicObject {
@@ -95,6 +94,8 @@ public class RubyObject extends RubyBasicObject {
     /**
      * Standard path for object creation. Objects are entered into ObjectSpace
      * only if ObjectSpace is enabled.
+     * @param runtime the runtime
+     * @param metaClass the metaclass
      */
     public RubyObject(Ruby runtime, RubyClass metaClass) {
         super(runtime, metaClass);
@@ -102,6 +103,7 @@ public class RubyObject extends RubyBasicObject {
 
     /**
      * Path for objects that don't enter objectspace.
+     * @param metaClass the metaclass
      */
     public RubyObject(RubyClass metaClass) {
         super(metaClass);
@@ -116,6 +118,9 @@ public class RubyObject extends RubyBasicObject {
      * Path for objects who want to decide whether they don't want to be in
      * ObjectSpace even when it is on. (notably used by objects being
      * considered immediate, they'll always pass false here)
+     * @param runtime the runtime
+     * @param metaClass the metaclass
+     * @param useObjectSpace to enable object space
      */
     protected RubyObject(Ruby runtime, RubyClass metaClass, boolean useObjectSpace) {
         super(runtime, metaClass, useObjectSpace);
@@ -138,6 +143,7 @@ public class RubyObject extends RubyBasicObject {
      * specified. This method needs to take the actual class as an
      * argument because of the Object class' central part in runtime
      * initialization.
+     * @param Object the object claass
      */
     public static void finishObjectClass(RubyClass Object) {
         Object.reifiedClass(RubyObject.class).classIndex(ClassIndex.OBJECT);
@@ -218,6 +224,7 @@ public class RubyObject extends RubyBasicObject {
     /**
      * Simple helper to print any objects.
      * @deprecated no longer used - uses Java's System.out
+     * @param obj to puts
      */
     @Deprecated
     public static void puts(Object obj) {
@@ -250,6 +257,7 @@ public class RubyObject extends RubyBasicObject {
     /**
      * The default toString method is just a wrapper that calls the
      * Ruby "to_s" method.
+     * @return string representation
      */
     @Override
     public String toString() {
@@ -258,6 +266,8 @@ public class RubyObject extends RubyBasicObject {
 
     /**
      * Call the Ruby initialize method with the supplied arguments and block.
+     * @param args args
+     * @param block block
      */
     public final void callInit(IRubyObject[] args, Block block) {
         ThreadContext context = metaClass.runtime.getCurrentContext();
@@ -266,6 +276,7 @@ public class RubyObject extends RubyBasicObject {
 
     /**
      * Call the Ruby initialize method with the supplied arguments and block.
+     * @param block block
      */
     public final void callInit(Block block) {
         ThreadContext context = metaClass.runtime.getCurrentContext();
@@ -274,6 +285,8 @@ public class RubyObject extends RubyBasicObject {
 
     /**
      * Call the Ruby initialize method with the supplied arguments and block.
+     * @param arg0 arg0
+     * @param block block
      */
     public final void callInit(IRubyObject arg0, Block block) {
         ThreadContext context = metaClass.runtime.getCurrentContext();
@@ -282,13 +295,16 @@ public class RubyObject extends RubyBasicObject {
 
     /**
      * Call the Ruby initialize method with the supplied arguments and block.
+     * @param arg0 arg0
+     * @param arg1 arg1
+     * @param block block
      */
     public final void callInit(IRubyObject arg0, IRubyObject arg1, Block block) {
         ThreadContext context = metaClass.runtime.getCurrentContext();
         metaClass.getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, arg0, arg1, block);
     }
 
-    /**
+    /*
      * Call the Ruby initialize method with the supplied arguments and block.
      */
     public final void callInit(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
@@ -316,7 +332,7 @@ public class RubyObject extends RubyBasicObject {
         metaClass.getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, arg0, arg1, arg2, block);
     }
 
-    /**
+    /*
      * Tries to convert this object to the specified Ruby type, using
      * a specific conversion method.
      */
@@ -325,7 +341,7 @@ public class RubyObject extends RubyBasicObject {
         throw new RuntimeException("Not supported; use the String versions");
     }
 
-    /** specific_eval
+    /* specific_eval
      *
      * Evaluates the block or string inside of the context of this
      * object, using the supplied arguments. If a block is given, this
@@ -381,6 +397,9 @@ public class RubyObject extends RubyBasicObject {
     /**
      * Helper method for checking equality, first using Java identity
      * equality, and then calling the "==" method.
+     * @param context the thread context
+     * @param a first comparator
+     * @param b second comparator
      */
     public static boolean equalInternal(final ThreadContext context, final IRubyObject a, final IRubyObject b) {
         if (a == b) return true;
@@ -411,6 +430,9 @@ public class RubyObject extends RubyBasicObject {
     /**
      * Helper method for checking equality, first using Java identity
      * equality, and then calling the "eql?" method.
+     * @param context the thread context
+     * @param a first comparator
+     * @param b second comparator
      */
     protected static boolean eqlInternal(final ThreadContext context, final IRubyObject a, final IRubyObject b){
         if (a == b) return true;
@@ -426,6 +448,7 @@ public class RubyObject extends RubyBasicObject {
      * This override does not do "checked" dispatch since Object usually has #hash defined.
      *
      * @see RubyBasicObject#hashCode()
+     * @return the hash code
      */
     @Override
     public int hashCode() {
@@ -442,6 +465,8 @@ public class RubyObject extends RubyBasicObject {
      * The internal helper that ensures a RubyString instance is returned
      * so dangerous casting can be omitted
      * Preferred over callMethod(context, "inspect")
+     * @param context the thread context
+     * @param object the object to inspect
      */
     public static RubyString inspect(ThreadContext context, IRubyObject object) {
         return (RubyString)rbInspect(context, object);

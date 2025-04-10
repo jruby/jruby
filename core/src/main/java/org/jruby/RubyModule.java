@@ -6326,7 +6326,6 @@ public class RubyModule extends RubyObject {
      *
      * @param name of the constant
      * @param value of the constant
-     * @return the value
      */
     public void defineConstantBootstrap(String name, IRubyObject value) {
         constantTableStore(name, value, false, false, null, -1);
