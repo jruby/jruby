@@ -34,10 +34,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Error.nameError;
 
-/**
- * 
- * @author jpetersen
- */
 public class ReadonlyAccessor implements IAccessor {
     private String name;
     private IAccessor accessor;

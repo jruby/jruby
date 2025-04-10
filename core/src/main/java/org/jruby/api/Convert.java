@@ -39,22 +39,21 @@ import static org.jruby.util.TypeConverter.convertToTypeWithCheck;
 import static org.jruby.util.TypeConverter.sites;
 
 /**
- * Conversion utilities.
- * <p>
- * There are 3 mechanisms for converting between types:
- * <p>
- * <ul>
+ * <p>Conversion utilities.
+ *
+ * <p>There are 3 mechanisms for converting between types:
+ *  * <ul>
  *     <li>type#getValue() where we know exactly what it is and we will be responsible for how it is used</li>
  *     <li>`as` where we know it is the thing but we will not care about truncation or range issues</li>
  *     <li>`to` where we do not know but hope it is the thing OR we know but need to check range</li>
  * </ul>
- * <p>
- * For example, I have a RubyFixnum and I know I need a long I can just call `getValue()`.  If I need an
+ *
+ * <p>For example, I have a RubyFixnum and I know I need a long I can just call `getValue()`.  If I need an
  * int and I know enough about it to not care about range I can call `asInt`.  If I do need check range I can
  * call `toInt(context, (RubyFixnum) value)` and it will make sure it is a valid int value.   If I don't know
  * for sure if it is even capable of being an int I will call `toInt(context, (IRubyObject) value)`.
- * <p>
- * The naming conventions will tend to be {resolvedType}?[As|To}{returnedType} where {resolvedType} is ommitted
+ *
+ * <p>The naming conventions will tend to be {resolvedType}?[As|To}{returnedType} where {resolvedType} is omitted
  * when the convention is obvious (`long toLong(ThreadContext context, IRubyObject)`).  Right now we have
  * `RubyInteger toInteger(ThreadContext, IRubyObject)` which means making a Ruby Integer vs a Java boxed Integer.
  * If we ever needed a Java Integer (narrator: we won't) we would have to break this convention and make

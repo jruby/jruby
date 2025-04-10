@@ -45,10 +45,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.func.TriConsumer;
 
-/**
- *
- * @author jpetersen
- */
 public class GlobalVariables {
     private final Ruby runtime;
     private final Map<String, GlobalVariable> globalVariables = new ConcurrentHashMap<String, GlobalVariable>();

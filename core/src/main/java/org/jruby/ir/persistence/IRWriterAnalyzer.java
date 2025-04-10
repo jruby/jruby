@@ -24,10 +24,6 @@ import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
 
-/**
- *
- * @author enebo
- */
 public class IRWriterAnalyzer implements IRWriterEncoder {
     private int currentOffsetId = 0;
     private final Map<IRScope, Integer> offsetIds = new HashMap();

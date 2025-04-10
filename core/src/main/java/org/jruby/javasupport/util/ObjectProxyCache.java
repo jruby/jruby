@@ -11,11 +11,11 @@ import java.util.concurrent.locks.ReentrantLock;
 
 
 /**
- * Maps Java objects to their proxies.  Combines elements of WeakHashMap and
+ * <p>Maps Java objects to their proxies.  Combines elements of WeakHashMap and
  * ConcurrentHashMap to permit unsynchronized reads.  May be configured to
- * use either Weak (the default) or Soft references.<p>
+ * use either Weak (the default) or Soft references.</p>
  *
- * Note that both Java objects and their proxies are held by weak/soft
+ * <p>Note that both Java objects and their proxies are held by weak/soft
  * references; because proxies (currently) keep strong references to their
  * Java objects, if we kept strong references to them the Java objects would
  * never be gc'ed.  This presents a problem in the case where a user passes
@@ -24,10 +24,11 @@ import java.util.concurrent.locks.ReentrantLock;
  * a new (and possibly very wrong, in the case of JRuby-defined subclasses)
  * proxy will be created.  Use of soft references may help reduce the
  * likelihood of this occurring; users may be advised to keep Ruby-side
- * references to prevent it occurring altogether.
+ * references to prevent it occurring altogether.</p>
  *
+ * @param <T> the T
+ * @param <A> the A
  * @author <a href="mailto:bill.dortch@gmail.com">Bill Dortch</a>
- *
  */
 public abstract class ObjectProxyCache<T,A> {
 

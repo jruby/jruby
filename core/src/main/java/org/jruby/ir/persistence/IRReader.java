@@ -20,10 +20,6 @@ import java.util.EnumSet;
 
 import org.jruby.util.ByteList;
 
-/**
- *
- * @author enebo
- */
 public class IRReader implements IRPersistenceValues {
     public static IRScope load(IRManager manager, final IRReaderDecoder file) throws IOException {
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("IRReader.load");

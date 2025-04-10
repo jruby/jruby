@@ -42,9 +42,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.api.Error.runtimeError;
 import static org.jruby.api.Error.typeError;
 
-/**
- * @author kares
- */
 public abstract class ClassJavaAddons {
 
     // Get the native (or reified) (a la become_java!) class for this Ruby class.

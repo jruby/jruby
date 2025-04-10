@@ -88,9 +88,6 @@ import static org.jruby.parser.RubyParserBase.IDType.*;
 import static org.jruby.util.CommonByteLists.*;
 import static org.jruby.util.RubyStringBuilder.*;
 
-/** 
- *
- */
 public abstract class RubyParserBase {
     // Parser states:
     protected StaticScope currentScope;

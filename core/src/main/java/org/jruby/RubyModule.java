@@ -185,10 +185,6 @@ import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
 import static org.jruby.util.RubyStringBuilder.types;
 
-
-/**
- *
- */
 @JRubyClass(name="Module")
 public class RubyModule extends RubyObject {
 
