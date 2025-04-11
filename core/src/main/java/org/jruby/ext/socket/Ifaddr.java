@@ -21,10 +21,6 @@ import jnr.constants.platform.InterfaceInfo;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newString;
 
-/**
- *
- * @author Lucas Allan Amorim
- */
 public class Ifaddr extends RubyObject {
 
     private String name;

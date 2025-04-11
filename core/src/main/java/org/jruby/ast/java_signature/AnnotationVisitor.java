@@ -28,13 +28,12 @@
 
 package org.jruby.ast.java_signature;
 
-import java.util.List;
-
 /**
  * Visitor interface to be implemented by visitors of the Annotation AST.
  * each node will call the visit method appropriate to its type.
  * @see org.jruby.ast.java_signature.Annotation
-  *
+ *
+ * @param <T> the type
  * @author Patrick Plenefisch
  **/
 public interface AnnotationVisitor<T> {

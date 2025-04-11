@@ -45,10 +45,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- * 
- * @author jpetersen
- */
 public class ProcMethod extends DynamicMethod implements PositionAware, IRMethodArgs {
     private final RubyProc proc;
 

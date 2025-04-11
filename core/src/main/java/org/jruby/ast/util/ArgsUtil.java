@@ -45,17 +45,11 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static org.jruby.api.Convert.asSymbol;
-import static org.jruby.api.Convert.castAsArray;
 import static org.jruby.api.Error.argumentError;
-import static org.jruby.api.Error.typeError;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
 import static org.jruby.util.TypeConverter.booleanExpected;
 
-/**
- *
- * @author  jpetersen
- */
 public final class ArgsUtil {
     /**
      * This name may be a bit misleading, since this also attempts to coerce

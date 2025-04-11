@@ -195,6 +195,8 @@ abstract public class AbstractMemory extends MemoryObject {
 
     /**
      * Clears (zeros out) the memory contents.
+     * @param context the thread context
+     * @return this
      */
     @JRubyMethod(name = "clear")
     public IRubyObject clear(ThreadContext context) {
@@ -205,6 +207,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Gets the total size (in bytes) of the Memory.
      *
+     * @param context the thread context
      * @return The total size in bytes.
      */
     @JRubyMethod(name = { "total", "size", "length" })
@@ -215,8 +218,8 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Indicates how many bytes the intrinsic type of the memory uses.
      *
-     * @param context
-     * @return
+     * @param context the thread context
+     * @return the type size
      */
     @JRubyMethod(name = "type_size")
     public final IRubyObject type_size(ThreadContext context) {
@@ -226,6 +229,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes a 8 bit signed integer value to the memory area.
      *
+     * @param context the thread context
      * @param value The value to write.
      * @return The value written.
      */
@@ -239,6 +243,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes a 8 bit signed integer value to the memory area.
      *
+     * @param context the thread context
      * @param value The value to write.
      * @return The value written.
      */
@@ -252,6 +257,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes a 8 bit signed integer value to the memory area.
      *
+     * @param context the thread context
      * @param offset The offset from the base pointer address to write the value.
      * @param value The value to write.
      * @return The value written.
@@ -266,6 +272,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads an 8 bit signed integer value from the memory address.
      *
+     * @param context the thread context
      * @return The value read from the address.
      */
     @JRubyMethod(name = { "read_char" })
@@ -276,6 +283,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads an 8 bit signed integer value from the memory address.
      *
+     * @param context the thread context
      * @return The value read from the address.
      */
     @JRubyMethod(name = { "get_int8", "get_char" })
@@ -286,6 +294,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads an 8 bit signed integer value from the memory address.
      *
+     * @param context the thread context
      * @param offset The offset from the base pointer address to read the value.
      * @return The value read from the address.
      */
@@ -297,6 +306,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes a 8 bit unsigned integer value to the memory area.
      *
+     * @param context the thread context
      * @param value The value to write.
      * @return The value written.
      */
@@ -309,6 +319,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes a 8 bit unsigned integer value to the memory area.
      *
+     * @param context the thread context
      * @param value The value to write.
      * @return The value written.
      */
@@ -321,6 +332,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes a 8 bit unsigned integer value to the memory area.
      *
+     * @param context the thread context
      * @param offset The offset from the base pointer address to write the value.
      * @param value The value to write.
      * @return The value written.
@@ -334,6 +346,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads an 8 bit unsigned integer value from the memory address.
      *
+     * @param context the thread context
      * @return The value read from the address.
      */
     @JRubyMethod(name = { "read_uchar" })
@@ -344,6 +357,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads an 8 bit unsigned integer value from the memory address.
      *
+     * @param context the thread context
      * @return The value read from the address.
      */
     @JRubyMethod(name = { "get_uint8", "get_uchar" })
@@ -354,6 +368,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads an 8 bit unsigned integer value from the memory address.
      *
+     * @param context the thread context
      * @param offset The offset from the base pointer address to read the value.
      * @return The value read from the address.
      */
@@ -365,6 +380,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes a 16 bit signed integer value to the memory address.
      *
+     * @param context the thread context
      * @param value The value to write.
      * @return The value written.
      */
@@ -378,6 +394,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes a 16 bit signed integer value to the memory address.
      *
+     * @param context the thread context
      * @param value The value to write.
      * @return The value written.
      */
@@ -391,6 +408,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes a 16 bit signed integer value to the memory address.
      *
+     * @param context the thread context
      * @param offset The offset from the base pointer address to write the value.
      * @param value The value to write.
      * @return The value written.
@@ -405,6 +423,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads a 16 bit signed integer value from the memory address.
      *
+     * @param context the thread context
      * @return The value read from the address.
      */
     @JRubyMethod(name = { "read_short" })
@@ -415,6 +434,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads a 16 bit signed integer value from the memory address.
      *
+     * @param context the thread context
      * @return The value read from the address.
      */
     @JRubyMethod(name = { "get_int16", "get_short" })
@@ -425,6 +445,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads a 16 bit signed integer value from the memory address.
      *
+     * @param context the thread context
      * @param offset The offset from the base pointer address to read the value.
      * @return The value read from the address.
      */
@@ -436,6 +457,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes a 16 bit unsigned integer value to the memory address.
      *
+     * @param context the thread context
      * @param value The value to write.
      * @return The value written.
      */
@@ -449,6 +471,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes a 16 bit unsigned integer value to the memory address.
      *
+     * @param context the thread context
      * @param value The value to write.
      * @return The value written.
      */
@@ -462,6 +485,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes a 16 bit unsigned integer value to the memory address.
      *
+     * @param context the thread context
      * @param offset The offset from the base pointer address to write the value.
      * @param value The value to write.
      * @return The value written.
@@ -476,6 +500,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads a 16 bit unsigned integer value from the memory address.
      *
+     * @param context the thread context
      * @return The value read from the address.
      */
     @JRubyMethod(name = { "read_ushort" })
@@ -486,6 +511,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads a 16 bit unsigned integer value from the memory address.
      *
+     * @param context the thread context
      * @return The value read from the address.
      */
     @JRubyMethod(name = { "get_uint16", "get_ushort" })
@@ -496,6 +522,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads a 16 bit unsigned integer value from the memory address.
      *
+     * @param context the thread context
      * @param offset The offset from the base pointer address to read the value.
      * @return The value read from the address.
      */
@@ -507,6 +534,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes a 32 bit signed integer value to the memory address.
      *
+     * @param context the thread context
      * @param value The value to write.
      * @return The value written.
      */
@@ -520,6 +548,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes a 32 bit signed integer value to the memory address.
      *
+     * @param context the thread context
      * @param value The value to write.
      * @return The value written.
      */
@@ -533,6 +562,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes a 32 bit signed integer value to the memory address.
      *
+     * @param context the thread context
      * @param offset The offset from the base pointer address to write the value.
      * @param value The value to write.
      * @return The value written.
@@ -547,6 +577,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads a 32 bit signed integer value from the memory address.
      *
+     * @param context the thread context
      * @return The value read from the address.
      */
     @JRubyMethod(name = { "read_int", "read_int32" })
@@ -557,6 +588,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads a 32 bit signed integer value from the memory address.
      *
+     * @param context the thread context
      * @return The value read from the address.
      */
     @JRubyMethod(name = { "get_int32", "get_int" })
@@ -567,6 +599,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads a 32 bit signed integer value from the memory address.
      *
+     * @param context the thread context
      * @param offset The offset from the base pointer address to read the value.
      * @return The value read from the address.
      */
@@ -578,6 +611,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes an 32 bit unsigned integer value to the memory address.
      *
+     * @param context the thread context
      * @param value The value to write.
      * @return The value written.
      */
@@ -591,6 +625,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes an 32 bit unsigned integer value to the memory address.
      *
+     * @param context the thread context
      * @param value The value to write.
      * @return The value written.
      */
@@ -604,6 +639,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes an 32 bit unsigned integer value to the memory address.
      *
+     * @param context the thread context
      * @param offset The offset from the base pointer address to write the value.
      * @param value The value to write.
      * @return The value written.
@@ -618,6 +654,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads a 8 bit unsigned integer value from the memory address.
      *
+     * @param context the thread context
      * @return The value read from the address.
      */
     @JRubyMethod(name = { "read_uint8" })
@@ -628,6 +665,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads a 16 bit unsigned integer value from the memory address.
      *
+     * @param context the thread context
      * @return The value read from the address.
      */
     @JRubyMethod(name = { "read_uint16" })
@@ -638,6 +676,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads a 32 bit unsigned integer value from the memory address.
      *
+     * @param context the thread context
      * @return The value read from the address.
      */
     @JRubyMethod(name = { "read_uint", "read_uint32" })
@@ -648,6 +687,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads a 32 bit unsigned integer value from the memory address.
      *
+     * @param context the thread context
      * @return The value read from the address.
      */
     @JRubyMethod(name = { "get_uint32", "get_uint" })
@@ -658,6 +698,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads a 32 bit unsigned integer value from the memory address.
      *
+     * @param context the thread context
      * @param offset The offset from the base pointer address to read the value.
      * @return The value read from the address.
      */
@@ -669,6 +710,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes a 64 bit integer value to the memory area.
      *
+     * @param context the thread context
      * @param value The value to write.
      * @return The value written.
      */
@@ -682,6 +724,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes a 64 bit integer value to the memory area.
      *
+     * @param context the thread context
      * @param value The value to write.
      * @return The value written.
      */
@@ -695,6 +738,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes a 64 bit integer value to the memory area.
      *
+     * @param context the thread context
      * @param offset The offset from the base pointer address to write the value.
      * @param value The value to write.
      * @return The value written.
@@ -709,6 +753,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads a 64 bit integer value from the memory address.
      *
+     * @param context the thread context
      * @return The value read from the address.
      */
     @JRubyMethod(name = { "read_int64", "read_long_long" })
@@ -719,6 +764,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads a 64 bit integer value from the memory address.
      *
+     * @param context the thread context
      * @return The value read from the address.
      */
     @JRubyMethod(name = { "get_int64", "get_long_long" })
@@ -729,6 +775,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads a 64 bit integer value from the memory address.
      *
+     * @param context the thread context
      * @param offset The offset from the base pointer address to read the value.
      * @return The value read from the address.
      */
@@ -740,6 +787,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes a 64 bit unsigned integer value to the memory area.
      *
+     * @param context the thread context
      * @param value The value to write.
      * @return The value written.
      */
@@ -753,6 +801,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes a 64 bit unsigned integer value to the memory area.
      *
+     * @param context the thread context
      * @param value The value to write.
      * @return The value written.
      */
@@ -766,6 +815,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes a 64 bit unsigned integer value to the memory area.
      *
+     * @param context the thread context
      * @param offset The offset from the base pointer address to write the value.
      * @param value The value to write.
      * @return The value written.
@@ -780,6 +830,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads a 64 bit unsigned integer value from the memory address.
      *
+     * @param context the thread context
      * @return The value read from the address.
      */
     @JRubyMethod(name = { "read_uint64", "read_ulong_long" })
@@ -790,6 +841,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads a 64 bit unsigned integer value from the memory address.
      *
+     * @param context the thread context
      * @return The value read from the address.
      */
     @JRubyMethod(name = { "get_uint64", "get_ulong_long" })
@@ -800,6 +852,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads a 64 bit unsigned integer value from the memory address.
      *
+     * @param context the thread context
      * @param offset The offset from the base pointer address to read the value.
      * @return The value read from the address.
      */
@@ -812,6 +865,7 @@ abstract public class AbstractMemory extends MemoryObject {
      * Writes a C long integer value to the memory area. This version is added
      * to support the "write_long" alias for the single-arg "put_long".
      *
+     * @param context the thread context
      * @param value The value to write.
      * @return The value written.
      */
@@ -823,6 +877,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes a C long integer value to the memory area.
      *
+     * @param context the thread context
      * @param value The value to write.
      * @return The value written.
      */
@@ -836,6 +891,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes a C long integer value to the memory area.
      *
+     * @param context the thread context
      * @param offset The offset from the base pointer address to write the value.
      * @param value The value to write.
      * @return The value written.
@@ -850,6 +906,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads a C long integer value from the memory area.
      *
+     * @param context the thread context
      * @return The value read.
      */
     @JRubyMethod(name = { "read_long" })
@@ -860,6 +917,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads a C long integer value from the memory area.
      *
+     * @param context the thread context
      * @return The value read.
      */
     @JRubyMethod(name = { "get_long" })
@@ -871,6 +929,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads a C long integer value from the memory area.
      *
+     * @param context the thread context
      * @param offset The offset from the base pointer address to read the value.
      * @return The value read.
      */
@@ -884,6 +943,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes a C long integer value to the memory area.
      *
+     * @param context the thread context
      * @param value The value to write.
      * @return The value written.
      */
@@ -897,6 +957,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes a C long integer value to the memory area.
      *
+     * @param context the thread context
      * @param offset The offset from the base pointer address to write the value.
      * @param value The value to write.
      * @return The value written.
@@ -912,6 +973,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads a C unsigned long integer value from the memory area.
      *
+     * @param context the thread context
      * @return The value read.
      */
     @JRubyMethod(name = { "read_ulong" })
@@ -922,6 +984,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads a C unsigned long integer value from the memory area.
      *
+     * @param context the thread context
      * @return The value read.
      */
     @JRubyMethod(name = { "get_ulong", "read_ulong" })
@@ -933,6 +996,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads a C unsigned long integer value from the memory area.
      *
+     * @param context the thread context
      * @param offset The offset from the base pointer address to read the value.
      * @return The value read.
      */
@@ -946,6 +1010,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes an 32 bit floating point value to the memory area.
      *
+     * @param context the thread context
      * @param value The value to write.
      * @return The value written.
      */
@@ -959,6 +1024,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes an 32 bit floating point value to the memory area.
      *
+     * @param context the thread context
      * @param value The value to write.
      * @return The value written.
      */
@@ -972,6 +1038,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes an 32 bit floating point value to the memory area.
      *
+     * @param context the thread context
      * @param offset The offset from the base pointer address to write the value.
      * @param value The value to write.
      * @return The value written.
@@ -986,6 +1053,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads a 32 bit floating point value from the memory address.
      *
+     * @param context the thread context
      * @return The value read from the address.
      */
     @JRubyMethod(name = { "read_float" })
@@ -996,6 +1064,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads a 32 bit floating point value from the memory address.
      *
+     * @param context the thread context
      * @return The value read from the address.
      */
     @JRubyMethod(name = { "get_float32", "get_float" })
@@ -1006,6 +1075,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads a 32 bit floating point value from the memory address.
      *
+     * @param context the thread context
      * @param offset The offset from the base pointer address to read the value.
      * @return The value read from the address.
      */
@@ -1017,6 +1087,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes an 64 bit floating point value to the memory area.
      *
+     * @param context the thread context
      * @param value The value to write.
      * @return The value written.
      */
@@ -1030,6 +1101,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes an 64 bit floating point value to the memory area.
      *
+     * @param context the thread context
      * @param value The value to write.
      * @return The value written.
      */
@@ -1043,6 +1115,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Writes an 64 bit floating point value to the memory area.
      *
+     * @param context the thread context
      * @param offset The offset from the base pointer address to write the value.
      * @param value The value to write.
      * @return The value written.
@@ -1057,6 +1130,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads a 64 bit floating point value from the memory address.
      *
+     * @param context the thread context
      * @return The value read from the address.
      */
     @JRubyMethod(name = { "read_double" })
@@ -1067,6 +1141,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads a 64 bit floating point value from the memory address.
      *
+     * @param context the thread context
      * @return The value read from the address.
      */
     @JRubyMethod(name = { "get_float64", "get_double" })
@@ -1077,6 +1152,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads a 64 bit floating point value from the memory address.
      *
+     * @param context the thread context
      * @param offset The offset from the base pointer address to read the value.
      * @return The value read from the address.
      */
@@ -1088,6 +1164,7 @@ abstract public class AbstractMemory extends MemoryObject {
     /**
      * Reads an array of signed 8 bit integer values from the memory address.
      *
+     * @param context the thread context
      * @param offset The offset from the start of the memory area to read the values.
      * @param length The number of values to be read from memory.
      * @return An array containing the values.

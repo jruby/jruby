@@ -102,9 +102,6 @@ import static org.jruby.util.WindowsFFI.Kernel32.PROCESS_TERMINATE;
 import static org.jruby.util.WindowsFFI.Kernel32.STILL_ACTIVE;
 import static org.jruby.util.WindowsFFI.kernel32;
 
-/**
- */
-
 @JRubyModule(name="Process")
 public class RubyProcess {
 

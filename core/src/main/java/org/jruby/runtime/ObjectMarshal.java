@@ -38,10 +38,6 @@ import org.jruby.util.io.RubyOutputStream;
 
 import static org.jruby.api.Error.typeError;
 
-/**
- *
- * @author headius
- */
 public interface ObjectMarshal<T> {
     ObjectMarshal NOT_MARSHALABLE_MARSHAL = new ObjectMarshal() {
         public void marshalTo(ThreadContext context, RubyOutputStream out, Object obj, RubyClass type, MarshalDumper marshalStream) {

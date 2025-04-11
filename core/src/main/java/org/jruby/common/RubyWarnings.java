@@ -60,12 +60,8 @@ import static org.jruby.api.Create.newSmallHash;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.argumentError;
-import static org.jruby.util.RubyStringBuilder.cat;
 import static org.jruby.util.RubyStringBuilder.str;
 
-/**
- *
- */
 public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
     private static final int LINE_NUMBER_NON_WARNING = Integer.MIN_VALUE;

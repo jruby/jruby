@@ -110,11 +110,6 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.commons.GeneratorAdapter;
 
-
-/**
- *
- * @author  jpetersen
- */
 @JRubyClass(name="Class", parent="Module")
 public class RubyClass extends RubyModule {
 

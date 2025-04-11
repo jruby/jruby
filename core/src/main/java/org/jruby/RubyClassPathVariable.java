@@ -42,9 +42,6 @@ import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 
-/**
- * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
- */
 public class RubyClassPathVariable extends RubyObject {
     public static void createClassPathVariable(ThreadContext context, RubyModule Enumerable, RubyClass Object) {
         RubyClassPathVariable self = new RubyClassPathVariable(context, Object);

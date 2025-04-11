@@ -134,6 +134,7 @@ public class Pointer extends AbstractMemory {
     /**
      * Tests if this <code>Pointer</code> represents the C <code>NULL</code> value.
      *
+     * @param context the thread context
      * @return true if the address is NULL.
      */
     @JRubyMethod(name = "null?")

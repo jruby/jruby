@@ -27,58 +27,54 @@ import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.Signature;
 import org.jruby.util.ByteList;
 
-/**
- *
- * @author enebo
- */
 public interface IRReaderDecoder {
-    public String decodeString();
-    public String[] decodeStringArray();
-    public int[] decodeIntArray();
-    public Instr decodeInstr();
-    public IRScopeType decodeIRScopeType();
-    public StaticScope.Type decodeStaticScopeType();
-    public Operation decodeOperation();
-    public Operand decodeOperand();
-    public List<Operand> decodeOperandList();
-    public Label decodeLabel();
-    public Label[] decodeLabelArray();
-    public Operand[] decodeOperandArray();
-    public OperandType decodeOperandType();
-    public boolean decodeBoolean();
-    public byte decodeByte();
-    public byte[] decodeByteArray();
-    public Encoding decodeEncoding();
-    public ByteList decodeByteList();
-    public char decodeChar();
-    public int decodeInt();
-    public int decodeIntRaw();
-    public long decodeLong();
-    public double decodeDouble();
-    public float decodeFloat();
-    public RubyEvent decodeRubyEvent();
-    public RubySymbol decodeSymbol();
-    public Signature decodeSignature();
+    String decodeString();
+    String[] decodeStringArray();
+    int[] decodeIntArray();
+    Instr decodeInstr();
+    IRScopeType decodeIRScopeType();
+    StaticScope.Type decodeStaticScopeType();
+    Operation decodeOperation();
+    Operand decodeOperand();
+    List<Operand> decodeOperandList();
+    Label decodeLabel();
+    Label[] decodeLabelArray();
+    Operand[] decodeOperandArray();
+    OperandType decodeOperandType();
+    boolean decodeBoolean();
+    byte decodeByte();
+    byte[] decodeByteArray();
+    Encoding decodeEncoding();
+    ByteList decodeByteList();
+    char decodeChar();
+    int decodeInt();
+    int decodeIntRaw();
+    long decodeLong();
+    double decodeDouble();
+    float decodeFloat();
+    RubyEvent decodeRubyEvent();
+    RubySymbol decodeSymbol();
+    Signature decodeSignature();
     EnumSet<IRFlags> decodeIRFlags();
 
-    public Variable decodeVariable();
+    Variable decodeVariable();
 
-    public List<Instr> decodeInstructionsAt(IRScope scope, int poolOffset, int instructionOffset);
-    public IRScope getCurrentScope();
-    public Map<String, Operand> getVars();
+    List<Instr> decodeInstructionsAt(IRScope scope, int poolOffset, int instructionOffset);
+    IRScope getCurrentScope();
+    Map<String, Operand> getVars();
 
-    public void addScope(IRScope scope);
-    public void seek(int headersOffset);
+    void addScope(IRScope scope);
+    void seek(int headersOffset);
 
-    public IRScope decodeScope();
+    IRScope decodeScope();
 
-    public TemporaryVariableType decodeTemporaryVariableType();
-    public String getFilename();
+    TemporaryVariableType decodeTemporaryVariableType();
+    String getFilename();
 
     /**
      * Duplicate this decoder to isolate any state changes.
      *
      * @return An identical decoder that's isolated from the original
      */
-    public IRReaderDecoder dup();
+    IRReaderDecoder dup();
 }

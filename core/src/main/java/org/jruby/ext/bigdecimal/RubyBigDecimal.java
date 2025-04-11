@@ -69,9 +69,6 @@ import static org.jruby.api.Error.typeError;
 import static org.jruby.api.Warn.warnDeprecated;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
-/**
- * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
- */
 public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyConstant

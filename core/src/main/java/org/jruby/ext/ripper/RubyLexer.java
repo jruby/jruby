@@ -52,10 +52,6 @@ import static org.jruby.parser.RubyParser.tGVAR;
 import static org.jruby.util.StringSupport.CR_7BIT;
 import static org.jruby.util.StringSupport.codeRangeScan;
 
-/**
- *
- * @author enebo
- */
 public class RubyLexer extends LexingCommon {
     private static final HashMap<String, Keyword> map;
 

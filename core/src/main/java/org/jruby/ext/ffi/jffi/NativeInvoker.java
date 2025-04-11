@@ -11,9 +11,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- *
- */
 abstract public class NativeInvoker extends DynamicMethod {
     protected final Arity arity;
     protected final com.kenai.jffi.Function function;

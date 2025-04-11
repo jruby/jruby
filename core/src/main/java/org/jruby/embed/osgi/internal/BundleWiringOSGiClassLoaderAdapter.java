@@ -30,10 +30,6 @@ package org.jruby.embed.osgi.internal;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.wiring.BundleWiring;
 
-/**
- * @author awj
- *
- */
 public class BundleWiringOSGiClassLoaderAdapter implements IOSGiClassLoaderAdapter {
     /**
      * Implements {@link IOSGiClassLoaderAdapter#getClassLoader(Bundle)} using BundleWiring.

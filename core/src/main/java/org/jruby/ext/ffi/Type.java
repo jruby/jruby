@@ -5,7 +5,6 @@ import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
@@ -18,9 +17,6 @@ import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
-/**
- *
- */
 @JRubyClass(name = "FFI::Type", parent = "Object")
 public abstract class Type extends RubyObject {
     private static final java.util.Locale LOCALE = java.util.Locale.ENGLISH;

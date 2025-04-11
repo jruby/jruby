@@ -24,10 +24,6 @@ import org.jruby.util.ByteList;
 
 import java.math.BigInteger;
 
-/**
- *
- * @author headius
- */
 public abstract class AbstractScript implements Script {
     public AbstractScript() {
     }

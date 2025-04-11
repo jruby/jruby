@@ -28,7 +28,6 @@
 
 package org.jruby.javasupport;
 
-import org.jruby.Ruby;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
@@ -46,10 +45,6 @@ import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.typeError;
 
-/**
- * @author Bill Dortch
- *
- */
 @JRubyModule(name="JavaArrayUtilities")
 public class JavaArrayUtilities {
 

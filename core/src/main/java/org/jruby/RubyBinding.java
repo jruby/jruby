@@ -54,9 +54,6 @@ import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.nameError;
 import static org.jruby.util.RubyStringBuilder.str;
 
-/**
- * @author  jpetersen
- */
 @JRubyClass(name="Binding")
 public class RubyBinding extends RubyObject {
     private Binding binding;

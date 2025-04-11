@@ -28,14 +28,10 @@
 
 package org.jruby.util;
 
-import org.jruby.Ruby;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>
- */
 public class NoFunctionalitySignalFacade implements SignalFacade {
     public IRubyObject trap(ThreadContext context, IRubyObject recv, IRubyObject block, IRubyObject sig) {
         return context.nil;

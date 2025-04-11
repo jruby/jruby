@@ -44,9 +44,6 @@ import static org.jruby.api.Warn.warn;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- *
- */
 @JRubyClass(name = "Zlib::ZStream")
 public abstract class ZStream extends RubyObject {
 

@@ -11,13 +11,15 @@ public interface IRMethodArgs {
 
     /**
      * Get the Signature for this method.
+     * @return this methods signature
      */
-    public Signature getSignature();
+    Signature getSignature();
 
     /**
      * Get the array of ArgumentDescriptors that represent the arguments to this method.
+     * @return this methods argument descriptors
      */
-    public ArgumentDescriptor[] getArgumentDescriptors();
+    ArgumentDescriptor[] getArgumentDescriptors();
 
     void setRuby2Keywords();
 }

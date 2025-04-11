@@ -47,10 +47,6 @@ import org.objectweb.asm.util.Textifier;
 import org.objectweb.asm.util.TraceMethodVisitor;
 import static org.objectweb.asm.Opcodes.*;
 
-/**
- *
- * @author headius
- */
 public final class SkinnyMethodAdapter extends MethodVisitor {
     private final static boolean DEBUG;
 

@@ -34,10 +34,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- *
- * @author headius
- */
 public class SynchronizedDynamicMethod extends DelegatingDynamicMethod {
     public SynchronizedDynamicMethod(DynamicMethod delegate) {
         super(delegate);

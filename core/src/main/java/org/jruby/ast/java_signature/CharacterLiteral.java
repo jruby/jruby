@@ -4,10 +4,6 @@
  */
 package org.jruby.ast.java_signature;
 
-/**
- *
- * @author enebo
- */
 public class CharacterLiteral implements Literal {
     private final String string;
     

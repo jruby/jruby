@@ -4,9 +4,6 @@ import org.jruby.ext.ffi.NativeType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- *
- */
 abstract public class NativeDataConverter {
     private final boolean referenceRequired;
     private final boolean postInvokeRequired;

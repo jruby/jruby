@@ -4,10 +4,6 @@
  */
 package org.jruby.ast.java_signature;
 
-/**
- *
- * @author enebo
- */
 public interface Literal extends AnnotationExpression {
-    public Object getLiteral();
+    Object getLiteral();
 }

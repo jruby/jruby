@@ -223,7 +223,7 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
         return ruby2Keywords;
     }
 
-    /**
+    /*
      * Calls a split method (java constructor-invoked initialize) and returns the paused state. If
      * this method doesn't have a super call, returns null without execution.
      */

@@ -47,8 +47,6 @@ import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.util.ByteList;
 
-/**
- */
 @JRubyClass(name = "Zlib::Deflate", parent = "Zlib::ZStream")
 public class JZlibDeflate extends ZStream {
     public static final int BASE_SIZE = 100;

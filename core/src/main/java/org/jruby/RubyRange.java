@@ -89,9 +89,6 @@ import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
 
-/**
- * @author jpetersen
- */
 @JRubyClass(name = "Range", include = "Enumerable")
 public class RubyRange extends RubyObject {
 

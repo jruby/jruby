@@ -41,10 +41,6 @@ import org.jruby.runtime.opto.Invalidator;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.cli.Options;
 
-/**
- * 
- * @author jpetersen
- */
 public final class GlobalVariable {
     public enum Scope { GLOBAL, THREAD, FRAME }
     private IAccessor accessor;

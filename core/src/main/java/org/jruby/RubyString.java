@@ -3239,7 +3239,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     /**
      * sub! but without any frame globals ...
-     * @note Internal API, subject to change!
      * @param context current context
      * @param regexp the regular expression
      * @param repl replacement string value

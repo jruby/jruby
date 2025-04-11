@@ -2,6 +2,8 @@ package org.jruby.util.collections;
 
 /**
  * A carrier object with two fields
+ * @param <T> one
+ * @param <U> two
  */
 public class DoubleObject<T, U> {
     public DoubleObject() {}

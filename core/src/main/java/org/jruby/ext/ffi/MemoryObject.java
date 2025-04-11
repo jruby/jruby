@@ -4,9 +4,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyObject;
 
-/**
- *
- */
 abstract public class MemoryObject extends RubyObject {
     /** The Memory I/O object */
     private MemoryIO memory;

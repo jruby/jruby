@@ -56,11 +56,6 @@ import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.api.Warn.warn;
 
-
-/**
- * @author Bill Dortch
- *
- */
 public class Sprintf {
     private static final int FLAG_NONE        = 0;
     private static final int FLAG_SPACE       = 1;

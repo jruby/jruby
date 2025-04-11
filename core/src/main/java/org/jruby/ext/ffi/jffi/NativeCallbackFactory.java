@@ -14,9 +14,6 @@ import org.jruby.util.WeakIdentityHashMap;
 
 import static org.jruby.api.Error.typeError;
 
-/**
- * 
- */
 public class NativeCallbackFactory {
     private final WeakIdentityHashMap closures = new WeakIdentityHashMap();
     private final Ruby runtime;

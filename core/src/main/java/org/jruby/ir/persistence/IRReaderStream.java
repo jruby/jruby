@@ -41,10 +41,6 @@ import org.jruby.util.ByteList;
 
 import static com.headius.backport9.buffer.Buffers.positionBuffer;
 
-/**
- *
- * @author enebo
- */
 public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
     private final ByteBuffer buf;
     private final IRManager manager;

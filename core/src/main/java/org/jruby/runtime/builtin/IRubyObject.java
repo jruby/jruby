@@ -103,7 +103,7 @@ public interface IRubyObject {
     
     /**
      * RubyMethod setFrozen.
-     * @param b
+     * @param b boolean
      */
     void setFrozen(boolean b);
 
@@ -115,19 +115,19 @@ public interface IRubyObject {
 
     /**
      * RubyMethod setUntrusted.
-     * @param b
+     * @param b boolean
      */
     void setUntrusted(boolean b);
     
     /**
-     *
-     * @return
+     * Is this an immediate object
+     * @return boolean
      */
     boolean isImmediate();
 
     /**
-     *
-     * @return
+     * Is this a special constant
+     * @return boolean
      */
     boolean isSpecialConst();
 
@@ -157,21 +157,22 @@ public interface IRubyObject {
     
     /**
      * RubyMethod respondsTo.
-     * @param string
+     * @param string method name
      * @return boolean
      */
     boolean respondsTo(String string);
 
     /**
      * RubyMethod respondsTo.
-     * @param string
+     * @param string method name
      * @return boolean
      */
     boolean respondsToMissing(String string);
 
     /**
      * RubyMethod respondsTo.
-     * @param string
+     * @param string method name
+     * @param priv private?
      * @return boolean
      */
     boolean respondsToMissing(String string, boolean priv);
@@ -196,7 +197,7 @@ public interface IRubyObject {
     String asJavaString();
     
     /** rb_obj_as_string
-     * @return
+     * @return string representation
      */
     RubyString asString();
 
@@ -239,19 +240,19 @@ public interface IRubyObject {
     RubyString convertToString();
     
     /**
-     *
-     * @return
+     * make this object into a string (hopefully)
+     * @return a string value
      */
     IRubyObject anyToString();
     
     /**
-     *
+     * is this a string if so return it otherwise nil
      * @return nil if type check failed
      */
     IRubyObject checkStringType();
     
     /**
-     *
+     * is this an array if so return it otherwise nil
      * @return nil if type check failed
      */
     IRubyObject checkArrayType();
@@ -260,6 +261,8 @@ public interface IRubyObject {
      * Convert the object to the specified Java class, if possible.
      *
      * @param type The target type to which the object should be converted.
+     * @param <T> type
+     * @return java type
      */
     <T> T toJava(Class<T> type);
 
@@ -271,6 +274,7 @@ public interface IRubyObject {
 
     /**
      * RubyMethod dup.
+     * @param context the thread context
      * @return a dup-ed object
      * @since 10.0
      */
@@ -327,10 +331,12 @@ public interface IRubyObject {
      * @return the object wrapped.
      */
     Object dataGetStruct();
+
     @Deprecated // not used at all
     Object dataGetStructChecked();
     
     /**
+     * The id of the object
      * @return the object id
      */
     IRubyObject id();
@@ -368,6 +374,7 @@ public interface IRubyObject {
     boolean hasVariables();
 
     /**
+     * how many variables?
      * @return the count of all variables (ivar/cvar/constant/internal)
      */
     int getVariableCount();
@@ -392,11 +399,13 @@ public interface IRubyObject {
     void syncVariables(IRubyObject source);
     
     /**
+     * list of all variables
      * @return a list of all variables (ivar/internal)
      */
     List<Variable<Object>> getVariableList();
 
     /**
+     * all marshable values
      * @return a mutable list of all marshalable variables (ivar/internal)
      */
     default List<Variable<Object>> getMarshalVariableList() {
@@ -420,6 +429,7 @@ public interface IRubyObject {
     InternalVariables getInternalVariables();
 
     /**
+     * list of all variable names
      * @return a list of all variable names (ivar/cvar/constant/internal)
      */
     List<String> getVariableNameList();
@@ -430,7 +440,9 @@ public interface IRubyObject {
     public void setVariable(int index, Object value);
 
     /**
+     * is this a string?
      * @deprecated Use {@link #checkStringType()} instead.
+     * @return the string if so
      */
     @Deprecated
     default IRubyObject checkStringType19() {
@@ -438,9 +450,11 @@ public interface IRubyObject {
     }
 
     /**
-     * @param convertMethod
-     * @param convertMethodIndex
+     * convert this object to an integer
+     * @param convertMethod conversion method name
+     * @param convertMethodIndex index
      * @see #convertToInteger(String)
+     * @return integer
      */
     @Deprecated
     default RubyInteger convertToInteger(int convertMethodIndex, String convertMethod) {

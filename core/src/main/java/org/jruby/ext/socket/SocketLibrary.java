@@ -9,10 +9,6 @@ import java.io.IOException;
 import static org.jruby.api.Access.*;
 import static org.jruby.api.Define.defineClass;
 
-/**
- *
- * @author nicksieger
- */
 public class SocketLibrary implements Library {
     public void load(final Ruby runtime, boolean wrap) throws IOException {
         var context = runtime.getCurrentContext();

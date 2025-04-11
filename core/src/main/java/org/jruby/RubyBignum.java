@@ -65,10 +65,6 @@ import static org.jruby.api.Error.zeroDivisionError;
 import static org.jruby.api.Warn.warning;
 import static org.jruby.util.Numeric.int_pow;
 
-/**
- *
- * @author  jpetersen
- */
 @JRubyClass(name="Bignum", parent="Integer")
 public class RubyBignum extends RubyInteger {
     private static final int BIT_SIZE = 64;

@@ -35,13 +35,8 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- *
- * @author  jpetersen
- */
 @Deprecated
 public interface Callback {
-    public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block);
-
-    public Arity getArity();
+    IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block);
+    Arity getArity();
 }
