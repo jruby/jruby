@@ -147,9 +147,7 @@ public class JavaProxy extends RubyObject {
     @Override
     @SuppressWarnings("deprecation")
     public final void dataWrapStruct(Object object) {
-        if (object instanceof org.jruby.javasupport.JavaObject) {
-            this.object = ((org.jruby.javasupport.JavaObject) object).getValue();
-        } else if (object instanceof JavaProxy) {
+        if (object instanceof JavaProxy) {
             this.object = ((JavaProxy) object).object;
         } else {
             this.object = object;
@@ -165,12 +163,6 @@ public class JavaProxy extends RubyObject {
     }
 
     public Object unwrap() { return getObject(); }
-
-    @Deprecated // not used
-    @SuppressWarnings("deprecation")
-    protected org.jruby.javasupport.JavaObject asJavaObject(final Object object) {
-        return org.jruby.javasupport.JavaObject.wrap(getRuntime(), object);
-    }
 
     @Override
     public Class<?> getJavaClass() {

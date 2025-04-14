@@ -414,8 +414,6 @@ public abstract class JavaLangReflect {
 
     @SuppressWarnings("deprecation")
     private static Object convertValueToJava(final java.lang.reflect.Field field, IRubyObject value) {
-        Object val = value.dataGetStruct();
-        if (val instanceof org.jruby.javasupport.JavaObject) value = (IRubyObject) val; // expected to be no longer necessary
         return value.toJava(field.getType());
     }
 
