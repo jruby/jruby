@@ -230,7 +230,6 @@ public class JavaUtil {
         return convertProcToInterface(context, (RubyBasicObject) rubyObject, targetType);
     }
 
-    @SuppressWarnings("unchecked")
     public static <T> T convertProcToInterface(ThreadContext context, RubyBasicObject rubyObject, Class<T> targetType) {
         // Capture original class; we only detach the singleton for natural Proc instances
         RubyClass procClass = rubyObject.getMetaClass();
@@ -280,7 +279,6 @@ public class JavaUtil {
      * @param object
      * @return true if the object is wrapping a Java object
      */
-    @SuppressWarnings("deprecation")
     public static boolean isJavaObject(final IRubyObject object) {
         return object instanceof JavaProxy;
     }
@@ -291,7 +289,6 @@ public class JavaUtil {
      * @return Java object
      * @see JavaUtil#isJavaObject(IRubyObject)
      */
-    @SuppressWarnings("deprecation")
     public static <T> T unwrapJavaObject(final IRubyObject object) {
         return (T) ((JavaProxy) object).getObject();
     }
@@ -302,7 +299,6 @@ public class JavaUtil {
      * @return java object or passed object
      * @see JavaUtil#isJavaObject(IRubyObject)
      */
-    @SuppressWarnings("deprecation")
     public static <T> T unwrapIfJavaObject(final IRubyObject object) {
         if ( object instanceof JavaProxy ) {
             return (T) ((JavaProxy) object).getObject();
@@ -1471,7 +1467,6 @@ public class JavaUtil {
     }
 
     @Deprecated
-    @SuppressWarnings("deprecation")
     public static IRubyObject primitive_to_java(IRubyObject recv, IRubyObject object, Block unusedBlock) {
         var context = ((RubyObject) recv).getCurrentContext();
         Object javaObject;

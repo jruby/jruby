@@ -145,7 +145,6 @@ public class JavaProxy extends RubyObject {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public final void dataWrapStruct(Object object) {
         if (object instanceof JavaProxy) {
             this.object = ((JavaProxy) object).object;

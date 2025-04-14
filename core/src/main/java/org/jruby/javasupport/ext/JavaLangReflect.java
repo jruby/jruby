@@ -412,7 +412,6 @@ public abstract class JavaLangReflect {
         return JavaUtil.unwrapJavaValue(object);
     }
 
-    @SuppressWarnings("deprecation")
     private static Object convertValueToJava(final java.lang.reflect.Field field, IRubyObject value) {
         return value.toJava(field.getType());
     }
