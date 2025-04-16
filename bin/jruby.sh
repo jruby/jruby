@@ -537,15 +537,11 @@ if [ -f "$JAVA_HOME/release" ]; then
         esac
 
         name=${line%%=*}
-
-        # I think the values are JSON encoded but the ones we care about don't
-        # require any special parsing
-        unquote "${line#*=}"
-        value=$REPLY
+        value=${line#*=}
 
         case $name in
-            (JAVA_VERSION) java_version=$value ;;
-            (JAVA_RELEASE_VERSION) java_runtime_version=$value ;;
+            (JAVA_VERSION) unquote "$value" && java_version=$REPLY ;;
+            (JAVA_RELEASE_VERSION) unquote "$value" && java_runtime_version=$REPLY ;;
         esac
     done < "$JAVA_HOME"/release
     unset line name value
