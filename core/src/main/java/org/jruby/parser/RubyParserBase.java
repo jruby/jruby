@@ -399,9 +399,11 @@ public abstract class RubyParserBase {
             node = new LocalVarNode(lexer.tokline, slot, name);
         } else if (dyna_in_block() && id.equals("it")) {
             if (!hasArguments()) {
-                slot = currentScope.addVariable(id);
+                int existing = currentScope.isDefined(id);
+                slot = existing == -1 ?
+                        currentScope.addVariable(id) : existing;
                 node = new DVarNode(lexer.tokline, slot, name);
-                set_it_id(node);
+                if (existing == -1) set_it_id(node);
             } else {
                 slot = currentScope.isDefined(id);
                 // A special it cannot exist without being marked as a special it.
