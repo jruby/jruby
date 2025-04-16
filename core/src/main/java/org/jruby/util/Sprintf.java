@@ -874,7 +874,16 @@ public class Sprintf {
                             if (leadChar != 0) len++;
                         }
                     }
+
                     int numlen = bytes.length - first;
+                    switch (fchar) {
+                    case 'd': case 'i': case 'u':
+                        // If the precision is 0 and the value is 0, nothing is written.
+                        if ((flags & FLAG_PRECISION) != 0 && precision == 0 && zero) {
+                            numlen = 0;
+                        }
+                    }
+
                     len += numlen;
 
                     if ((flags & (FLAG_ZERO|FLAG_PRECISION)) == FLAG_ZERO) {
