@@ -47,21 +47,18 @@ import java.lang.reflect.Type;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.java.util.ClassUtils;
 import org.jruby.javasupport.proxy.ReifiedJavaProxy;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.proxy.JavaProxyMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import static org.jruby.RubyModule.undefinedMethodMessage;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.nameError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.api.Warn.warn;
 import static org.jruby.util.CodegenUtils.getBoxType;
 import static org.jruby.util.CodegenUtils.prettyParams;
-import static org.jruby.util.RubyStringBuilder.ids;
 
 public class JavaMethod extends JavaCallable {
 
@@ -105,34 +102,6 @@ public class JavaMethod extends JavaCallable {
 
     public static JavaMethod create(Ruby runtime, Method method) {
         return new JavaMethod(runtime, method);
-    }
-
-    @Deprecated // no-longer used
-    public static JavaMethod create(Ruby runtime, Class<?> javaClass, String methodName, Class<?>[] argumentTypes) {
-        try {
-            return create(runtime, javaClass.getMethod(methodName, argumentTypes));
-        }
-        catch (NoSuchMethodException e) {
-            throw nameError(runtime.getCurrentContext(), undefinedMethodMessage(runtime, ids(runtime, methodName), ids(runtime, javaClass.getName()), false), methodName);
-        }
-    }
-
-    @Deprecated // no-longer used
-    public static JavaMethod createDeclared(Ruby runtime, Class<?> javaClass, String methodName, Class<?>[] argumentTypes) {
-        try {
-            return create(runtime, javaClass.getDeclaredMethod(methodName, argumentTypes));
-        }
-        catch (NoSuchMethodException e) {
-            throw nameError(runtime.getCurrentContext(), undefinedMethodMessage(runtime, ids(runtime, methodName), ids(runtime, javaClass.getName()), false), methodName);
-        }
-    }
-
-    public static JavaMethod getMatchingDeclaredMethod(Ruby runtime, Class<?> javaClass, String methodName, Class<?>[] argumentTypes) {
-        Method m = ClassUtils.getMatchingDeclaredMethod(javaClass, methodName, argumentTypes);
-
-        if (m == null) return null;
-
-        return new JavaMethod(runtime, m);
     }
 
     @Override

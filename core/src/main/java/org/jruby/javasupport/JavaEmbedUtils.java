@@ -239,13 +239,6 @@ public class JavaEmbedUtils {
 
         IRubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(runtime, args);
 
-        // Create Ruby proxies for any input arguments that are not primitives.
-        for (int i = 0; i < rubyArgs.length; i++) {
-            IRubyObject obj = rubyArgs[i];
-
-            if (obj instanceof JavaObject) rubyArgs[i] = Java.wrap(runtime, obj);
-        }
-
         IRubyObject result = rubyReceiver.callMethod(runtime.getCurrentContext(), method, rubyArgs);
 
         return rubyToJava(runtime, result, returnType);
@@ -277,9 +270,7 @@ public class JavaEmbedUtils {
      */
     @SuppressWarnings("deprecation")
     public static IRubyObject javaToRuby(Ruby runtime, Object value) {
-        IRubyObject result = JavaUtil.convertJavaToUsableRubyObject(runtime, value);
-
-        return result instanceof JavaObject ? Java.wrap(runtime, result) : result;
+        return JavaUtil.convertJavaToUsableRubyObject(runtime, value);
     }
 
     public static IRubyObject javaToRuby(Ruby runtime, boolean value) {

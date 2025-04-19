@@ -64,9 +64,6 @@ import static org.jruby.javasupport.Java.initCause;
 public abstract class JavaSupport {
 
     protected final Ruby runtime;
-
-    @Deprecated
-    private final ClassValue<JavaClass> javaClassCache;
     private final ClassValue<RubyModule> proxyClassCache;
 
     static final class UnfinishedProxy extends ReentrantLock {
@@ -92,8 +89,6 @@ public abstract class JavaSupport {
     private RubyModule javaUtilitiesModule;
     private RubyModule javaArrayUtilitiesModule;
     private RubyClass javaObjectClass;
-    @Deprecated
-    private Object objectJavaClass;
     private RubyClass javaClassClass;
     private RubyClass javaPackageClass;
     private RubyClass javaArrayClass;
@@ -111,8 +106,6 @@ public abstract class JavaSupport {
     @SuppressWarnings("deprecation")
     public JavaSupport(final Ruby runtime) {
         this.runtime = runtime;
-
-        this.javaClassCache = ClassValue.newInstance(klass -> new JavaClass(runtime, getJavaClassClass(), klass));
 
         this.proxyClassCache = ClassValue.newInstance(new ClassValueCalculator<RubyModule>() {
             /**
@@ -226,20 +219,6 @@ public abstract class JavaSupport {
 
         var context = runtime.getCurrentContext();
         return javaProxyConstructorClass = getJavaModule(context).getClass(context, "JavaProxyConstructor");
-    }
-
-    @Deprecated // no longer used
-    public JavaClass getObjectJavaClass() {
-        Object clazz;
-        if ((clazz = objectJavaClass) != null) return (JavaClass) clazz;
-        JavaClass javaClass = JavaClass.get(runtime, Object.class);
-        objectJavaClass = javaClass;
-        return javaClass;
-    }
-
-    @Deprecated
-    public void setObjectJavaClass(JavaClass objectJavaClass) {
-        // noop
     }
 
     @Deprecated
@@ -367,16 +346,8 @@ public abstract class JavaSupport {
 
     abstract ClassValue<Map<String, AssignedName>> getInstanceAssignedNames();
 
-    @Deprecated
-    public abstract Map<String, JavaClass> getNameClassMap();
-
     @Deprecated // internal API - no longer used
     public abstract Map<Set<?>, JavaProxyClass> getJavaProxyClassCache();
-
-    @Deprecated // internal API - no longer used (kept functional due deprecated JavaClass.get API)
-    public JavaClass getJavaClassFromCache(Class clazz) {
-        return javaClassCache.get(clazz);
-    }
 
     final void beginProxy(Class clazz, RubyModule proxy) {
         UnfinishedProxy up = new UnfinishedProxy(proxy);
