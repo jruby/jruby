@@ -118,11 +118,18 @@ final class NativeClosureProxy implements Closure {
                     buffer.setLongReturn(Util.int64Value(value)); break;
                 case ULONG_LONG:
                     buffer.setLongReturn(Util.uint64Value(value)); break;
-                case LONG, ULONG:
+                case LONG:
                     if (LONG_SIZE == 32) {
                         buffer.setIntReturn((int) longValue(context, value));
                     } else {
                         buffer.setLongReturn(Util.int64Value(value));
+                    }
+                    break;
+                case ULONG:
+                    if (LONG_SIZE == 32) {
+                        buffer.setIntReturn((int) longValue(context, value));
+                    } else {
+                        buffer.setLongReturn(Util.uint64Value(value));
                     }
                     break;
                 case FLOAT:
