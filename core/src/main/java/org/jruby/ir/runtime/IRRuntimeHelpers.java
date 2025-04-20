@@ -864,26 +864,21 @@ public class IRRuntimeHelpers {
             return hash;
         }
 
-        clearTrailingHashRuby2Keywords(context, args, hash);
-
-        // If splat call with ruby2_keywords hash that's not empty, just return it
-        if ((callInfo & CALL_SPLATS) != 0 && hash.isEmpty()) {
-            return hash;
+        if ((callInfo & CALL_SPLATS) != 0 && !hash.isEmpty()) {
+            args[args.length - 1] = hash.dup(context);
+            return UNDEFINED;
         }
 
-        // We record before funging last arg because we may unmark and replace last arg.
-        boolean callKeyword = (callInfo & CALL_KEYWORD) != 0;
+        boolean explicitKeywords = (callInfo & CALL_KEYWORD) != 0;
+        if (explicitKeywords) {
+            if (!hash.isEmpty()) return hash.dupFast(context);
 
-        // If ordinary hash as last argument, dup and return it
-        if (callKeyword && acceptsKeywords && !hash.isEmpty()) {
-            return hash.dupFast(context);
+            // FIXME: This is a bit gross.  a real kwarg callsite if passed to a non-kwarg method but it
+            // has a rest arg will dup the original kwarg (presumably so you cannot modify the original
+            // kwarg hash).  This should be handled during  recv_rest_arg but we no longer have the info so
+            // it happening here.
+            if (hasRestArgs) args[args.length - 1] = hash.dup(context);
         }
-
-        // FIXME: This is a bit gross.  a real kwarg callsite if passed to a non-kwarg method but it
-        // has a rest arg will dup the original kwarg (presumably so you cannot modify the original
-        // kwarg hash).  This should be handled during  recv_rest_arg but we no longer have the info so
-        // it happening here.
-        if (hasRestArgs && callKeyword) args[args.length - 1] = hash.dup(context);
 
         // All other situations no-op
         return UNDEFINED;
