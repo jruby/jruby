@@ -844,11 +844,7 @@ public class IRRuntimeHelpers {
             return hash.dupFast(context);
         }
 
-        // FIXME: This is a bit gross.  a real kwarg callsite if passed to a non-kwarg method but it
-        // has a rest arg will dup the original kwarg (presumably so you cannot modify the original
-        // kwarg hash).  This should be handled during  recv_rest_arg but we no longer have the info so
-        // it happening here.
-        if (hasRestArgs) args[args.length - 1] = hash.dup(context);
+        args[args.length - 1] = hash.dup(context);
 
         // All other situations no-op
         return UNDEFINED;
