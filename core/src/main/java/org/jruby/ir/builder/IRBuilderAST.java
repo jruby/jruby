@@ -2332,6 +2332,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
 
             if (key == null) {                          // Splat kwarg [e.g. {**splat1, a: 1, **splat2)]
                 Node value = pair.getValue();
+                if (value instanceof NilNode) continue; // **nil contribute nothing to a heterogeneous hash of elements
                  duplicateCheck = value instanceof HashNode && ((HashNode) value).isLiteral() ? tru() : fals();
                 if (hash == null) {                     // No hash yet. Define so order is preserved.
                     hash = copy(new Hash(args));
