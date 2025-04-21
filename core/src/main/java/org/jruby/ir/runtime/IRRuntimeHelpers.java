@@ -852,7 +852,10 @@ public class IRRuntimeHelpers {
             return hash;
         }
 
-        if ((callInfo & CALL_SPLATS) != 0 && !hash.isEmpty()) {
+        if ((callInfo & CALL_SPLATS) != 0) {
+            // somehow we splatted an array with an empty keyword argument attached (ruby2_keywords_hash can lead to this)
+            if (hash.isEmpty()) return hash;
+
             args[args.length - 1] = hash.dup(context);
             return UNDEFINED;
         }
