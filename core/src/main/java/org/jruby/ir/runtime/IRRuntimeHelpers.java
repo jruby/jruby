@@ -671,7 +671,7 @@ public class IRRuntimeHelpers {
 
     @JIT @Interp
     public static IRubyObject hashCheck(ThreadContext context, IRubyObject hash) {
-        return TypeConverter.checkHashType(context.runtime, hash);
+        return TypeConverter.convertToType(hash, hashClass(context), "to_hash");
     }
 
     public static IRubyObject isHashEmpty(ThreadContext context, IRubyObject hash) {
