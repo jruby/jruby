@@ -840,7 +840,9 @@ public class IRRuntimeHelpers {
         return UNDEFINED;
     }
 
-    private static IRubyObject receiveKeywordsHashRubyKeywordsHash(ThreadContext context, IRubyObject[] args, boolean hasRestArgs, boolean acceptsKeywords, int callInfo, RubyHash hash) {
+    private static IRubyObject receiveKeywordsHashRubyKeywordsHash(ThreadContext context, IRubyObject[] args,
+                                                                   boolean hasRestArgs, boolean acceptsKeywords,
+                                                                   int callInfo, RubyHash hash) {
         // ruby2_keywords only get unmarked if it enters a method which accepts keywords.
         // This means methods which don't just keep that marked hash around in case it is passed
         // onto another method which accepts keywords.

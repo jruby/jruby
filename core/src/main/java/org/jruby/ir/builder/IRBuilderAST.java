@@ -523,11 +523,14 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
 
+    // Looks weird to see no key comparison but we know if this is called there are only kwrest value(s).
     private Operand buildRestKeywordArgs(HashNode keywordArgs, int[] flags) {
         flags[0] |= CALL_KEYWORD_REST;
         List<KeyValuePair<Node, Node>> pairs = keywordArgs.getPairs();
 
         if (pairs.size() == 1) { // Only a single rest arg here.  Do not bother to merge.
+            if (pairs.get(0).getValue() instanceof NilNode) return new Hash(new ArrayList<>()); // **nil
+
             Operand splat = buildWithOrder(pairs.get(0).getValue(), keywordArgs.containsVariableAssignment());
 
             return addResultInstr(new RuntimeHelperCall(temp(), HASH_CHECK, new Operand[] { splat }));
@@ -535,7 +538,9 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
 
         Variable splatValue = copy(new Hash(new ArrayList<>()));
         for (KeyValuePair<Node, Node> pair: pairs) {
-            Operand splat = buildWithOrder(pair.getValue(), keywordArgs.containsVariableAssignment());
+            Operand splat = pair.getValue() instanceof NilNode ?
+                    new Hash(new ArrayList<>()) : // **nil
+                    buildWithOrder(pair.getValue(), keywordArgs.containsVariableAssignment()); // **r
             addInstr(new RuntimeHelperCall(splatValue, MERGE_KWARGS, new Operand[] { splatValue, splat, fals() }));
         }
 
