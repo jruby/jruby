@@ -624,19 +624,19 @@ public class Sprintf {
                     }
                     if ((flags & FLAG_WIDTH) == 0) {
                         buf.ensure(buf.length() + n);
-                        EncodingUtils.encMbcput(context, c, buf.unsafeBytes(), buf.realSize(), encoding);
+                        EncodingUtils.encMbcput(context, c, buf.unsafeBytes(), buf.begin() + buf.realSize(), encoding);
                         buf.realSize(buf.realSize() + n);
                     }
                     else if ((flags & FLAG_MINUS) != 0) {
                         buf.ensure(buf.length() + n);
-                        EncodingUtils.encMbcput(context, c, buf.unsafeBytes(), buf.realSize(), encoding);
+                        EncodingUtils.encMbcput(context, c, buf.unsafeBytes(), buf.begin() + buf.realSize(), encoding);
                         buf.realSize(buf.realSize() + n);
                         buf.fill(' ', width - 1);
                     }
                     else {
                         buf.fill(' ', width - 1);
                         buf.ensure(buf.length() + n);
-                        EncodingUtils.encMbcput(context, c, buf.unsafeBytes(), buf.realSize(), encoding);
+                        EncodingUtils.encMbcput(context, c, buf.unsafeBytes(), buf.begin() + buf.realSize(), encoding);
                         buf.realSize(buf.realSize() + n);
                     }
                     offset++;
