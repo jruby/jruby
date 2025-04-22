@@ -27,7 +27,7 @@ import static org.jruby.api.Create.newSmallHash;
 // Further down the line, this hash could get converted to calls
 // that actually build the hash
 public class Hash extends Operand {
-    final public KeyValuePair<Operand, Operand>[] pairs;
+    public final KeyValuePair<Operand, Operand>[] pairs;
 
     public Hash(List<KeyValuePair<Operand, Operand>> pairs) {
         this(pairs.toArray(new KeyValuePair[pairs.size()]));
