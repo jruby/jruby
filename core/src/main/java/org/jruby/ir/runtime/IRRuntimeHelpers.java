@@ -671,6 +671,8 @@ public class IRRuntimeHelpers {
 
     @JIT @Interp
     public static IRubyObject hashCheck(ThreadContext context, IRubyObject hash) {
+        // A case like: x = nil; foo(a: 1, **x). **nil itself gets figured out during build but indirection to nil happens here.
+        if (hash instanceof RubyNil) return newHash(context);
         return TypeConverter.convertToType(hash, hashClass(context), "to_hash");
     }
 
