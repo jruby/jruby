@@ -3455,17 +3455,17 @@ public class RubyModule extends RubyObject {
                 if (!method.isNative()) {
                     Signature signature = method.getSignature();
                     if (!signature.hasRest()) {
-                        warn(context, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (method accepts keywords or method does not accept argument splat)"));
+                        warn(context, str(context.runtime, "Skipping set of ruby2_keywords flag for ", ids(context.runtime, name), " (method accepts keywords or method does not accept argument splat)"));
                     } else if (!signature.hasKwargs()) {
                         method.setRuby2Keywords();
                     } else if (method instanceof AbstractIRMethod && ((AbstractIRMethod) method).getStaticScope().exists("...") == -1) {
-                        warn(context, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (method accepts keywords or method does not accept argument splat)"));
+                        warn(context, str(context.runtime, "Skipping set of ruby2_keywords flag for ", ids(context.runtime, name), " (method accepts keywords or method does not accept argument splat)"));
                     }
                 } else {
                     warn(context, str(context.runtime, "Skipping set of ruby2_keywords flag for ", ids(context.runtime, name), " (method not defined in Ruby)"));
                 }
             } else {
-                warn(context, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (can only set in method defining module)"));
+                warn(context, str(context.runtime, "Skipping set of ruby2_keywords flag for ", ids(context.runtime, name), " (can only set in method defining module)"));
             }
         }
         return context.nil;
