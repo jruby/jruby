@@ -58,7 +58,7 @@ module JRuby::Compiler
       end
 
       opts.on("-J OPTION", "Pass OPTION to javac for javac compiles") do |o|
-        o[:javac_options] << o
+        options[:javac_options] << o
       end
 
       opts.on("--java", "Generate Java classes (.java) for a script containing Ruby class definitions") do
