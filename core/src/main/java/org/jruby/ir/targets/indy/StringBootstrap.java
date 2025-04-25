@@ -45,7 +45,7 @@ public class StringBootstrap {
             Opcodes.H_INVOKESTATIC,
             p(StringBootstrap.class),
             "cstring",
-            sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, String.class, int.class),
+            sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, String.class, int.class, String.class, int.class),
             false);
     public static final Handle EMPTY_STRING_BOOTSTRAP = new Handle(
             Opcodes.H_INVOKESTATIC,
@@ -79,7 +79,7 @@ public class StringBootstrap {
 
     private static final MethodHandle CSTRING_HANDLE =
             Binder
-                    .from(RubyString.class, ThreadContext.class, ByteList.class, int.class)
+                    .from(RubyString.class, ThreadContext.class, ByteList.class, int.class, String.class, int.class)
                     .invokeStaticQuiet(LOOKUP, StringBootstrap.class, "chilledString");
 
     private static final MethodHandle FSTRING_HANDLE =
@@ -103,8 +103,8 @@ public class StringBootstrap {
         return new ConstantCallSite(insertArguments(STRING_HANDLE, 1, bytelist(value, encodingName), cr));
     }
 
-    public static CallSite cstring(MethodHandles.Lookup lookup, String name, MethodType type, String value, String encodingName, int cr) {
-        return new ConstantCallSite(insertArguments(CSTRING_HANDLE, 1, bytelist(value, encodingName), cr));
+    public static CallSite cstring(MethodHandles.Lookup lookup, String name, MethodType type, String value, String encodingName, int cr, String file, int line) {
+        return new ConstantCallSite(insertArguments(CSTRING_HANDLE, 1, bytelist(value, encodingName), cr, file, line));
     }
 
     public static CallSite emptyString(MethodHandles.Lookup lookup, String name, MethodType type, String encodingName) {
@@ -136,8 +136,8 @@ public class StringBootstrap {
         return RubyString.newStringShared(context.runtime, value, cr);
     }
 
-    public static RubyString chilledString(ThreadContext context, ByteList value, int cr) {
-        return RubyString.newChilledString(context.runtime, value, cr);
+    public static RubyString chilledString(ThreadContext context, ByteList value, int cr, String file, int line) {
+        return RubyString.newChilledString(context.runtime, value, cr, file, line);
     }
 
     public static RubyString bufferString(ThreadContext context, Encoding encoding, int size, int cr) {

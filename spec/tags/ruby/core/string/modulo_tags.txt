@@ -3,4 +3,5 @@ fails:String#% behaves as if calling Kernel#Float for %E arguments, when the pas
 fails:String#% behaves as if calling Kernel#Float for %f arguments, when the passed argument does not respond to #to_ary
 fails:String#% behaves as if calling Kernel#Float for %g arguments, when the passed argument does not respond to #to_ary
 fails:String#% behaves as if calling Kernel#Float for %G arguments, when the passed argument does not respond to #to_ary
-fails:String#% raises an ArgumentError if absolute argument specifier is followed by a conversion specifier
+fails(https://github.com/jruby/jruby/issues/8739):String#% other formats c displays no characters if argument is an empty string
+fails(https://github.com/jruby/jruby/issues/8739):String#% raises an ArgumentError if absolute argument specifier is followed by a conversion specifier

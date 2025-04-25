@@ -87,9 +87,9 @@ public class IndyValueCompiler implements ValueCompiler {
         compiler.adapter.invokedynamic("string", sig(RubyString.class, ThreadContext.class), StringBootstrap.STRING_BOOTSTRAP, RubyEncoding.decodeRaw(bl), bl.getEncoding().toString(), cr);
     }
 
-    public void pushChilledString(ByteList bl, int cr) {
+    public void pushChilledString(ByteList bl, int cr, String file, int line) {
         compiler.loadContext();
-        compiler.adapter.invokedynamic("chilled", sig(RubyString.class, ThreadContext.class), StringBootstrap.CSTRING_BOOTSTRAP, RubyEncoding.decodeRaw(bl), bl.getEncoding().toString(), cr);
+        compiler.adapter.invokedynamic("chilled", sig(RubyString.class, ThreadContext.class), StringBootstrap.CSTRING_BOOTSTRAP, RubyEncoding.decodeRaw(bl), bl.getEncoding().toString(), cr, file, line);
     }
 
     public void pushFrozenString(ByteList bl, int cr, String file, int line) {

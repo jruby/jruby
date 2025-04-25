@@ -28,9 +28,6 @@
 
 package org.jruby;
 
-/**
- * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
- */
 public interface Profile {
     Profile ALL = new Profile() {
             public boolean allowBuiltin(String name) { return true; }

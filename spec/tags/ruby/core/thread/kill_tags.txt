@@ -1,3 +1,3 @@
 unstable:Thread#kill killing dying running does nothing
 unstable(sleep status does not propagate in fibers properly):Thread#kill kills the entire thread when a fiber is active
-fails:Thread#kill kills other fibers of that thread without running their ensure clauses
+unstable(JRuby does run ensures because they are JVM finally sections, so this only passes randomly due to racing):Thread#kill kills other fibers of that thread without running their ensure clauses

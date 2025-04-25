@@ -44,6 +44,7 @@ public interface CoreObjectType {
     /**
      * Return the ClassIndex for the native type this object was constructed
      * from.
+     * @return the ClassIndex of the native type this object was constructed from
      */
     ClassIndex getNativeClassIndex();
 }

@@ -41,9 +41,6 @@ import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newString;
 
-/**
- *
- */
 public class Platform {
 
     private static final java.util.Locale LOCALE = java.util.Locale.ENGLISH;

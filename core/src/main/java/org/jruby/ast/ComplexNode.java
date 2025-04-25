@@ -13,10 +13,6 @@ import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- *
- * @author enebo
- */
 public class ComplexNode extends NumericNode implements SideEffectFree {
     private NumericNode y;
 

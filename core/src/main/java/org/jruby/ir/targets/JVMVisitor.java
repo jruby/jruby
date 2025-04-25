@@ -2747,7 +2747,7 @@ public class JVMVisitor extends IRVisitor {
     }
 
     public void ChilledString(ChilledString chilled) {
-        jvmMethod().getValueCompiler().pushChilledString(chilled.getByteList(), chilled.getCodeRange());
+        jvmMethod().getValueCompiler().pushChilledString(chilled.getByteList(), chilled.getCodeRange(), chilled.frozenString.file, chilled.frozenString.line);
     }
 
 

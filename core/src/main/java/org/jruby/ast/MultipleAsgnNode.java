@@ -33,9 +33,6 @@ import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
 
-/**
- *
- */
 public class MultipleAsgnNode extends AssignableNode {
     private final ListNode pre;
     private final Node rest;

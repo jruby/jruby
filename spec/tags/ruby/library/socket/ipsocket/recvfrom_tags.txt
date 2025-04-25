@@ -4,4 +4,4 @@ fails:Socket::IPSocket#recvfrom using IPv6 returns an Array containing up to N b
 fails:Socket::IPSocket#recvfrom using IPv6 using reverse lookups includes the hostname in the address Array
 hangs:Socket::IPSocket#recvfrom when recvfrom(2) returns 0 (if no messages are available to be received and the peer has performed an orderly shutdown) datagram socket using IPv4 returns an empty String as received data
 hangs:Socket::IPSocket#recvfrom when recvfrom(2) returns 0 (if no messages are available to be received and the peer has performed an orderly shutdown) datagram socket using IPv6 returns an empty String as received data
-fails:Socket::IPSocket#recvfrom when recvfrom(2) returns 0 (if no messages are available to be received and the peer has performed an orderly shutdown) stream socket returns nil on a closed stream socket
+fails(low priority excluded from JRuby 10):Socket::IPSocket#recvfrom when recvfrom(2) returns 0 (if no messages are available to be received and the peer has performed an orderly shutdown) stream socket returns nil on a closed stream socket

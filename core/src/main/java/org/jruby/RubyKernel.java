@@ -480,7 +480,6 @@ public class RubyKernel {
     /**
      * Parse hexidecimal exponential notation:
      * <a href="https://en.wikipedia.org/wiki/Hexadecimal#Hexadecimal_exponential_notation">...</a>
-     * <p/>
      * This method assumes the string is a valid-formatted string.
      *
      * @param str the bytelist to be parsed

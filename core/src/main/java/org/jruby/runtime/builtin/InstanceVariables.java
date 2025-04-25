@@ -47,6 +47,7 @@ public interface InstanceVariables {
      * 
      * @param name the name of an instance variable
      * @param value the value to be set
+     * @return value
      */    
     IRubyObject setInstanceVariable(String name, IRubyObject value);
 
@@ -63,17 +64,20 @@ public interface InstanceVariables {
     IRubyObject removeInstanceVariable(String name);
 
     /**
+     * list of instance variables
      * @return instance variables
      */
     List<Variable<IRubyObject>> getInstanceVariableList();
 
     /**
+     * list of instance variables as Strings
      * @return instance variable names
      */
     List<String> getInstanceVariableNameList();
 
     /**
      * Copies all instance variables from the given object into the receiver
+     * @param other the thing to copy into
      */
     void copyInstanceVariablesInto(InstanceVariables other);
 

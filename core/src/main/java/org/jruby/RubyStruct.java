@@ -76,9 +76,6 @@ import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.util.RubyStringBuilder.str;
 
-/**
- * @author  jpetersen
- */
 @JRubyClass(name="Struct")
 public class RubyStruct extends RubyObject {
     public static final String NO_MEMBER_IN_STRUCT = "no member '%1$s' in struct";

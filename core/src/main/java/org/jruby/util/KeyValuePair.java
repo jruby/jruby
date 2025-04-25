@@ -2,6 +2,8 @@ package org.jruby.util;
 
 /**
  * Simple key-value pair object.
+ * @param <K> key
+ * @param <V> value
  */
 public class KeyValuePair<K,V> {
     private final K key;

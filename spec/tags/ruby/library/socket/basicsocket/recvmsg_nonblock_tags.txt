@@ -48,4 +48,4 @@ fails:BasicSocket#recvmsg_nonblock using IPv4 using a disconnected socket using 
 fails:BasicSocket#recvmsg_nonblock using IPv6 using a disconnected socket using a bound socket without any data available returns :wait_readable with exception: false
 fails:BasicSocket#recvmsg_nonblock using IPv4 using a connected but not bound socket raises Errno::ENOTCONN
 fails:BasicSocket#recvmsg_nonblock using IPv6 using a connected but not bound socket raises Errno::ENOTCONN
-fails:BasicSocket#recvmsg_nonblock when recvfrom(2) returns 0 (if no messages are available to be received and the peer has performed an orderly shutdown) stream socket returns nil on a closed stream socket
+fails(low priority excluded from JRuby 10):BasicSocket#recvmsg_nonblock when recvfrom(2) returns 0 (if no messages are available to be received and the peer has performed an orderly shutdown) stream socket returns nil on a closed stream socket

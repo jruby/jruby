@@ -114,9 +114,9 @@ ruby/test_nomethod_error.rb
 ruby/test_not.rb
 ruby/test_numeric.rb
 ruby/test_object.rb
-ruby/test_objectspace.rb
-# accesses RubyVM during load
-#ruby/test_optimization.rb
+# should be run with ObjectSpace enabled
+#ruby/test_objectspace.rb
+ruby/test_optimization.rb
 ruby/test_pack.rb
 ruby/test_parse.rb
 ruby/test_path.rb
@@ -135,7 +135,8 @@ ruby/test_readpartial.rb
 ruby/test_refinement.rb
 ruby/test_regexp.rb
 ruby/test_require.rb
-ruby/test_require_lib.rb
+# launches many subprocesses, moved to extra
+#ruby/test_require_lib.rb
 ruby/test_rubyoptions.rb
 # accesses RubyVM during load
 #ruby/test_rubyvm.rb
@@ -170,7 +171,8 @@ ruby/test_transcode.rb
 ruby/test_undef.rb
 ruby/test_unicode_escape.rb
 ruby/test_variable.rb
-ruby/test_vm_dump.rb
+# CRuby-specific, macos-specific memory dumping test
+#ruby/test_vm_dump.rb
 ruby/test_warning.rb
 ruby/test_weakkeymap.rb
 ruby/test_weakmap.rb

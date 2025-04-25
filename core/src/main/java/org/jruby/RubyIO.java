@@ -144,10 +144,6 @@ import static org.jruby.util.io.ChannelHelper.*;
 import static org.jruby.util.io.EncodingUtils.encCodepointLength;
 import static org.jruby.util.io.EncodingUtils.vperm;
 
-/**
- *
- * @author jpetersen
- */
 @JRubyClass(name="IO", include="Enumerable")
 public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flushable {
 
@@ -4060,36 +4056,30 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     /* class methods for IO */
 
     // rb_io_s_foreach
-    private static IRubyObject foreachInternal(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        boolean keywords = (resetCallInfo(context) & CALL_KEYWORD) != 0;
-
+    private static IRubyObject foreachInternal(ThreadContext context, IRubyObject recv, IRubyObject[] args, boolean keywords, Block block) {
         IRubyObject opt = ArgsUtil.getOptionsArg(context.runtime, args);
         RubyIO io = openKeyArgs(context, recv, args, opt);
         IRubyObject nil = context.nil;
 
         if (io == nil) return io;
 
-        int argc = args.length;
-        if (!opt.isNil()) {
-            argc--;
-        }
-
         // io_s_foreach, roughly
         try {
-            switch (argc) {
+            switch (args.length) {
                 case 1:
                     Getline.getlineCall(context, GETLINE_YIELD, io, io.getReadEncoding(context), block);
                     break;
                 case 2:
-                    if (opt != context.nil) return io.readlines(context, opt);
                     Getline.getlineCall(context, GETLINE_YIELD, io, io.getReadEncoding(context), args[1], block, keywords);
                     break;
                 case 3:
-                    if (opt != context.nil) return io.readlines(context, args[1], opt);
                     Getline.getlineCall(context, GETLINE_YIELD, io, io.getReadEncoding(context), args[1], args[2], block, keywords);
                     break;
+                case 4:
+                    Getline.getlineCall(context, GETLINE_YIELD, io, io.getReadEncoding(context), args[1], args[2], args[3], block, keywords);
+                    break;
                 default:
-                    Arity.checkArgumentCount(context, argc, 1, 3);
+                    Arity.checkArgumentCount(context, args.length - (keywords ? 1 : 0), 1, 3);
             }
         } finally {
             io.close();
@@ -4101,11 +4091,13 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @JRubyMethod(name = "foreach", required = 1, optional = 3, checkArity = false, meta = true, writes = LASTLINE, keywords = true)
     public static IRubyObject foreach(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
-        Arity.checkArgumentCount(context, args, 1, 4);
+        boolean keywords = (resetCallInfo(context) & CALL_KEYWORD) != 0;
+
+        Arity.checkArgumentCount(context, args.length - (keywords ? 1 : 0), 1, 4);
 
         if (!block.isGiven()) return enumeratorize(context.runtime, recv, "foreach", args);
 
-        return foreachInternal(context, recv, args, block);
+        return foreachInternal(context, recv, args, keywords, block);
     }
 
     public static RubyIO convertToIO(ThreadContext context, IRubyObject obj) {
@@ -4577,25 +4569,20 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         int callInfo = context.callInfo;
         IRubyObject opt = ArgsUtil.getOptionsArg(context.runtime, args);
 
-        int argc = args.length;
-        if (!opt.isNil()) {
-            argc--;
-        }
-
         final RubyIO io = openKeyArgs(context, recv, args, opt);
         context.callInfo = callInfo;
         try {
-            switch (argc) {
+            switch (args.length) {
                 case 1:
                     return io.readlines(context);
                 case 2:
-                    if (opt != context.nil) return io.readlines(context, opt);
                     return io.readlines(context, args[1]);
                 case 3:
-                    if (opt != context.nil) return io.readlines(context, args[1], opt);
                     return io.readlines(context, args[1], args[2]);
+                case 4:
+                    return io.readlines(context, args[1], args[2], args[3]);
                 default:
-                    Arity.raiseArgumentError(context, args.length, 1, 2);
+                    Arity.raiseArgumentError(context, args.length, 1, 3);
                     throw new AssertionError("BUG");
             }
         } finally { io.close(); }

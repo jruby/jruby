@@ -5,3 +5,5 @@ fails:Socket.gethostbyname using an IPv6 address the returned Array includes the
 fails:Socket.gethostbyname using an IPv6 address the returned Array includes the address type as the 3rd value
 darwin(macOS provides a hostname for the broadcast address):Socket.gethostbyname returns broadcast address info for '<broadcast>'
 darwin(macOS provides a hostname for the broadcast address):Socket.gethostbyname using <broadcast> as the input address the returned Array includes the broadcast address as the first value
+fails(low priority excluded from JRuby 10):Socket.gethostbyname returns broadcast address info for '<broadcast>'
+fails(low priority excluded from JRuby 10):Socket.gethostbyname using <broadcast> as the input address the returned Array includes the broadcast address as the first value

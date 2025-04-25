@@ -1019,7 +1019,7 @@ public class JavaUtil {
         case RubyFixnum fixnum -> Long.valueOf(fixnum.getValue());
         case RubyFloat flote-> Double.valueOf(flote.asDouble(context));
         case RubyBignum bignum -> bignum.getValue();
-        case RubyBigDecimal bigdec -> bigdec.asLong(context);
+        case RubyBigDecimal bigdec -> bigdec.getValue();
         default -> NUMERIC_TO_OTHER.coerce(context, numeric, target);
     };
     private static final NumericConverter NUMERIC_TO_VOID = (context, numeric, target) -> null;

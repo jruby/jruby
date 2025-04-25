@@ -56,11 +56,6 @@ import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.api.Warn.warn;
 
-
-/**
- * @author Bill Dortch
- *
- */
 public class Sprintf {
     private static final int FLAG_NONE        = 0;
     private static final int FLAG_SPACE       = 1;
@@ -355,7 +350,7 @@ public class Sprintf {
                                                final Args args, final boolean usePrefixForZero) {
         ThreadContext context = args.runtime.getCurrentContext();
         final byte[] format;
-        final Encoding encoding;
+        Encoding encoding;
 
         int offset, length;
 
@@ -595,27 +590,36 @@ public class Sprintf {
                         }
                     } else {
                         c = (int) toLong(context, arg) & 0xFFFFFFFF;
-                        try {
-                            n = StringSupport.codeLength(encoding, c);
-                        } catch (EncodingException e) {
+                        if (c >= 0) {
+                            try {
+                                n = StringSupport.codeLength(encoding, c);
+                            } catch (EncodingException e) {
+                                n = -1;
+                            }
+                        } else {
                             n = -1;
                         }
                     }
-                    if (n < 0) throw argumentError(context, "invalid character");
+                    if (n <= 0) throw argumentError(context, "invalid character");
+                    Encoding appendableEncoding = EncodingUtils.rbAscii8bitAppendableEncodingIndex(context, encoding, c);
+                    if (appendableEncoding != null && appendableEncoding != encoding) {
+                        buf.setEncoding(appendableEncoding);
+                        encoding = appendableEncoding;
+                    }
 
                     if ((flags & FLAG_WIDTH) == 0) {
                         buf.ensure(buf.length() + n);
-                        EncodingUtils.encMbcput(context, c, buf.unsafeBytes(), buf.realSize(), encoding);
+                        EncodingUtils.encMbcput(context, c, buf.unsafeBytes(), buf.begin() + buf.realSize(), encoding);
                         buf.realSize(buf.realSize() + n);
                     } else if ((flags & FLAG_MINUS) != 0) {
                         buf.ensure(buf.length() + n);
-                        EncodingUtils.encMbcput(context, c, buf.unsafeBytes(), buf.realSize(), encoding);
+                        EncodingUtils.encMbcput(context, c, buf.unsafeBytes(), buf.begin() + buf.realSize(), encoding);
                         buf.realSize(buf.realSize() + n);
                         buf.fill(' ', width - n);
                     } else {
                         buf.fill(' ', width - n);
                         buf.ensure(buf.length() + n);
-                        EncodingUtils.encMbcput(context, c, buf.unsafeBytes(), buf.realSize(), encoding);
+                        EncodingUtils.encMbcput(context, c, buf.unsafeBytes(), buf.begin() + buf.realSize(), encoding);
                         buf.realSize(buf.realSize() + n);
                     }
                     offset++;
@@ -751,7 +755,7 @@ public class Sprintf {
                     case INTEGER: // no-op
                         break;
                     case FLOAT:
-                        arg = asInteger(context, ((RubyFloat) arg).asLong(context));
+                        arg = asInteger(context, ((RubyFloat) arg).asDouble(context));
                         break;
                     case STRING:
                         arg = ((RubyString) arg).stringToInum(0, true);
@@ -870,7 +874,16 @@ public class Sprintf {
                             if (leadChar != 0) len++;
                         }
                     }
+
                     int numlen = bytes.length - first;
+                    switch (fchar) {
+                    case 'd': case 'i': case 'u':
+                        // If the precision is 0 and the value is 0, nothing is written.
+                        if ((flags & FLAG_PRECISION) != 0 && precision == 0 && zero) {
+                            numlen = 0;
+                        }
+                    }
+
                     len += numlen;
 
                     if ((flags & (FLAG_ZERO|FLAG_PRECISION)) == FLAG_ZERO) {

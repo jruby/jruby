@@ -2516,6 +2516,7 @@ states[70] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop,
 
                     ctxt.in_def = true;
                     ctxt.in_rescue = LexContext.InRescue.BEFORE_RESCUE;
+                    ctxt.cant_return = false;
                     p.setCurrentArg(null);
   return yyVal;
 };
@@ -4329,6 +4330,7 @@ states[379] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
                     LexContext ctxt = p.getLexContext();
                     p.popCurrentScope();
                     ctxt.in_class = ((LexContext)yyVals[-5+yyTop].value).in_class;
+                    ctxt.cant_return = ((LexContext)yyVals[-5+yyTop].value).cant_return;
                     ctxt.shareable_constant_value = ((LexContext)yyVals[-5+yyTop].value).shareable_constant_value;
   return yyVal;
 };
@@ -4345,6 +4347,7 @@ states[381] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
                     LexContext ctxt = p.getLexContext();
                     ctxt.in_def = ((LexContext)yyVals[-6+yyTop].value).in_def;
                     ctxt.in_class = ((LexContext)yyVals[-6+yyTop].value).in_class;
+                    ctxt.cant_return = ((LexContext)yyVals[-6+yyTop].value).cant_return;
                     ctxt.shareable_constant_value = ((LexContext)yyVals[-6+yyTop].value).shareable_constant_value;
                     p.popCurrentScope();
   return yyVal;
@@ -4362,6 +4365,7 @@ states[383] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
                     p.popCurrentScope();
                     LexContext ctxt = p.getLexContext();
                     ctxt.in_class = ((LexContext)yyVals[-4+yyTop].value).in_class;
+                    ctxt.cant_return = ((LexContext)yyVals[-4+yyTop].value).cant_return;
                     ctxt.shareable_constant_value = ((LexContext)yyVals[-4+yyTop].value).shareable_constant_value;
   return yyVal;
 };
@@ -4523,7 +4527,7 @@ states[411] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
 };
 states[412] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     LexContext ctxt = p.getLexContext();
-                    if (ctxt.in_class && !ctxt.in_def && !p.getCurrentScope().isBlockScope()) {
+                    if (ctxt.cant_return && !p.dyna_in_block()) {
                         p.compile_error("Invalid return in class/module body");
                     }
   return yyVal;
@@ -6616,7 +6620,7 @@ states[822] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 }
-					// line 4635 "ripper_RubyParser.out"
+					// line 4639 "ripper_RubyParser.out"
 
 }
-					// line 14748 "-"
+					// line 14752 "-"

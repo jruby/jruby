@@ -17,10 +17,6 @@ import java.util.Map;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
-
-/**
- *
- */
 public class DataConverters {
     @SuppressWarnings("unchecked")
     private static final Map<IRubyObject, NativeDataConverter> enumConverters = Collections.synchronizedMap(new WeakIdentityHashMap());

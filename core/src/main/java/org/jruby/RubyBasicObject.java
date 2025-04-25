@@ -30,7 +30,6 @@ package org.jruby;
 
 import org.jcodings.Encoding;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.api.Access;
 import org.jruby.api.Create;
 import org.jruby.api.JRubyAPI;
 import org.jruby.ast.util.ArgsUtil;
@@ -57,7 +56,6 @@ import org.jruby.runtime.builtin.InternalVariables;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.component.VariableEntry;
-import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.ivars.VariableTableManager;
 import org.jruby.runtime.marshal.CoreObjectType;
@@ -102,7 +100,6 @@ import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Convert.castAsModule;
 import static org.jruby.api.Convert.toInt;
-import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Error.argumentError;
@@ -119,7 +116,6 @@ import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PROTECTED;
 import static org.jruby.runtime.Visibility.PUBLIC;
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
-import static org.jruby.runtime.invokedynamic.MethodNames.INSPECT;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 import static org.jruby.util.Inspector.COMMA;
@@ -234,6 +230,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /**
      * Will create the Ruby class BasicObject in the runtime specified. This method needs to take the
      * actual class as an argument because of the Object class' central part in runtime initialization.
+     * @param context the thread context
+     * @param BasicObject reference to BasicObject
      */
     public static void finishBasicObjectClass(ThreadContext context, RubyClass BasicObject) {
         BasicObject.classIndex(ClassIndex.OBJECT).
@@ -255,6 +253,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /**
      * Standard path for object creation. Objects are entered into ObjectSpace
      * only if ObjectSpace is enabled.
+     * @param runtime the runtime
+     * @param metaClass the meta class
      */
     public RubyBasicObject(Ruby runtime, RubyClass metaClass) {
         this.metaClass = metaClass;
@@ -264,6 +264,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     /**
      * Path for objects that don't enter objectspace.
+     * @param metaClass the new metaclass
      */
     public RubyBasicObject(RubyClass metaClass) {
         this.metaClass = metaClass;
@@ -273,6 +274,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * Path for objects who want to decide whether they don't want to be in
      * ObjectSpace even when it is on. (notably used by objects being
      * considered immediate, they'll always pass false here)
+     * @param runtime the runtime
+     * @param metaClass the metaclass
+     * @param useObjectSpace should object space be enabled
      */
     protected RubyBasicObject(Ruby runtime, RubyClass metaClass, boolean useObjectSpace) {
         this.metaClass = metaClass;
@@ -284,6 +288,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      * Helper to test whether this object is frozen, and if it is will
      * throw an exception based on the message.
+     * @param message is frozen
      */
    protected final void testFrozen(String message) {
        if (isFrozen()) {
@@ -417,6 +422,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     /**
      * Is this value a truthy value or not? Based on the {@link #FALSE_F} flag.
+     * @return true it truthy
      */
     @Override
     public final boolean isTrue() {
@@ -425,6 +431,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     /**
      * Is this value a falsey value or not? Based on the {@link #FALSE_F} flag.
+     * @return true is false
      */
     public final boolean isFalse() {
         return (flags & FALSE_F) != 0;
@@ -523,6 +530,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * Will create a new meta class, insert this in the chain of
      * classes for this specific object, and return the generated meta
      * class.
+     * @param context the thread context
+     * @param superClass the super class
+     * @return the new meta class
      */
     public RubyClass makeMetaClass(ThreadContext context, RubyClass superClass) {
         MetaClass klass = new MetaClass(context.runtime, superClass, this); // rb_class_boot
@@ -537,6 +547,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * This will create a new metaclass.  This is only used during bootstrapping before
      * the initial ThreadContext is defined.  Normal needs of making a metaclass should use
      * {@link RubyBasicObject#makeMetaClass(ThreadContext, RubyClass)}
+     * @param runtime the runtime
      * @param superClass of the metaclass
      * @param Class a reference to Ruby Class
      * @return the new metaclass
@@ -556,6 +567,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * that it doesn't work when we're dealing with subclasses. In
      * practice it's used to change the singleton/meta class used,
      * without changing the "real" inheritance chain.
+     * @param metaClass the meta class to set
      */
     public void setMetaClass(RubyClass metaClass) {
         this.metaClass = metaClass;
@@ -796,6 +808,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /**
      * raw (id) strings are not properly encoded but in an iso_8859_1 form.  This method will lookup
      * properly encoded string from the symbol table.
+     * @param id the id of the string
+     * @return the string of the symbol found from id
      */
     public RubyString decode(String id) {
         var context = getRuntime().getCurrentContext();
@@ -1015,6 +1029,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * Will make sure that if the current objects class is a
      * singleton, it will get cloned.
      *
+     * @param context the thread context
+     * @param attach object ot attach
      * @return either a real class, or a clone of the current singleton class
      */
     protected RubyClass getSingletonClassCloneAndAttach(ThreadContext context, RubyBasicObject attach) {
@@ -1101,6 +1117,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * objectId slot is managed separately from the "normal" vars so it
      * does not marshal, clone/dup, or refuse to be initially set when the
      * object is frozen.
+     * @return object id
      */
     protected long getObjectId() {
         return metaClass.getRealClass().getVariableTableManager().getObjectId(this);
@@ -1273,6 +1290,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /**
      * Helper method for checking equality, first using Java identity
      * equality, and then calling the "==" method.
+     * @param context the thread context
+     * @param that first comparator
+     * @param other the second comparator
+     * @return are they equal
      */
     protected static boolean equalInternal(final ThreadContext context, final IRubyObject that, final IRubyObject other){
         return that == other || invokedynamic(context, that, OP_EQUAL, other).isTrue();
@@ -1281,6 +1302,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /**
      * Helper method for checking equality, first using Java identity
      * equality, and then calling the "eql?" method.
+     * @param context the thread context
+     * @param that first comparator
+     * @param other the second comparator
+     * @return are they equal
      */
     protected static boolean eqlInternal(final ThreadContext context, final IRubyObject that, final IRubyObject other){
         return that == other || invokedynamic(context, that, EQL, other).isTrue();
@@ -1288,7 +1313,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     /** method used for Hash key comparison (specialized for String, Symbol and Fixnum)
      *
-     * Will by default just call the Ruby method "eql?"
+     * @return Will by default just call the Ruby method "eql?"
      */
     @Override
     public boolean eql(IRubyObject other) {
@@ -1450,6 +1475,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /**
      * Checks if the variable table contains a variable of the
      * specified name.
+     * @param name to lookup
+     * @return if contained in this object
      */
     protected boolean variableTableContains(String name) {
         return metaClass.getVariableAccessorForRead(name).get(this) != null;
@@ -1458,6 +1485,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /**
      * Fetch an object from the variable table based on the name.
      *
+     * @param name to lookup
      * @return the object or null if not found
      */
     protected Object variableTableFetch(String name) {
@@ -1466,6 +1494,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     /**
      * Store a value in the variable store under the specific name.
+     * @param name to store in
+     * @param value to store
+     * @return value
      */
     protected Object variableTableStore(String name, Object value) {
         metaClass.getVariableAccessorForWrite(name).set(this, value);
@@ -1475,6 +1506,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /**
      * Removes the entry with the specified name from the variable
      * table, and returning the removed value.
+     * @param name to remove
+     * @return the value removed
      */
     protected Object variableTableRemove(String name) {
         return metaClass.getVariableTableManager().clearVariable(this, name);
@@ -1483,6 +1516,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /**
      * Synchronize the variable table with the argument. In real terms
      * this means copy all entries into a newly allocated table.
+     * @param vars to to sync with
      */
     protected void variableTableSync(List<Variable<Object>> vars) {
         synchronized(this) {
@@ -1795,6 +1829,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * it in the args array will be yielded to the block. This makes
      * it possible to emulate both instance_eval and instance_exec
      * with this implementation.
+     * @param context the thread context
+     * @param under module to yield in
+     * @param args to use
+     * @param block to call
+     * @param evalType type of evaal to perform
+     * @return the result
      */
     protected IRubyObject yieldUnder(final ThreadContext context, RubyModule under, IRubyObject[] args, Block block, EvalType evalType) {
         context.preExecuteUnder(this, under, block);
@@ -1842,6 +1882,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * it in the args array will be yielded to the block. This makes
      * it possible to emulate both instance_eval and instance_exec
      * with this implementation.
+     * @param context the thread context
+     * @param under module to yield in
+     * @param block to call
+     * @param evalType type of evaal to perform
+     * @return the result
      */
     protected IRubyObject yieldUnder(final ThreadContext context, RubyModule under, Block block, EvalType evalType) {
         context.preExecuteUnder(this, under, block);
@@ -1863,6 +1908,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * argument, and this string will be evaluated. Second and third
      * arguments in the args-array is optional, but can contain the
      * filename and line of the string under evaluation.
+     * @param context the thread context
+     * @param mod module to yield in
+     * @param block to call
+     * @param evalType type of evaal to perform
+     * @return the result
      */
     public IRubyObject specificEval(ThreadContext context, RubyModule mod, Block block, EvalType evalType) {
         if (!block.isGiven()) throw argumentError(context, 0, 1, 3);
@@ -1879,6 +1929,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * argument, and this string will be evaluated. Second and third
      * arguments in the args-array is optional, but can contain the
      * filename and line of the string under evaluation.
+     * @param context the thread context
+     * @param mod module to yield in
+     * @param arg to pass to block
+     * @param block to call
+     * @param evalType type of evaal to perform
+     * @return the result
      */
     public IRubyObject specificEval(ThreadContext context, RubyModule mod, IRubyObject arg, Block block, EvalType evalType) {
         if (block.isGiven()) throw argumentError(context, 1, 0);
@@ -1901,6 +1957,13 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * argument, and this string will be evaluated. Second and third
      * arguments in the args-array is optional, but can contain the
      * filename and line of the string under evaluation.
+     * @param context the thread context
+     * @param mod module to yield in
+     * @param arg0 to pass to block
+     * @param arg1 to pass to block
+     * @param block to call
+     * @param evalType type of evaal to perform
+     * @return the result
      */
     public IRubyObject specificEval(ThreadContext context, RubyModule mod, IRubyObject arg0, IRubyObject arg1, Block block, EvalType evalType) {
         if (block.isGiven()) throw argumentError(context, 2, 0);
@@ -1922,6 +1985,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * argument, and this string will be evaluated. Second and third
      * arguments in the args-array is optional, but can contain the
      * filename and line of the string under evaluation.
+     * @param context the thread context
+     * @param mod module to yield in
+     * @param arg0 to pass to block
+     * @param arg1 to pass to block
+     * @param arg2 to pass to block
+     * @param block to call
+     * @param evalType type of evaal to perform
+     * @return the result
      */
     public IRubyObject specificEval(ThreadContext context, RubyModule mod, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block, EvalType evalType) {
         if (block.isGiven()) throw argumentError(context, 2, 0);
@@ -1945,7 +2016,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
                 singletonClass(context);
     }
 
-    /**
+    /*
      * Evaluates the string src with self set to the current object,
      * using the module under as the context.
      */
@@ -2056,6 +2127,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /** rb_obj_equal
      *
      * Will use Java identity equality.
+     * @param context the thread context
+     * @param other to compare with
+     * @return are they equal?
      */
     @JRubyMethod(name = "equal?")
     public IRubyObject equal_p(ThreadContext context, IRubyObject other) {
@@ -2067,7 +2141,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return eql_p(getCurrentContext(), obj);
     }
 
-    /**
+    /*
      * Just like "==" and "equal?", "eql?" will use identity equality for Object.
      */
     // MRI: rb_obj_equal
@@ -2084,7 +2158,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     /**
      * @param original object
-     * @return
+     * @return a copy
      * @deprecated Use {@link org.jruby.RubyBasicObject#initialize_copy(ThreadContext, IRubyObject)} instead.
      */
     @Deprecated(since = "10.0")
@@ -2099,6 +2173,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * actually has the same real class as this object. It shouldn't
      * be possible to initialize an object with something totally
      * different.
+     * @param context the thread context
+     * @param original the original
+     * @return a copy unless the same thing
      */
     // MRI: rb_obj_init_copy
     public IRubyObject initialize_copy(ThreadContext context, IRubyObject original) {
@@ -2121,7 +2198,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         testFrozen();
     }
 
-    /** obj_respond_to
+    /* obj_respond_to
      *
      * respond_to?( aSymbol, includePriv=false )$ -&gt; true or false
      *
@@ -2165,6 +2242,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * using rb_obj_id, since the usage of id in JRuby will incur the
      * cost of some. ObjectSpace maintenance.
      * @deprecated Use {@link RubyBasicObject#hash(ThreadContext)} instead.
+     * @return hash value
      */
     @Deprecated(since = "10.0")
     public RubyFixnum hash() {
@@ -2189,12 +2267,13 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      * Returns the real class of this object, excluding any
      * singleton/meta class in the inheritance chain.
+     * @return the real class
      */
     public RubyClass type() {
         return getMetaClass().getRealClass();
     }
 
-    /** rb_obj_display
+    /* rb_obj_display
      *
      *  call-seq:
      *     obj.display(port=$&gt;)    =&gt; nil
@@ -2226,7 +2305,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return context.nil;
     }
 
-    /** rb_obj_freeze
+    /* rb_obj_freeze
      *
      *  call-seq:
      *     obj.freeze    =&gt; obj
@@ -2252,7 +2331,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return this;
     }
 
-    /** rb_obj_frozen_p
+    /* rb_obj_frozen_p
      *
      *  call-seq:
      *     obj.frozen?    =&gt; true or false
@@ -2274,6 +2353,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      *  Returns <code>true</code> if <i>obj</i> is an instance of the given
      *  class. See also <code>Object#kind_of?</code>.
+     * @param context the thread context
+     * @param type the type
+     * @return true if this is instance of type
      */
     public RubyBoolean instance_of_p(ThreadContext context, IRubyObject type) {
         if (type() == type) return context.tru;
@@ -2308,6 +2390,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     b.kind_of? B       #=&gt; true
      *     b.kind_of? C       #=&gt; false
      *     b.kind_of? M       #=&gt; true
+     * @param context the thread context
+     * @param type the type
+     * @return true if this is kind of type
      */
     public RubyBoolean kind_of_p(ThreadContext context, IRubyObject type) {
         return asBoolean(context, castAsModule(context, type, "class or module required").isInstance(this));
@@ -2331,6 +2416,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *                             "class", "instance_variable_set",
      *                              "methods", "extend", "__send__", "instance_eval"]
      *     k.methods.length   #=&gt; 42
+     * @param context the thread context
+     * @param args include ancestors
+     * @return methods
      */
     public IRubyObject methods(ThreadContext context, IRubyObject... args) {
         return methodsImpl(context, args.length != 1 || args[0].isTrue());
@@ -2358,7 +2446,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return methodsImpl(context, args.length == 1 ? args[0].isTrue() : true);
     }
 
-    /** rb_obj_public_methods
+    /* rb_obj_public_methods
      *
      *  call-seq:
      *     obj.public_methods(all=true)   =&gt; array
@@ -2371,7 +2459,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return getMetaClass().instanceMethods(context, args, PUBLIC, true, false);
     }
 
-    /** rb_obj_protected_methods
+    /* rb_obj_protected_methods
      *
      *  call-seq:
      *     obj.protected_methods(all=true)   =&gt; array
@@ -2387,7 +2475,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return getMetaClass().instanceMethods(context, args, PROTECTED, true, false);
     }
 
-    /** rb_obj_private_methods
+    /* rb_obj_private_methods
      *
      *  call-seq:
      *     obj.private_methods(all=true)   =&gt; array
@@ -2403,7 +2491,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return getMetaClass().instanceMethods(context, args, PRIVATE, true, false);
     }
 
-    /** rb_obj_singleton_methods
+    /* rb_obj_singleton_methods
      *
      *  call-seq:
      *     obj.singleton_methods(all=true)    =&gt; array
@@ -2486,7 +2574,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         throw nameError(context, str(context.runtime, "undefined method '", symbol,  "' for '", inspect(context), "'"), symbol);
     }
 
-    /** rb_obj_method
+    /* rb_obj_method
      *
      *  call-seq:
      *     obj.method(sym)    =&gt; method
@@ -2529,9 +2617,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /**
      * Like {@link #method(IRubyObject)} but using the given refinement scope to search for the method.
      *
+     * @param context the thread context
      * @param name the name of the method
      * @param refinedScope the static scope for the caller method
-     * @return
+     * @return method instance
      */
     public IRubyObject method(ThreadContext context, IRubyObject name, StaticScope refinedScope) {
         return getMetaClass().newMethod(context, this, checkID(context, name).idString(), refinedScope, true, null, true, true);
@@ -2546,7 +2635,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return to_s(getCurrentContext());
     }
 
-    /** rb_any_to_s
+    /* rb_any_to_s
      *
      *  call-seq:
      *     obj.to_s    =&gt; string
@@ -2560,7 +2649,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     	return anyToString();
     }
 
-    /** rb_any_to_a
+    /* rb_any_to_a
      *
      *  call-seq:
      *     obj.to_a$ -&gt; anArray
@@ -2581,7 +2670,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return newArray(context,this);
     }
 
-    /** rb_obj_instance_eval
+    /* rb_obj_instance_eval
      *
      *  call-seq:
      *     obj.instance_eval(string [, filename [, lineno]] )   =&gt; obj
@@ -2662,6 +2751,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     end
      *     k = Klass.new
      *     k.instance_exec(5) {|x| {@literal @}secret+x }   #=&gt; 104
+     * @param context the thread context
+     * @param args the args
+     * @param block block
+     * @return the result
      */
     @JRubyMethod(name = "instance_exec", rest = true, keywords = true,
             reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
@@ -2696,6 +2789,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     k.hello         #=&gt; "Hello from Klass.\n"
      *     k.extend(Mod)   #=&gt; #&lt;Klass:0x401b3bc8&gt;
      *     k.hello         #=&gt; "Hello from Mod.\n"
+     * @param args to use as modules to extend
+     * @return itself
      */
     public IRubyObject extend(IRubyObject[] args) {
         var context = getRuntime().getCurrentContext();
@@ -2722,6 +2817,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *   &lt;anything_else&gt;.nil?   =&gt; false
      *
      * Only the object <i>nil</i> responds <code>true</code> to <code>nil?</code>.
+     * @param context the thread context
+     * @return true if nil
      */
     public IRubyObject nil_p(ThreadContext context) {
         return context.fals;
@@ -2735,6 +2832,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *  Pattern Match---Overridden by descendents (notably
      *  <code>Regexp</code> and <code>String</code>) to provide meaningful
      *  pattern-match semantics.
+     * @param context the thread context
+     * @param arg arg
+     * @return true if matches (always nil)
      */
     public IRubyObject op_match(ThreadContext context, IRubyObject arg) {
         return context.nil;
@@ -2743,9 +2843,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /**
      * Invert the match operator.
      *
-     * @param context
-     * @param arg
-     * @return
+     * @param context the thread context
+     * @param arg arg
+     * @return true if they do not match
      */
     public IRubyObject op_not_match(ThreadContext context, IRubyObject arg) {
         return asBoolean(context, !sites(context).match.call(context, this, this, arg).isTrue());
@@ -2773,6 +2873,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     fred.instance_variable_defined?(:{@literal @}a)    #=&gt; true
      *     fred.instance_variable_defined?("{@literal @}b")   #=&gt; true
      *     fred.instance_variable_defined?("@c")   #=&gt; false
+     * @param context the thread context
+     * @param name of ivar
+     * @return true if defined
      */
     public IRubyObject instance_variable_defined_p(ThreadContext context, IRubyObject name) {
         return asBoolean(context, variableTableContains(validateInstanceVariable(name)));
@@ -2797,6 +2900,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     fred = Fred.new('cat', 99)
      *     fred.instance_variable_get(:{@literal @}a)    #=&gt; "cat"
      *     fred.instance_variable_get("{@literal @}b")   #=&gt; 99
+     * @param context the thread context
+     * @param name of ivar
+     * @return value of ivar
      */
     public IRubyObject instance_variable_get(ThreadContext context, IRubyObject name) {
         Object value = variableTableFetch(validateInstanceVariable(name));
@@ -2823,6 +2929,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     fred.instance_variable_set(:{@literal @}a, 'dog')   #=&gt; "dog"
      *     fred.instance_variable_set(:@c, 'cat')   #=&gt; "cat"
      *     fred.inspect                             #=&gt; "#&lt;Fred:0x401b3da8 {@literal @}a=\"dog\", @b=99, @c=\"cat\"&gt;"
+     * @param name of ivar
+     * @param value to set
+     * @return value of old set ivar
      */
     public IRubyObject instance_variable_set(IRubyObject name, IRubyObject value) {
         // no need to check for ensureInstanceVariablesSettable() here, that'll happen downstream in setVariable
@@ -2850,6 +2959,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     d.var      #=&gt; 99
      *     d.remove   #=&gt; 99
      *     d.var      #=&gt; nil
+     * @param context the thread context
+     * @param name of ivar
+     * @param block the block (not used)
+     * @return value of removed ivar
      */
     public IRubyObject remove_instance_variable(ThreadContext context, IRubyObject name, Block block) {
         String id = validateInstanceVariable(name);
@@ -2875,6 +2988,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *       end
      *     end
      *     Fred.new.instance_variables   #=&gt; [:"{@literal @}iv"]
+     * @param context the thread context
+     * @return list of ivars
      */
     public RubyArray instance_variables(ThreadContext context) {
         var array = Create.allocArray(context, getMetaClass().getVariableAccessorsForRead().size());
@@ -2886,6 +3001,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * This method is just a wrapper around the Ruby "==" method,
      * provided so that RubyObjects can be used as keys in the Java
      * HashMap object underlying RubyHash.
+     * @param other object to compare
+     * @return true if equals
      */
     @Override
     public boolean equals(Object other) {
@@ -2930,6 +3047,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     /**
      * Checks if the name parameter represents a legal instance variable name, and otherwise throws a Ruby NameError
+     * @param name of instance variable
+     * @return name it is valid
      */
     @Deprecated
     protected String validateInstanceVariable(String name) {

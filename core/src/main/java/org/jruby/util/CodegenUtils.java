@@ -18,10 +18,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- *
- * @author headius
- */
 public class CodegenUtils {
     /**
      * Creates a dotted class name from a path/package name

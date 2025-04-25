@@ -22,6 +22,7 @@ describe :kernel_sprintf, shared: true do
       @method.call("%d", "112").should == "112"
       @method.call("%d", "0127").should == "87"
       @method.call("%d", "0xc4").should == "196"
+      @method.call("%d", "0").should == "0"
     end
 
     it "raises TypeError exception if cannot convert to Integer" do
@@ -56,6 +57,11 @@ describe :kernel_sprintf, shared: true do
 
         it "works well with large numbers" do
           @method.call("%#{f}", 1234567890987654321).should == "1234567890987654321"
+        end
+
+        it "converts to the empty string if precision is 0 and value is 0" do
+          @method.call("%.#{f}", 0).should == ""
+          @method.call("%.0#{f}", 0).should == ""
         end
       end
     end

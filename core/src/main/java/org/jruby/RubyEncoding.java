@@ -555,12 +555,19 @@ public class RubyEncoding extends RubyObject implements Constantizable {
             result.fastASet(alias, name);
         }
 
-        result.fastASet(newString(context, EXTERNAL), newString(context, new ByteList(service.getDefaultExternalEncoding().getName())));
-        result.fastASet(newString(context, INTERNAL), newString(context, new ByteList(service.getDefaultInternalEncodingOrDefault().getName())));
-        result.fastASet(newString(context, FILESYSTEM), newString(context, new ByteList(service.getDefaultFilesystemEncoding().getName())));
-        result.fastASet(newString(context, LOCALE), newString(context, new ByteList(service.getLocaleEncoding().getName())));
+        addSpecialAlias(context, result, EXTERNAL, service.getDefaultExternalEncoding());
+        Encoding internal = service.getDefaultInternalEncoding();
+        if (internal != null) {
+            addSpecialAlias(context, result, INTERNAL, internal);
+        }
+        addSpecialAlias(context, result, FILESYSTEM, service.getDefaultFilesystemEncoding());
+        addSpecialAlias(context, result, LOCALE, service.getLocaleEncoding());
 
         return result;
+    }
+
+    private static void addSpecialAlias(ThreadContext context, RubyHash result, ByteList alias, Encoding encoding) {
+        result.fastASet(newString(context, alias), newString(context, new ByteList(encoding.getName())));
     }
 
     @JRubyMethod(name = "find", meta = true)
@@ -605,7 +612,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     }
 
     private ByteList inspectName() {
-        if (encoding == ASCIIEncoding.INSTANCE) {
+        if (getEncoding() == ASCIIEncoding.INSTANCE) {
             return BINARY_ASCII_NAME;
         }
         return name;
@@ -635,9 +642,10 @@ public class RubyEncoding extends RubyObject implements Constantizable {
                 result.append(context, RubyString.newUsAsciiStringShared(runtime, e.bytes, e.p, e.end - e.p).freeze(context));
             }
         }
-        if (encoding == service.getDefaultExternalEncoding()) result.append(context, newString(context, EXTERNAL));
-        if (encoding == service.getDefaultInternalEncodingOrDefault()) result.append(context, newString(context, INTERNAL));
-        if (encoding == service.getLocaleEncoding()) result.append(context, newString(context, LOCALE));
+        if (getEncoding() == service.getDefaultExternalEncoding()) result.append(context, newString(context, EXTERNAL));
+        if (getEncoding() == service.getDefaultInternalEncoding()) result.append(context, newString(context, INTERNAL));
+        if (getEncoding() == service.getDefaultFilesystemEncoding()) result.append(context, newString(context, FILESYSTEM));
+        if (getEncoding() == service.getLocaleEncoding()) result.append(context, newString(context, LOCALE));
 
         return result;
     }

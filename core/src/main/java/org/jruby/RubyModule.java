@@ -185,11 +185,6 @@ import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.ids;
 import static org.jruby.util.RubyStringBuilder.types;
 
-
-/**
- *
- * @author  jpetersen
- */
 @JRubyClass(name="Module")
 public class RubyModule extends RubyObject {
 
@@ -1331,7 +1326,6 @@ public class RubyModule extends RubyObject {
                 }
             }
 
-            invalidateCoreClasses(context);
             invalidateCacheDescendants(context);
             invalidateConstantCacheForModuleInclusion(context, module);
         }
@@ -1391,7 +1385,6 @@ public class RubyModule extends RubyObject {
             }
         }
 
-        invalidateCoreClasses(context);
         invalidateCacheDescendants(context);
         invalidateConstantCacheForModuleInclusion(context, module);
     }
@@ -1945,7 +1938,6 @@ public class RubyModule extends RubyObject {
     public final void addMethodInternal(ThreadContext context, String name, DynamicMethod method) {
         synchronized (getMethodLocation().getMethodsForWrite()) {
             putMethod(context, name, method);
-            invalidateCoreClasses(context);
             invalidateCacheDescendants(context);
         }
     }
@@ -1977,7 +1969,6 @@ public class RubyModule extends RubyObject {
                 methodsForWrite.put(id, new RefinedMarker(method.getImplementationClass(), method.getVisibility(), id));
             }
 
-            invalidateCoreClasses(context);
             invalidateCacheDescendants(context);
         }
 
@@ -2380,19 +2371,21 @@ public class RubyModule extends RubyObject {
             return;
         }
 
-        InvalidatorList invalidators = new InvalidatorList();
-        invalidators.add(methodInvalidator);
+        InvalidatorList invalidators = new InvalidatorList((int) (lastInvalidatorSize * 1.25));
+        methodInvalidator.addIfUsed(invalidators);
 
         synchronized (getRuntime().getHierarchyLock()) {
             includingHierarchies.forEachClass(invalidators);
         }
 
+        lastInvalidatorSize = invalidators.size();
+
         methodInvalidator.invalidateAll(invalidators);
     }
 
-    static class InvalidatorList<T> extends ArrayList<T> implements RubyClass.BiConsumerIgnoresSecond<RubyClass> {
-        public InvalidatorList() {
-            super();
+    public static class InvalidatorList<T> extends ArrayList<T> implements RubyClass.BiConsumerIgnoresSecond<RubyClass> {
+        public InvalidatorList(int size) {
+            super(size);
         }
 
         @Override
@@ -2418,21 +2411,8 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Deprecated(since = "10.0")
     protected void invalidateCoreClasses() {
-        invalidateCoreClasses(getCurrentContext());
-    }
-
-    @SuppressWarnings("deprecation")
-    protected void invalidateCoreClasses(ThreadContext context) {
-        if (!context.runtime.isBootingCore()) {
-            if (this == fixnumClass(context)) {
-                context.runtime.reopenFixnum();
-            } else if (this == floatClass(context)) {
-                context.runtime.reopenFloat();
-            }
-        }
     }
 
     public Invalidator getInvalidator() {
@@ -2445,11 +2425,6 @@ public class RubyModule extends RubyObject {
 
     private void updateGeneration(final Ruby runtime) {
         generationObject = generation = runtime.getNextModuleGeneration();
-    }
-
-    @Deprecated
-    protected void invalidateCacheDescendantsInner() {
-        methodInvalidator.invalidate();
     }
 
     @Deprecated(since = "10.0")
@@ -2832,7 +2807,6 @@ public class RubyModule extends RubyObject {
                 getMethodLocation().addMethod(context, name, newMethod);
             }
 
-            invalidateCoreClasses(context);
             invalidateCacheDescendants(context);
         }
     }
@@ -3481,17 +3455,17 @@ public class RubyModule extends RubyObject {
                 if (!method.isNative()) {
                     Signature signature = method.getSignature();
                     if (!signature.hasRest()) {
-                        warn(context, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (method accepts keywords or method does not accept argument splat)"));
+                        warn(context, str(context.runtime, "Skipping set of ruby2_keywords flag for ", ids(context.runtime, name), " (method accepts keywords or method does not accept argument splat)"));
                     } else if (!signature.hasKwargs()) {
                         method.setRuby2Keywords();
                     } else if (method instanceof AbstractIRMethod && ((AbstractIRMethod) method).getStaticScope().exists("...") == -1) {
-                        warn(context, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (method accepts keywords or method does not accept argument splat)"));
+                        warn(context, str(context.runtime, "Skipping set of ruby2_keywords flag for ", ids(context.runtime, name), " (method accepts keywords or method does not accept argument splat)"));
                     }
                 } else {
-                    warn(context, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (method not defined in Ruby)"));
+                    warn(context, str(context.runtime, "Skipping set of ruby2_keywords flag for ", ids(context.runtime, name), " (method not defined in Ruby)"));
                 }
             } else {
-                warn(context, str(context.runtime, "Skipping set of ruby2_keywords flag for ", name, " (can only set in method defining module)"));
+                warn(context, str(context.runtime, "Skipping set of ruby2_keywords flag for ", ids(context.runtime, name), " (can only set in method defining module)"));
             }
         }
         return context.nil;
@@ -5704,7 +5678,6 @@ public class RubyModule extends RubyObject {
         putAlias(context, name, entry, oldName);
 
         RubyModule methodLocation = getMethodLocation();
-        methodLocation.invalidateCoreClasses(context);
         methodLocation.invalidateCacheDescendants(context);
 
         return (T) this;
@@ -6353,7 +6326,6 @@ public class RubyModule extends RubyObject {
      *
      * @param name of the constant
      * @param value of the constant
-     * @return the value
      */
     public void defineConstantBootstrap(String name, IRubyObject value) {
         constantTableStore(name, value, false, false, null, -1);
@@ -6963,7 +6935,6 @@ public class RubyModule extends RubyObject {
         }
 
         RubyModule methodLocation = getMethodLocation();
-        methodLocation.invalidateCoreClasses(context);
         methodLocation.invalidateCacheDescendants(context);
     }
 
@@ -7008,6 +6979,9 @@ public class RubyModule extends RubyObject {
 
     // Invalidator used for method caches
     protected final Invalidator methodInvalidator;
+
+    // track last size to avoid thrashing
+    private int lastInvalidatorSize = 4;
 
     /** Whether this class proxies a normal Java class */
     private boolean javaProxy = false;

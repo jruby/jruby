@@ -79,6 +79,7 @@ import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.Channel;
 import java.nio.channels.Channels;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -461,6 +462,8 @@ public class RubyGlobal {
      */
     public static class CaseInsensitiveStringOnlyRubyHash extends StringOnlyRubyHash {
 
+        private static final byte[] HASHROCKET_WITH_SPACES = " => ".getBytes(StandardCharsets.UTF_8);
+
         public CaseInsensitiveStringOnlyRubyHash(Ruby runtime, Map<RubyString, RubyString> valueMap, IRubyObject defaultValue, boolean updateRealENV) {
             super(runtime, valueMap, defaultValue, updateRealENV);
         }
@@ -716,7 +719,7 @@ public class RubyGlobal {
                 // key should never be Symbol for ENV
                 bytes.append(':');
             } else {
-                bytes.append('=').append('>');
+                bytes.append(HASHROCKET_WITH_SPACES);
             }
         }
     }

@@ -9,6 +9,10 @@ describe "An exception that bubbles out when $stderr is redirected" do
     @ruby = '"' + File.join([RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name']]) << RbConfig::CONFIG['EXEEXT'] + '"'
     @tmpfile = Tempfile.new("GH-1082")
   end
+
+  after :each do
+    @tmpfile.close! rescue nil
+  end
   
   it "logs to the redirected target" do
     system(

@@ -2008,6 +2008,15 @@ CLASSDEF
     assert_equal 255, color.getRed # assert we called (float,float,float)
   end
 
+  def test_no_ambiguous_warning_when_method_inherited_from_2_interfaces
+    map = org.jruby.javasupport.test.TestConcurrentMapFactory.newMap
+    output = with_stderr_captured do # exact match should not warn:
+      map.compute(:key) { 42 } # warning: multiple Java methods found, use -Xjruby.ji.ambiguous.calls.debug for backtrace.
+      # Choosing compute(java.lang.Object,java.util.function.BiFunction)
+    end
+    assert_equal "", output
+  end
+
   class Runner
     def run; end
   end

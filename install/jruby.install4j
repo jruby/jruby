@@ -9,7 +9,7 @@
       <variable name="ruby.buildplatform" value="error" />
     </variables>
   </application>
-  <files preserveSymlinks="false">
+  <files preserveSymlinks="false" globalExcludeSuffixes="jsa">
     <filesets>
       <fileset name="non-arch ruby lib" id="97" />
       <fileset name="windows arch-specific" id="99" />

@@ -17,10 +17,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Define.defineClass;
 
-/**
- *
- * @author headius
- */
 public class InterfaceJavaProxy extends JavaProxy {
 
     public InterfaceJavaProxy(Ruby runtime, RubyClass klazz) {

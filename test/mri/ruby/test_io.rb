@@ -350,6 +350,19 @@ class TestIO < Test::Unit::TestCase
     end)
   end
 
+  def test_ungetc_with_seek
+    make_tempfile {|t|
+      t.open
+      t.write('0123456789')
+      t.rewind
+
+      t.ungetc('a')
+      t.seek(2, :SET)
+
+      assert_equal('2', t.getc)
+    }
+  end
+
   def test_ungetbyte
     make_tempfile {|t|
       t.open
@@ -370,6 +383,19 @@ class TestIO < Test::Unit::TestCase
       t.ungetbyte("\xe7\xb4\x85")
       assert_equal(-2, t.pos)
       assert_equal("\u7d05\u7389bar\n", t.gets)
+    }
+  end
+
+  def test_ungetbyte_with_seek
+    make_tempfile {|t|
+      t.open
+      t.write('0123456789')
+      t.rewind
+
+      t.ungetbyte('a'.ord)
+      t.seek(2, :SET)
+
+      assert_equal('2'.ord, t.getbyte)
     }
   end
 
@@ -2010,6 +2036,36 @@ class TestIO < Test::Unit::TestCase
     }
   end
 
+  def test_readline_limit_nonascii
+    mkcdtmpdir do
+      i = 0
+
+      File.open("text#{i+=1}", "w+:utf-8") do |f|
+        f.write("Test\nok\u{bf}ok\n")
+        f.rewind
+
+        assert_equal("Test\nok\u{bf}", f.readline("\u{bf}"))
+        assert_equal("ok\n", f.readline("\u{bf}"))
+      end
+
+      File.open("text#{i+=1}", "w+b:utf-32le") do |f|
+        f.write("0123456789")
+        f.rewind
+
+        assert_equal(4, f.readline(4).bytesize)
+        assert_equal(4, f.readline(3).bytesize)
+      end
+
+      File.open("text#{i+=1}", "w+:utf-8:utf-32le") do |f|
+        f.write("0123456789")
+        f.rewind
+
+        assert_equal(4, f.readline(4).bytesize)
+        assert_equal(4, f.readline(3).bytesize)
+      end
+    end
+  end
+
   def test_set_lineno_readline
     pipe(proc do |w|
       w.puts "foo"
@@ -2655,6 +2711,17 @@ class TestIO < Test::Unit::TestCase
     }
   end
 
+  def test_reopen_binmode
+    f1 = File.open(__FILE__)
+    f2 = File.open(__FILE__)
+    f1.binmode
+    f1.reopen(f2)
+    assert_not_operator(f1, :binmode?)
+  ensure
+    f2.close
+    f1.close
+  end
+
   def make_tempfile_for_encoding
     t = make_tempfile
     open(t.path, "rb+:utf-8") {|f| f.puts "\u7d05\u7389bar\n"}
@@ -2683,6 +2750,16 @@ class TestIO < Test::Unit::TestCase
         assert_equal("\xB9\xC8\xB6\xCCbar\n".force_encoding(Encoding::EUC_JP), s)
       }
     }
+  end
+
+  def test_reopen_encoding_from_io
+    f1 = File.open(__FILE__, "rb:UTF-16LE")
+    f2 = File.open(__FILE__, "r:UTF-8")
+    f1.reopen(f2)
+    assert_equal(Encoding::UTF_8, f1.external_encoding)
+  ensure
+    f2.close
+    f1.close
   end
 
   def test_reopen_opt_encoding

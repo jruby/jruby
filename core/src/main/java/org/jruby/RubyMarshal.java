@@ -146,8 +146,11 @@ public class RubyMarshal {
 
         final IRubyObject str = in.checkStringType();
         InputStream rawInput;
-        if (str != context.nil) {
-            ByteList bytes = ((RubyString) str).getByteList();
+        if (str instanceof RubyString string) {
+            if (string.size() == 0) {
+                throw argumentError(context, "marshal data too short");
+            }
+            ByteList bytes = string.getByteList();
             rawInput = new ByteArrayInputStream(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
         } else if (sites(context).respond_to_getc.respondsTo(context, in, in) &&
                     sites(context).respond_to_read.respondsTo(context, in, in)) {

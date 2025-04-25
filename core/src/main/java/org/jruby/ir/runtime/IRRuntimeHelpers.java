@@ -660,14 +660,20 @@ public class IRRuntimeHelpers {
      * @param line
      */
     public static void updateCoverage(ThreadContext context, String filename, int line) {
-        CoverageData data = context.runtime.getCoverageData();
+        Ruby runtime = context.runtime;
+
+        if (!runtime.isCoverageEnabled()) return;
+
+        CoverageData data = runtime.getCoverageData();
 
         if (data.isRunning()) data.coverLine(filename, line);
     }
 
     @JIT @Interp
     public static IRubyObject hashCheck(ThreadContext context, IRubyObject hash) {
-        return TypeConverter.checkHashType(context.runtime, hash);
+        // A case like: x = nil; foo(a: 1, **x). **nil itself gets figured out during build but indirection to nil happens here.
+        if (hash instanceof RubyNil) return newHash(context);
+        return TypeConverter.convertToType(hash, hashClass(context), "to_hash");
     }
 
     public static IRubyObject isHashEmpty(ThreadContext context, IRubyObject hash) {
@@ -703,18 +709,18 @@ public class IRRuntimeHelpers {
         }
 
         return ruby2Keywords ?
-                receiveSpecificArityRuby2HashKeywords(context, last) :
-                receiveSpecificArityHashKeywords(context, last);
+                receiveSpecificArityRuby2HashKeywords(context, (RubyHash) last) :
+                receiveSpecificArityHashKeywords(context, (RubyHash) last);
     }
 
-    private static IRubyObject receiveSpecificArityHashKeywords(ThreadContext context, IRubyObject last) {
+    private static IRubyObject receiveSpecificArityHashKeywords(ThreadContext context, RubyHash last) {
         int callInfo = ThreadContext.resetCallInfo(context);
         boolean isKwarg = (callInfo & CALL_KEYWORD) != 0;
 
-        return receiverSpecificArityKwargsCommon(context, last, callInfo, isKwarg);
+        return receiverSpecificArityKwargsCommon(context, last, isKwarg);
     }
 
-    private static IRubyObject receiveSpecificArityRuby2HashKeywords(ThreadContext context, IRubyObject last) {
+    private static IRubyObject receiveSpecificArityRuby2HashKeywords(ThreadContext context, RubyHash last) {
         int callInfo = ThreadContext.resetCallInfo(context);
         boolean isKwarg = (callInfo & CALL_KEYWORD) != 0;
 
@@ -724,42 +730,25 @@ public class IRRuntimeHelpers {
         if (isKwarg) {
             // a ruby2_keywords method which happens to receive a keyword.  Mark hash as ruby2_keyword
             // So it can be used similarly to an ordinary hash passed in this way.
-
-            RubyHash hash = (RubyHash) last;
-            hash = hash.dupFast(context);
+            RubyHash hash = last.dupFast(context);
             hash.setRuby2KeywordHash(true);
-
             return hash;
         }
 
-        return receiverSpecificArityKwargsCommon(context, last, callInfo, false);
+        return receiverSpecificArityKwargsCommon(context, last, false);
     }
 
-    private static IRubyObject receiverSpecificArityKwargsCommon(ThreadContext context, IRubyObject last, int callInfo, boolean isKwarg) {
-        // ruby2_keywords only get unmarked if it enters a method which accepts keywords.
-        // This means methods which don't just keep that marked hash around in case it is passed
-        // onto another method which accepts keywords.
-        if ((callInfo & CALL_KEYWORD_REST) != 0) {
-            // This is kwrest passed to a method which does not accept kwargs
-
-            // We pass empty kwrest through so kwrest does not try and slurp it up as normal argument.
-            // This complicates check_arity but empty ** is special case.
-            RubyHash hash = (RubyHash) last;
-            return hash;
-        } else if (!isKwarg) {
-            // This is just an ordinary hash as last argument
-            return last;
-        } else {
-            RubyHash hash = (RubyHash) last;
-            return hash.dupFast(context);
-        }
+    private static IRubyObject receiverSpecificArityKwargsCommon(ThreadContext context, RubyHash last, boolean isKwarg) {
+        return isKwarg || last.isRuby2KeywordHash() ?
+                last.dupFast(context) :
+                last;
     }
 
     /**
      * Simplified receiveKeywords when:
-     * <li>receiver is not a ruby2_keywords method</li>
-     * <li>receiver does not accept keywords</li>
-     * <li>there's no rest argument</li>
+     * receiver is not a ruby2_keywords method.
+     * receiver does not accept keywords.
+     * there's no rest argument.
      *
      * @param context
      * @param args
@@ -776,17 +765,24 @@ public class IRRuntimeHelpers {
     }
 
     /**
-     * Handle incoming keyword arguments given the receiver's rest arg, keyword acceptance, and need for ruby2_keywords.
+     * <p>Handle incoming keyword arguments given the receiver's rest arg, keyword acceptance, and need for
+     * ruby2_keywords.</p>
      *
-     * We return as undefined and not null when no kwarg since null gets auto-converted to nil because
-     * temp vars do this to work around no explicit initialization of temp values (e.g. they might start as null).
+     * <p>Note: We return as %undefined and not null when no keyword arguments are present since null in temporary
+     * values when accessed will return nil (unfortunate artifact of us not guaranteeing all temporary variables are
+     * explicitly initialized).</p>
      *
-     * @param context
-     * @param args
-     * @param hasRestArgs
-     * @param acceptsKeywords
-     * @param ruby2_keywords_method
-     * @return
+     * <p>Note: Last argument of args may be replaced by a duplicate of itself.  This is done for two reasons:
+     * 1) keywords passed to method with rest argument and we dup as side-effect because recv_rest_arg lack
+     * knowledge to do it itself 2) any context where keyword can be consumed as an ordinary argument (not
+     * doing this would modify the hash back at the callsite)</p>
+     *
+     * @param context the thread context
+     * @param args arguments we are processing
+     * @param hasRestArgs the thing being called has a rest argument
+     * @param acceptsKeywords the thing being called accepts keyword arguments
+     * @param ruby2_keywords_method the method being called is marked with ruby2_keywords
+     * @return %undefined if no keywords given or a hash if so
      */
     @Interp
     public static IRubyObject receiveKeywords(ThreadContext context, IRubyObject[] args, boolean hasRestArgs,
@@ -840,17 +836,15 @@ public class IRRuntimeHelpers {
             return hash.dupFast(context);
         }
 
-        // FIXME: This is a bit gross.  a real kwarg callsite if passed to a non-kwarg method but it
-        // has a rest arg will dup the original kwarg (presumably so you cannot modify the original
-        // kwarg hash).  This should be handled during  recv_rest_arg but we no longer have the info so
-        // it happening here.
-        if (hasRestArgs) args[args.length - 1] = hash.dup(context);
+        args[args.length - 1] = hash.dup(context);
 
         // All other situations no-op
         return UNDEFINED;
     }
 
-    private static IRubyObject receiveKeywordsHashRubyKeywordsHash(ThreadContext context, IRubyObject[] args, boolean hasRestArgs, boolean acceptsKeywords, int callInfo, RubyHash hash) {
+    private static IRubyObject receiveKeywordsHashRubyKeywordsHash(ThreadContext context, IRubyObject[] args,
+                                                                   boolean hasRestArgs, boolean acceptsKeywords,
+                                                                   int callInfo, RubyHash hash) {
         // ruby2_keywords only get unmarked if it enters a method which accepts keywords.
         // This means methods which don't just keep that marked hash around in case it is passed
         // onto another method which accepts keywords.
@@ -860,26 +854,24 @@ public class IRRuntimeHelpers {
             return hash;
         }
 
-        clearTrailingHashRuby2Keywords(context, args, hash);
+        if ((callInfo & CALL_SPLATS) != 0) {
+            // somehow we splatted an array with an empty keyword argument attached (ruby2_keywords_hash can lead to this)
+            if (hash.isEmpty()) return hash;
 
-        // If splat call with ruby2_keywords hash that's not empty, just return it
-        if ((callInfo & CALL_SPLATS) != 0 && hash.isEmpty()) {
-            return hash;
+            args[args.length - 1] = hash.dup(context);
+            return UNDEFINED;
         }
 
-        // We record before funging last arg because we may unmark and replace last arg.
-        boolean callKeyword = (callInfo & CALL_KEYWORD) != 0;
+        boolean explicitKeywords = (callInfo & CALL_KEYWORD) != 0;
+        if (explicitKeywords) {
+            if (!hash.isEmpty()) return hash.dupFast(context);
 
-        // If ordinary hash as last argument, dup and return it
-        if (callKeyword && acceptsKeywords && !hash.isEmpty()) {
-            return hash.dupFast(context);
+            // FIXME: This is a bit gross.  a real kwarg callsite if passed to a non-kwarg method but it
+            // has a rest arg will dup the original kwarg (presumably so you cannot modify the original
+            // kwarg hash).  This should be handled during  recv_rest_arg but we no longer have the info so
+            // it happening here.
+            if (hasRestArgs) args[args.length - 1] = hash.dup(context);
         }
-
-        // FIXME: This is a bit gross.  a real kwarg callsite if passed to a non-kwarg method but it
-        // has a rest arg will dup the original kwarg (presumably so you cannot modify the original
-        // kwarg hash).  This should be handled during  recv_rest_arg but we no longer have the info so
-        // it happening here.
-        if (hasRestArgs && callKeyword) args[args.length - 1] = hash.dup(context);
 
         // All other situations no-op
         return UNDEFINED;
@@ -2425,11 +2417,6 @@ public class IRRuntimeHelpers {
         Ruby runtime = context.runtime;
 
         return runtime.freezeAndDedupString(RubyString.newString(runtime, bytelist, coderange));
-    }
-
-
-    public static RubyString newChilledString(ThreadContext context, ByteList bytelist, int coderange, String file, int line) {
-        return RubyString.newString(context.runtime, bytelist, coderange).chill();
     }
 
     @JIT @Interp

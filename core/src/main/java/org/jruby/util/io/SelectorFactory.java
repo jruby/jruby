@@ -38,9 +38,6 @@ import org.jruby.Ruby;
 
 import static org.jruby.api.Warn.warn;
 
-/**
- * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>
- */
 public class SelectorFactory {
     // If it doesn't work after 20 times it's unlikely to ever work. Bailout is only option.
     private final static int RETRY_MAX = 20; 

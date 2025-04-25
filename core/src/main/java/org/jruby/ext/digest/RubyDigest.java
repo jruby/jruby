@@ -68,9 +68,6 @@ import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.*;
 
-/**
- * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
- */
 @JRubyModule(name="Digest")
 public class RubyDigest {
 

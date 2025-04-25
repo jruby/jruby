@@ -41,9 +41,6 @@ import static org.jruby.api.Convert.toDouble;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
-/**
- *
- */
 public final class Util {
     private Util() {}
     public static final byte int8Value(IRubyObject parameter) {

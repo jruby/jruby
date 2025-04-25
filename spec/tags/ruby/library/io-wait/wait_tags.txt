@@ -14,8 +14,8 @@ fails:IO#wait [events, timeout] passed changes thread status to 'sleep' when wai
 fails:IO#wait [events, timeout] passed can be interrupted when waiting for READABLE event
 fails:IO#wait [events, timeout] passed can be interrupted when waiting for WRITABLE event
 fails:Data#deconstruct accepts string attribute names
-fails:IO#wait [events, timeout] passed returns events mask when the WRITABLE event is ready during the timeout
-fails:IO#wait [events, timeout] passed raises ArgumentError when events is not positive
-fails:IO#wait [timeout, mode] passed accepts timeout and mode in any order
-fails:IO#wait [timeout, mode] passed raises ArgumentError when several Integer arguments passed
-fails:IO#wait [events, timeout] passed returns events mask when the READABLE event is ready during the timeout
+fails(https://github.com/jruby/jruby/issues/8743):IO#wait [events, timeout] passed returns events mask when the READABLE event is ready during the timeout
+fails(https://github.com/jruby/jruby/issues/8743):IO#wait [events, timeout] passed returns events mask when the WRITABLE event is ready during the timeout
+fails(https://github.com/jruby/jruby/issues/8743):IO#wait [events, timeout] passed raises ArgumentError when events is not positive
+fails(https://github.com/jruby/jruby/issues/8743):IO#wait [timeout, mode] passed accepts timeout and mode in any order
+fails(https://github.com/jruby/jruby/issues/8743):IO#wait [timeout, mode] passed raises ArgumentError when several Integer arguments passed

@@ -76,9 +76,6 @@ import static org.jruby.api.Error.indexError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.RubyStringBuilder.str;
 
-/**
- * @author olabini
- */
 @JRubyClass(name="MatchData")
 public class RubyMatchData extends RubyObject {
     Region regs;        // captures

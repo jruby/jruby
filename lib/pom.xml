@@ -12,7 +12,7 @@ DO NOT MODIFY - GENERATED CODE
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>10.0.0.0-SNAPSHOT</version>
+    <version>10.0.1.0-SNAPSHOT</version>
   </parent>
   <artifactId>jruby-stdlib</artifactId>
   <name>JRuby Lib Setup</name>
@@ -28,7 +28,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>jruby-core</artifactId>
-      <version>10.0.0.0-SNAPSHOT</version>
+      <version>10.0.1.0-SNAPSHOT</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -736,7 +736,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>uri</artifactId>
-      <version>1.0.2</version>
+      <version>1.0.3</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -983,7 +983,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>power_assert</artifactId>
-      <version>2.0.4</version>
+      <version>2.0.5</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1048,7 +1048,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>rexml</artifactId>
-      <version>3.3.9</version>
+      <version>3.4.0</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1087,7 +1087,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>test-unit</artifactId>
-      <version>3.6.2</version>
+      <version>3.6.7</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1172,7 +1172,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/timeout-0.4.3*</include>
           <include>specifications/tsort-0.2.0*</include>
           <include>specifications/un-0.3.0*</include>
-          <include>specifications/uri-1.0.2*</include>
+          <include>specifications/uri-1.0.3*</include>
           <include>specifications/weakref-0.1.3*</include>
           <include>specifications/yaml-0.4.0*</include>
           <include>specifications/abbrev-0.1.2*</include>
@@ -1191,15 +1191,15 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/net-smtp-0.5.0*</include>
           <include>specifications/nkf-0.2.0*</include>
           <include>specifications/observer-0.1.2*</include>
-          <include>specifications/power_assert-2.0.4*</include>
+          <include>specifications/power_assert-2.0.5*</include>
           <include>specifications/prime-0.1.3*</include>
           <include>specifications/racc-1.8.1*</include>
           <include>specifications/rake-${rake.version}*</include>
           <include>specifications/resolv-replace-0.1.1*</include>
-          <include>specifications/rexml-3.3.9*</include>
+          <include>specifications/rexml-3.4.0*</include>
           <include>specifications/rinda-0.2.0*</include>
           <include>specifications/rss-0.3.1*</include>
-          <include>specifications/test-unit-3.6.2*</include>
+          <include>specifications/test-unit-3.6.7*</include>
           <include>gems/rubygems-update-3.6.3*/**/*</include>
           <include>gems/benchmark-0.4.0*/**/*</include>
           <include>gems/bundler-2.6.3*/**/*</include>
@@ -1254,7 +1254,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/timeout-0.4.3*/**/*</include>
           <include>gems/tsort-0.2.0*/**/*</include>
           <include>gems/un-0.3.0*/**/*</include>
-          <include>gems/uri-1.0.2*/**/*</include>
+          <include>gems/uri-1.0.3*/**/*</include>
           <include>gems/weakref-0.1.3*/**/*</include>
           <include>gems/yaml-0.4.0*/**/*</include>
           <include>gems/abbrev-0.1.2*/**/*</include>
@@ -1273,15 +1273,15 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/net-smtp-0.5.0*/**/*</include>
           <include>gems/nkf-0.2.0*/**/*</include>
           <include>gems/observer-0.1.2*/**/*</include>
-          <include>gems/power_assert-2.0.4*/**/*</include>
+          <include>gems/power_assert-2.0.5*/**/*</include>
           <include>gems/prime-0.1.3*/**/*</include>
           <include>gems/racc-1.8.1*/**/*</include>
           <include>gems/rake-${rake.version}*/**/*</include>
           <include>gems/resolv-replace-0.1.1*/**/*</include>
-          <include>gems/rexml-3.3.9*/**/*</include>
+          <include>gems/rexml-3.4.0*/**/*</include>
           <include>gems/rinda-0.2.0*/**/*</include>
           <include>gems/rss-0.3.1*/**/*</include>
-          <include>gems/test-unit-3.6.2*/**/*</include>
+          <include>gems/test-unit-3.6.7*/**/*</include>
           <include>cache/rubygems-update-3.6.3*</include>
           <include>cache/benchmark-0.4.0*</include>
           <include>cache/bundler-2.6.3*</include>
@@ -1336,7 +1336,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/timeout-0.4.3*</include>
           <include>cache/tsort-0.2.0*</include>
           <include>cache/un-0.3.0*</include>
-          <include>cache/uri-1.0.2*</include>
+          <include>cache/uri-1.0.3*</include>
           <include>cache/weakref-0.1.3*</include>
           <include>cache/yaml-0.4.0*</include>
           <include>cache/abbrev-0.1.2*</include>
@@ -1355,15 +1355,15 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/net-smtp-0.5.0*</include>
           <include>cache/nkf-0.2.0*</include>
           <include>cache/observer-0.1.2*</include>
-          <include>cache/power_assert-2.0.4*</include>
+          <include>cache/power_assert-2.0.5*</include>
           <include>cache/prime-0.1.3*</include>
           <include>cache/racc-1.8.1*</include>
           <include>cache/rake-${rake.version}*</include>
           <include>cache/resolv-replace-0.1.1*</include>
-          <include>cache/rexml-3.3.9*</include>
+          <include>cache/rexml-3.4.0*</include>
           <include>cache/rinda-0.2.0*</include>
           <include>cache/rss-0.3.1*</include>
-          <include>cache/test-unit-3.6.2*</include>
+          <include>cache/test-unit-3.6.7*</include>
         </includes>
       </resource>
       <resource>

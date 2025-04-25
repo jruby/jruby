@@ -30,10 +30,6 @@
 
 package org.jruby.lexer.yacc;
 
-/**
- * 
- * @author jpetersen
- */
 public class StackState implements Cloneable {
     private long stack = 0;
 

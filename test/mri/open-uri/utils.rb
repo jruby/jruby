@@ -17,6 +17,7 @@ class SimpleHTTPServer
     @procs[path] = proc
   end
 
+  # NOTE: patched by JRuby
   def start
     @thread = Thread.new do
       loop do
@@ -27,6 +28,7 @@ class SimpleHTTPServer
     end
   end
 
+  # NOTE: patched by JRuby
   def shutdown
     @thread.kill
   end
@@ -160,6 +162,7 @@ class SimpleHTTPProxyServer
     @access_log = access_log
   end
 
+  # NOTE: patched by JRuby
   def start
     @thread = Thread.new do
       loop do
@@ -179,6 +182,7 @@ class SimpleHTTPProxyServer
     end
   end
 
+  # NOTE: patched by JRuby
   def shutdown
     @thread.kill
   end
@@ -269,6 +273,7 @@ class SimpleHTTPSServer
     @ssl_server = OpenSSL::SSL::SSLServer.new(@server, context)
   end
 
+  # NOTE: patched by JRuby
   def start
     @thread = Thread.new do
       loop do
@@ -280,10 +285,9 @@ class SimpleHTTPSServer
     end
   end
 
+  # NOTE: patched by JRuby
   def shutdown
-    #@thread.kill
     @server.close
-    @thread.join
   end
 
   def handle_request(socket)

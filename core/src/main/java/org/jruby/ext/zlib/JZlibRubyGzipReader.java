@@ -71,10 +71,6 @@ import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
-/**
- *
- * @author enebo
- */
 @JRubyClass(name = "Zlib::GzipReader", parent = "Zlib::GzipFile", include = "Enumerable")
 public class JZlibRubyGzipReader extends RubyGzipFile {
     @JRubyClass(name = "Zlib::GzipReader::Error", parent = "Zlib::GzipReader")

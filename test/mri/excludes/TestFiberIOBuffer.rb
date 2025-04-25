@@ -1,3 +1,5 @@
-exclude :test_read_nonblock, ""
-exclude :test_read_write_blocking, ""
-exclude :test_timeout_after, ""
+exclude :test_read_nonblock, "wrong return value, should be :wait_readable"
+exclude :test_read_write_blocking, "hangs on macos m1"
+exclude :test_timeout_after, "hangs on macos m1 probably because timeout is not implemented"
+exclude :test_io_buffer_read_write, "incorrect designation of internal vs readonly buffer"
+exclude :test_io_buffer_pread_pwrite, "uses Tempfile but does not require the library"

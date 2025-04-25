@@ -37,9 +37,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 
-/**
- * @author Miguel Landaeta
- */
 @JRubyClass(name="KeyError", parent="IndexError")
 public class RubyKeyError extends RubyIndexError {
     private static final String[] VALID_KEYS = {"receiver", "key"};

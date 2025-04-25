@@ -72,10 +72,6 @@ import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.RubyStringBuilder.str;
 
-/**
- *
- * @author  jpetersen
- */
 @JRubyClass(name="Exception")
 public class RubyException extends RubyObject {
 

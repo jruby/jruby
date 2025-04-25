@@ -602,7 +602,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return new RubyString(runtime, runtime.getString(), bytes, coderange);
     }
 
-    public static RubyString newChilledString(Ruby runtime, ByteList bytes, int coderange) {
+    public static RubyString newChilledString(Ruby runtime, ByteList bytes, int coderange, String file, int line) {
+        if (runtime.getInstanceConfig().isDebuggingFrozenStringLiteral()) {
+            return new DebugChilledString(runtime, runtime.getString(), bytes, coderange, file, line + 1);
+        }
+
         return newStringShared(runtime, bytes, coderange).chill();
     }
 
@@ -953,6 +957,19 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return dup;
     }
 
+    public final RubyString dupAsChilled(Ruby runtime, RubyClass clazz, String file, int line) {
+        if (runtime.getInstanceConfig().isDebuggingFrozenStringLiteral()) {
+            shareLevel = SHARE_LEVEL_BYTELIST;
+            RubyString dup = new DebugChilledString(runtime, clazz, value, getCodeRange(), file, line + 1);
+            dup.shareLevel = SHARE_LEVEL_BYTELIST;
+            dup.flags |= flags & CR_MASK;
+
+            return dup;
+        }
+
+        return strDup(runtime, clazz).chill();
+    }
+
     public FString dupAsFString(Ruby runtime) {
         shareLevel = SHARE_LEVEL_BYTELIST;
         FString dup = new FString(runtime, value, getCodeRange());
@@ -1052,7 +1069,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         frozenCheck();
     }
 
-    private void mutateChilledString() {
+    protected void mutateChilledString() {
         int savedFlags = flags;
         flags &= ~(CHILLED_LITERAL_F|CHILLED_SYMBOL_TO_S_F);
         if ((savedFlags & CHILLED_LITERAL_F) != 0) {
@@ -1184,6 +1201,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return new DebugFrozenString(runtime, rubyClass, value, cr, file, line);
     }
 
+    public static RubyString newDebugChilledString(Ruby runtime, RubyClass rubyClass, ByteList value, int cr, String file, int line) {
+        return new DebugChilledString(runtime, rubyClass, value, cr, file, line);
+    }
+
     static class DebugFrozenString extends RubyString {
         private final String file;
         private final int line;
@@ -1214,6 +1235,30 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             
             throw runtime.newRaiseException(runtime.getFrozenError(),
                     "can't modify frozen String, created at " + file + ":" + line);
+        }
+    }
+
+    static class DebugChilledString extends RubyString {
+        private final String file;
+        private final int line;
+
+        protected DebugChilledString(Ruby runtime, RubyClass rubyClass, ByteList value, int cr, String file, int line) {
+            super(runtime, rubyClass, value, cr, false);
+
+            this.file = file;
+            this.line = line;
+
+            chill();
+        }
+
+        protected void mutateChilledString() {
+            int savedFlags = flags;
+            flags &= ~(CHILLED_LITERAL_F|CHILLED_SYMBOL_TO_S_F);
+            if ((savedFlags & CHILLED_LITERAL_F) != 0) {
+                getRuntime().getWarnings().warn("literal string will be frozen in the future, the string was created here: " + file + ":" + line);
+            } else {
+                super.mutateChilledString();
+            }
         }
     }
 
@@ -2938,6 +2983,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         int cl;
 
         try {
+            // TODO: much of this encoding promotion logic is duplicated in rbAscii8bitAppendableEncodingIndex
             cl = codeLength(enc, c);
 
             if (cl <= 0) throw rangeError(context, c + " out of char range or invalid code point");
@@ -3193,7 +3239,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     /**
      * sub! but without any frame globals ...
-     * @note Internal API, subject to change!
      * @param context current context
      * @param regexp the regular expression
      * @param repl replacement string value

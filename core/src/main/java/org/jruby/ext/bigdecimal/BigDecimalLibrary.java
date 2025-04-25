@@ -37,10 +37,6 @@ import org.jruby.runtime.load.Library;
 
 import static org.jruby.api.Access.loadService;
 
-/**
- * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
- * @version $Revision: 1.2 $
- */
 public class BigDecimalLibrary implements Library {
     public void load(Ruby runtime, boolean wrap) throws IOException {
         var context = runtime.getCurrentContext();

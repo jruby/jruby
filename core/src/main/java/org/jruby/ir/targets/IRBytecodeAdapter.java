@@ -53,10 +53,6 @@ import java.util.Map;
 
 import static org.jruby.util.CodegenUtils.*;
 
-/**
- *
- * @author headius
- */
 public class IRBytecodeAdapter {
     public static final int MAX_ARGUMENTS = 250;
 

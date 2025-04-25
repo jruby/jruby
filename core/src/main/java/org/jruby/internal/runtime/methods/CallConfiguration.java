@@ -17,10 +17,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- *
- * @author headius
- */
 public enum CallConfiguration {
     FrameFullScopeFull(Framing.Full, Scoping.Full) {
         void pre(ThreadContext context, IRubyObject self, RubyModule implementer, String name, Block block, StaticScope scope) {

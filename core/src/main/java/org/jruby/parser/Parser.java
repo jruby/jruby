@@ -224,7 +224,10 @@ public class Parser {
     }
 
     protected RubyArray<?> getLines(boolean isEvalParse, String file, int length) {
-        if (isEvalParse && !runtime.getCoverageData().isEvalCovered()) return null;
+        Ruby runtime = this.runtime;
+
+        // only gather eval lines if eval coverage is enabled
+        if (isEvalParse && (!runtime.isCoverageEnabled() || !runtime.getCoverageData().isEvalCovered())) return null;
 
         var context = runtime.getCurrentContext();
         IRubyObject scriptLines = objectClass(context).getConstantAt(context, "SCRIPT_LINES__");

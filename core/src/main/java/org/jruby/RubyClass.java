@@ -110,11 +110,6 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.commons.GeneratorAdapter;
 
-
-/**
- *
- * @author  jpetersen
- */
 @JRubyClass(name="Class", parent="Module")
 public class RubyClass extends RubyModule {
 
@@ -555,6 +550,7 @@ public class RubyClass extends RubyModule {
                 baseName(name);
         clazz.makeMetaClass(context, superClass.getMetaClass());
         if (setParent) clazz.setParent(parent);
+        clazz.copyVariableTableManager(context, superClass);
         parent.setConstant(context, name, clazz, file, line);
         superClass.invokeInherited(context, superClass, clazz);
         return clazz;
@@ -1077,6 +1073,7 @@ public class RubyClass extends RubyModule {
         allocator = superClazz.allocator;
         makeMetaClass(context, superClazz.getMetaClass());
         superClazz.addSubclass(this);
+        copyVariableTableManager(context, superClazz);
 
         marshal = superClazz.marshal;
 
@@ -1084,6 +1081,14 @@ public class RubyClass extends RubyModule {
         super.initialize(context, block);
 
         return this;
+    }
+
+    private void copyVariableTableManager(ThreadContext context, RubyClass superClazz) {
+        VariableTableManager variableTableManager = superClazz.getVariableTableManager();
+        if (variableTableManager.getRealClass().superClass() == context.runtime.getData()) {
+            // duplicate data's variable table in subclasses
+            this.variableTableManager = variableTableManager.duplicate();
+        }
     }
 
     /** rb_class_init_copy
@@ -1403,7 +1408,7 @@ public class RubyClass extends RubyModule {
 
     void addInvalidatorsAndFlush(InvalidatorList invalidators) {
         // add this class's invalidators to the aggregate
-        invalidators.add(methodInvalidator);
+        methodInvalidator.addIfUsed(invalidators);
 
         // if we're not at boot time, don't bother fully clearing caches
         if (!runtime.isBootingCore()) getCachedMethods().clear();
@@ -3484,5 +3489,5 @@ public class RubyClass extends RubyModule {
     private final RubyClass realClass;
 
     /** Variable table manager for this class */
-    private final VariableTableManager variableTableManager;
+    private VariableTableManager variableTableManager;
 }

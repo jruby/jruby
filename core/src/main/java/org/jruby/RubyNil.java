@@ -51,10 +51,6 @@ import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Create.newSmallHash;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
-/**
- *
- * @author  jpetersen
- */
 @JRubyClass(name="NilClass")
 public class RubyNil extends RubyObject implements Constantizable {
 

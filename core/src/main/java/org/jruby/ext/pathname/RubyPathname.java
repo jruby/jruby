@@ -292,9 +292,10 @@ public class RubyPathname extends RubyObject {
 
     /* Facade for IO */
 
-    @JRubyMethod(optional = 3, checkArity = false)
+    @JRubyMethod(optional = 3, checkArity = false, keywords = true)
     public IRubyObject each_line(ThreadContext context, IRubyObject[] args, Block block) {
-        return ioClass(context).callMethod(context, "foreach", unshiftPath(args), block);
+        // allow keyword state to pass through to File
+        return fileClass(context).callMethod(context, "foreach", unshiftPath(args), block);
     }
 
     /* Facade for Dir */
@@ -345,14 +346,12 @@ public class RubyPathname extends RubyObject {
 
     @JRubyMethod
     public IRubyObject each_entry(ThreadContext context, Block block) {
-        if (block.isGiven()) {
-            // TODO: yield block while iterating
-            RubyArray entries = callMethod(context, "entries").convertToArray();
-            entries.each(context, block);
-            return context.nil;
-        } else {
-            return dirClass(context).callMethod(context, "foreach");
-        }
+        if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, this, "each_entry");
+
+        // TODO: yield block while iterating
+        RubyArray entries = callMethod(context, "entries").convertToArray();
+        entries.each(context, block);
+        return context.nil;
     }
 
     /* Mix of File and Dir */

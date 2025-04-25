@@ -41,10 +41,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.regex.Pattern;
 
-/**
- *
- * @author headius
- */
 public class JavaNameMangler {
     public static final Pattern PATH_SPLIT = Pattern.compile("[/\\\\]");
 

@@ -7,10 +7,6 @@ package org.jruby.util;
 
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- *
- * @author headius
- */
 public interface TypeCoercer {
-    public Object coerce(IRubyObject self);
+    Object coerce(IRubyObject self);
 }

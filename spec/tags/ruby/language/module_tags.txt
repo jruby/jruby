@@ -1,1 +1,1 @@
-fails:The module keyword does not reopen a module included in Object
+fails(low priority excluded from JRuby 10):The module keyword does not reopen a module included in Object

@@ -6,10 +6,10 @@
 
 export REPO=${REPO:=jruby}
 
-java_version=$(java -version 2>&1 | head -1 | awk -F\" -e '{ print $2 }' | awk -F. '{print $1 "." $2 }')
+java_version=$(java -version 2>&1 | head -1 | awk -F\" -e '{ print $2 }' | awk -F. '{print $1 }')
 
-if [ "$java_version" != "17" ]; then
-   echo "You must use Java 17 to release JRuby"
+if [ "$java_version" != "21" ]; then
+   echo "You must use Java 21 to release JRuby"
    exit 1
 fi
 

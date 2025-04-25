@@ -63,6 +63,8 @@ default_gems = [
     # ['pathname', '0.4.0'],
     ['pp', '0.6.2'],
     ['prettyprint', '0.2.0'],
+    # Not ready to ship in the box yet (native dependencies)
+    # ['prism', '1.2.0'],
     ['pstore', '0.1.4'],
     ['psych', '5.2.3'],
     ['rake-ant', '1.0.6'],
@@ -90,7 +92,7 @@ default_gems = [
     # ['tmpdir', '0.3.1'],
     ['tsort', '0.2.0'],
     ['un', '0.3.0'],
-    ['uri', '1.0.2'],
+    ['uri', '1.0.3'],
     ['weakref', '0.1.3'],
     # https://github.com/ruby/win32ole/issues/12
     # ['win32ole', '1.9.0'],
@@ -119,7 +121,7 @@ bundled_gems = [
     ['net-smtp', '0.5.0'],
     ['nkf', '0.2.0'],
     ['observer', '0.1.2'],
-    ['power_assert', '2.0.4'],
+    ['power_assert', '2.0.5'],
     ['prime', '0.1.3'],
     ['racc', '1.8.1'],
     ['rake', '${rake.version}'],
@@ -135,12 +137,12 @@ bundled_gems = [
     # Depends on prism gem with native ext
     # ['repl_type_completer', '0.1.1'],
     ['resolv-replace', '0.1.1'],
-    ['rexml', '3.3.9'],
+    ['rexml', '3.4.0'],
     ['rinda', '0.2.0'],
     ['rss', '0.3.1'],
     # https://github.com/ruby/syslog/issues/1
     # ['syslog', '0.2.0'],
-    ['test-unit', '3.6.2'],
+    ['test-unit', '3.6.7'],
     # Depends on many CRuby internals
     # ['typeprof', '0.30.1'],
 ]

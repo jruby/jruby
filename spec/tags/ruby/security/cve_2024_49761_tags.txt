@@ -1,1 +1,1 @@
-fails:CVE-2024-49761 is resisted by the Regexp implementation handling that regular expression in linear time
+fails(https://github.com/jruby/jruby/issues/8724):CVE-2024-49761 is resisted by the Regexp implementation handling that regular expression in linear time

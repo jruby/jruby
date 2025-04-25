@@ -36,10 +36,6 @@ import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.util.ArrayList;
 
-
-/**
- * @author <a href="mailto:joshuago@gmail.com">Joshua Go</a>
- */
 public class MulticastStateManager {
     private MulticastSocket multicastSocket;
     private final ArrayList membershipGroups;

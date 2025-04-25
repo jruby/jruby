@@ -24,6 +24,7 @@ module TestNetHTTPUtils
       @block = block
     end
 
+    # NOTE: patched by JRuby
     def start
       @thread = Thread.new do
         loop do
@@ -42,6 +43,7 @@ module TestNetHTTPUtils
       handle_request(socket)
     end
 
+    # NOTE: patched by JRuby
     def shutdown
       @thread&.kill
       @thread&.join

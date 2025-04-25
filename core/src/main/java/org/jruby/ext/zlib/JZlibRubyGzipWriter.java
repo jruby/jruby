@@ -64,9 +64,6 @@ import static org.jruby.api.Create.dupString;
 import static org.jruby.api.Create.newString;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
-/**
- *
- */
 @JRubyClass(name = "Zlib::GzipWriter", parent = "Zlib::GzipFile")
 public class JZlibRubyGzipWriter extends RubyGzipFile {
     @JRubyMethod(name = "new", rest = true, meta = true, keywords = true)
