@@ -1,0 +1,3 @@
+fails:Data#inspect does not call #name method
+fails:Data#inspect does not call #name method when struct is anonymous
+fails:Data#inspect recursive structure returns string representation with recursive attribute replaced with ...

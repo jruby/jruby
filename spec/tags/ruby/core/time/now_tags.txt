@@ -1,1 +1,8 @@
 fails:Time.now :in keyword argument raises ArgumentError if String argument and seconds greater than 59
+fails:Time.now Timezone object raises TypeError if timezone does not implement #utc_to_local method
+fails:Time.now Timezone object does not raise exception if timezone does not implement #local_to_utc method
+fails:Time.now Timezone object returned value by #utc_to_local and #local_to_utc methods could be Time instance
+fails:Time.now Timezone object returned value by #utc_to_local and #local_to_utc methods could be Time subclass instance
+fails:Time.now Timezone object returned value by #utc_to_local and #local_to_utc methods could be Integer
+fails:Time.now Timezone object returned value by #utc_to_local and #local_to_utc methods could have any #zone and #utc_offset because they are ignored
+fails:Time.now Timezone object returned value by #utc_to_local and #local_to_utc methods raises ArgumentError if difference between argument and result is too large

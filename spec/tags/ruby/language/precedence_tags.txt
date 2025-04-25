@@ -1,0 +1,1 @@
+fails:The module keyword does not reopen a module included in Object

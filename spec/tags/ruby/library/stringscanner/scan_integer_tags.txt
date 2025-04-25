@@ -1,0 +1,1 @@
+fails:StringScanner#scan_integer sets the last match result

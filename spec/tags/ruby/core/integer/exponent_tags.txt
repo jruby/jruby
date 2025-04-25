@@ -1,0 +1,1 @@
+fails:Integer#** fixnum raises an ArgumentError when the number is too big
