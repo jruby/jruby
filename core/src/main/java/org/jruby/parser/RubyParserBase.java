@@ -2487,7 +2487,7 @@ public abstract class RubyParserBase {
     }
 
     protected boolean dyna_in_block() {
-        return currentScope.isBlockScope() && currentScope.scopeType != IRScopeType.EVAL_SCRIPT;
+        return currentScope.isBlockScope() && currentScope.getType() != StaticScope.Type.EVAL;
     }
 
     private boolean hasArguments() {
