@@ -147,7 +147,7 @@ public class TimeArgs {
         } else if (usecObj instanceof RubyRational rat) {
             if (rat.isNegativeNumber(context)) throw argumentError(context, "argument out of range.");
 
-            RubyRational nsec = (RubyRational) rat.op_mul(context, asFixnum(context, 1000));
+            RubyRational nsec = (RubyRational) rat.op_mul(context, asFixnum(context, 1000000000));
 
             long tmpNanos = (long) nsec.asDouble(context);
 
