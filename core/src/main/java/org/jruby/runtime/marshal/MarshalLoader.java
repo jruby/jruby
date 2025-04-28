@@ -148,7 +148,6 @@ public class MarshalLoader {
     public static RubyClass getClassFromPath(ThreadContext context, String path) {
         Ruby runtime = context.runtime;
         final RubyModule value = runtime.getClassFromPath(path, runtime.getArgumentError(), false);
-        if (value == null) throw argumentError(context, "undefined class/module " + path);
         if ( ! value.isClass() ) throw argumentError(context, path + " does not refer class");
         return (RubyClass) value;
     }
