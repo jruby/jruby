@@ -15,7 +15,7 @@ import static org.jruby.api.Error.argumentError;
 import static org.jruby.util.RubyStringBuilder.str;
 
 public class RubyTimeParser {
-    public static final int TIME_SCALE_NUMDIGITS = 10;
+    public static final int TIME_SCALE_NUMDIGITS = 9;
     public static final long SIZE_MAX = Long.MAX_VALUE;
 
     
@@ -84,7 +84,6 @@ public class RubyTimeParser {
                     IRubyObject invalidSecs = context.runtime.newString(new ByteList(bytes, timePart, ptr - timePart + 1, true));
                     throw argumentError(context, str(context.runtime, "subsecond expected after dot: ", invalidSecs));
                 }
-                ndigits = digits;
                 subsec = parseInt(context, false);
                 if (subsec.isNil()) break;
                 while (!isEOS() && isDigit(0)) ptr++;
@@ -229,14 +228,13 @@ public class RubyTimeParser {
 
     private IRubyObject parseInt(ThreadContext context, boolean parseSign) {
         int sign = 1;
+        ndigits = 0;
         if (parseSign) {
             eatSpace();
             byte signByte = peek();
             if (signByte == '+') {
-                ndigits++;
                 advance();
             } else if (signByte == '-') {
-                ndigits++;
                 advance();
                 sign = -1;
             }

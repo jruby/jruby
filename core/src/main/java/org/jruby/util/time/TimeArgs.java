@@ -6,6 +6,7 @@ import org.joda.time.DateTimeZone;
 import org.joda.time.IllegalFieldValueException;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyFloat;
+import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyRational;
 import org.jruby.RubyString;
@@ -147,9 +148,15 @@ public class TimeArgs {
         } else if (usecObj instanceof RubyRational rat) {
             if (rat.isNegativeNumber(context)) throw argumentError(context, "argument out of range.");
 
-            RubyRational nsec = (RubyRational) rat.op_mul(context, asFixnum(context, 1000));
+            // FIXME: This is wrong as numerator may not resolve to something which fits into a double
+            // I see that the rational will create something which create a denominator which will keep track
+            // of how far over we are from nano value but I do not see the right mechanism to get an appropriate
+            // double from that.
+            var val = rat.numerator(context);
+//            RubyRational nsec = (RubyRational) rat.op_mul(context, asFixnum(context, 1000));
+            long tmpNanos = (long) ((RubyNumeric) val).asDouble(context);
 
-            long tmpNanos = (long) nsec.asDouble(context);
+            //long tmpNanos = (long) nsec.asDouble(context);
 
             millis = tmpNanos / 1_000_000;
             nanos = tmpNanos % 1_000_000;
