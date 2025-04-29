@@ -935,8 +935,15 @@ public final class ThreadContext {
     }
 
     private RubyStackTraceElement[] getPartialTrace(int level, Integer length, Stream<StackWalker.StackFrame> stackStream) {
-        if (length != null && length == 0) return RubyStackTraceElement.EMPTY_ARRAY;
-        return TraceType.Gather.CALLER.getBacktraceData(this, stackStream).getPartialBacktrace(runtime, level + length);
+	int len = 0;
+        if (length != null) {
+        	if (length == 0) {
+			return RubyStackTraceElement.EMPTY_ARRAY;
+		else {
+			len = length;
+		}
+	}
+        return TraceType.Gather.CALLER.getBacktraceData(this, stackStream).getPartialBacktrace(runtime, level + len);
     }
 
     private void eachPartialTrace(Stream<StackWalker.StackFrame> stackStream, Consumer<RubyStackTraceElement> consumer) {
