@@ -2874,7 +2874,7 @@ public final class Ruby implements Constantizable {
 
             if ( p < length && path.charAt(p) == ':' ) {
                 if ( ++p < length && path.charAt(p) != ':' ) {
-                    throw newRaiseException(undefinedExceptionClass, str(this, "undefined class/module ", ids(this, path)));
+                    throw classPathUndefinedException(path, undefinedExceptionClass, p);
                 }
                 pbeg = ++p;
             }
@@ -2883,7 +2883,7 @@ public final class Ruby implements Constantizable {
             IRubyObject cc = flexibleSearch || isJavaPackageOrJavaClassProxyType(clazz) ?
                     clazz.getConstant(context, str) : clazz.getConstantAt(context, str);
 
-            if (!flexibleSearch && cc == null) return null;
+            if (cc == null) throw classPathUndefinedException(path, undefinedExceptionClass, p);
 
             if (!(cc instanceof RubyModule mod)) {
                 throw typeError(context, str(this, ids(this, path), " does not refer to class/module"));
@@ -2892,6 +2892,10 @@ public final class Ruby implements Constantizable {
         }
 
         return clazz;
+    }
+
+    private RaiseException classPathUndefinedException(String path, RubyClass undefinedExceptionClass, int p) {
+        return newRaiseException(undefinedExceptionClass, str(this, "undefined class/module ", ids(this, path.substring(0, p))));
     }
 
     private static boolean isJavaPackageOrJavaClassProxyType(final RubyModule type) {
