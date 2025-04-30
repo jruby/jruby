@@ -1707,7 +1707,7 @@ public class RubyModule extends RubyObject {
             if (cacheUndef) {
                 return addToCache(id, UndefinedMethod.getInstance(), this, token);
             }
-            return cacheEntryFactory.newCacheEntry(id, UndefinedMethod.getInstance(), methodEntry.sourceModule, token);
+            return cacheEntryFactory.newCacheEntry(id, UndefinedMethod.getInstance(), this, token);
         } else if (!runtime.isBooting()) {
             addToCache(id, methodEntry);
         }

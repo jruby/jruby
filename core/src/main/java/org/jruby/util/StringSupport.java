@@ -2073,7 +2073,7 @@ public final class StringSupport {
 
         if (opts != context.nil) {
             IRubyObject _chomp = ArgsUtil.extractKeywordArg(context, "chomp", opts);
-            chomp = _chomp != null || _chomp.isTrue();
+            chomp = _chomp.isTrue();
         }
 
         if (block.isGiven()) {
