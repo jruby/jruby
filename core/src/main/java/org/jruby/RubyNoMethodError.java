@@ -26,6 +26,7 @@
 
 package org.jruby;
 
+import org.jruby.anno.JRubyField;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.NoMethodError;
@@ -47,15 +48,17 @@ import static org.jruby.api.Define.defineClass;
  */
 @JRubyClass(name="NoMethodError", parent="NameError")
 public class RubyNoMethodError extends RubyNameError implements Reified {
+    @JRubyField
     private IRubyObject args;
 
     private static final ObjectAllocator ALLOCATOR = RubyNoMethodError::new;
 
     static RubyClass define(ThreadContext context, RubyClass NameError) {
         RubyClass noMethodError = defineClass(context, "NoMethodError", NameError, ALLOCATOR).
-                defineMethods(context, RubyNoMethodError.class);
-        noMethodError.reifiedClass(RubyNoMethodError.class);
-        noMethodError.getVariableTableManager().requestFieldStorage("args", "args", IRubyObject.class, false, null, MethodHandles.lookup());
+                reifiedClass(RubyNoMethodError.class).
+                defineMethods(context, RubyNoMethodError.class).
+                defineFields(context, RubyNoMethodError.class, MethodHandles.lookup());
+
         return noMethodError;
     }
 

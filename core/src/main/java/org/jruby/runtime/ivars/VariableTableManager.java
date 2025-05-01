@@ -33,7 +33,6 @@ import java.io.ObjectOutputStream;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -196,14 +195,14 @@ public class VariableTableManager {
      * Request that the listed ivars (no @ in name) have field storage when we are reified
      */
     public synchronized void requestFieldStorage(String name, Class<?> fieldType, Boolean unwrap, Class<?> toType) {
-        requestFieldStorage(name, '@' + name, fieldType, unwrap, toType, RubyObjectSpecializer.LOOKUP);
+        addDirectField(name, '@' + name, fieldType, unwrap, toType, RubyObjectSpecializer.LOOKUP);
     }
 
     /**
      * This is internal API, don't call this directly if you aren't in the JRuby codebase, it may change
      * Request that the listed ivars (no @ in name) have field storage when we are reified
      */
-    public synchronized void requestFieldStorage(String name, String rubyName, Class<?> fieldType, Boolean unwrap, Class<?> toType, MethodHandles.Lookup lookup) {
+    public synchronized void addDirectField(String name, String rubyName, Class<?> fieldType, Boolean unwrap, Class<?> toType, MethodHandles.Lookup lookup) {
         DirectFieldConfiguration config = new JavaClassConfiguration.DirectFieldConfiguration(name, rubyName, fieldType, unwrap, toType, lookup);
         if (realClass.reifiedClass() != null)
             requestFieldStorage(config);

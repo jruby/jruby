@@ -68,6 +68,7 @@ import org.jruby.anno.AnnotationHelper;
 import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyConstant;
+import org.jruby.anno.JRubyField;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.anno.TypePopulator;
