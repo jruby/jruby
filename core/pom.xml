@@ -558,9 +558,9 @@ DO NOT MODIFY - GENERATED CODE
         <configuration>
           <forkCount>1</forkCount>
           <reuseForks>false</reuseForks>
-          <systemProperties>
+          <systemPropertyVariables>
             <jruby.home>${basedir}/..</jruby.home>
-          </systemProperties>
+          </systemPropertyVariables>
           <argLine>-Xmx${jruby.test.memory} -Dfile.encoding=UTF-8 -Djava.awt.headless=true</argLine>
           <environmentVariables>
             <JDK_JAVA_OPTIONS>--add-modules java.scripting --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED</JDK_JAVA_OPTIONS>

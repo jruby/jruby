@@ -244,7 +244,7 @@ project 'JRuby Base' do
   plugin( :surefire,
           'forkCount' =>  '1',
           'reuseForks' =>  'false',
-          'systemProperties' => {
+          'systemPropertyVariables' => {
             'jruby.home' =>  '${basedir}/..'
           },
           'argLine' =>  '-Xmx${jruby.test.memory} -Dfile.encoding=UTF-8 -Djava.awt.headless=true',

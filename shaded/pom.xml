@@ -53,6 +53,14 @@ DO NOT MODIFY - GENERATED CODE
                   <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                 </relocation>
               </relocations>
+              <filters>
+                <filter>
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <exclude>META-INF/MANIFEST.MF</exclude>
+                  </excludes>
+                </filter>
+              </filters>
               <transformers>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <mainClass>org.jruby.Main</mainClass>
@@ -62,7 +70,6 @@ DO NOT MODIFY - GENERATED CODE
                 </transformer>
               </transformers>
               <createSourcesJar>false</createSourcesJar>
-              <compress>false</compress>
             </configuration>
           </execution>
         </executions>
