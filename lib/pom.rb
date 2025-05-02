@@ -17,10 +17,10 @@ end
 default_gems = [
     # treat RGs update special:
     # - we do not want bin/update_rubygems or bin/gem overrides
-    ['rubygems-update', '3.6.3', { bin: false, require_paths: ['lib'] }],
+    ['rubygems-update', '3.6.8', { bin: false, require_paths: ['lib'] }],
     ['benchmark', '0.4.0'],
-    ['bundler', '2.6.3'],
-    ['cgi', '0.4.1'],
+    ['bundler', '2.6.8'],
+    ['cgi', '0.4.2'],
     # Currently using a stub gem for JRuby until we can incorporate our code.
     # https://github.com/ruby/date/issues/48
     ['date', '3.4.1'],
@@ -35,8 +35,8 @@ default_gems = [
     # ['etc', '1.4.5'],
     # https://github.com/ruby/fcntl/issues/9
     # ['fcntl', '1.2.0'],
-    ['ffi', '1.17.0'],
-    ['fiddle', '1.1.6'],
+    ['ffi', '1.17.2'],
+    ['fiddle', '1.1.8'],
     ['fileutils', '1.7.3'],
     ['find', '0.2.0'],
     ['forwardable', '1.3.3'],
@@ -46,7 +46,7 @@ default_gems = [
     ['io-wait', '0.3.1'],
     ['ipaddr', '1.2.7'],
     ['irb', '1.14.3'],
-    ['jar-dependencies', '0.5.4'],
+    ['jar-dependencies', '0.5.5'],
     ['jruby-readline', '1.3.7'],
     ['jruby-openssl', '0.15.3'],
     ['json', '2.9.1'],
@@ -66,10 +66,10 @@ default_gems = [
     # Not ready to ship in the box yet (native dependencies)
     # ['prism', '1.2.0'],
     ['pstore', '0.1.4'],
-    ['psych', '5.2.3'],
+    ['psych', '5.2.4'],
     ['rake-ant', '1.0.6'],
     ['rdoc', '6.10.0'],
-    ['reline', '0.6.0'],
+    ['reline', '0.6.1'],
     # https://github.com/ruby/resolv/issues/19
     # ['resolv', '0.6.0'],
     ['ruby2_keywords', '0.0.5'],
@@ -78,8 +78,8 @@ default_gems = [
     # ['set', '1.1.1'],
     ['shellwords', '0.2.2'],
     ['singleton', '0.3.0'],
-    ['stringio', '3.1.5'],
-    ['strscan', '3.1.2'],
+    ['stringio', '3.1.7'],
+    ['strscan', '3.1.4'],
     ['subspawn', '0.1.1'], # has 3 transitive deps:
       ['subspawn-posix', '0.1.1'],
       ['ffi-binary-libfixposix', '0.5.1.1'],
@@ -106,19 +106,19 @@ bundled_gems = [
     ['base64', '0.2.0'],
     # Extension still lives in JRuby. See https://github.com/ruby/bigdecimal/issues/268
     ['bigdecimal', '3.1.9'],
-    ['csv', '3.3.2'],
+    ['csv', '3.3.4'],
     # Newer versions require deep control over CRuby internals, needs work to support JRuby.
     # ['debug', '1.10.0'],
     ['debug', '0.2.1'],
     ['drb', '2.2.1'],
     ['getoptlong', '0.2.1'],
     ['matrix', '0.4.2'],
-    ['minitest', '5.25.4'],
+    ['minitest', '5.25.5'],
     ['mutex_m', '0.3.0'],
     ['net-ftp', '0.3.8'],
-    ['net-imap', '0.5.4'],
+    ['net-imap', '0.5.8'],
     ['net-pop', '0.1.2'],
-    ['net-smtp', '0.5.0'],
+    ['net-smtp', '0.5.1'],
     ['nkf', '0.2.0'],
     ['observer', '0.1.2'],
     ['power_assert', '2.0.5'],
@@ -137,12 +137,12 @@ bundled_gems = [
     # Depends on prism gem with native ext
     # ['repl_type_completer', '0.1.1'],
     ['resolv-replace', '0.1.1'],
-    ['rexml', '3.4.0'],
+    ['rexml', '3.4.1'],
     ['rinda', '0.2.0'],
     ['rss', '0.3.1'],
     # https://github.com/ruby/syslog/issues/1
     # ['syslog', '0.2.0'],
-    ['test-unit', '3.6.7'],
+    ['test-unit', '3.6.8'],
     # Depends on many CRuby internals
     # ['typeprof', '0.30.1'],
 ]
