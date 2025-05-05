@@ -918,7 +918,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>net-imap</artifactId>
-      <version>0.5.4</version>
+      <version>0.5.8</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1186,7 +1186,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/minitest-5.25.4*</include>
           <include>specifications/mutex_m-0.3.0*</include>
           <include>specifications/net-ftp-0.3.8*</include>
-          <include>specifications/net-imap-0.5.4*</include>
+          <include>specifications/net-imap-0.5.8*</include>
           <include>specifications/net-pop-0.1.2*</include>
           <include>specifications/net-smtp-0.5.0*</include>
           <include>specifications/nkf-0.2.0*</include>
@@ -1268,7 +1268,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/minitest-5.25.4*/**/*</include>
           <include>gems/mutex_m-0.3.0*/**/*</include>
           <include>gems/net-ftp-0.3.8*/**/*</include>
-          <include>gems/net-imap-0.5.4*/**/*</include>
+          <include>gems/net-imap-0.5.8*/**/*</include>
           <include>gems/net-pop-0.1.2*/**/*</include>
           <include>gems/net-smtp-0.5.0*/**/*</include>
           <include>gems/nkf-0.2.0*/**/*</include>
@@ -1350,7 +1350,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/minitest-5.25.4*</include>
           <include>cache/mutex_m-0.3.0*</include>
           <include>cache/net-ftp-0.3.8*</include>
-          <include>cache/net-imap-0.5.4*</include>
+          <include>cache/net-imap-0.5.8*</include>
           <include>cache/net-pop-0.1.2*</include>
           <include>cache/net-smtp-0.5.0*</include>
           <include>cache/nkf-0.2.0*</include>
