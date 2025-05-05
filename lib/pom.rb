@@ -128,7 +128,7 @@ bundled_gems = [
     ['matrix', '0.4.2'],
     ['minitest', '5.15.0'],
     ['net-ftp', '0.3.7'],
-    ['net-imap', '0.2.3'],
+    ['net-imap', '0.2.5'],
     ['net-pop', '0.1.1'],
     ['net-smtp', '0.3.1'],
     ['prime', '0.1.2'],
