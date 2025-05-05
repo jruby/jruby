@@ -40,6 +40,7 @@ import static org.jruby.ir.runtime.IRRuntimeHelpers.setCallInfo;
 import static org.jruby.runtime.Arity.checkArgumentCount;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
+import static org.jruby.runtime.ThreadContext.clearCallInfo;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
@@ -112,7 +113,8 @@ public class RubyData {
         }
 
         RubyArray[] unknownKeywordsPtr = {null};
-        VariableTableManager vtm = selfObj.getMetaClass().getVariableTableManager();
+        RubyClass metaClass = selfObj.getMetaClass();
+        VariableTableManager vtm = getVariableManagerFromClass(metaClass);
         Map<String, VariableAccessor> variableAccessors = vtm.getVariableAccessorsForRead();
 
         hash.visitAll(context, (c, h, k, v, i) -> {
@@ -288,11 +290,26 @@ public class RubyData {
         }
 
         @JRubyMethod(name = {"new", "[]"}, keywords = true)
+        public static IRubyObject rbNew(ThreadContext context, IRubyObject self) {
+            RubyClass klass = (RubyClass) self;
+
+            clearCallInfo(context);
+
+            IRubyObject dataObject = klass.getAllocator().allocate(context.runtime, klass);
+
+            dataObject.getMetaClass().getBaseCallSite(RubyClass.CS_IDX_INITIALIZE)
+                    .call(context, self, dataObject);
+
+            return dataObject;
+        }
+
+        @JRubyMethod(name = {"new", "[]"}, keywords = true)
         public static IRubyObject rbNew(ThreadContext context, IRubyObject self, IRubyObject hashOrElt) {
             RubyClass klass = (RubyClass) self;
 
             RubyHash init;
-            if (hasKeywords(resetCallInfo(context))) {
+            int callInfo = resetCallInfo(context);
+            if (hasKeywords(callInfo)) {
                 if (!(hashOrElt instanceof RubyHash)) {
                     throw argumentError(context, 1, 0, 0);
                 }
@@ -311,12 +328,11 @@ public class RubyData {
 
             IRubyObject dataObject = klass.getAllocator().allocate(context.runtime, klass);
 
-            setCallInfo(context, ThreadContext.CALL_KEYWORD);
+            setCallInfo(context, callInfo);
 
             // TODO: avoid initialize and hash overhead for known types
             dataObject.getMetaClass().getBaseCallSite(RubyClass.CS_IDX_INITIALIZE)
                     .call(context, self, dataObject, init);
-
 
             return dataObject;
         }
@@ -496,6 +512,18 @@ public class RubyData {
             VariableAccessor[] accessors = (VariableAccessor[]) metaClass.getInternalVariable(ACCESSORS_KEY);
 
             if (accessors != null) return accessors;
+
+            metaClass = metaClass.getSuperClass();
+        }
+
+        throw new RuntimeException("non-Data attempted to access Data accessors");
+    }
+
+    private static VariableTableManager getVariableManagerFromClass(RubyClass metaClass) {
+        while (metaClass != null) {
+            VariableAccessor[] accessors = (VariableAccessor[]) metaClass.getInternalVariable(ACCESSORS_KEY);
+
+            if (accessors != null) return metaClass.getVariableTableManager();
 
             metaClass = metaClass.getSuperClass();
         }
