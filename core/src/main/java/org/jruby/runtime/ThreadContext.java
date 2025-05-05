@@ -939,7 +939,7 @@ public final class ThreadContext {
         if (length != null) {
         	if (length == 0) {
 			return RubyStackTraceElement.EMPTY_ARRAY;
-		else {
+		} else {
 			len = length;
 		}
 	}
