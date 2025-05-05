@@ -116,7 +116,7 @@ bundled_gems = [
     ['minitest', '5.25.4'],
     ['mutex_m', '0.3.0'],
     ['net-ftp', '0.3.8'],
-    ['net-imap', '0.5.4'],
+    ['net-imap', '0.5.8'],
     ['net-pop', '0.1.2'],
     ['net-smtp', '0.5.0'],
     ['nkf', '0.2.0'],
