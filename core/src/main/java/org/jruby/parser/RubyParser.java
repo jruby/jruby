@@ -3952,15 +3952,7 @@ states[328] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[329] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    Node node = null;
-
-                    /* FIXME: lose syntactical elements here (and others like this)*/
-                    if (((Node)yyVals[0+yyTop].value) instanceof ArrayNode &&
-                        (node = p.splat_array(((Node)yyVals[-2+yyTop].value))) != null) {
-                        yyVal = p.list_concat(node, ((Node)yyVals[0+yyTop].value));
-                    } else {
-                        yyVal = arg_concat(((Node)yyVals[-2+yyTop].value), ((Node)yyVals[0+yyTop].value));
-                    }
+                    yyVal = p.rest_arg_append(((Node)yyVals[-2+yyTop].value), p.newSplatNode(((Node)yyVals[0+yyTop].value)));
                     /*% %*/
                     /*% ripper: args_add_star!($1, $3) %*/
   return yyVal;
@@ -6807,7 +6799,7 @@ states[822] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4826 "parse.y"
+					// line 4818 "parse.y"
 
 }
-					// line 14939 "-"
+					// line 14931 "-"

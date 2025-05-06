@@ -58,9 +58,7 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.OperatorCallNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.common.RubyWarnings;
 import org.jruby.ext.coverage.CoverageData;
-import org.jruby.ir.IRScopeType;
 import org.jruby.ir.builder.StringStyle;
 import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.yacc.LexContext;
@@ -1818,7 +1816,7 @@ public abstract class RubyParserBase {
      */
     public Node splat_array(Node node) {
         if (node instanceof SplatNode) node = ((SplatNode) node).getValue();
-        if (node instanceof ArrayNode) return node;
+        if (node instanceof BlockNode) return node;
         return null;
     }
 
