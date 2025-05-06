@@ -70,16 +70,16 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'rake.version' => '13.2.1',
               'jruby-launcher.version' => '1.1.6',
               'ant.version' => '1.9.8',
-              'asm.version' => '9.7.1',
+              'asm.version' => '9.8',
               'jar-dependencies.version' => '0.4.1',
               'jffi.version' => '1.3.13',
               'joda.time.version' => '2.12.7' )
 
   plugin_management do
-    jar( 'junit:junit:4.13.1',
+    jar( 'junit:junit:4.13.2',
          :scope => 'test' )
 
-    jar( 'org.awaitility:awaitility:4.1.0',
+    jar( 'org.awaitility:awaitility:4.3.0',
          :scope => 'test' )
 
     plugin( 'org.apache.felix:maven-bundle-plugin:4.2.1',
@@ -96,34 +96,34 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
                      :phase => 'prepare-package' )
     end
 
-    plugin( :site, '3.9.1', 'skipDeploy' =>  'true' )
-    plugin 'org.codehaus.mojo:build-helper-maven-plugin:3.2.0'
-    plugin 'org.codehaus.mojo:exec-maven-plugin:3.0.0'
-    plugin :antrun, '3.0.0'
-    plugin :source, '3.2.1'
-    plugin :assembly, '3.3.0'
-    plugin :install, '3.0.0-M1'
-    plugin :deploy, '3.0.0-M1'
-    plugin :javadoc, '3.2.0'
-    plugin :resources, '3.2.0'
-    plugin :clean, '3.1.0'
-    plugin :dependency, '2.8'
-    plugin :release, '3.0.0-M1'
-    plugin :jar, '3.2.0'
+    plugin( :site, '3.21.0', 'skipDeploy' =>  'true' )
+    plugin 'org.codehaus.mojo:build-helper-maven-plugin:3.6.0'
+    plugin 'org.codehaus.mojo:exec-maven-plugin:3.5.0'
+    plugin :antrun, '3.1.0'
+    plugin :source, '3.3.1'
+    plugin :assembly, '3.7.1'
+    plugin :install, '3.1.4'
+    plugin :deploy, '3.1.4'
+    plugin :javadoc, '3.11.2'
+    plugin :resources, '3.3.1'
+    plugin :clean, '3.4.1'
+    plugin :dependency, '3.8.1'
+    plugin :release, '3.1.1'
+    plugin :jar, '3.4.2'
 
-    rules = { :requireMavenVersion => { :version => '[3.3.0,)' } }
+    rules = { :requireMavenVersion => { :version => '[3.9,)' } }
     unless model.version =~ /-SNAPSHOT/
        rules[:requireReleaseDeps] = { :message => 'No Snapshots Allowed!' }
     end
-    plugin :enforcer, '1.4' do
+    plugin :enforcer, '3.5.0' do
       execute_goal :enforce, :rules => rules
     end
 
-    plugin :compiler, '3.8.1'
-    plugin :shade, '3.5.1'
-    plugin :surefire, '3.0.0'
-    plugin :plugin, '3.6.0'
-    plugin( :invoker, '3.2.1',
+    plugin :compiler, '3.14.0'
+    plugin :shade, '3.6.0'
+    plugin :surefire, '3.5.3'
+    plugin :plugin, '3.15.1'
+    plugin( :invoker, '3.9.0',
             'properties' => { 'jruby.version' => '${project.version}',
                               'jruby.plugins.version' => '${jruby.plugins.version}' },
             'pomIncludes' => [ '*/pom.xml' ],
@@ -139,7 +139,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
 
     plugin 'org.eclipse.m2e:lifecycle-mapping:1.0.0'
-    plugin :'scm-publish', '3.1.0'
+    plugin :'scm-publish', '3.3.0'
   end
 
   plugin( :site,
@@ -318,24 +318,24 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
   end
 
   reporting do
-    plugin( :'project-info-reports', '2.4',
+    plugin( :'project-info-reports', '3.9.0',
             'dependencyLocationsEnabled' =>  'false',
             'dependencyDetailsEnabled' =>  'false' )
-    plugin :changelog, '2.2'
-    plugin( :checkstyle, '2.9.1',
+    plugin :changelog, '2.3'
+    plugin( :checkstyle, '3.6.0',
             'configLocation' =>  '${main.basedir}/docs/style_checks.xml',
             'propertyExpansion' =>  'cacheFile=${project.build.directory}/checkstyle-cachefile' ) do
       report_set( 'checkstyle',
                   :inherited => 'false' )
     end
 
-    plugin( 'org.codehaus.mojo:cobertura-maven-plugin:2.5.1',
+    plugin( 'org.codehaus.mojo:cobertura-maven-plugin:2.7',
             'aggregate' =>  'true' )
     plugin :dependency, '2.8' do
       report_set 'analyze-report'
     end
 
-    plugin 'org.codehaus.mojo:findbugs-maven-plugin:2.5'
+    plugin 'org.codehaus.mojo:findbugs-maven-plugin:3.0.5'
     plugin( :javadoc, '2.9',
             'quiet' =>  'true',
             'aggregate' =>  'true',
@@ -350,16 +350,16 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
                   'detectOfflineLinks' =>  'false' )
     end
 
-    plugin( :pmd, '2.7.1',
+    plugin( :pmd, '3.26.0',
             'linkXRef' =>  'true',
             'sourceEncoding' =>  'utf-8',
             'minimumTokens' =>  '100',
             'targetJdk' =>  '${base.javac.version}' )
-    plugin( :jxr, '2.3',
+    plugin( :jxr, '3.6.0',
             'linkJavadoc' =>  'true',
             'aggregate' =>  'true' )
-    plugin :'surefire-report', '2.14.1'
-    plugin( 'org.codehaus.mojo:taglist-maven-plugin:2.4',
+    plugin :'surefire-report', '3.5.3'
+    plugin( 'org.codehaus.mojo:taglist-maven-plugin:3.2.1',
             'tagListOptions' => {
               'tagClasses' => {
                 'tagClass' => {
@@ -372,7 +372,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
                 }
               }
             } )
-    plugin 'org.codehaus.mojo:versions-maven-plugin:2.1' do
+    plugin 'org.codehaus.mojo:versions-maven-plugin:2.18.0' do
       report_set 'dependency-updates-report', 'plugin-updates-report', 'property-updates-report'
     end
   end

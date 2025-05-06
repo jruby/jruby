@@ -25,15 +25,17 @@ project 'JRuby Core' do
                        {pattern: 'org.objectweb', shadedPattern: 'org.jruby.org.objectweb' },
                        {pattern: 'me.qmx.jitescript', shadedPattern: 'org.jruby.me.qmx.jitescript'},
                    ],
+                   filters: [
+                       {artifact: '*:*', excludes: ['META-INF/MANIFEST.MF']}
+                   ],
                    transformers: [ {'@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
                                          mainClass: 'org.jruby.Main',
                                          manifestEntries: {'Automatic-Module-Name' => 'org.jruby.dist'}}],
-                   createSourcesJar: false,
-                   compress: false
+                   createSourcesJar: false
     )
   end
 
-  plugin :'com.coderplus.maven.plugins:copy-rename-maven-plugin', '1.0' do
+  plugin :'com.coderplus.maven.plugins:copy-rename-maven-plugin', '1.0.1' do
     execute_goals 'copy',
                   id: 'copy to lib/jruby.jar',
                   phase: 'package',

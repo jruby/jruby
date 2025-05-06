@@ -36,7 +36,7 @@ project 'JRuby Dist' do
   end
 
   phase :package do
-    plugin( :assembly, '2.4',
+    plugin( :assembly, '3.7.1',
             :recompressZippedFiles => true,
             :tarLongFileMode =>  'gnu' ) do
       execute_goals( :single, :id => 'bin.tar.gz and bin.zip',
