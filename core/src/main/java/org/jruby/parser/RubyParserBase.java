@@ -1816,7 +1816,7 @@ public abstract class RubyParserBase {
      */
     public Node splat_array(Node node) {
         if (node instanceof SplatNode) node = ((SplatNode) node).getValue();
-        if (node instanceof ListNode) return node;
+        if (node instanceof ArrayNode) return node;
         return null;
     }
 
