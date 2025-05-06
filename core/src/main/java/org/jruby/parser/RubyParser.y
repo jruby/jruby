@@ -2177,15 +2177,7 @@ args            : arg_value { // ArrayNode
                 }
                 | args ',' tSTAR arg_value { // ArgsCatNode, SplatNode, ArrayNode
                     /*%%%*/
-                    Node node = null;
-
-                    // FIXME: lose syntactical elements here (and others like this)
-                    if ($4 instanceof ArrayNode &&
-                        (node = p.splat_array($1)) != null) {
-                        $$ = p.list_concat(node, $4);
-                    } else {
-                        $$ = arg_concat($1, $4);
-                    }
+                    $$ = p.rest_arg_append($1, p.newSplatNode($4));
                     /*% %*/
                     /*% ripper: args_add_star!($1, $4) %*/
                 }
