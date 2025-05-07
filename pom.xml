@@ -16,7 +16,7 @@ DO NOT MODIFY - GENERATED CODE
   </parent>
   <groupId>org.jruby</groupId>
   <artifactId>jruby-parent</artifactId>
-  <version>10.0.0.0</version>
+  <version>10.0.0.1</version>
   <packaging>pom</packaging>
   <name>JRuby</name>
   <description>JRuby is the effort to recreate the Ruby (https://www.ruby-lang.org) interpreter in Java.</description>
