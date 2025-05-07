@@ -4,7 +4,6 @@ import java.lang.reflect.Array;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.javasupport.Java;
@@ -167,11 +166,6 @@ public class ArrayUtils {
         }
     }
 
-    //public static void copyDataToJavaArrayDirect(ThreadContext context,
-    //    final RubyArray rubyArray, final Object[] javaArray) {
-    //    copyDataToJavaArrayDirect(javaArray.getClass().getComponentType(), rubyArray, javaArray)
-    //}
-
     private static void copyDataToJavaArrayDirect(final Class<?> targetType,
         final RubyArray rubyArray, final Object[] javaArray) {
         int length = rubyArray.getLength();
@@ -217,19 +211,6 @@ public class ArrayUtils {
 
         for ( int i = 0; i < length; i++ ) {
             javaArray[i] = (Byte) rubyArray.eltInternal(i).toJava(targetType);
-        }
-    }
-
-    @Deprecated // not used
-    public static void copyDataToJavaArray(
-            ThreadContext context, RubyArray rubyArray, int src, org.jruby.javasupport.JavaArray javaArray, int dest, int length) {
-        Class targetType = javaArray.getComponentType();
-
-        int destLength = javaArray.getLength();
-        int srcLength = rubyArray.getLength();
-
-        for (int i = 0; src + i < srcLength && dest + i < destLength && i < length; i++) {
-            javaArray.setWithExceptionHandling(context, dest + i, rubyArray.entry(src + i).toJava(targetType));
         }
     }
 }
