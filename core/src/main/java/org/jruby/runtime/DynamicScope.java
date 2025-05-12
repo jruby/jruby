@@ -110,7 +110,7 @@ public abstract class DynamicScope implements Cloneable {
     /**
      * Get all variable names captured (visible) by this scope (sans $~ and $_).
      *
-     * @return a list of variable names
+     * @return an array of variable names
      */
     public final String[] getAllNamesInScope() {
         return staticScope.getAllNamesInScope();
@@ -501,13 +501,13 @@ public abstract class DynamicScope implements Cloneable {
 
     // Helper function to give a good view of current dynamic scope with captured scopes
     public String toString(StringBuffer buf, String indent) {
-        buf.append(indent).append("Static Type[" + hashCode() + "]: " +
-                (staticScope.isBlockScope() ? "block" : "local")+" [");
+        buf.append(indent).append("Static Type[").append(hashCode()).append("]: ").
+                append(staticScope.isBlockScope() ? "block" : "local").append(" [");
         int size = staticScope.getNumberOfVariables();
         IRubyObject[] variableValues = getValues();
 
         if (size != 0) {
-            String names[] = staticScope.getVariables();
+            String[] names = staticScope.getVariables();
             for (int i = 0; i < size-1; i++) {
                 buf.append(names[i]).append("=");
 
@@ -574,12 +574,13 @@ public abstract class DynamicScope implements Cloneable {
     }
 
     /**
-     * A DynamicScope is the target of a non-local return if it is one of the following:
-     *
-     * * A method scope
-     * * A top-level script scope
-     * * A block scope that is either marked as the argument scope (define_method) or a lambda
-     *
+     * <p>A DynamicScope is the target of a non-local return if it is one of the following:
+     * </p>
+     * <ul>
+     * <li>A method scope</li>
+     * <li>A top-level script scope</li>
+     * <li>A block scope that is either marked as the argument scope (define_method) or a lambda</li>
+     * </ul>
      * @return true if this scope is the nearest return scope, false otherwise
      */
     public boolean isReturnTarget() {
@@ -595,7 +596,7 @@ public abstract class DynamicScope implements Cloneable {
     public DynamicScope cloneScope() {
         try {
             return (DynamicScope) clone();
-        } catch (CloneNotSupportedException cnse) {
+        } catch (CloneNotSupportedException e) {
             throw new RuntimeException("BUG: failed to clone scope type " + getClass().getName());
         }
     }
