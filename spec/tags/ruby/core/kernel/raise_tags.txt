@@ -1,0 +1,5 @@
+fails:Kernel#raise allows cause equal an exception
+fails:Kernel#raise doesn't set given cause when it equals an exception
+fails:Kernel#raise doesn't raise an ArgumentError when given cause is nil
+fails:Kernel#raise raises ArgumentError when exception is part of the cause chain
+fails:Kernel#raise re-raises a previously rescued exception without overwriting the cause when it's explicitly specified with :cause option and has nil value
