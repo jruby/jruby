@@ -1,1 +1,2 @@
 fails:Struct#deconstruct_keys raises TypeError if index is not a String, a Symbol and not convertible to Integer 
+fails:Struct#deconstruct_keys raises TypeError if index is not a String, a Symbol and not convertible to Integer
