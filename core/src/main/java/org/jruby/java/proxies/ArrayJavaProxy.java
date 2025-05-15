@@ -63,17 +63,6 @@ public final class ArrayJavaProxy extends JavaProxy {
         return new ArrayJavaProxy(context.runtime, Java.getProxyClassForObject(context, array), array);
     }
 
-    @Override
-    @Deprecated
-    protected org.jruby.javasupport.JavaArray asJavaObject(final Object array) {
-        return new org.jruby.javasupport.JavaArray(getCurrentContext().runtime, array);
-    }
-
-    @Deprecated
-    public final org.jruby.javasupport.JavaArray getJavaArray() {
-        return asJavaObject(this.object);
-    }
-
     public Object get(final int index) {
         return Array.get(getObject(), index);
     }

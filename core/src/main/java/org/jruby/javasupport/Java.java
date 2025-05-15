@@ -315,11 +315,6 @@ public class Java implements Library {
         return runtime.getNil();
     }
 
-    @Deprecated(since = "9.4-")
-    public static RubyModule getInterfaceModule(final Ruby runtime, final JavaClass javaClass) {
-        return getInterfaceModule(runtime.getCurrentContext(), javaClass.javaClass());
-    }
-
     @Deprecated(since = "10.0")
     public static RubyModule getInterfaceModule(final Ruby runtime, final Class javaClass) {
         return getInterfaceModule(runtime.getCurrentContext(), javaClass);
@@ -451,11 +446,6 @@ public class Java implements Library {
             case "Void" : return Void.class;
         }
         return null;
-    }
-
-    @Deprecated
-    public static RubyModule getProxyClass(Ruby runtime, JavaClass javaClass) {
-        return getProxyClass(runtime.getCurrentContext(), javaClass.javaClass());
     }
 
     @Deprecated(since = "10.0")
@@ -1368,11 +1358,6 @@ public class Java implements Library {
         return result != null ? result : context.nil;
     }
 
-    @Deprecated
-    public static IRubyObject wrap(Ruby runtime, IRubyObject java_object) {
-        return getInstance(runtime, ((JavaObject) java_object).getValue());
-    }
-
     /**
      * High-level object conversion utility function 'java_to_primitive' is the low-level version
      */
@@ -1792,10 +1777,5 @@ public class Java implements Library {
      */
     public static <T extends AccessibleObject & Member> boolean isAccessible(T member) {
         return Modules.isAccessible(member, Java.class);
-    }
-
-    public static JavaObject castToJavaObject(ThreadContext context, IRubyObject newValue) {
-        if (!(newValue instanceof JavaObject)) throw typeError(context, newValue, "a java object");
-        return (JavaObject) newValue;
     }
 }
