@@ -59,5 +59,15 @@ describe "Data#initialize" do
     }.should raise_error(ArgumentError) { |e|
       e.message.should.include?("unknown keyword: :system")
     }
+
+  it "supports super from a subclass" do
+    ms = DataSpecs::MeasureSubclass.new(amount: 1, unit: "km")
+
+    ms.amount.should == 1
+    ms.unit.should == "km"
+  end
+
+  it "supports Data with no fields" do
+    -> { DataSpecs::Empty.new }.should_not raise_error
   end
 end
