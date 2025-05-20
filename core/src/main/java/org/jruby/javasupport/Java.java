@@ -430,7 +430,11 @@ public class Java implements Library {
     }
 
     @SuppressWarnings("deprecation")
-    public static RubyModule getProxyClass(final Ruby runtime, final Class<?> clazz) {
+    public static RubyModule getProxyClass(final Ruby runtime, Class<?> clazz) {
+        // skip synthetic classes we should not see, like InterfaceImpl*
+        while (clazz.isSynthetic()) {
+            clazz = clazz.getSuperclass();
+        }
         RubyModule proxy = runtime.getJavaSupport().getUnfinishedProxy(clazz);
         if (proxy != null) return proxy;
         return runtime.getJavaSupport().getProxyClassFromCache(clazz);
