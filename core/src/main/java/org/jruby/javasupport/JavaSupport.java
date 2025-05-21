@@ -46,6 +46,8 @@ import org.jruby.javasupport.util.ObjectProxyCache;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Loader;
+import org.jruby.util.collections.ClassValue;
+import org.jruby.util.collections.ClassValueCalculator;
 
 import java.lang.reflect.Member;
 import java.util.Map;
@@ -106,17 +108,16 @@ public abstract class JavaSupport {
     public JavaSupport(final Ruby runtime) {
         this.runtime = runtime;
 
-        this.javaClassCache = new ClassValue<JavaClass>() {
-            public synchronized JavaClass computeValue(Class<?> klass) {
-                return new JavaClass(runtime, getJavaClassClass(), klass);
-            }
-        };
+        this.javaClassCache = ClassValue.newInstance(klass -> new JavaClass(runtime, getJavaClassClass(), klass));
 
-        this.proxyClassCache = new ClassValue<RubyModule>() {
+        this.proxyClassCache = ClassValue.newInstance(new ClassValueCalculator<RubyModule>() {
             /**
              * Because of the complexity of processing a given class and all its dependencies,
              * we opt to synchronize this logic. Creation of all proxies goes through here,
              * allowing us to skip some threading work downstream.
+             *
+             * Note: when this is used with StableClassValue, the synchronization is unnecessary, and should be removed
+             * when only the stable form remains.
              */
             @Override
             public synchronized RubyModule computeValue(Class<?> klass) {
@@ -124,7 +125,7 @@ public abstract class JavaSupport {
                 JavaExtensions.define(runtime, klass, proxyKlass); // (lazy) load extensions
                 return proxyKlass;
             }
-        };
+        });
         // Proxy creation is synchronized (see above) so a HashMap is fine for recursion detection.
         this.unfinishedProxies = new ConcurrentHashMap<>(8, 0.75f, 1);
     }
