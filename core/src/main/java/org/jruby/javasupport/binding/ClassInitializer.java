@@ -58,9 +58,12 @@ final class ClassInitializer extends Initializer {
 
         proxyClass.getName(); // trigger calculateName()
 
-        final MethodGatherer state = new MethodGatherer(runtime, javaClass.getSuperclass());
+        // only gather methods for non-synthetic classes, since we should not bind pure generated methods
+//        if (!javaClass.isSynthetic()) {
+            final MethodGatherer state = new MethodGatherer(runtime, javaClass.getSuperclass());
 
-        state.initialize(javaClass, proxy);
+            state.initialize(javaClass, proxy);
+//        }
 
         return proxyClass;
     }

@@ -43,7 +43,6 @@ import java.util.Set;
 import org.jruby.Ruby;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.WeakIdentityHashMap;
-import org.jruby.util.collections.ClassValue;
 import org.jruby.javasupport.binding.AssignedName;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 
@@ -52,10 +51,16 @@ import org.jruby.javasupport.proxy.JavaProxyClass;
  */
 public class JavaSupportImpl extends JavaSupport {
 
-    private final ClassValue<Map<String, AssignedName>> staticAssignedNames =
-            ClassValue.newInstance(klass -> new HashMap<>(8, 1));
-    private final ClassValue<Map<String, AssignedName>> instanceAssignedNames =
-            ClassValue.newInstance(klass -> new HashMap<>(8, 1));
+    private final java.lang.ClassValue<Map<String, AssignedName>> staticAssignedNames = new java.lang.ClassValue<Map<String, AssignedName>>() {
+        public Map<String, AssignedName> computeValue(Class clazz) {
+            return new HashMap<>(8, 1);
+        }
+    };
+    private final ClassValue<Map<String, AssignedName>> instanceAssignedNames = new java.lang.ClassValue<Map<String, AssignedName>>() {
+        public Map<String, AssignedName> computeValue(Class clazz) {
+            return new HashMap<>(8, 1);
+        }
+    };
 
     public JavaSupportImpl(final Ruby runtime) {
         super(runtime);
