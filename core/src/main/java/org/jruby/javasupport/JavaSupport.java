@@ -107,7 +107,7 @@ public abstract class JavaSupport {
         this.runtime = runtime;
 
         this.javaClassCache = new ClassValue<JavaClass>() {
-            public JavaClass computeValue(Class<?> klass) {
+            public synchronized JavaClass computeValue(Class<?> klass) {
                 return new JavaClass(runtime, getJavaClassClass(), klass);
             }
         };

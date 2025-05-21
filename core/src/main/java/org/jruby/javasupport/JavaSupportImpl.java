@@ -52,12 +52,12 @@ import org.jruby.javasupport.proxy.JavaProxyClass;
 public class JavaSupportImpl extends JavaSupport {
 
     private final java.lang.ClassValue<Map<String, AssignedName>> staticAssignedNames = new java.lang.ClassValue<Map<String, AssignedName>>() {
-        public Map<String, AssignedName> computeValue(Class clazz) {
+        public synchronized Map<String, AssignedName> computeValue(Class clazz) {
             return new HashMap<>(8, 1);
         }
     };
     private final ClassValue<Map<String, AssignedName>> instanceAssignedNames = new java.lang.ClassValue<Map<String, AssignedName>>() {
-        public Map<String, AssignedName> computeValue(Class clazz) {
+        public synchronized Map<String, AssignedName> computeValue(Class clazz) {
             return new HashMap<>(8, 1);
         }
     };
