@@ -47,7 +47,6 @@ import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
-import org.jruby.api.Convert;
 import org.jruby.api.Create;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.DAsgnNode;
@@ -68,19 +67,18 @@ import org.jruby.runtime.scope.DynamicScopeGenerator;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
 import static org.jruby.api.Convert.asSymbol;
-import static org.jruby.api.Create.allocArray;
 import static org.jruby.api.Define.defineModule;
 
 /**
- * StaticScope represents lexical scoping of variables and module/class constants.
- * 
- * At a very high level every scopes enclosing scope contains variables in the next outer
+ * <p>StaticScope represents lexical scoping of variables and module/class constants.
+ * </p>
+ * <p>At a very high level every scope's enclosing scope contains variables in the next outer
  * lexical layer.  The enclosing scopes variables may or may not be reachable depending
  * on the scoping rules for variables (governed by BlockStaticScope and LocalStaticScope).
- * 
- * StaticScope also keeps track of current module/class that is in scope.  previousCRefScope
+ * </p>
+ * <p>StaticScope also keeps track of current module/class that is in scope.  previousCRefScope
  * will point to the previous scope of the enclosing module/class (cref).
- * 
+ * </p>
  */
 public class StaticScope implements Serializable, Cloneable {
     public static final int MAX_SPECIALIZED_SIZE = 50;
@@ -235,6 +233,11 @@ public class StaticScope implements Serializable, Cloneable {
         return irScope;
     }
 
+    /**
+     * What lexical type is this scope contained within?  For example, this may be a block scope but
+     * that block resides within a class method (CLASS_METHOD).  This returns CLASS_METHOD.
+     * @return the "hard" topmost lexical scope type
+     */
     public IRScopeType getScopeType() {
         return scopeType;
     }
@@ -263,7 +266,7 @@ public class StaticScope implements Serializable, Cloneable {
         // Clear constructor since we are adding a name
         constructor = null;
 
-        // This is perhaps innefficient timewise?  Optimal spacewise
+        // This is perhaps inefficient time wise?  Optimal space wise
         growVariableNames(name);
 
         // Returns slot of variable
@@ -285,7 +288,7 @@ public class StaticScope implements Serializable, Cloneable {
         // Clear constructor since we are adding a name
         constructor = null;
 
-        // This is perhaps innefficient timewise?  Optimal spacewise
+        // This is perhaps inefficient time wise?  Optimal space wise
         growVariableNames(name);
 
         // Returns slot of variable
@@ -318,7 +321,7 @@ public class StaticScope implements Serializable, Cloneable {
 
     /**
      * Gets a constant back from lexical search from the cref in this scope.
-     * As it is for defined? we will not forced resolution of autoloads nor
+     * As it is for defined? we will not force resolution of autoloads nor
      * call const_defined
      */
     public IRubyObject getConstantDefined(ThreadContext context, String internedName) {
@@ -346,7 +349,7 @@ public class StaticScope implements Serializable, Cloneable {
     public IRubyObject getConstant(ThreadContext context, String internedName) {
         IRubyObject result = getScopedConstant(context, internedName);
 
-        // If we could not find the constant from cref..then try getting from inheritance hierarchy
+        // If we could not find the constant from cref then try getting from inheritance hierarchy
         return result == null ? cref.getConstantNoConstMissing(context, internedName) : result;
     }
 
@@ -370,8 +373,8 @@ public class StaticScope implements Serializable, Cloneable {
     }
 
     /**
-     * Next outer most scope in list of scopes.  An enclosing scope may have no direct scoping
-     * relationship to its child.  If I am in a localScope and then I enter something which
+     * Next outermost scope in list of scopes.  An enclosing scope may have no direct scoping
+     * relationship to its child.  If I am in a localScope, and then I enter something which
      * creates another localScope the enclosing scope will be the first scope, but there are
      * no valid scoping relationships between the two.  Methods which walk the enclosing scopes
      * are responsible for enforcing appropriate scoping relationships.
@@ -415,8 +418,8 @@ public class StaticScope implements Serializable, Cloneable {
     }
 
     /**
-     * Make a DASgn or LocalAsgn node based on scope logic
-     *
+     * <p>Make a DASgn or LocalAsgn node based on scope logic
+     * </p>
      * Note: This is private code made public only for parser.
      */
     public AssignableNode assign(int line, RubySymbol name, Node value) {
@@ -448,7 +451,7 @@ public class StaticScope implements Serializable, Cloneable {
      * Get all visible variables that we can see from this scope that have been assigned
      * (e.g. seen so far)
      *
-     * @return a list of all names (sans $~ and $_ which are special names)
+     * @return an array of all names (sans $~ and $_ which are special names)
      */
     public String[] getAllNamesInScope() {
         return collectVariables(ArrayList::new, ArrayList::add).stream().toArray(String[]::new);
@@ -478,11 +481,11 @@ public class StaticScope implements Serializable, Cloneable {
     }
 
     /**
-     * Populate a deduplicated collection of variable names in scope using the given functions.
-     *
-     * This may include variables that are not strictly Ruby local variable names, so the consumer should validate
+     * <p>Populate a deduplicated collection of variable names in scope using the given functions.
+     * </p>
+     * <p>This may include variables that are not strictly Ruby local variable names, so the consumer should validate
      * names as appropriate.
-     *
+     * </p>
      * @param collectionFactory used to construct the collection
      * @param collectionPopulator used to pass values into the collection
      * @param <T> resulting collection type
@@ -524,9 +527,9 @@ public class StaticScope implements Serializable, Cloneable {
     public RubyArray getLocalVariables(ThreadContext context) {
         return collectVariables(
                 context,
-                (ctxt, length) -> allocArray(ctxt, length),
+                Create::allocArray,
                 (array, id) -> {
-                    RubySymbol symbol = Convert.asSymbol(context, id);
+                    RubySymbol symbol = asSymbol(context, id);
                     if (symbol.validLocalVariableName()) array.append(context, symbol);
                 });
     }
@@ -552,7 +555,7 @@ public class StaticScope implements Serializable, Cloneable {
         String id = symbolID.idString();
         int slot = exists(id);
 
-        // We can assign if we already have variable of that name here or we are the only
+        // We can assign if we already have variable of that name here, or we are the only
         // scope in the chain (which Local scopes always are).
         if (slot >= 0) {
             return isBlockOrEval ? new DAsgnNode(line, symbolID, ((depth << 16) | slot), value)
@@ -717,6 +720,10 @@ public class StaticScope implements Serializable, Cloneable {
         return "StaticScope(" + type + "):" + Arrays.toString(variableNames);
     }
 
+    /**
+     * What type of scope is this specific scope?  Not to be confused with {@link StaticScope#getScopeType()}.
+     * @return the type of scope
+     */
     public Type getType() {
         return type;
     }
@@ -760,7 +767,7 @@ public class StaticScope implements Serializable, Cloneable {
      * Duplicate the parent scope's refinements overlay to get a moment-in-time snapshot.  Caller must
      * decide whether this scope is using (or maybe) using refinements.
      *
-     * @param context
+     * @param context the current thread context
      */
     public void captureParentRefinements(ThreadContext context) {
         for (StaticScope cur = this.getEnclosingScope(); cur != null; cur = cur.getEnclosingScope()) {
