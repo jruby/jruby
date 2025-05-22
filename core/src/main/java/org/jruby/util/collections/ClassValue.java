@@ -3,7 +3,6 @@ package org.jruby.util.collections;
 import org.jruby.util.cli.Options;
 
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 /**
  * Represents a cache or other mechanism for getting the Ruby-level proxy classes
