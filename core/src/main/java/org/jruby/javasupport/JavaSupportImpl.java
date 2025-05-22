@@ -53,12 +53,16 @@ import org.jruby.javasupport.proxy.JavaProxyClass;
 public class JavaSupportImpl extends JavaSupport {
 
     private final ClassValue<Map<String, AssignedName>> staticAssignedNames =
-            ClassValue.newInstance(klass -> new HashMap<>(8, 1));
+            ClassValue.newInstance(JavaSupportImpl::newAssignedNames);
     private final ClassValue<Map<String, AssignedName>> instanceAssignedNames =
-            ClassValue.newInstance(klass -> new HashMap<>(8, 1));
+            ClassValue.newInstance(JavaSupportImpl::newAssignedNames);
 
     public JavaSupportImpl(final Ruby runtime) {
         super(runtime);
+    }
+
+    private static Map<String, AssignedName> newAssignedNames(Class<?> klass) {
+        return new HashMap<>(8, 1);
     }
 
     @Deprecated

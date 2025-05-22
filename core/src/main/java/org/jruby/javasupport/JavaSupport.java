@@ -115,6 +115,9 @@ public abstract class JavaSupport {
              * Because of the complexity of processing a given class and all its dependencies,
              * we opt to synchronize this logic. Creation of all proxies goes through here,
              * allowing us to skip some threading work downstream.
+             *
+             * Note: when this is used with StableClassValue, the synchronization is unnecessary, and should be removed
+             * when only the stable form remains.
              */
             @Override
             public synchronized RubyModule computeValue(Class<?> klass) {
