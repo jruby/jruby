@@ -27,7 +27,7 @@ final class StableClassValue<T> extends ClassValue<T> {
      * @param <Input> input of the computation
      * @param <Result> result of the computation
      */
-    private static class StableValue<Input, Result> {
+    private class StableValue<Input, Result> {
         private final Function<Input, Result> calculator;
         private volatile Result result;
         StableValue(Function<Input, Result> calculator) {
@@ -35,9 +35,19 @@ final class StableClassValue<T> extends ClassValue<T> {
         }
         Result get(Input input) {
             Result result = this.result;
-            if (result == null) synchronized (this) {
-                this.result = result = this.calculator.apply(input);
+
+            if (result != null) return result;
+
+            // lock on the StableClassValue so there are not multiple locks potentially in different orders
+            synchronized (StableClassValue.this) {
+                result = this.result;
+
+                if (result != null) return result;
+
+                result = this.calculator.apply(input);
+                this.result = result;
             }
+
             return result;
         }
     }
