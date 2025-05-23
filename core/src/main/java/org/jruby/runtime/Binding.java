@@ -307,12 +307,4 @@ public class Binding {
     public BacktraceElement getBacktrace() {
         return new BacktraceElement(method, filename, line);
     }
-
-    @Deprecated
-    public static final Binding DUMMY =
-            new Binding(
-                    RubyBasicObject.NEVER,
-                    // Can't use Frame.DUMMY because of circular static init seeing it before it's assigned
-                    new Frame(),
-                    Visibility.PUBLIC);
 }
