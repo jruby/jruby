@@ -37,6 +37,8 @@ public class BuildDynamicStringSite extends MutableCallSite {
             false);
     private static final int MAX_ELEMENTS_FOR_SPECIALIZE1 = 4;
     private static final int MAX_DYNAMIC_ARGS_FOR_SPECIALIZE2 = 5;
+    public static final int MAX_ELEMENTS = 50;
+    private static final int METADATA_ARGS_COUNT = 6;
 
     public static CallSite buildDString(MethodHandles.Lookup lookup, String name, MethodType type, Object[] args) {
         return new BuildDynamicStringSite(type, args);
@@ -55,12 +57,14 @@ public class BuildDynamicStringSite extends MutableCallSite {
     public BuildDynamicStringSite(MethodType type, Object[] stringArgs) {
         super(type);
 
-        initialSize = (Integer) stringArgs[stringArgs.length - 6];
-        encoding = StringBootstrap.encodingFromName((String) stringArgs[stringArgs.length - 5]);
-        chilled = ((Integer) stringArgs[stringArgs.length - 4]) != 0;
-        frozen = ((Integer) stringArgs[stringArgs.length - 3]) != 0;
-        descriptor = (Long) stringArgs[stringArgs.length - 2];
-        elementCount = (Integer) stringArgs[stringArgs.length - 1];
+        int metadataIndex = stringArgs.length - METADATA_ARGS_COUNT;
+
+        initialSize = (Integer) stringArgs[metadataIndex];
+        encoding = StringBootstrap.encodingFromName((String) stringArgs[metadataIndex + 1]);
+        frozen = ((Integer) stringArgs[metadataIndex + 2]) != 0;
+        chilled = ((Integer) stringArgs[metadataIndex + 3]) != 0;
+        descriptor = (Long) stringArgs[metadataIndex + 4];
+        elementCount = (Integer) stringArgs[metadataIndex + 5];
 
         ByteListAndCodeRange[] strings = new ByteListAndCodeRange[elementCount];
         int stringArgsIdx = 0;
@@ -85,7 +89,7 @@ public class BuildDynamicStringSite extends MutableCallSite {
 
         boolean specialize = elementCount <= MAX_ELEMENTS_FOR_SPECIALIZE1;
         for (int i = 0; i < elementCount; i++) {
-            if ((descriptor & (1 << i)) != 0) {
+            if (isStringElement(descriptor, i)) {
                 ByteListAndCodeRange blcr = new ByteListAndCodeRange(StringBootstrap.bytelist((String) stringArgs[stringArgsIdx * 3], (String) stringArgs[stringArgsIdx * 3 + 1]), (Integer) stringArgs[stringArgsIdx * 3 + 2]);
                 strings[i] = blcr;
                 if (specialize) {
@@ -483,7 +487,13 @@ public class BuildDynamicStringSite extends MutableCallSite {
     }
 
     private static boolean isDynamicElement(long descriptor, int i) {
-        return (descriptor & (1 << i)) == 0;
+        if (i > 63) throw new ArrayIndexOutOfBoundsException("bit " + i + " out of long range");
+        return (descriptor & (1L << i)) == 0;
+    }
+
+    private static boolean isStringElement(long descriptor, int i) {
+        if (i > 63) throw new ArrayIndexOutOfBoundsException("bit " + i + " out of long range");
+        return (descriptor & (1L << i)) != 0;
     }
 
     public RubyString buildString(ThreadContext context, IRubyObject... values) {
@@ -491,7 +501,7 @@ public class BuildDynamicStringSite extends MutableCallSite {
 
         int valueIdx = 0;
         for (int i = 0; i < elementCount; i++) {
-            if ((descriptor & (1 << i)) != 0) {
+            if (isStringElement(descriptor, i)) {
                 buffer.catWithCodeRange(strings[i].bl, strings[i].cr);
             } else {
                 buffer.appendAsStringOrAny(values[valueIdx++]);
