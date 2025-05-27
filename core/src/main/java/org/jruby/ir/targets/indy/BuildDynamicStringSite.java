@@ -58,8 +58,8 @@ public class BuildDynamicStringSite extends MutableCallSite {
 
         initialSize = (Integer) stringArgs[stringArgs.length - 6];
         encoding = StringBootstrap.encodingFromName((String) stringArgs[stringArgs.length - 5]);
-        chilled = ((Integer) stringArgs[stringArgs.length - 4]) != 0;
-        frozen = ((Integer) stringArgs[stringArgs.length - 3]) != 0;
+        frozen = ((Integer) stringArgs[stringArgs.length - 4]) != 0;
+        chilled = ((Integer) stringArgs[stringArgs.length - 3]) != 0;
         descriptor = (Long) stringArgs[stringArgs.length - 2];
         elementCount = (Integer) stringArgs[stringArgs.length - 1];
 
