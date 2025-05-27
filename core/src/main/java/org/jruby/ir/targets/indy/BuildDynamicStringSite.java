@@ -37,6 +37,7 @@ public class BuildDynamicStringSite extends MutableCallSite {
             false);
     private static final int MAX_ELEMENTS_FOR_SPECIALIZE1 = 4;
     private static final int MAX_DYNAMIC_ARGS_FOR_SPECIALIZE2 = 5;
+    public static final int MAX_ELEMENTS = 50;
 
     public static CallSite buildDString(MethodHandles.Lookup lookup, String name, MethodType type, Object[] args) {
         return new BuildDynamicStringSite(type, args);
