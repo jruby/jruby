@@ -85,7 +85,7 @@ public class BuildDynamicStringSite extends MutableCallSite {
 
         boolean specialize = elementCount <= MAX_ELEMENTS_FOR_SPECIALIZE1;
         for (int i = 0; i < elementCount; i++) {
-            if ((descriptor & (1 << i)) != 0) {
+            if (isStringElement(descriptor, i)) {
                 ByteListAndCodeRange blcr = new ByteListAndCodeRange(StringBootstrap.bytelist((String) stringArgs[stringArgsIdx * 3], (String) stringArgs[stringArgsIdx * 3 + 1]), (Integer) stringArgs[stringArgsIdx * 3 + 2]);
                 strings[i] = blcr;
                 if (specialize) {
@@ -483,7 +483,13 @@ public class BuildDynamicStringSite extends MutableCallSite {
     }
 
     private static boolean isDynamicElement(long descriptor, int i) {
-        return (descriptor & (1 << i)) == 0;
+        if (i > 63) throw new ArrayIndexOutOfBoundsException("bit " + i + " out of long range");
+        return (descriptor & (1L << i)) == 0;
+    }
+
+    private static boolean isStringElement(long descriptor, int i) {
+        if (i > 63) throw new ArrayIndexOutOfBoundsException("bit " + i + " out of long range");
+        return (descriptor & (1L << i)) != 0;
     }
 
     public RubyString buildString(ThreadContext context, IRubyObject... values) {
@@ -491,7 +497,7 @@ public class BuildDynamicStringSite extends MutableCallSite {
 
         int valueIdx = 0;
         for (int i = 0; i < elementCount; i++) {
-            if ((descriptor & (1 << i)) != 0) {
+            if (isStringElement(descriptor, i)) {
                 buffer.catWithCodeRange(strings[i].bl, strings[i].cr);
             } else {
                 buffer.appendAsStringOrAny(values[valueIdx++]);
