@@ -66,8 +66,16 @@ public class IndyInvocationCompiler implements InvocationCompiler {
 
     @Override
     public void invokeOther(String file, String scopeFieldName, CallBase call, RubySymbol[] kwargKeys, int arity) {
+        if (arity == -1) {
+            throw new NotCompilableException("should not be compiling kwargs call with arity -1");
+        }
+
         String id = call.getId();
-        if (arity > IRBytecodeAdapter.MAX_ARGUMENTS)
+
+        // arity of the indy invocation is length of non-kwargs args plus kwargs values
+        int invokeArity = arity - 1 + kwargKeys.length;
+
+        if (invokeArity > IRBytecodeAdapter.MAX_ARGUMENTS)
             throw new NotCompilableException("call to '" + id + "' has more than " + IRBytecodeAdapter.MAX_ARGUMENTS + " arguments");
         if (call.isPotentiallyRefined()) {
             normalCompiler.invokeOther(file, scopeFieldName, call, arity);
@@ -77,18 +85,11 @@ public class IndyInvocationCompiler implements InvocationCompiler {
         int flags = call.getFlags();
 
         IRBytecodeAdapter.BlockPassType blockPassType = IRBytecodeAdapter.BlockPassType.fromIR(call);
+        String kwargKeysString = Arrays.stream(kwargKeys).map(RubySymbol::idString).collect(Collectors.joining(";"));
         if (blockPassType.given()) {
-            if (arity == -1) {
-                compiler.adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(id), CodegenUtils.sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class)), NormalInvokeSite.BOOTSTRAP, blockPassType.literal(), flags, file, compiler.getLastLine());
-            } else {
-                compiler.adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, arity + 2, Block.class)), NormalInvokeSite.BOOTSTRAP, blockPassType.literal(), flags, file, compiler.getLastLine());
-            }
+            compiler.adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, invokeArity, Block.class)), NormalInvokeSite.BOOTSTRAP_KWARGS, kwargKeysString, blockPassType.literal(), flags, file, compiler.getLastLine());
         } else {
-            if (arity == -1) {
-                compiler.adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY)), NormalInvokeSite.BOOTSTRAP, false, flags, file, compiler.getLastLine());
-            } else {
-                compiler.adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity)), NormalInvokeSite.BOOTSTRAP, false, flags, file, compiler.getLastLine());
-            }
+            compiler.adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, invokeArity)), NormalInvokeSite.BOOTSTRAP_KWARGS, kwargKeysString, false, flags, file, compiler.getLastLine());
         }
     }
 
