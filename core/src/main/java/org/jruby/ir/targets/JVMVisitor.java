@@ -1278,13 +1278,29 @@ public class JVMVisitor extends IRVisitor {
         if (!functional) m.loadSelf(); // caller
         visit(call.getReceiver());
         int arity = args.length;
+        RubySymbol[] kwargKeys = null;
 
-        if (args.length == 1 && args[0] instanceof Splat) {
+        if (args.length == 0) {
+            // no arguments
+        } else if (args.length == 1 && args[0] instanceof Splat) {
             visit(args[0]);
             m.adapter.invokevirtual(p(RubyArray.class), "toJavaArray", sig(IRubyObject[].class));
             arity = -1;
         } else if (CallBase.containsArgSplat(args)) {
             throw new NotCompilableException("splat in non-initial argument for normal call is unsupported in JIT");
+        } else if (args[args.length - 1] instanceof Hash kwargs) {
+            // visit all but kwargs
+            for (int i = 0; i < arity - 1; i++) {
+                visit(args[i]);
+            }
+
+            // now visit operands for kwargs and build key list
+            kwargKeys = new RubySymbol[kwargs.pairs.length];
+            for (int i = 0; i < kwargs.pairs.length; i++) {
+                var pair = kwargs.pairs[i];
+                kwargKeys[i] = ((Symbol) pair.getKey()).getSymbol();
+                visit(pair.getValue());
+            }
         } else {
             for (Operand operand : args) {
                 visit(operand);
@@ -1305,10 +1321,18 @@ public class JVMVisitor extends IRVisitor {
         switch (call.getCallType()) {
             case FUNCTIONAL:
             case VARIABLE:
-                m.getInvocationCompiler().invokeSelf(file, jvm.methodData().scopeField, call, arity);
+                if (kwargKeys != null) {
+                    m.getInvocationCompiler().invokeSelf(file, jvm.methodData().scopeField, call, kwargKeys, arity);
+                } else {
+                    m.getInvocationCompiler().invokeSelf(file, jvm.methodData().scopeField, call, arity);
+                }
                 break;
             case NORMAL:
-                m.getInvocationCompiler().invokeOther(file, jvm.methodData().scopeField, call, arity);
+                if (kwargKeys != null) {
+                    m.getInvocationCompiler().invokeOther(file, jvm.methodData().scopeField, call, kwargKeys, arity);
+                } else {
+                    m.getInvocationCompiler().invokeOther(file, jvm.methodData().scopeField, call, arity);
+                }
                 break;
         }
 

@@ -1,5 +1,6 @@
 package org.jruby.ir.targets;
 
+import org.jruby.RubySymbol;
 import org.jruby.ir.instructions.AsStringInstr;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.EQQInstr;
@@ -13,6 +14,15 @@ public interface InvocationCompiler {
      * @param call the call to be invoked
      */
     void invokeOther(String file, String scopeFieldName, CallBase call, int arity);
+
+    /**
+     * Invoke a method on an object other than self.
+     * <p>
+     * Stack required: context, self, all arguments, optional block
+     *
+     * @param call the call to be invoked
+     */
+    void invokeOther(String file, String scopeFieldName, CallBase call, RubySymbol[] kwargKeys, int arity);
 
     /**
      * Invoke the array dereferencing method ([]) on an object other than self.
@@ -48,6 +58,16 @@ public interface InvocationCompiler {
      * @param arity of the call.
      */
     void invokeSelf(String file, String scopeFieldName, CallBase call, int arity);
+
+    /**
+     * Invoke a method on self.
+     *
+     * Stack required: context, caller, self, all arguments, optional block
+     *  @param file the filename of the script making this call
+     * @param call to be invoked on self
+     * @param arity of the call.
+     */
+    void invokeSelf(String file, String scopeFieldName, CallBase call, RubySymbol[] kwargKeys, int arity);
 
     /**
      * Invoke a superclass method from an instance context.
