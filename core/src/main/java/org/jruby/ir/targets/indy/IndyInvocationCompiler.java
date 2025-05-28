@@ -309,4 +309,7 @@ public class IndyInvocationCompiler implements InvocationCompiler {
         compiler.loadFrameName();
         compiler.adapter.invokedynamic(IndyInvocationCompiler.constructIndyCallName("callVariable", methodName), sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class), FrameNameSite.FRAME_NAME_BOOTSTRAP, file, compiler.getLastLine());
     }
+
+    @Override
+    public boolean supportsDirectKwargs() { return true; }
 }

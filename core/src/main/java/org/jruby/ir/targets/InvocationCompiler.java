@@ -1,6 +1,7 @@
 package org.jruby.ir.targets;
 
 import org.jruby.RubySymbol;
+import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.instructions.AsStringInstr;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.EQQInstr;
@@ -18,11 +19,16 @@ public interface InvocationCompiler {
     /**
      * Invoke a method on an object other than self.
      * <p>
-     * Stack required: context, self, all arguments, optional block
+     * Stack required: context, caller, self, all arguments, optional block
      *
-     * @param call the call to be invoked
+     * @param file the filename of the script making this call
+     * @param call to be invoked
+     * @param kwargKeys the key names for passed keyword arguments
+     * @param arity of the call.
      */
-    void invokeOther(String file, String scopeFieldName, CallBase call, RubySymbol[] kwargKeys, int arity);
+    default void invokeOther(String file, String scopeFieldName, CallBase call, RubySymbol[] kwargKeys, int arity) {
+        throw new NotCompilableException("this invocation compiler does not support direct kwargs calls");
+    }
 
     /**
      * Invoke the array dereferencing method ([]) on an object other than self.
@@ -63,11 +69,14 @@ public interface InvocationCompiler {
      * Invoke a method on self.
      *
      * Stack required: context, caller, self, all arguments, optional block
-     *  @param file the filename of the script making this call
+     * @param file the filename of the script making this call
      * @param call to be invoked on self
+     * @param kwargKeys the key names for passed keyword arguments
      * @param arity of the call.
      */
-    void invokeSelf(String file, String scopeFieldName, CallBase call, RubySymbol[] kwargKeys, int arity);
+    default void invokeSelf(String file, String scopeFieldName, CallBase call, RubySymbol[] kwargKeys, int arity) {
+        throw new NotCompilableException("this invocation compiler does not support direct kwargs calls");
+    }
 
     /**
      * Invoke a superclass method from an instance context.
@@ -158,4 +167,9 @@ public interface InvocationCompiler {
      * Invoke __method__ or __callee__ with awareness of any built-in methods.
      */
     void invokeFrameName(String methodName, String file);
+
+    /**
+     * Whether this InvocationCompiler support direct keyword argument passing.
+     */
+    default boolean supportsDirectKwargs() { return false; }
 }

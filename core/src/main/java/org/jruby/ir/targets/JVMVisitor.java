@@ -1288,7 +1288,8 @@ public class JVMVisitor extends IRVisitor {
             arity = -1;
         } else if (CallBase.containsArgSplat(args)) {
             throw new NotCompilableException("splat in non-initial argument for normal call is unsupported in JIT");
-        } else if (args[args.length - 1] instanceof Hash kwargs) {
+        } else if (m.getInvocationCompiler().supportsDirectKwargs() &&
+                        args[args.length - 1] instanceof Hash kwargs) {
             // visit all but kwargs
             for (int i = 0; i < arity - 1; i++) {
                 visit(args[i]);
