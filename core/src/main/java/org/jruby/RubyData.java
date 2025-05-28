@@ -324,6 +324,7 @@ public class RubyData {
 
                 RubySymbol sym = members.eltOk(0);
                 init.fastASetSmall(sym, hashOrElt);
+                callInfo = CALL_KEYWORD;
             }
 
             IRubyObject dataObject = klass.getAllocator().allocate(context.runtime, klass);
