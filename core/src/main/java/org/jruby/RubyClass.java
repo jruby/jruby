@@ -1308,7 +1308,9 @@ public class RubyClass extends RubyModule {
     public void invalidateCacheDescendants() {
         super.invalidateCacheDescendants();
 
-        getSubclassesForRead().forEachClass(RubyClass::invalidateCacheDescendants);
+        synchronized (getRuntime().getHierarchyLock()) {
+            getSubclassesForRead().forEachClass(RubyClass::invalidateCacheDescendants);
+        }
     }
 
     void addInvalidatorsAndFlush(InvalidatorList invalidators) {
