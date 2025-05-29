@@ -249,8 +249,8 @@ public class RubyModule extends RubyObject {
         if (fileString.isEmpty()) throw argumentError(context, "empty file name");
 
         final String symbolStr = symbol.asJavaString();
-        if (!IdUtil.isValidConstantName(symbolStr)) {
-            throw nameError(context, "autoload must be constant name", symbolStr);
+        if (!IdUtil.isValidConstantName(symbol)) {
+            throw nameError(context, "autoload must be constant name", symbol);
         }
 
         IRubyObject existingValue = fetchConstant(context, symbolStr);
