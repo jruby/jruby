@@ -5566,7 +5566,7 @@ public class RubyModule extends RubyObject {
      * @return The result of setting the variable.
      */
     public IRubyObject setConstantQuiet(ThreadContext context, String name, IRubyObject value) {
-        return setConstantCommon(context, name, value, false, false, null, -1);
+        return setConstantCommon(context, name, value, null, false, null, -1);
     }
 
     @Deprecated(since = "10.0")
@@ -5583,7 +5583,7 @@ public class RubyModule extends RubyObject {
      * @return The result of setting the variable.
      */
     public IRubyObject setConstant(ThreadContext context, String name, IRubyObject value) {
-        return setConstantCommon(context, name, value, false, true, null, -1);
+        return setConstantCommon(context, name, value, null, true, null, -1);
     }
 
     @Deprecated(since = "10.0")
@@ -5592,7 +5592,7 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject setConstant(ThreadContext context, String name, IRubyObject value, String file, int line) {
-        return setConstantCommon(context, name, value, false, true, file, line);
+        return setConstantCommon(context, name, value, null, true, file, line);
     }
 
     @Deprecated(since = "10.0")
@@ -5610,19 +5610,20 @@ public class RubyModule extends RubyObject {
      *
      * @param name The name to assign
      * @param value The value to assign to it; if an unnamed Module, also set its basename to name
-     * @param hidden whether a constant is private (hidden).  This parameter is only for asserting it is explicitly
-     *               private.  If it is false the entry may still remain private if the constant was already private
-     *               and its value is being updated.
+     * @param hiddenObj whether a constant is private (hidden).  If null, default to public (non-hidden), or leave
+     *                  previous visibility in place.
      * @return The result of setting the variable.
      */
-    private IRubyObject setConstantCommon(ThreadContext context, String name, IRubyObject value, boolean hidden,
+    private IRubyObject setConstantCommon(ThreadContext context, String name, IRubyObject value, Boolean hiddenObj,
                                           boolean warn, String file, int line) {
         ConstantEntry oldEntry = fetchConstantEntry(context, name, true);
 
         setParentForModule(context, name, value);
 
         if (oldEntry != null) {
-            hidden |= oldEntry.hidden; // Already private constants will stay constant.
+            // preserve existing hidden value if none was given
+            boolean hidden = oldEntry.hidden;
+            if (hiddenObj != null) hidden = hiddenObj;
             boolean notAutoload = oldEntry.value != UNDEF;
             if (notAutoload) {
                 if (warn) {
@@ -5643,7 +5644,7 @@ public class RubyModule extends RubyObject {
         } else {
             if (this == context.runtime.getObject() && name.equals("Ruby")) Warn.warnReservedName(context, "::Ruby", "3.5");
 
-            storeConstant(context, name, value, hidden, file, line);
+            storeConstant(context, name, value, hiddenObj == null ? false : hiddenObj, file, line);
         }
 
         invalidateConstantCache(context, name);
