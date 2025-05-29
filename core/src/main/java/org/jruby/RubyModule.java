@@ -107,6 +107,7 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.IRBlockBody;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -118,6 +119,7 @@ import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callsite.CacheEntry;
+import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.runtime.marshal.MarshalDumper;
 import org.jruby.runtime.marshal.MarshalLoader;
@@ -3199,7 +3201,22 @@ public class RubyModule extends RubyObject {
 
     @Override
     public int hashCode() {
-        return id;
+        RubyClass metaClass = this.metaClass;
+
+        // may be null during boot
+        if (metaClass == null) return id;
+
+        Ruby runtime = metaClass.getClassRuntime();
+
+        if (runtime.isBooting()) return id;
+
+        ThreadContext context = runtime.getCurrentContext();
+        CachingCallSite hash = sites(context).hash;
+
+        if (hash.isBuiltin(this)) return id;
+
+        // we truncate for Java hashcode
+        return (int) hash.call(context, this, this).convertToInteger().getLongValue();
     }
 
     @JRubyMethod(name = "hash")
@@ -6984,6 +7001,10 @@ public class RubyModule extends RubyObject {
     private static final MethodHandle testModuleMatch = Binder
             .from(boolean.class, ThreadContext.class, IRubyObject.class, int.class)
             .invokeStaticQuiet(LOOKUP, RubyModule.class, "testModuleMatch");
+
+    public static JavaSites.ModuleSites sites(ThreadContext context) {
+        return context.sites.Module;
+    }
 
     @Deprecated
     public IRubyObject const_get(IRubyObject symbol) {
