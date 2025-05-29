@@ -5041,7 +5041,7 @@ public class RubyModule extends RubyObject {
             throw nameError(context, "constant " + getName(context) + "::" + name + " not defined", name);
         }
 
-        storeConstant(context, name, entry.value, hidden, entry.getFile(), entry.getLine());
+        setConstantCommon(context, name, entry.value, hidden, false, entry.getFile(), entry.getLine());
     }
 
     @JRubyMethod(name = "refinements")
@@ -5624,7 +5624,7 @@ public class RubyModule extends RubyObject {
         if (oldEntry != null) {
             hidden |= oldEntry.hidden; // Already private constants will stay constant.
             boolean notAutoload = oldEntry.value != UNDEF;
-            if (notAutoload || !setAutoloadConstant(context, name, value, file, line)) {
+            if (notAutoload || !setAutoloadConstant(context, name, value, hidden, file, line)) {
                 if (warn && notAutoload) {
                     warn(context, "already initialized constant " +
                             (this.equals(objectClass(context)) ? name : (this + "::" + name)));
@@ -6396,7 +6396,7 @@ public class RubyModule extends RubyObject {
         final IRubyObject value = autoload.getValue();
 
         if (value != null && value != UNDEF) {
-            storeConstant(context, name, value, false, autoload.getFile(), autoload.getLine());
+            storeConstant(context, name, value, autoload.hidden, autoload.getFile(), autoload.getLine());
             invalidateConstantCache(context, name);
         }
 
@@ -6434,11 +6434,11 @@ public class RubyModule extends RubyObject {
     /**
      * Set an Object as a defined constant in autoloading.
      */
-    private boolean setAutoloadConstant(ThreadContext context, String name, IRubyObject value, String file, int line) {
+    private boolean setAutoloadConstant(ThreadContext context, String name, IRubyObject value, boolean hidden, String file, int line) {
         final Autoload autoload = getAutoloadMap().get(name);
         if (autoload == null) return false;
 
-        boolean set = autoload.setConstant(context, value, file, line);
+        boolean set = autoload.setConstant(context, value, hidden, file, line);
         if (!set) removeAutoload(name);
         return set;
     }
@@ -6617,6 +6617,8 @@ public class RubyModule extends RubyObject {
         private volatile ThreadContext ctx;
         // An object defined for the constant while autoloading.
         private volatile IRubyObject value;
+        // Whether the autoload constant was set private
+        private boolean hidden;
         // The symbol ID for the autoload constant
         private final String symbol;
         // The Ruby string representing the path to load
@@ -6625,8 +6627,6 @@ public class RubyModule extends RubyObject {
         public int line;
 
         Autoload(String symbol, RubyString path, String file, int line) {
-            this.ctx = null;
-            this.value = null;
             this.symbol = symbol;
             this.path = path;
             this.file = file;
@@ -6639,6 +6639,10 @@ public class RubyModule extends RubyObject {
 
         public int getLine() {
             return line;
+        }
+
+        public boolean isHidden() {
+            return hidden;
         }
 
         // Returns an object for the constant if the caller is the autoloading thread.
@@ -6670,11 +6674,15 @@ public class RubyModule extends RubyObject {
         }
 
         // Update an object for the constant if the caller is the autoloading thread.
-        synchronized boolean setConstant(ThreadContext ctx, IRubyObject newValue, String file, int line) {
+        synchronized boolean setConstant(ThreadContext ctx, IRubyObject newValue, boolean hidden, String file, int line) {
             boolean isSelf = isSelf(ctx);
 
             if (isSelf) {
-                value = newValue;
+                // only update value to valid results
+                if (newValue != null && newValue != UNDEF) {
+                    value = newValue;
+                }
+                this.hidden = hidden;
                 // Note: we replace undef location with constant location as the autoload resolution is in flight.
                 this.file = file;
                 this.line = line;
