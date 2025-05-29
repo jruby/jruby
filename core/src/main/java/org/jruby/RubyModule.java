@@ -5624,13 +5624,21 @@ public class RubyModule extends RubyObject {
         if (oldEntry != null) {
             hidden |= oldEntry.hidden; // Already private constants will stay constant.
             boolean notAutoload = oldEntry.value != UNDEF;
-            if (notAutoload || !setAutoloadConstant(context, name, value, hidden, file, line)) {
-                if (warn && notAutoload) {
+            if (notAutoload) {
+                if (warn) {
                     warn(context, "already initialized constant " +
                             (this.equals(objectClass(context)) ? name : (this + "::" + name)));
                 }
 
                 storeConstant(context, name, value, hidden, file, line);
+            } else {
+                boolean autoloading = setAutoloadConstant(context, name, value, hidden, file, line);
+                if (autoloading) {
+                    // invoke const_added for Autoload in progress
+                    callMethod(context, "const_added", asSymbol(context, name));
+                } else {
+                    storeConstant(context, name, value, hidden, file, line);
+                }
             }
         } else {
             if (this == context.runtime.getObject() && name.equals("Ruby")) Warn.warnReservedName(context, "::Ruby", "3.5");
