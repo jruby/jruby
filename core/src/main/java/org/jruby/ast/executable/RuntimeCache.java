@@ -387,7 +387,7 @@ public class RuntimeCache {
         IRubyObject value = target.getConstantFromNoConstMissing(context, name, false);
 
         constants[index] = value != null ?
-                new ConstantCache(value, newGeneration, invalidator, target.hashCode()) : null;
+                new ConstantCache(value, newGeneration, invalidator, target.id) : null;
 
         return value;
     }
