@@ -812,7 +812,7 @@ public abstract class InvokeSite extends MutableCallSite {
         // Test thresholds so we don't do this forever (#4596)
         if (testThresholds(selfClass) == CacheAction.FAIL) {
             logFail();
-            bindToFail();
+            failHandle();
         } else {
             logMethodMissing();
         }
@@ -1380,45 +1380,46 @@ public abstract class InvokeSite extends MutableCallSite {
      * bind and argument-juggling logic. Return a handle suitable for invoking
      * with the site's original method type.
      */
-    protected MethodHandle updateInvocationTarget(MethodHandle target, IRubyObject self, RubyModule testClass, DynamicMethod method, SwitchPoint switchPoint) {
-        MethodHandle fallback;
-        MethodHandle gwt;
+    protected void updateInvocationTarget(MethodHandle target, IRubyObject self, RubyModule testClass, DynamicMethod method, SwitchPoint switchPoint) {
+        MethodHandle result;
 
         CacheAction cacheAction = testThresholds(testClass);
+
         switch (cacheAction) {
             case FAIL:
                 logFail();
                 // bind to specific-arity fail method if available
-                return bindToFail();
+                result = failHandle();
+                break;
             case PIC:
                 // stack it up into a PIC
                 logPic(method);
-                fallback = getTarget();
+                result = wrapWithGuards(target, self, testClass, switchPoint, getTarget());
                 break;
             case REBIND:
             case BIND:
                 // wipe out site with this new type and method
                 logBind(cacheAction);
-                fallback = this.fallback;
+                result = wrapWithGuards(target, self, testClass, switchPoint, this.fallback);
                 break;
             default:
                 throw new RuntimeException("invalid cache action: " + cacheAction);
         }
 
-        // Continue with logic for PIC, BIND, and REBIND
+        setTarget(result);
+    }
 
+    private MethodHandle wrapWithGuards(MethodHandle target, IRubyObject self, RubyModule testClass, SwitchPoint switchPoint, MethodHandle fallback) {
+        MethodHandle result;
         SmartHandle test = testTarget(self, testClass);
 
-        gwt = MethodHandles.guardWithTest(test.handle(), target, fallback);
+        result = MethodHandles.guardWithTest(test.handle(), target, fallback);
 
         // wrap in switchpoint for mutation invalidation
-        gwt = switchPoint.guardWithTest(gwt, fallback);
-
-        setTarget(gwt);
+        result = switchPoint.guardWithTest(result, fallback);
 
         tracker.addType(testClass.id);
-
-        return target;
+        return result;
     }
 
     protected SmartHandle testTarget(IRubyObject self, RubyModule testClass) {
@@ -1474,10 +1475,8 @@ public abstract class InvokeSite extends MutableCallSite {
         }
     }
 
-    private MethodHandle bindToFail() {
-        MethodHandle target;
-        setTarget(target = prepareBinder(false).invokeVirtualQuiet(LOOKUP, functional ? "failf" : "fail"));
-        return target;
+    private MethodHandle failHandle() {
+        return prepareBinder(false).invokeVirtualQuiet(LOOKUP, functional ? "failf" : "fail");
     }
 
     enum CacheAction { FAIL, BIND, REBIND, PIC }
