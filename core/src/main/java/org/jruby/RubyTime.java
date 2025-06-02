@@ -706,6 +706,93 @@ public class RubyTime extends RubyObject {
         return rdf.compileAndFormat(format.convertToString().getByteList(), false, dt, nsec, null);
     }
 
+    @JRubyMethod(name = {"xmlschema", "iso8601"}, optional = 1, checkArity = false)
+    public RubyString xmlschema(ThreadContext context, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 0, 1);
+
+        int fractionDigits = 0;
+        if (args.length > 0) {
+            fractionDigits = toInt(context, args[0]);
+            if (fractionDigits < 0) {
+                fractionDigits = 0;
+            }
+        }
+
+        // NOTE: size of "-MM-DDTHH:MM:SSZ" or "-MM-DDTHH:MM:SS+ZH:ZM" plus fraction digits
+        int sizeAfterYear = (isUTC() ? 16 : 21) + fractionDigits + (fractionDigits > 0 ? 1 : 0);
+
+        int year = dt.getYear();
+        int yearSize = 4;
+        int yearScale = 1_000;
+        boolean yearNeg = false;
+
+        if (year < 0) {
+            yearNeg = true;
+            year = -year;
+        }
+
+        if (year > 9999) {
+            int y = year / yearScale;
+            while (y > 9) {
+                y /= 10;
+                yearSize += 1;
+                yearScale *= 10;
+            }
+        }
+
+        byte[] buf = new byte[(yearNeg ? 1 : 0) + yearSize + sizeAfterYear];
+        int pos = 0;
+
+        if (yearNeg) buf[pos++] = (byte) '-';
+        pos = fillDigits(buf, pos, year, yearSize, yearScale);
+        pos = fillDigitsAfterChar(buf, pos, '-', dt.getMonthOfYear(), 2, 10);
+        pos = fillDigitsAfterChar(buf, pos, '-', dt.getDayOfMonth(), 2, 10);
+        pos = fillDigitsAfterChar(buf, pos, 'T', dt.getHourOfDay(), 2, 10);
+        pos = fillDigitsAfterChar(buf, pos, ':', dt.getMinuteOfHour(), 2, 10);
+        pos = fillDigitsAfterChar(buf, pos, ':', dt.getSecondOfMinute(), 2, 10);
+
+        if (fractionDigits > 0) {
+            pos = fillDigitsAfterChar(buf, pos, '.', getNanos(), fractionDigits, TIME_SCALE / 10);
+        }
+
+        if (isUTC()) {
+            buf[pos++] = (byte) 'Z';
+        } else {
+            int offset = dt.getZone().getOffset(dt.getMillis()) / 1000 / 60;
+            char offsetSign = '+';
+
+            if (offset < 0) {
+                offset = -offset;
+                offsetSign = '-';
+            }
+
+            pos = fillDigitsAfterChar(buf, pos, offsetSign, offset / 60, 2, 10);
+            pos = fillDigitsAfterChar(buf, pos, ':', offset % 60, 2, 10);
+        }
+
+        return newString(context, new ByteList(buf, false));
+    }
+
+    private static int fillDigits(byte[] buf, int begin, int number, int size, int divisor) {
+        int pos = begin;
+
+        for (int i = 0; i < size; i++) {
+            if (divisor > 0) {
+                buf[pos++] = (byte) ('0' + number / divisor % 10);
+                divisor /= 10;
+            } else {
+                buf[pos++] = (byte) '0';
+            }
+        }
+
+        return pos;
+    }
+
+    private static int fillDigitsAfterChar(byte[] buf, int begin, char firstChar, int number, int size, int divisor) {
+        buf[begin] = (byte) firstChar;
+        return fillDigits(buf, begin + 1, number, size, divisor);
+    }
+
     @JRubyMethod(name = "==")
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
