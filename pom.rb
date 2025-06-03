@@ -6,7 +6,6 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
   model_version '4.0.0'
   inception_year '2001'
   id 'org.jruby:jruby-parent', version
-  inherit 'org.sonatype.oss:oss-parent:7'
   packaging 'pom'
 
   description 'JRuby is the effort to recreate the Ruby (https://www.ruby-lang.org) interpreter in Java.'
@@ -141,6 +140,10 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     plugin 'org.eclipse.m2e:lifecycle-mapping:1.0.0'
     plugin :'scm-publish', '3.1.0'
   end
+  
+  plugin( 'org.sonatype.central:central-publishing-maven-plugin:0.7.0',
+          extensions: true,
+          publishingServerId: 'central')
 
   plugin( :site,
           'port' =>  '9000',
