@@ -1,1 +1,2 @@
 fails:A method definition always resets the visibility to public for nested definitions at the toplevel
+fails:A singleton method definition raises FrozenError with the correct class name

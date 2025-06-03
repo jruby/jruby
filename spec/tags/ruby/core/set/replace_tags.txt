@@ -1,0 +1,1 @@
+fails:Set#replace raises RuntimeError when called during iteration
