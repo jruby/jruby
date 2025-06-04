@@ -1,5 +1,6 @@
 package org.jruby.ir.targets;
 
+import org.jruby.RubySymbol;
 import org.jruby.ir.instructions.AsStringInstr;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.EQQInstr;
@@ -138,4 +139,13 @@ public interface InvocationCompiler {
      * Invoke __method__ or __callee__ with awareness of any built-in methods.
      */
     void invokeFrameName(String methodName, String file);
+
+    /**
+     * Check for a literal respond_to? result
+     *
+     * Stack required: context, caller, target
+     *
+     * @param id the method name to check respond_to?
+     */
+    void respondTo(CallBase callBase, RubySymbol id, String scopeFieldName, String file);
 }

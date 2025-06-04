@@ -771,7 +771,7 @@ public abstract class InvokeSite extends MutableCallSite {
         MethodHandle mh;
         boolean passSymbol = false;
 
-        if (methodMissing(entry, caller)) {
+        if (methodMissing(entry.method, methodName, callType, caller)) {
             entry = methodMissingEntry(context, selfClass, methodName, entry);
             // only pass symbol below if we be calling a user-defined method_missing (default ones do it for us)
             passSymbol = !(entry.method instanceof RubyKernel.MethodMissingMethod ||
@@ -794,7 +794,7 @@ public abstract class InvokeSite extends MutableCallSite {
         MethodHandle mh;
         boolean passSymbol = false;
 
-        if (methodMissing(entry)) {
+        if (methodMissing(entry.method)) {
             entry = methodMissingEntry(context, selfClass, methodName, entry);
             // only pass symbol below if we be calling a user-defined method_missing (default ones do it for us)
             passSymbol = !(entry.method instanceof RubyKernel.MethodMissingMethod ||
@@ -915,7 +915,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
         entry = selfClass.searchWithCache(name);
 
-        if (methodMissing(entry, caller)) {
+        if (methodMissing(entry.method, methodName, callType, caller)) {
             return callMethodMissing(entry, callType, context, self, selfClass, name, args, block);
         }
 
@@ -940,7 +940,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
         entry = selfClass.searchWithCache(name);
 
-        if (methodMissing(entry)) {
+        if (methodMissing(entry.method)) {
             return callMethodMissing(entry, callType, context, self, selfClass, name, args, block);
         }
 
@@ -979,7 +979,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
         entry = selfClass.searchWithCache(name);
 
-        if (methodMissing(entry, caller)) {
+        if (methodMissing(entry.method, methodName, callType, caller)) {
             return callMethodMissing(entry, callType, context, self, selfClass, name, arg0, block);
         }
 
@@ -1004,7 +1004,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
         entry = selfClass.searchWithCache(name);
 
-        if (methodMissing(entry)) {
+        if (methodMissing(entry.method)) {
             return callMethodMissing(entry, callType, context, self, selfClass, name, arg0, block);
         }
 
@@ -1029,7 +1029,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
         entry = selfClass.searchWithCache(name);
 
-        if (methodMissing(entry, caller)) {
+        if (methodMissing(entry.method, methodName, callType, caller)) {
             return callMethodMissing(entry, callType, context, self, selfClass, name, arg0, arg1, block);
         }
 
@@ -1054,7 +1054,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
         entry = selfClass.searchWithCache(name);
 
-        if (methodMissing(entry)) {
+        if (methodMissing(entry.method)) {
             return callMethodMissing(entry, callType, context, self, selfClass, name, arg0, arg1, block);
         }
 
@@ -1079,7 +1079,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
         entry = selfClass.searchWithCache(name);
 
-        if (methodMissing(entry, caller)) {
+        if (methodMissing(entry.method, methodName, callType, caller)) {
             return callMethodMissing(entry, callType, context, self, selfClass, name, arg0, arg1, arg2, block);
         }
 
@@ -1104,7 +1104,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
         entry = selfClass.searchWithCache(name);
 
-        if (methodMissing(entry)) {
+        if (methodMissing(entry.method)) {
             return callMethodMissing(entry, callType, context, self, selfClass, name, arg0, arg1, arg2, block);
         }
 
@@ -1431,18 +1431,32 @@ public abstract class InvokeSite extends MutableCallSite {
 
     private MethodHandle wrapWithGuards(MethodHandle target, IRubyObject self, RubyModule testClass, SwitchPoint switchPoint, MethodHandle fallback) {
         MethodHandle result;
-        SmartHandle test = testTarget(self, testClass);
-
-        result = MethodHandles.guardWithTest(test.handle(), target, fallback);
-
-        // wrap in switchpoint for mutation invalidation
-        result = switchPoint.guardWithTest(result, fallback);
+        result = typeCheck(target, self, testClass, fallback);
+        result = switchPoint(switchPoint, fallback, result);
 
         tracker.addType(testClass.id);
         return result;
     }
 
+    public static MethodHandle switchPoint(SwitchPoint switchPoint, MethodHandle fallback, MethodHandle result) {
+        // wrap in switchpoint for mutation invalidation
+        result = switchPoint.guardWithTest(result, fallback);
+        return result;
+    }
+
+    public MethodHandle typeCheck(MethodHandle target, IRubyObject self, RubyModule testClass, MethodHandle fallback) {
+        MethodHandle result;
+        SmartHandle test = testTarget(self, testClass);
+
+        result = MethodHandles.guardWithTest(test.handle(), target, fallback);
+        return result;
+    }
+
     protected SmartHandle testTarget(IRubyObject self, RubyModule testClass) {
+        return testTarget(signature, self, testClass);
+    }
+
+    public static SmartHandle testTarget(Signature signature, IRubyObject self, RubyModule testClass) {
         if (self instanceof RubySymbol ||
                 self instanceof RubyFixnum ||
                 self instanceof RubyFloat ||
@@ -1534,15 +1548,11 @@ public abstract class InvokeSite extends MutableCallSite {
         super.setTarget(target);
     }
 
-    public boolean methodMissing(CacheEntry entry, IRubyObject caller) {
-        DynamicMethod method = entry.method;
-
+    public static boolean methodMissing(DynamicMethod method, String methodName, CallType callType, IRubyObject caller) {
         return method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(caller, callType));
     }
 
-    public boolean methodMissing(CacheEntry entry) {
-        DynamicMethod method = entry.method;
-
+    public static boolean methodMissing(DynamicMethod method) {
         return method.isUndefined();
     }
 

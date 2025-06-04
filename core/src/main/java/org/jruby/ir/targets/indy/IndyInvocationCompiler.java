@@ -1,6 +1,8 @@
 package org.jruby.ir.targets.indy;
 
 import org.jruby.RubyClass;
+import org.jruby.RubyEncoding;
+import org.jruby.RubySymbol;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.instructions.AsStringInstr;
 import org.jruby.ir.instructions.CallBase;
@@ -17,6 +19,7 @@ import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.MathLinker;
+import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JavaNameMangler;
 
@@ -245,5 +248,15 @@ public class IndyInvocationCompiler implements InvocationCompiler {
         compiler.loadSelf();
         compiler.loadFrameName();
         compiler.adapter.invokedynamic(IndyInvocationCompiler.constructIndyCallName("callVariable", methodName), sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class), FrameNameSite.FRAME_NAME_BOOTSTRAP, file, compiler.getLastLine());
+    }
+
+    @Override
+    public void respondTo(CallBase callBase, RubySymbol id, String scopeFieldName, String file) {
+        String sig = callBase.getCallType().isSelfCall() ?
+                sig(IRubyObject.class, ThreadContext.class, IRubyObject.class) :
+                sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class);
+
+        ByteList bytes = id.getBytes();
+        compiler.adapter.invokedynamic("respond_to", sig, RespondToSite.RESPOND_TO_BOOTSTRAP, RubyEncoding.decodeRaw(bytes), bytes.getEncoding().toString(), file, compiler.getLastLine());
     }
 }
