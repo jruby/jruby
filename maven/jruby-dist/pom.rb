@@ -33,6 +33,22 @@ project 'JRuby Dist' do
         end
       end
     end
+
+    execute :copy_windows_exe do |ctx|
+      FileUtils.cp(File.join(ctx.project.build.directory.to_pathname,
+                             'META-INF/jruby.home/bin/jruby.exe'),
+                   File.join(ctx.project.build.directory.to_pathname,
+                             ctx.project.build.finalName + '-windows.exe'))
+    end
+
+    plugin 'org.codehaus.mojo:build-helper-maven-plugin' do
+      execute_goal( 'attach-artifact',
+                    :id => 'attach-windows-artifacts',
+                    :artifacts => [ { :file => '${project.build.directory}/${project.build.finalName}-windows.exe',
+                                      :type => 'exe',
+                                      :classifier => 'windows' } ] )
+    end
+
   end
 
   phase :package do
@@ -71,7 +87,14 @@ project 'JRuby Dist' do
                                     type: 'zip.sha256'},
                                   { file: '${project.build.directory}/jruby-dist-${project.version}-src.zip.sha512',
                                     classifier: :src,
-                                    type: 'zip.sha512'} ] )
+                                    type: 'zip.sha512'},
+                                  { file: '${project.build.directory}/jruby-dist-${project.version}-windows.exe.sha256',
+                                    classifier: :windows,
+                                    type: 'exe.sha256'},
+                                  { file: '${project.build.directory}/jruby-dist-${project.version}-windows.exe.sha512',
+                                    classifier: :windows,
+                                    type: 'exe.sha512'} ] )
+
     end
   end
 
