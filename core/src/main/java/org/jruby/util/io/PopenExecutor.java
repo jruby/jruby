@@ -564,17 +564,19 @@ public class PopenExecutor {
 
         if (prog != null) cmd = checkEmbeddedNulls(context, prog).toString();
 
-        if (eargp.chdirGiven) {
-            // we can'd do chdir with posix_spawn, so we should be set to use_shell and now
-            // just need to add chdir to the cmd
-            cmd = "cd '" + eargp.chdir_dir + "'; " + cmd;
-            eargp.chdir_dir = null;
-            eargp.chdirGiven = false;
-        }
+        if (eargp != null) {
+	        if (eargp.chdirGiven) {
+	            // we can'd do chdir with posix_spawn, so we should be set to use_shell and now
+	            // just need to add chdir to the cmd
+	            cmd = "cd '" + eargp.chdir_dir + "'; " + cmd;
+	            eargp.chdir_dir = null;
+	            eargp.chdirGiven = false;
+	        }
 
-        if (eargp != null && !eargp.use_shell) {
-            args = eargp.argv_str.argv;
-        }
+	        if (!eargp.use_shell) {
+	            args = eargp.argv_str.argv;
+	        }
+	}
         int[] pair = {-1,-1}, writePair = {-1, -1};
         switch (fmode & (OpenFile.READABLE|OpenFile.WRITABLE)) {
             case OpenFile.READABLE | OpenFile.WRITABLE:
