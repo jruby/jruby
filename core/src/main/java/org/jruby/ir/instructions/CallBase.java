@@ -30,7 +30,7 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
 
     public transient long callSiteId;
     private final CallType callType;
-    protected final RubySymbol name;
+    protected RubySymbol name;
     protected final transient CallSite callSite;
     protected final transient int argsCount;
     protected final transient boolean hasClosure;
@@ -104,6 +104,10 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         return name.idString();
     }
 
+    public void setName(RubySymbol name) {
+        this.name = name;
+    }
+
     public long getCallSiteId() {
         return callSiteId;
     }
@@ -119,6 +123,10 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     /** From interface ClosureAcceptingInstr */
     public Operand getClosureArg() {
         return hasClosure ? operands[argsCount + 1] : null;
+    }
+
+    public void setClosureArg(WrappedIRClosure closureArg) {
+        operands[argsCount + 1] = closureArg;
     }
 
     public Operand getClosureArg(Operand ifUnspecified) {

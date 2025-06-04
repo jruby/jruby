@@ -1,12 +1,14 @@
 package org.jruby.ir.interpreter;
 
 import java.util.ArrayDeque;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.function.Supplier;
 
 import org.jruby.RubySymbol;
+import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRMetaClassBody;
 import org.jruby.ir.IRScope;
@@ -72,6 +74,21 @@ public class InterpreterContext {
         this.flags = flags;
     }
 
+    public InterpreterContext(IRClosure other) {
+        InterpreterContext ic = other.getInterpreterContext();
+        this.temporaryVariableCount = ic.temporaryVariableCount;
+        this.instructions = ic.instructions.clone();
+        this.rescueIPCs = ic.rescueIPCs.clone();
+        this.instructionsCallback = null; // Already done in original IC
+        this.flags = ic.flags.clone();
+        this.scope = other;
+        this.engine = ic.engine;
+        this.hasExplicitCallProtocol = ic.hasExplicitCallProtocol;
+        this.dynamicScopeEliminated = ic.dynamicScopeEliminated;
+        this.reuseParentDynScope = ic.reuseParentDynScope;
+        this.metaClassBodyScope = ic.metaClassBodyScope;
+    }
+
     protected void initialize() {
         if (instructions == null) getEngine();
     }
@@ -95,6 +112,11 @@ public class InterpreterContext {
 
     private synchronized void setInstructions(final List<Instr> instructions) {
         this.instructions = instructions != null ? prepareBuildInstructions(instructions) : null;
+    }
+
+    public void setInstructionsRaw(List<Instr> instrs) {
+        this.instructions = new Instr[instrs.size()];
+        instrs.toArray(this.instructions);
     }
 
     private Instr[] prepareBuildInstructions(List<Instr> instructions) {

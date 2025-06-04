@@ -59,6 +59,9 @@ public abstract class SuperInvokeSite extends SelfInvokeSite {
             case "invokeClassSuperIter":
                 site = new ClassSuperIterInvokeSite(type, superName, splatmapString, file, line);
                 break;
+            case "invokeModuleSuper":
+                site = new ModuleSuperInvokeSite(type, superName, splatmapString, file, line);
+                break;
             case "invokeUnresolvedSuper":
                 site = new UnresolvedSuperInvokeSite(type, superName, splatmapString, file, line);
                 break;

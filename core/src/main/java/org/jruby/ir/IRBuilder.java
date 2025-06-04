@@ -4076,19 +4076,37 @@ public class IRBuilder {
     private Operand buildSuperInstr(Operand block, Operand[] args) {
         CallInstr superInstr;
         Variable ret = createTemporaryVariable();
-        if (scope instanceof IRMethod && scope.getLexicalParent() instanceof IRClassBody) {
-            if (((IRMethod) scope).isInstanceMethod) {
-                superInstr = new InstanceSuperInstr(scope, ret, getCurrentModuleVariable(), getName(), args, block, scope.maybeUsingRefinements());
+        IRMethod nearestMethod = scope.getNearestMethod();
+
+        if (nearestMethod != null) {
+            IRScope lexicalParent;
+            RubySymbol superName;
+
+            if (scope instanceof IRMethod) {
+                lexicalParent = scope.getLexicalParent();
+                superName = getName();
             } else {
-                superInstr = new ClassSuperInstr(scope, ret, getCurrentModuleVariable(), getName(), args, block, scope.maybeUsingRefinements());
+                lexicalParent = nearestMethod.getLexicalParent();
+                superName = nearestMethod.getName();
+            }
+
+            if (lexicalParent instanceof IRClassBody) {
+                if (nearestMethod.isInstanceMethod) {
+                    superInstr = new InstanceSuperInstr(scope, ret, getCurrentModuleVariable(), superName, args, block, scope.maybeUsingRefinements());
+                } else {
+                    superInstr = new ClassSuperInstr(scope, ret, getCurrentModuleVariable(), superName, args, block, scope.maybeUsingRefinements());
+                }
+            } else {
+                superInstr = new ModuleSuperInstr(scope, ret, superName, buildSelf(), args, block, scope.maybeUsingRefinements());
             }
         } else {
             // We dont always know the method name we are going to be invoking if the super occurs in a closure.
             // This is because the super can be part of a block that will be used by 'define_method' to define
             // a new method.  In that case, the method called by super will be determined by the 'name' argument
             // to 'define_method'.
-            superInstr = new UnresolvedSuperInstr(scope, ret, buildSelf(), args, block, scope.maybeUsingRefinements());
+            superInstr = new UnresolvedSuperInstr(scope, ret, getCurrentModuleVariable(), buildSelf(), args, block, scope.maybeUsingRefinements());
         }
+
         receiveBreakException(block, superInstr);
         return ret;
     }
@@ -4251,7 +4269,7 @@ public class IRBuilder {
         Variable zsuperResult = createTemporaryVariable();
         if (superScope instanceof IRMethod && !defineMethod) {
             Operand[] args = adjustVariableDepth(getCallArgs(superScope, superBuilder), depthFromSuper);
-            addInstr(new ZSuperInstr(scope, zsuperResult, buildSelf(), args, block, scope.maybeUsingRefinements()));
+            addInstr(new ZSuperInstr(scope, zsuperResult, getCurrentModuleVariable(), buildSelf(), args, block, scope.maybeUsingRefinements()));
         } else {
             // We will not have a zsuper show up since we won't emit it but we still need to toggle it.
             // define_method optimization will try and create a method from a closure but it should not in this case.

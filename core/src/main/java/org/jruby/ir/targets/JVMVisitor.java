@@ -1633,6 +1633,9 @@ public class JVMVisitor extends IRVisitor {
             case CLASS_SUPER:
                 m.getInvocationCompiler().invokeClassSuper(file, name, args.length, hasClosure, literalClosure, splatMap);
                 break;
+            case MODULE_SUPER:
+                m.getInvocationCompiler().invokeModuleSuper(file, name, args.length, hasClosure, literalClosure, splatMap);
+                break;
             case UNRESOLVED_SUPER:
                 m.getInvocationCompiler().invokeUnresolvedSuper(file, name, args.length, hasClosure, literalClosure, splatMap);
                 break;
@@ -1712,6 +1715,18 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void MatchInstr(MatchInstr matchInstr) {
         compileCallCommon(jvmMethod(), matchInstr);
+    }
+
+    @Override
+    public void ModuleSuperInstr(ModuleSuperInstr modulesuperinstr) {
+        String name = modulesuperinstr.getId();
+        Operand[] args = modulesuperinstr.getCallArgs();
+        // this would be getDefiningModule but that is not used for module super
+        Operand definingModule = UndefinedValue.UNDEFINED;
+        boolean[] splatMap = modulesuperinstr.splatMap();
+        Operand closure = modulesuperinstr.getClosureArg(null);
+
+        superCommon(name, modulesuperinstr, args, definingModule, splatMap, closure);
     }
 
     @Override

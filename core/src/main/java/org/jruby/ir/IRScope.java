@@ -517,6 +517,13 @@ public abstract class IRScope implements ParseResult {
         return usesSuper;
     }
 
+    public boolean childUsesSuper() {
+        for (IRClosure closure : getClosures()) {
+            if (closure.usesSuper() || closure.childUsesSuper()) return true;
+        }
+        return false;
+    }
+
     public boolean usesZSuper() {
         return usesZSuper;
     }

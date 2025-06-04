@@ -1329,26 +1329,38 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
+    public static IRubyObject moduleSuperSplatArgs(ThreadContext context, IRubyObject self, String id, IRubyObject[] args, Block block, boolean[] splatMap) {
+        return moduleSuper(context, self, id, splatArguments(args, splatMap), block);
+    }
+
+    @JIT
     public static IRubyObject unresolvedSuperIterSplatArgs(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, boolean[] splatMap) {
         return unresolvedSuperIter(context, self, splatArguments(args, splatMap), block);
     }
 
     @Interp
     public static IRubyObject unresolvedSuper(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-        // We have to rely on the frame stack to find the implementation class
-        RubyModule klazz = context.getFrameKlazz();
+        // We have to rely on the frame stack to find the super method name
         String methodName = context.getFrameName();
 
-        Helpers.checkSuperDisabledOrOutOfMethod(context, klazz, methodName);
+        return moduleSuper(context, self, methodName, args, block);
+    }
+
+    @Interp
+    public static IRubyObject moduleSuper(ThreadContext context, IRubyObject self, String id, IRubyObject[] args, Block block) {
+        // We have to rely on the frame stack to find the implementation class
+        RubyModule klazz = context.getFrameKlazz();
+
+        Helpers.checkSuperDisabledOrOutOfMethod(context, klazz, id);
 
         RubyClass superClass = searchNormalSuperclass(klazz);
-        CacheEntry entry = superClass != null ? superClass.searchWithCache(methodName) : CacheEntry.NULL_CACHE;
+        CacheEntry entry = superClass != null ? superClass.searchWithCache(id) : CacheEntry.NULL_CACHE;
 
         IRubyObject rVal;
         if (entry.method.isUndefined()) {
-            rVal = Helpers.callMethodMissing(context, self, entry.method.getVisibility(), methodName, CallType.SUPER, args, block);
+            rVal = Helpers.callMethodMissing(context, self, entry.method.getVisibility(), id, CallType.SUPER, args, block);
         } else {
-            rVal = entry.method.call(context, self, entry.sourceModule, methodName, args, block);
+            rVal = entry.method.call(context, self, entry.sourceModule, id, args, block);
         }
 
         return rVal;
@@ -1358,6 +1370,15 @@ public class IRRuntimeHelpers {
     public static IRubyObject unresolvedSuperIter(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
         try {
             return unresolvedSuper(context, self, args, block);
+        } finally {
+            block.escape();
+        }
+    }
+
+    @Interp
+    public static IRubyObject moduleSuperIter(ThreadContext context, IRubyObject self, String id, IRubyObject[] args, Block block) {
+        try {
+            return moduleSuper(context, self, id, args, block);
         } finally {
             block.escape();
         }

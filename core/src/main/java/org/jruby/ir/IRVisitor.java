@@ -78,6 +78,7 @@ public abstract class IRVisitor {
     public void LoadFrameClosure(LoadFrameClosureInstr loadframeclosureinstr) { error(loadframeclosureinstr); }
     public void LoadBlockImplicitClosure(LoadBlockImplicitClosureInstr loadblockimplicitclosureinstr) { error(loadblockimplicitclosureinstr); }
     public void MatchInstr(MatchInstr matchInstr) { error(matchInstr); }
+    public void ModuleSuperInstr(ModuleSuperInstr modulesuperinstr) { error(modulesuperinstr); }
     public void ModuleVersionGuardInstr(ModuleVersionGuardInstr moduleversionguardinstr) { error(moduleversionguardinstr); }
     public void NonlocalReturnInstr(NonlocalReturnInstr nonlocalreturninstr) { error(nonlocalreturninstr); }
     public void NopInstr(NopInstr nopinstr) { error(nopinstr); }
