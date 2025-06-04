@@ -35,6 +35,8 @@ import org.jcodings.Encoding;
 import org.jcodings.IntHolder;
 import org.jcodings.unicode.UnicodeCodeRange;
 import org.jruby.Ruby;
+import org.jruby.RubySymbol;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public final class IdUtil {
     /**
@@ -96,6 +98,14 @@ public final class IdUtil {
             return isNameString(id, 1, len);
         }
         return false;
+    }
+
+    public static boolean isValidConstantName(IRubyObject id) {
+        if (id instanceof RubySymbol sym) {
+            return sym.validConstantName();
+        } else {
+            return isValidConstantName(id.asJavaString());
+        }
     }
 
     public static boolean isValidInstanceVariableName(String id) {

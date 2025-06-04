@@ -298,6 +298,12 @@ public class JavaPackage extends RubyModule {
         return super.toJava(target);
     }
 
+    @Override
+    public int hashCode() {
+        // avoid any dynamic calls to #hash
+        return id;
+    }
+
     private static class JavaClassProvider implements ClassProvider {
 
         static final JavaClassProvider INSTANCE = new JavaClassProvider();

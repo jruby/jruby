@@ -85,7 +85,7 @@ public class ConstantLookupSite {
         } else {
             // recache
             Invalidator invalidator = context.runtime.getConstantInvalidator(id);
-            cache = new ConstantCache(constant, invalidator.getData(), invalidator, module.hashCode());
+            cache = new ConstantCache(constant, invalidator.getData(), invalidator, module.id);
         }
         return constant;
     }
@@ -105,7 +105,7 @@ public class ConstantLookupSite {
                 module.getConstantNoConstMissing(context, id);
         if (constant != null) {
             Invalidator invalidator = context.runtime.getConstantInvalidator(id);
-            cache = new ConstantCache(constant, invalidator.getData(), invalidator, module.hashCode());
+            cache = new ConstantCache(constant, invalidator.getData(), invalidator, module.id);
         }
         return constant;
     }
