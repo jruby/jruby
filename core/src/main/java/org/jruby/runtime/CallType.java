@@ -41,4 +41,8 @@ public enum CallType {
         }
         return VALUES[ordinal];
     }
+
+    public boolean isSelfCall() {
+        return this == FUNCTIONAL || this == VARIABLE;
+    }
 }

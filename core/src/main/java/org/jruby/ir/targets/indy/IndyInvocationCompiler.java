@@ -1,6 +1,7 @@
 package org.jruby.ir.targets.indy;
 
 import org.jruby.RubyClass;
+import org.jruby.RubySymbol;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.instructions.AsStringInstr;
 import org.jruby.ir.instructions.CallBase;
@@ -245,5 +246,14 @@ public class IndyInvocationCompiler implements InvocationCompiler {
         compiler.loadSelf();
         compiler.loadFrameName();
         compiler.adapter.invokedynamic(IndyInvocationCompiler.constructIndyCallName("callVariable", methodName), sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class), FrameNameSite.FRAME_NAME_BOOTSTRAP, file, compiler.getLastLine());
+    }
+
+    @Override
+    public void respondTo(CallBase callBase, RubySymbol id, String scopeFieldName, String file) {
+        String sig = callBase.getCallType().isSelfCall() ?
+                sig(IRubyObject.class, ThreadContext.class, IRubyObject.class) :
+                sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class);
+
+        compiler.adapter.invokedynamic(JavaNameMangler.mangleMethodName(id.idString()), sig, RespondToSite.RESPOND_TO_BOOTSTRAP, file, compiler.getLastLine());
     }
 }
