@@ -129,7 +129,7 @@ project 'JRuby Base' do
             } )
   end
 
-  plugin 'org.codehaus.mojo:buildnumber-maven-plugin:1.2' do
+  plugin 'org.codehaus.mojo:buildnumber-maven-plugin:3.2.1' do
     execute_goals( 'create',
                    :id => 'jruby-revision',
                    :phase => 'generate-sources',
@@ -244,7 +244,7 @@ project 'JRuby Base' do
   plugin( :surefire,
           'forkCount' =>  '1',
           'reuseForks' =>  'false',
-          'systemProperties' => {
+          'systemPropertyVariables' => {
             'jruby.home' =>  '${basedir}/..'
           },
           'argLine' =>  '-Xmx${jruby.test.memory} -Dfile.encoding=UTF-8 -Djava.awt.headless=true',
@@ -407,7 +407,7 @@ project 'JRuby Base' do
       file( :exists => '../build.properties' )
     end
 
-    plugin 'org.codehaus.mojo:properties-maven-plugin:1.0-alpha-2' do
+    plugin 'org.codehaus.mojo:properties-maven-plugin:1.2.1' do
       execute_goals( 'read-project-properties',
                      :id => 'properties',
                      :phase => 'initialize',
