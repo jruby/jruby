@@ -222,7 +222,6 @@ public class IRBuilder {
         }
 
         public void emitBody(IRBuilder b) {
-            b.addInstr(new LabelInstr(start));
             for (Instr i: instrs) {
                 b.addInstr(i);
             }
@@ -233,7 +232,7 @@ public class IRBuilder {
             if (savedGlobalException != null) {
                 // We need make sure on all outgoing paths in optimized short-hand rescues we restore the backtrace
                 if (!needsBacktrace) builder.addInstr(builder.manager.needsBacktrace(true));
-                builder.addInstr(new PutGlobalVarInstr(builder.symbol("$!"), savedGlobalException));
+                builder.addInstr(new RestoreErrorInfoInstr(savedGlobalException));
             }
 
             // Sometimes we process a rescue and it hits something like non-local flow like a 'next' and
@@ -2828,10 +2827,10 @@ public class IRBuilder {
         return buildEnsureInternal(ensureNode.getBodyNode(), ensureNode.getEnsureNode());
     }
 
-    public Operand buildEnsureInternal(Node ensureBodyNode, Node ensureNode) {
+    private Operand buildEnsureInternal(Node ensureBodyNode, Node ensureNode) {
         // Save $!
         final Variable savedGlobalException = createTemporaryVariable();
-        addInstr(new GetGlobalVariableInstr(savedGlobalException, symbol("$!")));
+        addInstr(new GetErrorInfoInstr(savedGlobalException));
 
         // ------------ Build the body of the ensure block ------------
         //
@@ -2847,9 +2846,7 @@ public class IRBuilder {
 
         // Record $! save var if we had a non-empty rescue node.
         // $! will be restored from it where required.
-        if (ensureBodyNode instanceof RescueNode) {
-            ebi.savedGlobalException = savedGlobalException;
-        }
+        if (ensureBodyNode instanceof RescueNode) ebi.savedGlobalException = savedGlobalException;
 
         ensureBodyBuildStack.push(ebi);
         Operand ensureRetVal = ensureNode == null ? manager.getNil() : build(ensureNode);
@@ -2894,6 +2891,8 @@ public class IRBuilder {
 
         // Now emit the ensure body's stashed instructions
         if (ensureNode != null) {
+            addInstr(new RestoreErrorInfoInstr(exc));
+            addInstr(new LabelInstr(ebi.start));
             ebi.emitBody(this);
         }
 
@@ -3938,7 +3937,7 @@ public class IRBuilder {
             addInstr(new ThreadPollInstr(true));
             // Restore $! and jump back to the entry of the rescue block
             RescueBlockInfo rbi = activeRescueBlockStack.peek();
-            addInstr(new PutGlobalVarInstr(symbol("$!"), rbi.savedExceptionVariable));
+            addInstr(new RestoreErrorInfoInstr(rbi.savedExceptionVariable));
             addInstr(new JumpInstr(rbi.entryLabel));
             // Retries effectively create a loop
             scope.setHasLoops();
@@ -3977,7 +3976,7 @@ public class IRBuilder {
                 // for non-local returns (from rescue block) we need to restore $! so it does not get carried over
                 if (!activeRescueBlockStack.isEmpty()) {
                     RescueBlockInfo rbi = activeRescueBlockStack.peek();
-                    addInstr(new PutGlobalVarInstr(symbol("$!"), rbi.savedExceptionVariable));
+                    addInstr(new RestoreErrorInfoInstr(rbi.savedExceptionVariable));
                 }
 
                 addInstr(new NonlocalReturnInstr(retVal, definedWithinMethod ? scope.getNearestMethod().getId() : "--none--"));

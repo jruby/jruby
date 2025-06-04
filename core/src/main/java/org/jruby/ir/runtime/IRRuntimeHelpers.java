@@ -31,6 +31,7 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.common.IRubyWarnings;
+import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.coverage.CoverageData;
@@ -363,7 +364,7 @@ public class IRRuntimeHelpers {
         return (excObj instanceof RaiseException) ? ((RaiseException) excObj).getException() : excObj;
     }
 
-    private static boolean isJavaExceptionHandled(ThreadContext context, IRubyObject excType, Object excObj, boolean arrayCheck) {
+    private static boolean isJavaExceptionHandled(ThreadContext context, IRubyObject excType, Object excObj) {
         if (!(excObj instanceof Throwable)) {
             return false;
         }
@@ -375,7 +376,7 @@ public class IRRuntimeHelpers {
             RubyArray testTypes = (RubyArray)excType;
             for (int i = 0, n = testTypes.getLength(); i < n; i++) {
                 IRubyObject testType = testTypes.eltInternal(i);
-                if (IRRuntimeHelpers.isJavaExceptionHandled(context, testType, ex, true)) {
+                if (isJavaExceptionHandled(context, testType, ex)) {
                     IRubyObject exception;
                     if (n == 1) {
                         exception = wrapJavaException(context, testType, ex);
@@ -383,7 +384,7 @@ public class IRRuntimeHelpers {
                         exception = Helpers.wrapJavaException(runtime, ex);
                     }
 
-                    runtime.getGlobalVariables().set("$!", exception);
+                    setErrorInfoGlobalVariable(context, exception);
                     return true;
                 }
             }
@@ -391,7 +392,7 @@ public class IRRuntimeHelpers {
         else {
             IRubyObject exception = wrapJavaException(context, excType, ex);
             if (Helpers.checkJavaException(exception, ex, excType, context)) {
-                runtime.getGlobalVariables().set("$!", exception);
+                setErrorInfoGlobalVariable(context, exception);
                 return true;
             }
         }
@@ -420,23 +421,47 @@ public class IRRuntimeHelpers {
             RubyArray testTypes = (RubyArray)excType;
             for (int i = 0, n = testTypes.getLength(); i < n; i++) {
                 IRubyObject testType = testTypes.eltInternal(i);
-                if (IRRuntimeHelpers.isRubyExceptionHandled(context, testType, excObj)) {
-                    context.runtime.getGlobalVariables().set("$!", (IRubyObject)excObj);
+                if (isRubyExceptionHandled(context, testType, excObj)) {
+                    setErrorInfoGlobalVariable(context, (IRubyObject) excObj);
                     return true;
                 }
             }
-        } else if (excObj instanceof IRubyObject) {
-            // SSS FIXME: Should this check be "runtime.getModule().isInstance(excType)"??
-            if (!(excType instanceof RubyModule)) {
-                throw context.runtime.newTypeError("class or module required for rescue clause. Found: " + excType);
-            }
-
-            if (excType.callMethod(context, "===", (IRubyObject)excObj).isTrue()) {
-                context.runtime.getGlobalVariables().set("$!", (IRubyObject)excObj);
-                return true;
-            }
+            return false;
+        }
+        if (excObj instanceof IRubyObject) {
+            return isRubyExceptionHandled(context, excType, (IRubyObject) excObj);
         }
         return false;
+    }
+
+    private static boolean isRubyExceptionHandled(ThreadContext context, IRubyObject excType, IRubyObject excObj) {
+        // SSS FIXME: Should this check be "runtime.getModule().isInstance(excType)"??
+        if (!(excType instanceof RubyModule)) {
+            throw context.runtime.newTypeError("class or module required for rescue clause. Found: " + excType);
+        }
+
+        if (((RubyModule) excType).callMethod(context, "===", excObj).isTrue()) {
+            setErrorInfoGlobalVariable(context, excObj);
+            return true;
+        }
+        return false;
+    }
+
+    @JIT
+    public static void setErrorInfoGlobalVariable(ThreadContext context, Object exception) {
+        if (exception instanceof RaiseException) {
+            exception = ((RaiseException) exception).getException();
+        } else if (exception instanceof Throwable && !(exception instanceof JumpException)) {
+            exception = Helpers.wrapJavaException(context.runtime, (Throwable) exception);
+        }
+
+        if (exception instanceof IRubyObject) {
+            setErrorInfoGlobalVariable(context, (IRubyObject) exception);
+        }
+    }
+
+    public static void setErrorInfoGlobalVariable(ThreadContext context, IRubyObject exception) {
+        context.runtime.getGlobalVariables().set("$!", exception);
     }
 
     public static IRubyObject isExceptionHandled(ThreadContext context, IRubyObject excType, Object excObj) {
@@ -448,9 +473,7 @@ public class IRRuntimeHelpers {
         // Unwrap Ruby exceptions
         excObj = unwrapRubyException(excObj);
 
-        boolean ret = IRRuntimeHelpers.isRubyExceptionHandled(context, excType, excObj)
-            || IRRuntimeHelpers.isJavaExceptionHandled(context, excType, excObj, false);
-
+        boolean ret = isRubyExceptionHandled(context, excType, excObj) || isJavaExceptionHandled(context, excType, excObj);
         return RubyBoolean.newBoolean(context, ret);
     }
 
