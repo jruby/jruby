@@ -50,6 +50,7 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 import java.lang.invoke.CallSite;
+import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -108,6 +109,77 @@ public abstract class InvokeSite extends MutableCallSite {
     public static boolean testType(RubyClass original, IRubyObject self) {
         // naive test
         return original == RubyBasicObject.getMetaClass(self);
+    }
+
+    public static ConstantCallSite wrappedKwargsInvokeSite(MethodHandles.Lookup lookup, String name, MethodType type, String kwargKeys, int closureInt, int flags, String file, int line, boolean caller, InvokeSiteBootstrap bootstrapper) {
+        String[] kwargKeysArray = kwargKeys.split(";");
+
+        int argCount = type.parameterCount();
+        boolean block = false;
+
+        argCount--; // context
+        if (caller) argCount--; // caller if present
+        argCount -= 1; // self
+        if (type.lastParameterType() == Block.class) {
+            block = true;
+            argCount--; // block
+        }
+
+        int selfArgs = caller ? 2 : 1; // caller and self
+        int argIndex = 1 + selfArgs; // context and caller and self
+        int normalArgCount = argCount - kwargKeysArray.length;
+        int kwargsIndex = argIndex + normalArgCount;
+
+        MethodType passthroughType = type
+                .dropParameterTypes(kwargsIndex, kwargsIndex + kwargKeysArray.length)
+                .insertParameterTypes(kwargsIndex, IRubyObject.class);
+
+        // folder to construct kwargs from args
+        MethodHandle foldKwargs;
+        {
+            Binder binder = Binder.from(type);
+
+            // collect kwarg values
+            binder = binder.collect(kwargsIndex, kwargKeysArray.length, IRubyObject[].class);
+
+            // drop self and caller and normal args
+            binder = binder.drop(1, selfArgs + normalArgCount);
+
+            // drop block if present
+            if (block) binder = binder.dropLast();
+
+            // insert kwarg constructor
+            binder = binder.prepend(new Helpers.KwargConstructor(kwargKeysArray));
+
+            foldKwargs = binder.invokeVirtualQuiet("constructKwargs");
+        }
+
+        InvokeSite invokeSite = bootstrapper.bootstrap(lookup, name, passthroughType, closureInt, flags, file, line);
+        InvokeSite.bootstrap(invokeSite, lookup);
+
+        // fold, permute
+        int[] permutes = new int[argIndex + normalArgCount + 1 + (block ? 1 : 0)];
+        // slide context, caller, self, normal args over
+        int i;
+        for (i = 0; i < argIndex + normalArgCount; i++) {
+            permutes[i] = i + 1;
+        }
+        // move kwargs
+        permutes[i++] = 0;
+        // drop rest except block
+        if (block) permutes[i] = permutes.length - 1;
+
+        MethodHandle wrappedSite = Binder.from(type)
+                .fold(foldKwargs)
+                .drop(1 + argIndex + normalArgCount, kwargKeysArray.length)
+                .permute(permutes)
+                .invoke(invokeSite.dynamicInvoker());
+
+        return new ConstantCallSite(wrappedSite);
+    }
+
+    public interface InvokeSiteBootstrap {
+        InvokeSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, int closureInt, int flags, String file, int line);
     }
 
     MethodHandle buildIndyHandle(CacheEntry entry) {
