@@ -217,4 +217,8 @@ class TestTimeNilOps < Test::Unit::TestCase
     assert_raise(TypeError) { Time.strptime('2020-01-01', 0) }
     assert_raise(TypeError) { Time.strptime('2020-01-01', nil) }
   end
+
+  def test_new_with_empty_keywords
+    assert_equal Time.new(2000, 3, 2), Time.new(2000, 3, 2, **{})
+  end
 end
