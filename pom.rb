@@ -145,11 +145,6 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
           extensions: true,
           publishingServerId: 'central')
 
-  plugin( :gpg, '1.6',
-          gpgArguments: [ '--pinentry-mode', 'loopback' ]) do
-    execute_goals( 'sign', id: 'sign-artifacts', phase: 'verify')
-  end
-
   plugin( :site,
           'port' =>  '9000',
           'tempWebappDirectory' =>  '${basedir}/target/site/tempdir' ) do
@@ -281,6 +276,10 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     plugin(:javadoc) do
       execute_goals('jar', :id => 'attach-javadocs')
       configuration(doclint: 'none')
+    end
+    plugin( :gpg, '1.6',
+            gpgArguments: [ '--pinentry-mode', 'loopback' ]) do
+      execute_goals( 'sign', id: 'sign-artifacts', phase: 'verify')
     end
   end
 
