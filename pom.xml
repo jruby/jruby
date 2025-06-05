@@ -9,11 +9,6 @@ DO NOT MODIFY - GENERATED CODE
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>org.sonatype.oss</groupId>
-    <artifactId>oss-parent</artifactId>
-    <version>7</version>
-  </parent>
   <groupId>org.jruby</groupId>
   <artifactId>jruby-parent</artifactId>
   <version>9.4.13.0-SNAPSHOT</version>
@@ -341,6 +336,34 @@ DO NOT MODIFY - GENERATED CODE
       </plugins>
     </pluginManagement>
     <plugins>
+      <plugin>
+        <groupId>org.sonatype.central</groupId>
+        <artifactId>central-publishing-maven-plugin</artifactId>
+        <version>0.7.0</version>
+        <extensions>true</extensions>
+        <configuration>
+          <publishingServerId>central</publishingServerId>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-gpg-plugin</artifactId>
+        <version>1.6</version>
+        <executions>
+          <execution>
+            <id>sign-artifacts</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>sign</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <gpgArguments>
+            <gpgArgument>--pinentry-mode</gpgArgument>
+            <gpgArgument>loopback</gpgArgument>
+          </gpgArguments>
+        </configuration>
+      </plugin>
       <plugin>
         <artifactId>maven-site-plugin</artifactId>
         <executions>
