@@ -346,25 +346,6 @@ DO NOT MODIFY - GENERATED CODE
         </configuration>
       </plugin>
       <plugin>
-        <artifactId>maven-gpg-plugin</artifactId>
-        <version>1.6</version>
-        <executions>
-          <execution>
-            <id>sign-artifacts</id>
-            <phase>verify</phase>
-            <goals>
-              <goal>sign</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <gpgArguments>
-            <gpgArgument>--pinentry-mode</gpgArgument>
-            <gpgArgument>loopback</gpgArgument>
-          </gpgArguments>
-        </configuration>
-      </plugin>
-      <plugin>
         <artifactId>maven-site-plugin</artifactId>
         <executions>
           <execution>
@@ -790,6 +771,25 @@ DO NOT MODIFY - GENERATED CODE
             </executions>
             <configuration>
               <doclint>none</doclint>
+            </configuration>
+          </plugin>
+          <plugin>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.6</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <gpgArguments>
+                <gpgArgument>--pinentry-mode</gpgArgument>
+                <gpgArgument>loopback</gpgArgument>
+              </gpgArguments>
             </configuration>
           </plugin>
         </plugins>
