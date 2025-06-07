@@ -1264,6 +1264,15 @@ public class JVMVisitor extends IRVisitor {
         } else if (callInstr instanceof OneFloatArgNoBlockCallInstr) {
             oneFloatArgNoBlockCallInstr((OneFloatArgNoBlockCallInstr) callInstr);
             return;
+        } else if (!callInstr.isPotentiallyRefined() && callInstr.getId().equals("respond_to?") && callInstr.getArgsCount() == 1 && callInstr.getArg1() instanceof Symbol) {
+            jvmMethod().loadContext();
+            if (callInstr.getCallType().isSelfCall()) {
+                jvmMethod().loadSelf();
+            }
+            visit(callInstr.getReceiver());
+            jvmMethod().getInvocationCompiler().respondTo(callInstr, callInstr.getName(), jvm.methodData().scopeField, file);
+            handleCallResult(jvmMethod(), callInstr.getResult());
+            return;
         }
 
         compileCallCommon(jvmMethod(), callInstr);
