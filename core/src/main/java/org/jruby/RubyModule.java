@@ -1298,7 +1298,7 @@ public class RubyModule extends RubyObject {
         // Make sure the module we include does not already exist
         checkForCyclicPrepend(context, module);
 
-        synchronized (this) {
+        synchronized (getRuntime().getHierarchyLock()) {
             if (hasModuleInPrepends(module)) {
                 invalidateCacheDescendants(context);
                 return;
@@ -1307,25 +1307,23 @@ public class RubyModule extends RubyObject {
             doPrependModule(context, module);
 
             if (this.isModule()) {
-                synchronized (getRuntime().getHierarchyLock()) {
-                    getIncludingHierarchiesForRead().forEachClass(new RubyClass.BiConsumerIgnoresSecond<RubyClass>() {
-                        boolean doPrepend = true;
+                getIncludingHierarchiesForRead().forEachClass(new RubyClass.BiConsumerIgnoresSecond<RubyClass>() {
+                    boolean doPrepend = true;
 
-                        public void accept(RubyClass includeClass) {
-                            RubyClass checkClass = includeClass;
-                            while (checkClass != null) {
-                                if (checkClass instanceof IncludedModule && checkClass.getOrigin() == module) {
-                                    doPrepend = false;
-                                }
-                                checkClass = checkClass.superClass;
+                    public void accept(RubyClass includeClass) {
+                        RubyClass checkClass = includeClass;
+                        while (checkClass != null) {
+                            if (checkClass instanceof IncludedModule && checkClass.getOrigin() == module) {
+                                doPrepend = false;
                             }
-
-                            if (doPrepend) {
-                                includeClass.doPrependModule(context, module);
-                            }
+                            checkClass = checkClass.superClass;
                         }
-                    });
-                }
+
+                        if (doPrepend) {
+                            includeClass.doPrependModule(context, module);
+                        }
+                    }
+                });
             }
 
             invalidateCacheDescendants(context);
@@ -1349,7 +1347,7 @@ public class RubyModule extends RubyObject {
      *
      * @param arg The module to include
      */
-    public synchronized void includeModule(ThreadContext context, IRubyObject arg) {
+    public void includeModule(ThreadContext context, IRubyObject arg) {
         assert arg != null;
 
         testFrozen("module");
@@ -1363,10 +1361,10 @@ public class RubyModule extends RubyObject {
         // Make sure the module we include does not already exist
         checkForCyclicInclude(context, module);
 
-        doIncludeModule(context, module);
+        synchronized (getRuntime().getHierarchyLock()) {
+            doIncludeModule(context, module);
 
-        if (this.isModule()) {
-            synchronized (getRuntime().getHierarchyLock()) {
+            if (this.isModule()) {
                 getIncludingHierarchiesForRead().forEachClass(new RubyClass.BiConsumerIgnoresSecond<RubyClass>() {
                     boolean doInclude = true;
 
@@ -1385,10 +1383,10 @@ public class RubyModule extends RubyObject {
                     }
                 });
             }
-        }
 
-        invalidateCacheDescendants(context);
-        invalidateConstantCacheForModuleInclusion(context, module);
+            invalidateCacheDescendants(context);
+            invalidateConstantCacheForModuleInclusion(context, module);
+        }
     }
 
     /**
@@ -1940,6 +1938,9 @@ public class RubyModule extends RubyObject {
     public final void addMethodInternal(ThreadContext context, String name, DynamicMethod method) {
         synchronized (getMethodLocation().getMethodsForWrite()) {
             putMethod(context, name, method);
+        }
+
+        synchronized (getRuntime().getHierarchyLock()) {
             invalidateCacheDescendants(context);
         }
     }
@@ -1970,7 +1971,9 @@ public class RubyModule extends RubyObject {
             if (method.isRefined()) {
                 methodsForWrite.put(id, new RefinedMarker(method.getImplementationClass(), method.getVisibility(), id));
             }
+        }
 
+        synchronized (getRuntime().getHierarchyLock()) {
             invalidateCacheDescendants(context);
         }
 
@@ -5694,7 +5697,9 @@ public class RubyModule extends RubyObject {
         putAlias(context, name, entry, oldName);
 
         RubyModule methodLocation = getMethodLocation();
-        methodLocation.invalidateCacheDescendants(context);
+        synchronized (context.runtime.getHierarchyLock()) {
+            methodLocation.invalidateCacheDescendants(context);
+        }
 
         return (T) this;
     }
