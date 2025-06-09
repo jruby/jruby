@@ -432,7 +432,7 @@ jobs:
       contents: read
     if: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/heads/10-dev' }}
     needs: [mvn-test, mvn-test-extended, mvn-test-windows, dependency-check, rake-test, rake-test-indy-off, rake-test, test-versions, sequel, concurrent-ruby, jruby-tests-dev, regression-specs-jit]
-    uses: jruby/jruby/.github/workflows/snapshot-publish.yml@d8369e218d4878b79d394a90483f109a2096a820
+    uses: jruby/jruby/.github/workflows/snapshot-publish.yml@7c23b095f0127be68da938831d15cfefba2711cf
     with:
       javaLevel: 21
     secrets:
