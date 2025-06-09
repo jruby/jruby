@@ -15,7 +15,7 @@ jobs:
     permissions:
       contents: read
     if: ${{ github.ref == 'refs/heads/jruby-9.4' }}
-    uses: jruby/jruby/.github/workflows/snapshot-publish.yml@7c23b095f0127be68da938831d15cfefba2711cf
+    uses: jruby/jruby/.github/workflows/snapshot-publish.yml@be3447be266437d35861b8d73cb30db4c6f4ad95
     with:
       javaLevel: 8
     secrets:
