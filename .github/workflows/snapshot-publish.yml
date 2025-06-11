@@ -33,7 +33,7 @@ jobs:
           server-username: ${{ secrets.SONATYPE_USERNAME }}
           server-password: ${{ secrets.SONATYPE_PASSWORD }}
       - name: Publish package
-        run: ./mvnw -B clean deploy -Prelease
+        run: ./mvnw -B clean deploy -Psnapshots
         env:
           MAVEN_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
