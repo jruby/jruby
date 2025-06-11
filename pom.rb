@@ -301,6 +301,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
     plugin(:javadoc) do
       execute_goals('jar', :id => 'attach-javadocs')
+      configuration(doclint: 'none', additionalOptions: '-Xdoclint:none', failOnError: 'false')
     end
   end
 

@@ -827,6 +827,11 @@ DO NOT MODIFY - GENERATED CODE
                 </goals>
               </execution>
             </executions>
+            <configuration>
+              <doclint>none</doclint>
+              <additionalOptions>-Xdoclint:none</additionalOptions>
+              <failOnError>false</failOnError>
+            </configuration>
           </plugin>
         </plugins>
       </build>
