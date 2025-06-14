@@ -30,10 +30,10 @@ jobs:
           distribution: 'zulu'
           java-version: ${{ inputs.javaLevel }}
           server-id: central
-          server-username: ${{ secrets.SONATYPE_USERNAME }}
-          server-password: ${{ secrets.SONATYPE_PASSWORD }}
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
       - name: Publish package
-        run: ./mvnw -B clean deploy -Prelease
+        run: ./mvnw -B clean deploy -Psnapshots -X
         env:
           MAVEN_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}

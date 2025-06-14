@@ -827,22 +827,17 @@ DO NOT MODIFY - GENERATED CODE
                 </goals>
               </execution>
             </executions>
+            <configuration>
+              <doclint>none</doclint>
+              <additionalOptions>-Xdoclint:none</additionalOptions>
+              <failOnError>false</failOnError>
+            </configuration>
           </plugin>
         </plugins>
       </build>
       <modules>
         <module>maven</module>
       </modules>
-      <distributionManagement>
-        <repository>
-          <id>local releases</id>
-          <url>file:${project.build.directory}/maven</url>
-        </repository>
-        <snapshotRepository>
-          <id>local snapshots</id>
-          <url>file:${project.build.directory}/maven</url>
-        </snapshotRepository>
-      </distributionManagement>
     </profile>
     <profile>
       <id>single invoker test</id>

@@ -287,11 +287,6 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
     modules [ 'maven' ]
 
-    distribution_management do
-      repository( :url => "file:${project.build.directory}/maven", :id => 'local releases' )
-      snapshot_repository( :url => "file:${project.build.directory}/maven",
-                           :id => 'local snapshots' )
-    end
     build do
       default_goal :deploy
     end
@@ -301,6 +296,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
     plugin(:javadoc) do
       execute_goals('jar', :id => 'attach-javadocs')
+      configuration(doclint: 'none', additionalOptions: '-Xdoclint:none', failOnError: 'false')
     end
   end
 
