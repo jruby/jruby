@@ -14,7 +14,7 @@ jobs:
   publish-snapshot:
     permissions:
       contents: read
-    if: ${{ github.ref == 'refs/heads/jruby-9.4' }}
+    if: ${{ github.ref == 'refs/heads/jruby-9.4' && github.repository == 'jruby/jruby' }}
     uses: jruby/jruby/.github/workflows/snapshot-publish.yml@5c281bb7db572a7ecbbb88fa7bd3e31253837291
     with:
       javaLevel: 8
