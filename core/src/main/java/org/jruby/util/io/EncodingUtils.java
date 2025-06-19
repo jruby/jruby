@@ -659,7 +659,8 @@ public class EncodingUtils {
         RubyHash optHash2 = (RubyHash)opthash;
         ecflags = econvOpts(context, opthash, ecflags);
 
-        v = optHash2.op_aref(context, Convert.asSymbol(context, "replace"));
+        RubySymbol replaceSymbol = asSymbol(context, "replace");
+        v = optHash2.op_aref(context, replaceSymbol);
         if (!v.isNil()) {
             RubyString v_str = v.convertToString();
             if (v_str.scanForCodeRange() == StringSupport.CR_BROKEN) {
@@ -667,10 +668,11 @@ public class EncodingUtils {
             }
             v = v_str.freeze(context);
             newhash = newHash(context);
-            ((RubyHash)newhash).op_aset(context, Convert.asSymbol(context, "replace"), v);
+            ((RubyHash)newhash).op_aset(context, replaceSymbol, v);
         }
 
-        v = optHash2.op_aref(context, Convert.asSymbol(context, "fallback"));
+        RubySymbol fallbackSymbol = asSymbol(context, "fallback");
+        v = optHash2.op_aref(context, fallbackSymbol);
         if (!v.isNil()) {
             IRubyObject h = TypeConverter.checkHashType(context.runtime, v);
             boolean condition;
@@ -684,7 +686,7 @@ public class EncodingUtils {
             if (condition) {
                 if (newhash.isNil()) newhash = newHash(context);
 
-                ((RubyHash)newhash).op_aset(context, Convert.asSymbol(context, "fallback"), v);
+                ((RubyHash)newhash).op_aset(context, fallbackSymbol, v);
             }
         }
 
