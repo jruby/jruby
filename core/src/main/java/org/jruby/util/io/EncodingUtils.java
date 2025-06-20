@@ -665,7 +665,7 @@ public class EncodingUtils {
             if (v_str.scanForCodeRange() == StringSupport.CR_BROKEN) {
                 throw argumentError(context, "replacement string is broken: " + v_str);
             }
-            v = v_str.freeze(context);
+            v = v_str.newFrozen();
             newhash = newHash(context);
             ((RubyHash)newhash).op_aset(context, replaceSymbol, v);
         }
