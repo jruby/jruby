@@ -455,51 +455,59 @@ public class LoadService {
             ThreadContext currentContext = runtime.getCurrentContext();
             RubyThread thread = currentContext.getThread();
 
-            RequireLock lock = pool.get(path);
-
-            // Check if lock is already there
-            if (lock == null) {
-                RequireLock newLock = new RequireLock();
-
-                // If lock is new, lock and return LOCKED
-                lock = pool.computeIfAbsent(path, (name) -> {
-                    thread.lock(newLock);
-                    return newLock;
-                });
-
-                if (lock == newLock) {
-                    // Lock is ours, run ifLocked and then clean up
-                    return executeAndClearLock(path, ifLocked, thread, lock);
-                }
-            }
-
-            if (lock.isHeldByCurrentThread()) {
-                // we hold the lock, which means we're re-locking for the same file; warn about this
-                if (circularRequireWarning && runtime.isVerbose()) {
-                    warnCircularRequire(path);
-                }
-
-                return null;
-            }
-
-            // Other thread holds the lock, wait to acquire
+            // loop until require fails for us or succeeds for another thread
             while (true) {
-                try {
-                    thread.lockInterruptibly(lock);
-                    break;
-                } catch (InterruptedException ie) {
-                    currentContext.pollThreadEvents();
+                RequireLock lock = pool.get(path);
+
+                // Check if lock is already there
+                if (lock == null) {
+                    RequireLock newLock = new RequireLock();
+
+                    // If lock is new, lock and return LOCKED
+                    lock = pool.computeIfAbsent(path, (name) -> {
+                        thread.lock(newLock);
+                        return newLock;
+                    });
+
+                    RequireState state = null;
+                    if (lock == newLock) {
+                        // Lock is ours, run ifLocked and then clean up
+                        try {
+                            return state = executeAndClearLock(path, ifLocked, thread, lock);
+                        } finally {
+                            // failed load, remove our lock and let other threads fight it out
+                            if (state == null) pool.remove(path);
+                        }
+                    }
                 }
-            }
 
-            // Lock has been acquired, confirm other thread has completed and return default
-            if (lock.destroyed) {
+                if (lock.isHeldByCurrentThread()) {
+                    // we hold the lock, which means we're re-locking for the same file; warn about this
+                    if (circularRequireWarning && runtime.isVerbose()) {
+                        warnCircularRequire(path);
+                    }
+
+                    return null;
+                }
+
+                // Other thread holds the lock, wait to acquire
+                while (true) {
+                    try {
+                        thread.lockInterruptibly(lock);
+                        break;
+                    } catch (InterruptedException ie) {
+                        currentContext.pollThreadEvents();
+                    }
+                }
+
+                // Lock has been acquired, confirm other thread has completed and return default
                 thread.unlock(lock);
-                return defaultResult;
-            }
+                if (lock.destroyed) {
+                    return defaultResult;
+                }
 
-            // Other thread failed to load, try on this thread instead
-            return executeAndClearLock(path, ifLocked, thread, lock);
+                // Other thread failed to load, try again to lock and load
+            }
         }
 
         private RequireState executeAndClearLock(String path, Function<String, RequireState> ifLocked, RubyThread thread, RequireLock lock) {
