@@ -8,7 +8,7 @@ jobs:
   publish:
     permissions:
       contents: read
-    uses: jruby/jruby/.github/workflows/snapshot-publish.yml@46678ce513443c231ce91c7782ad72b886aed5b4
+    uses: jruby/jruby/.github/workflows/snapshot-publish.yml@659a649a802bafb69c5d216f6fbc4160c749d454
     with:
       javaLevel: 8
     secrets:
