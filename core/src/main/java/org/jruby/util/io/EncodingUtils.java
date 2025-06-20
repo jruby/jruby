@@ -31,7 +31,6 @@ import org.jruby.RubyHash;
 import org.jruby.RubyIO;
 import org.jruby.RubyInteger;
 import org.jruby.RubyMethod;
-import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
@@ -659,18 +658,20 @@ public class EncodingUtils {
         RubyHash optHash2 = (RubyHash)opthash;
         ecflags = econvOpts(context, opthash, ecflags);
 
-        v = optHash2.op_aref(context, Convert.asSymbol(context, "replace"));
+        RubySymbol replaceSymbol = asSymbol(context, "replace");
+        v = optHash2.op_aref(context, replaceSymbol);
         if (!v.isNil()) {
             RubyString v_str = v.convertToString();
             if (v_str.scanForCodeRange() == StringSupport.CR_BROKEN) {
                 throw argumentError(context, "replacement string is broken: " + v_str);
             }
-            v = v_str.freeze(context);
+            v = v_str.newFrozen();
             newhash = newHash(context);
-            ((RubyHash)newhash).op_aset(context, Convert.asSymbol(context, "replace"), v);
+            ((RubyHash)newhash).op_aset(context, replaceSymbol, v);
         }
 
-        v = optHash2.op_aref(context, Convert.asSymbol(context, "fallback"));
+        RubySymbol fallbackSymbol = asSymbol(context, "fallback");
+        v = optHash2.op_aref(context, fallbackSymbol);
         if (!v.isNil()) {
             IRubyObject h = TypeConverter.checkHashType(context.runtime, v);
             boolean condition;
@@ -684,7 +685,7 @@ public class EncodingUtils {
             if (condition) {
                 if (newhash.isNil()) newhash = newHash(context);
 
-                ((RubyHash)newhash).op_aset(context, Convert.asSymbol(context, "fallback"), v);
+                ((RubyHash)newhash).op_aset(context, fallbackSymbol, v);
             }
         }
 
@@ -710,7 +711,7 @@ public class EncodingUtils {
         }
 
         v = ((RubyHash)opt).op_aref(context, Convert.asSymbol(context, "replace"));
-        if (!v.isNil() && (ecflags & EConvFlags.INVALID_REPLACE) != 0) {
+        if (!v.isNil() && (ecflags & EConvFlags.INVALID_REPLACE) == 0) {
             ecflags |= EConvFlags.UNDEF_REPLACE;
         }
 
