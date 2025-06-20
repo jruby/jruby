@@ -1836,11 +1836,6 @@ public class RubyInstanceConfig {
         int version = Integer.parseInt(specVersion);
         switch (version) {
             default:
-            case 17:
-            case 18:
-            case 19:
-            case 20:
-                return Opcodes.V17;
             case 21:
             case 22:
                 return Opcodes.V21;
