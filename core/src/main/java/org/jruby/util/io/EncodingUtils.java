@@ -712,7 +712,7 @@ public class EncodingUtils {
         }
 
         v = ((RubyHash)opt).op_aref(context, Convert.asSymbol(context, "replace"));
-        if (!v.isNil() && (ecflags & EConvFlags.INVALID_REPLACE) != 0) {
+        if (!v.isNil() && (ecflags & EConvFlags.INVALID_REPLACE) == 0) {
             ecflags |= EConvFlags.UNDEF_REPLACE;
         }
 
