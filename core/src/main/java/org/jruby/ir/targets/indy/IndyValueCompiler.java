@@ -113,7 +113,7 @@ public class IndyValueCompiler implements ValueCompiler {
     }
 
     public void buildDynamicString(Encoding encoding, int estimatedSize, boolean frozen, boolean chilled, boolean debugFrozen, String file, int line, List<DStringElement> elements) {
-        if (elements.size() > 50 || !Options.COMPILE_INVOKEDYNAMIC.load()) {
+        if (elements.size() > BuildDynamicStringSite.MAX_ELEMENTS || !Options.COMPILE_INVOKEDYNAMIC.load()) {
             normalValueCompiler.buildDynamicString(encoding, estimatedSize, frozen, chilled, debugFrozen, file, line, elements);
             return;
         }

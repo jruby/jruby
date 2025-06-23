@@ -1,0 +1,1 @@
+fails:Dir#chdir does not raise an Errno::ENOENT if the original directory no longer exists

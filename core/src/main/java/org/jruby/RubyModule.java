@@ -1999,7 +1999,7 @@ public class RubyModule extends RubyObject {
      * @return the CacheEntry corresponding to the method and this class's serial number
      */
     public CacheEntry searchWithCache(String name) {
-        return searchWithCacheAndRefinements(name, true, null);
+        return searchWithCacheAndRefinements(name, null);
     }
 
     /**
@@ -2011,26 +2011,21 @@ public class RubyModule extends RubyObject {
      * @return the method or UndefinedMethod
      */
     public CacheEntry searchWithRefinements(String name, StaticScope refinedScope) {
-        return searchWithCacheAndRefinements(name, true, refinedScope);
+        return searchWithCacheAndRefinements(name, refinedScope);
     }
 
-    /**
-     * Search through this module and supermodules for method definitions. Cache superclass definitions in this class.
-     *
-     * MRI: method_entry_get
-     *
-     * @param id The name of the method to search for
-     * @param cacheUndef Flag for caching UndefinedMethod. This should normally be true.
-     * @return The method, or UndefinedMethod if not found
-     */
+    @Deprecated
     public final CacheEntry searchWithCache(String id, boolean cacheUndef) {
         final CacheEntry entry = cacheHit(id);
-        return entry != null ? entry : searchWithCacheMiss(getRuntime(), id, cacheUndef);
+        return entry != null ? entry : searchWithCacheMiss(getRuntime(), id);
     }
 
     // MRI: method_entry_resolve_refinement
-    private CacheEntry searchWithCacheAndRefinements(String id, boolean cacheUndef, StaticScope refinedScope) {
-        CacheEntry entry = searchWithCache(id, cacheUndef);
+    private CacheEntry searchWithCacheAndRefinements(String id, StaticScope refinedScope) {
+        CacheEntry entry = cacheHit(id);
+        if (entry == null) {
+            entry = searchWithCacheMiss(getRuntime(), id);
+        }
 
         if (entry.method.isRefined()) {
             // FIXME: We walk up scopes to look for refinements, while MRI seems to copy from parent to child on push
@@ -2041,7 +2036,7 @@ public class RubyModule extends RubyObject {
 
                 if (overlay == null) continue;
 
-                CacheEntry maybeEntry = resolveRefinedMethod(overlay, entry, id, cacheUndef);
+                CacheEntry maybeEntry = resolveRefinedMethod(overlay, entry, id);
 
                 if (maybeEntry.method.isUndefined()) continue;
 
@@ -2049,15 +2044,14 @@ public class RubyModule extends RubyObject {
             }
 
             // MRI: refined_method_original_method_entry
-            return resolveRefinedMethod(null, entry, id, cacheUndef);
+            return resolveRefinedMethod(null, entry, id);
         }
 
         return entry;
     }
 
     // MRI: refined_method_original_method_entry
-    private CacheEntry refinedMethodOriginalMethodEntry(RubyModule overlay, String id,
-                                                        boolean cacheUndef, CacheEntry entry) {
+    private CacheEntry refinedMethodOriginalMethodEntry(RubyModule overlay, String id, CacheEntry entry) {
         RubyModule superClass;
 
         DynamicMethod method = entry.method;
@@ -2075,7 +2069,7 @@ public class RubyModule extends RubyObject {
             return CacheEntry.NULL_CACHE;
         } else {
             // marker with no scope available, find super method
-            return resolveRefinedMethod(overlay, superClass.searchWithCache(id, cacheUndef), id, cacheUndef);
+            return resolveRefinedMethod(overlay, superClass.searchWithCache(id), id);
         }
     }
 
@@ -2086,10 +2080,9 @@ public class RubyModule extends RubyObject {
      * MRI: method_entry_get_without_cache
      * 
      * @param id The name of the method to search for
-     * @param cacheUndef Flag for caching UndefinedMethod. This should normally be true.
      * @return The method, or UndefinedMethod if not found
      */
-    private CacheEntry searchWithCacheMiss(Ruby runtime, final String id, final boolean cacheUndef) {
+    private CacheEntry searchWithCacheMiss(Ruby runtime, final String id) {
         // we grab serial number first; the worst that will happen is we cache a later
         // update with an earlier serial number, which would just flush anyway
         final int token = generation;
@@ -2097,10 +2090,7 @@ public class RubyModule extends RubyObject {
         CacheEntry methodEntry = searchMethodEntryInner(id);
 
         if (methodEntry == null) {
-            if (cacheUndef) {
-                return addToCache(id, UndefinedMethod.getInstance(), this, token);
-            }
-            return cacheEntryFactory.newCacheEntry(id, UndefinedMethod.getInstance(), methodEntry.sourceModule, token);
+            return addToCache(id, UndefinedMethod.getInstance(), this, token);
         } else if (!runtime.isBooting()) {
             addToCache(id, methodEntry);
         }
@@ -2318,19 +2308,19 @@ public class RubyModule extends RubyObject {
     }
 
     // MRI: resolve_refined_method
-    public CacheEntry resolveRefinedMethod(RubyModule overlay, CacheEntry entry, String id, boolean cacheUndef) {
+    public CacheEntry resolveRefinedMethod(RubyModule overlay, CacheEntry entry, String id) {
         if (entry != null && entry.method.isRefined()) {
             // Check for refinements in the given scope
             RubyModule refinement = findRefinement(overlay, entry.method.getDefinedClass());
 
             if (refinement == null) {
-                return refinedMethodOriginalMethodEntry(overlay, id, cacheUndef, entry);
+                return refinedMethodOriginalMethodEntry(overlay, id, entry);
             } else {
                 CacheEntry tmpEntry = refinement.searchWithCache(id);
                 if (!tmpEntry.method.isRefined()) {
                     return tmpEntry;
                 } else {
-                    return refinedMethodOriginalMethodEntry(overlay, id, cacheUndef, entry);
+                    return refinedMethodOriginalMethodEntry(overlay, id, entry);
                 }
             }
         }
@@ -2814,7 +2804,7 @@ public class RubyModule extends RubyObject {
     private CacheEntry deepMethodSearch(ThreadContext context, String id) {
         CacheEntry orig = searchWithCache(id);
         if (orig.method.isRefined()) {
-            orig = resolveRefinedMethod(null, orig, id, true);
+            orig = resolveRefinedMethod(null, orig, id);
         }
 
         if (orig.method.isUndefined() || orig.method.isRefined()) {

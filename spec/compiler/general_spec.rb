@@ -203,6 +203,11 @@ modes.each do |mode|
       run('i = 1; a = "hello#{i + 42}"; a') {|result| expect(result).to eq("hello43") }
       # same cases in presence of refinements
       run('class NoToS; end; module AddToS; refine(NoToS){def to_s; "42"; end}; end; class TryToS; using AddToS; def self.a; "hello#{NoToS.new}"; end; end; TryToS.a') {|result| expect(result).to eq('hello42') }
+
+      # https://github.com/jruby/jruby/issues/8847
+      pid_dstr_32_times = '#{$$}' * 32
+      pid_32_times = ([$$] * 32).join('')
+      run("\"hello#{pid_dstr_32_times}\"") {|result| expect(result).to eq('hello' + pid_32_times) }
     end
 
     it "compiles calls" do

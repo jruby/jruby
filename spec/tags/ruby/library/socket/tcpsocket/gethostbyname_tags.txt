@@ -1,3 +1,5 @@
 windows:TCPSocket#gethostbyname returns the canonical name as first value
 fails:TCPSocket#gethostbyname using IPv6 the returned Array includes the IP address as the 1st value
 fails:TCPSocket#gethostbyname using IPv6 the returned Array includes the IP address as the 4th value
+fails:TCPSocket.gethostbyname using IPv6 the returned Array includes the IP address as the 1st value
+fails:TCPSocket.gethostbyname using IPv6 the returned Array includes the IP address as the 4th value
