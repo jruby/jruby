@@ -15,7 +15,9 @@ import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.RubyRational.rationalCanonicalize;
 import static org.jruby.RubyTime.TIME_SCALE;
+import static org.jruby.RubyTime.TIME_SCALE_DIGITS;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.toDouble;
 import static org.jruby.api.Convert.toInt;
@@ -126,16 +128,26 @@ public class TimeArgs {
 
         if (usecObj.isNil()) {
             if (!secondObj.isNil()) {
-                if (secondObj instanceof RubyRational rat) {
-                    if (rat.isNegativeNumber(context)) throw argumentError(context, "argument out of range.");
+                if (secondObj instanceof RubyRational subSecond) {
+                    if (subSecond.isNegativeNumber(context)) throw argumentError(context, "argument out of range.");
 
-                    RubyRational nsec = (RubyRational) rat.op_mul(context, asFixnum(context, 1_000_000_000));
+                    double subSeconds;
+                    var canon = rationalCanonicalize(context, subSecond);
+                    if (canon instanceof RubyInteger rint) {
+                        subSeconds = rint.getDoubleValue();
+                    } else {
+                        subSeconds = ((RubyRational) canon).getDoubleValue(context);
+                    }
 
-                    long fullNanos = nsec.asLong(context);
-                    long fullMillis = fullNanos / 1_000_000;
+                    if (subSeconds > 0) {
+                        float s = (long) subSeconds;
+                        subSeconds = subSeconds - s;
+                    }
 
-                    nanos = fullNanos - fullMillis * 1_000_000;
-                    millis = fullMillis % 1000;
+                    subSeconds = subSeconds * TIME_SCALE;
+
+                    millis = (long) subSeconds / 1_000_000;
+                    nanos = (long) subSeconds % 1_000_000;
                 } else {
                     double secs = toDouble(context, secondObj);
 
@@ -148,18 +160,10 @@ public class TimeArgs {
         } else if (usecObj instanceof RubyRational rat) {
             if (rat.isNegativeNumber(context)) throw argumentError(context, "argument out of range.");
 
-            // FIXME: This is wrong as numerator may not resolve to something which fits into a double
-            // I see that the rational will create something which create a denominator which will keep track
-            // of how far over we are from nano value but I do not see the right mechanism to get an appropriate
-            // double from that.
-            var val = rat.numerator(context);
-//            RubyRational nsec = (RubyRational) rat.op_mul(context, asFixnum(context, 1000));
-            long tmpNanos = (long) ((RubyNumeric) val).asDouble(context);
+            var subSeconds = rat.asDouble(context);
 
-            //long tmpNanos = (long) nsec.asDouble(context);
-
-            millis = tmpNanos / 1_000_000;
-            nanos = tmpNanos % 1_000_000;
+            millis = (long) subSeconds / 1_000_000;
+            nanos = (long) subSeconds % 1_000_000;
         } else if (usecObj instanceof RubyFloat flo) {
             if (flo.isNegativeNumber(context)) throw argumentError(context, "argument out of range.");
 
@@ -168,20 +172,12 @@ public class TimeArgs {
             millis = (long) (micros / 1000);
             nanos = (long) Math.rint((micros * 1000) % 1_000_000);
         } else {
-            int usec = parseIntArg(context, usecObj).isNil() ? 0 : toInt(context, usecObj);
+            int subSeconds = parseIntArg(context, usecObj).isNil() ? 0 : toInt(context, usecObj);
 
-            if (usec < 0 || usec >= TIME_SCALE / 1000) throw argumentError(context, "argument out of range.");
+            if (subSeconds < 0) throw argumentError(context, "argument out of range.");
 
-            int usecPart = usec % 1000;
-            int msecPart = usec / 1000;
-
-            if (usec < 0) {
-                msecPart -= 1;
-                usecPart += 1000;
-            }
-
-            nanos = 1000 * usecPart;
-            millis = msecPart;
+            millis = (long) subSeconds / 1_000_000;
+            nanos = (long) subSeconds % 1_000_000;
         }
 
         instant = chrono.millis().add(instant, millis);
@@ -196,6 +192,15 @@ public class TimeArgs {
 
         time.setDateTime(dt);
         time.setNSec(nanos);
+    }
+
+    private int numberOfDigits(int anInt) {
+        int count = 0;
+        while (anInt > 0) {
+            count++;
+            anInt <<= 10;
+        }
+        return count - 1;
     }
 
     private static int parseYear(ThreadContext context, IRubyObject _year) {
