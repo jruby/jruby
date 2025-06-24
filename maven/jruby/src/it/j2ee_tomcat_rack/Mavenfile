@@ -4,7 +4,7 @@
 packaging 'war'
 
 # get jruby dependencies
-properties( 'jruby.plugins.version' => '3.0.5',
+properties( 'jruby.plugins.version' => '3.0.6-SNAPSHOT',
             'project.build.sourceEncoding' => 'utf-8',
             'public.dir' => '${basedir}/public' )
 

@@ -62,7 +62,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'github.global.server' => 'github',
               'polyglot.dump.pom' => 'pom.xml',
               'polyglot.dump.readonly' => 'true',
-              'jruby.plugins.version' => '3.0.5',
+              'jruby.plugins.version' => '3.0.6-SNAPSHOT',
 
               # versions for default gems with bin executables
               # used in ./lib/pom.rb and ./maven/jruby-stdlib/pom.rb
