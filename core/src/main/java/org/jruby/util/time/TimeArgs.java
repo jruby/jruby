@@ -119,9 +119,6 @@ public class TimeArgs {
         instant = chrono.hours().add(instant, this.hour);
         instant = chrono.minutes().add(instant, this.minute);
 
-        IRubyObject usecObj = this.usecObj;
-        IRubyObject secondObj = this.secondObj;
-
         long millis = 0;
         long nanos = 0;
         int secondsInRational = -1;
@@ -147,8 +144,8 @@ public class TimeArgs {
 
                     if (secs < 0 || secs >= TIME_SCALE) throw argumentError(context, "argument out of range");
 
-                    millis = (int) (secs * 1000) % 1000;
-                    nanos = ((long) (secs * TIME_SCALE) % 1000000);
+                    millis = (int) (secs * 1000) % 1_000;
+                    nanos = ((long) (secs * TIME_SCALE) % 1_000_000);
                 }
             }
         } else if (usecObj instanceof RubyRational subSecond) {
@@ -162,15 +159,15 @@ public class TimeArgs {
             if (flo.isNegativeNumber(context)) throw argumentError(context, "argument out of range");
 
             double micros = flo.asDouble(context);
-            millis = (long) (micros / 1000);
-            nanos = (long) Math.rint((micros * 1000) % 1_000_000);
+            millis = (long) (micros / 1_000);
+            nanos = (long) Math.rint((micros * 1_000) % 1_000_000);
         } else {
             int subSeconds = parseIntArg(context, usecObj).isNil() ? 0 : toInt(context, usecObj);
             if (subSeconds < 0 || subSeconds >= 1_000_000) throw argumentError(context, "argument out of range");
 
             double micros = subSeconds;
-            millis = (long) (micros / 1000);
-            nanos = (long) Math.rint((micros * 1000) % 1_000_000);
+            millis = (long) (micros / 1_000);
+            nanos = (long) Math.rint((micros * 1_000) % 1_000_000);
         }
 
         // We need to know if we passed in explicit 0 for second or omitted it as a param
@@ -191,15 +188,6 @@ public class TimeArgs {
 
         time.setDateTime(dt);
         time.setNSec(nanos);
-    }
-
-    private int numberOfDigits(int anInt) {
-        int count = 0;
-        while (anInt > 0) {
-            count++;
-            anInt <<= 10;
-        }
-        return count - 1;
     }
 
     private static int parseYear(ThreadContext context, IRubyObject _year) {
