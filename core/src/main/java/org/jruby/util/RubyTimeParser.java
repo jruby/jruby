@@ -104,12 +104,18 @@ public class RubyTimeParser {
             throw argumentError(context, "no time information");
         }
         if (!subsec.isNil()) {
+            // FIXME: Our time args processing later will examine all subseconds as-if they are microseconds so
+            // this will calculate as nanoseconds and make a rational to adjust it back to microseconds.  I am
+            // not sure if time args should change or perhaps all other paths in should give subseconds in nanoseconds
             if (ndigits < TIME_SCALE_NUMDIGITS) {
                 int mul = (int) Math.pow(10, TIME_SCALE_NUMDIGITS - ndigits);
-                subsec = asFixnum(context, ((RubyInteger) subsec).asLong(context) * mul);
+                var value = ((RubyInteger) subsec).asLong(context) * mul;
+                subsec = RubyRational.newRational(context.runtime, value, 1000);
             } else if (ndigits > TIME_SCALE_NUMDIGITS) {
-                int mul = (int) Math.pow(10, ndigits - TIME_SCALE_NUMDIGITS);
+                int mul = (int) Math.pow(10, ndigits - TIME_SCALE_NUMDIGITS - 3/*1000*/);
                 subsec = RubyRational.newRational(context.runtime, ((RubyInteger) subsec).asLong(context), mul);
+            } else if (subsec instanceof RubyInteger) {
+                subsec = RubyRational.newRational(context.runtime, ((RubyInteger) subsec).asLong(context), 1000);
             }
         }
 
