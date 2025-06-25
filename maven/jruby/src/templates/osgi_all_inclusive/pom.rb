@@ -3,7 +3,7 @@ gemfile
 packaging 'bundle'
 
 # default versions will be overwritten by pom.rb from root directory
-properties( 'jruby.plugins.version' => '3.0.5',
+properties( 'jruby.plugins.version' => '3.0.6',
             'exam.version' => '3.0.3',
             'url.version' => '1.5.2',
             'logback.version' => '1.0.13',

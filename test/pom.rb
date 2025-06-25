@@ -13,7 +13,7 @@ project 'JRuby Integration Tests' do
   repository :id => :mavengems, :url => 'mavengem:http://rubygems.org'
   plugin_repository :id => :mavengems, :url => 'mavengem:http://rubygems.org'
 
-  plugin_repository( :url => 'https://oss.sonatype.org/content/repositories/snapshots/',
+  plugin_repository( :url => 'https://central.sonatype.com/repository/maven-snapshots/',
                      :id => 'sonatype' ) do
     releases 'false'
     snapshots 'true'
