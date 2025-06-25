@@ -29,12 +29,12 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
   license 'LGPL-2.1', 'http://www.gnu.org/licenses/lgpl-2.1-standalone.html'
   license 'EPL-2.0', 'http://www.eclipse.org/legal/epl-v20.html'
 
-  plugin_repository( :url => 'https://oss.sonatype.org/content/repositories/snapshots/',
+  plugin_repository( :url => 'https://central.sonatype.com/repository/maven-snapshots/',
                      :id => 'sonatype' ) do
     releases 'false'
     snapshots 'true'
   end
-  repository( :url => 'https://oss.sonatype.org/content/repositories/snapshots/',
+  repository( :url => 'https://central.sonatype.com/repository/maven-snapshots/',
               :id => 'sonatype' ) do
     releases 'false'
     snapshots 'true'

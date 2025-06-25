@@ -145,7 +145,7 @@ DO NOT MODIFY - GENERATED CODE
         <enabled>true</enabled>
       </snapshots>
       <id>sonatype</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+      <url>https://central.sonatype.com/repository/maven-snapshots/</url>
     </repository>
   </repositories>
   <pluginRepositories>
@@ -157,7 +157,7 @@ DO NOT MODIFY - GENERATED CODE
         <enabled>true</enabled>
       </snapshots>
       <id>sonatype</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+      <url>https://central.sonatype.com/repository/maven-snapshots/</url>
     </pluginRepository>
   </pluginRepositories>
   <build>
