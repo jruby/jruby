@@ -670,7 +670,7 @@ DO NOT MODIFY - GENERATED CODE
                   <executable>/bin/sh</executable>
                   <arguments>
                     <argument>-c</argument>
-                    <argument>cp ${jruby.basedir}/bin/jruby.sh ${jruby.basedir}/bin/jruby</argument>
+                    <argument>cp ${jruby.basedir}/bin/jruby.sh ${jruby.basedir}/bin/jruby ; cp ${jruby.basedir}/bin/jruby.sh ${jruby.basedir}/bin/ruby</argument>
                   </arguments>
                 </configuration>
               </execution>
@@ -760,7 +760,7 @@ DO NOT MODIFY - GENERATED CODE
                   <executable>/bin/sh</executable>
                   <arguments>
                     <argument>-c</argument>
-                    <argument>cp ${jruby.basedir}/bin/jruby.sh ${jruby.basedir}/bin/jruby</argument>
+                    <argument>cp ${jruby.basedir}/bin/jruby.sh ${jruby.basedir}/bin/jruby ; cp ${jruby.basedir}/bin/jruby.sh ${jruby.basedir}/bin/ruby</argument>
                   </arguments>
                 </configuration>
               </execution>
