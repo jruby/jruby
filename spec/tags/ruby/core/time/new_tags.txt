@@ -10,7 +10,6 @@ fails(not implemented, jruby/jruby#6161):Time.new with a timezone argument subje
 fails(only during full spec run):Time.new with a utc_offset argument raises ArgumentError if the String argument is not of the form (+|-)HH:MM
 fails:Time.new with a timezone argument returned value by #utc_to_local and #local_to_utc methods cannot have arbitrary #utc_offset if it is an instance of Time
 fails(https://github.com/jruby/jruby/issues/8736):Time.new with a timezone argument :in keyword argument allows omitting minor arguments
-fails(https://github.com/jruby/jruby/issues/8736):Time.new with a timezone argument Time.new with a String argument parses an ISO-8601 like format
 fails(https://github.com/jruby/jruby/issues/8736):Time.new with a timezone argument Time.new with a String argument accepts precision keyword argument and truncates specified digits of sub-second part
 fails(https://github.com/jruby/jruby/issues/8736):Time.new with a timezone argument Time.new with a String argument converts precision keyword argument into Integer if is not nil
 fails(https://github.com/jruby/jruby/issues/8736):Time.new with a timezone argument Time.new with a String argument raises ArgumentError if date/time parts values are not valid
@@ -18,8 +17,4 @@ fails(https://github.com/jruby/jruby/issues/8736):Time.new with a timezone argum
 fails(https://github.com/jruby/jruby/issues/8736):Time.new with a timezone argument Time.new with a String argument raises ArgumentError if string doesn't start with year
 fails(https://github.com/jruby/jruby/issues/8736):Time.new with a timezone argument Time.new with a String argument raises ArgumentError when there are leading space characters
 fails(https://github.com/jruby/jruby/issues/8736):Time.new with a timezone argument Time.new with a String argument raises ArgumentError when there are trailing whitespaces
-fails:Time.new with a timezone argument Time.new with a String argument returns Time with correct subseconds when given seconds fraction is shorted than 6 digits
-fails:Time.new with a timezone argument Time.new with a String argument returns Time with correct subseconds when given seconds fraction is milliseconds
-fails:Time.new with a timezone argument Time.new with a String argument returns Time with correct subseconds when given seconds fraction is longer that 6 digits but shorted than 9 digits
-fails:Time.new with a timezone argument Time.new with a String argument returns Time with correct subseconds when given seconds fraction is nanoseconds
 fails:Time.new with a timezone argument Time.new with a String argument returns Time with correct subseconds when given seconds fraction is longer than 9 digits
