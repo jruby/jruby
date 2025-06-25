@@ -1,7 +1,7 @@
 #-*- mode: ruby -*-
 
 # default versions will be overwritten by pom.rb from root directory
-properties( 'jruby.plugins.version' => '3.0.6-SNAPSHOT' )
+properties( 'jruby.plugins.version' => '3.0.6' )
 
 packaging :pom
 

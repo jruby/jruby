@@ -12,7 +12,7 @@ id 'org.jruby.osgi:gems-bundle', '1.0'
 packaging 'bundle'
 
 # default versions will be overwritten by pom.rb from root directory
-properties( 'jruby.plugins.version' => '3.0.6-SNAPSHOT',
+properties( 'jruby.plugins.version' => '3.0.6',
             # needed bundle plugin
             'polyglot.dump.pom' => 'pom.xml' )
 
