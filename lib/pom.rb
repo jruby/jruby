@@ -418,6 +418,8 @@ project 'JRuby Lib Setup' do
     jruby_complete = ctx.project.properties.get_property( 'jruby.complete.home' )
     FileUtils.cp( File.join( jruby_complete, 'bin', 'jruby.sh' ),
                   File.join( jruby_complete, 'bin', 'jruby' ) )
+    FileUtils.cp( File.join( jruby_complete, 'bin', 'jruby.sh' ),
+                  File.join( jruby_complete, 'bin', 'ruby' ) )
   end
 
   execute 'jrubydir', 'prepare-package' do |ctx|
