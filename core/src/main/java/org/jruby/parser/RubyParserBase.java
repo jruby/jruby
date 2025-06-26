@@ -637,7 +637,7 @@ public abstract class RubyParserBase {
 
     public void backref_error(Node node) {
         String varName = "$" + (node instanceof NthRefNode ?
-                ((NthRefNode) node).getMatchNumber() : ((BackRefNode) node).getType());
+                ((NthRefNode) node).getMatchNumber() : ""+((BackRefNode) node).getType());
         lexer.compile_error("Can't set variable " + varName + '.');
     }
 
