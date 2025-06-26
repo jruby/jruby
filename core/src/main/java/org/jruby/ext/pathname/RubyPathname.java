@@ -358,13 +358,12 @@ public class RubyPathname extends RubyObject {
 
     @JRubyMethod(name = {"unlink", "delete"})
     public IRubyObject unlink(ThreadContext context) {
-        var globalVariables = globalVariables(context);
-        IRubyObject oldExc = globalVariables.get("$!"); // Save $!
+        IRubyObject oldExc = context.getErrorInfo();
         try {
             return dirClass(context).callMethod(context, "unlink", getPath());
         } catch (RaiseException ex) {
             if (!errnoModule(context).getClass(context, "ENOTDIR").isInstance(ex.getException())) throw ex;
-            globalVariables.set("$!", oldExc); // Restore $!
+            context.setErrorInfo(oldExc); // Restore $!
             return fileClass(context).callMethod(context, "unlink", getPath());
         }
     }

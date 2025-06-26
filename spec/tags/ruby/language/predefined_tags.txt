@@ -3,22 +3,11 @@ windows:The predefined global constant ARGV contains Strings encoded in locale E
 fails:Predefined global $! in bodies without ensure should be cleared when an exception is rescued even when a non-local return is present
 fails(etc not .so/.jar):$LOAD_PATH.resolve_feature_path returns what will be loaded without actual loading, .so file
 fails:Execution variable $: default $LOAD_PATH entries until sitelibdir included have @gem_prelude_index set
-fails:Predefined global $& is read-only
 fails:Predefined global $& is read-only when aliased
 fails:Predefined global $+ is read-only when aliased
 fails:Predefined global $-0 does not call #to_str to convert the object to a String
 fails:Predefined global $-0 raises a TypeError if assigned an Integer
-fails:Predefined global $! is read-only
-fails:Predefined global $/ does not call #to_str to convert the object to a String
-fails:Predefined global $/ raises a TypeError if assigned an Integer
-fails:Predefined global $/ raises a TypeError if assigned a boolean
 fails:$LOAD_PATH.resolve_feature_path returns what will be loaded without actual loading, .rb file
-fails:Predefined global $\ raises a TypeError if assigned not String
-fails:Predefined global $, raises TypeError if assigned a non-String
-fails:Predefined global $` is read-only
 fails:Predefined global $` is read-only when aliased
-fails:Predefined global $' is read-only
 fails:Predefined global $' is read-only when aliased
-fails:Predefined global $+ is read-only
 fails:Predefined global $-0 raises a TypeError if assigned a boolean
-fails:Predefined global $\ does not call #to_str to convert the object to a String

@@ -2684,7 +2684,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             addInstr(new ThreadPollInstr(true));
             // Restore $! and jump back to the entry of the rescue block
             RescueBlockInfo rbi = activeRescueBlockStack.peek();
-            addInstr(new PutGlobalVarInstr(symbol("$!"), rbi.savedExceptionVariable));
+            addInstr(new RuntimeHelperCall(temp(), RESET_GVAR_UNDERSCORE, new Operand[] { rbi.savedExceptionVariable }));
             addInstr(new JumpInstr(rbi.entryLabel));
             // Retries effectively create a loop
             scope.setHasLoops();
@@ -2712,7 +2712,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                 // for non-local returns (from rescue block) we need to restore $! so it does not get carried over
                 if (!activeRescueBlockStack.isEmpty()) {
                     RescueBlockInfo rbi = activeRescueBlockStack.peek();
-                    addInstr(new PutGlobalVarInstr(symbol("$!"), rbi.savedExceptionVariable));
+                    addInstr(new RuntimeHelperCall(temp(), RESET_GVAR_UNDERSCORE, new Operand[] { rbi.savedExceptionVariable }));
                 }
 
                 addInstr(new NonlocalReturnInstr(retVal, definedWithinMethod ? scope.getNearestMethod().getId() : "--none--"));

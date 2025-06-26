@@ -387,7 +387,7 @@ public class IRRuntimeHelpers {
                         exception = Helpers.wrapJavaException(runtime, ex);
                     }
 
-                    globalVariables(context).set("$!", exception);
+                    context.setErrorInfo(exception);
                     return true;
                 }
             }
@@ -395,7 +395,7 @@ public class IRRuntimeHelpers {
         else {
             IRubyObject exception = wrapJavaException(context, excType, ex);
             if (Helpers.checkJavaException(exception, ex, excType, context)) {
-                globalVariables(context).set("$!", exception);
+                context.setErrorInfo(exception);
                 return true;
             }
         }
@@ -425,7 +425,7 @@ public class IRRuntimeHelpers {
             for (int i = 0, n = testTypes.getLength(); i < n; i++) {
                 IRubyObject testType = testTypes.eltInternal(i);
                 if (IRRuntimeHelpers.isRubyExceptionHandled(context, testType, excObj)) {
-                    globalVariables(context).set("$!", (IRubyObject)excObj);
+                    context.setErrorInfo((IRubyObject) excObj);
                     return true;
                 }
             }
@@ -435,7 +435,7 @@ public class IRRuntimeHelpers {
             }
 
             if (excType.callMethod(context, "===", (IRubyObject)excObj).isTrue()) {
-                globalVariables(context).set("$!", (IRubyObject)excObj);
+                context.setErrorInfo((IRubyObject) excObj);
                 return true;
             }
         }

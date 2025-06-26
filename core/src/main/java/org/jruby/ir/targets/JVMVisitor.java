@@ -2311,6 +2311,12 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void RuntimeHelperCall(RuntimeHelperCall runtimehelpercall) {
         switch (runtimehelpercall.getHelperMethod()) {
+            case RESET_GVAR_UNDERSCORE:
+                jvmMethod().loadContext();
+                visit(runtimehelpercall.getArgs()[0]);
+                jvmAdapter().invokevirtual(p(ThreadContext.class), "setErrorInfo", sig(IRubyObject.class, IRubyObject.class));
+                jvmStoreLocal(runtimehelpercall.getResult());
+                break;
             case HANDLE_PROPAGATED_BREAK:
                 jvmMethod().loadContext();
                 jvmLoadLocal(DYNAMIC_SCOPE);

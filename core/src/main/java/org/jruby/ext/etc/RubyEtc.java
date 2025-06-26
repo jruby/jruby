@@ -22,10 +22,8 @@ import jnr.posix.Group;
 import jnr.posix.POSIX;
 import jnr.posix.util.Platform;
 import org.jruby.Ruby;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyIO;
 import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.RubyStruct;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
@@ -230,8 +228,7 @@ public class RubyEtc {
         Arity.checkArgumentCount(context, args, 0, 1);
 
         POSIX posix = context.runtime.getPosix();
-        var globalVariables = globalVariables(context);
-        IRubyObject oldExc = globalVariables.get("$!"); // Save $!
+        IRubyObject oldExc = context.getErrorInfo(); // Save $!
         try {
             int uid = args.length == 0 ? posix.getuid() : toInt(context, args[0]);
             Passwd pwd = posix.getpwuid(uid);
@@ -243,7 +240,7 @@ public class RubyEtc {
             return setupPasswd(context, pwd);
         } catch (RaiseException re) {
             if (context.runtime.getNotImplementedError().isInstance(re.getException())) {
-                globalVariables.set("$!", oldExc); // Restore $!
+                context.setErrorInfo(oldExc); // Restore $!
                 return context.nil;
             }
             throw re;

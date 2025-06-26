@@ -1293,7 +1293,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         final Throwable exception = this.exitingException;
         if (exception != null) {
-            globalVariables(context).set("$!", exception instanceof RaiseException exc ?
+            context.setErrorInfo(exception instanceof RaiseException exc ?
                     exc.getException() : // Set $! in the current thread before exiting
                     JavaUtil.convertJavaToUsableRubyObject(context.runtime, exception));
             Helpers.throwException(exception);

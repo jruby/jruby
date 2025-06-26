@@ -30,7 +30,6 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
-import org.jruby.api.Access;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
@@ -1966,13 +1965,12 @@ public class RubyEnumerable {
     public static IRubyObject zipEnumNext(ThreadContext context, IRubyObject arg) {
         if (arg.isNil()) return context.nil;
 
-        var globalVariables = Access.globalVariables(context);
-        IRubyObject oldExc = globalVariables.get("$!");
+        IRubyObject oldExc = context.getErrorInfo();
         try {
             return sites(context).zip_next.call(context, arg, arg);
         } catch (RaiseException re) {
             if (re.getException().getMetaClass() == context.runtime.getStopIteration()) {
-                globalVariables.set("$!", oldExc);
+                context.setErrorInfo(oldExc);
                 return context.nil;
             }
             throw re;
