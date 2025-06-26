@@ -107,6 +107,7 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.IRBlockBody;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.MethodFactory;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -118,6 +119,7 @@ import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callsite.CacheEntry;
+import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.runtime.marshal.MarshalDumper;
 import org.jruby.runtime.marshal.MarshalLoader;
@@ -249,8 +251,8 @@ public class RubyModule extends RubyObject {
         if (fileString.isEmpty()) throw argumentError(context, "empty file name");
 
         final String symbolStr = symbol.asJavaString();
-        if (!IdUtil.isValidConstantName(symbolStr)) {
-            throw nameError(context, "autoload must be constant name", symbolStr);
+        if (!IdUtil.isValidConstantName(symbol)) {
+            throw nameError(context, "autoload must be constant name", symbol);
         }
 
         IRubyObject existingValue = fetchConstant(context, symbolStr);
@@ -1296,7 +1298,7 @@ public class RubyModule extends RubyObject {
         // Make sure the module we include does not already exist
         checkForCyclicPrepend(context, module);
 
-        synchronized (this) {
+        synchronized (getRuntime().getHierarchyLock()) {
             if (hasModuleInPrepends(module)) {
                 invalidateCacheDescendants(context);
                 return;
@@ -1305,25 +1307,23 @@ public class RubyModule extends RubyObject {
             doPrependModule(context, module);
 
             if (this.isModule()) {
-                synchronized (getRuntime().getHierarchyLock()) {
-                    getIncludingHierarchiesForRead().forEachClass(new RubyClass.BiConsumerIgnoresSecond<RubyClass>() {
-                        boolean doPrepend = true;
+                getIncludingHierarchiesForRead().forEachClass(new RubyClass.BiConsumerIgnoresSecond<RubyClass>() {
+                    boolean doPrepend = true;
 
-                        public void accept(RubyClass includeClass) {
-                            RubyClass checkClass = includeClass;
-                            while (checkClass != null) {
-                                if (checkClass instanceof IncludedModule && checkClass.getOrigin() == module) {
-                                    doPrepend = false;
-                                }
-                                checkClass = checkClass.superClass;
+                    public void accept(RubyClass includeClass) {
+                        RubyClass checkClass = includeClass;
+                        while (checkClass != null) {
+                            if (checkClass instanceof IncludedModule && checkClass.getOrigin() == module) {
+                                doPrepend = false;
                             }
-
-                            if (doPrepend) {
-                                includeClass.doPrependModule(context, module);
-                            }
+                            checkClass = checkClass.superClass;
                         }
-                    });
-                }
+
+                        if (doPrepend) {
+                            includeClass.doPrependModule(context, module);
+                        }
+                    }
+                });
             }
 
             invalidateCacheDescendants(context);
@@ -1347,7 +1347,7 @@ public class RubyModule extends RubyObject {
      *
      * @param arg The module to include
      */
-    public synchronized void includeModule(ThreadContext context, IRubyObject arg) {
+    public void includeModule(ThreadContext context, IRubyObject arg) {
         assert arg != null;
 
         testFrozen("module");
@@ -1361,10 +1361,10 @@ public class RubyModule extends RubyObject {
         // Make sure the module we include does not already exist
         checkForCyclicInclude(context, module);
 
-        doIncludeModule(context, module);
+        synchronized (getRuntime().getHierarchyLock()) {
+            doIncludeModule(context, module);
 
-        if (this.isModule()) {
-            synchronized (getRuntime().getHierarchyLock()) {
+            if (this.isModule()) {
                 getIncludingHierarchiesForRead().forEachClass(new RubyClass.BiConsumerIgnoresSecond<RubyClass>() {
                     boolean doInclude = true;
 
@@ -1383,10 +1383,10 @@ public class RubyModule extends RubyObject {
                     }
                 });
             }
-        }
 
-        invalidateCacheDescendants(context);
-        invalidateConstantCacheForModuleInclusion(context, module);
+            invalidateCacheDescendants(context);
+            invalidateConstantCacheForModuleInclusion(context, module);
+        }
     }
 
     /**
@@ -1938,6 +1938,9 @@ public class RubyModule extends RubyObject {
     public final void addMethodInternal(ThreadContext context, String name, DynamicMethod method) {
         synchronized (getMethodLocation().getMethodsForWrite()) {
             putMethod(context, name, method);
+        }
+
+        synchronized (getRuntime().getHierarchyLock()) {
             invalidateCacheDescendants(context);
         }
     }
@@ -1968,7 +1971,9 @@ public class RubyModule extends RubyObject {
             if (method.isRefined()) {
                 methodsForWrite.put(id, new RefinedMarker(method.getImplementationClass(), method.getVisibility(), id));
             }
+        }
 
+        synchronized (getRuntime().getHierarchyLock()) {
             invalidateCacheDescendants(context);
         }
 
@@ -3199,7 +3204,22 @@ public class RubyModule extends RubyObject {
 
     @Override
     public int hashCode() {
-        return id;
+        RubyClass metaClass = this.metaClass;
+
+        // may be null during boot
+        if (metaClass == null) return id;
+
+        Ruby runtime = metaClass.getClassRuntime();
+
+        if (runtime.isBooting()) return id;
+
+        ThreadContext context = runtime.getCurrentContext();
+        CachingCallSite hash = sites(context).hash;
+
+        if (hash.isBuiltin(this)) return id;
+
+        // we truncate for Java hashcode
+        return (int) hash.call(context, this, this).convertToInteger().getLongValue();
     }
 
     @JRubyMethod(name = "hash")
@@ -5024,7 +5044,7 @@ public class RubyModule extends RubyObject {
             throw nameError(context, "constant " + getName(context) + "::" + name + " not defined", name);
         }
 
-        storeConstant(context, name, entry.value, hidden, entry.getFile(), entry.getLine());
+        setConstantCommon(context, name, entry.value, hidden, false, entry.getFile(), entry.getLine());
     }
 
     @JRubyMethod(name = "refinements")
@@ -5549,7 +5569,7 @@ public class RubyModule extends RubyObject {
      * @return The result of setting the variable.
      */
     public IRubyObject setConstantQuiet(ThreadContext context, String name, IRubyObject value) {
-        return setConstantCommon(context, name, value, false, false, null, -1);
+        return setConstantCommon(context, name, value, null, false, null, -1);
     }
 
     @Deprecated(since = "10.0")
@@ -5566,7 +5586,7 @@ public class RubyModule extends RubyObject {
      * @return The result of setting the variable.
      */
     public IRubyObject setConstant(ThreadContext context, String name, IRubyObject value) {
-        return setConstantCommon(context, name, value, false, true, null, -1);
+        return setConstantCommon(context, name, value, null, true, null, -1);
     }
 
     @Deprecated(since = "10.0")
@@ -5575,7 +5595,7 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject setConstant(ThreadContext context, String name, IRubyObject value, String file, int line) {
-        return setConstantCommon(context, name, value, false, true, file, line);
+        return setConstantCommon(context, name, value, null, true, file, line);
     }
 
     @Deprecated(since = "10.0")
@@ -5593,32 +5613,41 @@ public class RubyModule extends RubyObject {
      *
      * @param name The name to assign
      * @param value The value to assign to it; if an unnamed Module, also set its basename to name
-     * @param hidden whether a constant is private (hidden).  This parameter is only for asserting it is explicitly
-     *               private.  If it is false the entry may still remain private if the constant was already private
-     *               and its value is being updated.
+     * @param hiddenObj whether a constant is private (hidden).  If null, default to public (non-hidden), or leave
+     *                  previous visibility in place.
      * @return The result of setting the variable.
      */
-    private IRubyObject setConstantCommon(ThreadContext context, String name, IRubyObject value, boolean hidden,
+    private IRubyObject setConstantCommon(ThreadContext context, String name, IRubyObject value, Boolean hiddenObj,
                                           boolean warn, String file, int line) {
         ConstantEntry oldEntry = fetchConstantEntry(context, name, true);
 
         setParentForModule(context, name, value);
 
         if (oldEntry != null) {
-            hidden |= oldEntry.hidden; // Already private constants will stay constant.
+            // preserve existing hidden value if none was given
+            boolean hidden = oldEntry.hidden;
+            if (hiddenObj != null) hidden = hiddenObj;
             boolean notAutoload = oldEntry.value != UNDEF;
-            if (notAutoload || !setAutoloadConstant(context, name, value, file, line)) {
-                if (warn && notAutoload) {
+            if (notAutoload) {
+                if (warn) {
                     warn(context, "already initialized constant " +
                             (this.equals(objectClass(context)) ? name : (this + "::" + name)));
                 }
 
                 storeConstant(context, name, value, hidden, file, line);
+            } else {
+                boolean autoloading = setAutoloadConstant(context, name, value, hidden, file, line);
+                if (autoloading) {
+                    // invoke const_added for Autoload in progress
+                    callMethod(context, "const_added", asSymbol(context, name));
+                } else {
+                    storeConstant(context, name, value, hidden, file, line);
+                }
             }
         } else {
             if (this == context.runtime.getObject() && name.equals("Ruby")) Warn.warnReservedName(context, "::Ruby", "3.5");
 
-            storeConstant(context, name, value, hidden, file, line);
+            storeConstant(context, name, value, hiddenObj == null ? false : hiddenObj, file, line);
         }
 
         invalidateConstantCache(context, name);
@@ -5668,7 +5697,9 @@ public class RubyModule extends RubyObject {
         putAlias(context, name, entry, oldName);
 
         RubyModule methodLocation = getMethodLocation();
-        methodLocation.invalidateCacheDescendants(context);
+        synchronized (context.runtime.getHierarchyLock()) {
+            methodLocation.invalidateCacheDescendants(context);
+        }
 
         return (T) this;
     }
@@ -6379,7 +6410,7 @@ public class RubyModule extends RubyObject {
         final IRubyObject value = autoload.getValue();
 
         if (value != null && value != UNDEF) {
-            storeConstant(context, name, value, false, autoload.getFile(), autoload.getLine());
+            storeConstant(context, name, value, autoload.hidden, autoload.getFile(), autoload.getLine());
             invalidateConstantCache(context, name);
         }
 
@@ -6417,11 +6448,11 @@ public class RubyModule extends RubyObject {
     /**
      * Set an Object as a defined constant in autoloading.
      */
-    private boolean setAutoloadConstant(ThreadContext context, String name, IRubyObject value, String file, int line) {
+    private boolean setAutoloadConstant(ThreadContext context, String name, IRubyObject value, boolean hidden, String file, int line) {
         final Autoload autoload = getAutoloadMap().get(name);
         if (autoload == null) return false;
 
-        boolean set = autoload.setConstant(context, value, file, line);
+        boolean set = autoload.setConstant(context, value, hidden, file, line);
         if (!set) removeAutoload(name);
         return set;
     }
@@ -6600,6 +6631,8 @@ public class RubyModule extends RubyObject {
         private volatile ThreadContext ctx;
         // An object defined for the constant while autoloading.
         private volatile IRubyObject value;
+        // Whether the autoload constant was set private
+        private boolean hidden;
         // The symbol ID for the autoload constant
         private final String symbol;
         // The Ruby string representing the path to load
@@ -6608,8 +6641,6 @@ public class RubyModule extends RubyObject {
         public int line;
 
         Autoload(String symbol, RubyString path, String file, int line) {
-            this.ctx = null;
-            this.value = null;
             this.symbol = symbol;
             this.path = path;
             this.file = file;
@@ -6622,6 +6653,10 @@ public class RubyModule extends RubyObject {
 
         public int getLine() {
             return line;
+        }
+
+        public boolean isHidden() {
+            return hidden;
         }
 
         // Returns an object for the constant if the caller is the autoloading thread.
@@ -6653,11 +6688,15 @@ public class RubyModule extends RubyObject {
         }
 
         // Update an object for the constant if the caller is the autoloading thread.
-        synchronized boolean setConstant(ThreadContext ctx, IRubyObject newValue, String file, int line) {
+        synchronized boolean setConstant(ThreadContext ctx, IRubyObject newValue, boolean hidden, String file, int line) {
             boolean isSelf = isSelf(ctx);
 
             if (isSelf) {
-                value = newValue;
+                // only update value to valid results
+                if (newValue != null && newValue != UNDEF) {
+                    value = newValue;
+                }
+                this.hidden = hidden;
                 // Note: we replace undef location with constant location as the autoload resolution is in flight.
                 this.file = file;
                 this.line = line;
@@ -6984,6 +7023,10 @@ public class RubyModule extends RubyObject {
     private static final MethodHandle testModuleMatch = Binder
             .from(boolean.class, ThreadContext.class, IRubyObject.class, int.class)
             .invokeStaticQuiet(LOOKUP, RubyModule.class, "testModuleMatch");
+
+    public static JavaSites.ModuleSites sites(ThreadContext context) {
+        return context.sites.Module;
+    }
 
     @Deprecated
     public IRubyObject const_get(IRubyObject symbol) {

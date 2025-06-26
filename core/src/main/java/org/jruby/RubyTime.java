@@ -1856,50 +1856,45 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = "initialize", optional = 8, checkArity = false, visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
-        int argc = args.length - (keywords ? 1 : 0);
+        int argc = args.length;
         IRubyObject zone = context.nil;
         IRubyObject precision = context.nil;
 
         if (keywords) {
             IRubyObject[] opts = ArgsUtil.extractKeywordArgs(context, args[args.length - 1], "in", "precision");
-            if (opts[0] != null) {
-                if (args.length > 7) throw argumentError(context, "timezone argument given as positional and keyword arguments");
-                zone = opts[0];
-            } else if (args.length > 6) {
-                zone = args[6];
-            }
 
-            if (opts[1] != null) {
-                if (!(opts[1] instanceof RubyNumeric)) {
-                    // Weird error since all numerics work at this point so why mention Integer?
-                    throw typeError(context, str(context.runtime, "no implicit conversion of ", typeAsString(opts[1]), " into Integer"));
+            if (opts != null) {
+                argc -= 1;
+
+                if (opts[0] != null) {
+                    if (argc > 6) {
+                        throw argumentError(context, "timezone argument given as positional and keyword arguments");
+                    }
+                    zone = opts[0];
                 }
-                precision = opts[1];
+
+                if (opts[1] != null) {
+                    if (!(opts[1] instanceof RubyNumeric)) {
+                        // Weird error since all numerics work at this point so why mention Integer?
+                        throw typeError(context, str(context.runtime, "no implicit conversion of ", typeAsString(opts[1]), " into Integer"));
+                    }
+                    precision = opts[1];
+                }
             }
-        } else if (args.length > 6) {
-            zone = args[6];
         }
+
+        if (argc > 6) zone = args[6];
 
         IRubyObject nil = context.nil;
 
         return switch (argc) {
             case 0 -> initializeNow(context, zone);
             case 1 -> timeInitParse(context, args[0], zone, precision);
-            case 2 -> keywords ?
-                    initialize(context, args[0], nil, nil, nil, nil, nil, precision, zone) :
-                    initialize(context, args[0], args[1], nil, nil, nil, nil, precision);
-            case 3 -> keywords ?
-                    initialize(context, args[0], args[1], nil, nil, nil, nil, precision, zone) :
-                    initialize(context, args[0], args[1], args[2], nil, nil, nil, precision);
-            case 4 -> keywords ?
-                    initialize(context, args[0], args[1], args[2], nil, nil, nil, precision, zone) :
-                    initialize(context, args[0], args[1], args[2], args[3], nil, nil, precision);
-            case 5 -> keywords ?
-                    initialize(context, args[0], args[1], args[2], args[3], nil, nil, precision, zone) :
-                    initialize(context, args[0], args[1], args[2], args[3], args[4], nil, precision);
-            case 6 -> keywords ?
-                    initialize(context, args[0], args[1], args[2], args[3], args[4], nil, precision, zone) :
-                    initialize(context, args[0], args[1], args[2], args[3], args[4], args[5], precision);
+            case 2 -> initialize(context, args[0], args[1], nil, nil, nil, nil, precision, zone);
+            case 3 -> initialize(context, args[0], args[1], args[2], nil, nil, nil, precision, zone);
+            case 4 -> initialize(context, args[0], args[1], args[2], args[3], nil, nil, precision, zone);
+            case 5 -> initialize(context, args[0], args[1], args[2], args[3], args[4], nil, precision, zone);
+            case 6 -> initialize(context, args[0], args[1], args[2], args[3], args[4], args[5], precision, zone);
             case 7 -> initialize(context, args[0], args[1], args[2], args[3], args[4], args[5], precision, zone);
             default -> throw argumentError(context, argc, 0, 7);
         };

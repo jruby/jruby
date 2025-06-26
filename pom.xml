@@ -9,11 +9,6 @@ DO NOT MODIFY - GENERATED CODE
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>org.sonatype.oss</groupId>
-    <artifactId>oss-parent</artifactId>
-    <version>7</version>
-  </parent>
   <groupId>org.jruby</groupId>
   <artifactId>jruby-parent</artifactId>
   <version>10.0.1.0-SNAPSHOT</version>
@@ -114,10 +109,10 @@ DO NOT MODIFY - GENERATED CODE
     <its.osgi>osgi*/pom.xml</its.osgi>
     <jar-dependencies.version>0.4.1</jar-dependencies.version>
     <jffi.version>1.3.13</jffi.version>
-    <joda.time.version>2.12.7</joda.time.version>
+    <joda.time.version>2.14.0</joda.time.version>
     <jruby-launcher.version>1.1.6</jruby-launcher.version>
     <jruby.basedir>${project.basedir}</jruby.basedir>
-    <jruby.plugins.version>3.0.5</jruby.plugins.version>
+    <jruby.plugins.version>3.0.6</jruby.plugins.version>
     <main.basedir>${project.basedir}</main.basedir>
     <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
     <polyglot.dump.readonly>true</polyglot.dump.readonly>
@@ -150,7 +145,7 @@ DO NOT MODIFY - GENERATED CODE
         <enabled>true</enabled>
       </snapshots>
       <id>sonatype</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+      <url>https://central.sonatype.com/repository/maven-snapshots/</url>
     </repository>
   </repositories>
   <pluginRepositories>
@@ -162,7 +157,7 @@ DO NOT MODIFY - GENERATED CODE
         <enabled>true</enabled>
       </snapshots>
       <id>sonatype</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+      <url>https://central.sonatype.com/repository/maven-snapshots/</url>
     </pluginRepository>
   </pluginRepositories>
   <build>
@@ -341,6 +336,15 @@ DO NOT MODIFY - GENERATED CODE
       </plugins>
     </pluginManagement>
     <plugins>
+      <plugin>
+        <groupId>org.sonatype.central</groupId>
+        <artifactId>central-publishing-maven-plugin</artifactId>
+        <version>0.7.0</version>
+        <extensions>true</extensions>
+        <configuration>
+          <publishingServerId>central</publishingServerId>
+        </configuration>
+      </plugin>
       <plugin>
         <artifactId>maven-site-plugin</artifactId>
         <executions>
@@ -769,6 +773,25 @@ DO NOT MODIFY - GENERATED CODE
               <doclint>none</doclint>
             </configuration>
           </plugin>
+          <plugin>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.6</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <gpgArguments>
+                <gpgArgument>--pinentry-mode</gpgArgument>
+                <gpgArgument>loopback</gpgArgument>
+              </gpgArguments>
+            </configuration>
+          </plugin>
         </plugins>
       </build>
       <modules>
@@ -804,22 +827,17 @@ DO NOT MODIFY - GENERATED CODE
                 </goals>
               </execution>
             </executions>
+            <configuration>
+              <doclint>none</doclint>
+              <additionalOptions>-Xdoclint:none</additionalOptions>
+              <failOnError>false</failOnError>
+            </configuration>
           </plugin>
         </plugins>
       </build>
       <modules>
         <module>maven</module>
       </modules>
-      <distributionManagement>
-        <repository>
-          <id>local releases</id>
-          <url>file:${project.build.directory}/maven</url>
-        </repository>
-        <snapshotRepository>
-          <id>local snapshots</id>
-          <url>file:${project.build.directory}/maven</url>
-        </snapshotRepository>
-      </distributionManagement>
     </profile>
     <profile>
       <id>single invoker test</id>

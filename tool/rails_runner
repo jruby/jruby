@@ -1,0 +1,46 @@
+#!/usr/bin/env jruby
+require 'rubygems'
+require 'fileutils'
+require 'optparse'
+
+ENV['RAILS_ENV'] = "development"
+# FIXME: -rlogger is because logger is getting loaded in CRuby but not
+# for us.  
+ENV['JRUBY_OPTS'] = "--dev -rlogger"
+
+#launcher, options, rails_version = "jruby", "", "6.1.3.2"
+launcher, options, rails_version = "jruby", "", "7.0.8.7"
+OptionParser.new do |opt|
+  opt.banner = "Usage: runner [OPTIONS]"
+  opt.separator  ""
+  opt.separator  "Options"
+  opt.on('-r', '--ruby ruby', 'which ruby you want to run') { |v| launcher = v }
+  opt.on('-o', '--options opts', 'options for ruby command') { |v| options = v }
+  opt.on('-v', '--version version', 'rails version to run') { |v| rails_version = v }
+end.parse!
+
+full_path = File.expand_path launcher
+launcher = full_path if File.exist? full_path
+
+$jruby = "#{launcher} #{options} "
+
+def jruby_command(command, *args)
+  command = "#{$jruby} -rlogger -S #{command} #{args.join(' ')}"
+  puts "$ #{command}"
+  value = system command
+  puts value
+end
+
+rails_app = 'frogger'
+
+FileUtils.rm_rf rails_app
+jruby_command("gem", "install rails --version=#{rails_version}")
+jruby_command("rails", "new", rails_app)
+Dir.chdir(rails_app) do
+  jruby_command("bundle", "update")
+  jruby_command("rails", "generate scaffold person name:string")
+  jruby_command("rake", "db:migrate")
+#  jruby_command("rails", "webpacker:install")
+  jruby_command("rails", "server")
+end
+puts "Done"

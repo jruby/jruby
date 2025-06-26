@@ -6,7 +6,6 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
   model_version '4.0.0'
   inception_year '2001'
   id 'org.jruby:jruby-parent', version
-  inherit 'org.sonatype.oss:oss-parent:7'
   packaging 'pom'
 
   description 'JRuby is the effort to recreate the Ruby (https://www.ruby-lang.org) interpreter in Java.'
@@ -30,12 +29,12 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
   license 'LGPL-2.1', 'http://www.gnu.org/licenses/lgpl-2.1-standalone.html'
   license 'EPL-2.0', 'http://www.eclipse.org/legal/epl-v20.html'
 
-  plugin_repository( :url => 'https://oss.sonatype.org/content/repositories/snapshots/',
+  plugin_repository( :url => 'https://central.sonatype.com/repository/maven-snapshots/',
                      :id => 'sonatype' ) do
     releases 'false'
     snapshots 'true'
   end
-  repository( :url => 'https://oss.sonatype.org/content/repositories/snapshots/',
+  repository( :url => 'https://central.sonatype.com/repository/maven-snapshots/',
               :id => 'sonatype' ) do
     releases 'false'
     snapshots 'true'
@@ -63,7 +62,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'github.global.server' => 'github',
               'polyglot.dump.pom' => 'pom.xml',
               'polyglot.dump.readonly' => 'true',
-              'jruby.plugins.version' => '3.0.5',
+              'jruby.plugins.version' => '3.0.6',
 
               # versions for default gems with bin executables
               # used in ./lib/pom.rb and ./maven/jruby-stdlib/pom.rb
@@ -73,7 +72,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'asm.version' => '9.7.1',
               'jar-dependencies.version' => '0.4.1',
               'jffi.version' => '1.3.13',
-              'joda.time.version' => '2.12.7' )
+              'joda.time.version' => '2.14.0' )
 
   plugin_management do
     jar( 'junit:junit:4.13.1',
@@ -141,6 +140,10 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     plugin 'org.eclipse.m2e:lifecycle-mapping:1.0.0'
     plugin :'scm-publish', '3.1.0'
   end
+  
+  plugin( 'org.sonatype.central:central-publishing-maven-plugin:0.7.0',
+          extensions: true,
+          publishingServerId: 'central')
 
   plugin( :site,
           'port' =>  '9000',
@@ -274,17 +277,16 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
       execute_goals('jar', :id => 'attach-javadocs')
       configuration(doclint: 'none')
     end
+    plugin( :gpg, '1.6',
+            gpgArguments: [ '--pinentry-mode', 'loopback' ]) do
+      execute_goals( 'sign', id: 'sign-artifacts', phase: 'verify')
+    end
   end
 
   profile 'snapshots' do
 
     modules [ 'maven' ]
 
-    distribution_management do
-      repository( :url => "file:${project.build.directory}/maven", :id => 'local releases' )
-      snapshot_repository( :url => "file:${project.build.directory}/maven",
-                           :id => 'local snapshots' )
-    end
     build do
       default_goal :deploy
     end
@@ -294,6 +296,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
     plugin(:javadoc) do
       execute_goals('jar', :id => 'attach-javadocs')
+      configuration(doclint: 'none', additionalOptions: '-Xdoclint:none', failOnError: 'false')
     end
   end
 
