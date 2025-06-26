@@ -8,6 +8,7 @@ import org.jruby.RubyTime;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.RubyTime.TIME_SCALE_DIGITS;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newString;
@@ -15,7 +16,6 @@ import static org.jruby.api.Error.argumentError;
 import static org.jruby.util.RubyStringBuilder.str;
 
 public class RubyTimeParser {
-    public static final int TIME_SCALE_NUMDIGITS = 10;
     public static final long SIZE_MAX = Long.MAX_VALUE;
 
     
@@ -84,7 +84,6 @@ public class RubyTimeParser {
                     IRubyObject invalidSecs = context.runtime.newString(new ByteList(bytes, timePart, ptr - timePart + 1, true));
                     throw argumentError(context, str(context.runtime, "subsecond expected after dot: ", invalidSecs));
                 }
-                ndigits = digits;
                 subsec = parseInt(context, false);
                 if (subsec.isNil()) break;
                 while (!isEOS() && isDigit(0)) ptr++;
@@ -105,12 +104,18 @@ public class RubyTimeParser {
             throw argumentError(context, "no time information");
         }
         if (!subsec.isNil()) {
-            if (ndigits < TIME_SCALE_NUMDIGITS) {
-                int mul = (int) Math.pow(10, TIME_SCALE_NUMDIGITS - ndigits);
-                subsec = asFixnum(context, ((RubyInteger) subsec).asLong(context) * mul);
-            } else if (ndigits > TIME_SCALE_NUMDIGITS) {
-                int mul = (int) Math.pow(10, ndigits - TIME_SCALE_NUMDIGITS);
+            // FIXME: Our time args processing later will examine all subseconds as-if they are microseconds so
+            // this will calculate as nanoseconds and make a rational to adjust it back to microseconds.  I am
+            // not sure if time args should change or perhaps all other paths in should give subseconds in nanoseconds
+            if (ndigits < TIME_SCALE_DIGITS) {
+                int mul = (int) Math.pow(10, TIME_SCALE_DIGITS - ndigits);
+                var value = ((RubyInteger) subsec).asLong(context) * mul;
+                subsec = RubyRational.newRational(context.runtime, value, 1000);
+            } else if (ndigits > TIME_SCALE_DIGITS) {
+                int mul = (int) Math.pow(10, ndigits - TIME_SCALE_DIGITS - 3/*1000*/);
                 subsec = RubyRational.newRational(context.runtime, ((RubyInteger) subsec).asLong(context), mul);
+            } else if (subsec instanceof RubyInteger) {
+                subsec = RubyRational.newRational(context.runtime, ((RubyInteger) subsec).asLong(context), 1000);
             }
         }
 
@@ -229,14 +234,13 @@ public class RubyTimeParser {
 
     private IRubyObject parseInt(ThreadContext context, boolean parseSign) {
         int sign = 1;
+        ndigits = 0;
         if (parseSign) {
             eatSpace();
             byte signByte = peek();
             if (signByte == '+') {
-                ndigits++;
                 advance();
             } else if (signByte == '-') {
-                ndigits++;
                 advance();
                 sign = -1;
             }

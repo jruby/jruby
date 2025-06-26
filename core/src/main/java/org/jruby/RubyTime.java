@@ -113,6 +113,7 @@ public class RubyTime extends RubyObject {
     private static final BigDecimal ONE_MILLION_BD = BigDecimal.valueOf(1000000);
     private static final BigDecimal ONE_BILLION_BD = BigDecimal.valueOf(1000000000);
     public static final int TIME_SCALE = 1_000_000_000;
+    public static final int TIME_SCALE_DIGITS = 9;
 
     private DateTime dt;
     private long nsec;
@@ -629,7 +630,11 @@ public class RubyTime extends RubyObject {
     public RubyTime localtime(ThreadContext context, IRubyObject arg) {
         final DateTimeZone zone = getTimeZoneFromUtcOffset(context, arg);
 
-        if (zone == null) throw invalidUTCOffset(context);
+        if (zone == null) {
+            throw invalidUTCOffset(context);
+        } else if (zone == DateTimeZone.UTC) {
+            return gmtime(context);
+        }
 
         return adjustTimeZone(context, zone, true);
     }
@@ -1780,10 +1785,8 @@ public class RubyTime extends RubyObject {
             this.zone = zone;
             dtz = DateTimeZone.UTC;
         } else {
-            dtz = getTimeZoneFromUtcOffset(context, zone);
-            if (dtz != null) {
-                this.setIsTzRelative(true);
-            } else {
+            dtz = handleUTCDateTimeZone(context, zone);
+            if (dtz == null) {
                 this.zone = findTimezone(context, zone);
                 maybeZoneObj = true;
                 dtz = DateTimeZone.UTC;
@@ -1831,6 +1834,23 @@ public class RubyTime extends RubyObject {
         }
 
         return context.nil;
+    }
+
+    private DateTimeZone handleUTCDateTimeZone(ThreadContext context, IRubyObject zone) {
+        var dtz = getTimeZoneFromUtcOffset(context, zone);
+
+        // FIXME: At some point UTC started returning "UTC" for #zone.  This is a form-fit and
+        // we need to resolve how we store info about zone and joda time vs how MRI stores the
+        // same info.
+        if (dtz != null) {
+            if (!(zone instanceof RubyString &&
+                    (zone.asJavaString().equals("Z") ||
+                            zone.asJavaString().equals("UTC") ||
+                            zone.asJavaString().equals("-00:00")))) {
+                this.setIsTzRelative(true);
+            }
+        }
+        return dtz;
     }
 
     @JRubyMethod(name = "initialize", optional = 8, checkArity = false, visibility = PRIVATE, keywords = true)
@@ -1927,10 +1947,8 @@ public class RubyTime extends RubyObject {
             this.zone = zone;
             dtz = DateTimeZone.UTC;
         } else {
-            dtz = getTimeZoneFromUtcOffset(context, zone);
-            if (dtz != null) {
-                this.setIsTzRelative(true);
-            } else {
+            dtz = handleUTCDateTimeZone(context, zone);
+            if (dtz == null) {
                 this.zone = findTimezone(context, zone);
                 maybeZoneObj = true;
                 dtz = DateTimeZone.UTC;
