@@ -1479,7 +1479,6 @@ CLASSDEF
 
   # JRUBY-2106
   def test_package_load_doesnt_set_error
-    $! = nil
     undo = javax.swing.undo
     assert_nil($!)
     assert undo
@@ -1487,11 +1486,9 @@ CLASSDEF
 
   # JRUBY-2106
   def test_top_level_package_load_doesnt_set_error
-    $! = nil
     Java::boom
     assert_nil($!)
 
-    $! = nil
     Java::Boom
     assert_nil($!)
   end
