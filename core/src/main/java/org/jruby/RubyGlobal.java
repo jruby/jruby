@@ -1009,22 +1009,10 @@ public class RubyGlobal {
         }
     }
 
-    private static class ErrorInfoGlobalVariable extends GlobalVariable {
+    private static class ErrorInfoGlobalVariable extends ReadonlyGlobalVariable {
         public ErrorInfoGlobalVariable(Ruby runtime, String name, IRubyObject value) {
             super(runtime, name, null);
-            set(value);
-        }
-
-        @Override
-        public IRubyObject set(IRubyObject value) {
-            var context = runtime.getCurrentContext();
-            if (!value.isNil() &&
-                    !exceptionClass(context).isInstance(value) &&
-                    !(JavaUtil.isJavaObject(value) && JavaUtil.unwrapJavaObject(value) instanceof Throwable)) {
-                throw typeError(context, "assigning non-exception to $!");
-            }
-
-            return context.setErrorInfo(value);
+            runtime.getCurrentContext().setErrorInfo(value);
         }
 
         @Override

@@ -8,7 +8,6 @@ fails:Predefined global $& is read-only when aliased
 fails:Predefined global $+ is read-only when aliased
 fails:Predefined global $-0 does not call #to_str to convert the object to a String
 fails:Predefined global $-0 raises a TypeError if assigned an Integer
-fails:Predefined global $! is read-only
 fails:$LOAD_PATH.resolve_feature_path returns what will be loaded without actual loading, .rb file
 fails:Predefined global $` is read-only
 fails:Predefined global $` is read-only when aliased

@@ -70,7 +70,6 @@ import static org.jruby.RubyFile.filePathConvert;
 import static org.jruby.RubyString.UTF8;
 import static org.jruby.api.Access.dirClass;
 import static org.jruby.api.Access.encodingService;
-import static org.jruby.api.Access.globalVariables;
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.asBoolean;
@@ -948,15 +947,13 @@ public class RubyDir extends RubyObject implements Closeable {
     @JRubyMethod(name = "exist?", meta = true)
     public static IRubyObject exist(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         // Capture previous exception if any.
-        var globals = globalVariables(context);
-        IRubyObject exception = globals.get("$!");
+        IRubyObject exception = context.getErrorInfo();
         RubyString path = RubyFile.get_path(context, arg);
 
         try {
             return context.runtime.newFileStat(path.asJavaString(), false).directory_p(context);
         } catch (Exception e) {
-            // Restore $!
-            globals.set("$!", exception);
+            context.setErrorInfo(exception); // Restore $!
             return context.fals;
         }
     }

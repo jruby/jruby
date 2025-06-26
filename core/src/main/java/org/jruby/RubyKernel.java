@@ -1410,7 +1410,7 @@ public class RubyKernel {
     private static final ByteList uncaught_throw_p = new ByteList(new byte[] { 'u','n','c','a','u','g','h','t',' ','t','h','r','o','w',' ','%','p' });
 
     private static IRubyObject rbThrowInternal(ThreadContext context, IRubyObject tag, IRubyObject arg) {
-        globalVariables(context).set("$!", context.nil);
+        context.setErrorInfo(context.nil);
 
         CatchThrow continuation = context.getActiveCatch(tag);
 
@@ -1651,8 +1651,7 @@ public class RubyKernel {
         if ( ! block.isGiven() ) {
             return enumeratorizeWithSize(context, recv, "loop", RubyKernel::loopSize);
         }
-        final Ruby runtime = context.runtime;
-        IRubyObject oldExc = globalVariables(context).get("$!"); // Save $!
+        IRubyObject oldExc = context.getErrorInfo();
         try {
             while (true) {
                 block.yieldSpecific(context);
@@ -1661,9 +1660,9 @@ public class RubyKernel {
             }
         }
         catch (RaiseException ex) {
-            final RubyClass StopIteration = runtime.getStopIteration();
+            final RubyClass StopIteration = context.runtime.getStopIteration();
             if ( StopIteration.isInstance(ex.getException()) ) {
-                globalVariables(context).set("$!", oldExc); // Restore $!
+                context.setErrorInfo(oldExc); // Restore $!
                 return ex.getException().callMethod("result");
             }
             else {
@@ -1989,7 +1988,7 @@ public class RubyKernel {
         System.setProperty("user.dir", runtime.getCurrentDirectory());
 
         if (nativeExec) {
-            IRubyObject oldExc = globalVariables(context).get("$!"); // Save $!
+            IRubyObject oldExc = context.getErrorInfo();
             try {
                 ShellLauncher.LaunchConfig cfg = new ShellLauncher.LaunchConfig(runtime, args, true);
 
@@ -2036,7 +2035,7 @@ public class RubyKernel {
                 // Only here because native exec could not exec (always -1)
                 nativeFailed = true;
             } catch (RaiseException e) {
-                globalVariables(context).set("$!", oldExc); // Restore $!
+                context.setErrorInfo(oldExc); // Restore $!
             } catch (Exception e) {
                 throw runtime.newErrnoENOENTError("cannot execute: " + e.getLocalizedMessage());
             }
