@@ -1042,7 +1042,7 @@ public class RubyGlobal {
         @Override
         public IRubyObject set(IRubyObject value) {
             if (!value.isNil() && ! (value instanceof RubyString)) {
-                throw typeError(value.getRuntime().getCurrentContext(), name() + " must be a String");
+                throw typeError(value.getRuntime().getCurrentContext(), "value of " + name() + " must be String");
             }
             return super.set(value);
         }
