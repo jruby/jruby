@@ -1740,7 +1740,7 @@ public abstract class RubyParserBase {
     }
 
     public enum IDType {
-        Local, Global, Instance, AttrSet, Constant, Class;
+        Local, Global, Instance, AttrSet, Constant, Class, Error;
     }
 
     public static IDType id_type(ByteList identifier) {
@@ -1763,6 +1763,8 @@ public abstract class RubyParserBase {
             }
             return AttrSet;
         }
+
+        if (last == '!' || last == '?') return Error;
 
         return Local;
     }
