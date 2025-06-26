@@ -4625,7 +4625,7 @@ public class RubyModule extends RubyObject {
         int realSize = value.getRealSize();
         int end = begin + realSize;
         int currentOffset = 0;
-        int patternIndex;
+        int patternIndex = 0;
         int index = 0;
         RubyModule mod = this;
 
@@ -4661,7 +4661,6 @@ public class RubyModule extends RubyObject {
 
             mod = (RubyModule) obj;
             currentOffset = patternIndex + pattern.getRealSize();
-            inherit = false;
         }
 
         if (mod == null) mod = this; // Bare 'Foo'
@@ -4670,7 +4669,9 @@ public class RubyModule extends RubyObject {
 
         String id = RubySymbol.newConstantSymbol(context, fullName, lastSegment).idString();
 
-        return mod.getConstantSkipAutoload(context, id, inherit, inherit) != null;
+        // index of 0 (::Foo) would naturaally happen above loop and not make it here.  This
+        // tells us we are in a chain and to not look at Object for our last lookup.
+        return mod.getConstantSkipAutoload(context, id, inherit, patternIndex == 0) != null;
     }
 
     // MRI: rb_mod_const_get
