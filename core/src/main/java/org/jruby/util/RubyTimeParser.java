@@ -8,6 +8,7 @@ import org.jruby.RubyTime;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.RubyTime.TIME_SCALE_DIGITS;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newString;
@@ -15,7 +16,6 @@ import static org.jruby.api.Error.argumentError;
 import static org.jruby.util.RubyStringBuilder.str;
 
 public class RubyTimeParser {
-    public static final int TIME_SCALE_NUMDIGITS = 9;
     public static final long SIZE_MAX = Long.MAX_VALUE;
 
     
@@ -107,12 +107,12 @@ public class RubyTimeParser {
             // FIXME: Our time args processing later will examine all subseconds as-if they are microseconds so
             // this will calculate as nanoseconds and make a rational to adjust it back to microseconds.  I am
             // not sure if time args should change or perhaps all other paths in should give subseconds in nanoseconds
-            if (ndigits < TIME_SCALE_NUMDIGITS) {
-                int mul = (int) Math.pow(10, TIME_SCALE_NUMDIGITS - ndigits);
+            if (ndigits < TIME_SCALE_DIGITS) {
+                int mul = (int) Math.pow(10, TIME_SCALE_DIGITS - ndigits);
                 var value = ((RubyInteger) subsec).asLong(context) * mul;
                 subsec = RubyRational.newRational(context.runtime, value, 1000);
-            } else if (ndigits > TIME_SCALE_NUMDIGITS) {
-                int mul = (int) Math.pow(10, ndigits - TIME_SCALE_NUMDIGITS - 3/*1000*/);
+            } else if (ndigits > TIME_SCALE_DIGITS) {
+                int mul = (int) Math.pow(10, ndigits - TIME_SCALE_DIGITS - 3/*1000*/);
                 subsec = RubyRational.newRational(context.runtime, ((RubyInteger) subsec).asLong(context), mul);
             } else if (subsec instanceof RubyInteger) {
                 subsec = RubyRational.newRational(context.runtime, ((RubyInteger) subsec).asLong(context), 1000);
