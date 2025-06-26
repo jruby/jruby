@@ -4661,6 +4661,7 @@ public class RubyModule extends RubyObject {
 
             mod = (RubyModule) obj;
             currentOffset = patternIndex + pattern.getRealSize();
+            inherit = false;
         }
 
         if (mod == null) mod = this; // Bare 'Foo'
