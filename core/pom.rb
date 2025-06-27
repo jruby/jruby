@@ -236,8 +236,6 @@ project 'JRuby Base' do
                    'filesets' => [ { 'directory' =>  '${project.build.sourceDirectory}',
                                      'includes' => [ '${Constants.java}' ] },
                                    { 'directory' =>  '${project.basedir}/..',
-                                     'includes' => [ 'bin/jruby' ] },
-                                   { 'directory' =>  '${project.basedir}/..',
                                      'includes' => [ 'lib/jni/**' ] } ],
                    'failOnError' =>  'false' )
   end
@@ -296,23 +294,6 @@ project 'JRuby Base' do
                   ])
   end
 
-  copy_goal = [:exec, :executable => '/bin/sh', :arguments => ['-c', 'cp ${jruby.basedir}/bin/jruby.sh ${jruby.basedir}/bin/jruby ; cp ${jruby.basedir}/bin/jruby.sh ${jruby.basedir}/bin/ruby']]
-
-  profile :clean do
-    activation do
-      # hack to get the os triggeer into the model
-      os = org.apache.maven.model.ActivationOS.new
-      os.family = 'unix'
-      @current.os = os
-    end
-
-    phase :clean do
-      plugin 'org.codehaus.mojo:exec-maven-plugin' do
-        execute_goals( *copy_goal )
-      end
-    end
-  end
-
   profile 'error-prone' do
     activation do
       jdk('11') # even an older (2.10.0) version of error-prone would need an adjusted setup on Java 8
@@ -345,27 +326,6 @@ project 'JRuby Base' do
                         }
                     ) )
     end
-  end
-
-  profile 'jruby.sh' do
-
-    activation do
-      file( :missing => '../bin/jruby' )
-      file( :missing => '../bin/ruby' )
-    end
-    activation do
-      # hack to get the os triggeer into the model
-      os = org.apache.maven.model.ActivationOS.new
-      os.family = 'unix'
-      @current.os = os
-    end
-
-    phase :initialize do
-      plugin 'org.codehaus.mojo:exec-maven-plugin' do
-        execute_goals *copy_goal
-      end
-    end
-
   end
 
   jni_config = [ 'unpack', { :id => 'unzip native',

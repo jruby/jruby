@@ -1438,17 +1438,6 @@ DO NOT MODIFY - GENERATED CODE
             </configuration>
           </execution>
           <execution>
-            <id>copy bin/jruby.sh to bin/jruby</id>
-            <phase>process-resources</phase>
-            <goals>
-              <goal>execute</goal>
-            </goals>
-            <configuration>
-              <taskId>copy bin/jruby.sh to bin/jruby</taskId>
-              <nativePom>pom.rb</nativePom>
-            </configuration>
-          </execution>
-          <execution>
             <id>jrubydir</id>
             <phase>prepare-package</phase>
             <goals>

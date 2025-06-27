@@ -539,12 +539,6 @@ DO NOT MODIFY - GENERATED CODE
                 <fileset>
                   <directory>${project.basedir}/..</directory>
                   <includes>
-                    <include>bin/jruby</include>
-                  </includes>
-                </fileset>
-                <fileset>
-                  <directory>${project.basedir}/..</directory>
-                  <includes>
                     <include>lib/jni/**</include>
                   </includes>
                 </fileset>
@@ -650,37 +644,6 @@ DO NOT MODIFY - GENERATED CODE
   </build>
   <profiles>
     <profile>
-      <id>clean</id>
-      <activation>
-        <os>
-          <family>unix</family>
-        </os>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <phase>clean</phase>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-                <configuration>
-                  <executable>/bin/sh</executable>
-                  <arguments>
-                    <argument>-c</argument>
-                    <argument>cp ${jruby.basedir}/bin/jruby.sh ${jruby.basedir}/bin/jruby ; cp ${jruby.basedir}/bin/jruby.sh ${jruby.basedir}/bin/ruby</argument>
-                  </arguments>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
       <id>error-prone</id>
       <activation>
         <jdk>11</jdk>
@@ -732,37 +695,6 @@ DO NOT MODIFY - GENERATED CODE
                       <version>9.4.14.0-SNAPSHOT</version>
                     </path>
                   </annotationProcessorPaths>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>jruby.sh</id>
-      <activation>
-        <os>
-          <family>unix</family>
-        </os>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <phase>initialize</phase>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-                <configuration>
-                  <executable>/bin/sh</executable>
-                  <arguments>
-                    <argument>-c</argument>
-                    <argument>cp ${jruby.basedir}/bin/jruby.sh ${jruby.basedir}/bin/jruby ; cp ${jruby.basedir}/bin/jruby.sh ${jruby.basedir}/bin/ruby</argument>
-                  </arguments>
                 </configuration>
               </execution>
             </executions>
