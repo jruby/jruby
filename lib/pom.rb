@@ -417,16 +417,6 @@ project 'JRuby Lib Setup' do
     end
   end
 
-  execute( 'copy bin/jruby.sh to bin/jruby',
-           'process-resources' ) do |ctx|
-    require 'fileutils'
-    jruby_complete = ctx.project.properties.get_property( 'jruby.complete.home' )
-    FileUtils.cp( File.join( jruby_complete, 'bin', 'jruby.sh' ),
-                  File.join( jruby_complete, 'bin', 'jruby' ) )
-    FileUtils.cp( File.join( jruby_complete, 'bin', 'jruby.sh' ),
-                  File.join( jruby_complete, 'bin', 'ruby' ) )
-  end
-
   execute 'jrubydir', 'prepare-package' do |ctx|
     require( ctx.project.basedir.to_pathname + '/../core/src/main/ruby/jruby/commands.rb' )
     JRuby::Commands.generate_dir_info( ctx.project.build.output_directory.to_pathname + '/META-INF/jruby.home' )
