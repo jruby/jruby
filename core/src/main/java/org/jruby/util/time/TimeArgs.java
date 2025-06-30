@@ -130,7 +130,7 @@ public class TimeArgs {
 
                     var numerator = subSecond.getNumerator().asLong(context);
                     var denominator = subSecond.getDenominator().asLong(context);
-                    if (numerator > denominator) {
+                    if (numerator >= denominator) {
                         secondsInRational = (int) (numerator / (double) denominator);
                         numerator = numerator % denominator;
                         subSecond = RubyRational.newRational(context.runtime, numerator, denominator);
