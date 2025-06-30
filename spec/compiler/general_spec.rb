@@ -839,7 +839,6 @@ modes.each do |mode|
 
     it "properly resets $! to nil upon normal exit from a rescue" do
       # test that $! is getting reset/cleared appropriately
-      $! = nil
       run("begin; raise; rescue; end; $!") {|result| expect(result).to be_nil }
       run("1.times { begin; raise; rescue; next; end }; $!") {|result| expect(result).to be_nil }
       run("begin; raise; rescue; begin; raise; rescue; end; $!; end") {|result| expect(result).to_not be_nil }

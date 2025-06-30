@@ -149,9 +149,6 @@ import static org.jruby.anno.FrameField.SCOPE;
 import static org.jruby.anno.FrameField.SELF;
 import static org.jruby.anno.FrameField.VISIBILITY;
 import static org.jruby.api.Access.basicObjectClass;
-import static org.jruby.api.Access.fixnumClass;
-import static org.jruby.api.Access.floatClass;
-import static org.jruby.api.Access.globalVariables;
 import static org.jruby.api.Access.instanceConfig;
 import static org.jruby.api.Access.loadService;
 import static org.jruby.api.Access.objectClass;
@@ -1827,13 +1824,13 @@ public class RubyModule extends RubyObject {
         }
 
         if (name.equals("method_missing")) {
-            IRubyObject oldExc = globalVariables(context).get("$!"); // Save $!
+            IRubyObject oldExc = context.getErrorInfo(); // Save $!
             try {
                 removeMethod(context, name);
             } catch (RaiseException t) {
                 if (!(t.getException() instanceof RubyNameError)) throw t;
 
-                globalVariables(context).set("$!", oldExc); // Restore $!
+                context.setErrorInfo(oldExc); // Restore $!
             }
             return;
         }

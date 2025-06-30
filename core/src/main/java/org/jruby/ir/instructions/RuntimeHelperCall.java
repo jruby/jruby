@@ -33,7 +33,7 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
         IS_DEFINED_BACKREF, IS_DEFINED_NTH_REF, IS_DEFINED_GLOBAL,
         IS_DEFINED_CLASS_VAR, IS_DEFINED_SUPER, IS_DEFINED_METHOD, IS_DEFINED_CALL,
         IS_DEFINED_CONSTANT_OR_METHOD, MERGE_KWARGS, IS_HASH_EMPTY, HASH_CHECK, ARRAY_LENGTH,
-        TRACE_RESCUE;
+        TRACE_RESCUE, RESET_GVAR_UNDERSCORE;
 
         private static final Methods[] VALUES = values();
 
@@ -104,6 +104,8 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
 
         // These have special operands[0] that we may not want to execute
         switch (helperMethod) {
+            case RESET_GVAR_UNDERSCORE:
+                return context.setErrorInfo((IRubyObject) operands[0].retrieve(context, self, currScope, currDynScope, temp));
             case IS_DEFINED_BACKREF:
                 return IRRuntimeHelpers.isDefinedBackref(
                         context,
