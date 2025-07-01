@@ -1703,7 +1703,7 @@ public class PopenExecutor {
         IRubyObject chdir;
         if (!optForChdir.isNil() && (chdir = ((RubyHash) optForChdir).delete(chdirSym)) != null) {
             eargp.chdirGiven = true;
-            eargp.chdir_dir = chdir.convertToString().toString();
+            eargp.chdir_dir = RubyFile.get_path(context, chdir).toString();
         }
 
         execFillarg(context, prog, argv_p[0], env_opt[0], env_opt[1], eargp);
