@@ -1,6 +1,6 @@
 # frozen_string_literal: false
 require 'win32/importer'
-require 'Win32API'
+require 'win32api'
 
 module Win32
 
