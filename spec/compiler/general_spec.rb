@@ -1566,5 +1566,16 @@ modes.each do |mode|
         BZSuper.new.z_super
       SUPER
     end
+
+    it "compiles debug chilled strings that can be modified without impacting other strings" do
+      JRuby.runtime.instance_config.debugging_frozen_string_literal = true
+      run(<<~CHILLED) {|val| expect(val).to eq("")}
+        str = ""
+        str << "hello"
+        ""
+      CHILLED
+    ensure
+      JRuby.runtime.instance_config.debugging_frozen_string_literal = false
+    end
   end
 end
