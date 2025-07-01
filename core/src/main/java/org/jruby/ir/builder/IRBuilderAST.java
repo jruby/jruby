@@ -552,7 +552,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
 
         if (keywords.hasOnlyRestKwargs()) return buildRestKeywordArgs(keywords, flags);
 
-        return buildHash(keywords);
+        return buildKwargsHash(keywords);
     }
 
     // This is very similar to buildArray but when building generic arrays we do not want to mark callinfo
@@ -2355,6 +2355,54 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             hash = copy(new Hash(args));
         } else if (!args.isEmpty()) { // ordinary hash values encountered after a **arg
             addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args), duplicateCheck}));
+        }
+
+        return hash;
+    }
+
+    public Operand buildKwargsHash(HashNode hashNode) {
+        List<KeyValuePair<Operand, Operand>> args = new ArrayList<>();
+        boolean hasAssignments = hashNode.containsVariableAssignment();
+        Variable hashVar = null;
+        Operand hash;
+        // Duplication checks happen when **{} are literals and not **h variable references.
+        Operand duplicateCheck = fals();
+
+        for (KeyValuePair<Node, Node> pair: hashNode.getPairs()) {
+            Node key = pair.getKey();
+            Operand keyOperand;
+
+            if (key == null) {                          // Splat kwarg [e.g. {**splat1, a: 1, **splat2)]
+                Node value = pair.getValue();
+
+                if (value instanceof NilNode) continue; // **nil contribute nothing to a heterogeneous hash of elements
+
+                duplicateCheck = value instanceof HashNode && ((HashNode) value).isLiteral() ? tru() : fals();
+
+                if (hashVar == null) {                     // No hash yet. Define so order is preserved.
+                    hashVar = copy(new Hash(args));
+                    args = new ArrayList<>();           // Used args but we may find more after the splat so we reset
+                } else if (!args.isEmpty()) {
+                    addInstr(new RuntimeHelperCall(hashVar, MERGE_KWARGS, new Operand[] { hashVar, new Hash(args), duplicateCheck}));
+                    args = new ArrayList<>();
+                }
+                Operand splat = buildWithOrder(value, hasAssignments);
+                addInstr(new RuntimeHelperCall(hashVar, MERGE_KWARGS, new Operand[] { hashVar, splat, duplicateCheck}));
+                continue;
+            } else {
+                keyOperand = buildWithOrder(key, hasAssignments);
+            }
+
+            args.add(new KeyValuePair<>(keyOperand, buildWithOrder(pair.getValue(), hasAssignments)));
+        }
+
+        if (hashVar == null) {           // non-**arg ordinary hash
+            hash = new Hash(args);
+        } else {
+            hash = hashVar;
+            if (!args.isEmpty()) { // ordinary hash values encountered after a **arg
+                addInstr(new RuntimeHelperCall(hashVar, MERGE_KWARGS, new Operand[] { hashVar, new Hash(args), duplicateCheck}));
+            }
         }
 
         return hash;
