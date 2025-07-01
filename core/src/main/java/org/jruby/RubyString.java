@@ -2880,7 +2880,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      *
      */
     public RubyString append(IRubyObject other, Function<IRubyObject, RubyString> convert) {
-        modifyCheck();
         if (other instanceof Appendable appendable) {
             appendable.appendIntoString(this);
         } else {
