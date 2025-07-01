@@ -170,6 +170,16 @@ is_newer() {
     [ -e "$master" ] && ! find "$@" -newer "$master" 2>/dev/null | read -r _
 }
 
+# unquote STRING
+#
+# Remove single/double quotes from beginning and end of a string
+unquote() {
+    REPLY=$1
+    case $REPLY in
+        (\"*\" | \'*\') REPLY=${REPLY#?}; REPLY=${REPLY%?} ;;
+    esac
+}
+
 # echo [STRING...]
 #
 # Dumb echo, i.e. print arguments joined by spaces with no further processing
@@ -402,6 +412,15 @@ JRUBY_HOME="${SELF_PATH%/*/*}"
 
 # ----- File paths for various options and files we'll process later ----------
 
+# Find HOME of current user if empty
+if [ -z "${HOME-}" ]; then
+    username=$(id -un)
+    case $username in
+        (*[!_[:alnum]]*) ;;
+        (*) eval HOME="~$username"; export HOME ;;
+    esac
+fi
+
 # Module options to open up packages we need to reflect
 readonly jruby_module_opts_file="$JRUBY_HOME/bin/.jruby.module_opts"
 
@@ -504,20 +523,38 @@ if $use_modules; then
 fi
 
 # ----- Detect Java version and determine available features ------------------
+
+# assume Java 8 if no release file
+java_version=1.8
+java_major=8
+
 # shellcheck source=/dev/null
 if [ -f "$JAVA_HOME/release" ]; then
-    java_version=$(. "$JAVA_HOME/release" && echo "${JAVA_VERSION-}")
+    # Get java version from JAVA_HOME/release file
+    while IFS= read -r line; do
+        case $line in
+            (\#*) continue ;;
+        esac
+
+        name=${line%%=*}
+        value=${line#*=}
+
+        case $name in
+            (JAVA_VERSION) unquote "$value" && java_version=$REPLY ;;
+            (JAVA_RELEASE_VERSION) unquote "$value" && java_runtime_version=$REPLY ;;
+        esac
+    done < "$JAVA_HOME"/release
+    unset line name value
 
     # convert version to major, considering 1.8 as 8
     case $java_version in
         1.8 | 1.8.*) java_major=8 ;;
         *)           java_major=${java_version%%.*} ;;
     esac
-else
-    # assume Java 8 if no release file
-    java_version=1.8
-    java_major=8
 fi
+
+# Default java_runtime_version to $java_version
+: "${java_runtime_version:=$java_version}"
 
 # shellcheck source=/dev/null
 if [ -f "$JRUBY_HOME/bin/.java-version" ] && . "$JRUBY_HOME/bin/.java-version" && [ "${JRUBY_MINIMUM_JAVA_VERSION-}" ]; then
@@ -527,6 +564,7 @@ else
     minimum_java_version=8
 fi
 add_log "Detected Java version: $java_version"
+add_log "Detected Java runtime version: $java_runtime_version"
 
 # Present a useful error if running a Java version lower than bin/.java-version
 if [ "$java_major" -lt "$minimum_java_version" ]; then
@@ -702,6 +740,10 @@ do
         -X*.*) append java_args -Djruby."${1#-X}" ;;
         # Match switches that take an argument
         -[CeIS])
+            if [ "$#" -eq 1 ]; then
+                echo "Error: Missing argument to $1" >&2
+                exit 2
+            fi
             append ruby_args "$1" "$2"
             shift
             ;;
@@ -803,7 +845,7 @@ if $use_modules; then
 fi
 
 # Default JVM Class Data Sharing Archive (jsa) file for JVMs that support it
-readonly jruby_jsa_file="$JRUBY_HOME/lib/jruby-java$java_version.jsa"
+readonly jruby_jsa_file="$JRUBY_HOME/lib/jruby-java$java_runtime_version.jsa"
 
 # Find JSAs for all Java versions
 assign jruby_jsa_files "$JRUBY_HOME"/lib/jruby-java*.jsa
