@@ -2387,8 +2387,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         if (this != write_io) {
             write_fptr = write_io.openFile;
 
-            boolean locked = write_fptr.lock();
             try {
+	        boolean locked = write_fptr.lock();
                 if (write_fptr != null && write_fptr.fd() != null) {
                     write_fptr.cleanup(context.runtime, true);
                 }
@@ -2399,8 +2399,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         fptr = openFile;
 
-        boolean locked = fptr.lock();
         try {
+            boolean locked = fptr.lock();
             if (fptr == null) return context.nil;
             if (fptr.fd() == null) return context.nil;
             final Ruby runtime = context.runtime;
