@@ -960,8 +960,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     public final RubyString dupAsChilled(Ruby runtime, RubyClass clazz, String file, int line) {
         if (runtime.getInstanceConfig().isDebuggingFrozenStringLiteral()) {
             shareLevel = SHARE_LEVEL_BYTELIST;
-            RubyString dup = new DebugChilledString(runtime, clazz, value, getCodeRange(), file, line + 1);
-            dup.shareLevel = SHARE_LEVEL_BYTELIST;
+            RubyString dup = new DebugChilledString(runtime, clazz, value, getCodeRange(), file, line + 1 + 1);
             dup.flags |= flags & CR_MASK;
 
             return dup;
@@ -1247,6 +1246,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
             this.file = file;
             this.line = line;
+
+            // Always set as shared bytelist, since chilled strings reuse bytelists and will eventually be immutable
+            this.shareLevel = SHARE_LEVEL_BYTELIST;
 
             chill();
         }
