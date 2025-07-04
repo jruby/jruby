@@ -1858,7 +1858,7 @@ public class RubyTime extends RubyObject {
         boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
         int argc = args.length;
         IRubyObject zone = context.nil;
-        IRubyObject precision = context.nil;
+        IRubyObject precision = asFixnum(context, 9);
 
         if (keywords) {
             IRubyObject[] opts = ArgsUtil.extractKeywordArgs(context, args[args.length - 1], "in", "precision");
@@ -1874,10 +1874,6 @@ public class RubyTime extends RubyObject {
                 }
 
                 if (opts[1] != null) {
-                    if (!(opts[1] instanceof RubyNumeric)) {
-                        // Weird error since all numerics work at this point so why mention Integer?
-                        throw typeError(context, str(context.runtime, "no implicit conversion of ", typeAsString(opts[1]), " into Integer"));
-                    }
                     precision = opts[1];
                 }
             }
@@ -1890,12 +1886,12 @@ public class RubyTime extends RubyObject {
         return switch (argc) {
             case 0 -> initializeNow(context, zone);
             case 1 -> timeInitParse(context, args[0], zone, precision);
-            case 2 -> initialize(context, args[0], args[1], nil, nil, nil, nil, precision, zone);
-            case 3 -> initialize(context, args[0], args[1], args[2], nil, nil, nil, precision, zone);
-            case 4 -> initialize(context, args[0], args[1], args[2], args[3], nil, nil, precision, zone);
-            case 5 -> initialize(context, args[0], args[1], args[2], args[3], args[4], nil, precision, zone);
-            case 6 -> initialize(context, args[0], args[1], args[2], args[3], args[4], args[5], precision, zone);
-            case 7 -> initialize(context, args[0], args[1], args[2], args[3], args[4], args[5], precision, zone);
+            case 2 -> initialize(context, args[0], args[1], nil, nil, nil, nil, nil, zone);
+            case 3 -> initialize(context, args[0], args[1], args[2], nil, nil, nil, nil, zone);
+            case 4 -> initialize(context, args[0], args[1], args[2], args[3], nil, nil, nil, zone);
+            case 5 -> initialize(context, args[0], args[1], args[2], args[3], args[4], nil, nil, zone);
+            case 6 -> initialize(context, args[0], args[1], args[2], args[3], args[4], args[5], nil, zone);
+            case 7 -> initialize(context, args[0], args[1], args[2], args[3], args[4], args[5], nil, zone);
             default -> throw argumentError(context, argc, 0, 7);
         };
     }
@@ -1903,7 +1899,7 @@ public class RubyTime extends RubyObject {
     private IRubyObject timeInitParse(ThreadContext context, IRubyObject arg, IRubyObject zone, IRubyObject precision) {
         IRubyObject strArg = arg.checkStringType();
         if (strArg.isNil()) {
-            return initialize(context, arg, context.nil, context.nil, context.nil, context.nil, context.nil, precision, zone);
+            return initialize(context, arg, context.nil, context.nil, context.nil, context.nil, context.nil, context.nil, zone);
         }
         RubyString str = (RubyString) strArg;
 

@@ -16,9 +16,6 @@ import static org.jruby.api.Error.argumentError;
 import static org.jruby.util.RubyStringBuilder.str;
 
 public class RubyTimeParser {
-    public static final long SIZE_MAX = Long.MAX_VALUE;
-
-    
     private int beg;
     private int ptr;
     private int end;
@@ -39,19 +36,20 @@ public class RubyTimeParser {
         IRubyObject year;
         IRubyObject subsec = context.nil;
         int mon = -1, mday = -1, hour = -1, min = -1, sec = -1;
-        long prec = precision.isNil() ? SIZE_MAX : toLong(context, precision);
+        long prec = precision.isNil() ? Long.MAX_VALUE : toLong(context, precision);
+        if (prec < 0) prec = Long.MAX_VALUE;
 
-        if (!isEOS() && (isSpace() || Character.isSpaceChar(bytes[end - 1]))) {
-            throw argumentError(context, str(context.runtime, "can't parse: ", str));
+        if (!isEOS() && (isSpace() || Character.isWhitespace(bytes[end - 1]))) {
+            throw argumentError(context, str(context.runtime, "can't parse: ", str.inspect()));
         }
-        year = parseInt(context, true);
-        if (year.isNil()) throw argumentError(context, str(context.runtime, "can't parse: ", str));
+        year = parseInt(context, true, Long.MAX_VALUE);
+        if (year.isNil()) throw argumentError(context, str(context.runtime, "can't parse: ", str.inspect()));
         if (ndigits < 4) {
             IRubyObject invalidYear = context.runtime.newString(new ByteList(bytes, ptr - ndigits - beg, ndigits, true));
             throw argumentError(context, str(context.runtime, "year must be 4 or more digits: ", invalidYear));
         }
         if (ptr == end) { // only year provided
-            return self.initialize(context, year, context.nil, context.nil, context.nil, context.nil, context.nil, precision, zone);
+            return self.initialize(context, year, context.nil, context.nil, context.nil, context.nil, context.nil, context.nil, zone);
         }
         do {
             if (peek() != '-') break;
@@ -75,17 +73,12 @@ public class RubyTimeParser {
             sec = expectTwoDigits(context, "sec", 60);
             if (peek() == '.') {
                 advance();
-                int digits;
-                for (digits = 0; digits < prec; digits++) {
-                    if (!isDigit(digits)) break;
-                }
-                if (digits == 0) {
-                    // FIXME: some precise mbc for garbled time string
-                    IRubyObject invalidSecs = context.runtime.newString(new ByteList(bytes, timePart, ptr - timePart + 1, true));
+                if (isEOS() || !isDigit(0)) {
+                    if (!isEOS()) advance();
+                    IRubyObject invalidSecs = context.runtime.newString(new ByteList(bytes, timePart, ptr - timePart, true));
                     throw argumentError(context, str(context.runtime, "subsecond expected after dot: ", invalidSecs));
                 }
-                subsec = parseInt(context, false);
-                if (subsec.isNil()) break;
+                subsec = parseInt(context, false, prec);
                 while (!isEOS() && isDigit(0)) ptr++;
             }
         } while (false);
@@ -112,7 +105,7 @@ public class RubyTimeParser {
                 var value = ((RubyInteger) subsec).asLong(context) * mul;
                 subsec = RubyRational.newRational(context.runtime, value, 1000);
             } else if (ndigits > TIME_SCALE_DIGITS) {
-                int mul = (int) Math.pow(10, ndigits - TIME_SCALE_DIGITS - 3/*1000*/);
+                int mul = (int) Math.pow(10, ndigits - TIME_SCALE_DIGITS + 3/*1000*/);
                 subsec = RubyRational.newRational(context.runtime, ((RubyInteger) subsec).asLong(context), mul);
             } else if (subsec instanceof RubyInteger) {
                 subsec = RubyRational.newRational(context.runtime, ((RubyInteger) subsec).asLong(context), 1000);
@@ -149,7 +142,7 @@ public class RubyTimeParser {
     }
 
     private boolean isSpace() {
-        return Character.isSpaceChar(peek());
+        return Character.isWhitespace(peek());
     }
 
     private void needColon(ThreadContext context, String label, int start) {
@@ -232,7 +225,7 @@ public class RubyTimeParser {
         return total;*/
     }
 
-    private IRubyObject parseInt(ThreadContext context, boolean parseSign) {
+    private IRubyObject parseInt(ThreadContext context, boolean parseSign, long precision) {
         int sign = 1;
         ndigits = 0;
         if (parseSign) {
@@ -247,11 +240,13 @@ public class RubyTimeParser {
         }
 
         long total = 0;
-        while (!isEOS() && isDigit(0)) {
+        while (!isEOS() && isDigit(0) && ndigits < precision) {
             total = total * 10 + (peek() - '0');
             advance();
             ndigits++;
         }
+
+        if (ndigits == 0) return context.nil;
 
         return new RubyFixnum(context.runtime, sign * total);
     }
