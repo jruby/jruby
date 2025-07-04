@@ -15,9 +15,7 @@ import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import static org.jruby.RubyRational.rationalCanonicalize;
 import static org.jruby.RubyTime.TIME_SCALE;
-import static org.jruby.RubyTime.TIME_SCALE_DIGITS;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.toDouble;
 import static org.jruby.api.Convert.toInt;
