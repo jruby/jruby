@@ -16,6 +16,8 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import org.jruby.Profile;
+import org.jruby.RubyFixnum;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.ThreadContext;
@@ -62,6 +64,48 @@ public class JavaEmbedUtilsTest {
         Ruby runtime = JavaEmbedUtils.initialize(EMPTY, config);
         String result = runtime.evalScriptlet("require 'test_me'; $result").toString();
         assertEquals(result, "uri:" + url);
+    }
+
+    class CustomProfile implements Profile {
+        private List classAllow = List.of("String", "Fixnum", "Integer", "Numeric", "Hash", "Array",
+                "Thread", "ThreadGroup", "RubyError", "StopIteration", "LoadError", "ArgumentError", "Encoding",
+                "EncodingError", "StandardError", "Exception");
+
+        @Override
+        public boolean allowBuiltin(String name) {
+            return false;
+        }
+
+        @Override
+        public boolean allowClass(String name) {
+            return classAllow.contains(name);
+        }
+
+        @Override
+        public boolean allowModule(String name) {
+            return false;
+        }
+
+        @Override
+        public boolean allowLoad(String name) {
+            return false;
+        }
+
+        @Override
+        public boolean allowRequire(String name) {
+            return false;
+        }
+    }
+
+    @Test
+    public void testRestrictedProfile() throws Exception {
+        RubyInstanceConfig config = new RubyInstanceConfig();
+        config.setDisableGems(true);
+        config.setProfile(new CustomProfile());
+
+        Ruby runtime = Ruby.newInstance(config);
+        assertEquals(20L, ((RubyFixnum) runtime.evalScriptlet("def double(a); a * 2; end; double(10)")).getValue());
+        //Ruby runtime = JavaEmbedUtils.initialize(EMPTY, config);
     }
 
     @Test
