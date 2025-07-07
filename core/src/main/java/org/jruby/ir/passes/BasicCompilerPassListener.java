@@ -11,6 +11,8 @@ import org.jruby.util.log.LoggerFactory;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.util.Objects.requireNonNull;
+
 public class BasicCompilerPassListener implements CompilerPassListener {
     private static final Logger LOG = LoggerFactory.getLogger(BasicCompilerPassListener.class);
 
@@ -31,16 +33,11 @@ public class BasicCompilerPassListener implements CompilerPassListener {
         Long startTime = times.get(pass);
         long timeTaken = startTime != null ? System.currentTimeMillis() - startTime.longValue() : -1;
 
-        CFG c = fic.getCFG();
+        CFG c = requireNonNull(fic.getCFG());
 
-        if (c != null) {
-            LOG.info("\nGraph:\n" + c.toStringGraph());
-            LOG.info("\nInstructions[" + getScopeUUID(fic.getScope()) + "," + fic.getScope().getClass().getSimpleName() + "," +
-                    pass.getClass().getSimpleName() + "]:\n" + c.toStringInstrs() + "\n:Instructions");
-        } else {
-            LOG.info("\n  instrs:\n" + fic.toStringInstrs());
-        }
-
+        LOG.info("\nGraph:\n" + c.toStringGraph());
+        LOG.info("\nInstructions[" + getScopeUUID(fic.getScope()) + "," + fic.getScope().getClass().getSimpleName() + "," +
+                pass.getClass().getSimpleName() + "]:\n" + c.toStringInstrs() + "\n:Instructions");
 
         if (startTime > 0) {
             LOG.info("Finished " + pass.getLabel() + " on scope in " + timeTaken + "ms.");

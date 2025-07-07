@@ -55,6 +55,7 @@ import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.BiConsumer;
 
 import static org.jruby.RubyString.encodeBytelist;
 import static org.jruby.RubyString.newBinaryString;
@@ -1850,31 +1851,27 @@ public class EncodingUtils {
     public static void rbEncSetDefaultExternal(ThreadContext context, IRubyObject encoding) {
         if (encoding.isNil()) throw argumentError(context, "default external can not be nil");
 
-        Encoding[] enc_p = {context.runtime.getDefaultExternalEncoding()};
-        encSetDefaultEncoding(context, enc_p, encoding, "external");
-        context.runtime.setDefaultExternalEncoding(enc_p[0]);
+        encSetDefaultEncoding(context, context.runtime.getDefaultExternalEncoding(), encoding, "external", (ctx, enc) -> ctx.runtime.setDefaultExternalEncoding(enc));
     }
 
     // rb_enc_set_default_internal
     public static void rbEncSetDefaultInternal(ThreadContext context, IRubyObject encoding) {
-        Encoding[] enc_p = {context.runtime.getDefaultInternalEncoding()};
-        encSetDefaultEncoding(context, enc_p, encoding, "internal");
-        context.runtime.setDefaultInternalEncoding(enc_p[0]);
+        encSetDefaultEncoding(context, context.runtime.getDefaultInternalEncoding(), encoding, "internal", (ctx, enc) -> ctx.runtime.setDefaultInternalEncoding(enc));
     }
 
     // enc_set_default_encoding
-    public static boolean encSetDefaultEncoding(ThreadContext context, Encoding[] def_p, IRubyObject encoding, String name) {
+    static boolean encSetDefaultEncoding(ThreadContext context, Encoding defaultEncoding, IRubyObject encoding, String name, BiConsumer<ThreadContext, Encoding> setter) {
         boolean overridden = false;
 
-        if (def_p != null) {
+        if (defaultEncoding != null) {
             overridden = true;
         }
 
         if (encoding.isNil()) {
-            def_p[0] = null;
+            setter.accept(context, null);
             // don't set back into encoding table since it defers to us
         } else {
-            def_p[0] = rbToEncoding(context, encoding);
+            setter.accept(context, rbToEncoding(context, encoding));
             // don't set back into encoding table since it defers to us
         }
 
