@@ -2290,7 +2290,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             ChannelFD fd = orig.fd().dup();
             fptr.setFD(fd);
             long pos = orig.tell(context);
-            if (pos == -1)
+            if (0 <= pos)
                 fptr.seek(context, pos, PosixShim.SEEK_SET);
         } finally {
             if (locked2) fptr.unlock();
