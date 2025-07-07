@@ -128,7 +128,7 @@ public class IndyValueCompiler implements ValueCompiler {
             switch (elt.type()) {
                 case STRING:
                     StringLiteral str = (StringLiteral) elt.value();
-                    descriptor |= (1 << bit);
+                    descriptor = setBit(descriptor, bit);
                     bootstrapArgs.add(RubyEncoding.decodeRaw(str.getByteList()));
                     bootstrapArgs.add(str.getByteList().getEncoding().toString());
                     bootstrapArgs.add(str.getCodeRange());
@@ -148,6 +148,10 @@ public class IndyValueCompiler implements ValueCompiler {
         bootstrapArgs.add(bit);
 
         compiler.adapter.invokedynamic("buildDynamicString", sig(RubyString.class, params(ThreadContext.class, IRubyObject.class, otherCount)), BuildDynamicStringSite.BUILD_DSTRING_BOOTSTRAP, bootstrapArgs.toArray());
+    }
+
+    private static long setBit(long descriptor, int bit) {
+        return descriptor | (1L << bit);
     }
 
     public void pushByteList(ByteList bl) {
