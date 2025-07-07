@@ -56,6 +56,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static java.util.Objects.requireNonNull;
 import static org.jruby.RubyString.encodeBytelist;
 import static org.jruby.RubyString.newBinaryString;
 import static org.jruby.RubyString.newEmptyString;
@@ -1863,8 +1864,10 @@ public class EncodingUtils {
     }
 
     // enc_set_default_encoding
-    public static boolean encSetDefaultEncoding(ThreadContext context, Encoding[] def_p, IRubyObject encoding, String name) {
+    static boolean encSetDefaultEncoding(ThreadContext context, Encoding[] def_p, IRubyObject encoding, String name) {
         boolean overridden = false;
+
+        def_p = requireNonNull(def_p);
 
         if (def_p != null) {
             overridden = true;
