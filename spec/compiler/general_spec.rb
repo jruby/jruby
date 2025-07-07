@@ -320,7 +320,7 @@ modes.each do |mode|
         }
         arr << x
         arr
-        EOS
+      EOS
       run(blocks_code) {|result| expect(result).to eq([1,2,3,4,5,6]) }
     end
 
@@ -335,7 +335,7 @@ modes.each do |mode|
           yield
         end
         foo { 1 }
-        EOS
+      EOS
       run(yield_in_block) {|result| expect(result).to eq 1}
 
       yield_in_proc = <<-EOS
@@ -344,7 +344,7 @@ modes.each do |mode|
         end
         p = foo { 1 }
         p.call
-        EOS
+      EOS
       run(yield_in_proc) {|result| expect(result).to eq 1 }
     end
 
@@ -376,7 +376,7 @@ modes.each do |mode|
           end
         end
         CompiledClass1.new.foo
-        EOS
+      EOS
       run(class_string) {|result| expect(result).to eq 'cc1' }
     end
 
