@@ -1577,5 +1577,11 @@ modes.each do |mode|
     ensure
       JRuby.runtime.instance_config.debugging_frozen_string_literal = false
     end
+
+    it "compiles very long dynamic strings" do
+      run('"a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}"') do
+        expect(it).to eq("a#{$$}" * 24)
+      end
+    end
   end
 end
