@@ -593,7 +593,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>strscan</artifactId>
-      <version>3.1.2</version>
+      <version>3.1.5</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1161,7 +1161,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/shellwords-0.2.2*</include>
           <include>specifications/singleton-0.3.0*</include>
           <include>specifications/stringio-3.1.5*</include>
-          <include>specifications/strscan-3.1.2*</include>
+          <include>specifications/strscan-3.1.5*</include>
           <include>specifications/subspawn-0.1.1*</include>
           <include>specifications/subspawn-posix-0.1.1*</include>
           <include>specifications/ffi-binary-libfixposix-0.5.1.1*</include>
@@ -1243,7 +1243,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/shellwords-0.2.2*/**/*</include>
           <include>gems/singleton-0.3.0*/**/*</include>
           <include>gems/stringio-3.1.5*/**/*</include>
-          <include>gems/strscan-3.1.2*/**/*</include>
+          <include>gems/strscan-3.1.5*/**/*</include>
           <include>gems/subspawn-0.1.1*/**/*</include>
           <include>gems/subspawn-posix-0.1.1*/**/*</include>
           <include>gems/ffi-binary-libfixposix-0.5.1.1*/**/*</include>
@@ -1325,7 +1325,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/shellwords-0.2.2*</include>
           <include>cache/singleton-0.3.0*</include>
           <include>cache/stringio-3.1.5*</include>
-          <include>cache/strscan-3.1.2*</include>
+          <include>cache/strscan-3.1.5*</include>
           <include>cache/subspawn-0.1.1*</include>
           <include>cache/subspawn-posix-0.1.1*</include>
           <include>cache/ffi-binary-libfixposix-0.5.1.1*</include>

@@ -95,6 +95,20 @@ describe "IO.popen" do
     @io = IO.popen(ruby_cmd('exit 0'), mode)
   end
 
+  it "accepts a path using the chdir: keyword argument" do
+    File.write(@fname, 'hello world')
+    @io = IO.popen("/bin/ls", chdir: File.dirname(@fname));
+    @io.read.chomp.should == File.basename(@fname)
+  end
+
+  it "accepts a path using the chdir: keyword argument and a coercible path" do
+    path = mock("path")
+    path.should_receive(:to_path).and_return(File.dirname(@fname))
+    File.write(@fname, 'hello world')
+    @io = IO.popen("/bin/ls", chdir: path);
+    @io.read.chomp.should == File.basename(@fname)
+  end
+
   describe "with a block" do
     it "yields an open IO to the block" do
       IO.popen(ruby_cmd('exit'), "r") do |io|
