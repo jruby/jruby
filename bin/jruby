@@ -1,6 +1,6 @@
 #!/bin/sh
 # -----------------------------------------------------------------------------
-# ruby - Relaunches as jruby.sh from the same path.
+# jruby - Relaunches as jruby.sh from the same path.
 #
 # See jruby.sh for more information.
 # -----------------------------------------------------------------------------
