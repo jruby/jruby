@@ -1,0 +1,1 @@
+fails(spec is guarded on Ruby version rather than strscan version):StringScanner#skip_until raises TypeError if given a String

@@ -1,0 +1,1 @@
+fails(spec is guarded on Ruby version rather than strscan version):StringScanner#exist? raises TypeError if given a String
