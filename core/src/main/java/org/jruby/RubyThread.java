@@ -1918,11 +1918,16 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     private Status getStatus() {
-        Status status = STATUS.get(this);
+        Status statusFromNative = nativeStatus();
+        Status statusFromRuby = Status.NATIVE;
 
-        if (status != Status.NATIVE) return status;
+        if (statusFromNative == Status.RUN) {
+            statusFromRuby = STATUS.get(this);
+        }
 
-        return nativeStatus();
+        if (statusFromRuby != Status.NATIVE) return statusFromRuby;
+
+        return statusFromNative;
     }
 
     private Status nativeStatus() {
