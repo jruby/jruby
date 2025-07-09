@@ -1,0 +1,1 @@
+fails:when passing **nil into a method that accepts keyword arguments expands nil using ** into {}
