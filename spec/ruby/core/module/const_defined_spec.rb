@@ -151,6 +151,7 @@ describe "Module#const_defined?" do
     ConstantSpecs.const_defined?("::Object").should == true
     ConstantSpecs.const_defined?("ClassA::CS_CONST10").should == true
     ConstantSpecs.const_defined?("ClassA::CS_CONST10_").should == false
+    ConstantSpecs.const_defined?("ClassA::String").should == false
   end
 
   it "raises a NameError if the name contains non-alphabetic characters except '_'" do
