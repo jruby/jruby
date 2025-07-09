@@ -13,11 +13,14 @@ import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newEmptyArray;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import org.jruby.Profile;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyString;
+import org.jruby.exceptions.NameError;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.ThreadContext;
@@ -69,7 +72,7 @@ public class JavaEmbedUtilsTest {
     class CustomProfile implements Profile {
         private List classAllow = List.of("String", "Fixnum", "Integer", "Numeric", "Hash", "Array",
                 "Thread", "ThreadGroup", "RubyError", "StopIteration", "LoadError", "ArgumentError", "Encoding",
-                "EncodingError", "StandardError", "Exception");
+                "EncodingError", "StandardError", "Exception", "NameError");
         private List loadAllow = List.of("jruby/java.rb", "jruby/java/core_ext.rb", "jruby/java/java_ext.rb",
                 "jruby/java/core_ext/object.rb");
 
@@ -107,7 +110,11 @@ public class JavaEmbedUtilsTest {
 
         Ruby runtime = Ruby.newInstance(config);
         assertEquals(20L, ((RubyFixnum) runtime.evalScriptlet("def double(a); a * 2; end; double(10)")).getValue());
-        //Ruby runtime = JavaEmbedUtils.initialize(EMPTY, config);
+        assertThrows(NameError.class, () -> runtime.evalScriptlet("File.open('test.tmp')"));
+        assertThrows(NameError.class, () -> runtime.evalScriptlet("UDPSocket.new"));
+        assertEquals("cute_cats",((RubyString)runtime.evalScriptlet("\"cute_cats\"")).getValue());
+        assertEquals("cute_cat",((RubyString)runtime.evalScriptlet("\"cute_cats\".delete('s')")).getValue());
+        //assertThrows(NameError.class, () -> runtime.evalScriptlet("IO.sysopen('test.tmp')"));
     }
 
     @Test
