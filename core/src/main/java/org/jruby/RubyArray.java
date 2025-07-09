@@ -1259,15 +1259,24 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
     @JRubyMethod(name = "insert", required = 1, rest = true, checkArity = false)
     public IRubyObject insert(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+            case 0:
+                return insert();
+            case 1:
+                return insert(args[0]);
+            case 2:
+                return insert(args[0], args[1]);
+        }
+
         int argc = Arity.checkArgumentCount(context, args, 1, -1);
 
         modifyCheck(context);
 
+        long pos = RubyNumeric.num2long(args[0]);
+
         if (argc == 1) return this;
 
         unpack(context);
-
-        long pos = toLong(context, args[0]);
 
         if (pos == -1) pos = realLength;
         if (pos < 0) pos++;
