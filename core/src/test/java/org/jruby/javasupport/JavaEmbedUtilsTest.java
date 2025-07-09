@@ -70,6 +70,8 @@ public class JavaEmbedUtilsTest {
         private List classAllow = List.of("String", "Fixnum", "Integer", "Numeric", "Hash", "Array",
                 "Thread", "ThreadGroup", "RubyError", "StopIteration", "LoadError", "ArgumentError", "Encoding",
                 "EncodingError", "StandardError", "Exception");
+        private List loadAllow = List.of("jruby/java.rb", "jruby/java/core_ext.rb", "jruby/java/java_ext.rb",
+                "jruby/java/core_ext/object.rb");
 
         @Override
         public boolean allowBuiltin(String name) {
@@ -88,7 +90,7 @@ public class JavaEmbedUtilsTest {
 
         @Override
         public boolean allowLoad(String name) {
-            return false;
+            return loadAllow.contains(name);
         }
 
         @Override

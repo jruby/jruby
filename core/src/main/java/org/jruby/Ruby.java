@@ -1772,7 +1772,7 @@ public final class Ruby implements Constantizable {
         // if we can't use reflection, 'jruby' and 'java' won't work; no load.
         boolean reflectionWorks = doesReflectionWork();
 
-        if (reflectionWorks && profile.allowLoad("java")) {
+        if (reflectionWorks) {
             new Java().load(context.runtime, false);
             new JRubyUtilLibrary().load(context.runtime, false);
 
