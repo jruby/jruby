@@ -784,7 +784,11 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             loadBlock(method, specificArity, block);
 
             if (Modifier.isStatic(desc.modifiers)) {
-                method.invokestatic(typePath, javaMethodName, sig(desc.returnClass, desc.parameters));
+                if (Modifier.isInterface(desc.declaringClass.getModifiers())) {
+                    method.invokestaticinterface(typePath, javaMethodName, sig(desc.returnClass, desc.parameters));
+                } else {
+                    method.invokestatic(typePath, javaMethodName, sig(desc.returnClass, desc.parameters));
+                }
             } else {
                 method.invokevirtual(typePath, javaMethodName, sig(desc.returnClass, desc.parameters));
             }

@@ -219,6 +219,10 @@ public final class SkinnyMethodAdapter extends MethodVisitor {
         getMethodVisitor().visitMethodInsn(INVOKESTATIC, arg1, arg2, arg3, false);
     }
 
+    public void invokestaticinterface(String arg1, String arg2, String arg3) {
+        getMethodVisitor().visitMethodInsn(INVOKESTATIC, arg1, arg2, arg3, true);
+    }
+
     public void invokestatic(String arg1, String arg2, String arg3, boolean iface) {
         getMethodVisitor().visitMethodInsn(INVOKESTATIC, arg1, arg2, arg3, iface);
     }
