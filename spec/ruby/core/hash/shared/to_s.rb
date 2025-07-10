@@ -85,6 +85,10 @@ describe :hash_to_s, shared: true do
     { true => false }.to_s.should == expected
   end
 
+  it "leaves printable multi-byte symbolic keys unescaped" do
+    {"\u3042": 1}.inspect.should == "{あ: 1}"
+  end
+
   ruby_version_is "3.4" do
     it "adds quotes to symbol keys that are not valid symbol literals" do
       { "needs-quotes": 1 }.send(@method).should == '{"needs-quotes": 1}'
